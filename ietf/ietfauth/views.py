@@ -112,33 +112,47 @@ def index(request):
 #         redirect_to = settings.LOGIN_REDIRECT_URL
 #     return HttpResponseRedirect(redirect_to)
 
-def create_account(request):
-    to_email = None
 
-    if request.method == 'POST':
+def create_account(request):
+    new_account_email = None
+
+    if request.method == "POST":
         form = RegistrationForm(request.POST)
         if form.is_valid():
-            to_email = form.cleaned_data['email'] # This will be lowercase if form.is_valid()
+            new_account_email = form.cleaned_data[
+                "email"
+            ]  # This will be lowercase if form.is_valid()
 
-            # For the IETF 113 Registration period (at least) we are lowering the barriers for account creation
-            # to the simple email round-trip check
-            send_account_creation_email(request, to_email)
+            user = User.objects.filter(username__iexact=new_account_email)
+            email = Email.objects.filter(address__iexact=new_account_email)
+            if user.exists() or email.exists():
+                to_email = user.first().person.email_address() if user else new_account_email
+                send_account_creation_exists_email(request, new_account_email, to_email)
+            else:
+                # For the IETF 113 Registration period (at least) we are lowering the
+                # barriers for account creation to the simple email round-trip check
+                send_account_creation_email(request, new_account_email)
 
-            # The following is what to revert to should that lowered barrier prove problematic
-            # existing = Subscribed.objects.filter(email__iexact=to_email).first()
-            # ok_to_create = ( Allowlisted.objects.filter(email__iexact=to_email).exists()
-            #     or existing and (existing.time + TimeDelta(seconds=settings.LIST_ACCOUNT_DELAY)) < DateTime.now() )
-            # if ok_to_create:
-            #     send_account_creation_email(request, to_email)
-            # else:
-            #     return render(request, 'registration/manual.html', { 'account_request_email': settings.ACCOUNT_REQUEST_EMAIL })
+                # The following is what to revert to should that lowered barrier prove problematic
+                # existing = Subscribed.objects.filter(email__iexact=new_account_email).first()
+                # ok_to_create = ( Allowlisted.objects.filter(email__iexact=new_account_email).exists()
+                #     or existing and (existing.time + TimeDelta(seconds=settings.LIST_ACCOUNT_DELAY)) < DateTime.now() )
+                # if ok_to_create:
+                #     send_account_creation_email(request, new_account_email)
+                # else:
+                #     return render(request, 'registration/manual.html', { 'account_request_email': settings.ACCOUNT_REQUEST_EMAIL })
     else:
         form = RegistrationForm()
 
-    return render(request, 'registration/create.html', {
-        'form': form,
-        'to_email': to_email,
-    })
+    return render(
+        request,
+        "registration/create.html",
+        {
+            "form": form,
+            "to_email": new_account_email,
+        },
+    )
+
 
 def send_account_creation_email(request, to_email):
     auth = django.core.signing.dumps(to_email, salt="create_account")
@@ -151,6 +165,23 @@ def send_account_creation_email(request, to_email):
         'username': to_email,
         'expire': settings.DAYS_TO_EXPIRE_REGISTRATION_LINK,
     })
+
+
+def send_account_creation_exists_email(request, new_account_email, to_email):
+    domain = Site.objects.get_current().domain
+    subject = "Attempted account creation at %s" % domain
+    from_email = settings.DEFAULT_FROM_EMAIL
+    send_mail(
+        request,
+        to_email,
+        from_email,
+        subject,
+        "registration/creation_exists_email.txt",
+        {
+            "domain": domain,
+            "username": new_account_email,
+        },
+    )
 
 
 def confirm_account(request, auth):
@@ -255,17 +286,25 @@ def profile(request):
                 auth = django.core.signing.dumps([person.user.username, to_email], salt="add_email")
 
                 domain = Site.objects.get_current().domain
-                subject = 'Confirm email address for %s' % person.name
                 from_email = settings.DEFAULT_FROM_EMAIL
 
-                send_mail(request, to_email, from_email, subject, 'registration/add_email_email.txt', {
-                    'domain': domain,
-                    'auth': auth,
-                    'email': to_email,
-                    'person': person,
-                    'expire': settings.DAYS_TO_EXPIRE_REGISTRATION_LINK,
-                })
-                
+                existing = Email.objects.filter(address=to_email).first()
+                if existing:
+                    subject = 'Attempt to add your email address by %s' % person.name
+                    send_mail(request, to_email, from_email, subject, 'registration/add_email_exists_email.txt', {
+                        'domain': domain,
+                        'email': to_email,
+                        'person': person,
+                    })
+                else:
+                    subject = 'Confirm email address for %s' % person.name
+                    send_mail(request, to_email, from_email, subject, 'registration/add_email_email.txt', {
+                        'domain': domain,
+                        'auth': auth,
+                        'email': to_email,
+                        'person': person,
+                        'expire': settings.DAYS_TO_EXPIRE_REGISTRATION_LINK,
+                    })
 
             for r in roles:
                 e = r.email_form.cleaned_data["email"]
@@ -417,14 +456,10 @@ def password_reset(request):
             # The form validation checks that a matching User exists. Add the person__isnull check
             # because the OneToOne field does not gracefully handle checks for user.person is Null.
             # If we don't get a User here, we know it's because there's no related Person.
+            # We still report that the action succeeded, so we're not leaking the existence of user
+            # email addresses.
             user = User.objects.filter(username__iexact=submitted_username, person__isnull=False).first()
-            if not (user and user.person.email_set.filter(active=True).exists()):
-                form.add_error(
-                    'username',
-                    'No known active email addresses are associated with this account. '
-                    'Please contact the secretariat for assistance.',
-                )
-            else:
+            if user and user.person.email_set.filter(active=True).exists():
                 data = {
                     'username': user.username,
                     'password': user.password and user.password[-4:],
@@ -445,7 +480,7 @@ def password_reset(request):
                     'username': submitted_username,
                     'expire': settings.MINUTES_TO_EXPIRE_RESET_PASSWORD_LINK,
                 })
-                success = True
+            success = True
     else:
         form = ResetPasswordForm()
     return render(request, 'registration/password_reset.html', {

@@ -165,7 +165,7 @@ class IetfAuthTests(TestCase):
         r = render_to_string('registration/manual.html', { 'account_request_email': settings.ACCOUNT_REQUEST_EMAIL })
         self.assertTrue("Additional Assistance Required" in r)
 
-    def register_and_verify(self, email):
+    def register(self, email):
         url = urlreverse(ietf.ietfauth.views.create_account)
 
         # register email
@@ -174,6 +174,9 @@ class IetfAuthTests(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, "Account request received")
         self.assertEqual(len(outbox), 1)
+
+    def register_and_verify(self, email):
+        self.register(email)
 
         # go to confirm page
         confirm_url = self.extract_confirm_url(outbox[-1])
@@ -228,6 +231,20 @@ class IetfAuthTests(TestCase):
         time.sleep(1.1)
         self.register_and_verify(email)
         settings.LIST_ACCOUNT_DELAY = saved_delay
+
+    def test_create_existing_account(self):
+        # create account once
+        email = "new-account@example.com"
+        self.register_and_verify(email)
+
+        # create account again
+        self.register(email)
+
+        # check notification
+        note = get_payload_text(outbox[-1])
+        self.assertIn(email, note)
+        self.assertIn("A datatracker account for that email already exists", note)
+        self.assertIn(urlreverse(ietf.ietfauth.views.password_reset), note)
 
     def test_ietfauth_profile(self):
         EmailFactory(person__user__username='plain')
@@ -317,11 +334,14 @@ class IetfAuthTests(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertEqual(Email.objects.filter(address=new_email_address, person__user__username=username, active=1).count(), 1)
 
-        # check that we can't re-add it - that would give a duplicate
-        r = self.client.get(confirm_url)
+        # try and add it again
+        empty_outbox()
+        r = self.client.post(url, with_new_email_address)
         self.assertEqual(r.status_code, 200)
-        q = PyQuery(r.content)
-        self.assertEqual(len(q('[name="action"][value="confirm"]')), 0)
+        self.assertEqual(len(outbox), 1)
+        note = get_payload_text(outbox[-1])
+        self.assertIn(new_email_address, note)
+        self.assertIn("already associated with your account", note)
 
         pronoundish = base_data.copy()
         pronoundish["pronouns_freetext"] = "baz/boom"
@@ -395,7 +415,7 @@ class IetfAuthTests(TestCase):
             "new_email": "testaddress@example.net",
         }
         r = self.client.post(url, data)
-        self.assertContains(r, "Email address &#39;TestAddress@example.net&#39; is already assigned", status_code=200)
+        self.assertContains(r, "A confirmation email has been sent to", status_code=200)
 
     def test_nomcom_dressing_on_profile(self):
         url = urlreverse('ietf.ietfauth.views.profile')
@@ -437,11 +457,11 @@ class IetfAuthTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
 
-        # ask for reset, wrong username
+        # ask for reset, wrong username (form should not fail)
         r = self.client.post(url, { 'username': "nobody@example.com" })
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(len(q("form .is-invalid")) > 0)
+        self.assertTrue(len(q("form .is-invalid")) == 0)
 
         # ask for reset
         empty_outbox()
@@ -518,9 +538,9 @@ class IetfAuthTests(TestCase):
         user.save()
         empty_outbox()
         r = self.client.post(url, { 'username': user.username})
-        self.assertContains(r, 'No known active email addresses', status_code=200)
+        self.assertContains(r, 'We have sent you an email with instructions', status_code=200)
         q = PyQuery(r.content)
-        self.assertTrue(len(q("form .is-invalid")) > 0)
+        self.assertTrue(len(q("form .is-invalid")) == 0)
         self.assertEqual(len(outbox), 0)
 
     def test_reset_password_address_handling(self):
@@ -530,14 +550,14 @@ class IetfAuthTests(TestCase):
         person.email_set.update(active=False)
         empty_outbox()
         r = self.client.post(url, { 'username': person.user.username})
-        self.assertContains(r, 'No known active email addresses', status_code=200)
+        self.assertContains(r, 'We have sent you an email with instructions', status_code=200)
         q = PyQuery(r.content)
-        self.assertTrue(len(q("form .is-invalid")) > 0)
+        self.assertTrue(len(q("form .is-invalid")) == 0)
         self.assertEqual(len(outbox), 0)
 
         active_address = EmailFactory(person=person).address
         r = self.client.post(url, {'username': person.user.username})
-        self.assertNotContains(r, 'No known active email addresses', status_code=200)
+        self.assertContains(r, 'We have sent you an email with instructions', status_code=200)
         self.assertEqual(len(outbox), 1)
         to = outbox[0].get('To')
         self.assertIn(active_address, to)
