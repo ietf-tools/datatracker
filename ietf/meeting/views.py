@@ -4049,13 +4049,15 @@ def api_upload_bluesheet(request):
     def err(code, text):
         return HttpResponse(text, status=code, content_type='text/plain')
 
+    if request.method != 'POST':
+        return HttpResponseNotAllowed(
+            content="Method not allowed", content_type="text/plain", permitted_methods=('POST',)
+        )
+
     # Temporary: fall back to deprecated interface if we have old-style parameters.
     # Do away with this once meetecho is using the new pk-based interface.
     if any(k in request.POST for k in ['meeting', 'group', 'item']):
-        return deprecated_api_set_session_video_url(request)
-
-    if request.method != 'POST':
-        return HttpResponseNotAllowed(permitted_methods=('POST',))
+        return deprecated_api_upload_bluesheet(request)
 
     session_id = request.POST.get('session_id', None)
     if session_id is None:
