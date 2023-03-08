@@ -4066,9 +4066,13 @@ def api_upload_bluesheet(request):
     if bjson is None:
         return err(400, 'Missing bluesheet parameter')
 
-    session = Session.objects.filter(pk=session_id).first()
-    if session is None:
+    try:
+        session = Session.objects.get(pk=session_id)
+    except Session.DoesNotExist:
         return err(400, f"Session not found with session_id '{session_id}'")
+    except ValueError:
+        return err(400, f"Invalid session_id '{session_id}'")
+
     try:
         data = json.loads(bjson)
     except json.decoder.JSONDecodeError:
