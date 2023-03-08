@@ -37,6 +37,7 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["@fullcalendar/bootstrap5", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.4"],\
             ["@fullcalendar/core", "npm:6.1.4"],\
             ["@fullcalendar/daygrid", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.4"],\
+            ["@fullcalendar/icalendar", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.4"],\
             ["@fullcalendar/interaction", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.4"],\
             ["@fullcalendar/list", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.4"],\
             ["@fullcalendar/luxon2", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.4"],\
@@ -67,6 +68,7 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["file-saver", "npm:2.0.5"],\
             ["highcharts", "npm:10.3.3"],\
             ["html-validate", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:7.13.1"],\
+            ["ical.js", "npm:1.5.0"],\
             ["jquery", "npm:3.6.3"],\
             ["jquery-migrate", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:3.4.0"],\
             ["jquery-ui-dist", "npm:1.13.2"],\
@@ -309,6 +311,32 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
           "packagePeers": [\
             "@fullcalendar/core",\
             "@types/fullcalendar__core"\
+          ],\
+          "linkType": "HARD"\
+        }]\
+      ]],\
+      ["@fullcalendar/icalendar", [\
+        ["npm:6.1.4", {\
+          "packageLocation": "./.yarn/cache/@fullcalendar-icalendar-npm-6.1.4-8f5c41e738-4ec2ed9092.zip/node_modules/@fullcalendar/icalendar/",\
+          "packageDependencies": [\
+            ["@fullcalendar/icalendar", "npm:6.1.4"]\
+          ],\
+          "linkType": "SOFT"\
+        }],\
+        ["virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.4", {\
+          "packageLocation": "./.yarn/__virtual__/@fullcalendar-icalendar-virtual-d4c1c240a9/0/cache/@fullcalendar-icalendar-npm-6.1.4-8f5c41e738-4ec2ed9092.zip/node_modules/@fullcalendar/icalendar/",\
+          "packageDependencies": [\
+            ["@fullcalendar/icalendar", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.4"],\
+            ["@fullcalendar/core", "npm:6.1.4"],\
+            ["@types/fullcalendar__core", null],\
+            ["@types/ical.js", null],\
+            ["ical.js", "npm:1.5.0"]\
+          ],\
+          "packagePeers": [\
+            "@fullcalendar/core",\
+            "@types/fullcalendar__core",\
+            "@types/ical.js",\
+            "ical.js"\
           ],\
           "linkType": "HARD"\
         }]\
@@ -5338,6 +5366,15 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
           "linkType": "HARD"\
         }]\
       ]],\
+      ["ical.js", [\
+        ["npm:1.5.0", {\
+          "packageLocation": "./.yarn/cache/ical.js-npm-1.5.0-5ba1c69420-51df7a01f4.zip/node_modules/ical.js/",\
+          "packageDependencies": [\
+            ["ical.js", "npm:1.5.0"]\
+          ],\
+          "linkType": "HARD"\
+        }]\
+      ]],\
       ["iconv-lite", [\
         ["npm:0.6.3", {\
           "packageLocation": "./.yarn/cache/iconv-lite-npm-0.6.3-24b8aae27e-3f60d47a5c.zip/node_modules/iconv-lite/",\
@@ -7482,6 +7519,7 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["@fullcalendar/bootstrap5", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.4"],\
             ["@fullcalendar/core", "npm:6.1.4"],\
             ["@fullcalendar/daygrid", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.4"],\
+            ["@fullcalendar/icalendar", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.4"],\
             ["@fullcalendar/interaction", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.4"],\
             ["@fullcalendar/list", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.4"],\
             ["@fullcalendar/luxon2", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.4"],\
@@ -7512,6 +7550,7 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["file-saver", "npm:2.0.5"],\
             ["highcharts", "npm:10.3.3"],\
             ["html-validate", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:7.13.1"],\
+            ["ical.js", "npm:1.5.0"],\
             ["jquery", "npm:3.6.3"],\
             ["jquery-migrate", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:3.4.0"],\
             ["jquery-ui-dist", "npm:1.13.2"],\

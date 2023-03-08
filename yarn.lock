@@ -148,6 +148,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@fullcalendar/icalendar@npm:6.1.4":
+  version: 6.1.4
+  resolution: "@fullcalendar/icalendar@npm:6.1.4"
+  peerDependencies:
+    "@fullcalendar/core": ~6.1.4
+    ical.js: ^1.4.0
+  checksum: 4ec2ed9092bf963dd889ffb01dd5ec6c956810e3b791a16a3d5c4bd0b303850757ad03b000c79d026ed8f7a9dbc53b673743c4eec0b8901bc4030a56d718f94c
+  languageName: node
+  linkType: hard
+
 "@fullcalendar/interaction@npm:6.1.4":
   version: 6.1.4
   resolution: "@fullcalendar/interaction@npm:6.1.4"
@@ -4250,6 +4260,13 @@ browserlist@latest:
   languageName: node
   linkType: hard
 
+"ical.js@npm:1.5.0":
+  version: 1.5.0
+  resolution: "ical.js@npm:1.5.0"
+  checksum: 51df7a01f462dc8a02b3c3c28acb288756071044c4a8b56ff5179995bb219e569e72cfedac6f4ab03dc643be34f5d88c09a7d79c4be6ba8a7623b7336eecb110
+  languageName: node
+  linkType: hard
+
 "iconv-lite@npm:0.6, iconv-lite@npm:^0.6.2":
   version: 0.6.3
   resolution: "iconv-lite@npm:0.6.3"
@@ -6174,6 +6191,7 @@ browserlist@latest:
     "@fullcalendar/bootstrap5": 6.1.4
     "@fullcalendar/core": 6.1.4
     "@fullcalendar/daygrid": 6.1.4
+    "@fullcalendar/icalendar": 6.1.4
     "@fullcalendar/interaction": 6.1.4
     "@fullcalendar/list": 6.1.4
     "@fullcalendar/luxon2": 6.1.4
@@ -6204,6 +6222,7 @@ browserlist@latest:
     file-saver: 2.0.5
     highcharts: 10.3.3
     html-validate: 7.13.1
+    ical.js: 1.5.0
     jquery: 3.6.3
     jquery-migrate: 3.4.0
     jquery-ui-dist: 1.13.2
