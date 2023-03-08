@@ -70,7 +70,7 @@ class CustomApiTests(TestCase):
         r = self.client.get(url)
         self.assertContains(r, 'OpenID Connect Issuer', status_code=200)
 
-    def test_api_set_session_video_url(self):
+    def test_deprecated_api_set_session_video_url(self):
         url = urlreverse('ietf.meeting.views.api_set_session_video_url')
         recmanrole = RoleFactory(group__type_id='ietf', name_id='recman')
         recman = recmanrole.person
@@ -99,7 +99,7 @@ class CustomApiTests(TestCase):
         r = self.client.get(url, {'apikey': apikey.hash()} )
         self.assertContains(r, "Method not allowed", status_code=405)
 
-        r = self.client.post(url, {'apikey': apikey.hash()} )
+        r = self.client.post(url, {'apikey': apikey.hash(), 'group': group.acronym} )
         self.assertContains(r, "Missing meeting parameter", status_code=400)
 
 
