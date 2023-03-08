@@ -304,7 +304,7 @@ class CustomApiTests(TestCase):
             newdoccontent = get_unicode_document_content(newdoc.name, Path(session.meeting.get_materials_path()) / type_id / newdoc.uploaded_filename)
             self.assertEqual(json.loads(content), json.loads(newdoccontent))
 
-    def test_api_upload_bluesheet(self):
+    def test_deprecated_api_upload_bluesheet(self):
         url = urlreverse('ietf.meeting.views.api_upload_bluesheet')
         recmanrole = RoleFactory(group__type_id='ietf', name_id='recman')
         recman = recmanrole.person
@@ -342,7 +342,7 @@ class CustomApiTests(TestCase):
         r = self.client.get(url, {'apikey': apikey.hash()} )
         self.assertContains(r, "Method not allowed", status_code=405)
 
-        r = self.client.post(url, {'apikey': apikey.hash()} )
+        r = self.client.post(url, {'apikey': apikey.hash(), 'group': group.acronym} )
         self.assertContains(r, "Missing meeting parameter", status_code=400)
 
 
