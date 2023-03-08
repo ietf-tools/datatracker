@@ -727,6 +727,7 @@ class SessionDetailsForm(forms.ModelForm):
                 'purpose',
                 session_purposes[0] if len(session_purposes) > 0 else None,
             )
+            kwargs['initial'].setdefault('has_onsite_tool', group.features.acts_like_wg)
         super().__init__(*args, **kwargs)
 
         self.fields['type'].widget.attrs.update({

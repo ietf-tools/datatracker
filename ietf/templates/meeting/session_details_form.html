@@ -26,6 +26,10 @@
                 <th scope="row">{{ form.requested_duration.label_tag }}</th>
                 <td>{{ form.requested_duration }}{{ form.requested_duration.errors }}</td>
             </tr>
+            <tr>
+                <th scope="row">{{ form.has_onsite_tool.label_tag }}</th>
+                <td>{{ form.has_onsite_tool }}{{ form.has_onsite_tool.errors }}</td>
+            </tr>
             </tbody>
         </table>
     {% endif %}
