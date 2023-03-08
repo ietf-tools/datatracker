@@ -151,6 +151,60 @@ class CustomApiTests(TestCase):
         event = doc.latest_event()
         self.assertEqual(event.by, recman)
 
+    def test_api_set_session_video_url(self):
+        url = urlreverse('ietf.meeting.views.api_set_session_video_url')
+        recmanrole = RoleFactory(group__type_id='ietf', name_id='recman')
+        recman = recmanrole.person
+        meeting = MeetingFactory(type_id='ietf')
+        session = SessionFactory(group__type_id='wg', meeting=meeting)
+        apikey = PersonalApiKey.objects.create(endpoint=url, person=recman)
+        video = 'https://foo.example.com/bar/beer/'
+
+        # error cases
+        r = self.client.post(url, {})
+        self.assertContains(r, "Missing apikey parameter", status_code=400)
+
+        badrole  = RoleFactory(group__type_id='ietf', name_id='ad')
+        badapikey = PersonalApiKey.objects.create(endpoint=url, person=badrole.person)
+        badrole.person.user.last_login = timezone.now()
+        badrole.person.user.save()
+        r = self.client.post(url, {'apikey': badapikey.hash()} )
+        self.assertContains(r, "Restricted to role: Recording Manager", status_code=403)
+
+        r = self.client.post(url, {'apikey': apikey.hash()} )
+        self.assertContains(r, "Too long since last regular login", status_code=400)
+        recman.user.last_login = timezone.now()
+        recman.user.save()
+
+        r = self.client.get(url, {'apikey': apikey.hash()} )
+        self.assertContains(r, "Method not allowed", status_code=405)
+
+        r = self.client.post(url, {'apikey': apikey.hash()} )
+        self.assertContains(r, "Missing session_id parameter", status_code=400)
+
+        r = self.client.post(url, {'apikey': apikey.hash(), 'session_id': session.pk} )
+        self.assertContains(r, "Missing url parameter", status_code=400)
+
+        bad_pk = int(Session.objects.order_by('-pk').first().pk) + 1
+        r = self.client.post(url, {'apikey': apikey.hash(), 'session_id': bad_pk, 'url': video, })
+        self.assertContains(r, "Session not found", status_code=400)
+
+        r = self.client.post(url, {'apikey': apikey.hash(), 'session_id': 'foo', 'url': video, })
+        self.assertContains(r, "Invalid session_id", status_code=400)
+
+        r = self.client.post(url, {'apikey': apikey.hash(), 'session_id': session.pk, 'url': "foobar", })
+        self.assertContains(r, "Invalid url value: 'foobar'", status_code=400)
+
+        r = self.client.post(url, {'apikey': apikey.hash(), 'session_id': session.pk, 'url': video})
+        self.assertContains(r, "Done", status_code=200)
+
+        recordings = session.recordings()
+        self.assertEqual(len(recordings), 1)
+        doc = recordings[0]
+        self.assertEqual(doc.external_url, video)
+        event = doc.latest_event()
+        self.assertEqual(event.by, recman)
+
     def test_api_add_session_attendees(self):
         url = urlreverse('ietf.meeting.views.api_add_session_attendees')
         otherperson = PersonFactory()
