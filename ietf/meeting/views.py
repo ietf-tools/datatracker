@@ -3839,13 +3839,17 @@ def api_set_session_video_url(request):
     if incoming_url is None:
         return err(400, 'Missing url parameter')
 
-    session = Session.objects.filter(pk=session_id).first()
-    if session is None:
+    try:
+        session = Session.objects.get(pk=session_id)
+    except Session.DoesNotExist:
         return err(400, f"Session not found with session_id '{session_id}'")
+    except ValueError:
+        return err(400, "Invalid session_id: {session_id}")
+
     try:
         URLValidator()(incoming_url)
     except ValidationError:
-        return err(400, f"Invalid url value '{incoming_url}'")
+        return err(400, f"Invalid url value: '{incoming_url}'")
 
     recordings = [(r.name, r.title, r) for r in session.recordings() if 'video' in r.title.lower()]
     if recordings:
