@@ -397,11 +397,11 @@ class CustomApiTests(TestCase):
                 self.assertIn(p['affiliation'], html.unescape(text))
 
     def test_api_upload_bluesheet(self):
-        url = urlreverse('ietf.meeting.views.api_upload_bluesheet')
-        recmanrole = RoleFactory(group__type_id='ietf', name_id='recman')
+        url = urlreverse("ietf.meeting.views.api_upload_bluesheet")
+        recmanrole = RoleFactory(group__type_id="ietf", name_id="recman")
         recman = recmanrole.person
-        meeting = MeetingFactory(type_id='ietf')
-        session = SessionFactory(group__type_id='wg', meeting=meeting)
+        meeting = MeetingFactory(type_id="ietf")
+        session = SessionFactory(group__type_id="wg", meeting=meeting)
         group = session.group
         apikey = PersonalApiKey.objects.create(endpoint=url, person=recman)
 
@@ -419,58 +419,100 @@ class CustomApiTests(TestCase):
         r = self.client.post(url, {})
         self.assertContains(r, "Missing apikey parameter", status_code=400)
 
-        badrole = RoleFactory(group__type_id='ietf', name_id='ad')
+        badrole = RoleFactory(group__type_id="ietf", name_id="ad")
         badapikey = PersonalApiKey.objects.create(endpoint=url, person=badrole.person)
         badrole.person.user.last_login = timezone.now()
         badrole.person.user.save()
-        r = self.client.post(url, {'apikey': badapikey.hash()})
-        self.assertContains(r, "Restricted to roles: Recording Manager, Secretariat", status_code=403)
+        r = self.client.post(url, {"apikey": badapikey.hash()})
+        self.assertContains(
+            r, "Restricted to roles: Recording Manager, Secretariat", status_code=403
+        )
 
-        r = self.client.post(url, {'apikey': apikey.hash()})
+        r = self.client.post(url, {"apikey": apikey.hash()})
         self.assertContains(r, "Too long since last regular login", status_code=400)
         recman.user.last_login = timezone.now()
         recman.user.save()
 
-        r = self.client.get(url, {'apikey': apikey.hash()})
+        r = self.client.get(url, {"apikey": apikey.hash()})
         self.assertContains(r, "Method not allowed", status_code=405)
 
-        r = self.client.post(url, {'apikey': apikey.hash()})
+        r = self.client.post(url, {"apikey": apikey.hash()})
         self.assertContains(r, "Missing session_id parameter", status_code=400)
 
-        r = self.client.post(url,
-                             {'apikey': apikey.hash(), 'session_id': session.pk})
+        r = self.client.post(url, {"apikey": apikey.hash(), "session_id": session.pk})
         self.assertContains(r, "Missing bluesheet parameter", status_code=400)
 
-        r = self.client.post(url, {'apikey': apikey.hash(), 'meeting': meeting.number, 'group': group.acronym,
-                                   'item': '1', 'bluesheet': "foobar", })
+        r = self.client.post(
+            url,
+            {
+                "apikey": apikey.hash(),
+                "meeting": meeting.number,
+                "group": group.acronym,
+                "item": "1",
+                "bluesheet": "foobar",
+            },
+        )
         self.assertContains(r, "Invalid json value: 'foobar'", status_code=400)
 
-        bad_session_pk = int(Session.objects.order_by('-pk').first().pk) + 1
-        r = self.client.post(url, {'apikey': apikey.hash(), 'session_id': bad_session_pk, 'bluesheet': bluesheet, })
+        bad_session_pk = int(Session.objects.order_by("-pk").first().pk) + 1
+        r = self.client.post(
+            url,
+            {
+                "apikey": apikey.hash(),
+                "session_id": bad_session_pk,
+                "bluesheet": bluesheet,
+            },
+        )
         self.assertContains(r, "Session not found", status_code=400)
 
-        r = self.client.post(url, {'apikey': apikey.hash(), 'session_id': 'foo', 'bluesheet': bluesheet, })
+        r = self.client.post(
+            url,
+            {
+                "apikey": apikey.hash(),
+                "session_id": "foo",
+                "bluesheet": bluesheet,
+            },
+        )
         self.assertContains(r, "Invalid session_id", status_code=400)
 
-        r = self.client.post(url, {'apikey': apikey.hash(), 'session_id': session.pk, 'bluesheet': bluesheet, })
+        r = self.client.post(
+            url,
+            {
+                "apikey": apikey.hash(),
+                "session_id": session.pk,
+                "bluesheet": bluesheet,
+            },
+        )
         self.assertContains(r, "Done", status_code=200)
 
         # Submit again, with slightly different content, as an updated version
-        people[1]['affiliation'] = 'Bolaget AB'
+        people[1]["affiliation"] = "Bolaget AB"
         bluesheet = json.dumps(people)
-        r = self.client.post(url, {'apikey': apikey.hash(), 'meeting': meeting.number, 'group': group.acronym,
-                                   'item': '1', 'bluesheet': bluesheet, })
+        r = self.client.post(
+            url,
+            {
+                "apikey": apikey.hash(),
+                "meeting": meeting.number,
+                "group": group.acronym,
+                "item": "1",
+                "bluesheet": bluesheet,
+            },
+        )
         self.assertContains(r, "Done", status_code=200)
 
-        bluesheet = session.sessionpresentation_set.filter(document__type__slug='bluesheets').first().document
+        bluesheet = (
+            session.sessionpresentation_set.filter(document__type__slug="bluesheets")
+            .first()
+            .document
+        )
         # We've submitted an update; check that the rev is right
-        self.assertEqual(bluesheet.rev, '01')
+        self.assertEqual(bluesheet.rev, "01")
         # Check the content
         with open(bluesheet.get_file_name()) as file:
             text = file.read()
             for p in people:
-                self.assertIn(p['name'], html.unescape(text))
-                self.assertIn(p['affiliation'], html.unescape(text))
+                self.assertIn(p["name"], html.unescape(text))
+                self.assertIn(p["affiliation"], html.unescape(text))
 
     def test_person_export(self):
         person = PersonFactory()
