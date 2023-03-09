@@ -121,6 +121,7 @@ let lastSessionId = 25000
 let lastRecordingId = 150000
 function createEvent ({
   name = '',
+  slotName = '',
   startDateTime,
   duration = '1h',
   area,
@@ -152,6 +153,7 @@ function createEvent ({
     acronym: group.keyword,
     duration: typeof duration === 'string' ? ms(duration) / 1000 : duration,
     name: eventName,
+    slotName: slotName,
     startDateTime: startDateTime.toISO({ includeOffset: false, suppressMilliseconds: true }),
     status,
     type,
@@ -514,7 +516,7 @@ module.exports = {
         _.times(8, () => { // 8 lanes per session time
           const { area, ...group } = daySessions.pop()
           schedule.push(createEvent({
-            name: 'Session I',
+            slotName: 'Session I',
             startDateTime: curDay.set({ hour: 10 }),
             duration: '2h',
             type: 'regular',
@@ -543,7 +545,7 @@ module.exports = {
         _.times(8, () => { // 8 lanes per session time
           const { area, ...group } = daySessions.pop()
           schedule.push(createEvent({
-            name: 'Session II',
+            slotName: 'Session II',
             startDateTime: curDay.set({ hour: 13, minute: 30 }),
             duration: '1h',
             type: 'regular',
@@ -574,7 +576,7 @@ module.exports = {
           _.times(8, () => { // 8 lanes per session time
             const { area, ...group } = daySessions.pop()
             schedule.push(createEvent({
-              name: 'Session III',
+              slotName: 'Session III',
               startDateTime: curDay.set({ hour: 15 }),
               duration: '2h',
               type: 'regular',
