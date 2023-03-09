@@ -81,7 +81,30 @@
             </table>
         {% endif %}
     {% endfor %}
+    <div id="cal" class="mt-5"></div>
 {% endblock %}
 {% block js %}
     <script src="{% static "ietf/js/list.js" %}"></script>
+    <script src="{% static 'ietf/js/fullcalendar.js' %}"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function (event) {
+            const el = document.getElementById("cal");
+            var calendar = new FullCalendar(el, {
+                plugins: [dayGridPlugin, bootstrap5Plugin, iCalendarPlugin],
+                themeSystem: 'bootstrap5',
+                displayEventTime: false,
+                eventDidMount: function (info) {
+                    $(info.el)
+                        .tooltip({
+                            title: info.event.title + ": " + info.event.extendedProps.description
+                        });
+                },
+                events: {
+                    url: "{% url 'ietf.meeting.views.important_dates' output_format='ics' %}",
+                    format: "ics"
+                }
+            });
+            calendar.render();
+        });
+    </script>
 {% endblock %}
