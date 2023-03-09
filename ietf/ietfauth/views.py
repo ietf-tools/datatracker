@@ -126,8 +126,12 @@ def create_account(request):
             user = User.objects.filter(username__iexact=new_account_email)
             email = Email.objects.filter(address__iexact=new_account_email)
             if user.exists() or email.exists():
-                to_email = user.first().person.email_address() if user else new_account_email
-                send_account_creation_exists_email(request, new_account_email, to_email)
+                person_to_contact = user.first().person if user else email.first().person
+                to_email = person_to_contact.email_address()
+                if to_email:
+                    send_account_creation_exists_email(request, new_account_email, to_email)
+                else:
+                    raise ValidationError(f"Account for {{new_account_email}} exists, but cannot email it")
             else:
                 # For the IETF 113 Registration period (at least) we are lowering the
                 # barriers for account creation to the simple email round-trip check
