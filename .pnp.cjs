@@ -94,6 +94,7 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["shepherd.js", "npm:10.0.1"],\
             ["slugify", "npm:1.6.5"],\
             ["sortablejs", "npm:1.15.0"],\
+            ["vanillajs-datepicker", "npm:1.3.1"],\
             ["vite", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:3.2.5"],\
             ["vue", "npm:3.2.47"],\
             ["vue-router", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:4.1.6"],\
@@ -7576,6 +7577,7 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["shepherd.js", "npm:10.0.1"],\
             ["slugify", "npm:1.6.5"],\
             ["sortablejs", "npm:1.15.0"],\
+            ["vanillajs-datepicker", "npm:1.3.1"],\
             ["vite", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:3.2.5"],\
             ["vue", "npm:3.2.47"],\
             ["vue-router", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:4.1.6"],\
@@ -8345,6 +8347,15 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["@jridgewell/trace-mapping", "npm:0.3.14"],\
             ["@types/istanbul-lib-coverage", "npm:2.0.4"],\
             ["convert-source-map", "npm:1.8.0"]\
+          ],\
+          "linkType": "HARD"\
+        }]\
+      ]],\
+      ["vanillajs-datepicker", [\
+        ["npm:1.3.1", {\
+          "packageLocation": "./.yarn/cache/vanillajs-datepicker-npm-1.3.1-75a9d66ea4-c01ea7ec70.zip/node_modules/vanillajs-datepicker/",\
+          "packageDependencies": [\
+            ["vanillajs-datepicker", "npm:1.3.1"]\
           ],\
           "linkType": "HARD"\
         }]\

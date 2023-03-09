@@ -6248,6 +6248,7 @@ browserlist@latest:
     shepherd.js: 10.0.1
     slugify: 1.6.5
     sortablejs: 1.15.0
+    vanillajs-datepicker: 1.3.1
     vite: 3.2.5
     vue: 3.2.47
     vue-router: 4.1.6
@@ -6930,6 +6931,13 @@ browserlist@latest:
     "@types/istanbul-lib-coverage": ^2.0.1
     convert-source-map: ^1.6.0
   checksum: a49c34bf0a3af0c11041a3952a2600913904a983bd1bc87148b5c033bc5c1d02d5a13620fcdbfa2c60bc582a2e2970185780f0c844b4c3a220abf405f8af6311
+  languageName: node
+  linkType: hard
+
+"vanillajs-datepicker@npm:1.3.1":
+  version: 1.3.1
+  resolution: "vanillajs-datepicker@npm:1.3.1"
+  checksum: c01ea7ec70de94441a3b7760ff6ce8a06b38c6197c2cc68568e69afc8c80f4e45419358ab99e328daf58663ff2a42bb818314f4279095db7aaec18a9e995d5f2
   languageName: node
   linkType: hard
 
