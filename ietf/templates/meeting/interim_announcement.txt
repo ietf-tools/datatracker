@@ -1,8 +1,6 @@
 {% load ietf_filters tz %}{% timezone meeting.tz %}{% if is_change %}MEETING DETAILS HAVE CHANGED.  SEE LATEST DETAILS BELOW.
 
-{% endif %}The {{ group.name }} ({{ group.acronym }}) {% if group.type.slug == 'wg' and group.state.slug == 'bof' %}BOF{% else %}{{group.type.name}}{% endif %} will hold
-{% if assignments.count == 1 %}a{% if meeting.city %}n {% else %} virtual {% endif %}interim meeting on {{ meeting.date }} from {{ assignments.first.timeslot.time | date:"H:i" }} to {{ assignments.first.timeslot.end_time | date:"H:i" }} {{ meeting.time_zone}}{% if meeting.time_zone != 'UTC' %} ({{ assignments.first.timeslot.time | utc | date:"H:i" }} to {{ assignments.first.timeslot.end_time | utc | date:"H:i" }} UTC){% endif %}.
-{% else %}a multi-day {% if not meeting.city %}virtual {% endif %}interim meeting.
+{% endif %}{% filter wordwrap:78 %}The {{ group.name }} ({{ group.acronym }}) {% if group.type.slug == 'wg' and group.state.slug == 'bof' %}BOF{% else %}{{group.type.name}}{% endif %} will hold {% if assignments.count == 1 %}a{% if meeting.city %}n {% else %} virtual {% endif %}interim meeting on {{ meeting.date }} from {{ assignments.first.timeslot.time | date:"H:i" }} to {{ assignments.first.timeslot.end_time | date:"H:i" }} {{ meeting.time_zone}}{% if meeting.time_zone != 'UTC' %} ({{ assignments.first.timeslot.time | utc | date:"H:i" }} to {{ assignments.first.timeslot.end_time | utc | date:"H:i" }} UTC){% endif %}.{% else %}a multi-day {% if not meeting.city %}virtual {% endif %}interim meeting.
 
 {% for assignment in assignments %}Session {{ forloop.counter }}:
 {{ assignment.timeslot.time | date:"Y-m-d" }}     {{ assignment.timeslot.time | date:"H:i" }} to {{ assignment.timeslot.end_time | date:"H:i" }} {{ meeting.time_zone }}{% if meeting.time_zone != 'UTC' %}({{ assignment.timeslot.time | utc | date:"H:i" }} to {{ assignment.timeslot.end_time | utc | date:"H:i" }} UTC){% endif %}
@@ -10,11 +8,15 @@
 {% if meeting.city %}Meeting Location:
 {{ meeting.city }}, {{ meeting.country }}
 
-{% endif %}Agenda:
+{% endif %}{% endfilter %}
+Agenda:
 {{ meeting.session_set.first.agenda | document_content | default_if_none:"(No agenda submitted)" }}
 
 Information about remote participation:
-{{ meeting.session_set.first.remote_instructions }}
+{{ meeting.session_set.first.remote_instructions.rstrip }}
 
-{{ meeting.session_set.first.agenda_note }}
-{% endtimezone %}
+{{ meeting.session_set.first.agenda_note.rstrip|wordwrap:78 }}{% endtimezone %}
+
+--
+A calendar subscription for all {{ group.acronym }} meetings is available at
+{{ settings.IDTRACKER_BASE_URL }}{% url 'ietf.meeting.views.upcoming_ical' %}?show={{ group.acronym }}
