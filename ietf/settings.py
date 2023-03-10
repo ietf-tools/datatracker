@@ -478,8 +478,6 @@ INSTALLED_APPS = [
     'ietf.secr.areas',
     'ietf.secr.groups',
     'ietf.secr.meetings',
-    'ietf.secr.proceedings',
-    'ietf.secr.roles',
     'ietf.secr.rolodex',
     'ietf.secr.sreq',
     'ietf.secr.telechat',
