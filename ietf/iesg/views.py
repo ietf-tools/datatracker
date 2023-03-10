@@ -593,3 +593,9 @@ def telechat_agenda_content_manage(request):
         for section in TelechatAgendaSectionName.objects.filter(used=True)
     ]
     return render(request, "iesg/telechat_agenda_content_manage.html", {"contents": contents})
+
+
+@role_required("Secretariat", "IAB Chair", "Area Director")
+def telechat_agenda_content_view(request, section):
+    content = get_object_or_404(TelechatAgendaContent, section__slug=section, section__used=True)
+    return HttpResponse(content=content.text, content_type="text/plain")
