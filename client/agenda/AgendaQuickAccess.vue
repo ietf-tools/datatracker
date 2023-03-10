@@ -74,7 +74,6 @@
           size='large'
           :show-arrow='true'
           trigger='click'
-          @select='downloadIcs'
           )
           n-button.mt-2(
             id='agenda-quickaccess-addtocal-btn'
@@ -141,14 +140,26 @@ const route = useRoute()
 
 const downloadIcsOptions = [
   {
-    label: 'Subscribe... (webcal)',
     key: 'subscribe',
-    icon: () => h('i', { class: 'bi bi-calendar-week text-blue' })
+    type: 'render',
+    render: () => h('a', {
+      class: 'agenda-quickaccess-callinks',
+      href: `webcal://${window.location.host}${icsLink.value}`
+    }, [
+      h('i', { class: 'bi bi-calendar-week text-blue' }),
+      h('span', 'Subscribe... (webcal)')
+    ])
   },
   {
-    label: 'Download... (.ics)',
     key: 'download',
-    icon: () => h('i', { class: 'bi bi-arrow-down-square' })
+    type: 'render',
+    render: () => h('a', {
+      class: 'agenda-quickaccess-callinks',
+      href: icsLink.value
+    }, [
+      h('i', { class: 'bi bi-arrow-down-square' }),
+      h('span', 'Download... (.ics)')
+    ])
   }
 ]
 
@@ -156,6 +167,17 @@ const downloadIcsOptions = [
 
 const shortMode = computed(() => {
   return siteStore.viewport <= 1350
+})
+
+const icsLink = computed(() => {
+  if (agendaStore.pickerMode) {
+    const sessionKeywords = agendaStore.scheduleAdjusted.map(s => s.sessionKeyword)
+    return `${getUrl('meetingCalIcs', { meetingNumber: agendaStore.meeting.number })}?show=${sessionKeywords.join(',')}`
+  } else if (agendaStore.selectedCatSubs.length > 0) {
+    return `${getUrl('meetingCalIcs', { meetingNumber: agendaStore.meeting.number })}?show=${agendaStore.selectedCatSubs.join(',')}`
+  } else {
+    return `${getUrl('meetingCalIcs', { meetingNumber: agendaStore.meeting.number })}`
+  }
 })
 
 // METHODS
@@ -174,24 +196,6 @@ function pickerDiscard () {
   agendaStore.$patch({ pickerMode: false })
   if (route.query.show) {
     router.push({ query: null })
-  }
-}
-
-function downloadIcs (key) {
-  message.loading('Generating calendar file... Download will begin shortly.')
-  let icsUrl = ''
-  if (agendaStore.pickerMode) {
-    const sessionKeywords = agendaStore.scheduleAdjusted.map(s => s.sessionKeyword)
-    icsUrl = `${getUrl('meetingCalIcs', { meetingNumber: agendaStore.meeting.number })}?show=${sessionKeywords.join(',')}`
-  } else if (agendaStore.selectedCatSubs.length > 0) {
-    icsUrl = `${getUrl('meetingCalIcs', { meetingNumber: agendaStore.meeting.number })}?show=${agendaStore.selectedCatSubs.join(',')}`
-  } else {
-    icsUrl = `${getUrl('meetingCalIcs', { meetingNumber: agendaStore.meeting.number })}`
-  }
-  if (key === 'subscribe') {
-    window.location.assign(`webcal://${window.location.host}${icsUrl}`)
-  } else {
-    window.location.assign(icsUrl)
   }
 }
 
@@ -283,6 +287,25 @@ function scrollToNow (ev) {
   .n-divider {
     margin-top: 15px;
     margin-bottom: 15px;
+  }
+
+  &-callinks {
+    padding: 8px 16px;
+    display: flex;
+    text-decoration: none;
+    align-items: center;
+
+    &:hover, &:focus {
+      text-decoration: underline;
+    }
+
+    > i {
+      font-size: var(--n-font-size);
+    }
+
+    > span {
+      margin-left: 12px;
+    }
   }
 }
 </style>

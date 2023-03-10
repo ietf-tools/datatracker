@@ -4506,10 +4506,11 @@ class InterimTests(TestCase):
             if sess:
                 timeslot = sess.official_timeslotassignment().timeslot
                 self.assertIn(timeslot.time.strftime('%Y-%m-%d'), announcement_text)
-                self.assertIn(
-                    '(%s to %s UTC)' % (
+                self.assertRegex(
+                    announcement_text,
+                    r'(%s\s+to\s+%s\s+UTC)' % (
                         timeslot.utc_start_time().strftime('%H:%M'),timeslot.utc_end_time().strftime('%H:%M')
-                    ), announcement_text)
+                    ))
         # Count number of sessions listed
         if base_session and extra_session:
             expected_session_matches = 3
