@@ -579,17 +579,17 @@ def telechat_agenda_content_edit(request, section):
             TelechatAgendaContent.objects.update_or_create(
                 section=section, defaults={"text": form.cleaned_data["text"]}
             )
-            return redirect("ietf.iesg.views.telechat_agenda_content_view")
+            return redirect("ietf.iesg.views.telechat_agenda_content_manage")
     else:
         form = TelechatAgendaContentForm(initial=initial)
     return render(request, "iesg/telechat_agenda_content_edit.html", {"section": section, "form": form})
 
 
 @role_required("Secretariat")
-def telechat_agenda_content_view(request):
+def telechat_agenda_content_manage(request):
     # Fill in any missing instances with empty stand-ins. The edit view will create persistent instances if needed.
     contents = [
         TelechatAgendaContent.objects.filter(section=section).first() or TelechatAgendaContent(section=section)
         for section in TelechatAgendaSectionName.objects.filter(used=True)
     ]
-    return render(request, "iesg/telechat_agenda_content_view.html", {"contents": contents})
+    return render(request, "iesg/telechat_agenda_content_manage.html", {"contents": contents})
