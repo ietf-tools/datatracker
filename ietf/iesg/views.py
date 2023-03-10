@@ -49,6 +49,7 @@ from django.db import models
 from django.http import HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.sites.models import Site
+from django.urls import reverse as urlreverse
 from django.utils.encoding import force_bytes
 #from django.views.decorators.cache import cache_page
 #from django.views.decorators.vary import vary_on_cookie
@@ -198,8 +199,17 @@ def agenda(request, date=None):
     data = agenda_data(date)
 
     if has_role(request.user, ["Area Director", "IAB Chair", "Secretariat"]):
-        data["sections"]["1.1"]["title"] = data["sections"]["1.1"]["title"].replace("Roll call", '<a href="%s">Roll Call</a>' % settings.IESG_ROLL_CALL_URL )
-        data["sections"]["1.3"]["title"] = data["sections"]["1.3"]["title"].replace("minutes", '<a href="%s">Minutes</a>' % settings.IESG_MINUTES_URL)
+        data["sections"]["1.1"]["title"] = data["sections"]["1.1"]["title"].replace(
+            "Roll call",
+            '<a href="{}">Roll Call</a>'.format(
+                urlreverse("ietf.iesg.views.telechat_agenda_content_view", kwargs={"section": "roll_call"})
+            )
+        )
+        data["sections"]["1.3"]["title"] = data["sections"]["1.3"]["title"].replace(
+            "minutes",
+            '<a href="{}">Minutes</a>'.format(
+                urlreverse("ietf.iesg.views.telechat_agenda_content_view", kwargs={"section": "minutes"})
+            ))
 
     request.session['ballot_edit_return_point'] = request.path_info
     return render(request, "iesg/agenda.html", {
@@ -274,9 +284,8 @@ def agenda_package(request, date=None):
             "date": data["date"],
             "sections": sorted(data["sections"].items()),
             "roll_call": data["sections"]["1.1"]["text"],
-            "roll_call_url": settings.IESG_ROLL_CALL_URL,
             "minutes": data["sections"]["1.3"]["text"],
-            "minutes_url": settings.IESG_MINUTES_URL,
+            "minutes_url": urlreverse("", kwargs={"section": "minutes"}),
             "management_items": [(num, section) for num, section in data["sections"].items() if "6" < num < "7"],
             "domain": Site.objects.get_current().domain,
             }, content_type='text/plain')
