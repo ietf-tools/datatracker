@@ -663,11 +663,6 @@ STATUS_CHANGE_PATH = '/a/ietfdata/doc/status-change'
 AGENDA_PATH = '/a/www/www6s/proceedings/'
 MEETINGHOST_LOGO_PATH = AGENDA_PATH  # put these in the same place as other proceedings files
 IPR_DOCUMENT_PATH = '/a/www/ietf-ftp/ietf/IPR/'
-IESG_TASK_FILE = '/a/www/www6/iesg/internal/task.txt'
-IESG_ROLL_CALL_FILE = '/a/www/www6/iesg/internal/rollcall.txt'
-IESG_ROLL_CALL_URL = 'https://www6.ietf.org/iesg/internal/rollcall.txt'
-IESG_MINUTES_FILE = '/a/www/www6/iesg/internal/minutes.txt'
-IESG_MINUTES_URL = 'https://www6.ietf.org/iesg/internal/minutes.txt'
 IESG_WG_EVALUATION_DIR = "/a/www/www6/iesg/evaluation"
 # Move drafts to this directory when they expire
 INTERNET_DRAFT_ARCHIVE_DIR = '/a/ietfdata/doc/draft/collection/draft-archive/'
