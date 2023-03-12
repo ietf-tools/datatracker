@@ -323,4 +323,3 @@ def can_request_rfc_publication(user, doc):
         return False # See the docstring
     else:
         return False
-
