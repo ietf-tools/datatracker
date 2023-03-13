@@ -2,7 +2,7 @@
   "name": "deploy-to-container",
   "type": "module",
   "dependencies": {
-    "dockerode": "^3.3.3",
+    "dockerode": "^3.3.5",
     "fs-extra": "^10.1.0",
     "nanoid": "4.0.0",
     "nanoid-dictionary": "5.0.0-beta.1",
