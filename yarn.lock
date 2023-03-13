@@ -1625,6 +1625,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@vue/devtools-api@npm:^6.5.0":
+  version: 6.5.0
+  resolution: "@vue/devtools-api@npm:6.5.0"
+  checksum: ec819ef3a426e91d09e9cfefd2827e9ed8ec9d62bb3b3e0674f3da8c7e92a4b879c3b777dc7329172ca6fe2670b62dd5580d23160339208f0f5ae038f2e504ad
+  languageName: node
+  linkType: hard
+
 "@vue/reactivity-transform@npm:3.2.47":
   version: 3.2.47
   resolution: "@vue/reactivity-transform@npm:3.2.47"
@@ -5694,11 +5701,11 @@ browserlist@latest:
   languageName: node
   linkType: hard
 
-"pinia@npm:2.0.30":
-  version: 2.0.30
-  resolution: "pinia@npm:2.0.30"
+"pinia@npm:2.0.33":
+  version: 2.0.33
+  resolution: "pinia@npm:2.0.33"
   dependencies:
-    "@vue/devtools-api": ^6.4.5
+    "@vue/devtools-api": ^6.5.0
     vue-demi: "*"
   peerDependencies:
     "@vue/composition-api": ^1.4.0
@@ -5709,7 +5716,7 @@ browserlist@latest:
       optional: true
     typescript:
       optional: true
-  checksum: 2522d3700e2d23f184ae65c36d764973ae4680e2fefbc7ca808524c706f5988ced1633606bfedae8c2a44042026528bac105a9437764d026d6323ddc40610e89
+  checksum: efd9cf1d61521ab2a4549f93ada6e2c1b9feeb6c8f2f482281a53c0079e0008f02adaebb07a782865ccfe896876ac60447ef4586fc6eeaeaf17d634767e22638
   languageName: node
   linkType: hard
 
@@ -6237,7 +6244,7 @@ browserlist@latest:
     murmurhash-js: 1.0.0
     naive-ui: 2.34.3
     parcel: 2.8.3
-    pinia: 2.0.30
+    pinia: 2.0.33
     pinia-plugin-persist: 1.0.0
     pug: 3.0.2
     sass: 1.58.0
