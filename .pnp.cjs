@@ -54,7 +54,7 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["bootstrap-icons", "npm:1.10.3"],\
             ["browser-fs-access", "npm:0.31.2"],\
             ["browserlist", "npm:1.0.1"],\
-            ["c8", "npm:7.12.0"],\
+            ["c8", "npm:7.13.0"],\
             ["caniuse-lite", "npm:1.0.30001450"],\
             ["d3", "npm:7.8.2"],\
             ["eslint", "npm:8.33.0"],\
@@ -2786,10 +2786,10 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
         }]\
       ]],\
       ["c8", [\
-        ["npm:7.12.0", {\
-          "packageLocation": "./.yarn/cache/c8-npm-7.12.0-c808cac509-3b7fa9ad7c.zip/node_modules/c8/",\
+        ["npm:7.13.0", {\
+          "packageLocation": "./.yarn/cache/c8-npm-7.13.0-9ac8f17e2c-491abf4cf3.zip/node_modules/c8/",\
           "packageDependencies": [\
-            ["c8", "npm:7.12.0"],\
+            ["c8", "npm:7.13.0"],\
             ["@bcoe/v8-coverage", "npm:0.2.3"],\
             ["@istanbuljs/schema", "npm:0.1.3"],\
             ["find-up", "npm:5.0.0"],\
@@ -7544,7 +7544,7 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["bootstrap-icons", "npm:1.10.3"],\
             ["browser-fs-access", "npm:0.31.2"],\
             ["browserlist", "npm:1.0.1"],\
-            ["c8", "npm:7.12.0"],\
+            ["c8", "npm:7.13.0"],\
             ["caniuse-lite", "npm:1.0.30001450"],\
             ["d3", "npm:7.8.2"],\
             ["eslint", "npm:8.33.0"],\
