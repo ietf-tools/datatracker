@@ -91,7 +91,7 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["select2", "npm:4.1.0-rc.0"],\
             ["select2-bootstrap-5-theme", "npm:1.3.0"],\
             ["send", "npm:0.18.0"],\
-            ["shepherd.js", "npm:10.0.1"],\
+            ["shepherd.js", "npm:11.0.1"],\
             ["slugify", "npm:1.6.5"],\
             ["sortablejs", "npm:1.15.0"],\
             ["vanillajs-datepicker", "npm:1.3.1"],\
@@ -258,6 +258,25 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
           "packageLocation": "./.yarn/cache/@faker-js-faker-npm-7.6.0-fa135883e9-942af62217.zip/node_modules/@faker-js/faker/",\
           "packageDependencies": [\
             ["@faker-js/faker", "npm:7.6.0"]\
+          ],\
+          "linkType": "HARD"\
+        }]\
+      ]],\
+      ["@floating-ui/core", [\
+        ["npm:1.2.3", {\
+          "packageLocation": "./.yarn/cache/@floating-ui-core-npm-1.2.3-1c6ae1b105-dbaff1b454.zip/node_modules/@floating-ui/core/",\
+          "packageDependencies": [\
+            ["@floating-ui/core", "npm:1.2.3"]\
+          ],\
+          "linkType": "HARD"\
+        }]\
+      ]],\
+      ["@floating-ui/dom", [\
+        ["npm:1.2.4", {\
+          "packageLocation": "./.yarn/cache/@floating-ui-dom-npm-1.2.4-950afe60a4-5c24a2e8f0.zip/node_modules/@floating-ui/dom/",\
+          "packageDependencies": [\
+            ["@floating-ui/dom", "npm:1.2.4"],\
+            ["@floating-ui/core", "npm:1.2.3"]\
           ],\
           "linkType": "HARD"\
         }]\
@@ -7574,7 +7593,7 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["select2", "npm:4.1.0-rc.0"],\
             ["select2-bootstrap-5-theme", "npm:1.3.0"],\
             ["send", "npm:0.18.0"],\
-            ["shepherd.js", "npm:10.0.1"],\
+            ["shepherd.js", "npm:11.0.1"],\
             ["slugify", "npm:1.6.5"],\
             ["sortablejs", "npm:1.15.0"],\
             ["vanillajs-datepicker", "npm:1.3.1"],\
@@ -7802,13 +7821,12 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
         }]\
       ]],\
       ["shepherd.js", [\
-        ["npm:10.0.1", {\
-          "packageLocation": "./.yarn/cache/shepherd.js-npm-10.0.1-64acc35968-be51f42734.zip/node_modules/shepherd.js/",\
+        ["npm:11.0.1", {\
+          "packageLocation": "./.yarn/cache/shepherd.js-npm-11.0.1-ab01602505-a7781e47c5.zip/node_modules/shepherd.js/",\
           "packageDependencies": [\
-            ["shepherd.js", "npm:10.0.1"],\
-            ["@popperjs/core", "npm:2.11.6"],\
-            ["deepmerge", "npm:4.2.2"],\
-            ["smoothscroll-polyfill", "npm:0.4.4"]\
+            ["shepherd.js", "npm:11.0.1"],\
+            ["@floating-ui/dom", "npm:1.2.4"],\
+            ["deepmerge", "npm:4.2.2"]\
           ],\
           "linkType": "HARD"\
         }]\
@@ -7857,15 +7875,6 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
           "packageLocation": "./.yarn/cache/smart-buffer-npm-4.2.0-5ac3f668bb-b5167a7142.zip/node_modules/smart-buffer/",\
           "packageDependencies": [\
             ["smart-buffer", "npm:4.2.0"]\
-          ],\
-          "linkType": "HARD"\
-        }]\
-      ]],\
-      ["smoothscroll-polyfill", [\
-        ["npm:0.4.4", {\
-          "packageLocation": "./.yarn/cache/smoothscroll-polyfill-npm-0.4.4-69b5bb4bf7-b99ff7d916.zip/node_modules/smoothscroll-polyfill/",\
-          "packageDependencies": [\
-            ["smoothscroll-polyfill", "npm:0.4.4"]\
           ],\
           "linkType": "HARD"\
         }]\
