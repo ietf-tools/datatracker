@@ -9,30 +9,6 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
-  - package-ecosystem: "npm"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-  - package-ecosystem: "npm"
-    directory: "/playwright"
-    schedule:
-      interval: "weekly"
-  - package-ecosystem: "npm"
-    directory: "/dev/del-old-packages"
-    schedule:
-      interval: "weekly"
-  - package-ecosystem: "npm"
-    directory: "/dev/deploy-to-container"
-    schedule:
-      interval: "weekly"
-  - package-ecosystem: "npm"
-    directory: "/dev/diff"
-    schedule:
-      interval: "weekly"
-  - package-ecosystem: "npm"
-    directory: "/dev/coverage-action"
-    schedule:
-      interval: "weekly"
   - package-ecosystem: "docker"
     directory: "/docker"
     schedule:
