@@ -70,7 +70,7 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["html-validate", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:7.13.1"],\
             ["ical.js", "npm:1.5.0"],\
             ["jquery", "npm:3.6.3"],\
-            ["jquery-migrate", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:3.4.0"],\
+            ["jquery-migrate", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:3.4.1"],\
             ["jquery-ui-dist", "npm:1.13.2"],\
             ["js-cookie", "npm:3.0.1"],\
             ["list.js", "npm:2.3.1"],\
@@ -5866,17 +5866,17 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
         }]\
       ]],\
       ["jquery-migrate", [\
-        ["npm:3.4.0", {\
-          "packageLocation": "./.yarn/cache/jquery-migrate-npm-3.4.0-88c209e61f-7431685c56.zip/node_modules/jquery-migrate/",\
+        ["npm:3.4.1", {\
+          "packageLocation": "./.yarn/cache/jquery-migrate-npm-3.4.1-c842b6adb7-d2cb17d055.zip/node_modules/jquery-migrate/",\
           "packageDependencies": [\
-            ["jquery-migrate", "npm:3.4.0"]\
+            ["jquery-migrate", "npm:3.4.1"]\
           ],\
           "linkType": "SOFT"\
         }],\
-        ["virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:3.4.0", {\
-          "packageLocation": "./.yarn/__virtual__/jquery-migrate-virtual-68c5ec0b7a/0/cache/jquery-migrate-npm-3.4.0-88c209e61f-7431685c56.zip/node_modules/jquery-migrate/",\
+        ["virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:3.4.1", {\
+          "packageLocation": "./.yarn/__virtual__/jquery-migrate-virtual-e23c9912e5/0/cache/jquery-migrate-npm-3.4.1-c842b6adb7-d2cb17d055.zip/node_modules/jquery-migrate/",\
           "packageDependencies": [\
-            ["jquery-migrate", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:3.4.0"],\
+            ["jquery-migrate", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:3.4.1"],\
             ["@types/jquery", null],\
             ["jquery", "npm:3.6.3"]\
           ],\
@@ -7553,7 +7553,7 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["html-validate", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:7.13.1"],\
             ["ical.js", "npm:1.5.0"],\
             ["jquery", "npm:3.6.3"],\
-            ["jquery-migrate", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:3.4.0"],\
+            ["jquery-migrate", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:3.4.1"],\
             ["jquery-ui-dist", "npm:1.13.2"],\
             ["js-cookie", "npm:3.0.1"],\
             ["list.js", "npm:2.3.1"],\
