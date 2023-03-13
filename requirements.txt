@@ -51,7 +51,7 @@ pyflakes>=2.4.0
 pyopenssl>=22.0.0    # Used by urllib3.contrib, which is used by PyQuery but not marked as a dependency
 pyquery>=1.4.3
 python-dateutil>=2.8.2
-python-magic==0.4.18    # Versions beyond the yanked .19 and .20 introduce form failures
+python-magic==0.4.27    # Versions beyond the yanked .19 and .20 introduce form failures
 python-memcached>=1.59    # for django.core.cache.backends.memcached
 python-mimeparse>=1.6    # from TastyPie
 pytz==2022.2.1   # Pinned as changes need to be vetted for their effect on Meeting fields
