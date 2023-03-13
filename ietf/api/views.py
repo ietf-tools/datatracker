@@ -414,15 +414,15 @@ def directauth(request):
         if not is_valid_token("ietf.api.views.directauth", authtoken):
             return HttpResponse(json.dumps(dict(result="failure",reason="invalid authtoken")), content_type='application/json')
         
-        user = User.objects.filter(username__iexact=username).first()
-        # The following would be consistent with auth everywhere else in the app, but until we can map users well
+        user_query = User.objects.filter(username__iexact=username)
+
+        # Matching email would be consistent with auth everywhere else in the app, but until we can map users well
         # in the imap server, people's annotations are associated with a very specific login.
         # If we get a second user of this API, add an "allow_any_email" argument.
-        # if not user:
-        #     user = Email.objects.filter(address__iexact=username).first().person.user
+
 
         # Note well that we are using user.username, not what was passed to the API.
-        if user and authenticate(username = user.username, password = password):
+        if user_query.count() == 1 and authenticate(username = user_query.first().username, password = password):
             return HttpResponse(json.dumps(dict(result="success")), content_type='application/json')
 
         return HttpResponse(json.dumps(dict(result="failure", reason="authentication failed")), content_type='application/json') 
