@@ -4675,12 +4675,12 @@ browserlist@latest:
   languageName: node
   linkType: hard
 
-"jquery-migrate@npm:3.4.0":
-  version: 3.4.0
-  resolution: "jquery-migrate@npm:3.4.0"
+"jquery-migrate@npm:3.4.1":
+  version: 3.4.1
+  resolution: "jquery-migrate@npm:3.4.1"
   peerDependencies:
     jquery: ">=3 <4"
-  checksum: 7431685c560d5ff6bc083f613dc4ea72905832b84cb9df4b28c4de71f41dc69c86ac135601a5fe41329773dde0739b4002456ba2249f646d2969afb98092fe4a
+  checksum: d2cb17d055672d4030788e0e1625aa27e33344fc2e5cb69d4f209ae3baedc6cf16142ad55d09c24fa0fe3aa64a7e1e803b6622bd7022e011293f2d294ce1e864
   languageName: node
   linkType: hard
 
@@ -6224,7 +6224,7 @@ browserlist@latest:
     html-validate: 7.13.1
     ical.js: 1.5.0
     jquery: 3.6.3
-    jquery-migrate: 3.4.0
+    jquery-migrate: 3.4.1
     jquery-ui-dist: 1.13.2
     js-cookie: 3.0.1
     list.js: 2.3.1
