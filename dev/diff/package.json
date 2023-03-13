@@ -2,7 +2,7 @@
   "name": "diff",
   "type": "module",
   "dependencies": {
-    "chalk": "^5.0.1",
+    "chalk": "^5.2.0",
     "dockerode": "^3.3.3",
     "enquirer": "^2.3.6",
     "extract-zip": "^2.0.1",
