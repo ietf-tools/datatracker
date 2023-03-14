@@ -134,6 +134,11 @@ $(document)
                         window.setupSelect2Field($(this)); // from select2-field.js
                     });
 
+                new_edit_milestone.find("[data-provide='datepicker']")
+                    .each(function () {
+                        enable_datepicker($(this)[0]); // from datepicker.js
+                    });
+
                 if (!group_uses_milestone_dates) {
                     setOrderControlValue();
                 }
