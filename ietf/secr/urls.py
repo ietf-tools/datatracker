@@ -6,7 +6,6 @@ urlpatterns = [
     url(r'^announcement/', include('ietf.secr.announcement.urls')),
     url(r'^areas/', include('ietf.secr.areas.urls')),
     url(r'^console/', include('ietf.secr.console.urls')),
-    url(r'^groups/', include('ietf.secr.groups.urls')),
     url(r'^meetings/', include('ietf.secr.meetings.urls')),
     url(r'^rolodex/', include('ietf.secr.rolodex.urls')),
     url(r'^sreq/', include('ietf.secr.sreq.urls')),
