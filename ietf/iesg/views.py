@@ -285,7 +285,6 @@ def agenda_package(request, date=None):
             "sections": sorted(data["sections"].items()),
             "roll_call": data["sections"]["1.1"]["text"],
             "minutes": data["sections"]["1.3"]["text"],
-            "minutes_url": urlreverse("", kwargs={"section": "minutes"}),
             "management_items": [(num, section) for num, section in data["sections"].items() if "6" < num < "7"],
             "domain": Site.objects.get_current().domain,
             }, content_type='text/plain')
