@@ -103,4 +103,4 @@ class TelechatAgendaContent(models.Model):
     text = models.TextField(blank=True)
 
     def __str__(self):
-        return f"Telechat agenda section '{self.section.name}'"
+        return f"{self.section.name} content"
