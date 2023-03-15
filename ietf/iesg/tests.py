@@ -369,6 +369,29 @@ class IESGAgendaTests(TestCase):
         # Make sure the sort places 6.9 before 6.10
         self.assertLess(r.content.find(b"6.9"), r.content.find(b"6.10"))
 
+    def test_agenda_restricted_sections(self):
+        r = self.client.get(urlreverse("ietf.iesg.views.agenda"))
+        # not logged in
+        for section_id in ("roll_call", "minutes"):
+            self.assertNotContains(
+                r, urlreverse("ietf.iesg.views.telechat_agenda_content_view", kwargs={"section": section_id})
+            )
+
+        self.client.login(username="plain", password="plain+password")
+        for section_id in ("roll_call", "minutes"):
+            self.assertNotContains(
+                r, urlreverse("ietf.iesg.views.telechat_agenda_content_view", kwargs={"section": section_id})
+            )
+
+        for username in ("ad", "secretary", "iab chair"):
+            self.client.login(username=username, password=f"{username}+password")
+            r = self.client.get(urlreverse("ietf.iesg.views.agenda"))
+            self.assertEqual(r.status_code, 200)
+            for section_id in ("roll_call", "minutes"):
+                self.assertContains(
+                    r, urlreverse("ietf.iesg.views.telechat_agenda_content_view", kwargs={"section": section_id})
+                )
+
     def test_agenda_txt(self):
         r = self.client.get(urlreverse("ietf.iesg.views.agenda_txt"))
         self.assertEqual(r.status_code, 200)
