@@ -347,8 +347,11 @@ class IESGAgendaTests(TestCase):
         self.assertTrue(r.json())
 
     def test_agenda(self):
+        action_items = TelechatAgendaContentFactory(section_id='action_items')
         r = self.client.get(urlreverse("ietf.iesg.views.agenda"))
         self.assertEqual(r.status_code, 200)
+
+        self.assertContains(r, action_items.text)
 
         for k, d in self.telechat_docs.items():
             if d.type_id == "charter":
