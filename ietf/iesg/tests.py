@@ -22,12 +22,12 @@ from ietf.doc.factories import WgDraftFactory, IndividualDraftFactory, ConflictR
 from ietf.doc.utils import create_ballot_if_not_open
 from ietf.group.factories import RoleFactory, GroupFactory
 from ietf.group.models import Group, GroupMilestone, Role
-from ietf.iesg.agenda import get_agenda_date, agenda_data
+from ietf.iesg.agenda import get_agenda_date, agenda_data, fill_in_agenda_administrivia, agenda_sections
 from ietf.iesg.models import TelechatDate
 from ietf.name.models import StreamName
 from ietf.person.models import Person
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized, unicontent
-from ietf.iesg.factories import IESGMgmtItemFactory
+from ietf.iesg.factories import IESGMgmtItemFactory, TelechatAgendaContentFactory
 from ietf.utils.timezone import date_today, DEADLINE_TZINFO
 
 
@@ -140,6 +140,16 @@ class IESGAgendaTests(TestCase):
         self.mgmt_items = [ ]
         for i in range(0, 10):
             self.mgmt_items.append(IESGMgmtItemFactory())
+
+    def test_fill_in_agenda_administrivia(self):
+        roll_call = TelechatAgendaContentFactory(section_id='roll_call')
+        minutes = TelechatAgendaContentFactory(section_id='minutes')
+        action_items = TelechatAgendaContentFactory(section_id='action_items')
+        sections = agenda_sections()
+        fill_in_agenda_administrivia(None, sections)  # n.b., date parameter is unused at present
+        self.assertIn(roll_call.text, sections["1.1"]["text"])
+        self.assertIn(minutes.text, sections["1.3"]["text"])
+        self.assertIn(action_items.text, sections["1.4"]["text"])
 
     def test_fill_in_agenda_docs(self):
         draft = self.telechat_docs["ietf_draft"]
