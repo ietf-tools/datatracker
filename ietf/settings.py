@@ -54,7 +54,7 @@ ADMINS = [
     ('Kesara Rathnayaka', 'krathnayake@ietf.org'),
 ]                                       # type: List[Tuple[str, str]]
 
-BUG_REPORT_EMAIL = "datatracker-project@ietf.org"
+BUG_REPORT_EMAIL = "tools-help@ietf.org"
 
 PASSWORD_HASHERS = [
     'django.contrib.auth.hashers.Argon2PasswordHasher',
