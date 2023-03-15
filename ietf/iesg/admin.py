@@ -3,7 +3,7 @@ from django.contrib import admin
 import debug                            # pyflakes:ignore
 
 from ietf.doc.models import TelechatDocEvent
-from ietf.iesg.models import TelechatDate, TelechatAgendaItem
+from ietf.iesg.models import TelechatDate, TelechatAgendaItem, TelechatAgendaContent
 
 class TelechatAgendaItemAdmin(admin.ModelAdmin):
     pass
@@ -22,3 +22,6 @@ class TelechatDateAdmin(admin.ModelAdmin):
 
 admin.site.register(TelechatDate, TelechatDateAdmin)
 
+class TelechatAgendaContentAdmin(admin.ModelAdmin):
+    list_display = ('section',)
+admin.site.register(TelechatAgendaContent, TelechatAgendaContentAdmin)
