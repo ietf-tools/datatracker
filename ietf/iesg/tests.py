@@ -23,7 +23,7 @@ from ietf.doc.utils import create_ballot_if_not_open
 from ietf.group.factories import RoleFactory, GroupFactory
 from ietf.group.models import Group, GroupMilestone, Role
 from ietf.iesg.agenda import get_agenda_date, agenda_data, fill_in_agenda_administrivia, agenda_sections
-from ietf.iesg.models import TelechatDate
+from ietf.iesg.models import TelechatDate, TelechatAgendaContent
 from ietf.name.models import StreamName, TelechatAgendaSectionName
 from ietf.person.models import Person
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized, unicontent
@@ -618,9 +618,30 @@ class TelechatAgendaContentTests(TestCase):
             self.client.login(username="secretary", password="secretary+password")
             self.assertEqual(self.client.get(url).status_code, 200)
 
-
     def test_telechat_agenda_content_edit(self):
-        raise NotImplementedError
+        for section in TelechatAgendaSectionName.objects.filter(used=True):
+            self.assertFalse(TelechatAgendaContent.objects.filter(section=section).exists())
+            url = urlreverse("ietf.iesg.views.telechat_agenda_content_edit", kwargs={"section": section.slug})
+            self.client.logout()
+            login_testing_unauthorized(self, 'secretary', url, method='get')
+            r = self.client.get(url)
+            self.assertContains(r, str(section), status_code=200)
+
+            self.client.logout()
+            login_testing_unauthorized(self, 'secretary', url, method='post')
+            r = self.client.post(url, {"text": "This is some content"})
+            self.assertRedirects(r, urlreverse("ietf.iesg.views.telechat_agenda_content_manage"))
+            contents = TelechatAgendaContent.objects.filter(section=section)
+            self.assertEqual(contents.count(), 1)
+            self.assertEqual(contents.first().text, "This is some content")
+
+            self.client.logout()
+            login_testing_unauthorized(self, 'secretary', url, method='post')
+            r = self.client.post(url, {"text": "This is some different content"})
+            self.assertRedirects(r, urlreverse("ietf.iesg.views.telechat_agenda_content_manage"))
+            contents = TelechatAgendaContent.objects.filter(section=section)
+            self.assertEqual(contents.count(), 1)
+            self.assertEqual(contents.first().text, "This is some different content")
 
     def test_telechat_agenda_content_manage(self):
         raise NotImplementedError
