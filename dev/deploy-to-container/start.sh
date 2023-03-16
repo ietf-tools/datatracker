@@ -27,7 +27,7 @@ echo "Running Datatracker checks..."
 # Migrate, adjusting to what the current state of the underlying database might be:
 
 echo "Running Datatracker migrations..."
-/usr/local/bin/python ./ietf/manage.py migrate --settings=settings_local
+/usr/local/bin/python ./ietf/manage.py migrate --fake-initial --settings=settings_local
 
 echo "Starting Datatracker..."
 ./ietf/manage.py runserver 0.0.0.0:8000 --settings=settings_local

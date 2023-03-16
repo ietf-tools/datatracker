@@ -151,7 +151,7 @@ jobs:
       run: |
         echo "Running checks..."
         ./ietf/manage.py check
-        ./ietf/manage.py migrate
+        ./ietf/manage.py migrate --fake-initial
         echo "Validating migrations..."
         if ! ( ietf/manage.py makemigrations --dry-run --check --verbosity 3 ) ; then
           echo "Model changes without migrations found."

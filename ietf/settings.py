@@ -44,17 +44,12 @@ SERVER_MODE = 'development'
 # Domain name of the IETF
 IETF_DOMAIN = 'ietf.org'
 
+# Overriden in settings_local
 ADMINS = [
-#    ('Henrik Levkowetz', 'henrik@levkowetz.com'),
-    ('Robert Sparks', 'rjsparks@nostrum.com'),
-#    ('Ole Laursen', 'olau@iola.dk'),
-    ('Ryan Cross', 'rcross@amsl.com'),
-    ('Glen Barney', 'glen@amsl.com'),
-    ('Maddy Conner', 'maddy@amsl.com'),
-    ('Kesara Rathnayaka', 'krathnayake@ietf.org'),
+    ('Tools Help', 'tools-help@ietf.org'),
 ]                                       # type: List[Tuple[str, str]]
 
-BUG_REPORT_EMAIL = "datatracker-project@ietf.org"
+BUG_REPORT_EMAIL = "tools-help@ietf.org"
 
 PASSWORD_HASHERS = [
     'django.contrib.auth.hashers.Argon2PasswordHasher',
