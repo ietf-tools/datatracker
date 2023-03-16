@@ -41,8 +41,9 @@ done
 rm -rf .parcel-cache __pycache__
 
 # Create extended docker-compose definition
-cp docker-compose.extend.yml docker-compose.extend-custom.yml
-sed -i -r -e "s/CUSTOM_PORT/$CUSTOM_PORT/" docker-compose.extend-custom.yml
+sed -e "s/CUSTOM_PORT/$CUSTOM_PORT/" \
+	<docker-compose.extend.yml docker-compose.extend-custom.yml \
+	>docker-compose.extend-custom.yml
 cd ..
 
 # Set UID/GID mappings
