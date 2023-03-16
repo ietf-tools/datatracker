@@ -653,4 +653,36 @@ class TelechatAgendaContentTests(TestCase):
             self.assertEqual(contents.first().text, "This is some different content")
 
     def test_telechat_agenda_content_manage(self):
-        raise NotImplementedError
+        url = urlreverse("ietf.iesg.views.telechat_agenda_content_manage")
+        login_testing_unauthorized(self, "plain", url)
+        login_testing_unauthorized(self, "ad", url)
+        login_testing_unauthorized(self, "iab chair", url)
+        login_testing_unauthorized(self, "secretary", url)
+        self.assertEqual(TelechatAgendaContent.objects.count(), 0)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        pq = PyQuery(r.content)
+        for section in TelechatAgendaSectionName.objects.filter(used=True):
+            # check that there's a tab even when section is empty
+            nav_button = pq(f"button.nav-link#{section.slug}-tab")
+            self.assertEqual(nav_button.text(), str(section))
+            edit_url = urlreverse("ietf.iesg.views.telechat_agenda_content_edit", kwargs={"section": section.pk})
+            edit_button = pq(f'div#{section.slug} a[href="{edit_url}"]')
+            self.assertEqual(len(edit_button), 1)
+            self.assertIn(f"No {section}", pq(f"div#{section.slug}").text())
+            # and create a section for the next test
+            TelechatAgendaContentFactory(section_id=section.slug)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        pq = PyQuery(r.content)
+        for section in TelechatAgendaSectionName.objects.filter(used=True):
+            # check that there's a tab with the content
+            nav_button = pq(f"button.nav-link#{section.slug}-tab")
+            self.assertEqual(nav_button.text(), str(section))
+            edit_url = urlreverse("ietf.iesg.views.telechat_agenda_content_edit", kwargs={"section": section.pk})
+            edit_button = pq(f'div#{section.slug} a[href="{edit_url}"]')
+            self.assertEqual(len(edit_button), 1)
+            self.assertIn(
+                TelechatAgendaContent.objects.get(section=section).text, pq(f"div#{section.slug}").text()
+            )
+
