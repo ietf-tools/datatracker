@@ -10,7 +10,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@octokit/core": "^4.1.0",
+    "@octokit/core": "^4.2.0",
     "luxon": "^3.2.1"
   }
 }

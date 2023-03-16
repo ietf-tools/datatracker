@@ -49,8 +49,7 @@ ADMINS = [
     ('Tools Help', 'tools-help@ietf.org'),
 ]                                       # type: List[Tuple[str, str]]
 
-
-BUG_REPORT_EMAIL = "datatracker-project@ietf.org"
+BUG_REPORT_EMAIL = "tools-help@ietf.org"
 
 PASSWORD_HASHERS = [
     'django.contrib.auth.hashers.Argon2PasswordHasher',
@@ -472,10 +471,7 @@ INSTALLED_APPS = [
     # IETF Secretariat apps
     'ietf.secr.announcement',
     'ietf.secr.areas',
-    'ietf.secr.groups',
     'ietf.secr.meetings',
-    'ietf.secr.proceedings',
-    'ietf.secr.roles',
     'ietf.secr.rolodex',
     'ietf.secr.sreq',
     'ietf.secr.telechat',

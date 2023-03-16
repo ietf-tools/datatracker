@@ -23,8 +23,6 @@
                    href="{% url 'ietf.meeting.views_proceedings.edit_meetinghosts' num=meeting.number %}">
                     Edit meeting hosts
                 </a>
-                <a class="btn btn-primary"
-                   href="{% url 'ietf.secr.proceedings.views.main' %}">Secretariat proceedings functions</a>
                 {% if meeting.end_date.today > meeting.end_date %}
                     <a class="btn btn-primary"
                        href="{% url 'ietf.meeting.views.request_minutes' num=meeting.number %}">

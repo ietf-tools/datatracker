@@ -1,3 +1,6 @@
+// Based on https://github.com/martinthomson/rfc-css/blob/ea8e9e34897bf6bdb6b1b7cf336f9aa25f576d76/rfc.css
+// (Version hash to make future merging easier.)
+
 :root {
   --line: 1.2em;
   --block: 0 0 0 3ch;
@@ -36,45 +39,42 @@
 //   font-size: 1em;
   line-height: var(--line);
   width: 72ch;
-
   // margin: var(--line) 3ch;
   margin-top: var(--line);
   margin-right: 3ch;
   margin-bottom: var(--line);
   margin-left: 3ch;
 
-  section > p, section > dl.references > dd {
   /* Really long lines can wrap when all else fails.
    * This won't affect <pre> or <table>, or cases where soft-wrapping occurs.
    * Mostly this exists so that long URLs wrap properly in Safari, which
    * doesn't break words at '/' like other browsers. */
   overflow-wrap: break-word;
-  }
 
 h1, h2, h3, h4, h5 {
   font-weight: bold;
   font-size: inherit;
   line-height: inherit;
-  // margin: var(--line) 0;
-  @include margin-line;
+  @include margin-line; // margin: var(--line) 0;
 }
 .section-number {
   margin-right: 1ch;
 }
 p {
-  // margin: var(--paragraph);
-  @include margin-paragraph;
+  margin: 0;
 }
-aside, ol, dl {
-  // margin: var(--block);
-  @include margin-block;
+section > p, section > div > p {
+  @include margin-paragraph; // margin: var(--paragraph);
+}
+aside {
+  @include margin-block; // margin: var(--block);
 }
 figure {
   margin: 0;
 }
 blockquote {
-  // margin: var(--paragraph);
-  @include margin-paragraph;
+  @include margin-paragraph; // margin: var(--paragraph);
+  padding-left: calc(2ch - 2px);
   border-left: 2px solid darkgrey;
 }
 
@@ -98,6 +98,7 @@ blockquote {
 }
 #identifiers dd {
   margin: 0;
+  margin-left: 0 !important; /* grr */
   width: 47ch;
   /* HAXX: this gets around the lack of text-content-trim support */
   display: flex;
@@ -209,7 +210,7 @@ blockquote {
 #title {
   clear: left;
   text-align: center;
-  margin-top: 2em;
+  margin-top: calc(2 * var(--line));
 }
 #rfcnum {
   display: none;
@@ -247,59 +248,88 @@ ol {
 }
 ul {
   margin: 0 0 0 4ch;
+}
+ul.ulEmpty {
+  list-style: none;
+}
+ul:not(.ulEmpty) {
   list-style-type: '*';
 }
-ul ul {
+ul ul:not(.ulEmpty) {
   list-style-type: '-';
 }
 :is(ul, ol) ul {
   margin-left: 1ch;
 }
-ul ul ul {
+ul ul ul:not(.ulEmpty) {
   list-style-type: 'o';
 }
 li {
-  // margin: var(--line) 0;
-  @include margin-line;
+  @include margin-line; // margin: var(--line) 0;
   padding: 0 0 0 2ch;
 }
-.compact li {
+dl {
   margin: 0;
 }
-:is(li, dd) p:first-child {
-  margin: 0;
+section > dl, section > div > dl {
+  @include margin-block; // margin: var(--block);
+}
+dl, dt {
+  clear: left;
 }
 dt {
   float: left;
-  clear: left;
+  font-weight: bold;
   margin: 0 2ch 0 0;
   break-after: avoid;
 }
 dd {
-  // margin: var(--paragraph);
-  @include margin-paragraph;
+  @include margin-paragraph; // margin: var(--paragraph);
+  margin-left: 3ch !important; /* override attribute added by xml2rfc */
+  padding: 0;
   break-before: avoid;
 }
-dl.compact :is(dt, dd) {
-  margin-top: 0;
+dl.dlNewline > dd {
+  clear: left;
+}
+dl.olPercent > dt {
+  min-width: 4ch;
+}
+dl.olPercent > dd {
+  margin-left: 6ch !important; /* as above */
+}
+dl > dd > dl {
+  margin-top: var(--line);
   margin-bottom: 0;
 }
 dl.references dt {
   margin-right: 1ch;
 }
 dl.references dd {
-  margin-left: 11ch;
+  margin-left: 11ch !important; /* grr */
 }
 :is(dd, span).break {
   display: none;
 }
+:is(li, dd, blockquote, aside) :is(p, ol, ul:not(.toc), dl):not(:first-child) {
+  margin-top: var(--line);
+}
+:is(li, dd, blockquote, aside) .break:first-child + :is(p, ol, ul, dl) {
+  margin-top: 0;
+}
+:is(ol:is(.compact, .olCompact), ul:is(.compact, .ulCompact)) > li,
+:is(dl.compact, .dlCompact) > :is(dt, dd) {
+  margin-top: 0;
+  margin-bottom: 0;
+}
 
 /* Figures, tables */
 pre {
-  // margin: var(--line) 0;
-  @include margin-line;
+  @include margin-line; // margin: var(--line) 0;
 }
 div:is(.artwork, .sourcecode) {
+  margin-top: var(--line);
+  margin-bottom: var(--line);
   display: flex;
   flex-wrap: nowrap;
   align-items: end;
@@ -400,16 +430,13 @@ sup, sub {
 }
 
 /* Authors */
-address {
+address, address.vcard {
   font-style: normal;
   // margin: 2em 0 var(--line) 3ch;
   margin-top: 2em;
   margin-right: 0;
   margin-bottom: var(--line);
   margin-left: 3ch;
-}
-h2 + address {
-  margin-top: 1em;
 }
 address .tel, address .email {
   // margin: var(--line) 0 0;
