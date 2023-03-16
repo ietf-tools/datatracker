@@ -16,6 +16,7 @@
       <li class="nav-item" role="presentation">
         <button class="nav-link {% if forloop.first %}active{% endif %}"
                 id="{{ item.section.slug }}-tab"
+                type="button"
                 data-bs-toggle="tab"
                 data-bs-target="#{{ item.section.slug}}"
                 role="tab" aria-controls="{{ item.section.slug }}"
