@@ -154,9 +154,10 @@ $(document)
 $(function () {
     const contentElement = $('#content.ietf-auto-nav');
     if (contentElement.length > 0) {
-        const heading_selector = "h2:not([style='display:none']):not(.navskip), h3:not([style='display:none']):not(.navskip), h4:not([style='display:none']):not(.navskip), h5:not([style='display:none']):not(.navskip), h6:not([style='display:none']):not(.navskip), .nav-heading:not([style='display:none']):not(.navskip)";
+        const heading_selector = ":is(h2, h3, h4, h5, h6, .nav-heading):not([style='display:none']):not(.navskip)";
         const headings = contentElement
-            .find(heading_selector);
+            .find(heading_selector)
+            .filter((i, el) => !el.closest(".navskip"));
 
         const contents = (headings.length > 0) &&
             ($(headings)
@@ -195,7 +196,7 @@ $(function () {
                 .children()
                 .last();
 
-            populate_nav(nav[0], heading_selector);
+            populate_nav(nav[0], headings.toArray());
 
             if (haveExtraNav) {
                 $('#righthand-panel').append('<div id="righthand-extra" class="w-100 py-3"></div>');
