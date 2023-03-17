@@ -139,20 +139,17 @@ def render_document_top(request, doc, tab, name):
 def interesting_doc_relations(doc):
 
     if isinstance(doc, Document):
-        cls = RelatedDocument
         target = doc
     elif isinstance(doc, DocHistory):
-        cls = RelatedDocHistory
         target = doc.doc
     else:
         raise TypeError("Expected this method to be called with a Document or DocHistory object")
-
     that_relationships = STATUSCHANGE_RELATIONS + ('conflrev', 'replaces', 'possibly_replaces', 'updates', 'obs') 
 
     that_doc_relationships = ('replaces', 'possibly_replaces', 'updates', 'obs')
 
-    interesting_relations_that = cls.objects.filter(target__docs=target, relationship__in=that_relationships).select_related('source')
-    interesting_relations_that_doc = cls.objects.filter(source=doc, relationship__in=that_doc_relationships).prefetch_related('target__docs')
+    interesting_relations_that = RelatedDocument.objects.filter(target__docs=target, relationship__in=that_relationships).select_related('source')
+    interesting_relations_that_doc = RelatedDocument.objects.filter(source=target, relationship__in=that_doc_relationships).prefetch_related('target__docs')
 
     return interesting_relations_that, interesting_relations_that_doc
 
