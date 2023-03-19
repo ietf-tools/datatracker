@@ -52,7 +52,7 @@ def send_submission_confirmation(request, submission, chair_notice=False):
     return all_addrs
 
 def send_full_url(request, submission):
-    subject = 'Full URL for managing submission of draft %s' % submission.name
+    subject = 'Full URL for managing submission of Internet-Draft %s' % submission.name
     from_email = settings.IDSUBMIT_FROM_EMAIL
     (to_email, cc) = gather_address_lists('sub_management_url_requested',submission=submission)
     url = settings.IDTRACKER_BASE_URL + urlreverse('ietf.submit.views.submission_status', kwargs=dict(submission_id=submission.pk, access_token=submission.access_token()))
@@ -75,7 +75,7 @@ def send_approval_request(request, submission, replaced_doc=None):
     If replaced_doc is not None, requests will be sent to the wg chairs or ADs
     responsible for that doc's group instead of the submission. 
     """
-    subject = 'New draft waiting for approval: %s' % submission.name
+    subject = 'New Internet-Draft waiting for approval: %s' % submission.name
     from_email = settings.IDSUBMIT_FROM_EMAIL
 
     # Sort out which MailTrigger to use

@@ -398,15 +398,6 @@ def assign_review_request_to_reviewer(request, review_req, reviewer, add_skip=Fa
             review_req.team.acronym.upper(),
             reviewer.person if reviewer else "(None)")
     update_change_reason(assignment, descr)
-    ReviewRequestDocEvent.objects.create(
-        type="assigned_review_request",
-        doc=review_req.doc,
-        rev=review_req.doc.rev,
-        by=request.user.person,
-        desc=descr,
-        review_request=review_req,
-        state_id='assigned',
-    )
 
     ReviewAssignmentDocEvent.objects.create(
         type="assigned_review_request",
@@ -416,7 +407,7 @@ def assign_review_request_to_reviewer(request, review_req, reviewer, add_skip=Fa
         desc="Request for {} review by {} is assigned to {}".format(
             review_req.type.name,
             review_req.team.acronym.upper(),
-            reviewer.person,
+            reviewer.person if reviewer else "(None)",
         ),
         review_assignment=assignment,
         state_id='assigned',

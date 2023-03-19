@@ -41,7 +41,7 @@ from functools import reduce
 NOTES:
 Authorized individuals are people (in our Person table) who are authorized to send
 messages on behalf of some other group - they have a formal role in the other group,
-whereas the liasion manager has a formal role with the IETF (or more correctly,
+whereas the liaison manager has a formal role with the IETF (or more correctly,
 with the IAB).
 '''
 
@@ -471,7 +471,6 @@ class IncomingLiaisonForm(LiaisonModelForm):
 
 
 class OutgoingLiaisonForm(LiaisonModelForm):
-    from_contact = SearchableEmailField(only_users=True)
     approved = forms.BooleanField(label="Obtained prior approval", required=False)
 
     class Meta:
@@ -501,6 +500,7 @@ class OutgoingLiaisonForm(LiaisonModelForm):
             self.fields['from_groups'].initial = [flat_choices[0][0]]
         
         if has_role(self.user, "Secretariat"):
+            self.fields['from_contact'] = SearchableEmailField(only_users=True)  # secretariat can edit this field!
             return
 
         if self.person.role_set.filter(name='liaiman',group__state='active'):
@@ -509,8 +509,10 @@ class OutgoingLiaisonForm(LiaisonModelForm):
             email = self.person.role_set.filter(name__in=('ad','chair'),group__state='active').first().email.address
         else:
             email = self.person.email_address()
+
+        # Non-secretariat user cannot change the from_contact field. Fill in its value.
+        self.fields['from_contact'].disabled = True
         self.fields['from_contact'].initial = email
-        self.fields['from_contact'].widget.attrs['readonly'] = True
 
     def set_to_fields(self):
         '''Set to_groups and to_contacts options and initial value based on user

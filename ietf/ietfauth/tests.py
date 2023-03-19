@@ -39,7 +39,7 @@ from ietf.ietfauth.utils import has_role
 from ietf.mailinglists.models import Subscribed
 from ietf.meeting.factories import MeetingFactory
 from ietf.nomcom.factories import NomComFactory
-from ietf.person.factories import PersonFactory, EmailFactory, UserFactory
+from ietf.person.factories import PersonFactory, EmailFactory, UserFactory, PersonalApiKeyFactory
 from ietf.person.models import Person, Email, PersonalApiKey
 from ietf.review.factories import ReviewRequestFactory, ReviewAssignmentFactory
 from ietf.review.models import ReviewWish, UnavailablePeriod
@@ -194,27 +194,27 @@ class IetfAuthTests(TestCase):
 
         self.assertTrue(self.username_in_htpasswd_file(email))
 
-    def test_create_whitelisted_account(self):
+    def test_create_allowlisted_account(self):
         email = "new-account@example.com"
 
-        # add whitelist entry
+        # add allowlist entry
         r = self.client.post(urlreverse(ietf.ietfauth.views.login), {"username":"secretary", "password":"secretary+password"})
         self.assertEqual(r.status_code, 302)
         self.assertEqual(urlsplit(r["Location"])[2], urlreverse(ietf.ietfauth.views.profile))
 
-        r = self.client.get(urlreverse(ietf.ietfauth.views.add_account_whitelist))
+        r = self.client.get(urlreverse(ietf.ietfauth.views.add_account_allowlist))
         self.assertEqual(r.status_code, 200)
-        self.assertContains(r, "Add a whitelist entry")
+        self.assertContains(r, "Add an allowlist entry")
 
-        r = self.client.post(urlreverse(ietf.ietfauth.views.add_account_whitelist), {"email": email})
+        r = self.client.post(urlreverse(ietf.ietfauth.views.add_account_allowlist), {"email": email})
         self.assertEqual(r.status_code, 200)
-        self.assertContains(r, "Whitelist entry creation successful")
+        self.assertContains(r, "Allowlist entry creation successful")
 
         # log out
         r = self.client.get(urlreverse('django.contrib.auth.views.logout'))
         self.assertEqual(r.status_code, 200)
 
-        # register and verify whitelisted email
+        # register and verify allowlisted email
         self.register_and_verify(email)
 
 
@@ -414,12 +414,10 @@ class IetfAuthTests(TestCase):
         email = 'someone@example.com'
         password = 'foobar'
 
-        user = User.objects.create(username=email, email=email)
+        user = PersonFactory(user__email=email).user
         user.set_password(password)
         user.save()
-        p = Person.objects.create(name="Some One", ascii="Some One", user=user)
-        Email.objects.create(address=user.username, person=p, origin=user.username)
-        
+
         # get
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
@@ -496,6 +494,39 @@ class IetfAuthTests(TestCase):
 
         r = self.client.get(confirm_url)
         self.assertEqual(r.status_code, 404)
+
+    def test_reset_password_without_person(self):
+        """No password reset for account without a person"""
+        url = urlreverse('ietf.ietfauth.views.password_reset')
+        user = UserFactory()
+        user.set_password('some password')
+        user.save()
+        empty_outbox()
+        r = self.client.post(url, { 'username': user.username})
+        self.assertContains(r, 'No known active email addresses', status_code=200)
+        q = PyQuery(r.content)
+        self.assertTrue(len(q("form .is-invalid")) > 0)
+        self.assertEqual(len(outbox), 0)
+
+    def test_reset_password_address_handling(self):
+        """Reset password links are only sent to known, active addresses"""
+        url = urlreverse('ietf.ietfauth.views.password_reset')
+        person = PersonFactory()
+        person.email_set.update(active=False)
+        empty_outbox()
+        r = self.client.post(url, { 'username': person.user.username})
+        self.assertContains(r, 'No known active email addresses', status_code=200)
+        q = PyQuery(r.content)
+        self.assertTrue(len(q("form .is-invalid")) > 0)
+        self.assertEqual(len(outbox), 0)
+
+        active_address = EmailFactory(person=person).address
+        r = self.client.post(url, {'username': person.user.username})
+        self.assertNotContains(r, 'No known active email addresses', status_code=200)
+        self.assertEqual(len(outbox), 1)
+        to = outbox[0].get('To')
+        self.assertIn(active_address, to)
+        self.assertNotIn(person.user.username, to)
 
     def test_review_overview(self):
         review_req = ReviewRequestFactory()
@@ -692,8 +723,20 @@ class IetfAuthTests(TestCase):
         url = urlreverse('ietf.ietfauth.views.apikey_disable')
         r = self.client.get(url)
 
+        self.assertEqual(r.status_code, 200)
         self.assertContains(r, 'Disable a personal API key')
         self.assertContains(r, 'Key')
+
+        # Try to delete something that doesn't exist
+        r = self.client.post(url, {'hash': key.hash()+'bad'})
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r,"Key validation failed; key not disabled")
+
+        # Try to delete someone else's key
+        otherkey = PersonalApiKeyFactory()
+        r = self.client.post(url, {'hash': otherkey.hash()})
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r,"Key validation failed; key not disabled")
         
         # Delete a key
         r = self.client.post(url, {'hash': key.hash()})

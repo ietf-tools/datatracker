@@ -25,6 +25,7 @@ from tempfile import mkdtemp
 from django.apps import apps
 from django.contrib.auth.models import User
 from django.conf import settings
+from django.forms import Form
 from django.template import Context
 from django.template import Template    # pyflakes:ignore
 from django.template.defaulttags import URLNode
@@ -37,6 +38,7 @@ import debug                            # pyflakes:ignore
 from ietf.person.name import name_parts, unidecode_name
 from ietf.submit.tests import submission_file
 from ietf.utils.draft import PlaintextDraft, getmeta
+from ietf.utils.fields import SearchableField
 from ietf.utils.log import unreachable, assertion
 from ietf.utils.mail import send_mail_preformatted, send_mail_text, send_mail_mime, outbox, get_payload_text
 from ietf.utils.test_runner import get_template_paths, set_coverage_checking
@@ -162,7 +164,7 @@ def get_callbacks(urllist, namespace=None):
                 callbacks.add(qualified(entry.name))
             if hasattr(entry, 'lookup_str') and entry.lookup_str:
                 callbacks.add(qualified(entry.lookup_str))
-            # There are some entries we don't handle here, mostly clases
+            # There are some entries we don't handle here, mostly classes
             # (such as Feed subclasses)
 
     return list(callbacks)
@@ -372,10 +374,17 @@ class XMLDraftTests(TestCase):
             draft.get_refs(),
             {
                 'rfc1': XMLDraft.REF_TYPE_NORMATIVE,
+                'rfc2': XMLDraft.REF_TYPE_NORMATIVE,
+                'draft-wood-key-consistency-03': XMLDraft.REF_TYPE_INFORMATIVE,
                 'rfc255': XMLDraft.REF_TYPE_INFORMATIVE,
                 'bcp6': XMLDraft.REF_TYPE_INFORMATIVE,
+                'bcp14': XMLDraft.REF_TYPE_INFORMATIVE,
                 'rfc1207': XMLDraft.REF_TYPE_UNKNOWN,
                 'rfc4086': XMLDraft.REF_TYPE_NORMATIVE,
+                'draft-ietf-teas-pcecc-use-cases-00': XMLDraft.REF_TYPE_INFORMATIVE,
+                'draft-ietf-teas-pcecc-use-cases': XMLDraft.REF_TYPE_INFORMATIVE,
+                'draft-ietf-sipcore-multiple-reasons-00': XMLDraft.REF_TYPE_INFORMATIVE,
+                'draft-ietf-sipcore-multiple-reasons': XMLDraft.REF_TYPE_INFORMATIVE,
             }
         )
 
@@ -517,3 +526,25 @@ class TimezoneTests(TestCase):
         ):
             with self.assertRaises(RuntimeError):
                 timezone_not_near_midnight()
+
+
+class SearchableFieldTests(TestCase):
+    def test_has_changed_single_value(self):
+        """Should work with initial as a single value or list when max_entries == 1"""
+        class TestSearchableField(SearchableField):
+            model = "fake model"  # needs to be not-None to allow field init
+
+        class TestForm(Form):
+            test_field = TestSearchableField(max_entries=1)
+
+        # single value in initial (e.g., when used as a single-valued field in a formset)
+        changed_form = TestForm(initial={'test_field': 1}, data={'test_field': [2]})
+        self.assertTrue(changed_form.has_changed())
+        unchanged_form = TestForm(initial={'test_field': 1}, data={'test_field': [1]})
+        self.assertFalse(unchanged_form.has_changed())
+
+        # list value in initial (usual situation for a MultipleChoiceField subclass like SearchableField)
+        changed_form = TestForm(initial={'test_field': [1]}, data={'test_field': [2]})
+        self.assertTrue(changed_form.has_changed())
+        unchanged_form = TestForm(initial={'test_field': [1]}, data={'test_field': [1]})
+        self.assertFalse(unchanged_form.has_changed())

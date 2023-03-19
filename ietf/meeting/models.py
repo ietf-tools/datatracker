@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2007-2020, All Rights Reserved
+# Copyright The IETF Trust 2007-2022, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -39,6 +39,7 @@ from ietf.name.models import (
 )
 from ietf.person.models import Person
 from ietf.utils.decorators import memoize
+from ietf.utils.history import find_history_replacements_active_at, find_history_active_at
 from ietf.utils.storage import NoLocationMigrationFileSystemStorage
 from ietf.utils.text import xslugify
 from ietf.utils.timezone import datetime_from_date, date_today
@@ -244,7 +245,7 @@ class Meeting(models.Model):
         Attendance = namedtuple('Attendance', 'onsite remote')
 
         # MeetingRegistration.attended started conflating badge-pickup and session attendance before IETF 114.
-        # We've separated session attendence off to ietf.meeting.Attended, but need to report attendance at older
+        # We've separated session attendance off to ietf.meeting.Attended, but need to report attendance at older
         # meetings correctly.
 
         attended_per_meetingregistration = (
@@ -296,26 +297,6 @@ class Meeting(models.Model):
                         break
             self._proceedings_format_version = version  # save this for later
         return self._proceedings_format_version
-
-    @property
-    def session_constraintnames(self):
-        """Gets a list of the constraint names that should be used for this meeting
-
-        Anticipated that this will soon become a many-to-many relationship with ConstraintName
-        (see issue #2770). Making this a @property allows use of the .all(), .filter(), etc,
-        so that other code should not need changes when this is replaced.
-        """
-        try:
-            mtg_num = int(self.number)
-        except ValueError:
-            mtg_num = None  # should not come up, but this method should not fail
-        if mtg_num is None or mtg_num >= 106:
-            # These meetings used the old 'conflic?' constraint types labeled as though
-            # they were the new types.
-            slugs = ('chair_conflict', 'tech_overlap', 'key_participant')
-        else:
-            slugs = ('conflict', 'conflic2', 'conflic3')
-        return ConstraintName.objects.filter(slug__in=slugs)
 
     def base_url(self):
         return "/meeting/%s" % (self.number, )
@@ -407,6 +388,37 @@ class Meeting(models.Model):
 
     def uses_notes(self):
         return self.date>=datetime.date(2020,7,6)
+
+    def meeting_start(self):
+        """Meeting-local midnight at the start of the meeting date"""
+        return self.tz().localize(datetime.datetime.combine(self.date, datetime.time()))
+
+    def _groups_at_the_time(self):
+        """Get dict mapping Group PK to appropriate Group or GroupHistory at meeting time
+
+        Known issue: only looks up Groups and their *current* parents when called. If a Group's
+        parent was different at meeting time, that parent will not be in the cache. Use
+        group_at_the_time() to look up values - that will fill in missing groups for you.
+        """
+        if not hasattr(self,'cached_groups_at_the_time'):
+            all_group_pks = set(self.session_set.values_list('group__pk', flat=True))
+            all_group_pks.update(self.session_set.values_list('group__parent__pk', flat=True))
+            all_group_pks.discard(None)
+            self.cached_groups_at_the_time = find_history_replacements_active_at(
+                Group.objects.filter(pk__in=all_group_pks),
+                self.meeting_start(),
+            )
+        return self.cached_groups_at_the_time
+
+    def group_at_the_time(self, group):
+        # MUST call self._groups_at_the_time() before assuming cached_groups_at_the_time exists
+        gatt = self._groups_at_the_time()
+        if group.pk in gatt:
+            return gatt[group.pk]
+        # Cache miss - look up the missing historical group and add it to the cache.
+        new_item = find_history_active_at(group, self.meeting_start()) or group  # fall back to original if no history
+        self.cached_groups_at_the_time[group.pk] = new_item
+        return new_item
 
     class Meta:
         ordering = ["-date", "-id"]
@@ -535,7 +547,13 @@ class FloorPlan(models.Model):
     def __str__(self):
         return u'floorplan-%s-%s' % (self.meeting.number, xslugify(self.name))
 
+
 # === Schedules, Sessions, Timeslots and Assignments ===========================
+
+class TimeSlotQuerySet(models.QuerySet):
+    def that_can_be_scheduled(self):
+        return self.exclude(type__in=TimeSlot.TYPES_NOT_SCHEDULABLE)
+
 
 class TimeSlot(models.Model):
     """
@@ -543,6 +561,8 @@ class TimeSlot(models.Model):
     mapped to a timeslot, including breaks. Sessions are connected to
     TimeSlots during scheduling.
     """
+    objects = TimeSlotQuerySet.as_manager()
+
     meeting = ForeignKey(Meeting)
     type = ForeignKey(TimeSlotTypeName)
     name = models.CharField(max_length=255)
@@ -554,15 +574,13 @@ class TimeSlot(models.Model):
     modified = models.DateTimeField(auto_now=True)
     #
 
+    TYPES_NOT_SCHEDULABLE = ('offagenda', 'reserved', 'unavail')
+
     @property
     def session(self):
         if not hasattr(self, "_session_cache"):
             self._session_cache = self.sessions.filter(timeslotassignments__schedule__in=[self.meeting.schedule, self.meeting.schedule.base if self.meeting else None]).first()
         return self._session_cache
-
-    @property
-    def time_desc(self):
-        return "%s-%s" % (self.time.strftime("%H%M"), (self.time + self.duration).strftime("%H%M"))
 
     def meeting_date(self):
         return self.time.date()
@@ -824,12 +842,12 @@ class SchedTimeSessAssignment(models.Model):
         if not self.timeslot:
             components.append("unknown")
 
-        if not self.session or not (getattr(self.session, "historic_group", None) or self.session.group):
+        if not self.session or not self.session.group_at_the_time():
             components.append("unknown")
         else:
             components.append(self.timeslot.time.strftime("%Y-%m-%d-%a-%H%M"))
 
-            g = getattr(self.session, "historic_group", None) or self.session.group
+            g = self.session.group_at_the_time()
 
             if self.timeslot.type.slug in ('break', 'reg', 'other'):
                 components.append(g.acronym)
@@ -839,7 +857,7 @@ class SchedTimeSessAssignment(models.Model):
                 if self.timeslot.type.slug == "plenary":
                     components.append("1plenary")
                 else:
-                    p = getattr(g, "historic_parent", None) or g.parent
+                    p = self.session.group_parent_at_the_time()
                     if p and p.type_id in ("area", "irtf", 'ietf'):
                         components.append(p.acronym)
 
@@ -1000,11 +1018,16 @@ class SessionQuerySet(models.QuerySet):
             type__slug='regular'
         )
 
+    def that_can_be_scheduled(self):
+        """Queryset containing sessions that should be scheduled for a meeting"""
+        return self.requests().with_current_status().filter(
+            current_status__in=['appr', 'schedw', 'scheda', 'sched']
+        )
+
     def requests(self):
         """Queryset containing sessions that may be handled as requests"""
-        return self.exclude(
-            type__in=('offagenda', 'reserved', 'unavail')
-        )
+        return self.exclude(type__in=TimeSlot.TYPES_NOT_SCHEDULABLE)
+
 
 class Session(models.Model):
     """Session records that a group should have a session on the
@@ -1263,17 +1286,18 @@ class Session(models.Model):
     def chat_room_name(self):
         if self.type_id=='plenary':
             return 'plenary'
-        elif hasattr(self, 'historic_group'):
-            return self.historic_group.acronym
         else:
-            return self.group.acronym
+            return self.group_at_the_time().acronym
 
     def chat_room_url(self):
         return settings.CHAT_URL_PATTERN.format(chat_room_name=self.chat_room_name())
 
     def chat_archive_url(self):
-        # datatracker 8.8.0 released on 2022 July 15; before that, fall back to old log URL
-        if self.meeting.date <= datetime.date(2022, 7, 15):
+        chatlog = self.sessionpresentation_set.filter(document__type__slug='chatlog').first()
+        if chatlog is not None:
+            return chatlog.document.get_href()
+        elif self.meeting.date <= datetime.date(2022, 7, 15):
+            # datatracker 8.8.0 released on 2022 July 15; before that, fall back to old log URL
             return f'https://www.ietf.org/jabber/logs/{ self.chat_room_name() }?C=M;O=D'
         elif hasattr(settings,'CHAT_ARCHIVE_URL_PATTERN'):
             return settings.CHAT_ARCHIVE_URL_PATTERN.format(chat_room_name=self.chat_room_name())
@@ -1287,6 +1311,14 @@ class Session(models.Model):
 
     def notes_url(self):
         return urljoin(settings.IETF_NOTES_URL, self.notes_id())
+
+    def group_at_the_time(self):
+        return self.meeting.group_at_the_time(self.group)
+
+    def group_parent_at_the_time(self):
+        if self.group_at_the_time().parent:
+            return self.meeting.group_at_the_time(self.group_at_the_time().parent)
+
 
 class SchedulingEvent(models.Model):
     session = ForeignKey(Session)

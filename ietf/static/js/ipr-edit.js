@@ -18,7 +18,7 @@ $(document)
                         ["for", "id", "name"].forEach(function (at) {
                             var val = x.attr(at);
                             if (val && val.match("iprdocrel")) {
-                                x.attr(at, val.replace('-1-', '-' + total + '-'));
+                                x.attr(at, val.replace('__prefix__', total.toString()));
                             }
                         });
                     });
@@ -27,6 +27,8 @@ $(document)
                 totalField.val(total);
 
                 template.before(el);
+
+                el.find('.select2-field').each((index, element) => setupSelect2Field($(element)));
             });
 
         function updateRevisions() {

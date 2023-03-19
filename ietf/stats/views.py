@@ -182,7 +182,7 @@ def document_stats(request, stats_type=None):
         possible_document_types = add_url_to_choices([
             ("", "All"),
             ("rfc", "RFCs"),
-            ("draft", "Drafts"),
+            ("draft", "Internet-Drafts"),
         ], lambda slug: build_document_stats_url(get_overrides={ "type": slug }))
 
         document_type = get_choice(request, "type", possible_document_types) or ""
@@ -345,7 +345,7 @@ def document_stats(request, stats_type=None):
 
                     basename, ext = t
                     ext = ext.lower()
-                    if not any(ext==whitelisted_ext for whitelisted_ext in settings.DOCUMENT_FORMAT_WHITELIST):
+                    if not any(ext==allowlisted_ext for allowlisted_ext in settings.DOCUMENT_FORMAT_ALLOWLIST):
                         continue
 
                     canonical_name = doc_names_with_missing_types.get(basename)

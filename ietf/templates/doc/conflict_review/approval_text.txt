@@ -18,7 +18,7 @@ The IESG would also like the {{receiver}} to review the comments in the datatrac
 The IESG review is documented at:
 {{review_url}}
 
-A URL of the reviewed Internet Draft is:
+A URL of the reviewed Internet-Draft is:
 {{conflictdoc_url}}
 
 The process for such documents is described {% if conflictdoc.stream_id == 'ise' %}at https://www.rfc-editor.org/indsubs.html {% else %}{% if conflictdoc.stream_id == 'irtf' %}in RFC 5743 {% endif %} {% endif %}

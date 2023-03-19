@@ -18,8 +18,9 @@ from django_password_strength.widgets import PasswordStrengthInput, PasswordConf
 import debug                            # pyflakes:ignore
 
 from ietf.person.models import Person, Email
-from ietf.mailinglists.models import Whitelisted
+from ietf.mailinglists.models import Allowlisted
 from ietf.utils.text import isascii
+
 
 class RegistrationForm(forms.Form):
     email = forms.EmailField(label="Your email (lowercase)")
@@ -193,19 +194,27 @@ class ResetPasswordForm(forms.Form):
     username = forms.EmailField(label="Your email (lowercase)")
 
     def clean_username(self):
-        import ietf.ietfauth.views
+        """Verify that the username is valid
+
+        In addition to EmailField's checks, verifies that a User matching the username exists.
+        """
         username = self.cleaned_data["username"]
         if not User.objects.filter(username=username).exists():
-            raise forms.ValidationError(mark_safe("Didn't find a matching account. If you don't have an account yet, you can <a href=\"{}\">create one</a>.".format(urlreverse(ietf.ietfauth.views.create_account))))
+            raise forms.ValidationError(mark_safe(
+                "Didn't find a matching account. "
+                "If you don't have an account yet, you can <a href=\"{}\">create one</a>.".format(
+                    urlreverse('ietf.ietfauth.views.create_account')
+                )
+            ))
         return username
 
 
 class TestEmailForm(forms.Form):
     email = forms.EmailField(required=False)
 
-class WhitelistForm(forms.ModelForm):
+class AllowlistForm(forms.ModelForm):
     class Meta:
-        model = Whitelisted
+        model = Allowlisted
         exclude = ['by', 'time' ]
 
     

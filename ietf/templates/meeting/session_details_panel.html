@@ -1,7 +1,7 @@
 {% load origin ietf_filters textfilters tz dateformat %}
 {% origin %}
 {% for session in sessions %}
-    {% with item=session.official_timeslotassignment %}
+    {% with item=session.official_timeslotassignment %} {% with timeslot=item.timeslot %}
         <h3 class="mt-4" id="session_{{ session.pk }}">
             {% if sessions|length > 1 %}Session {{ forloop.counter }} :{% endif %}
             {% for time in session.times %}
@@ -21,6 +21,8 @@
                 {# see note in the included templates re: show_agenda parameter and required JS import #}
                 {% if meeting.type.slug == 'interim' %}
                     {% include "meeting/interim_session_buttons.html" with show_agenda=False show_empty=False %}
+                {% else %}
+                    {% include "meeting/session_buttons_include.html" with show_agenda=False item=session.official_timeslotassignment use_notes=session.meeting.use_notes %}
                 {% endif %}
             </div>
         {% endif %}
@@ -66,8 +68,6 @@
                             <td>
                                 <a href="{{ pres.document.get_href }}">{{ pres.document.title }}</a>
                                 <a href="{{ url }}">({{ pres.document.name }})</a>
-                            </td>
-                            <td class="text-end">
                                 {% if user|has_role:"Secretariat" or can_manage_materials %}
                                     {% if pres.document.type.slug == 'minutes' %}
                                         {% url 'ietf.meeting.views.upload_session_minutes' session_id=session.pk num=session.meeting.number as upload_url %}
@@ -78,10 +78,11 @@
                                     {% endif %}
                                     {% if pres.document.type.slug != 'bluesheets' or user|has_role:"Secretariat" or meeting.type.slug == 'interim' and can_manage_materials %}
                                         {% if pres.document.type.slug == 'minutes' %}
-                                            <a class="btn btn-primary btn-sm" href="{% url 'ietf.meeting.views.import_session_minutes' num=session.meeting.number session_id=session.pk %}">Import from notes.ietf.org</a>
+                                            <a class="btn btn-primary btn-sm float-end ms-1" href="{% url 'ietf.meeting.views.import_session_minutes' num=session.meeting.number session_id=session.pk %}">Import from notes.ietf.org</a>
                                         {% endif %}
-                                        <a class="btn btn-primary btn-sm" href="{{ upload_url }}">Upload revision</a>
+                                        <a class="btn btn-primary btn-sm float-end ms-1" href="{{ upload_url }}">Upload revision</a>
                                     {% endif %}
+
                                 {% endif %}
                             </td>
                         </tr>
@@ -136,24 +137,26 @@
                        data-remove-from-session="{% url 'ietf.meeting.views.ajax_remove_slides_from_session' session_id=session.pk num=session.meeting.number %}"
                        data-reorder-in-session="{% url 'ietf.meeting.views.ajax_reorder_slides_in_session' session_id=session.pk num=session.meeting.number %}">
                     {% for pres in session.filtered_slides %}
-                        <tr data-name="{{ pres.document.name }}" title="Drag to reorder.">
+                        <tr data-name="{{ pres.document.name }}" {% if can_manage_materials %} class="draggable" {% endif %}>
                             {% url 'ietf.doc.views_doc.document_main' name=pres.document.name as url %}
-                            <td><i class="bi bi-grip-vertical"></i></td>
+                            {% if can_manage_materials %}
+                                <td>
+                                    <i class="bi bi-grip-vertical drag-handle" title="Drag to reorder"></i>
+                                </td>
+                            {% endif %}
                             <td>
-                                <a href="{{ pres.document.get_href }}">{{ pres.document.title }}</a>
-                                <a href="{{ url }}">({{ pres.document.name }})</a>
-                            </td>
-                            <td class="text-end">
                                 {% if can_manage_materials %}
-                                    <a class="btn btn-primary btn-sm"
+                                    <a class="btn btn-primary btn-sm float-end ms-1"
                                        href="{% url 'ietf.meeting.views.upload_session_slides' session_id=session.pk num=session.meeting.number name=pres.document.name %}">
                                         Upload revision
                                     </a>
-                                    <a class="btn btn-danger btn-sm"
+                                    <a class="btn btn-danger btn-sm float-end ms-1"
                                        href="{% url 'ietf.meeting.views.remove_sessionpresentation' session_id=session.pk num=session.meeting.number name=pres.document.name %}">
                                         Remove
                                     </a>
                                 {% endif %}
+                                <a href="{{ pres.document.get_href }}">{{ pres.document.title }}</a>
+                                <a href="{{ url }}">({{ pres.document.name }})</a>
                             </td>
                         </tr>
                     {% endfor %}
@@ -173,7 +176,7 @@
         {% endif %}
 
     {% if can_manage_materials %}<div class="form-text">Drag-and-drop to reorder slides</div>{% endif %}
-    <h3 class="mt-4">Drafts</h3>
+    <h3 class="mt-4">Internet-Drafts</h3>
     <table class="table table-sm table-striped">
         {% if session.filtered_drafts %}
             <tbody>
@@ -202,8 +205,152 @@
     {% if can_manage_materials %}
         <a class="btn btn-primary"
            href="{% url 'ietf.meeting.views.add_session_drafts' session_id=session.pk num=session.meeting.number %}">
-            Link additional drafts to session
+            Link additional I-Ds to session
         </a>
     {% endif %}
-{% endwith %}
+    {% if timezone_now < timeslot.end_time %}{# show meeting tools until the session ends #}
+        <h3 class="mt-4">Meeting tools</h3>
+        <table class="table table-sm table-striped meeting-tools"
+               id="meeting_tools_{{ session.pk }}">
+            <tbody>
+            {% if use_notes %}
+                <tr>
+                    <td>
+                        <a href="{{ session.notes_url }}">
+                            <i class="bi bi-journal-text"></i> Notepad for note-takers
+                        </a>
+                    </td>
+                </tr>
+            {% endif %}
+            {# chat #}
+            <tr>
+                <td>
+                    <a href="{{ session.chat_room_url }}">
+                        <i class="bi bi-chat"></i> Chat room
+                    </a>
+                </td>
+            </tr>
+            {# Video stream (meetecho) #}
+            {% if timezone_now < timeslot.end_time %}
+                <tr>
+                    <td>
+                        <a href="{{ timeslot.location.video_stream_url|format:session }}">
+                            <i class="bi bi-camera-video"></i> Video stream
+                        </a>
+                    </td>
+                </tr>
+            {% endif %}
+            {# Onsite tool (meetecho_onsite) #}
+            {% if timeslot.location.onsite_tool_url %}
+                <tr>
+                    <td>
+                        <a href="{{ timeslot.location.onsite_tool_url|format:session }}">
+                            <i class="bi bi-phone"></i> Onsite tool
+                        </a>
+                    </td>
+                </tr>
+            {% endif %}
+            {# Audio stream #}
+            {% if timeslot.location.audio_stream_url %}
+                <tr>
+                    <td>
+                        <a href="{{ timeslot.location.audio_stream_url|format:session }}">
+                            <i class="bi bi-headphones"></i> Audio stream
+                        </a>
+                    </td>
+                </tr>
+            {% endif %}
+            {# Remote call-in #}
+            {% if session.agenda_note|first_url|conference_url %}
+                <tr>
+                    <td>
+                        <a href="{{ session.agenda_note|first_url }}">
+                            <i class="bi bi-people"></i> Online conference
+                        </a>
+                    </td>
+                </tr>
+            {% elif session.remote_instructions|first_url|conference_url %}
+                <tr>
+                    <td>
+                        <a href="{{ session.remote_instructions|first_url }}">
+                            <i class="bi bi-people"></i> Online conference
+                        </a>
+                    </td>
+                </tr>
+            {% elif timeslot.location.webex_url %}
+                <tr>
+                    <td>
+                        <a href="{{ timeslot.location.webex_url|format:session }}">
+                            <i class="bi bi-people"></i> Webex session
+                        </a>
+                    </td>
+                </tr>
+            {% endif %}
+            </tbody>
+        </table>
+    {% else %}{# session is in the past #}
+        <h3 class="mt-4">Notes and recordings</h3>
+        <table class="table table-sm table-striped meeting-tools"
+               id="notes_and_recordings_{{ session.pk }}">
+            <tbody>
+            {% if use_notes %}
+                <tr>
+                    <td>
+                        <a href="{{ session.notes_url }}">
+                            <i class="bi bi-journal-text"></i> Notepad for note-takers
+                        </a>
+                    </td>
+                </tr>
+            {% endif %}
+            {# Recordings #}
+            {% if meeting.number|add:"0" >= 80 %}
+                {% with session.recordings as recordings %}
+                    {% if recordings %}
+                        {# There's no guaranteed order, so this is a bit messy: #}
+                        {# First, the audio recordings, if any #}
+                        {% for r in recordings %}
+                            {% if r.get_href and 'audio' in r.get_href %}
+                                <tr>
+                                    <td>
+                                        <a href="{{ r.get_href }}"><i class="bi bi-file-play"></i> {{ r.title }}</a>
+                                    </td>
+                                </tr>
+                            {% endif %}
+                        {% endfor %}
+                        {# Then the youtube recordings #}
+                        {% for r in recordings %}
+                            {% if r.get_href and 'youtu' in r.get_href %}
+                                <tr>
+                                    <td>
+                                        <a href="{{ r.get_href }}"><i class="bi bi-file-slides"></i> {{ r.title }}</a>
+                                    </td>
+                                </tr>
+                            {% endif %}
+                        {% endfor %}
+                        {# Finally, any other recordings #}
+                        {% for r in recordings %}
+                            {% if r.get_href and not 'audio' in r.get_href and not 'youtu' in r.get_href %}
+                                <tr>
+                                    <td>
+                                        <a href="{{ r.get_href }}"><i class="bi bi-file-play"></i> {{ r.title }}</a>
+                                    </td>
+                                </tr>
+                            {% endif %}
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+                {% if timeslot.location.video_stream_url %}
+                    <tr>
+                        <td>
+                            <a href="https://www.meetecho.com/ietf{{ meeting.number }}/recordings#{{ acronym.upper }}">
+                                <i class="bi bi-file-slides"></i> Session recording
+                            </a>
+                        </td>
+                    </tr>
+                {% endif %}
+            {% endif %}
+            </tbody>
+        </table>
+    {% endif %}
+{% endwith %}{% endwith %}
 {% endfor %}

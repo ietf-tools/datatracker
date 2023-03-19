@@ -71,7 +71,7 @@ class GroupPagesTests(TestCase):
         self.assertContains(r, group.name)
         self.assertContains(r, escape(group.ad_role().person.name))
 
-        for t in ('rg','area','ag', 'rag', 'dir','review','team','program','iabasg','adm','rfcedtyp'):
+        for t in ('rg','area','ag', 'rag', 'dir','review','team','program','iabasg','adm','rfcedtyp'): # See issue 5120
             g = GroupFactory.create(type_id=t,state_id='active') 
             if t in ['dir','review']:
                 g.parent = GroupFactory.create(type_id='area',state_id='active')
@@ -87,7 +87,7 @@ class GroupPagesTests(TestCase):
         self.assertContains(r, "Directorate")
         self.assertContains(r, "AG")
 
-        for slug in GroupTypeName.objects.exclude(slug__in=['wg','rg','ag','rag','area','dir','review','team','program','adhoc','ise','adm','iabasg','rfcedtyp']).values_list('slug',flat=True):
+        for slug in GroupTypeName.objects.exclude(slug__in=['wg','rg','ag','rag','area','dir','review','team','program','adhoc','ise','adm','iabasg','rfcedtyp', 'edwg', 'edappr']).values_list('slug',flat=True):
             with self.assertRaises(NoReverseMatch):
                 url=urlreverse('ietf.group.views.active_groups', kwargs=dict(group_type=slug))
 
@@ -1826,7 +1826,7 @@ class StatusUpdateTests(TestCase):
             self.assertEqual(response.status_code, 404)
             self.client.logout()
 
-        for type_id in GroupTypeName.objects.exclude(slug__in=('wg','rg','ag','rag','team')).values_list('slug',flat=True):
+        for type_id in GroupTypeName.objects.exclude(slug__in=('wg','rg','ag','rag','team','edwg')).values_list('slug',flat=True):
             group = GroupFactory.create(type_id=type_id)
             for user in (None,User.objects.get(username='secretary')):
                 ensure_updates_dont_show(group,user)
@@ -1937,12 +1937,12 @@ class GroupParentLoopTests(TestCase):
         import signal
 
         def timeout_handler(signum, frame):
-            raise Exception("Infinite loop in parent links is not handeled properly.")
+            raise Exception("Infinite loop in parent links is not handled properly.")
 
         signal.signal(signal.SIGALRM, timeout_handler)
         signal.alarm(1)   # One second
         try:
-            test2.is_decendant_of("ietf")
+            test2.is_descendant_of("ietf")
         except AssertionError:
             pass
         except Exception:
@@ -1963,7 +1963,7 @@ class AcronymValidationTests(TestCase):
         self.assertIn('acronym',form.errors)
         form = AdminGroupForm({'acronym':'f','name':'should fail','type':'wg','state':'active','used_roles':'[]','time':now})
         self.assertIn('acronym',form.errors)
-        # For the ITU we have a heirarchy of group names that use hyphens as delimeters
+        # For the ITU we have a hierarchy of group names that use hyphens as delimiters
         form = AdminGroupForm({'acronym':'should-pass','name':'should pass','type':'sdo','state':'active','used_roles':'[]','time':now})
         self.assertTrue(form.is_valid())
         form = AdminGroupForm({'acronym':'shouldfail-','name':'should fail','type':'wg','state':'active','used_roles':'[]','time':now})

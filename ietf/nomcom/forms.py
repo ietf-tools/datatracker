@@ -175,7 +175,7 @@ class MergeNomineeForm(forms.Form):
         secondary_emails = self.cleaned_data.get("secondary_emails")
         if primary_email and secondary_emails:
             if primary_email in secondary_emails:
-                msg = "Primary and secondary email address must be differents"
+                msg = "Primary and secondary email address must be different"
                 self._errors["primary_email"] = self.error_class([msg])
         return self.cleaned_data
 

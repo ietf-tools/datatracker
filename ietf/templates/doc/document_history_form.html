@@ -1,0 +1,115 @@
+{# Copyright The IETF Trust 2015-2022, All Rights Reserved #}
+{% load origin %}
+{% load ietf_filters %}
+{% origin %}
+<form class="form-horizontal diff-form"
+      action="{{ action }}"
+      method="get"
+      target="_blank">
+{% if not document_html %}
+    <div class="row mb-3">
+        <label for="url1" class="col-form-label col-sm-2 fw-bold">From revision</label>
+        <div class="col-sm-10">
+{% endif %}
+{% with prev_rev=doc.rev|add:"-1"|stringformat:"02d" %}
+            <select class="form-select{% if document_html %} form-select-sm mb-1{% endif %} select2-field"
+                    data-max-entries="1"
+                    data-width="resolve"
+                    data-allow-clear="false"
+                    data-minimum-input-length="0"
+                    {% if not document_html %}id="url1"{% else %}aria-label="From revision"{% endif %}
+                    name="url1">
+                {% for name, rev, time, url in diff_revisions %}
+                    <option value="{{ url }}"
+                            {% if document_html %}
+                                {% if name == doc.name %}
+                                    {% if rev == prev_rev or doc.rev == "00" and rev == "00" %} selected{% endif %}
+                                {% endif %}
+                            {% else %}
+                                {% if diff_revisions|length > 1 and forloop.counter == 2 %} selected{% endif %}
+                            {% endif %}>
+                        {{ name|prettystdname }}{% if rev %}-{{ rev }}{% endif %}
+                        {% if not document_html %}({{ time|date:"Y-m-d" }}){% endif %}
+                    </option>
+                {% endfor %}
+                {% if doc.name|rfcbis %}
+                    <option value="{{ doc.name|rfcbis }}"
+                            {% if document_html %}
+                                {% if rev == prev_rev %} selected{% endif %}
+                            {% else %}
+                                {% if diff_revisions and diff_revisions|length == 1 %} selected{% endif %}
+                            {% endif %}>
+                        {{ doc.name|rfcbis|prettystdname }}
+                    </option>
+                {% endif %}
+            </select>
+{% if not document_html %}
+        </div>
+    </div>
+    <div class="row mb-3">
+        <label for="url2" class="col-form-label col-sm-2 fw-bold">To revision</label>
+        <div class="col-sm-10">
+{% endif %}
+            <select class="form-select{% if document_html %} form-select-sm mb-1{% endif %} select2-field"
+                    data-max-entries="1"
+                    data-width="resolve"
+                    data-allow-clear="false"
+                    data-minimum-input-length="0"
+                    {% if not document_html %}id="url2"{% else %}aria-label="To revision"{% endif %}
+                    name="url2">
+                {% for name, rev, time, url in diff_revisions %}
+                    <option value="{{ url }}"
+                        {% if document_html %}
+                            {% if not snapshot and doc.get_state_slug == "rfc" and name == "rfc"|add:doc.rfc_number or snapshot and name == doc.name and rev == doc.rev %} selected{% endif %}
+                        {% else %}
+                            {% if forloop.counter == 1 %} selected{% endif %}
+                        {% endif %}>
+                        {{ name|prettystdname }}{% if rev %}-{{ rev }}{% endif %}
+                        {% if not document_html %}({{ time|date:"Y-m-d" }}){% endif %}
+                    </option>
+                {% endfor %}
+                {% if doc.name|rfcbis %}
+                    <option value="{{ doc.name|rfcbis }}">
+                        {{ doc.name|rfcbis|prettystdname }}
+                    </option>
+                {% endif %}
+            </select>
+{% if not document_html %}
+        </div>
+    </div>
+    <div class="row mb-3">
+        <label class="col-form-label col-sm-2 fw-bold">Diff format</label>
+        <div class="col-sm-10">
+{% endif %}
+            <button type="submit"
+                    class="btn btn-primary{% if document_html %} btn-sm{% endif %}"
+                    value="--html"
+                    name="difftype">
+                Side-by-side
+            </button>
+            {% if not document_html %}
+                <button type="submit"
+                        class="btn btn-primary{% if document_html %} btn-sm{% endif %}"
+                        value="--abdiff"
+                        name="difftype">
+                    Before-after
+                </button>
+                <button type="submit"
+                        class="btn btn-primary{% if document_html %} btn-sm{% endif %}"
+                        value="--chbars"
+                        name="difftype">
+                    Change bars
+                </button>
+            {% endif %}
+            <button type="submit"
+                    class="btn btn-primary{% if document_html %} btn-sm{% endif %}"
+                    value="--hwdiff"
+                    name="difftype">
+                Inline
+            </button>
+{% endwith %}
+{% if not document_html %}
+        </div>
+    </div>
+{% endif %}
+</form>

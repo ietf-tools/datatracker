@@ -49,6 +49,7 @@ from django.template.loader import render_to_string
 from django.urls import reverse as urlreverse
 from django.conf import settings
 from django import forms
+from django.contrib.staticfiles import finders
 
 
 import debug                            # pyflakes:ignore
@@ -57,19 +58,19 @@ from ietf.doc.models import ( Document, DocAlias, DocHistory, DocEvent, BallotDo
     ConsensusDocEvent, NewRevisionDocEvent, TelechatDocEvent, WriteupDocEvent, IanaExpertDocEvent,
     IESG_BALLOT_ACTIVE_STATES, STATUSCHANGE_RELATIONS, DocumentActionHolder, DocumentAuthor,
     RelatedDocument, RelatedDocHistory)
-from ietf.doc.utils import (add_links_in_new_revision_events, augment_events_with_revision,
+from ietf.doc.utils import (augment_events_with_revision,
     can_adopt_draft, can_unadopt_draft, get_chartering_type, get_tags_for_stream_id,
     needed_ballot_positions, nice_consensus, prettify_std_name, update_telechat, has_same_ballot,
     get_initial_notify, make_notify_changed_event, make_rev_history, default_consensus,
-    add_events_message_info, get_unicode_document_content, build_doc_meta_block,
+    add_events_message_info, get_unicode_document_content,
     augment_docs_and_user_with_user_info, irsg_needed_ballot_positions, add_action_holder_change_event,
-    build_doc_supermeta_block, build_file_urls, update_documentauthors, fuzzy_find_documents,
+    build_file_urls, update_documentauthors, fuzzy_find_documents,
     bibxml_for_draft)
 from ietf.doc.utils_bofreq import bofreq_editors, bofreq_responsible
 from ietf.group.models import Role, Group
 from ietf.group.utils import can_manage_all_groups_of_type, can_manage_materials, group_features_role_filter
 from ietf.ietfauth.utils import ( has_role, is_authorized_in_doc_stream, user_is_person,
-    role_required, is_individual_draft_author)
+    role_required, is_individual_draft_author, can_request_rfc_publication)
 from ietf.name.models import StreamName, BallotPositionName
 from ietf.utils.history import find_history_active_at
 from ietf.doc.forms import TelechatForm, NotifyForm, ActionHoldersForm, DocAuthorForm, DocAuthorChangeBasisForm
@@ -91,13 +92,28 @@ def render_document_top(request, doc, tab, name):
     tabs = []
     tabs.append(("Status", "status", urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=name)), True, None))
 
-    iesg_type_slugs = set(BallotType.objects.values_list('slug',flat=True)) 
-    iesg_type_slugs.discard('irsg-approve')
+    iesg_type_slugs = set(BallotType.objects.exclude(slug__in=("irsg-approve","rsab-approve")).values_list('slug',flat=True)) 
     iesg_ballot = doc.latest_event(BallotDocEvent, type="created_ballot", ballot_type__slug__in=iesg_type_slugs)
     irsg_ballot = doc.latest_event(BallotDocEvent, type="created_ballot", ballot_type__slug='irsg-approve')
+    rsab_ballot = doc.latest_event(BallotDocEvent, type="created_ballot", ballot_type__slug='rsab-approve')
 
-    if doc.type_id == "draft" and doc.get_state("draft-stream-irtf"):
-        tabs.append(("IRSG Evaluation Record", "irsgballot", urlreverse("ietf.doc.views_doc.document_irsg_ballot", kwargs=dict(name=name)), irsg_ballot,  None if irsg_ballot else "IRSG Evaluation Ballot has not been created yet"))
+    if doc.type_id == "draft":
+        if doc.get_state("draft-stream-irtf"):
+            tabs.append((
+                "IRSG Evaluation Record", 
+                "irsgballot", 
+                urlreverse("ietf.doc.views_doc.document_irsg_ballot", kwargs=dict(name=name)), 
+                irsg_ballot,  
+                None if irsg_ballot else "IRSG Evaluation Ballot has not been created yet"
+            ))
+        if  doc.get_state("draft-stream-editorial"):
+            tabs.append((
+                "RSAB Evaluation Record", 
+                "rsabballot", 
+                urlreverse("ietf.doc.views_doc.document_rsab_ballot", kwargs=dict(name=name)), 
+                rsab_ballot,  
+                None if rsab_ballot else "RSAB Evaluation Ballot has not been created yet"
+            ))
     if doc.type_id in ("draft","conflrev", "statchg"):
         tabs.append(("IESG Evaluation Record", "ballot", urlreverse("ietf.doc.views_doc.document_ballot", kwargs=dict(name=name)), iesg_ballot,  None if iesg_ballot else "IESG Evaluation Ballot has not been created yet"))
     elif doc.type_id == "charter" and doc.group.type_id == "wg":
@@ -140,12 +156,12 @@ def interesting_doc_relations(doc):
 
     return interesting_relations_that, interesting_relations_that_doc
 
-def document_main(request, name, rev=None):
+def document_main(request, name, rev=None, document_html=False):
     doc = get_object_or_404(Document.objects.select_related(), docalias__name=name)
 
     # take care of possible redirections
     aliases = DocAlias.objects.filter(docs=doc).values_list("name", flat=True)
-    if rev==None and doc.type_id == "draft" and not name.startswith("rfc"):
+    if document_html is False and rev==None and doc.type_id == "draft" and not name.startswith("rfc"):
         for a in aliases:
             if a.startswith("rfc"):
                 return redirect("ietf.doc.views_doc.document_main", name=a)
@@ -161,7 +177,7 @@ def document_main(request, name, rev=None):
     snapshot = False
 
     gh = None
-    if rev != None:
+    if rev:
         # find the entry in the history
         for h in doc.history_set.order_by("-time"):
             if rev == h.rev:
@@ -169,7 +185,7 @@ def document_main(request, name, rev=None):
                 doc = h
                 break
 
-        if not snapshot:
+        if not snapshot and document_html is False:
             return redirect('ietf.doc.views_doc.document_main', name=name)
 
         if doc.type_id == "charter":
@@ -183,7 +199,6 @@ def document_main(request, name, rev=None):
         group = doc.group
 
     top = render_document_top(request, doc, "status", name)
-
 
     telechat = doc.latest_event(TelechatDocEvent, type="scheduled_for_telechat")
     if telechat and (not telechat.telechat_date or telechat.telechat_date < date_today(settings.TIME_ZONE)):
@@ -269,13 +284,11 @@ def document_main(request, name, rev=None):
 
         # ballot
         iesg_ballot_summary = None
-        irsg_ballot_summary = None
         due_date = None
         if (iesg_state_slug in IESG_BALLOT_ACTIVE_STATES) or irsg_state:
             active_ballot = doc.active_ballot()
             if active_ballot:
                 if irsg_state:
-                    irsg_ballot_summary = irsg_needed_ballot_positions(doc, list(active_ballot.active_balloter_positions().values()))
                     due_date=active_ballot.irsgballotdocevent.duedate
                 else:
                     iesg_ballot_summary = needed_ballot_positions(doc, list(active_ballot.active_balloter_positions().values()))
@@ -289,7 +302,7 @@ def document_main(request, name, rev=None):
         elif group.type_id == "area" and doc.stream_id == "ietf":
             submission = "individual in %s area" % group.acronym
         else:
-            if group.features.acts_like_wg:
+            if group.features.acts_like_wg and not group.type_id=="edwg":
                 submission = "%s %s" % (group.acronym, group.type)
             else:
                 submission = group.acronym
@@ -390,29 +403,46 @@ def document_main(request, name, rev=None):
         if doc.get_state_slug() == "expired" and has_role(request.user, ("Secretariat",)) and not snapshot:
             actions.append(("Resurrect", urlreverse('ietf.doc.views_draft.resurrect', kwargs=dict(name=doc.name))))
         
-        if (doc.get_state_slug() not in ["rfc", "expired"] and doc.stream_id in ("irtf",) and not snapshot and not doc.ballot_open('irsg-approve') and can_edit_stream_info):
-            label = "Issue IRSG Ballot"
-            actions.append((label, urlreverse('ietf.doc.views_ballot.issue_irsg_ballot', kwargs=dict(name=doc.name))))
-        if (doc.get_state_slug() not in ["rfc", "expired"] and doc.stream_id in ("irtf",) and not snapshot and doc.ballot_open('irsg-approve') and can_edit_stream_info):
-            label = "Close IRSG Ballot"
-            actions.append((label, urlreverse('ietf.doc.views_ballot.close_irsg_ballot', kwargs=dict(name=doc.name))))
+        if doc.get_state_slug() not in ["rfc", "expired"] and not snapshot:
+            if doc.stream_id == "irtf" and has_role(request.user, ("Secretariat", "IRTF Chair")):
+                if not doc.ballot_open('irsg-approve'):
+                    actions.append((
+                        "Issue IRSG Ballot",
+                        urlreverse('ietf.doc.views_ballot.issue_irsg_ballot', kwargs=dict(name=doc.name))
+                    ))
+                else:
+                    actions.append((
+                        "Close IRSG Ballot",
+                        urlreverse('ietf.doc.views_ballot.close_irsg_ballot', kwargs=dict(name=doc.name))
+                    ))
+            elif doc.stream_id == "editorial" and has_role(request.user, ("Secretariat", "RSAB Chair")): 
+                if not doc.ballot_open('rsab-approve'):
+                    actions.append((
+                        "Issue RSAB Ballot",
+                        urlreverse('ietf.doc.views_ballot.issue_rsab_ballot', kwargs=dict(name=doc.name))
+                        ))
+                else:
+                    actions.append((
+                        "Close RSAB Ballot",
+                        urlreverse('ietf.doc.views_ballot.close_rsab_ballot', kwargs=dict(name=doc.name))
+                    ))
 
         if (doc.get_state_slug() not in ["rfc", "expired"] and doc.stream_id in ("ise", "irtf")
-            and can_edit_stream_info and not conflict_reviews and not snapshot):
+            and has_role(request.user, ("Secretariat", "IRTF Chair")) and not conflict_reviews and not snapshot):
             label = "Begin IETF Conflict Review"
             if not doc.intended_std_level:
                 label += " (note that intended status is not set)"
             actions.append((label, urlreverse('ietf.doc.views_conflict_review.start_review', kwargs=dict(name=doc.name))))
 
-        if (doc.get_state_slug() not in ["rfc", "expired"] and doc.stream_id in ("iab", "ise", "irtf")
-            and can_edit_stream_info and not snapshot):
-            if doc.get_state_slug('draft-stream-%s' % doc.stream_id) not in ('rfc-edit', 'pub', 'dead'):
-                label = "Request Publication"
-                if not doc.intended_std_level:
-                    label += " (note that intended status is not set)"
-                if iesg_state and iesg_state_slug not in ('idexists','dead'):
-                    label += " (Warning: the IESG state indicates ongoing IESG processing)"
-                actions.append((label, urlreverse('ietf.doc.views_draft.request_publication', kwargs=dict(name=doc.name))))
+        if doc.get_state_slug() not in ["rfc", "expired"] and not snapshot:
+            if can_request_rfc_publication(request.user, doc):
+                if doc.get_state_slug('draft-stream-%s' % doc.stream_id) not in ('rfc-edit', 'pub', 'dead'):
+                    label = "Request Publication"
+                    if not doc.intended_std_level:
+                        label += " (note that intended status is not set)"
+                    if iesg_state and iesg_state_slug not in ('idexists','dead'):
+                        label += " (Warning: the IESG state indicates ongoing IESG processing)"
+                    actions.append((label, urlreverse('ietf.doc.views_draft.request_publication', kwargs=dict(name=doc.name))))
 
         if doc.get_state_slug() not in ["rfc", "expired"] and doc.stream_id in ("ietf",) and not snapshot:
             if iesg_state_slug == 'idexists' and can_edit:
@@ -446,8 +476,22 @@ def document_main(request, name, rev=None):
         else:
             stream_desc = "(None)"
 
-        return render(request, "doc/document_draft.html",
+        html = None
+        js = None
+        css = None
+        if document_html:
+            html = doc.html_body()
+            if request.COOKIES.get("pagedeps") == "inline":
+                js = Path(finders.find("ietf/js/document_html.js")).read_text()
+                css = Path(finders.find("ietf/css/document_html_inline.css")).read_text()
+                if html:
+                    css += Path(finders.find("ietf/css/document_html_txt.css")).read_text()
+        return render(request, "doc/document_draft.html" if document_html is False else "doc/document_html.html",
                                   dict(doc=doc,
+                                       document_html=document_html,
+                                       css=css,
+                                       js=js,
+                                       html=html,
                                        group=group,
                                        top=top,
                                        name=name,
@@ -477,8 +521,6 @@ def document_main(request, name, rev=None):
                                        draft_name=draft_name,
                                        telechat=telechat,
                                        iesg_ballot_summary=iesg_ballot_summary,
-                                       # PEY: Currently not using irsg_ballot_summary in the template, but it should be.  That will take a new box for IRSG data.
-                                       irsg_ballot_summary=irsg_ballot_summary,
                                        submission=submission,
                                        resurrected_by=resurrected_by,
 
@@ -519,6 +561,7 @@ def document_main(request, name, rev=None):
                                        review_assignments=review_assignments,
                                        no_review_from_teams=no_review_from_teams,
                                        due_date=due_date,
+                                       diff_revisions=get_diff_revisions(request, name, doc if isinstance(doc,Document) else doc.doc) if document_html else None
                                        ))
 
     if doc.type_id == "charter":
@@ -787,7 +830,6 @@ def document_raw_id(request, name, rev=None, ext=None):
     except:
         raise Http404
 
-
 def document_html(request, name, rev=None):
     found = fuzzy_find_documents(name, rev)
     num_found = found.documents.count()
@@ -796,45 +838,20 @@ def document_html(request, name, rev=None):
     if num_found > 1:
         raise Http404("Multiple documents matched: %s" % name)
 
-    if found.matched_name.startswith('rfc') and name != found.matched_name:
-         return redirect('ietf.doc.views_doc.document_html', name=found.matched_name)
-
     doc = found.documents.get()
+    rev = found.matched_rev
 
-    if found.matched_rev or found.matched_name.startswith('rfc'):
-        rev = found.matched_rev
-    else:
-        rev = doc.rev
+    if doc.is_rfc() and rev is None:
+        if not name.startswith('rfc'):
+            return redirect('ietf.doc.views_doc.document_html', name=doc.canonical_name())
+
     if rev:
         doc = doc.history_set.filter(rev=rev).first() or doc.fake_history_obj(rev)
 
     if not os.path.exists(doc.get_file_name()):
         raise Http404("File not found: %s" % doc.get_file_name())
 
-    if doc.type_id in ['draft',]:
-        doc.supermeta = build_doc_supermeta_block(doc)
-        doc.meta = build_doc_meta_block(doc, settings.HTMLIZER_URL_PREFIX)
-
-    doccolor = 'bgwhite' # Unknown
-    if doc.type_id=='draft':
-        if doc.is_rfc():
-            if doc.related_that('obs'):
-                doccolor = 'bgbrown'
-            else:
-                doccolor = {
-                    'ps'   : 'bgblue',
-                    'exp'  : 'bgyellow',
-                    'inf'  : 'bgorange',
-                    'ds'   : 'bgcyan',
-                    'hist' : 'bggrey',
-                    'std'  : 'bggreen',
-                    'bcp'  : 'bgmagenta',
-                    'unkn' : 'bgwhite',
-                }.get(doc.std_level_id, 'bgwhite')
-        else:
-            doccolor = 'bgred' # Draft
-
-    return render(request, "doc/document_html.html", {"doc":doc, "doccolor":doccolor })
+    return document_main(request, name=doc.name, rev=doc.rev if not doc.is_rfc() else None, document_html=True)
 
 def document_pdfized(request, name, rev=None, ext=None):
 
@@ -911,50 +928,82 @@ def document_email(request,name):
                  )
 
 
-def document_history(request, name):
-    doc = get_object_or_404(Document, docalias__name=name)
-    top = render_document_top(request, doc, "history", name)
+def get_diff_revisions(request, name, doc):
+    diffable = any(
+        [
+            name.startswith(prefix)
+            for prefix in [
+                "rfc",
+                "draft",
+                "charter",
+                "conflict-review",
+                "status-change",
+            ]
+        ]
+    )
+
+    if not diffable:
+        return []
 
     # pick up revisions from events
     diff_revisions = []
 
-    diffable = [ name.startswith(prefix) for prefix in ["rfc", "draft", "charter", "conflict-review", "status-change", ]]
-    if any(diffable):
-        diff_documents = [ doc ]
-        diff_documents.extend(Document.objects.filter(docalias__relateddocument__source=doc, docalias__relateddocument__relationship="replaces"))
+    diff_documents = [doc]
+    diff_documents.extend(
+        Document.objects.filter(
+            docalias__relateddocument__source=doc,
+            docalias__relateddocument__relationship="replaces",
+        )
+    )
 
-        if doc.get_state_slug() == "rfc":
-            e = doc.latest_event(type="published_rfc")
-            aliases = doc.docalias.filter(name__startswith="rfc")
-            if aliases:
-                name = aliases[0].name
-            diff_revisions.append((name, "", e.time if e else doc.time, name))
+    if doc.get_state_slug() == "rfc":
+        e = doc.latest_event(type="published_rfc")
+        aliases = doc.docalias.filter(name__startswith="rfc")
+        if aliases:
+            name = aliases[0].name
+        diff_revisions.append((name, "", e.time if e else doc.time, name))
 
-        seen = set()
-        for e in NewRevisionDocEvent.objects.filter(type="new_revision", doc__in=diff_documents).select_related('doc').order_by("-time", "-id"):
-            if (e.doc.name, e.rev) in seen:
-                continue
+    seen = set()
+    for e in (
+        NewRevisionDocEvent.objects.filter(type="new_revision", doc__in=diff_documents)
+        .select_related("doc")
+        .order_by("-time", "-id")
+    ):
+        if (e.doc.name, e.rev) in seen:
+            continue
 
-            seen.add((e.doc.name, e.rev))
+        seen.add((e.doc.name, e.rev))
 
-            url = ""
-            if name.startswith("charter"):
-                url = request.build_absolute_uri(urlreverse('ietf.doc.views_charter.charter_with_milestones_txt', kwargs=dict(name=e.doc.name, rev=e.rev)))
-            elif name.startswith("conflict-review"):
-                url = find_history_active_at(e.doc, e.time).get_href()
-            elif name.startswith("status-change"):
-                url = find_history_active_at(e.doc, e.time).get_href()
-            elif name.startswith("draft") or name.startswith("rfc"):
-                # rfcdiff tool has special support for IDs
-                url = e.doc.name + "-" + e.rev
+        url = ""
+        if name.startswith("charter"):
+            url = request.build_absolute_uri(
+                urlreverse(
+                    "ietf.doc.views_charter.charter_with_milestones_txt",
+                    kwargs=dict(name=e.doc.name, rev=e.rev),
+                )
+            )
+        elif name.startswith("conflict-review"):
+            url = find_history_active_at(e.doc, e.time).get_href()
+        elif name.startswith("status-change"):
+            url = find_history_active_at(e.doc, e.time).get_href()
+        elif name.startswith("draft") or name.startswith("rfc"):
+            # rfcdiff tool has special support for IDs
+            url = e.doc.name + "-" + e.rev
 
-            diff_revisions.append((e.doc.name, e.rev, e.time, url))
+        diff_revisions.append((e.doc.name, e.rev, e.time, url))
+
+    return diff_revisions
+
+
+def document_history(request, name):
+    doc = get_object_or_404(Document, docalias__name=name)
+    top = render_document_top(request, doc, "history", name)
+    diff_revisions = get_diff_revisions(request, name, doc)
 
     # grab event history
     events = doc.docevent_set.all().order_by("-time", "-id").select_related("by")
 
     augment_events_with_revision(doc, events)
-    add_links_in_new_revision_events(doc, events, diff_revisions)
     add_events_message_info(events)
 
     # figure out if the current user can add a comment to the history
@@ -1292,6 +1341,28 @@ def document_irsg_ballot(request, name, ballot_id=None):
                                    ballot_content=c,
                                    # ballot_type_slug=ballot.ballot_type.slug,
                                    ))
+
+def document_rsab_ballot(request, name, ballot_id=None):
+    doc = get_object_or_404(Document, docalias__name=name)
+    top = render_document_top(request, doc, "rsabballot", name)
+    if not ballot_id:
+        ballot = doc.latest_event(BallotDocEvent, type="created_ballot", ballot_type__slug='rsab-approve')
+        if ballot:
+            ballot_id = ballot.id
+
+    c = document_ballot_content(request, doc, ballot_id, editable=True)
+
+    request.session['ballot_edit_return_point'] = request.path_info
+
+    return render(
+        request,
+        "doc/document_ballot.html",
+        dict(
+            doc=doc,
+            top=top,
+            ballot_content=c,
+        )
+    )
 
 def ballot_popup(request, name, ballot_id):
     doc = get_object_or_404(Document, docalias__name=name)
@@ -1872,136 +1943,3 @@ def idnits2_state(request, name, rev=None):
         else:
             doc.deststatus="Unknown"
     return render(request, 'doc/idnits2-state.txt', context={'doc':doc}, content_type='text/plain;charset=utf-8')    
-
-def find_doc_for_rfcdiff(name, rev):
-    """rfcdiff lookup heuristics
-
-    Returns a tuple with:
-      [0] - condition string
-      [1] - document found (or None)
-      [2] - historic version
-      [3] - revision actually found (may differ from :rev: input)
-    """
-    found = fuzzy_find_documents(name, rev)
-    condition = 'no such document'
-    if found.documents.count() != 1:
-        return (condition, None, None, rev)
-    doc = found.documents.get()
-    if found.matched_rev is None or doc.rev == found.matched_rev:
-        condition = 'current version'
-        return (condition, doc, None, found.matched_rev)
-    else:
-        candidate = doc.history_set.filter(rev=found.matched_rev).order_by("-time").first()
-        if candidate:
-            condition = 'historic version'
-            return (condition, doc, candidate, found.matched_rev)
-        else:
-            condition = 'version dochistory not found'
-            return (condition, doc, None, found.matched_rev)
-            
-# This is a proof of concept of a service that would redirect to the current revision           
-# def rfcdiff_latest(request, name, rev=None):
-#     condition, doc, history = find_doc_for_rfcdiff(name, rev)
-#     if not doc:
-#         raise Http404
-#     if history:
-#         return redirect(history.get_href())
-#     else:
-#         return redirect(doc.get_href())
-
-HAS_TOMBSTONE = [ 
-    2821, 2822, 2873, 2919, 2961, 3023, 3029, 3031, 3032, 3033, 3034, 3035, 3036,
-    3037, 3038, 3042, 3044, 3050, 3052, 3054, 3055, 3056, 3057, 3059, 3060, 3061,
-    3062, 3063, 3064, 3067, 3068, 3069, 3070, 3071, 3072, 3073, 3074, 3075, 3076,
-    3077, 3078, 3080, 3081, 3082, 3084, 3085, 3086, 3087, 3088, 3089, 3090, 3094,
-    3095, 3096, 3097, 3098, 3101, 3102, 3103, 3104, 3105, 3106, 3107, 3108, 3109,
-    3110, 3111, 3112, 3113, 3114, 3115, 3116, 3117, 3118, 3119, 3120, 3121, 3123,
-    3124, 3126, 3127, 3128, 3130, 3131, 3132, 3133, 3134, 3135, 3136, 3137, 3138,
-    3139, 3140, 3141, 3142, 3143, 3144, 3145, 3147, 3149, 3150, 3151, 3152, 3153,
-    3154, 3155, 3156, 3157, 3158, 3159, 3160, 3161, 3162, 3163, 3164, 3165, 3166,
-    3167, 3168, 3169, 3170, 3171, 3172, 3173, 3174, 3176, 3179, 3180, 3181, 3182,
-    3183, 3184, 3185, 3186, 3187, 3188, 3189, 3190, 3191, 3192, 3193, 3194, 3197,
-    3198, 3201, 3202, 3203, 3204, 3205, 3206, 3207, 3208, 3209, 3210, 3211, 3212,
-    3213, 3214, 3215, 3216, 3217, 3218, 3220, 3221, 3222, 3224, 3225, 3226, 3227,
-    3228, 3229, 3230, 3231, 3232, 3233, 3234, 3235, 3236, 3237, 3238, 3240, 3241,
-    3242, 3243, 3244, 3245, 3246, 3247, 3248, 3249, 3250, 3253, 3254, 3255, 3256,
-    3257, 3258, 3259, 3260, 3261, 3262, 3263, 3264, 3265, 3266, 3267, 3268, 3269,
-    3270, 3271, 3272, 3273, 3274, 3275, 3276, 3278, 3279, 3280, 3281, 3282, 3283,
-    3284, 3285, 3286, 3287, 3288, 3289, 3290, 3291, 3292, 3293, 3294, 3295, 3296,
-    3297, 3298, 3301, 3302, 3303, 3304, 3305, 3307, 3308, 3309, 3310, 3311, 3312,
-    3313, 3315, 3317, 3318, 3319, 3320, 3321, 3322, 3323, 3324, 3325, 3326, 3327,
-    3329, 3330, 3331, 3332, 3334, 3335, 3336, 3338, 3340, 3341, 3342, 3343, 3346,
-    3348, 3349, 3351, 3352, 3353, 3354, 3355, 3356, 3360, 3361, 3362, 3363, 3364,
-    3366, 3367, 3368, 3369, 3370, 3371, 3372, 3374, 3375, 3377, 3378, 3379, 3383,
-    3384, 3385, 3386, 3387, 3388, 3389, 3390, 3391, 3394, 3395, 3396, 3397, 3398,
-    3401, 3402, 3403, 3404, 3405, 3406, 3407, 3408, 3409, 3410, 3411, 3412, 3413,
-    3414, 3415, 3416, 3417, 3418, 3419, 3420, 3421, 3422, 3423, 3424, 3425, 3426,
-    3427, 3428, 3429, 3430, 3431, 3433, 3434, 3435, 3436, 3437, 3438, 3439, 3440,
-    3441, 3443, 3444, 3445, 3446, 3447, 3448, 3449, 3450, 3451, 3452, 3453, 3454,
-    3455, 3458, 3459, 3460, 3461, 3462, 3463, 3464, 3465, 3466, 3467, 3468, 3469,
-    3470, 3471, 3472, 3473, 3474, 3475, 3476, 3477, 3480, 3481, 3483, 3485, 3488,
-    3494, 3495, 3496, 3497, 3498, 3501, 3502, 3503, 3504, 3505, 3506, 3507, 3508,
-    3509, 3511, 3512, 3515, 3516, 3517, 3518, 3520, 3521, 3522, 3523, 3524, 3525,
-    3527, 3529, 3530, 3532, 3533, 3534, 3536, 3537, 3538, 3539, 3541, 3543, 3544,
-    3545, 3546, 3547, 3548, 3549, 3550, 3551, 3552, 3555, 3556, 3557, 3558, 3559,
-    3560, 3562, 3563, 3564, 3565, 3568, 3569, 3570, 3571, 3572, 3573, 3574, 3575,
-    3576, 3577, 3578, 3579, 3580, 3581, 3582, 3583, 3584, 3588, 3589, 3590, 3591,
-    3592, 3593, 3594, 3595, 3597, 3598, 3601, 3607, 3609, 3610, 3612, 3614, 3615,
-    3616, 3625, 3627, 3630, 3635, 3636, 3637, 3638
-]
-
-def rfcdiff_latest_json(request, name, rev=None):
-    response = dict()
-    condition, document, history, found_rev = find_doc_for_rfcdiff(name, rev)
-
-    if condition == 'no such document':
-        raise Http404
-    elif condition in ('historic version', 'current version'):
-        doc = history if history else document
-        if not found_rev and doc.is_rfc():
-            response['content_url'] = doc.get_href()
-            response['name']=doc.canonical_name()
-            if doc.name != doc.canonical_name():
-                prev_rev = doc.rev
-                # not sure what to do if non-numeric values come back, so at least log it
-                log.assertion('doc.rfc_number().isdigit()') # .rfc_number() is expensive...
-                log.assertion('doc.rev.isdigit()')
-                if int(doc.rfc_number()) in HAS_TOMBSTONE and prev_rev != '00':
-                    prev_rev = f'{(int(doc.rev)-1):02d}'
-                response['previous'] = f'{doc.name}-{prev_rev}'
-        else:
-            doc.is_rfc = lambda: False
-            response['content_url'] = doc.get_href()
-            response['rev'] = doc.rev
-            response['name'] = doc.name
-            if doc.rev == '00':
-                replaces_docs = (history.doc if condition=='historic version' else doc).related_that_doc('replaces')
-                if replaces_docs:
-                    replaces = replaces_docs[0].document
-                    response['previous'] = f'{replaces.name}-{replaces.rev}'
-                else:
-                    match = re.search("-(rfc)?([0-9][0-9][0-9]+)bis(-.*)?$", name)
-                    if match and match.group(2):
-                        response['previous'] = f'rfc{match.group(2)}'
-            else:
-                # not sure what to do if non-numeric values come back, so at least log it
-                log.assertion('doc.rev.isdigit()')
-                response['previous'] = f'{doc.name}-{(int(doc.rev)-1):02d}'
-    elif condition == 'version dochistory not found':
-        response['warning'] = 'History for this version not found - these results are speculation'
-        response['name'] = document.name
-        response['rev'] = found_rev
-        document.rev = found_rev
-        document.is_rfc = lambda: False
-        response['content_url'] = document.get_href()
-        # not sure what to do if non-numeric values come back, so at least log it
-        log.assertion('found_rev.isdigit()')
-        if int(found_rev) > 0:
-            response['previous'] = f'{document.name}-{(int(found_rev)-1):02d}'
-        else:
-            match = re.search("-(rfc)?([0-9][0-9][0-9]+)bis(-.*)?$", name)
-            if match and match.group(2):
-                response['previous'] = f'rfc{match.group(2)}'
-    if not response:
-        raise Http404
-    return HttpResponse(json.dumps(response), content_type='application/json')

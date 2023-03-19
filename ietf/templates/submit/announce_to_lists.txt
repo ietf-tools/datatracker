@@ -1,18 +1,17 @@
 {% autoescape off %}
-A New Internet-Draft is available from the on-line Internet-Drafts directories.
-{% if submission.group %}This draft is a work item of the {{ submission.group.name }}{% if submission.group.type.name %} {{ submission.group.type.name }}{% endif %} of the {% if submission.group.type_id == "rg" %}IRTF{% else %}IETF{% endif %}.{% endif %}
+{% filter wordwrap:78 %}A New Internet-Draft is available from the on-line Internet-Drafts directories.{% if submission.group %} This Internet-Draft is a work item of the {{ submission.group.name }} ({{ submission.group.acronym|upper }}){% if submission.group.type.name %} {{ submission.group.type.name }}{% endif %} of the {% if submission.group.type_id == "rg" %}IRTF{% else %}IETF{% endif %}.{% endif %}{% endfilter %}
 
-        Title           : {{ submission.title }}
-        Author{{ submission.authors|pluralize:" ,s" }}         : {% for author in submission.authors %}{{ author.name }}{% if not forloop.last %}
-                          {% endif %}{% endfor %}
-  Filename        : {{ submission.name }}-{{ submission.rev }}.txt
-  Pages           : {{ submission.pages }}
-  Date            : {{ submission.submission_date|date:"Y-m-d" }}
+   Title           : {{ submission.title }}
+   Author{{ submission.authors|pluralize:" ,s" }}         : {% for author in submission.authors %}{{ author.name }}{% if not forloop.last %}
+                     {% endif %}{% endfor %}
+   Filename        : {{ submission.name }}-{{ submission.rev }}.txt
+   Pages           : {{ submission.pages }}
+   Date            : {{ submission.submission_date|date:"Y-m-d" }}
 
 Abstract:
-{{ submission.abstract }}
+{{ submission.abstract.rstrip }}
 
-The IETF datatracker status page for this draft is:
+The IETF datatracker status page for this Internet-Draft is:
 {{ settings.IDTRACKER_BASE_URL }}{% url 'ietf.doc.views_doc.document_main' name=submission.name %}
 {% if submission.xml_version == "3" %}
 There is also an HTML version available at:
@@ -23,6 +22,5 @@ There is also an htmlized version available at:
 A diff from the previous version is available at:
 {{settings.RFCDIFF_BASE_URL}}?url2={{ submission.name }}-{{ submission.rev }}
 {% endif %}
-
 Internet-Drafts are also available by rsync at rsync.ietf.org::internet-drafts
 {% endautoescape %}

@@ -28,10 +28,10 @@ fake = faker.Factory.create()
 
 def setup():
     global acceptable_fakers
-    # The transliteration of some arabic and devanagari names introduces
-    # non-alphabetic characgters that don't work with the draft author
-    # extraction code, and also don't seem to match the way people with arabic
-    # names romanize arabic names.  Exlude those locales from name generation
+    # The transliteration of some Arabic and Devanagari names introduces
+    # non-alphabetic characters that don't work with the draft author
+    # extraction code, and also don't seem to match the way people with Arabic
+    # names romanize Arabic names.  Exclude those locales from name generation
     # in order to avoid test failures.
     locales = set( [ l for l in faker.config.AVAILABLE_LOCALES if not (l.startswith('ar_') or l.startswith('sg_') or l=='fr_QC') ] )
     acceptable_fakers = [faker.Faker(locale) for locale in locales]
@@ -65,7 +65,10 @@ class PersonFactory(factory.django.DjangoModelFactory):
 
     user = factory.SubFactory(UserFactory)
     name = factory.LazyAttribute(lambda p: normalize_name('%s %s'%(p.user.first_name, p.user.last_name)))
-    ascii = factory.LazyAttribute(lambda p: force_text(unidecode_name(p.name)))
+    # Some i18n names, e.g., "शिला के.सी." have a dot at the end that is also part of the ASCII, e.g., "Shilaa Kesii."
+    # That trailing dot breaks extract_authors(). Avoid this issue by stripping the dot from the ASCII.
+    # Some others have a trailing semicolon (e.g., "உயிரோவியம் தங்கராஐ;") - strip those, too.
+    ascii = factory.LazyAttribute(lambda p: force_text(unidecode_name(p.name)).rstrip(".;"))
 
     class Params:
         with_bio = factory.Trait(biography = "\n\n".join(fake.paragraphs())) # type: ignore

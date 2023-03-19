@@ -11,8 +11,8 @@ import os
 import re
 import textwrap
 
-from collections import defaultdict, namedtuple
-from urllib.parse import quote
+from collections import defaultdict, namedtuple, Counter
+from typing import Union
 from zoneinfo import ZoneInfo
 
 from django.conf import settings
@@ -34,7 +34,7 @@ from ietf.doc.models import DocAlias, RelatedDocument, RelatedDocHistory, Ballot
 from ietf.doc.models import DocEvent, ConsensusDocEvent, BallotDocEvent, IRSGBallotDocEvent, NewRevisionDocEvent, StateDocEvent
 from ietf.doc.models import TelechatDocEvent, DocumentActionHolder, EditedAuthorsDocEvent
 from ietf.name.models import DocReminderTypeName, DocRelationshipName
-from ietf.group.models import Role, Group
+from ietf.group.models import Role, Group, GroupFeatures
 from ietf.ietfauth.utils import has_role, is_authorized_in_doc_stream, is_individual_draft_author, is_bofreq_editor
 from ietf.person.models import Person
 from ietf.review.models import ReviewWish
@@ -117,6 +117,10 @@ def get_tags_for_stream_id(stream_id):
         return []
 
 def can_adopt_draft(user, doc):
+    """Answers whether a user can adopt a given draft into some stream/group.
+    
+    This does not answer, even by implicaiton, which streams/groups the user has authority to adopt into."""
+
     if not user.is_authenticated:
         return False
 
@@ -128,17 +132,29 @@ def can_adopt_draft(user, doc):
         return (doc.stream_id in (None, "irtf")
                 and doc.group.type_id == "individ")
 
-    roles = Role.objects.filter(name__in=("chair", "delegate", "secr"),
-                                group__type__in=("wg", "rg", "ag", "rag"),
-                                group__state="active",
-                                person__user=user)
-    role_groups = [ r.group for r in roles ]
+    for type_id, allowed_stream in (
+        ("wg", "ietf"),
+        ("rg", "irtf"),
+        ("ag", "ietf"),
+        ("rag", "irtf"),
+        ("edwg", "editorial"),
+    ):
+        if doc.stream_id in (None, allowed_stream):
+            if doc.group.type_id in ("individ", type_id):
+                if Role.objects.filter(
+                    name__in=GroupFeatures.objects.get(type_id=type_id).docman_roles,
+                    group__type_id = type_id,
+                    group__state = "active",
+                    person__user = user,
+                ).exists():
+                    return True
+                        
+    return False
 
-    return (doc.stream_id in (None, "ietf", "irtf")
-            and (doc.group.type_id == "individ" or (doc.group in role_groups and len(role_groups)>1))
-            and roles.exists())
 
 def can_unadopt_draft(user, doc):
+    # TODO: This should use docman_roles, and this implementation probably returns wrong answers
+    # For instance, should any WG chair be able to unadopt a group from any other WG
     if not user.is_authenticated:
         return False
     if has_role(user, "Secretariat"):
@@ -154,6 +170,8 @@ def can_unadopt_draft(user, doc):
     elif doc.stream_id == 'iab':
         return False    # Right now only the secretariat can add a document to the IAB stream, so we'll
                         # leave it where only the secretariat can take it out.
+    elif doc.stream_id == 'editorial':
+        return user.person.role_set.filter(name='chair', group__acronym='rswg').exists()
     else:
         return False
 
@@ -221,7 +239,6 @@ def needed_ballot_positions(doc, active_positions):
 
     return " ".join(answer)
 
-# Not done yet - modified version of above needed_ballot_positions
 def irsg_needed_ballot_positions(doc, active_positions):
     '''Returns text answering the question "what does this document
     need to pass?".  The return value is only useful if the document
@@ -249,6 +266,21 @@ def irsg_needed_ballot_positions(doc, active_positions):
 
     return " ".join(answer)
 
+def rsab_needed_ballot_positions(doc, active_positions):
+    count = Counter([p.pos_id if p else 'none' for p in active_positions])
+    answer = []
+    if count["concern"] > 0:
+        answer.append("Has a Concern position.")
+        # note RFC9280 section 3.2.2 item 12
+        # the "vote" mentioned there is a separate thing from ballot position.
+    if count["yes"] == 0:
+        # This is _implied_ by 9280 - a document shouldn't be
+        # approved if all RSAB members recuse
+        answer.append("Needs a YES position.")
+    if count["none"] > 0:
+        answer.append("Some members have have not taken a position.")
+    return " ".join(answer)
+        
 def create_ballot(request, doc, by, ballot_slug, time=None):
     closed = close_open_ballots(doc, by)
     for e in closed:
@@ -264,16 +296,14 @@ def create_ballot(request, doc, by, ballot_slug, time=None):
 def create_ballot_if_not_open(request, doc, by, ballot_slug, time=None, duedate=None):
     ballot_type = BallotType.objects.get(doc_type=doc.type, slug=ballot_slug)
     if not doc.ballot_open(ballot_slug):
+        kwargs = dict(type="created_ballot", by=by, doc=doc, rev=doc.rev)
         if time:
-            if duedate:
-                e = IRSGBallotDocEvent(type="created_ballot", by=by, doc=doc, rev=doc.rev, time=time, duedate=duedate)
-            else:
-                e = BallotDocEvent(type="created_ballot", by=by, doc=doc, rev=doc.rev, time=time)
+            kwargs['time'] = time
+        if doc.stream_id == 'irtf':
+            kwargs['duedate'] = duedate
+            e = IRSGBallotDocEvent(**kwargs)
         else:
-            if duedate:
-                e = IRSGBallotDocEvent(type="created_ballot", by=by, doc=doc, rev=doc.rev, duedate=duedate)
-            else:
-                e = BallotDocEvent(type="created_ballot", by=by, doc=doc, rev=doc.rev)
+            e = BallotDocEvent(**kwargs)
         e.ballot_type = ballot_type
         e.desc = 'Created "%s" ballot' % e.ballot_type.name
         e.save()
@@ -338,42 +368,6 @@ def augment_events_with_revision(doc, events):
             else:
                 cur_rev = "00"
             e.rev = cur_rev
-
-def add_links_in_new_revision_events(doc, events, diff_revisions):
-    """Add direct .txt links and diff links to new_revision events."""
-    prev = None
-
-    diff_urls = dict(((name, revision), url) for name, revision, time, url in diff_revisions)
-
-    for e in sorted(events, key=lambda e: (e.time, e.id)):
-        if not e.type == "new_revision":
-            continue
-
-        for sub in ['newrevisiondocevent', 'submissiondocevent', ]:
-            if hasattr(e, sub):
-                e = getattr(e, sub)
-                break
-
-        if not (e.doc.name, e.rev) in diff_urls:
-            continue
-
-        full_url = diff_url = diff_urls[(e.doc.name, e.rev)]
-
-        if doc.type_id in "draft": # work around special diff url for drafts
-            full_url = "https://www.ietf.org/archive/id/" + diff_url + ".txt"
-
-        # build links
-        links = r'<a href="%s">\1</a>' % full_url
-        if prev:
-            links += ""
-
-        if prev != None:
-            links += ' (<a href="%s?url1=%s&amp;url2=%s">diff from previous</a>)' % (settings.RFCDIFF_BASE_URL, quote(prev, safe="~"), quote(diff_url, safe="~"))
-
-        # replace the bold filename part
-        e.desc = re.sub(r"<b>(.+-[0-9][0-9].txt)</b>", links, e.desc)
-
-        prev = diff_url
 
 
 def add_events_message_info(events):
@@ -761,7 +755,7 @@ def rebuild_reference_relations(doc, filenames):
         except IOError as e:
             return { 'errors': ["%s :%s" %  (e.strerror, filename)] }
     else:
-        return {'errors': ['No draft text available for rebuilding reference relations. Need XML or plaintext.']}
+        return {'errors': ['No Internet-Draft text available for rebuilding reference relations. Need XML or plaintext.']}
 
     doc.relateddocument_set.filter(relationship__slug__in=['refnorm','refinfo','refold','refunk']).delete()
 
@@ -769,9 +763,11 @@ def rebuild_reference_relations(doc, filenames):
     errors = []
     unfound = set()
     for ( ref, refType ) in refs.items():
-        # As of Dec 2021, DocAlias has a unique constraint on the name field, so count > 1 should not occur
-        refdoc = DocAlias.objects.filter( name=ref )
+        refdoc = DocAlias.objects.filter(name=ref)
+        if not refdoc and re.match(r"^draft-.*-\d{2}$", ref):
+            refdoc = DocAlias.objects.filter(name=ref[:-3])
         count = refdoc.count()
+        # As of Dec 2021, DocAlias has a unique constraint on the name field, so count > 1 should not occur
         if count == 0:
             unfound.add( "%s" % ref )
             continue
@@ -995,43 +991,11 @@ def get_search_cache_key(params):
     key = "doc:document:search:" + hashlib.sha512(json.dumps(kwargs, sort_keys=True).encode('utf-8')).hexdigest()
     return key
     
-def label_wrap(label, items, joiner=',', max=50):
-    lines = []
-    if not items:
-        return lines
-    line = '%s: %s' % (label, items[0])
-    for item in items[1:]:
-        if len(line)+len(joiner+' ')+len(item) > max:
-            lines.append(line+joiner)
-            line = ' '*(len(label)+len(': ')) + item
-        else:
-            line += joiner+' '+item
-    if line:
-        lines.append(line)
-    return lines
+def build_file_urls(doc: Union[Document, DocHistory]):
+    if doc.type_id != 'draft':
+        return [], []
 
-def join_justified(left, right, width=72):
-    count = max(len(left), len(right))
-    left = left + ['']*(count-len(left))
-    right = right + ['']*(count-len(right))
-    lines = []
-    i = 0
-    while True:
-        l = left[i]
-        r = right[i]
-        if len(l)+1+len(r) > width:
-            left = left + ['']
-            right = right[:i] + [''] + right[i:]
-            r = right[i]
-            count += 1
-        lines.append( l + ' ' + r.rjust(width-len(l)-1) )
-        i += 1
-        if i >= count:
-            break
-    return lines
-
-def build_file_urls(doc):
-    if isinstance(doc,Document) and doc.get_state_slug() == "rfc":
+    if doc.get_state_slug() == "rfc":
         name = doc.canonical_name()
         base_path = os.path.join(settings.RFC_PATH, name + ".")
         possible_types = settings.RFC_FILE_TYPES
@@ -1052,7 +1016,7 @@ def build_file_urls(doc):
             if doc.tags.filter(slug="verified-errata").exists():
                 file_urls.append(("with errata", settings.RFC_EDITOR_INLINE_ERRATA_URL.format(rfc_number=doc.rfc_number())))
         file_urls.append(("bibtex", urlreverse('ietf.doc.views_doc.document_bibtex',kwargs=dict(name=name))))
-    else:
+    elif doc.rev:
         base_path = os.path.join(settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR, doc.name + "-" + doc.rev + ".")
         possible_types = settings.IDSUBMIT_FILE_TYPES
         found_types = [t for t in possible_types if os.path.exists(base_path + t)]
@@ -1066,137 +1030,14 @@ def build_file_urls(doc):
             file_urls.append(("htmlized", urlreverse('ietf.doc.views_doc.document_html', kwargs=dict(name=doc.name, rev=doc.rev))))
             file_urls.append(("pdfized", urlreverse('ietf.doc.views_doc.document_pdfized', kwargs=dict(name=doc.name, rev=doc.rev))))
         file_urls.append(("bibtex", urlreverse('ietf.doc.views_doc.document_bibtex',kwargs=dict(name=doc.name,rev=doc.rev))))
+    else:
+        # As of 2022-12-14, there are 1463 Document and 3136 DocHistory records with type='draft' and rev=''.
+        # All of these are in the rfc state and are covered by the above cases.
+        log.unreachable('2022-12-14')
+        file_urls = []
+        found_types = []
 
     return file_urls, found_types
-
-def build_doc_supermeta_block(doc):
-    items = []
-    items.append(f'[<a href="{ settings.IDTRACKER_BASE_URL }" title="Document search and retrieval page">Search</a>]')
-
-    file_urls, found_types = build_file_urls(doc)
-    file_urls = [('txt',url) if label=='plain text' else (label,url) for label,url in file_urls]
-
-    if file_urls:
-        file_labels = {
-            'txt' : 'Plaintext version of this document',
-            'xml' : 'XML source for this document',
-            'pdf' : 'PDF version of this document',
-            'html' : 'HTML version of this document, from XML2RFC',
-            'bibtex' : 'BibTex entry for this document',
-        }
-        parts=[]
-        for label,url in file_urls:
-            if 'htmlized' not in label:
-                file_label=file_labels.get(label,'')
-                title_attribute = f' title="{file_label}"' if file_label else ''
-                partstring = f'<a href="{url}"{title_attribute}>{label}</a>' 
-                parts.append(partstring)
-        items.append('[' + '|'.join(parts) + ']')
-
-    items.append(f'[<a href="{ urlreverse("ietf.doc.views_doc.document_main",kwargs=dict(name=doc.canonical_name())) }" title="Datatracker information for this document">Tracker</a>]')
-    if doc.group.acronym != 'none':
-        items.append(f'[<a href="{urlreverse("ietf.group.views.group_home",kwargs=dict(acronym=doc.group.acronym))}" title="The working group handling this document">WG</a>]')
-    items.append(f'[<a href="mailto:{doc.name}@ietf.org?subject={doc.name}" title="Send email to the document authors">Email</a>]')
-    if doc.rev != "00":
-        items.append(f'[<a href="{settings.RFCDIFF_BASE_URL}?difftype=--hwdiff&amp;url2={doc.name}-{doc.rev}.txt" title="Inline diff (wdiff)">Diff1</a>]')
-        items.append(f'[<a href="{settings.RFCDIFF_BASE_URL}?url2={doc.name}-{doc.rev}.txt" title="Side-by-side diff">Diff2</a>]')
-    items.append(f'[<a href="{settings.IDNITS_BASE_URL}?url={settings.IETF_ID_ARCHIVE_URL}{doc.name}-{doc.rev}.txt" title="Run an idnits check of this document">Nits</a>]')
-
-    return ' '.join(items)
-
-def build_doc_meta_block(doc, path):
-    def add_markup(path, doc, lines):
-        is_hst = doc.is_dochistory()
-        rev = doc.rev
-        if is_hst:
-            doc = doc.doc
-        name = doc.name
-        rfcnum = doc.rfc_number()
-        errata_url = settings.RFC_EDITOR_ERRATA_URL.format(rfc_number=rfcnum) if not is_hst else ""
-        ipr_url = "%s?submit=draft&amp;id=%s" % (urlreverse('ietf.ipr.views.search'), name)
-        for i, line in enumerate(lines):
-            # add draft links
-            line = re.sub(r'\b(draft-[-a-z0-9]+)\b', r'<a href="%s/\g<1>">\g<1></a>'%(path, ), line)
-            # add rfcXXXX to RFC links
-            line = re.sub(r' (rfc[0-9]+)\b', r' <a href="%s/\g<1>">\g<1></a>'%(path, ), line)
-            # add XXXX to RFC links
-            line = re.sub(r' ([0-9]{3,5})\b', r' <a href="%s/rfc\g<1>">\g<1></a>'%(path, ), line)
-            # add draft revision links
-            line = re.sub(r' ([0-9]{2})\b', r' <a href="%s/%s-\g<1>">\g<1></a>'%(path, name, ), line)
-            if rfcnum:
-                # add errata link
-                line = re.sub(r'Errata exist', r'<a class="text-warning" href="%s">Errata exist</a>'%(errata_url, ), line)
-            if is_hst or not rfcnum:
-                # make current draft rev bold
-                line = re.sub(r'>(%s)<'%rev, r'><b>\g<1></b><', line)
-            line = re.sub(r'IPR declarations', r'<a class="text-warning" href="%s">IPR declarations</a>'%(ipr_url, ), line)
-            line = line.replace(r'[txt]', r'[<a href="%s">txt</a>]' % doc.get_href())
-            lines[i] = line
-        return lines
-    #
-    now = timezone.now()
-    draft_state = doc.get_state('draft')
-    block = ''
-    meta = {}
-    if doc.type_id == 'draft':
-        revisions = []
-        ipr = doc.related_ipr()
-        if ipr:
-            meta['ipr'] = [ "IPR declarations" ]
-        if doc.is_rfc() and not doc.is_dochistory():
-            if not doc.name.startswith('rfc'):
-                meta['from'] = [ "%s-%s"%(doc.name, doc.rev) ]
-            meta['errata'] = [ "Errata exist" ] if doc.tags.filter(slug='errata').exists() else []
-            
-            meta['obsoletedby'] = [ document.rfc_number() for alias in doc.related_that('obs') for document in alias.docs.all() ]
-            meta['obsoletedby'].sort()
-            meta['updatedby'] = [ document.rfc_number() for alias in doc.related_that('updates') for document in alias.docs.all() ]
-            meta['updatedby'].sort()
-            meta['stdstatus'] = [ doc.std_level.name ]
-        else:
-            dd = doc.doc if doc.is_dochistory() else doc
-            revisions += [ '(%s)%s'%(d.name, ' '*(2-((len(d.name)-1)%3))) for d in dd.replaces() ]
-            revisions += doc.revisions()
-            if doc.is_dochistory() and doc.doc.is_rfc():
-                revisions += [ doc.doc.canonical_name() ]
-            else:
-                revisions += [ d.name for d in doc.replaced_by() ]
-            meta['versions'] = revisions
-            if not doc.is_dochistory and draft_state.slug == 'active' and now > doc.expires:
-                # Active past expiration date
-                meta['active'] = [ 'Document is active' ]
-                meta['state' ] = [ doc.friendly_state() ]
-            intended_std = doc.intended_std_level if doc.intended_std_level else None
-            if intended_std:
-                if intended_std.slug in ['ps', 'ds', 'std']:
-                    meta['stdstatus'] = [ "Standards Track" ]
-                else:
-                    meta['stdstatus'] = [ intended_std.name ]
-    elif doc.type_id == 'charter':
-        meta['versions'] = doc.revisions()
-    #
-    # Add markup to items that needs it.
-    if 'versions' in meta:
-        meta['versions'] = label_wrap('Versions', meta['versions'], joiner="")
-    for label in ['Obsoleted by', 'Updated by', 'From' ]:
-        item = label.replace(' ','').lower()
-        if item in meta and meta[item]:
-            meta[item] = label_wrap(label, meta[item])
-    #
-    left = []
-    right = []
-    #right = [ '[txt]']
-    for item in [ 'from', 'versions', 'obsoletedby', 'updatedby', ]:
-        if item in meta and meta[item]:
-            left += meta[item]
-    for item in ['stdstatus', 'active', 'state', 'ipr', 'errata', ]:
-        if item in meta and meta[item]:
-            right += meta[item]
-    lines = join_justified(left, right)
-    block = '\n'.join(add_markup(path, doc, lines))
-    #
-    return block
-
 
 def augment_docs_and_user_with_user_info(docs, user):
     """Add attribute to each document with whether the document is tracked
@@ -1346,7 +1187,7 @@ def bibxml_for_draft(doc, rev=None):
         raise Http404("Revision not found")
 
     # Build the date we want to claim for the document in the bibxml
-    # For documents that have relevent NewRevisionDocEvents, use the date of the event.
+    # For documents that have relevant NewRevisionDocEvents, use the date of the event.
     # Very old documents don't have NewRevisionDocEvents - just use the document time.
         
     latest_revision_event = doc.latest_event(NewRevisionDocEvent, type="new_revision")
@@ -1362,5 +1203,9 @@ def bibxml_for_draft(doc, rev=None):
     else:
         doc.date = doc.time.astimezone(tzinfo).date()      # Even if this may be incorrect, what would be better?
 
-    return render_to_string('doc/bibxml.xml', {'name':doc.name, 'doc': doc, 'doc_bibtype':'I-D'})
+    name = doc.name if isinstance(doc, Document) else doc.doc.name
+    if name.startswith('rfc'): # bibxml3 does not speak of RFCs
+        raise Http404()
+        
+    return render_to_string('doc/bibxml.xml', {'name':name, 'doc':doc, 'doc_bibtype':'I-D', 'settings':settings})
 

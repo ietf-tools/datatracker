@@ -17,8 +17,8 @@ from django.utils import timezone
 
 import debug                             # pyflakes:ignore
 
-from ietf.doc.factories import DocumentFactory, WgDraftFactory
-from ietf.doc.models import DocEvent, RelatedDocument
+from ietf.doc.factories import DocumentFactory, WgDraftFactory, EditorialDraftFactory
+from ietf.doc.models import DocEvent, RelatedDocument, Document
 from ietf.group.models import Role, Group
 from ietf.group.utils import get_group_role_emails, get_child_group_role_emails, get_group_ad_emails
 from ietf.group.factories import GroupFactory, RoleFactory
@@ -41,6 +41,11 @@ class StreamTests(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, draft.name)
 
+        EditorialDraftFactory() # Quick way to ensure RSWG exists.
+        r = self.client.get(urlreverse("ietf.group.views.stream_documents", kwargs=dict(acronym="editorial")))
+        self.assertRedirects(r, expected_url=urlreverse('ietf.group.views.group_documents',kwargs={"acronym":"rswg"}))
+
+
     def test_stream_edit(self):
         EmailFactory(address="ad2@ietf.org")
 
@@ -56,6 +61,32 @@ class StreamTests(TestCase):
         r = self.client.post(url, dict(delegates="ad2@ietf.org"))
         self.assertEqual(r.status_code, 302)
         self.assertTrue(Role.objects.filter(name="delegate", group__acronym=stream_acronym, email__address="ad2@ietf.org"))
+
+
+class GroupStatsTests(TestCase):
+    def setUp(self):
+        super().setUp()
+        a = WgDraftFactory()
+        b = WgDraftFactory()
+        RelatedDocument.objects.create(
+            source=a, target=b.docalias.first(), relationship_id="refnorm"
+        )
+
+    def test_group_stats(self):
+        client = Client(Accept="application/json")
+        url = urlreverse("ietf.group.views.group_stats_data")
+        r = client.get(url)
+        self.assertTrue(r.status_code == 200, "Failed to receive group stats")
+        self.assertGreater(len(r.content), 0, "Group stats have no content")
+
+        try:
+            data = json.loads(r.content)
+        except Exception as e:
+            self.fail("JSON load failed: %s" % e)
+
+        ids = [d["id"] for d in data]
+        for doc in Document.objects.all():
+            self.assertIn(doc.name, ids)
 
 
 class GroupDocDependencyTests(TestCase):
@@ -142,6 +173,9 @@ class GenerateGroupAliasesTests(TestCase):
         testrg = GroupFactory(type_id='rg', acronym='testrg', parent=irtf)
         testrgchair = PersonFactory(user__username='testrgchair')
         testrg.role_set.create(name_id='chair', person=testrgchair, email=testrgchair.email())
+        testrag = GroupFactory(type_id='rg', acronym='testrag', parent=irtf)
+        testragchair = PersonFactory(user__username='testragchair')
+        testrag.role_set.create(name_id='chair', person=testragchair, email=testragchair.email())
         individual = PersonFactory()
 
         args = [ ]
@@ -184,6 +218,7 @@ class GenerateGroupAliasesTests(TestCase):
                 ameschair.email_address(),
                 recentchair.email_address(),
                 testrgchair.email_address(),
+                testragchair.email_address(),
             ]]))
             self.assertFalse(all([x in vcontent for x in [
                 done_ad.email_address(),
@@ -200,8 +235,11 @@ class GenerateGroupAliasesTests(TestCase):
                 'xfilter-' + recent.acronym + '-ads',
                 'xfilter-' + recent.acronym + '-chairs',
                 'xfilter-' + testrg.acronym + '-chairs',
+                'xfilter-' + testrag.acronym + '-chairs',
                 testrg.acronym + '-chairs@ietf.org',
                 testrg.acronym + '-chairs@irtf.org',
+                testrag.acronym + '-chairs@ietf.org',
+                testrag.acronym + '-chairs@irtf.org',
             ]]))
             self.assertFalse(all([x in vcontent for x in [
                 'xfilter-' + done.acronym + '-ads',

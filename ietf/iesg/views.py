@@ -41,6 +41,7 @@ import json
 import os
 import tarfile
 import time
+from dateutil import relativedelta
 
 from django import forms
 from django.conf import settings
@@ -62,6 +63,7 @@ from ietf.iesg.models import TelechatDate
 from ietf.iesg.utils import telechat_page_count
 from ietf.ietfauth.utils import has_role, role_required, user_is_person
 from ietf.person.models import Person
+from ietf.meeting.utils import get_activity_stats
 from ietf.doc.utils_search import fill_in_document_table_attributes, fill_in_telechat_date
 from ietf.utils.timezone import date_today, datetime_from_date
 
@@ -528,4 +530,34 @@ def photos(request):
         role.last_initial = role.person.last_name()[0]
     return render(request, 'iesg/photos.html', {'group_type': 'IESG', 'role': '', 'roles': roles })
 
+def month_choices():
+    choices = [(str(n).zfill(2), str(n).zfill(2)) for n in range(1, 13)]
+    return choices
+
+def year_choices():
+    this_year = date_today().year
+    choices = [(str(n), str(n)) for n in range(this_year, 2009, -1)]
+    return choices
+
+class ActivityForm(forms.Form):
+    month = forms.ChoiceField(choices=month_choices, help_text='Month', required=True)
+    year = forms.ChoiceField(choices=year_choices, help_text='Year', required=True)
+
+def ietf_activity(request):
+    # default date range for last month
+    today = date_today()
+    edate = today.replace(day=1)
+    sdate = (edate - datetime.timedelta(days=1)).replace(day=1)
+    if request.method == 'GET':
+        form = ActivityForm(request.GET)
+        if form.is_valid():
+            month = form.cleaned_data['month']
+            year = form.cleaned_data['year']
+            sdate = datetime.date(int(year), int(month), 1)
+            edate = sdate + relativedelta.relativedelta(months=1)
     
+    # always pass back an unbound form to avoid annoying is-valid styling
+    form = ActivityForm(initial={'month': str(sdate.month).zfill(2), 'year': sdate.year})
+    context = get_activity_stats(sdate, edate)
+    context['form'] = form
+    return render(request, "iesg/ietf_activity_report.html", context)

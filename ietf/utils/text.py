@@ -20,11 +20,11 @@ import debug                            # pyflakes:ignore
 from .texescape import init as texescape_init, tex_escape_map
 
 tlds_sorted = sorted(tlds.tld_set, key=len, reverse=True)
-protocols = copy.copy(bleach.sanitizer.ALLOWED_PROTOCOLS)
-protocols.append("ftp")  # we still have some ftp links
-protocols.append("xmpp")  # we still have some xmpp links
+protocols = set(bleach.sanitizer.ALLOWED_PROTOCOLS)
+protocols.add("ftp")  # we still have some ftp links
+protocols.add("xmpp")  # we still have some xmpp links
 
-tags = set(copy.copy(bleach.sanitizer.ALLOWED_TAGS)).union(
+tags = set(bleach.sanitizer.ALLOWED_TAGS).union(
     {
         # fmt: off
         'a', 'abbr', 'acronym', 'address', 'b', 'big',
@@ -51,7 +51,8 @@ validate_url = URLValidator()
 
 def check_url_validity(attrs, new=False):
     if (None, "href") not in attrs:
-        return None
+        # rfc2html creates a tags without href
+        return attrs
     url = attrs[(None, "href")]
     try:
         if url.startswith("http"):
@@ -111,7 +112,7 @@ def fill(text, width):
     return "\n\n".join(wrapped)
 
 def wordwrap(text, width=80):
-    """Wraps long lines without loosing the formatting and indentation
+    """Wraps long lines without losing the formatting and indentation
        of short lines"""
     if not isinstance(text, str):
         return text

@@ -25,6 +25,7 @@ import debug                            # pyflakes:ignore
 
 from ietf.doc.models import BallotDocEvent, DocAlias
 from ietf.doc.models import ConsensusDocEvent
+from ietf.ietfauth.utils import can_request_rfc_publication as utils_can_request_rfc_publication
 from ietf.utils.html import sanitize_fragment
 from ietf.utils import log
 from ietf.doc.utils import prettify_std_name
@@ -260,8 +261,8 @@ def urlize_ietf_docs(string, autoescape=None):
 
 urlize_ietf_docs = stringfilter(urlize_ietf_docs)
 
-@register.filter(name='urlize_related_source_list', is_safe=True, needs_autoescape=True)
-def urlize_related_source_list(related, autoescape=None):
+@register.filter(name='urlize_related_source_list', is_safe=True, document_html=False)
+def urlize_related_source_list(related, document_html=False):
     """Convert a list of RelatedDocuments into list of links using the source document's canonical name"""
     links = []
     names = set()
@@ -273,10 +274,9 @@ def urlize_related_source_list(related, autoescape=None):
             continue
         names.add(name)
         titles.add(title)
-        url = urlreverse('ietf.doc.views_doc.document_main', kwargs=dict(name=name))
-        if autoescape:
-            name = escape(name)
-            title = escape(title)
+        url = urlreverse('ietf.doc.views_doc.document_main' if document_html is False else 'ietf.doc.views_doc.document_html', kwargs=dict(name=name))
+        name = escape(name)
+        title = escape(title)
         links.append(mark_safe(
             '<a href="%(url)s" title="%(title)s">%(name)s</a>' % dict(name=prettify_std_name(name),
                                                                       title=title,
@@ -284,17 +284,16 @@ def urlize_related_source_list(related, autoescape=None):
         ))
     return links
         
-@register.filter(name='urlize_related_target_list', is_safe=True, needs_autoescape=True)
-def urlize_related_target_list(related, autoescape=None):
+@register.filter(name='urlize_related_target_list', is_safe=True, document_html=False)
+def urlize_related_target_list(related, document_html=False):
     """Convert a list of RelatedDocuments into list of links using the target document's canonical name"""
     links = []
     for rel in related:
         name=rel.target.document.canonical_name()
         title = rel.target.document.title
-        url = urlreverse('ietf.doc.views_doc.document_main', kwargs=dict(name=name))
-        if autoescape:
-            name = escape(name)
-            title = escape(title)
+        url = urlreverse('ietf.doc.views_doc.document_main' if document_html is False else 'ietf.doc.views_doc.document_html', kwargs=dict(name=name))
+        name = escape(name)
+        title = escape(title)
         links.append(mark_safe(
             '<a href="%(url)s" title="%(title)s">%(name)s</a>' % dict(name=prettify_std_name(name),
                                                                       title=title,
@@ -554,6 +553,19 @@ def consensus(doc):
     else:
         return "Unknown"
 
+
+@register.filter
+def std_level_to_label_format(doc):
+    """Returns valid Bootstrap classes to label a status level badge."""
+    if doc.is_rfc():
+        if doc.related_that("obs"):
+            return "obs"
+        else:
+            return doc.std_level_id
+    else:
+        return "draft"
+
+
 @register.filter
 def pos_to_label_format(text):
     """Returns valid Bootstrap classes to label a ballot position."""
@@ -566,6 +578,8 @@ def pos_to_label_format(text):
         'Recuse':       'bg-recuse text-light',
         'Not Ready':    'bg-discuss text-light',
         'Need More Time': 'bg-discuss text-light',
+        'Concern': 'bg-discuss text-light',
+
     }.get(str(text), 'bg-norecord text-dark')
 
 @register.filter
@@ -580,6 +594,7 @@ def pos_to_border_format(text):
         'Recuse':       'border-recuse',
         'Not Ready':    'border-discuss',
         'Need More Time': 'border-discuss',
+        'Concern': 'border-discuss',
     }.get(str(text), 'border-norecord')
 
 @register.filter
@@ -653,17 +668,25 @@ def charter_minor_rev(rev):
 @register.filter()
 def can_defer(user,doc):
     ballot = doc.latest_event(BallotDocEvent, type="created_ballot")
-    if ballot and (doc.type_id == "draft" or doc.type_id == "conflrev") and doc.stream_id == 'ietf' and has_role(user, 'Area Director,Secretariat'):
+    if ballot and (doc.type_id == "draft" or doc.type_id == "conflrev" or doc.type_id=="statchg") and doc.stream_id == 'ietf' and has_role(user, 'Area Director,Secretariat'):
         return True
     else:
         return False
 
 @register.filter()
+def can_clear_ballot(user, doc):
+    return can_defer(user, doc)
+
+@register.filter()
+def can_request_rfc_publication(user, doc):
+    return utils_can_request_rfc_publication(user, doc)
+
+@register.filter()
 def can_ballot(user,doc):
-    # Only IRSG memebers (and the secretariat, handled by code separately) can take positions on IRTF documents
-    # Otherwise, an AD can take a position on anything that has a ballot open
-    if doc.type_id == 'draft' and doc.stream_id == 'irtf':
-        return has_role(user,'IRSG Member')
+    if doc.stream_id == "irtf" and doc.type_id == "draft":
+        return has_role(user,"IRSG Member")
+    elif doc.stream_id == "editorial" and doc.type_id == "draft":
+        return has_role(user,"RSAB Member")
     else:
         return user.person.role_set.filter(name="ad", group__type="area", group__state="active")
 

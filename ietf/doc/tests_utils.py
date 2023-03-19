@@ -5,6 +5,7 @@ import debug  # pyflakes:ignore
 from unittest.mock import patch
 
 from django.db import IntegrityError
+from django.test.utils import override_settings
 from django.utils import timezone
 
 from ietf.group.factories import GroupFactory, RoleFactory
@@ -15,7 +16,7 @@ from ietf.person.models import Person
 from ietf.doc.factories import DocumentFactory, WgRfcFactory, WgDraftFactory
 from ietf.doc.models import State, DocumentActionHolder, DocumentAuthor, Document
 from ietf.doc.utils import (update_action_holders, add_state_change_event, update_documentauthors,
-                            fuzzy_find_documents, rebuild_reference_relations)
+                            fuzzy_find_documents, rebuild_reference_relations, build_file_urls)
 from ietf.utils.draft import Draft, PlaintextDraft
 from ietf.utils.xmldraft import XMLDraft
 
@@ -294,6 +295,30 @@ class MiscTests(TestCase):
         self.do_fuzzy_find_documents_rfc_test('draft-name-that-has-two-02-04')
         self.do_fuzzy_find_documents_rfc_test('draft-wild-01-numbers-0312')
 
+    @override_settings(RFC_FILE_TYPES=['pdf'], IDSUBMIT_FILE_TYPES=['xml'])
+    @patch('ietf.doc.utils.os.path.exists', return_value=True)
+    def test_build_file_urls(self, mocked):
+        # a cursory test only - does not check details of how URLs are constructed
+        self.assertEqual(
+            build_file_urls(DocumentFactory(type_id='statchg')), ([], []),
+            'Non-draft Document should return empty sets'
+        )
+
+        with self.assertRaises(AssertionError):
+            build_file_urls(WgDraftFactory(rev=''))
+
+        urls, types = build_file_urls(WgDraftFactory(rev='23'))
+        self.assertEqual(['xml', 'bibtex'], [t for t, _ in urls])
+        self.assertEqual(types, ['xml'])
+
+        urls, types = build_file_urls(WgRfcFactory(rev=''))
+        self.assertEqual(['pdf', 'bibtex'], [t for t, _ in urls])
+        self.assertEqual(types, ['pdf'])
+
+        urls, types = build_file_urls(WgRfcFactory(rev='23'))
+        self.assertEqual(['pdf', 'bibtex'], [t for t, _ in urls])
+        self.assertEqual(types, ['pdf'])
+
 
 class RebuildReferenceRelationsTests(TestCase):
     def setUp(self):
@@ -330,13 +355,13 @@ class RebuildReferenceRelationsTests(TestCase):
         result = rebuild_reference_relations(self.doc, {})
         self.assertCountEqual(result.keys(), ['errors'])
         self.assertEqual(len(result['errors']), 1)
-        self.assertIn('No draft text available', result['errors'][0],
-                      'Error should be reported if no draft file is given')
+        self.assertIn('No Internet-Draft text available', result['errors'][0],
+                      'Error should be reported if no Internet-Draft file is given')
 
         result = rebuild_reference_relations(self.doc, {'md': 'cant-do-this.md'})
         self.assertCountEqual(result.keys(), ['errors'])
         self.assertEqual(len(result['errors']), 1)
-        self.assertIn('No draft text available', result['errors'][0],
+        self.assertIn('No Internet-Draft text available', result['errors'][0],
                       'Error should be reported if no XML or plaintext file is given')
 
     @patch.object(XMLDraft, 'get_refs')

@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2015-2020, All Rights Reserved
+# Copyright The IETF Trust 2015-2022, All Rights Reserved
 import datetime
 import debug # pyflakes:ignore
 import factory
@@ -10,6 +10,8 @@ from django.utils import timezone
 from ietf.group.models import Group, Role, GroupEvent, GroupMilestone, \
                               GroupHistory, RoleHistory
 from ietf.review.factories import ReviewTeamSettingsFactory
+from ietf.utils.timezone import date_today
+
 
 class GroupFactory(factory.django.DjangoModelFactory):
     class Meta:
@@ -68,7 +70,7 @@ class BaseGroupMilestoneFactory(factory.django.DjangoModelFactory):
 
 class DatedGroupMilestoneFactory(BaseGroupMilestoneFactory):
     group = factory.SubFactory(GroupFactory, uses_milestone_dates=True)
-    due = timezone.now()+datetime.timedelta(days=180)
+    due = date_today() + datetime.timedelta(days=180)
 
 class DatelessGroupMilestoneFactory(BaseGroupMilestoneFactory):
     group = factory.SubFactory(GroupFactory, uses_milestone_dates=False)
@@ -78,15 +80,37 @@ class GroupHistoryFactory(factory.django.DjangoModelFactory):
     class Meta:
         model=GroupHistory
 
-    name = factory.LazyAttribute(lambda obj: obj.group.name)
-    state_id = 'active'
-    type_id = factory.LazyAttribute(lambda obj: obj.group.type_id)
-    list_email = factory.LazyAttribute(lambda obj: '%s@ietf.org'% obj.group.acronym)
-    uses_milestone_dates = True
-    used_roles = [] # type: List[str]
+    time = lambda: timezone.now()
+    group = factory.SubFactory(GroupFactory, state_id='active')
 
-    group = factory.SubFactory(GroupFactory)
+    name = factory.LazyAttribute(lambda obj: obj.group.name)
+    state_id = factory.LazyAttribute(lambda obj: obj.group.state_id)
+    type_id = factory.LazyAttribute(lambda obj: obj.group.type_id)
+    parent = factory.LazyAttribute(lambda obj: obj.group.parent)
+    uses_milestone_dates = factory.LazyAttribute(lambda obj: obj.group.uses_milestone_dates)
+    used_roles = factory.LazyAttribute(lambda obj: obj.group.used_roles)
+    description = factory.LazyAttribute(lambda obj: obj.group.description)
+    list_email = factory.LazyAttribute(lambda obj: '%s@ietf.org'% obj.group.acronym) #TODO : move this to GroupFactory
+    list_subscribe = factory.LazyAttribute(lambda obj: obj.group.list_subscribe)
+    list_archive = factory.LazyAttribute(lambda obj: obj.group.list_archive)
+    comments = factory.LazyAttribute(lambda obj: obj.group.comments)
+    meeting_seen_as_area = factory.LazyAttribute(lambda obj: obj.group.meeting_seen_as_area)
     acronym = factory.LazyAttribute(lambda obj: obj.group.acronym)
+
+    @factory.post_generation
+    def unused_states(obj, create, extracted, **kwargs):
+        if create:
+            if extracted:
+                obj.unused_states.set(extracted)
+            else:
+                obj.unused_states.set(obj.group.unused_states.all())
+    @factory.post_generation
+    def unused_tags(obj, create, extracted, **kwargs):
+        if create:
+            if extracted:
+                obj.unused_tags.set(extracted)
+            else:
+                obj.unused_tags.set(obj.group.unused_states.all())            
 
 class RoleHistoryFactory(factory.django.DjangoModelFactory):
     class Meta:

@@ -223,10 +223,10 @@ class InterimMeetingModelForm(forms.ModelForm):
 
 class InterimSessionModelForm(forms.ModelForm):
     date = DatepickerDateField(date_format="yyyy-mm-dd", picker_settings={"autoclose": "1"}, label='Date', required=False)
-    time = forms.TimeField(widget=forms.TimeInput(format='%H:%M'), required=True, help_text="Local time")
+    time = forms.TimeField(widget=forms.TimeInput(format='%H:%M'), required=True, help_text="Start time in meeting time zone")
     time.widget.attrs['placeholder'] = "HH:MM"
     requested_duration = CustomDurationField(required=True)
-    end_time = forms.TimeField(required=False, help_text="Local time")
+    end_time = forms.TimeField(required=False, help_text="End time in meeting time zone")
     end_time.widget.attrs['placeholder'] = "HH:MM"
     remote_participation = forms.ChoiceField(choices=(), required=False)
     remote_instructions = forms.CharField(
@@ -258,8 +258,8 @@ class InterimSessionModelForm(forms.ModelForm):
         self.is_edit = bool(self.instance.pk)
         # setup fields that aren't intrinsic to the Session object
         if self.is_edit:
-            self.initial['date'] = self.instance.official_timeslotassignment().timeslot.time
-            self.initial['time'] = self.instance.official_timeslotassignment().timeslot.time
+            self.initial['date'] = self.instance.official_timeslotassignment().timeslot.local_start_time().date()
+            self.initial['time'] = self.instance.official_timeslotassignment().timeslot.local_start_time().time()
             if self.instance.agenda():
                 doc = self.instance.agenda()
                 content = doc.text_or_error()
@@ -743,7 +743,8 @@ class SessionDetailsForm(forms.ModelForm):
         model = Session
         fields = (
             'purpose', 'name', 'short', 'type', 'requested_duration',
-            'on_agenda', 'remote_instructions', 'attendees', 'comments',
+            'on_agenda', 'agenda_note', 'remote_instructions', 'attendees',
+            'comments',
         )
         labels = {'requested_duration': 'Length'}
 

@@ -72,6 +72,10 @@ def make_immutable_base_data():
     irtf = create_group(name="IRTF", acronym="irtf", type_id="irtf")
     create_person(irtf, "chair")
 
+    rsab = create_group(name="RSAB", acronym="rsab", type_id="edappr")
+    p = create_person(rsab, "chair")
+    p.role_set.create(group=rsab, name_id="member", email=p.email())
+
     secretariat = create_group(name="IETF Secretariat", acronym="secretariat", type_id="ietf")
     create_person(secretariat, "secr", name="Sec Retary", username="secretary", is_staff=True, is_superuser=True)
 
@@ -347,7 +351,7 @@ def make_test_data():
         title="Statement regarding rights",
         holder_legal_name="Native Martians United",
         state=IprDisclosureStateName.objects.get(slug='posted'),
-        patent_info='Number: US12345\nTitle: A method of transfering bits\nInventor: A. Nonymous\nDate: 2000-01-01',
+        patent_info='Number: US12345\nTitle: A method of transferring bits\nInventor: A. Nonymous\nDate: 2000-01-01',
         holder_contact_name='George',
         holder_contact_email='george@acme.com',
         holder_contact_info='14 Main Street\nEarth',

@@ -40,7 +40,8 @@ from ietf.doc.factories import ( DocumentFactory, DocEventFactory, CharterFactor
     ConflictReviewFactory, WgDraftFactory, IndividualDraftFactory, WgRfcFactory, 
     IndividualRfcFactory, StateDocEventFactory, BallotPositionDocEventFactory, 
     BallotDocEventFactory, DocumentAuthorFactory, NewRevisionDocEventFactory,
-    StatusChangeFactory, BofreqFactory)
+    StatusChangeFactory, BofreqFactory, DocExtResourceFactory)
+from ietf.doc.forms import NotifyForm
 from ietf.doc.fields import SearchableDocumentsField
 from ietf.doc.utils import create_ballot_if_not_open, uppercase_std_abbreviated_name
 from ietf.doc.views_search import ad_dashboard_group, ad_dashboard_group_type, shorten_group_name # TODO: red flag that we're importing from views in tests. Move these to utils.
@@ -55,7 +56,7 @@ from ietf.name.models import SessionStatusName, BallotPositionName, DocTypeName
 from ietf.person.models import Person
 from ietf.person.factories import PersonFactory, EmailFactory
 from ietf.utils.mail import outbox, empty_outbox
-from ietf.utils.test_utils import login_testing_unauthorized, unicontent, reload_db_objects
+from ietf.utils.test_utils import login_testing_unauthorized, unicontent
 from ietf.utils.test_utils import TestCase
 from ietf.utils.text import normalize_text
 from ietf.utils.timezone import date_today, datetime_today, DEADLINE_TZINFO, RPC_TZINFO
@@ -489,7 +490,7 @@ Table of Contents
 1.  Introduction
 
    This document describes how to make the Martian networks work.  The
-   methods used in Earth do not directly translate to the efficent
+   methods used in Earth do not directly translate to the efficient
    networks on Mars, as the topographical differences caused by planets.
    For example the avian carriers, cannot be used in the Mars, thus
    RFC1149 ([RFC1149]) cannot be used in Mars.
@@ -601,6 +602,8 @@ Man                    Expires September 22, 2015               [Page 3]
         updated_by = IndividualDraftFactory()
         updated_by.relateddocument_set.create(relationship_id='updates',source=obsoleted_by,target=draft.docalias.first())
 
+        external_resource = DocExtResourceFactory(doc=draft)
+
         # these tests aren't testing all attributes yet, feel free to
         # expand them
 
@@ -621,6 +624,7 @@ Man                    Expires September 22, 2015               [Page 3]
         self.assertNotContains(r, updated.title)
         self.assertNotContains(r, updated_by.canonical_name())
         self.assertNotContains(r, updated_by.title)
+        self.assertContains(r, external_resource.value)
 
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)) + "?include_text=0")
         self.assertEqual(r.status_code, 200)
@@ -730,18 +734,24 @@ Man                    Expires September 22, 2015               [Page 3]
 
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_html", kwargs=dict(name=draft.name)))
         self.assertEqual(r.status_code, 200)
-        self.assertContains(r, "Versions:")
+        self.assertContains(r, "Select version")
         self.assertContains(r, "Deimos street")
         q = PyQuery(r.content)
         self.assertEqual(q('title').text(), 'draft-ietf-mars-test-01')
-        self.assertEqual(len(q('.rfcmarkup pre')), 4)
-        self.assertEqual(len(q('.rfcmarkup span.h1')), 2)
-        self.assertEqual(len(q('.rfcmarkup a[href]')), 41)
+        self.assertEqual(len(q('.rfcmarkup pre')), 3)
+        self.assertEqual(len(q('.rfcmarkup span.h1, .rfcmarkup h1')), 2)
+        self.assertEqual(len(q('.rfcmarkup a[href]')), 27)
 
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_html", kwargs=dict(name=draft.name, rev=draft.rev)))
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertEqual(q('title').text(), 'draft-ietf-mars-test-01')
+
+        # check that revision list has expected versions
+        self.assertEqual(len(q('#sidebar .revision-list .page-item.active a.page-link[href$="draft-ietf-mars-test-01"]')), 1)
+
+        # check that diff dropdowns have expected versions
+        self.assertEqual(len(q('#sidebar option[value="draft-ietf-mars-test-00"][selected="selected"]')), 1)
 
         rfc = WgRfcFactory()
         (Path(settings.RFC_PATH) / rfc.get_base_name()).touch()
@@ -817,7 +827,7 @@ Man                    Expires September 22, 2015               [Page 3]
         self.assertContains(r, updated_by.canonical_name())
         self.assertContains(r, updated_by.title)
 
-        # naked RFC - also wierd that we test a PS from the ISE
+        # naked RFC - also weird that we test a PS from the ISE
         rfc = IndividualDraftFactory(
             name="rfc1234567",
             title="RFC without a Draft",
@@ -1280,7 +1290,12 @@ Man                    Expires September 22, 2015               [Page 3]
 
     def test_edit_authors_edit_fields(self):
         draft = WgDraftFactory()
-        DocumentAuthorFactory.create_batch(3, document=draft)
+        DocumentAuthorFactory.create_batch(
+            3,
+            document=draft,
+            affiliation='Somewhere, Inc.',
+            country='Bolivia',
+        )
         url = urlreverse('ietf.doc.views_doc.edit_authors', kwargs=dict(name=draft.name))
         change_reason = 'reorder the authors'
 
@@ -1292,8 +1307,9 @@ Man                    Expires September 22, 2015               [Page 3]
             authors = draft.documentauthor_set.all(),
             basis=change_reason
         )
-        
-        new_email = EmailFactory(person=draft.authors()[0])
+
+        old_address = draft.authors()[0].email()
+        new_email = EmailFactory(person=draft.authors()[0], address=f'changed-{old_address}')
         post_data['author-0-email'] = new_email.address
         post_data['author-1-affiliation'] = 'University of Nowhere'
         post_data['author-2-country'] = 'Chile'
@@ -1700,7 +1716,7 @@ class DocTestCase(TestCase):
             href = q(f'div.balloter-name a[href$="{author_slug}"]').attr('href')
             ids = [
                 target.attr('id')
-                for target in q(f'p.h5[id$="{author_slug}"]').items()
+                for target in q(f'div.h5[id$="{author_slug}"]').items()
             ]
             self.assertEqual(len(ids), 1, 'Should be exactly one link for the balloter')
             self.assertEqual(href, f'#{ids[0]}', 'Anchor href should match ID')
@@ -2506,7 +2522,7 @@ class ChartTests(ResourceTestCaseMixin, TestCase):
         self.assertValidJSONResponse(r)
         d = r.json()
         self.assertEqual(d['chart']['type'], settings.CHART_TYPE_COLUMN_OPTIONS['chart']['type'])
-        self.assertEqual("New draft revisions over time for %s" % person.name, d['title']['text'])
+        self.assertEqual("New Internet-Draft revisions over time for %s" % person.name, d['title']['text'])
 
         data_url = urlreverse('ietf.doc.views_stats.chart_data_person_drafts', kwargs=dict(id=person.id))
 
@@ -2580,7 +2596,7 @@ class MaterialsTests(TestCase):
         self.doc.save_with_history([e])
 
         # This is necessary for the view to be able to find the document
-        # which hints that the view has an issue : if a materials document is taken out of all SessionPresentations, it is no longer accessable by this view
+        # which hints that the view has an issue : if a materials document is taken out of all SessionPresentations, it is no longer accessible by this view
         SessionPresentationFactory(session__meeting__number=meeting_number, session__group=self.doc.group, document=self.doc)
 
     def test_markdown_and_text(self):
@@ -2645,200 +2661,6 @@ class Idnits2SupportTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         self.assertContains(r,'Proposed')
-
-class RfcdiffSupportTests(TestCase):
-
-    def setUp(self):
-        super().setUp()
-        self.target_view = 'ietf.doc.views_doc.rfcdiff_latest_json'
-        self._last_rfc_num = 8000
-
-    def getJson(self, view_args):
-        url = urlreverse(self.target_view, kwargs=view_args)
-        r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
-        return r.json()
-
-    def next_rfc_number(self):
-        self._last_rfc_num += 1
-        return self._last_rfc_num
-
-    def do_draft_test(self, name):
-        draft = IndividualDraftFactory(name=name, rev='00', create_revisions=range(0,13))
-        draft = reload_db_objects(draft)
-
-        received = self.getJson(dict(name=draft.name))
-        self.assertEqual(
-            received,
-            dict(
-                name=draft.name,
-                rev=draft.rev,
-                content_url=draft.get_href(),
-                previous=f'{draft.name}-{(int(draft.rev)-1):02d}'
-            ),
-            'Incorrect JSON when draft revision not specified',
-        )
-
-        received = self.getJson(dict(name=draft.name, rev=draft.rev))
-        self.assertEqual(
-            received,
-            dict(
-                name=draft.name,
-                rev=draft.rev,
-                content_url=draft.get_href(),
-                previous=f'{draft.name}-{(int(draft.rev)-1):02d}'
-            ),
-            'Incorrect JSON when latest revision specified',
-        )
-
-        received = self.getJson(dict(name=draft.name, rev='10'))
-        self.assertEqual(
-            received,
-            dict(
-                name=draft.name,
-                rev='10',
-                content_url=draft.history_set.get(rev='10').get_href(),
-                previous=f'{draft.name}-09'
-            ),
-            'Incorrect JSON when historical revision specified',
-        )
-
-        received = self.getJson(dict(name=draft.name, rev='00'))
-        self.assertNotIn('previous', received, 'Rev 00 has no previous name when not replacing a draft')
-
-        replaced = IndividualDraftFactory()
-        RelatedDocument.objects.create(relationship_id='replaces',source=draft,target=replaced.docalias.first())
-        received = self.getJson(dict(name=draft.name, rev='00'))
-        self.assertEqual(received['previous'], f'{replaced.name}-{replaced.rev}',
-                         'Rev 00 has a previous name when replacing a draft')
-
-    def test_draft(self):
-        # test with typical, straightforward names
-        self.do_draft_test(name='draft-somebody-did-a-thing')
-        # try with different potentially problematic names
-        self.do_draft_test(name='draft-someone-did-something-01-02')
-        self.do_draft_test(name='draft-someone-did-something-else-02')
-        self.do_draft_test(name='draft-someone-did-something-02-weird-01')
-
-    def do_draft_with_broken_history_test(self, name):
-        draft = IndividualDraftFactory(name=name, rev='10')
-        received = self.getJson(dict(name=draft.name,rev='09'))
-        self.assertEqual(received['rev'],'09')
-        self.assertEqual(received['previous'], f'{draft.name}-08')
-        self.assertTrue('warning' in received)
-
-    def test_draft_with_broken_history(self):
-        # test with typical, straightforward names
-        self.do_draft_with_broken_history_test(name='draft-somebody-did-something')
-        # try with different potentially problematic names
-        self.do_draft_with_broken_history_test(name='draft-someone-did-something-01-02')
-        self.do_draft_with_broken_history_test(name='draft-someone-did-something-else-02')
-        self.do_draft_with_broken_history_test(name='draft-someone-did-something-02-weird-03')
-
-    def do_rfc_test(self, draft_name):
-        draft = WgDraftFactory(name=draft_name, create_revisions=range(0,2))
-        draft.docalias.create(name=f'rfc{self.next_rfc_number():04}')
-        draft.set_state(State.objects.get(type_id='draft',slug='rfc'))
-        draft.set_state(State.objects.get(type_id='draft-iesg', slug='pub'))
-        draft = reload_db_objects(draft)
-        rfc = draft
-        
-        number = rfc.rfc_number()
-        received = self.getJson(dict(name=number))
-        self.assertEqual(
-            received,
-            dict(
-                content_url=rfc.get_href(),
-                name=rfc.canonical_name(),
-                previous=f'{draft.name}-{draft.rev}',
-            ),
-            'Can look up an RFC by number',
-        )
-
-        num_received = received
-        received = self.getJson(dict(name=rfc.canonical_name()))
-        self.assertEqual(num_received, received, 'RFC by canonical name gives same result as by number')
-
-        received = self.getJson(dict(name=f'RfC {number}'))
-        self.assertEqual(num_received, received, 'RFC with unusual spacing/caps gives same result as by number')
-
-        received = self.getJson(dict(name=draft.name))
-        self.assertEqual(num_received, received, 'RFC by draft name and no rev gives same result as by number')
-
-        received = self.getJson(dict(name=draft.name, rev='01'))
-        self.assertEqual(
-            received,
-            dict(
-                content_url=draft.history_set.get(rev='01').get_href(),
-                name=draft.name,
-                rev='01',
-                previous=f'{draft.name}-00',
-            ),
-            'RFC by draft name with rev should give draft name, not canonical name'
-        )
-
-    def test_rfc(self):
-        # simple draft name
-        self.do_rfc_test(draft_name='draft-test-ar-ef-see')
-        # tricky draft names
-        self.do_rfc_test(draft_name='draft-whatever-02')
-        self.do_rfc_test(draft_name='draft-test-me-03-04')
-
-    def test_rfc_with_tombstone(self):
-        draft = WgDraftFactory(create_revisions=range(0,2))
-        draft.docalias.create(name='rfc3261') # See views_doc.HAS_TOMBSTONE
-        draft.set_state(State.objects.get(type_id='draft',slug='rfc'))
-        draft.set_state(State.objects.get(type_id='draft-iesg', slug='pub'))
-        draft = reload_db_objects(draft)
-        rfc = draft
-
-        # Some old rfcs had tombstones that shouldn't be used for comparisons
-        received = self.getJson(dict(name=rfc.canonical_name()))
-        self.assertTrue(received['previous'].endswith('00'))
-
-    def do_rfc_with_broken_history_test(self, draft_name):
-        draft = WgDraftFactory(rev='10', name=draft_name)
-        draft.docalias.create(name=f'rfc{self.next_rfc_number():04}')
-        draft.set_state(State.objects.get(type_id='draft',slug='rfc'))
-        draft.set_state(State.objects.get(type_id='draft-iesg', slug='pub'))
-        draft = reload_db_objects(draft)
-        rfc = draft
-
-        received = self.getJson(dict(name=draft.name))
-        self.assertEqual(
-            received,
-            dict(
-                content_url=rfc.get_href(),
-                name=rfc.canonical_name(),
-                previous=f'{draft.name}-10',
-            ),
-            'RFC by draft name without rev should return canonical RFC name and no rev',
-        )
-
-        received = self.getJson(dict(name=draft.name, rev='10'))
-        self.assertEqual(received['name'], draft.name, 'RFC by draft name with rev should return draft name')
-        self.assertEqual(received['rev'], '10', 'Requested rev should be returned')
-        self.assertEqual(received['previous'], f'{draft.name}-09', 'Previous rev is one less than requested')
-        self.assertIn(f'{draft.name}-10', received['content_url'], 'Returned URL should include requested rev')
-        self.assertNotIn('warning', received, 'No warning when we have the rev requested')
-
-        received = self.getJson(dict(name=f'{draft.name}-09'))
-        self.assertEqual(received['name'], draft.name, 'RFC by draft name with rev should return draft name')
-        self.assertEqual(received['rev'], '09', 'Requested rev should be returned')
-        self.assertEqual(received['previous'], f'{draft.name}-08', 'Previous rev is one less than requested')
-        self.assertIn(f'{draft.name}-09', received['content_url'], 'Returned URL should include requested rev')
-        self.assertEqual(
-            received['warning'],
-            'History for this version not found - these results are speculation',
-            'Warning should be issued when requested rev is not found'
-        )
-
-    def test_rfc_with_broken_history(self):
-        # simple draft name
-        self.do_rfc_with_broken_history_test(draft_name='draft-some-draft')
-        # tricky draft names
-        self.do_rfc_with_broken_history_test(draft_name='draft-gizmo-01')
-        self.do_rfc_with_broken_history_test(draft_name='draft-oh-boy-what-a-draft-02-03')
 
 
 class RawIdTests(TestCase):
@@ -2926,3 +2748,43 @@ class PdfizedTests(TestCase):
             for ext in ('pdf','txt','html','anythingatall'):
                 self.should_succeed(dict(name=rfc.name,rev=f'{r:02d}',ext=ext))
         self.should_404(dict(name=rfc.name,rev='02'))
+
+class NotifyValidationTests(TestCase):
+    def test_notify_validation(self):
+        valid_values = [
+            "foo@example.com, bar@example.com",
+            "Foo Bar <foobar@example.com>, baz@example.com",
+            "foo@example.com, ,bar@example.com,", # We're ignoring extra commas
+            "foo@example.com\nbar@example.com", # Yes, we're quietly accepting a newline as a comma
+        ]
+        bad_nameaddr_values = [
+            "@example.com",
+            "foo",
+            "foo@",
+            "foo bar foobar@example.com",
+        ]
+        duplicate_values = [
+            "foo@bar.com, bar@baz.com, foo@bar.com",
+            "Foo <foo@bar.com>, foobar <foo@bar.com>",
+        ]
+        both_duplicate_and_bad_values = [
+            "foo@example.com, bar@, Foo <foo@example.com>",
+            "Foo <@example.com>, Bar <@example.com>",
+        ]
+        for v in valid_values:
+            self.assertTrue(NotifyForm({"notify": v}).is_valid())
+        for v in bad_nameaddr_values:
+            f = NotifyForm({"notify": v})
+            self.assertFalse(f.is_valid())
+            self.assertTrue("Invalid addresses" in f.errors["notify"][0])
+            self.assertFalse("Duplicate addresses" in f.errors["notify"][0])
+        for v in duplicate_values:
+            f = NotifyForm({"notify": v})
+            self.assertFalse(f.is_valid())
+            self.assertFalse("Invalid addresses" in f.errors["notify"][0])
+            self.assertTrue("Duplicate addresses" in f.errors["notify"][0])
+        for v in both_duplicate_and_bad_values:
+            f = NotifyForm({"notify": v})
+            self.assertFalse(f.is_valid())
+            self.assertTrue("Invalid addresses" in f.errors["notify"][0])
+            self.assertTrue("Duplicate addresses" in f.errors["notify"][0])

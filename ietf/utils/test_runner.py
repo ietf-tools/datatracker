@@ -174,14 +174,21 @@ def vnu_fmt_message(file, msg, content):
 
 def vnu_filter_message(msg, filter_db_issues, filter_test_issues):
     "True if the vnu message is a known false positive"
-    if filter_db_issues and re.search(
-        r"""^Forbidden\ code\ point\ U\+|
-             Illegal\ character\ in\ query:\ '\['|
-            'href'\ on\ element\ 'a':\ Percentage\ \("%"\)\ is\ not\ followed|
-            ^Saw\ U\+\d+\ in\ stream|
-            ^Document\ uses\ the\ Unicode\ Private\ Use\ Area""",
+    if re.search(
+        r"""^Document\ uses\ the\ Unicode\ Private\ Use\ Area|
+            ^Element\ 'h.'\ not\ allowed\ as\ child\ of\ element\ 'pre'""",
         msg["message"],
         flags=re.VERBOSE,
+    ) or (
+        filter_db_issues
+        and re.search(
+            r"""^Forbidden\ code\ point\ U\+|
+                 Illegal\ character\ in\ query:\ '\['|
+                 'href'\ on\ element\ 'a':\ Percentage\ \("%"\)\ is\ not|
+                ^Saw\ U\+\d+\ in\ stream""",
+            msg["message"],
+            flags=re.VERBOSE,
+        )
     ):
         return True
 
@@ -427,7 +434,7 @@ def get_template_paths(apps=None):
 
 def save_test_results(failures, test_labels):
     # Record the test result in a file, in order to be able to check the
-    # results and avoid re-running tests if we've alread run them with OK
+    # results and avoid re-running tests if we've already run them with OK
     # result after the latest code changes:
     tfile = io.open(".testresult", "a", encoding='utf-8')
     timestr = time.strftime("%Y-%m-%d %H:%M:%S")
@@ -726,7 +733,7 @@ class IetfTestRunner(DiscoverRunner):
         settings.show_logging = show_logging
         #
         self.root_dir = os.path.dirname(settings.BASE_DIR)
-        self.coverage_file = os.path.join(self.root_dir, settings.TEST_COVERAGE_MASTER_FILE)
+        self.coverage_file = os.path.join(self.root_dir, settings.TEST_COVERAGE_MAIN_FILE)
         super(IetfTestRunner, self).__init__(**kwargs)
         if self.parallel > 1:
             if self.html_report == True:
@@ -869,6 +876,10 @@ class IetfTestRunner(DiscoverRunner):
                     "attribute-empty-style": "off",
                     # For fragments, don't check that elements are in the proper ancestor element
                     "element-required-ancestor": "off",
+                    # This is allowed by the HTML spec
+                    "form-dup-name": "off",
+                    # Don't trip over unused disable blocks
+                    "no-unused-disable": "off",
                 },
             }
 

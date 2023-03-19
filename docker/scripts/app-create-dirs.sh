@@ -8,6 +8,7 @@ for sub in \
     test/media \
     test/wiki/ietf \
     data/nomcom_keys/public_keys \
+    /assets/archive/id \
     /assets/ietf-ftp \
     /assets/ietf-ftp/bofreq \
     /assets/ietf-ftp/charter \

@@ -18,7 +18,7 @@ warnings.filterwarnings("ignore", message="The logout\(\) view is superseded by"
 warnings.filterwarnings("ignore", message="Report.file_reporters will no longer be available in Coverage.py 4.2", module="coverage.report")
 warnings.filterwarnings("ignore", message="{% load staticfiles %} is deprecated")
 warnings.filterwarnings("ignore", message="Using or importing the ABCs from 'collections' instead of from 'collections.abc' is deprecated", module="bleach")
-
+warnings.filterwarnings("ignore", message="HTTPResponse.getheader\(\) is deprecated", module='selenium.webdriver')
 try:
     import syslog
     syslog.openlog(str("datatracker"), syslog.LOG_PID, syslog.LOG_USER)
@@ -114,7 +114,7 @@ SITE_ID = 1
 # to load the internationalization machinery.
 USE_I18N = False
 
-USE_TZ = False
+USE_TZ = True
 
 if SERVER_MODE == 'production':
     MEDIA_ROOT = '/a/www/www6s/lib/dt/media/'
@@ -372,6 +372,7 @@ TEMPLATES = [
                 'ietf.context_processors.settings_info',
                 'ietf.secr.context_processors.secr_revision_info',
                 'ietf.context_processors.rfcdiff_base_url',
+                'ietf.context_processors.timezone_now',
             ],
             'loaders': [
                 ('django.template.loaders.cached.Loader', (
@@ -477,8 +478,6 @@ INSTALLED_APPS = [
     'ietf.secr.areas',
     'ietf.secr.groups',
     'ietf.secr.meetings',
-    'ietf.secr.proceedings',
-    'ietf.secr.roles',
     'ietf.secr.rolodex',
     'ietf.secr.sreq',
     'ietf.secr.telechat',
@@ -542,7 +541,7 @@ INTERNAL_IPS = (
 
 # no slash at end
 IDTRACKER_BASE_URL = "https://datatracker.ietf.org"
-RFCDIFF_BASE_URL = "https://www.ietf.org/rfcdiff"
+RFCDIFF_BASE_URL = "https://author-tools.ietf.org/iddiff"
 IDNITS_BASE_URL = "https://author-tools.ietf.org/api/idnits"
 IDNITS_SERVICE_URL = "https://author-tools.ietf.org/idnits"
 
@@ -610,7 +609,7 @@ TEST_TEMPLATE_IGNORE = [
     "500.html"                        # isn't loaded by regular loader, but checked by test_500_page()
 ]
 
-TEST_COVERAGE_MASTER_FILE = os.path.join(BASE_DIR, "../release-coverage.json")
+TEST_COVERAGE_MAIN_FILE = os.path.join(BASE_DIR, "../release-coverage.json")
 TEST_COVERAGE_LATEST_FILE = os.path.join(BASE_DIR, "../latest-coverage.json")
 
 TEST_CODE_COVERAGE_CHECKER = None
@@ -630,7 +629,7 @@ MAX_WG_DELEGATES = 3
 # document state:
 GROUP_STATES_WITH_EXTRA_PROCESSING = ["sub-pub", "rfc-edit", ]
 
-# Review team releated settings
+# Review team related settings
 GROUP_REVIEW_MAX_ITEMS_TO_SHOW_IN_REVIEWER_LIST = 10
 GROUP_REVIEW_DAYS_TO_SHOW_IN_REVIEWER_LIST = 365
 
@@ -680,7 +679,7 @@ INTERNET_ALL_DRAFTS_ARCHIVE_DIR = '/a/ietfdata/doc/draft/archive'
 MEETING_RECORDINGS_DIR = '/a/www/audio'
 DERIVED_DIR = '/a/ietfdata/derived'
 
-DOCUMENT_FORMAT_WHITELIST = ["txt", "ps", "pdf", "xml", "html", ]
+DOCUMENT_FORMAT_ALLOWLIST = ["txt", "ps", "pdf", "xml", "html", ]
 
 # Mailing list info URL for lists hosted on the IETF servers
 MAILING_LIST_INFO_URL = "https://www.ietf.org/mailman/listinfo/%(list_addr)s"
@@ -1008,7 +1007,7 @@ HTPASSWD_FILE = "/www/htpasswd"
 # Generation of pdf files
 GHOSTSCRIPT_COMMAND = "/usr/bin/gs"
 
-# Generation of bibxml files (currently only for internet drafts)
+# Generation of bibxml files (currently only for Internet-Drafts)
 BIBXML_BASE_PATH = '/a/ietfdata/derived/bibxml'
 
 # Timezone files for iCalendar

@@ -105,7 +105,7 @@ def _memoize(func, self, *args, **kwargs):
     return cache[key]
 def memoize(func):
     if not hasattr(func, '__class__'):
-        raise NotImplementedError("Use @lru_cache instead of memoize() for funcitons.")
+        raise NotImplementedError("Use @lru_cache instead of memoize() for functions.")
     # For methods, we want the cache on the object, not on the class, in order
     # to not having to think about cache bloat and content becoming stale, so
     # we cannot set up the cache here.

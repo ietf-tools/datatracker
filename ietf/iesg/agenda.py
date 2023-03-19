@@ -17,7 +17,7 @@ from ietf.doc.models import Document, LastCallDocEvent, ConsensusDocEvent
 from ietf.doc.utils_search import fill_in_telechat_date
 from ietf.iesg.models import TelechatDate, TelechatAgendaItem
 from ietf.review.utils import review_assignments_to_list_for_docs
-from ietf.utils.timezone import date_today
+from ietf.utils.timezone import date_today, make_aware
 
 def get_agenda_date(date=None):
     if not date:
@@ -26,8 +26,9 @@ def get_agenda_date(date=None):
         except IndexError:
             return date_today()
     else:
+        parsed_date = make_aware(datetime.datetime.strptime(date, "%Y-%m-%d"), settings.TIME_ZONE).date()
         try:
-            return TelechatDate.objects.active().get(date=datetime.datetime.strptime(date, "%Y-%m-%d").date()).date
+            return TelechatDate.objects.active().get(date=parsed_date).date
         except (ValueError, TelechatDate.DoesNotExist):
             raise Http404
 

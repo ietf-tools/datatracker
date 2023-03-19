@@ -9,7 +9,7 @@
         {% if submission.state_id == "posted" %}
             <p class="alert alert-warning my-3">
                 The submission has already been posted. See the
-                <a href="{% url "ietf.doc.views_doc.document_main" name=submission.name %}">draft here</a>.
+                <a href="{% url "ietf.doc.views_doc.document_main" name=submission.name %}">Internet-Draft here</a>.
             </p>
         {% else %}
             <div class="alert alert-info my-3">
@@ -54,7 +54,7 @@
             <form id="confirm-submission" method="post">
                 {% csrf_token %}
                 <button class="btn btn-primary" type="submit" name="action" value="confirm">
-                    Confirm submission &amp; post draft
+                    Confirm submission &amp; post I-D
                 </button>
                 <button class="btn btn-danger"  type="submit" name="action" value="cancel">Cancel submission</button>
             </form>

@@ -1,0 +1,6 @@
+{% load ietf_filters %}{% load mail_filters %}{% autoescape off %}{% filter wordwrap:78 %}Evaluation for {{ doc.file_tag }} can be found at {{ doc_url }}
+
+{% endfilter %}
+{% filter wordwrap:78 %}{{ needed_ballot_positions }}{% endfilter %}
+
+{% endautoescape%}

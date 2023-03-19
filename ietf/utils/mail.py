@@ -533,7 +533,7 @@ def log_smtp_exception(e):
 def build_warning_message(request, e):
     (extype, value, tb) = exception_components(e)
     if request:
-        warning =  "An error occured while sending email:\n"
+        warning =  "An error occurred while sending email:\n"
         if getattr(e,'original_msg',None):
             warning += "Subject: %s\n" % e.original_msg.get('Subject','[no subject]')
             warning += "To: %s\n" % e.original_msg.get('To','[no to]')

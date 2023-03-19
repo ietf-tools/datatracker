@@ -8,7 +8,6 @@ import os
 import sys
 
 from importlib import import_module
-from mock import patch
 from pathlib import Path
 
 from django.apps import apps
@@ -23,9 +22,10 @@ import debug                            # pyflakes:ignore
 
 import ietf
 from ietf.doc.utils import get_unicode_document_content
+from ietf.doc.models import RelatedDocument, State
+from ietf.doc.factories import IndividualDraftFactory, WgDraftFactory
 from ietf.group.factories import RoleFactory
 from ietf.meeting.factories import MeetingFactory, SessionFactory
-from ietf.meeting.test_data import make_meeting_test_data
 from ietf.meeting.models import Session
 from ietf.person.factories import PersonFactory, random_faker
 from ietf.person.models import User
@@ -33,7 +33,7 @@ from ietf.person.models import PersonalApiKey
 from ietf.stats.models import MeetingRegistration
 from ietf.utils.mail import outbox, get_payload_text
 from ietf.utils.models import DumpInfo
-from ietf.utils.test_utils import TestCase, login_testing_unauthorized
+from ietf.utils.test_utils import TestCase, login_testing_unauthorized, reload_db_objects
 
 OMITTED_APPS = (
     'ietf.secr.meetings',
@@ -43,20 +43,6 @@ OMITTED_APPS = (
 
 class CustomApiTests(TestCase):
     settings_temp_path_overrides = TestCase.settings_temp_path_overrides + ['AGENDA_PATH']
-
-    # Using mock to patch the import functions in ietf.meeting.views, where
-    # api_import_recordings() are using them:
-    @patch('ietf.meeting.views.import_audio_files')
-    def test_notify_meeting_import_audio_files(self, mock_import_audio):
-        meeting = make_meeting_test_data()
-        client = Client(Accept='application/json')
-        # try invalid method GET
-        url = urlreverse('ietf.meeting.views.api_import_recordings', kwargs={'number':meeting.number})
-        r = client.get(url)
-        self.assertEqual(r.status_code, 405)
-        # try valid method POST
-        r = client.post(url)
-        self.assertEqual(r.status_code, 201)
 
     def test_api_help_page(self):
         url = urlreverse('ietf.api.views.api_help')
@@ -589,3 +575,207 @@ class TastypieApiTestCase(ResourceTestCaseMixin, TestCase):
                     #print("There doesn't seem to be any resource for model %s.models.%s"%(app.__name__,model.__name__,))
                     self.assertIn(model._meta.model_name, list(app_resources.keys()),
                         "There doesn't seem to be any API resource for model %s.models.%s"%(app.__name__,model.__name__,))
+
+
+class RfcdiffSupportTests(TestCase):
+
+    def setUp(self):
+        super().setUp()
+        self.target_view = 'ietf.api.views.rfcdiff_latest_json'
+        self._last_rfc_num = 8000
+
+    def getJson(self, view_args):
+        url = urlreverse(self.target_view, kwargs=view_args)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        return r.json()
+
+    def next_rfc_number(self):
+        self._last_rfc_num += 1
+        return self._last_rfc_num
+
+    def do_draft_test(self, name):
+        draft = IndividualDraftFactory(name=name, rev='00', create_revisions=range(0,13))
+        draft = reload_db_objects(draft)
+        prev_draft_rev = f'{(int(draft.rev)-1):02d}'
+
+        received = self.getJson(dict(name=draft.name))
+        self.assertEqual(
+            received,
+            dict(
+                name=draft.name,
+                rev=draft.rev,
+                content_url=draft.get_href(),
+                previous=f'{draft.name}-{prev_draft_rev}',
+                previous_url= draft.history_set.get(rev=prev_draft_rev).get_href(),
+            ),
+            'Incorrect JSON when draft revision not specified',
+        )
+
+        received = self.getJson(dict(name=draft.name, rev=draft.rev))
+        self.assertEqual(
+            received,
+            dict(
+                name=draft.name,
+                rev=draft.rev,
+                content_url=draft.get_href(),
+                previous=f'{draft.name}-{prev_draft_rev}',
+                previous_url= draft.history_set.get(rev=prev_draft_rev).get_href(),
+            ),
+            'Incorrect JSON when latest revision specified',
+        )
+
+        received = self.getJson(dict(name=draft.name, rev='10'))
+        prev_draft_rev = '09'
+        self.assertEqual(
+            received,
+            dict(
+                name=draft.name,
+                rev='10',
+                content_url=draft.history_set.get(rev='10').get_href(),
+                previous=f'{draft.name}-{prev_draft_rev}',
+                previous_url= draft.history_set.get(rev=prev_draft_rev).get_href(),
+            ),
+            'Incorrect JSON when historical revision specified',
+        )
+
+        received = self.getJson(dict(name=draft.name, rev='00'))
+        self.assertNotIn('previous', received, 'Rev 00 has no previous name when not replacing a draft')
+
+        replaced = IndividualDraftFactory()
+        RelatedDocument.objects.create(relationship_id='replaces',source=draft,target=replaced.docalias.first())
+        received = self.getJson(dict(name=draft.name, rev='00'))
+        self.assertEqual(received['previous'], f'{replaced.name}-{replaced.rev}',
+                         'Rev 00 has a previous name when replacing a draft')
+
+    def test_draft(self):
+        # test with typical, straightforward names
+        self.do_draft_test(name='draft-somebody-did-a-thing')
+        # try with different potentially problematic names
+        self.do_draft_test(name='draft-someone-did-something-01-02')
+        self.do_draft_test(name='draft-someone-did-something-else-02')
+        self.do_draft_test(name='draft-someone-did-something-02-weird-01')
+
+    def do_draft_with_broken_history_test(self, name):
+        draft = IndividualDraftFactory(name=name, rev='10')
+        received = self.getJson(dict(name=draft.name,rev='09'))
+        self.assertEqual(received['rev'],'09')
+        self.assertEqual(received['previous'], f'{draft.name}-08')
+        self.assertTrue('warning' in received)
+
+    def test_draft_with_broken_history(self):
+        # test with typical, straightforward names
+        self.do_draft_with_broken_history_test(name='draft-somebody-did-something')
+        # try with different potentially problematic names
+        self.do_draft_with_broken_history_test(name='draft-someone-did-something-01-02')
+        self.do_draft_with_broken_history_test(name='draft-someone-did-something-else-02')
+        self.do_draft_with_broken_history_test(name='draft-someone-did-something-02-weird-03')
+
+    def do_rfc_test(self, draft_name):
+        draft = WgDraftFactory(name=draft_name, create_revisions=range(0,2))
+        draft.docalias.create(name=f'rfc{self.next_rfc_number():04}')
+        draft.set_state(State.objects.get(type_id='draft',slug='rfc'))
+        draft.set_state(State.objects.get(type_id='draft-iesg', slug='pub'))
+        draft = reload_db_objects(draft)
+        rfc = draft
+
+        number = rfc.rfc_number()
+        received = self.getJson(dict(name=number))
+        self.assertEqual(
+            received,
+            dict(
+                content_url=rfc.get_href(),
+                name=rfc.canonical_name(),
+                previous=f'{draft.name}-{draft.rev}',
+                previous_url= draft.history_set.get(rev=draft.rev).get_href(),
+            ),
+            'Can look up an RFC by number',
+        )
+
+        num_received = received
+        received = self.getJson(dict(name=rfc.canonical_name()))
+        self.assertEqual(num_received, received, 'RFC by canonical name gives same result as by number')
+
+        received = self.getJson(dict(name=f'RfC {number}'))
+        self.assertEqual(num_received, received, 'RFC with unusual spacing/caps gives same result as by number')
+
+        received = self.getJson(dict(name=draft.name))
+        self.assertEqual(num_received, received, 'RFC by draft name and no rev gives same result as by number')
+
+        received = self.getJson(dict(name=draft.name, rev='01'))
+        prev_draft_rev = '00'
+        self.assertEqual(
+            received,
+            dict(
+                content_url=draft.history_set.get(rev='01').get_href(),
+                name=draft.name,
+                rev='01',
+                previous=f'{draft.name}-{prev_draft_rev}',
+                previous_url= draft.history_set.get(rev=prev_draft_rev).get_href(),
+            ),
+            'RFC by draft name with rev should give draft name, not canonical name'
+        )
+
+    def test_rfc(self):
+        # simple draft name
+        self.do_rfc_test(draft_name='draft-test-ar-ef-see')
+        # tricky draft names
+        self.do_rfc_test(draft_name='draft-whatever-02')
+        self.do_rfc_test(draft_name='draft-test-me-03-04')
+
+    def test_rfc_with_tombstone(self):
+        draft = WgDraftFactory(create_revisions=range(0,2))
+        draft.docalias.create(name='rfc3261') # See views_doc.HAS_TOMBSTONE
+        draft.set_state(State.objects.get(type_id='draft',slug='rfc'))
+        draft.set_state(State.objects.get(type_id='draft-iesg', slug='pub'))
+        draft = reload_db_objects(draft)
+        rfc = draft
+
+        # Some old rfcs had tombstones that shouldn't be used for comparisons
+        received = self.getJson(dict(name=rfc.canonical_name()))
+        self.assertTrue(received['previous'].endswith('00'))
+
+    def do_rfc_with_broken_history_test(self, draft_name):
+        draft = WgDraftFactory(rev='10', name=draft_name)
+        draft.docalias.create(name=f'rfc{self.next_rfc_number():04}')
+        draft.set_state(State.objects.get(type_id='draft',slug='rfc'))
+        draft.set_state(State.objects.get(type_id='draft-iesg', slug='pub'))
+        draft = reload_db_objects(draft)
+        rfc = draft
+
+        received = self.getJson(dict(name=draft.name))
+        self.assertEqual(
+            received,
+            dict(
+                content_url=rfc.get_href(),
+                name=rfc.canonical_name(),
+                previous=f'{draft.name}-10',
+                previous_url= f'{settings.IETF_ID_ARCHIVE_URL}{draft.name}-10.txt',
+            ),
+            'RFC by draft name without rev should return canonical RFC name and no rev',
+        )
+
+        received = self.getJson(dict(name=draft.name, rev='10'))
+        self.assertEqual(received['name'], draft.name, 'RFC by draft name with rev should return draft name')
+        self.assertEqual(received['rev'], '10', 'Requested rev should be returned')
+        self.assertEqual(received['previous'], f'{draft.name}-09', 'Previous rev is one less than requested')
+        self.assertIn(f'{draft.name}-10', received['content_url'], 'Returned URL should include requested rev')
+        self.assertNotIn('warning', received, 'No warning when we have the rev requested')
+
+        received = self.getJson(dict(name=f'{draft.name}-09'))
+        self.assertEqual(received['name'], draft.name, 'RFC by draft name with rev should return draft name')
+        self.assertEqual(received['rev'], '09', 'Requested rev should be returned')
+        self.assertEqual(received['previous'], f'{draft.name}-08', 'Previous rev is one less than requested')
+        self.assertIn(f'{draft.name}-09', received['content_url'], 'Returned URL should include requested rev')
+        self.assertEqual(
+            received['warning'],
+            'History for this version not found - these results are speculation',
+            'Warning should be issued when requested rev is not found'
+        )
+
+    def test_rfc_with_broken_history(self):
+        # simple draft name
+        self.do_rfc_with_broken_history_test(draft_name='draft-some-draft')
+        # tricky draft names
+        self.do_rfc_with_broken_history_test(draft_name='draft-gizmo-01')
+        self.do_rfc_with_broken_history_test(draft_name='draft-oh-boy-what-a-draft-02-03')
