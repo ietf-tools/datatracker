@@ -8,7 +8,7 @@
                     {{ review_assignment.review_request.doc.name }}
                 {% endif %}
                 -{{ review_assignment.reviewed_rev }}){% endif %}
-            by {{ review_assignment.reviewer.person.name }}</a>
+            by {{ review_assignment.reviewer.person.plain_name() }}</a>
         {% if review_assignment.state_id == "part-completed" %}
             <span class="badge rounded-pill ms-1 bg-secondary">Partially completed</span>
         {% endif %}
