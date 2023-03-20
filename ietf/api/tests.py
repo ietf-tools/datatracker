@@ -8,12 +8,12 @@ import os
 import sys
 
 from importlib import import_module
-from mock import patch
 from pathlib import Path
 
 from django.apps import apps
 from django.conf import settings
 from django.test import Client
+from django.test.utils import override_settings
 from django.urls import reverse as urlreverse
 from django.utils import timezone
 
@@ -27,7 +27,6 @@ from ietf.doc.models import RelatedDocument, State
 from ietf.doc.factories import IndividualDraftFactory, WgDraftFactory
 from ietf.group.factories import RoleFactory
 from ietf.meeting.factories import MeetingFactory, SessionFactory
-from ietf.meeting.test_data import make_meeting_test_data
 from ietf.meeting.models import Session
 from ietf.person.factories import PersonFactory, random_faker
 from ietf.person.models import User
@@ -45,20 +44,6 @@ OMITTED_APPS = (
 
 class CustomApiTests(TestCase):
     settings_temp_path_overrides = TestCase.settings_temp_path_overrides + ['AGENDA_PATH']
-
-    # Using mock to patch the import functions in ietf.meeting.views, where
-    # api_import_recordings() are using them:
-    @patch('ietf.meeting.views.import_audio_files')
-    def test_notify_meeting_import_audio_files(self, mock_import_audio):
-        meeting = make_meeting_test_data()
-        client = Client(Accept='application/json')
-        # try invalid method GET
-        url = urlreverse('ietf.meeting.views.api_import_recordings', kwargs={'number':meeting.number})
-        r = client.get(url)
-        self.assertEqual(r.status_code, 405)
-        # try valid method POST
-        r = client.post(url)
-        self.assertEqual(r.status_code, 201)
 
     def test_api_help_page(self):
         url = urlreverse('ietf.api.views.api_help')
@@ -546,6 +531,101 @@ class CustomApiTests(TestCase):
         jsondata = r.json()
         self.assertEqual(jsondata['success'], True)
 
+class DirectAuthApiTests(TestCase):
+
+    def setUp(self):
+        super().setUp()
+        self.valid_token = "nSZJDerbau6WZwbEAYuQ"
+        self.invalid_token = self.valid_token
+        while self.invalid_token == self.valid_token:
+            self.invalid_token = User.objects.make_random_password(20)
+        self.url = urlreverse("ietf.api.views.directauth")
+        self.valid_person = PersonFactory()
+        self.valid_password = self.valid_person.user.username+"+password"
+        self.invalid_password = self.valid_password
+        while self.invalid_password == self.valid_password:
+            self.invalid_password = User.objects.make_random_password(20)
+
+        self.valid_body_with_good_password = self.post_dict(authtoken=self.valid_token, username=self.valid_person.user.username, password=self.valid_password)
+        self.valid_body_with_bad_password = self.post_dict(authtoken=self.valid_token, username=self.valid_person.user.username, password=self.invalid_password)
+        self.valid_body_with_unknown_user = self.post_dict(authtoken=self.valid_token, username="notauser@nowhere.nada", password=self.valid_password)
+
+    def post_dict(self, authtoken, username, password):
+        data = dict()
+        if authtoken is not None:
+            data["authtoken"] = authtoken
+        if username is not None:
+            data["username"] = username
+        if password is not None:
+            data["password"] = password
+        return dict(data = json.dumps(data))
+
+    def response_data(self, response):
+        try:
+            data = json.loads(response.content)
+        except json.decoder.JSONDecodeError:
+            data = None
+        self.assertIsNotNone(data)
+        return data
+
+    def test_bad_methods(self):
+        for method in (self.client.get, self.client.put, self.client.head, self.client.delete, self.client.patch):
+            r = method(self.url)
+            self.assertEqual(r.status_code, 405)
+
+    def test_bad_post(self):
+        for bad in [
+            self.post_dict(authtoken=None, username=self.valid_person.user.username, password=self.valid_password),
+            self.post_dict(authtoken=self.valid_token, username=None, password=self.valid_password),
+            self.post_dict(authtoken=self.valid_token, username=self.valid_person.user.username, password=None),
+            self.post_dict(authtoken=None, username=None, password=self.valid_password),
+            self.post_dict(authtoken=self.valid_token, username=None, password=None),
+            self.post_dict(authtoken=None, username=self.valid_person.user.username, password=None),
+            self.post_dict(authtoken=None, username=None, password=None),
+        ]:
+            r = self.client.post(self.url, bad)
+            self.assertEqual(r.status_code, 200)
+            data = self.response_data(r)
+            self.assertEqual(data["result"], "failure")
+            self.assertEqual(data["reason"], "invalid post")
+        
+        bad = dict(authtoken=self.valid_token, username=self.valid_person.user.username, password=self.valid_password)
+        r = self.client.post(self.url, bad)
+        self.assertEqual(r.status_code, 200)
+        data = self.response_data(r)
+        self.assertEqual(data["result"], "failure")
+        self.assertEqual(data["reason"], "invalid post")       
+
+    def test_notokenstore(self):
+        self.assertFalse(hasattr(settings, "APP_API_TOKENS"))
+        r = self.client.post(self.url,self.valid_body_with_good_password)
+        self.assertEqual(r.status_code, 200)
+        data = self.response_data(r)
+        self.assertEqual(data["result"], "failure")
+        self.assertEqual(data["reason"], "invalid authtoken")
+
+    @override_settings(APP_API_TOKENS={"ietf.api.views.directauth":"nSZJDerbau6WZwbEAYuQ"})
+    def test_bad_username(self):
+        r = self.client.post(self.url, self.valid_body_with_unknown_user)
+        self.assertEqual(r.status_code, 200)
+        data = self.response_data(r)
+        self.assertEqual(data["result"], "failure")
+        self.assertEqual(data["reason"], "authentication failed")
+
+    @override_settings(APP_API_TOKENS={"ietf.api.views.directauth":"nSZJDerbau6WZwbEAYuQ"})
+    def test_bad_password(self):
+        r = self.client.post(self.url, self.valid_body_with_bad_password)
+        self.assertEqual(r.status_code, 200)
+        data = self.response_data(r)
+        self.assertEqual(data["result"], "failure")
+        self.assertEqual(data["reason"], "authentication failed")
+
+    @override_settings(APP_API_TOKENS={"ietf.api.views.directauth":"nSZJDerbau6WZwbEAYuQ"})
+    def test_good_password(self):
+        r = self.client.post(self.url, self.valid_body_with_good_password)
+        self.assertEqual(r.status_code, 200)
+        data = self.response_data(r)
+        self.assertEqual(data["result"], "success")
 
 class TastypieApiTestCase(ResourceTestCaseMixin, TestCase):
     def __init__(self, *args, **kwargs):

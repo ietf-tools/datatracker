@@ -113,7 +113,7 @@ echo "Running initial checks..."
 
 # Migrate, adjusting to what the current state of the underlying database might be:
 
-/usr/local/bin/python $WORKSPACEDIR/ietf/manage.py migrate --settings=settings_local
+/usr/local/bin/python $WORKSPACEDIR/ietf/manage.py migrate --fake-initial --settings=settings_local
 
 echo "-----------------------------------------------------------------"
 echo "Done!"

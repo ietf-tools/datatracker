@@ -47,6 +47,7 @@ from ietf.meeting.models import Session, TimeSlot, Meeting, SchedTimeSessAssignm
 from ietf.meeting.test_data import make_meeting_test_data, make_interim_meeting, make_interim_test_data
 from ietf.meeting.utils import finalize, condition_slide_order
 from ietf.meeting.utils import add_event_info_to_session_qs
+from ietf.meeting.utils import create_recording, get_next_sequence
 from ietf.meeting.views import session_draft_list, parse_agenda_filter_params, sessions_post_save, agenda_extract_schedule
 from ietf.name.models import SessionStatusName, ImportantDateName, RoleName, ProceedingsMaterialTypeName
 from ietf.utils.decorators import skip_coverage
@@ -8100,3 +8101,20 @@ class ProceedingsTests(BaseMeetingTestCase):
         pm = meeting.proceedings_materials.get(pk=pm.pk)
         self.assertEqual(str(pm), 'This Is Not the Default Name')
         self.assertEqual(pm.document.rev, orig_rev, 'Renaming should not change document revision')
+
+    def test_create_recording(self):
+        session = SessionFactory(meeting__type_id='ietf', meeting__number=72, group__acronym='mars')
+        filename = 'ietf42-testroomt-20000101-0800.mp3'
+        url = settings.IETF_AUDIO_URL + 'ietf{}/{}'.format(session.meeting.number, filename)
+        doc = create_recording(session, url)
+        self.assertEqual(doc.name,'recording-72-mars-1')
+        self.assertEqual(doc.group,session.group)
+        self.assertEqual(doc.external_url,url)
+        self.assertTrue(doc in session.materials.all())
+
+    def test_get_next_sequence(self):
+        session = SessionFactory(meeting__type_id='ietf', meeting__number=72, group__acronym='mars')
+        meeting = session.meeting
+        group = session.group
+        sequence = get_next_sequence(group,meeting,'recording')
+        self.assertEqual(sequence,1)

@@ -20,6 +20,8 @@
                         <th scope="col" data-sort="{{ h.key }}"
                             {% if h.title|slugify == "ipr" or h.title|slugify == "ad-shepherd" %}
                               class="d-none d-sm-table-cell"
+                            {% elif h.title|slugify == 'date' %}
+                              data-default-sort="desc"
                             {% endif %}>
                             {% if "sort_url" in h %}
                                 <a href="{{ h.sort_url }}">
