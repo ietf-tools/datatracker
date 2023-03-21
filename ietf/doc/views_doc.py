@@ -303,7 +303,7 @@ def document_main(request, name, rev=None, document_html=False):
             submission = "individual in %s area" % group.acronym
         else:
             if group.features.acts_like_wg and not group.type_id=="edwg":
-                submission = "%s %s" % (group.acronym, group.type)
+                submission = "%s %s, %s %s" % (group.acronym.upper(), group.type, group.parent.acronym.upper(), group.parent.type)
             else:
                 submission = group.acronym
             submission = "<a href=\"%s\">%s</a>" % (group.about_url(), submission)
