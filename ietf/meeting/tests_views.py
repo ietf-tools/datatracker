@@ -219,6 +219,7 @@ class MeetingTests(BaseMeetingTestCase):
         slot = TimeSlot.objects.get(sessionassignments__session=session,sessionassignments__schedule=meeting.schedule)
         slot.location.urlresource_set.create(name_id='meetecho_onsite', url='https://onsite.example.com')
         slot.location.urlresource_set.create(name_id='meetecho', url='https://meetecho.example.com')
+        meeting.timeslot_set.filter(type_id="break").update(show_location=False)
         #
         self.write_materials_files(meeting, session)
         #
@@ -348,9 +349,17 @@ class MeetingTests(BaseMeetingTestCase):
         self.assertContains(r, session.materials.filter(type='slides').exclude(states__type__slug='slides',states__slug='deleted').first().uploaded_filename)
         self.assertNotContains(r, session.materials.filter(type='slides',states__type__slug='slides',states__slug='deleted').first().uploaded_filename)
 
-        # iCal
-        r = self.client.get(urlreverse("ietf.meeting.views.agenda_ical", kwargs=dict(num=meeting.number))
-                            + "?show=" + session.group.parent.acronym.upper())
+        # iCal, no constraints
+        ical_url = urlreverse("ietf.meeting.views.agenda_ical", kwargs=dict(num=meeting.number))
+        r = self.client.get(ical_url)
+        with open('./ical-output.ics', 'w') as f:
+            f.write(r.content.decode())
+        assert_ical_response_is_valid(self, r)
+        self.assertContains(r, "BEGIN:VTIMEZONE")
+        self.assertContains(r, "END:VTIMEZONE")
+
+        # iCal, single group
+        r = self.client.get(ical_url + "?show=" + session.group.parent.acronym.upper())
         assert_ical_response_is_valid(self, r)
         self.assertContains(r, session.group.acronym)
         self.assertContains(r, session.group.name)
