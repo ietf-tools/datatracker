@@ -113,7 +113,6 @@
         "ietf/static/js/agenda_filter.js",
         "ietf/static/js/agenda_materials.js",
         "ietf/static/js/agenda_personalize.js",
-        "ietf/static/js/agenda_timezone.js",
         "ietf/static/js/complete-review.js",
         "ietf/static/js/create_timeslot.js",
         "ietf/static/js/create_timeslot.js",
