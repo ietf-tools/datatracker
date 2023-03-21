@@ -349,7 +349,7 @@ class MeetingTests(BaseMeetingTestCase):
         self.assertContains(r, session.materials.filter(type='slides').exclude(states__type__slug='slides',states__slug='deleted').first().uploaded_filename)
         self.assertNotContains(r, session.materials.filter(type='slides',states__type__slug='slides',states__slug='deleted').first().uploaded_filename)
 
-        # iCal, no constraints
+        # iCal, no session filtering
         ical_url = urlreverse("ietf.meeting.views.agenda_ical", kwargs=dict(num=meeting.number))
         r = self.client.get(ical_url)
         with open('./ical-output.ics', 'w') as f:
