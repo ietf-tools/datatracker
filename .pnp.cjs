@@ -71,7 +71,6 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["ical.js", "npm:1.5.0"],\
             ["jquery", "npm:3.6.3"],\
             ["jquery-migrate", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:3.4.1"],\
-            ["jquery-ui-dist", "npm:1.13.2"],\
             ["js-cookie", "npm:3.0.1"],\
             ["list.js", "npm:2.3.1"],\
             ["lodash", "npm:4.17.21"],\
@@ -5904,13 +5903,6 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
         }]\
       ]],\
       ["jquery", [\
-        ["npm:3.6.0", {\
-          "packageLocation": "./.yarn/cache/jquery-npm-3.6.0-ca7872bdbb-8fd5fef4aa.zip/node_modules/jquery/",\
-          "packageDependencies": [\
-            ["jquery", "npm:3.6.0"]\
-          ],\
-          "linkType": "HARD"\
-        }],\
         ["npm:3.6.3", {\
           "packageLocation": "./.yarn/cache/jquery-npm-3.6.3-cbc34d2330-0fd366bdca.zip/node_modules/jquery/",\
           "packageDependencies": [\
@@ -5937,16 +5929,6 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
           "packagePeers": [\
             "@types/jquery",\
             "jquery"\
-          ],\
-          "linkType": "HARD"\
-        }]\
-      ]],\
-      ["jquery-ui-dist", [\
-        ["npm:1.13.2", {\
-          "packageLocation": "./.yarn/cache/jquery-ui-dist-npm-1.13.2-86225c0ce7-4f3a3a2ff8.zip/node_modules/jquery-ui-dist/",\
-          "packageDependencies": [\
-            ["jquery-ui-dist", "npm:1.13.2"],\
-            ["jquery", "npm:3.6.0"]\
           ],\
           "linkType": "HARD"\
         }]\
@@ -7601,7 +7583,6 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["ical.js", "npm:1.5.0"],\
             ["jquery", "npm:3.6.3"],\
             ["jquery-migrate", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:3.4.1"],\
-            ["jquery-ui-dist", "npm:1.13.2"],\
             ["js-cookie", "npm:3.0.1"],\
             ["list.js", "npm:2.3.1"],\
             ["lodash", "npm:4.17.21"],\
