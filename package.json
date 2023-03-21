@@ -143,7 +143,6 @@
         "ietf/static/js/meeting-interim-request.js",
         "ietf/static/js/moment.js",
         "ietf/static/js/password_strength.js",
-        "ietf/static/js/room_params.js",
         "ietf/static/js/select2.js",
         "ietf/static/js/session_details_form.js",
         "ietf/static/js/sortable.js",
