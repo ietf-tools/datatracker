@@ -23,52 +23,83 @@ echo "Waiting for DB containers to come online..."
 /usr/local/bin/wait-for db:3306 -- echo "MariaDB ready"
 /usr/local/bin/wait-for pgdb:5432 -- echo "PostgreSQL ready"
 
-# Alter search path
-psql -U django -h pgdb -d ietf -v ON_ERROR_STOP=1 -c '\x' -c 'ALTER USER django set search_path=ietf_utf8,django,public;'
+# Set up schema and alter search path
+psql -U django -h pgdb -d ietf -v ON_ERROR_STOP=1 -c '\x' \
+  -c 'CREATE SCHEMA datatracker;' \
+  -c 'ALTER DATABASE ietf SET search_path=datatracker,public;' \
+  -c 'ALTER USER django set search_path=datatracker,django,public;' \
+  -c 'CREATE EXTENSION citext WITH SCHEMA datatracker;'
 
 # Copy settings files
 cp ./docker/configs/settings_local.py ./ietf/settings_local.py
 cp ./docker/configs/settings_mysqldb.py ./ietf/settings_mysqldb.py
 cp ./docker/configs/settings_postgresqldb.py ./ietf/settings_postgresqldb.py
 
-# Switch to MySQL config
-cat ./ietf/settings_local.py | sed 's/from ietf.settings_postgresqldb import DATABASES/from ietf.settings_mysqldb import DATABASES/' > /tmp/settings_local.py && mv /tmp/settings_local.py ./ietf/settings_local.py
-
-# Initial checks
-echo "Running initial checks..."
-/usr/local/bin/python ./ietf/manage.py check --settings=settings_local
-
-# The mysql database is always freshly build container from the 
-# image build of last-night's dump when this script is run
-# The first run of migrations will run anything merged from main that
-# that hasn't been released, and the few pre-engine-shift migrations
-# that the feat/postgres branch adds. It is guaranteed to fail at
-# utils.migrations.0004_pause_to_change_database_engines (where it
-# fails on purpose, hence the `|| true` so we may proceed
-/usr/local/bin/python ./ietf/manage.py migrate --settings=settings_local || true
-
 # Switch to PostgreSQL config
-cat ./ietf/settings_local.py | sed 's/from ietf.settings_mysqldb import DATABASES/from ietf.settings_postgresqldb import DATABASES/' > /tmp/settings_local.py && mv /tmp/settings_local.py ./ietf/settings_local.py
+#cat ./ietf/settings_local.py | sed 's/from ietf.settings_mysqldb import DATABASES/from ietf.settings_postgresqldb import DATABASES/' > /tmp/settings_local.py && mv /tmp/settings_local.py ./ietf/settings_local.py
 cat ./ietf/settings_postgresqldb.py | sed "s/'db'/'pgdb'/" > /tmp/settings_postgresqldb.py && mv /tmp/settings_postgresqldb.py ./ietf/settings_postgresqldb.py
 
-# Now transfer the migrated database from mysql to postgres unless that's already happened.
+# Migrate empty schema into postgres database
+/usr/local/bin/python ./ietf/manage.py migrate --settings=settings_local
+
+# Now transfer data from mysql to postgres
 echo "Transferring migrated database from MySQL to PostgreSQL..."
-EMPTY_CHECK=`psql -U django -h pgdb -d ietf -c "\dt" 2>&1`
-if echo ${EMPTY_CHECK} | grep -q "Did not find any relations."; then
-    cat << EOF > cast.load
+cat << EOF > transforms.lisp
+; transform functions for IETF datatracker conversion
+(in-package :pgloader.transforms)
+(defun integer-to-interval (dt)
+  "Convert microseconds to a postgres interval value"
+  (multiple-value-bind (totsec useconds) (floor (parse-integer dt) 1000000)
+    (multiple-value-bind (totmin seconds) (floor totsec 60)
+      (multiple-value-bind (tothours minutes) (floor totmin 60)
+        (multiple-value-bind (totdays hours) (floor tothours 24)
+          (multiple-value-bind (totmonths days) (floor totdays 30)
+            (multiple-value-bind (years months) (floor totmonths 12)
+              (format nil "~a years ~a months ~a days ~a hours ~a minutes ~a seconds ~a microseconds"
+                      years months days hours minutes seconds useconds))))))))
+EOF
+cat << EOF > cast.load
 LOAD DATABASE
 FROM mysql://django:RkTkDPFnKpko@db/ietf_utf8
 INTO postgresql://django:RkTkDPFnKpko@pgdb/ietf
-WITH workers = 3, concurrency = 1, batch size = 1MB, batch rows = 1000
-CAST type varchar to text drop typemod;
+WITH workers = 3, concurrency = 1, batch size = 1MB, batch rows = 1000,
+     data only, truncate, include no drop, create no tables, create no indexes, reset sequences
+EXCLUDING TABLE NAMES MATCHING
+    'django_migrations',
+    'community_communitylist_added_ids',
+    'community_documentchangedates',
+    'community_expectedchange',
+    'community_listnotification',
+    'community_rule_cached_ids',
+    'draft_versions_mirror',
+    'iesg_wgaction',
+    'ietfworkflows_annotationtag',
+    'ietfworkflows_statedescription',
+    'ietfworkflows_stream',
+    'ietfworkflows_wgworkflow',
+    'ipr_iprselecttype',
+    'ipr_iprlicensing',
+    'request_profiler_profilingrecord',
+    'request_profiler_ruleset',
+    'south_migrationhistory',
+    'submit_idapproveddetail',
+    'workflows_state',
+    'workflows_state_transitions',
+    'workflows_transition',
+    'workflows_workflow'
+CAST column meeting_session.requested_duration to interval using integer-to-interval,
+     column meeting_timeslot.duration to interval using integer-to-interval,
+     column meeting_meeting.idsubmit_cutoff_time_utc to interval using integer-to-interval,
+     column meeting_meeting.idsubmit_cutoff_warning_days to interval using integer-to-interval
+ALTER SCHEMA 'ietf_utf8' RENAME TO 'datatracker'
+BEFORE LOAD DO
+  \$\$ ALTER TABLE person_email ALTER COLUMN address TYPE text; \$\$
+AFTER LOAD DO
+  \$\$ ALTER TABLE person_email ALTER COLUMN address TYPE citext; \$\$
+;
 EOF
-    pgloader --verbose --logfile=ietf_pgloader.run --summary=ietf_pgloader.summary cast.load
-    rm cast.load
-    /usr/local/bin/python ./ietf/manage.py migrate --settings=settings_local
-else
-    echo "The postgres database is in an unexpected state"
-    echo ${EMPTY_CHECK}
-fi
+pgloader --verbose --logfile=ietf_pgloader.run --summary=ietf_pgloader.summary --load-lisp-file transforms.lisp cast.load
+rm cast.load transforms.lisp
 
 # Create export dump
 echo "Creating export dump..."
