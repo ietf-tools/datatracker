@@ -2238,6 +2238,48 @@ def agenda_json(request, num=None):
         response['Last-Modified'] = format_date_time(timegm(last_modified.timetuple()))
     return response
 
+
+def get_requests_summary_data(sessions):
+    """Returns summary data for list of session requests.
+    Summary data is a two dimensional array[row=session duration][col=session area count]
+    It also includes row and column headers as well as a totals row.
+    """
+    rows = []
+    exclude_type = ['team', 'rfcedtyp']
+    exclude_group = []
+    exclude_area = []
+
+    # first build a dictionary of counts, key=(duration,area)
+    durations = set()
+    areas = set()
+    duration_totals = defaultdict(int)
+    data = defaultdict(int)
+    for session in sessions:
+        if (session.group.area is None
+                or session.group.area.acronym in exclude_area
+                or session.group.acronym in exclude_group
+                or session.group.type.slug in exclude_type
+                or session.current_status == 'notmeet'):
+            continue
+
+        area = session.group.area.acronym.upper()
+        key = (session.requested_duration, area)
+        data[key] = data[key] + 1
+        durations.add(session.requested_duration)
+        areas.add(area)
+        duration_totals[session.requested_duration] = duration_totals[session.requested_duration] + 1
+
+    # build two dimensional array for use in template
+    sorted_areas = sorted(areas)
+    # add header row
+    rows.append(['Duration'] + sorted_areas + ['REQUESTED SLOTS'])
+    for duration in sorted(durations):
+        rows.append([duration.seconds / 3600] + [data[(duration, a)] for a in sorted_areas] + [duration_totals[duration]])
+    # add total row
+    rows.append(['Total'] + [sum([rows[r][c] for r in range(1, len(rows))]) for c in range(1, len(rows[0]))])
+    return rows
+
+
 def meeting_requests(request, num=None):
     meeting = get_meeting(num)
     groups_to_show = Group.objects.filter(
@@ -2289,6 +2331,7 @@ def meeting_requests(request, num=None):
             "meeting": meeting,
             "sessions": sessions,
             "groups_not_meeting": groups_not_meeting,
+            "requests_summary_data": get_requests_summary_data(sessions),
         },
     )
 

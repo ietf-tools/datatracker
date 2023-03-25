@@ -15,6 +15,26 @@
             {% if meeting.venue_name %}– {{ meeting.venue_name }}{% endif %}
         </small>
     </h1>
+
+    <h2>Requests Summary</h2>
+    <div>
+        <table class="table table-sm">
+            {% for row in requests_summary_data %}
+            <tr>
+                {% if forloop.first %}
+                    {% for col in row %}
+                        <th scope="col">{{ col }}</th>
+                    {% endfor %}
+                {% else %}
+                    {% for col in row %}
+                        <td>{{ col }}</td>
+                    {% endfor %}
+                {% endif %}
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+
     {% regroup sessions by display_area as area_sessions %}
     {% for area in area_sessions %}
         <h2 class="mt-5" id="{% firstof area.grouper.acronym "other-groups" %}">

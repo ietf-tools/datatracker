@@ -49,6 +49,7 @@ from ietf.meeting.utils import finalize, condition_slide_order
 from ietf.meeting.utils import add_event_info_to_session_qs
 from ietf.meeting.utils import create_recording, get_next_sequence
 from ietf.meeting.views import session_draft_list, parse_agenda_filter_params, sessions_post_save, agenda_extract_schedule
+from ietf.meeting.views import get_requests_summary_data
 from ietf.name.models import SessionStatusName, ImportantDateName, RoleName, ProceedingsMaterialTypeName
 from ietf.utils.decorators import skip_coverage
 from ietf.utils.mail import outbox, empty_outbox, get_payload_text
@@ -6580,6 +6581,14 @@ class ImportNotesTests(TestCase):
 
 class SessionTests(TestCase):
 
+    def test_get_requests_summary_data(self):
+        meeting = make_meeting_test_data(meeting=MeetingFactory(type_id='ietf', number='100'))
+        sessions = Session.objects.filter(meeting=meeting).with_current_status()
+        data = get_requests_summary_data(sessions)
+        assert data[0][0] == 'Duration'
+        assert len(data) > 2
+        assert data[-1][0] == 'Total'
+        
     def test_meeting_requests(self):
         meeting = MeetingFactory(type_id='ietf')
 
