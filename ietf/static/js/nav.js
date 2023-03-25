@@ -21,9 +21,8 @@ function get_level(el) {
     return h.charAt(h.length - 1);
 }
 
-export function populate_nav(nav, heading_selector, classes) {
+export function populate_nav(nav, headings, classes) {
     // Extract section headings from document
-    const headings = document.querySelectorAll(heading_selector);
     const min_level = Math.min(...Array.from(headings)
         .map(get_level));
 

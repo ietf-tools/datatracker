@@ -163,7 +163,7 @@ class AgendaApiTests(TestCase):
             meeting
         )
         AgendaKeywordTagger(assignments=processed).apply()
-        extracted = {item.pk: agenda_extract_schedule(item) for item in processed}
+        extracted = {item.session.pk: agenda_extract_schedule(item) for item in processed}
 
         hidden = extracted[hidden_sess.pk]
         self.assertIsNone(hidden['room'])
@@ -3140,10 +3140,15 @@ class ReorderSlidesTests(TestCase):
             self.assertEqual(list(session2.sessionpresentation_set.order_by('order').values_list('order',flat=True)), list(range(1,3)))
 
 
+
+
     def test_reorder_slides_in_session(self):
+        def _sppk_at(sppk, positions):
+            return [sppk[p-1] for p in positions]
         chair_role = RoleFactory(name_id='chair')
         session = SessionFactory(group=chair_role.group, meeting__date=date_today() - datetime.timedelta(days=90))
         sp_list = SessionPresentationFactory.create_batch(5, document__type_id='slides', session=session)
+        sppk = [o.pk for o in sp_list]
         for num, sp in enumerate(sp_list, start=1):
             sp.order = num
             sp.save()
@@ -3190,42 +3195,42 @@ class ReorderSlidesTests(TestCase):
             r = self.client.post(url, {'oldIndex':1, 'newIndex':3})
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.json()['success'],True)
-            self.assertEqual(list(session.sessionpresentation_set.order_by('order').values_list('pk',flat=True)),[2,3,1,4,5])
+            self.assertEqual(list(session.sessionpresentation_set.order_by('order').values_list('pk',flat=True)),_sppk_at(sppk,[2,3,1,4,5]))
 
             # Move to beginning
             r = self.client.post(url, {'oldIndex':3, 'newIndex':1})
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.json()['success'],True)
-            self.assertEqual(list(session.sessionpresentation_set.order_by('order').values_list('pk',flat=True)),[1,2,3,4,5])
+            self.assertEqual(list(session.sessionpresentation_set.order_by('order').values_list('pk',flat=True)),_sppk_at(sppk,[1,2,3,4,5]))
             
             # Move from end
             r = self.client.post(url, {'oldIndex':5, 'newIndex':3})
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.json()['success'],True)
-            self.assertEqual(list(session.sessionpresentation_set.order_by('order').values_list('pk',flat=True)),[1,2,5,3,4])
+            self.assertEqual(list(session.sessionpresentation_set.order_by('order').values_list('pk',flat=True)),_sppk_at(sppk,[1,2,5,3,4]))
 
             # Move to end
             r = self.client.post(url, {'oldIndex':3, 'newIndex':5})
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.json()['success'],True)
-            self.assertEqual(list(session.sessionpresentation_set.order_by('order').values_list('pk',flat=True)),[1,2,3,4,5])
+            self.assertEqual(list(session.sessionpresentation_set.order_by('order').values_list('pk',flat=True)),_sppk_at(sppk,[1,2,3,4,5]))
 
             # Move beginning to end
             r = self.client.post(url, {'oldIndex':1, 'newIndex':5})
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.json()['success'],True)
-            self.assertEqual(list(session.sessionpresentation_set.order_by('order').values_list('pk',flat=True)),[2,3,4,5,1])
+            self.assertEqual(list(session.sessionpresentation_set.order_by('order').values_list('pk',flat=True)),_sppk_at(sppk,[2,3,4,5,1]))
 
             # Move middle to middle 
             r = self.client.post(url, {'oldIndex':3, 'newIndex':4})
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.json()['success'],True)
-            self.assertEqual(list(session.sessionpresentation_set.order_by('order').values_list('pk',flat=True)),[2,3,5,4,1])
+            self.assertEqual(list(session.sessionpresentation_set.order_by('order').values_list('pk',flat=True)),_sppk_at(sppk,[2,3,5,4,1]))
 
             r = self.client.post(url, {'oldIndex':3, 'newIndex':2})
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.json()['success'],True)
-            self.assertEqual(list(session.sessionpresentation_set.order_by('order').values_list('pk',flat=True)),[2,5,3,4,1])
+            self.assertEqual(list(session.sessionpresentation_set.order_by('order').values_list('pk',flat=True)),_sppk_at(sppk,[2,5,3,4,1]))
 
             # Reset for next iteration in the loop
             session.sessionpresentation_set.update(order=F('pk'))
