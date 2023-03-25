@@ -1313,14 +1313,17 @@ def eligible(request, year, public=False):
 def public_volunteers(request, year):
     return volunteers(request=request, year=year, public=True)
 
-def private_volunteers(request, year):
-    return volunteers(request=request, year=year, public=False)
+def private_volunteers(request, year, mode):
+    return volunteers(request=request, year=year, public=False, mode="full")
 
 
 @role_required("Nomcom Chair", "Nomcom Advisor", "Secretariat")
-def volunteers(request, year, public=False):
+def volunteers(request, year, public=False, mode="full"):
     nomcom, volunteers = extract_volunteers(year)
-    return render(request, 'nomcom/volunteers.html', dict(year=year, nomcom=nomcom, volunteers=volunteers, public=public))
+    fullmode = 1
+    if mode != "full":
+        fullmode=0
+    return render(request, 'nomcom/volunteers.html', dict(year=year, nomcom=nomcom, volunteers=volunteers, public=public, fullmode=fullmode))
 
 @role_required("Nomcom Chair", "Nomcom Advisor", "Secretariat")
 def private_volunteers_csv(request, year, public=False):
