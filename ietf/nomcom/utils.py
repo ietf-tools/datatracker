@@ -95,7 +95,7 @@ def get_user_email(user):
             if emails:
                 user._email_cache = emails[0]
                 for email in emails:
-                    if email.address == user.username:
+                    if email.address.lower() == user.username.lower():
                         user._email_cache = email
         else:
             try: 

@@ -36,7 +36,7 @@ def lookup_community_list(username=None, acronym=None):
         group = get_object_or_404(Group, acronym=acronym)
         clist = CommunityList.objects.filter(group=group).first() or CommunityList(group=group)
     else:
-        user = get_object_or_404(User, username=username)
+        user = get_object_or_404(User, username__iexact=username)
         clist = CommunityList.objects.filter(user=user).first() or CommunityList(user=user)
 
     return clist

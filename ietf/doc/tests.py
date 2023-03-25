@@ -93,6 +93,10 @@ class SearchTests(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, "draft-foo-mars-test")
 
+        r = self.client.get(base_url + "?olddrafts=on&name=FoO")  # mixed case
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "draft-foo-mars-test")
+
         # find by rfc/active/inactive
         draft.set_state(State.objects.get(type="draft", slug="rfc"))
         r = self.client.get(base_url + "?rfcs=on&name=%s" % draft.name)
@@ -123,6 +127,10 @@ class SearchTests(TestCase):
 
         # find by group
         r = self.client.get(base_url + "?activedrafts=on&by=group&group=%s" % draft.group.acronym)
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, draft.title)
+
+        r = self.client.get(base_url + "?activedrafts=on&by=group&group=%s" % draft.group.acronym.swapcase())
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, draft.title)
 
@@ -167,13 +175,36 @@ class SearchTests(TestCase):
         self.assertEqual(r.status_code, 302)
         self.assertEqual(urlparse(r["Location"]).path, urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)))
 
+        # mixed-up case exact match
+        r = self.client.get(urlreverse('ietf.doc.views_search.search_for_name', kwargs=dict(name=draft.name.swapcase())))
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(urlparse(r["Location"]).path, urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)))
+
         # prefix match
         r = self.client.get(urlreverse('ietf.doc.views_search.search_for_name', kwargs=dict(name="-".join(draft.name.split("-")[:-1]))))
         self.assertEqual(r.status_code, 302)
         self.assertEqual(urlparse(r["Location"]).path, urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)))
 
+        # mixed-up case prefix match
+        r = self.client.get(
+            urlreverse(
+                'ietf.doc.views_search.search_for_name',
+                kwargs=dict(name="-".join(draft.name.swapcase().split("-")[:-1])),
+            ))
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(urlparse(r["Location"]).path, urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)))
+
         # non-prefix match
         r = self.client.get(urlreverse('ietf.doc.views_search.search_for_name', kwargs=dict(name="-".join(draft.name.split("-")[1:]))))
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(urlparse(r["Location"]).path, urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)))
+
+        # mixed-up case non-prefix match
+        r = self.client.get(
+            urlreverse(
+                'ietf.doc.views_search.search_for_name',
+                kwargs=dict(name="-".join(draft.name.swapcase().split("-")[1:])),
+            ))
         self.assertEqual(r.status_code, 302)
         self.assertEqual(urlparse(r["Location"]).path, urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)))
 

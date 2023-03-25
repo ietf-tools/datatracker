@@ -17,17 +17,10 @@ services:
             GITHUB_ACTIONS: 'true'
             HOME: /github/home
     db:
-        image: ghcr.io/ietf-tools/datatracker-db:latest
+        image: ghcr.io/ietf-tools/datatracker-db-pg:latest
         restart: unless-stopped
         volumes:
-            - mariadb-data:/var/lib/mysql
-        environment:
-            MYSQL_ROOT_PASSWORD: RkTkDPFnKpko
-            MYSQL_DATABASE: ietf_utf8
-            MYSQL_USER: django
-            MYSQL_PASSWORD: RkTkDPFnKpko
-            CI: 'true'
-            GITHUB_ACTIONS: 'true'
+            - postgresdb-data:/var/lib/postgresql/data
 
 volumes:
-    mariadb-data:
+    postgresdb-data:
