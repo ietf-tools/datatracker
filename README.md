@@ -202,7 +202,7 @@ before activating a new release.
 
 From a datatracker container, run the command:
 ```sh
-./ietf/manage.py test --settings=settings_local_sqlitetest
+./ietf/manage.py test --settings=settings_postgrestest
 ```
 
 > You can limit the run to specific tests using the `--pattern` argument.
