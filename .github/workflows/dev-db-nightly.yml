@@ -134,7 +134,7 @@ jobs:
     steps:
     - uses: actions/checkout@v3
       with:
-        ref: 'feat/pg-migrations'
+        ref: 'feat/postgres'
         
     - name: Migrate
       uses: nick-fields/retry@v2
