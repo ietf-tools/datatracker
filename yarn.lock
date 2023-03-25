@@ -284,12 +284,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@fullcalendar/bootstrap5@npm:6.1.4":
-  version: 6.1.4
-  resolution: "@fullcalendar/bootstrap5@npm:6.1.4"
+"@fullcalendar/bootstrap5@npm:6.1.5":
+  version: 6.1.5
+  resolution: "@fullcalendar/bootstrap5@npm:6.1.5"
   peerDependencies:
-    "@fullcalendar/core": ~6.1.4
-  checksum: e4a5dd281d95d0cd24ee8ecb6b0454b1a081c5236cb9ac8d2b0ddac777160d0bd31a7f489368c7d0c33a1ac026cec9e8d62cc4e7f1980a11d84165a271860371
+    "@fullcalendar/core": ~6.1.5
+  checksum: c2f886582344e268bdb342ef6ae2152a9ffe42f4ba48ab1eaa54414413cf52dbe3fb2c423efb44ca491318a53bb17bc476602b9a21672b07dd3bec48eec9345d
   languageName: node
   linkType: hard
 
@@ -311,13 +311,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@fullcalendar/icalendar@npm:6.1.4":
-  version: 6.1.4
-  resolution: "@fullcalendar/icalendar@npm:6.1.4"
+"@fullcalendar/icalendar@npm:6.1.5":
+  version: 6.1.5
+  resolution: "@fullcalendar/icalendar@npm:6.1.5"
   peerDependencies:
-    "@fullcalendar/core": ~6.1.4
+    "@fullcalendar/core": ~6.1.5
     ical.js: ^1.4.0
-  checksum: 4ec2ed9092bf963dd889ffb01dd5ec6c956810e3b791a16a3d5c4bd0b303850757ad03b000c79d026ed8f7a9dbc53b673743c4eec0b8901bc4030a56d718f94c
+  checksum: c7d53f932860dceac8d69ef9280c2f9990de976ff060871f13b40c3ff69b951104dfa283cecb233bb03bffd71766c4b31687f76904e9d18ff5fa28b36d04ae3b
   languageName: node
   linkType: hard
 
@@ -339,13 +339,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@fullcalendar/luxon2@npm:6.1.4":
-  version: 6.1.4
-  resolution: "@fullcalendar/luxon2@npm:6.1.4"
+"@fullcalendar/luxon2@npm:6.1.5":
+  version: 6.1.5
+  resolution: "@fullcalendar/luxon2@npm:6.1.5"
   peerDependencies:
-    "@fullcalendar/core": ~6.1.4
+    "@fullcalendar/core": ~6.1.5
     luxon: ^2.0.0
-  checksum: 577283ad7cd555c25143f64c865554aebaa957b0bc51bcece7114bb7282abb448a8450b23863fb6287c6e91f7f89cc261beb51c8e0542c5b0df6c853fe3bd9c3
+  checksum: 6253f7d06695a73745c719b44d4048ec2aca1dc0dbf24c57ad7721cf540cff1672e9ccc9e595bb2ec822c5f54b066a259fb5280feb778dce779288417c668085
   languageName: node
   linkType: hard
 
@@ -360,13 +360,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@fullcalendar/vue3@npm:6.1.4":
-  version: 6.1.4
-  resolution: "@fullcalendar/vue3@npm:6.1.4"
+"@fullcalendar/vue3@npm:6.1.5":
+  version: 6.1.5
+  resolution: "@fullcalendar/vue3@npm:6.1.5"
   peerDependencies:
-    "@fullcalendar/core": ~6.1.4
+    "@fullcalendar/core": ~6.1.5
     vue: ^3.0.11
-  checksum: 3e11102fbf09e2e62d52c03f7fc42435c816faeefd57c1e551271af6bfdeb52be7380b6d9b199e652a742626c17a21227092b83039f30a48f76d9d26ffae9beb
+  checksum: bf426f3668ec813174b33c7151555299ee40176f53a481e72f5352002da257a9182c6b1c6cc0083f5e10f76601ccbe25af814fe0ae741516149e078dccc7efd1
   languageName: node
   linkType: hard
 
@@ -1721,13 +1721,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@vitejs/plugin-vue@npm:4.0.0":
-  version: 4.0.0
-  resolution: "@vitejs/plugin-vue@npm:4.0.0"
+"@vitejs/plugin-vue@npm:4.1.0":
+  version: 4.1.0
+  resolution: "@vitejs/plugin-vue@npm:4.1.0"
   peerDependencies:
     vite: ^4.0.0
     vue: ^3.2.25
-  checksum: 5a53414912db644ca7a663d87c8d4838841dbf794772105c9b3bc3fb10214fc86c2f1f1a47350f264370e9a5fd2475f3b6882778b2440b5085d3fe7550ced542
+  checksum: 532192a3da39f3fd6ba9d4fa9de74533cf6e222785c26bcb75bde9f826c5c4a22ad6f0bb09fae83e3393f9d8d24b6982d547683b1967972a4350e8e76aecf3cb
   languageName: node
   linkType: hard
 
@@ -4178,9 +4178,9 @@ browserlist@latest:
   languageName: node
   linkType: hard
 
-"html-validate@npm:7.13.2":
-  version: 7.13.2
-  resolution: "html-validate@npm:7.13.2"
+"html-validate@npm:7.13.3":
+  version: 7.13.3
+  resolution: "html-validate@npm:7.13.3"
   dependencies:
     "@babel/code-frame": ^7.10.0
     "@html-validate/stylish": ^3.0.0
@@ -4208,7 +4208,7 @@ browserlist@latest:
       optional: true
   bin:
     html-validate: bin/html-validate.js
-  checksum: 891e03479e8c66b45734d49b9bd2a60a5b9c774a35972b545a3996df264f47b15f112b17a02e3660ecddb21f2161963fcf1000d149dcd9c97c30c15ff58d5e53
+  checksum: d58b7eff726e5351b5f9ed54674b741f94f29b210e8f854e299eab8f2cd6a25d008c19aa57838403beb19e64ca771747ad8e53d4e460bb9d72c6265db26c1fa1
   languageName: node
   linkType: hard
 
@@ -4735,10 +4735,10 @@ browserlist@latest:
   languageName: node
   linkType: hard
 
-"jquery@npm:3.6.3":
-  version: 3.6.3
-  resolution: "jquery@npm:3.6.3"
-  checksum: 0fd366bdcaa0c84a7a8751ce20f8192290141913978b5059574426d9b01f4365daa675f95aab3eec94fd794d27b08d32078a2236bef404b8ba78073009988ce6
+"jquery@npm:3.6.4":
+  version: 3.6.4
+  resolution: "jquery@npm:3.6.4"
+  checksum: 8354f7bd0a0424aa714ee1b6b1ef74b410f834eb5c8501682289b358bc151f11677f11188b544f3bb49309d6ec4d15d1a5de175661250c206b06185a252f706f
   languageName: node
   linkType: hard
 
@@ -6216,22 +6216,22 @@ browserlist@latest:
   resolution: "root-workspace-0b6124@workspace:."
   dependencies:
     "@faker-js/faker": 7.6.0
-    "@fullcalendar/bootstrap5": 6.1.4
+    "@fullcalendar/bootstrap5": 6.1.5
     "@fullcalendar/core": 6.1.4
     "@fullcalendar/daygrid": 6.1.4
-    "@fullcalendar/icalendar": 6.1.4
+    "@fullcalendar/icalendar": 6.1.5
     "@fullcalendar/interaction": 6.1.4
     "@fullcalendar/list": 6.1.4
-    "@fullcalendar/luxon2": 6.1.4
+    "@fullcalendar/luxon2": 6.1.5
     "@fullcalendar/timegrid": 6.1.4
-    "@fullcalendar/vue3": 6.1.4
+    "@fullcalendar/vue3": 6.1.5
     "@parcel/optimizer-data-url": 2.8.3
     "@parcel/transformer-inline-string": 2.8.3
     "@parcel/transformer-sass": 2.8.3
     "@popperjs/core": 2.11.6
     "@rollup/pluginutils": 5.0.2
     "@twuni/emojify": 1.0.2
-    "@vitejs/plugin-vue": 4.0.0
+    "@vitejs/plugin-vue": 4.1.0
     bootstrap: 5.2.3
     bootstrap-icons: 1.10.3
     browser-fs-access: 0.33.0
@@ -6249,9 +6249,9 @@ browserlist@latest:
     eslint-plugin-vue: 9.9.0
     file-saver: 2.0.5
     highcharts: 10.3.3
-    html-validate: 7.13.2
+    html-validate: 7.13.3
     ical.js: 1.5.0
-    jquery: 3.6.3
+    jquery: 3.6.4
     jquery-migrate: 3.4.1
     js-cookie: 3.0.1
     list.js: 2.3.1
@@ -6267,7 +6267,7 @@ browserlist@latest:
     pinia: 2.0.33
     pinia-plugin-persist: 1.0.0
     pug: 3.0.2
-    sass: 1.58.3
+    sass: 1.59.3
     seedrandom: 3.0.5
     select2: 4.1.0-rc.0
     select2-bootstrap-5-theme: 1.3.0
@@ -6331,16 +6331,16 @@ browserlist@latest:
   languageName: node
   linkType: hard
 
-"sass@npm:1.58.3":
-  version: 1.58.3
-  resolution: "sass@npm:1.58.3"
+"sass@npm:1.59.3":
+  version: 1.59.3
+  resolution: "sass@npm:1.59.3"
   dependencies:
     chokidar: ">=3.0.0 <4.0.0"
     immutable: ^4.0.0
     source-map-js: ">=0.6.2 <2.0.0"
   bin:
     sass: sass.js
-  checksum: 35a2b98c037ef80fdc93c9b0be846e6ccc7d75596351a37ee79c397e66666d0a754c52c4696e746c0aff32327471e185343ca349e998a58340411adc9d0489a5
+  checksum: 839b5282cdf7d0ba3fdbfb605277dd584a8c40fa3e3e58ad905d64cd812acfb82ff0a4072d4981673db884ee61505472ff07c5c5a8a497f16ba013b183ba6473
   languageName: node
   linkType: hard
 
