@@ -1232,7 +1232,6 @@ class BallotContentTests(TestCase):
         self.assertEqual(len(heading), 1)
         # <div.h5> is followed by a panel with the message of interest, so use next()
         next = heading.next()
-        print(f"looking for {expected} in:\n{next}")
         self.assertEqual(
             len(next.find(
                 f'*[title="{expected}"]'
