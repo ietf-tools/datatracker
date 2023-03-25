@@ -40,6 +40,7 @@ cp ./docker/configs/settings_postgresqldb.py ./ietf/settings_postgresqldb.py
 cat ./ietf/settings_postgresqldb.py | sed "s/'db'/'pgdb'/" > /tmp/settings_postgresqldb.py && mv /tmp/settings_postgresqldb.py ./ietf/settings_postgresqldb.py
 
 # Migrate empty schema into postgres database
+/usr/local/bin/python ./ietf/manage.py check --settings=settings_local
 /usr/local/bin/python ./ietf/manage.py migrate --settings=settings_local
 
 # Now transfer data from mysql to postgres
