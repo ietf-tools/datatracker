@@ -143,6 +143,7 @@ def fill_in_document_table_attributes(docs, have_telechat_date=False):
     xed_by = RelatedDocument.objects.filter(target__name__in=list(rfc_aliases.values()),
                                             relationship__in=("obs", "updates")).select_related('target')
     rel_rfc_aliases = dict([ (a.document.id, re.sub(r"rfc(\d+)", r"RFC \1", a.name, flags=re.IGNORECASE)) for a in DocAlias.objects.filter(name__startswith="rfc", docs__id__in=[rel.source_id for rel in xed_by]) ])
+    l = []
     for rel in xed_by:
         d = doc_dict[rel.target.document.id]
         if rel.relationship_id == "obs":
@@ -150,7 +151,7 @@ def fill_in_document_table_attributes(docs, have_telechat_date=False):
         elif rel.relationship_id == "updates":
             l = d.updated_by_list
         l.append(rel_rfc_aliases[rel.source_id])
-        l.sort()
+    l.sort(key=lambda x: int(re.sub(r"rfc\s*(\d+)", r"\1", x, flags=re.IGNORECASE)))
 
 def augment_docs_with_related_docs_info(docs):
     """Augment all documents with related documents information.
