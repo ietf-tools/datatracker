@@ -782,12 +782,14 @@ def view_feedback(request, year):
 
     sorted_nominees = sorted(nominees,key=lambda x:x.staterank)
 
+    fbtotals = []
     for nominee in sorted_nominees:
         last_seen = FeedbackLastSeen.objects.filter(reviewer=request.user.person,nominee=nominee).first()
         nominee_feedback = []
         for ft in nominee_feedback_types:
             qs = nominee.feedback_set.by_type(ft.slug)
             count = qs.count()
+            fbtotals[ft.slug] = count + fbtotals.get(ft.slug, 0);
             if not count:
                 newflag = False
             elif not last_seen:
@@ -822,6 +824,7 @@ def view_feedback(request, year):
                                'topics_feedback': topics_feedback,
                                'independent_feedback': independent_feedback,
                                'nominees_feedback': nominees_feedback,
+                               'feedback_totals': fbtotals,
                                'nomcom': nomcom})
 
 
