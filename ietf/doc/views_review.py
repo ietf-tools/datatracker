@@ -373,7 +373,7 @@ def reject_reviewer_assignment(request, name, assignment_id):
     if can_manage_request:
         allow_reject_request = True
 
-    if request.method == "POST" and request.POST.get("action") == "reject" and not review_request_past_deadline:
+    if request.method == "POST" and request.POST.get("action") == "reject" and allow_reject_request:
         form = RejectReviewerAssignmentForm(request.POST)
         if form.is_valid():
             # reject the assignment

@@ -420,7 +420,16 @@ class ReviewTests(TestCase):
         self.assertContains(r, reject_url)
         self.client.logout()
 
-        # get reject page
+        # Check that user can reject it
+        login_testing_unauthorized(self, assignment.reviewer.person.user.username, reject_url)
+        r = self.client.get(reject_url)
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, escape(assignment.reviewer.person.name))
+        self.assertNotContains(r, 'can not be rejected')
+        self.assertContains(r, '<button type="submit"')
+        self.client.logout()
+
+        # Secretary can also reject it
         login_testing_unauthorized(self, "reviewsecretary", reject_url)
         r = self.client.get(reject_url)
         self.assertEqual(r.status_code, 200)
@@ -444,12 +453,17 @@ class ReviewTests(TestCase):
         self.assertNotIn("<reviewsecretary@example.com>", outbox[0]["To"])
         self.assertTrue("Test message" in get_payload_text(outbox[0]))
 
-        # try again, but now with an expired review request, which should not be allowed (#2277)
+        # try again, but now with an expired review request,
+        # which should not be allowed (#2277)
         assignment.state_id = 'assigned'
         assignment.save()
         review_req.deadline = datetime.date(2019, 1, 1)
         review_req.save()
+        self.client.logout()
         
+        # Login as reviewer to do this test, so it should fail, as the
+        # request is past deadline
+        login_testing_unauthorized(self, assignment.reviewer.person.user.username, reject_url)
         r = self.client.get(reject_url)
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, escape(assignment.reviewer.person.name))
@@ -461,10 +475,53 @@ class ReviewTests(TestCase):
         r = self.client.post(reject_url, { "action": "reject", "message_to_secretary": "Test message" })
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, 'can not be rejected')
+        self.client.logout()
+
+        # Change settings so that even the reviewer should
+        # be allowed to reject the request even after past deadline
+        m = apps.get_model('review', 'ReviewTeamSettings')
+        for row in m.objects.all():
+            if row.group.upcase_acronym == review_team.upcase_acronym:
+               row.allow_reviewer_to_reject_after_deadline = True
+               row.save(update_fields=['allow_reviewer_to_reject_after_deadline'])
+
+        # Test again as user
+        login_testing_unauthorized(self, assignment.reviewer.person.user.username, reject_url)
+        r = self.client.get(reject_url)
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, escape(assignment.reviewer.person.name))
+        self.assertNotContains(r, 'can not be rejected')
+        self.assertContains(r, '<button type="submit"')
 
         assignment = reload_db_objects(assignment)
         self.assertEqual(assignment.state_id, "assigned")
         self.assertEqual(len(outbox), 0)
+        self.client.logout()
+
+        # Log in as secretary and that should allow rejecting the review
+        # even if the deadline is past
+        login_testing_unauthorized(self, "reviewsecretary", reject_url)
+        r = self.client.get(reject_url)
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, escape(assignment.reviewer.person.name))
+        self.assertNotContains(r, 'can not be rejected')
+        self.assertContains(r, '<button type="submit"')
+
+        # Revert the setting of allow_reviewer_to_reject_after_deadline
+        # This should not affect the secretary's ability to reject.
+        m = apps.get_model('review', 'ReviewTeamSettings')
+        for row in m.objects.all():
+            if row.group.upcase_acronym == review_team.upcase_acronym:
+               row.allow_reviewer_to_reject_after_deadline = False
+               row.save(update_fields=['allow_reviewer_to_reject_after_deadline'])
+        # Log in as secretary and that should allow rejecting the review
+        # even if the deadline is past
+        r = self.client.get(reject_url)
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, escape(assignment.reviewer.person.name))
+        self.assertNotContains(r, 'can not be rejected')
+        self.assertContains(r, '<button type="submit"')
+
 
     def make_test_mbox_tarball(self, review_req):
         mbox_path = os.path.join(self.review_dir, "testmbox.tar.gz")
