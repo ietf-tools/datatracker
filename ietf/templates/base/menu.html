@@ -145,14 +145,6 @@
                     </a>
                 </li>
             {% endfor %}
-            {% for g in user|matman_groups %}
-                <li>
-                    <a class="dropdown-item {% if flavor != 'top' %}text-wrap link-primary{% endif %}"
-                       href="{% url "ietf.group.views.meetings" g.acronym %}">
-                        {{ g.acronym }} {{ g.type.slug }} meetings
-                    </a>
-                </li>
-            {% endfor %}
         {% endif %}
         {% if user|has_role:"Review Team Secretary" %}
             {% if flavor == 'top' %}
@@ -270,18 +262,41 @@
             Important dates
         </a>
     </li>
-    <li>
-        <a class="dropdown-item {% if flavor != 'top' %}text-wrap link-primary{% endif %}"
-           href="{% url 'ietf.secr.sreq.views.main' %}">
-            Request a session
-        </a>
-    </li>
-    <li>
-        <a class="dropdown-item {% if flavor != 'top' %}text-wrap link-primary{% endif %}"
-           href="{% url 'ietf.meeting.views.meeting_requests' %}">
-            Session requests
-        </a>
-    </li>
+    {% if user|has_role:"WG Chair,WG Secretary,RG Chair,IAB Group Chair,Area Director,Secretariat,Team Chair,IRTF Chair,Program Chair,Program Lead,Program Secretary,EDWG Chair" %}
+        <li>
+            <a class="dropdown-item {% if flavor != 'top' %}text-wrap link-primary{% endif %}"
+               href="{% url 'ietf.secr.sreq.views.main' %}">
+                Request a session
+            </a>
+        </li>
+    {% endif %}
+    {% if user|has_role:"WG Chair,RG Chair" %}
+        <li>
+            <a class="dropdown-item {% if flavor != 'top' %}text-wrap link-primary{% endif %}"
+               href="{% url 'ietf.meeting.views.interim_request' %}">
+                Request an interim meeting
+            </a>
+        </li>
+    {% endif %}
+        <li>
+            <a class="dropdown-item {% if flavor != 'top' %}text-wrap link-primary{% endif %}"
+               href="{% url 'ietf.meeting.views.meeting_requests' %}">
+                Session requests
+            </a>
+        </li>
+    {% if user|has_role:"WG Chair,RG Chair" %}
+        {% if flavor == 'top' %}<li><hr class="dropdown-divider"></li>{% endif %}
+        <li {% if flavor == 'top' %}class="dropdown-header"{% else %}class="nav-item fw-bolder"{% endif %}>Manage</li>
+            {% for g in user|matman_groups %}
+                <li>
+                    <a class="dropdown-item {% if flavor != 'top' %}text-wrap link-primary{% endif %}"
+                       href="{% url "ietf.group.views.meetings" g.acronym %}">
+                        {{ g.acronym }} {{ g.type.slug }} meetings
+                    </a>
+                </li>
+            {% endfor %}
+    {% endif %}
+
     {% if flavor == 'top' %}
         {% if flavor == 'top' %}
             <li><hr class="dropdown-divider">
