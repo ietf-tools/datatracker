@@ -1314,8 +1314,7 @@ def public_volunteers(request, year):
     return volunteers(request=request, year=year, public=True)
 
 def private_volunteers(request, year, mode="full"):
-    return volunteers(request=request, year=year, public=False, mode)
-
+    return volunteers(request=request, year=year, public=False, mode=mode)
 
 @role_required("Nomcom Chair", "Nomcom Advisor", "Secretariat")
 def volunteers(request, year, public=False, mode="full"):
