@@ -476,9 +476,10 @@ class RotateAlphabeticallyReviewerQueuePolicy(AbstractReviewerQueuePolicy):
         # As RotateAlphabetically does not keep a full rotation list,
         # returning someone to a particular order is complex.
         # Instead, the "assign me next" flag is set.
-        settings = self._reviewer_settings_for(reviewer_person)
-        settings.request_assignment_next = wants_to_be_next
-        settings.save()
+        if wants_to_be_next:
+            settings = self._reviewer_settings_for(reviewer_person)
+            settings.request_assignment_next = wants_to_be_next
+            settings.save()
 
     def _update_skip_next(self, rotation_pks, assignee_person):
         """Decrement skip_next for all users skipped
@@ -570,7 +571,10 @@ class LeastRecentlyUsedReviewerQueuePolicy(AbstractReviewerQueuePolicy):
         # Reviewer rotation for this policy ignores rejected/withdrawn
         # reviews, so it automatically adjusts the position of someone
         # who rejected a review and no further action is needed.
-        pass
+        if wants_to_be_next:
+            settings = self._reviewer_settings_for(reviewer_person)
+            settings.request_assignment_next = wants_to_be_next
+            settings.save()
 
 
 QUEUE_POLICY_NAME_MAPPING = {
