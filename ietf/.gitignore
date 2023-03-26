@@ -5,5 +5,4 @@
 /settings_local_vite.py
 /settings_mysqldb.py
 /settings_postgresqldb.py
-/settings_postgrestest.py
 /ietfdb.sql.gz
