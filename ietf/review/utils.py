@@ -588,10 +588,12 @@ def suggested_review_requests_for_team(team):
                    and existing.reviewassignment_set.filter(state_id__in=("assigned", "accepted")).exists()
                    and (not existing.requested_rev or existing.requested_rev == request.doc.rev))
         request_closed = existing.state_id not in ('requested','assigned')
+        # Is there a review request for this document already in system
+        requested = existing.state_id in ('requested')
         # at least one assignment was completed for the requested version or the current doc version if no specific version was requested:
         some_assignment_completed = existing.reviewassignment_set.filter(reviewed_rev=existing.requested_rev or existing.doc.rev, state_id='completed').exists()
 
-        return any([no_review_document, no_review_rev, pending, request_closed, some_assignment_completed])
+        return any([no_review_document, no_review_rev, pending, request_closed, requested, some_assignment_completed])
 
     res = [r for r in requests.values()
            if not any(blocks(e, r) for e in existing_requests[r.doc_id])]
