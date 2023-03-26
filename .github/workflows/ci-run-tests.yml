@@ -4,7 +4,7 @@ on:
   pull_request:
     branches:
       - 'main'
-      - 'feat/tzaware'
+      - 'feat/postgres'
     paths:
       - 'client/**'
       - 'ietf/**'
