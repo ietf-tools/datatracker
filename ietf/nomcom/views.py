@@ -1313,8 +1313,8 @@ def eligible(request, year, public=False):
 def public_volunteers(request, year):
     return volunteers(request=request, year=year, public=True)
 
-def private_volunteers(request, year, mode):
-    return volunteers(request=request, year=year, public=False, mode="full")
+def private_volunteers(request, year, mode="full"):
+    return volunteers(request=request, year=year, public=False, mode)
 
 
 @role_required("Nomcom Chair", "Nomcom Advisor", "Secretariat")
