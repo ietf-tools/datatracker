@@ -18,16 +18,12 @@
             <thead>
                 <tr>
                     <th scope="col"></th>
+                    <th scope="col" data-sort="plain">Plain name</th>
+		    <th scope="col" data-sort="affiliation">Affiliation</th>
 		    {% if fullmode %}
 			<th scope="col" data-sort="last">Last name</th>
 			<th scope="col" data-sort="first">First name</th>
-		    {% endif %}
-                    <th scope="col" data-sort="plain">Plain name</th>
-		    {% if fullmode %}
 			<th scope="col" data-sort="page">Profile page</th>
-		    {% endif %}
-		    <th scope="col" data-sort="affiliation">Affiliation</th>
-		    {% if fullmode %}
 			<th scope="col" data-sort="primary">Primary email</th>
 			<th scope="col" data-sort="qualifications">Qualifications</th>
 		    {% endif %}
@@ -37,16 +33,12 @@
                 {% for v in eligibility_group.list %}
                     <tr>
                         <td>{{ forloop.counter }}</td>
+                        <td>{{ v.person.ascii_name }}</td>
+                        <td>{{ v.affiliation }}</td>
 			{% if fullmode %}
 			    <td>{{ v.person.last_name }}</td>
 			    <td>{{ v.person.first_name }}</td>
-			{% endif %}
-                        <td>{{ v.person.ascii_name }}</td>
-			{% if fullmode %}
 			    <td>{% person_link v.person %}</td>
-			{% endif %}
-                        <td>{{ v.affiliation }}</td>
-			{% if fullmode %}
 			    <td>{{ v.person.email|linkify }}</td>
 			    <td>{{ v.qualifications }}</td>
 			{% endif %}
