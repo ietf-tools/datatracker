@@ -25,6 +25,7 @@ echo "Waiting for DB containers to come online..."
 
 # Set up schema and alter search path
 psql -U django -h pgdb -d ietf -v ON_ERROR_STOP=1 -c '\x' \
+  -c 'DROP SCHEMA IF EXISTS ietf_utf8 CASCADE;' \
   -c 'CREATE SCHEMA ietf_utf8;' \
   -c 'ALTER DATABASE ietf SET search_path=ietf_utf8,public;' \
   -c 'ALTER USER django set search_path=ietf_utf8,django,public;' \
