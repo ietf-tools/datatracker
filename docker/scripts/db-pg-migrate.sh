@@ -25,10 +25,10 @@ echo "Waiting for DB containers to come online..."
 
 # Set up schema and alter search path
 psql -U django -h pgdb -d ietf -v ON_ERROR_STOP=1 -c '\x' \
-  -c 'CREATE SCHEMA datatracker;' \
-  -c 'ALTER DATABASE ietf SET search_path=datatracker,public;' \
-  -c 'ALTER USER django set search_path=datatracker,django,public;' \
-  -c 'CREATE EXTENSION citext WITH SCHEMA datatracker;'
+  -c 'CREATE SCHEMA ietf_utf8;' \
+  -c 'ALTER DATABASE ietf SET search_path=ietf_utf8,public;' \
+  -c 'ALTER USER django set search_path=ietf_utf8,django,public;' \
+  -c 'CREATE EXTENSION citext WITH SCHEMA ietf_utf8;'
 
 # Copy settings files
 cp ./docker/configs/settings_local.py ./ietf/settings_local.py
@@ -109,7 +109,6 @@ CAST TYPE int with extra auto_increment TO integer,
      COLUMN meeting_timeslot.duration TO interval USING integer-to-interval,
      COLUMN meeting_meeting.idsubmit_cutoff_time_utc TO interval USING integer-to-interval,
      COLUMN meeting_meeting.idsubmit_cutoff_warning_days TO interval USING integer-to-interval
-ALTER SCHEMA 'ietf_utf8' RENAME TO 'datatracker'
 BEFORE LOAD DO
   -- must change person_email before any tables with FK constraints to address
   \$\$ ALTER TABLE person_email ALTER COLUMN address TYPE text; \$\$,
