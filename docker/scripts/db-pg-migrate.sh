@@ -88,14 +88,57 @@ EXCLUDING TABLE NAMES MATCHING
     'workflows_state_transitions',
     'workflows_transition',
     'workflows_workflow'
-CAST column meeting_session.requested_duration to interval using integer-to-interval,
-     column meeting_timeslot.duration to interval using integer-to-interval,
-     column meeting_meeting.idsubmit_cutoff_time_utc to interval using integer-to-interval,
-     column meeting_meeting.idsubmit_cutoff_warning_days to interval using integer-to-interval
+CAST TYPE int with extra auto_increment TO integer,
+     TYPE int TO integer,
+     COLUMN django_admin_log.action_flag TO smallint,
+     COLUMN meeting_session_materials.order TO smallint,
+     COLUMN community_emailsubscription.email_id TO text,
+     COLUMN doc_dochistory.shepherd_id TO text,
+     COLUMN doc_document.shepherd_id TO text,
+     COLUMN doc_documentauthor.email_id TO text,
+     COLUMN doc_dochistoryauthor.email_id TO text,
+     COLUMN group_role.email_id TO text,
+     COLUMN group_rolehistory.email_id TO text,
+     COLUMN liaisons_liaisonstatement.from_contact_id TO text,
+     COLUMN nomcom_nominee.email_id TO text,
+     COLUMN person_email.address TO text,
+     COLUMN person_historicalemail.address TO text,
+     COLUMN review_historicalreviewassignment.reviewer_id TO text,
+     COLUMN review_reviewassignment.reviewer_id TO text,
+     COLUMN meeting_session.requested_duration TO interval USING integer-to-interval,
+     COLUMN meeting_timeslot.duration TO interval USING integer-to-interval,
+     COLUMN meeting_meeting.idsubmit_cutoff_time_utc TO interval USING integer-to-interval,
+     COLUMN meeting_meeting.idsubmit_cutoff_warning_days TO interval USING integer-to-interval
 ALTER SCHEMA 'ietf_utf8' RENAME TO 'datatracker'
 BEFORE LOAD DO
-  \$\$ ALTER TABLE person_email ALTER COLUMN address TYPE text; \$\$
+  -- must change person_email before any tables with FK constraints to address
+  \$\$ ALTER TABLE person_email ALTER COLUMN address TYPE text; \$\$,
+  \$\$ ALTER TABLE community_emailsubscription ALTER COLUMN email_id TYPE text; \$\$,
+  \$\$ ALTER TABLE doc_dochistory ALTER COLUMN shepherd_id TYPE text; \$\$,
+  \$\$ ALTER TABLE doc_document ALTER COLUMN shepherd_id TYPE text; \$\$,
+  \$\$ ALTER TABLE doc_documentauthor ALTER COLUMN email_id TYPE text; \$\$,
+  \$\$ ALTER TABLE doc_dochistoryauthor ALTER COLUMN email_id TYPE text; \$\$,
+  \$\$ ALTER TABLE group_role ALTER COLUMN email_id TYPE text; \$\$,
+  \$\$ ALTER TABLE group_rolehistory ALTER COLUMN email_id TYPE text; \$\$,
+  \$\$ ALTER TABLE liaisons_liaisonstatement ALTER COLUMN from_contact_id TYPE text; \$\$,
+  \$\$ ALTER TABLE nomcom_nominee ALTER COLUMN email_id TYPE text; \$\$,
+  \$\$ ALTER TABLE person_historicalemail ALTER COLUMN address TYPE text; \$\$,
+  \$\$ ALTER TABLE review_historicalreviewassignment ALTER COLUMN reviewer_id TYPE text; \$\$,
+  \$\$ ALTER TABLE review_reviewassignment ALTER COLUMN reviewer_id TYPE text; \$\$
 AFTER LOAD DO
+  \$\$ ALTER TABLE community_emailsubscription ALTER COLUMN email_id TYPE citext; \$\$,
+  \$\$ ALTER TABLE doc_dochistory ALTER COLUMN shepherd_id TYPE citext; \$\$,
+  \$\$ ALTER TABLE doc_document ALTER COLUMN shepherd_id TYPE citext; \$\$,
+  \$\$ ALTER TABLE doc_documentauthor ALTER COLUMN email_id TYPE citext; \$\$,
+  \$\$ ALTER TABLE doc_dochistoryauthor ALTER COLUMN email_id TYPE citext; \$\$,
+  \$\$ ALTER TABLE group_role ALTER COLUMN email_id TYPE citext; \$\$,
+  \$\$ ALTER TABLE group_rolehistory ALTER COLUMN email_id TYPE citext; \$\$,
+  \$\$ ALTER TABLE liaisons_liaisonstatement ALTER COLUMN from_contact_id TYPE citext; \$\$,
+  \$\$ ALTER TABLE nomcom_nominee ALTER COLUMN email_id TYPE citext; \$\$,
+  \$\$ ALTER TABLE person_historicalemail ALTER COLUMN address TYPE citext; \$\$,
+  \$\$ ALTER TABLE review_historicalreviewassignment ALTER COLUMN reviewer_id TYPE citext; \$\$,
+  \$\$ ALTER TABLE review_reviewassignment ALTER COLUMN reviewer_id TYPE citext; \$\$,
+  -- must change person_email after any tables with FK constraints to address
   \$\$ ALTER TABLE person_email ALTER COLUMN address TYPE citext; \$\$
 ;
 EOF
