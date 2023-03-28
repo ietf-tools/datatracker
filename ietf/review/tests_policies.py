@@ -115,7 +115,7 @@ class _Wrapper(TestCase):
             return (ReviewerSettings.objects.filter(team=self.team, person=person).first()
                     or ReviewerSettings(team=self.team, person=person))
 
-        def test_return_reviewer_to_rotation_top(self):
+        def test_return_reviewer_to_rotation_top(self, reviewer, wants_to_be_next):
             # Subclass must implement this
             raise NotImplementedError
 
@@ -507,9 +507,9 @@ class RotateAlphabeticallyReviewerQueuePolicyTest(_Wrapper.ReviewerQueuePolicyTe
         rotation = self.policy.default_reviewer_rotation_list()
         self.assertEqual(rotation, available_reviewers[2:] + available_reviewers[:1])
 
-    def test_return_reviewer_to_rotation_top(self):
+    def test_return_reviewer_to_rotation_top(self, person, wants_to_be_next):
         reviewer = self.append_reviewer()
-        self.policy.return_reviewer_to_rotation_top(reviewer)
+        self.policy.return_reviewer_to_rotation_top(reviewer, wants_to_be_next)
         self.assertTrue(ReviewerSettings.objects.get(person=reviewer).request_assignment_next)
 
     def test_update_policy_state_for_assignment(self):
@@ -723,9 +723,9 @@ class LeastRecentlyUsedReviewerQueuePolicyTest(_Wrapper.ReviewerQueuePolicyTestC
         self.assertEqual(self.policy.default_reviewer_rotation_list(),
                          available_reviewers[2:] + [first_reviewer, second_reviewer])
 
-    def test_return_reviewer_to_rotation_top(self):
+    def test_return_reviewer_to_rotation_top(self, reviewer, wants_to_be_next):
         # Should do nothing, this is implicit in this policy, no state change is needed.
-        self.policy.return_reviewer_to_rotation_top(self.append_reviewer())
+        self.policy.return_reviewer_to_rotation_top(self.append_reviewer(), wants_to_be_next)
 
     def test_assign_reviewer_updates_skip_next_without_add_skip(self):
         """Skipping reviewers with add_skip=False should update skip_counts properly"""
