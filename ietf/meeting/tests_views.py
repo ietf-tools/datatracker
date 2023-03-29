@@ -6594,23 +6594,23 @@ class SessionTests(TestCase):
         meeting = make_meeting_test_data(meeting=MeetingFactory(type_id='ietf', number='100'))
         sessions = Session.objects.filter(meeting=meeting).with_current_status()
         data = get_summary_by_area(sessions)
-        assert data[0][0] == 'Duration'
-        assert len(data) > 2
-        assert data[-1][0] == 'Total Hours'
+        self.assertEqual(data[0][0], 'Duration')
+        self.assertGreater(len(data), 2)
+        self.assertEqual(data[-1][0], 'Total Hours')
 
     def test_get_summary_by_type(self):
         meeting = make_meeting_test_data(meeting=MeetingFactory(type_id='ietf', number='100'))
         sessions = Session.objects.filter(meeting=meeting).with_current_status()
         data = get_summary_by_type(sessions)
-        assert data[0][0] == 'Group Type'
-        assert len(data) > 2
+        self.assertEqual(data[0][0], 'Group Type')
+        self.assertGreater(len(data), 2)
 
     def test_get_summary_by_purpose(self):
         meeting = make_meeting_test_data(meeting=MeetingFactory(type_id='ietf', number='100'))
         sessions = Session.objects.filter(meeting=meeting).with_current_status()
         data = get_summary_by_purpose(sessions)
-        assert data[0][0] == 'Purpose'
-        assert len(data) > 2
+        self.assertEqual(data[0][0], 'Purpose')
+        self.assertGreater(len(data), 2)
 
     def test_meeting_requests(self):
         meeting = MeetingFactory(type_id='ietf')
