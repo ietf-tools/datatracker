@@ -16,23 +16,65 @@
         </small>
     </h1>
 
-    <h2>Requests Summary</h2>
-    <div>
+    <h2 class="mt-3">Requests Summary</h2>
+    <div class="mt-2">
         <table class="table table-sm">
-            {% for row in requests_summary_data %}
-            <tr>
-                {% if forloop.first %}
-                    {% for col in row %}
-                        <th scope="col">{{ col }}</th>
-                    {% endfor %}
-                {% else %}
-                    {% for col in row %}
-                        <td>{{ col }}</td>
-                    {% endfor %}
-                {% endif %}
-            </tr>
-            {% endfor %}
+            <tbody>
+                {% for row in summary_by_area %}
+                <tr>
+                    {% if forloop.first %}
+                        {% for col in row %}
+                            <th scope="col" class="table-primary">{{ col }}</th>
+                        {% endfor %}
+                    {% else %}
+                        {% for col in row %}
+                            <td>{{ col }}</td>
+                        {% endfor %}
+                    {% endif %}
+                </tr>
+                {% endfor %}
+            </tbody>
         </table>
+    </div>
+    <div class="row mt-2">
+        <div class="col">
+            <table class="table table-sm">
+                <tbody>
+                    {% for row in summary_by_group_type %}
+                    <tr>
+                        {% if forloop.first %}
+                            {% for col in row %}
+                                <th scope="col" class="table-primary">{{ col }}</th>
+                            {% endfor %}
+                        {% else %}
+                            {% for col in row %}
+                                <td>{{ col }}</td>
+                            {% endfor %}
+                        {% endif %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>    
+        </div>
+        <div class="col">
+            <table class="table table-sm">
+                <tbody>
+                    {% for row in summary_by_purpose %}
+                    <tr>
+                        {% if forloop.first %}
+                            {% for col in row %}
+                                <th scope="col" class="table-primary">{{ col }}</th>
+                            {% endfor %}
+                        {% else %}
+                            {% for col in row %}
+                                <td>{{ col }}</td>
+                            {% endfor %}
+                        {% endif %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>    
+        </div>
     </div>
 
     {% regroup sessions by display_area as area_sessions %}
