@@ -141,10 +141,8 @@ $(document)
                     attachTo.append(menu.join(""));
                 }
 
-                if (!("ontouchstart" in document.documentElement)) {
-                    $("ul.nav li.dropdown, ul.nav li.dropend")
-                        .on("mouseenter mouseleave", dropdown_hover);
-                }
+                $("ul.nav li.dropdown, ul.nav li.dropend")
+                    .on("mouseenter mouseleave", dropdown_hover);
             }
         });
     });
