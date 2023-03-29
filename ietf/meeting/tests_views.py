@@ -49,6 +49,7 @@ from ietf.meeting.utils import finalize, condition_slide_order
 from ietf.meeting.utils import add_event_info_to_session_qs
 from ietf.meeting.utils import create_recording, get_next_sequence
 from ietf.meeting.views import session_draft_list, parse_agenda_filter_params, sessions_post_save, agenda_extract_schedule
+from ietf.meeting.views import get_summary_by_area, get_summary_by_type, get_summary_by_purpose
 from ietf.name.models import SessionStatusName, ImportantDateName, RoleName, ProceedingsMaterialTypeName
 from ietf.utils.decorators import skip_coverage
 from ietf.utils.mail import outbox, empty_outbox, get_payload_text
@@ -6588,6 +6589,28 @@ class ImportNotesTests(TestCase):
 
 
 class SessionTests(TestCase):
+
+    def test_get_summary_by_area(self):
+        meeting = make_meeting_test_data(meeting=MeetingFactory(type_id='ietf', number='100'))
+        sessions = Session.objects.filter(meeting=meeting).with_current_status()
+        data = get_summary_by_area(sessions)
+        self.assertEqual(data[0][0], 'Duration')
+        self.assertGreater(len(data), 2)
+        self.assertEqual(data[-1][0], 'Total Hours')
+
+    def test_get_summary_by_type(self):
+        meeting = make_meeting_test_data(meeting=MeetingFactory(type_id='ietf', number='100'))
+        sessions = Session.objects.filter(meeting=meeting).with_current_status()
+        data = get_summary_by_type(sessions)
+        self.assertEqual(data[0][0], 'Group Type')
+        self.assertGreater(len(data), 2)
+
+    def test_get_summary_by_purpose(self):
+        meeting = make_meeting_test_data(meeting=MeetingFactory(type_id='ietf', number='100'))
+        sessions = Session.objects.filter(meeting=meeting).with_current_status()
+        data = get_summary_by_purpose(sessions)
+        self.assertEqual(data[0][0], 'Purpose')
+        self.assertGreater(len(data), 2)
 
     def test_meeting_requests(self):
         meeting = MeetingFactory(type_id='ietf')
