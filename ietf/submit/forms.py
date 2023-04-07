@@ -262,10 +262,7 @@ class SubmissionBaseUploadForm(forms.Form):
                 raise forms.ValidationError(
                     format_html(
                         'A submission with same name and revision is currently being processed. <a href="{}">Check the status here.</a>',
-                        urljoin(
-                            settings.IDTRACKER_BASE_URL,
-                            urlreverse("ietf.submit.views.submission_status", kwargs={'submission_id': existing[0].pk}),
-                        )
+                        urlreverse("ietf.submit.views.submission_status", kwargs={'submission_id': existing[0].pk}),
                     )
                 )
 
