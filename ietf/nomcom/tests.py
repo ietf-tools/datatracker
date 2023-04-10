@@ -1035,8 +1035,8 @@ class NomineePositionStateSaveTest(TestCase):
                                                           state=NomineePositionStateName.objects.get(slug='accepted'))
         self.assertEqual(nominee_position.state.slug, 'accepted')
 
-    def test_nomine_position_unique(self):
-        """Verify nomine and position are unique together"""
+    def test_nominee_position_unique(self):
+        """Verify nominee and position are unique together"""
         position = Position.objects.get(name='OAM')
         NomineePosition.objects.create(position=position,
                                        nominee=self.nominee)

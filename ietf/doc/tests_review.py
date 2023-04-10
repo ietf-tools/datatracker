@@ -603,7 +603,7 @@ class ReviewTests(TestCase):
         for r in ReviewResultName.objects.filter(slug__in=("issues", "ready")):
             review_req.team.reviewteamsettings.review_results.add(r)
 
-        url = urlreverse('ietf.doc.views_review.complete_review', kwargs={ "name": doc.name, "assignment_id": review_req.pk })
+        url = urlreverse('ietf.doc.views_review.complete_review', kwargs={ "name": doc.name, "assignment_id": assignment.pk })
 
         return assignment, url
 

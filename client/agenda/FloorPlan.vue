@@ -187,10 +187,10 @@ function handleDesiredRoom () {
       if (rm) {
         state.currentFloor = fl.id
         state.currentRoom = rm.id
+        state.desiredRoom = null
         break
       }
     }
-    state.desiredRoom = null
   }
 }
 

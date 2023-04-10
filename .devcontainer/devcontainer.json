@@ -45,13 +45,13 @@
         "sqltools.connections": [
             // Default connection to dev DB container
             {
-                "name": "Local Dev",
+                "name": "Local PostgreSQL",
                 "server": "db",
-                "port": 3306,
-                "database": "ietf_utf8",
+                "port": 5432,
+                "database": "ietf",
                 "username": "django",
                 "password": "RkTkDPFnKpko",
-                "driver": "MySQL",
+                "driver": "PostgreSQL",
                 "askForPassword": false,
                 "connectionTimeout": 60
             }
@@ -72,7 +72,7 @@
         "ms-playwright.playwright",
 		"ms-python.python",
 		"ms-python.vscode-pylance",
-		"mtxr.sqltools-driver-mysql",
+        "mtxr.sqltools-driver-pg",
         "mtxr.sqltools",
 		"mutantdino.resourcemonitor",
 		"oderwat.indent-rainbow",
@@ -82,15 +82,15 @@
 	],
     
     // Use 'forwardPorts' to make a list of ports inside the container available locally.
-    "forwardPorts": [8000, 3306],
+    "forwardPorts": [8000, 5432],
     
     "portsAttributes": {
         "3000": {
             "label": "Vite",
             "onAutoForward": "silent"
         },
-        "3306": {
-            "label": "MariaDB",
+        "5432": {
+            "label": "PostgreSQL",
             "onAutoForward": "silent"
         },
         "8000": {
