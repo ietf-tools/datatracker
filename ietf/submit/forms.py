@@ -251,6 +251,8 @@ class SubmissionBaseUploadForm(forms.Form):
                 "element has a docName attribute which provides the full Internet-Draft name including "
                 "revision number.")
 
+        self.check_for_old_uppercase_collisions(self.filename)    
+
         if self.cleaned_data.get('txt') or self.cleaned_data.get('xml'):
             # check group
             self.group = self.deduce_group(self.filename)
@@ -283,6 +285,17 @@ class SubmissionBaseUploadForm(forms.Form):
                     settings.IDSUBMIT_MAX_DAILY_SAME_GROUP, settings.IDSUBMIT_MAX_DAILY_SAME_GROUP_SIZE,
                 )
         return super().clean()
+
+    @staticmethod
+    def check_for_old_uppercase_collisions(name):
+        possible_collision = Document.objects.filter(name__iexact=name).first()
+        if possible_collision and possible_collision.name != name:
+            raise forms.ValidationError(
+                f"Case-conflicting draft name found: {possible_collision.name}. "
+                "Please choose a different draft name. Case-conflicting names with "
+                "the small number of legacy Internet-Drafts with names containing "
+                "upper-case letters are not permitted."
+            )
 
     @staticmethod
     def check_submissions_thresholds(which, filter_kwargs, max_amount, max_size):

@@ -230,9 +230,6 @@ def safe_create_test_db(self, verbosity, *args, **kwargs):
     keepdb = kwargs.get('keepdb', False)
     if not keepdb:
         print("     Creating test database...")
-        if settings.DATABASES["default"]["ENGINE"] == 'django.db.backends.mysql':
-            settings.DATABASES["default"]["OPTIONS"] = settings.DATABASE_TEST_OPTIONS
-            print("     Using OPTIONS: %s" % settings.DATABASES["default"]["OPTIONS"])
     test_database_name = old_create(self, 0, *args, **kwargs)
 
     if settings.GLOBAL_TEST_FIXTURES:
