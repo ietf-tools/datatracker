@@ -391,6 +391,16 @@ class Role(models.Model):
     def formatted_email(self):
         return formataddr((self.person.plain_name(), self.email.address))
 
+    def started_in_role(self):
+        print("----", self.person, self.name)
+        events = self.group.groupevent_set.filter(type="info_changed").order_by('time')
+        for e in events:
+            print(e, e.desc, e.group.role_set.filter(name=self.name))
+        history = self.group.history_set.filter(rolehistory__person=self.person).order_by('time')
+        # for h in history:
+        #     print(h.time, h.group.get_chair())
+        return history.first().time if history.first() else None
+
     class Meta:
         ordering = ['name_id', ]
 
