@@ -1277,3 +1277,23 @@ def process_and_accept_uploaded_submission(submission):
 
     create_submission_event(None, submission, desc="Completed submission validation checks")
     accept_submission(submission)
+
+
+def process_uploaded_submission(submission):
+    """Process and validate an uploaded submission
+
+    The submission must be in the "validating" state. On success, it will be in the "uploaded"
+    state. On error, it will be in the "cancel" state.
+    """
+    if submission.state_id != "validating":
+        log.log(f'Submission {submission.pk} is not in "validating" state, skipping.')
+        return  # do nothing
+
+    try:
+        process_and_validate_submission(submission)
+    except SubmissionError as err:
+        cancel_submission(submission)  # changes Submission.state
+        create_submission_event(None, submission, f"Submission rejected: {err}")
+    submission.state_id = "uploaded"
+    submission.save()
+    create_submission_event(None, submission, desc="Completed submission validation checks")

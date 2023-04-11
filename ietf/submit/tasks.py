@@ -9,8 +9,19 @@ from django.conf import settings
 from django.utils import timezone
 
 from ietf.submit.models import Submission
-from ietf.submit.utils import cancel_submission, create_submission_event, process_and_accept_uploaded_submission
+from ietf.submit.utils import (cancel_submission, create_submission_event, process_uploaded_submission,
+                               process_and_accept_uploaded_submission)
 from ietf.utils import log
+
+
+@shared_task
+def process_uploaded_submission_task(submission_id):
+    try:
+        submission = Submission.objects.get(pk=submission_id)
+    except Submission.DoesNotExist:
+        log.log(f'process_uploaded_submission_task called for missing submission_id={submission_id}')
+    else:
+        process_uploaded_submission(submission)
 
 
 @shared_task
