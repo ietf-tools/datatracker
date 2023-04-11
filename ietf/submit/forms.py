@@ -49,6 +49,15 @@ from ietf.utils.xmldraft import XMLDraft, XMLParseError
 class SubmissionBaseUploadForm(forms.Form):
     xml = forms.FileField(label='.xml format', required=True)
 
+    # No code currently (14 Sep 2017) uses this class directly; it is
+    # only used through its subclasses.  The two assignments below are
+    # set to trigger an exception if it is used directly only to make
+    # sure that adequate consideration is made if it is decided to use it
+    # directly in the future.  Feel free to set these appropriately to
+    # avoid the exceptions in that case:
+    formats = None  # None will raise an exception in clean() if this isn't changed in a subclass
+    base_formats = None  # None will raise an exception in clean() if this isn't changed in a subclass
+
     def __init__(self, request, *args, **kwargs):
         super(SubmissionBaseUploadForm, self).__init__(*args, **kwargs)
 
@@ -70,14 +79,6 @@ class SubmissionBaseUploadForm(forms.Form):
         self.file_types = []
         self.file_info = {}             # indexed by file field name, e.g., 'txt', 'xml', ...
         self.xml_version = None
-        # No code currently (14 Sep 2017) uses this class directly; it is
-        # only used through its subclasses.  The two assignments below are
-        # set to trigger an exception if it is used directly only to make
-        # sure that adequate consideration is made if it is decided to use it
-        # directly in the future.  Feel free to set these appropriately to
-        # avoid the exceptions in that case:
-        self.formats = None             # None will raise an exception in clean() if this isn't changed in a subclass
-        self.base_formats = None        # None will raise an exception in clean() if this isn't changed in a subclass
 
     def set_cutoff_warnings(self):
         now = timezone.now()
@@ -610,7 +611,7 @@ class DeprecatedSubmissionBaseUploadForm(SubmissionBaseUploadForm):
         return super().clean()
 
 
-class SubmissionManualUploadForm(DeprecatedSubmissionBaseUploadForm):
+class DeprecatedSubmissionManualUploadForm(DeprecatedSubmissionBaseUploadForm):
     xml = forms.FileField(label='.xml format', required=False) # xml field with required=False instead of True
     txt = forms.FileField(label='.txt format', required=False)
     # We won't permit html upload until we can verify that the content
@@ -620,7 +621,7 @@ class SubmissionManualUploadForm(DeprecatedSubmissionBaseUploadForm):
     pdf = forms.FileField(label='.pdf format', required=False)
 
     def __init__(self, request, *args, **kwargs):
-        super(SubmissionManualUploadForm, self).__init__(request, *args, **kwargs)
+        super(DeprecatedSubmissionManualUploadForm, self).__init__(request, *args, **kwargs)
         self.formats = settings.IDSUBMIT_FILE_TYPES
         self.base_formats = ['txt', 'xml', ]
 
@@ -638,6 +639,10 @@ class DeprecatedSubmissionAutoUploadForm(DeprecatedSubmissionBaseUploadForm):
         super(DeprecatedSubmissionAutoUploadForm, self).__init__(request, *args, **kwargs)
         self.formats = ['xml', ]
         self.base_formats = ['xml', ]
+
+class SubmissionManualUploadForm(SubmissionBaseUploadForm):
+    formats = ('xml',)
+    base_formats = ('xml',)
 
 class SubmissionAutoUploadForm(SubmissionBaseUploadForm):
     user = forms.EmailField(required=True)
