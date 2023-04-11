@@ -1203,17 +1203,15 @@ def process_submission_text(submission):
     )
 
 
-def process_uploaded_submission(submission):
-    def abort_submission(error):
-        cancel_submission(submission)
-        create_submission_event(None, submission, f'Submission rejected: {error}')
+def process_and_validate_submission(submission):
+    """Process and validate a submission
 
-    if submission.state_id != 'validating':
-        log.log(f'Submission {submission.pk} is not in "validating" state, skipping.')
-        return  # do nothing
+    Limitation: Only works with XML submissions. Cannot handle additional formats.
 
+    Raises SubmissionError if an error is encountered.
+    """
     if submission.file_types != '.xml':
-        abort_submission('Only XML Internet-Draft submissions can be processed.')
+        raise SubmissionError('Only XML Internet-Draft submissions can be processed.')
 
     try:
         process_submission_xml(submission)
@@ -1235,16 +1233,47 @@ def process_uploaded_submission(submission):
         errors = [c.message for c in submission.checks.filter(passed__isnull=False) if not c.passed]
         if len(errors) > 0:
             raise SubmissionError('Checks failed: ' + ' / '.join(errors))
-    except SubmissionError as err:
-        abort_submission(err)
     except Exception:
         log.log(f'Unexpected exception while processing submission {submission.pk}.')
         log.log(traceback.format_exc())
-        abort_submission('A system error occurred while processing the submission.')
+        raise SubmissionError('A system error occurred while processing the submission.')
 
-    # if we get here and are still "validating", accept the draft
-    if submission.state_id == 'validating':
-        submission.state_id = 'uploaded'
-        submission.save()
-        create_submission_event(None, submission, desc="Completed submission validation checks")
-        accept_submission(submission)
+
+def submitter_is_author(submission):
+    submitter = get_person_from_name_email(**submission.submitter_parsed())  # the ** expands dict into kwargs
+    if submitter:
+        author_emails = [author['email'].strip().lower() for author in submission.authors]
+        return any(
+            email.address.lower() in author_emails
+            for email in submitter.email_set.filter(active=True)
+        )
+    return False
+
+
+def process_and_accept_uploaded_submission(submission):
+    """Process, validate, and, if valid, accept an uploaded submission
+
+    Requires that the submitter already be set and is an author of the submitted draft.
+    The submission must be in the "validating" state. On success, it will be in the
+    "posted" state. On error, it wil be in the "cancel" state.
+    """
+    if submission.state_id != "validating":
+        log.log(f'Submission {submission.pk} is not in "validating" state, skipping.')
+        return  # do nothing
+
+    try:
+        process_and_validate_submission(submission)
+    except SubmissionError as err:
+        cancel_submission(submission)  # changes Submission.state
+        create_submission_event(None, submission, f"Submission rejected: {err}")
+
+    if not submitter_is_author(submission):
+        cancel_submission(submission)  # changes Submission.state
+        create_submission_event(
+            None,
+            submission,
+            f"Submission rejected: Submitter ({submission.submitter}) is not one of the document authors",
+        )
+
+    create_submission_event(None, submission, desc="Completed submission validation checks")
+    accept_submission(submission)
