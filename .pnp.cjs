@@ -91,7 +91,7 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["select2-bootstrap-5-theme", "npm:1.3.0"],\
             ["send", "npm:0.18.0"],\
             ["shepherd.js", "npm:11.0.1"],\
-            ["slugify", "npm:1.6.5"],\
+            ["slugify", "npm:1.6.6"],\
             ["sortablejs", "npm:1.15.0"],\
             ["vanillajs-datepicker", "npm:1.3.1"],\
             ["vite", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:4.2.1"],\
@@ -7625,7 +7625,7 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["select2-bootstrap-5-theme", "npm:1.3.0"],\
             ["send", "npm:0.18.0"],\
             ["shepherd.js", "npm:11.0.1"],\
-            ["slugify", "npm:1.6.5"],\
+            ["slugify", "npm:1.6.6"],\
             ["sortablejs", "npm:1.15.0"],\
             ["vanillajs-datepicker", "npm:1.3.1"],\
             ["vite", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:4.2.1"],\
@@ -7893,10 +7893,10 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
         }]\
       ]],\
       ["slugify", [\
-        ["npm:1.6.5", {\
-          "packageLocation": "./.yarn/cache/slugify-npm-1.6.5-6db25d7016-a955a1b600.zip/node_modules/slugify/",\
+        ["npm:1.6.6", {\
+          "packageLocation": "./.yarn/cache/slugify-npm-1.6.6-7ce458677d-04773c2d3b.zip/node_modules/slugify/",\
           "packageDependencies": [\
-            ["slugify", "npm:1.6.5"]\
+            ["slugify", "npm:1.6.6"]\
           ],\
           "linkType": "HARD"\
         }]\
