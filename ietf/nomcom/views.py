@@ -782,7 +782,7 @@ def view_feedback(request, year):
 
     sorted_nominees = sorted(nominees,key=lambda x:x.staterank)
 
-    fbtotals = []
+    fbtotals = defaultdict(lambda: 0)
     for nominee in sorted_nominees:
         last_seen = FeedbackLastSeen.objects.filter(reviewer=request.user.person,nominee=nominee).first()
         nominee_feedback = []

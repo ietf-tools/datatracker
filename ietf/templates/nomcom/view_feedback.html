@@ -54,12 +54,12 @@
                     </tr>
                 {% endfor %}
             </tbody>
-	    <tr>
+	    <tfoot>
 		<td></td>
 		<td></td>
-		<td><b>Totals</b></td>
+		<th>Totals</h></th>
 		{% for fbtot in feedback_totals %}<td>{{ fbtot }}</td>{% endfor %}
-	    </tr>
+	    </tfoot>
         </table>
     {% endfor %}
     <h2 class="mt-5" id="topics">Feedback related to topics</h2>
