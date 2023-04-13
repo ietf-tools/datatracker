@@ -126,11 +126,6 @@
                 </a>
                 <ul class="dropdown-menu mt-n1" role="menu">
                     <li class="dropdown-item">
-                        <a href="{% url 'ietf.nomcom.views.private_eligible' year %}">
-                            View eligible
-                        </a>
-                    </li>
-                    <li class="dropdown-item">
                         <a href="{% url 'ietf.nomcom.views.private_volunteers' year %}">
                             View volunteers (full)
                         </a>
@@ -138,6 +133,11 @@
                     <li class="dropdown-item">
                         <a href="{% url 'ietf.nomcom.views.private_volunteers' year "simple" %}">
                             View volunteers (simple)
+                        </a>
+                    </li>
+                    <li class="dropdown-item">
+                        <a href="{% url 'ietf.nomcom.views.private_eligible' year %}">
+                            View eligible
                         </a>
                     </li>
                 </ul>
