@@ -42,7 +42,7 @@ rm -rf .parcel-cache __pycache__
 
 # Create extended docker-compose definition
 sed -e "s/CUSTOM_PORT/$CUSTOM_PORT/" \
-	<docker-compose.extend.yml docker-compose.extend-custom.yml \
+	<docker-compose.extend.yml \
 	>docker-compose.extend-custom.yml
 cd ..
 
