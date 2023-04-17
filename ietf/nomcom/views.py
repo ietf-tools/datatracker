@@ -789,7 +789,7 @@ def view_feedback(request, year):
         for ft in nominee_feedback_types:
             qs = nominee.feedback_set.by_type(ft.slug)
             count = qs.count()
-            fbtotals[ft.slug] = count + fbtotals.get(ft.slug, 0);
+            fbtotals[ft.slug] += count
             if not count:
                 newflag = False
             elif not last_seen:
