@@ -663,11 +663,11 @@ def search(request):
                 doc = q
 
                 if docid:
-                    start = DocAlias.objects.filter(name=docid)
+                    start = DocAlias.objects.filter(name__iexact=docid)
                 else:
                     if search_type == "draft":
                         q = normalize_draftname(q)
-                        start = DocAlias.objects.filter(name__contains=q, name__startswith="draft")
+                        start = DocAlias.objects.filter(name__icontains=q, name__startswith="draft")
                     elif search_type == "rfc":
                         start = DocAlias.objects.filter(name="rfc%s" % q.lstrip("0"))
                 

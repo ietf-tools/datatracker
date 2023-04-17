@@ -77,7 +77,7 @@ def import_mailman_listinfo(verbosity=0):
             to_add = members - known
             for addr in to_remove:
                     note("  Removing subscription: %s" % (addr))
-                    old = Subscribed.objects.get(email=addr)
+                    old = Subscribed.objects.get(email=addr) # Intentionally leaving this as case-sensitive in postgres
                     old.lists.remove(mmlist)
                     if old.lists.count() == 0:
                         note("    Removing address with no subscriptions: %s" % (addr))
@@ -90,7 +90,7 @@ def import_mailman_listinfo(verbosity=0):
                     continue
                 note("  Adding subscription: %s" % (addr))
                 try:
-                    new, created = Subscribed.objects.get_or_create(email=addr)
+                    new, created = Subscribed.objects.get_or_create(email=addr) # Intentionally leaving this as case-sensitive in postgres
                 except MultipleObjectsReturned as e:
                     sys.stderr.write("    **  Error handling %s in %s: %s\n" % (addr, name, e))
                     continue

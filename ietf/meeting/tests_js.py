@@ -195,7 +195,7 @@ class EditMeetingScheduleTests(IetfSeleniumTestCase):
         self.assertTrue(self.driver.find_elements(By.CSS_SELECTOR, '#timeslot{}.would-violate-hint'.format(slot1.pk)))
         # Find the timeslot label for slot1 - it's the first timeslot in the room group containing room 1
         slot1_roomgroup_elt = self.driver.find_element(By.CSS_SELECTOR,
-            '.day-flow .day:first-child .room-group[data-rooms="1"]'
+            f'.day-flow .day:first-child .room-group[data-rooms="{room1.pk}"]'
         )
         self.assertTrue(
             slot1_roomgroup_elt.find_elements(By.CSS_SELECTOR,

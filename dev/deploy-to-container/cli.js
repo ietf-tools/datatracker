@@ -75,7 +75,7 @@ async function main () {
 
   // Pull latest DB image
   console.info('Pulling latest DB docker image...')
-  const dbImagePullStream = await dock.pull('ghcr.io/ietf-tools/datatracker-db:latest')
+  const dbImagePullStream = await dock.pull('ghcr.io/ietf-tools/datatracker-db-pg:latest')
   await new Promise((resolve, reject) => {
     dock.modem.followProgress(dbImagePullStream, (err, res) => err ? reject(err) : resolve(res))
   })
@@ -172,7 +172,7 @@ async function main () {
   // Create DB container
   console.info(`Creating DB docker container... [dt-db-${branch}]`)
   const dbContainer = await dock.createContainer({
-    Image: 'ghcr.io/ietf-tools/datatracker-db:latest',
+    Image: 'ghcr.io/ietf-tools/datatracker-db-pg:latest',
     name: `dt-db-${branch}`,
     Hostname: `dt-db-${branch}`,
     HostConfig: {
@@ -247,7 +247,8 @@ async function main () {
     Env: [
       `LETSENCRYPT_HOST=${hostname}`,
       `VIRTUAL_HOST=${hostname}`,
-      `VIRTUAL_PORT=8000`
+      `VIRTUAL_PORT=8000`,
+      `PGHOST=dt-db-${branch}`
     ],
     Labels: {
       appversion: `${argv.appversion}` ?? '0.0.0',

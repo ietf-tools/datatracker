@@ -4,7 +4,7 @@ on:
   pull_request:
     branches:
       - 'main'
-      - 'feat/tzaware'
+      - 'feat/postgres'
     paths:
       - 'client/**'
       - 'ietf/**'
@@ -20,14 +20,7 @@ jobs:
     
     services:
       db:
-        image: ghcr.io/ietf-tools/datatracker-db:latest
-        volumes:
-            - mariadb-data:/var/lib/mysql
-        env:
-            MYSQL_ROOT_PASSWORD: ietf
-            MYSQL_DATABASE: ietf_utf8
-            MYSQL_USER: django
-            MYSQL_PASSWORD: RkTkDPFnKpko
+        image: ghcr.io/ietf-tools/datatracker-db-pg:latest
     
     steps:
     - uses: actions/checkout@v3
@@ -39,7 +32,7 @@ jobs:
         
     - name: Ensure DB is ready
       run: |
-        /usr/local/bin/wait-for db:3306 -- echo "DB ready"
+        /usr/local/bin/wait-for db:5432 -- echo "DB ready"
         
     - name: Run all tests
       run: |
@@ -53,7 +46,7 @@ jobs:
           exit 1
         fi
         echo "Running tests..."
-        ./ietf/manage.py test --settings=settings_sqlitetest
+        ./ietf/manage.py test --settings=settings_postgrestest
         coverage xml
 
     - name: Upload Coverage Results to Codecov
@@ -120,14 +113,7 @@ jobs:
     
     services:
       db:
-        image: ghcr.io/ietf-tools/datatracker-db:latest
-        volumes:
-            - mariadb-data:/var/lib/mysql
-        env:
-            MYSQL_ROOT_PASSWORD: ietf
-            MYSQL_DATABASE: ietf_utf8
-            MYSQL_USER: django
-            MYSQL_PASSWORD: RkTkDPFnKpko
+        image: ghcr.io/ietf-tools/datatracker-db-pg:latest
     
     steps:
     - uses: actions/checkout@v3
@@ -139,7 +125,7 @@ jobs:
         
     - name: Ensure DB is ready
       run: |
-        /usr/local/bin/wait-for db:3306 -- echo "DB ready"
+        /usr/local/bin/wait-for db:5432 -- echo "DB ready"
         
     - name: Start Datatracker
       run: |

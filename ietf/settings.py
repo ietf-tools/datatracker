@@ -75,21 +75,13 @@ MANAGERS = ADMINS
 
 DATABASES = {
     'default': {
-        'NAME': 'ietf_utf8',
-        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'datatracker',
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
         'USER': 'ietf',
-        #'PASSWORD': 'ietf',
-        'OPTIONS': {
-            'sql_mode': 'STRICT_TRANS_TABLES',
-            'init_command': 'SET storage_engine=MyISAM; SET names "utf8"'
-        },
+        #'PASSWORD': 'somepassword',
     },
 }
 
-DATABASE_TEST_OPTIONS = {
-    # Comment this out if your database doesn't support InnoDB
-    'init_command': 'SET storage_engine=InnoDB',
-}
 
 # Local time zone for this installation. Choices can be found here:
 # http://www.postgresql.org/docs/8.1/static/datetime-keywords.html#DATETIME-TIMEZONE-SET-TABLE
@@ -167,7 +159,7 @@ STATICFILES_FINDERS = (
 
 WSGI_APPLICATION = "ietf.wsgi.application"
 
-AUTHENTICATION_BACKENDS = ( 'django.contrib.auth.backends.ModelBackend', )
+AUTHENTICATION_BACKENDS = ( 'ietf.ietfauth.backends.CaseInsensitiveModelBackend', )
 
 FILE_UPLOAD_PERMISSIONS = 0o644          
 

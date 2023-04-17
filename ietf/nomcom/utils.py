@@ -95,7 +95,7 @@ def get_user_email(user):
             if emails:
                 user._email_cache = emails[0]
                 for email in emails:
-                    if email.address == user.username:
+                    if email.address.lower() == user.username.lower():
                         user._email_cache = email
         else:
             try: 
@@ -531,7 +531,7 @@ def decorate_volunteers_with_qualifications(volunteers, nomcom=None, date=None, 
                 qualifications.append('path_2')
             if v.person in author_qs:
                 qualifications.append('path_3')
-            v.qualifications = ", ".join(qualifications)
+            v.qualifications = "+".join(qualifications)
     else:
         for v in volunteers:
             v.qualifications = ''

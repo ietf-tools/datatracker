@@ -197,7 +197,7 @@ def api_new_meeting_registration(request):
             except ValueError as e:
                 return err(400, "Unexpected POST data: %s" % e)
             response = "Accepted, New registration" if created else "Accepted, Updated registration"
-            if User.objects.filter(username=email).exists() or Email.objects.filter(address=email).exists():
+            if User.objects.filter(username__iexact=email).exists() or Email.objects.filter(address=email).exists():
                 pass
             else:
                 send_account_creation_email(request, email)
