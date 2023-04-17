@@ -392,14 +392,11 @@ class Role(models.Model):
         return formataddr((self.person.plain_name(), self.email.address))
 
     def started_in_role(self):
-        print("----", self.person, self.name)
-        events = self.group.groupevent_set.filter(type="info_changed").order_by('time')
-        for e in events:
-            print(e, e.desc, e.group.role_set.filter(name=self.name))
-        history = self.group.history_set.filter(rolehistory__person=self.person).order_by('time')
-        # for h in history:
-        #     print(h.time, h.group.get_chair())
-        return history.first().time if history.first() else None
+        history = Person.objects.filter(pk=self.person.pk, rolehistory__name=self.name, rolehistory__group__group=self.group).values_list('rolehistory__group__time').order_by('rolehistory__group__time').first()
+        current = Person.objects.filter(pk=self.person.pk, role__name=self.name, role__group=self.group).values_list('role__group__time').first()
+        start = history[0] if history and history[0] < current[0] else current[0]
+        return start
+
 
     class Meta:
         ordering = ['name_id', ]
