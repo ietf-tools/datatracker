@@ -1,7 +1,7 @@
 # =====================
 # --- Builder Stage ---
 # =====================
-FROM postgres:14.5 AS builder
+FROM postgres:15.2 AS builder
 
 ENV POSTGRES_PASSWORD=hk2j22sfiv
 ENV POSTGRES_USER=django
@@ -19,7 +19,7 @@ RUN ["/usr/local/bin/docker-entrypoint.sh", "postgres"]
 # ===================
 # --- Final Image ---
 # ===================
-FROM postgres:14.5
+FROM postgres:15.2
 LABEL maintainer="IETF Tools Team <tools-discuss@ietf.org>"
 
 COPY --from=builder /data $PGDATA
