@@ -4,7 +4,7 @@
 
 import datetime
 import re
-from collections import OrderedDict, Counter
+from collections import OrderedDict, Counter, defaultdict
 import csv
 import hmac
 

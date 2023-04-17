@@ -843,3 +843,9 @@ def is_valid_url(url):
     except ValidationError:
         return False
     return True
+
+@register.filter
+def lookup(d, key):
+    if key not in d:
+        return 'nada'
+    return d[key]
