@@ -8,10 +8,10 @@
   },
   "devDependencies": {
     "@playwright/test": "1.32.1",
-    "eslint": "8.36.0",
+    "eslint": "8.37.0",
     "eslint-config-standard": "17.0.0",
     "eslint-plugin-import": "2.27.5",
-    "eslint-plugin-n": "15.6.1",
+    "eslint-plugin-n": "15.7.0",
     "eslint-plugin-node": "11.1.0",
     "eslint-plugin-promise": "6.1.1",
     "npm-check-updates": "16.7.10"

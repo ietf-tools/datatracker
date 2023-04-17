@@ -75,10 +75,9 @@ Read the [Docker Dev Environment](docker/README.md) guide to get started.
 
 ### Database & Assets
 
-Nightly database dumps of the datatracker are available at  
-https://www.ietf.org/lib/dt/sprint/ietf_utf8.sql.gz
+Nightly database dumps of the datatracker are available as Docker images: `ghcr.io/ietf-tools/datatracker-db:latest`  
 
-> Note that this link is provided as reference only. To update the database in your dev environment to the latest version, you should instead run the `docker/cleandb` script!
+> Note that to update the database in your dev environment to the latest version, you should run the `docker/cleandb` script.
 
 ### Frontend Development
 

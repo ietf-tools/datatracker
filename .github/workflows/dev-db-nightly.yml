@@ -11,15 +11,15 @@ name: Nightly Dev DB Image
 # Controls when the workflow will run
 on:
   # Run every night
-  schedule:
-    - cron: '0 8 * * *'
+  # schedule:
+  #  - cron: '0 8 * * *'
 
   # Run on db.Dockerfile changes
-  push:
-    branches:
-      - main
-    paths:
-      - 'docker/db.Dockerfile'
+  # push:
+  #  branches:
+  #    - main
+  #  paths:
+  #    - 'docker/db.Dockerfile'
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
