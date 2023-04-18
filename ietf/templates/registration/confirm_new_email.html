@@ -13,9 +13,15 @@
         <a class="btn btn-primary my-3"
            href="{% url "ietf.ietfauth.views.profile" %}">Edit profile</a>
     {% elif new_email_obj %}
-        <p class="alert alert-success my-3">
-            Your account {{ username }} has been updated to include the email address {{ email|linkify }}.
-        </p>
+        {% if already_confirmed %} 
+            <p class="alert alert-info my-3">
+                Your account {{ username }} already includes the email address {{ email|linkify }}.
+            </p>
+        {% else %}
+            <p class="alert alert-success my-3">
+                Your account {{ username }} has been updated to include the email address {{ email|linkify }}.
+            </p>
+        {% endif %}
         <a class="btn btn-primary my-3"
            href="{% url "ietf.ietfauth.views.profile" %}">Edit profile</a>
     {% else %}
