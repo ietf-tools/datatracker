@@ -7,7 +7,7 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('name', '0047_populate_telechatagendasectionname'),
+        ('name', '0002_telechatagendasectionname'),
         ('iesg', '0001_initial'),
     ]
 
