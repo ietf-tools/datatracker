@@ -8,7 +8,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('name', '0047_populate_telechatagendasectionname'),
-        ('iesg', '0002_auto_20230314_0912'),
+        ('iesg', '0001_initial'),
     ]
 
     operations = [

@@ -20,7 +20,7 @@ def reverse(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('name', '0046_telechatagendasectionname'),
+        ('name', '0002_telechatagendasectionname'),
     ]
 
     operations = [
