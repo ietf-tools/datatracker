@@ -6,4 +6,6 @@
             <li>{% person_link n.person with_email=False %} ({{ n.email.address|linkify }})</li>
         {% endfor %}
     </ul>
+{% else %}
+<i>None</i>
 {% endif %}
