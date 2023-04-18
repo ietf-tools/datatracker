@@ -11,7 +11,7 @@ ENV PGDATA=/data
 
 COPY docker/scripts/db-load-default-extensions.sh /docker-entrypoint-initdb.d/
 COPY docker/scripts/db-import.sh /docker-entrypoint-initdb.d/
-COPY ietf.dump /
+COPY datatracker.dump /
 
 RUN ["sed", "-i", "s/exec \"$@\"/echo \"skipping...\"/", "/usr/local/bin/docker-entrypoint.sh"]
 RUN ["/usr/local/bin/docker-entrypoint.sh", "postgres"]
