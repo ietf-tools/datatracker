@@ -844,7 +844,7 @@ def is_valid_url(url):
         return False
     return True
 
-@register.filter
+@register.filter(name='lookup')
 def lookup(d, key):
     if key not in d:
         return 'nada'
