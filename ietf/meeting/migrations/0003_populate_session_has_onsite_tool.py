@@ -25,7 +25,7 @@ def reverse(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('meeting', '0061_session_has_onsite_tool'),
+        ('meeting', '0002_session_has_onsite_tool'),
     ]
 
     operations = [
