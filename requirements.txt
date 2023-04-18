@@ -35,6 +35,7 @@ gunicorn>=20.1.0
 hashids>=1.3.1
 html2text>=2020.1.16    # Used only to clean comment field of secr/sreq
 html5lib>=1.1    # Only used in tests
+inflect>= 6.0.2
 jsonfield>=3.1.0    # for SubmissionCheck.  This is https://github.com/bradjasper/django-jsonfield/.
 jwcrypto>=1.2    # for signed notifications - this is aspirational, and is not really used.
 logging_tree>=1.9    # Used only by the showloggers management command
@@ -45,6 +46,7 @@ mypy>=0.782,<0.790    # Version requirements determined by django-stubs.
 mysqlclient>=2.1.0
 oic>=1.3    # Used only by tests
 Pillow>=9.1.0
+psycopg2<2.9
 pyang>=2.5.3
 pyflakes>=2.4.0
 pyopenssl>=22.0.0    # Used by urllib3.contrib, which is used by PyQuery but not marked as a dependency

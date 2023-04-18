@@ -47,7 +47,9 @@ from ietf.meeting.models import Session, TimeSlot, Meeting, SchedTimeSessAssignm
 from ietf.meeting.test_data import make_meeting_test_data, make_interim_meeting, make_interim_test_data
 from ietf.meeting.utils import finalize, condition_slide_order
 from ietf.meeting.utils import add_event_info_to_session_qs
+from ietf.meeting.utils import create_recording, get_next_sequence
 from ietf.meeting.views import session_draft_list, parse_agenda_filter_params, sessions_post_save, agenda_extract_schedule
+from ietf.meeting.views import get_summary_by_area, get_summary_by_type, get_summary_by_purpose
 from ietf.name.models import SessionStatusName, ImportantDateName, RoleName, ProceedingsMaterialTypeName
 from ietf.utils.decorators import skip_coverage
 from ietf.utils.mail import outbox, empty_outbox, get_payload_text
@@ -162,7 +164,7 @@ class AgendaApiTests(TestCase):
             meeting
         )
         AgendaKeywordTagger(assignments=processed).apply()
-        extracted = {item.pk: agenda_extract_schedule(item) for item in processed}
+        extracted = {item.session.pk: agenda_extract_schedule(item) for item in processed}
 
         hidden = extracted[hidden_sess.pk]
         self.assertIsNone(hidden['room'])
@@ -220,6 +222,7 @@ class MeetingTests(BaseMeetingTestCase):
         session.remote_instructions='https://remote.example.com'
         session.save()
         slot = TimeSlot.objects.get(sessionassignments__session=session,sessionassignments__schedule=meeting.schedule)
+        meeting.timeslot_set.filter(type_id="break").update(show_location=False)
         #
         self.write_materials_files(meeting, session)
         #
@@ -349,9 +352,17 @@ class MeetingTests(BaseMeetingTestCase):
         self.assertContains(r, session.materials.filter(type='slides').exclude(states__type__slug='slides',states__slug='deleted').first().uploaded_filename)
         self.assertNotContains(r, session.materials.filter(type='slides',states__type__slug='slides',states__slug='deleted').first().uploaded_filename)
 
-        # iCal
-        r = self.client.get(urlreverse("ietf.meeting.views.agenda_ical", kwargs=dict(num=meeting.number))
-                            + "?show=" + session.group.parent.acronym.upper())
+        # iCal, no session filtering
+        ical_url = urlreverse("ietf.meeting.views.agenda_ical", kwargs=dict(num=meeting.number))
+        r = self.client.get(ical_url)
+        with open('./ical-output.ics', 'w') as f:
+            f.write(r.content.decode())
+        assert_ical_response_is_valid(self, r)
+        self.assertContains(r, "BEGIN:VTIMEZONE")
+        self.assertContains(r, "END:VTIMEZONE")
+
+        # iCal, single group
+        r = self.client.get(ical_url + "?show=" + session.group.parent.acronym.upper())
         assert_ical_response_is_valid(self, r)
         self.assertContains(r, session.group.acronym)
         self.assertContains(r, session.group.name)
@@ -3141,10 +3152,15 @@ class ReorderSlidesTests(TestCase):
             self.assertEqual(list(session2.sessionpresentation_set.order_by('order').values_list('order',flat=True)), list(range(1,3)))
 
 
+
+
     def test_reorder_slides_in_session(self):
+        def _sppk_at(sppk, positions):
+            return [sppk[p-1] for p in positions]
         chair_role = RoleFactory(name_id='chair')
         session = SessionFactory(group=chair_role.group, meeting__date=date_today() - datetime.timedelta(days=90))
         sp_list = SessionPresentationFactory.create_batch(5, document__type_id='slides', session=session)
+        sppk = [o.pk for o in sp_list]
         for num, sp in enumerate(sp_list, start=1):
             sp.order = num
             sp.save()
@@ -3191,42 +3207,42 @@ class ReorderSlidesTests(TestCase):
             r = self.client.post(url, {'oldIndex':1, 'newIndex':3})
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.json()['success'],True)
-            self.assertEqual(list(session.sessionpresentation_set.order_by('order').values_list('pk',flat=True)),[2,3,1,4,5])
+            self.assertEqual(list(session.sessionpresentation_set.order_by('order').values_list('pk',flat=True)),_sppk_at(sppk,[2,3,1,4,5]))
 
             # Move to beginning
             r = self.client.post(url, {'oldIndex':3, 'newIndex':1})
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.json()['success'],True)
-            self.assertEqual(list(session.sessionpresentation_set.order_by('order').values_list('pk',flat=True)),[1,2,3,4,5])
+            self.assertEqual(list(session.sessionpresentation_set.order_by('order').values_list('pk',flat=True)),_sppk_at(sppk,[1,2,3,4,5]))
             
             # Move from end
             r = self.client.post(url, {'oldIndex':5, 'newIndex':3})
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.json()['success'],True)
-            self.assertEqual(list(session.sessionpresentation_set.order_by('order').values_list('pk',flat=True)),[1,2,5,3,4])
+            self.assertEqual(list(session.sessionpresentation_set.order_by('order').values_list('pk',flat=True)),_sppk_at(sppk,[1,2,5,3,4]))
 
             # Move to end
             r = self.client.post(url, {'oldIndex':3, 'newIndex':5})
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.json()['success'],True)
-            self.assertEqual(list(session.sessionpresentation_set.order_by('order').values_list('pk',flat=True)),[1,2,3,4,5])
+            self.assertEqual(list(session.sessionpresentation_set.order_by('order').values_list('pk',flat=True)),_sppk_at(sppk,[1,2,3,4,5]))
 
             # Move beginning to end
             r = self.client.post(url, {'oldIndex':1, 'newIndex':5})
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.json()['success'],True)
-            self.assertEqual(list(session.sessionpresentation_set.order_by('order').values_list('pk',flat=True)),[2,3,4,5,1])
+            self.assertEqual(list(session.sessionpresentation_set.order_by('order').values_list('pk',flat=True)),_sppk_at(sppk,[2,3,4,5,1]))
 
             # Move middle to middle 
             r = self.client.post(url, {'oldIndex':3, 'newIndex':4})
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.json()['success'],True)
-            self.assertEqual(list(session.sessionpresentation_set.order_by('order').values_list('pk',flat=True)),[2,3,5,4,1])
+            self.assertEqual(list(session.sessionpresentation_set.order_by('order').values_list('pk',flat=True)),_sppk_at(sppk,[2,3,5,4,1]))
 
             r = self.client.post(url, {'oldIndex':3, 'newIndex':2})
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.json()['success'],True)
-            self.assertEqual(list(session.sessionpresentation_set.order_by('order').values_list('pk',flat=True)),[2,5,3,4,1])
+            self.assertEqual(list(session.sessionpresentation_set.order_by('order').values_list('pk',flat=True)),_sppk_at(sppk,[2,5,3,4,1]))
 
             # Reset for next iteration in the loop
             session.sessionpresentation_set.update(order=F('pk'))
@@ -6576,6 +6592,28 @@ class ImportNotesTests(TestCase):
 
 class SessionTests(TestCase):
 
+    def test_get_summary_by_area(self):
+        meeting = make_meeting_test_data(meeting=MeetingFactory(type_id='ietf', number='100'))
+        sessions = Session.objects.filter(meeting=meeting).with_current_status()
+        data = get_summary_by_area(sessions)
+        self.assertEqual(data[0][0], 'Duration')
+        self.assertGreater(len(data), 2)
+        self.assertEqual(data[-1][0], 'Total Hours')
+
+    def test_get_summary_by_type(self):
+        meeting = make_meeting_test_data(meeting=MeetingFactory(type_id='ietf', number='100'))
+        sessions = Session.objects.filter(meeting=meeting).with_current_status()
+        data = get_summary_by_type(sessions)
+        self.assertEqual(data[0][0], 'Group Type')
+        self.assertGreater(len(data), 2)
+
+    def test_get_summary_by_purpose(self):
+        meeting = make_meeting_test_data(meeting=MeetingFactory(type_id='ietf', number='100'))
+        sessions = Session.objects.filter(meeting=meeting).with_current_status()
+        data = get_summary_by_purpose(sessions)
+        self.assertEqual(data[0][0], 'Purpose')
+        self.assertGreater(len(data), 2)
+
     def test_meeting_requests(self):
         meeting = MeetingFactory(type_id='ietf')
 
@@ -8097,3 +8135,20 @@ class ProceedingsTests(BaseMeetingTestCase):
         pm = meeting.proceedings_materials.get(pk=pm.pk)
         self.assertEqual(str(pm), 'This Is Not the Default Name')
         self.assertEqual(pm.document.rev, orig_rev, 'Renaming should not change document revision')
+
+    def test_create_recording(self):
+        session = SessionFactory(meeting__type_id='ietf', meeting__number=72, group__acronym='mars')
+        filename = 'ietf42-testroomt-20000101-0800.mp3'
+        url = settings.IETF_AUDIO_URL + 'ietf{}/{}'.format(session.meeting.number, filename)
+        doc = create_recording(session, url)
+        self.assertEqual(doc.name,'recording-72-mars-1')
+        self.assertEqual(doc.group,session.group)
+        self.assertEqual(doc.external_url,url)
+        self.assertTrue(doc in session.materials.all())
+
+    def test_get_next_sequence(self):
+        session = SessionFactory(meeting__type_id='ietf', meeting__number=72, group__acronym='mars')
+        meeting = session.meeting
+        group = session.group
+        sequence = get_next_sequence(group,meeting,'recording')
+        self.assertEqual(sequence,1)

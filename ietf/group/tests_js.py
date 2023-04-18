@@ -100,8 +100,8 @@ class MilestoneTests(IetfSeleniumTestCase):
 
         # fill in the edit milestone form
         desc_input.send_keys(description)
-        due_input.send_keys(due_date.strftime('%m %Y\n'))  # \n closes the date selector
         self._search_draft_and_locate_result(draft_input, draft_search_string, draft).click()
+        due_input.send_keys(due_date.strftime('%m %Y'))
 
         self._click_milestone_submit_button('Review')
         result_row = self._assert_milestone_changed()
@@ -165,7 +165,7 @@ class MilestoneTests(IetfSeleniumTestCase):
         # modify the fields
         new_due_date = (milestone.due + datetime.timedelta(days=31)).strftime('%m %Y')
         due_field.clear()
-        due_field.send_keys(new_due_date + '\n')
+        due_field.send_keys(new_due_date)
 
         self._search_draft_and_locate_result(draft_input, draft_search_string, draft).click()
 

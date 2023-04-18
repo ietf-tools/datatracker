@@ -82,10 +82,9 @@ from ietf.meeting.utils import diff_meeting_schedules, prefetch_schedule_diff_ob
 from ietf.meeting.utils import swap_meeting_schedule_timeslot_assignments, bulk_create_timeslots
 from ietf.meeting.utils import preprocess_meeting_important_dates
 from ietf.meeting.utils import new_doc_for_session, write_doc_for_session
+from ietf.meeting.utils import get_activity_stats, post_process, create_recording
 from ietf.message.utils import infer_message
 from ietf.name.models import SlideSubmissionStatusName, ProceedingsMaterialTypeName, SessionPurposeName
-from ietf.secr.proceedings.proc_utils import (get_activity_stats, post_process, import_audio_files,
-    create_recording)
 from ietf.utils import markdown
 from ietf.utils.decorators import require_api_key
 from ietf.utils.hedgedoc import Note, NoteError
@@ -102,7 +101,9 @@ from .forms import (InterimMeetingModelForm, InterimAnnounceForm, InterimSession
     InterimCancelForm, InterimSessionInlineFormSet, RequestMinutesForm,
     UploadAgendaForm, UploadBlueSheetForm, UploadMinutesForm, UploadSlidesForm)
 
+request_summary_exclude_group_types = ['team']
 
+    
 def get_interim_menu_entries(request):
     '''Setup menu entries for interim meeting view tabs'''
     entries = []
@@ -2239,6 +2240,70 @@ def agenda_json(request, num=None):
         response['Last-Modified'] = format_date_time(timegm(last_modified.timetuple()))
     return response
 
+def request_summary_filter(session):
+    if (session.group.area is None
+            or session.group.type.slug in request_summary_exclude_group_types
+            or session.current_status == 'notmeet'):
+        return False
+    return True
+
+def get_area_column(area):
+    if area is None:
+        return ''
+    if area.type.slug in ['rfcedtyp']:
+        name = 'OTHER'
+    else:
+        name = area.acronym.upper()
+    return name
+
+def get_summary_by_area(sessions):
+    """Returns summary by area for list of session requests.
+    Summary is a two dimensional array[row=session duration][col=session area count]
+    It also includes row and column headers as well as a totals row.
+    """
+
+    # first build a dictionary of counts, key=(duration,area)
+    durations = set()
+    areas = set()
+    duration_totals = defaultdict(int)
+    data = defaultdict(int)
+    for session in sessions:
+        area_column = get_area_column(session.group.area)
+        duration = session.requested_duration.seconds / 3600
+        key = (duration, area_column)
+        data[key] = data[key] + 1
+        durations.add(duration)
+        areas.add(area_column)
+        duration_totals[duration] = duration_totals[duration] + 1
+
+    # build two dimensional array for use in template
+    rows = []
+    sorted_areas = sorted(areas)
+    # move "other" to end
+    if 'OTHER' in sorted_areas:
+        sorted_areas.remove('OTHER')
+        sorted_areas.append('OTHER')
+    # add header row
+    rows.append(['Duration'] + sorted_areas + ['TOTAL SLOTS', 'TOTAL HOURS'])
+    for duration in sorted(durations):
+        rows.append([duration] + [data[(duration, a)] for a in sorted_areas] + [duration_totals[duration]] + [duration_totals[duration] * duration])
+    # add total row
+    rows.append(['Total Slots'] + [sum([rows[r][c] for r in range(1, len(rows))]) for c in range(1, len(rows[0]))])
+    rows.append(['Total Hours'] + [sum([d * data[(d, area)] for d in durations]) for area in sorted_areas])
+    return rows
+
+def get_summary_by_type(sessions):
+    counter = Counter([s.group.type.name for s in sessions])
+    data = counter.most_common()
+    data.insert(0, ('Group Type', 'Count'))
+    return data
+
+def get_summary_by_purpose(sessions):
+    counter = Counter([s.purpose.name for s in sessions])
+    data = counter.most_common()
+    data.insert(0, ('Purpose', 'Count'))
+    return data
+
 def meeting_requests(request, num=None):
     meeting = get_meeting(num)
     groups_to_show = Group.objects.filter(
@@ -2254,7 +2319,7 @@ def meeting_requests(request, num=None):
         ).with_current_status().with_requested_by().exclude(
             requested_by=0
         ).prefetch_related(
-            "group","group__ad_role__person"
+            "group", "group__ad_role__person", "group__type"
         )
     )
 
@@ -2277,11 +2342,13 @@ def meeting_requests(request, num=None):
     )
 
     groups_not_meeting = groups_to_show.exclude(
-        acronym__in = [session.group.acronym for session in sessions]
+        acronym__in=[session.group.acronym for session in sessions]
     ).order_by(
         "parent__acronym",
         "acronym",
     ).prefetch_related("parent")
+
+    summary_sessions = list(filter(request_summary_filter, sessions))
 
     return render(
         request,
@@ -2290,6 +2357,9 @@ def meeting_requests(request, num=None):
             "meeting": meeting,
             "sessions": sessions,
             "groups_not_meeting": groups_not_meeting,
+            "summary_by_area": get_summary_by_area(summary_sessions),
+            "summary_by_group_type": get_summary_by_type(summary_sessions),
+            "summary_by_purpose": get_summary_by_purpose(summary_sessions),
         },
     )
 
@@ -3797,16 +3867,6 @@ def proceedings_activity_report(request, num=None):
 class OldUploadRedirect(RedirectView):
     def get_redirect_url(self, **kwargs):
         return reverse_lazy('ietf.meeting.views.session_details',kwargs=self.kwargs)
-
-@csrf_exempt
-def api_import_recordings(request, number):
-    '''REST API to check for recording files and import'''
-    if request.method == 'POST':
-        meeting = get_meeting(number)
-        import_audio_files(meeting)
-        return HttpResponse(status=201)
-    else:
-        return HttpResponse(status=405)
 
 @require_api_key
 @role_required('Recording Manager')

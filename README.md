@@ -9,7 +9,7 @@
 [![Python Version](https://img.shields.io/badge/python-3.9-blue?logo=python&logoColor=white)](#prerequisites)
 [![Django Version](https://img.shields.io/badge/django-2.x-51be95?logo=django&logoColor=white)](#prerequisites)
 [![Node Version](https://img.shields.io/badge/node.js-16.x-green?logo=node.js&logoColor=white)](#prerequisites)
-[![MariaDB Version](https://img.shields.io/badge/mariadb-10-blue?logo=mariadb&logoColor=white)](#prerequisites)
+[![MariaDB Version](https://img.shields.io/badge/postgres-14-blue?logo=postgresql&logoColor=white)](#prerequisites)
 
 ##### The day-to-day front-end to the IETF database for people who work on IETF standards.
 
@@ -75,10 +75,9 @@ Read the [Docker Dev Environment](docker/README.md) guide to get started.
 
 ### Database & Assets
 
-Nightly database dumps of the datatracker are available at  
-https://www.ietf.org/lib/dt/sprint/ietf_utf8.sql.gz
+Nightly database dumps of the datatracker are available as Docker images: `ghcr.io/ietf-tools/datatracker-db:latest`  
 
-> Note that this link is provided as reference only. To update the database in your dev environment to the latest version, you should instead run the `docker/cleandb` script!
+> Note that to update the database in your dev environment to the latest version, you should run the `docker/cleandb` script.
 
 ### Frontend Development
 
@@ -202,7 +201,7 @@ before activating a new release.
 
 From a datatracker container, run the command:
 ```sh
-./ietf/manage.py test --settings=settings_local_sqlitetest
+./ietf/manage.py test --settings=settings_postgrestest
 ```
 
 > You can limit the run to specific tests using the `--pattern` argument.

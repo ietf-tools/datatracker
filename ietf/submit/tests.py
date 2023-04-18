@@ -3638,3 +3638,15 @@ class ValidateSubmissionFilenameTests(BaseSubmitTestCase):
 
         msg = validate_submission_rev(new_wg_doc.name, '02')
         self.assertIsNone(msg)
+
+class TestOldNamesAreProtected(BaseSubmitTestCase):
+    
+    def test_submit_case_conflited_name_fails(self):
+        WgDraftFactory(name="draft-something-HasCapitalLetters")
+        with self.assertRaisesMessage(ValidationError, "Case-conflicting draft name found"):
+            SubmissionBaseUploadForm.check_for_old_uppercase_collisions("draft-something-hascapitalletters")
+        url = urlreverse("ietf.submit.views.upload_submission")
+        files = {}
+        files["xml"], _ = submission_file("draft-something-hascapitalletters-00", "draft-something-hascapitalletters-00.xml", None, "test_submission.xml")
+        r = self.client.post(url, files)
+        self.assertContains(r,"Case-conflicting draft name found",status_code=200)
