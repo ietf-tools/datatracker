@@ -47,7 +47,9 @@ from ietf.meeting.models import Session, TimeSlot, Meeting, SchedTimeSessAssignm
 from ietf.meeting.test_data import make_meeting_test_data, make_interim_meeting, make_interim_test_data
 from ietf.meeting.utils import finalize, condition_slide_order
 from ietf.meeting.utils import add_event_info_to_session_qs
+from ietf.meeting.utils import create_recording, get_next_sequence
 from ietf.meeting.views import session_draft_list, parse_agenda_filter_params, sessions_post_save, agenda_extract_schedule
+from ietf.meeting.views import get_summary_by_area, get_summary_by_type, get_summary_by_purpose
 from ietf.name.models import SessionStatusName, ImportantDateName, RoleName, ProceedingsMaterialTypeName
 from ietf.utils.decorators import skip_coverage
 from ietf.utils.mail import outbox, empty_outbox, get_payload_text
@@ -218,6 +220,7 @@ class MeetingTests(BaseMeetingTestCase):
         slot = TimeSlot.objects.get(sessionassignments__session=session,sessionassignments__schedule=meeting.schedule)
         slot.location.urlresource_set.create(name_id='meetecho_onsite', url='https://onsite.example.com')
         slot.location.urlresource_set.create(name_id='meetecho', url='https://meetecho.example.com')
+        meeting.timeslot_set.filter(type_id="break").update(show_location=False)
         #
         self.write_materials_files(meeting, session)
         #
@@ -347,9 +350,17 @@ class MeetingTests(BaseMeetingTestCase):
         self.assertContains(r, session.materials.filter(type='slides').exclude(states__type__slug='slides',states__slug='deleted').first().uploaded_filename)
         self.assertNotContains(r, session.materials.filter(type='slides',states__type__slug='slides',states__slug='deleted').first().uploaded_filename)
 
-        # iCal
-        r = self.client.get(urlreverse("ietf.meeting.views.agenda_ical", kwargs=dict(num=meeting.number))
-                            + "?show=" + session.group.parent.acronym.upper())
+        # iCal, no session filtering
+        ical_url = urlreverse("ietf.meeting.views.agenda_ical", kwargs=dict(num=meeting.number))
+        r = self.client.get(ical_url)
+        with open('./ical-output.ics', 'w') as f:
+            f.write(r.content.decode())
+        assert_ical_response_is_valid(self, r)
+        self.assertContains(r, "BEGIN:VTIMEZONE")
+        self.assertContains(r, "END:VTIMEZONE")
+
+        # iCal, single group
+        r = self.client.get(ical_url + "?show=" + session.group.parent.acronym.upper())
         assert_ical_response_is_valid(self, r)
         self.assertContains(r, session.group.acronym)
         self.assertContains(r, session.group.name)
@@ -6579,6 +6590,28 @@ class ImportNotesTests(TestCase):
 
 class SessionTests(TestCase):
 
+    def test_get_summary_by_area(self):
+        meeting = make_meeting_test_data(meeting=MeetingFactory(type_id='ietf', number='100'))
+        sessions = Session.objects.filter(meeting=meeting).with_current_status()
+        data = get_summary_by_area(sessions)
+        self.assertEqual(data[0][0], 'Duration')
+        self.assertGreater(len(data), 2)
+        self.assertEqual(data[-1][0], 'Total Hours')
+
+    def test_get_summary_by_type(self):
+        meeting = make_meeting_test_data(meeting=MeetingFactory(type_id='ietf', number='100'))
+        sessions = Session.objects.filter(meeting=meeting).with_current_status()
+        data = get_summary_by_type(sessions)
+        self.assertEqual(data[0][0], 'Group Type')
+        self.assertGreater(len(data), 2)
+
+    def test_get_summary_by_purpose(self):
+        meeting = make_meeting_test_data(meeting=MeetingFactory(type_id='ietf', number='100'))
+        sessions = Session.objects.filter(meeting=meeting).with_current_status()
+        data = get_summary_by_purpose(sessions)
+        self.assertEqual(data[0][0], 'Purpose')
+        self.assertGreater(len(data), 2)
+
     def test_meeting_requests(self):
         meeting = MeetingFactory(type_id='ietf')
 
@@ -8100,3 +8133,20 @@ class ProceedingsTests(BaseMeetingTestCase):
         pm = meeting.proceedings_materials.get(pk=pm.pk)
         self.assertEqual(str(pm), 'This Is Not the Default Name')
         self.assertEqual(pm.document.rev, orig_rev, 'Renaming should not change document revision')
+
+    def test_create_recording(self):
+        session = SessionFactory(meeting__type_id='ietf', meeting__number=72, group__acronym='mars')
+        filename = 'ietf42-testroomt-20000101-0800.mp3'
+        url = settings.IETF_AUDIO_URL + 'ietf{}/{}'.format(session.meeting.number, filename)
+        doc = create_recording(session, url)
+        self.assertEqual(doc.name,'recording-72-mars-1')
+        self.assertEqual(doc.group,session.group)
+        self.assertEqual(doc.external_url,url)
+        self.assertTrue(doc in session.materials.all())
+
+    def test_get_next_sequence(self):
+        session = SessionFactory(meeting__type_id='ietf', meeting__number=72, group__acronym='mars')
+        meeting = session.meeting
+        group = session.group
+        sequence = get_next_sequence(group,meeting,'recording')
+        self.assertEqual(sequence,1)

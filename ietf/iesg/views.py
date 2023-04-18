@@ -65,7 +65,7 @@ from ietf.iesg.utils import telechat_page_count
 from ietf.ietfauth.utils import has_role, role_required, user_is_person
 from ietf.name.models import TelechatAgendaSectionName
 from ietf.person.models import Person
-from ietf.secr.proceedings.proc_utils import get_activity_stats
+from ietf.meeting.utils import get_activity_stats
 from ietf.doc.utils_search import fill_in_document_table_attributes, fill_in_telechat_date
 from ietf.utils.timezone import date_today, datetime_from_date
 

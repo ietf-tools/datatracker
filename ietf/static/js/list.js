@@ -266,43 +266,23 @@ $(document)
                                 });
                         }
                     });
-
-                    e.on("searchComplete", function () {
-                        var last_show_with_children = {};
-                        e.items.forEach((item) => {
-                            if ($(item.elm)
-                                .hasClass("show-with-children")) {
-                                var kind = $(item.elm)
-                                    .attr("class")
-                                    .split(/\s+/)
-                                    .join();
-                                last_show_with_children[kind] = item;
-                            }
-
-                            if (item.found) {
-                                Object.entries(last_show_with_children)
-                                    .forEach(([key, val]) => {
-                                        val.found = true;
-                                        val.show();
-                                        delete last_show_with_children[key];
-                                    });
-                            }
-
-                            if ($(item.elm)
-                                .hasClass("show-always")) {
-                                item.found = true;
-                                item.show();
-                            }
-                        });
-
-                        e.update();
-                        replace_with_internal(table, internal_table, i);
-                    });
                 });
+
                 $(table.addClass("tablesorter-done"));
                 n++;
                 $(table)[0]
                     .dispatchEvent(new Event("tablesorter:done"));
+
+                // if there is a data-default-sort attribute on a column, pre-sort the table on that
+                const presort_col = $(header_row).children("[data-default-sort]:first");
+                if (presort_col) {
+                    const order = presort_col.attr("data-default-sort");
+                    if (order == "asc" || order == "desc") {
+                        $.each(list_instance, (i, e) => {
+                            e.sort(presort_col.attr("data-sort"), { order: order, sortFunction: text_sort });
+                        });
+                    }
+                }
             });
 
         // if the URL contains a #, scroll to it again, since we modified the DOM

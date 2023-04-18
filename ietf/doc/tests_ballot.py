@@ -1231,8 +1231,9 @@ class BallotContentTests(TestCase):
         heading = q(f'div.h5[id$="_{slugify(balloter.plain_name())}"]')
         self.assertEqual(len(heading), 1)
         # <div.h5> is followed by a panel with the message of interest, so use next()
+        next = heading.next()
         self.assertEqual(
-            len(heading.next().find(
+            len(next.find(
                 f'*[title="{expected}"]'
             )),
             1,
@@ -1409,6 +1410,6 @@ class BallotContentTests(TestCase):
             ballot_id=ballot.pk,
         )
         q = PyQuery(content)
-        self._assertBallotMessage(q, balloters[0], 'No email send requests for this discuss')
-        self._assertBallotMessage(q, balloters[1], 'No ballot position send log available')
+        self._assertBallotMessage(q, balloters[0], 'No discuss send log available')
+        self._assertBallotMessage(q, balloters[1], 'No comment send log available')
         self._assertBallotMessage(q, old_balloter, 'No ballot position send log available')
