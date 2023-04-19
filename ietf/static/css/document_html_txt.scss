@@ -375,7 +375,7 @@ thead, tfoot {
   border-bottom-style: double;
 }
 td, th {
-  border: 1px solid black;
+  border: 1px solid inherit;
   // padding: var(--half-line) 1ch;
   padding-top: var(--half-line);
   padding-right: 1ch;
@@ -394,7 +394,7 @@ td, th {
 
 /* Links */
 a.selfRef, a.pilcrow, .iref + a.internal {
-  color: black;
+  color: inherit;
   text-decoration: none;
 }
 a.relref, a.xref {
