@@ -1294,6 +1294,7 @@ def process_uploaded_submission(submission):
     except SubmissionError as err:
         cancel_submission(submission)  # changes Submission.state
         create_submission_event(None, submission, f"Submission rejected: {err}")
-    submission.state_id = "uploaded"
-    submission.save()
-    create_submission_event(None, submission, desc="Completed submission validation checks")
+    else:
+        submission.state_id = "uploaded"
+        submission.save()
+        create_submission_event(None, submission, desc="Completed submission validation checks")
