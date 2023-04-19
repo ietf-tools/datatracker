@@ -4,7 +4,6 @@ on:
   pull_request:
     branches:
       - 'main'
-      - 'feat/postgres'
     paths:
       - 'client/**'
       - 'ietf/**'
@@ -20,7 +19,7 @@ jobs:
     
     services:
       db:
-        image: ghcr.io/ietf-tools/datatracker-db-pg:latest
+        image: ghcr.io/ietf-tools/datatracker-db:latest
     
     steps:
     - uses: actions/checkout@v3
@@ -50,7 +49,7 @@ jobs:
         coverage xml
 
     - name: Upload Coverage Results to Codecov
-      uses: codecov/codecov-action@v3.1.1
+      uses: codecov/codecov-action@v3.1.2
       with:
         files: coverage.xml
         
