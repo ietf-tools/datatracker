@@ -88,7 +88,7 @@ if [ -n "$EDITOR_VSCODE" ]; then
 fi
 
 # Make sure PG search path is set
-psql -U django -h db -d ietf -v ON_ERROR_STOP=1 -c '\x' -c 'ALTER USER django set search_path=ietf_utf8,django,public;'
+psql -U django -h db -d ietf -v ON_ERROR_STOP=1 -c '\x' -c 'ALTER USER django set search_path=datatracker,public;'
 
 # Run memcached
 
