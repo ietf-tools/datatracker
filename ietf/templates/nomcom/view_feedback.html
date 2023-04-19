@@ -57,7 +57,7 @@
 	    <tfoot>
 		<td></td>
 		<td></td>
-		<th>Totals</h></th>
+		<th scope="row">Totals</th>
 		{% for ft in nominee_feedback_types %}
 		  <td>{{ feedback_totals|lookup:ft.slug }}</td>
 		{% endfor %}
