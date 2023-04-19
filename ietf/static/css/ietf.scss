@@ -15,9 +15,14 @@ $popover-max-width: 100%;
 $font-family-sans-serif: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", "Liberation Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
 $font-family-monospace: "Noto Sans Mono", SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 
+// Allow color modes
+
+$color-mode-type: media-query;
+
 // Only import what we need:
 
 @import "bootstrap/scss/variables";
+@import "bootstrap/scss/variables-dark";
 
 $h1-font-size: $font-size-base * 2.2;
 $h2-font-size: $font-size-base * 1.8;
@@ -334,7 +339,7 @@ th,
 }
 
 .ballot-icon table .my {
-    border: 2 * $table-border-width solid #000;
+    border: calc(2 * $table-border-width) solid #000;
 }
 
 // See https://getbootstrap.com/docs/5.1/customize/color/#all-colors

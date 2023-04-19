@@ -2191,12 +2191,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"bootstrap@npm:5.2.3":
-  version: 5.2.3
-  resolution: "bootstrap@npm:5.2.3"
+"bootstrap@npm:5.3.0-alpha3":
+  version: 5.3.0-alpha3
+  resolution: "bootstrap@npm:5.3.0-alpha3"
   peerDependencies:
-    "@popperjs/core": ^2.11.6
-  checksum: 0211805dec6a190c0911d142966df30fdb4b4139a04cc6c23dd83c6045ea3cb0a966b360ab2e701e7b3ad96ff01e05fdc0914be97b41bd876b11e457a8bdc6a3
+    "@popperjs/core": ^2.11.7
+  checksum: 1739c40e4033c134e9dc51235e8018f267a9fc8114feba6a5b402f2ab0c68e67c363e2f243c79f252d1cf8fcde82262b04bbaaf6ea1695c37537c02f34ae4f79
   languageName: node
   linkType: hard
 
@@ -6376,7 +6376,7 @@ browserlist@latest:
     "@rollup/pluginutils": 5.0.2
     "@twuni/emojify": 1.0.2
     "@vitejs/plugin-vue": 4.2.1
-    bootstrap: 5.2.3
+    bootstrap: 5.3.0-alpha3
     bootstrap-icons: 1.10.5
     browser-fs-access: 0.33.1
     browserlist: latest

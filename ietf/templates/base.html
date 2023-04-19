@@ -6,7 +6,7 @@
 {% origin %}
 {% load django_bootstrap5 %}
 {% load django_vite %}
-<html lang="en" {% block html_attrs %}{% endblock %}>
+<html data-bs-theme="auto" lang="en" {% block html_attrs %}{% endblock %}>
     <head>
         {% analytical_head_top %}
         <meta charset="utf-8">
@@ -160,6 +160,7 @@
         {% endblock %}
         {% block js %}
         {% endblock %}
+        <script src="{% static 'ietf/js/theme.js' %}"></script>
         <script src="{% static 'ietf/js/select2.js' %}"></script>
         <script>
             $('#navbar-doc-search').on('select2:select', function (e) {
