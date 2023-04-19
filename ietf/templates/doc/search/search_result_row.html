@@ -136,7 +136,7 @@
             <td class="text-center d-none d-sm-table-cell">
                 {% if doc.related_ipr %}
                     <a href="{% url "ietf.ipr.views.search" %}?submit=draft&amp;id={{ doc.name }}">
-                        <span class="badge rounded-pill bg-info">{{ doc.related_ipr|length }}</span>
+                        <span class="badge rounded-pill bg-info-subtle">{{ doc.related_ipr|length }}</span>
                     </a>
                 {% endif %}
             </td>

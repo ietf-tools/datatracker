@@ -78,7 +78,7 @@
                                     Awaiting accept
                                 </span>
                             {% endif %}
-                            {% if form.changed %}<span class="badge rounded-pill bg-info">Changed</span>{% endif %}
+                            {% if form.changed %}<span class="badge rounded-pill bg-info-subtle">Changed</span>{% endif %}
                             {% if form.delete.data %}<span class="badge rounded-pill bg-danger">Deleted</span>{% endif %}
                             {% for d in form.docs_names %}<div class="doc">{{ d }}</div>{% endfor %}
                         </div>

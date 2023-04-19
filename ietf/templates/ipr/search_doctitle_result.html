@@ -27,7 +27,7 @@
             {% for alias in docs %}
                 <tbody>
                     <tr>
-                        <th scope="col" class="table-info" colspan="3">
+                        <th scope="col" class="bg-info-subtle" colspan="3">
                             IPR that is related to {{ alias.name|prettystdname:""|urlize_ietf_docs }} ("{{ alias.document.title }}")
                             {% if alias.related %}
                                 that was {{ alias.relation|lower }} {{ alias.related.source.name|prettystdname:""|urlize_ietf_docs  }} ("{{ alias.related.source.title }}")

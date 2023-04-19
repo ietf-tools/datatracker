@@ -28,7 +28,7 @@
                     <tr>
                         <td>{{ ipr.time|date:"Y-m-d" }}</td>
                         <td>{{ ipr.id }}</td>
-                        <td><a href="{% url "ietf.ipr.views.show" id=ipr.id %}">{{ ipr.title }}</a>{% if ipr.state_id == 'removed' %}<span class="badge rounded-pill bg-info">Removed</span>{% endif %}
+                        <td><a href="{% url "ietf.ipr.views.show" id=ipr.id %}">{{ ipr.title }}</a>{% if ipr.state_id == 'removed' %}<span class="badge rounded-pill bg-info-subtle">Removed</span>{% endif %}
                             {% if ipr.updates %} <br>(Updates ID#: {% for upd in ipr.updates %}{{upd.target_id}}{% if not forloop.last %}, {% endif %}{% endfor %}){% endif %}
                         </td>
                     </tr>
@@ -57,7 +57,7 @@
         {% for doc in docs %}
             <tbody>
                 <tr>
-                    <th scope="col" class="table-info" colspan="3">
+                    <th scope="col" class="bg-info-subtle" colspan="3">
                         Results for {{ doc.name|prettystdname|urlize_ietf_docs }} ("{{ doc.document.title }}"){% if not forloop.first %}{% if doc.related %}, which was {{ doc.relation|lower }} {{ doc.related.source|prettystdname|urlize_ietf_docs  }} ("{{ doc.related.source.title }}"){% endif %}{% endif %}
                     </th>
                 </tr>

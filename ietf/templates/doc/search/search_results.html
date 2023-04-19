@@ -46,7 +46,7 @@
 {% regroup docs by search_heading as grouped_docs %}
 {% for doc_group in grouped_docs %}
     <tbody>
-        <tr class="table-info">
+        <tr class="bg-info-subtle">
             <td></td>
             <th scope="col" colspan="{{ meta.headers|length|add:"-1" }}">
             {{ doc_group.grouper|plural:doc_group.list }} ({{ doc_group.list|length }} {{"hit"|plural:doc_group.list }})

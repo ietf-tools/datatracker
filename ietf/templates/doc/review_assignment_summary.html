@@ -13,7 +13,7 @@
             <span class="badge rounded-pill ms-1 bg-secondary">Partially completed</span>
         {% endif %}
         {% if review_assignment.result %}
-            <span class="badge rounded-pill ms-1 {% if review_assignment.result.name|slice:5|slugify == 'ready' %}bg-success{% else %}bg-info{% endif %}">
+            <span class="badge rounded-pill ms-1 {% if review_assignment.result.name|slice:5|slugify == 'ready' %}bg-success{% else %}bg-info-subtle{% endif %}">
                 {{ review_assignment.result.name }}
             </span>
         {% endif %}

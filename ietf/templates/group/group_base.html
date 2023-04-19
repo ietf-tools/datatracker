@@ -13,7 +13,7 @@
             <span class="badge rounded-pill bg-warning float-end ms-3">Concluded {{ group.type.name }}</span>
         {% endif %}
         {% if group.state_id == "replaced" %}<span class="badge rounded-pill bg-warning float-end ms-3">Replaced {{ group.type.name }}</span>{% endif %}
-        {% if group.state_id == "proposed" %}<span class="badge rounded-pill bg-info float-end ms-3">Proposed {{ group.type.name }}</span>{% endif %}
+        {% if group.state_id == "proposed" %}<span class="badge rounded-pill bg-info-subtle float-end ms-3">Proposed {{ group.type.name }}</span>{% endif %}
         {{ group.name }} ({{ group.acronym }})
     </h1>
     <ul class="nav nav-tabs my-3">
