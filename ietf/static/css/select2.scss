@@ -1,4 +1,8 @@
 @import "bootstrap/scss/functions";
+
+// Enable automatic dark mode
+$color-mode-type: media-query;
+
 @import "bootstrap/scss/variables";
 @import "bootstrap/scss/variables-dark";
 @import "bootstrap/scss/maps";
