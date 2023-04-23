@@ -18,7 +18,7 @@
 - [**Production Website**](https://datatracker.ietf.org)
 - [Changelog](https://github.com/ietf-tools/datatracker/releases)
 - [Contributing](https://github.com/ietf-tools/.github/blob/main/CONTRIBUTING.md)
-- [Getting Started](#getting-started) [tl;dr](#the-tl;dr-to-get-going))
+- [Getting Started](#getting-started) [tl;dr](#the-tldr-to-get-going))
     - [Git Cloning Tips](#git-cloning-tips)
     - [Docker Dev Environment](docker/README.md)
 - [Database & Assets](#database--assets)
@@ -63,7 +63,7 @@ Because of the extensive history of this project, cloning the datatracker projec
     git clone --shallow-since=DATE https://github.com/USERNAME/datatracker.git
     ```
 
-#### The tl;dr to get going
+#### The tldr to get going
 Note that you will have to have cloned the datatracker code locally - please read the above sections.
 
 Datatracker development is performed using Docker containers. You will need to be able to run docker (and docker-compose) on your machine to effectively develop. It is possible to get a purely native install working, but it is _very complicated_ and typically takes a first time datatracker developer a full day of setup, where the docker setup complete in a small number of minutes.
@@ -77,7 +77,7 @@ Once the containers are started, run the test to make sure your checkout is a go
 
 Note that we recently moved the datatracker onto postgres - you may still find older documentation that suggests testing with settings_sqlitetest. That will no longer work.
 
-For a more detailed description of getting going see [docker/README.md](https://github.com/ietf-tools/.github/blob/main/docker/README.md).
+For a more detailed description of getting going see [docker/README.md](docker/README.md).
 #### Overview of the datatracker models
 
 A beginning of a [walkthrough of the datatracker models](https://notes.ietf.org/iab-aid-datatracker-database-overview) was prepared for the IAB AID workshop.
