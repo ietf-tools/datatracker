@@ -18,7 +18,7 @@
 - [**Production Website**](https://datatracker.ietf.org)
 - [Changelog](https://github.com/ietf-tools/datatracker/releases)
 - [Contributing](https://github.com/ietf-tools/.github/blob/main/CONTRIBUTING.md)
-- [Getting Started](#getting-started) (#tl;dr)
+- [Getting Started](#getting-started) [tl;dr](#the-tl;dr-to-get-going))
     - [Git Cloning Tips](#git-cloning-tips)
     - [Docker Dev Environment](docker/README.md)
 - [Database & Assets](#database--assets)
@@ -77,7 +77,7 @@ Once the containers are started, run the test to make sure your checkout is a go
 
 Note that we recently moved the datatracker onto postgres - you may still find older documentation that suggests testing with settings_sqlitetest. That will no longer work.
 
-For a more detailed description of getting going see [docker/README.md].
+For a more detailed description of getting going see [docker/README.md](https://github.com/ietf-tools/.github/blob/main/docker/README.md).
 #### Overview of the datatracker models
 
 A beginning of a [walkthrough of the datatracker models](https://notes.ietf.org/iab-aid-datatracker-database-overview) was prepared for the IAB AID workshop.
