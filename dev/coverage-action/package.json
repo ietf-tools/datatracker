@@ -19,6 +19,6 @@
     "eslint-plugin-import": "2.27.5",
     "eslint-plugin-node": "11.1.0",
     "eslint-plugin-promise": "6.1.1",
-    "npm-check-updates": "16.7.12"
+    "npm-check-updates": "16.10.8"
   }
 }
