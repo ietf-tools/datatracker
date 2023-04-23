@@ -63,6 +63,19 @@ Because of the extensive history of this project, cloning the datatracker projec
     git clone --shallow-since=DATE https://github.com/USERNAME/datatracker.git
     ```
 
+#### The tl;dr to get going
+Datatracker development is performed using Docker containers. You will need to be able to run docker (and docker-compose) on your machine to effectively develop. It is possible to get a purely native install working, but it is _very complicated_ and typically takes a first time datatracker developer a full day of setup, where the docker setup complete in a small number of minutes.
+
+Many developers are using vscode and taking advantage of vscode's ability to start a project in a set of containers. If you are using vscode, simply start vscode in your clone and inside vscode choose `Restart in container`.
+
+If vscode is not available to you. in your clone, type `cd docker; ./run`
+
+Once the containers are started, run the test to make sure your checkout is a good place to start from (all tests should pass - if any fail, ask for help at tools-develop@). Inside the app container's shell type:
+`ietf/manage.py test --settings=settings_postgrestest`
+
+Note that we recently moved the datatracker onto postgres - you may still find older documentation that suggests testing with settings_sqlitetest. That will no longer work.
+
+For a more detailed description of getting going see [docker/README.md].
 #### Overview of the datatracker models
 
 A beginning of a [walkthrough of the datatracker models](https://notes.ietf.org/iab-aid-datatracker-database-overview) was prepared for the IAB AID workshop.
