@@ -212,14 +212,16 @@ class AgendaApiTests(TestCase):
 
 
 class MeetingTests(BaseMeetingTestCase):
+    @override_settings(
+        MEETECHO_ONSITE_TOOL_URL="https://onsite.example.com",
+        MEETECHO_VIDEO_STREAM_URL="https://meetecho.example.com",
+    )
     def test_meeting_agenda(self):
         meeting = make_meeting_test_data()
         session = Session.objects.filter(meeting=meeting, group__acronym="mars").first()
         session.remote_instructions='https://remote.example.com'
         session.save()
         slot = TimeSlot.objects.get(sessionassignments__session=session,sessionassignments__schedule=meeting.schedule)
-        slot.location.urlresource_set.create(name_id='meetecho_onsite', url='https://onsite.example.com')
-        slot.location.urlresource_set.create(name_id='meetecho', url='https://meetecho.example.com')
         meeting.timeslot_set.filter(type_id="break").update(show_location=False)
         #
         self.write_materials_files(meeting, session)
