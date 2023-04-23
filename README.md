@@ -18,7 +18,7 @@
 - [**Production Website**](https://datatracker.ietf.org)
 - [Changelog](https://github.com/ietf-tools/datatracker/releases)
 - [Contributing](https://github.com/ietf-tools/.github/blob/main/CONTRIBUTING.md)
-- [Getting Started](#getting-started) - [tl-dr](#the-tl-dr-to-get-going))
+- [Getting Started](#getting-started) - [tl-dr](#the-tl-dr-to-get-going)
     - [Git Cloning Tips](#git-cloning-tips)
     - [Docker Dev Environment](docker/README.md)
 - [Database & Assets](#database--assets)
