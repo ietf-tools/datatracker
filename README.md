@@ -18,7 +18,7 @@
 - [**Production Website**](https://datatracker.ietf.org)
 - [Changelog](https://github.com/ietf-tools/datatracker/releases)
 - [Contributing](https://github.com/ietf-tools/.github/blob/main/CONTRIBUTING.md)
-- [Getting Started](#getting-started) - [tl&semi;dr](#the-tl&semi;dr-to-get-going))
+- [Getting Started](#getting-started) - [tl-dr](#the-tl-dr-to-get-going))
     - [Git Cloning Tips](#git-cloning-tips)
     - [Docker Dev Environment](docker/README.md)
 - [Database & Assets](#database--assets)
@@ -63,7 +63,7 @@ Because of the extensive history of this project, cloning the datatracker projec
     git clone --shallow-since=DATE https://github.com/USERNAME/datatracker.git
     ```
 
-#### The tl&semi;dr to get going
+#### The tl-dr to get going
 Note that you will have to have cloned the datatracker code locally - please read the above sections.
 
 Datatracker development is performed using Docker containers. You will need to be able to run docker (and docker-compose) on your machine to effectively develop. It is possible to get a purely native install working, but it is _very complicated_ and typically takes a first time datatracker developer a full day of setup, where the docker setup complete in a small number of minutes.
