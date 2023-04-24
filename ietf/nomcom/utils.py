@@ -531,7 +531,7 @@ def decorate_volunteers_with_qualifications(volunteers, nomcom=None, date=None, 
                 qualifications.append('path_2')
             if v.person in author_qs:
                 qualifications.append('path_3')
-            v.qualifications = ", ".join(qualifications)
+            v.qualifications = "+".join(qualifications)
     else:
         for v in volunteers:
             v.qualifications = ''

@@ -4,6 +4,7 @@
 
 import email.utils
 
+from django.forms import TextInput
 from django.db import models
 from django.utils import timezone
 
@@ -16,19 +17,26 @@ from ietf.name.models import RoleName
 from ietf.utils.models import ForeignKey
 from ietf.utils.mail import get_email_addresses_from_text
 
+
+class HeaderField(models.TextField):
+    """TextField that defaults to a TextInput widget"""
+    def formfield(self, **kwargs):
+        return super().formfield(**{'widget': TextInput, **kwargs})
+
+
 class Message(models.Model):
     time = models.DateTimeField(default=timezone.now)
     by = ForeignKey(Person)
 
-    subject = models.CharField(max_length=255)
-    frm = models.CharField(max_length=255)
-    to = models.CharField(max_length=1024)
-    cc = models.CharField(max_length=1024, blank=True)
-    bcc = models.CharField(max_length=255, blank=True)
-    reply_to = models.CharField(max_length=255, blank=True)
+    subject = HeaderField()
+    frm = HeaderField()
+    to = HeaderField()
+    cc = HeaderField(blank=True)
+    bcc = HeaderField(blank=True)
+    reply_to = HeaderField(blank=True)
     body = models.TextField()
     content_type = models.CharField(default="text/plain", max_length=255, blank=True)
-    msgid = models.CharField(max_length=255, blank=True, null=True, default=email.utils.make_msgid)
+    msgid = HeaderField(blank=True, null=True, default=email.utils.make_msgid)
 
     related_groups = models.ManyToManyField(Group, blank=True)
     related_docs = models.ManyToManyField(Document, blank=True)
