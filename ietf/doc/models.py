@@ -6,6 +6,8 @@ import datetime
 import logging
 import io
 import os
+
+import django.db
 import rfc2html
 
 from pathlib import Path
@@ -56,16 +58,22 @@ class StateType(models.Model):
 @checks.register('db-consistency')
 def check_statetype_slugs(app_configs, **kwargs):
     errors = []
-    state_type_slugs = [ t.slug for t in StateType.objects.all() ]
-    for type in DocTypeName.objects.all():
-        if not type.slug in state_type_slugs:
-            errors.append(checks.Error(
-                "The document type '%s (%s)' does not have a corresponding entry in the doc.StateType table" % (type.name, type.slug),
-                hint="You should add a doc.StateType entry with a slug '%s' to match the DocTypeName slug."%(type.slug),
-                obj=type,
-                id='datatracker.doc.E0015',
-            ))
-    return errors
+    try:
+        state_type_slugs = [ t.slug for t in StateType.objects.all() ]
+    except django.db.ProgrammingError:
+        # When running initial migrations on an empty DB, attempting to retrieve StateType will raise a
+        # ProgrammingError. Until Django 3, there is no option to skip the checks.
+        return []
+    else:
+        for type in DocTypeName.objects.all():
+            if not type.slug in state_type_slugs:
+                errors.append(checks.Error(
+                    "The document type '%s (%s)' does not have a corresponding entry in the doc.StateType table" % (type.name, type.slug),
+                    hint="You should add a doc.StateType entry with a slug '%s' to match the DocTypeName slug."%(type.slug),
+                    obj=type,
+                    id='datatracker.doc.E0015',
+                ))
+        return errors
 
 class State(models.Model):
     type = ForeignKey(StateType)

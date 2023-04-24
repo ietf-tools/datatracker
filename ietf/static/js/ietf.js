@@ -141,10 +141,8 @@ $(document)
                     attachTo.append(menu.join(""));
                 }
 
-                if (!("ontouchstart" in document.documentElement)) {
-                    $("ul.nav li.dropdown, ul.nav li.dropend")
-                        .on("mouseenter mouseleave", dropdown_hover);
-                }
+                $("ul.nav li.dropdown, ul.nav li.dropend")
+                    .on("mouseenter mouseleave", dropdown_hover);
             }
         });
     });
@@ -154,7 +152,7 @@ $(document)
 $(function () {
     const contentElement = $('#content.ietf-auto-nav');
     if (contentElement.length > 0) {
-        const heading_selector = ":is(h2, h3, h4, h5, h6, .nav-heading):not([style='display:none']):not(.navskip)";
+        const heading_selector = ":is(h2, h3, h4, h5, h6, .h2, .h3, .h4, .h5, .h6, .nav-heading):not([style='display:none']):not(.navskip)";
         const headings = contentElement
             .find(heading_selector)
             .filter((i, el) => !el.closest(".navskip"));

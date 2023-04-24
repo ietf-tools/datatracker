@@ -5,22 +5,25 @@ Reply-To: {{ reply_to }}
 
 Dear {{ to_name }}:
 
-We have just received a request to update the IPR disclosure(s) submitted by you:
+We have just received a request to update one or more IPR disclosures
+previously submitted by you:
 
 {% for ipr in iprs %}
 {{ ipr.title }} {{ ipr.get_absolute_url }}
 {% endfor %}
 
-The name and email address of the person who submitted the update to your IPR disclosure are:
-{{ new_ipr.submitter_name }}, {{ new_ipr.submitter_email }}.
+The name and email address of the person who submitted the update to
+your IPR disclosure are: {{ new_ipr.submitter_name }}, {{ new_ipr.submitter_email }}.
+If this is you or someone known by you to be authorized to update
+the above disclosures, please respond to this message to confirm.
 
-We will not post this update unless we receive positive confirmation from you that
-{{ new_ipr.submitter_name }} is authorized to update your disclosure.
-Please respond to this message to confirm.
+We will not post this update unless we receive positive confirmation
+from you that the update is indeed from you or someone authorized to
+update the above listed disclosures.
 
 If we do not hear from you within 30 days, we will inform {{ new_ipr.submitter_name }}
-that we were not able to secure approval for posting and that we are therefore rejecting
-the update until we can be assured it is authorized.
+that we were not able to secure approval for posting and that we are
+therefore rejecting the update until we can be assured it is authorized.
 
 Thank you
 

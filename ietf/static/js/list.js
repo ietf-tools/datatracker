@@ -277,9 +277,11 @@ $(document)
                 const presort_col = $(header_row).children("[data-default-sort]:first");
                 if (presort_col) {
                     const order = presort_col.attr("data-default-sort");
-                    $.each(list_instance, (i, e) => {
-                        e.sort(presort_col.attr("data-sort"), { order: order, sortFunction: text_sort });
-                    });
+                    if (order == "asc" || order == "desc") {
+                        $.each(list_instance, (i, e) => {
+                            e.sort(presort_col.attr("data-sort"), { order: order, sortFunction: text_sort });
+                        });
+                    }
                 }
             });
 

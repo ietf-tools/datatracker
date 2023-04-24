@@ -516,7 +516,7 @@
         </a>
     {% endif %}
     {% if show_send_full_url %}
-        <div class="alert alert-danger my-3">
+        <div class="alert alert-info my-3">
             <p>
                 You are not allowed to modify or cancel this submission. You can
                 only modify or cancel this submission from the same URL you were
@@ -535,7 +535,7 @@
             <form class="mt-3" method="post">
                 {% csrf_token %}
                 <input type="hidden" name="action" value="sendfullurl">
-                <button class="btn btn-danger" type="submit">
+                <button class="btn btn-primary" type="submit">
                     Request full access URL
                 </button>
             </form>
