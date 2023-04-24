@@ -28,7 +28,7 @@ def reverse(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("doc", "0050_editorial_stream_states"),
+        ("doc", "0002_auto_20230320_1222"),
     ]
 
     operations = [migrations.RunPython(forward, reverse)]
