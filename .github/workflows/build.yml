@@ -421,7 +421,7 @@ jobs:
         channel-id: ${{ secrets.SLACK_GH_BUILDS_CHANNEL_ID }}
         payload: |
           {
-            "text": "Datatracker Build <https://github.com/ietf-tools/datatracker/actions/runs/${{ github.run_id }}|${{ env.PKG_VERSION }}> by ${{ github.triggering_actor }} - <@${{ secrets.SLACK_UID_RJSPARKS }}>"
+            "text": "Datatracker Build <https://github.com/ietf-tools/datatracker/actions/runs/${{ github.run_id }}|${{ env.PKG_VERSION }}> by ${{ github.triggering_actor }} - <@${{ secrets.SLACK_UID_RJSPARKS }}>",
             "attachments": [
               {
                 "pretext": "Build completed",
@@ -445,7 +445,7 @@ jobs:
         channel-id: ${{ secrets.SLACK_GH_BUILDS_CHANNEL_ID }}
         payload: |
           {
-            "text": "Datatracker Build <https://github.com/ietf-tools/datatracker/actions/runs/${{ github.run_id }}|${{ env.PKG_VERSION }}> by ${{ github.triggering_actor }} - <@${{ secrets.SLACK_UID_RJSPARKS }}>"
+            "text": "Datatracker Build <https://github.com/ietf-tools/datatracker/actions/runs/${{ github.run_id }}|${{ env.PKG_VERSION }}> by ${{ github.triggering_actor }} - <@${{ secrets.SLACK_UID_RJSPARKS }}>",
             "attachments": [
               {
                 "pretext": "Build FAILED",
