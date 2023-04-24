@@ -56,7 +56,7 @@ jobs:
     steps:
     - name: Ensure Release Branch
       if: ${{ github.event.inputs.publish == 'true' && github.ref_name != 'release' }}
-      uses: actions/github-script@v3
+      uses: actions/github-script@v6
       with:
         script: |
             core.setFailed('Production release must be done from release branch!')
@@ -282,7 +282,7 @@ jobs:
   # -----------------------------------------------------------------
   release:
     name: Make Release
-    if: ${{ always() }}
+    if: ${{ always() && jobs.prepare.result == 'success' }}
     needs: [tests-python, tests-playwright, tests-playwright-legacy, prepare]
     runs-on: ubuntu-latest
     env:
@@ -419,7 +419,7 @@ jobs:
   # -----------------------------------------------------------------
   sandbox:
     name: Deploy to Sandbox
-    if: ${{ always() && github.event.inputs.sandbox == 'true' }}
+    if: ${{ always() && github.event.inputs.sandbox == 'true' && jobs.release.status == 'success' }}
     needs: [prepare, release]
     runs-on: [self-hosted, dev-server]
     env:
