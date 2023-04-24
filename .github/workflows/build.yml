@@ -282,7 +282,7 @@ jobs:
   # -----------------------------------------------------------------
   release:
     name: Make Release
-    if: ${{ always() && jobs.prepare.result == 'success' }}
+    if: ${{ success() }}
     needs: [tests-python, tests-playwright, tests-playwright-legacy, prepare]
     runs-on: ubuntu-latest
     env:
@@ -402,14 +402,63 @@ jobs:
         name: release-${{ env.PKG_VERSION }}
         path: /home/runner/work/release/release.tar.gz
         
-    - name: Notify on Slack
-      if: ${{ always() }}
+  # -----------------------------------------------------------------
+  # NOTIFY
+  # -----------------------------------------------------------------
+  notify:
+    name: Notify
+    if: ${{ always() }}
+    needs: [prepare, release]
+    runs-on: ubuntu-latest
+    env:
+      PKG_VERSION: ${{needs.prepare.outputs.pkg_version}}
+        
+    steps:
+    - name: Notify on Slack (Success)
+      if: ${{ success() }}
       uses: slackapi/slack-github-action@v1.23.0
       with:
         channel-id: ${{ secrets.SLACK_GH_BUILDS_CHANNEL_ID }}
         payload: |
           {
-            "text": "Datatracker - Build <https://github.com/ietf-tools/datatracker/actions/runs/${{ github.run_id }}|${{ env.PKG_VERSION }}> by ${{ github.triggering_actor }} completed - <@${{ secrets.SLACK_UID_RJSPARKS }}>"
+            "text": "Datatracker Build <https://github.com/ietf-tools/datatracker/actions/runs/${{ github.run_id }}|${{ env.PKG_VERSION }}> by ${{ github.triggering_actor }} - <@${{ secrets.SLACK_UID_RJSPARKS }}>"
+            "attachments": [
+              {
+                "pretext": "Build completed",
+                "color": "28a745",
+                "fields": [
+                  {
+                    "title": "Status",
+                    "short": true,
+                    "value": "Completed"
+                  }
+                ]
+              }
+            ]
+          }
+      env:
+        SLACK_BOT_TOKEN: ${{ secrets.SLACK_GH_BOT }}
+    - name: Notify on Slack (Failure)
+      if: ${{ failure() }}
+      uses: slackapi/slack-github-action@v1.23.0
+      with:
+        channel-id: ${{ secrets.SLACK_GH_BUILDS_CHANNEL_ID }}
+        payload: |
+          {
+            "text": "Datatracker Build <https://github.com/ietf-tools/datatracker/actions/runs/${{ github.run_id }}|${{ env.PKG_VERSION }}> by ${{ github.triggering_actor }} - <@${{ secrets.SLACK_UID_RJSPARKS }}>"
+            "attachments": [
+              {
+                "pretext": "Build FAILED",
+                "color": "a82929",
+                "fields": [
+                  {
+                    "title": "Status",
+                    "short": true,
+                    "value": "Failed"
+                  }
+                ]
+              }
+            ]
           }
       env:
         SLACK_BOT_TOKEN: ${{ secrets.SLACK_GH_BOT }}
@@ -419,7 +468,7 @@ jobs:
   # -----------------------------------------------------------------
   sandbox:
     name: Deploy to Sandbox
-    if: ${{ always() && github.event.inputs.sandbox == 'true' && jobs.release.status == 'success' }}
+    if: ${{ success() && github.event.inputs.sandbox == 'true' }}
     needs: [prepare, release]
     runs-on: [self-hosted, dev-server]
     env:
