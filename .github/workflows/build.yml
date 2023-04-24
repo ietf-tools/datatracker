@@ -415,7 +415,7 @@ jobs:
         
     steps:
     - name: Notify on Slack (Success)
-      if: ${{ success() }}
+      if: ${{ contains(join(needs.*.result, ','), 'failure') == 'false' }}
       uses: slackapi/slack-github-action@v1.23.0
       with:
         channel-id: ${{ secrets.SLACK_GH_BUILDS_CHANNEL_ID }}
@@ -424,7 +424,6 @@ jobs:
             "text": "Datatracker Build <https://github.com/ietf-tools/datatracker/actions/runs/${{ github.run_id }}|${{ env.PKG_VERSION }}> by ${{ github.triggering_actor }} - <@${{ secrets.SLACK_UID_RJSPARKS }}>",
             "attachments": [
               {
-                "pretext": "Build completed",
                 "color": "28a745",
                 "fields": [
                   {
@@ -439,7 +438,7 @@ jobs:
       env:
         SLACK_BOT_TOKEN: ${{ secrets.SLACK_GH_BOT }}
     - name: Notify on Slack (Failure)
-      if: ${{ failure() }}
+      if: ${{ contains(join(needs.*.result, ','), 'failure') == 'true' }}
       uses: slackapi/slack-github-action@v1.23.0
       with:
         channel-id: ${{ secrets.SLACK_GH_BUILDS_CHANNEL_ID }}
@@ -448,7 +447,6 @@ jobs:
             "text": "Datatracker Build <https://github.com/ietf-tools/datatracker/actions/runs/${{ github.run_id }}|${{ env.PKG_VERSION }}> by ${{ github.triggering_actor }} - <@${{ secrets.SLACK_UID_RJSPARKS }}>",
             "attachments": [
               {
-                "pretext": "Build FAILED",
                 "color": "a82929",
                 "fields": [
                   {
