@@ -414,6 +414,10 @@ jobs:
       PKG_VERSION: ${{needs.prepare.outputs.pkg_version}}
         
     steps:
+    - name: test
+      run: |
+        echo "${{ join(needs.*.result, ',') }}"
+        
     - name: Notify on Slack (Success)
       if: ${{ contains(join(needs.*.result, ','), 'failure') == 'false' }}
       uses: slackapi/slack-github-action@v1.23.0
