@@ -3,9 +3,4 @@
 Explanation:
 
 {{ message_to_secretary }}
-
-{% endif %}
-{% if wants_to_be_next %}
-User requested to be next in queue.
-{% endif %}
-{% endautoescape %}
+{% endif %}{% endautoescape %}

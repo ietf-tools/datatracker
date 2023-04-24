@@ -12,9 +12,6 @@ height: 100vh;
     text-decoration: none;
 }
 {% endblock %}
-{% block pagehead %}
-    <link rel="stylesheet" href="{% static "ietf/css/list.css" %}">
-{% endblock %}
 {% block group_content %}
     {% origin %}
     {% if group.state_id == "conclude" %}
@@ -404,38 +401,8 @@ height: 100vh;
             </p>
         {% endif %}
     {% endif %}
-    {% if subgroups %}
-        <h2 class="mt-4">
-            Groups in {{ group.acronym|upper }}
-        </h2>
-        <table class="table table-sm table-striped tablesorter">
-            <thead>
-                <tr>
-                    <th scope="col" data-sort="group">Group</th>
-                    <th scope="col" data-sort="name">Name</th>
-                    <th scope="col" data-sort="type">Type</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for sg in subgroups %}
-                    <tr>
-                        <td>
-                            <div id="{{ sg.acronym }}">
-                                <a href="{% url "ietf.group.views.group_home" acronym=sg.acronym %}">
-                                    {{ sg.acronym }}
-                                </a>
-                            </div>
-                        </td>
-                        <td>{{ sg.name }}</td>
-                        <td>{{ sg.type }}</td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    {% endif %}
 {% endblock %}
 {% block js %}
-<script src="{% static "ietf/js/list.js" %}"></script>
 <script src="{% static 'ietf/js/d3.js' %}"></script>
 <script src="{% static 'ietf/js/document_relations.js' %}"></script>
     <script src="{% static 'ietf/js/highcharts.js' %}"></script>

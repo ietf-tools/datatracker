@@ -176,7 +176,6 @@ def vnu_filter_message(msg, filter_db_issues, filter_test_issues):
     "True if the vnu message is a known false positive"
     if re.search(
         r"""^Document\ uses\ the\ Unicode\ Private\ Use\ Area|
-            ^Trailing\ slash\ on\ void\ elements\ has\ no\ effect|
             ^Element\ 'h.'\ not\ allowed\ as\ child\ of\ element\ 'pre'""",
         msg["message"],
         flags=re.VERBOSE,

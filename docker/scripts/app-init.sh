@@ -54,6 +54,17 @@ else
     fi
 fi
 
+if [ ! -f "$WORKSPACEDIR/ietf/settings_local_sqlitetest.py" ]; then
+    echo "Setting up a default settings_local_sqlitetest.py ..."
+    cp $WORKSPACEDIR/docker/configs/settings_local_sqlitetest.py $WORKSPACEDIR/ietf/settings_local_sqlitetest.py
+else
+    echo "Using existing ietf/settings_local_sqlitetest.py file"
+    if ! cmp -s $WORKSPACEDIR/docker/configs/settings_local_sqlitetest.py $WORKSPACEDIR/ietf/settings_local_sqlitetest.py; then
+        echo "NOTE: Differences detected compared to docker/configs/settings_local_sqlitetest.py!"
+        echo "We'll assume you made these deliberately."
+    fi
+fi
+
 if [ ! -f "$WORKSPACEDIR/ietf/settings_local_vite.py" ]; then
     echo "Setting up a default settings_local_vite.py ..."
     cp $WORKSPACEDIR/docker/configs/settings_local_vite.py $WORKSPACEDIR/ietf/settings_local_vite.py
@@ -119,7 +130,7 @@ if [ -z "$EDITOR_VSCODE" ]; then
         echo
         echo "to start a development instance of the Datatracker."
         echo
-        echo "    ietf/manage.py test --settings=settings_postgrestest"
+        echo "    ietf/manage.py test --settings=settings_sqlitetest"
         echo
         echo "to run all the python tests."
         echo

@@ -563,21 +563,6 @@ class IetfAuthTests(TestCase):
         self.assertIn(active_address, to)
         self.assertNotIn(person.user.username, to)
 
-    def test_reset_password_without_username(self):
-        """Reset password using non-username email address"""
-        url = urlreverse('ietf.ietfauth.views.password_reset')
-        person = PersonFactory()
-        secondary_address = EmailFactory(person=person).address
-        inactive_secondary_address = EmailFactory(person=person, active=False).address
-        empty_outbox()
-        r = self.client.post(url, { 'username': secondary_address})
-        self.assertContains(r, 'We have sent you an email with instructions', status_code=200)
-        self.assertEqual(len(outbox), 1)
-        to = outbox[0].get('To')
-        self.assertIn(person.user.username, to)
-        self.assertIn(secondary_address, to)
-        self.assertNotIn(inactive_secondary_address, to)
-
     def test_review_overview(self):
         review_req = ReviewRequestFactory()
         assignment = ReviewAssignmentFactory(review_request=review_req,reviewer=EmailFactory(person__user__username='reviewer'))

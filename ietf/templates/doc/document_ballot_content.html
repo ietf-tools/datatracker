@@ -108,27 +108,18 @@
                                 <div>
                                     <b>{{ p.pos.name }}</b>
                                     ({{ p.discuss_time|date:"Y-m-d" }}{% if not p.for_current_revision and p.get_dochistory.rev %}{% if p.discuss_time %} {% endif %}for -{{ p.get_dochistory.rev }}{% endif %})
-                                    {# TODO: This logic is in place for discusses/ballots/comments, consider centralizing somewhere #}
                                     {% if p.send_email %}
-                                        <span class="badge rounded-pill text-bg-success float-end"
-                                              title="Email requested to be sent for this discuss">
-                                            <i class="bi bi-envelope-fill"></i> Sent
-                                        </span>
+                                        <i class="bi bi-envelope float-end"
+                                              title="Email requested to be sent for this discuss"></i>
                                     {% elif p.any_email_sent == True %}
-                                        <span class="badge rounded-pill text-bg-secondary float-end"
-                                              title="Email requested to be sent for earlier discuss">
-                                            <i class="bi bi-envelope-fill"></i> Sent for earlier
-                                        </span>
+                                        <i class="bi bi-envelope float-end"
+                                              title="Email requested to be sent for earlier discuss"></i>
                                     {% elif p.any_email_sent == False %}
-                                        <span class="badge rounded-pill text-bg-danger float-end"
-                                              title="No email send requests for this discuss">
-                                            <i class="bi bi-envelope-fill"></i> Not sent
-                                        </span>
+                                        <i class="bi bi-chat float-end"
+                                              title="No email send requests for this discuss"></i>
                                     {% else %}
-                                        <span class="badge rounded-pill text-bg-light float-end"
-                                              title="No discuss send log available">
-                                            <i class="bi bi-envelope-fill"></i> Unknown
-                                        </span>
+                                        <i class="bi bi-chat float-end"
+                                              title="No email send requests for this discuss"></i>
                                     {% endif %}
                                 </div>
                             </div>
@@ -144,25 +135,17 @@
                                     <b>Comment</b>
                                     ({{ p.comment_time|date:"Y-m-d" }}{% if not p.for_current_revision and p.get_dochistory.rev %}{% if p.comment_time %} {% endif %}for -{{ p.get_dochistory.rev }}{% endif %})
                                     {% if p.send_email %}
-                                        <span class="badge rounded-pill text-bg-success float-end"
-                                              title="Email requested to be sent for this comment">
-                                            <i class="bi bi-envelope-fill"></i> Sent
-                                        </span>
+                                        <i class="bi bi-envelope-check float-end"
+                                              title="Email requested to be sent for this comment"></i>
                                     {% elif p.any_email_sent == True %}
-                                        <span class="badge rounded-pill text-bg-secondary float-end"
-                                              title="Email requested to be sent for earlier comment">
-                                            <i class="bi bi-envelope-fill"></i> Sent for earlier
-                                        </span>
+                                        <i class="bi bi-envelope-plus float-end"
+                                              title="Email requested to be sent for earlier comment"></i>
                                     {% elif p.any_email_sent == False %}
-                                        <span class="badge rounded-pill text-bg-danger float-end"
-                                              title="No email send requests for this comment">
-                                            <i class="bi bi-envelope-fill"></i> Not sent
-                                        </span>
+                                        <i class="bi bi-envelope-dash float-end"
+                                              title="No email send requests for this comment"></i>
                                     {% else %}
-                                        <span class="badge rounded-pill text-bg-light float-end"
-                                              title="No comment send log available">
-                                            <i class="bi bi-envelope-fill"></i> Unknown
-                                        </span>
+                                        <i class="bi bi-envelope-exclamation float-end"
+                                              title="No ballot position send log available"></i>
                                     {% endif %}
                                 </div>
                             </div>
@@ -205,27 +188,17 @@
                                     ({{ p.comment_time|date:"Y-m-d" }}{% if not p.for_current_revision and p.get_dochistory.rev %}{% if p.comment_time %} {% endif %}for -{{ p.get_dochistory.rev }}{% endif %})
                                 {% endif %}
                                 {% if p.send_email %}
-                                    <span class="badge rounded-pill text-bg-success float-end"
-                                          title="Email requested to be sent for this ballot position">
-                                        <i class="bi bi-envelope-fill"></i> Sent
-                                    </span>
+                                    <i class="bi bi-envelope float-end"
+                                          title="Email requested to be sent for this ballot position"></i>
                                 {% elif p.any_email_sent == True %}
-                                    <span class="badge rounded-pill text-bg-secondary float-end"
-                                            title="Email requested to be sent for earlier ballot position">
-                                        <i class="bi bi-envelope-fill"></i> Sent for earlier
-                                    </span>
+                                    <i class="bi bi-envelope float-end"
+                                          title="Email requested to be sent for earlier ballot position"></i>
                                 {% elif p.any_email_sent == False %}
-                                    <span class="badge rounded-pill text-bg-danger float-end"
-                                          title="No email send requests for this ballot position">
-                                        <i class="bi bi-envelope-fill"></i> Not sent
-                                    </span>
+                                    <i class="bi bi-chat float-end"
+                                          title="No email send requests for this ballot position"></i>
                                 {% else %}
-                                    <!-- <i class="bi bi-envelope-slash float-end"
-                                          title="No ballot position send log available"></i> -->
-                                    <span class="badge rounded-pill text-bg-light float-end"
-                                          title="No ballot position send log available">
-                                        <i class="bi bi-envelope-fill"></i> Unknown
-                                    </span>
+                                    <i class="bi bi-envelope-slash float-end"
+                                          title="No ballot position send log available"></i>
                                 {% endif %}
                             </div>
                         </div>

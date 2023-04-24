@@ -1,0 +1,5 @@
+#!/bin/bash
+
+echo "This script is deprecated. Please use the `cleandb` script in the parent folder instead."
+
+# Modified on 2021-12-20, remove this file after a while

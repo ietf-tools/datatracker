@@ -1,30 +1,32 @@
 # =====================
 # --- Builder Stage ---
 # =====================
-FROM postgres:14.5 AS builder
+FROM mariadb:10 AS builder
 
-ENV POSTGRES_PASSWORD=hk2j22sfiv
-ENV POSTGRES_USER=django
-ENV POSTGRES_DB=ietf
-ENV POSTGRES_HOST_AUTH_METHOD=trust
-ENV PGDATA=/data
+# That file does the DB initialization but also runs mysql daemon, by removing the last line it will only init
+RUN ["sed", "-i", "s/exec \"$@\"/echo \"not running $@\"/", "/usr/local/bin/docker-entrypoint.sh"]
 
-COPY docker/scripts/db-load-default-extensions.sh /docker-entrypoint-initdb.d/
-COPY docker/scripts/db-import.sh /docker-entrypoint-initdb.d/
-COPY ietf.dump /
+# needed for intialization
+ENV MARIADB_ROOT_PASSWORD=RkTkDPFnKpko
+ENV MARIADB_DATABASE=ietf_utf8
+ENV MARIADB_USER=django
+ENV MARIADB_PASSWORD=RkTkDPFnKpko
 
-RUN ["sed", "-i", "s/exec \"$@\"/echo \"skipping...\"/", "/usr/local/bin/docker-entrypoint.sh"]
-RUN ["/usr/local/bin/docker-entrypoint.sh", "postgres"]
+# Import the latest database dump
+ADD https://www.ietf.org/lib/dt/sprint/ietf_utf8.sql.gz /docker-entrypoint-initdb.d/
+RUN chmod 0777 /docker-entrypoint-initdb.d/ietf_utf8.sql.gz
+
+# Need to change the datadir to something else that /var/lib/mysql because the parent docker file defines it as a volume.
+# https://docs.docker.com/engine/reference/builder/#volume :
+#       Changing the volume from within the Dockerfile: If any build steps change the data within the volume after
+#       it has been declared, those changes will be discarded.
+RUN ["/usr/local/bin/docker-entrypoint.sh", "mysqld", "--datadir", "/initialized-db", "--aria-log-dir-path", "/initialized-db"]
 
 # ===================
 # --- Final Image ---
 # ===================
-FROM postgres:14.5
+FROM mariadb:10
 LABEL maintainer="IETF Tools Team <tools-discuss@ietf.org>"
 
-COPY --from=builder /data $PGDATA
-
-ENV POSTGRES_PASSWORD=hk2j22sfiv
-ENV POSTGRES_USER=django
-ENV POSTGRES_DB=ietf
-ENV POSTGRES_HOST_AUTH_METHOD=trust
+# Copy the mysql data folder from the builder stage
+COPY --from=builder /initialized-db /var/lib/mysql

@@ -509,10 +509,8 @@ class RotateAlphabeticallyReviewerQueuePolicyTest(_Wrapper.ReviewerQueuePolicyTe
 
     def test_return_reviewer_to_rotation_top(self):
         reviewer = self.append_reviewer()
-        self.policy.return_reviewer_to_rotation_top(reviewer, False)
-        self.assertFalse(self.reviewer_settings_for(reviewer).request_assignment_next)
-        self.policy.return_reviewer_to_rotation_top(reviewer, True)
-        self.assertTrue(self.reviewer_settings_for(reviewer).request_assignment_next)
+        self.policy.return_reviewer_to_rotation_top(reviewer)
+        self.assertTrue(ReviewerSettings.objects.get(person=reviewer).request_assignment_next)
 
     def test_update_policy_state_for_assignment(self):
         # make a bunch of reviewers
@@ -726,11 +724,8 @@ class LeastRecentlyUsedReviewerQueuePolicyTest(_Wrapper.ReviewerQueuePolicyTestC
                          available_reviewers[2:] + [first_reviewer, second_reviewer])
 
     def test_return_reviewer_to_rotation_top(self):
-        reviewer = self.append_reviewer()
-        self.policy.return_reviewer_to_rotation_top(reviewer, False)
-        self.assertFalse(self.reviewer_settings_for(reviewer).request_assignment_next)
-        self.policy.return_reviewer_to_rotation_top(reviewer, True)
-        self.assertTrue(self.reviewer_settings_for(reviewer).request_assignment_next)
+        # Should do nothing, this is implicit in this policy, no state change is needed.
+        self.policy.return_reviewer_to_rotation_top(self.append_reviewer())
 
     def test_assign_reviewer_updates_skip_next_without_add_skip(self):
         """Skipping reviewers with add_skip=False should update skip_counts properly"""

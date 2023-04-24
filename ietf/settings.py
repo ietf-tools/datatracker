@@ -75,10 +75,14 @@ MANAGERS = ADMINS
 
 DATABASES = {
     'default': {
-        'NAME': 'datatracker',
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': 'ietf_utf8',
+        'ENGINE': 'django.db.backends.mysql',
         'USER': 'ietf',
-        #'PASSWORD': 'somepassword',
+        #'PASSWORD': 'ietf',
+        'OPTIONS': {
+            'sql_mode': 'STRICT_TRANS_TABLES',
+            'init_command': 'SET storage_engine=MyISAM; SET names "utf8"'
+        },
     },
 }
 

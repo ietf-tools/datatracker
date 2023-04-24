@@ -1,4 +1,4 @@
-// Based on https://github.com/martinthomson/rfc-txt-html/blob/db4be92247979541cd26a32b7b2bf0e044ca098b/txt.css
+// Based on https://github.com/martinthomson/rfc-css/blob/ea8e9e34897bf6bdb6b1b7cf336f9aa25f576d76/rfc.css
 // (Version hash to make future merging easier.)
 
 :root {
@@ -45,6 +45,11 @@
   margin-bottom: var(--line);
   margin-left: 3ch;
 
+  /* Really long lines can wrap when all else fails.
+   * This won't affect <pre> or <table>, or cases where soft-wrapping occurs.
+   * Mostly this exists so that long URLs wrap properly in Safari, which
+   * doesn't break words at '/' like other browsers. */
+  overflow-wrap: break-word;
 
 h1, h2, h3, h4, h5 {
   font-weight: bold;
@@ -126,6 +131,7 @@ blockquote {
 }
 #identifiers dd.obsoletes {
   padding-left: 10ch;
+  width: 37ch;
 }
 #identifiers dd.updates::before {
   content: "Updates:";
@@ -133,6 +139,7 @@ blockquote {
 }
 #identifiers dd.updates {
   padding-left: 8ch;
+  width: 39ch;
 }
 #identifiers dd:is(.updates, .obsoletes) a {
   margin: 0 0 0 1ch;
@@ -440,14 +447,5 @@ address .tel, address .email {
 }
 address .tel + .email {
   margin: 0;
-}
-
-/* haxx */
-section > p, section > dl.references > dd {
-  /* Really long lines can wrap when all else fails.
-   * This won't affect <pre> or <table>, or cases where soft-wrapping occurs.
-   * Mostly this exists so that long URLs wrap properly in Safari, which
-   * doesn't break words at '/' like other browsers. */
-  overflow-wrap: break-word;
 }
 }

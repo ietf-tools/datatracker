@@ -461,7 +461,7 @@ def ad_dashboard_sort_key(doc):
 
 
 def ad_workload(request):
-    delta = datetime.timedelta(days=120)
+    delta = datetime.timedelta(days=30)
     right_now = timezone.now()
 
     ads = []

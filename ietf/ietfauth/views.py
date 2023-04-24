@@ -463,12 +463,6 @@ def password_reset(request):
             # We still report that the action succeeded, so we're not leaking the existence of user
             # email addresses.
             user = User.objects.filter(username__iexact=submitted_username, person__isnull=False).first()
-            if not user:
-                # try to find user ID from the email address
-                email = Email.objects.filter(address=submitted_username).first()
-                if email and email.person and email.person.user:
-                    user = email.person.user
-
             if user and user.person.email_set.filter(active=True).exists():
                 data = {
                     'username': user.username,
