@@ -413,13 +413,9 @@ jobs:
     env:
       PKG_VERSION: ${{needs.prepare.outputs.pkg_version}}
         
-    steps:
-    - name: test
-      run: |
-        echo "${{ join(needs.*.result, ',') }}"
-        
+    steps:      
     - name: Notify on Slack (Success)
-      if: ${{ contains(join(needs.*.result, ','), 'failure') == 'false' }}
+      if: ${{ !contains(join(needs.*.result, ','), 'failure') }}
       uses: slackapi/slack-github-action@v1.23.0
       with:
         channel-id: ${{ secrets.SLACK_GH_BUILDS_CHANNEL_ID }}
@@ -442,7 +438,7 @@ jobs:
       env:
         SLACK_BOT_TOKEN: ${{ secrets.SLACK_GH_BOT }}
     - name: Notify on Slack (Failure)
-      if: ${{ contains(join(needs.*.result, ','), 'failure') == 'true' }}
+      if: ${{ contains(join(needs.*.result, ','), 'failure') }}
       uses: slackapi/slack-github-action@v1.23.0
       with:
         channel-id: ${{ secrets.SLACK_GH_BUILDS_CHANNEL_ID }}
