@@ -2,10 +2,6 @@ name: Build and Release
 run-name: ${{ github.event.inputs.publish == 'true' && '[Prod]' || '[Dev]' }} Build ${{ github.run_number }} of branch ${{ github.ref_name }} by @${{ github.actor }}
 
 on:
-  push:
-    tags:
-      - '*'
-
   workflow_dispatch:
     inputs:
       summary:
@@ -58,6 +54,13 @@ jobs:
       to_tag: ${{ steps.semver.outputs.current }}
 
     steps:
+    - name: Ensure Release Branch
+      if: ${{ github.event.inputs.publish == 'true' && github.ref_name != 'release' }}
+      uses: actions/github-script@v3
+      with:
+        script: |
+            core.setFailed('Production release must be done from release branch!')
+    
     - uses: actions/checkout@v3
       with:
         fetch-depth: 0
