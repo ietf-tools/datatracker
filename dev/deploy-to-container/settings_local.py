@@ -9,7 +9,7 @@ DATABASES = {
     'default': {
         'HOST': '__DBHOST__',
         'PORT': 5432,
-        'NAME': 'ietf',
+        'NAME': 'datatracker',
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
         'USER': 'django',
         'PASSWORD': 'RkTkDPFnKpko',

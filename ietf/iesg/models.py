@@ -39,6 +39,7 @@ import datetime
 from django.conf import settings
 from django.db import models
 
+from ietf.name.models import TelechatAgendaSectionName
 from ietf.utils.timezone import date_today
 
 
@@ -95,3 +96,11 @@ class TelechatDate(models.Model):
         indexes = [
             models.Index(fields=['-date',]),
         ]
+
+
+class TelechatAgendaContent(models.Model):
+    section = models.ForeignKey(TelechatAgendaSectionName, on_delete=models.PROTECT)
+    text = models.TextField(blank=True)
+
+    def __str__(self):
+        return f"{self.section.name} content"
