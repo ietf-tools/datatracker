@@ -112,7 +112,7 @@ jobs:
     
     services:
       db:
-        image: ghcr.io/ietf-tools/datatracker-db-pg:latest
+        image: ghcr.io/ietf-tools/datatracker-db:latest
     
     steps:
     - uses: actions/checkout@v3
