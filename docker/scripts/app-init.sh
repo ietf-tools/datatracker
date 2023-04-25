@@ -87,9 +87,6 @@ if [ -n "$EDITOR_VSCODE" ]; then
     /usr/local/bin/wait-for db:5432 -- echo "PostgreSQL ready"
 fi
 
-# Make sure PG search path is set
-psql -U django -h db -d ietf -v ON_ERROR_STOP=1 -c '\x' -c 'ALTER USER django set search_path=datatracker,public;'
-
 # Run memcached
 
 echo "Starting memcached..."
