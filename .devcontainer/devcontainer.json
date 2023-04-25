@@ -28,9 +28,6 @@
                 "ms-playwright.playwright",
                 "ms-python.python",
                 "ms-python.vscode-pylance",
-                "ms-python.pylint",
-                "mtxr.sqltools-driver-pg",
-                "mtxr.sqltools",
                 "mutantdino.resourcemonitor",
                 "oderwat.indent-rainbow",
                 "redhat.vscode-yaml",
@@ -63,27 +60,13 @@
                     "./ietf",
                     "-p",
                     "test*.py"
-                ],
-                "sqltools.connections": [
-                    // Default connection to dev DB container
-                    {
-                        "name": "Local PostgreSQL",
-                        "server": "db",
-                        "port": 5432,
-                        "database": "ietf",
-                        "username": "django",
-                        "password": "RkTkDPFnKpko",
-                        "driver": "PostgreSQL",
-                        "askForPassword": false,
-                        "connectionTimeout": 60
-                    }
                 ]
             }
         }
     },
     
     // Use 'forwardPorts' to make a list of ports inside the container available locally.
-    "forwardPorts": [8000, 5432],
+    "forwardPorts": [8000, 5432, 5433],
     
     "portsAttributes": {
         "3000": {
@@ -92,6 +75,10 @@
         },
         "5432": {
             "label": "PostgreSQL",
+            "onAutoForward": "silent"
+        },
+        "5433": {
+            "label": "pgAdmin",
             "onAutoForward": "silent"
         },
         "8000": {
