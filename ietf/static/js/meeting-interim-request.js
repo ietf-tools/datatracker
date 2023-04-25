@@ -44,13 +44,15 @@ const interimRequest = (function() {
             // increment formset counter
             template.find(':input')
                 .each(function () {
-                    const name = $(this)
-                        .attr('name')
-                        .replace('-' + (total - 1) + '-', '-' + total + '-');
-                    const id = 'id_' + name;
-                    $(this)
-                        .attr({ name: name, id: id })
-                        .val('');
+                    let name = $(this)
+                        .attr('name');
+                    if (name) {
+                        name.replace('-' + (total - 1) + '-', '-' + total + '-');
+                        const id = 'id_' + name;
+                        $(this)
+                            .attr({ name: name, id: id })
+                            .val('');
+                    }
                 });
 
             template.find('label')
