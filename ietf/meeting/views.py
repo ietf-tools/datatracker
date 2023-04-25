@@ -25,7 +25,7 @@ from django import forms
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import (HttpResponse, HttpResponseRedirect, HttpResponseForbidden,
                          HttpResponseNotFound, Http404, HttpResponseBadRequest,
-                         JsonResponse, HttpResponseGone)
+                         JsonResponse, HttpResponseGone, HttpResponseNotAllowed)
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -1747,10 +1747,10 @@ def agenda_extract_schedule (item):
             "chat" : item.session.chat_room_url(),
             "chatArchive" : item.session.chat_archive_url(),
             "recordings": list(map(agenda_extract_recording, item.session.recordings())),
-            "videoStream": item.timeslot.location.video_stream_url() if item.timeslot.location else "",
-            "audioStream": item.timeslot.location.audio_stream_url() if item.timeslot.location else "",
+            "videoStream": item.session.video_stream_url() or "",
+            "audioStream": item.session.audio_stream_url() or "",
             "webex": item.timeslot.location.webex_url() if item.timeslot.location else "",
-            "onsiteTool": item.timeslot.location.onsite_tool_url() if item.timeslot.location else "",
+            "onsiteTool": item.session.onsite_tool_url() or "",
             "calendar": reverse(
                 'ietf.meeting.views.agenda_ical',
                 kwargs={'num': item.schedule.meeting.number, 'session_id': item.session.id},
@@ -3872,6 +3872,65 @@ class OldUploadRedirect(RedirectView):
 @role_required('Recording Manager')
 @csrf_exempt
 def api_set_session_video_url(request):
+    """Set video URL for session
+
+    parameters:
+      apikey: the poster's personal API key
+      session_id: id of session to update
+      url: The recording url (on YouTube, or whatever)
+    """
+    def err(code, text):
+        return HttpResponse(text, status=code, content_type='text/plain')
+
+    if request.method != 'POST':
+        return HttpResponseNotAllowed(
+            content="Method not allowed", content_type="text/plain", permitted_methods=('POST',)
+        )
+
+    # Temporary: fall back to deprecated interface if we have old-style parameters.
+    # Do away with this once meetecho is using the new pk-based interface.
+    if any(k in request.POST for k in ['meeting', 'group', 'item']):
+        return deprecated_api_set_session_video_url(request)
+
+    session_id = request.POST.get('session_id', None)
+    if session_id is None:
+        return err(400, 'Missing session_id parameter')
+    incoming_url = request.POST.get('url', None)
+    if incoming_url is None:
+        return err(400, 'Missing url parameter')
+
+    try:
+        session = Session.objects.get(pk=session_id)
+    except Session.DoesNotExist:
+        return err(400, f"Session not found with session_id '{session_id}'")
+    except ValueError:
+        return err(400, "Invalid session_id: {session_id}")
+
+    try:
+        URLValidator()(incoming_url)
+    except ValidationError:
+        return err(400, f"Invalid url value: '{incoming_url}'")
+
+    recordings = [(r.name, r.title, r) for r in session.recordings() if 'video' in r.title.lower()]
+    if recordings:
+        r = recordings[-1][-1]
+        if r.external_url != incoming_url:
+            e = DocEvent.objects.create(doc=r, rev=r.rev, type="added_comment", by=request.user.person,
+                                        desc="External url changed from %s to %s" % (r.external_url, incoming_url))
+            r.external_url = incoming_url
+            r.save_with_history([e])
+    else:
+        time = session.official_timeslotassignment().timeslot.time
+        title = 'Video recording for %s on %s at %s' % (session.group.acronym, time.date(), time.time())
+        create_recording(session, incoming_url, title=title, user=request.user.person)
+    return HttpResponse("Done", status=200, content_type='text/plain')
+
+
+def deprecated_api_set_session_video_url(request):
+    """Set video URL for session (deprecated)
+
+    Uses meeting/group/item to identify session.
+    """
     def err(code, text):
         return HttpResponse(text, status=code, content_type='text/plain')
     if request.method == 'POST':
@@ -4045,6 +4104,64 @@ def api_upload_polls(request):
 @role_required('Recording Manager', 'Secretariat')
 @csrf_exempt
 def api_upload_bluesheet(request):
+    """Upload bluesheet for a session
+
+    parameters:
+      apikey: the poster's personal API key
+      session_id: id of session to update
+      bluesheet: json blob with
+          [{'name': 'Name', 'affiliation': 'Organization', }, ...]
+    """
+    def err(code, text):
+        return HttpResponse(text, status=code, content_type='text/plain')
+
+    if request.method != 'POST':
+        return HttpResponseNotAllowed(
+            content="Method not allowed", content_type="text/plain", permitted_methods=('POST',)
+        )
+
+    # Temporary: fall back to deprecated interface if we have old-style parameters.
+    # Do away with this once meetecho is using the new pk-based interface.
+    if any(k in request.POST for k in ['meeting', 'group', 'item']):
+        return deprecated_api_upload_bluesheet(request)
+
+    session_id = request.POST.get('session_id', None)
+    if session_id is None:
+        return err(400, 'Missing session_id parameter')
+    bjson = request.POST.get('bluesheet', None)
+    if bjson is None:
+        return err(400, 'Missing bluesheet parameter')
+
+    try:
+        session = Session.objects.get(pk=session_id)
+    except Session.DoesNotExist:
+        return err(400, f"Session not found with session_id '{session_id}'")
+    except ValueError:
+        return err(400, f"Invalid session_id '{session_id}'")
+
+    try:
+        data = json.loads(bjson)
+    except json.decoder.JSONDecodeError:
+        return err(400, f"Invalid json value: '{bjson}'")
+
+    text = render_to_string('meeting/bluesheet.txt', {
+            'data': data,
+            'session': session,
+        })
+
+    fd, name = tempfile.mkstemp(suffix=".txt", text=True)
+    os.close(fd)
+    with open(name, "w") as file:
+        file.write(text)
+    with open(name, "br") as file:
+        save_err = save_bluesheet(request, session, file)
+    if save_err:
+        return err(400, save_err)
+
+    return HttpResponse("Done", status=200, content_type='text/plain')
+
+
+def deprecated_api_upload_bluesheet(request):
     def err(code, text):
         return HttpResponse(text, status=code, content_type='text/plain')
     if request.method == 'POST':

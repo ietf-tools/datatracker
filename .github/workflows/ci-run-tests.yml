@@ -49,7 +49,7 @@ jobs:
         coverage xml
 
     - name: Upload Coverage Results to Codecov
-      uses: codecov/codecov-action@v3.1.2
+      uses: codecov/codecov-action@v3.1.3
       with:
         files: coverage.xml
         
@@ -112,7 +112,7 @@ jobs:
     
     services:
       db:
-        image: ghcr.io/ietf-tools/datatracker-db-pg:latest
+        image: ghcr.io/ietf-tools/datatracker-db:latest
     
     steps:
     - uses: actions/checkout@v3

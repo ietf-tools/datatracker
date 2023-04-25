@@ -13630,6 +13630,36 @@
   },
   {
     "fields": {
+      "desc": "Action items section",
+      "name": "Action Items",
+      "order": 3,
+      "used": true
+    },
+    "model": "name.telechatagendasectionname",
+    "pk": "action_items"
+  },
+  {
+    "fields": {
+      "desc": "Minutes section",
+      "name": "Minutes",
+      "order": 2,
+      "used": true
+    },
+    "model": "name.telechatagendasectionname",
+    "pk": "minutes"
+  },
+  {
+    "fields": {
+      "desc": "Roll call section",
+      "name": "Roll Call",
+      "order": 1,
+      "used": true
+    },
+    "model": "name.telechatagendasectionname",
+    "pk": "roll_call"
+  },
+  {
+    "fields": {
       "desc": "Friday early afternoon",
       "name": "friday-afternoon-early",
       "order": 13,

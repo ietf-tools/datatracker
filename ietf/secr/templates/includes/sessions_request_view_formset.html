@@ -16,6 +16,8 @@
             {% if sess_form.cleaned_data.purpose.timeslot_types|length > 1 %}({{ sess_form.cleaned_data.type }}
               ){% endif %}
           </dd>
+          <dt>Onsite tool?</dt>
+          <dd>{{ sess_form.cleaned_data.has_onsite_tool|yesno }}</dd>
         {% endif %}
       </dl>
     </td>

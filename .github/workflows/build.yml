@@ -2,10 +2,6 @@ name: Build and Release
 run-name: ${{ github.event.inputs.publish == 'true' && '[Prod]' || '[Dev]' }} Build ${{ github.run_number }} of branch ${{ github.ref_name }} by @${{ github.actor }}
 
 on:
-  push:
-    tags:
-      - '*'
-
   workflow_dispatch:
     inputs:
       summary:
@@ -58,6 +54,13 @@ jobs:
       to_tag: ${{ steps.semver.outputs.current }}
 
     steps:
+    - name: Ensure Release Branch
+      if: ${{ github.event.inputs.publish == 'true' && github.ref_name != 'release' }}
+      uses: actions/github-script@v6
+      with:
+        script: |
+            core.setFailed('Production release must be done from release branch!')
+    
     - uses: actions/checkout@v3
       with:
         fetch-depth: 0
@@ -107,10 +110,10 @@ jobs:
           echo "pkg_version=$GITHUB_REF_NAME" >> $GITHUB_OUTPUT
           echo "::notice::Release $GITHUB_REF_NAME created using tag $GITHUB_REF_NAME"
         else
-          echo "Using TEST mode: 9.0.0-dev.$GITHUB_RUN_NUMBER"
+          echo "Using TEST mode: 10.0.0-dev.$GITHUB_RUN_NUMBER"
           echo "should_deploy=false" >> $GITHUB_OUTPUT
-          echo "pkg_version=9.0.0-dev.$GITHUB_RUN_NUMBER" >> $GITHUB_OUTPUT
-          echo "::notice::Non-production build 9.0.0-dev.$GITHUB_RUN_NUMBER created using branch $GITHUB_REF_NAME"
+          echo "pkg_version=10.0.0-dev.$GITHUB_RUN_NUMBER" >> $GITHUB_OUTPUT
+          echo "::notice::Non-production build 10.0.0-dev.$GITHUB_RUN_NUMBER created using branch $GITHUB_REF_NAME"
         fi
 
   # -----------------------------------------------------------------
@@ -160,7 +163,7 @@ jobs:
         coverage xml
 
     - name: Upload Coverage Results to Codecov
-      uses: codecov/codecov-action@v3.1.2
+      uses: codecov/codecov-action@v3.1.3
       with:
         files: coverage.xml
         
@@ -279,7 +282,7 @@ jobs:
   # -----------------------------------------------------------------
   release:
     name: Make Release
-    if: ${{ always() }}
+    if: ${{ success() }}
     needs: [tests-python, tests-playwright, tests-playwright-legacy, prepare]
     runs-on: ubuntu-latest
     env:
@@ -399,14 +402,61 @@ jobs:
         name: release-${{ env.PKG_VERSION }}
         path: /home/runner/work/release/release.tar.gz
         
-    - name: Notify on Slack
-      if: ${{ always() }}
+  # -----------------------------------------------------------------
+  # NOTIFY
+  # -----------------------------------------------------------------
+  notify:
+    name: Notify
+    if: ${{ always() }}
+    needs: [prepare, release]
+    runs-on: ubuntu-latest
+    env:
+      PKG_VERSION: ${{needs.prepare.outputs.pkg_version}}
+        
+    steps:      
+    - name: Notify on Slack (Success)
+      if: ${{ !contains(join(needs.*.result, ','), 'failure') }}
       uses: slackapi/slack-github-action@v1.23.0
       with:
         channel-id: ${{ secrets.SLACK_GH_BUILDS_CHANNEL_ID }}
         payload: |
           {
-            "text": "Datatracker - Build <https://github.com/ietf-tools/datatracker/actions/runs/${{ github.run_id }}|${{ env.PKG_VERSION }}> by ${{ github.triggering_actor }} completed - <@${{ secrets.SLACK_UID_RJSPARKS }}>"
+            "text": "Datatracker Build <https://github.com/ietf-tools/datatracker/actions/runs/${{ github.run_id }}|${{ env.PKG_VERSION }}> by ${{ github.triggering_actor }} - <@${{ secrets.SLACK_UID_RJSPARKS }}>",
+            "attachments": [
+              {
+                "color": "28a745",
+                "fields": [
+                  {
+                    "title": "Status",
+                    "short": true,
+                    "value": "Completed"
+                  }
+                ]
+              }
+            ]
+          }
+      env:
+        SLACK_BOT_TOKEN: ${{ secrets.SLACK_GH_BOT }}
+    - name: Notify on Slack (Failure)
+      if: ${{ contains(join(needs.*.result, ','), 'failure') }}
+      uses: slackapi/slack-github-action@v1.23.0
+      with:
+        channel-id: ${{ secrets.SLACK_GH_BUILDS_CHANNEL_ID }}
+        payload: |
+          {
+            "text": "Datatracker Build <https://github.com/ietf-tools/datatracker/actions/runs/${{ github.run_id }}|${{ env.PKG_VERSION }}> by ${{ github.triggering_actor }} - <@${{ secrets.SLACK_UID_RJSPARKS }}>",
+            "attachments": [
+              {
+                "color": "a82929",
+                "fields": [
+                  {
+                    "title": "Status",
+                    "short": true,
+                    "value": "Failed"
+                  }
+                ]
+              }
+            ]
           }
       env:
         SLACK_BOT_TOKEN: ${{ secrets.SLACK_GH_BOT }}
@@ -416,7 +466,7 @@ jobs:
   # -----------------------------------------------------------------
   sandbox:
     name: Deploy to Sandbox
-    if: ${{ always() && github.event.inputs.sandbox == 'true' }}
+    if: ${{ success() && github.event.inputs.sandbox == 'true' }}
     needs: [prepare, release]
     runs-on: [self-hosted, dev-server]
     env:

@@ -53,6 +53,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth.views import LoginView
 from django.contrib.sites.models import Site
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
+from django.db import IntegrityError
 from django.urls import reverse as urlreverse
 from django.http import Http404, HttpResponseRedirect, HttpResponseForbidden
 from django.shortcuts import render, redirect, get_object_or_404
@@ -440,8 +441,19 @@ def confirm_new_email(request, auth):
     form = NewEmailForm({ "new_email": email })
     can_confirm = form.is_valid() and email
     new_email_obj = None
+    created = False
     if request.method == 'POST' and can_confirm and request.POST.get("action") == "confirm":
-        new_email_obj = Email.objects.create(address=email, person=person, origin=username)
+        try: 
+            new_email_obj, created = Email.objects.get_or_create(
+                address=email, 
+                person=person, 
+                defaults={'origin': username},
+            )
+        except IntegrityError:
+            can_confirm = False
+            form.add_error(
+                None, "Email address is in use by another user. Please contact the secretariat for assistance."
+            )
 
     return render(request, 'registration/confirm_new_email.html', {
         'username': username,
@@ -449,6 +461,7 @@ def confirm_new_email(request, auth):
         'can_confirm': can_confirm,
         'form': form,
         'new_email_obj': new_email_obj,
+        'already_confirmed': new_email_obj and not created,
     })
 
 def password_reset(request):
