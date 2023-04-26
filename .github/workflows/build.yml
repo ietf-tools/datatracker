@@ -1,7 +1,10 @@
 name: Build and Release
-run-name: ${{ github.event.inputs.publish == 'true' && '[Prod]' || '[Dev]' }} Build ${{ github.run_number }} of branch ${{ github.ref_name }} by @${{ github.actor }}
+run-name: ${{ github.ref_name == 'release' && '[Prod]' || '[Dev]' }} Build ${{ github.run_number }} of branch ${{ github.ref_name }} by @${{ github.actor }}
 
 on:
+  push:
+    branches: [release]
+    
   workflow_dispatch:
     inputs:
       summary:
@@ -9,11 +12,6 @@ on:
         required: false
         type: string
         default: ''
-      publish:
-        description: 'Create Production Release'
-        default: false
-        required: true
-        type: boolean
       sandbox:
         description: 'Deploy to Sandbox'
         default: true
@@ -34,11 +32,6 @@ on:
         default: false
         required: true
         type: boolean
-      dryrun:
-        description: 'Dry Run'
-        default: false
-        required: true
-        type: boolean
 
 jobs:
   # -----------------------------------------------------------------
@@ -53,25 +46,13 @@ jobs:
       from_tag: ${{ steps.semver.outputs.nextStrict }}
       to_tag: ${{ steps.semver.outputs.current }}
 
-    steps:
-    - name: Ensure Release Branch
-      if: ${{ github.event.inputs.publish == 'true' && github.ref_name != 'release' }}
-      uses: actions/github-script@v6
-      with:
-        script: |
-            core.setFailed('Production release must be done from release branch!')
-    
+    steps:   
     - uses: actions/checkout@v3
       with:
         fetch-depth: 0
-        
-    - name: Dry Run Notify
-      if: ${{ github.event.inputs.dryrun == 'true' }}
-      run: |
-        echo "::notice::This is a DRY RUN of a production release. No release will be created."
 
     - name: Get Next Version
-      if: ${{ github.event.inputs.publish == 'true' || github.event.inputs.dryrun == 'true' }}
+      if: ${{ github.ref_name == 'release' }}
       id: semver
       uses: ietf-tools/semver-action@v1
       with:
@@ -80,13 +61,13 @@ jobs:
         skipInvalidTags: true
         
     - name: Set Next Version Env Var
-      if: ${{ github.event.inputs.publish == 'true' || github.event.inputs.dryrun == 'true' }}
+      if: ${{ github.ref_name == 'release' }}
       run: |
         echo "NEXT_VERSION=$nextStrict" >> $GITHUB_ENV
         
     - name: Create Draft Release
       uses: ncipollo/release-action@v1.12.0
-      if: ${{ github.event.inputs.publish == 'true' && github.event.inputs.dryrun == 'false' }}
+      if: ${{ github.ref_name == 'release' }}
       with:
         prerelease: true
         draft: false
@@ -104,11 +85,6 @@ jobs:
           echo "should_deploy=true" >> $GITHUB_OUTPUT
           echo "pkg_version=$NEXT_VERSION" >> $GITHUB_OUTPUT
           echo "::notice::Release $NEXT_VERSION created using branch $GITHUB_REF_NAME"
-        elif [[ "$GITHUB_REF" =~ ^refs/tags/* ]]; then
-          echo "Using TAG mode: $GITHUB_REF_NAME"
-          echo "should_deploy=true" >> $GITHUB_OUTPUT
-          echo "pkg_version=$GITHUB_REF_NAME" >> $GITHUB_OUTPUT
-          echo "::notice::Release $GITHUB_REF_NAME created using tag $GITHUB_REF_NAME"
         else
           echo "Using TEST mode: 10.0.0-dev.$GITHUB_RUN_NUMBER"
           echo "should_deploy=false" >> $GITHUB_OUTPUT
@@ -344,7 +320,7 @@ jobs:
     - name: Update CHANGELOG
       id: changelog
       uses: Requarks/changelog-action@v1
-      if: ${{ env.SHOULD_DEPLOY == 'true' && github.event.inputs.dryrun == 'false' }}
+      if: ${{ env.SHOULD_DEPLOY == 'true' }}
       with:
         token: ${{ github.token }}
         fromTag: ${{ env.FROM_TAG }}
@@ -372,7 +348,7 @@ jobs:
         
     - name: Create Release
       uses: ncipollo/release-action@v1.12.0
-      if: ${{ env.SHOULD_DEPLOY == 'true' && github.event.inputs.dryrun == 'false' }}
+      if: ${{ env.SHOULD_DEPLOY == 'true' }}
       with:
         allowUpdates: true
         makeLatest: true
@@ -385,7 +361,7 @@ jobs:
 
     - name: Update Baseline Coverage
       uses: ncipollo/release-action@v1.12.0
-      if: ${{ github.event.inputs.updateCoverage == 'true' && github.event.inputs.dryrun == 'false' }}
+      if: ${{ github.event.inputs.updateCoverage == 'true' }}
       with:
         allowUpdates: true
         tag: baseline
