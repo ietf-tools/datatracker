@@ -2209,10 +2209,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"browser-fs-access@npm:0.33.0":
-  version: 0.33.0
-  resolution: "browser-fs-access@npm:0.33.0"
-  checksum: d4591e75c485d88fb2b3153599563fd10c5b236a11fb9db7028e5dde96e0e2683930b419040a6cd644816467dee56e35fbb6940b8893f6ad14fce7d4fed376a5
+"browser-fs-access@npm:0.33.1":
+  version: 0.33.1
+  resolution: "browser-fs-access@npm:0.33.1"
+  checksum: 2fb595c2d28e2da3a5772c0c4da01e8bd4ea2d812693a5ccc8675b59c7658ac82d3e16780e4b7746ca45350b0e873f09597256a524b9e9e80fe67c91bcddffa0
   languageName: node
   linkType: hard
 
@@ -2908,9 +2908,9 @@ browserlist@latest:
   languageName: node
   linkType: hard
 
-"d3@npm:7.8.3":
-  version: 7.8.3
-  resolution: "d3@npm:7.8.3"
+"d3@npm:7.8.4":
+  version: 7.8.4
+  resolution: "d3@npm:7.8.4"
   dependencies:
     d3-array: 3
     d3-axis: 3
@@ -2942,7 +2942,7 @@ browserlist@latest:
     d3-timer: 3
     d3-transition: 3
     d3-zoom: 3
-  checksum: d3291a8f487a96a57bef54af40728da82dedd52e6abd033f93835f1ca5fdc8daad8c6e9e10b324d8e67680205da9ae32ee5bb679cc97ef79527c57dea3b78dd8
+  checksum: 8dfea4d026e5597ab9c46035df7f0ca4f3891b2b52b21b181bd8660fc61d85f0bbe3cc2b8f1e922978084156cb017cbbfa350a8e42349310642023a9f1517471
   languageName: node
   linkType: hard
 
@@ -3560,9 +3560,9 @@ browserlist@latest:
   languageName: node
   linkType: hard
 
-"eslint-plugin-vue@npm:9.10.0":
-  version: 9.10.0
-  resolution: "eslint-plugin-vue@npm:9.10.0"
+"eslint-plugin-vue@npm:9.11.0":
+  version: 9.11.0
+  resolution: "eslint-plugin-vue@npm:9.11.0"
   dependencies:
     "@eslint-community/eslint-utils": ^4.3.0
     natural-compare: ^1.4.0
@@ -3573,7 +3573,7 @@ browserlist@latest:
     xml-name-validator: ^4.0.0
   peerDependencies:
     eslint: ^6.2.0 || ^7.0.0 || ^8.0.0
-  checksum: 91c6f1ab59433cfa3ade0e6003ca4a9f3ee50e1fd6b49ad9487805dc582f1865ef27796ff18b89e92f37f9ed39d7bfb8c8ccd029c2b77bb3e26ce9b705713070
+  checksum: 1bcb6cf76831419dbb18b9ef7a71831b69325eab1f83137af7a7ffe2800962af2afae30d5eb94210597e70e9503b698d31af210f0d36c0b3fd9cafc77d2a1895
   languageName: node
   linkType: hard
 
@@ -4211,9 +4211,9 @@ browserlist@latest:
   languageName: node
   linkType: hard
 
-"html-validate@npm:7.14.0":
-  version: 7.14.0
-  resolution: "html-validate@npm:7.14.0"
+"html-validate@npm:7.15.1":
+  version: 7.15.1
+  resolution: "html-validate@npm:7.15.1"
   dependencies:
     "@babel/code-frame": ^7.10.0
     "@html-validate/stylish": ^3.0.0
@@ -4241,7 +4241,7 @@ browserlist@latest:
       optional: true
   bin:
     html-validate: bin/html-validate.js
-  checksum: 61d2097563226a0bef2c0d2f049d2e5dbd2137ddb0460a74907807d6d3654f7cc4e8bb5d730e26d40b1ff0350b25fc7b1300ab942bd8e6087fd2b365647219e5
+  checksum: c22d20c4cc1935369c275082d62173c4554b4b83a1a63b18a2931345b80631bd97df5bc82484296374acdc6ee9023167e320c1656eb634aa63ee41bfa641adbe
   languageName: node
   linkType: hard
 
@@ -5289,12 +5289,12 @@ browserlist@latest:
   languageName: node
   linkType: hard
 
-"moment-timezone@npm:0.5.42":
-  version: 0.5.42
-  resolution: "moment-timezone@npm:0.5.42"
+"moment-timezone@npm:0.5.43":
+  version: 0.5.43
+  resolution: "moment-timezone@npm:0.5.43"
   dependencies:
     moment: ^2.29.4
-  checksum: d4d5d68d4b98e4309e8692ddb6b790ab6b375414ea4e45ef3144bfbc689ab14e3089c4561aea43471fd58595328f43fc554231c9d8fc753b460ca0a29a105693
+  checksum: 8075c897ed8a044f992ef26fe8cdbcad80caf974251db424cae157473cca03be2830de8c74d99341b76edae59f148c9d9d19c1c1d9363259085688ec1cf508d0
   languageName: node
   linkType: hard
 
@@ -6307,11 +6307,11 @@ browserlist@latest:
     "@vitejs/plugin-vue": 4.1.0
     bootstrap: 5.2.3
     bootstrap-icons: 1.10.4
-    browser-fs-access: 0.33.0
+    browser-fs-access: 0.33.1
     browserlist: latest
     c8: 7.13.0
     caniuse-lite: 1.0.30001469
-    d3: 7.8.3
+    d3: 7.8.4
     eslint: 8.37.0
     eslint-config-standard: 17.0.0
     eslint-plugin-cypress: 2.13.2
@@ -6319,10 +6319,10 @@ browserlist@latest:
     eslint-plugin-n: 15.7.0
     eslint-plugin-node: 11.1.0
     eslint-plugin-promise: 6.1.1
-    eslint-plugin-vue: 9.10.0
+    eslint-plugin-vue: 9.11.0
     file-saver: 2.0.5
     highcharts: 10.3.3
-    html-validate: 7.14.0
+    html-validate: 7.15.1
     ical.js: 1.5.0
     jquery: 3.6.4
     jquery-migrate: 3.4.1
@@ -6332,7 +6332,7 @@ browserlist@latest:
     lodash-es: 4.17.21
     luxon: 3.3.0
     moment: 2.29.4
-    moment-timezone: 0.5.42
+    moment-timezone: 0.5.43
     ms: 2.1.3
     murmurhash-js: 1.0.0
     naive-ui: 2.34.3
@@ -6340,7 +6340,7 @@ browserlist@latest:
     pinia: 2.0.34
     pinia-plugin-persist: 1.0.0
     pug: 3.0.2
-    sass: 1.60.0
+    sass: 1.62.0
     seedrandom: 3.0.5
     select2: 4.1.0-rc.0
     select2-bootstrap-5-theme: 1.3.0
@@ -6404,16 +6404,16 @@ browserlist@latest:
   languageName: node
   linkType: hard
 
-"sass@npm:1.60.0":
-  version: 1.60.0
-  resolution: "sass@npm:1.60.0"
+"sass@npm:1.62.0":
+  version: 1.62.0
+  resolution: "sass@npm:1.62.0"
   dependencies:
     chokidar: ">=3.0.0 <4.0.0"
     immutable: ^4.0.0
     source-map-js: ">=0.6.2 <2.0.0"
   bin:
     sass: sass.js
-  checksum: 06e163c37af466ec194cf2ed8dab616372afeb19322d356947d48ea664fc38398ae77c4d91bea9cb0ace954ce289d5518d0f8555ecc49f6bf2539a8ef52fc580
+  checksum: d5f606aa25afdf3ed9f316602811a40cf3b29f64cb70ea02f4198ae4288f9687de6fcef9f4fd2d58e06c28282d859aa249bdbf7d7d97a3a6a582eeaa8e5607fa
   languageName: node
   linkType: hard
 
