@@ -151,7 +151,13 @@ def create_account(request):
                 # Either a User or an Email matching new_account_email is in the system but we do not have a
                 # "good" email to use to contact its owner. Fail so the user can contact the secretariat to sort
                 # things out.
-                form.add_error("email", ValidationError(f"Unable to create account for {new_account_email}. Please contact the secretariat."))
+                form.add_error(
+                    "email",
+                    ValidationError(
+                        f"Unable to create account for {new_account_email}. Please contact "
+                        f"the Secretariat at {settings.SECRETARIAT_SUPPORT_EMAIL} for assistance."
+                    ),
+                )
                 new_account_email = None  # Indicate to the template that we failed to create the requested account
             else:
                 # For the IETF 113 Registration period (at least) we are lowering the
