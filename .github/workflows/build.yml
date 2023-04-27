@@ -97,7 +97,7 @@ jobs:
   # -----------------------------------------------------------------
   tests-python:
     name: Run Tests (Python)
-    if: ${{ github.event.inputs.skiptests == 'false' }}
+    if: ${{ github.event.inputs.skiptests == 'false' || github.ref_name == 'release' }}
     needs: [prepare]
     runs-on: ubuntu-latest
     container: ghcr.io/ietf-tools/datatracker-app-base:latest
@@ -157,7 +157,7 @@ jobs:
 
   tests-playwright:
     name: Run Tests (Playwright)
-    if: ${{ github.event.inputs.skiptests == 'false' }}
+    if: ${{ github.event.inputs.skiptests == 'false' || github.ref_name == 'release' }}
     needs: [prepare]
     runs-on: macos-latest
     strategy:
@@ -195,7 +195,7 @@ jobs:
 
   tests-playwright-legacy:
     name: Run Tests (Playwright Legacy)
-    if: ${{ github.event.inputs.skiptests == 'false' }}
+    if: ${{ github.event.inputs.skiptests == 'false' || github.ref_name == 'release' }}
     needs: [prepare]
     runs-on: ubuntu-latest
     container: ghcr.io/ietf-tools/datatracker-app-base:latest
@@ -283,7 +283,7 @@ jobs:
         python-version: '3.x'
         
     - name: Download a Coverage Results
-      if: ${{ github.event.inputs.skiptests == 'false' }}
+      if: ${{ github.event.inputs.skiptests == 'false' || github.ref_name == 'release' }}
       uses: actions/download-artifact@v3.0.2
       with:
         name: coverage
@@ -328,14 +328,14 @@ jobs:
         writeToFile: false
 
     - name: Prepare Coverage Action
-      if: ${{ github.event.inputs.skiptests == 'false' }}
+      if: ${{ github.event.inputs.skiptests == 'false' || github.ref_name == 'release' }}
       working-directory: ./dev/coverage-action
       run: npm install
         
     - name: Process Coverage Stats + Chart
       id: covprocess
       uses: ./dev/coverage-action/
-      if: ${{ github.event.inputs.skiptests == 'false' }}
+      if: ${{ github.event.inputs.skiptests == 'false' || github.ref_name == 'release' }}
       with:
         token: ${{ github.token }}
         tokenCommon: ${{ secrets.GH_COMMON_TOKEN }}
