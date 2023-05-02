@@ -11,7 +11,7 @@ import time
 import traceback
 import xml2rfc
 
-from typing import Optional  # pyflakes:ignore
+from typing import Optional, Union  # pyflakes:ignore
 from unidecode import unidecode
 
 from django.conf import settings
@@ -1166,6 +1166,27 @@ def process_submission_xml(filename, revision):
     }
 
 
+def _turn_into_unicode(s: Optional[Union[str, bytes]]):
+    """Decode a possibly null string-like item as a string
+    
+    Copied from ietf.submit.utils.get_draft_meta(), would be nice to
+    ditch this.
+    """
+    if s is None:
+        return ""
+
+    if isinstance(s, str):
+        return s
+    else:
+        try:
+            return s.decode("utf-8")
+        except UnicodeDecodeError:
+            try:
+                return s.decode("latin-1")
+            except UnicodeDecodeError:
+                return ""
+
+
 def process_submission_text(filename, revision):
     """Validate/extract data from the text version of a submitted draft"""
     text_path = staging_path(filename, revision, '.txt')
@@ -1185,11 +1206,22 @@ def process_submission_text(filename, revision):
     if not title:
         raise SubmissionError("Could not extract a valid title from the text")
 
+    # Drops \r, \n, <, >. Based on get_draft_meta() behavior
+    trans_table = str.maketrans("", "", "\r\n<>")
+    authors = [
+        {
+            "name": fullname.translate(trans_table).strip(),
+            "email": _turn_into_unicode(email if validate_email(email) else ""),
+            "affiliation": _turn_into_unicode(company),
+            "country": _turn_into_unicode(country),
+        }
+        for (fullname, _, _, _, _, email, country, company) in text_draft.get_author_list()
+    ]
     return {
         "filename": text_draft.filename,
         "rev": text_draft.revision,
         "title": _normalize_title(text_draft.get_title()),
-        "authors": None,  # not supported from text (todo: fix this!!)
+        "authors": authors,
         "abstract": text_draft.get_abstract(),
         "document_date": text_draft.get_creation_date(),
         "pages": text_draft.get_pagecount(),
