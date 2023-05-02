@@ -1128,100 +1128,129 @@ def _normalize_title(title):
     return normalize_text(title)  # normalize whitespace
 
 
-def process_submission_xml(submission):
+def process_submission_xml(filename, revision):
     """Validate and extract info from an uploaded submission"""
-    xml_path = staging_path(submission.name, submission.rev, '.xml')
+    xml_path = staging_path(filename, revision, '.xml')
     xml_draft = XMLDraft(xml_path)
 
-    if submission.name != xml_draft.filename:
-        raise SubmissionError('XML Internet-Draft filename disagrees with submission filename')
-    if submission.rev != xml_draft.revision:
-        raise SubmissionError('XML Internet-Draft revision disagrees with submission revision')
+    if filename != xml_draft.filename:
+        raise SubmissionError(
+            f"XML Internet-Draft filename ({xml_draft.filename}) "
+            f"disagrees with submission filename ({filename})"
+        )
+    if revision != xml_draft.revision:
+        raise SubmissionError(
+            f"XML Internet-Draft revision ({xml_draft.revision})"
+            f"disagrees with submission revision ({revision})"
+        )
+    title = _normalize_title(xml_draft.get_title())
+    if not title:
+        raise SubmissionError("Could not extract a valid title from the XML")
+    
+    return {
+        "filename": xml_draft.filename,
+        "rev": xml_draft.revision,
+        "title": title,
+        "authors": [
+            {key: auth[key] for key in ('name', 'email', 'affiliation', 'country')}
+            for auth in xml_draft.get_author_list()
+        ],
+        "abstract": None,  # not supported from XML
+        "document_date": None,  # not supported from XML
+        "pages": None,  # not supported from XML
+        "words": None,  # not supported from XML
+        "first_two_pages": None,  # not supported from XML
+        "file_size": None,  # not supported from XML
+        "formal_languages": None,  # not supported from XML
+        "xml_version": xml_draft.xml_version,
+    }
 
-    authors = xml_draft.get_author_list()
-    for a in authors:
-        if not a['email']:
-            raise SubmissionError(f'Missing email address for author {a}')
 
-    author_emails = [a['email'].lower() for a in authors]
-    submitter = get_person_from_name_email(**submission.submitter_parsed())  # the ** expands dict into kwargs
-    if not any(
-            email.address.lower() in author_emails
-            for email in submitter.email_set.filter(active=True)
-    ):
-        raise SubmissionError(f'Submitter ({submitter}) is not one of the document authors')
-
-    # Fill in the submission data
-    submission.title = _normalize_title(xml_draft.get_title())
-    if not submission.title:
-        raise SubmissionError('Could not extract a valid title from the XML')
-    submission.authors = [
-        {key: auth[key] for key in ('name', 'email', 'affiliation', 'country')}
-        for auth in authors
-    ]
-    submission.xml_version = xml_draft.xml_version
-    submission.save()
-
-
-def process_submission_text(submission):
-    """Validate/extract data from the text version of a submitted draft
-
-    This assumes the draft was uploaded as XML and extracts data that is not
-    currently available directly from the XML. Additional processing, e.g. from
-    get_draft_meta(), would need to be added in order to support direct text
-    draft uploads.
-    """
-    text_path = staging_path(submission.name, submission.rev, '.txt')
+def process_submission_text(filename, revision):
+    """Validate/extract data from the text version of a submitted draft"""
+    text_path = staging_path(filename, revision, '.txt')
     text_draft = PlaintextDraft.from_file(text_path)
 
-    if submission.name != text_draft.filename:
+    if filename != text_draft.filename:
         raise SubmissionError(
-            f'Text Internet-Draft filename ({text_draft.filename}) disagrees with submission filename ({submission.name})'
+            f"Text Internet-Draft filename ({text_draft.filename}) "
+            f"disagrees with submission filename ({filename})"
         )
-    if submission.rev != text_draft.revision:
+    if revision != text_draft.revision:
         raise SubmissionError(
-            f'Text Internet-Draft revision ({text_draft.revision}) disagrees with submission revision ({submission.rev})')
-    text_title = _normalize_title(text_draft.get_title())
-    if not text_title:
-        raise SubmissionError('Could not extract a valid title from the text')
-    if text_title != submission.title:
-        raise SubmissionError(
-            f'Text Internet-Draft title ({text_title}) disagrees with submission title ({submission.title})')
+            f"Text Internet-Draft revision ({text_draft.revision}) "
+            f"disagrees with submission revision ({revision})"
+        )
+    title = _normalize_title(text_draft.get_title())
+    if not title:
+        raise SubmissionError("Could not extract a valid title from the text")
 
-    submission.abstract = text_draft.get_abstract()
-    submission.document_date = text_draft.get_creation_date()
-    submission.pages = text_draft.get_pagecount()
-    submission.words = text_draft.get_wordcount()
-    submission.first_two_pages = ''.join(text_draft.pages[:2])
-    submission.file_size = os.stat(text_path).st_size
-    submission.save()
-
-    submission.formal_languages.set(
-        FormalLanguageName.objects.filter(
+    return {
+        "filename": text_draft.filename,
+        "rev": text_draft.revision,
+        "title": _normalize_title(text_draft.get_title()),
+        "authors": None,  # not supported from text (todo: fix this!!)
+        "abstract": text_draft.get_abstract(),
+        "document_date": text_draft.get_creation_date(),
+        "pages": text_draft.get_pagecount(),
+        "words": text_draft.get_wordcount(),
+        "first_two_pages": ''.join(text_draft.pages[:2]),
+        "file_size": os.stat(text_path).st_size,
+        "formal_languages": FormalLanguageName.objects.filter(
             slug__in=text_draft.get_formal_languages()
-        )
-    )
+        ),
+        "xml_version": None,  # not supported from text
+    }
 
 
 def process_and_validate_submission(submission):
     """Process and validate a submission
 
-    Limitation: Only works with XML submissions. Cannot handle additional formats.
-
     Raises SubmissionError if an error is encountered.
     """
-    if submission.file_types != '.xml':
-        raise SubmissionError('Only XML Internet-Draft submissions can be processed.')
+    if len(set(submission.file_types.split(",")).intersection({".xml", ".txt"})) == 0:
+        raise SubmissionError("Require XML and/or text format to process an Internet-Draft submission.")
 
     try:
-        process_submission_xml(submission)
+        xml_metadata = None
+        # Parse XML first, if we have it
+        if ".xml" in submission.formats:
+            xml_metadata = process_submission_xml(submission)
+            render_missing_formats(submission)  # makes HTML and text, unless text was uploaded
+        # Parse text, whether uploaded or generated from XML
+        text_metadata = process_submission_text(submission)
+
+        if xml_metadata and xml_metadata["title"] != text_metadata["title"]:
+            raise SubmissionError(
+                f"Text Internet-Draft title ({text_metadata['title']}) "
+                f"disagrees with XML Internet-Draft title ({xml_metadata['title']})"
+            )
+
+        # Fill in the submission from the parsed XML/text metadata
+        if xml_metadata is not None:
+            # Items preferred / only available from XML
+            submission.xml_version = xml_metadata["xml_version"]
+            submission.authors = xml_metadata["authors"]
+        else:
+            # Items to get from text only if XML not available
+            submission.authors = text_metadata["authors"]
+
+        # Items always to get from text, even when XML is available
+        submission.title = text_metadata["title"]  # verified above this agrees with XML, if present
+        submission.abstract = text_metadata["abstract"]
+        submission.document_date = text_metadata["document_date"]
+        submission.pages = text_metadata["pages"]
+        submission.words = text_metadata["words"]
+        submission.first_two_pages = text_metadata["first_two_pages"]
+        submission.file_size = text_metadata["file_size"]
+        submission.save()
+        submission.formal_languages.set(text_metadata["formal_languages"])
+
         if check_submission_revision_consistency(submission):
             raise SubmissionError(
                 'Document revision inconsistency error in the database. '
                 'Please contact the secretariat for assistance.'
             )
-        render_missing_formats(submission)
-        process_submission_text(submission)
         set_extresources_from_existing_draft(submission)
         apply_checkers(
             submission,
@@ -1240,14 +1269,22 @@ def process_and_validate_submission(submission):
 
 
 def submitter_is_author(submission):
-    submitter = get_person_from_name_email(**submission.submitter_parsed())  # the ** expands dict into kwargs
+    submitter = get_person_from_name_email(**submission.submitter_parsed())
     if submitter:
-        author_emails = [author['email'].strip().lower() for author in submission.authors]
+        author_emails = [
+            author["email"].strip().lower()
+            for author in submission.authors
+            if "email" in author
+        ]
         return any(
             email.address.lower() in author_emails
             for email in submitter.email_set.filter(active=True)
         )
     return False
+
+
+def all_authors_have_emails(submission):
+    return all(a["email"] for a in submission.authors)
 
 
 def process_and_accept_uploaded_submission(submission):
@@ -1262,11 +1299,21 @@ def process_and_accept_uploaded_submission(submission):
         return  # do nothing
 
     try:
-        process_and_validate_submission(submission)
+        process_and_validate_submission(
+            submission, require_author_emails=True, require_submitter_is_author=True
+        )
     except SubmissionError as err:
         cancel_submission(submission)  # changes Submission.state
         create_submission_event(None, submission, f"Submission rejected: {err}")
 
+    if not all_authors_have_emails(submission):
+        cancel_submission(submission)  # changes Submission.state
+        create_submission_event(
+            None,
+            submission,
+            "Submission rejected: Email address not found for all authors"
+        )
+        
     if not submitter_is_author(submission):
         cancel_submission(submission)  # changes Submission.state
         create_submission_event(

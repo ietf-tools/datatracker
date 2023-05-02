@@ -49,14 +49,8 @@ from ietf.utils.xmldraft import XMLDraft, XMLParseError
 class SubmissionBaseUploadForm(forms.Form):
     xml = forms.FileField(label='.xml format', required=True)
 
-    # No code currently (14 Sep 2017) uses this class directly; it is
-    # only used through its subclasses.  The two assignments below are
-    # set to trigger an exception if it is used directly only to make
-    # sure that adequate consideration is made if it is decided to use it
-    # directly in the future.  Feel free to set these appropriately to
-    # avoid the exceptions in that case:
-    formats = None  # None will raise an exception in clean() if this isn't changed in a subclass
-    base_formats = None  # None will raise an exception in clean() if this isn't changed in a subclass
+    formats = ('xml',)  # allowed formats
+    base_formats = ('xml',)  # at least one of these is required
 
     def __init__(self, request, *args, **kwargs):
         super(SubmissionBaseUploadForm, self).__init__(*args, **kwargs)
@@ -75,10 +69,11 @@ class SubmissionBaseUploadForm(forms.Form):
         self.title = None
         self.abstract = None
         self.authors = []
-        self.parsed_draft = None
         self.file_types = []
         self.file_info = {}             # indexed by file field name, e.g., 'txt', 'xml', ...
         self.xml_version = None
+
+        self._extracted_filenames_and_revisions = {}
 
     def set_cutoff_warnings(self):
         now = timezone.now()
@@ -127,20 +122,17 @@ class SubmissionBaseUploadForm(forms.Form):
                 'The I-D submission tool will be reopened after %s (IETF-meeting local time).' % (cutoff_01_str, reopen_str))
             self.shutdown = True
 
-    def clean_file(self, field_name, parser_class):
+    def _clean_file(self, field_name, parser_class):
         f = self.cleaned_data[field_name]
         if not f:
             return f
 
         self.file_info[field_name] = parser_class(f).critical_parse()
         if self.file_info[field_name].errors:
-            raise forms.ValidationError(self.file_info[field_name].errors)
+            raise forms.ValidationError(self.file_info[field_name].errors, code="critical_error")
         return f
 
     def clean_xml(self):
-        return self.clean_file("xml", XMLParser)
-
-    def clean(self):
         def format_messages(where, e, log_msgs):
             m = str(e)
             if m:
@@ -149,38 +141,12 @@ class SubmissionBaseUploadForm(forms.Form):
                 import traceback
                 typ, val, tb = sys.exc_info()
                 m = traceback.format_exception(typ, val, tb)
-                m = [ l.replace('\n ', ':\n ') for l in m ]
-            msgs = [s for s in (["Error from xml2rfc (%s):" % (where,)] + m + log_msgs) if s]
+                m = [l.replace('\n ', ':\n ') for l in m]
+            msgs = [s for s in ([f"Error from xml2rfc ({where}):"] + m + log_msgs) if s]
             return msgs
 
-        if self.shutdown and not has_role(self.request.user, "Secretariat"):
-            raise forms.ValidationError('The submission tool is currently shut down')
-
-        # check general submission rate thresholds before doing any more work
-        today = date_today()
-        self.check_submissions_thresholds(
-            "for the same submitter",
-            dict(remote_ip=self.remote_ip, submission_date=today),
-            settings.IDSUBMIT_MAX_DAILY_SAME_SUBMITTER, settings.IDSUBMIT_MAX_DAILY_SAME_SUBMITTER_SIZE,
-        )
-        self.check_submissions_thresholds(
-            "across all submitters",
-            dict(submission_date=today),
-            settings.IDSUBMIT_MAX_DAILY_SUBMISSIONS, settings.IDSUBMIT_MAX_DAILY_SUBMISSIONS_SIZE,
-        )
-
-        for ext in self.formats:
-            f = self.cleaned_data.get(ext, None)
-            if not f:
-                continue
-            self.file_types.append('.%s' % ext)
-        if not ('.txt' in self.file_types or '.xml' in self.file_types):
-            if not self.errors:
-                raise forms.ValidationError('Unexpected submission file types; found %s, but %s is required' % (', '.join(self.file_types), ' or '.join(self.base_formats)))
-
-        # Determine the draft name and revision. Try XML first.
-        if self.cleaned_data.get('xml'):
-            xml_file = self.cleaned_data.get('xml')
+        xml_file = self._clean_file("xml", XMLParser)
+        if xml_file:
             tfn = None
             with ExitStack() as stack:
                 @stack.callback
@@ -205,27 +171,48 @@ class SubmissionBaseUploadForm(forms.Form):
                     xml_draft = XMLDraft(tfn)
                 except XMLParseError as e:
                     msgs = format_messages('xml', e, e.parser_msgs())
-                    self.add_error('xml', msgs)
-                    return
+                    raise forms.ValidationError(msgs, code="xml_parse_error")
                 except Exception as e:
-                    self.add_error('xml', f'Error parsing XML Internet-Draft: {e}')
-                    return
+                    raise forms.ValidationError(f"Error parsing XML Internet-Draft: {e}", code="parse_exception")
+                self._extracted_filenames_and_revisions['xml'] = (xml_draft.filename, xml_draft.revision)
+        return xml_file
 
-                self.filename = xml_draft.filename
-                self.revision = xml_draft.revision
-        elif self.cleaned_data.get('txt'):
-            # no XML available, extract from the text if we have it
-            # n.b., this code path is unused until a subclass with a 'txt' field is created.
-            txt_file = self.cleaned_data['txt']
-            txt_file.seek(0)
-            bytes = txt_file.read()
-            try:
-                text = bytes.decode(self.file_info['txt'].charset)
-                self.parsed_draft = PlaintextDraft(text, txt_file.name)
-                self.filename = self.parsed_draft.filename
-                self.revision = self.parsed_draft.revision
-            except (UnicodeDecodeError, LookupError) as e:
-                self.add_error('txt', 'Failed decoding the uploaded file: "%s"' % str(e))
+    def clean(self):
+        if self.shutdown and not has_role(self.request.user, "Secretariat"):
+            raise forms.ValidationError('The submission tool is currently shut down')
+
+        # check general submission rate thresholds before doing any more work
+        today = date_today()
+        self.check_submissions_thresholds(
+            "for the same submitter",
+            dict(remote_ip=self.remote_ip, submission_date=today),
+            settings.IDSUBMIT_MAX_DAILY_SAME_SUBMITTER, settings.IDSUBMIT_MAX_DAILY_SAME_SUBMITTER_SIZE,
+        )
+        self.check_submissions_thresholds(
+            "across all submitters",
+            dict(submission_date=today),
+            settings.IDSUBMIT_MAX_DAILY_SUBMISSIONS, settings.IDSUBMIT_MAX_DAILY_SUBMISSIONS_SIZE,
+        )
+
+        for ext in self.formats:
+            f = self.cleaned_data.get(ext, None)
+            if not f:
+                continue
+            self.file_types.append('.%s' % ext)
+        if not any(f".{bt}" in self.file_types for bt in self.base_formats):
+            if not self.errors:
+                raise forms.ValidationError(
+                    "Unexpected submission file types; found {}, but {} is required".format(
+                        ", ".join(ft.lstrip(".") for ft in self.file_types),
+                        " or ".join(self.base_formats),
+                    )
+                )
+
+        # Determine the draft name and revision
+        for fmt in self.formats:
+            if fmt in self._extracted_filenames_and_revisions:
+                self.filename, self.revision = self._extracted_filenames_and_revisions[fmt]
+                break
 
         rev_error = validate_submission_rev(self.filename, self.revision)
         if rev_error:
@@ -254,34 +241,33 @@ class SubmissionBaseUploadForm(forms.Form):
 
         self.check_for_old_uppercase_collisions(self.filename)    
 
-        if self.cleaned_data.get('txt') or self.cleaned_data.get('xml'):
-            # check group
-            self.group = self.deduce_group(self.filename)
-            # check existing
-            existing = Submission.objects.filter(name=self.filename, rev=self.revision).exclude(state__in=("posted", "cancel", "waiting-for-draft"))
-            if existing:
-                raise forms.ValidationError(
-                    format_html(
-                        'A submission with same name and revision is currently being processed. <a href="{}">Check the status here.</a>',
-                        urlreverse("ietf.submit.views.submission_status", kwargs={'submission_id': existing[0].pk}),
-                    )
+        # check group
+        self.group = self.deduce_group(self.filename)
+        # check existing
+        existing = Submission.objects.filter(name=self.filename, rev=self.revision).exclude(state__in=("posted", "cancel", "waiting-for-draft"))
+        if existing:
+            raise forms.ValidationError(
+                format_html(
+                    'A submission with same name and revision is currently being processed. <a href="{}">Check the status here.</a>',
+                    urlreverse("ietf.submit.views.submission_status", kwargs={'submission_id': existing[0].pk}),
                 )
-
-            # cut-off
-            if self.revision == '00' and self.in_first_cut_off:
-                raise forms.ValidationError(mark_safe(self.cutoff_warning))
-            # check thresholds that depend on the draft / group
-            self.check_submissions_thresholds(
-                "for the Internet-Draft %s" % self.filename,
-                dict(name=self.filename, rev=self.revision, submission_date=today),
-                settings.IDSUBMIT_MAX_DAILY_SAME_DRAFT_NAME, settings.IDSUBMIT_MAX_DAILY_SAME_DRAFT_NAME_SIZE,
             )
-            if self.group:
-                self.check_submissions_thresholds(
-                    "for the group \"%s\"" % (self.group.acronym),
-                    dict(group=self.group, submission_date=today),
-                    settings.IDSUBMIT_MAX_DAILY_SAME_GROUP, settings.IDSUBMIT_MAX_DAILY_SAME_GROUP_SIZE,
-                )
+
+        # cut-off
+        if self.revision == '00' and self.in_first_cut_off:
+            raise forms.ValidationError(mark_safe(self.cutoff_warning))
+        # check thresholds that depend on the draft / group
+        self.check_submissions_thresholds(
+            "for the Internet-Draft %s" % self.filename,
+            dict(name=self.filename, rev=self.revision, submission_date=today),
+            settings.IDSUBMIT_MAX_DAILY_SAME_DRAFT_NAME, settings.IDSUBMIT_MAX_DAILY_SAME_DRAFT_NAME_SIZE,
+        )
+        if self.group:
+            self.check_submissions_thresholds(
+                "for the group \"%s\"" % (self.group.acronym),
+                dict(group=self.group, submission_date=today),
+                settings.IDSUBMIT_MAX_DAILY_SAME_GROUP, settings.IDSUBMIT_MAX_DAILY_SAME_GROUP_SIZE,
+            )
         return super().clean()
 
     @staticmethod
@@ -626,10 +612,10 @@ class DeprecatedSubmissionManualUploadForm(DeprecatedSubmissionBaseUploadForm):
         self.base_formats = ['txt', 'xml', ]
 
     def clean_txt(self):
-        return self.clean_file("txt", PlainParser)
+        return self._clean_file("txt", PlainParser)
 
     def clean_pdf(self):
-        return self.clean_file("pdf", PDFParser)
+        return self._clean_file("pdf", PDFParser)
 
 class DeprecatedSubmissionAutoUploadForm(DeprecatedSubmissionBaseUploadForm):
     """Full-service upload form, replaced by the asynchronous version"""
@@ -640,21 +626,33 @@ class DeprecatedSubmissionAutoUploadForm(DeprecatedSubmissionBaseUploadForm):
         self.formats = ['xml', ]
         self.base_formats = ['xml', ]
 
+
 class SubmissionManualUploadForm(SubmissionBaseUploadForm):
-    formats = ('xml',)
-    base_formats = ('xml',)
+    txt = forms.FileField(label='.txt format', required=False)
+    formats = SubmissionBaseUploadForm.formats + ('txt',)
+    base_formats =  SubmissionBaseUploadForm.base_formats + ('txt',)
+
+    def __init__(self, request, *args, **kwargs):
+        super().__init__(request, *args, **kwargs)
+        self.fields['xml'].required = False
+
+    def clean_txt(self):
+        txt_file = self._clean_file("txt", PlainParser)
+        bytes = txt_file.read()
+        try:
+            text = bytes.decode(self.file_info["txt"].charset)
+            parsed_draft = PlaintextDraft(text, txt_file.name)
+            self._extracted_filenames_and_revisions["txt"] = (parsed_draft.filename, parsed_draft.revision)
+        except (UnicodeDecodeError, LookupError) as e:
+            raise forms.ValidationError(f'Failed decoding the uploaded file: "{str(e)}"', code="decode_failed")
+        return txt_file
 
 class SubmissionAutoUploadForm(SubmissionBaseUploadForm):
     user = forms.EmailField(required=True)
     replaces = forms.CharField(required=False, max_length=1000, strip=True)
 
-    def __init__(self, request, *args, **kwargs):
-        super().__init__(request, *args, **kwargs)
-        self.formats = ['xml', ]
-        self.base_formats = ['xml', ]
-
     def clean(self):
-        super().clean()
+        cleaned_data = super().clean()
 
         # Clean the replaces field after the rest of the cleaning so we know the name of the
         # uploaded draft via self.filename
@@ -694,6 +692,7 @@ class SubmissionAutoUploadForm(SubmissionBaseUploadForm):
                             alias.name + " is approved by the IESG and cannot be replaced"
                         ),
                     )
+            return cleaned_data
 
 
 class NameEmailForm(forms.Form):

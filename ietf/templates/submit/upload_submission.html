@@ -60,12 +60,6 @@
                     However, if you cannot for some reason submit XML, you must
                     submit a plaintext rendering of your I-D.
                 </p>
-                {% bootstrap_label '<i class="bi bi-file-pdf"></i> PDF rendering of the I-D' label_class="form-label fw-bold" %}
-                {% bootstrap_field form.pdf show_label=False %}
-                <p class="form-text">
-                    Optional to submit, will be auto-generated based
-                    on the submitted XML.
-                </p>
             </div>
             {% bootstrap_form_errors form %}
             {% bootstrap_button button_type="submit" name="upload" content="Upload" %}
