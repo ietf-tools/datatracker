@@ -44,17 +44,12 @@ SERVER_MODE = 'development'
 # Domain name of the IETF
 IETF_DOMAIN = 'ietf.org'
 
+# Overriden in settings_local
 ADMINS = [
-#    ('Henrik Levkowetz', 'henrik@levkowetz.com'),
-    ('Robert Sparks', 'rjsparks@nostrum.com'),
-#    ('Ole Laursen', 'olau@iola.dk'),
-    ('Ryan Cross', 'rcross@amsl.com'),
-    ('Glen Barney', 'glen@amsl.com'),
-    ('Maddy Conner', 'maddy@amsl.com'),
-    ('Kesara Rathnayaka', 'krathnayake@ietf.org'),
+    ('Tools Help', 'tools-help@ietf.org'),
 ]                                       # type: List[Tuple[str, str]]
 
-BUG_REPORT_EMAIL = "datatracker-project@ietf.org"
+BUG_REPORT_EMAIL = "tools-help@ietf.org"
 
 PASSWORD_HASHERS = [
     'django.contrib.auth.hashers.Argon2PasswordHasher',
@@ -80,21 +75,13 @@ MANAGERS = ADMINS
 
 DATABASES = {
     'default': {
-        'NAME': 'ietf_utf8',
-        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'datatracker',
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
         'USER': 'ietf',
-        #'PASSWORD': 'ietf',
-        'OPTIONS': {
-            'sql_mode': 'STRICT_TRANS_TABLES',
-            'init_command': 'SET storage_engine=MyISAM; SET names "utf8"'
-        },
+        #'PASSWORD': 'somepassword',
     },
 }
 
-DATABASE_TEST_OPTIONS = {
-    # Comment this out if your database doesn't support InnoDB
-    'init_command': 'SET storage_engine=InnoDB',
-}
 
 # Local time zone for this installation. Choices can be found here:
 # http://www.postgresql.org/docs/8.1/static/datetime-keywords.html#DATETIME-TIMEZONE-SET-TABLE
@@ -172,7 +159,7 @@ STATICFILES_FINDERS = (
 
 WSGI_APPLICATION = "ietf.wsgi.application"
 
-AUTHENTICATION_BACKENDS = ( 'django.contrib.auth.backends.ModelBackend', )
+AUTHENTICATION_BACKENDS = ( 'ietf.ietfauth.backends.CaseInsensitiveModelBackend', )
 
 FILE_UPLOAD_PERMISSIONS = 0o644          
 
@@ -476,10 +463,7 @@ INSTALLED_APPS = [
     # IETF Secretariat apps
     'ietf.secr.announcement',
     'ietf.secr.areas',
-    'ietf.secr.groups',
     'ietf.secr.meetings',
-    'ietf.secr.proceedings',
-    'ietf.secr.roles',
     'ietf.secr.rolodex',
     'ietf.secr.sreq',
     'ietf.secr.telechat',
@@ -667,11 +651,6 @@ STATUS_CHANGE_PATH = '/a/ietfdata/doc/status-change'
 AGENDA_PATH = '/a/www/www6s/proceedings/'
 MEETINGHOST_LOGO_PATH = AGENDA_PATH  # put these in the same place as other proceedings files
 IPR_DOCUMENT_PATH = '/a/www/ietf-ftp/ietf/IPR/'
-IESG_TASK_FILE = '/a/www/www6/iesg/internal/task.txt'
-IESG_ROLL_CALL_FILE = '/a/www/www6/iesg/internal/rollcall.txt'
-IESG_ROLL_CALL_URL = 'https://www6.ietf.org/iesg/internal/rollcall.txt'
-IESG_MINUTES_FILE = '/a/www/www6/iesg/internal/minutes.txt'
-IESG_MINUTES_URL = 'https://www6.ietf.org/iesg/internal/minutes.txt'
 IESG_WG_EVALUATION_DIR = "/a/www/www6/iesg/evaluation"
 # Move drafts to this directory when they expire
 INTERNET_DRAFT_ARCHIVE_DIR = '/a/ietfdata/doc/draft/collection/draft-archive/'
@@ -1197,6 +1176,10 @@ CELERY_BEAT_SYNC_EVERY = 1  # update DB after every event
 #     'request_timeout': 3.01,  # python-requests doc recommend slightly > a multiple of 3 seconds
 # }
 
+# Meetecho URLs - instantiate with url.format(session=some_session)
+MEETECHO_ONSITE_TOOL_URL = "https://meetings.conf.meetecho.com/onsite{session.meeting.number}/?session={session.pk}"
+MEETECHO_VIDEO_STREAM_URL = "https://meetings.conf.meetecho.com/ietf{session.meeting.number}/?session={session.pk}"
+MEETECHO_AUDIO_STREAM_URL = "https://mp3.conf.meetecho.com/ietf{session.meeting.number}/{session.pk}.m3u"
 
 # Put the production SECRET_KEY in settings_local.py, and also any other
 # sensitive or site-specific changes.  DO NOT commit settings_local.py to svn.

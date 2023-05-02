@@ -18,3 +18,4 @@ chmod +x ./docker/scripts/app-create-dirs.sh
 ./docker/scripts/app-create-dirs.sh
 echo "Fetching latest coverage results file..."
 curl -fsSL https://github.com/ietf-tools/datatracker/releases/download/baseline/coverage.json -o release-coverage.json
+psql -U django -h db -d datatracker -v ON_ERROR_STOP=1 -c '\x' -c 'ALTER USER django set search_path=datatracker,public;'

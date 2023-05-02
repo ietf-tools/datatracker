@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% load ams_filters ietf_filters cache %}
+{% block title %}IETF {{ meeting.number }} Proceedings - Activity Report{% endblock %}
+{% block content %}
+    {% cache 3600 proceedings_activity_report meeting.number %}
+    <h1>
+        <a class="text-decoration-none text-reset"
+           href="{% url 'ietf.meeting.views.proceedings' num=meeting.number %}">
+            IETF {{ meeting.number }} proceedings
+        </a>
+    </h1>
+    <h2 class="mt-3">IETF Activity Report</h2>
+    <h3 class="mt-3">{{ sdate|date:"d-F-y" }} to {{ edate|date:"d-F-y" }}</h3>
+    
+    {% include "meeting/activity_report.html" %}
+
+    {% endcache %}
+{% endblock %}

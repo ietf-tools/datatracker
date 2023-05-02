@@ -36,12 +36,14 @@ from ietf.utils.pipe import pipe
 from ietf.utils.text import xslugify
 
 
-def get_meeting(num=None,type_in=['ietf',],days=28):
+def get_meeting(num=None, type_in=('ietf',), days=28):
     meetings = Meeting.objects
-    if type_in:
+    if type_in is not None:
         meetings = meetings.filter(type__in=type_in)
-    if num == None:
-        meetings = meetings.filter(date__gte=timezone.now()-datetime.timedelta(days=days)).order_by('date')
+    if num is None:
+        meetings = meetings.filter(
+            date__gte=timezone.now() - datetime.timedelta(days=days)
+        ).order_by('date')
     else:
         meetings = meetings.filter(number=num)
     if meetings.exists():
@@ -124,7 +126,7 @@ def preprocess_assignments_for_agenda(assignments_queryset, meeting, extra_prefe
             # check before blindly assigning to meeting just in case.
             if a.session.meeting.pk == meeting.pk:
                 a.session.meeting = meeting
-            a.session.order_number = None
+            a.session.order_number = a.session.order_in_meeting() if a.session.group else None
 
             if a.session.group and a.session.group not in groups:
                 groups.append(a.session.group)
@@ -133,12 +135,6 @@ def preprocess_assignments_for_agenda(assignments_queryset, meeting, extra_prefe
     for a in assignments:
         if a.session and a.session.group:
             sessions_for_groups[(a.session.group, a.session.type_id)].append(a)
-
-    for a in assignments:
-        if a.session and a.session.group:
-
-            l = sessions_for_groups.get((a.session.group, a.session.type_id), [])
-            a.session.order_number = l.index(a) + 1 if a in l else 0
 
     timeslot_by_session_pk = {a.session_id: a.timeslot for a in assignments}
 
@@ -830,7 +826,7 @@ def get_announcement_initial(meeting, is_change=False):
         desc=desc,
         date=meeting.date,
         change=change)
-    body = render_to_string('meeting/interim_announcement.txt', locals())
+    body = render_to_string('meeting/interim_announcement.txt', locals() | {"settings": settings})
     initial['body'] = body
     return initial
 

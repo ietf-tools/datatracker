@@ -298,26 +298,6 @@ class Meeting(models.Model):
             self._proceedings_format_version = version  # save this for later
         return self._proceedings_format_version
 
-    @property
-    def session_constraintnames(self):
-        """Gets a list of the constraint names that should be used for this meeting
-
-        Anticipated that this will soon become a many-to-many relationship with ConstraintName
-        (see issue #2770). Making this a @property allows use of the .all(), .filter(), etc,
-        so that other code should not need changes when this is replaced.
-        """
-        try:
-            mtg_num = int(self.number)
-        except ValueError:
-            mtg_num = None  # should not come up, but this method should not fail
-        if mtg_num is None or mtg_num >= 106:
-            # These meetings used the old 'conflic?' constraint types labeled as though
-            # they were the new types.
-            slugs = ('chair_conflict', 'tech_overlap', 'key_participant')
-        else:
-            slugs = ('conflict', 'conflic2', 'conflic3')
-        return ConstraintName.objects.filter(slug__in=slugs)
-
     def base_url(self):
         return "/meeting/%s" % (self.number, )
 
@@ -601,10 +581,6 @@ class TimeSlot(models.Model):
         if not hasattr(self, "_session_cache"):
             self._session_cache = self.sessions.filter(timeslotassignments__schedule__in=[self.meeting.schedule, self.meeting.schedule.base if self.meeting else None]).first()
         return self._session_cache
-
-    @property
-    def time_desc(self):
-        return "%s-%s" % (self.time.strftime("%H%M"), (self.time + self.duration).strftime("%H%M"))
 
     def meeting_date(self):
         return self.time.date()
@@ -1075,6 +1051,7 @@ class Session(models.Model):
     modified = models.DateTimeField(auto_now=True)
     remote_instructions = models.CharField(blank=True,max_length=1024)
     on_agenda = models.BooleanField(default=True, help_text='Is this session visible on the meeting agenda?')
+    has_onsite_tool = models.BooleanField(default=False, help_text="Does this session use the officially supported onsite and remote tooling?")
 
     tombstone_for = models.ForeignKey('Session', blank=True, null=True, help_text="This session is the tombstone for a session that was rescheduled", on_delete=models.CASCADE)
 
@@ -1342,6 +1319,33 @@ class Session(models.Model):
     def group_parent_at_the_time(self):
         if self.group_at_the_time().parent:
             return self.meeting.group_at_the_time(self.group_at_the_time().parent)
+
+    def audio_stream_url(self):
+        if (
+            self.meeting.type.slug == "ietf"
+            and self.has_onsite_tool
+            and (url := getattr(settings, "MEETECHO_AUDIO_STREAM_URL", ""))
+        ):
+            return url.format(session=self)
+        return None
+
+    def video_stream_url(self):
+        if (
+            self.meeting.type.slug == "ietf"
+            and self.has_onsite_tool
+            and (url := getattr(settings, "MEETECHO_VIDEO_STREAM_URL", ""))
+        ):
+            return url.format(session=self)
+        return None
+
+    def onsite_tool_url(self):
+        if (
+            self.meeting.type.slug == "ietf"
+            and self.has_onsite_tool
+            and (url := getattr(settings, "MEETECHO_ONSITE_TOOL_URL", ""))
+        ):
+            return url.format(session=self)
+        return None
 
 
 class SchedulingEvent(models.Model):

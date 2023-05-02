@@ -25,7 +25,7 @@ from django import forms
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import (HttpResponse, HttpResponseRedirect, HttpResponseForbidden,
                          HttpResponseNotFound, Http404, HttpResponseBadRequest,
-                         JsonResponse, HttpResponseGone)
+                         JsonResponse, HttpResponseGone, HttpResponseNotAllowed)
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -82,10 +82,9 @@ from ietf.meeting.utils import diff_meeting_schedules, prefetch_schedule_diff_ob
 from ietf.meeting.utils import swap_meeting_schedule_timeslot_assignments, bulk_create_timeslots
 from ietf.meeting.utils import preprocess_meeting_important_dates
 from ietf.meeting.utils import new_doc_for_session, write_doc_for_session
+from ietf.meeting.utils import get_activity_stats, post_process, create_recording
 from ietf.message.utils import infer_message
 from ietf.name.models import SlideSubmissionStatusName, ProceedingsMaterialTypeName, SessionPurposeName
-from ietf.secr.proceedings.proc_utils import (get_progress_stats, post_process, import_audio_files,
-    create_recording)
 from ietf.utils import markdown
 from ietf.utils.decorators import require_api_key
 from ietf.utils.hedgedoc import Note, NoteError
@@ -102,7 +101,9 @@ from .forms import (InterimMeetingModelForm, InterimAnnounceForm, InterimSession
     InterimCancelForm, InterimSessionInlineFormSet, RequestMinutesForm,
     UploadAgendaForm, UploadBlueSheetForm, UploadMinutesForm, UploadSlidesForm)
 
+request_summary_exclude_group_types = ['team']
 
+    
 def get_interim_menu_entries(request):
     '''Setup menu entries for interim meeting view tabs'''
     entries = []
@@ -202,32 +203,37 @@ def current_materials(request):
     else:
         raise Http404('No such meeting')
 
+
+def _get_materials_doc(meeting, name):
+    """Get meeting materials document named by name
+
+    Raises Document.DoesNotExist if a match cannot be found.
+    """
+    # try an exact match first
+    doc = Document.objects.filter(name=name).first()
+    if doc is not None and doc.get_related_meeting() == meeting:
+        return doc, None
+    # try parsing a rev number
+    if "-" in name:
+        docname, rev = name.rsplit("-", 1)
+        if len(rev) == 2 and rev.isdigit():
+            doc = Document.objects.get(name=docname)  # may raise Document.DoesNotExist
+            if doc.get_related_meeting() == meeting and rev in doc.revisions():
+                return doc, rev
+    # give up
+    raise Document.DoesNotExist
+
+
 @cache_page(1 * 60)
 def materials_document(request, document, num=None, ext=None):
     meeting=get_meeting(num,type_in=['ietf','interim'])
     num = meeting.number
-    if (re.search(r'^\w+-\d+-.+-\d\d$', document) or
-        re.search(r'^\w+-interim-\d+-.+-\d\d-\d\d$', document) or
-        re.search(r'^\w+-interim-\d+-.+-sess[a-z]-\d\d$', document) or
-        re.search(r'^(minutes|slides|chatlog|polls)-interim-\d+-.+-\d\d$', document)):
-        name, rev = document.rsplit('-', 1)
-    else:
-        name, rev = document, None
     # This view does not allow the use of DocAliases. Right now we are probably only creating one (identity) alias, but that may not hold in the future.
-    doc = Document.objects.filter(name=name).first()
-    # Handle edge case where the above name, rev splitter misidentifies the end of a document name as a revision number
-    if not doc:
-        if rev:
-            name = name + '-' + rev
-            rev = None
-            doc = get_object_or_404(Document, name=name)
-        else:
-            raise Http404("No such document")
-
-    if not doc.meeting_related():
-        raise Http404("Not a meeting related document")
-    if doc.get_related_meeting() != meeting:
+    try:
+        doc, rev = _get_materials_doc(meeting=meeting, name=document)
+    except Document.DoesNotExist:
         raise Http404("No such document for meeting %s" % num)
+
     if not rev:
         filename = doc.get_file_name()
     else:
@@ -1516,7 +1522,7 @@ def get_assignments_for_agenda(schedule):
 
 
 @ensure_csrf_cookie
-def agenda_plain(request, num=None, name=None, base=None, ext=None, owner=None, utc=""):
+def agenda_plain(request, num=None, name=None, base=None, ext=None, owner=None, utc=None):
     base = base if base else 'agenda'
     ext = ext if ext else '.txt'
     mimetype = {
@@ -1545,7 +1551,7 @@ def agenda_plain(request, num=None, name=None, base=None, ext=None, owner=None, 
         person   = get_person_by_email(owner)
         schedule = get_schedule_by_name(meeting, person, name)
 
-    if schedule == None:
+    if schedule is None:
         base = base.replace("-utc", "")
         return render(request, "meeting/no-"+base+ext, {'meeting':meeting }, content_type=mimetype[ext])
 
@@ -1560,13 +1566,13 @@ def agenda_plain(request, num=None, name=None, base=None, ext=None, owner=None, 
 
     # Done processing for CSV output
     if ext == ".csv":
-        return agenda_csv(schedule, filtered_assignments)
+        return agenda_csv(schedule, filtered_assignments, utc=utc is not None)
 
     filter_organizer = AgendaFilterOrganizer(assignments=filtered_assignments)
 
     is_current_meeting = (num is None) or (num == get_current_ietf_meeting_num())
 
-    display_timezone = 'UTC' if utc else meeting.time_zone
+    display_timezone = meeting.time_zone if utc is None else 'UTC'
     with timezone.override(display_timezone):
         rendered_page = render(
             request,
@@ -1741,10 +1747,10 @@ def agenda_extract_schedule (item):
             "chat" : item.session.chat_room_url(),
             "chatArchive" : item.session.chat_archive_url(),
             "recordings": list(map(agenda_extract_recording, item.session.recordings())),
-            "videoStream": item.timeslot.location.video_stream_url() if item.timeslot.location else "",
-            "audioStream": item.timeslot.location.audio_stream_url() if item.timeslot.location else "",
+            "videoStream": item.session.video_stream_url() or "",
+            "audioStream": item.session.audio_stream_url() or "",
             "webex": item.timeslot.location.webex_url() if item.timeslot.location else "",
-            "onsiteTool": item.timeslot.location.onsite_tool_url() if item.timeslot.location else "",
+            "onsiteTool": item.session.onsite_tool_url() or "",
             "calendar": reverse(
                 'ietf.meeting.views.agenda_ical',
                 kwargs={'num': item.schedule.meeting.number, 'session_id': item.session.id},
@@ -1799,19 +1805,19 @@ def agenda_extract_slide (item):
         "ext": item.file_extension()
     }
 
-def agenda_csv(schedule, filtered_assignments):
-    response = HttpResponse(content_type="text/csv; charset=%s"%settings.DEFAULT_CHARSET)
+def agenda_csv(schedule, filtered_assignments, utc=False):
+    encoding = 'utf-8'
+    response = HttpResponse(content_type=f"text/csv; charset={encoding}")
     writer = csv.writer(response, delimiter=str(','), quoting=csv.QUOTE_ALL)
 
     headings = ["Date", "Start", "End", "Session", "Room", "Area", "Acronym", "Type", "Description", "Session ID", "Agenda", "Slides"]
 
     def write_row(row):
-        encoded_row = [v.encode('utf-8') if isinstance(v, str) else v for v in row]
-
-        while len(encoded_row) < len(headings):
-            encoded_row.append(None) # produce empty entries at the end as necessary
-
-        writer.writerow(encoded_row)
+        if len(row) < len(headings):
+            padding = [None] * (len(headings) - len(row))  # produce empty entries at the end as necessary
+        else:
+            padding = []
+        writer.writerow(row + padding)
 
     def agenda_field(item):
         agenda_doc = item.session.agenda()
@@ -1825,11 +1831,12 @@ def agenda_csv(schedule, filtered_assignments):
 
     write_row(headings)
 
+    tz = datetime.timezone.utc if utc else schedule.meeting.tz()
     for item in filtered_assignments:
         row = []
-        row.append(item.timeslot.time.strftime("%Y-%m-%d"))
-        row.append(item.timeslot.time.strftime("%H%M"))
-        row.append(item.timeslot.end_time().strftime("%H%M"))
+        row.append(item.timeslot.time.astimezone(tz).strftime("%Y-%m-%d"))
+        row.append(item.timeslot.time.astimezone(tz).strftime("%H%M"))
+        row.append(item.timeslot.end_time().astimezone(tz).strftime("%H%M"))
 
         if item.slot_type().slug == "break":
             row.append(item.slot_type().name)
@@ -2036,10 +2043,13 @@ def should_include_assignment(filter_params, assignment):
     hidden = len(set(filter_params['hide']).intersection(assignment.filter_keywords)) > 0
     return shown and not hidden
 
-def agenda_ical(request, num=None, name=None, acronym=None, session_id=None):
+def agenda_ical(request, num=None, acronym=None, session_id=None):
     """Agenda ical view
 
-    By default, all agenda items will be shown. A filter can be specified in 
+    If num is None, looks for the next IETF meeting. Otherwise, uses the requested meeting
+    regardless of its type.
+
+    By default, all agenda items will be shown. A filter can be specified in
     the querystring. It has the format
     
       ?show=...&hide=...&showtypes=...&hidetypes=...
@@ -2054,8 +2064,13 @@ def agenda_ical(request, num=None, name=None, acronym=None, session_id=None):
 
     Hiding (by wg or type) takes priority over showing.
     """
-    meeting = get_meeting(num, type_in=None)
-    schedule = get_schedule(meeting, name)
+    if num is None:
+        meeting = get_ietf_meeting()
+        if meeting is None:
+            raise Http404
+    else:
+        meeting = get_meeting(num, type_in=None)  # get requested meeting, whatever its type
+    schedule = get_schedule(meeting)
     updated = meeting.updated()
 
     if schedule is None and acronym is None and session_id is None:
@@ -2094,7 +2109,12 @@ def agenda_ical(request, num=None, name=None, acronym=None, session_id=None):
 
 @cache_page(15 * 60)
 def agenda_json(request, num=None):
-    meeting = get_meeting(num, type_in=['ietf','interim'])
+    if num is None:
+        meeting = get_ietf_meeting()
+        if meeting is None:
+            raise Http404
+    else:
+        meeting = get_meeting(num, type_in=None)  # get requested meeting, whatever its type
 
     sessions = []
     locations = set()
@@ -2220,6 +2240,70 @@ def agenda_json(request, num=None):
         response['Last-Modified'] = format_date_time(timegm(last_modified.timetuple()))
     return response
 
+def request_summary_filter(session):
+    if (session.group.area is None
+            or session.group.type.slug in request_summary_exclude_group_types
+            or session.current_status == 'notmeet'):
+        return False
+    return True
+
+def get_area_column(area):
+    if area is None:
+        return ''
+    if area.type.slug in ['rfcedtyp']:
+        name = 'OTHER'
+    else:
+        name = area.acronym.upper()
+    return name
+
+def get_summary_by_area(sessions):
+    """Returns summary by area for list of session requests.
+    Summary is a two dimensional array[row=session duration][col=session area count]
+    It also includes row and column headers as well as a totals row.
+    """
+
+    # first build a dictionary of counts, key=(duration,area)
+    durations = set()
+    areas = set()
+    duration_totals = defaultdict(int)
+    data = defaultdict(int)
+    for session in sessions:
+        area_column = get_area_column(session.group.area)
+        duration = session.requested_duration.seconds / 3600
+        key = (duration, area_column)
+        data[key] = data[key] + 1
+        durations.add(duration)
+        areas.add(area_column)
+        duration_totals[duration] = duration_totals[duration] + 1
+
+    # build two dimensional array for use in template
+    rows = []
+    sorted_areas = sorted(areas)
+    # move "other" to end
+    if 'OTHER' in sorted_areas:
+        sorted_areas.remove('OTHER')
+        sorted_areas.append('OTHER')
+    # add header row
+    rows.append(['Duration'] + sorted_areas + ['TOTAL SLOTS', 'TOTAL HOURS'])
+    for duration in sorted(durations):
+        rows.append([duration] + [data[(duration, a)] for a in sorted_areas] + [duration_totals[duration]] + [duration_totals[duration] * duration])
+    # add total row
+    rows.append(['Total Slots'] + [sum([rows[r][c] for r in range(1, len(rows))]) for c in range(1, len(rows[0]))])
+    rows.append(['Total Hours'] + [sum([d * data[(d, area)] for d in durations]) for area in sorted_areas])
+    return rows
+
+def get_summary_by_type(sessions):
+    counter = Counter([s.group.type.name for s in sessions])
+    data = counter.most_common()
+    data.insert(0, ('Group Type', 'Count'))
+    return data
+
+def get_summary_by_purpose(sessions):
+    counter = Counter([s.purpose.name for s in sessions])
+    data = counter.most_common()
+    data.insert(0, ('Purpose', 'Count'))
+    return data
+
 def meeting_requests(request, num=None):
     meeting = get_meeting(num)
     groups_to_show = Group.objects.filter(
@@ -2235,7 +2319,7 @@ def meeting_requests(request, num=None):
         ).with_current_status().with_requested_by().exclude(
             requested_by=0
         ).prefetch_related(
-            "group","group__ad_role__person"
+            "group", "group__ad_role__person", "group__type"
         )
     )
 
@@ -2258,11 +2342,13 @@ def meeting_requests(request, num=None):
     )
 
     groups_not_meeting = groups_to_show.exclude(
-        acronym__in = [session.group.acronym for session in sessions]
+        acronym__in=[session.group.acronym for session in sessions]
     ).order_by(
         "parent__acronym",
         "acronym",
     ).prefetch_related("parent")
+
+    summary_sessions = list(filter(request_summary_filter, sessions))
 
     return render(
         request,
@@ -2271,6 +2357,9 @@ def meeting_requests(request, num=None):
             "meeting": meeting,
             "sessions": sessions,
             "groups_not_meeting": groups_not_meeting,
+            "summary_by_area": get_summary_by_area(summary_sessions),
+            "summary_by_group_type": get_summary_by_type(summary_sessions),
+            "summary_by_purpose": get_summary_by_purpose(summary_sessions),
         },
     )
 
@@ -3011,43 +3100,6 @@ def delete_schedule(request, num, owner, name):
 # -------------------------------------------------
 # Interim Views
 # -------------------------------------------------
-
-
-def ajax_get_utc(request):
-    '''Ajax view that takes arguments time, timezone, date and returns UTC data'''
-    time = request.GET.get('time')
-    timezone = request.GET.get('timezone')
-    date = request.GET.get('date')
-    time_re = re.compile(r'^\d{2}:\d{2}$')
-    # validate input
-    if not time_re.match(time) or not date:
-        return HttpResponse(json.dumps({'error': True}),
-                            content_type='application/json')
-    hour, minute = time.split(':')
-    if not (int(hour) <= 23 and int(minute) <= 59):
-        return HttpResponse(json.dumps({'error': True}),
-                            content_type='application/json')
-    year, month, day = date.split('-')
-    dt = datetime.datetime(int(year), int(month), int(day), int(hour), int(minute))
-    tz = pytz.timezone(timezone)
-    aware_dt = tz.localize(dt, is_dst=None)
-    utc_dt = aware_dt.astimezone(pytz.utc)
-    utc = utc_dt.strftime('%H:%M')
-    # calculate utc day offset
-    naive_utc_dt = utc_dt.replace(tzinfo=None)
-    utc_day_offset = (naive_utc_dt.date() - dt.date()).days
-    html = "<span>{utc} UTC</span>".format(utc=utc)
-    if utc_day_offset != 0:
-        html = html + '<span class="day-offset"> {0:+d} Day</span>'.format(utc_day_offset)
-    context_data = {'timezone': timezone, 
-                    'time': time, 
-                    'utc': utc, 
-                    'utc_day_offset': utc_day_offset,
-                    'html': html}
-    return HttpResponse(json.dumps(context_data),
-                        content_type='application/json')
-
-
 def interim_announce(request):
     '''View which shows interim meeting requests awaiting announcement'''
     meetings = data_for_meetings_overview(Meeting.objects.filter(type='interim').order_by('date'), interim_status='scheda')
@@ -3798,8 +3850,8 @@ def proceedings_overview(request, num=None):
         'template': template,
     })
 
-def proceedings_progress_report(request, num=None):
-    '''Display Progress Report (stats since last meeting)'''
+def proceedings_activity_report(request, num=None):
+    '''Display Activity Report (stats since last meeting)'''
     if not (num and num.isdigit()):
         raise Http404
     meeting = get_meeting(num)
@@ -3807,28 +3859,78 @@ def proceedings_progress_report(request, num=None):
         return HttpResponseRedirect(f'{settings.PROCEEDINGS_V1_BASE_URL.format(meeting=meeting)}/progress-report.html')
     sdate = meeting.previous_meeting().date
     edate = meeting.date
-    context = get_progress_stats(sdate,edate)
+    context = get_activity_stats(sdate,edate)
     context['meeting'] = meeting
-    return render(request, "meeting/proceedings_progress_report.html", context)
+    context['is_meeting_report'] = True
+    return render(request, "meeting/proceedings_activity_report.html", context)
     
 class OldUploadRedirect(RedirectView):
     def get_redirect_url(self, **kwargs):
         return reverse_lazy('ietf.meeting.views.session_details',kwargs=self.kwargs)
 
-@csrf_exempt
-def api_import_recordings(request, number):
-    '''REST API to check for recording files and import'''
-    if request.method == 'POST':
-        meeting = get_meeting(number)
-        import_audio_files(meeting)
-        return HttpResponse(status=201)
-    else:
-        return HttpResponse(status=405)
-
 @require_api_key
 @role_required('Recording Manager')
 @csrf_exempt
 def api_set_session_video_url(request):
+    """Set video URL for session
+
+    parameters:
+      apikey: the poster's personal API key
+      session_id: id of session to update
+      url: The recording url (on YouTube, or whatever)
+    """
+    def err(code, text):
+        return HttpResponse(text, status=code, content_type='text/plain')
+
+    if request.method != 'POST':
+        return HttpResponseNotAllowed(
+            content="Method not allowed", content_type="text/plain", permitted_methods=('POST',)
+        )
+
+    # Temporary: fall back to deprecated interface if we have old-style parameters.
+    # Do away with this once meetecho is using the new pk-based interface.
+    if any(k in request.POST for k in ['meeting', 'group', 'item']):
+        return deprecated_api_set_session_video_url(request)
+
+    session_id = request.POST.get('session_id', None)
+    if session_id is None:
+        return err(400, 'Missing session_id parameter')
+    incoming_url = request.POST.get('url', None)
+    if incoming_url is None:
+        return err(400, 'Missing url parameter')
+
+    try:
+        session = Session.objects.get(pk=session_id)
+    except Session.DoesNotExist:
+        return err(400, f"Session not found with session_id '{session_id}'")
+    except ValueError:
+        return err(400, "Invalid session_id: {session_id}")
+
+    try:
+        URLValidator()(incoming_url)
+    except ValidationError:
+        return err(400, f"Invalid url value: '{incoming_url}'")
+
+    recordings = [(r.name, r.title, r) for r in session.recordings() if 'video' in r.title.lower()]
+    if recordings:
+        r = recordings[-1][-1]
+        if r.external_url != incoming_url:
+            e = DocEvent.objects.create(doc=r, rev=r.rev, type="added_comment", by=request.user.person,
+                                        desc="External url changed from %s to %s" % (r.external_url, incoming_url))
+            r.external_url = incoming_url
+            r.save_with_history([e])
+    else:
+        time = session.official_timeslotassignment().timeslot.time
+        title = 'Video recording for %s on %s at %s' % (session.group.acronym, time.date(), time.time())
+        create_recording(session, incoming_url, title=title, user=request.user.person)
+    return HttpResponse("Done", status=200, content_type='text/plain')
+
+
+def deprecated_api_set_session_video_url(request):
+    """Set video URL for session (deprecated)
+
+    Uses meeting/group/item to identify session.
+    """
     def err(code, text):
         return HttpResponse(text, status=code, content_type='text/plain')
     if request.method == 'POST':
@@ -4002,6 +4104,64 @@ def api_upload_polls(request):
 @role_required('Recording Manager', 'Secretariat')
 @csrf_exempt
 def api_upload_bluesheet(request):
+    """Upload bluesheet for a session
+
+    parameters:
+      apikey: the poster's personal API key
+      session_id: id of session to update
+      bluesheet: json blob with
+          [{'name': 'Name', 'affiliation': 'Organization', }, ...]
+    """
+    def err(code, text):
+        return HttpResponse(text, status=code, content_type='text/plain')
+
+    if request.method != 'POST':
+        return HttpResponseNotAllowed(
+            content="Method not allowed", content_type="text/plain", permitted_methods=('POST',)
+        )
+
+    # Temporary: fall back to deprecated interface if we have old-style parameters.
+    # Do away with this once meetecho is using the new pk-based interface.
+    if any(k in request.POST for k in ['meeting', 'group', 'item']):
+        return deprecated_api_upload_bluesheet(request)
+
+    session_id = request.POST.get('session_id', None)
+    if session_id is None:
+        return err(400, 'Missing session_id parameter')
+    bjson = request.POST.get('bluesheet', None)
+    if bjson is None:
+        return err(400, 'Missing bluesheet parameter')
+
+    try:
+        session = Session.objects.get(pk=session_id)
+    except Session.DoesNotExist:
+        return err(400, f"Session not found with session_id '{session_id}'")
+    except ValueError:
+        return err(400, f"Invalid session_id '{session_id}'")
+
+    try:
+        data = json.loads(bjson)
+    except json.decoder.JSONDecodeError:
+        return err(400, f"Invalid json value: '{bjson}'")
+
+    text = render_to_string('meeting/bluesheet.txt', {
+            'data': data,
+            'session': session,
+        })
+
+    fd, name = tempfile.mkstemp(suffix=".txt", text=True)
+    os.close(fd)
+    with open(name, "w") as file:
+        file.write(text)
+    with open(name, "br") as file:
+        save_err = save_bluesheet(request, session, file)
+    if save_err:
+        return err(400, save_err)
+
+    return HttpResponse("Done", status=200, content_type='text/plain')
+
+
+def deprecated_api_upload_bluesheet(request):
     def err(code, text):
         return HttpResponse(text, status=code, content_type='text/plain')
     if request.method == 'POST':

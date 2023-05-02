@@ -9,6 +9,7 @@ import re
 from jwcrypto.jwk import JWK
 
 from django.conf import settings
+from django.contrib.auth import authenticate
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
@@ -32,6 +33,7 @@ import ietf
 from ietf.person.models import Person, Email
 from ietf.api import _api_list
 from ietf.api.serializer import JsonExportMixin
+from ietf.api.ietf_utils import is_valid_token
 from ietf.doc.utils import fuzzy_find_documents
 from ietf.ietfauth.views import send_account_creation_email
 from ietf.ietfauth.utils import role_required
@@ -195,7 +197,7 @@ def api_new_meeting_registration(request):
             except ValueError as e:
                 return err(400, "Unexpected POST data: %s" % e)
             response = "Accepted, New registration" if created else "Accepted, Updated registration"
-            if User.objects.filter(username=email).exists() or Email.objects.filter(address=email).exists():
+            if User.objects.filter(username__iexact=email).exists() or Email.objects.filter(address=email).exists():
                 pass
             else:
                 send_account_creation_email(request, email)
@@ -388,3 +390,42 @@ def rfcdiff_latest_json(request, name, rev=None):
     if not response:
         raise Http404
     return HttpResponse(json.dumps(response), content_type='application/json')
+
+@csrf_exempt
+def directauth(request):
+    if request.method == "POST":
+        raw_data = request.POST.get("data", None)
+        if raw_data:
+            try:
+                data = json.loads(raw_data)
+            except json.decoder.JSONDecodeError:
+                data = None
+
+        if raw_data is None or data is None:
+            return HttpResponse(json.dumps(dict(result="failure",reason="invalid post")), content_type='application/json')
+
+        authtoken = data.get('authtoken', None)
+        username = data.get('username', None)
+        password = data.get('password', None)
+
+        if any([item is None for item in (authtoken, username, password)]):
+            return HttpResponse(json.dumps(dict(result="failure",reason="invalid post")), content_type='application/json')
+
+        if not is_valid_token("ietf.api.views.directauth", authtoken):
+            return HttpResponse(json.dumps(dict(result="failure",reason="invalid authtoken")), content_type='application/json')
+        
+        user_query = User.objects.filter(username__iexact=username)
+
+        # Matching email would be consistent with auth everywhere else in the app, but until we can map users well
+        # in the imap server, people's annotations are associated with a very specific login.
+        # If we get a second user of this API, add an "allow_any_email" argument.
+
+
+        # Note well that we are using user.username, not what was passed to the API.
+        if user_query.count() == 1 and authenticate(username = user_query.first().username, password = password):
+            return HttpResponse(json.dumps(dict(result="success")), content_type='application/json')
+
+        return HttpResponse(json.dumps(dict(result="failure", reason="authentication failed")), content_type='application/json') 
+
+    else:
+        return HttpResponse(status=405)

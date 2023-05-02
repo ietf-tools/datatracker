@@ -544,6 +544,7 @@ def group_about(request, acronym, group_type=None):
     can_provide_update = can_provide_status_update(request.user, group)
     status_update = group.latest_event(type="status_update")
 
+    subgroups = Group.objects.filter(parent=group, state="active").exclude(type__slug__in=["sdo", "individ", "nomcom"]).order_by("type", "acronym")
 
     return render(request, 'group/group_about.html',
                   construct_group_menu_context(request, group, "about", group_type, {
@@ -556,6 +557,7 @@ def group_about(request, acronym, group_type=None):
                       "charter_submit_url": charter_submit_url,
                       "editable_roles": group.used_roles or group.features.default_used_roles,
                       "closing_note": e,
+                      "subgroups": subgroups,
                   }))
 
 def all_status(request):
@@ -820,6 +822,9 @@ def meetings(request, acronym=None, group_type=None):
     ).filter(
         current_status__in=['sched','schedw','appr','canceled'],
     )
+    sessions = list(sessions)
+    for s in sessions:
+        s.order_number = s.order_in_meeting()
 
     future, in_progress, recent, past = group_sessions(sessions)
 
@@ -1283,6 +1288,8 @@ def streams(request):
     return render(request, 'group/index.html', {'streams':streams})
 
 def stream_documents(request, acronym):
+    if acronym == "editorial":
+        return HttpResponseRedirect(urlreverse(group_documents, kwargs=dict(acronym="rswg")))
     streams = [ s.slug for s in StreamName.objects.all().exclude(slug__in=['ietf', 'legacy']) ]
     if not acronym in streams:
         raise Http404("No such stream: %s" % acronym)

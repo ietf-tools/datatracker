@@ -35,7 +35,7 @@ from django.utils.text import slugify
 
 import debug           # pyflakes:ignore
 
-from ietf.doc.models import Document
+from ietf.doc.models import Document, NewRevisionDocEvent
 from ietf.group.models import Group, Role, GroupFeatures
 from ietf.group.utils import can_manage_group
 from ietf.person.models import Person
@@ -47,7 +47,9 @@ from ietf.meeting.models import Session, TimeSlot, Meeting, SchedTimeSessAssignm
 from ietf.meeting.test_data import make_meeting_test_data, make_interim_meeting, make_interim_test_data
 from ietf.meeting.utils import finalize, condition_slide_order
 from ietf.meeting.utils import add_event_info_to_session_qs
+from ietf.meeting.utils import create_recording, get_next_sequence
 from ietf.meeting.views import session_draft_list, parse_agenda_filter_params, sessions_post_save, agenda_extract_schedule
+from ietf.meeting.views import get_summary_by_area, get_summary_by_type, get_summary_by_purpose
 from ietf.name.models import SessionStatusName, ImportantDateName, RoleName, ProceedingsMaterialTypeName
 from ietf.utils.decorators import skip_coverage
 from ietf.utils.mail import outbox, empty_outbox, get_payload_text
@@ -162,7 +164,7 @@ class AgendaApiTests(TestCase):
             meeting
         )
         AgendaKeywordTagger(assignments=processed).apply()
-        extracted = {item.pk: agenda_extract_schedule(item) for item in processed}
+        extracted = {item.session.pk: agenda_extract_schedule(item) for item in processed}
 
         hidden = extracted[hidden_sess.pk]
         self.assertIsNone(hidden['room'])
@@ -210,14 +212,17 @@ class AgendaApiTests(TestCase):
 
 
 class MeetingTests(BaseMeetingTestCase):
+    @override_settings(
+        MEETECHO_ONSITE_TOOL_URL="https://onsite.example.com",
+        MEETECHO_VIDEO_STREAM_URL="https://meetecho.example.com",
+    )
     def test_meeting_agenda(self):
         meeting = make_meeting_test_data()
         session = Session.objects.filter(meeting=meeting, group__acronym="mars").first()
         session.remote_instructions='https://remote.example.com'
         session.save()
         slot = TimeSlot.objects.get(sessionassignments__session=session,sessionassignments__schedule=meeting.schedule)
-        slot.location.urlresource_set.create(name_id='meetecho_onsite', url='https://onsite.example.com')
-        slot.location.urlresource_set.create(name_id='meetecho', url='https://meetecho.example.com')
+        meeting.timeslot_set.filter(type_id="break").update(show_location=False)
         #
         self.write_materials_files(meeting, session)
         #
@@ -227,9 +232,6 @@ class MeetingTests(BaseMeetingTestCase):
                                 city="Panama City", country="PA", time_zone='America/Panama')
 
         registration_text = "Registration"
-
-        # utc
-        time_interval = r"%s<span.*/span>-%s" % (slot.utc_start_time().strftime("%H:%M").lstrip("0"), (slot.utc_start_time() + slot.duration).strftime("%H:%M").lstrip("0"))
 
         # Extremely rudementary test of agenda-neue - to be replaced with back-end tests as the front-end tests are developed.
         r = self.client.get(urlreverse("agenda", kwargs=dict(num=meeting.number,utc='-utc')))
@@ -279,23 +281,32 @@ class MeetingTests(BaseMeetingTestCase):
             }
         )
 
-        # plain
-        time_interval = r"{}<span.*/span>-{}".format(
-            slot.time.astimezone(meeting.tz()).strftime("%H:%M").lstrip("0"),
-            slot.end_time().astimezone(meeting.tz()).strftime("%H:%M").lstrip("0"),
-        )
-
         # text
-        # the rest of the results don't have as nicely formatted times
-        time_interval = "%s-%s" % (slot.time.strftime("%H%M").lstrip("0"), (slot.time + slot.duration).strftime("%H%M").lstrip("0"))
-
         r = self.client.get(urlreverse("ietf.meeting.views.agenda_plain", kwargs=dict(num=meeting.number, ext=".txt")))
         self.assertContains(r, session.group.acronym)
         self.assertContains(r, session.group.name)
         self.assertContains(r, session.group.parent.acronym.upper())
         self.assertContains(r, slot.location.name)
+        self.assertContains(r, "{}-{}".format(
+            slot.time.astimezone(meeting.tz()).strftime("%H%M"),
+            (slot.time + slot.duration).astimezone(meeting.tz()).strftime("%H%M"),
+        ))
+        self.assertContains(r, f"shown in the {meeting.tz()} time zone")
 
-        self.assertContains(r, time_interval)
+        # text, UTC
+        r = self.client.get(urlreverse(
+            "ietf.meeting.views.agenda_plain",
+            kwargs=dict(num=meeting.number, ext=".txt", utc="-utc"),
+        ))
+        self.assertContains(r, session.group.acronym)
+        self.assertContains(r, session.group.name)
+        self.assertContains(r, session.group.parent.acronym.upper())
+        self.assertContains(r, slot.location.name)
+        self.assertContains(r, "{}-{}".format(
+            slot.time.astimezone(datetime.timezone.utc).strftime("%H%M"),
+            (slot.time + slot.duration).astimezone(datetime.timezone.utc).strftime("%H%M"),
+        ))
+        self.assertContains(r, "shown in UTC")
 
         # future meeting, no agenda
         r = self.client.get(urlreverse("ietf.meeting.views.agenda_plain", kwargs=dict(num=future_meeting.number, ext=".txt")))
@@ -309,14 +320,49 @@ class MeetingTests(BaseMeetingTestCase):
         self.assertContains(r, session.group.parent.acronym.upper())
         self.assertContains(r, slot.location.name)
         self.assertContains(r, registration_text)
-
+        start_time = slot.time.astimezone(meeting.tz())
+        end_time = slot.end_time().astimezone(meeting.tz())
+        self.assertContains(r, '"{}","{}","{}"'.format(
+            start_time.strftime("%Y-%m-%d"),
+            start_time.strftime("%H%M"),
+            end_time.strftime("%H%M"),
+        ))
         self.assertContains(r, session.materials.get(type='agenda').uploaded_filename)
         self.assertContains(r, session.materials.filter(type='slides').exclude(states__type__slug='slides',states__slug='deleted').first().uploaded_filename)
         self.assertNotContains(r, session.materials.filter(type='slides',states__type__slug='slides',states__slug='deleted').first().uploaded_filename)
 
-        # iCal
-        r = self.client.get(urlreverse("ietf.meeting.views.agenda_ical", kwargs=dict(num=meeting.number))
-                            + "?show=" + session.group.parent.acronym.upper())
+        # CSV, utc
+        r = self.client.get(urlreverse(
+            "ietf.meeting.views.agenda_plain",
+            kwargs=dict(num=meeting.number, ext=".csv", utc="-utc"),
+        ))
+        self.assertContains(r, session.group.acronym)
+        self.assertContains(r, session.group.name)
+        self.assertContains(r, session.group.parent.acronym.upper())
+        self.assertContains(r, slot.location.name)
+        self.assertContains(r, registration_text)
+        start_time = slot.time.astimezone(datetime.timezone.utc)
+        end_time = slot.end_time().astimezone(datetime.timezone.utc)
+        self.assertContains(r, '"{}","{}","{}"'.format(
+            start_time.strftime("%Y-%m-%d"),
+            start_time.strftime("%H%M"),
+            end_time.strftime("%H%M"),
+        ))
+        self.assertContains(r, session.materials.get(type='agenda').uploaded_filename)
+        self.assertContains(r, session.materials.filter(type='slides').exclude(states__type__slug='slides',states__slug='deleted').first().uploaded_filename)
+        self.assertNotContains(r, session.materials.filter(type='slides',states__type__slug='slides',states__slug='deleted').first().uploaded_filename)
+
+        # iCal, no session filtering
+        ical_url = urlreverse("ietf.meeting.views.agenda_ical", kwargs=dict(num=meeting.number))
+        r = self.client.get(ical_url)
+        with open('./ical-output.ics', 'w') as f:
+            f.write(r.content.decode())
+        assert_ical_response_is_valid(self, r)
+        self.assertContains(r, "BEGIN:VTIMEZONE")
+        self.assertContains(r, "END:VTIMEZONE")
+
+        # iCal, single group
+        r = self.client.get(ical_url + "?show=" + session.group.parent.acronym.upper())
         assert_ical_response_is_valid(self, r)
         self.assertContains(r, session.group.acronym)
         self.assertContains(r, session.group.name)
@@ -339,6 +385,39 @@ class MeetingTests(BaseMeetingTestCase):
         r = self.client.get(urlreverse('floor-plan', kwargs=dict(num=meeting.number)))
         self.assertEqual(r.status_code, 200)
 
+    def test_agenda_ical_next_meeting_type(self):
+        # start with no upcoming IETF meetings, just an interim
+        MeetingFactory(
+            type_id="interim", date=date_today() + datetime.timedelta(days=15)
+        )
+        r = self.client.get(urlreverse("ietf.meeting.views.agenda_ical", kwargs={}))
+        self.assertEqual(
+            r.status_code, 404, "Should not return an interim meeting as next meeting"
+        )
+        # create an IETF meeting after the interim - it should be found as "next"
+        ietf_meeting = MeetingFactory(
+            type_id="ietf", date=date_today() + datetime.timedelta(days=30)
+        )
+        SessionFactory(meeting=ietf_meeting, name="Session at IETF meeting")
+        r = self.client.get(urlreverse("ietf.meeting.views.agenda_ical", kwargs={}))
+        self.assertContains(r, "Session at IETF meeting", status_code=200)
+
+    def test_agenda_json_next_meeting_type(self):
+        # start with no upcoming IETF meetings, just an interim
+        MeetingFactory(
+            type_id="interim", date=date_today() + datetime.timedelta(days=15)
+        )
+        r = self.client.get(urlreverse("ietf.meeting.views.agenda_json", kwargs={}))
+        self.assertEqual(
+            r.status_code, 404, "Should not return an interim meeting as next meeting"
+        )
+        # create an IETF meeting after the interim - it should be found as "next"
+        ietf_meeting = MeetingFactory(
+            type_id="ietf", date=date_today() + datetime.timedelta(days=30)
+        )
+        SessionFactory(meeting=ietf_meeting, name="Session at IETF meeting")
+        r = self.client.get(urlreverse("ietf.meeting.views.agenda_json", kwargs={}))
+        self.assertContains(r, "Session at IETF meeting", status_code=200)
 
     @override_settings(PROCEEDINGS_V1_BASE_URL='https://example.com/{meeting.number}')
     def test_agenda_redirects_for_old_meetings(self):
@@ -607,13 +686,73 @@ class MeetingTests(BaseMeetingTestCase):
 
     @override_settings(MEETING_MATERIALS_SERVE_LOCALLY=True)
     def test_materials_name_endswith_hyphen_number_number(self):
-        sp = SessionPresentationFactory(document__name='slides-junk-15',document__type_id='slides',document__states=[('reuse_policy','single')])
-        sp.document.uploaded_filename = '%s-%s.pdf'%(sp.document.name,sp.document.rev)
+        # be sure a shadowed filename without the hyphen does not interfere
+        shadow = SessionPresentationFactory(
+            document__name="slides-115-junk",
+            document__type_id="slides",
+            document__states=[("reuse_policy", "single")],
+        )
+        shadow.document.uploaded_filename = (
+            f"{shadow.document.name}-{shadow.document.rev}.pdf"
+        )
+        shadow.document.save()
+        # create the material we want to find for the test
+        sp = SessionPresentationFactory(
+            document__name="slides-115-junk-15",
+            document__type_id="slides",
+            document__states=[("reuse_policy", "single")],
+        )
+        sp.document.uploaded_filename = f"{sp.document.name}-{sp.document.rev}.pdf"
         sp.document.save()
-        self.write_materials_file(sp.session.meeting, sp.document, 'Fake slide contents')
-        url = urlreverse("ietf.meeting.views.materials_document", kwargs=dict(document=sp.document.name,num=sp.session.meeting.number))
+        self.write_materials_file(
+            sp.session.meeting, sp.document, "Fake slide contents rev 00"
+        )
+
+        # create rev 01
+        sp.document.rev = "01"
+        sp.document.uploaded_filename = f"{sp.document.name}-{sp.document.rev}.pdf"
+        sp.document.save_with_history(
+            [
+                NewRevisionDocEvent.objects.create(
+                    type="new_revision",
+                    doc=sp.document,
+                    rev=sp.document.rev,
+                    by=Person.objects.get(name="(System)"),
+                    desc=f"New version available: <b>{sp.document.name}-{sp.document.rev}.txt</b>",
+                )
+            ]
+        )
+        self.write_materials_file(
+            sp.session.meeting, sp.document, "Fake slide contents rev 01"
+        )
+        url = urlreverse(
+            "ietf.meeting.views.materials_document",
+            kwargs=dict(document=sp.document.name, num=sp.session.meeting.number),
+        )
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
+        self.assertContains(
+            r,
+            "Fake slide contents rev 01",
+            status_code=200,
+            msg_prefix="Should return latest rev by default",
+        )
+        url = urlreverse(
+            "ietf.meeting.views.materials_document",
+            kwargs=dict(document=sp.document.name + "-00", num=sp.session.meeting.number),
+        )
+        r = self.client.get(url)
+        self.assertContains(
+            r,
+            "Fake slide contents rev 00",
+            status_code=200,
+            msg_prefix="Should return existing version on request",
+        )
+        url = urlreverse(
+            "ietf.meeting.views.materials_document",
+            kwargs=dict(document=sp.document.name + "-02", num=sp.session.meeting.number),
+        )
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 404, "Should not find nonexistent version")
 
     def test_important_dates(self):
         meeting=MeetingFactory(type_id='ietf')
@@ -3013,10 +3152,15 @@ class ReorderSlidesTests(TestCase):
             self.assertEqual(list(session2.sessionpresentation_set.order_by('order').values_list('order',flat=True)), list(range(1,3)))
 
 
+
+
     def test_reorder_slides_in_session(self):
+        def _sppk_at(sppk, positions):
+            return [sppk[p-1] for p in positions]
         chair_role = RoleFactory(name_id='chair')
         session = SessionFactory(group=chair_role.group, meeting__date=date_today() - datetime.timedelta(days=90))
         sp_list = SessionPresentationFactory.create_batch(5, document__type_id='slides', session=session)
+        sppk = [o.pk for o in sp_list]
         for num, sp in enumerate(sp_list, start=1):
             sp.order = num
             sp.save()
@@ -3063,42 +3207,42 @@ class ReorderSlidesTests(TestCase):
             r = self.client.post(url, {'oldIndex':1, 'newIndex':3})
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.json()['success'],True)
-            self.assertEqual(list(session.sessionpresentation_set.order_by('order').values_list('pk',flat=True)),[2,3,1,4,5])
+            self.assertEqual(list(session.sessionpresentation_set.order_by('order').values_list('pk',flat=True)),_sppk_at(sppk,[2,3,1,4,5]))
 
             # Move to beginning
             r = self.client.post(url, {'oldIndex':3, 'newIndex':1})
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.json()['success'],True)
-            self.assertEqual(list(session.sessionpresentation_set.order_by('order').values_list('pk',flat=True)),[1,2,3,4,5])
+            self.assertEqual(list(session.sessionpresentation_set.order_by('order').values_list('pk',flat=True)),_sppk_at(sppk,[1,2,3,4,5]))
             
             # Move from end
             r = self.client.post(url, {'oldIndex':5, 'newIndex':3})
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.json()['success'],True)
-            self.assertEqual(list(session.sessionpresentation_set.order_by('order').values_list('pk',flat=True)),[1,2,5,3,4])
+            self.assertEqual(list(session.sessionpresentation_set.order_by('order').values_list('pk',flat=True)),_sppk_at(sppk,[1,2,5,3,4]))
 
             # Move to end
             r = self.client.post(url, {'oldIndex':3, 'newIndex':5})
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.json()['success'],True)
-            self.assertEqual(list(session.sessionpresentation_set.order_by('order').values_list('pk',flat=True)),[1,2,3,4,5])
+            self.assertEqual(list(session.sessionpresentation_set.order_by('order').values_list('pk',flat=True)),_sppk_at(sppk,[1,2,3,4,5]))
 
             # Move beginning to end
             r = self.client.post(url, {'oldIndex':1, 'newIndex':5})
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.json()['success'],True)
-            self.assertEqual(list(session.sessionpresentation_set.order_by('order').values_list('pk',flat=True)),[2,3,4,5,1])
+            self.assertEqual(list(session.sessionpresentation_set.order_by('order').values_list('pk',flat=True)),_sppk_at(sppk,[2,3,4,5,1]))
 
             # Move middle to middle 
             r = self.client.post(url, {'oldIndex':3, 'newIndex':4})
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.json()['success'],True)
-            self.assertEqual(list(session.sessionpresentation_set.order_by('order').values_list('pk',flat=True)),[2,3,5,4,1])
+            self.assertEqual(list(session.sessionpresentation_set.order_by('order').values_list('pk',flat=True)),_sppk_at(sppk,[2,3,5,4,1]))
 
             r = self.client.post(url, {'oldIndex':3, 'newIndex':2})
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.json()['success'],True)
-            self.assertEqual(list(session.sessionpresentation_set.order_by('order').values_list('pk',flat=True)),[2,5,3,4,1])
+            self.assertEqual(list(session.sessionpresentation_set.order_by('order').values_list('pk',flat=True)),_sppk_at(sppk,[2,5,3,4,1]))
 
             # Reset for next iteration in the loop
             session.sessionpresentation_set.update(order=F('pk'))
@@ -4379,10 +4523,11 @@ class InterimTests(TestCase):
             if sess:
                 timeslot = sess.official_timeslotassignment().timeslot
                 self.assertIn(timeslot.time.strftime('%Y-%m-%d'), announcement_text)
-                self.assertIn(
-                    '(%s to %s UTC)' % (
+                self.assertRegex(
+                    announcement_text,
+                    r'(%s\s+to\s+%s\s+UTC)' % (
                         timeslot.utc_start_time().strftime('%H:%M'),timeslot.utc_end_time().strftime('%H:%M')
-                    ), announcement_text)
+                    ))
         # Count number of sessions listed
         if base_session and extra_session:
             expected_session_matches = 3
@@ -5701,35 +5846,6 @@ class InterimTests(TestCase):
         self.assertContains(r, 'END:VEVENT')
 
 
-class AjaxTests(TestCase):
-    def test_ajax_get_utc(self):
-        # test bad queries
-        url = urlreverse('ietf.meeting.views.ajax_get_utc') + "?date=2016-1-1&time=badtime&timezone=UTC"
-        r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
-        data = r.json()
-        self.assertEqual(data["error"], True)
-        url = urlreverse('ietf.meeting.views.ajax_get_utc') + "?date=2016-1-1&time=25:99&timezone=UTC"
-        r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
-        data = r.json()
-        self.assertEqual(data["error"], True)
-        url = urlreverse('ietf.meeting.views.ajax_get_utc') + "?date=2016-1-1&time=10:00am&timezone=UTC"
-        r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
-        data = r.json()
-        self.assertEqual(data["error"], True)
-        # test good query
-        url = urlreverse('ietf.meeting.views.ajax_get_utc') + "?date=2016-1-1&time=12:00&timezone=America/Los_Angeles"
-        r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
-        data = r.json()
-        self.assertIn('timezone', data)
-        self.assertIn('time', data)
-        self.assertIn('utc', data)
-        self.assertNotIn('error', data)
-        self.assertEqual(data['utc'], '20:00')
-
 class IphoneAppJsonTests(TestCase):
     def test_iphone_app_json_interim(self):
         make_interim_test_data()
@@ -6475,6 +6591,28 @@ class ImportNotesTests(TestCase):
 
 
 class SessionTests(TestCase):
+
+    def test_get_summary_by_area(self):
+        meeting = make_meeting_test_data(meeting=MeetingFactory(type_id='ietf', number='100'))
+        sessions = Session.objects.filter(meeting=meeting).with_current_status()
+        data = get_summary_by_area(sessions)
+        self.assertEqual(data[0][0], 'Duration')
+        self.assertGreater(len(data), 2)
+        self.assertEqual(data[-1][0], 'Total Hours')
+
+    def test_get_summary_by_type(self):
+        meeting = make_meeting_test_data(meeting=MeetingFactory(type_id='ietf', number='100'))
+        sessions = Session.objects.filter(meeting=meeting).with_current_status()
+        data = get_summary_by_type(sessions)
+        self.assertEqual(data[0][0], 'Group Type')
+        self.assertGreater(len(data), 2)
+
+    def test_get_summary_by_purpose(self):
+        meeting = make_meeting_test_data(meeting=MeetingFactory(type_id='ietf', number='100'))
+        sessions = Session.objects.filter(meeting=meeting).with_current_status()
+        data = get_summary_by_purpose(sessions)
+        self.assertEqual(data[0][0], 'Purpose')
+        self.assertGreater(len(data), 2)
 
     def test_meeting_requests(self):
         meeting = MeetingFactory(type_id='ietf')
@@ -7470,7 +7608,7 @@ class ProceedingsTests(BaseMeetingTestCase):
         )
         self.assertNotEqual(
             pq('a[href="{}"]'.format(
-                urlreverse('ietf.meeting.views.proceedings_progress_report', kwargs=dict(num=meeting.number)))
+                urlreverse('ietf.meeting.views.proceedings_activity_report', kwargs=dict(num=meeting.number)))
             ),
             [],
             'Should have a link to activity report',
@@ -7636,14 +7774,14 @@ class ProceedingsTests(BaseMeetingTestCase):
         response = self.client.get(url)
         self.assertContains(response, 'The Internet Engineering Task Force')
 
-    def test_proceedings_progress_report(self):
+    def test_proceedings_activity_report(self):
         make_meeting_test_data()
         MeetingFactory(type_id='ietf', date=datetime.date(2016,4,3), number="96")
         MeetingFactory(type_id='ietf', date=datetime.date(2016,7,14), number="97")
 
-        url = urlreverse('ietf.meeting.views.proceedings_progress_report',kwargs={'num':97})
+        url = urlreverse('ietf.meeting.views.proceedings_activity_report',kwargs={'num':97})
         response = self.client.get(url)
-        self.assertContains(response, 'Progress Report')
+        self.assertContains(response, 'Activity Report')
 
     def test_feed(self):
         meeting = make_meeting_test_data()
@@ -7997,3 +8135,20 @@ class ProceedingsTests(BaseMeetingTestCase):
         pm = meeting.proceedings_materials.get(pk=pm.pk)
         self.assertEqual(str(pm), 'This Is Not the Default Name')
         self.assertEqual(pm.document.rev, orig_rev, 'Renaming should not change document revision')
+
+    def test_create_recording(self):
+        session = SessionFactory(meeting__type_id='ietf', meeting__number=72, group__acronym='mars')
+        filename = 'ietf42-testroomt-20000101-0800.mp3'
+        url = settings.IETF_AUDIO_URL + 'ietf{}/{}'.format(session.meeting.number, filename)
+        doc = create_recording(session, url)
+        self.assertEqual(doc.name,'recording-72-mars-1')
+        self.assertEqual(doc.group,session.group)
+        self.assertEqual(doc.external_url,url)
+        self.assertTrue(doc in session.materials.all())
+
+    def test_get_next_sequence(self):
+        session = SessionFactory(meeting__type_id='ietf', meeting__number=72, group__acronym='mars')
+        meeting = session.meeting
+        group = session.group
+        sequence = get_next_sequence(group,meeting,'recording')
+        self.assertEqual(sequence,1)

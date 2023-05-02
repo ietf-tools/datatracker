@@ -17,7 +17,7 @@ from django.utils import timezone
 
 import debug                             # pyflakes:ignore
 
-from ietf.doc.factories import DocumentFactory, WgDraftFactory
+from ietf.doc.factories import DocumentFactory, WgDraftFactory, EditorialDraftFactory
 from ietf.doc.models import DocEvent, RelatedDocument, Document
 from ietf.group.models import Role, Group
 from ietf.group.utils import get_group_role_emails, get_child_group_role_emails, get_group_ad_emails
@@ -40,6 +40,11 @@ class StreamTests(TestCase):
         r = self.client.get(urlreverse("ietf.group.views.stream_documents", kwargs=dict(acronym="iab")))
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, draft.name)
+
+        EditorialDraftFactory() # Quick way to ensure RSWG exists.
+        r = self.client.get(urlreverse("ietf.group.views.stream_documents", kwargs=dict(acronym="editorial")))
+        self.assertRedirects(r, expected_url=urlreverse('ietf.group.views.group_documents',kwargs={"acronym":"rswg"}))
+
 
     def test_stream_edit(self):
         EmailFactory(address="ad2@ietf.org")

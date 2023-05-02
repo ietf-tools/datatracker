@@ -81,13 +81,13 @@ class EditPersonForm(forms.ModelForm):
             self.initial['user'] = self.instance.user.username
         
     def clean_user(self):
-        user = self.cleaned_data['user']
+        user = self.cleaned_data['user'].lower()
         if user:
             # if Django User object exists return it, otherwise create one
             try:
-                user_obj = User.objects.get(username=user)
+                user_obj = User.objects.get(username__iexact=user)
             except User.DoesNotExist:
-                user_obj = User.objects.create_user(user,user)
+                user_obj = User.objects.create_user(username=user, email=user)
                 
             return user_obj
         else:
@@ -133,11 +133,11 @@ class NewPersonForm(forms.ModelForm):
         exclude = ('time','user')
 
     def clean_email(self):
-        email = self.cleaned_data['email']
+        email = self.cleaned_data['email'].lower()
         
         # error if there is already an account (User, Person) associated with this email
         try:
-            user = User.objects.get(username=email)
+            user = User.objects.get(username__iexact=email)
             person = Person.objects.get(user=user)
             if user and person:
                 raise forms.ValidationError("This account already exists. [name=%s, id=%s, email=%s]" % (person.name,person.id,email))

@@ -4,7 +4,6 @@ on:
   pull_request:
     branches:
       - 'main'
-      - 'feat/tzaware'
     paths:
       - 'client/**'
       - 'ietf/**'
@@ -21,13 +20,6 @@ jobs:
     services:
       db:
         image: ghcr.io/ietf-tools/datatracker-db:latest
-        volumes:
-            - mariadb-data:/var/lib/mysql
-        env:
-            MYSQL_ROOT_PASSWORD: ietf
-            MYSQL_DATABASE: ietf_utf8
-            MYSQL_USER: django
-            MYSQL_PASSWORD: RkTkDPFnKpko
     
     steps:
     - uses: actions/checkout@v3
@@ -39,13 +31,13 @@ jobs:
         
     - name: Ensure DB is ready
       run: |
-        /usr/local/bin/wait-for db:3306 -- echo "DB ready"
+        /usr/local/bin/wait-for db:5432 -- echo "DB ready"
         
     - name: Run all tests
       run: |
         echo "Running checks..."
         ./ietf/manage.py check
-        ./ietf/manage.py migrate
+        ./ietf/manage.py migrate --fake-initial
         echo "Validating migrations..."
         if ! ( ietf/manage.py makemigrations --dry-run --check --verbosity 3 ) ; then
           echo "Model changes without migrations found."
@@ -53,11 +45,11 @@ jobs:
           exit 1
         fi
         echo "Running tests..."
-        ./ietf/manage.py test --settings=settings_sqlitetest
+        ./ietf/manage.py test --settings=settings_postgrestest
         coverage xml
 
     - name: Upload Coverage Results to Codecov
-      uses: codecov/codecov-action@v3.1.1
+      uses: codecov/codecov-action@v3.1.3
       with:
         files: coverage.xml
         
@@ -121,13 +113,6 @@ jobs:
     services:
       db:
         image: ghcr.io/ietf-tools/datatracker-db:latest
-        volumes:
-            - mariadb-data:/var/lib/mysql
-        env:
-            MYSQL_ROOT_PASSWORD: ietf
-            MYSQL_DATABASE: ietf_utf8
-            MYSQL_USER: django
-            MYSQL_PASSWORD: RkTkDPFnKpko
     
     steps:
     - uses: actions/checkout@v3
@@ -139,7 +124,7 @@ jobs:
         
     - name: Ensure DB is ready
       run: |
-        /usr/local/bin/wait-for db:3306 -- echo "DB ready"
+        /usr/local/bin/wait-for db:5432 -- echo "DB ready"
         
     - name: Start Datatracker
       run: |

@@ -18,7 +18,7 @@ docker compose -p dtdebug cp ../../. app:/__w/datatracker/datatracker/
 echo "Run prepare script..."
 docker compose -p dtdebug exec app chmod +x ./dev/tests/prepare.sh
 docker compose -p dtdebug exec app sh ./dev/tests/prepare.sh
-docker compose -p dtdebug exec app /usr/local/bin/wait-for db:3306 -- echo "DB ready"
+docker compose -p dtdebug exec app /usr/local/bin/wait-for db:5432 -- echo "DB ready"
 echo "================================================================="
 echo "Launching zsh terminal:"
 docker compose -p dtdebug exec app /bin/zsh
