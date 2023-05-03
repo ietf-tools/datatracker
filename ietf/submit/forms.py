@@ -174,6 +174,22 @@ class SubmissionBaseUploadForm(forms.Form):
                     raise forms.ValidationError(msgs, code="xml_parse_error")
                 except Exception as e:
                     raise forms.ValidationError(f"Error parsing XML Internet-Draft: {e}", code="parse_exception")
+                if not xml_draft.filename:
+                    raise forms.ValidationError(
+                        "Could not extract a valid Internet-Draft name from the XML.  "
+                        "Please make sure that the top-level <rfc/> "
+                        "element has a docName attribute which provides the full Internet-Draft name including "
+                        "revision number.", 
+                        code="parse_error_filename",
+                    )
+                if not xml_draft.revision:
+                    raise forms.ValidationError(
+                        "Could not extract a valid Internet-Draft revision from the XML.  "
+                        "Please make sure that the top-level <rfc/> "
+                        "element has a docName attribute which provides the full Internet-Draft name including "
+                        "revision number.", 
+                        code="parse_error_revision",
+                    )
                 self._extracted_filenames_and_revisions['xml'] = (xml_draft.filename, xml_draft.revision)
         return xml_file
 
@@ -208,11 +224,41 @@ class SubmissionBaseUploadForm(forms.Form):
                     )
                 )
 
-        # Determine the draft name and revision
-        for fmt in self.formats:
-            if fmt in self._extracted_filenames_and_revisions:
-                self.filename, self.revision = self._extracted_filenames_and_revisions[fmt]
-                break
+        # The following errors are likely noise if we have previous field
+        # errors:
+        if self.errors:
+            raise forms.ValidationError('')
+
+        # Check that all formats agree on draft name/rev
+        filename_from = None
+        for fmt, (extracted_name, extracted_rev) in self._extracted_filenames_and_revisions.items():
+            if self.filename is None:
+                filename_from = fmt
+                self.filename = extracted_name
+                self.revision = extracted_rev
+            elif self.filename != extracted_name:
+                raise forms.ValidationError(
+                    {fmt: f"Extracted filename '{extracted_name}' does not match filename '{self.filename}' from {filename_from} format"},
+                    code="filename_mismatch",
+                )
+            elif self.revision != extracted_rev:
+                raise forms.ValidationError(
+                    {fmt: f"Extracted revision ({extracted_rev}) does not match revision from {filename_from} format ({self.revision})"},
+                    code="revision_mismatch",
+                )
+        # Not expected to encounter missing filename/revision here because
+        # the individual fields should fail validation, but just in case
+        if not self.filename:
+            raise forms.ValidationError(
+                "Unable to extract a filename from any uploaded format.",
+                code="no_filename",
+            )
+        if not self.revision:
+            raise forms.ValidationError(
+                "Unable to extract a revision from any uploaded format.",
+                code="no_revision",
+            )
+
         name_error = validate_submission_name(self.filename)
         if name_error:
             raise forms.ValidationError(name_error)
@@ -220,27 +266,6 @@ class SubmissionBaseUploadForm(forms.Form):
         rev_error = validate_submission_rev(self.filename, self.revision)
         if rev_error:
             raise forms.ValidationError(rev_error)
-
-        # The following errors are likely noise if we have previous field
-        # errors:
-        if self.errors:
-            raise forms.ValidationError('')
-
-        if not self.filename:
-            raise forms.ValidationError("Could not extract a valid Internet-Draft name from the upload.  "
-                "To fix this in a text upload, please make sure that the full Internet-Draft name including "
-                "revision number appears centered on its own line below the document title on the "
-                "first page.  In an xml upload, please make sure that the top-level <rfc/> "
-                "element has a docName attribute which provides the full Internet-Draft name including "
-                "revision number.")
-
-        if not self.revision:
-            raise forms.ValidationError("Could not extract a valid Internet-Draft revision from the upload.  "
-                "To fix this in a text upload, please make sure that the full Internet-Draft name including "
-                "revision number appears centered on its own line below the document title on the "
-                "first page.  In an xml upload, please make sure that the top-level <rfc/> "
-                "element has a docName attribute which provides the full Internet-Draft name including "
-                "revision number.")
 
         self.check_for_old_uppercase_collisions(self.filename)    
 
@@ -641,13 +666,30 @@ class SubmissionManualUploadForm(SubmissionBaseUploadForm):
 
     def clean_txt(self):
         txt_file = self._clean_file("txt", PlainParser)
-        bytes = txt_file.read()
-        try:
-            text = bytes.decode(self.file_info["txt"].charset)
-            parsed_draft = PlaintextDraft(text, txt_file.name)
-            self._extracted_filenames_and_revisions["txt"] = (parsed_draft.filename, parsed_draft.revision)
-        except (UnicodeDecodeError, LookupError) as e:
-            raise forms.ValidationError(f'Failed decoding the uploaded file: "{str(e)}"', code="decode_failed")
+        if txt_file is not None:
+            bytes = txt_file.read()
+            try:
+                text = bytes.decode(self.file_info["txt"].charset)
+                parsed_draft = PlaintextDraft(text, txt_file.name)
+                self._extracted_filenames_and_revisions["txt"] = (parsed_draft.filename, parsed_draft.revision)
+            except (UnicodeDecodeError, LookupError) as e:
+                raise forms.ValidationError(f'Failed decoding the uploaded file: "{str(e)}"', code="decode_failed")
+            if not parsed_draft.filename:
+                raise forms.ValidationError(
+                    "Could not extract a valid Internet-Draft name from the plaintext.  "
+                    "Please make sure that the full Internet-Draft name including "
+                    "revision number appears centered on its own line below the document title on the "
+                    "first page.", 
+                    code="parse_error_filename",
+                )
+            if not parsed_draft.revision:
+                raise forms.ValidationError(
+                    "Could not extract a valid Internet-Draft revision from the plaintext.  "
+                    "Please make sure that the full Internet-Draft name including "
+                    "revision number appears centered on its own line below the document title on the "
+                    "first page.", 
+                    code="parse_error_revision",
+                )
         return txt_file
 
 class SubmissionAutoUploadForm(SubmissionBaseUploadForm):
