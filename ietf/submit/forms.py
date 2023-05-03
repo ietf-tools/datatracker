@@ -213,6 +213,9 @@ class SubmissionBaseUploadForm(forms.Form):
             if fmt in self._extracted_filenames_and_revisions:
                 self.filename, self.revision = self._extracted_filenames_and_revisions[fmt]
                 break
+        name_error = validate_submission_name(self.filename)
+        if name_error:
+            raise forms.ValidationError(name_error)
 
         rev_error = validate_submission_rev(self.filename, self.revision)
         if rev_error:
