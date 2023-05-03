@@ -428,7 +428,7 @@ def document_main(request, name, rev=None, document_html=False):
                     ))
 
         if (doc.get_state_slug() not in ["rfc", "expired"] and doc.stream_id in ("ise", "irtf")
-            and has_role(request.user, ("Secretariat", "IRTF Chair")) and not conflict_reviews and not snapshot):
+            and has_role(request.user, ("Secretariat", "IRTF Chair", "ISE")) and not conflict_reviews and not snapshot):
             label = "Begin IETF Conflict Review"
             if not doc.intended_std_level:
                 label += " (note that intended status is not set)"
