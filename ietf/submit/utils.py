@@ -1246,11 +1246,11 @@ def process_and_validate_submission(submission):
     try:
         xml_metadata = None
         # Parse XML first, if we have it
-        if ".xml" in submission.formats:
-            xml_metadata = process_submission_xml(submission)
+        if ".xml" in submission.file_types:
+            xml_metadata = process_submission_xml(submission.name, submission.rev)
             render_missing_formats(submission)  # makes HTML and text, unless text was uploaded
         # Parse text, whether uploaded or generated from XML
-        text_metadata = process_submission_text(submission)
+        text_metadata = process_submission_text(submission.name, submission.rev)
 
         if xml_metadata and xml_metadata["title"] != text_metadata["title"]:
             raise SubmissionError(
@@ -1331,12 +1331,11 @@ def process_and_accept_uploaded_submission(submission):
         return  # do nothing
 
     try:
-        process_and_validate_submission(
-            submission, require_author_emails=True, require_submitter_is_author=True
-        )
+        process_and_validate_submission(submission)
     except SubmissionError as err:
         cancel_submission(submission)  # changes Submission.state
         create_submission_event(None, submission, f"Submission rejected: {err}")
+        return
 
     if not all_authors_have_emails(submission):
         cancel_submission(submission)  # changes Submission.state
@@ -1345,6 +1344,7 @@ def process_and_accept_uploaded_submission(submission):
             submission,
             "Submission rejected: Email address not found for all authors"
         )
+        return
         
     if not submitter_is_author(submission):
         cancel_submission(submission)  # changes Submission.state
@@ -1353,6 +1353,7 @@ def process_and_accept_uploaded_submission(submission):
             submission,
             f"Submission rejected: Submitter ({submission.submitter}) is not one of the document authors",
         )
+        return
 
     create_submission_event(None, submission, desc="Completed submission validation checks")
     accept_submission(submission)
