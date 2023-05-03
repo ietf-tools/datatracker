@@ -1187,6 +1187,14 @@ def _turn_into_unicode(s: Optional[Union[str, bytes]]):
                 return ""
 
 
+def _is_valid_email(addr):
+    try:
+        validate_email(addr)
+    except ValidationError:
+        return False
+    return True
+
+
 def process_submission_text(filename, revision):
     """Validate/extract data from the text version of a submitted draft"""
     text_path = staging_path(filename, revision, '.txt')
@@ -1211,7 +1219,7 @@ def process_submission_text(filename, revision):
     authors = [
         {
             "name": fullname.translate(trans_table).strip(),
-            "email": _turn_into_unicode(email if validate_email(email) else ""),
+            "email": _turn_into_unicode(email if _is_valid_email(email) else ""),
             "affiliation": _turn_into_unicode(company),
             "country": _turn_into_unicode(country),
         }
