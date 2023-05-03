@@ -427,12 +427,20 @@ def document_main(request, name, rev=None, document_html=False):
                         urlreverse('ietf.doc.views_ballot.close_rsab_ballot', kwargs=dict(name=doc.name))
                     ))
 
-        if (doc.get_state_slug() not in ["rfc", "expired"] and doc.stream_id in ("ise", "irtf")
-            and has_role(request.user, ("Secretariat", "IRTF Chair", "ISE")) and not conflict_reviews and not snapshot):
-            label = "Begin IETF Conflict Review"
-            if not doc.intended_std_level:
-                label += " (note that intended status is not set)"
-            actions.append((label, urlreverse('ietf.doc.views_conflict_review.start_review', kwargs=dict(name=doc.name))))
+        if (
+            doc.get_state_slug() not in ["rfc", "expired"]
+            and not conflict_reviews
+            and not snapshot
+        ):
+            if (
+                doc.stream_id == "ise" and has_role(request.user, ("Secretariat", "ISE"))
+            ) or (
+                doc.stream_id == "irtf" and has_role(request.user, ("Secretariat", "IRTF Chair"))
+            ):
+                label = "Begin IETF conflict review" # Note that the template feeds this through capfirst_allcaps
+                if not doc.intended_std_level:
+                    label += " (note that intended status is not set)"
+                actions.append((label, urlreverse('ietf.doc.views_conflict_review.start_review', kwargs=dict(name=doc.name))))
 
         if doc.get_state_slug() not in ["rfc", "expired"] and not snapshot:
             if can_request_rfc_publication(request.user, doc):
