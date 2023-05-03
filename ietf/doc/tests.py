@@ -2825,7 +2825,7 @@ class CanRequestConflictReviewTests(TestCase):
         ise_draft = IndividualDraftFactory(stream_id="ise")
         irtf_draft = RgDraftFactory()
 
-        # This is blunt, trading off precision for time. A more thourogh test would ensure
+        # This is blunt, trading off precision for time. A more thorough test would ensure
         # that the text is in a button and that the correct link is absent/present as well.
 
         target_string = "Begin IETF conflict review"
