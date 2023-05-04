@@ -28,7 +28,7 @@ import debug                            # pyflakes:ignore
 
 from ietf.submit.utils import (expirable_submissions, expire_submission, find_submission_filenames,
                                post_submission, validate_submission_name, validate_submission_rev,
-                               process_uploaded_submission, SubmissionError, process_submission_text)
+                               process_and_accept_uploaded_submission, SubmissionError, process_submission_text)
 from ietf.doc.factories import (DocumentFactory, WgDraftFactory, IndividualDraftFactory, IndividualRfcFactory,
                                 ReviewFactory, WgRfcFactory)
 from ietf.doc.models import ( Document, DocAlias, DocEvent, State,
@@ -3107,8 +3107,8 @@ class SubmissionUploadFormTests(BaseSubmitTestCase):
 
 class AsyncSubmissionTests(BaseSubmitTestCase):
     """Tests of async submission-related tasks"""
-    def test_process_uploaded_submission(self):
-        """process_uploaded_submission should properly process a submission"""
+    def test_process_and_accept_uploaded_submission(self):
+        """process_and_accept_uploaded_submission should properly process a submission"""
         _today = date_today()
         xml, author = submission_file('draft-somebody-test-00', 'draft-somebody-test-00.xml', None, 'test_submission.xml')
         xml_data = xml.read()
@@ -3128,7 +3128,7 @@ class AsyncSubmissionTests(BaseSubmitTestCase):
         self.assertFalse(txt_path.exists())
         html_path = xml_path.with_suffix('.html')
         self.assertFalse(html_path.exists())
-        process_uploaded_submission(submission)
+        process_and_accept_uploaded_submission(submission)
 
         submission = Submission.objects.get(pk=submission.pk)  # refresh
         self.assertEqual(submission.state_id, 'auth', 'accepted submission should be in auth state')
@@ -3146,8 +3146,8 @@ class AsyncSubmissionTests(BaseSubmitTestCase):
         self.assertEqual(submission.file_size, os.stat(txt_path).st_size)
         self.assertIn('Completed submission validation checks', submission.submissionevent_set.last().desc)
 
-    def test_process_uploaded_submission_invalid(self):
-        """process_uploaded_submission should properly process an invalid submission"""
+    def test_process_and_accept_uploaded_submission_invalid(self):
+        """process_and_accept_uploaded_submission should properly process an invalid submission"""
         xml, author = submission_file('draft-somebody-test-00', 'draft-somebody-test-00.xml', None, 'test_submission.xml')
         xml_data = xml.read()
         xml.close()
@@ -3168,7 +3168,7 @@ class AsyncSubmissionTests(BaseSubmitTestCase):
         xml_path = Path(settings.IDSUBMIT_STAGING_PATH) / 'draft-somebody-test-00.xml'
         with xml_path.open('w') as f:
             f.write(xml_data)
-        process_uploaded_submission(submission)
+        process_and_accept_uploaded_submission(submission)
         submission = Submission.objects.get(pk=submission.pk)  # refresh
         self.assertEqual(submission.state_id, 'cancel')
         self.assertIn('not one of the document authors', submission.submissionevent_set.last().desc)
@@ -3184,10 +3184,10 @@ class AsyncSubmissionTests(BaseSubmitTestCase):
         xml_path = Path(settings.IDSUBMIT_STAGING_PATH) / 'draft-somebody-test-00.xml'
         with xml_path.open('w') as f:
             f.write(re.sub(r'<email>.*</email>', '', xml_data))
-        process_uploaded_submission(submission)
+        process_and_accept_uploaded_submission(submission)
         submission = Submission.objects.get(pk=submission.pk)  # refresh
         self.assertEqual(submission.state_id, 'cancel')
-        self.assertIn('Missing email address', submission.submissionevent_set.last().desc)
+        self.assertIn('Email address not found for all authors', submission.submissionevent_set.last().desc)
 
         # no title
         submission = SubmissionFactory(
@@ -3200,7 +3200,7 @@ class AsyncSubmissionTests(BaseSubmitTestCase):
         xml_path = Path(settings.IDSUBMIT_STAGING_PATH) / 'draft-somebody-test-00.xml'
         with xml_path.open('w') as f:
             f.write(re.sub(r'<title>.*</title>', '<title></title>', xml_data))
-        process_uploaded_submission(submission)
+        process_and_accept_uploaded_submission(submission)
         submission = Submission.objects.get(pk=submission.pk)  # refresh
         self.assertEqual(submission.state_id, 'cancel')
         self.assertIn('Could not extract a valid title', submission.submissionevent_set.last().desc)
@@ -3216,10 +3216,10 @@ class AsyncSubmissionTests(BaseSubmitTestCase):
         xml_path = Path(settings.IDSUBMIT_STAGING_PATH) / 'draft-different-name-00.xml'
         with xml_path.open('w') as f:
             f.write(xml_data)
-        process_uploaded_submission(submission)
+        process_and_accept_uploaded_submission(submission)
         submission = Submission.objects.get(pk=submission.pk)  # refresh
         self.assertEqual(submission.state_id, 'cancel')
-        self.assertIn('Internet-Draft filename disagrees', submission.submissionevent_set.last().desc)
+        self.assertIn('Submission rejected: XML Internet-Draft filename', submission.submissionevent_set.last().desc)
 
         # rev mismatch
         submission = SubmissionFactory(
@@ -3232,26 +3232,10 @@ class AsyncSubmissionTests(BaseSubmitTestCase):
         xml_path = Path(settings.IDSUBMIT_STAGING_PATH) / 'draft-somebody-test-01.xml'
         with xml_path.open('w') as f:
             f.write(xml_data)
-        process_uploaded_submission(submission)
+        process_and_accept_uploaded_submission(submission)
         submission = Submission.objects.get(pk=submission.pk)  # refresh
         self.assertEqual(submission.state_id, 'cancel')
-        self.assertIn('revision disagrees', submission.submissionevent_set.last().desc)
-
-        # not xml
-        submission = SubmissionFactory(
-            name='draft-somebody-test',
-            rev='00',
-            file_types='.txt',
-            submitter=author.formatted_email(),
-            state_id='validating',
-        )
-        txt_path = Path(settings.IDSUBMIT_STAGING_PATH) / 'draft-somebody-test-00.txt'
-        with txt_path.open('w') as f:
-            f.write(txt_data)
-        process_uploaded_submission(submission)
-        submission = Submission.objects.get(pk=submission.pk)  # refresh
-        self.assertEqual(submission.state_id, 'cancel')
-        self.assertIn('Only XML Internet-Draft submissions', submission.submissionevent_set.last().desc)
+        self.assertIn('Submission rejected: XML Internet-Draft revision', submission.submissionevent_set.last().desc)
 
         # wrong state
         submission = SubmissionFactory(
@@ -3265,7 +3249,7 @@ class AsyncSubmissionTests(BaseSubmitTestCase):
         with xml_path.open('w') as f:
             f.write(xml_data)
         with mock.patch('ietf.submit.utils.process_submission_xml') as mock_proc_xml:
-            process_uploaded_submission(submission)
+            process_and_accept_uploaded_submission(submission)
         submission = Submission.objects.get(pk=submission.pk)  # refresh
         self.assertFalse(mock_proc_xml.called, 'Should not process submission not in "validating" state')
         self.assertEqual(submission.state_id, 'uploaded', 'State should not be changed')
@@ -3293,13 +3277,13 @@ class AsyncSubmissionTests(BaseSubmitTestCase):
                     symbol='x',
                 )
         ):
-            process_uploaded_submission(submission)
+            process_and_accept_uploaded_submission(submission)
         submission = Submission.objects.get(pk=submission.pk)  # refresh
         self.assertEqual(submission.state_id, 'cancel')
         self.assertIn('fake failure', submission.submissionevent_set.last().desc)
 
 
-    @mock.patch('ietf.submit.tasks.process_uploaded_submission')
+    @mock.patch('ietf.submit.tasks.process_and_accept_uploaded_submission')
     def test_process_and_accept_uploaded_submission_task(self, mock_method):
         """process_and_accept_uploaded_submission_task task should properly call its method"""
         s = SubmissionFactory()
@@ -3307,7 +3291,7 @@ class AsyncSubmissionTests(BaseSubmitTestCase):
         self.assertEqual(mock_method.call_count, 1)
         self.assertEqual(mock_method.call_args.args, (s,))
 
-    @mock.patch('ietf.submit.tasks.process_uploaded_submission')
+    @mock.patch('ietf.submit.tasks.process_and_accept_uploaded_submission')
     def test_process_and_accept_uploaded_submission_task_ignores_invalid_id(self, mock_method):
         """process_and_accept_uploaded_submission_task should ignore an invalid submission_id"""
         SubmissionFactory()  # be sure there is a Submission
@@ -3347,18 +3331,6 @@ class AsyncSubmissionTests(BaseSubmitTestCase):
         )
         txt_path.open('w').write(txt.read())
         with self.assertRaisesMessage(SubmissionError, 'disagrees with submission revision'):
-            process_submission_text(submission.name, submission.rev)
-
-        # title mismatch
-        txt, _ = submission_file(
-            'draft-somebody-test-00',  # name that appears in the file
-            'draft-somebody-test-00.xml',
-            None,
-            'test_submission.txt',
-            title='Not Correct Draft Title',
-        )
-        txt_path.open('w').write(txt.read())
-        with self.assertRaisesMessage(SubmissionError, 'disagrees with submission title'):
             process_submission_text(submission.name, submission.rev)
 
     def test_status_of_validating_submission(self):
