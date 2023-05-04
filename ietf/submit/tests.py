@@ -91,7 +91,8 @@ class BaseSubmitTestCase(TestCase):
     def archive_dir(self):
         return settings.INTERNET_DRAFT_ARCHIVE_DIR
 
-def submission_file(name_in_doc, name_in_post, group, templatename, author=None, email=None, title=None, year=None, ascii=True):
+
+def submission_file_contents(name_in_doc, group, templatename, author=None, email=None, title=None, year=None, ascii=True):
     _today = date_today()
     # construct appropriate text draft
     f = io.open(os.path.join(settings.BASE_DIR, "submit", templatename))
@@ -128,9 +129,17 @@ def submission_file(name_in_doc, name_in_post, group, templatename, author=None,
             email=email,
             title=title,
     )
+    return submission_text, author
+
+
+def submission_file(name_in_doc, name_in_post, group, templatename, author=None, email=None, title=None, year=None, ascii=True):
+    submission_text, author = submission_file_contents(
+        name_in_doc, group, templatename, author, email, title, year, ascii
+    )
     file = StringIO(submission_text)
     file.name = name_in_post
     return file, author
+
 
 def create_draft_submission_with_rev_mismatch(rev='01'):
     """Create a draft and submission with mismatched version
