@@ -1140,7 +1140,7 @@ def process_submission_xml(filename, revision):
         )
     if revision != xml_draft.revision:
         raise SubmissionError(
-            f"XML Internet-Draft revision ({xml_draft.revision})"
+            f"XML Internet-Draft revision ({xml_draft.revision}) "
             f"disagrees with submission revision ({revision})"
         )
     title = _normalize_title(xml_draft.get_title())
@@ -1302,7 +1302,10 @@ def process_and_validate_submission(submission):
         errors = [c.message for c in submission.checks.filter(passed__isnull=False) if not c.passed]
         if len(errors) > 0:
             raise SubmissionError('Checks failed: ' + ' / '.join(errors))
+    except SubmissionError:
+        raise  # pass SubmissionErrors up the stack
     except Exception:
+        # convert other exceptions into SubmissionErrors
         log.log(f'Unexpected exception while processing submission {submission.pk}.')
         log.log(traceback.format_exc())
         raise SubmissionError('A system error occurred while processing the submission.')
