@@ -3333,7 +3333,7 @@ class AsyncSubmissionTests(BaseSubmitTestCase):
         )
         txt_path.open('w').write(txt.read())
         with self.assertRaisesMessage(SubmissionError, 'disagrees with submission filename'):
-            process_submission_text(submission)
+            process_submission_text(submission.name, submission.rev)
 
         # rev mismatch
         txt, _ = submission_file(
@@ -3345,7 +3345,7 @@ class AsyncSubmissionTests(BaseSubmitTestCase):
         )
         txt_path.open('w').write(txt.read())
         with self.assertRaisesMessage(SubmissionError, 'disagrees with submission revision'):
-            process_submission_text(submission)
+            process_submission_text(submission.name, submission.rev)
 
         # title mismatch
         txt, _ = submission_file(
@@ -3357,7 +3357,7 @@ class AsyncSubmissionTests(BaseSubmitTestCase):
         )
         txt_path.open('w').write(txt.read())
         with self.assertRaisesMessage(SubmissionError, 'disagrees with submission title'):
-            process_submission_text(submission)
+            process_submission_text(submission.name, submission.rev)
 
     def test_status_of_validating_submission(self):
         s = SubmissionFactory(state_id='validating')

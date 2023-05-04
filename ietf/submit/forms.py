@@ -14,7 +14,6 @@ from contextlib import ExitStack
 
 from email.utils import formataddr
 from unidecode import unidecode
-from urllib.parse import urljoin
 
 from django import forms
 from django.conf import settings

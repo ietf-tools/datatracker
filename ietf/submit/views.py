@@ -12,7 +12,7 @@ from urllib.parse import urljoin
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.models import User
-from django.db import DataError, transaction
+from django.db import transaction
 from django.urls import reverse as urlreverse
 from django.core.exceptions import ValidationError
 from django.http import HttpResponseRedirect, Http404, HttpResponseForbidden, HttpResponse, JsonResponse
