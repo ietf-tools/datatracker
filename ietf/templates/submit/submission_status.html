@@ -133,17 +133,22 @@
             This submission is awaiting the first Internet-Draft upload.
         </p>
     {% elif submission.state_id == 'validating' %}
-        <p class="alert alert-warning my-3">
+        <div class="alert alert-warning my-3">
             This submission is still being processed and validated. This normally takes a few minutes after
             submission.
             {% with earliest_event=submission.submissionevent_set.last %}
-                {% if earliest_event %}
-                    It has been {{ earliest_event.time|timesince }} since submission.
-                {% endif %}
+            {% if earliest_event %}
+            It has been {{ earliest_event.time|timesince }} since submission.
+            {% endif %}
             {% endwith %}
             Please contact the secretariat for assistance if it has been more than an hour.
-        </p>
-    {% else %}
+
+            <div class="form-check form-switch mt-3 d-none">{# hide with d-none unless javascript makes it visible #}
+                <input class="form-check-input" type="checkbox" id="enableAutoReload" checked>
+                <label class="form-check-label" for="enableAutoReload"> Refresh automatically </label>
+            </div>
+        </div>
+        {% else %}
         <h2 class="mt-5">Meta-data from the submission</h2>
         {% if errors %}
             <div class="alert alert-danger my-3">
