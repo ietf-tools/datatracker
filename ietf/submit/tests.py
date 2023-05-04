@@ -47,7 +47,7 @@ from ietf.submit.factories import SubmissionFactory, SubmissionExtResourceFactor
 from ietf.submit.forms import SubmissionBaseUploadForm, SubmissionAutoUploadForm
 from ietf.submit.models import Submission, Preapproval, SubmissionExtResource
 from ietf.submit.mail import add_submission_email, process_response_email
-from ietf.submit.tasks import cancel_stale_submissions, process_uploaded_submission_task
+from ietf.submit.tasks import cancel_stale_submissions, process_and_accept_uploaded_submission_task
 from ietf.utils.accesstoken import generate_access_token
 from ietf.utils.mail import outbox, empty_outbox, get_payload_text
 from ietf.utils.models import VersionInfo
@@ -2742,6 +2742,8 @@ Subject: test
 @mock.patch.object(transaction, 'on_commit', lambda x: x())
 @override_settings(IDTRACKER_BASE_URL='https://datatracker.example.com')
 class ApiSubmissionTests(BaseSubmitTestCase):
+    TASK_TO_MOCK = "ietf.submit.views.process_and_accept_uploaded_submission_task"
+
     def test_upload_draft(self):
         """api_submission accepts a submission and queues it for processing"""
         url = urlreverse('ietf.submit.views.api_submission')
@@ -2750,7 +2752,7 @@ class ApiSubmissionTests(BaseSubmitTestCase):
             'xml': xml,
             'user': author.user.username,
         }
-        with mock.patch('ietf.submit.views.process_uploaded_submission_task') as mock_task:
+        with mock.patch(self.TASK_TO_MOCK) as mock_task:
             r = self.client.post(url, data)
         self.assertEqual(r.status_code, 200)
         response = r.json()
@@ -2788,7 +2790,7 @@ class ApiSubmissionTests(BaseSubmitTestCase):
             'replaces': existing_draft.name,
         }
         # mock out the task so we don't call to celery during testing!
-        with mock.patch('ietf.submit.views.process_uploaded_submission_task'):
+        with mock.patch(self.TASK_TO_MOCK):
             r = self.client.post(url, data)
         self.assertEqual(r.status_code, 200)
         submission = Submission.objects.last()
@@ -2806,7 +2808,7 @@ class ApiSubmissionTests(BaseSubmitTestCase):
             'xml': xml,
             'user': 'i.dont.exist@nowhere.example.com',
         }
-        with mock.patch('ietf.submit.views.process_uploaded_submission_task') as mock_task:
+        with mock.patch(self.TASK_TO_MOCK) as mock_task:
             r = self.client.post(url, data)
         self.assertEqual(r.status_code, 400)
         response = r.json()
@@ -2820,7 +2822,7 @@ class ApiSubmissionTests(BaseSubmitTestCase):
             'xml': xml,
             'user': author.user.username,
         }
-        with mock.patch('ietf.submit.views.process_uploaded_submission_task') as mock_task:
+        with mock.patch(self.TASK_TO_MOCK) as mock_task:
             r = self.client.post(url, data)
         self.assertEqual(r.status_code, 400)
         response = r.json()
@@ -2834,7 +2836,7 @@ class ApiSubmissionTests(BaseSubmitTestCase):
             'xml': xml,
             'user': author.user.username,
         }
-        with mock.patch('ietf.submit.views.process_uploaded_submission_task') as mock_task:
+        with mock.patch(self.TASK_TO_MOCK) as mock_task:
             r = self.client.post(url, data)
         self.assertEqual(r.status_code, 400)
         response = r.json()
@@ -2850,7 +2852,7 @@ class ApiSubmissionTests(BaseSubmitTestCase):
             'xml': xml,
             'user': author.user.username,
         }
-        with mock.patch('ietf.submit.views.process_uploaded_submission_task') as mock_task:
+        with mock.patch(self.TASK_TO_MOCK) as mock_task:
             r = self.client.post(url, data)
         self.assertEqual(r.status_code, 400)
         response = r.json()
@@ -3298,20 +3300,20 @@ class AsyncSubmissionTests(BaseSubmitTestCase):
 
 
     @mock.patch('ietf.submit.tasks.process_uploaded_submission')
-    def test_process_uploaded_submission_task(self, mock_method):
-        """process_uploaded_submission_task task should properly call its method"""
+    def test_process_and_accept_uploaded_submission_task(self, mock_method):
+        """process_and_accept_uploaded_submission_task task should properly call its method"""
         s = SubmissionFactory()
-        process_uploaded_submission_task(s.pk)
+        process_and_accept_uploaded_submission_task(s.pk)
         self.assertEqual(mock_method.call_count, 1)
         self.assertEqual(mock_method.call_args.args, (s,))
 
     @mock.patch('ietf.submit.tasks.process_uploaded_submission')
-    def test_process_uploaded_submission_task_ignores_invalid_id(self, mock_method):
-        """process_uploaded_submission_task should ignore an invalid submission_id"""
+    def test_process_and_accept_uploaded_submission_task_ignores_invalid_id(self, mock_method):
+        """process_and_accept_uploaded_submission_task should ignore an invalid submission_id"""
         SubmissionFactory()  # be sure there is a Submission
         bad_pk = 9876
         self.assertEqual(Submission.objects.filter(pk=bad_pk).count(), 0)
-        process_uploaded_submission_task(bad_pk)
+        process_and_accept_uploaded_submission_task(bad_pk)
         self.assertEqual(mock_method.call_count, 0)
 
     def test_process_submission_text_consistency_checks(self):
