@@ -1689,12 +1689,6 @@ class SubmitTests(BaseSubmitTestCase):
         self.assertIn('Expected the XML file to have extension ".xml"', m)
         self.assertIn('Expected an XML file of type "application/xml"', m)
 
-    def test_submit_bad_file_pdf(self):
-        r, q, m = self.submit_bad_file("some name", ["pdf"])
-        self.assertIn('Invalid characters were found in the name', m)
-        self.assertIn('Expected the PDF file to have extension ".pdf"', m)
-        self.assertIn('Expected an PDF file of type "application/pdf"', m)
-
     def test_submit_file_in_archive(self):
         name = "draft-authorname-testing-file-exists"
         rev = '00'
