@@ -188,10 +188,12 @@ class SubmitTests(BaseSubmitTestCase):
         
         If base_filename is None, "test_submission" is used.
         """
+        if isinstance(group, str):
+            group = Group.objects.get(acronym=group)
         for format in formats:
             submission_contents, _ = submission_file_contents(
                 name_in_doc=f'{name}-{rev}', 
-                group=Group.objects.get(acronym=group) if group else None, 
+                group=group, 
                 templatename='.'.join((base_filename or 'test_submission', format)), 
                 author=author,
                 ascii=ascii,
@@ -1657,13 +1659,8 @@ class SubmitTests(BaseSubmitTestCase):
             files[format].name = name_in_post
 
         r = self.client.post(url, files)
-
         self.assertEqual(r.status_code, 200)
-        q = PyQuery(r.content)
-        self.assertTrue(len(q("form .invalid-feedback")) > 0)
-        m = q('div.invalid-feedback').text()
-
-        return r, q, m
+        return r
         
     def test_submit_bad_file_txt(self):
         r, q, m = self.submit_bad_file("some name", ["txt"])
@@ -1673,15 +1670,15 @@ class SubmitTests(BaseSubmitTestCase):
         self.assertIn('document does not contain a legitimate name', m)
 
     def test_submit_bad_doc_name(self):
-        r, q, m = self.submit_bad_doc_name_with_ext(name_in_doc="draft-foo.dot-bar", name_in_post="draft-foo.dot-bar", formats=["txt"])
-        self.assertIn('contains a disallowed character with byte code: 46', m)
+        r = self.submit_bad_doc_name_with_ext(name_in_doc="draft-foo.dot-bar", name_in_post="draft-foo.dot-bar", formats=["txt"])
+        self.assertContains(r, "contains a disallowed character with byte code: 46")
         # This actually is allowed by the existing code. A significant rework of the validation mechanics is needed.
         # r, q, m = self.submit_bad_doc_name_with_ext(name_in_doc="draft-foo-bar-00.txt", name_in_post="draft-foo-bar-00.txt", formats=["txt"])
         # self.assertIn('Did you include a filename extension in the name by mistake?', m)
-        r, q, m = self.submit_bad_doc_name_with_ext(name_in_doc="draft-foo-bar-00.xml", name_in_post="draft-foo-bar-00.xml", formats=["xml"])
-        self.assertIn('Did you include a filename extension in the name by mistake?', m)
-        r, q, m = self.submit_bad_doc_name_with_ext(name_in_doc="../malicious-name-in-content-00", name_in_post="../malicious-name-in-post-00.xml", formats=["xml"])
-        self.assertIn('Did you include a filename extension in the name by mistake?', m)
+        r = self.submit_bad_doc_name_with_ext(name_in_doc="draft-foo-bar-00.xml", name_in_post="draft-foo-bar-00.xml", formats=["xml"])
+        self.assertContains(r, "Could not extract a valid Internet-Draft revision from the XML")
+        r = self.submit_bad_doc_name_with_ext(name_in_doc="../malicious-name-in-content-00", name_in_post="../malicious-name-in-post-00.xml", formats=["xml"])
+        self.assertContains(r, "Did you include a filename extension in the name by mistake?")
 
     def test_submit_bad_file_xml(self):
         r, q, m = self.submit_bad_file("some name", ["xml"])
