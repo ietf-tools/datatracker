@@ -13,6 +13,7 @@ import xml2rfc
 from contextlib import ExitStack
 
 from email.utils import formataddr
+from typing import Tuple
 from unidecode import unidecode
 
 from django import forms
@@ -48,8 +49,8 @@ from ietf.utils.xmldraft import XMLDraft, XMLParseError
 class SubmissionBaseUploadForm(forms.Form):
     xml = forms.FileField(label='.xml format', required=True)
 
-    formats = ('xml',)  # allowed formats
-    base_formats = ('xml',)  # at least one of these is required
+    formats: Tuple[str, ...] = ('xml',)  # allowed formats
+    base_formats: Tuple[str, ...] = ('xml',)  # at least one of these is required
 
     def __init__(self, request, *args, **kwargs):
         super(SubmissionBaseUploadForm, self).__init__(*args, **kwargs)
