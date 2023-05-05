@@ -5,9 +5,10 @@
 import datetime
 import email
 import io
+import mock
 import os
 import re
-import mock
+import sys
 
 from faker import Faker
 from io import StringIO
@@ -203,7 +204,7 @@ class SubmitTests(BaseSubmitTestCase):
         # Submit views assume there is a "next" IETF to look for cutoff dates against
         MeetingFactory(type_id='ietf', date=date_today()+datetime.timedelta(days=180))
 
-    def create_and_post_submission(self, name, rev, author, group=None, formats=("txt",), base_filename=None):
+    def create_and_post_submission(self, name, rev, author, group=None, formats=("txt",), base_filename=None, ascii=True):
         """Helper to create and post a submission
 
         If base_filename is None, defaults to 'test_submission'.
@@ -213,55 +214,30 @@ class SubmitTests(BaseSubmitTestCase):
 
         for format in formats:
             fn = '.'.join((base_filename or 'test_submission', format))
-            files[format], __ = submission_file(f'{name}-{rev}', f'{name}-{rev}.{format}', group, fn, author=author)
+            files[format], __ = submission_file(f'{name}-{rev}', f'{name}-{rev}.{format}', group, fn, author=author, ascii=ascii)
 
         r = self.post_to_upload_submission(url, files)
-        if r.status_code != 302:
+        if r.status_code == 302:
+            # A redirect means the upload was accepted and queued for processing
+            process_submission = True
+            last_submission = Submission.objects.order_by("-pk").first()
+            self.assertEqual(last_submission.state_id, "validating")
+        else:
+            process_submission = False
             q = PyQuery(r.content)
             print(q('div.invalid-feedback').text())
         self.assertNoFormPostErrors(r, ".invalid-feedback,.alert-danger")
+        
         # Now process the submission like the task would do
-        process_uploaded_submission(Submission.objects.order_by('-pk').first())
-
-        for format in formats:
-            self.assertTrue(os.path.exists(os.path.join(self.staging_dir, "%s-%s.%s" % (name, rev, format))))
-            if format == 'xml':
-                self.assertTrue(os.path.exists(os.path.join(self.staging_dir, "%s-%s.%s" % (name, rev, 'html'))))
+        if process_submission:
+            process_uploaded_submission(Submission.objects.order_by('-pk').first())
+            for format in formats:
+                self.assertTrue(os.path.exists(os.path.join(self.staging_dir, "%s-%s.%s" % (name, rev, format))))
+                if format == 'xml':
+                    self.assertTrue(os.path.exists(os.path.join(self.staging_dir, "%s-%s.%s" % (name, rev, 'html'))))
         return r
 
-    def _create_staged_submission(self, name, rev, author, group=None, formats=("txt",), base_filename=None, ascii=True):
-        """Create staged submission files that would exist following upload_submission()
-        
-        If base_filename is None, "test_submission" is used.
-        """
-        if isinstance(group, str):
-            group = Group.objects.get(acronym=group)
-        for format in formats:
-            submission_contents, _ = submission_file_contents(
-                name_in_doc=f'{name}-{rev}', 
-                group=group, 
-                templatename='.'.join((base_filename or 'test_submission', format)), 
-                author=author,
-                ascii=ascii,
-            )
-            self._write_staged_file(f'{name}-{rev}.{format}', submission_contents)
-        return SubmissionFactory(
-            state_id="validating",
-            name=name,
-            rev=rev,
-            group=group,
-            remote_ip=Faker().ipv6,
-            file_types=",".join(f".{fmt}" for fmt in formats),
-            submission_date=date_today(),
-        )
-
-    def _write_staged_file(self, filename, contents):
-        """Helper to create a staged submission file in the right place"""
-        with open(Path(self.staging_dir) / filename, "w") as f:
-            f.write(contents)
-
-    def do_submission(self, name, rev, group=None, formats: Tuple[str, ...]=("txt",), author=None, base_filename=None,
-                      ascii=True):
+    def do_submission(self, name, rev, group=None, formats: Tuple[str, ...]=("txt",), author=None, base_filename=None, ascii=True):
         """Simulate uploading a draft and waiting for validation results
         
         Returns the "full access" status URL and the author associated with the submitted draft.
@@ -269,20 +245,38 @@ class SubmitTests(BaseSubmitTestCase):
         # break early in case of missing configuration
         self.assertTrue(os.path.exists(settings.IDSUBMIT_IDNITS_BINARY))
 
+        # get
+        url = urlreverse('ietf.submit.views.upload_submission')
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q('input[type=file][name=txt]')), 1)
+        self.assertEqual(len(q('input[type=file][name=xml]')), 1)
+
         # submit
         if author is None:
             author = PersonFactory()
-
-        submission = self._create_staged_submission(name, rev, author, group, formats, base_filename, ascii)
-        process_uploaded_submission(submission)
-
-        status_url = urlreverse(
-            "ietf.submit.views.submission_status", 
-            kwargs={
-                "submission_id": submission.pk, 
-                "access_token": submission.access_token(),
-            },
+        r = self.create_and_post_submission(
+            name=name, rev=rev, author=author, group=group, formats=formats, base_filename=base_filename, ascii=ascii
         )
+        status_url = r["Location"]
+
+        self.assertEqual(Submission.objects.filter(name=name).count(), 1)
+        submission = Submission.objects.get(name=name)
+        if len(submission.authors) != 1:
+            sys.stderr.write("\nAuthor extraction failure.\n")
+            sys.stderr.write(force_str("Author name used in test: %s\n"%author))
+            sys.stderr.write("Author ascii name: %s\n" % author.ascii)
+            sys.stderr.write("Author initials: %s\n" % author.initials())
+        self.assertEqual(len(submission.authors), 1)
+        a = submission.authors[0]
+        if ascii:
+            self.assertEqual(a["name"], author.ascii_name())
+        if author.email():
+            self.assertEqual(a["email"], author.email().address.lower())
+        self.assertEqual(a["affiliation"], "Test Centre Inc.")
+        self.assertEqual(a["country"], "UK")
+
         return status_url, author
 
     def supply_extra_metadata(self, name, status_url, submitter_name, submitter_email, replaces, extresources=None):
@@ -1562,7 +1556,7 @@ class SubmitTests(BaseSubmitTestCase):
         rev = "00"
         group = "mars"
 
-        self.do_submission(name, rev, group, ["txt", "xml", "pdf"])
+        self.do_submission(name, rev, group, ["txt", "xml"])
 
         self.assertEqual(Submission.objects.filter(name=name).count(), 1)
 
@@ -1571,8 +1565,6 @@ class SubmitTests(BaseSubmitTestCase):
         self.assertTrue(os.path.exists(os.path.join(self.staging_dir, "%s-%s.xml" % (name, rev))))
         self.assertTrue(name in io.open(os.path.join(self.staging_dir, "%s-%s.xml" % (name, rev))).read())
         self.assertTrue('<?xml version="1.0" encoding="UTF-8"?>' in io.open(os.path.join(self.staging_dir, "%s-%s.xml" % (name, rev))).read())
-        self.assertTrue(os.path.exists(os.path.join(self.staging_dir, "%s-%s.pdf" % (name, rev))))
-        self.assertTrue('This is PDF' in io.open(os.path.join(self.staging_dir, "%s-%s.pdf" % (name, rev))).read())
 
     def test_expire_submissions(self):
         s = Submission.objects.create(name="draft-ietf-mars-foo",
