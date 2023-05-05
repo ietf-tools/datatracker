@@ -52,13 +52,15 @@ from ietf.utils.timezone import date_today
 
 
 def upload_submission(request):
-    if request.method == 'POST':
-        form = SubmissionManualUploadForm(request, data=request.POST, files=request.FILES)
+    if request.method == "POST":
+        form = SubmissionManualUploadForm(
+            request, data=request.POST, files=request.FILES
+        )
         if form.is_valid():
             submission = get_submission(form)
             submission.state = DraftSubmissionStateName.objects.get(slug="validating")
             submission.remote_ip = form.remote_ip
-            submission.file_types = ','.join(form.file_types)
+            submission.file_types = ",".join(form.file_types)
             submission.submission_date = date_today()
             submission.save()
             clear_existing_files(form)
@@ -68,15 +70,17 @@ def upload_submission(request):
             transaction.on_commit(
                 lambda: process_uploaded_submission_task.delay(submission.pk)
             )
-            return redirect("ietf.submit.views.submission_status", submission_id=submission.pk,
-                            access_token=submission.access_token())
+            return redirect(
+                "ietf.submit.views.submission_status",
+                submission_id=submission.pk,
+                access_token=submission.access_token(),
+            )
     else:
         form = SubmissionManualUploadForm(request=request)
 
-    return render(request, 'submit/upload_submission.html',
-                              {'selected': 'index',
-                               'form': form})
-
+    return render(
+        request, "submit/upload_submission.html", {"selected": "index", "form": form}
+    )
 
 @csrf_exempt
 def api_submission(request):
