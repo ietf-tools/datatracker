@@ -93,6 +93,26 @@ class BaseSubmitTestCase(TestCase):
     def archive_dir(self):
         return settings.INTERNET_DRAFT_ARCHIVE_DIR
 
+    def post_to_upload_submission(self, *args, **kwargs):
+        """POST to the upload_submission endpoint
+        
+        Use this instead of directly POSTing to be sure that the appropriate celery
+        tasks would be queued (but are not actually queued during testing)
+        """
+        # Mock task so we can check that it's called without actually submitting a celery task.
+        # Also mock on_commit() because otherwise the test transaction prevents the call from
+        # ever being made.
+        with mock.patch("ietf.submit.views.process_uploaded_submission_task") as mocked_task:
+            with mock.patch("ietf.submit.views.transaction.on_commit", side_effect=lambda x: x()):
+                response = self.client.post(*args, **kwargs)
+        if response.status_code == 302:
+            # A 302 indicates we're being redirected to the status page, meaning the upload
+            # was accepted. Check that the task would have been queued.
+            self.assertTrue(mocked_task.delay.called)
+        else:
+            self.assertFalse(mocked_task.delay.called)
+        return response
+
 
 def submission_file_contents(name_in_doc, group, templatename, author=None, email=None, title=None, year=None, ascii=True):
     _today = date_today()
@@ -195,17 +215,11 @@ class SubmitTests(BaseSubmitTestCase):
             fn = '.'.join((base_filename or 'test_submission', format))
             files[format], __ = submission_file(f'{name}-{rev}', f'{name}-{rev}.{format}', group, fn, author=author)
 
-        # Mock task so we can check that it's called without actually submitting a celery task.
-        # Also mock on_commit() because otherwise the test transaction prevents the call from
-        # ever being made.
-        with mock.patch("ietf.submit.views.process_uploaded_submission_task") as mocked_task:
-            with mock.patch("ietf.submit.views.transaction.on_commit", side_effect=lambda x: x()):
-                r = self.client.post(url, files)
+        r = self.post_to_upload_submission(url, files)
         if r.status_code != 302:
             q = PyQuery(r.content)
             print(q('div.invalid-feedback').text())
         self.assertNoFormPostErrors(r, ".invalid-feedback,.alert-danger")
-        self.assertTrue(mocked_task.delay.called)
         # Now process the submission like the task would do
         process_uploaded_submission(Submission.objects.order_by('-pk').first())
 
@@ -1664,7 +1678,7 @@ class SubmitTests(BaseSubmitTestCase):
         for format in formats:
             files[format], author = submission_file(f'{name}-{rev}', f'{name}-{rev}.bad', group, "test_submission.bad")
 
-        r = self.client.post(url, files)
+        r = self.post_to_upload_submission(url, files)
 
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
@@ -1683,7 +1697,7 @@ class SubmitTests(BaseSubmitTestCase):
             files[format], author = submission_file(name_in_doc, name_in_post, group, "test_submission.%s" % format)
             files[format].name = name_in_post
 
-        r = self.client.post(url, files)
+        r = self.post_to_upload_submission(url, files)
         self.assertEqual(r.status_code, 200)
         return r
         
@@ -1734,7 +1748,7 @@ class SubmitTests(BaseSubmitTestCase):
                 with io.open(fn, 'w') as f:
                     f.write("a" * 2000)
                 files[format], author = submission_file(f'{name}-{rev}', f'{name}-{rev}.{format}', group, "test_submission.%s" % format)
-            r = self.client.post(url, files)
+            r = self.post_to_upload_submission(url, files)
 
             self.assertEqual(r.status_code, 200)
             q = PyQuery(r.content)
@@ -2681,7 +2695,7 @@ Subject: test
         for format in formats:
             files[format], author = submission_file(f'{name}-{rev}', f'{name}-{rev}.{format}', group, "test_submission.%s" % format)
 
-        r = self.client.post(url, files)
+        r = self.post_to_upload_submission(url, files)
         if r.status_code != 302:
             q = PyQuery(r.content)
             print(q('div.invalid-feedback span.form-text div').text())
@@ -3610,5 +3624,5 @@ class TestOldNamesAreProtected(BaseSubmitTestCase):
         url = urlreverse("ietf.submit.views.upload_submission")
         files = {}
         files["xml"], _ = submission_file("draft-something-hascapitalletters-00", "draft-something-hascapitalletters-00.xml", None, "test_submission.xml")
-        r = self.client.post(url, files)
+        r = self.post_to_upload_submission(url, files)
         self.assertContains(r,"Case-conflicting draft name found",status_code=200)
