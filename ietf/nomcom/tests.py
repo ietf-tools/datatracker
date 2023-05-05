@@ -1492,7 +1492,7 @@ class NewActiveNomComTests(TestCase):
         # Pin nomcom years to be after 2008 or later so that ietf.nomcom.utils.list_eligible can 
         # return something other than empty. Note that anything after 2022 is suspect, and that
         # we should revisit this when implementing RFC 9389.
-        self.nc = NomComFactory.create(**nomcom_kwargs_for_year(year=random.randint(2008,2200)))
+        self.nc = NomComFactory.create(**nomcom_kwargs_for_year(year=random.randint(2008,2100)))
         self.chair = self.nc.group.role_set.filter(name='chair').first().person
         self.saved_days_to_expire_nomination_link = settings.DAYS_TO_EXPIRE_NOMINATION_LINK
 
