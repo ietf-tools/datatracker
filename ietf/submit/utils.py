@@ -40,7 +40,7 @@ from ietf.name.models import StreamName, FormalLanguageName
 from ietf.person.models import Person, Email
 from ietf.community.utils import update_name_contains_indexes_with_new_doc
 from ietf.submit.mail import ( announce_to_lists, announce_new_version, announce_to_authors,
-    send_approval_request, send_submission_confirmation, announce_new_wg_00 )
+    send_approval_request, send_submission_confirmation, announce_new_wg_00, send_manual_post_request )
 from ietf.submit.models import ( Submission, SubmissionEvent, Preapproval, DraftSubmissionStateName,
     SubmissionCheck, SubmissionExtResource )
 from ietf.utils import log
@@ -911,6 +911,9 @@ class SubmissionError(Exception):
     """Exception for errors during submission processing"""
     pass
 
+class InconsistentRevisionError(SubmissionError):
+    """SubmissionError caused by an inconsistent revision"""
+
 
 def staging_path(filename, revision, ext):
     if len(ext) > 0 and ext[0] != '.':
@@ -1286,11 +1289,9 @@ def process_and_validate_submission(submission):
         submission.save()
         submission.formal_languages.set(text_metadata["formal_languages"])
 
-        if check_submission_revision_consistency(submission):
-            raise SubmissionError(
-                'Document revision inconsistency error in the database. '
-                'Please contact the secretariat for assistance.'
-            )
+        consistency_error = check_submission_revision_consistency(submission)
+        if consistency_error:
+            raise InconsistentRevisionError(consistency_error)
         set_extresources_from_existing_draft(submission)
         apply_checkers(
             submission,
@@ -1382,6 +1383,11 @@ def process_uploaded_submission(submission):
 
     try:
         process_and_validate_submission(submission)
+    except InconsistentRevisionError as consistency_error:
+        submission.state_id = "manual"
+        submission.save()
+        create_submission_event(None, submission, desc="Uploaded submission (diverted to manual process)")
+        send_manual_post_request(None, submission, errors=dict(consistency=str(consistency_error)))
     except SubmissionError as err:
         cancel_submission(submission)  # changes Submission.state
         create_submission_event(None, submission, f"Submission rejected: {err}")
