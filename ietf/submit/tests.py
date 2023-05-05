@@ -10,7 +10,6 @@ import os
 import re
 import sys
 
-from faker import Faker
 from io import StringIO
 from pyquery import PyQuery
 from typing import Tuple
@@ -3230,6 +3229,22 @@ class AsyncSubmissionTests(BaseSubmitTestCase):
         submission = Submission.objects.get(pk=submission.pk)  # refresh
         self.assertEqual(submission.state_id, 'cancel')
         self.assertIn('Submission rejected: XML Internet-Draft revision', submission.submissionevent_set.last().desc)
+
+        # not xml
+        submission = SubmissionFactory(
+            name='draft-somebody-test',
+            rev='00',
+            file_types='.txt',
+            submitter=author.formatted_email(),
+            state_id='validating',
+        )
+        txt_path = Path(settings.IDSUBMIT_STAGING_PATH) / 'draft-somebody-test-00.txt'
+        with txt_path.open('w') as f:
+            f.write(txt_data)
+        process_and_accept_uploaded_submission(submission)
+        submission = Submission.objects.get(pk=submission.pk)  # refresh
+        self.assertEqual(submission.state_id, 'cancel')
+        self.assertIn('Only XML Internet-Draft submissions', submission.submissionevent_set.last().desc)
 
         # wrong state
         submission = SubmissionFactory(

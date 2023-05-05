@@ -1342,6 +1342,16 @@ def process_and_accept_uploaded_submission(submission):
         log.log(f'Submission {submission.pk} is not in "validating" state, skipping.')
         return  # do nothing
 
+    if submission.file_types != '.xml':
+        # permit only XML uploads for automatic acceptance
+        cancel_submission(submission)
+        create_submission_event(
+            None, 
+            submission, 
+            "Only XML Internet-Draft submissions can be processed.",
+        )
+        return
+
     try:
         process_and_validate_submission(submission)
     except SubmissionError as err:
