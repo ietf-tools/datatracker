@@ -183,6 +183,38 @@ class SubmitTests(BaseSubmitTestCase):
         # Submit views assume there is a "next" IETF to look for cutoff dates against
         MeetingFactory(type_id='ietf', date=date_today()+datetime.timedelta(days=180))
 
+    def create_and_post_submission(self, name, rev, author, group=None, formats=("txt",), base_filename=None):
+        """Helper to create and post a submission
+
+        If base_filename is None, defaults to 'test_submission'.
+        """
+        url = urlreverse('ietf.submit.views.upload_submission')
+        files = dict()
+
+        for format in formats:
+            fn = '.'.join((base_filename or 'test_submission', format))
+            files[format], __ = submission_file(f'{name}-{rev}', f'{name}-{rev}.{format}', group, fn, author=author)
+
+        # Mock task so we can check that it's called without actually submitting a celery task.
+        # Also mock on_commit() because otherwise the test transaction prevents the call from
+        # ever being made.
+        with mock.patch("ietf.submit.views.process_uploaded_submission_task") as mocked_task:
+            with mock.patch("ietf.submit.views.transaction.on_commit", side_effect=lambda x: x()):
+                r = self.client.post(url, files)
+        if r.status_code != 302:
+            q = PyQuery(r.content)
+            print(q('div.invalid-feedback').text())
+        self.assertNoFormPostErrors(r, ".invalid-feedback,.alert-danger")
+        self.assertTrue(mocked_task.delay.called)
+        # Now process the submission like the task would do
+        process_uploaded_submission(Submission.objects.order_by('-pk').first())
+
+        for format in formats:
+            self.assertTrue(os.path.exists(os.path.join(self.staging_dir, "%s-%s.%s" % (name, rev, format))))
+            if format == 'xml':
+                self.assertTrue(os.path.exists(os.path.join(self.staging_dir, "%s-%s.%s" % (name, rev, 'html'))))
+        return r
+
     def _create_staged_submission(self, name, rev, author, group=None, formats=("txt",), base_filename=None, ascii=True):
         """Create staged submission files that would exist following upload_submission()
         
@@ -1271,11 +1303,8 @@ class SubmitTests(BaseSubmitTestCase):
 
     def test_submit_new_wg_with_dash(self):
         group = Group.objects.create(acronym="mars-special", name="Mars Special", type_id="wg", state_id="active")
-
         name = "draft-ietf-%s-testing-tests" % group.acronym
-
-        self.do_submission(name, "00")
-
+        self.create_and_post_submission(name=name, rev="00", author=PersonFactory())
         self.assertEqual(Submission.objects.get(name=name).group.acronym, group.acronym)
 
     def test_submit_new_wg_v2_country_only(self):
@@ -1301,19 +1330,15 @@ class SubmitTests(BaseSubmitTestCase):
 
     def test_submit_new_irtf(self):
         group = Group.objects.create(acronym="saturnrg", name="Saturn", type_id="rg", state_id="active")
-
         name = "draft-irtf-%s-testing-tests" % group.acronym
-
-        self.do_submission(name, "00")
-
-        self.assertEqual(Submission.objects.get(name=name).group.acronym, group.acronym)
-        self.assertEqual(Submission.objects.get(name=name).group.type_id, group.type_id)
+        self.create_and_post_submission(name=name, rev="00", author=PersonFactory())
+        submission = Submission.objects.get(name=name)
+        self.assertEqual(submission.group.acronym, group.acronym)
+        self.assertEqual(submission.group.type_id, group.type_id)
 
     def test_submit_new_iab(self):
         name = "draft-iab-testing-tests"
-
-        self.do_submission(name, "00")
-
+        self.create_and_post_submission(name=name, rev="00", author=PersonFactory())
         self.assertEqual(Submission.objects.get(name=name).group.acronym, "iab")
 
     def test_cancel_submission(self):
