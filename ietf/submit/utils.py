@@ -1215,7 +1215,9 @@ def process_submission_text(filename, revision):
         )
     title = _normalize_title(text_draft.get_title())
     if not title:
-        raise SubmissionError("Could not extract a valid title from the text")
+        # This test doesn't work well - the text_draft parser tends to grab "Abstract" as
+        # the title if there's an empty title.
+        raise SubmissionError("Could not extract a title from the text")
 
     # Drops \r, \n, <, >. Based on get_draft_meta() behavior
     trans_table = str.maketrans("", "", "\r\n<>")

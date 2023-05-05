@@ -30,7 +30,8 @@ import debug                            # pyflakes:ignore
 from ietf.submit.utils import (expirable_submissions, expire_submission, find_submission_filenames,
                                post_submission, validate_submission_name, validate_submission_rev,
                                process_and_accept_uploaded_submission, SubmissionError, process_submission_text,
-                               process_uploaded_submission)
+                               process_submission_xml, process_uploaded_submission, 
+                               process_and_validate_submission)
 from ietf.doc.factories import (DocumentFactory, WgDraftFactory, IndividualDraftFactory, IndividualRfcFactory,
                                 ReviewFactory, WgRfcFactory)
 from ietf.doc.models import ( Document, DocAlias, DocEvent, State,
@@ -3309,38 +3310,162 @@ class AsyncSubmissionTests(BaseSubmitTestCase):
         process_and_accept_uploaded_submission_task(bad_pk)
         self.assertEqual(mock_method.call_count, 0)
 
-    def test_process_submission_text_consistency_checks(self):
-        """process_submission_text should check draft metadata against submission"""
-        submission = SubmissionFactory(
-            name='draft-somebody-test',
-            rev='00',
-            title='Correct Draft Title',
+    def test_process_submission_xml(self):
+        xml_path = Path(settings.IDSUBMIT_STAGING_PATH) / "draft-somebody-test-00.xml"
+        xml, _ = submission_file(
+            "draft-somebody-test-00",
+            "draft-somebody-test-00.xml",
+            None,
+            "test_submission.xml",
+            title="Correct Draft Title",
         )
-        txt_path = Path(settings.IDSUBMIT_STAGING_PATH) / 'draft-somebody-test-00.txt'
+        xml_path.write_text(xml.read())
+        output = process_submission_xml("draft-somebody-test", "00")
+        self.assertEqual(output["filename"], "draft-somebody-test")
+        self.assertEqual(output["rev"], "00")
+        self.assertEqual(output["title"], "Correct Draft Title")
+        self.assertIsNone(output["abstract"])
+        self.assertEqual(len(output["authors"]), 1)  # not checking in detail, parsing is unreliable
+        self.assertIsNone(output["document_date"])
+        self.assertIsNone(output["pages"])
+        self.assertIsNone(output["words"])
+        self.assertIsNone(output["first_two_pages"])
+        self.assertIsNone(output["file_size"])
+        self.assertIsNone(output["formal_languages"])
+        self.assertEqual(output["xml_version"], "3")
+
+        # name mismatch
+        xml, _ = submission_file(
+            "draft-somebody-wrong-name-00",  # name that appears in the file
+            "draft-somebody-test-00.xml",
+            None,
+            "test_submission.xml",
+            title="Correct Draft Title",
+        )
+        xml_path.write_text(xml.read())
+        with self.assertRaisesMessage(SubmissionError, "disagrees with submission filename"):
+            process_submission_xml("draft-somebody-test", "00")
+
+        # rev mismatch
+        xml, _ = submission_file(
+            "draft-somebody-test-01",  # name that appears in the file
+            "draft-somebody-test-00.xml",
+            None,
+            "test_submission.xml",
+            title="Correct Draft Title",
+        )
+        xml_path.write_text(xml.read())
+        with self.assertRaisesMessage(SubmissionError, "disagrees with submission revision"):
+            process_submission_xml("draft-somebody-test", "00")
+
+        # missing title
+        xml, _ = submission_file(
+            "draft-somebody-test-00",  # name that appears in the file
+            "draft-somebody-test-00.xml",
+            None,
+            "test_submission.xml",
+            title="",
+        )
+        xml_path.write_text(xml.read())
+        with self.assertRaisesMessage(SubmissionError, "Could not extract a valid title"):
+            process_submission_xml("draft-somebody-test", "00")
+
+    def test_process_submission_text(self):
+        txt_path = Path(settings.IDSUBMIT_STAGING_PATH) / "draft-somebody-test-00.txt"
+        txt, _ = submission_file(
+            "draft-somebody-test-00",
+            "draft-somebody-test-00.txt",
+            None,
+            "test_submission.txt",
+            title="Correct Draft Title",
+        )
+        txt_path.write_text(txt.read())
+        output = process_submission_text("draft-somebody-test", "00")
+        self.assertEqual(output["filename"], "draft-somebody-test")
+        self.assertEqual(output["rev"], "00")
+        self.assertEqual(output["title"], "Correct Draft Title")
+        self.assertEqual(output["abstract"].strip(), "This document describes how to test tests.")
+        self.assertEqual(len(output["authors"]), 1)  # not checking in detail, parsing is unreliable
+        self.assertLessEqual(output["document_date"] - date_today(), datetime.timedelta(days=1))
+        self.assertEqual(output["pages"], 2)
+        self.assertGreater(output["words"], 0)  # make sure it got something
+        self.assertGreater(len(output["first_two_pages"]), 0)  # make sure it got something
+        self.assertGreater(output["file_size"], 0)  # make sure it got something
+        self.assertEqual(output["formal_languages"].count(), 1)
+        self.assertIsNone(output["xml_version"])
 
         # name mismatch
         txt, _ = submission_file(
-            'draft-somebody-wrong-name-00',  # name that appears in the file
-            'draft-somebody-test-00.xml',
+            "draft-somebody-wrong-name-00",  # name that appears in the file
+            "draft-somebody-test-00.txt",
             None,
-            'test_submission.txt',
-            title='Correct Draft Title',
+            "test_submission.txt",
+            title="Correct Draft Title",
         )
-        txt_path.open('w').write(txt.read())
-        with self.assertRaisesMessage(SubmissionError, 'disagrees with submission filename'):
-            process_submission_text(submission.name, submission.rev)
+        txt_path.write_text(txt.read())
+        with self.assertRaisesMessage(SubmissionError, "disagrees with submission filename"):
+            process_submission_text("draft-somebody-test", "00")
 
         # rev mismatch
         txt, _ = submission_file(
-            'draft-somebody-test-01',  # name that appears in the file
-            'draft-somebody-test-00.xml',
+            "draft-somebody-test-01",  # name that appears in the file
+            "draft-somebody-test-00.txt",
             None,
-            'test_submission.txt',
-            title='Correct Draft Title',
+            "test_submission.txt",
+            title="Correct Draft Title",
         )
-        txt_path.open('w').write(txt.read())
-        with self.assertRaisesMessage(SubmissionError, 'disagrees with submission revision'):
-            process_submission_text(submission.name, submission.rev)
+        txt_path.write_text(txt.read())
+        with self.assertRaisesMessage(SubmissionError, "disagrees with submission revision"):
+            process_submission_text("draft-somebody-test", "00")
+
+    def test_process_and_validate_submission(self):
+        xml_data = {
+            "title": "The Title",
+            "authors": [{
+                "name": "Jane Doe",
+                "email": "jdoe@example.com",
+                "affiliation": "Test Centre",
+                "country": "UK",
+            }],
+            "xml_version": "3",
+        }
+        text_data = {
+            "title": "The Title",
+            "abstract": "This is an abstract.",
+            "authors": [{
+                "name": "John Doh",
+                "email": "ignored@example.com",
+                "affiliation": "Ignored",
+                "country": "CA",
+            }],
+            "document_date": date_today(),
+            "pages": 25,
+            "words": 1234,
+            "first_two_pages": "Pages One and Two",
+            "file_size": 4321,
+            "formal_languages": FormalLanguageName.objects.none(),
+        }
+        submission = SubmissionFactory(
+            state_id="validating",
+            file_types=".xml,.txt",
+        )
+        with mock.patch("ietf.submit.utils.process_submission_xml", return_value=xml_data):
+            with mock.patch("ietf.submit.utils.process_submission_text", return_value=text_data):
+                with mock.patch("ietf.submit.utils.render_missing_formats") as mock_render:
+                    with mock.patch("ietf.submit.utils.apply_checkers") as mock_checkers:
+                        process_and_validate_submission(submission)
+        self.assertTrue(mock_render.called)
+        self.assertTrue(mock_checkers.called)
+        submission = Submission.objects.get(pk=submission.pk)
+        self.assertEqual(submission.title, text_data["title"])
+        self.assertEqual(submission.abstract, text_data["abstract"])
+        self.assertEqual(submission.authors, xml_data["authors"])
+        self.assertEqual(submission.document_date, text_data["document_date"])
+        self.assertEqual(submission.pages, text_data["pages"])
+        self.assertEqual(submission.words, text_data["words"])
+        self.assertEqual(submission.first_two_pages, text_data["first_two_pages"])
+        self.assertEqual(submission.file_size, text_data["file_size"])
+        self.assertEqual(submission.xml_version, xml_data["xml_version"])
 
     def test_status_of_validating_submission(self):
         s = SubmissionFactory(state_id='validating')
