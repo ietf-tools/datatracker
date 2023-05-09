@@ -43,7 +43,6 @@ lxml>=4.8.0,<5
 markdown>=3.3.6
 mock>=4.0.3    # Used only by tests, of course
 mypy>=0.782,<0.790    # Version requirements determined by django-stubs.
-mysqlclient>=2.1.0
 oic>=1.3    # Used only by tests
 Pillow>=9.1.0
 psycopg2<2.9
