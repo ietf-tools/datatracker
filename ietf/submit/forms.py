@@ -36,7 +36,6 @@ from ietf.message.models import Message
 from ietf.name.models import FormalLanguageName, GroupTypeName
 from ietf.submit.models import Submission, Preapproval
 from ietf.submit.utils import validate_submission_name, validate_submission_rev, validate_submission_document_date, remote_ip
-from ietf.submit.parsers.pdf_parser import PDFParser
 from ietf.submit.parsers.plain_parser import PlainParser
 from ietf.submit.parsers.xml_parser import XMLParser
 from ietf.utils import log
@@ -624,26 +623,6 @@ class DeprecatedSubmissionBaseUploadForm(SubmissionBaseUploadForm):
 
         return super().clean()
 
-
-class DeprecatedSubmissionManualUploadForm(DeprecatedSubmissionBaseUploadForm):
-    xml = forms.FileField(label='.xml format', required=False) # xml field with required=False instead of True
-    txt = forms.FileField(label='.txt format', required=False)
-    # We won't permit html upload until we can verify that the content
-    # reasonably matches the text and/or xml upload.  Till then, we generate
-    # html for version 3 xml submissions.
-    # html = forms.FileField(label='.html format', required=False)
-    pdf = forms.FileField(label='.pdf format', required=False)
-
-    def __init__(self, request, *args, **kwargs):
-        super(DeprecatedSubmissionManualUploadForm, self).__init__(request, *args, **kwargs)
-        self.formats = settings.IDSUBMIT_FILE_TYPES
-        self.base_formats = ['txt', 'xml', ]
-
-    def clean_txt(self):
-        return self._clean_file("txt", PlainParser)
-
-    def clean_pdf(self):
-        return self._clean_file("pdf", PDFParser)
 
 class DeprecatedSubmissionAutoUploadForm(DeprecatedSubmissionBaseUploadForm):
     """Full-service upload form, replaced by the asynchronous version"""
