@@ -715,7 +715,8 @@ class NomcomViewsTest(TestCase):
 
         # save the cert file in tmp
         #nomcom.public_key.storage.location = tempfile.gettempdir()
-        nomcom.public_key.save('cert', File(io.open(self.cert_file.name, 'r')))
+        with io.open(self.cert_file.name, 'r') as fd:
+            nomcom.public_key.save('cert', File(fd))
 
         response = self.client.get(nominate_url)
         self.assertEqual(response.status_code, 200)
@@ -781,7 +782,8 @@ class NomcomViewsTest(TestCase):
 
         # save the cert file in tmp
         #nomcom.public_key.storage.location = tempfile.gettempdir()
-        nomcom.public_key.save('cert', File(io.open(self.cert_file.name, 'r')))
+        with io.open(self.cert_file.name, 'r') as fd:
+            nomcom.public_key.save('cert', File(fd))
 
         response = self.client.get(nominate_url)
         self.assertEqual(response.status_code, 200)
@@ -863,7 +865,8 @@ class NomcomViewsTest(TestCase):
 
         # save the cert file in tmp
         #nomcom.public_key.storage.location = tempfile.gettempdir()
-        nomcom.public_key.save('cert', File(io.open(self.cert_file.name, 'r')))
+        with io.open(self.cert_file.name, 'r') as fd:
+            nomcom.public_key.save('cert', File(fd))
 
         response = self.client.get(self.add_questionnaire_url)
         self.assertEqual(response.status_code, 200)
@@ -942,7 +945,8 @@ class NomcomViewsTest(TestCase):
 
         # save the cert file in tmp
         #nomcom.public_key.storage.location = tempfile.gettempdir()
-        nomcom.public_key.save('cert', File(io.open(self.cert_file.name, 'r')))
+        with io.open(self.cert_file.name, 'r') as fd:
+            nomcom.public_key.save('cert', File(fd))
 
         response = self.client.get(feedback_url)
         self.assertEqual(response.status_code, 200)
@@ -1066,7 +1070,8 @@ class FeedbackTest(TestCase):
 
         # save the cert file in tmp
         #nomcom.public_key.storage.location = tempfile.gettempdir()
-        nomcom.public_key.save('cert', File(io.open(self.cert_file.name, 'r')))
+        with io.open(self.cert_file.name, 'r') as fd:
+            nomcom.public_key.save('cert', File(fd))
 
         comment_text = 'Plain text. Comments with accents äöåÄÖÅ éáíóú âêîôû ü àèìòù.'
         comments = nomcom.encrypt(comment_text)
@@ -1089,7 +1094,8 @@ class ReminderTest(TestCase):
         self.nomcom = get_nomcom_by_year(NOMCOM_YEAR)
         self.cert_file, self.privatekey_file = get_cert_files()
         #self.nomcom.public_key.storage.location = tempfile.gettempdir()
-        self.nomcom.public_key.save('cert', File(io.open(self.cert_file.name, 'r')))
+        with io.open(self.cert_file.name, 'r') as fd:
+            self.nomcom.public_key.save('cert', File(fd))
 
         gen = Position.objects.get(nomcom=self.nomcom,name='GEN')
         rai = Position.objects.get(nomcom=self.nomcom,name='RAI')

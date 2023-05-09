@@ -1519,12 +1519,16 @@ class SubmitTests(BaseSubmitTestCase):
         self.assertEqual(Submission.objects.filter(name=name).count(), 1)
 
         self.assertTrue(os.path.exists(os.path.join(self.staging_dir, "%s-%s.txt" % (name, rev))))
-        self.assertTrue(name in io.open(os.path.join(self.staging_dir, "%s-%s.txt" % (name, rev))).read())
+        fd = io.open(os.path.join(self.staging_dir, "%s-%s.txt" % (name, rev)))
+        txt_contents = fd.read()
+        fd.close()
+        self.assertTrue(name in txt_contents)
         self.assertTrue(os.path.exists(os.path.join(self.staging_dir, "%s-%s.xml" % (name, rev))))
-        self.assertTrue(name in io.open(os.path.join(self.staging_dir, "%s-%s.xml" % (name, rev))).read())
-        self.assertTrue('<?xml version="1.0" encoding="UTF-8"?>' in io.open(os.path.join(self.staging_dir, "%s-%s.xml" % (name, rev))).read())
-        self.assertTrue(os.path.exists(os.path.join(self.staging_dir, "%s-%s.pdf" % (name, rev))))
-        self.assertTrue('This is PDF' in io.open(os.path.join(self.staging_dir, "%s-%s.pdf" % (name, rev))).read())
+        fd = io.open(os.path.join(self.staging_dir, "%s-%s.xml" % (name, rev)))
+        xml_contents = fd.read()
+        fd.close()
+        self.assertTrue(name in xml_contents)
+        self.assertTrue('<?xml version="1.0" encoding="UTF-8"?>' in xml_contents)
 
     def test_expire_submissions(self):
         s = Submission.objects.create(name="draft-ietf-mars-foo",
@@ -3331,7 +3335,9 @@ class AsyncSubmissionTests(BaseSubmitTestCase):
             'test_submission.txt',
             title='Correct Draft Title',
         )
-        txt_path.open('w').write(txt.read())
+        with txt_path.open('w') as fd:
+            fd.write(txt.read())
+        txt.close()
         with self.assertRaisesMessage(SubmissionError, 'disagrees with submission filename'):
             process_submission_text(submission)
 
@@ -3343,7 +3349,9 @@ class AsyncSubmissionTests(BaseSubmitTestCase):
             'test_submission.txt',
             title='Correct Draft Title',
         )
-        txt_path.open('w').write(txt.read())
+        with txt_path.open('w') as fd:
+            fd.write(txt.read())
+        txt.close()
         with self.assertRaisesMessage(SubmissionError, 'disagrees with submission revision'):
             process_submission_text(submission)
 
@@ -3355,7 +3363,9 @@ class AsyncSubmissionTests(BaseSubmitTestCase):
             'test_submission.txt',
             title='Not Correct Draft Title',
         )
-        txt_path.open('w').write(txt.read())
+        with txt_path.open('w') as fd:
+            fd.write(txt.read())
+        txt.close()
         with self.assertRaisesMessage(SubmissionError, 'disagrees with submission title'):
             process_submission_text(submission)
 

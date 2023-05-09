@@ -80,6 +80,7 @@ def validate_mime_type(file, valid, missing_ok=False):
         else:
             raise
     raw = file.read()
+    file.close()
     mime_type, encoding = get_mime_type(raw)
     # work around mis-identification of text where a line has 'virtual' as
     # the first word:

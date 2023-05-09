@@ -23,8 +23,12 @@ class Command(EmailOnFailureCommand):
 
     def handle(self, *args, **options):
         email = options.get('email', None)
-        binary_input = io.open(email, 'rb') if email else sys.stdin.buffer
-        self.msg_bytes = binary_input.read()
+        if email:
+            binary_input = io.open(email, 'rb')
+            self.msg_bytes = binary_input.read()
+            binary_input.close()
+        else:
+            self.msg_bytes = sys.stdin.buffer.read()
         try:
             process_response_email(self.msg_bytes)
         except ValueError as e:
