@@ -15,7 +15,7 @@ from django.http import Http404, HttpResponseRedirect
 from django.urls import reverse
 from django.template.loader import render_to_string
 from django.conf import settings
-from django.utils.encoding import force_text
+from django.utils.encoding import force_str
 from django.utils.html import escape
 
 import debug                            # pyflakes:ignore
@@ -665,7 +665,7 @@ def generate_last_call_text(request, doc):
     e.doc = doc
     e.rev = doc.rev
     e.desc = 'Last call announcement was generated'
-    e.text = force_text(new_text)
+    e.text = force_str(new_text)
     e.save()
 
     return e 

@@ -132,7 +132,7 @@ class AddCommentForm(forms.Form):
 #     def render(self):
 #         output = []
 #         for widget in self:
-#             output.append(format_html(force_text(widget)))
+#             output.append(format_html(force_str(widget)))
 #         return mark_safe('\n'.join(output))
 
 

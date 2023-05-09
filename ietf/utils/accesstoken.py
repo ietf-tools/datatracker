@@ -5,7 +5,7 @@
 import time, random, hashlib
 
 from django.conf import settings
-from django.utils.encoding import force_bytes, force_text
+from django.utils.encoding import force_bytes, force_str
 
 
 def generate_random_key(max_length=32):
@@ -18,4 +18,4 @@ def generate_access_token(key, max_length=32):
     # we hash it with the private key to make sure only we can
     # generate and use the final token - so storing the key in the
     # database is safe
-    return force_text(hashlib.sha256(force_bytes(settings.SECRET_KEY) + force_bytes(key)).hexdigest()[:max_length])
+    return force_str(hashlib.sha256(force_bytes(settings.SECRET_KEY) + force_bytes(key)).hexdigest()[:max_length])

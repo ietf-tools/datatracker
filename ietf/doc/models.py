@@ -23,7 +23,7 @@ from django.urls import reverse as urlreverse
 from django.contrib.contenttypes.models import ContentType
 from django.conf import settings
 from django.utils import timezone
-from django.utils.encoding import force_text
+from django.utils.encoding import force_str
 from django.utils.html import mark_safe # type:ignore
 from django.contrib.staticfiles import finders
 
@@ -1131,7 +1131,7 @@ class DocHistory(DocumentInfo):
     name = models.CharField(max_length=255)
 
     def __str__(self):
-        return force_text(self.doc.name)
+        return force_str(self.doc.name)
 
     def get_related_session(self):
         return self.doc.get_related_session()
@@ -1193,7 +1193,7 @@ class DocAlias(models.Model):
         return self.docs.first()
 
     def __str__(self):
-        return u"%s-->%s" % (self.name, ','.join([force_text(d.name) for d in self.docs.all() if isinstance(d, Document) ]))
+        return u"%s-->%s" % (self.name, ','.join([force_str(d.name) for d in self.docs.all() if isinstance(d, Document) ]))
     document_link = admin_link("document")
     class Meta:
         verbose_name = "document alias"

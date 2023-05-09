@@ -221,7 +221,7 @@ class JsonExportMixin(object):
 #             obj = None
 # 
 #         if obj is None:
-#             raise Http404(_('%(name)s object with primary key %(key)r does not exist.') % {'name': force_text(self.model._meta.verbose_name), 'key': escape(object_id)})
+#             raise Http404(_('%(name)s object with primary key %(key)r does not exist.') % {'name': force_str(self.model._meta.verbose_name), 'key': escape(object_id)})
 # 
 #         content_type = 'application/json'
 #         return HttpResponse(serialize([ obj ], sort_keys=True, indent=3)[2:-2], content_type=content_type)
