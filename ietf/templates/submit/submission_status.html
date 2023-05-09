@@ -133,12 +133,21 @@
             This submission is awaiting the first Internet-Draft upload.
         </p>
     {% elif submission.state_id == 'validating' %}
+        <div class="alert alert-danger my-3">
+            Notice: The Internet-Draft submission process has changed as of Datatracker version 10.3.0.
+            Your Internet-Draft is currently being processed and validated asynchronously. Results will be
+            displayed at this URL when they are available. If JavaScript is enabled in your
+            browser, this page will refreshed automatically. If JavaScript is not enabled, or if you
+            disable the automatic refresh with the toggle below, please reload this page in a few
+            minutes to see the results.
+        </div>
         <div class="alert alert-warning my-3">
-            This submission is still being processed and validated. This normally takes a few minutes after
+            This submission is being processed and validated. This normally takes a few minutes after
             submission.
             {% with earliest_event=submission.submissionevent_set.last %}
             {% if earliest_event %}
-            It has been {{ earliest_event.time|timesince }} since submission.
+            Your draft was uploaded at {{ earliest_event.time }}<span id="time-since-uploaded" class="d-none">
+            ({{ earliest_event.time|timesince }} ago)</span>.
             {% endif %}
             {% endwith %}
             Please contact the secretariat for assistance if it has been more than an hour.

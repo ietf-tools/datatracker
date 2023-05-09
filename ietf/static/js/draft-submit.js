@@ -68,20 +68,24 @@ $(function () {
 
     // Reload page periodically if the enableAutoReload checkbox is present and checked
     const autoReloadSwitch = document.getElementById("enableAutoReload");
+    const timeSinceDisplay = document.getElementById("time-since-uploaded");
     if (autoReloadSwitch) {
         const autoReloadTime = 30000; // ms
         let autoReloadTimeoutId;
         autoReloadSwitch.parentElement.classList.remove("d-none");
+        timeSinceDisplay.classList.remove("d-none");
         autoReloadTimeoutId = setTimeout(() => location.reload(), autoReloadTime);
         autoReloadSwitch.addEventListener("change", (e) => {
             if (e.currentTarget.checked) {
                 if (!autoReloadTimeoutId) {
                     autoReloadTimeoutId = setTimeout(() => location.reload(), autoReloadTime);
+                    timeSinceDisplay.classList.remove("d-none");
                 }
             } else {
                 if (autoReloadTimeoutId) {
                     clearTimeout(autoReloadTimeoutId);
                     autoReloadTimeoutId = null;
+                    timeSinceDisplay.classList.add("d-none");
                 }
             }
         });
