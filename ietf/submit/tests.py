@@ -3472,7 +3472,7 @@ class AsyncSubmissionTests(BaseSubmitTestCase):
         url = urlreverse('ietf.submit.views.submission_status', kwargs={'submission_id': s.pk})
         r = self.client.get(url)
         self.assertContains(r, s.name)
-        self.assertContains(r, 'still being processed and validated', status_code=200)
+        self.assertContains(r, 'This submission is being processed and validated.', status_code=200)
 
     @override_settings(IDSUBMIT_MAX_VALIDATION_TIME=datetime.timedelta(minutes=30))
     def test_cancel_stale_submissions(self):
