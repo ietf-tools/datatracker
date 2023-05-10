@@ -9,7 +9,6 @@ import operator
 from typing import Union            # pyflakes:ignore
 
 from email.utils import parseaddr
-from form_utils.forms import BetterModelForm
 
 from django import forms
 from django.conf import settings
@@ -213,7 +212,7 @@ class CustomModelMultipleChoiceField(forms.ModelMultipleChoiceField):
         return super(CustomModelMultipleChoiceField, self).prepare_value(value)
 
 
-class LiaisonModelForm(BetterModelForm):
+class LiaisonModelForm(forms.ModelForm):
     '''Specify fields which require a custom widget or that are not part of the model.
     '''
     from_groups = forms.ModelMultipleChoiceField(queryset=Group.objects.all(),label='Groups',required=False)
@@ -238,13 +237,6 @@ class LiaisonModelForm(BetterModelForm):
     class Meta:
         model = LiaisonStatement
         exclude = ('attachments','state','from_name','to_name')
-        fieldsets = [('From', {'fields': ['from_groups','from_contact', 'response_contacts'], 'legend': ''}),
-                     ('To', {'fields': ['to_groups','to_contacts'], 'legend': ''}),
-                     ('Other email addresses', {'fields': ['technical_contacts','action_holder_contacts','cc_contacts'], 'legend': ''}),
-                     ('Purpose', {'fields':['purpose', 'deadline'], 'legend': ''}),
-                     ('Reference', {'fields': ['other_identifiers','related_to'], 'legend': ''}),
-                     ('Liaison Statement', {'fields': ['title', 'submitted_date', 'body', 'attachments'], 'legend': ''}),
-                     ('Add attachment', {'fields': ['attach_title', 'attach_file', 'attach_button'], 'legend': ''})]
 
     def __init__(self, user, *args, **kwargs):
         super(LiaisonModelForm, self).__init__(*args, **kwargs)
