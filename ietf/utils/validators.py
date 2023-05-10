@@ -73,14 +73,13 @@ def validate_file_size(file, missing_ok=False):
 
 def validate_mime_type(file, valid, missing_ok=False):
     try:
-        file.open()
+        file.open() # Callers expect this to remain open. Consider refactoring.
     except FileNotFoundError:
         if missing_ok:
             return None, None
         else:
             raise
     raw = file.read()
-    file.close()
     mime_type, encoding = get_mime_type(raw)
     # work around mis-identification of text where a line has 'virtual' as
     # the first word:
