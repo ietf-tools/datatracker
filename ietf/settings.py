@@ -76,7 +76,7 @@ MANAGERS = ADMINS
 DATABASES = {
     'default': {
         'NAME': 'datatracker',
-        'ENGINE': 'django.db.backends.postgresql',
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
         'USER': 'ietf',
         #'PASSWORD': 'somepassword',
     },
@@ -430,6 +430,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'django_markup',
     'django_password_strength',
+    'form_utils',
     'oidc_provider',
     'simple_history',
     'tastypie',
@@ -1122,6 +1123,7 @@ CHECKS_LIBRARY_PATCHES_TO_APPLY = [
     'patch/fix-jwkest-jwt-logging.patch',
     'patch/fix-django-password-strength-kwargs.patch',
     'patch/add-django-http-cookie-value-none.patch',
+    'patch/django-cookie-delete-with-all-settings.patch',
     'patch/tastypie-django22-fielderror-response.patch',
 ]
 if DEBUG:

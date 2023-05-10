@@ -1,0 +1,46 @@
+--- django/contrib/messages/storage/cookie.py.orig	2020-08-13 11:10:36.719177122 +0200
++++ django/contrib/messages/storage/cookie.py	2020-08-13 11:45:23.503463150 +0200
+@@ -92,6 +92,8 @@
+             response.delete_cookie(
+                 self.cookie_name,
+                 domain=settings.SESSION_COOKIE_DOMAIN,
++                secure=settings.SESSION_COOKIE_SECURE or None,
++                httponly=settings.SESSION_COOKIE_HTTPONLY or None,
+                 samesite=settings.SESSION_COOKIE_SAMESITE,
+             )
+ 
+--- django/http/response.py.orig	2020-08-13 11:16:04.060627793 +0200
++++ django/http/response.py	2020-08-13 11:54:03.482476973 +0200
+@@ -210,12 +210,18 @@
+         value = signing.get_cookie_signer(salt=key + salt).sign(value)
+         return self.set_cookie(key, value, **kwargs)
+ 
+-    def delete_cookie(self, key, path='/', domain=None, samesite=None):
++    def delete_cookie(self, key, path='/', domain=None, secure=False, httponly=False, samesite=None):
+         # Most browsers ignore the Set-Cookie header if the cookie name starts
+         # with __Host- or __Secure- and the cookie doesn't use the secure flag.
+-        secure = key.startswith(('__Secure-', '__Host-'))
++        if key in self.cookies:
++            domain     = self.cookies[key].get('domain', domain)
++            secure     = self.cookies[key].get('secure', secure)
++            httponly   = self.cookies[key].get('httponly', httponly)
++            samesite   = self.cookies[key].get('samesite', samesite)
++        else:
++            secure = secure or key.startswith(('__Secure-', '__Host-'))
+         self.set_cookie(
+-            key, max_age=0, path=path, domain=domain, secure=secure,
++            key, max_age=0, path=path, domain=domain, secure=secure, httponly=httponly,
+             expires='Thu, 01 Jan 1970 00:00:00 GMT', samesite=samesite,
+         )
+ 
+--- django/contrib/sessions/middleware.py.orig	2020-08-13 12:12:12.401898114 +0200
++++ django/contrib/sessions/middleware.py	2020-08-13 12:14:52.690520659 +0200
+@@ -39,6 +39,8 @@
+                     settings.SESSION_COOKIE_NAME,
+                     path=settings.SESSION_COOKIE_PATH,
+                     domain=settings.SESSION_COOKIE_DOMAIN,
++                    secure=settings.SESSION_COOKIE_SECURE or None,
++                    httponly=settings.SESSION_COOKIE_HTTPONLY or None,
+                     samesite=settings.SESSION_COOKIE_SAMESITE,
+                 )
+             else:
