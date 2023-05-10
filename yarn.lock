@@ -272,10 +272,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@eslint/js@npm:8.37.0":
-  version: 8.37.0
-  resolution: "@eslint/js@npm:8.37.0"
-  checksum: 7a07fb085c94ce1538949012c292fd3a6cd734f149bc03af6157dfbd8a7477678899ef57b4a27e15b36470a997389ad79a0533d5880c71e67720ae1a7de7c62d
+"@eslint/js@npm:8.39.0":
+  version: 8.39.0
+  resolution: "@eslint/js@npm:8.39.0"
+  checksum: 63fe36e2bfb5ff5705d1c1a8ccecd8eb2f81d9af239713489e767b0e398759c0177fcc75ad62581d02942f2776903a8496d5fae48dc2d883dff1b96fcb19e9e2
   languageName: node
   linkType: hard
 
@@ -302,25 +302,25 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@fullcalendar/bootstrap5@npm:6.1.5":
-  version: 6.1.5
-  resolution: "@fullcalendar/bootstrap5@npm:6.1.5"
+"@fullcalendar/bootstrap5@npm:6.1.6":
+  version: 6.1.6
+  resolution: "@fullcalendar/bootstrap5@npm:6.1.6"
   peerDependencies:
-    "@fullcalendar/core": ~6.1.5
-  checksum: c2f886582344e268bdb342ef6ae2152a9ffe42f4ba48ab1eaa54414413cf52dbe3fb2c423efb44ca491318a53bb17bc476602b9a21672b07dd3bec48eec9345d
+    "@fullcalendar/core": ~6.1.6
+  checksum: 09f2bdf7dc6811c6069e76edf8455e0ef833da1859ab91aa4d97ca1dbd652219e81f0332fa5d311edac35231bd6fa022f1c0607b995299a1b17357b317f8c1e8
   languageName: node
   linkType: hard
 
-"@fullcalendar/core@npm:6.1.5":
-  version: 6.1.5
-  resolution: "@fullcalendar/core@npm:6.1.5"
+"@fullcalendar/core@npm:6.1.6":
+  version: 6.1.6
+  resolution: "@fullcalendar/core@npm:6.1.6"
   dependencies:
     preact: ~10.12.1
-  checksum: 6892c11c40899fc986edc3d36b8e764c8e78f1c53df2c6e23d418d0191fc0bd1562bd0d9cfc74fd986d02ac1e18c8a4a9d34a40b8329964cc9fb9f8ab8367635
+  checksum: 72ec698bd226ea76cef106b9eecd4391a0434b13f9f02f663a84720d5b1e0ca8db21f1ace72278d22814cc4d1dfb1374f17532abde0ae99210bfd5ad7468e17f
   languageName: node
   linkType: hard
 
-"@fullcalendar/daygrid@npm:6.1.5, @fullcalendar/daygrid@npm:~6.1.5":
+"@fullcalendar/daygrid@npm:6.1.5":
   version: 6.1.5
   resolution: "@fullcalendar/daygrid@npm:6.1.5"
   peerDependencies:
@@ -329,62 +329,71 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@fullcalendar/icalendar@npm:6.1.5":
-  version: 6.1.5
-  resolution: "@fullcalendar/icalendar@npm:6.1.5"
+"@fullcalendar/daygrid@npm:~6.1.6":
+  version: 6.1.6
+  resolution: "@fullcalendar/daygrid@npm:6.1.6"
   peerDependencies:
-    "@fullcalendar/core": ~6.1.5
+    "@fullcalendar/core": ~6.1.6
+  checksum: e7b60e359b620091c834fe3472761b9f4ebf3cd8d65a2ae56ead10dcb65a898c4c86770046dc3addff86002df9972a58395b7916502e8a4ec8d7b83a74b150b9
+  languageName: node
+  linkType: hard
+
+"@fullcalendar/icalendar@npm:6.1.6":
+  version: 6.1.6
+  resolution: "@fullcalendar/icalendar@npm:6.1.6"
+  peerDependencies:
+    "@fullcalendar/core": ~6.1.6
     ical.js: ^1.4.0
-  checksum: c7d53f932860dceac8d69ef9280c2f9990de976ff060871f13b40c3ff69b951104dfa283cecb233bb03bffd71766c4b31687f76904e9d18ff5fa28b36d04ae3b
+  checksum: 50d290346aa9ba0cb36e6072d05b2ffe1dd1d3b89975eaf89c6309e58adafd7e2ce1ca3e3063634218c5c29207e39c75530ebe6908f66f12bc8782eaba57d52d
   languageName: node
   linkType: hard
 
-"@fullcalendar/interaction@npm:6.1.5":
-  version: 6.1.5
-  resolution: "@fullcalendar/interaction@npm:6.1.5"
+"@fullcalendar/interaction@npm:6.1.6":
+  version: 6.1.6
+  resolution: "@fullcalendar/interaction@npm:6.1.6"
   peerDependencies:
-    "@fullcalendar/core": ~6.1.5
-  checksum: dd3d7fb8ba33b13b79ee0788f81fd6831f90d3663e04467fd4b72f1c82af6d6e7d1a91ea8ea8c2c203c39d7f6a388d1bbfd501f79f7198629da03c9c9385588d
+    "@fullcalendar/core": ~6.1.6
+  checksum: b7dea490592cdaf902788825ebea122816185657bb37f82dd78ba8129d10fff0c1c45a70d819dd44b5b7088d8b51588899e8e2332652fd939e263160912940dd
   languageName: node
   linkType: hard
 
-"@fullcalendar/list@npm:6.1.5":
-  version: 6.1.5
-  resolution: "@fullcalendar/list@npm:6.1.5"
+"@fullcalendar/list@npm:6.1.6":
+  version: 6.1.6
+  resolution: "@fullcalendar/list@npm:6.1.6"
   peerDependencies:
-    "@fullcalendar/core": ~6.1.5
-  checksum: 4879294b57445a47a15c0316b3fa79265afaf02155b4fd250429a9af9fcb90eadf0842b105fa2a984efe2f044b205dbd48dffe7237d5ec9341c549fea251ad08
+    "@fullcalendar/core": ~6.1.6
+  checksum: e5beb01c624b9994490ef0e8e3cb4e9f97efd4a0be6539191f912a27df4cd56bbf4124f558536618f18889b8133920fadf0962994a7345fb089fd4245bcbcf15
   languageName: node
   linkType: hard
 
-"@fullcalendar/luxon2@npm:6.1.5":
-  version: 6.1.5
-  resolution: "@fullcalendar/luxon2@npm:6.1.5"
+"@fullcalendar/luxon2@npm:6.1.6":
+  version: 6.1.6
+  resolution: "@fullcalendar/luxon2@npm:6.1.6"
   peerDependencies:
-    "@fullcalendar/core": ~6.1.5
+    "@fullcalendar/core": ~6.1.6
     luxon: ^2.0.0
-  checksum: 6253f7d06695a73745c719b44d4048ec2aca1dc0dbf24c57ad7721cf540cff1672e9ccc9e595bb2ec822c5f54b066a259fb5280feb778dce779288417c668085
+  checksum: 48d76dc556960e3ac18fc7b0afd7da5c7fb2dd2817afaba8bdf6423999aaaa174dfe8464813e79d3e5d717b0a92f793260a227f848af2427c902ed7506a01ffa
   languageName: node
   linkType: hard
 
-"@fullcalendar/timegrid@npm:6.1.5":
-  version: 6.1.5
-  resolution: "@fullcalendar/timegrid@npm:6.1.5"
+"@fullcalendar/timegrid@npm:6.1.6":
+  version: 6.1.6
+  resolution: "@fullcalendar/timegrid@npm:6.1.6"
   dependencies:
-    "@fullcalendar/daygrid": ~6.1.5
+    "@fullcalendar/daygrid": ~6.1.6
   peerDependencies:
-    "@fullcalendar/core": ~6.1.5
-  checksum: 236aabb57a3a8e8f41c43bf3a76b074731fee8a4e815b3c32a3532a7503678d488bbc1b2c74c270580ef37fb2d9ed9edf0b4646943812a5c238cd1cd7104e5f8
+    "@fullcalendar/core": ~6.1.6
+  checksum: ef79183dad0a49f86f43b3eb58fabfd48312ec0abf03b690094be72c3d8821a488038f8308cb0e136c0f716648409dc33c8a5fc77192c7c0d93cd9962cb4c814
   languageName: node
   linkType: hard
 
-"@fullcalendar/vue3@npm:6.1.5":
-  version: 6.1.5
-  resolution: "@fullcalendar/vue3@npm:6.1.5"
+"@fullcalendar/vue3@npm:6.1.6":
+  version: 6.1.6
+  resolution: "@fullcalendar/vue3@npm:6.1.6"
   peerDependencies:
-    "@fullcalendar/core": ~6.1.5
+    "@fullcalendar/core": ~6.1.6
     vue: ^3.0.11
-  checksum: bf426f3668ec813174b33c7151555299ee40176f53a481e72f5352002da257a9182c6b1c6cc0083f5e10f76601ccbe25af814fe0ae741516149e078dccc7efd1
+  checksum: 68fe3ce2049173a46c85d60d2f344644da5f50603455cc0838917449d5daae406e32995834384a02c1d741aea0ec19446ec9feb1d9c0f19b466b83336b98c8ae
   languageName: node
   linkType: hard
 
@@ -2332,10 +2341,10 @@ browserlist@latest:
   languageName: node
   linkType: hard
 
-"caniuse-lite@npm:1.0.30001469":
-  version: 1.0.30001469
-  resolution: "caniuse-lite@npm:1.0.30001469"
-  checksum: 8e496509d7e9ff189c72205675b5db0c5f1b6a09917027441e835efae0848a468a8c4e7d2b409ffc202438fcd23ae53e017f976a03c22c04d12d3c0e1e33e5de
+"caniuse-lite@npm:1.0.30001481":
+  version: 1.0.30001481
+  resolution: "caniuse-lite@npm:1.0.30001481"
+  checksum: 8200a043c191b4fd4fe0beda37a58fd61869c895ab93f87bdd0420e5927453f48434d716ce9da8552ff6c3ecc4dcd1366354cda3a134f3cc844af741574a7cab
   languageName: node
   linkType: hard
 
@@ -3587,6 +3596,16 @@ browserlist@latest:
   languageName: node
   linkType: hard
 
+"eslint-scope@npm:^7.2.0":
+  version: 7.2.0
+  resolution: "eslint-scope@npm:7.2.0"
+  dependencies:
+    esrecurse: ^4.3.0
+    estraverse: ^5.2.0
+  checksum: 64591a2d8b244ade9c690b59ef238a11d5c721a98bcee9e9f445454f442d03d3e04eda88e95a4daec558220a99fa384309d9faae3d459bd40e7a81b4063980ae
+  languageName: node
+  linkType: hard
+
 "eslint-utils@npm:^2.0.0":
   version: 2.1.0
   resolution: "eslint-utils@npm:2.1.0"
@@ -3635,14 +3654,14 @@ browserlist@latest:
   languageName: node
   linkType: hard
 
-"eslint@npm:8.37.0":
-  version: 8.37.0
-  resolution: "eslint@npm:8.37.0"
+"eslint@npm:8.39.0":
+  version: 8.39.0
+  resolution: "eslint@npm:8.39.0"
   dependencies:
     "@eslint-community/eslint-utils": ^4.2.0
     "@eslint-community/regexpp": ^4.4.0
     "@eslint/eslintrc": ^2.0.2
-    "@eslint/js": 8.37.0
+    "@eslint/js": 8.39.0
     "@humanwhocodes/config-array": ^0.11.8
     "@humanwhocodes/module-importer": ^1.0.1
     "@nodelib/fs.walk": ^1.2.8
@@ -3652,7 +3671,7 @@ browserlist@latest:
     debug: ^4.3.2
     doctrine: ^3.0.0
     escape-string-regexp: ^4.0.0
-    eslint-scope: ^7.1.1
+    eslint-scope: ^7.2.0
     eslint-visitor-keys: ^3.4.0
     espree: ^9.5.1
     esquery: ^1.4.2
@@ -3681,7 +3700,7 @@ browserlist@latest:
     text-table: ^0.2.0
   bin:
     eslint: bin/eslint.js
-  checksum: 80f3d5cdce2d671f4794e392d234a78d039c347673defb0596268bd481e8f30a53d93c01ff4f66a546c87d97ab4122c0e9cafe1371f87cb03cee6b7d5aa97595
+  checksum: d7a074ff326e7ea482500dc0427a7d4b0260460f0f812d19b46b1cca681806b67309f23da9d17cd3de8eb74dd3c14cb549c4d58b05b140564d14cc1a391122a0
   languageName: node
   linkType: hard
 
@@ -4775,10 +4794,10 @@ browserlist@latest:
   languageName: node
   linkType: hard
 
-"js-cookie@npm:3.0.1":
-  version: 3.0.1
-  resolution: "js-cookie@npm:3.0.1"
-  checksum: bb48de67e2a6bd1ae3dfd6b2d5a167c33dd0c5a37e909206161eb0358c98f17cb55acd55827a58e9eea3630d89444e7479f7938ef4420dda443218b8c434a4c3
+"js-cookie@npm:3.0.5":
+  version: 3.0.5
+  resolution: "js-cookie@npm:3.0.5"
+  checksum: 2dbd2809c6180fbcf060c6957cb82dbb47edae0ead6bd71cbeedf448aa6b6923115003b995f7d3e3077bfe2cb76295ea6b584eb7196cca8ba0a09f389f64967a
   languageName: node
   linkType: hard
 
@@ -6289,15 +6308,15 @@ browserlist@latest:
   resolution: "root-workspace-0b6124@workspace:."
   dependencies:
     "@faker-js/faker": 7.6.0
-    "@fullcalendar/bootstrap5": 6.1.5
-    "@fullcalendar/core": 6.1.5
+    "@fullcalendar/bootstrap5": 6.1.6
+    "@fullcalendar/core": 6.1.6
     "@fullcalendar/daygrid": 6.1.5
-    "@fullcalendar/icalendar": 6.1.5
-    "@fullcalendar/interaction": 6.1.5
-    "@fullcalendar/list": 6.1.5
-    "@fullcalendar/luxon2": 6.1.5
-    "@fullcalendar/timegrid": 6.1.5
-    "@fullcalendar/vue3": 6.1.5
+    "@fullcalendar/icalendar": 6.1.6
+    "@fullcalendar/interaction": 6.1.6
+    "@fullcalendar/list": 6.1.6
+    "@fullcalendar/luxon2": 6.1.6
+    "@fullcalendar/timegrid": 6.1.6
+    "@fullcalendar/vue3": 6.1.6
     "@parcel/optimizer-data-url": 2.8.3
     "@parcel/transformer-inline-string": 2.8.3
     "@parcel/transformer-sass": 2.8.3
@@ -6310,9 +6329,9 @@ browserlist@latest:
     browser-fs-access: 0.33.1
     browserlist: latest
     c8: 7.13.0
-    caniuse-lite: 1.0.30001469
+    caniuse-lite: 1.0.30001481
     d3: 7.8.4
-    eslint: 8.37.0
+    eslint: 8.39.0
     eslint-config-standard: 17.0.0
     eslint-plugin-cypress: 2.13.2
     eslint-plugin-import: 2.27.5
@@ -6326,7 +6345,7 @@ browserlist@latest:
     ical.js: 1.5.0
     jquery: 3.6.4
     jquery-migrate: 3.4.1
-    js-cookie: 3.0.1
+    js-cookie: 3.0.5
     list.js: 2.3.1
     lodash: 4.17.21
     lodash-es: 4.17.21
