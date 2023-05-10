@@ -317,6 +317,7 @@ def active_group_types(request):
             ]
         )
         .filter(group__state="active")
+        .order_by('order', 'name')  # default ordering ignored for "GROUP BY" queries, make it explicit
         .annotate(group_count=Count("group"))
     )
     return render(request, "group/active_groups.html", {"grouptypes": grouptypes})
