@@ -100,14 +100,14 @@ def photo(request, email_or_name):
     if not size.isdigit():
         return HttpResponse("Size must be integer", status=400)
     size = int(size)
-    img = Image.open(person.photo)
-    img = img.resize((size, img.height*size//img.width))
-    bytes = BytesIO()
-    try:
-        img.save(bytes, format='JPEG')
-        return HttpResponse(bytes.getvalue(), content_type='image/jpg')
-    except OSError:
-        raise Http404
+    with Image.open(person.photo) as img:
+        img = img.resize((size, img.height*size//img.width))
+        bytes = BytesIO()
+        try:
+            img.save(bytes, format='JPEG')
+            return HttpResponse(bytes.getvalue(), content_type='image/jpg')
+        except OSError:
+            raise Http404
 
 
 @role_required("Secretariat")

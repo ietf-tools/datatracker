@@ -73,7 +73,7 @@ def validate_file_size(file, missing_ok=False):
 
 def validate_mime_type(file, valid, missing_ok=False):
     try:
-        file.open()
+        file.open() # Callers expect this to remain open. Consider refactoring.
     except FileNotFoundError:
         if missing_ok:
             return None, None
