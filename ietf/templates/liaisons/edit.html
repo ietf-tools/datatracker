@@ -53,12 +53,17 @@
             {% bootstrap_field form.from_groups layout="horizontal" %}
             {% bootstrap_field form.from_contact layout="horizontal" %}
             {% bootstrap_field form.response_contacts layout="horizontal" %}
+            {% if form.approved %}
+                {% bootstrap_field form.approved layout="horizontal" %}
+            {% endif %}
         <h2>To</h2>
             {% bootstrap_field form.to_groups layout="horizontal" %}
             {% bootstrap_field form.to_contacts layout="horizontal" %}
         <h2>Other email addresses</h2>
             {% bootstrap_field form.technical_contacts layout="horizontal" %}
-            {% bootstrap_field form.action_holder_contacts layout="horizontal" %}
+            {% if form.action_holder_contacts %}
+                {% bootstrap_field form.action_holder_contacts layout="horizontal" %}
+            {% endif %}
             {% bootstrap_field form.cc_contacts layout="horizontal" %}
         <h2>Purpose</h2>
             {% bootstrap_field form.purpose layout="horizontal" %}

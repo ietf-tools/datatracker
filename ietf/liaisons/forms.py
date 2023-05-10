@@ -468,14 +468,6 @@ class OutgoingLiaisonForm(LiaisonModelForm):
     class Meta:
         model = LiaisonStatement
         exclude = ('attachments','state','from_name','to_name','action_holder_contacts')
-        # add approved field, no action_holder_contacts
-        fieldsets = [('From', {'fields': ['from_groups','from_contact','response_contacts','approved'], 'legend': ''}),
-                     ('To', {'fields': ['to_groups','to_contacts'], 'legend': ''}),
-                     ('Other email addresses', {'fields': ['technical_contacts','cc_contacts'], 'legend': ''}),
-                     ('Purpose', {'fields':['purpose', 'deadline'], 'legend': ''}),
-                     ('Reference', {'fields': ['other_identifiers','related_to'], 'legend': ''}),
-                     ('Liaison Statement', {'fields': ['title', 'submitted_date', 'body', 'attachments'], 'legend': ''}),
-                     ('Add attachment', {'fields': ['attach_title', 'attach_file', 'attach_button'], 'legend': ''})]
 
     def is_approved(self):
         return self.cleaned_data['approved']
