@@ -894,23 +894,27 @@ class MeetingTests(BaseMeetingTestCase):
 
     def test_session_draft_tarfile(self):
         session, filenames = self.build_session_setup()
-        url = urlreverse('ietf.meeting.views.session_draft_tarfile', kwargs={'num':session.meeting.number,'acronym':session.group.acronym})
-        response = self.client.get(url)
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.get('Content-Type'), 'application/octet-stream')
-        for filename in filenames:
-            os.unlink(filename)
+        try:
+            url = urlreverse('ietf.meeting.views.session_draft_tarfile', kwargs={'num':session.meeting.number,'acronym':session.group.acronym})
+            response = self.client.get(url)
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.get('Content-Type'), 'application/octet-stream')
+        finally:
+            for filename in filenames:
+                os.unlink(filename)
 
     @skipIf(skip_pdf_tests, skip_message)
     @skip_coverage
     def test_session_draft_pdf(self):
         session, filenames = self.build_session_setup()
-        url = urlreverse('ietf.meeting.views.session_draft_pdf', kwargs={'num':session.meeting.number,'acronym':session.group.acronym})
-        response = self.client.get(url)
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.get('Content-Type'), 'application/pdf')
-        for filename in filenames:
-            os.unlink(filename)
+        try:
+            url = urlreverse('ietf.meeting.views.session_draft_pdf', kwargs={'num':session.meeting.number,'acronym':session.group.acronym})
+            response = self.client.get(url)
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.get('Content-Type'), 'application/pdf')
+        finally:
+            for filename in filenames:
+                os.unlink(filename)
 
     def test_current_materials(self):
         url = urlreverse('ietf.meeting.views.current_materials')
