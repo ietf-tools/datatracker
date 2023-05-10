@@ -7,6 +7,9 @@ sudo service rsyslog start &>/dev/null
 # Turn off git info in zsh prompt (causes slowdowns)
 git config oh-my-zsh.hide-info 1
 
+# Add /workspace as a safe git directory
+git config --global --add safe.directory /workspace
+
 # Fix ownership of volumes
 echo "Fixing volumes ownership..."
 sudo chown -R dev:dev "$WORKSPACEDIR/.parcel-cache"
