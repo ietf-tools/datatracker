@@ -13,11 +13,11 @@ import warnings
 from typing import Any, Dict, List, Tuple # pyflakes:ignore
 
 warnings.simplefilter("always", DeprecationWarning)
-warnings.filterwarnings("ignore", message="'urllib3\[secure\]' extra is deprecated")
-warnings.filterwarnings("ignore", message="The logout\(\) view is superseded by")
+warnings.filterwarnings("ignore", message="'urllib3\\[secure\\]' extra is deprecated")
+warnings.filterwarnings("ignore", message="The logout\\(\\) view is superseded by")
 warnings.filterwarnings("ignore", message="Report.file_reporters will no longer be available in Coverage.py 4.2", module="coverage.report")
 warnings.filterwarnings("ignore", message="Using or importing the ABCs from 'collections' instead of from 'collections.abc' is deprecated", module="bleach")
-warnings.filterwarnings("ignore", message="HTTPResponse.getheader\(\) is deprecated", module='selenium.webdriver')
+warnings.filterwarnings("ignore", message="HTTPResponse.getheader\\(\\) is deprecated", module='selenium.webdriver')
 try:
     import syslog
     syslog.openlog(str("datatracker"), syslog.LOG_PID, syslog.LOG_USER)
