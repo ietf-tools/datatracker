@@ -430,7 +430,6 @@ INSTALLED_APPS = [
     'corsheaders',
     'django_markup',
     'django_password_strength',
-    'form_utils',
     'oidc_provider',
     'simple_history',
     'tastypie',
