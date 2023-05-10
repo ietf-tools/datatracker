@@ -2730,7 +2730,7 @@ def upload_session_agenda(request, session_id, num):
                   })
 
 
-def upload_session_slides(request, session_id, num, name):
+def upload_session_slides(request, session_id, num, name=None):
     # num is redundant, but we're dragging it along an artifact of where we are in the current URL structure
     session = get_object_or_404(Session,pk=session_id)
     if not session.can_manage_materials(request.user):

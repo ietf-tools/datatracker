@@ -531,7 +531,7 @@ def rfc_status_changes(request):
                           )
 
 @role_required("Area Director","Secretariat")
-def start_rfc_status_change(request,name):
+def start_rfc_status_change(request, name=None):
     """Start the RFC status change review process, setting the initial shepherding AD, and possibly putting the review on a telechat."""
 
     if name:
