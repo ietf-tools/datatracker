@@ -269,7 +269,7 @@ jobs:
   # -----------------------------------------------------------------
   release:
     name: Make Release
-    if: ${{ success() }}
+    if: ${{ !failure() && !cancelled() }}
     needs: [tests-python, tests-playwright, tests-playwright-legacy, tests-skip, prepare]
     runs-on: ubuntu-latest
     env:
