@@ -259,7 +259,7 @@ jobs:
   release:
     name: Make Release
     if: ${{ !failure() && !cancelled() }}
-    needs: [tests-python, tests-playwright, tests-playwright-legacy, tests-skip, prepare]
+    needs: [tests-python, tests-playwright, tests-playwright-legacy, prepare]
     runs-on: ubuntu-latest
     env:
       SHOULD_DEPLOY: ${{needs.prepare.outputs.should_deploy}}
