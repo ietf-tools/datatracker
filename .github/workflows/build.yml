@@ -503,7 +503,7 @@ jobs:
         echo "Creating main.dev.${{ github.run_number }} directory..."
         mkdir main.dev.${{ github.run_number }}
         echo "Extracting release to main.dev.${{ github.run_number }} directory..."
-        tar xzf release.tar.gz -C a/www/ietf-datatracker/main.dev.${{ github.run_number }}
+        tar xzf release.tar.gz -C /a/www/ietf-datatracker/main.dev.${{ github.run_number }}
         echo "Deleting release tarball..."
         rm -rf release.tar.gz
         
