@@ -17,6 +17,11 @@ on:
         default: true
         required: true
         type: boolean
+      legacySandbox:
+        description: 'Deploy to Legacy Sandbox'
+        default: false
+        required: false
+        type: boolean
       skiptests:
         description: 'Skip Tests'
         default: false
@@ -474,3 +479,25 @@ jobs:
         DEBIAN_FRONTEND: noninteractive
       run: |
         docker image prune -a -f
+        
+  legacySandbox:
+    name: Deploy to Legacy Sandbox
+    if: ${{ !failure() && !cancelled() && github.event.inputs.legacySandbox == 'true' }}
+    needs: [prepare, release]
+    runs-on: [self-hosted, legacy-sandbox-server]
+    env:
+      PKG_VERSION: ${{needs.prepare.outputs.pkg_version}}
+      
+    steps:
+    - name: Download a Release Artifact
+      uses: actions/download-artifact@v3.0.2
+      with:
+        name: release-${{ env.PKG_VERSION }}
+        path: /a/www/ietf-datatracker/main.dev.${{ github.run_number }}
+
+#     - name: Deploy
+#       env:
+#         DEBIAN_FRONTEND: noninteractive
+#       run: |
+#         cp ../web/ietf/settings_local.py ietf/
+        
