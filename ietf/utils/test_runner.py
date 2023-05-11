@@ -95,7 +95,7 @@ old_create = None
 template_coverage_collection = None
 code_coverage_collection = None
 url_coverage_collection = None
-
+validation_settings = {"validate_html": None, "validate_html_harder": None, "show_logging": False}
 
 def start_vnu_server(port=8888):
     "Start a vnu validation server on the indicated port"
@@ -282,7 +282,7 @@ class ValidatingTemplates(DjangoTemplates):
     def __init__(self, params):
         super().__init__(params)
 
-        if not settings.validate_html:
+        if not validation_settings["validate_html"]:
             return
         self.validation_cache = set()
         self.cwd = str(pathlib.Path.cwd())
@@ -298,7 +298,7 @@ class ValidatingTemplate(Template):
     def render(self, context=None, request=None):
         content = super().render(context, request)
 
-        if not settings.validate_html:
+        if not validation_settings["validate_html"]:
             return content
 
         if not self.origin.name.endswith("html"):
@@ -310,7 +310,7 @@ class ValidatingTemplate(Template):
             return content
 
         fingerprint = hash(content) + sys.maxsize + 1  # make hash positive
-        if not settings.validate_html_harder and fingerprint in self.backend.validation_cache:
+        if not validation_settings["validate_html_harder"] and fingerprint in self.backend.validation_cache:
             # already validated this HTML fragment, skip it
             # as an optimization, make page a bit smaller by not returning HTML for the menus
             # FIXME: figure out why this still includes base/menu.html
@@ -326,7 +326,7 @@ class ValidatingTemplate(Template):
         # don't validate each template by itself, causes too much overhead
         # instead, save a batch of them and then validate them all in one go
         # this delays error detection a bit, but is MUCH faster
-        settings.validate_html.batches[kind].append(
+        validation_settings["validate_html"].batches[kind].append(
             (self.origin.name, content, fingerprint)
         )
         return content
@@ -726,9 +726,10 @@ class IetfTestRunner(DiscoverRunner):
         self.html_report = html_report
         self.permit_mixed_migrations = permit_mixed_migrations
         self.show_logging = show_logging
-        settings.validate_html = self if validate_html else None
-        settings.validate_html_harder = self if validate_html and validate_html_harder else None
-        settings.show_logging = show_logging
+        global validation_settings
+        validation_settings["validate_html"] = self if validate_html else None
+        validation_settings["validate_html_harder"] = self if validate_html and validate_html_harder else None
+        validation_settings["show_logging"] = show_logging
         #
         self.root_dir = os.path.dirname(settings.BASE_DIR)
         self.coverage_file = os.path.join(self.root_dir, settings.TEST_COVERAGE_MAIN_FILE)
@@ -843,7 +844,7 @@ class IetfTestRunner(DiscoverRunner):
             s[1] = tuple(s[1])      # random.setstate() won't accept a list in lieu of a tuple
         factory.random.set_random_state(s)
 
-        if not settings.validate_html:
+        if not validation_settings["validate_html"]:
             print("     Not validating any generated HTML; "
                   "please do so at least once before committing changes")
         else:
@@ -912,7 +913,7 @@ class IetfTestRunner(DiscoverRunner):
                 self.config_file[kind].flush()
                 pathlib.Path(self.config_file[kind].name).chmod(0o644)
 
-            if not settings.validate_html_harder:
+            if not validation_settings["validate_html_harder"]:
                 print("")
                 self.vnu = None
             else:
@@ -941,7 +942,7 @@ class IetfTestRunner(DiscoverRunner):
                     with open(self.coverage_file, "w") as file:
                         json.dump(self.coverage_master, file, indent=2, sort_keys=True)
 
-        if settings.validate_html:
+        if validation_settings["validate_html"]:
             for kind in self.batches:
                 if len(self.batches[kind]):
                     print(f"     WARNING: not all templates of kind '{kind}' were validated")
@@ -1007,7 +1008,7 @@ class IetfTestRunner(DiscoverRunner):
                             + "\n"
                         )
 
-                if settings.validate_html_harder and kind != "frag":
+                if validation_settings["validate_html_harder"] and kind != "frag":
                     files = [
                         os.path.join(d, f)
                         for d, dirs, files in os.walk(tmppath)
@@ -1084,7 +1085,7 @@ class IetfTestRunner(DiscoverRunner):
 
         self.test_apps, self.test_paths = self.get_test_paths(test_labels)
 
-        if settings.validate_html:
+        if validation_settings["validate_html"]:
             extra_tests += [
                 TemplateValidationTests(
                     test_runner=self,

@@ -24,7 +24,7 @@ from django.test import override_settings
 from django.test.client import RequestFactory
 from django.urls import reverse as urlreverse
 from django.utils import timezone
-from django.utils.encoding import force_str, force_text
+from django.utils.encoding import force_str
 import debug                            # pyflakes:ignore
 
 from ietf.submit.utils import (expirable_submissions, expire_submission, find_submission_filenames,
@@ -750,10 +750,10 @@ class SubmitTests(BaseSubmitTestCase):
         self.assertTrue("New Version Notification" in outbox[-2]["Subject"])
         self.assertTrue(name in get_payload_text(outbox[-2]))
         interesting_address = {'ietf':'mars', 'irtf':'irtf-chair', 'iab':'iab-chair', 'ise':'rfc-ise'}[draft.stream_id]
-        self.assertTrue(interesting_address in force_text(outbox[-2].as_string()))
+        self.assertTrue(interesting_address in force_str(outbox[-2].as_string()))
         if draft.stream_id == 'ietf':
-            self.assertTrue(draft.ad.role_email("ad").address in force_text(outbox[-2].as_string()))
-            self.assertTrue(ballot_position.balloter.role_email("ad").address in force_text(outbox[-2].as_string()))
+            self.assertTrue(draft.ad.role_email("ad").address in force_str(outbox[-2].as_string()))
+            self.assertTrue(ballot_position.balloter.role_email("ad").address in force_str(outbox[-2].as_string()))
         self.assertTrue("New Version Notification" in outbox[-1]["Subject"])
         self.assertTrue(name in get_payload_text(outbox[-1]))
         r = self.client.get(urlreverse('ietf.doc.views_search.recent_drafts'))
