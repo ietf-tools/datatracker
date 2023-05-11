@@ -512,6 +512,7 @@ jobs:
       run: |
         echo "Copying settings from previous deploy..."
         cp ../web/ietf/settings_local.py ietf/
+        rsync -a ../web/test/ test/
         echo "Installing Python dependencies..."
         python3.9 -mvenv env
         source env/bin/activate
