@@ -253,13 +253,24 @@ jobs:
         path: playwright/test-results/
         if-no-files-found: ignore
         
+  tests-skip:
+    name: Quick Run
+    if: ${{ github.event.inputs.skiptests == 'true' }}
+    needs: [prepare]
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Prepare for tests
+      run: |
+        echo "Quick run mode, skipping tests..."
+        
   # -----------------------------------------------------------------
   # RELEASE
   # -----------------------------------------------------------------
   release:
     name: Make Release
     if: ${{ success() }}
-    needs: [tests-python, tests-playwright, tests-playwright-legacy, prepare]
+    needs: [tests-python, tests-playwright, tests-playwright-legacy, tests-skip, prepare]
     runs-on: ubuntu-latest
     env:
       SHOULD_DEPLOY: ${{needs.prepare.outputs.should_deploy}}
