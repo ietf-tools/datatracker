@@ -355,8 +355,7 @@ class MeetingTests(BaseMeetingTestCase):
         # iCal, no session filtering
         ical_url = urlreverse("ietf.meeting.views.agenda_ical", kwargs=dict(num=meeting.number))
         r = self.client.get(ical_url)
-        with open('./ical-output.ics', 'w') as f:
-            f.write(r.content.decode())
+
         assert_ical_response_is_valid(self, r)
         self.assertContains(r, "BEGIN:VTIMEZONE")
         self.assertContains(r, "END:VTIMEZONE")
