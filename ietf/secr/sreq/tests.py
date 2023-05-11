@@ -505,7 +505,7 @@ class SubmitRequestCase(TestCase):
             list(session.constraints().get(name='timerange').timeranges.all().values('name')),
             list(TimerangeName.objects.filter(name__in=['thursday-afternoon-early', 'thursday-afternoon-late']).values('name'))
         )
-        self.assertEqual(list(session.joint_with_groups.all()), [group3, group4])
+        self.assertEqual(set(list(session.joint_with_groups.all())), set([group3, group4]))
 
     def test_submit_request_invalid(self):
         MeetingFactory(type_id='ietf', date=date_today())
