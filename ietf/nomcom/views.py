@@ -1333,3 +1333,12 @@ def private_volunteers_csv(request, year, public=False):
         writer.writerow([v.person.last_name(), v.person.first_name(), v.person.ascii_name(), v.affiliation, v.person.email(), v.qualifications, v.eligible])
     return response
 
+@role_required("Nomcom Chair", "Nomcom Advisor", "Secretariat")
+def qualified_volunteer_list_for_announcement(request, year, public=False):
+    _, volunteers = extract_volunteers(year)
+    qualified_volunteers = [v for v in volunteers if v.eligible]
+    return render(request, 'nomcom/qualified_volunteer_list_for_announcement.txt',
+                dict(volunteers=qualified_volunteers),
+                content_type="text/plain; charset=%s"%settings.DEFAULT_CHARSET)
+
+

@@ -4,6 +4,9 @@ WORKSPACEDIR="/workspace"
 
 sudo service rsyslog start &>/dev/null
 
+# Add /workspace as a safe git directory
+git config --global --add safe.directory /workspace
+
 # Turn off git info in zsh prompt (causes slowdowns)
 git config oh-my-zsh.hide-info 1
 

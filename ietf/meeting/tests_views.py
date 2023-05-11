@@ -355,8 +355,7 @@ class MeetingTests(BaseMeetingTestCase):
         # iCal, no session filtering
         ical_url = urlreverse("ietf.meeting.views.agenda_ical", kwargs=dict(num=meeting.number))
         r = self.client.get(ical_url)
-        with open('./ical-output.ics', 'w') as f:
-            f.write(r.content.decode())
+
         assert_ical_response_is_valid(self, r)
         self.assertContains(r, "BEGIN:VTIMEZONE")
         self.assertContains(r, "END:VTIMEZONE")
@@ -894,23 +893,27 @@ class MeetingTests(BaseMeetingTestCase):
 
     def test_session_draft_tarfile(self):
         session, filenames = self.build_session_setup()
-        url = urlreverse('ietf.meeting.views.session_draft_tarfile', kwargs={'num':session.meeting.number,'acronym':session.group.acronym})
-        response = self.client.get(url)
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.get('Content-Type'), 'application/octet-stream')
-        for filename in filenames:
-            os.unlink(filename)
+        try:
+            url = urlreverse('ietf.meeting.views.session_draft_tarfile', kwargs={'num':session.meeting.number,'acronym':session.group.acronym})
+            response = self.client.get(url)
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.get('Content-Type'), 'application/octet-stream')
+        finally:
+            for filename in filenames:
+                os.unlink(filename)
 
     @skipIf(skip_pdf_tests, skip_message)
     @skip_coverage
     def test_session_draft_pdf(self):
         session, filenames = self.build_session_setup()
-        url = urlreverse('ietf.meeting.views.session_draft_pdf', kwargs={'num':session.meeting.number,'acronym':session.group.acronym})
-        response = self.client.get(url)
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.get('Content-Type'), 'application/pdf')
-        for filename in filenames:
-            os.unlink(filename)
+        try:
+            url = urlreverse('ietf.meeting.views.session_draft_pdf', kwargs={'num':session.meeting.number,'acronym':session.group.acronym})
+            response = self.client.get(url)
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.get('Content-Type'), 'application/pdf')
+        finally:
+            for filename in filenames:
+                os.unlink(filename)
 
     def test_current_materials(self):
         url = urlreverse('ietf.meeting.views.current_materials')
@@ -6411,7 +6414,9 @@ class MaterialsTests(TestCase):
         path = os.path.join(submission.session.meeting.get_materials_path(),'slides')
         filename = os.path.join(path,session.sessionpresentation_set.first().document.name+'-01.txt')
         self.assertTrue(os.path.exists(filename))
-        contents = io.open(filename,'r').read()
+        fd = io.open(filename, 'r')
+        contents = fd.read()
+        fd.close()
         self.assertIn('third version', contents)
 
 
@@ -7946,12 +7951,13 @@ class ProceedingsTests(BaseMeetingTestCase):
         """Upload proceedings materials document"""
         meeting = self._procmat_test_meeting()
         for mat_type in ProceedingsMaterialTypeName.objects.filter(used=True):
-            mat = self.upload_proceedings_material_test(
-                meeting,
-                mat_type,
-                {'file': self._proceedings_file(), 'external_url': ''},
-            )
-            self.assertEqual(mat.get_href(), f'{mat.document.name}:00')
+            with self._proceedings_file() as fd:
+                mat = self.upload_proceedings_material_test(
+                    meeting,
+                    mat_type,
+                    {'file': fd, 'external_url': ''},
+                )
+                self.assertEqual(mat.get_href(), f'{mat.document.name}:00')
 
     def test_add_proceedings_material_doc_invalid_ext(self):
         """Upload proceedings materials document with disallowed extension"""
@@ -8038,12 +8044,13 @@ class ProceedingsTests(BaseMeetingTestCase):
             kwargs=dict(num=meeting.number, material_type=pm_doc.type.slug),
         )
         self.client.login(username='secretary', password='secretary+password')
-        r = self.client.post(pm_doc_url, {'file': self._proceedings_file(), 'external_url': ''})
-        self.assertRedirects(r, success_url)
-        self.assertEqual(meeting.proceedings_materials.count(), 2)
-        pm_doc = meeting.proceedings_materials.get(pk=pm_doc.pk)  # refresh from DB
-        self.assertEqual(pm_doc.document.rev, '01')
-        self.assertEqual(pm_doc.get_href(), f'{pm_doc.document.name}:01')
+        with self._proceedings_file() as fd:
+            r = self.client.post(pm_doc_url, {'file': fd, 'external_url': ''})
+            self.assertRedirects(r, success_url)
+            self.assertEqual(meeting.proceedings_materials.count(), 2)
+            pm_doc = meeting.proceedings_materials.get(pk=pm_doc.pk)  # refresh from DB
+            self.assertEqual(pm_doc.document.rev, '01')
+            self.assertEqual(pm_doc.get_href(), f'{pm_doc.document.name}:01')
 
         # Replace the uploaded document with a URL
         r = self.client.post(pm_doc_url, {'use_url': 'on', 'external_url': 'https://example.com/second'})
@@ -8066,12 +8073,13 @@ class ProceedingsTests(BaseMeetingTestCase):
         self.assertEqual(pm_url.get_href(), 'https://example.com/third')
 
         # Now replace the URL doc with an uploaded file
-        r = self.client.post(pm_url_url, {'file': self._proceedings_file(), 'external_url': ''})
-        self.assertRedirects(r, success_url)
-        self.assertEqual(meeting.proceedings_materials.count(), 2)
-        pm_url = meeting.proceedings_materials.get(pk=pm_url.pk)  # refresh from DB
-        self.assertEqual(pm_url.document.rev, '02')
-        self.assertEqual(pm_url.get_href(), f'{pm_url.document.name}:02')
+        with self._proceedings_file() as fd:
+            r = self.client.post(pm_url_url, {'file': fd, 'external_url': ''})
+            self.assertRedirects(r, success_url)
+            self.assertEqual(meeting.proceedings_materials.count(), 2)
+            pm_url = meeting.proceedings_materials.get(pk=pm_url.pk)  # refresh from DB
+            self.assertEqual(pm_url.document.rev, '02')
+            self.assertEqual(pm_url.get_href(), f'{pm_url.document.name}:02')
 
     def test_remove_proceedings_material(self):
         """Proceedings material can be removed"""
