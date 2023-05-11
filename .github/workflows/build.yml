@@ -493,17 +493,15 @@ jobs:
       uses: actions/download-artifact@v3.0.2
       with:
         name: release-${{ env.PKG_VERSION }}
-        path: /a/www/ietf-datatracker
+        path: /a/www/ietf-datatracker/main.dev.${{ github.run_number }}
 
     - name: Extract Release
       env:
         DEBIAN_FRONTEND: noninteractive
-      working-directory: /a/www/ietf-datatracker
+      working-directory: /a/www/ietf-datatracker/main.dev.${{ github.run_number }}
       run: |
-        echo "Creating main.dev.${{ github.run_number }} directory..."
-        mkdir main.dev.${{ github.run_number }}
-        echo "Extracting release to main.dev.${{ github.run_number }} directory..."
-        tar xzf release.tar.gz -C /a/www/ietf-datatracker/main.dev.${{ github.run_number }}
+        echo "Extracting release tarball..."
+        tar xzf release.tar.gz
         echo "Deleting release tarball..."
         rm -rf release.tar.gz
         
