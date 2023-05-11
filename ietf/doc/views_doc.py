@@ -244,7 +244,7 @@ def document_main(request, name, rev=None, document_html=False):
         is_author = request.user.is_authenticated and doc.documentauthor_set.filter(person__user=request.user).exists()
         can_view_possibly_replaces = can_edit_replaces or is_author
 
-        rfc_number = name[3:] if name.startswith("") else None
+        rfc_number = name[3:] if name.startswith("rfc") else None
         draft_name = None
         for a in aliases:
             if a.startswith("draft"):
@@ -493,7 +493,7 @@ def document_main(request, name, rev=None, document_html=False):
             diff_revisions=get_diff_revisions(request, name, doc if isinstance(doc,Document) else doc.doc)
             simple_diff_revisions = [t[1] for t in diff_revisions]
             simple_diff_revisions.reverse()
-            if rev != doc.rev: 
+            if not doc.is_rfc() and rev != doc.rev: 
                 # No DocHistory was found matching rev - snapshot will be false
                 # and doc will be a Document object, not a DocHistory
                 snapshot = True
@@ -871,7 +871,7 @@ def document_html(request, name, rev=None):
     if not os.path.exists(doc.get_file_name()):
         raise Http404("File not found: %s" % doc.get_file_name())
 
-    return document_main(request, name=doc.name, rev=doc.rev if not doc.is_rfc() else None, document_html=True)
+    return document_main(request, name=doc.canonical_name(), rev=doc.rev if not doc.is_rfc() else None, document_html=True)
 
 def document_pdfized(request, name, rev=None, ext=None):
 
