@@ -253,17 +253,6 @@ jobs:
         path: playwright/test-results/
         if-no-files-found: ignore
         
-  tests-skip:
-    name: Quick Run
-    if: ${{ github.event.inputs.skiptests == 'true' }}
-    needs: [prepare]
-    runs-on: ubuntu-latest
-    
-    steps:
-    - name: Prepare for tests
-      run: |
-        echo "Quick run mode, skipping tests..."
-        
   # -----------------------------------------------------------------
   # RELEASE
   # -----------------------------------------------------------------
@@ -453,7 +442,7 @@ jobs:
   # -----------------------------------------------------------------
   sandbox:
     name: Deploy to Sandbox
-    if: ${{ success() && github.event.inputs.sandbox == 'true' }}
+    if: ${{ !failure() && !cancelled() && github.event.inputs.sandbox == 'true' }}
     needs: [prepare, release]
     runs-on: [self-hosted, dev-server]
     env:
