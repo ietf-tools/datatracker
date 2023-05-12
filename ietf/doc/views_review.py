@@ -11,7 +11,7 @@ import requests
 import email.utils
 
 from django.utils import timezone
-from django.utils.http import is_safe_url
+from django.utils.http import url_has_allowed_host_and_scheme
 
 from simple_history.utils import update_change_reason
 
@@ -1089,7 +1089,7 @@ def review_wishes_remove(request, name):
 
 def _generate_ajax_or_redirect_response(request, doc):
     redirect_url = request.GET.get('next')
-    url_is_safe = is_safe_url(url=redirect_url, allowed_hosts=request.get_host(),
+    url_is_safe = url_has_allowed_host_and_scheme(url=redirect_url, allowed_hosts=request.get_host(),
                               require_https=request.is_secure())
     if is_ajax(request):
         return HttpResponse(json.dumps({'success': True}), content_type='application/json')
