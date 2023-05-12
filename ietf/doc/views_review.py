@@ -1088,11 +1088,16 @@ def review_wishes_remove(request, name):
 
 
 def _generate_ajax_or_redirect_response(request, doc):
-    redirect_url = request.GET.get('next')
-    url_is_safe = url_has_allowed_host_and_scheme(url=redirect_url, allowed_hosts=request.get_host(),
-                              require_https=request.is_secure())
+    redirect_url = request.GET.get("next")
+    url_is_safe = url_has_allowed_host_and_scheme(
+        url=redirect_url,
+        allowed_hosts=request.get_host(),
+        require_https=request.is_secure(),
+    )
     if is_ajax(request):
-        return HttpResponse(json.dumps({'success': True}), content_type='application/json')
+        return HttpResponse(
+            json.dumps({"success": True}), content_type="application/json"
+        )
     elif url_is_safe:
         return HttpResponseRedirect(redirect_url)
     else:
