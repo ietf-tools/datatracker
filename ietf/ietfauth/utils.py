@@ -8,6 +8,7 @@ import oidc_provider.lib.claims
 
 
 from functools import wraps, WRAPPER_ASSIGNMENTS
+from urllib.parse import quote as urlquote
 
 from django.conf import settings
 from django.contrib.auth import REDIRECT_FIELD_NAME
@@ -15,7 +16,6 @@ from django.core.exceptions import PermissionDenied
 from django.db.models import Q
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404
-from django.utils.http import urlquote
 
 import debug                            # pyflakes:ignore
 
