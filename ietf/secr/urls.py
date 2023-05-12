@@ -1,4 +1,4 @@
-from django.conf.urls import re_path, include
+from django.urls import re_path, include
 from django.views.generic import TemplateView
 
 urlpatterns = [
