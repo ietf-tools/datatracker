@@ -7,6 +7,7 @@ from django.conf import settings
 from django.core.cache import cache
 from django.urls import reverse as urlreverse
 from django.db.models.aggregates import Count
+from django.db.models.functions import TruncDate
 from django.http import JsonResponse, HttpResponseBadRequest
 from django.shortcuts import render
 from django.views.decorators.cache import cache_page
@@ -40,15 +41,12 @@ def model_to_timeline_data(model, field='time', **kwargs):
     assert field in [ f.name for f in model._meta.get_fields() ]
 
     objects = ( model.objects.filter(**kwargs)
+                                .annotate(date=TruncDate(field))
                                 .order_by('date')
-                                .extra(select={'date': 'date(%s.%s)'% (model._meta.db_table, field) })
                                 .values('date')
                                 .annotate(count=Count('id')))
     if objects.exists():
         obj_list = list(objects)
-        # This is needed for sqlite, when we're running tests:
-        if type(obj_list[0]['date']) != datetime.date:
-            obj_list = [ {'date': dt(e['date']), 'count': e['count']} for e in obj_list ]
         today = date_today(datetime.timezone.utc)
         if not obj_list[-1]['date'] == today:
             obj_list += [ {'date': today, 'count': 0} ]
