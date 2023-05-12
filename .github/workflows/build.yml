@@ -389,7 +389,7 @@ jobs:
   notify:
     name: Notify
     if: ${{ always() }}
-    needs: [prepare, release]
+    needs: [prepare, tests-python, tests-playwright, tests-playwright-legacy, release]
     runs-on: ubuntu-latest
     env:
       PKG_VERSION: ${{needs.prepare.outputs.pkg_version}}
