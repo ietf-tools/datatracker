@@ -53,6 +53,7 @@ from ietf.utils.textupload import get_cleaned_text_file_content
 from ietf.utils.mail import send_mail_message
 from ietf.mailtrigger.utils import gather_address_lists
 from ietf.utils.fields import MultiEmailField
+from ietf.utils.http import is_ajax
 from ietf.utils.response import permission_denied
 from ietf.utils.timezone import date_today, DEADLINE_TZINFO
 
@@ -1090,7 +1091,7 @@ def _generate_ajax_or_redirect_response(request, doc):
     redirect_url = request.GET.get('next')
     url_is_safe = is_safe_url(url=redirect_url, allowed_hosts=request.get_host(),
                               require_https=request.is_secure())
-    if request.is_ajax():
+    if is_ajax(request):
         return HttpResponse(json.dumps({'success': True}), content_type='application/json')
     elif url_is_safe:
         return HttpResponseRedirect(redirect_url)
