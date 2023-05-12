@@ -12,8 +12,6 @@ import datetime
 import warnings
 from typing import Any, Dict, List, Tuple # pyflakes:ignore
 
-import django.db.models
-
 warnings.simplefilter("always", DeprecationWarning)
 warnings.filterwarnings("ignore", message="'urllib3\\[secure\\]' extra is deprecated")
 warnings.filterwarnings("ignore", message="The logout\\(\\) view is superseded by")
