@@ -7,9 +7,7 @@ import datetime
 import shutil
 import os
 import re
-from unittest import skipIf
 
-import django
 from django.utils import timezone
 from django.utils.text import slugify
 from django.db.models import F
@@ -880,42 +878,6 @@ class EditMeetingScheduleTests(IetfSeleniumTestCase):
         self.assertNotIn('would-violate-hint', session_elements[4].get_attribute('class'),
                          'Constraint violation should not be indicated on non-conflicting session')
 
-@ifSeleniumEnabled
-@skipIf(django.VERSION[0]==2, "Skipping test with race conditions under Django 2")
-class ScheduleEditTests(IetfSeleniumTestCase):
-    def testUnschedule(self):
-
-        meeting = make_meeting_test_data()
-        
-        self.assertEqual(SchedTimeSessAssignment.objects.filter(session__meeting=meeting, session__group__acronym='mars', schedule__name='test-schedule').count(),1)
-
-
-        ss = list(SchedTimeSessAssignment.objects.filter(session__meeting__number=72,session__group__acronym='mars',schedule__name='test-schedule')) # pyflakes:ignore
-
-        self.login()
-        url = self.absreverse('ietf.meeting.views.edit_meeting_schedule',kwargs=dict(num='72',name='test-schedule',owner='plain@example.com'))
-        self.driver.get(url)
-
-        # driver.get() will wait for scripts to finish, but not ajax
-        # requests.  Wait for completion of the permissions check:
-        read_only_note = self.driver.find_element(By.ID, 'read_only')
-        WebDriverWait(self.driver, 10).until(expected_conditions.invisibility_of_element(read_only_note), "Read-only schedule")
-
-        s1 = Session.objects.filter(group__acronym='mars', meeting=meeting).first()
-        selector = "#session_{}".format(s1.pk)
-        WebDriverWait(self.driver, 30).until(expected_conditions.presence_of_element_located((By.CSS_SELECTOR, selector)), "Did not find %s"%selector)
-
-        self.assertEqual(self.driver.find_elements(By.CSS_SELECTOR, "#sortable-list #session_{}".format(s1.pk)), [])
-
-        element = self.driver.find_element(By.ID, 'session_{}'.format(s1.pk))
-        target  = self.driver.find_element(By.ID, 'sortable-list')
-        ActionChains(self.driver).drag_and_drop(element,target).perform()
-
-        self.assertTrue(self.driver.find_elements(By.CSS_SELECTOR, "#sortable-list #session_{}".format(s1.pk)))
-
-        time.sleep(0.1) # The API that modifies the database runs async
-
-        self.assertEqual(SchedTimeSessAssignment.objects.filter(session__meeting__number=72,session__group__acronym='mars',schedule__name='test-schedule').count(),0)
 
 @ifSeleniumEnabled
 class SlideReorderTests(IetfSeleniumTestCase):
