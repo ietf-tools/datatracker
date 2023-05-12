@@ -7,9 +7,7 @@ import datetime
 import shutil
 import os
 import re
-from unittest import skipIf
 
-import django
 from django.utils import timezone
 from django.utils.text import slugify
 from django.db.models import F
