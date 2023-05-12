@@ -6,7 +6,7 @@ import debug                            # pyflakes:ignore
 
 from inspect import isclass
 
-from django.conf.urls import url as django_url
+from django.conf.urls import re_path
 from django.views.generic import View
 from django.utils.encoding import force_str
 
@@ -42,5 +42,5 @@ def url(regex, view, kwargs=None, name=None):
         #debug.show('branch')
         #debug.show('name')
         pass
-    return django_url(regex, view, kwargs=kwargs, name=name)
+    return re_path(regex, view, kwargs=kwargs, name=name)
     
