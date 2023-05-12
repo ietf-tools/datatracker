@@ -72,7 +72,7 @@
                                 {% with ref.source.intended_std_level as lvl %}
                                     {% if lvl %}{{ lvl }}{% endif %}
                                 {% endwith %}
-                            {% end %}
+                            {% endif %}
                         </td>
                         <td>{{ ref.relationship.name }}</td>
                         <td>{{ ref.is_downref|default:'' }}</td>
