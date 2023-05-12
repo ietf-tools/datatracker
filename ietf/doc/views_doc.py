@@ -244,7 +244,7 @@ def document_main(request, name, rev=None, document_html=False):
         is_author = request.user.is_authenticated and doc.documentauthor_set.filter(person__user=request.user).exists()
         can_view_possibly_replaces = can_edit_replaces or is_author
 
-        rfc_number = name[3:] if name.startswith("") else None
+        rfc_number = name[3:] if name.startswith("rfc") else None
         draft_name = None
         for a in aliases:
             if a.startswith("draft"):
@@ -487,13 +487,25 @@ def document_main(request, name, rev=None, document_html=False):
         html = None
         js = None
         css = None
+        diff_revisions = None
+        simple_diff_revisions = None
         if document_html:
-            html = doc.html_body()
-            if request.COOKIES.get("pagedeps") == "inline":
-                js = Path(finders.find("ietf/js/document_html.js")).read_text()
-                css = Path(finders.find("ietf/css/document_html_inline.css")).read_text()
-                if html:
-                    css += Path(finders.find("ietf/css/document_html_txt.css")).read_text()
+            diff_revisions=get_diff_revisions(request, name, doc if isinstance(doc,Document) else doc.doc)
+            simple_diff_revisions = [t[1] for t in diff_revisions]
+            simple_diff_revisions.reverse()
+            if not doc.is_rfc() and rev != doc.rev: 
+                # No DocHistory was found matching rev - snapshot will be false
+                # and doc will be a Document object, not a DocHistory
+                snapshot = True
+                doc = doc.fake_history_obj(rev)
+            else:
+                html = doc.html_body()
+                if request.COOKIES.get("pagedeps") == "inline":
+                    js = Path(finders.find("ietf/js/document_html.js")).read_text()
+                    css = Path(finders.find("ietf/css/document_html_inline.css")).read_text()
+                    if html:
+                        css += Path(finders.find("ietf/css/document_html_txt.css")).read_text()
+
         return render(request, "doc/document_draft.html" if document_html is False else "doc/document_html.html",
                                   dict(doc=doc,
                                        document_html=document_html,
@@ -505,7 +517,7 @@ def document_main(request, name, rev=None, document_html=False):
                                        name=name,
                                        content=content,
                                        split_content=split_content,
-                                       revisions=revisions,
+                                       revisions=simple_diff_revisions if document_html else revisions,
                                        snapshot=snapshot,
                                        stream_desc=stream_desc,
                                        latest_revision=latest_revision,
@@ -544,7 +556,7 @@ def document_main(request, name, rev=None, document_html=False):
                                        status_changes=status_changes,
                                        proposed_status_changes=proposed_status_changes,
                                        rfc_aliases=rfc_aliases,
-                                       has_errata=doc.tags.filter(slug="errata"),
+                                       has_errata=doc.pk and doc.tags.filter(slug="errata"), # doc.pk == None if using a fake_history_obj
                                        published=published,
                                        file_urls=file_urls,
                                        additional_urls=additional_urls,
@@ -569,7 +581,7 @@ def document_main(request, name, rev=None, document_html=False):
                                        review_assignments=review_assignments,
                                        no_review_from_teams=no_review_from_teams,
                                        due_date=due_date,
-                                       diff_revisions=get_diff_revisions(request, name, doc if isinstance(doc,Document) else doc.doc) if document_html else None
+                                       diff_revisions=diff_revisions
                                        ))
 
     if doc.type_id == "charter":
@@ -859,7 +871,7 @@ def document_html(request, name, rev=None):
     if not os.path.exists(doc.get_file_name()):
         raise Http404("File not found: %s" % doc.get_file_name())
 
-    return document_main(request, name=doc.name, rev=doc.rev if not doc.is_rfc() else None, document_html=True)
+    return document_main(request, name=doc.canonical_name(), rev=doc.rev if not doc.is_rfc() else None, document_html=True)
 
 def document_pdfized(request, name, rev=None, ext=None):
 

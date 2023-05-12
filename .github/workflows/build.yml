@@ -17,6 +17,11 @@ on:
         default: true
         required: true
         type: boolean
+      legacySandbox:
+        description: 'Deploy to Legacy Sandbox'
+        default: false
+        required: false
+        type: boolean
       skiptests:
         description: 'Skip Tests'
         default: false
@@ -258,7 +263,7 @@ jobs:
   # -----------------------------------------------------------------
   release:
     name: Make Release
-    if: ${{ success() }}
+    if: ${{ !failure() && !cancelled() }}
     needs: [tests-python, tests-playwright, tests-playwright-legacy, prepare]
     runs-on: ubuntu-latest
     env:
@@ -442,7 +447,7 @@ jobs:
   # -----------------------------------------------------------------
   sandbox:
     name: Deploy to Sandbox
-    if: ${{ success() && github.event.inputs.sandbox == 'true' }}
+    if: ${{ !failure() && !cancelled() && github.event.inputs.sandbox == 'true' }}
     needs: [prepare, release]
     runs-on: [self-hosted, dev-server]
     env:
@@ -474,3 +479,59 @@ jobs:
         DEBIAN_FRONTEND: noninteractive
       run: |
         docker image prune -a -f
+        
+  legacySandbox:
+    name: Deploy to Legacy Sandbox
+    if: ${{ !failure() && !cancelled() && github.event.inputs.legacySandbox == 'true' }}
+    needs: [prepare, release]
+    runs-on: [self-hosted, legacy-sandbox-server]
+    env:
+      PKG_VERSION: ${{needs.prepare.outputs.pkg_version}}
+      
+    steps:
+    - name: Download a Release Artifact
+      uses: actions/download-artifact@v3.0.2
+      with:
+        name: release-${{ env.PKG_VERSION }}
+        path: /a/www/ietf-datatracker/main.dev.${{ github.run_number }}
+
+    - name: Extract Release
+      env:
+        DEBIAN_FRONTEND: noninteractive
+      working-directory: /a/www/ietf-datatracker/main.dev.${{ github.run_number }}
+      run: |
+        echo "Extracting release tarball..."
+        tar xzf release.tar.gz
+        echo "Deleting release tarball..."
+        rm -rf release.tar.gz
+        
+    - name: Setup Environment
+      env:
+        DEBIAN_FRONTEND: noninteractive
+      working-directory: /a/www/ietf-datatracker/main.dev.${{ github.run_number }}
+      run: |
+        echo "Copying settings from previous deploy..."
+        cp ../web/ietf/settings_local.py ietf/
+        rsync -a ../web/test/ test/
+        echo "Installing Python dependencies..."
+        python3.9 -mvenv env
+        source env/bin/activate
+        pip install -r requirements.txt
+        pip freeze > frozen-requirements.txt
+        echo "Collecting static..."
+        ietf/manage.py collectstatic
+        echo "Running checks..."
+        ietf/manage.py check
+        
+    - name: Update Docker Containers
+      env:
+        DEBIAN_FRONTEND: noninteractive
+      working-directory: /a/docker/datatracker
+      run: |
+        echo "Pulling latest docker images..."
+        docker image tag ghcr.io/ietf-tools/datatracker-celery:latest datatracker-celery-fallback
+        docker image tag ghcr.io/ietf-tools/datatracker-mq:latest datatracker-mq-fallback
+        docker-compose pull
+        # echo "Shutting down containers..."
+        # docker-compose down -t 300
+        

@@ -617,7 +617,9 @@ Man                    Expires September 22, 2015               [Page 3]
                 f.write(self.draft_text)
 
     def test_document_draft(self):
-        draft = WgDraftFactory(name='draft-ietf-mars-test',rev='01')
+        draft = WgDraftFactory(name='draft-ietf-mars-test',rev='01', create_revisions=range(0,2))
+
+
         HolderIprDisclosureFactory(docs=[draft])
         
         # Docs for testing relationships. Does not test 'possibly-replaces'. The 'replaced_by' direction
@@ -785,6 +787,7 @@ Man                    Expires September 22, 2015               [Page 3]
         self.assertEqual(len(q('#sidebar option[value="draft-ietf-mars-test-00"][selected="selected"]')), 1)
 
         rfc = WgRfcFactory()
+        rfc.save_with_history([DocEventFactory(doc=rfc)])
         (Path(settings.RFC_PATH) / rfc.get_base_name()).touch()
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_html", kwargs=dict(name=rfc.canonical_name())))
         self.assertEqual(r.status_code, 200)
