@@ -12,6 +12,8 @@ import datetime
 import warnings
 from typing import Any, Dict, List, Tuple # pyflakes:ignore
 
+import django.db.models
+
 warnings.simplefilter("always", DeprecationWarning)
 warnings.filterwarnings("ignore", message="'urllib3\\[secure\\]' extra is deprecated")
 warnings.filterwarnings("ignore", message="The logout\\(\\) view is superseded by")
@@ -101,6 +103,11 @@ SITE_ID = 1
 USE_I18N = False
 
 USE_TZ = True
+
+# Default primary key field type to use for models that don’t have a field with primary_key=True.
+# In the future (relative to 4.2), the default will become 'django.db.models.BigAutoField.'
+DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
+
 
 if SERVER_MODE == 'production':
     MEDIA_ROOT = '/a/www/www6s/lib/dt/media/'
