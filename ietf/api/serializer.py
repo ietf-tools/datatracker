@@ -11,8 +11,9 @@ from django.core.serializers.json import Serializer
 from django.http import HttpResponse
 from django.utils.encoding import smart_str
 from django.db.models import Field
-from django.db.models.query import QuerySet
 from django.db.models.signals import post_save, post_delete, m2m_changed
+
+from django_stubs_ext import QuerySetAny
 
 import debug                            # pyflakes:ignore
 
@@ -145,7 +146,7 @@ class AdminJsonSerializer(Serializer):
                                 field_value = None
                         else:
                             field_value = field
-                        if isinstance(field_value, QuerySet) or isinstance(field_value, list):
+                        if isinstance(field_value, QuerySetAny) or isinstance(field_value, list):
                             self._current[name] = dict([ (rel.pk, self.expand_related(rel, name)) for rel in field_value ])
                         else:
                             if hasattr(field_value, "_meta"):

@@ -13,11 +13,11 @@ from email.utils import parseaddr
 from django import forms
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
-from django.db.models.query import QuerySet
 from django.forms.utils import ErrorList
 from django.db.models import Q
 #from django.forms.widgets import RadioFieldRenderer
 from django.core.validators import validate_email
+from django_stubs_ext import QuerySetAny
 
 import debug                            # pyflakes:ignore
 
@@ -203,7 +203,7 @@ class SearchLiaisonForm(forms.Form):
 class CustomModelMultipleChoiceField(forms.ModelMultipleChoiceField):
     '''If value is a QuerySet, return it as is (for use in widget.render)'''
     def prepare_value(self, value):
-        if isinstance(value, QuerySet):
+        if isinstance(value, QuerySetAny):
             return value
         if (hasattr(value, '__iter__') and
                 not isinstance(value, str) and
