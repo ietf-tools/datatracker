@@ -2909,7 +2909,7 @@ class ApiSubmissionTests(BaseSubmitTestCase):
 
         with mock.patch('ietf.submit.views.process_uploaded_submission_task'):
             r = self.client.post(url, data)
-        self.assertContains(r, 'The submission tool is currently shut down', status_code=400)
+        self.assertContains(r, 'The last submission time for the I-D submission was', status_code=400)
 
  
 
