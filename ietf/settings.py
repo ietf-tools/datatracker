@@ -433,7 +433,6 @@ INSTALLED_APPS = [
     'django_celery_beat',
     'corsheaders',
     'django_markup',
-    'django_password_strength',
     'oidc_provider',
     'simple_history',
     'tastypie',
@@ -1124,7 +1123,6 @@ CHECKS_LIBRARY_PATCHES_TO_APPLY = [
     'patch/change-oidc-provider-field-sizes-228.patch',
     'patch/fix-oidc-access-token-post.patch',
     'patch/fix-jwkest-jwt-logging.patch',
-    'patch/fix-django-password-strength-kwargs.patch',
     'patch/django-cookie-delete-with-all-settings.patch',
     'patch/tastypie-django22-fielderror-response.patch',
 ]
