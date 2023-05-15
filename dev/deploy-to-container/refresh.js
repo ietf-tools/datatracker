@@ -42,9 +42,10 @@ async function main () {
       container.Names.some(n => n.startsWith('/dt-beat-'))
     ) {
       if (container.State === 'running') {
-        containersToRestart.push(container)
+        const appContainer = dock.getContainer(container.Id)
+        containersToRestart.push(appContainer)
         console.info(`Stopping app / celery container ${container.Id}...`)
-        await container.stop({ t: 5 })
+        await appContainer.stop({ t: 5 })
       }
     }
   }
