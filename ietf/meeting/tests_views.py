@@ -556,7 +556,7 @@ class MeetingTests(BaseMeetingTestCase):
         self.assertContains(r, "1. More work items underway")
         
         
-        cont_disp = r._headers.get('content-disposition', ('Content-Disposition', ''))[1]
+        cont_disp = r.headers.get('content-disposition', ('Content-Disposition', ''))[1]
         cont_disp = re.split('; ?', cont_disp)
         cont_disp_settings = dict( e.split('=', 1) for e in cont_disp if '=' in e )
         filename = cont_disp_settings.get('filename', '').strip('"')
