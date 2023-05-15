@@ -2357,7 +2357,7 @@ class EditTimeslotsTests(TestCase):
 
     def test_invalid_edit_timeslot(self):
         meeting = self.create_bare_meeting()
-        ts: TimeSlot = TimeSlotFactory(meeting=meeting, name='slot')  # n.b., colon indicates type hinting
+        ts: TimeSlot = TimeSlotFactory(meeting=meeting, name='slot')  # type: ignore[annotation-unchecked]
         self.login()
         r = self.client.post(
             self.edit_timeslot_url(ts),
