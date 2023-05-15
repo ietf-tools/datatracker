@@ -2744,6 +2744,10 @@ Subject: test
 class ApiSubmissionTests(BaseSubmitTestCase):
     TASK_TO_MOCK = "ietf.submit.views.process_and_accept_uploaded_submission_task"
 
+    def setUp(self):
+        super().setUp()
+        MeetingFactory(type_id='ietf', date=date_today()+datetime.timedelta(days=60))
+
     def test_upload_draft(self):
         """api_submission accepts a submission and queues it for processing"""
         url = urlreverse('ietf.submit.views.api_submission')
@@ -2890,6 +2894,24 @@ class ApiSubmissionTests(BaseSubmitTestCase):
         r = self.client.get(urlreverse('ietf.submit.views.api_submission_status', kwargs={'submission_id': '999999'}))
         self.assertEqual(r.status_code, 404)
 
+    def test_upload_blackout(self):
+        """api_submission returns a useful error in the blackout period"""
+        # Put today in the blackout period
+        meeting = Meeting.get_current_meeting()
+        meeting.importantdate_set.create(name_id='idcutoff',date=date_today()-datetime.timedelta(days=2))
+
+        url = urlreverse('ietf.submit.views.api_submission')
+        xml, author = submission_file('draft-somebody-test-00', 'draft-somebody-test-00.xml', None, 'test_submission.xml')
+        data = {
+            'xml': xml,
+            'user': author.user.username,
+        }
+
+        with mock.patch('ietf.submit.views.process_uploaded_submission_task'):
+            r = self.client.post(url, data)
+        self.assertContains(r, 'The submission tool is currently shut down', status_code=400)
+
+ 
 
 class SubmissionUploadFormTests(BaseSubmitTestCase):
     def test_check_submission_thresholds(self):
