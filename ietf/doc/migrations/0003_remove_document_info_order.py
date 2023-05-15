@@ -5,7 +5,7 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('doc', '0003_remove_document_info_order'),
+        ('doc', '0002_auto_20230320_1222'),
     ]
 
     operations = [
