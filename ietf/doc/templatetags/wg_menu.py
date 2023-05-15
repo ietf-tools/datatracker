@@ -71,7 +71,6 @@ def wg_menu(flavor):
 
         if p.type_id == "area":
             p.menu_url = "/wg/#" + p.acronym.upper()
-            debug.show('p.menu_url')
         elif p.acronym == "irtf":
             p.menu_url = "/rg/"
         elif p.acronym == "iab":
