@@ -2,7 +2,7 @@
 
 
 
-Network Working Group                                            A. Name
+Network Working Group             %(firstpagename)37s
 Internet-Draft                                          Test Centre Inc.
 Intended status: Informational                                %(month)s %(year)s
 Expires: %(expiration)s

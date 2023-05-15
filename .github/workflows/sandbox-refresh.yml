@@ -1,0 +1,35 @@
+name: Sandbox Refresh
+
+on:
+  # Run every night
+  schedule:
+   - cron: '0 9 * * *'
+  
+  workflow_dispatch:
+
+jobs:
+  main:
+    name: Refresh DBs
+    runs-on: [self-hosted, dev-server]
+    permissions:
+      contents: read
+      
+    steps:
+    - uses: actions/checkout@v3
+        
+    - name: Refresh DBs
+      env:
+        DEBIAN_FRONTEND: noninteractive
+      run: |
+        echo "Install Deploy to Container CLI dependencies..."
+        cd dev/deploy-to-container
+        npm ci
+        cd ../..
+        echo "Start Refresh..."
+        node ./dev/deploy-to-container/refresh.js
+        
+    - name: Cleanup old docker resources
+      env:
+        DEBIAN_FRONTEND: noninteractive
+      run: |
+        docker image prune -a -f

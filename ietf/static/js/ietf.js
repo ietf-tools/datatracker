@@ -255,25 +255,26 @@ $(document)
 
 // Bootstrap doesn't load modals via href anymore, so let's do it ourselves.
 // See https://stackoverflow.com/a/48934494/2240756
+// Instead of attaching to the modal elements as in that example, though,
+// listen on document and filter with the .modal selector. This allows handling
+// of modals that are added dynamically (e.g., list.js apparently replaces DOM 
+// elements with identical copies, minus any attached listeners).
 $(document)
-    .ready(function () {
-        $('.modal')
-            .on('show.bs.modal', function (e) {
-                var button = $(e.relatedTarget);
-                if (!$(button)
-                    .attr("href")) {
-                    return;
-                }
-                var loc = $(button)
-                    .attr("href")
-                    .trim();
-                // load content from value of button href
-                if (loc !== undefined && loc !== "#") {
-                    $(this)
-                        .find('.modal-content')
-                        .load(loc);
-                }
-            });
+    .on('show.bs.modal', '.modal', function (e) {
+        var button = $(e.relatedTarget);
+        if (!$(button)
+            .attr("href")) {
+            return;
+        }
+        var loc = $(button)
+            .attr("href")
+            .trim();
+        // load content from value of button href
+        if (loc !== undefined && loc !== "#") {
+            $(this)
+                .find('.modal-content')
+                .load(loc);
+        }
     });
 
 // Handle history snippet expansion.

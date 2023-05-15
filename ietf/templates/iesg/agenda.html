@@ -12,6 +12,12 @@
         <small class="text-muted">{{ date }}</small>
     </h1>
     {% include "iesg/nav.html" with active="agenda" %}
+    {% if user|has_role:"Secretariat" %}
+        <a class="btn btn-outline-primary float-end"
+           href="{% url 'ietf.iesg.views.telechat_agenda_content_manage' %}">
+          Manage administrivia
+        </a>
+    {% endif %}
     {% for num, section in sections %}
         {% if num|sectionlevel == 1 %}
             <h2 class="mt-3" id="sec-{{ num|slugify }}">{{ num }}. {{ section.title|safe }}</h2>

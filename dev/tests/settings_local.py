@@ -9,7 +9,7 @@ DATABASES = {
     'default': {
         'HOST': 'db',
         'PORT': 5432,
-        'NAME': 'ietf',
+        'NAME': 'datatracker',
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
         'USER': 'django',
         'PASSWORD': 'RkTkDPFnKpko',
@@ -19,9 +19,6 @@ DATABASES = {
 IDSUBMIT_IDNITS_BINARY = "/usr/local/bin/idnits"
 IDSUBMIT_REPOSITORY_PATH = "test/id/"
 IDSUBMIT_STAGING_PATH = "test/staging/"
-INTERNET_DRAFT_ARCHIVE_DIR = "test/archive/"
-INTERNET_ALL_DRAFTS_ARCHIVE_DIR = "test/archive/"
-RFC_PATH = "test/rfc/"
 
 AGENDA_PATH = '/assets/www6s/proceedings/'
 MEETINGHOST_LOGO_PATH = AGENDA_PATH
@@ -61,6 +58,7 @@ CONFLICT_REVIEW_PATH = '/assets/ietf-ftp/conflict-reviews/'
 STATUS_CHANGE_PATH = '/assets/ietf-ftp/status-changes/'
 INTERNET_DRAFT_ARCHIVE_DIR = '/assets/ietf-ftp/internet-drafts/'
 INTERNET_ALL_DRAFTS_ARCHIVE_DIR = '/assets/ietf-ftp/internet-drafts/'
+BIBXML_BASE_PATH = '/assets/ietfdata/derived/bibxml'
 
 NOMCOM_PUBLIC_KEYS_DIR = 'data/nomcom_keys/public_keys/'
 SLIDE_STAGING_PATH = 'test/staging/'

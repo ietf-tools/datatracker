@@ -17,7 +17,7 @@ services:
             GITHUB_ACTIONS: 'true'
             HOME: /github/home
     db:
-        image: ghcr.io/ietf-tools/datatracker-db-pg:latest
+        image: ghcr.io/ietf-tools/datatracker-db:latest
         restart: unless-stopped
         volumes:
             - postgresdb-data:/var/lib/postgresql/data
