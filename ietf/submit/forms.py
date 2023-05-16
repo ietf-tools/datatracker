@@ -194,7 +194,7 @@ class SubmissionBaseUploadForm(forms.Form):
 
     def clean(self):
         if self.shutdown and not has_role(self.request.user, "Secretariat"):
-            raise forms.ValidationError(self.cutoff_warning)
+            raise forms.ValidationError(mark_safe(self.cutoff_warning))
 
         # check general submission rate thresholds before doing any more work
         today = date_today()
@@ -383,7 +383,7 @@ class DeprecatedSubmissionBaseUploadForm(SubmissionBaseUploadForm):
             return msgs
 
         if self.shutdown and not has_role(self.request.user, "Secretariat"):
-            raise forms.ValidationError(self.cutoff_warning)
+            raise forms.ValidationError(mark_safe(self.cutoff_warning))
 
         for ext in self.formats:
             f = self.cleaned_data.get(ext, None)
@@ -633,6 +633,12 @@ class DeprecatedSubmissionAutoUploadForm(DeprecatedSubmissionBaseUploadForm):
         self.formats = ['xml', ]
         self.base_formats = ['xml', ]
 
+    def clean(self):
+        try:
+            super().clean()
+        except forms.ValidationError as e:
+            raise forms.ValidationError(mark_safe(e.message.replace('<br>', ' ')))
+
 
 class SubmissionManualUploadForm(SubmissionBaseUploadForm):
     txt = forms.FileField(label='.txt format', required=False)
@@ -676,7 +682,10 @@ class SubmissionAutoUploadForm(SubmissionBaseUploadForm):
     replaces = forms.CharField(required=False, max_length=1000, strip=True)
 
     def clean(self):
-        cleaned_data = super().clean()
+        try:
+            cleaned_data = super().clean()
+        except forms.ValidationError as e:
+            raise forms.ValidationError(mark_safe(e.message.replace('<br>', ' ')))
 
         # Clean the replaces field after the rest of the cleaning so we know the name of the
         # uploaded draft via self.filename
