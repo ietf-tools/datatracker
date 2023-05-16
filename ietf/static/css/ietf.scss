@@ -10,12 +10,14 @@ $enable-negative-margins: true;
 
 $popover-max-width: 100%;
 
-// Only import what we need:
-
-@import "bootstrap/scss/variables";
+// Override default fonts
 
 $font-family-sans-serif: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", "Liberation Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
 $font-family-monospace: "Noto Sans Mono", SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+
+// Only import what we need:
+
+@import "bootstrap/scss/variables";
 
 $h1-font-size: $font-size-base * 2.2;
 $h2-font-size: $font-size-base * 1.8;

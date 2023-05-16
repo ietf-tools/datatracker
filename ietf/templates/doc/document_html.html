@@ -18,6 +18,8 @@
             {% endif %}
         </title>
         <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link href="https://static.ietf.org/fonts/inter/import.css" rel="stylesheet">
+        <link href="https://static.ietf.org/fonts/noto-sans-mono/import.css" rel="stylesheet">
         {% if request.COOKIES.pagedeps == 'inline' %}
             <script>{{ js|safe }}</script>
             <style>{{ css|safe }}</style>
@@ -28,10 +30,7 @@
             {% endif %}
             <script src="{% static 'ietf/js/document_html.js' %}"></script>
         {% endif %}
-        <link rel="alternate"
-              type="application/atom+xml"
-              title="Document changes"
-              href="/feed/document-changes/{{ doc.name }}/">
+        <link rel="alternate" type="application/atom+xml" title="Document changes" href="/feed/document-changes/{{ doc.name }}/">
         <meta name="description"
             {% if not snapshot and doc.get_state_slug == 'rfc' %}
                 content="{{ doc.title }} (RFC {{ doc.rfc_number }}{% if published %}, {{ published.time|date:'F Y' }}{% endif %}{% if obsoleted_by %}; obsoleted by {% for rel in obsoleted_by %}{{ rel.source.canonical_name|prettystdname}}{% if not forloop.last%}, {% endif %}{% endfor %}{% endif %})"
@@ -40,7 +39,7 @@
             {% endif %}>
         {% include "base/icons.html" %}
         {% include "doc/opengraph.html" %}
-         {% analytical_head_bottom %}
+        {% analytical_head_bottom %}
         <style>
             {# Force "text-overflow: ellipsis" to hide the beginning of a doc name #}
             .diff-form .select2-selection__rendered {
