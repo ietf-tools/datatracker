@@ -1,12 +1,12 @@
 # Copyright The IETF Trust 2013-2020, All Rights Reserved
 from functools import wraps
+from urllib.parse import quote as urlquote
 
 from django.conf import settings
 from django.contrib.auth import REDIRECT_FIELD_NAME
 from django.core.exceptions import ObjectDoesNotExist
 from django.http import HttpResponseRedirect
 from django.shortcuts import render, get_object_or_404
-from django.utils.http import urlquote
 
 from ietf.ietfauth.utils import has_role
 from ietf.doc.models import Document

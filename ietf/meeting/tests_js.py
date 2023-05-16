@@ -1493,7 +1493,7 @@ class EditTimeslotsTests(IetfSeleniumTestCase):
     """Test the timeslot editor"""
     def setUp(self):
         super().setUp()
-        self.meeting: Meeting = MeetingFactory(
+        self.meeting: Meeting = MeetingFactory(  # type: ignore[annotation-unchecked]
             type_id='ietf',
             number=120,
             date=date_today() + datetime.timedelta(days=10),
@@ -1570,13 +1570,13 @@ class EditTimeslotsTests(IetfSeleniumTestCase):
         delete_time = delete_time_local.astimezone(datetime.timezone.utc)
         duration = datetime.timedelta(minutes=60)
 
-        delete: [TimeSlot] = TimeSlotFactory.create_batch(
+        delete: [TimeSlot] = TimeSlotFactory.create_batch(  # type: ignore[annotation-unchecked]
             2,
             meeting=self.meeting,
             time=delete_time_local,
             duration=duration,
         )
-        keep: [TimeSlot] = [
+        keep: [TimeSlot] = [  # type: ignore[annotation-unchecked]
             TimeSlotFactory(
                 meeting=self.meeting,
                 time=keep_time,
@@ -1613,14 +1613,14 @@ class EditTimeslotsTests(IetfSeleniumTestCase):
         hours = [10, 12]
         other_days = [self.meeting.get_meeting_date(d) for d in range(1, 3)]
 
-        delete: [TimeSlot] = [
+        delete: [TimeSlot] = [  # type: ignore[annotation-unchecked]
             TimeSlotFactory(
                 meeting=self.meeting,
                 time=datetime_from_date(delete_day, self.meeting.tz()).replace(hour=hour),
             ) for hour in hours
         ]
 
-        keep: [TimeSlot] = [
+        keep: [TimeSlot] = [  # type: ignore[annotation-unchecked]
             TimeSlotFactory(
                 meeting=self.meeting,
                 time=datetime_from_date(day, self.meeting.tz()).replace(hour=hour),

@@ -556,7 +556,7 @@ class MeetingTests(BaseMeetingTestCase):
         self.assertContains(r, "1. More work items underway")
         
         
-        cont_disp = r._headers.get('content-disposition', ('Content-Disposition', ''))[1]
+        cont_disp = r.headers.get('content-disposition', ('Content-Disposition', ''))[1]
         cont_disp = re.split('; ?', cont_disp)
         cont_disp_settings = dict( e.split('=', 1) for e in cont_disp if '=' in e )
         filename = cont_disp_settings.get('filename', '').strip('"')
@@ -2357,7 +2357,7 @@ class EditTimeslotsTests(TestCase):
 
     def test_invalid_edit_timeslot(self):
         meeting = self.create_bare_meeting()
-        ts: TimeSlot = TimeSlotFactory(meeting=meeting, name='slot')  # n.b., colon indicates type hinting
+        ts: TimeSlot = TimeSlotFactory(meeting=meeting, name='slot')  # type: ignore[annotation-unchecked]
         self.login()
         r = self.client.post(
             self.edit_timeslot_url(ts),

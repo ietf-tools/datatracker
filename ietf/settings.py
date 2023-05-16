@@ -102,6 +102,11 @@ USE_I18N = False
 
 USE_TZ = True
 
+# Default primary key field type to use for models that don’t have a field with primary_key=True.
+# In the future (relative to 4.2), the default will become 'django.db.models.BigAutoField.'
+DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
+
+
 if SERVER_MODE == 'production':
     MEDIA_ROOT = '/a/www/www6s/lib/dt/media/'
     MEDIA_URL  = 'https://www.ietf.org/lib/dt/media/'
@@ -428,7 +433,6 @@ INSTALLED_APPS = [
     'django_celery_beat',
     'corsheaders',
     'django_markup',
-    'django_password_strength',
     'oidc_provider',
     'simple_history',
     'tastypie',
@@ -1119,7 +1123,6 @@ CHECKS_LIBRARY_PATCHES_TO_APPLY = [
     'patch/change-oidc-provider-field-sizes-228.patch',
     'patch/fix-oidc-access-token-post.patch',
     'patch/fix-jwkest-jwt-logging.patch',
-    'patch/fix-django-password-strength-kwargs.patch',
     'patch/django-cookie-delete-with-all-settings.patch',
     'patch/tastypie-django22-fielderror-response.patch',
 ]

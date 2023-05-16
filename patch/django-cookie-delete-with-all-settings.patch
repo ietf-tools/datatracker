@@ -1,6 +1,6 @@
 --- django/contrib/messages/storage/cookie.py.orig	2020-08-13 11:10:36.719177122 +0200
 +++ django/contrib/messages/storage/cookie.py	2020-08-13 11:45:23.503463150 +0200
-@@ -95,6 +95,8 @@
+@@ -108,6 +108,8 @@
              response.delete_cookie(
                  self.cookie_name,
                  domain=settings.SESSION_COOKIE_DOMAIN,
@@ -11,7 +11,7 @@
  
 --- django/http/response.py.orig	2020-08-13 11:16:04.060627793 +0200
 +++ django/http/response.py	2020-08-13 11:54:03.482476973 +0200
-@@ -210,12 +210,18 @@
+@@ -243,12 +243,18 @@
          value = signing.get_cookie_signer(salt=key + salt).sign(value)
          return self.set_cookie(key, value, **kwargs)
  
@@ -43,7 +43,7 @@
  
 --- django/contrib/sessions/middleware.py.orig	2020-08-13 12:12:12.401898114 +0200
 +++ django/contrib/sessions/middleware.py	2020-08-13 12:14:52.690520659 +0200
-@@ -42,6 +42,8 @@
+@@ -40,6 +40,8 @@
                  settings.SESSION_COOKIE_NAME,
                  path=settings.SESSION_COOKIE_PATH,
                  domain=settings.SESSION_COOKIE_DOMAIN,

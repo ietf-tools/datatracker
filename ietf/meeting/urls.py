@@ -1,8 +1,8 @@
 # Copyright The IETF Trust 2007-2020, All Rights Reserved
 
-from django.conf.urls import include
-from django.views.generic import RedirectView
 from django.conf import settings
+from django.urls import include
+from django.views.generic import RedirectView
 
 from ietf.meeting import views, views_proceedings
 from ietf.utils.urls import url

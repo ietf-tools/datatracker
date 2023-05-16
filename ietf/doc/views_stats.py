@@ -25,7 +25,6 @@ from ietf.utils.timezone import date_today
 
 epochday = datetime.datetime.utcfromtimestamp(0).date().toordinal()
 
-column_chart_conf = settings.CHART_TYPE_COLUMN_OPTIONS
 
 def dt(s):
     "Convert the date string returned by sqlite's date() to a datetime.date"
