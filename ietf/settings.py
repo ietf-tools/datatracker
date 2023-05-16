@@ -102,6 +102,8 @@ SITE_ID = 1
 USE_I18N = False
 
 USE_TZ = True
+USE_DEPRECATED_PYTZ = True  # supported until Django 5
+
 
 # Default primary key field type to use for models that don’t have a field with primary_key=True.
 # In the future (relative to 4.2), the default will become 'django.db.models.BigAutoField.'
