@@ -194,7 +194,7 @@ class SubmissionBaseUploadForm(forms.Form):
 
     def clean(self):
         if self.shutdown and not has_role(self.request.user, "Secretariat"):
-            raise forms.ValidationError('The submission tool is currently shut down')
+            raise forms.ValidationError(self.cutoff_warning)
 
         # check general submission rate thresholds before doing any more work
         today = date_today()
@@ -383,7 +383,7 @@ class DeprecatedSubmissionBaseUploadForm(SubmissionBaseUploadForm):
             return msgs
 
         if self.shutdown and not has_role(self.request.user, "Secretariat"):
-            raise forms.ValidationError('The submission tool is currently shut down')
+            raise forms.ValidationError(self.cutoff_warning)
 
         for ext in self.formats:
             f = self.cleaned_data.get(ext, None)

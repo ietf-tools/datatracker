@@ -113,7 +113,6 @@ class DocumentInfo(models.Model):
     pages = models.IntegerField(blank=True, null=True)
     words = models.IntegerField(blank=True, null=True)
     formal_languages = models.ManyToManyField(FormalLanguageName, blank=True, help_text="Formal languages used in document")
-    order = models.IntegerField(default=1, blank=True) # This is probably obviated by SessionPresentaion.order
     intended_std_level = ForeignKey(IntendedStdLevelName, verbose_name="Intended standardization level", blank=True, null=True)
     std_level = ForeignKey(StdLevelName, verbose_name="Standardization level", blank=True, null=True)
     ad = ForeignKey(Person, verbose_name="area director", related_name='ad_%(class)s_set', blank=True, null=True)

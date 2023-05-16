@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2009-2022, All Rights Reserved
+# Copyright The IETF Trust 2009-2023, All Rights Reserved
 
 # Copyright (C) 2009-2010 Nokia Corporation and/or its subsidiary(-ies).
 # All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com>
@@ -31,6 +31,8 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+import debug    # pyflakes: ignore
 
 from django import template
 from django.template.loader import render_to_string
@@ -68,7 +70,7 @@ def wg_menu(flavor):
             p.short_name = p.short_name[: -len(" Area")]
 
         if p.type_id == "area":
-            p.menu_url = "/wg/#" + p.acronym
+            p.menu_url = "/wg/#" + p.acronym.upper()
         elif p.acronym == "irtf":
             p.menu_url = "/rg/"
         elif p.acronym == "iab":
