@@ -101,6 +101,10 @@ SITE_ID = 1
 # to load the internationalization machinery.
 USE_I18N = False
 
+# Django 4.0 changed the default setting of USE_L10N to True. The setting
+# is deprecated and will be removed in Django 5.0.
+USE_L10N = False
+
 USE_TZ = True
 USE_DEPRECATED_PYTZ = True  # supported until Django 5
 
