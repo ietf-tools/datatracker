@@ -258,7 +258,7 @@ class TestCase(django.test.TestCase):
             assert isinstance(text, str)
             mlist = [ m for m in mlist if text in get_payload_text(m) ]
         if count and len(mlist) != count:
-            sys.stderr.write("Wrong count in assertMailboxContains().  The complete mailbox contains %s emails, only %s out of them are valid:\n\n" % (len(mailbox), len(mlist)))
+            sys.stderr.write("Wrong count in assertMailboxContains().  The complete mailbox contains %s messages, only %s of them contain the searched-for text:\n\n" % (len(mailbox), len(mlist)))
             for m in mailbox:
                 sys.stderr.write(m.as_string())
                 sys.stderr.write('\n\n')
