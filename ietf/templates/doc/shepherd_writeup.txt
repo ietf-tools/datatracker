@@ -125,9 +125,9 @@ to answer all of them.
 [1]: https://www.ietf.org/about/groups/iesg/
 [2]: https://www.rfc-editor.org/rfc/rfc4858.html
 [3]: https://www.rfc-editor.org/rfc/rfc7942.html
-[4]: https://trac.ietf.org/trac/ops/wiki/yang-review-tools
+[4]: https://wiki.ietf.org/group/ops/yang-review-tools
 [5]: https://www.rfc-editor.org/rfc/rfc8342.html
-[6]: https://trac.ietf.org/trac/iesg/wiki/ExpertTopics
+[6]: https://wiki.ietf.org/group/iesg/ExpertTopics
 [7]: https://www.rfc-editor.org/info/bcp79
 [8]: https://www.ietf.org/tools/idnits/
 [9]: https://www.rfc-editor.org/rfc/rfc3967.html

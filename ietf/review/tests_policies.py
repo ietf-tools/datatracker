@@ -840,7 +840,7 @@ class AssignmentOrderResolverTests(TestCase):
         self.assertEqual(len(ranking), 2)
         self.assertEqual(ranking[0]['email'], reviewer_high.email())
         self.assertEqual(ranking[1]['email'], reviewer_low.email())
-        # These scores follow the ordering of https://trac.ietf.org/trac/ietfdb/wiki/ReviewerQueuePolicy,
+        # These scores follow the ordering of https://github.com/ietf-tools/datatracker/wiki/ReviewerQueuePolicy,
         self.assertEqual(ranking[0]['scores'], [ 1,  1,  1,  1,  1,  1,   0,  0, -1])
         self.assertEqual(ranking[1]['scores'], [-1, -1, -1, -1, -1, -1, -91, -2,  0])
         self.assertEqual(ranking[0]['label'], 'Test Reviewer-high: unavailable indefinitely (Can do follow-ups); requested to be selected next for assignment; reviewed document before; wishes to review document; #2; 1 no response, 1 partially complete, 1 fully completed')
