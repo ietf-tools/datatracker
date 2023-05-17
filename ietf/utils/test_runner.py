@@ -552,7 +552,7 @@ class CoverageTest(unittest.TestCase):
                         or re.search('^api/v1/[^/]+/[^/]+/', regex)
                         or (
                             hasattr(pattern.callback, "view_class")
-                            and isinstance(pattern.callback.view_class, (RedirectView, TemplateView))
+                            and issubclass(pattern.callback.view_class, (RedirectView, TemplateView))
                         )
                         or pattern.callback == django.views.static.serve)
 
