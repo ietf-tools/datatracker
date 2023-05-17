@@ -4,8 +4,7 @@
 
 [![Release](https://img.shields.io/github/release/ietf-tools/datatracker.svg?style=flat&maxAge=300)](https://github.com/ietf-tools/datatracker/releases)
 [![License](https://img.shields.io/github/license/ietf-tools/datatracker)](https://github.com/ietf-tools/datatracker/blob/main/LICENSE)
-[![Code Coverage](https://codecov.io/gh/ietf-tools/datatracker/branch/feat/bs5/graph/badge.svg?token=V4DXB0Q28C)](https://codecov.io/gh/ietf-tools/datatracker)
-[![Nightly Dev DB Image](https://github.com/ietf-tools/datatracker/actions/workflows/dev-db-nightly.yml/badge.svg)](https://github.com/ietf-tools/datatracker/pkgs/container/datatracker-db)  
+[![Code Coverage](https://codecov.io/gh/ietf-tools/datatracker/branch/feat/bs5/graph/badge.svg?token=V4DXB0Q28C)](https://codecov.io/gh/ietf-tools/datatracker)  
 [![Python Version](https://img.shields.io/badge/python-3.9-blue?logo=python&logoColor=white)](#prerequisites)
 [![Django Version](https://img.shields.io/badge/django-2.x-51be95?logo=django&logoColor=white)](#prerequisites)
 [![Node Version](https://img.shields.io/badge/node.js-16.x-green?logo=node.js&logoColor=white)](#prerequisites)
@@ -18,7 +17,7 @@
 - [**Production Website**](https://datatracker.ietf.org)
 - [Changelog](https://github.com/ietf-tools/datatracker/releases)
 - [Contributing](https://github.com/ietf-tools/.github/blob/main/CONTRIBUTING.md)
-- [Getting Started](#getting-started)
+- [Getting Started](#getting-started) - *[ tl;dr ](#the-tldr-to-get-going)*
     - [Git Cloning Tips](#git-cloning-tips)
     - [Docker Dev Environment](docker/README.md)
 - [Database & Assets](#database--assets)
@@ -63,6 +62,25 @@ Because of the extensive history of this project, cloning the datatracker projec
     git clone --shallow-since=DATE https://github.com/USERNAME/datatracker.git
     ```
 
+#### The tl;dr to get going
+
+Note that you will have to have cloned the datatracker code locally - please read the above sections.
+
+Datatracker development is performed using Docker containers. You will need to be able to run docker (and docker-compose) on your machine to effectively develop. It is possible to get a purely native install working, but it is _very complicated_ and typically takes a first time datatracker developer a full day of setup, where the docker setup completes in a small number of minutes.
+
+Many developers are using [VS Code](https://code.visualstudio.com/) and taking advantage of VS Code's ability to start a project in a set of containers. If you are using VS Code, simply start VS Code in your clone and inside VS Code choose `Restart in container`.
+
+If VS Code is not available to you, in your clone, type `cd docker; ./run`
+
+Once the containers are started, run the tests to make sure your checkout is a good place to start from (all tests should pass - if any fail, ask for help at tools-develop@). Inside the app container's shell type:
+```sh
+ietf/manage.py test --settings=settings_postgrestest
+```
+
+Note that we recently moved the datatracker onto PostgreSQL - you may still find older documentation that suggests testing with settings_sqlitetest. That will no longer work.
+
+For a more detailed description of getting going, see [docker/README.md](docker/README.md).
+
 #### Overview of the datatracker models
 
 A beginning of a [walkthrough of the datatracker models](https://notes.ietf.org/iab-aid-datatracker-database-overview) was prepared for the IAB AID workshop.
@@ -75,10 +93,9 @@ Read the [Docker Dev Environment](docker/README.md) guide to get started.
 
 ### Database & Assets
 
-Nightly database dumps of the datatracker are available at  
-https://www.ietf.org/lib/dt/sprint/ietf_utf8.sql.gz
+Nightly database dumps of the datatracker are available as Docker images: `ghcr.io/ietf-tools/datatracker-db:latest`  
 
-> Note that this link is provided as reference only. To update the database in your dev environment to the latest version, you should instead run the `docker/cleandb` script!
+> Note that to update the database in your dev environment to the latest version, you should run the `docker/cleandb` script.
 
 ### Frontend Development
 
@@ -202,7 +219,7 @@ before activating a new release.
 
 From a datatracker container, run the command:
 ```sh
-./ietf/manage.py test --settings=settings_local_sqlitetest
+./ietf/manage.py test --settings=settings_postgrestest
 ```
 
 > You can limit the run to specific tests using the `--pattern` argument.

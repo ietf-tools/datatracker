@@ -6,6 +6,8 @@ import datetime
 import logging
 import io
 import os
+
+import django.db
 import rfc2html
 
 from pathlib import Path
@@ -56,16 +58,22 @@ class StateType(models.Model):
 @checks.register('db-consistency')
 def check_statetype_slugs(app_configs, **kwargs):
     errors = []
-    state_type_slugs = [ t.slug for t in StateType.objects.all() ]
-    for type in DocTypeName.objects.all():
-        if not type.slug in state_type_slugs:
-            errors.append(checks.Error(
-                "The document type '%s (%s)' does not have a corresponding entry in the doc.StateType table" % (type.name, type.slug),
-                hint="You should add a doc.StateType entry with a slug '%s' to match the DocTypeName slug."%(type.slug),
-                obj=type,
-                id='datatracker.doc.E0015',
-            ))
-    return errors
+    try:
+        state_type_slugs = [ t.slug for t in StateType.objects.all() ]
+    except django.db.ProgrammingError:
+        # When running initial migrations on an empty DB, attempting to retrieve StateType will raise a
+        # ProgrammingError. Until Django 3, there is no option to skip the checks.
+        return []
+    else:
+        for type in DocTypeName.objects.all():
+            if not type.slug in state_type_slugs:
+                errors.append(checks.Error(
+                    "The document type '%s (%s)' does not have a corresponding entry in the doc.StateType table" % (type.name, type.slug),
+                    hint="You should add a doc.StateType entry with a slug '%s' to match the DocTypeName slug."%(type.slug),
+                    obj=type,
+                    id='datatracker.doc.E0015',
+                ))
+        return errors
 
 class State(models.Model):
     type = ForeignKey(StateType)
@@ -105,7 +113,6 @@ class DocumentInfo(models.Model):
     pages = models.IntegerField(blank=True, null=True)
     words = models.IntegerField(blank=True, null=True)
     formal_languages = models.ManyToManyField(FormalLanguageName, blank=True, help_text="Formal languages used in document")
-    order = models.IntegerField(default=1, blank=True) # This is probably obviated by SessionPresentaion.order
     intended_std_level = ForeignKey(IntendedStdLevelName, verbose_name="Intended standardization level", blank=True, null=True)
     std_level = ForeignKey(StdLevelName, verbose_name="Standardization level", blank=True, null=True)
     ad = ForeignKey(Person, verbose_name="area director", related_name='ad_%(class)s_set', blank=True, null=True)

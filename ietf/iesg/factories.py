@@ -4,7 +4,7 @@
 import debug    # pyflakes:ignore
 import factory
 
-from ietf.iesg.models import TelechatAgendaItem
+from ietf.iesg.models import TelechatAgendaItem, TelechatAgendaContent
 
 
 class IESGMgmtItemFactory(factory.django.DjangoModelFactory):
@@ -14,3 +14,10 @@ class IESGMgmtItemFactory(factory.django.DjangoModelFactory):
     type = 3
     text = factory.Faker('paragraph', nb_sentences=3)
     title = factory.Faker('sentence', nb_words=3)
+
+
+class TelechatAgendaContentFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = TelechatAgendaContent
+
+    text = factory.Faker('paragraph', nb_sentences=5)

@@ -2786,7 +2786,7 @@
       "about_page": "ietf.group.views.group_about",
       "acts_like_wg": false,
       "admin_roles": "[\n    \"chair\"\n]",
-      "agenda_filter_type": "none",
+      "agenda_filter_type": "heading",
       "agenda_type": "ietf",
       "create_wiki": false,
       "custom_group_roles": false,
@@ -2800,12 +2800,12 @@
       "has_chartering_process": false,
       "has_default_chat": false,
       "has_documents": false,
-      "has_meetings": false,
+      "has_meetings": true,
       "has_milestones": false,
       "has_nonsession_materials": false,
       "has_reviews": false,
       "has_session_materials": false,
-      "is_schedulable": false,
+      "is_schedulable": true,
       "material_types": "[\n    \"slides\"\n]",
       "matman_roles": "[\n    \"chair\"\n]",
       "need_parent": false,
@@ -2813,7 +2813,7 @@
       "req_subm_approval": false,
       "role_order": "[\n    \"chair\"\n]",
       "session_purposes": "[\n    \"closed_meeting\",\n    \"officehours\"\n]",
-      "show_on_agenda": false
+      "show_on_agenda": true
     },
     "model": "group.groupfeatures",
     "pk": "adm"
@@ -3284,8 +3284,8 @@
       "about_page": "ietf.group.views.group_about",
       "acts_like_wg": false,
       "admin_roles": "[\n    \"chair\",\n    \"lead\"\n]",
-      "agenda_filter_type": "none",
-      "agenda_type": "ad",
+      "agenda_filter_type": "heading",
+      "agenda_type": "ietf",
       "create_wiki": false,
       "custom_group_roles": true,
       "customize_workflow": false,
@@ -3298,12 +3298,12 @@
       "has_chartering_process": false,
       "has_default_chat": false,
       "has_documents": true,
-      "has_meetings": false,
+      "has_meetings": true,
       "has_milestones": false,
       "has_nonsession_materials": false,
       "has_reviews": false,
       "has_session_materials": false,
-      "is_schedulable": false,
+      "is_schedulable": true,
       "material_types": "[\n    \"slides\"\n]",
       "matman_roles": "[\n    \"chair\",\n    \"delegate\"\n]",
       "need_parent": false,
@@ -3311,7 +3311,7 @@
       "req_subm_approval": true,
       "role_order": "[\n    \"chair\",\n    \"delegate\"\n]",
       "session_purposes": "[\n    \"officehours\"\n]",
-      "show_on_agenda": false
+      "show_on_agenda": true
     },
     "model": "group.groupfeatures",
     "pk": "ise"
@@ -4098,8 +4098,8 @@
         "doc_ad",
         "doc_group_chairs",
         "doc_group_delegates",
-        "doc_shepherd",
-        "doc_stream_manager"
+        "doc_non_ietf_stream_manager",
+        "doc_shepherd"
       ]
     },
     "model": "mailtrigger.mailtrigger",
@@ -5004,6 +5004,35 @@
     },
     "model": "mailtrigger.mailtrigger",
     "pk": "review_completed_genart_telechat"
+  },
+  {
+    "fields": {
+      "cc": [
+        "review_doc_all_parties",
+        "review_doc_group_mail_list"
+      ],
+      "desc": "Recipients when a httpdir Early review is completed",
+      "to": [
+        "review_team_mail_list"
+      ]
+    },
+    "model": "mailtrigger.mailtrigger",
+    "pk": "review_completed_httpdir_early"
+  },
+  {
+    "fields": {
+      "cc": [
+        "ietf_last_call",
+        "review_doc_all_parties",
+        "review_doc_group_mail_list"
+      ],
+      "desc": "Recipients when a httpdir Telechat review is completed",
+      "to": [
+        "review_team_mail_list"
+      ]
+    },
+    "model": "mailtrigger.mailtrigger",
+    "pk": "review_completed_httpdir_telechat"
   },
   {
     "fields": {
@@ -6025,7 +6054,7 @@
   },
   {
     "fields": {
-      "desc": "The Internet-Drafts ticketing system",
+      "desc": "The Internet-Draft ticketing system",
       "template": "<internet-drafts@ietf.org>"
     },
     "model": "mailtrigger.recipient",
@@ -11328,7 +11357,7 @@
       "name": "Editorial Stream Approval Group",
       "order": 0,
       "used": true,
-      "verbose_name": ""
+      "verbose_name": "Editorial Stream Approval Group"
     },
     "model": "name.grouptypename",
     "pk": "edappr"
@@ -11339,7 +11368,7 @@
       "name": "Editorial Stream Working Group",
       "order": 0,
       "used": true,
-      "verbose_name": ""
+      "verbose_name": "Editorial Stream Working Group"
     },
     "model": "name.grouptypename",
     "pk": "edwg"
@@ -11460,7 +11489,7 @@
       "name": "Program",
       "order": 0,
       "used": true,
-      "verbose_name": ""
+      "verbose_name": "IAB Program"
     },
     "model": "name.grouptypename",
     "pk": "program"
@@ -11482,7 +11511,7 @@
       "name": "Directorate (with reviews)",
       "order": 0,
       "used": true,
-      "verbose_name": ""
+      "verbose_name": "Review Team"
     },
     "model": "name.grouptypename",
     "pk": "review"
@@ -11545,8 +11574,8 @@
   {
     "fields": {
       "default_offset_days": -19,
-      "desc": "Internet-Draft submission cut-off for -00 drafts by UTC 23:59",
-      "name": "00 ID Cutoff",
+      "desc": "Internet-Draft submission cut-off for -00 I-Ds by UTC 23:59",
+      "name": "00 I-D Cutoff",
       "order": 0,
       "used": false
     },
@@ -11556,8 +11585,8 @@
   {
     "fields": {
       "default_offset_days": -12,
-      "desc": "Internet-Draft submission cut-off for revised (-01 and above) drafts by UTC 23:59",
-      "name": "01 ID Cutoff",
+      "desc": "Internet-Draft submission cut-off for revised (-01 and above) I-Ds by UTC 23:59",
+      "name": "01 I-D Cutoff",
       "order": 0,
       "used": false
     },
@@ -11699,8 +11728,8 @@
   {
     "fields": {
       "default_offset_days": -12,
-      "desc": "Internet-Draft submission cut-off (for all drafts, including -00) by UTC 23:59",
-      "name": "ID Cutoff",
+      "desc": "Internet-Draft submission cut-off (for all Internet-Drafts, including -00) by UTC 23:59",
+      "name": "I-D Cutoff",
       "order": 0,
       "used": true
     },
@@ -13627,6 +13656,36 @@
     },
     "model": "name.streamname",
     "pk": "legacy"
+  },
+  {
+    "fields": {
+      "desc": "Action items section",
+      "name": "Action Items",
+      "order": 3,
+      "used": true
+    },
+    "model": "name.telechatagendasectionname",
+    "pk": "action_items"
+  },
+  {
+    "fields": {
+      "desc": "Minutes section",
+      "name": "Minutes",
+      "order": 2,
+      "used": true
+    },
+    "model": "name.telechatagendasectionname",
+    "pk": "minutes"
+  },
+  {
+    "fields": {
+      "desc": "Roll call section",
+      "name": "Roll Call",
+      "order": 1,
+      "used": true
+    },
+    "model": "name.telechatagendasectionname",
+    "pk": "roll_call"
   },
   {
     "fields": {
@@ -16326,9 +16385,9 @@
     "fields": {
       "command": "xym",
       "switch": "--version",
-      "time": "2023-01-31T08:09:46.678Z",
+      "time": "2023-05-14T07:09:32.713Z",
       "used": true,
-      "version": "xym 0.6.2"
+      "version": "xym 0.7.0"
     },
     "model": "utils.versioninfo",
     "pk": 1
@@ -16337,7 +16396,7 @@
     "fields": {
       "command": "pyang",
       "switch": "--version",
-      "time": "2023-01-31T08:09:47.011Z",
+      "time": "2023-05-14T07:09:33.045Z",
       "used": true,
       "version": "pyang 2.5.3"
     },
@@ -16348,7 +16407,7 @@
     "fields": {
       "command": "yanglint",
       "switch": "--version",
-      "time": "2023-01-31T08:09:47.028Z",
+      "time": "2023-05-14T07:09:33.065Z",
       "used": true,
       "version": "yanglint SO 1.9.2"
     },
@@ -16359,9 +16418,9 @@
     "fields": {
       "command": "xml2rfc",
       "switch": "--version",
-      "time": "2023-01-31T08:09:48.031Z",
+      "time": "2023-05-14T07:09:33.970Z",
       "used": true,
-      "version": "xml2rfc 3.16.0"
+      "version": "xml2rfc 3.17.1"
     },
     "model": "utils.versioninfo",
     "pk": 4
