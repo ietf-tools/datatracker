@@ -11,7 +11,9 @@ from django.utils.encoding import force_str
 from django.views.generic import View
 
 def url(regex, view, kwargs=None, name=None):
-    if callable(view) and hasattr(view, '__name__'):
+    if hasattr(view, "view_class"):
+        view_name = "%s.%s" % (view.__module__, view.view_class.__name__)
+    elif callable(view) and hasattr(view, '__name__'):
         view_name = "%s.%s" % (view.__module__, view.__name__)
     else:
         view_name = regex
