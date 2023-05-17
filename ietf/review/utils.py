@@ -382,7 +382,8 @@ def assign_review_request_to_reviewer(request, review_req, reviewer, add_skip=Fa
     # with a different view on a ReviewAssignment.
     log.assertion('reviewer is not None')
 
-    if review_req.reviewassignment_set.filter(reviewer=reviewer).exists():
+    # cannot reference reviewassignment_set relation until pk exists
+    if review_req.pk is not None and review_req.reviewassignment_set.filter(reviewer=reviewer).exists():
         return
 
     # Note that assigning a review no longer unassigns other reviews
