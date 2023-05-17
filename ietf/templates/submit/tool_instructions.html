@@ -32,10 +32,6 @@
         An API for automated Internet-Draft submission is available as an alternative to this webpage at
         <a href="https://datatracker.ietf.org/api/submission">https://datatracker.ietf.org/api/submission</a>.
     </p>
-    <p>
-        The specification for this tool can be found in
-        <a href="{% url 'ietf.doc.views_doc.document_html' name='rfc4228' %}">RFC 4228</a>.  It has been updated over the years.
-    </p>
     <h3 class="mt-4">Upload screen</h3>
     <p>
         The Upload screen is the first screen in the I-D submission process. You can submit an I-D in one or more format: XML, PDF, and plain text. You can submit an XML file, and the other formats will be created automatically. A single v3 .xml source file is preferred; however, a single v2 .xml source file is also accepted. If a .xml file is not available, a single plain text document is also accepted.
@@ -82,11 +78,8 @@
     </table>
     <h3 class="mt-4">Validation screen</h3>
     <p>
-        After you upload the file(s) and the tool parses the the metadata, the validation results are displayed, and you are offered option(s) for next steps. The validation checks include for IPR-related notices and I-D boilerplate described in
-        <a href="https://www.ietf.org/ietf/1id-guidelines.html">Guidelines to Authors of Internet-Drafts</a>,
-        the required sections described in
-        <a href="https://www.ietf.org/ID-Checklist.html">the I-D Check List</a>,
-        the version number, and the creation date.
+        After you upload the file(s) and the tool parses the the metadata, the validation results are displayed, and you are offered option(s) for next steps. Validation checks cover IPR-related notices, boilerplate, required sections, version number, and creation date as described in the
+        <a href="https://authors.ietf.org/en/content-guidelines-overview">Internet-Draft Author Resources</a>.
     </p>
     <p>
         If the submission does not have any validation errors, then you can proceed with the posting process. Submitter authentication is performed by email or via login to your IETF datatracker account.
