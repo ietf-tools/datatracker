@@ -17,6 +17,7 @@ warnings.filterwarnings("ignore", message="pkg_resources is deprecated as an API
 warnings.filterwarnings("ignore", module="tastypie", message="The django.utils.datetime_safe module is deprecated.")
 warnings.filterwarnings("ignore", message="The USE_DEPRECATED_PYTZ setting,")  # https://github.com/ietf-tools/datatracker/issues/5635
 warnings.filterwarnings("ignore", message="The USE_L10N setting is deprecated.")  # https://github.com/ietf-tools/datatracker/issues/5648
+warnings.filterwarnings("ignore", message="\\(fields.W905\\) django.contrib.postgres.fields.CICharField is deprecated.")
 warnings.filterwarnings("ignore", message="'urllib3\\[secure\\]' extra is deprecated")
 warnings.filterwarnings("ignore", message="The logout\\(\\) view is superseded by")
 warnings.filterwarnings("ignore", message="Report.file_reporters will no longer be available in Coverage.py 4.2", module="coverage.report")
@@ -1134,6 +1135,7 @@ ACCOUNT_REQUEST_EMAIL = 'account-request@ietf.org'
 
 SILENCED_SYSTEM_CHECKS = [
     "fields.W342",  # Setting unique=True on a ForeignKey has the same effect as using a OneToOneField.
+    "fields.W905",  # django.contrib.postgres.fields.CICharField is deprecated. (see https://github.com/ietf-tools/datatracker/issues/5660)
 ]
 
 CHECKS_LIBRARY_PATCHES_TO_APPLY = [
