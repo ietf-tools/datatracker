@@ -348,11 +348,7 @@ SESSION_COOKIE_SAMESITE = 'None'
 SESSION_COOKIE_SECURE = True
 
 SESSION_EXPIRE_AT_BROWSER_CLOSE = False
-# We want to use the JSON serialisation, as it's safer -- but there is /secr/
-# code which stashes objects in the session that can't be JSON serialized.
-# Switch when that code is rewritten.
-#SESSION_SERIALIZER = "django.contrib.sessions.serializers.JSONSerializer"
-SESSION_SERIALIZER = 'django.contrib.sessions.serializers.PickleSerializer'
+SESSION_SERIALIZER = "django.contrib.sessions.serializers.JSONSerializer"
 SESSION_ENGINE = "django.contrib.sessions.backends.cache"
 SESSION_SAVE_EVERY_REQUEST = True
 SESSION_CACHE_ALIAS = 'sessions'
