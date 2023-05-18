@@ -74,7 +74,7 @@ from django.urls import URLResolver # type: ignore
 from django.template.backends.django import DjangoTemplates
 from django.template.backends.django import Template  # type: ignore[attr-defined]
 from django.utils import timezone
-# from django.utils.safestring import mark_safe
+from django.views.generic import RedirectView, TemplateView
 
 import debug                            # pyflakes:ignore
 debug.debug = True
@@ -550,8 +550,10 @@ class CoverageTest(unittest.TestCase):
                 return (regex in ("^_test500/$", "^accounts/testemail/$")
                         or regex.startswith("^admin/")
                         or re.search('^api/v1/[^/]+/[^/]+/', regex)
-                        or getattr(pattern.callback, "__name__", "") == "RedirectView"
-                        or getattr(pattern.callback, "__name__", "") == "TemplateView"
+                        or (
+                            hasattr(pattern.callback, "view_class")
+                            and issubclass(pattern.callback.view_class, (RedirectView, TemplateView))
+                        )
                         or pattern.callback == django.views.static.serve)
 
             patterns = [(regex, re.compile(regex, re.U), obj) for regex, obj in url_patterns

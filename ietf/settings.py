@@ -13,6 +13,7 @@ import warnings
 from typing import Any, Dict, List, Tuple # pyflakes:ignore
 
 warnings.simplefilter("always", DeprecationWarning)
+warnings.filterwarnings("ignore", message="'oidc_provider' defines default_app_config")  # hopefully only need until Django 4.1 or 4.2
 warnings.filterwarnings("ignore", message="'urllib3\\[secure\\]' extra is deprecated")
 warnings.filterwarnings("ignore", message="The logout\\(\\) view is superseded by")
 warnings.filterwarnings("ignore", message="Report.file_reporters will no longer be available in Coverage.py 4.2", module="coverage.report")
@@ -100,7 +101,13 @@ SITE_ID = 1
 # to load the internationalization machinery.
 USE_I18N = False
 
+# Django 4.0 changed the default setting of USE_L10N to True. The setting
+# is deprecated and will be removed in Django 5.0.
+USE_L10N = False
+
 USE_TZ = True
+USE_DEPRECATED_PYTZ = True  # supported until Django 5
+
 
 # Default primary key field type to use for models that don’t have a field with primary_key=True.
 # In the future (relative to 4.2), the default will become 'django.db.models.BigAutoField.'
@@ -319,7 +326,14 @@ UTILS_LOGGER_LEVELS: Dict[str, str] = {
 
 
 X_FRAME_OPTIONS = 'SAMEORIGIN'
-CSRF_TRUSTED_ORIGINS = ['ietf.org', '*.ietf.org', 'meetecho.com', '*.meetecho.com', 'gather.town', '*.gather.town', ]
+CSRF_TRUSTED_ORIGINS = [
+    "https://ietf.org",
+    "https://*.ietf.org",
+    'https://meetecho.com',
+    'https://*.meetecho.com',
+    'https://gather.town',
+    'https://*.gather.town',
+]
 CSRF_COOKIE_SAMESITE = 'None'
 CSRF_COOKIE_SECURE = True
 
