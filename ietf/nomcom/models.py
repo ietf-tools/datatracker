@@ -187,9 +187,11 @@ class NomineePosition(models.Model):
         ordering = ['nominee']
 
     def save(self, **kwargs):
+        update_fields = kwargs.pop("update_fields", None)
         if not self.pk and not self.state_id:
             self.state = NomineePositionStateName.objects.get(slug='pending')
-        super(NomineePosition, self).save(**kwargs)
+            update_fields = {"slug"}.union(update_fields or set())
+        super().save(update_fields=update_fields, **kwargs)
 
     def __str__(self):
         return "%s - %s - %s" % (self.nominee, self.state, self.position)
