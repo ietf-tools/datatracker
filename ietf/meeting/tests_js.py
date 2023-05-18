@@ -833,7 +833,7 @@ class EditMeetingScheduleTests(IetfSeleniumTestCase):
     def test_session_constraint_hints(self):
         """Selecting a session should mark conflicting sessions
 
-        To test for recurrence of https://trac.ietf.org/trac/ietfdb/ticket/3327 need to have some constraints that
+        To test for recurrence of https://github.com/ietf-tools/datatracker/issues/3327 need to have some constraints that
         do not conflict. Testing with only violated constraints does not exercise the code adequately.
         """
         meeting = MeetingFactory(type_id='ietf', date=date_today(), populate_schedule=False)
