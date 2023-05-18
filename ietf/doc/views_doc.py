@@ -491,9 +491,9 @@ def document_main(request, name, rev=None, document_html=False):
         simple_diff_revisions = None
         if document_html:
             diff_revisions=get_diff_revisions(request, name, doc if isinstance(doc,Document) else doc.doc)
-            simple_diff_revisions = [t[1] for t in diff_revisions]
+            simple_diff_revisions = [t[1] for t in diff_revisions if t[0] == doc.name]
             simple_diff_revisions.reverse()
-            if not doc.is_rfc() and rev != doc.rev: 
+            if rev and rev != doc.rev: 
                 # No DocHistory was found matching rev - snapshot will be false
                 # and doc will be a Document object, not a DocHistory
                 snapshot = True
@@ -851,6 +851,7 @@ def document_raw_id(request, name, rev=None, ext=None):
         raise Http404
 
 def document_html(request, name, rev=None):
+    requested_rev = rev
     found = fuzzy_find_documents(name, rev)
     num_found = found.documents.count()
     if num_found == 0:
@@ -861,7 +862,7 @@ def document_html(request, name, rev=None):
     doc = found.documents.get()
     rev = found.matched_rev
 
-    if doc.is_rfc() and rev is None:
+    if not requested_rev and doc.is_rfc(): # Someone asked for /doc/html/8989
         if not name.startswith('rfc'):
             return redirect('ietf.doc.views_doc.document_html', name=doc.canonical_name())
 
@@ -871,7 +872,7 @@ def document_html(request, name, rev=None):
     if not os.path.exists(doc.get_file_name()):
         raise Http404("File not found: %s" % doc.get_file_name())
 
-    return document_main(request, name=doc.canonical_name(), rev=doc.rev if not doc.is_rfc() else None, document_html=True)
+    return document_main(request, name=doc.name if requested_rev else doc.canonical_name(), rev=doc.rev if requested_rev or not doc.is_rfc() else None, document_html=True)
 
 def document_pdfized(request, name, rev=None, ext=None):
 
