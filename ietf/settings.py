@@ -18,7 +18,7 @@ warnings.filterwarnings("ignore", module="tastypie", message="The django.utils.d
 warnings.filterwarnings("ignore", module="oidc_provider", message="The django.utils.timezone.utc alias is deprecated.")
 warnings.filterwarnings("ignore", message="The USE_DEPRECATED_PYTZ setting,")  # https://github.com/ietf-tools/datatracker/issues/5635
 warnings.filterwarnings("ignore", message="The USE_L10N setting is deprecated.")  # https://github.com/ietf-tools/datatracker/issues/5648
-warnings.filterwarnings("ignore", message="\\(fields.W905\\) django.contrib.postgres.fields.CICharField is deprecated.")
+warnings.filterwarnings("ignore", message="django.contrib.auth.hashers.CryptPasswordHasher is deprecated.")  # https://github.com/ietf-tools/datatracker/issues/5663
 warnings.filterwarnings("ignore", message="'urllib3\\[secure\\]' extra is deprecated")
 warnings.filterwarnings("ignore", message="The logout\\(\\) view is superseded by")
 warnings.filterwarnings("ignore", message="Report.file_reporters will no longer be available in Coverage.py 4.2", module="coverage.report")
