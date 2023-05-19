@@ -183,7 +183,7 @@ def retrieve_nomcom_private_key(request, year):
             settings.OPENSSL_COMMAND,
             command_line_safe_secret(settings.NOMCOM_APP_SECRET)
         ),
-        private_key
+        private_key.encode("utf8")
     )
     if code != 0:
         log("openssl error: %s:\n  Error %s: %s" %(command, code, error))        
@@ -205,8 +205,8 @@ def store_nomcom_private_key(request, year, private_key):
         if code != 0:
             log("openssl error: %s:\n  Error %s: %s" %(command, code, error))        
         if error and error!=b"*** WARNING : deprecated key derivation used.\nUsing -iter or -pbkdf2 would be better.\n":
-            out = ''
-        request.session['NOMCOM_PRIVATE_KEY_%s' % year] = out
+            out = b''
+        request.session['NOMCOM_PRIVATE_KEY_%s' % year] = out.decode("utf8")
 
 
 def validate_private_key(key):
