@@ -615,7 +615,7 @@ def extract_revision_ordered_review_assignments_for_documents_and_replaced(
             review_request__doc__name__in=replacement_name_set
         )
         .order_by("-reviewed_rev", "-assigned_on", "-id")
-        .iterator()
+        .iterator(chunk_size=2000)  # chunk_size not tested, using pre-Django 5 default value
     ):
         assignments_for_each_doc[r.review_request.doc.name].append(r)
 
@@ -670,7 +670,7 @@ def extract_revision_ordered_review_requests_for_documents_and_replaced(
             doc__name__in=set(e for l in replaces.values() for e in l) | names
         )
         .order_by("-time", "-id")
-        .iterator()
+        .iterator(chunk_size=2000)  # chunk_size not tested, using pre-Django 5 default value
     ):
         requests_for_each_doc[r.doc.name].append(r)
 
