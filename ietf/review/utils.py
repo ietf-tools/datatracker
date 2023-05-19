@@ -599,7 +599,9 @@ def suggested_review_requests_for_team(team):
     res.sort(key=lambda r: (r.deadline, r.doc_id), reverse=True)
     return res
 
-def extract_revision_ordered_review_assignments_for_documents_and_replaced(review_assignment_queryset, names):
+def extract_revision_ordered_review_assignments_for_documents_and_replaced(
+    review_assignment_queryset, names
+):
     """Extracts all review assignments for document names (including replaced ancestors), return them neatly sorted."""
 
     names = set(names)
@@ -608,8 +610,13 @@ def extract_revision_ordered_review_assignments_for_documents_and_replaced(revie
 
     assignments_for_each_doc = defaultdict(list)
     replacement_name_set = set(e for l in replaces.values() for e in l) | names
-    for r in ( review_assignment_queryset.filter(review_request__doc__name__in=replacement_name_set)
-                                        .order_by("-reviewed_rev","-assigned_on", "-id").iterator()):
+    for r in (
+        review_assignment_queryset.filter(
+            review_request__doc__name__in=replacement_name_set
+        )
+        .order_by("-reviewed_rev", "-assigned_on", "-id")
+        .iterator()
+    ):
         assignments_for_each_doc[r.review_request.doc.name].append(r)
 
     # now collect in breadth-first order to keep the revision order intact
@@ -647,7 +654,10 @@ def extract_revision_ordered_review_assignments_for_documents_and_replaced(revie
 
     return res
 
-def extract_revision_ordered_review_requests_for_documents_and_replaced(review_request_queryset, names):
+
+def extract_revision_ordered_review_requests_for_documents_and_replaced(
+    review_request_queryset, names
+):
     """Extracts all review requests for document names (including replaced ancestors), return them neatly sorted."""
 
     names = set(names)
@@ -655,7 +665,13 @@ def extract_revision_ordered_review_requests_for_documents_and_replaced(review_r
     replaces = extract_complete_replaces_ancestor_mapping_for_docs(names)
 
     requests_for_each_doc = defaultdict(list)
-    for r in review_request_queryset.filter(doc__name__in=set(e for l in replaces.values() for e in l) | names).order_by("-time", "-id").iterator():
+    for r in (
+        review_request_queryset.filter(
+            doc__name__in=set(e for l in replaces.values() for e in l) | names
+        )
+        .order_by("-time", "-id")
+        .iterator()
+    ):
         requests_for_each_doc[r.doc.name].append(r)
 
     # now collect in breadth-first order to keep the revision order intact
