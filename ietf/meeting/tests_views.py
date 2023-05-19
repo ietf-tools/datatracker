@@ -3931,7 +3931,7 @@ class EditTests(TestCase):
             'base': meeting.schedule.base_id,
         })
         self.assertEqual(r.status_code, 200)
-        self.assertFormError(r, 'form', 'name', 'Enter a valid value.')
+        self.assertFormError(r["form"], 'name', 'Enter a valid value.')
         self.assertEqual(meeting.schedule_set.count(), orig_schedule_count, 'Schedule should not be created')
 
         r = self.client.post(url, {
@@ -3941,7 +3941,7 @@ class EditTests(TestCase):
             'base': meeting.schedule.base_id,
         })
         self.assertEqual(r.status_code, 200)
-        self.assertFormError(r, 'form', 'name', 'Enter a valid value.')
+        self.assertFormError(r["form"], 'name', 'Enter a valid value.')
         self.assertEqual(meeting.schedule_set.count(), orig_schedule_count, 'Schedule should not be created')
 
         # Non-ASCII alphanumeric characters
@@ -3952,7 +3952,7 @@ class EditTests(TestCase):
             'base': meeting.schedule.base_id,
         })
         self.assertEqual(r.status_code, 200)
-        self.assertFormError(r, 'form', 'name', 'Enter a valid value.')
+        self.assertFormError(r["form"], 'name', 'Enter a valid value.')
         self.assertEqual(meeting.schedule_set.count(), orig_schedule_count, 'Schedule should not be created')
 
     def test_edit_session(self):
@@ -4037,9 +4037,9 @@ class EditTests(TestCase):
         self.assertIn(return_url_unofficial, r.content.decode())
 
         r = self.client.post(url, {})
-        self.assertFormError(r, 'form', 'confirmed', 'This field is required.')
+        self.assertFormError(r["form"], 'confirmed', 'This field is required.')
         r = self.client.post(url_unofficial, {})
-        self.assertFormError(r, 'form', 'confirmed', 'This field is required.')
+        self.assertFormError(r["form"], 'confirmed', 'This field is required.')
 
         r = self.client.post(url, {'confirmed': 'on'})
         self.assertRedirects(r, return_url)
@@ -7973,7 +7973,7 @@ class ProceedingsTests(BaseMeetingTestCase):
                 invalid_file.seek(0)  # read the file contents again
                 r = self.client.post(url, {'file': invalid_file, 'external_url': ''})
                 self.assertEqual(r.status_code, 200)
-                self.assertFormError(r, 'form', 'file', 'Found an unexpected extension: .png.  Expected one of .pdf')
+                self.assertFormError(r["form"], 'file', 'Found an unexpected extension: .png.  Expected one of .pdf')
 
     def test_add_proceedings_material_doc_empty(self):
         """Upload proceedings materials document without specifying a file"""
@@ -7986,7 +7986,7 @@ class ProceedingsTests(BaseMeetingTestCase):
             )
             r = self.client.post(url, {'external_url': ''})
             self.assertEqual(r.status_code, 200)
-            self.assertFormError(r, 'form', 'file', 'This field is required')
+            self.assertFormError(r["form"], 'file', 'This field is required')
 
     def test_add_proceedings_material_url(self):
         """Add a URL as proceedings material"""
@@ -8010,7 +8010,7 @@ class ProceedingsTests(BaseMeetingTestCase):
             )
             r = self.client.post(url, {'use_url': 'on', 'external_url': "Ceci n'est pas une URL"})
             self.assertEqual(r.status_code, 200)
-            self.assertFormError(r, 'form', 'external_url', 'Enter a valid URL.')
+            self.assertFormError(r["form"], 'external_url', 'Enter a valid URL.')
 
     def test_add_proceedings_material_url_empty(self):
         """Add proceedings materials URL without specifying the URL"""
@@ -8023,7 +8023,7 @@ class ProceedingsTests(BaseMeetingTestCase):
             )
             r = self.client.post(url, {'use_url': 'on', 'external_url': ''})
             self.assertEqual(r.status_code, 200)
-            self.assertFormError(r, 'form', 'external_url', 'This field is required')
+            self.assertFormError(r["form"], 'external_url', 'This field is required')
 
     @override_settings(MEETING_DOC_HREFS={'procmaterials': '{doc.name}:{doc.rev}'})
     def test_replace_proceedings_material(self):
