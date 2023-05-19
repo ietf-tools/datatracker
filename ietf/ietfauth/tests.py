@@ -98,7 +98,7 @@ class IetfAuthTests(TestCase):
         self.assertEqual(urlsplit(r["Location"])[2], urlreverse(ietf.ietfauth.views.profile))
 
         # try logging out
-        r = self.client.get(urlreverse('django.contrib.auth.views.logout'))
+        r = self.client.post(urlreverse('django.contrib.auth.views.logout'), {})
         self.assertEqual(r.status_code, 200)
         self.assertNotContains(r, "accounts/logout")
 
@@ -215,7 +215,7 @@ class IetfAuthTests(TestCase):
         self.assertContains(r, "Allowlist entry creation successful")
 
         # log out
-        r = self.client.get(urlreverse('django.contrib.auth.views.logout'))
+        r = self.client.post(urlreverse('django.contrib.auth.views.logout'), {})
         self.assertEqual(r.status_code, 200)
 
         # register and verify allowlisted email
