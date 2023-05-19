@@ -742,6 +742,11 @@ class IetfTestRunner(DiscoverRunner):
                                  "as the collection of test coverage data isn't currently threadsafe.")
                 sys.exit(1)
             self.check_coverage = False
+        from ietf.doc.tests import TemplateTagTest  # import here to prevent circular imports
+        # Ensure that the coverage tests come last. Specifically list TemplateTagTest before CoverageTest. If this list
+        # contains parent classes to later subclasses, the parent classes will determine the ordering, so use the most
+        # specific classes necessary to get the right ordering:
+        self.reorder_by = (PyFlakesTestCase, MyPyTest,) + self.reorder_by + (StaticLiveServerTestCase, TemplateTagTest, CoverageTest,)
 
     def setup_test_environment(self, **kwargs):
         global template_coverage_collection
@@ -1061,20 +1066,57 @@ class IetfTestRunner(DiscoverRunner):
         test_paths = [ os.path.join(*app.split('.')) for app in test_apps ]
         return test_apps, test_paths
 
+    # Django 5 will drop the extra_tests mechanism for the test runner. Work around
+    # by adding a special label to the test suite, then injecting our extra tests
+    # in load_tests_for_label()
+    def build_suite(self, test_labels=None, extra_tests=None, **kwargs):
+        if test_labels is None:
+            # Base class sets test_labels to ["."] if it was None. The label we're
+            # adding will interfere with that, so replicate that behavior here. 
+            test_labels = ["."]
+        test_labels = ("_ietf_extra_tests",) + tuple(test_labels)
+        return super().build_suite(test_labels, extra_tests, **kwargs)
+
+    def load_tests_for_label(self, label, discover_kwargs):
+        if label == "_ietf_extra_tests":
+            return self._extra_tests() or None
+        return super().load_tests_for_label(label, discover_kwargs)
+
+    def _extra_tests(self):
+        """Get extra tests that should be added to the test suite"""
+        tests = []
+        if validation_settings["validate_html"]:
+            tests += [
+                TemplateValidationTests(
+                    test_runner=self,
+                    validate_html=self,
+                    methodName='run_template_validation',
+                ),
+            ]
+        if self.check_coverage:
+            global template_coverage_collection, code_coverage_collection, url_coverage_collection
+            template_coverage_collection = True
+            code_coverage_collection = True
+            url_coverage_collection = True
+            tests += [
+                PyFlakesTestCase(test_runner=self, methodName='pyflakes_test'),
+                MyPyTest(test_runner=self, methodName='mypy_test'),
+                #CoverageTest(test_runner=self, methodName='interleaved_migrations_test'),
+                CoverageTest(test_runner=self, methodName='url_coverage_test'),
+                CoverageTest(test_runner=self, methodName='template_coverage_test'),
+                CoverageTest(test_runner=self, methodName='code_coverage_test'),
+            ]
+        return tests
+
     def run_tests(self, test_labels, extra_tests=None, **kwargs):
-        global old_destroy, old_create, test_database_name, template_coverage_collection, code_coverage_collection, url_coverage_collection
-        from django.db import connection
-        from ietf.doc.tests import TemplateTagTest
-
-        if extra_tests is None:
-            extra_tests=[]
-
         # Tests that involve switching back and forth between the real
         # database and the test database are way too dangerous to run
         # against the production database
         if socket.gethostname().split('.')[0] in ['core3', 'ietfa', 'ietfb', 'ietfc', ]:
             raise EnvironmentError("Refusing to run tests on production server")
 
+        from django.db import connection
+        global old_destroy, old_create
         old_create = connection.creation.__class__.create_test_db
         connection.creation.__class__.create_test_db = safe_create_test_db
         old_destroy = connection.creation.__class__.destroy_test_db
@@ -1086,35 +1128,6 @@ class IetfTestRunner(DiscoverRunner):
             test_labels = ["ietf"]
 
         self.test_apps, self.test_paths = self.get_test_paths(test_labels)
-
-        if validation_settings["validate_html"]:
-            extra_tests += [
-                TemplateValidationTests(
-                    test_runner=self,
-                    validate_html=self,
-                    methodName='run_template_validation',
-                ),
-            ]
-
-        if self.check_coverage:
-            template_coverage_collection = True
-            code_coverage_collection = True
-            url_coverage_collection = True
-            extra_tests += [
-                PyFlakesTestCase(test_runner=self, methodName='pyflakes_test'),
-                MyPyTest(test_runner=self, methodName='mypy_test'),
-                #CoverageTest(test_runner=self, methodName='interleaved_migrations_test'),
-                CoverageTest(test_runner=self, methodName='url_coverage_test'),
-                CoverageTest(test_runner=self, methodName='template_coverage_test'),
-                CoverageTest(test_runner=self, methodName='code_coverage_test'),
-            ]
-
-            # ensure that the coverage tests come last.  Specifically list
-            # TemplateTagTest before CoverageTest.  If this list contains
-            # parent classes to later subclasses, the parent classes will
-            # determine the ordering, so use the most specific classes
-            # necessary to get the right ordering:
-            self.reorder_by = (PyFlakesTestCase, MyPyTest, ) + self.reorder_by + (StaticLiveServerTestCase, TemplateTagTest, CoverageTest, )
 
         failures = super(IetfTestRunner, self).run_tests(test_labels, extra_tests=extra_tests, **kwargs)
 
@@ -1139,10 +1152,10 @@ class IetfTestRunner(DiscoverRunner):
 
                 if self.run_full_test_suite:
                     print(("      %8s coverage: %6.2f%%  (%s: %6.2f%%)" %
-                        (test.capitalize(), test_coverage*100, latest_coverage_version, master_coverage*100, )))
+                           (test.capitalize(), test_coverage*100, latest_coverage_version, master_coverage*100, )))
                 else:
                     print(("      %8s coverage: %6.2f%%" %
-                        (test.capitalize(), test_coverage*100, )))
+                           (test.capitalize(), test_coverage*100, )))
 
             print(("""
                 Per-file code and template coverage and per-url-pattern url coverage data
