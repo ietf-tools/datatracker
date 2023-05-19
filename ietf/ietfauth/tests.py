@@ -1158,7 +1158,6 @@ class OpenIDConnectTests(TestCase):
             self.assertEqual(set(userinfo['reg_type'].split()), set(['remote', 'hackathon']))
 
             # Check that ending a session works
-            warnings.filterwarnings("ignore", "Log out via GET requests is deprecated")  # happens in oidc_provider
             r = client.do_end_session_request(state=params["state"], scope=args['scope'])
             self.assertEqual(r.status_code, 302)
             self.assertEqual(r.headers["Location"], urlreverse('ietf.ietfauth.views.login'))
