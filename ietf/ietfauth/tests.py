@@ -12,7 +12,6 @@ import requests_mock
 import shutil
 import time
 import urllib
-import warnings
 
 from .factories import OidClientRecordFactory
 from Cryptodome.PublicKey import RSA
