@@ -113,6 +113,11 @@ USE_L10N = False
 USE_TZ = True
 USE_DEPRECATED_PYTZ = True  # supported until Django 5
 
+# The DjangoDivFormRenderer is a transitional class that opts in to defaulting to the div.html
+# template for formsets. This will become the default behavior in Django 5.0. This configuration
+# can be removed at that point.
+# See https://docs.djangoproject.com/en/4.2/releases/4.1/#forms
+FORM_RENDERER = "django.forms.renderers.DjangoDivFormRenderer"
 
 # Default primary key field type to use for models that don’t have a field with primary_key=True.
 # In the future (relative to 4.2), the default will become 'django.db.models.BigAutoField.'
