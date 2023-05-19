@@ -6518,8 +6518,8 @@ class ImportNotesTests(TestCase):
             r = self.client.get(url)  # try to import the same text
             self.assertContains(r, "This document is identical", status_code=200)
             q = PyQuery(r.content)
-            self.assertEqual(len(q('button:disabled[type="submit"]')), 1)
-            self.assertEqual(len(q('button:enabled[type="submit"]')), 0)
+            self.assertEqual(len(q('#content button:disabled[type="submit"]')), 1)
+            self.assertEqual(len(q('#content button:enabled[type="submit"]')), 0)
 
     def test_allows_import_on_existing_bad_unicode(self):
         """Should not be able to import text identical to the current revision"""
@@ -6543,8 +6543,8 @@ class ImportNotesTests(TestCase):
             r = self.client.get(url)  # try to import the same text
             self.assertNotContains(r, "This document is identical", status_code=200)
             q = PyQuery(r.content)
-            self.assertEqual(len(q('button:enabled[type="submit"]')), 1)
-            self.assertEqual(len(q('button:disabled[type="submit"]')), 0)
+            self.assertEqual(len(q('#content button:enabled[type="submit"]')), 1)
+            self.assertEqual(len(q('#content button:disabled[type="submit"]')), 0)
 
     def test_handles_missing_previous_revision_file(self):
         """Should still allow import if the file for the previous revision is missing"""
