@@ -187,11 +187,10 @@ class NomineePosition(models.Model):
         ordering = ['nominee']
 
     def save(self, **kwargs):
-        update_fields = kwargs.pop("update_fields", None)
         if not self.pk and not self.state_id:
+            # Don't need to set update_fields because the self.pk test means this is a new instance
             self.state = NomineePositionStateName.objects.get(slug='pending')
-            update_fields = {"slug"}.union(update_fields or set())
-        super().save(update_fields=update_fields, **kwargs)
+        super().save(**kwargs)
 
     def __str__(self):
         return "%s - %s - %s" % (self.nominee, self.state, self.position)
