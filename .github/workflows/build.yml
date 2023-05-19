@@ -450,6 +450,8 @@ jobs:
     if: ${{ !failure() && !cancelled() && github.event.inputs.sandbox == 'true' }}
     needs: [prepare, release]
     runs-on: [self-hosted, dev-server]
+    environment:
+      name: sandbox
     env:
       PKG_VERSION: ${{needs.prepare.outputs.pkg_version}}
       
@@ -485,6 +487,9 @@ jobs:
     if: ${{ !failure() && !cancelled() && github.event.inputs.legacySandbox == 'true' }}
     needs: [prepare, release]
     runs-on: [self-hosted, legacy-sandbox-server]
+    environment:
+      name: legacy-sandbox
+      url: "https://sandbox.ietf.org"
     env:
       PKG_VERSION: ${{needs.prepare.outputs.pkg_version}}
       
