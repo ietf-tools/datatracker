@@ -1993,7 +1993,7 @@ class NoPublicKeyTests(TestCase):
         text_bits = [x.xpath('.//text()') for x in q('.alert-warning')]
         flat_text_bits = [item for sublist in text_bits for item in sublist]
         self.assertTrue(any(['not yet' in y for y in flat_text_bits]))
-        self.assertEqual(bool(q('form:not(.navbar-form)')),expected_form)
+        self.assertEqual(bool(q('#content form:not(.navbar-form)')),expected_form)
         self.client.logout()
 
     def test_not_yet(self):
