@@ -32,11 +32,13 @@
     {% else %}
         {% if user.is_authenticated %}
             <li>
-                <a class="dropdown-item {% if flavor != 'top' %} text-wrap link-primary{% endif %}"
-                   rel="nofollow"
-                   href="{% url 'django.contrib.auth.views.logout' %}">
-                    Sign out
-                </a>
+                <form id="logout-form" method="post" action="{% url 'django.contrib.auth.views.logout' %}">
+                    {% csrf_token %}
+                    <button class="dropdown-item {% if flavor != 'top' %} text-wrap link-primary{% endif %}" 
+                            type="submit">
+                        Sign out
+                    </button>
+                </form>
             </li>
             <li>
                 <a class="dropdown-item {% if flavor != 'top' %} text-wrap link-primary{% endif %}"
