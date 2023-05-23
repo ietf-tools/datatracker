@@ -1,6 +1,6 @@
 # Copyright The IETF Trust 2021, All Rights Reserved
 # For an overview of this process and context, see:
-# https://trac.ietf.org/trac/ietfdb/wiki/MeetingConstraints
+# https://github.com/ietf-tools/datatracker/wiki/MeetingConstraints
 from __future__ import absolute_import, print_function, unicode_literals
 
 import calendar

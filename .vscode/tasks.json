@@ -48,7 +48,7 @@
             "args": [
                 "${workspaceFolder}/ietf/manage.py",
                 "test",
-                "--settings=settings_local_sqlitetest"
+                "--settings=settings_postgrestest"
             ],
             "group": "test",
             "presentation": {
@@ -68,7 +68,7 @@
             "args": [
                 "${workspaceFolder}/ietf/manage.py",
                 "test",
-                "--settings=settings_local_sqlitetest",
+                "--settings=settings_postgrestest",
                 "--pattern=tests_js.py"
             ],
             "group": "test",

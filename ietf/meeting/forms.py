@@ -727,6 +727,7 @@ class SessionDetailsForm(forms.ModelForm):
                 'purpose',
                 session_purposes[0] if len(session_purposes) > 0 else None,
             )
+            kwargs['initial'].setdefault('has_onsite_tool', group.features.acts_like_wg)
         super().__init__(*args, **kwargs)
 
         self.fields['type'].widget.attrs.update({
@@ -743,8 +744,8 @@ class SessionDetailsForm(forms.ModelForm):
         model = Session
         fields = (
             'purpose', 'name', 'short', 'type', 'requested_duration',
-            'on_agenda', 'agenda_note', 'remote_instructions', 'attendees',
-            'comments',
+            'on_agenda', 'agenda_note', 'has_onsite_tool', 'remote_instructions',
+            'attendees', 'comments',
         )
         labels = {'requested_duration': 'Length'}
 

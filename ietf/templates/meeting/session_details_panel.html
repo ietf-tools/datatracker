@@ -2,30 +2,32 @@
 {% origin %}
 {% for session in sessions %}
     {% with item=session.official_timeslotassignment %} {% with timeslot=item.timeslot %}
-        <h3 class="mt-4" id="session_{{ session.pk }}">
-            {% if sessions|length > 1 %}Session {{ forloop.counter }} :{% endif %}
-            {% for time in session.times %}
-                {% if not forloop.first %},{% endif %}
-                {{ time|timezone:session.meeting.time_zone|dateformat:"l Y-m-d H:i T" }}
-                {% if time.tzinfo.zone != "UTC" %}<span class="small">({{ time|utc|dateformat:"H:i T" }})</span>{% endif %}
-            {% endfor %}
-            {% if session.cancelled %}
-                <small class="badge rounded-pill bg-warning">Cancelled</small>
-            {% else %}
-                {{ session.status }}
+        <div class="mt-4">
+            {% if not session.cancelled %}
+                <div class="regular ms-3 float-end">
+                    {# see note in the included templates re: show_agenda parameter and required JS import #}
+                    {% if meeting.type.slug == 'interim' %}
+                        {% include "meeting/interim_session_buttons.html" with show_agenda=False show_empty=False %}
+                    {% else %}
+                        {% include "meeting/session_buttons_include.html" with show_agenda=False item=session.official_timeslotassignment use_notes=session.meeting.use_notes %}
+                    {% endif %}
+                </div>
             {% endif %}
-            {% if session.name %}: {{ session.name }}{% endif %}
-        </h3>
-        {% if not session.cancelled %}
-            <div class="regular float-end">
-                {# see note in the included templates re: show_agenda parameter and required JS import #}
-                {% if meeting.type.slug == 'interim' %}
-                    {% include "meeting/interim_session_buttons.html" with show_agenda=False show_empty=False %}
+            <h3 class="" id="session_{{ session.pk }}">
+                {% if sessions|length > 1 %}Session {{ forloop.counter }} :{% endif %}
+                {% for time in session.times %}
+                    {% if not forloop.first %},{% endif %}
+                    {{ time|timezone:session.meeting.time_zone|dateformat:"l Y-m-d H:i T" }}
+                    {% if time.tzinfo.zone != "UTC" %}<span class="small">({{ time|utc|dateformat:"H:i T" }})</span>{% endif %}
+                {% endfor %}
+                {% if session.cancelled %}
+                    <small class="badge rounded-pill bg-warning">Cancelled</small>
                 {% else %}
-                    {% include "meeting/session_buttons_include.html" with show_agenda=False item=session.official_timeslotassignment use_notes=session.meeting.use_notes %}
+                    {{ session.status }}
                 {% endif %}
-            </div>
-        {% endif %}
+                {% if session.name %}: {{ session.name }}{% endif %}
+            </h3>
+        </div>
         {% if session.agenda_note %}<h3 class="mt-4">{{ session.agenda_note }}</h3>{% endif %}
         {% if can_manage_materials %}
             {% if session.current_status == 'sched' or session.current_status == 'schedw' %}
@@ -231,30 +233,30 @@
                 </td>
             </tr>
             {# Video stream (meetecho) #}
-            {% if timezone_now < timeslot.end_time %}
+            {% if session.video_stream_url and timezone_now < timeslot.end_time %}
                 <tr>
                     <td>
-                        <a href="{{ timeslot.location.video_stream_url|format:session }}">
+                        <a href="{{ session.video_stream_url }}">
                             <i class="bi bi-camera-video"></i> Video stream
                         </a>
                     </td>
                 </tr>
             {% endif %}
             {# Onsite tool (meetecho_onsite) #}
-            {% if timeslot.location.onsite_tool_url %}
+            {% if session.onsite_tool_url %}
                 <tr>
                     <td>
-                        <a href="{{ timeslot.location.onsite_tool_url|format:session }}">
+                        <a href="{{ session.onsite_tool_url }}">
                             <i class="bi bi-phone"></i> Onsite tool
                         </a>
                     </td>
                 </tr>
             {% endif %}
             {# Audio stream #}
-            {% if timeslot.location.audio_stream_url %}
+            {% if session.audio_stream_url %}
                 <tr>
                     <td>
-                        <a href="{{ timeslot.location.audio_stream_url|format:session }}">
+                        <a href="{{ session.audio_stream_url }}">
                             <i class="bi bi-headphones"></i> Audio stream
                         </a>
                     </td>
@@ -339,7 +341,7 @@
                         {% endfor %}
                     {% endif %}
                 {% endwith %}
-                {% if timeslot.location.video_stream_url %}
+                {% if session.video_stream_url %}
                     <tr>
                         <td>
                             <a href="https://www.meetecho.com/ietf{{ meeting.number }}/recordings#{{ acronym.upper }}">

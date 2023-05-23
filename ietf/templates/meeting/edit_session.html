@@ -1,15 +1,16 @@
 {% extends "base.html" %}
-{# Copyright The IETF Trust 2021, All Rights Reserved #}
+{# Copyright The IETF Trust 2023, All Rights Reserved #}
 {% load origin %}
 {% load django_bootstrap5 %}
+{% load session_filters %}
 {% block pagehead %}{{ form.media.css }}{% endblock %}
-{% block title %}Edit session "{{ session }}"{% endblock %}
+{% block title %}Edit session "{{ session|describe_with_tz }}"{% endblock %}
 {% block content %}
     {% origin %}
     <h1>
         Edit session
         <br>
-        <small class="text-muted">{{ session }}</small>
+        <small class="text-muted">{{ session|describe_with_tz }}</small>
     </h1>
     <form class="session-details-form my-3" method="post">
         {% csrf_token %}

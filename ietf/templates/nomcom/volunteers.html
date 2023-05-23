@@ -10,7 +10,10 @@
 {% block nomcom_content %}
     {% origin %}
     <h2>Volunteers for {{ nomcom.group }}</h2>
-    {% if not public %}<a href="{% url 'ietf.nomcom.views.private_volunteers_csv' year=year %}">Download as csv</a>{% endif %}
+    {% if not public %}
+        <a class="btn btn-primary" role="button" href="{% url 'ietf.nomcom.views.private_volunteers_csv' year=year %}">Download as csv</a>
+        <a class="btn btn-primary" role="button" href="{% url 'ietf.nomcom.views.qualified_volunteer_list_for_announcement' year=year %}">View simplified list of only qualified volunteers</a>
+    {% endif %}
     {% regroup volunteers by eligible as volunteers_by_eligibility %}
     {% for eligibility_group in volunteers_by_eligibility %}
         <h3 class="mt-3">{{ eligibility_group.grouper|yesno:"Eligible, Not Eligible" }}</h3>

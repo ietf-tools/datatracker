@@ -556,6 +556,8 @@ class ReviewTests(TestCase):
 
                 tar.add(os.path.relpath(tmp.name))
 
+                mbox.close()
+
         return mbox_path
 
     def test_search_mail_archive(self):

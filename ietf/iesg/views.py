@@ -47,8 +47,9 @@ from django import forms
 from django.conf import settings
 from django.db import models
 from django.http import HttpResponse
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.sites.models import Site
+from django.urls import reverse as urlreverse
 from django.utils.encoding import force_bytes
 #from django.views.decorators.cache import cache_page
 #from django.views.decorators.vary import vary_on_cookie
@@ -59,9 +60,10 @@ from ietf.doc.models import Document, State, LastCallDocEvent, ConsensusDocEvent
 from ietf.doc.utils import update_telechat, augment_events_with_revision
 from ietf.group.models import GroupMilestone, Role
 from ietf.iesg.agenda import agenda_data, agenda_sections, fill_in_agenda_docs, get_agenda_date
-from ietf.iesg.models import TelechatDate
+from ietf.iesg.models import TelechatDate, TelechatAgendaContent
 from ietf.iesg.utils import telechat_page_count
 from ietf.ietfauth.utils import has_role, role_required, user_is_person
+from ietf.name.models import TelechatAgendaSectionName
 from ietf.person.models import Person
 from ietf.meeting.utils import get_activity_stats
 from ietf.doc.utils_search import fill_in_document_table_attributes, fill_in_telechat_date
@@ -197,8 +199,17 @@ def agenda(request, date=None):
     data = agenda_data(date)
 
     if has_role(request.user, ["Area Director", "IAB Chair", "Secretariat"]):
-        data["sections"]["1.1"]["title"] = data["sections"]["1.1"]["title"].replace("Roll call", '<a href="%s">Roll Call</a>' % settings.IESG_ROLL_CALL_URL )
-        data["sections"]["1.3"]["title"] = data["sections"]["1.3"]["title"].replace("minutes", '<a href="%s">Minutes</a>' % settings.IESG_MINUTES_URL)
+        data["sections"]["1.1"]["title"] = data["sections"]["1.1"]["title"].replace(
+            "Roll call",
+            '<a href="{}">Roll Call</a>'.format(
+                urlreverse("ietf.iesg.views.telechat_agenda_content_view", kwargs={"section": "roll_call"})
+            )
+        )
+        data["sections"]["1.3"]["title"] = data["sections"]["1.3"]["title"].replace(
+            "minutes",
+            '<a href="{}">Minutes</a>'.format(
+                urlreverse("ietf.iesg.views.telechat_agenda_content_view", kwargs={"section": "minutes"})
+            ))
 
     request.session['ballot_edit_return_point'] = request.path_info
     return render(request, "iesg/agenda.html", {
@@ -273,9 +284,7 @@ def agenda_package(request, date=None):
             "date": data["date"],
             "sections": sorted(data["sections"].items()),
             "roll_call": data["sections"]["1.1"]["text"],
-            "roll_call_url": settings.IESG_ROLL_CALL_URL,
             "minutes": data["sections"]["1.3"]["text"],
-            "minutes_url": settings.IESG_MINUTES_URL,
             "management_items": [(num, section) for num, section in data["sections"].items() if "6" < num < "7"],
             "domain": Site.objects.get_current().domain,
             }, content_type='text/plain')
@@ -561,3 +570,40 @@ def ietf_activity(request):
     context = get_activity_stats(sdate, edate)
     context['form'] = form
     return render(request, "iesg/ietf_activity_report.html", context)
+
+
+class TelechatAgendaContentForm(forms.Form):
+    text = forms.CharField(max_length=100_000, widget=forms.Textarea, required=False)
+
+
+@role_required("Secretariat")
+def telechat_agenda_content_edit(request, section):
+    section = get_object_or_404(TelechatAgendaSectionName, slug=section, used=True)
+    content = TelechatAgendaContent.objects.filter(section=section).first()
+    initial = {"text": content.text} if content else {}
+    if request.method == "POST":
+        form = TelechatAgendaContentForm(data=request.POST, initial=initial)
+        if form.is_valid():
+            TelechatAgendaContent.objects.update_or_create(
+                section=section, defaults={"text": form.cleaned_data["text"]}
+            )
+            return redirect("ietf.iesg.views.telechat_agenda_content_manage")
+    else:
+        form = TelechatAgendaContentForm(initial=initial)
+    return render(request, "iesg/telechat_agenda_content_edit.html", {"section": section, "form": form})
+
+
+@role_required("Secretariat")
+def telechat_agenda_content_manage(request):
+    # Fill in any missing instances with empty stand-ins. The edit view will create persistent instances if needed.
+    contents = [
+        TelechatAgendaContent.objects.filter(section=section).first() or TelechatAgendaContent(section=section)
+        for section in TelechatAgendaSectionName.objects.filter(used=True)
+    ]
+    return render(request, "iesg/telechat_agenda_content_manage.html", {"contents": contents})
+
+
+@role_required("Secretariat", "IAB Chair", "Area Director")
+def telechat_agenda_content_view(request, section):
+    content = get_object_or_404(TelechatAgendaContent, section__slug=section, section__used=True)
+    return HttpResponse(content=content.text, content_type="text/plain")

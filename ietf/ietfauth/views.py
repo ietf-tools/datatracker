@@ -53,6 +53,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth.views import LoginView
 from django.contrib.sites.models import Site
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
+from django.db import IntegrityError
 from django.urls import reverse as urlreverse
 from django.http import Http404, HttpResponseRedirect, HttpResponseForbidden
 from django.shortcuts import render, redirect, get_object_or_404
@@ -122,16 +123,42 @@ def create_account(request):
             new_account_email = form.cleaned_data[
                 "email"
             ]  # This will be lowercase if form.is_valid()
+            email_is_known = False  # do we already know of the new_account_email address?
 
-            user = User.objects.filter(username__iexact=new_account_email)
-            email = Email.objects.filter(address__iexact=new_account_email)
-            if user.exists() or email.exists():
-                person_to_contact = user.first().person if user else email.first().person
-                to_email = person_to_contact.email_address()
-                if to_email:
-                    send_account_creation_exists_email(request, new_account_email, to_email)
-                else:
-                    raise ValidationError(f"Account for {new_account_email} exists, but cannot email it")
+            # Find an existing Person to contact, if one exists
+            person_to_contact = None
+            user = User.objects.filter(username__iexact=new_account_email).first()
+            if user is not None:
+                email_is_known = True
+                try:
+                    person_to_contact = user.person
+                except User.person.RelatedObjectDoesNotExist:
+                    # User.person is a OneToOneField so it raises an exception if the field is null
+                    pass  # leave person_to_contact as None
+            if person_to_contact is None:
+                email = Email.objects.filter(address__iexact=new_account_email).first()
+                if email is not None:
+                    email_is_known = True
+                    # Email.person is a ForeignKey, so its value is None if the field is null
+                    person_to_contact = email.person
+            # Get a "good" email to contact the existing Person
+            to_email = person_to_contact.email_address() if person_to_contact else None
+
+            if to_email:
+                # We have a "good" email - send instructions to it
+                send_account_creation_exists_email(request, new_account_email, to_email)
+            elif email_is_known:
+                # Either a User or an Email matching new_account_email is in the system but we do not have a
+                # "good" email to use to contact its owner. Fail so the user can contact the secretariat to sort
+                # things out.
+                form.add_error(
+                    "email",
+                    ValidationError(
+                        f"Unable to create account for {new_account_email}. Please contact "
+                        f"the Secretariat at {settings.SECRETARIAT_SUPPORT_EMAIL} for assistance."
+                    ),
+                )
+                new_account_email = None  # Indicate to the template that we failed to create the requested account
             else:
                 # For the IETF 113 Registration period (at least) we are lowering the
                 # barriers for account creation to the simple email round-trip check
@@ -440,8 +467,19 @@ def confirm_new_email(request, auth):
     form = NewEmailForm({ "new_email": email })
     can_confirm = form.is_valid() and email
     new_email_obj = None
+    created = False
     if request.method == 'POST' and can_confirm and request.POST.get("action") == "confirm":
-        new_email_obj = Email.objects.create(address=email, person=person, origin=username)
+        try: 
+            new_email_obj, created = Email.objects.get_or_create(
+                address=email, 
+                person=person, 
+                defaults={'origin': username},
+            )
+        except IntegrityError:
+            can_confirm = False
+            form.add_error(
+                None, "Email address is in use by another user. Please contact the secretariat for assistance."
+            )
 
     return render(request, 'registration/confirm_new_email.html', {
         'username': username,
@@ -449,6 +487,7 @@ def confirm_new_email(request, auth):
         'can_confirm': can_confirm,
         'form': form,
         'new_email_obj': new_email_obj,
+        'already_confirmed': new_email_obj and not created,
     })
 
 def password_reset(request):
@@ -463,6 +502,12 @@ def password_reset(request):
             # We still report that the action succeeded, so we're not leaking the existence of user
             # email addresses.
             user = User.objects.filter(username__iexact=submitted_username, person__isnull=False).first()
+            if not user:
+                # try to find user ID from the email address
+                email = Email.objects.filter(address=submitted_username).first()
+                if email and email.person and email.person.user:
+                    user = email.person.user
+
             if user and user.person.email_set.filter(active=True).exists():
                 data = {
                     'username': user.username,

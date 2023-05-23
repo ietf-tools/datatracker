@@ -7,6 +7,15 @@
     <script src="{% static 'secr/js/utils.js' %}"></script>
 {% endblock %}
 
+{% block extrastyle %}
+    <style>
+        dl {width: 100%;}
+        dt {float: left; width: 30%; margin: 0.1em 0 0.1em 0; }
+        dt::after {content: ":";}
+        dd {float: left; width: 70%; margin: 0.1em 0 0.1em 0;}
+    </style>
+{% endblock %}
+
 {% block breadcrumbs %}{{ block.super }}
     &raquo; <a href="../">Sessions</a>
     &raquo; {{ group.acronym }}

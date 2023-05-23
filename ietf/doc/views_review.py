@@ -347,6 +347,7 @@ def assign_reviewer(request, name, request_id):
 
 class RejectReviewerAssignmentForm(forms.Form):
     message_to_secretary = forms.CharField(widget=forms.Textarea, required=False, help_text="Optional explanation of rejection, will be emailed to team secretary if filled in", strip=False)
+    wants_to_be_next = forms.BooleanField(label="I want to be assigned new document immediately", required=False)
 
 @login_required
 def reject_reviewer_assignment(request, name, assignment_id):
@@ -398,11 +399,12 @@ def reject_reviewer_assignment(request, name, assignment_id):
             )
 
             policy = get_reviewer_queue_policy(review_assignment.review_request.team)
-            policy.return_reviewer_to_rotation_top(review_assignment.reviewer.person)
+            policy.return_reviewer_to_rotation_top(review_assignment.reviewer.person, form.cleaned_data['wants_to_be_next'])
 
             msg = render_to_string("review/reviewer_assignment_rejected.txt", {
                 "by": request.user.person,
-                "message_to_secretary": form.cleaned_data.get("message_to_secretary")
+                "message_to_secretary": form.cleaned_data.get("message_to_secretary"),
+                "wants_to_be_next" : form.cleaned_data['wants_to_be_next']
             })
 
             email_review_assignment_change(request, review_assignment, "Reviewer assignment rejected", msg, by=request.user.person, notify_secretary=True, notify_reviewer=True, notify_requested_by=False)
@@ -448,7 +450,7 @@ def withdraw_reviewer_assignment(request, name, assignment_id):
         )            
 
         policy = get_reviewer_queue_policy(review_assignment.review_request.team)
-        policy.return_reviewer_to_rotation_top(review_assignment.reviewer.person)
+        policy.return_reviewer_to_rotation_top(review_assignment.reviewer.person, True)
         
         msg = "Review assignment withdrawn by %s"%request.user.person
 
