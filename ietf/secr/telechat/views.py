@@ -4,10 +4,11 @@
 
 import datetime
 
+from functools import partialmethod
+
 from django.contrib import messages
 from django.forms.formsets import formset_factory
 from django.shortcuts import render, get_object_or_404, redirect
-from django.utils.functional import curry
 
 import debug                            # pyflakes:ignore
 
@@ -215,7 +216,7 @@ def doc_detail(request, date, name):
     initial_state = {'state':doc.get_state(state_type).pk,
                      'substate':tag}
 
-    # need to use curry here to pass custom variable to form init
+    # need to use partialmethod here to pass custom variable to form init
     if doc.active_ballot():
         ballot_type = doc.active_ballot().ballot_type
     elif doc.type.slug == 'draft':
@@ -223,7 +224,7 @@ def doc_detail(request, date, name):
     else:
         ballot_type = BallotType.objects.get(doc_type=doc.type)
     BallotFormset = formset_factory(BallotForm, extra=0)
-    BallotFormset.form.__init__ = curry(BallotForm.__init__, ballot_type=ballot_type)
+    BallotFormset.form.__init__ = partialmethod(BallotForm.__init__, ballot_type=ballot_type)
     
     agenda = agenda_data(date=date)
     header = get_section_header(doc, agenda)

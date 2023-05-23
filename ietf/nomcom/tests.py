@@ -4,6 +4,7 @@
 
 import datetime
 import io
+import mock
 import random
 import shutil
 
@@ -1577,6 +1578,16 @@ class NewActiveNomComTests(TestCase):
         login_testing_unauthorized(self,self.chair.user.username,url)
         response = self.client.get(url)
         self.assertEqual(response.status_code,200)
+        # Check that we get an error if there's an encoding problem talking to openssl
+        # "\xc3\x28" is an invalid utf8 string
+        with mock.patch("ietf.nomcom.utils.pipe", return_value=(0, b"\xc3\x28", None)):
+            response = self.client.post(url, {'key': force_str(key)})
+        self.assertFormError(
+            response.context["form"],
+            None,
+            "An internal error occurred while adding your private key to your session."
+            f"Please contact the secretariat for assistance ({settings.SECRETARIAT_SUPPORT_EMAIL})",
+        )
         response = self.client.post(url,{'key': force_str(key)})
         self.assertEqual(response.status_code,302)
 
@@ -1993,7 +2004,7 @@ class NoPublicKeyTests(TestCase):
         text_bits = [x.xpath('.//text()') for x in q('.alert-warning')]
         flat_text_bits = [item for sublist in text_bits for item in sublist]
         self.assertTrue(any(['not yet' in y for y in flat_text_bits]))
-        self.assertEqual(bool(q('form:not(.navbar-form)')),expected_form)
+        self.assertEqual(bool(q('#content form:not(.navbar-form)')),expected_form)
         self.client.logout()
 
     def test_not_yet(self):

@@ -6,12 +6,14 @@ import debug                            # pyflakes:ignore
 
 from inspect import isclass
 
-from django.conf.urls import url as django_url
-from django.views.generic import View
+from django.urls import re_path
 from django.utils.encoding import force_str
+from django.views.generic import View
 
 def url(regex, view, kwargs=None, name=None):
-    if callable(view) and hasattr(view, '__name__'):
+    if hasattr(view, "view_class"):
+        view_name = "%s.%s" % (view.__module__, view.view_class.__name__)
+    elif callable(view) and hasattr(view, '__name__'):
         view_name = "%s.%s" % (view.__module__, view.__name__)
     else:
         view_name = regex
@@ -42,5 +44,5 @@ def url(regex, view, kwargs=None, name=None):
         #debug.show('branch')
         #debug.show('name')
         pass
-    return django_url(regex, view, kwargs=kwargs, name=name)
+    return re_path(regex, view, kwargs=kwargs, name=name)
     

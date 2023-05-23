@@ -691,7 +691,7 @@ class CustomApiTests(TestCase):
         self.assertEqual(set(missing_fields), set(drop_fields))
 
     def test_api_version(self):
-        DumpInfo.objects.create(date=timezone.datetime(2022,8,31,7,10,1,tzinfo=timezone.utc), host='testapi.example.com',tz='UTC')
+        DumpInfo.objects.create(date=timezone.datetime(2022,8,31,7,10,1,tzinfo=datetime.timezone.utc), host='testapi.example.com',tz='UTC')
         url = urlreverse('ietf.api.views.version')
         r = self.client.get(url)
         data = r.json()

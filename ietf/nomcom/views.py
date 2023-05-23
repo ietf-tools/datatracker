@@ -18,7 +18,7 @@ from django.http import Http404, HttpResponseRedirect, HttpResponse
 from django.shortcuts import render, get_object_or_404, redirect
 from django.template.loader import render_to_string
 from django.urls import reverse
-from django.utils.encoding import force_bytes, force_text
+from django.utils.encoding import force_bytes, force_str
 
 
 from ietf.dbtemplate.models import DBTemplate
@@ -158,8 +158,16 @@ def private_key(request, year):
     if request.method == 'POST':
         form = PrivateKeyForm(data=request.POST)
         if form.is_valid():
-            store_nomcom_private_key(request, year, force_bytes(form.cleaned_data.get('key', '')))
-            return HttpResponseRedirect(back_url)
+            try:
+                store_nomcom_private_key(request, year, force_bytes(form.cleaned_data.get('key', '')))
+            except UnicodeError:
+                form.add_error(
+                    None, 
+                    "An internal error occurred while adding your private key to your session."
+                    f"Please contact the secretariat for assistance ({settings.SECRETARIAT_SUPPORT_EMAIL})"
+                )
+            else:
+                return HttpResponseRedirect(back_url)
     else:
         form = PrivateKeyForm()
 
@@ -684,7 +692,7 @@ def private_questionnaire(request, year):
         if form.is_valid():
             form.save()
             messages.success(request, 'The questionnaire response has been registered.')
-            questionnaire_response = force_text(form.cleaned_data['comment_text'])
+            questionnaire_response = force_str(form.cleaned_data['comment_text'])
             form = QuestionnaireForm(nomcom=nomcom, user=request.user)
     else:
         form = QuestionnaireForm(nomcom=nomcom, user=request.user)

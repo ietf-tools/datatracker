@@ -3,10 +3,11 @@
 
 
 from django.urls import reverse as urlreverse
-from django.db.models.query import QuerySet
 from django.forms.widgets import Widget
 from django.utils.safestring import mark_safe
 from django.utils.html import conditional_escape
+
+from django_stubs_ext import QuerySetAny
 
 
 class ButtonWidget(Widget):
@@ -34,7 +35,7 @@ class ShowAttachmentsWidget(Widget):
         html = '<div id="id_%s">' % name
         html += '<span class="d-none showAttachmentsEmpty form-control widget">No files attached</span>'
         html += '<div class="attachedFiles form-control widget">'
-        if value and isinstance(value, QuerySet):
+        if value and isinstance(value, QuerySetAny):
             for attachment in value:
                 html += '<a class="initialAttach" href="%s">%s</a>&nbsp' % (conditional_escape(attachment.document.get_href()), conditional_escape(attachment.document.title))
                 html += '<a class="btn btn-primary btn-sm" href="{}">Edit</a>&nbsp'.format(urlreverse("ietf.liaisons.views.liaison_edit_attachment", kwargs={'object_id':attachment.statement.pk,'doc_id':attachment.document.pk}))

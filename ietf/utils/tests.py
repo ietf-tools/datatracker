@@ -209,7 +209,7 @@ class TemplateChecksTestCase(TestCase):
         errors = []
         for path, template in self.templates.items():
             origin = str(template.origin).replace(settings.BASE_DIR, '')
-            for node in template:
+            for node in template.nodelist:
                 for child in node.get_nodes_by_type(node_type):
                     errors += func(child, origin, *args, **kwargs)
         if errors:
