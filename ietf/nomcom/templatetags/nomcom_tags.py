@@ -55,8 +55,10 @@ def formatted_email(address):
 
 @register.simple_tag
 def decrypt(string, request, year, plain=False):
-    key = retrieve_nomcom_private_key(request, year)
-
+    try:
+        key = retrieve_nomcom_private_key(request, year)
+    except UnicodeError:
+        return f"-*- Encrypted text [Error retrieving private key, contact the secretariat ({settings.SECRETARIAT_SUPPORT_EMAIL})]"
     if not key:
         return '-*- Encrypted text [No private key provided] -*-'
 
