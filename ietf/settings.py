@@ -13,7 +13,13 @@ import warnings
 from typing import Any, Dict, List, Tuple # pyflakes:ignore
 
 warnings.simplefilter("always", DeprecationWarning)
-warnings.filterwarnings("ignore", message="'oidc_provider' defines default_app_config")  # hopefully only need until Django 4.1 or 4.2
+warnings.filterwarnings("ignore", message="pkg_resources is deprecated as an API")
+warnings.filterwarnings("ignore", "Log out via GET requests is deprecated")  # happens in oidc_provider
+warnings.filterwarnings("ignore", module="tastypie", message="The django.utils.datetime_safe module is deprecated.")
+warnings.filterwarnings("ignore", module="oidc_provider", message="The django.utils.timezone.utc alias is deprecated.")
+warnings.filterwarnings("ignore", message="The USE_DEPRECATED_PYTZ setting,")  # https://github.com/ietf-tools/datatracker/issues/5635
+warnings.filterwarnings("ignore", message="The USE_L10N setting is deprecated.")  # https://github.com/ietf-tools/datatracker/issues/5648
+warnings.filterwarnings("ignore", message="django.contrib.auth.hashers.CryptPasswordHasher is deprecated.")  # https://github.com/ietf-tools/datatracker/issues/5663
 warnings.filterwarnings("ignore", message="'urllib3\\[secure\\]' extra is deprecated")
 warnings.filterwarnings("ignore", message="The logout\\(\\) view is superseded by")
 warnings.filterwarnings("ignore", message="Report.file_reporters will no longer be available in Coverage.py 4.2", module="coverage.report")
@@ -108,6 +114,11 @@ USE_L10N = False
 USE_TZ = True
 USE_DEPRECATED_PYTZ = True  # supported until Django 5
 
+# The DjangoDivFormRenderer is a transitional class that opts in to defaulting to the div.html
+# template for formsets. This will become the default behavior in Django 5.0. This configuration
+# can be removed at that point.
+# See https://docs.djangoproject.com/en/4.2/releases/4.1/#forms
+FORM_RENDERER = "django.forms.renderers.DjangoDivFormRenderer"
 
 # Default primary key field type to use for models that don’t have a field with primary_key=True.
 # In the future (relative to 4.2), the default will become 'django.db.models.BigAutoField.'
@@ -343,11 +354,7 @@ SESSION_COOKIE_SAMESITE = 'None'
 SESSION_COOKIE_SECURE = True
 
 SESSION_EXPIRE_AT_BROWSER_CLOSE = False
-# We want to use the JSON serialisation, as it's safer -- but there is /secr/
-# code which stashes objects in the session that can't be JSON serialized.
-# Switch when that code is rewritten.
-#SESSION_SERIALIZER = "django.contrib.sessions.serializers.JSONSerializer"
-SESSION_SERIALIZER = 'django.contrib.sessions.serializers.PickleSerializer'
+SESSION_SERIALIZER = "django.contrib.sessions.serializers.JSONSerializer"
 SESSION_ENGINE = "django.contrib.sessions.backends.cache"
 SESSION_SAVE_EVERY_REQUEST = True
 SESSION_CACHE_ALIAS = 'sessions'
@@ -1131,6 +1138,7 @@ ACCOUNT_REQUEST_EMAIL = 'account-request@ietf.org'
 
 SILENCED_SYSTEM_CHECKS = [
     "fields.W342",  # Setting unique=True on a ForeignKey has the same effect as using a OneToOneField.
+    "fields.W905",  # django.contrib.postgres.fields.CICharField is deprecated. (see https://github.com/ietf-tools/datatracker/issues/5660)
 ]
 
 CHECKS_LIBRARY_PATCHES_TO_APPLY = [

@@ -158,8 +158,16 @@ def private_key(request, year):
     if request.method == 'POST':
         form = PrivateKeyForm(data=request.POST)
         if form.is_valid():
-            store_nomcom_private_key(request, year, force_bytes(form.cleaned_data.get('key', '')))
-            return HttpResponseRedirect(back_url)
+            try:
+                store_nomcom_private_key(request, year, force_bytes(form.cleaned_data.get('key', '')))
+            except UnicodeError:
+                form.add_error(
+                    None, 
+                    "An internal error occurred while adding your private key to your session."
+                    f"Please contact the secretariat for assistance ({settings.SECRETARIAT_SUPPORT_EMAIL})"
+                )
+            else:
+                return HttpResponseRedirect(back_url)
     else:
         form = PrivateKeyForm()
 

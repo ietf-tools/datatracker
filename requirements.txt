@@ -1,5 +1,5 @@
 # -*- conf-mode -*-
-setuptools>=51.1.0,<67.5.0    # Require this first, to prevent later errors
+setuptools>=51.1.0    # Require this first, to prevent later errors
 #
 argon2-cffi>=21.3.0    # For the Argon2 password hasher option
 beautifulsoup4>=4.11.1    # Only used in tests
@@ -11,7 +11,7 @@ coverage>=4.5.4,<5.0    # Coverage 5.x moves from a json database to SQLite.  Mo
 decorator>=5.1.1
 types-decorator>=5.1.1
 defusedxml>=0.7.1    # for TastyPie when using xml; not a declared dependency
-Django<4.2
+Django>4.2,<5
 django-analytical>=3.1.0
 django-bootstrap5>=21.3
 django-celery-beat>=2.3.0
@@ -45,7 +45,7 @@ markdown>=3.3.6
 types-markdown>=3.3.6
 mock>=4.0.3    # Used only by tests, of course
 types-mock>=4.0.3
-mypy<1.3    # Version requirements determined by django-stubs.
+mypy~=1.2.0    # Version requirements determined by django-stubs.
 oic>=1.3    # Used only by tests
 Pillow>=9.1.0
 psycopg2>=2.9.6
