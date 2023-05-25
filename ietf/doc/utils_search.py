@@ -155,7 +155,6 @@ def fill_in_document_table_attributes(docs, have_telechat_date=False):
         elif rel.relationship_id == "updates":
             l = d.updated_by_list
         l.append(rel_rfc_aliases[rel.source_id])
-    l.sort(key=lambda x: int(re.sub(r"rfc\s*(\d+)", r"\1", x, flags=re.IGNORECASE)))
 
 def augment_docs_with_related_docs_info(docs):
     """Augment all documents with related documents information.
