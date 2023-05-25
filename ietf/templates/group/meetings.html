@@ -84,8 +84,10 @@
             </tbody>
         </table>
     {% endif %}
-    <p class="alert alert-info my-3">
-        This page shows meetings within the last four years. For earlier meetings, please see the
-        <a href="https://www.ietf.org/how/meetings/past/">proceedings</a>.
-    </p>
+    {% if group.acronym != "iab" %}
+        <p class="alert alert-info my-3">
+            This page shows meetings within the last four years. For earlier meetings, please see the
+            <a href="https://www.ietf.org/how/meetings/past/">proceedings</a>.
+        </p>
+    {% endif %}
 {% endblock %}

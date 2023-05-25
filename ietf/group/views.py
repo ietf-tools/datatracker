@@ -816,7 +816,7 @@ def meetings(request, acronym=None, group_type=None):
 
     sessions = add_event_info_to_session_qs(
         group.session_set.filter(
-            meeting__date__gt=four_years_ago,
+            meeting__date__gt=four_years_ago if not group.acronym == 'iab' else datetime.date(1970,1,1),
             type__in=['regular','plenary','other']
         )
     ).filter(

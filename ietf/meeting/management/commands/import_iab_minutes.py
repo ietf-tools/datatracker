@@ -24,7 +24,7 @@ class Command(BaseCommand):
         for year in ntby:
             counter = 1
             for month, day, ext, start_hour, start_minute, duration in ntby[year]:
-                start = datetime.datetime(year, month, day, start_hour, start_minute, tzinfo=datetime.timezone.utc)
+                start = datetime.datetime(int(year), month, day, start_hour, start_minute, tzinfo=datetime.timezone.utc)
                 meeting_name = f"interim-{year}-iab-{counter:02d}"
                 minutes_docname = f"minutes-interim-{year}-iab-{counter:02d}-{start:%Y%m%d}" # Note violating the convention of having the start time...
                 minutes_filename = f"{minutes_docname}-00.{ext}"  # I plan to use a management command to put the files in place after the migration is run.
