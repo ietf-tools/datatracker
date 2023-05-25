@@ -1,118 +1,31 @@
 # Copyright The IETF Trust 2023, All Rights Reserved
 
 import datetime
-import zoneinfo
+import json
 
-from django.db import migrations
-
-
-def nametimes_by_year():
-    with open("data_for_0005","r") as datafile:
-        return(eval(datafile.read())) # Consider making the dump json instead.
-
-def forward(apps, schema_editor):
-    Document = apps.get_model("doc", "Document")
-    DocAlias = apps.get_model("doc", "DocAlias")
-    Meeting = apps.get_model("meeting", "Meeting")
-    Schedule = apps.get_model("meeting", "Schedule")
-    Session = apps.get_model("meeting", "Session")
-    SchedulingEvent = apps.get_model("meeting", "SchedulingEvent")
-    SchedTimeSessAssignment = apps.get_model("meeting", "SchedTimeSessAssignment")
-    TimeSlot = apps.get_model("meeting", "TimeSlot")
-
-    ntby = nametimes_by_year()
-    for year in ntby.keys():
-        counter = 1
-        for nametime in ntby[year]:
-            name = nametime[0]
-            _, ext = name.split(".")
-            start, end = nametime[1]
-            meeting_name = f"interim-{year}-iab-{counter:02d}"
-            minutes_docname = f"minutes-interim-{year}-iab-{counter:02d}-{start:%Y%m%d}" # Note violating the convention of having the start time...
-            minutes_filename = f"{minutes_docname}-00.{ext}"  # I plan to use a management command to put the files in place after the migration is run.
-            # Create Document
-            doc = Document.objects.create(
-                name = minutes_docname,
-                type_id = "minutes",
-                title = f"Minutes {meeting_name} {start:%Y-%m-%d}", # Another violation of convention,
-                group_id = 7, # The IAB group
-                rev = "00",
-                uploaded_filename = minutes_filename,
-            )
-            DocAlias.objects.create(name=doc.name).docs.add(doc)
-            # Create Meeting - Add a note about noon utc fake meeting times
-            meeting = Meeting.objects.create(
-                number=meeting_name,
-                type_id='interim',
-                date=start.date(),
-                days=1,
-                time_zone=start.tzname())
-            schedule = Schedule.objects.create(
-                meeting=meeting,
-                owner_id=1, # The "(System)" person
-                visible=True,
-                public=True)
-            meeting.schedule = schedule
-            if start.timetz() == datetime.time(12, 0, 0, tzinfo=zoneinfo.ZoneInfo(key="UTC")):
-                meeting.agenda_note = "The actual time of this meeting was not recorded and was likely not at noon UTC"
-            meeting.save()
-            # Create Session
-            session = Session.objects.create(
-                meeting = meeting,
-                group_id = 7, # The IAB group
-                type_id = "regular",
-                purpose_id = "regular",
-            )
-            # Schedule the Session
-            SchedulingEvent.objects.create(
-                session=session,
-                status_id="sched",
-                by_id=1, # (System)
-            )
-            timeslot = TimeSlot.objects.create(
-                meeting=meeting,
-                type_id = "regular",
-                time = start,
-                duration = end - start,
-            )
-            SchedTimeSessAssignment.objects.create(
-                timeslot=timeslot,
-                session=session,
-                schedule=schedule
-            )
-            # Add Document to Session
-            session.sessionpresentation_set.create(document=doc,rev=doc.rev)
-
-            counter += 1
-    raise Exception
-
-
-def reverse(apps, schema_editor):
-    pass
-
-
-class Migration(migrations.Migration):
-    dependencies = [
-        ("doc", "0003_remove_document_info_order"),
-        ("meeting", "0004_session_chat_room"),
-    ]
-
-    operations = [migrations.RunPython(forward, reverse)]
-
-"""
-The following can be used to regenerate data_for_0005
-
-import datetime
 from collections import defaultdict 
+from pathlib import PurePath
 from zoneinfo import ZoneInfo
 
+from django.core.management.base import BaseCommand
 
+class Command(BaseCommand):
+
+    help = "Regenerates the json used by import_iab_minutes"
+
+    def handle(self, *args, **options):
+        ntby = build_nametimes_by_year()
+        with open(PurePath(__file__).parent.joinpath("data_for_import_iab_minutes"),"w") as file:
+            file.write(json.dumps(ntby, sort_keys=True))
 
 def make_time_tuple(date, start_hour, start_minute, end_hour, end_minute, tz):
+    start = datetime.datetime(date.year, date.month, date.day, start_hour, start_minute, tzinfo=ZoneInfo(tz)).astimezone(datetime.timezone.utc)
+    end = datetime.datetime(date.year, date.month, date.day, end_hour, end_minute, tzinfo=ZoneInfo(tz)).astimezone(datetime.timezone.utc)
     return (
         (
-            datetime.datetime(date.year, date.month, date.day, start_hour, start_minute, tzinfo=ZoneInfo(tz)),
-            datetime.datetime(date.year, date.month, date.day, end_hour, end_minute, tzinfo=ZoneInfo(tz))   
+            start.hour,
+            start.minute,
+            (end-start).seconds
         )
     )
 
@@ -160,7 +73,6 @@ def get_time(name):
 
 
 def build_nametimes_by_year():
-    from collections import defaultdict 
     scraped_basenames = [
         "2022-12-14.md",
         "2022-12-07.md",
@@ -952,8 +864,9 @@ def build_nametimes_by_year():
 
     nametimes_by_year = defaultdict(list)
     for name in sorted(scraped_basenames):
-        year = name.split("-")[0]
-        nametimes_by_year[year].append( (name, get_time(name)) )
+        date, ext = name.split('.')
+        year, month, day = map(int,date.split("-"))
+        start_hour, start_minute, duration = get_time(name)
+        nametimes_by_year[year].append( (month, day, ext, start_hour, start_minute, duration) )
     return nametimes_by_year
 
-"""
