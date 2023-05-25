@@ -189,8 +189,7 @@ def state_age_colored(doc):
         except IndexError:
             state_datetime = datetime.datetime(1990, 1, 1, tzinfo=datetime.timezone.utc)
         days = (timezone.now() - state_datetime).days
-        # loosely based on
-        # https://trac.ietf.org/trac/iesg/wiki/PublishPath
+        # loosely based on the Publish Path page at the iesg wiki
         if iesg_state == "lc":
             goal1 = 30
             goal2 = 30

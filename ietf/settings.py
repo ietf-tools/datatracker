@@ -315,7 +315,12 @@ UTILS_LOGGER_LEVELS: Dict[str, str] = {
 
 
 X_FRAME_OPTIONS = 'SAMEORIGIN'
-CSRF_TRUSTED_ORIGINS = ['ietf.org', '*.ietf.org', 'meetecho.com', '*.meetecho.com', 'gather.town', '*.gather.town', ]
+CSRF_TRUSTED_ORIGINS = [
+    'ietf.org', 
+    '*.ietf.org', 
+    'meetecho.com', 
+    '*.meetecho.com', 
+]
 CSRF_COOKIE_SAMESITE = 'None'
 CSRF_COOKIE_SECURE = True
 
@@ -532,7 +537,9 @@ IDNITS_BASE_URL = "https://author-tools.ietf.org/api/idnits"
 IDNITS_SERVICE_URL = "https://author-tools.ietf.org/idnits"
 
 # Content security policy configuration (django-csp)
-CSP_DEFAULT_SRC = ("'self'", "'unsafe-inline'", f"data: {IDTRACKER_BASE_URL} https://www.ietf.org/ https://analytics.ietf.org/ https://fonts.googleapis.com/")
+# (In current production, the Content-Security-Policy header is completely set by nginx configuration, but
+#  we try to keep this in sync to avoid confusion)
+CSP_DEFAULT_SRC = ("'self'", "'unsafe-inline'", f"data: {IDTRACKER_BASE_URL} http://ietf.org/ https://www.ietf.org/ https://analytics.ietf.org/ https://static.ietf.org")
 
 # The name of the method to use to invoke the test suite
 TEST_RUNNER = 'ietf.utils.test_runner.IetfTestRunner'
@@ -651,11 +658,6 @@ STATUS_CHANGE_PATH = '/a/ietfdata/doc/status-change'
 AGENDA_PATH = '/a/www/www6s/proceedings/'
 MEETINGHOST_LOGO_PATH = AGENDA_PATH  # put these in the same place as other proceedings files
 IPR_DOCUMENT_PATH = '/a/www/ietf-ftp/ietf/IPR/'
-IESG_TASK_FILE = '/a/www/www6/iesg/internal/task.txt'
-IESG_ROLL_CALL_FILE = '/a/www/www6/iesg/internal/rollcall.txt'
-IESG_ROLL_CALL_URL = 'https://www6.ietf.org/iesg/internal/rollcall.txt'
-IESG_MINUTES_FILE = '/a/www/www6/iesg/internal/minutes.txt'
-IESG_MINUTES_URL = 'https://www6.ietf.org/iesg/internal/minutes.txt'
 IESG_WG_EVALUATION_DIR = "/a/www/www6/iesg/evaluation"
 # Move drafts to this directory when they expire
 INTERNET_DRAFT_ARCHIVE_DIR = '/a/ietfdata/doc/draft/collection/draft-archive/'
@@ -1181,6 +1183,10 @@ CELERY_BEAT_SYNC_EVERY = 1  # update DB after every event
 #     'request_timeout': 3.01,  # python-requests doc recommend slightly > a multiple of 3 seconds
 # }
 
+# Meetecho URLs - instantiate with url.format(session=some_session)
+MEETECHO_ONSITE_TOOL_URL = "https://meetings.conf.meetecho.com/onsite{session.meeting.number}/?session={session.pk}"
+MEETECHO_VIDEO_STREAM_URL = "https://meetings.conf.meetecho.com/ietf{session.meeting.number}/?session={session.pk}"
+MEETECHO_AUDIO_STREAM_URL = "https://mp3.conf.meetecho.com/ietf{session.meeting.number}/{session.pk}.m3u"
 
 # Put the production SECRET_KEY in settings_local.py, and also any other
 # sensitive or site-specific changes.  DO NOT commit settings_local.py to svn.

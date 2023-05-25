@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2023, All Rights Reserved #}
+{% load origin %}
+{% load django_bootstrap5 %}
+{% block title %}Telechat agenda contents{% endblock %}
+{% block content %}
+{% origin %}
+<h1>Telechat Agenda Contents</h1>
+<p>
+  <a href="{% url 'ietf.iesg.views.agenda' %}">Go to IESG agenda...</a>
+</p>
+<div class="card">
+  <div class="card-header">
+    <ul class="nav nav-tabs card-header-tabs" role="tablist">
+      {% for item in contents %}
+      <li class="nav-item" role="presentation">
+        <button class="nav-link {% if forloop.first %}active{% endif %}"
+                id="{{ item.section.slug }}-tab"
+                type="button"
+                data-bs-toggle="tab"
+                data-bs-target="#{{ item.section.slug}}"
+                role="tab" aria-controls="{{ item.section.slug }}"
+                aria-selected="true">
+          {{ item.section }}
+        </button>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+  <div class="tab-content card-body">
+    {% for item in contents %}
+    <div class="tab-pane {% if forloop.first %}show active{% endif %}"
+         id="{{ item.section.slug }}"
+         role="tabpanel"
+         aria-labelledby="{{ item.section.slug }}-tab">
+      <a class="btn btn-sm btn-outline-primary float-end"
+         href="{% url 'ietf.iesg.views.telechat_agenda_content_edit' section=item.section.slug %}">
+        Edit
+      </a>
+      {% if item.text %}
+      <pre>{{ item.text }}</pre>
+      {% else %}
+      <div class="text-center text-danger">No {{ item.section }}</div>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

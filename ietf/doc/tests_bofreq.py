@@ -320,22 +320,26 @@ This test section has some text.
             file = NamedTemporaryFile(delete=False,mode="w+",encoding='utf-8')
             file.write(f'# {username}')
             file.close()
-            for postdict in [
-                        {'bofreq_submission':'enter','bofreq_content':f'# {username}'},
-                        {'bofreq_submission':'upload','bofreq_file':open(file.name,'rb')},
-                     ]:
-                docevent_count = doc.docevent_set.count()
-                empty_outbox()
-                r = self.client.post(url, postdict)
-                self.assertEqual(r.status_code, 302)
-                doc = reload_db_objects(doc)
-                self.assertEqual('%02d'%(int(rev)+1) ,doc.rev)
-                self.assertEqual(f'# {username}', doc.text())
-                self.assertEqual(docevent_count+1, doc.docevent_set.count())
-                self.assertEqual(1, len(outbox))
-                rev = doc.rev
+            try:
+                with open(file.name, 'rb') as bofreq_fd:
+                    for postdict in [
+                                {'bofreq_submission':'enter','bofreq_content':f'# {username}'},
+                                {'bofreq_submission':'upload','bofreq_file':bofreq_fd},
+                            ]:
+                        docevent_count = doc.docevent_set.count()
+                        empty_outbox()
+                        r = self.client.post(url, postdict)
+                        self.assertEqual(r.status_code, 302)
+                        doc = reload_db_objects(doc)
+                        self.assertEqual('%02d'%(int(rev)+1) ,doc.rev)
+                        self.assertEqual(f'# {username}', doc.text())
+                        self.assertEqual(docevent_count+1, doc.docevent_set.count())
+                        self.assertEqual(1, len(outbox))
+                        rev = doc.rev
+            finally:
+                os.unlink(file.name)
+
             self.client.logout()
-            os.unlink(file.name)
 
     def test_start_new_bofreq(self):
         url = urlreverse('ietf.doc.views_bofreq.new_bof_request')
@@ -350,25 +354,28 @@ This test section has some text.
         file = NamedTemporaryFile(delete=False,mode="w+",encoding='utf-8')
         file.write('some stuff')
         file.close()
-        for postdict in [
-                            dict(title='title one', bofreq_submission='enter', bofreq_content='some stuff'),
-                            dict(title='title two', bofreq_submission='upload', bofreq_file=open(file.name,'rb')),
-                        ]:
-            empty_outbox()
-            r = self.client.post(url, postdict)
-            self.assertEqual(r.status_code,302)
-            name = f"bofreq-{xslugify(nobody.last_name())[:64]}-{postdict['title']}".replace(' ','-')
-            bofreq = Document.objects.filter(name=name,type_id='bofreq').first()
-            self.assertIsNotNone(bofreq)
-            self.assertIsNotNone(DocAlias.objects.filter(name=name).first())
-            self.assertEqual(bofreq.title, postdict['title'])
-            self.assertEqual(bofreq.rev, '00')
-            self.assertEqual(bofreq.get_state_slug(), 'proposed')
-            self.assertEqual(list(bofreq_editors(bofreq)), [nobody])
-            self.assertEqual(bofreq.latest_event(NewRevisionDocEvent).rev, '00')
-            self.assertEqual(bofreq.text_or_error(), 'some stuff')
-            self.assertEqual(len(outbox),1)
-        os.unlink(file.name)
+        try:
+            with open(file.name,'rb') as bofreq_fd:
+                for postdict in [
+                                    dict(title='title one', bofreq_submission='enter', bofreq_content='some stuff'),
+                                    dict(title='title two', bofreq_submission='upload', bofreq_file=bofreq_fd),
+                                ]:
+                    empty_outbox()
+                    r = self.client.post(url, postdict)
+                    self.assertEqual(r.status_code,302)
+                    name = f"bofreq-{xslugify(nobody.last_name())[:64]}-{postdict['title']}".replace(' ','-')
+                    bofreq = Document.objects.filter(name=name,type_id='bofreq').first()
+                    self.assertIsNotNone(bofreq)
+                    self.assertIsNotNone(DocAlias.objects.filter(name=name).first())
+                    self.assertEqual(bofreq.title, postdict['title'])
+                    self.assertEqual(bofreq.rev, '00')
+                    self.assertEqual(bofreq.get_state_slug(), 'proposed')
+                    self.assertEqual(list(bofreq_editors(bofreq)), [nobody])
+                    self.assertEqual(bofreq.latest_event(NewRevisionDocEvent).rev, '00')
+                    self.assertEqual(bofreq.text_or_error(), 'some stuff')
+                    self.assertEqual(len(outbox),1)
+        finally:
+            os.unlink(file.name)
         existing_bofreq = BofreqFactory(requester_lastname=nobody.last_name())
         for postdict in [
                             dict(title='', bofreq_submission='enter', bofreq_content='some stuff'),

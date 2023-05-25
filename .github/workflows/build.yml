@@ -1,11 +1,10 @@
 name: Build and Release
-run-name: ${{ github.event.inputs.publish == 'true' && '[Prod]' || '[Dev]' }} Build ${{ github.run_number }} of branch ${{ github.ref_name }} by @${{ github.actor }}
+run-name: ${{ github.ref_name == 'release' && '[Prod]' || '[Dev]' }} Build ${{ github.run_number }} of branch ${{ github.ref_name }} by @${{ github.actor }}
 
 on:
   push:
-    tags:
-      - '*'
-
+    branches: [release]
+    
   workflow_dispatch:
     inputs:
       summary:
@@ -13,15 +12,15 @@ on:
         required: false
         type: string
         default: ''
-      publish:
-        description: 'Create Production Release'
-        default: false
-        required: true
-        type: boolean
       sandbox:
         description: 'Deploy to Sandbox'
         default: true
         required: true
+        type: boolean
+      legacySandbox:
+        description: 'Deploy to Legacy Sandbox'
+        default: false
+        required: false
         type: boolean
       skiptests:
         description: 'Skip Tests'
@@ -35,11 +34,6 @@ on:
         type: boolean
       updateCoverage:
         description: 'Update Baseline Coverage'
-        default: false
-        required: true
-        type: boolean
-      dryrun:
-        description: 'Dry Run'
         default: false
         required: true
         type: boolean
@@ -57,18 +51,13 @@ jobs:
       from_tag: ${{ steps.semver.outputs.nextStrict }}
       to_tag: ${{ steps.semver.outputs.current }}
 
-    steps:
+    steps:   
     - uses: actions/checkout@v3
       with:
         fetch-depth: 0
-        
-    - name: Dry Run Notify
-      if: ${{ github.event.inputs.dryrun == 'true' }}
-      run: |
-        echo "::notice::This is a DRY RUN of a production release. No release will be created."
 
     - name: Get Next Version
-      if: ${{ github.event.inputs.publish == 'true' || github.event.inputs.dryrun == 'true' }}
+      if: ${{ github.ref_name == 'release' }}
       id: semver
       uses: ietf-tools/semver-action@v1
       with:
@@ -77,13 +66,13 @@ jobs:
         skipInvalidTags: true
         
     - name: Set Next Version Env Var
-      if: ${{ github.event.inputs.publish == 'true' || github.event.inputs.dryrun == 'true' }}
+      if: ${{ github.ref_name == 'release' }}
       run: |
         echo "NEXT_VERSION=$nextStrict" >> $GITHUB_ENV
         
     - name: Create Draft Release
       uses: ncipollo/release-action@v1.12.0
-      if: ${{ github.event.inputs.publish == 'true' && github.event.inputs.dryrun == 'false' }}
+      if: ${{ github.ref_name == 'release' }}
       with:
         prerelease: true
         draft: false
@@ -101,16 +90,11 @@ jobs:
           echo "should_deploy=true" >> $GITHUB_OUTPUT
           echo "pkg_version=$NEXT_VERSION" >> $GITHUB_OUTPUT
           echo "::notice::Release $NEXT_VERSION created using branch $GITHUB_REF_NAME"
-        elif [[ "$GITHUB_REF" =~ ^refs/tags/* ]]; then
-          echo "Using TAG mode: $GITHUB_REF_NAME"
-          echo "should_deploy=true" >> $GITHUB_OUTPUT
-          echo "pkg_version=$GITHUB_REF_NAME" >> $GITHUB_OUTPUT
-          echo "::notice::Release $GITHUB_REF_NAME created using tag $GITHUB_REF_NAME"
         else
-          echo "Using TEST mode: 9.0.0-dev.$GITHUB_RUN_NUMBER"
+          echo "Using TEST mode: 10.0.0-dev.$GITHUB_RUN_NUMBER"
           echo "should_deploy=false" >> $GITHUB_OUTPUT
-          echo "pkg_version=9.0.0-dev.$GITHUB_RUN_NUMBER" >> $GITHUB_OUTPUT
-          echo "::notice::Non-production build 9.0.0-dev.$GITHUB_RUN_NUMBER created using branch $GITHUB_REF_NAME"
+          echo "pkg_version=10.0.0-dev.$GITHUB_RUN_NUMBER" >> $GITHUB_OUTPUT
+          echo "::notice::Non-production build 10.0.0-dev.$GITHUB_RUN_NUMBER created using branch $GITHUB_REF_NAME"
         fi
 
   # -----------------------------------------------------------------
@@ -118,7 +102,7 @@ jobs:
   # -----------------------------------------------------------------
   tests-python:
     name: Run Tests (Python)
-    if: ${{ github.event.inputs.skiptests == 'false' }}
+    if: ${{ github.event.inputs.skiptests == 'false' || github.ref_name == 'release' }}
     needs: [prepare]
     runs-on: ubuntu-latest
     container: ghcr.io/ietf-tools/datatracker-app-base:latest
@@ -160,7 +144,7 @@ jobs:
         coverage xml
 
     - name: Upload Coverage Results to Codecov
-      uses: codecov/codecov-action@v3.1.2
+      uses: codecov/codecov-action@v3.1.4
       with:
         files: coverage.xml
         
@@ -178,7 +162,7 @@ jobs:
 
   tests-playwright:
     name: Run Tests (Playwright)
-    if: ${{ github.event.inputs.skiptests == 'false' }}
+    if: ${{ github.event.inputs.skiptests == 'false' || github.ref_name == 'release' }}
     needs: [prepare]
     runs-on: macos-latest
     strategy:
@@ -216,7 +200,7 @@ jobs:
 
   tests-playwright-legacy:
     name: Run Tests (Playwright Legacy)
-    if: ${{ github.event.inputs.skiptests == 'false' }}
+    if: ${{ github.event.inputs.skiptests == 'false' || github.ref_name == 'release' }}
     needs: [prepare]
     runs-on: ubuntu-latest
     container: ghcr.io/ietf-tools/datatracker-app-base:latest
@@ -279,7 +263,7 @@ jobs:
   # -----------------------------------------------------------------
   release:
     name: Make Release
-    if: ${{ always() }}
+    if: ${{ !failure() && !cancelled() }}
     needs: [tests-python, tests-playwright, tests-playwright-legacy, prepare]
     runs-on: ubuntu-latest
     env:
@@ -304,7 +288,7 @@ jobs:
         python-version: '3.x'
         
     - name: Download a Coverage Results
-      if: ${{ github.event.inputs.skiptests == 'false' }}
+      if: ${{ github.event.inputs.skiptests == 'false' || github.ref_name == 'release' }}
       uses: actions/download-artifact@v3.0.2
       with:
         name: coverage
@@ -341,7 +325,7 @@ jobs:
     - name: Update CHANGELOG
       id: changelog
       uses: Requarks/changelog-action@v1
-      if: ${{ env.SHOULD_DEPLOY == 'true' && github.event.inputs.dryrun == 'false' }}
+      if: ${{ env.SHOULD_DEPLOY == 'true' }}
       with:
         token: ${{ github.token }}
         fromTag: ${{ env.FROM_TAG }}
@@ -349,14 +333,14 @@ jobs:
         writeToFile: false
 
     - name: Prepare Coverage Action
-      if: ${{ github.event.inputs.skiptests == 'false' }}
+      if: ${{ github.event.inputs.skiptests == 'false' || github.ref_name == 'release' }}
       working-directory: ./dev/coverage-action
       run: npm install
         
     - name: Process Coverage Stats + Chart
       id: covprocess
       uses: ./dev/coverage-action/
-      if: ${{ github.event.inputs.skiptests == 'false' }}
+      if: ${{ github.event.inputs.skiptests == 'false' || github.ref_name == 'release' }}
       with:
         token: ${{ github.token }}
         tokenCommon: ${{ secrets.GH_COMMON_TOKEN }}
@@ -369,7 +353,7 @@ jobs:
         
     - name: Create Release
       uses: ncipollo/release-action@v1.12.0
-      if: ${{ env.SHOULD_DEPLOY == 'true' && github.event.inputs.dryrun == 'false' }}
+      if: ${{ env.SHOULD_DEPLOY == 'true' }}
       with:
         allowUpdates: true
         makeLatest: true
@@ -382,7 +366,7 @@ jobs:
 
     - name: Update Baseline Coverage
       uses: ncipollo/release-action@v1.12.0
-      if: ${{ github.event.inputs.updateCoverage == 'true' && github.event.inputs.dryrun == 'false' }}
+      if: ${{ github.event.inputs.updateCoverage == 'true' }}
       with:
         allowUpdates: true
         tag: baseline
@@ -399,14 +383,61 @@ jobs:
         name: release-${{ env.PKG_VERSION }}
         path: /home/runner/work/release/release.tar.gz
         
-    - name: Notify on Slack
-      if: ${{ always() }}
-      uses: slackapi/slack-github-action@v1.23.0
+  # -----------------------------------------------------------------
+  # NOTIFY
+  # -----------------------------------------------------------------
+  notify:
+    name: Notify
+    if: ${{ always() }}
+    needs: [prepare, tests-python, tests-playwright, tests-playwright-legacy, release]
+    runs-on: ubuntu-latest
+    env:
+      PKG_VERSION: ${{needs.prepare.outputs.pkg_version}}
+        
+    steps:      
+    - name: Notify on Slack (Success)
+      if: ${{ !contains(join(needs.*.result, ','), 'failure') }}
+      uses: slackapi/slack-github-action@v1.24.0
       with:
         channel-id: ${{ secrets.SLACK_GH_BUILDS_CHANNEL_ID }}
         payload: |
           {
-            "text": "Datatracker - Build <https://github.com/ietf-tools/datatracker/actions/runs/${{ github.run_id }}|${{ env.PKG_VERSION }}> by ${{ github.triggering_actor }} completed - <@${{ secrets.SLACK_UID_RJSPARKS }}>"
+            "text": "Datatracker Build <https://github.com/ietf-tools/datatracker/actions/runs/${{ github.run_id }}|${{ env.PKG_VERSION }}> by ${{ github.triggering_actor }} - <@${{ secrets.SLACK_UID_RJSPARKS }}>",
+            "attachments": [
+              {
+                "color": "28a745",
+                "fields": [
+                  {
+                    "title": "Status",
+                    "short": true,
+                    "value": "Completed"
+                  }
+                ]
+              }
+            ]
+          }
+      env:
+        SLACK_BOT_TOKEN: ${{ secrets.SLACK_GH_BOT }}
+    - name: Notify on Slack (Failure)
+      if: ${{ contains(join(needs.*.result, ','), 'failure') }}
+      uses: slackapi/slack-github-action@v1.24.0
+      with:
+        channel-id: ${{ secrets.SLACK_GH_BUILDS_CHANNEL_ID }}
+        payload: |
+          {
+            "text": "Datatracker Build <https://github.com/ietf-tools/datatracker/actions/runs/${{ github.run_id }}|${{ env.PKG_VERSION }}> by ${{ github.triggering_actor }} - <@${{ secrets.SLACK_UID_RJSPARKS }}>",
+            "attachments": [
+              {
+                "color": "a82929",
+                "fields": [
+                  {
+                    "title": "Status",
+                    "short": true,
+                    "value": "Failed"
+                  }
+                ]
+              }
+            ]
           }
       env:
         SLACK_BOT_TOKEN: ${{ secrets.SLACK_GH_BOT }}
@@ -416,9 +447,11 @@ jobs:
   # -----------------------------------------------------------------
   sandbox:
     name: Deploy to Sandbox
-    if: ${{ always() && github.event.inputs.sandbox == 'true' }}
+    if: ${{ !failure() && !cancelled() && github.event.inputs.sandbox == 'true' }}
     needs: [prepare, release]
     runs-on: [self-hosted, dev-server]
+    environment:
+      name: sandbox
     env:
       PKG_VERSION: ${{needs.prepare.outputs.pkg_version}}
       
@@ -448,3 +481,62 @@ jobs:
         DEBIAN_FRONTEND: noninteractive
       run: |
         docker image prune -a -f
+        
+  legacySandbox:
+    name: Deploy to Legacy Sandbox
+    if: ${{ !failure() && !cancelled() && github.event.inputs.legacySandbox == 'true' }}
+    needs: [prepare, release]
+    runs-on: [self-hosted, legacy-sandbox-server]
+    environment:
+      name: legacy-sandbox
+      url: "https://sandbox.ietf.org"
+    env:
+      PKG_VERSION: ${{needs.prepare.outputs.pkg_version}}
+      
+    steps:
+    - name: Download a Release Artifact
+      uses: actions/download-artifact@v3.0.2
+      with:
+        name: release-${{ env.PKG_VERSION }}
+        path: /a/www/ietf-datatracker/main.dev.${{ github.run_number }}
+
+    - name: Extract Release
+      env:
+        DEBIAN_FRONTEND: noninteractive
+      working-directory: /a/www/ietf-datatracker/main.dev.${{ github.run_number }}
+      run: |
+        echo "Extracting release tarball..."
+        tar xzf release.tar.gz
+        echo "Deleting release tarball..."
+        rm -rf release.tar.gz
+        
+    - name: Setup Environment
+      env:
+        DEBIAN_FRONTEND: noninteractive
+      working-directory: /a/www/ietf-datatracker/main.dev.${{ github.run_number }}
+      run: |
+        echo "Copying settings from previous deploy..."
+        cp ../web/ietf/settings_local.py ietf/
+        rsync -a ../web/test/ test/
+        echo "Installing Python dependencies..."
+        python3.9 -mvenv env
+        source env/bin/activate
+        pip install -r requirements.txt
+        pip freeze > frozen-requirements.txt
+        echo "Collecting static..."
+        ietf/manage.py collectstatic
+        echo "Running checks..."
+        ietf/manage.py check
+        
+    - name: Update Docker Containers
+      env:
+        DEBIAN_FRONTEND: noninteractive
+      working-directory: /a/docker/datatracker
+      run: |
+        echo "Pulling latest docker images..."
+        docker image tag ghcr.io/ietf-tools/datatracker-celery:latest datatracker-celery-fallback
+        docker image tag ghcr.io/ietf-tools/datatracker-mq:latest datatracker-mq-fallback
+        docker-compose pull
+        # echo "Shutting down containers..."
+        # docker-compose down -t 300
+        

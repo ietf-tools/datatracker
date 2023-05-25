@@ -233,30 +233,30 @@
                 </td>
             </tr>
             {# Video stream (meetecho) #}
-            {% if timezone_now < timeslot.end_time %}
+            {% if session.video_stream_url and timezone_now < timeslot.end_time %}
                 <tr>
                     <td>
-                        <a href="{{ timeslot.location.video_stream_url|format:session }}">
+                        <a href="{{ session.video_stream_url }}">
                             <i class="bi bi-camera-video"></i> Video stream
                         </a>
                     </td>
                 </tr>
             {% endif %}
             {# Onsite tool (meetecho_onsite) #}
-            {% if timeslot.location.onsite_tool_url %}
+            {% if session.onsite_tool_url %}
                 <tr>
                     <td>
-                        <a href="{{ timeslot.location.onsite_tool_url|format:session }}">
+                        <a href="{{ session.onsite_tool_url }}">
                             <i class="bi bi-phone"></i> Onsite tool
                         </a>
                     </td>
                 </tr>
             {% endif %}
             {# Audio stream #}
-            {% if timeslot.location.audio_stream_url %}
+            {% if session.audio_stream_url %}
                 <tr>
                     <td>
-                        <a href="{{ timeslot.location.audio_stream_url|format:session }}">
+                        <a href="{{ session.audio_stream_url }}">
                             <i class="bi bi-headphones"></i> Audio stream
                         </a>
                     </td>
@@ -341,7 +341,7 @@
                         {% endfor %}
                     {% endif %}
                 {% endwith %}
-                {% if timeslot.location.video_stream_url %}
+                {% if session.video_stream_url %}
                     <tr>
                         <td>
                             <a href="https://www.meetecho.com/ietf{{ meeting.number }}/recordings#{{ acronym.upper }}">
