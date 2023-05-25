@@ -59,6 +59,12 @@ services:
         volumes:
             - ./docker/configs/pgadmin-servers.json:/pgadmin4/servers.json
 
+    static:
+        image: ghcr.io/ietf-tools/static:latest
+        restart: unless-stopped
+        ports:
+            - 8001:80
+
     mq:
         image: rabbitmq:3-alpine
         restart: unless-stopped

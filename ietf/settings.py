@@ -137,7 +137,6 @@ IETF_NOTES_URL = 'https://notes.ietf.org/'  # HedgeDoc base URL
 # Absolute path to the directory static files should be collected to.
 # Example: "/var/www/example.com/static/"
 
-
 SERVE_CDN_PHOTOS = True
 
 SERVE_CDN_FILES_LOCALLY_IN_DEV_MODE = True
@@ -156,6 +155,8 @@ STATICFILES_FINDERS = (
     'django.contrib.staticfiles.finders.FileSystemFinder',
     'django.contrib.staticfiles.finders.AppDirectoriesFinder',
 )
+
+STATIC_IETF_ORG = "https://static.ietf.org"
 
 WSGI_APPLICATION = "ietf.wsgi.application"
 
