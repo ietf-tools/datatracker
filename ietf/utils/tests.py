@@ -366,6 +366,25 @@ class PlaintextDraftTests(TestCase):
         self.assertEqual(getmeta(filename)['docdeststatus'],'Informational')
         shutil.rmtree(tempdir)
 
+    def test_fixup_title(self):
+        # testing the _fixup_title() helper instead of get_title() because it's difficult to
+        # set up the tests for the latter.
+        self.assertEqual(PlaintextDraft._fixup_title("  Simple title  "), "Simple title")
+        self.assertEqual(PlaintextDraft._fixup_title("  Title  with double spaces  "), "Title with double spaces")
+        self.assertEqual(
+            PlaintextDraft._fixup_title("  Longer title  \n  with a line break  "),
+            "Longer title with a line break",
+        )
+        self.assertEqual(
+            PlaintextDraft._fixup_title("  Hyphenated-title  \n  not split at hyphen  "),
+            "Hyphenated-title not split at hyphen",
+        )
+        self.assertEqual(
+            PlaintextDraft._fixup_title("  This hyphenated-  \n  title is split at hyphen  "),
+            "This hyphenated-title is split at hyphen",
+        )
+
+
 
 class XMLDraftTests(TestCase):
     def test_get_refs_v3(self):
