@@ -146,6 +146,7 @@ def fill_in_document_table_attributes(docs, have_telechat_date=False):
         relationship__in=("obs", "updates")
     ).select_related('target'))
     rel_rfc_aliases = dict([ (a.document.id, re.sub(r"rfc(\d+)", r"RFC \1", a.name, flags=re.IGNORECASE)) for a in DocAlias.objects.filter(name__startswith="rfc", docs__id__in=[rel.source_id for rel in xed_by]) ])
+    xed_by.sort(key=lambda rel: int(re.sub(r"rfc\s*(\d+)", r"\1", rel_rfc_aliases[rel.source_id], flags=re.IGNORECASE)))
     l = []
     for rel in xed_by:
         d = doc_dict[rel.target.document.id]
