@@ -1106,8 +1106,9 @@ class PlaintextDraft(Draft):
             title = match.group(1)
             title = title.strip()
             title = re.sub(r'(?s)\n\s*\<?draft-.*$','', title)
-            title = re.sub(r'\s*\n\s*', ' ', title)
-            title = re.sub(r' +', ' ', title)
+            title = re.sub(r'-\s*\n\s*', '-', title)  # replace line break preceded by hyphen with hyphen
+            title = re.sub(r'\s*\n\s*', ' ', title)  # replace other line breaks with single space
+            title = re.sub(r' +', ' ', title)  # collapse multiple spaces
             self._title = title
             return self._title
         self.errors["title"] = "Could not find the title on the first page."
