@@ -51,7 +51,7 @@ class Command(BaseCommand):
                     visible=True,
                     public=True)
                 meeting.schedule = schedule
-                if start.timetz() == datetime.time(12, 0, 0, tzinfo=zoneinfo.ZoneInfo(key="UTC")):
+                if start.timetz() == datetime.time(12, 0, 0, tzinfo=datetime.timezone.utc):
                     meeting.agenda_note = "The actual time of this meeting was not recorded and was likely not at noon UTC"
                 meeting.save()
                 # Create Session
