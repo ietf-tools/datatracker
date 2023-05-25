@@ -140,8 +140,11 @@ def fill_in_document_table_attributes(docs, have_telechat_date=False):
         d.obsoleted_by_list = []
         d.updated_by_list = []
 
-    xed_by = RelatedDocument.objects.filter(target__name__in=list(rfc_aliases.values()),
-                                            relationship__in=("obs", "updates")).select_related('target')
+    # Revisit this block after RFCs become first-class Document objects
+    xed_by = list(RelatedDocument.objects.filter(
+        target__name__in=list(rfc_aliases.values()),
+        relationship__in=("obs", "updates")
+    ).select_related('target'))
     rel_rfc_aliases = dict([ (a.document.id, re.sub(r"rfc(\d+)", r"RFC \1", a.name, flags=re.IGNORECASE)) for a in DocAlias.objects.filter(name__startswith="rfc", docs__id__in=[rel.source_id for rel in xed_by]) ])
     l = []
     for rel in xed_by:
