@@ -51,5 +51,9 @@
     "javascript",
     "javascriptreact",
     "vue"
-  ]
+  ],
+  "python.linting.pylintArgs": ["--load-plugins", "pylint_django"],
+  "python.testing.pytestEnabled": false,
+  "python.testing.unittestEnabled": false,
+  "python.linting.enabled": true
 }
