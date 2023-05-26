@@ -427,9 +427,27 @@ class ReviewTests(TestCase):
         self.assertContains(r, escape(assignment.reviewer.person.name))
         self.assertNotContains(r, 'can not be rejected')
         self.assertContains(r, '<button type="submit"')
+
+        # reject
+        empty_outbox()
+        r = self.client.post(reject_url, { "action": "reject", "message_to_secretary": "Test message" })
+        self.assertEqual(r.status_code, 302)
+
+        assignment = reload_db_objects(assignment)
+        self.assertEqual(assignment.state_id, "rejected")
+        self.assertNotEqual(assignment.completed_on,None)
+        e = doc.latest_event()
+        self.assertEqual(e.type, "closed_review_assignment")
+        self.assertTrue("rejected" in e.desc)
+        self.assertEqual(len(outbox), 1)
+        self.assertNotIn(assignment.reviewer.address, outbox[0]["To"])
+        self.assertIn("<reviewsecretary@example.com>", outbox[0]["To"])
+        self.assertTrue("Test message" in get_payload_text(outbox[0]))
         self.client.logout()
 
         # Secretary can also reject it
+        assignment.state_id = 'assigned'
+        assignment.save()
         login_testing_unauthorized(self, "reviewsecretary", reject_url)
         r = self.client.get(reject_url)
         self.assertEqual(r.status_code, 200)
@@ -493,19 +511,33 @@ class ReviewTests(TestCase):
         self.assertNotContains(r, 'can not be rejected')
         self.assertContains(r, '<button type="submit"')
 
+        # actually reject
+        r = self.client.post(reject_url, { "action": "reject", "message_to_secretary": "Test message" })
+        self.assertEqual(r.status_code, 302)
+
         assignment = reload_db_objects(assignment)
-        self.assertEqual(assignment.state_id, "assigned")
-        self.assertEqual(len(outbox), 0)
+        self.assertEqual(assignment.state_id, "rejected")
+        self.assertNotEqual(len(outbox), 0)
         self.client.logout()
 
-        # Log in as secretary and that should allow rejecting the review
-        # even if the deadline is past
+        # Log in as secretary and that should still allow rejecting the review
+        assignment.state_id = 'assigned'
+        assignment.save()
         login_testing_unauthorized(self, "reviewsecretary", reject_url)
         r = self.client.get(reject_url)
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, escape(assignment.reviewer.person.name))
         self.assertNotContains(r, 'can not be rejected')
         self.assertContains(r, '<button type="submit"')
+
+        # actually reject
+        empty_outbox()
+        r = self.client.post(reject_url, { "action": "reject", "message_to_secretary": "Test message" })
+        self.assertEqual(r.status_code, 302)
+
+        assignment = reload_db_objects(assignment)
+        self.assertEqual(assignment.state_id, "rejected")
+        self.assertNotEqual(len(outbox), 0)
 
         # Revert the setting of allow_reviewer_to_reject_after_deadline
         # This should not affect the secretary's ability to reject.
@@ -514,8 +546,8 @@ class ReviewTests(TestCase):
             if row.group.upcase_acronym == review_team.upcase_acronym:
                row.allow_reviewer_to_reject_after_deadline = False
                row.save(update_fields=['allow_reviewer_to_reject_after_deadline'])
-        # Log in as secretary and that should allow rejecting the review
-        # even if the deadline is past
+        assignment.state_id = 'assigned'
+        assignment.save()
         r = self.client.get(reject_url)
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, escape(assignment.reviewer.person.name))
