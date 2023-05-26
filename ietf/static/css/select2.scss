@@ -1,7 +1,7 @@
 @import "bootstrap/scss/functions";
 
-// Enable automatic dark mode
-$color-mode-type: media-query;
+// Enable color modes
+$color-mode-type: data;
 
 @import "bootstrap/scss/variables";
 @import "bootstrap/scss/variables-dark";
@@ -10,6 +10,7 @@ $color-mode-type: media-query;
 @import "bootstrap/scss/root";
 
 // FIXME: bs-5.3.0 workaround from https://github.com/apalfrey/select2-bootstrap-5-theme/issues/75s
-$s2bs5-clear-icon:               str-replace($btn-close-bg, #{$btn-close-color}, #{shade-color(red, 50%)}) !default;
+$s2bs5-clear-icon: str-replace($btn-close-bg, #{$btn-close-color}, #{shade-color(red, 50%)}) !default;
+
 @import "select2/src/scss/core";
 @import "select2-bootstrap-5-theme/src/include-all";

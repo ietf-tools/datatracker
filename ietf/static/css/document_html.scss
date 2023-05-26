@@ -11,8 +11,8 @@ $font-family-monospace: "Noto Sans Mono", SFMono-Regular, Menlo, Monaco, Consola
 
 @import "bootstrap/scss/functions";
 
-// Enable automatic dark mode
-$color-mode-type: media-query;
+// Enable color modes
+$color-mode-type: data;
 
 @import "bootstrap/scss/variables";
 @import "bootstrap/scss/variables-dark";

@@ -1,7 +1,7 @@
 @import "bootstrap/scss/functions";
 
-// Enable automatic dark mode
-$color-mode-type: media-query;
+// Enable color modes
+$color-mode-type: data;
 
 @import "bootstrap/scss/variables";
 @import "bootstrap/scss/variables-dark";
@@ -10,6 +10,6 @@ $color-mode-type: media-query;
 @import "bootstrap/scss/root";
 
 // FIXME: color.scale doesn't seem to work with CSS variables, so avoid those:`
-$dp-cell-focus-background-color: $dropdown-link-hover-bg !default;  
+$dp-cell-focus-background-color: $dropdown-link-hover-bg !default;
 
 @import "vanillajs-datepicker/sass/datepicker-bs5";

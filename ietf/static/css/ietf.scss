@@ -15,9 +15,8 @@ $popover-max-width: 100%;
 $font-family-sans-serif: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", "Liberation Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
 $font-family-monospace: "Noto Sans Mono", SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 
-// Enable automatic dark mode
-
-$color-mode-type: media-query;
+// Enable color modes
+$color-mode-type: data;
 
 // Only import what we need:
 
@@ -451,7 +450,7 @@ td.position-recuse {
 }
 
 td.position-norecord {
-    background-color: $white; // $color-norecord;
+    background-color: transparent;
 }
 
 td.position-empty {
