@@ -814,11 +814,9 @@ def meetings(request, acronym=None, group_type=None):
 
     four_years_ago = timezone.now()-datetime.timedelta(days=4*365)
 
-    sessions = add_event_info_to_session_qs(
-        group.session_set.filter(
-            meeting__date__gt=four_years_ago if not group.acronym == 'iab' else datetime.date(1970,1,1),
-            type__in=['regular','plenary','other']
-        )
+    sessions = group.session_set.with_current_status().filter(
+        meeting__date__gt=four_years_ago if not group.acronym == 'iab' else datetime.date(1970,1,1),
+        type__in=['regular','plenary','other']
     ).filter(
         current_status__in=['sched','schedw','appr','canceled'],
     )
