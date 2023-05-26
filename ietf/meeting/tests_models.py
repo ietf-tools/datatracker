@@ -138,3 +138,11 @@ class SessionTests(TestCase):
         self.assertEqual(session_with_jabber.chat_archive_url(), 'https://www.ietf.org/jabber/logs/fakeacronym?C=M;O=D')
         chatlog = SessionPresentationFactory(session=session_with_jabber, document__type_id='chatlog').document
         self.assertEqual(session_with_jabber.chat_archive_url(), chatlog.get_href())
+
+    def test_chat_room_name(self):
+        session = SessionFactory(group__acronym='xyzzy')
+        self.assertEqual(session.chat_room_name(), 'xyzzy')
+        session.type_id = 'plenary'
+        self.assertEqual(session.chat_room_name(), 'plenary')
+        session.chat_room = 'fnord'
+        self.assertEqual(session.chat_room_name(), 'fnord')
