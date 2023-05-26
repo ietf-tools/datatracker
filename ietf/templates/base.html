@@ -15,8 +15,8 @@
             {% block title %}No title{% endblock %}
         </title>
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <link href="https://static.ietf.org/fonts/inter/import.css" rel="stylesheet">
-        <link href="https://static.ietf.org/fonts/noto-sans-mono/import.css" rel="stylesheet">
+        <link href="{{ settings.STATIC_IETF_ORG }}/fonts/inter/import.css" rel="stylesheet">
+        <link href="{{ settings.STATIC_IETF_ORG }}/fonts/noto-sans-mono/import.css" rel="stylesheet">
         <link rel="stylesheet" href="{% static 'ietf/css/ietf.css' %}">
         <link rel="stylesheet" href="{% static 'ietf/css/select2.css' %}">
         <style>

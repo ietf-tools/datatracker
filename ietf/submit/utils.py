@@ -1265,7 +1265,11 @@ def process_and_validate_submission(submission):
         # Parse text, whether uploaded or generated from XML
         text_metadata = process_submission_text(submission.name, submission.rev)
 
-        if xml_metadata and xml_metadata["title"] != text_metadata["title"]:
+        if (
+            ".txt" in submission.file_types
+            and xml_metadata
+            and xml_metadata["title"] != text_metadata["title"]
+        ):
             raise SubmissionError(
                 f"Text Internet-Draft title ({text_metadata['title']}) "
                 f"disagrees with XML Internet-Draft title ({xml_metadata['title']})"
@@ -1275,13 +1279,14 @@ def process_and_validate_submission(submission):
         if xml_metadata is not None:
             # Items preferred / only available from XML
             submission.xml_version = xml_metadata["xml_version"]
+            submission.title = xml_metadata["title"]
             submission.authors = xml_metadata["authors"]
         else:
             # Items to get from text only if XML not available
+            submission.title = text_metadata["title"]
             submission.authors = text_metadata["authors"]
 
         # Items always to get from text, even when XML is available
-        submission.title = text_metadata["title"]  # verified above this agrees with XML, if present
         submission.abstract = text_metadata["abstract"]
         submission.document_date = text_metadata["document_date"]
         submission.pages = text_metadata["pages"]
