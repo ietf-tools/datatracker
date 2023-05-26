@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('review', '0031_id_term'),
+        ('review', '0001_initial'),
     ]
 
     operations = [
