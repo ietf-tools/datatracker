@@ -418,7 +418,21 @@ class ReviewTests(TestCase):
         r = self.client.get(req_url)
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, reject_url)
+
+        # anonymous user should not be able to reject
         self.client.logout()
+        r = self.client.post(reject_url, { "action": "reject", "message_to_secretary": "Test message" })
+        self.assertEqual(r.status_code, 302)  # forwards to login page
+        assignment = reload_db_objects(assignment)
+        self.assertEqual(assignment.state_id, "accepted")
+
+        # unrelated person should not be able to reject
+        other_person = PersonFactory()
+        login_testing_unauthorized(self, other_person.user.username, reject_url)
+        r = self.client.post(reject_url, { "action": "reject", "message_to_secretary": "Test message" })
+        self.assertEqual(r.status_code, 403)
+        assignment = reload_db_objects(assignment)
+        self.assertEqual(assignment.state_id, "accepted")
 
         # Check that user can reject it
         login_testing_unauthorized(self, assignment.reviewer.person.user.username, reject_url)
