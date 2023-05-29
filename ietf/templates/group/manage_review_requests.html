@@ -63,7 +63,7 @@
                                     {% endif %}
                                     <br>
                                 {% else %}
-                                    <span class="badge rounded-pill bg-info-subtle">Auto-suggested</span>
+                                    <span class="badge rounded-pill bg-info">Auto-suggested</span>
                                     <br>
                                 {% endif %}
                                 {% if r.doc.authors %}
@@ -136,7 +136,7 @@
                                 {% endif %}
                                 <div>
                                     <span class="badge rounded-pill bg-secondary">{{ r.doc.pages }} page{{ r.doc.pages|pluralize }}</span>
-                                    <span class="badge rounded-pill bg-info-subtle">{{ r.doc.friendly_state }}</span>
+                                    <span class="badge rounded-pill bg-info">{{ r.doc.friendly_state }}</span>
                                 </div>
                                 {% if r.doc.telechat_date %}<span class="badge rounded-pill bg-warning">IESG telechat {{ r.doc.telechat_date }}</span>{% endif %}
                                 {% if r.comment %}<pre class="border p-3 pasted">{{ r.comment }}</pre>{% endif %}

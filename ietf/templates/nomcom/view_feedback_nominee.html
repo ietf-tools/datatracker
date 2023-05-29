@@ -32,7 +32,7 @@
                             <dd class="col-sm-10">
                                 {{ feedback.author|formatted_email|default:"Anonymous"|linkify }}
                                 {% if ft.slug == "nomina" and feedback.nomination_set.first.share_nominator %}
-                                    <span class="badge rounded-pill bg-info-subtle">OK to share name with nominee</span>
+                                    <span class="badge rounded-pill bg-info">OK to share name with nominee</span>
                                 {% endif %}
                             </dd>
                             <dt class="col-sm-2">

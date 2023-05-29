@@ -18,7 +18,7 @@
             <h4 class="mt-4">Agenda</h4>
             <div class="agenda-frame" data-src="{{ agenda.get_href }}"></div>
         {% else %}
-            <span class="badge rounded-pill bg-info-subtle">Agenda submitted as {{ agenda.file_extension|upper }}</span>
+            <span class="badge rounded-pill bg-info">Agenda submitted as {{ agenda.file_extension|upper }}</span>
         {% endif %}
     {% else %}
         <span class="badge rounded-pill bg-warning">No agenda submitted</span>
@@ -41,7 +41,7 @@
             <h4 class="mt-4">Minutes</h4>
             <div class="minutes-frame" data-src="{{ minutes.get_href }}"></div>
         {% else %}
-            <span class="badge rounded-pill bg-info-subtle">Minutes submitted as {{ minutes.file_extension|upper }}</span>
+            <span class="badge rounded-pill bg-info">Minutes submitted as {{ minutes.file_extension|upper }}</span>
         {% endif %}
     {% else %}
         <span class="badge rounded-pill bg-warning">No minutes submitted</span>

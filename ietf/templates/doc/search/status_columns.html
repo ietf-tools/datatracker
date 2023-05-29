@@ -52,7 +52,7 @@
             {% for review_assignment in doc.review_assignments %}
                 {% if review_assignment.state_id == "completed" or review_assignment.state_id == "part-completed" %}
                     <span title="{{ review_assignment.review_request.team.acronym|upper }} {{ review_assignment.review_request.type.name }} review {% if review_assignment.reviewed_rev and review_assignment.reviewed_rev != current_rev or review_assignment.review_request.doc.name != current_doc_name %}of {% if review_assignment.review_request.doc.name != current_doc_name %}{{ review_assignment.review_request.doc.name }}{% endif %}-{{ review_assignment.reviewed_rev }}{% endif %}: {{review_assignment.result}}"
-                    class="badge rounded-pill {% if review_assignment.result.name|slice:5|slugify == 'ready' %}bg-success{% elif review_assignment.result.name|slice:9|slugify == 'not-ready' %}bg-danger{% elif review_assignment.result.name|slice:10|slugify == 'has-issues' %}bg-warning{% else %}bg-info-subtle{% endif %}">
+                    class="badge rounded-pill {% if review_assignment.result.name|slice:5|slugify == 'ready' %}bg-success{% elif review_assignment.result.name|slice:9|slugify == 'not-ready' %}bg-danger{% elif review_assignment.result.name|slice:10|slugify == 'has-issues' %}bg-warning{% else %}bg-info{% endif %}">
                     {% else %}
                         <span title="Incomplete, due {{ review_assignment.review_request.deadline|date:"Y-m-d" }}" class="badge rounded-pill bg-secondary">
                     {% endif %}

@@ -48,7 +48,7 @@
                                 {% if r.pk %}
                                     {{ r.time|date:"Y-m-d" }} by {% person_link r.requested_by %}
                                 {% else %}
-                                    <span class="badge rounded-pill bg-info-subtle">Auto-suggested</span>
+                                    <span class="badge rounded-pill bg-info">Auto-suggested</span>
                                 {% endif %}
                             </td>
                             <td>

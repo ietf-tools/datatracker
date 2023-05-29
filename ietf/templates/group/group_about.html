@@ -67,7 +67,7 @@ height: 100vh;
                 </td>
                 <td>
                     <span class="{% if group.state.name|slugify == 'active' %}text-success{% elif group.state.name|slugify == 'concluded' %}text-danger{% endif %}">{{ group.state.name }}</span>
-                    {% if requested_close %}<div class="badge rounded-pill bg-info-subtle">Being closed</div>{% endif %}
+                    {% if requested_close %}<div class="badge rounded-pill bg-info">Being closed</div>{% endif %}
                 </td>
             </tr>
             {% if group.features.has_chartering_process %}
@@ -80,7 +80,7 @@ height: 100vh;
                             <a href="{% url "ietf.doc.views_doc.document_main" name=group.charter.name %}">
                                 {{ group.charter.name }}-{{ group.charter.rev }}</a>
                             {% if group.charter.get_state.name %}
-                                <span class="badge rounded-pill bg-info-subtle">{{ group.charter.get_state.name }}</span>
+                                <span class="badge rounded-pill bg-info">{{ group.charter.get_state.name }}</span>
                             {% endif %}
                         {% else %}
                             <span class="text-muted">(None)</span>
