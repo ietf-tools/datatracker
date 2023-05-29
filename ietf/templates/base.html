@@ -19,6 +19,8 @@
         <link href="{{ settings.STATIC_IETF_ORG }}/fonts/noto-sans-mono/import.css" rel="stylesheet">
         <link rel="stylesheet" href="{% static 'ietf/css/ietf.css' %}">
         <link rel="stylesheet" href="{% static 'ietf/css/select2.css' %}">
+        {# load this in the head, to prevent flickering #}
+        <script src="{% static 'ietf/js/theme.js' %}"></script>
         <style>
             {% block morecss %}{% endblock %}
         </style>
@@ -159,7 +161,6 @@
         {% endblock %}
         {% block js %}
         {% endblock %}
-        <script src="{% static 'ietf/js/theme.js' %}"></script>
         <script src="{% static 'ietf/js/select2.js' %}"></script>
         <script>
             $('#navbar-doc-search').on('select2:select', function (e) {
