@@ -1,0 +1,4 @@
+{% load ietf_filters %}{% autoescape off %}Name                     Affiliation
+
+{% for volunteer in volunteers %}{{ volunteer.person.plain_name|ljust:"25" }}{{ volunteer.affiliation|default:"No affiliation provided" }}
+{% endfor %}{% endautoescape %}

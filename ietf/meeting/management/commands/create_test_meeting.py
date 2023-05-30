@@ -14,7 +14,7 @@
 #   can be translated to the newly expanded Constraint objects.
 #
 # This work was done in the context of the new meeting constraints modelling:
-# https://trac.ietf.org/trac/ietfdb/wiki/MeetingConstraints
+# https://github.com/ietf-tools/datatracker/wiki/MeetingConstraints
 # Note that aside from Constraint objects, as created below, there is also
 # business logic that applies to all sessions, which is to be implemented
 # in the automatic schedule builder.

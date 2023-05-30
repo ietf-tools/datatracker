@@ -715,7 +715,8 @@ class NomcomViewsTest(TestCase):
 
         # save the cert file in tmp
         #nomcom.public_key.storage.location = tempfile.gettempdir()
-        nomcom.public_key.save('cert', File(io.open(self.cert_file.name, 'r')))
+        with io.open(self.cert_file.name, 'r') as fd:
+            nomcom.public_key.save('cert', File(fd))
 
         response = self.client.get(nominate_url)
         self.assertEqual(response.status_code, 200)
@@ -781,7 +782,8 @@ class NomcomViewsTest(TestCase):
 
         # save the cert file in tmp
         #nomcom.public_key.storage.location = tempfile.gettempdir()
-        nomcom.public_key.save('cert', File(io.open(self.cert_file.name, 'r')))
+        with io.open(self.cert_file.name, 'r') as fd:
+            nomcom.public_key.save('cert', File(fd))
 
         response = self.client.get(nominate_url)
         self.assertEqual(response.status_code, 200)
@@ -863,7 +865,8 @@ class NomcomViewsTest(TestCase):
 
         # save the cert file in tmp
         #nomcom.public_key.storage.location = tempfile.gettempdir()
-        nomcom.public_key.save('cert', File(io.open(self.cert_file.name, 'r')))
+        with io.open(self.cert_file.name, 'r') as fd:
+            nomcom.public_key.save('cert', File(fd))
 
         response = self.client.get(self.add_questionnaire_url)
         self.assertEqual(response.status_code, 200)
@@ -942,7 +945,8 @@ class NomcomViewsTest(TestCase):
 
         # save the cert file in tmp
         #nomcom.public_key.storage.location = tempfile.gettempdir()
-        nomcom.public_key.save('cert', File(io.open(self.cert_file.name, 'r')))
+        with io.open(self.cert_file.name, 'r') as fd:
+            nomcom.public_key.save('cert', File(fd))
 
         response = self.client.get(feedback_url)
         self.assertEqual(response.status_code, 200)
@@ -1066,7 +1070,8 @@ class FeedbackTest(TestCase):
 
         # save the cert file in tmp
         #nomcom.public_key.storage.location = tempfile.gettempdir()
-        nomcom.public_key.save('cert', File(io.open(self.cert_file.name, 'r')))
+        with io.open(self.cert_file.name, 'r') as fd:
+            nomcom.public_key.save('cert', File(fd))
 
         comment_text = 'Plain text. Comments with accents äöåÄÖÅ éáíóú âêîôû ü àèìòù.'
         comments = nomcom.encrypt(comment_text)
@@ -1089,7 +1094,8 @@ class ReminderTest(TestCase):
         self.nomcom = get_nomcom_by_year(NOMCOM_YEAR)
         self.cert_file, self.privatekey_file = get_cert_files()
         #self.nomcom.public_key.storage.location = tempfile.gettempdir()
-        self.nomcom.public_key.save('cert', File(io.open(self.cert_file.name, 'r')))
+        with io.open(self.cert_file.name, 'r') as fd:
+            self.nomcom.public_key.save('cert', File(fd))
 
         gen = Position.objects.get(nomcom=self.nomcom,name='GEN')
         rai = Position.objects.get(nomcom=self.nomcom,name='RAI')
@@ -1489,7 +1495,10 @@ class NewActiveNomComTests(TestCase):
     def setUp(self):
         super().setUp()
         setup_test_public_keys_dir(self)
-        self.nc = NomComFactory.create(**nomcom_kwargs_for_year(year=random.randint(1992,2100)))
+        # Pin nomcom years to be after 2008 or later so that ietf.nomcom.utils.list_eligible can 
+        # return something other than empty. Note that anything after 2022 is suspect, and that
+        # we should revisit this when implementing RFC 9389.
+        self.nc = NomComFactory.create(**nomcom_kwargs_for_year(year=random.randint(2008,2100)))
         self.chair = self.nc.group.role_set.filter(name='chair').first().person
         self.saved_days_to_expire_nomination_link = settings.DAYS_TO_EXPIRE_NOMINATION_LINK
 
@@ -1929,7 +1938,7 @@ Junk body for testing
         for number in range(meeting_start, meeting_start+8):
             m = MeetingFactory.create(type_id='ietf', number=number)
             for p in people:
-                m.meetingregistration_set.create(person=p)
+                m.meetingregistration_set.create(person=p, reg_type="onsite", checkedin=True, attended=True)
         for p in people:
             self.nc.volunteer_set.create(person=p,affiliation='something')
         for view in ('public_volunteers','private_volunteers'):
@@ -1947,6 +1956,14 @@ Junk body for testing
         login_testing_unauthorized(self,self.chair.user.username,url)
         response = self.client.get(url)
         self.assertContains(response,people[-1].email(),status_code=200)
+        unqualified_person = PersonFactory()
+        url = reverse('ietf.nomcom.views.qualified_volunteer_list_for_announcement',kwargs={'year':year})
+        self.client.logout()
+        login_testing_unauthorized(self,self.chair.user.username,url)
+        response = self.client.get(url)
+        self.assertContains(response, people[-1].plain_name(), status_code=200)
+        self.assertNotContains(response, unqualified_person.plain_name())
+
 
 
 
@@ -2582,7 +2599,7 @@ class rfc8989EligibilityTests(TestCase):
             self.assertEqual(set(list_eligible(nomcom=nomcom)),set(eligible))
             Person.objects.filter(pk__in=[p.pk for p in eligible.union(ineligible)]).delete()
 
-class rfc8989bisEligibilityTests(TestCase):
+class rfc9389EligibilityTests(TestCase):
 
     def setUp(self):
         super().setUp()

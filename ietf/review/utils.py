@@ -308,7 +308,7 @@ def email_review_assignment_change(request, review_assignment, subject, msg, by,
         doc=review_assignment.review_request.doc,
         group=review_assignment.review_request.team,
         review_assignment=review_assignment,
-        skip_review_secretary=not notify_secretary,
+        skip_secretary=not notify_secretary,
         skip_review_reviewer=not notify_reviewer,
         skip_review_requested_by=not notify_requested_by,
     )
@@ -328,11 +328,11 @@ def email_review_request_change(request, review_req, subject, msg, by, notify_se
     was done by that party."""    
     (to, cc) = gather_address_lists(
         'review_req_changed',
-        skipped_recipients=[Person.objects.get(name="(System)").formatted_email(), by.email_address()],
+        skipped_recipients=[Person.objects.get(name="(System)").formatted_email()],
         doc=review_req.doc,
         group=review_req.team,
         review_request=review_req,
-        skip_review_secretary=not notify_secretary,
+        skip_secretary=not notify_secretary,
         skip_review_reviewer=not notify_reviewer,
         skip_review_requested_by=not notify_requested_by,
     )
@@ -430,9 +430,9 @@ def assign_review_request_to_reviewer(request, review_req, reviewer, add_skip=Fa
 
     email_review_request_change(
         request, review_req,
-        "%s %s assignment: %s" % (review_req.team.acronym.capitalize(), review_req.type.name,review_req.doc.name),
+        "For %s, %s %s review by %s assigned: %s" % (reviewer.person.name, review_req.team.acronym.capitalize(), review_req.type.name, review_req.deadline, review_req.doc.name),
         msg ,
-        by=request.user.person, notify_secretary=False, notify_reviewer=True, notify_requested_by=False)
+        by=request.user.person, notify_secretary=True, notify_reviewer=True, notify_requested_by=True)
 
 
 def close_review_request(request, review_req, close_state, close_comment=''):

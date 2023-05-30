@@ -103,6 +103,7 @@ def retrieve_messages_from_mbox(mbox_fileobj):
                 "date": msg["Date"],
                 "utcdate": (utcdate.date().isoformat(), utcdate.time().isoformat()) if utcdate else ("", ""),
             })
+        mbox.close()
 
     return res
 
