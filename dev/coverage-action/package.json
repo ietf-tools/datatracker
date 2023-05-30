@@ -14,11 +14,11 @@
     "luxon": "3.3.0"
   },
   "devDependencies": {
-    "eslint": "8.37.0",
+    "eslint": "8.39.0",
     "eslint-config-standard": "17.0.0",
     "eslint-plugin-import": "2.27.5",
     "eslint-plugin-node": "11.1.0",
     "eslint-plugin-promise": "6.1.1",
-    "npm-check-updates": "16.10.8"
+    "npm-check-updates": "16.10.12"
   }
 }

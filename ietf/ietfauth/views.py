@@ -123,16 +123,42 @@ def create_account(request):
             new_account_email = form.cleaned_data[
                 "email"
             ]  # This will be lowercase if form.is_valid()
+            email_is_known = False  # do we already know of the new_account_email address?
 
-            user = User.objects.filter(username__iexact=new_account_email)
-            email = Email.objects.filter(address__iexact=new_account_email)
-            if user.exists() or email.exists():
-                person_to_contact = user.first().person if user else email.first().person
-                to_email = person_to_contact.email_address()
-                if to_email:
-                    send_account_creation_exists_email(request, new_account_email, to_email)
-                else:
-                    raise ValidationError(f"Account for {new_account_email} exists, but cannot email it")
+            # Find an existing Person to contact, if one exists
+            person_to_contact = None
+            user = User.objects.filter(username__iexact=new_account_email).first()
+            if user is not None:
+                email_is_known = True
+                try:
+                    person_to_contact = user.person
+                except User.person.RelatedObjectDoesNotExist:
+                    # User.person is a OneToOneField so it raises an exception if the field is null
+                    pass  # leave person_to_contact as None
+            if person_to_contact is None:
+                email = Email.objects.filter(address__iexact=new_account_email).first()
+                if email is not None:
+                    email_is_known = True
+                    # Email.person is a ForeignKey, so its value is None if the field is null
+                    person_to_contact = email.person
+            # Get a "good" email to contact the existing Person
+            to_email = person_to_contact.email_address() if person_to_contact else None
+
+            if to_email:
+                # We have a "good" email - send instructions to it
+                send_account_creation_exists_email(request, new_account_email, to_email)
+            elif email_is_known:
+                # Either a User or an Email matching new_account_email is in the system but we do not have a
+                # "good" email to use to contact its owner. Fail so the user can contact the secretariat to sort
+                # things out.
+                form.add_error(
+                    "email",
+                    ValidationError(
+                        f"Unable to create account for {new_account_email}. Please contact "
+                        f"the Secretariat at {settings.SECRETARIAT_SUPPORT_EMAIL} for assistance."
+                    ),
+                )
+                new_account_email = None  # Indicate to the template that we failed to create the requested account
             else:
                 # For the IETF 113 Registration period (at least) we are lowering the
                 # barriers for account creation to the simple email round-trip check

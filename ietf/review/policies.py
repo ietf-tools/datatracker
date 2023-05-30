@@ -23,7 +23,7 @@ from ietf.utils import log
 """
 This file contains policies regarding reviewer queues.
 The policies are documented in more detail on:
-https://trac.ietf.org/trac/ietfdb/wiki/ReviewerQueuePolicy
+https://github.com/ietf-tools/datatracker/wiki/ReviewerQueuePolicy
 Terminology used here should match terminology used in that document.
 """
 

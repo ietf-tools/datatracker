@@ -48,7 +48,7 @@ def redirect(request, path="", script=""):
             pass	# it's ok, request didn't have 'command'.
         except:
             pass	# strange exception like the one described in
-                        # https://trac.ietf.org/trac/ietfdb/ticket/179?
+                        # https://github.com/ietf-tools/datatracker/issues/179
                         # just ignore the command string.
     if cmd is not None:
         remove_args.append('command')

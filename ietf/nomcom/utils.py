@@ -513,7 +513,7 @@ def list_eligible(nomcom=None, date=None, base_qs=None):
     elif eligibility_date.year in (2021,2022):
         return list_eligible_8989(date=eligibility_date, base_qs=base_qs)
     elif eligibility_date.year > 2022:
-        return list_eligible_8989bis(date=eligibility_date, base_qs=base_qs)
+        return list_eligible_9389(date=eligibility_date, base_qs=base_qs)
     else:
         return Person.objects.none()
 
@@ -551,8 +551,8 @@ def list_eligible_8788(date, base_qs=None):
 def get_8989_eligibility_querysets(date, base_qs):
     return get_threerule_eligibility_querysets(date, base_qs, three_of_five_callable=three_of_five_eligible_8713)
 
-def get_8989bis_eligibility_querysets(date, base_qs):
-    return get_threerule_eligibility_querysets(date, base_qs, three_of_five_callable=three_of_five_eligible_8989bis)
+def get_9389_eligibility_querysets(date, base_qs):
+    return get_threerule_eligibility_querysets(date, base_qs, three_of_five_callable=three_of_five_eligible_9389)
 
 def get_threerule_eligibility_querysets(date, base_qs, three_of_five_callable):
     if not base_qs:
@@ -605,10 +605,10 @@ def list_eligible_8989(date, base_qs=None):
     author_pks = author_qs.values_list('pk',flat=True)
     return remove_disqualified(Person.objects.filter(pk__in=set(three_of_five_pks).union(set(officer_pks)).union(set(author_pks))))
 
-def list_eligible_8989bis(date, base_qs=None):
+def list_eligible_9389(date, base_qs=None):
     if not base_qs:
         base_qs = Person.objects.all()
-    three_of_five_qs, officer_qs, author_qs = get_8989bis_eligibility_querysets(date, base_qs)
+    three_of_five_qs, officer_qs, author_qs = get_9389_eligibility_querysets(date, base_qs)
     three_of_five_pks = three_of_five_qs.values_list('pk',flat=True)
     officer_pks = officer_qs.values_list('pk',flat=True)
     author_pks = author_qs.values_list('pk',flat=True)
@@ -653,12 +653,11 @@ def three_of_five_eligible_8713(previous_five, queryset=None):
         queryset = Person.objects.all()
     return queryset.filter(meetingregistration__meeting__in=list(previous_five),meetingregistration__attended=True).annotate(mtg_count=Count('meetingregistration')).filter(mtg_count__gte=3)
 
-def three_of_five_eligible_8989bis(previous_five, queryset=None):
+def three_of_five_eligible_9389(previous_five, queryset=None):
     """ Return a list of Person records who attended at least
         3 of the 5 type_id='ietf' meetings before the given
         date. Does not disqualify anyone based on held roles.
         This variant bases the calculation on Meeting.Session and MeetingRegistration.checked_in
-        Leadership will have to create a new RFC specifying eligibility (RFC8989 is timing out) before it can be used.
     """
     if queryset is None:
         queryset = Person.objects.all()

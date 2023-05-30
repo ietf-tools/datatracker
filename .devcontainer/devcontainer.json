@@ -13,76 +13,60 @@
 
     "features": {
     },
-    
-    // Set *default* container specific settings.json values on container create.
-    "settings": { 
-        "terminal.integrated.defaultProfile.linux": "zsh",
-        "python.pythonPath": "/usr/local/bin/python",
-        "python.languageServer": "Pylance",
-        "python.linting.enabled": true,
-        "python.linting.pylintEnabled": true,
-        "python.formatting.autopep8Path": "/usr/local/py-utils/bin/autopep8",
-        "python.formatting.blackPath": "/usr/local/py-utils/bin/black",
-        "python.formatting.yapfPath": "/usr/local/py-utils/bin/yapf",
-        "python.linting.banditPath": "/usr/local/py-utils/bin/bandit",
-        "python.linting.flake8Path": "/usr/local/py-utils/bin/flake8",
-        "python.linting.mypyPath": "/usr/local/py-utils/bin/mypy",
-        "python.linting.pycodestylePath": "/usr/local/py-utils/bin/pycodestyle",
-        "python.linting.pydocstylePath": "/usr/local/py-utils/bin/pydocstyle",
-        "python.linting.pylintPath": "/usr/local/py-utils/bin/pylint",
-        "python.testing.pytestArgs": [
-            "ietf"
-        ],
-        "python.testing.unittestEnabled": true,
-        "python.testing.pytestEnabled": false,
-        "python.testing.unittestArgs": [
-            "-v",
-            "-s",
-            "./ietf",
-            "-p",
-            "test*.py"
-        ],
-        "sqltools.connections": [
-            // Default connection to dev DB container
-            {
-                "name": "Local PostgreSQL",
-                "server": "db",
-                "port": 5432,
-                "database": "ietf",
-                "username": "django",
-                "password": "RkTkDPFnKpko",
-                "driver": "PostgreSQL",
-                "askForPassword": false,
-                "connectionTimeout": 60
+
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "arcanis.vscode-zipfs",
+                "batisteo.vscode-django",
+                "dbaeumer.vscode-eslint",
+                "eamodio.gitlens",
+                "editorconfig.editorconfig",
+                "vue.volar",
+                "mrmlnc.vscode-duplicate",
+                "ms-azuretools.vscode-docker",
+                "ms-playwright.playwright",
+                "ms-python.python",
+                "ms-python.vscode-pylance",
+                "mutantdino.resourcemonitor",
+                "oderwat.indent-rainbow",
+                "redhat.vscode-yaml",
+                "spmeesseman.vscode-taskexplorer",
+                "visualstudioexptteam.vscodeintellicode"
+            ],
+            "settings": {
+                "terminal.integrated.defaultProfile.linux": "zsh",
+                "python.pythonPath": "/usr/local/bin/python",
+                "python.languageServer": "Default",
+                "python.linting.enabled": true,
+                "python.linting.pylintEnabled": true,
+                "python.formatting.autopep8Path": "/usr/local/py-utils/bin/autopep8",
+                "python.formatting.blackPath": "/usr/local/py-utils/bin/black",
+                "python.formatting.yapfPath": "/usr/local/py-utils/bin/yapf",
+                "python.linting.banditPath": "/usr/local/py-utils/bin/bandit",
+                "python.linting.flake8Path": "/usr/local/py-utils/bin/flake8",
+                "python.linting.mypyPath": "/usr/local/py-utils/bin/mypy",
+                "python.linting.pycodestylePath": "/usr/local/py-utils/bin/pycodestyle",
+                "python.linting.pydocstylePath": "/usr/local/py-utils/bin/pydocstyle",
+                "python.linting.pylintPath": "/usr/local/py-utils/bin/pylint",
+                "python.testing.pytestArgs": [
+                    "ietf"
+                ],
+                "python.testing.unittestEnabled": true,
+                "python.testing.pytestEnabled": false,
+                "python.testing.unittestArgs": [
+                    "-v",
+                    "-s",
+                    "./ietf",
+                    "-p",
+                    "test*.py"
+                ]
             }
-        ]
-        // "python.envFile": "${workspaceFolder}/.devcontainer/dev.env"
+        }
     },
     
-    // Add the IDs of extensions you want installed when the container is created.
-    "extensions": [
-		"arcanis.vscode-zipfs",
-		"batisteo.vscode-django",
-        "dbaeumer.vscode-eslint",
-		"eamodio.gitlens",
-		"editorconfig.editorconfig",
-		"vue.volar",
-		"mrmlnc.vscode-duplicate",
-		"ms-azuretools.vscode-docker",
-        "ms-playwright.playwright",
-		"ms-python.python",
-		"ms-python.vscode-pylance",
-        "mtxr.sqltools-driver-pg",
-        "mtxr.sqltools",
-		"mutantdino.resourcemonitor",
-		"oderwat.indent-rainbow",
-		"redhat.vscode-yaml",
-		"spmeesseman.vscode-taskexplorer",
-		"visualstudioexptteam.vscodeintellicode"
-	],
-    
     // Use 'forwardPorts' to make a list of ports inside the container available locally.
-    "forwardPorts": [8000, 5432],
+    "forwardPorts": [3000, 5432, 5433, 8000, 8001],
     
     "portsAttributes": {
         "3000": {
@@ -93,9 +77,17 @@
             "label": "PostgreSQL",
             "onAutoForward": "silent"
         },
+        "5433": {
+            "label": "pgAdmin",
+            "onAutoForward": "silent"
+        },
         "8000": {
             "label": "Datatracker",
             "onAutoForward": "notify"
+        },
+        "8001": {
+            "label": "Static",
+            "onAutoForward": "silent"
         }
     },
     
