@@ -620,7 +620,7 @@ module.exports = {
     return {
       meeting: {
         number: '123',
-        city: faker.address.cityName(),
+        city: faker.location.city(),
         startDate: startDate.toISODate(),
         endDate: endDate.toISODate(),
         updated: faker.date.between({ from: startDate.toISO(), to: endDate.toISO() }).toISOString(),
