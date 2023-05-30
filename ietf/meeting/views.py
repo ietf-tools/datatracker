@@ -155,7 +155,7 @@ def materials(request, num=None):
     ).distinct().select_related('meeting__schedule', 'group__state', 'group__parent')).order_by('group__acronym')
 
     plenaries = sessions.filter(name__icontains='plenary')
-    ietf      = sessions.filter(group__parent__type__slug = 'area').exclude(group__acronym='edu')
+    ietf      = sessions.filter(group__parent__type__slug = 'area').exclude(group__acronym='edu').order_by('group__parent__acronym', 'group__acronym')
     irtf      = sessions.filter(group__parent__acronym = 'irtf')
     training  = sessions.filter(group__acronym__in=['edu','iaoc'], type_id__in=['regular', 'other', ])
     iab       = sessions.filter(group__parent__acronym = 'iab')
@@ -179,12 +179,26 @@ def materials(request, num=None):
         for type_name in ProceedingsMaterialTypeName.objects.all()
     ]
 
+    plenaries, _ = organize_proceedings_sessions(plenaries)
+    irtf, _ = organize_proceedings_sessions(irtf)
+    training, _ = organize_proceedings_sessions(training)
+    iab, _ = organize_proceedings_sessions(iab)
+    other, _ = organize_proceedings_sessions(other)
+
+    ietf_areas = []
+    for area, area_sessions in itertools.groupby(
+            ietf,
+            key=lambda s: s.group.parent
+    ):
+        meeting_groups, not_meeting_groups = organize_proceedings_sessions(area_sessions)
+        ietf_areas.append((area, meeting_groups, not_meeting_groups))
+
     with timezone.override(meeting.tz()):
         return render(request, "meeting/materials.html", {
             'meeting': meeting,
             'proceedings_materials': proceedings_materials,
             'plenaries': plenaries,
-            'ietf': ietf,
+            'ietf_areas': ietf_areas,
             'training': training,
             'irtf': irtf,
             'iab': iab,
@@ -3671,6 +3685,7 @@ def organize_proceedings_sessions(sessions):
             if s.current_status != 'notmeet' or s.sessionpresentation_set.exists():
                 by_name[s.name].append(s)  # for notmeet, only include sessions with materials
         for sess_name, ss in by_name.items():
+            session = ss[0] if ss else None
             def _format_materials(items):
                 """Format session/material for template
 
@@ -3697,6 +3712,7 @@ def organize_proceedings_sessions(sessions):
             entry = {
                 'group': group,
                 'name': sess_name,
+                'session': session,
                 'canceled': all_canceled,
                 'has_materials': s.sessionpresentation_set.exists(),
                 'agendas': _format_materials((s, s.agenda()) for s in ss),
@@ -3705,6 +3721,7 @@ def organize_proceedings_sessions(sessions):
                 'recordings': _format_materials((s, s.recordings()) for s in ss),
                 'slides': _format_materials((s, s.slides()) for s in ss),
                 'drafts': _format_materials((s, s.drafts()) for s in ss),
+                'last_update': session.last_update if hasattr(session, 'last_update') else None
             }
             if is_meeting:
                 meeting_groups.append(entry)
