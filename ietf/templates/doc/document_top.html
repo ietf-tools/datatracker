@@ -9,13 +9,11 @@
 </h1>
 <ul class="nav nav-tabs my-3">
     {% for name, t, url, active, tooltip in tabs %}
-        {% if doc.stream.name|lower == 'ietf' or t not in 'ballot,writeup' %}
-            <li {% if tooltip %}title="{{ tooltip }}"{% endif %} class="nav-item">
-                <a class="nav-link {% if t == selected %}active{% endif %}{% if not active %}disabled{% endif %}"
-                {% if active %}href="{{ url }}"{% endif %}>
-                    {{ name|capfirst_allcaps }}
-                </a>
-            </li>
-        {% endif %}
+        <li {% if tooltip %}title="{{ tooltip }}"{% endif %} class="nav-item">
+            <a class="nav-link {% if t == selected %}active{% endif %}{% if not active %}disabled{% endif %}"
+               {% if active %}href="{{ url }}"{% endif %}>
+                {{ name|capfirst_allcaps }}
+            </a>
+        </li>
     {% endfor %}
 </ul>

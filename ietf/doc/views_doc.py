@@ -114,12 +114,12 @@ def render_document_top(request, doc, tab, name):
                 rsab_ballot,  
                 None if rsab_ballot else "RSAB Evaluation Ballot has not been created yet"
             ))
-    if doc.type_id in ("draft","conflrev", "statchg"):
-        tabs.append(("IESG Evaluation Record", "ballot", urlreverse("ietf.doc.views_doc.document_ballot", kwargs=dict(name=name)), iesg_ballot,  None if iesg_ballot else "IESG Evaluation Ballot has not been created yet"))
-    elif doc.type_id == "charter" and doc.group.type_id == "wg":
-        tabs.append(("IESG Review", "ballot", urlreverse("ietf.doc.views_doc.document_ballot", kwargs=dict(name=name)), iesg_ballot, None if iesg_ballot else "IESG Review Ballot has not been created yet"))
+    if doc.type_id in ("draft","conflrev", "statchg") and iesg_ballot:
+        tabs.append(("IESG Evaluation Record", "ballot", urlreverse("ietf.doc.views_doc.document_ballot", kwargs=dict(name=name)), iesg_ballot,  None))
+    elif doc.type_id == "charter" and doc.group.type_id == "wg" and iesg_ballot:
+        tabs.append(("IESG Review", "ballot", urlreverse("ietf.doc.views_doc.document_ballot", kwargs=dict(name=name)), iesg_ballot, None))
     
-    if doc.type_id == "draft" or (doc.type_id == "charter" and doc.group.type_id == "wg"):
+    if (doc.type_id == "draft" and iesg_ballot) or (doc.type_id == "charter" and doc.group.type_id == "wg"):
         tabs.append(("IESG Writeups", "writeup", urlreverse('ietf.doc.views_doc.document_writeup', kwargs=dict(name=name)), True, None))
 
     tabs.append(("Email expansions","email",urlreverse('ietf.doc.views_doc.document_email', kwargs=dict(name=name)), True, None))
