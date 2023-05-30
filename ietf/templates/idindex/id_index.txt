@@ -2,10 +2,10 @@
 {% if with_abstracts %}
    This summary sheet provides a short synopsis of each Internet-Draft
 available within the "internet-drafts" directory at the shadow
-sites directory.  These drafts are listed alphabetically by working
+sites directory.  These Internet-Drafts are listed alphabetically by working
 group acronym and start date.{% else %}
    This summary sheet provides an index of each Internet-Draft. These
-drafts are listed alphabetically by Working Group acronym and initial
+Internet-Drafts are listed alphabetically by Working Group acronym and initial
 post date.{% endif %} Generated {{ time }}.
 
 {% for group in groups %}

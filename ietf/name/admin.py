@@ -12,7 +12,7 @@ from ietf.name.models import (
     SessionStatusName, StdLevelName, StreamName, TimeSlotTypeName, TopicAudienceName,
     DocUrlTagName, ReviewAssignmentStateName, ReviewerQueuePolicyName, TimerangeName,
     ExtResourceName, ExtResourceTypeName, SlideSubmissionStatusName, ProceedingsMaterialTypeName,
-    AgendaFilterTypeName, SessionPurposeName )
+    AgendaFilterTypeName, SessionPurposeName, TelechatAgendaSectionName )
 
 
 from ietf.stats.models import CountryAlias
@@ -97,3 +97,4 @@ admin.site.register(DocUrlTagName, NameAdmin)
 admin.site.register(ExtResourceTypeName, NameAdmin)
 admin.site.register(SlideSubmissionStatusName, NameAdmin)
 admin.site.register(SessionPurposeName, NameAdmin)
+admin.site.register(TelechatAgendaSectionName, NameAdmin)

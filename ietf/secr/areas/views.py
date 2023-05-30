@@ -1,7 +1,7 @@
 import json
  
 from django.contrib import messages
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseBadRequest
 from django.shortcuts import render, get_object_or_404, redirect
 
 from ietf.group.models import Group, GroupEvent, Role
@@ -110,6 +110,8 @@ def people(request, name):
 
                 messages.success(request, 'New Area Director added successfully!')
                 return redirect('ietf.secr.areas.views.view', name=name)
+        else:
+            return HttpResponseBadRequest('Invalid action')
     else:
         form = AreaDirectorForm()
 

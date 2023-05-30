@@ -5,111 +5,85 @@
 {% load proceedings_filters %}
 <tr>
     <td>
-        {% if session.name %}
-            <div id="{{ session.name|slugify }}">{{ session.name }}</div>
-        {% else %}
-            <div id="{{ session.group.acronym }}">
-                <a href="{% url 'ietf.group.views.group_home' acronym=session.group.acronym %}">{{ session.group.acronym }}</a>
+        {% if entry.name %}
+            <div id="{{ entry.name|slugify }}">{{ entry.name }}</div>
+        {% elif entry.group.acronym %}
+            <div id="{{ entry.group.acronym }}">
+                <a href="{% url 'ietf.group.views.group_home' acronym=entry.group.acronym %}">{{ entry.group.acronym }}</a>
             </div>
-            {% if session.group.state_id == "bof" %}<span class="badge rounded-pill bg-success">BOF</span>{% endif %}
+            {% if entry.group.state_id == "bof" %}<span class="badge rounded-pill bg-success">BOF</span>{% endif %}
+        {% else %}
+            <h1>{{ entry.group }}</h1>
         {% endif %}
     </td>
-    {% if session.all_meeting_sessions_cancelled %}
+    {% if entry.canceled %}
         <td colspan="4">
             <span class="badge rounded-pill bg-danger">Session cancelled</span>
         </td>
     {% else %}
+        {# artifacts #}
         <td>
-            {% if session.all_meeting_agendas %}
-                {% if session.all_meeting_agendas|length == 1 %}
-                    <a href="{{ session.all_meeting_agendas.0|meeting_href:meeting }}">Agenda</a>
-                    <br>
-                {% else %}
-                    {% for agenda in session.all_meeting_agendas %}
-                        <a href="{{ agenda|meeting_href:meeting }}">
-                            Agenda {{ agenda.sessionpresentation_set.first.session.official_timeslotassignment.timeslot.time|date:"D G:i" }}
-                        </a>
-                        <br>
-                    {% endfor %}
-                {% endif %}
-            {% else %}
-                {% if show_agenda == "True" and not meeting.proceedings_final %}
+            {% for agenda in entry.agendas %}
+                <a href="{{ agenda.material|meeting_href:meeting }}">
+                    Agenda
+                    {% if agenda.time %}{{agenda.time|date:"D G:i"}}{% endif %}
+                </a>
+                <br>
+            {% empty %}
+                {% if show_agenda and not meeting.proceedings_final %}
                     <span class="badge rounded-pill bg-warning">No agenda</span>
                     <br>
                 {% endif %}
-            {% endif %}
-            {% if session.all_meeting_minutes %}
-                {% if session.all_meeting_minutes|length == 1 %}
-                    <a href="{{ session.all_meeting_minutes.0|meeting_href:meeting }}">Minutes</a>
-                    <br>
-                {% else %}
-                    {% for minutes in session.all_meeting_minutes %}
-                        <a href="{{ minutes|meeting_href:meeting }}">
-                            Minutes {{ minutes.sessionpresentation_set.first.session.official_timeslotassignment.timeslot.time|date:"D G:i" }}
-                        </a>
-                        <br>
-                    {% endfor %}
-                {% endif %}
-            {% else %}
-                {% if show_agenda == "True" and not meeting.proceedings_final %}
+            {% endfor %}
+            {% for minutes in entry.minutes %}
+                <a href="{{ minutes.material|meeting_href:meeting }}">
+                    Minutes
+                    {% if minutes.time %}{{minutes.time|date:"D G:i"}}{% endif %}
+                </a>
+                <br>
+            {% empty %}
+                {% if show_agenda and not meeting.proceedings_final %}
                     <span class="badge rounded-pill bg-warning">No minutes</span>
                     <br>
                 {% endif %}
-            {% endif %}
-            {% if session.all_meeting_bluesheets %}
-                {% if session.all_meeting_bluesheets|length == 1 %}
-                    <a href="{{ session.all_meeting_bluesheets.0|meeting_href:meeting }}">Bluesheets</a>
-                    <br>
-                {% else %}
-                    {% for bs in session.all_meeting_bluesheets %}
-                        <a href="{{ bs|meeting_href:meeting }}">
-                            Bluesheets {{ bs.sessionpresentation_set.first.session.official_timeslotassignment.timeslot.time|date:"D G:i" }}
-                        </a>
-                        <br>
-                    {% endfor %}
-                {% endif %}
-            {% endif %}
-            {% with session.group|status_for_meeting:meeting as status %}
-                {% if status %}
-                    <a href="{% url 'ietf.group.views.group_about_status_meeting' acronym=session.group.acronym num=meeting.number %}">
-                        Status
-                    </a>
-                    <br>
-                {% endif %}
-            {% endwith %}
+            {% endfor %}
+            {% for bs in entry.bluesheets %}
+                <a href="{{ bs.material|meeting_href:meeting }}">
+                    Bluesheets
+                    {% if bs.time %}{{ bs.time|date:"D G:i" }}{% endif %}
+                </a>
+                <br>
+            {% endfor %}
         </td>
+        {# recordings #}
         <td>
-            {% if session.all_meeting_sessions_for_group|length == 1 %}
-                {% for rec in session.all_meeting_recordings %}
-                    <a href="{{ rec|meeting_href:meeting|default:"#" }}">{{ rec|hack_recording_title:False }}</a>
-                    <br>
-                {% endfor %}
-            {% else %}
-                {% for rec in session.all_meeting_recordings %}
-                    <a href="{{ rec|meeting_href:meeting|default:"#" }}">{{ rec|hack_recording_title:True }}</a>
-                    <br>
-                {% endfor %}
-            {% endif %}
+          {% for rec in entry.recordings %}
+              <a href="{{ rec.material|meeting_href:meeting|default:"#" }}">
+                  {{ rec.material|hack_recording_title }}
+                  {% if rec.time %}{{ rec.time|date:"D G:i"}}{% endif %}
+              </a>
+              <br>
+          {% endfor %}
         </td>
+        {# slides #}
         <td>
-            {% with session.all_meeting_slides as slides %}
-                {% for slide in slides %}
-                    <a href="{{ slide|meeting_href:meeting }}">{{ slide.title|clean_whitespace }}</a>
-                    <br>
-                {% empty %}
-                    {% if not meeting.proceedings_final %}<span class="badge rounded-pill bg-warning">No slides</span>{% endif %}
-                {% endfor %}
-            {% endwith %}
+            {% for slide in entry.slides %}
+                <a href="{{ slide.material|meeting_href:meeting }}">{{ slide.material.title|clean_whitespace }}</a>
+                <br>
+            {% empty %}
+                {% if not meeting.proceedings_final %}<span class="badge rounded-pill bg-warning">No slides</span>{% endif %}
+            {% endfor %}
         </td>
+        {# drafts #}
         <td>
-            {% with session.all_meeting_drafts as drafts %}
-                {% for draft in drafts %}
-                    <a href="{% url "ietf.doc.views_doc.document_main" name=draft.canonical_name %}">{{ draft.canonical_name }}</a>
-                    <br>
-                {% empty %}
-                    {% if not meeting.proceedings_final %}<span class="badge rounded-pill bg-warning">No drafts</span>{% endif %}
-                {% endfor %}
-            {% endwith %}
+            {% for draft in entry.drafts %}
+                <a href="{% url "ietf.doc.views_doc.document_main" name=draft.material.canonical_name %}">
+                    {{ draft.material.canonical_name }}
+                </a>
+                <br>
+            {% empty %}
+                {% if not meeting.proceedings_final %}<span class="badge rounded-pill bg-warning">No Internet-Drafts</span>{% endif %}
+            {% endfor %}
         </td>
     {% endif %}
 </tr>

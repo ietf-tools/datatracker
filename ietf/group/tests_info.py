@@ -71,7 +71,7 @@ class GroupPagesTests(TestCase):
         self.assertContains(r, group.name)
         self.assertContains(r, escape(group.ad_role().person.name))
 
-        for t in ('rg','area','ag', 'rag', 'dir','review','team','program','iabasg','adm','rfcedtyp'):
+        for t in ('rg','area','ag', 'rag', 'dir','review','team','program','iabasg','adm','rfcedtyp'): # See issue 5120
             g = GroupFactory.create(type_id=t,state_id='active') 
             if t in ['dir','review']:
                 g.parent = GroupFactory.create(type_id='area',state_id='active')
@@ -87,7 +87,7 @@ class GroupPagesTests(TestCase):
         self.assertContains(r, "Directorate")
         self.assertContains(r, "AG")
 
-        for slug in GroupTypeName.objects.exclude(slug__in=['wg','rg','ag','rag','area','dir','review','team','program','adhoc','ise','adm','iabasg','rfcedtyp']).values_list('slug',flat=True):
+        for slug in GroupTypeName.objects.exclude(slug__in=['wg','rg','ag','rag','area','dir','review','team','program','adhoc','ise','adm','iabasg','rfcedtyp', 'edwg', 'edappr']).values_list('slug',flat=True):
             with self.assertRaises(NoReverseMatch):
                 url=urlreverse('ietf.group.views.active_groups', kwargs=dict(group_type=slug))
 
@@ -616,7 +616,7 @@ class GroupEditTests(TestCase):
 
     def test_create_non_chartered_includes_description(self):
         parent = GroupFactory(type_id='area')
-        group_type = GroupTypeName.objects.filter(used=True, features__has_chartering_process=False).first()
+        group_type = GroupTypeName.objects.filter(used=True, features__has_chartering_process=False, features__parent_types='area').first()
         self.assertIsNotNone(group_type)
         url = urlreverse('ietf.group.views.edit', kwargs=dict(group_type=group_type.slug, action="create"))
         login_testing_unauthorized(self, "secretary", url)
@@ -1826,7 +1826,7 @@ class StatusUpdateTests(TestCase):
             self.assertEqual(response.status_code, 404)
             self.client.logout()
 
-        for type_id in GroupTypeName.objects.exclude(slug__in=('wg','rg','ag','rag','team')).values_list('slug',flat=True):
+        for type_id in GroupTypeName.objects.exclude(slug__in=('wg','rg','ag','rag','team','edwg')).values_list('slug',flat=True):
             group = GroupFactory.create(type_id=type_id)
             for user in (None,User.objects.get(username='secretary')):
                 ensure_updates_dont_show(group,user)

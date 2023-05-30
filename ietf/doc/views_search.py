@@ -188,7 +188,7 @@ def retrieve_search_results(form, all_types=False):
             Q(documentauthor__person__email__address__icontains=query["author"])
         )
     elif by == "group":
-        docs = docs.filter(group__acronym=query["group"])
+        docs = docs.filter(group__acronym__iexact=query["group"])
     elif by == "area":
         docs = docs.filter(Q(group__type="wg", group__parent=query["area"]) |
                            Q(group=query["area"])).distinct()
@@ -245,15 +245,15 @@ def frontpage(request):
 
 def search_for_name(request, name):
     def find_unique(n):
-        exact = DocAlias.objects.filter(name=n).first()
+        exact = DocAlias.objects.filter(name__iexact=n).first()
         if exact:
             return exact.name
 
-        aliases = DocAlias.objects.filter(name__startswith=n)[:2]
+        aliases = DocAlias.objects.filter(name__istartswith=n)[:2]
         if len(aliases) == 1:
             return aliases[0].name
 
-        aliases = DocAlias.objects.filter(name__contains=n)[:2]
+        aliases = DocAlias.objects.filter(name__icontains=n)[:2]
         if len(aliases) == 1:
             return aliases[0].name
 
@@ -461,7 +461,7 @@ def ad_dashboard_sort_key(doc):
 
 
 def ad_workload(request):
-    delta = datetime.timedelta(days=30)
+    delta = datetime.timedelta(days=120)
     right_now = timezone.now()
 
     ads = []
@@ -679,7 +679,27 @@ def docs_for_ad(request, name):
     results, meta = prepare_document_table(request, retrieve_search_results(form), form.data, max_results=500)
     results.sort(key=ad_dashboard_sort_key)
     del meta["headers"][-1]
-    #
+
+    # filter out some results
+    results = [
+        r
+        for r in results
+        if not (
+            r.type_id == "charter"
+            and (
+                r.group.state_id == "abandon"
+                or r.get_state_slug("charter") == "replaced"
+            )
+        )
+        and not (
+            r.type_id == "draft"
+            and (
+                r.get_state_slug("draft-iesg") == "dead"
+                or r.get_state_slug("draft") == "repl"
+            )
+        )
+    ]
+
     for d in results:
         d.search_heading = ad_dashboard_group(d)
     #

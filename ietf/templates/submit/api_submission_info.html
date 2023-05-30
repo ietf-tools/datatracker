@@ -1,12 +1,12 @@
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015-2022, All Rights Reserved #}
 {% load origin ietf_filters %}
-{% block title %}Draft submission API instructions{% endblock %}
+{% block title %}I-D submission API instructions{% endblock %}
 {% block content %}
     {% origin %}
-    <h1 class="mb-3">Draft submission API instructions</h1>
+    <h1 class="mb-3">Internet-Draft submission API instructions</h1>
     <p>
-        A simplified draft submission interface, intended for automation,
+        A simplified Internet-Draft submission interface, intended for automation,
         is available at <code>{% url 'ietf.submit.views.api_submission' %}</code>.
     </p>
     <p>
@@ -37,11 +37,11 @@
             <code>xml</code>, which is the submitted file (required)
         </li>
         <li>
-            <code>replaces</code>, a comma-separated list of draft names replaced by this submission (optional)
+            <code>replaces</code>, a comma-separated list of Internet-Draft names replaced by this submission (optional)
         </li>
     </ul>
     <p>
-        When a draft is submitted, basic checks are performed immediately and an HTTP response
+        When an Internet-Draft is submitted, basic checks are performed immediately and an HTTP response
         is sent including an appropriate http result code and JSON data describing the outcome.
     </p>
     <p>
@@ -62,7 +62,7 @@
   "error": "Description of the error"
 }</pre>
     <p>
-        If the basic checks passed and a successful response is sent, the draft is queued for further
+        If the basic checks passed and a successful response is sent, the Internet-Draft is queued for further
         processing. Its status can be monitored by issuing GET requests to the <code>status_url</code>
         indicated in the JSON response. This URL will respond with JSON data in the format
     </p>
@@ -72,17 +72,17 @@
   "state": "validating"
 }</pre>
     <p>
-        The state <code>validating</code> indicates that the draft is being or waiting to be processed.
-        Any other state indicates that the draft completed validation. If the validation failed or if the
-        draft was canceled after validation, the state will be <code>cancel</code>.
+        The state <code>validating</code> indicates that the Internet-Draft is being or waiting to be processed.
+        Any other state indicates that the Internet-Draft completed validation. If the validation failed or if the
+        Internet-Draft was canceled after validation, the state will be <code>cancel</code>.
     </p>
     <p>
-        Human-readable details of the draft's status and history can be found at
+        Human-readable details of the Internet-Draft's status and history can be found at
         {% absurl 'ietf.submit.views.submission_status' submission_id='123' %}
         (replacing <code>123</code> with the <code>id</code> for the submission).)
     </p>
     <p>
-        Here is an example of submitting a draft and polling its status through the API:
+        Here is an example of submitting an Internet-Draft and polling its status through the API:
     </p>
     <pre class="border p-3">
 $ curl -s -F "user=user.name@example.com" -F "xml=@~/draft-user-example.xml" -F "replaces=draft-user-replaced-draft"  {% absurl 'ietf.submit.views.api_submission' %} | jq

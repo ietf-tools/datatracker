@@ -296,7 +296,7 @@ def edit(request, id, updates=None):
     ipr = get_object_or_404(IprDisclosureBase, id=id).get_child()
     type = class_to_type[ipr.__class__.__name__]
     
-    DraftFormset = inlineformset_factory(IprDisclosureBase, IprDocRel, form=DraftForm, can_delete=True, extra=1)
+    DraftFormset = inlineformset_factory(IprDisclosureBase, IprDocRel, form=DraftForm, can_delete=True, extra=0)
 
     if request.method == 'POST':
         form = ipr_form_mapping[ipr.__class__.__name__](request.POST,instance=ipr)
@@ -316,7 +316,7 @@ def edit(request, id, updates=None):
         else:
             valid_formsets = True
 
-        if form.is_valid() and valid_formsets: 
+        if form.is_valid() and valid_formsets:
             updates = form.cleaned_data.get('updates')
             disclosure = form.save(commit=False)
             disclosure.save()
@@ -663,11 +663,11 @@ def search(request):
                 doc = q
 
                 if docid:
-                    start = DocAlias.objects.filter(name=docid)
+                    start = DocAlias.objects.filter(name__iexact=docid)
                 else:
                     if search_type == "draft":
                         q = normalize_draftname(q)
-                        start = DocAlias.objects.filter(name__contains=q, name__startswith="draft")
+                        start = DocAlias.objects.filter(name__icontains=q, name__startswith="draft")
                     elif search_type == "rfc":
                         start = DocAlias.objects.filter(name="rfc%s" % q.lstrip("0"))
                 

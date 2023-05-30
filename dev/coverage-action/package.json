@@ -6,18 +6,19 @@
   "author": "IETF Trust",
   "license": "BSD-3-Clause",
   "dependencies": {
-    "@actions/core": "1.9.1",
-    "@actions/github": "5.0.0",
-    "chart.js": "3.7.1",
+    "@actions/core": "1.10.0",
+    "@actions/github": "5.1.1",
+    "chart.js": "3.5.1",
     "chartjs-node-canvas": "4.1.6",
     "lodash": "4.17.21",
-    "luxon": "2.3.1"
+    "luxon": "3.3.0"
   },
   "devDependencies": {
-    "eslint": "7.32.0",
-    "eslint-config-standard": "16.0.3",
-    "eslint-plugin-import": "2.25.4",
+    "eslint": "8.39.0",
+    "eslint-config-standard": "17.0.0",
+    "eslint-plugin-import": "2.27.5",
     "eslint-plugin-node": "11.1.0",
-    "eslint-plugin-promise": "5.2.0"
+    "eslint-plugin-promise": "6.1.1",
+    "npm-check-updates": "16.10.12"
   }
 }

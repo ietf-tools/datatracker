@@ -2,6 +2,7 @@
 <div class="session-details-form my-3" data-prefix="{{ form.prefix }}">
     {% if hidden %}
         {{ form.name.as_hidden }}{{ form.purpose.as_hidden }}{{ form.type.as_hidden }}{{ form.requested_duration.as_hidden }}
+        {{ form.has_onsite_tool.as_hidden }}
     {% else %}
     <table>
         <tbody>
@@ -26,9 +27,16 @@
                 <th scope="row">{{ form.requested_duration.label_tag }}</th>
                 <td>{{ form.requested_duration }}{{ form.requested_duration.errors }}</td>
             </tr>
+            {% if not hide_onsite_tool_prompt %}
+            <tr>
+                <th scope="row">{{ form.has_onsite_tool.label_tag }}</th>
+                <td>{{ form.has_onsite_tool }}{{ form.has_onsite_tool.errors }}</td>
+            </tr>
+            {% endif %}
             </tbody>
         </table>
+        {% if hide_onsite_tool_prompt %}{{ form.has_onsite_tool.as_hidden }}{% endif %}
     {% endif %}
-    {# hidden fields shown whether or not the whole form is hidden #}
-    {{ form.attendees.as_hidden }}{{ form.comments.as_hidden }}{{ form.id.as_hidden }}{{ form.on_agenda.as_hidden }}{{ form.DELETE.as_hidden }}
+    {# hidden fields included whether or not the whole form is hidden #}
+    {{ form.attendees.as_hidden }}{{ form.comments.as_hidden }}{{ form.id.as_hidden }}{{ form.on_agenda.as_hidden }}{{ form.DELETE.as_hidden }}{{ form.remote_instructions.as_hidden }}{{ form.short.as_hidden }}{{ form.agenda_note.as_hidden }}
 </div>

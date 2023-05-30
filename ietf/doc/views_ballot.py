@@ -27,6 +27,7 @@ from ietf.doc.mails import ( email_ballot_deferred, email_ballot_undeferred,
     extra_automation_headers, generate_last_call_announcement, 
     generate_issue_ballot_mail, generate_ballot_writeup, generate_ballot_rfceditornote,
     generate_approval_mail, email_irsg_ballot_closed, email_irsg_ballot_issued,
+    email_rsab_ballot_issued, email_rsab_ballot_closed,
     email_lc_to_yang_doctors )
 from ietf.doc.lastcall import request_last_call
 from ietf.doc.templatetags.ietf_filters import can_ballot
@@ -42,16 +43,6 @@ from ietf.utils.decorators import require_api_key
 from ietf.utils.response import permission_denied
 from ietf.utils.timezone import date_today, datetime_from_date, DEADLINE_TZINFO
 
-
-BALLOT_CHOICES = (("yes", "Yes"),
-                  ("noobj", "No Objection"),
-                  ("discuss", "Discuss"),
-                  ("abstain", "Abstain"),
-                  ("recuse", "Recuse"),
-                  ("moretime", "Need More Time"),
-                  ("notready", "Not Ready"),
-                  ("", "No Record"),
-                  )
 
 # -------------------------------------------------
 # Helper Functions
@@ -106,6 +97,8 @@ class EditPositionForm(forms.Form):
         ballot_type = kwargs.pop("ballot_type")
         super(EditPositionForm, self).__init__(*args, **kwargs)
         self.fields['position'].queryset = ballot_type.positions.order_by('order')
+        if ballot_type.positions.filter(blocking=True).exists():
+            self.fields['discuss'].label = ballot_type.positions.get(blocking=True).name
 
     def clean_discuss(self):
        entered_discuss = self.cleaned_data["discuss"]
@@ -183,9 +176,9 @@ def save_position(form, doc, ballot, balloter, login=None, send_email=False):
 
     return pos
 
-@role_required('Area Director','Secretariat','IRSG Member')
+@role_required("Area Director", "Secretariat", "IRSG Member", "RSAB Member")
 def edit_position(request, name, ballot_id):
-    """Vote and edit discuss and comment on document as Area Director."""
+    """Vote and edit discuss and comment on document"""
     doc = get_object_or_404(Document, docalias__name=name)
     ballot = get_object_or_404(BallotDocEvent, type="created_ballot", pk=ballot_id, doc=doc)
 
@@ -196,8 +189,7 @@ def edit_position(request, name, ballot_id):
     else:
         return_to_url = urlreverse("ietf.doc.views_doc.document_ballot", kwargs=dict(name=doc.name, ballot_id=ballot_id))
 
-    # if we're in the Secretariat, we can select an AD to act as stand-in for
-    # or we can select an IRSG member
+    # if we're in the Secretariat, we can select a balloter to act as stand-in for
     if has_role(request.user, "Secretariat"):
         balloter_id = request.GET.get('balloter')
         if not balloter_id:
@@ -207,8 +199,8 @@ def edit_position(request, name, ballot_id):
     if request.method == 'POST':
         old_pos = None
         if not has_role(request.user, "Secretariat") and not can_ballot(request.user, doc):
-            # prevent pre-ADs from voting
-            permission_denied(request, "Must be a proper Area Director in an active area or IRSG Member to cast ballot")
+            # prevent pre-ADs from taking a position
+            permission_denied(request, "Must be an active member (not a pre-AD for example) of the balloting body to take a position")
         
         form = EditPositionForm(request.POST, ballot_type=ballot.ballot_type)
         if form.is_valid():
@@ -328,16 +320,18 @@ def build_position_email(balloter, doc, pos):
 
     return addrs, frm, subject, body
 
-@role_required('Area Director','Secretariat','IRSG Member')
+@role_required('Area Director','Secretariat','IRSG Member', 'RSAB Member')
 def send_ballot_comment(request, name, ballot_id):
     """Email document ballot position discuss/comment for Area Director."""
     doc = get_object_or_404(Document, docalias__name=name)
     ballot = get_object_or_404(BallotDocEvent, type="created_ballot", pk=ballot_id, doc=doc)
 
     if not has_role(request.user, 'Secretariat'):
-        if doc.stream_id == 'irtf' and not has_role(request.user, 'IRSG Member'):
-            raise Http404
-        if doc.stream_id == 'ietf' and not has_role(request.user, 'Area Director'):
+        if any([
+            doc.stream_id == 'ietf' and not has_role(request.user, 'Area Director'),
+            doc.stream_id == 'irtf' and not has_role(request.user, 'IRSG Member'),
+            doc.stream_id == 'editorial' and not has_role(request.user, 'RSAB Member'),
+        ]):
             raise Http404
 
     balloter = request.user.person
@@ -352,7 +346,7 @@ def send_ballot_comment(request, name, ballot_id):
     else:
         back_url = urlreverse("ietf.doc.views_doc.document_ballot", kwargs=dict(name=doc.name, ballot_id=ballot_id))
 
-    # if we're in the Secretariat, we can select an AD to act as stand-in for
+    # if we're in the Secretariat, we can select a balloter (such as an AD) to act as stand-in for
     if has_role(request.user, "Secretariat"):
         balloter_id = request.GET.get('balloter')
         if not balloter_id:
@@ -367,6 +361,8 @@ def send_ballot_comment(request, name, ballot_id):
 
     if doc.stream_id == 'irtf':
         mailtrigger_slug='irsg_ballot_saved'
+    elif doc.stream_id == 'editorial':
+        mailtrigger_slug='rsab_ballot_saved'
     else:
         mailtrigger_slug='iesg_ballot_saved'
         
@@ -998,7 +994,7 @@ class MakeLastCallForm(forms.Form):
 
 @role_required('Secretariat')
 def make_last_call(request, name):
-    """Make last call for Internet Draft, sending out announcement."""
+    """Make last call for Internet-Draft, sending out announcement."""
     doc = get_object_or_404(Document, docalias__name=name)
     if not (doc.get_state("draft-iesg") or doc.get_state("statchg")):
         raise Http404
@@ -1200,3 +1196,90 @@ def irsg_ballot_status(request):
             docs.append(doc)
 
     return render(request, 'doc/irsg_ballot_status.html', {'docs':docs})
+
+@role_required('Secretariat', 'RSAB Chair')
+def issue_rsab_ballot(request, name):
+    doc = get_object_or_404(Document, docalias__name=name)
+    if doc.stream.slug != "editorial" or doc.type != DocTypeName.objects.get(slug="draft"):
+        raise Http404
+
+    by = request.user.person
+
+    if request.method == 'POST':
+        button = request.POST.get("rsab_button") # TODO: Really? There's an irsg button? The templates should be generalized.
+        if button == 'Yes':
+            e = BallotDocEvent(doc=doc, rev=doc.rev, by=request.user.person)
+            e.type = "created_ballot"
+            e.desc = "Created RSAB Ballot"
+            ballot_type = BallotType.objects.get(doc_type=doc.type, slug="rsab-approve")
+            e.ballot_type = ballot_type
+            e.save()
+            new_state = doc.get_state()
+            prev_tags = []
+            new_tags = []
+
+            email_rsab_ballot_issued(request, doc, ballot=e)  # Send notification email
+
+            if doc.type_id == 'draft':
+                new_state = State.objects.get(used=True, type="draft-stream-editorial", slug='rsabpoll')
+
+            prev_state = doc.get_state(new_state.type_id if new_state else None)
+
+            doc.set_state(new_state)
+            doc.tags.remove(*prev_tags)
+
+            events = []
+            e = add_state_change_event(doc, by, prev_state, new_state, prev_tags=prev_tags, new_tags=new_tags)
+            if e:
+                events.append(e)
+            e = update_action_holders(doc, prev_state, new_state, prev_tags=prev_tags, new_tags=new_tags)
+            if e:
+                events.append(e)
+
+            if events:
+                doc.save_with_history(events)
+
+        return HttpResponseRedirect(doc.get_absolute_url())
+    else:
+        templ = 'doc/ballot/rsab_ballot_approve.html'
+
+        question = "Confirm issuing a ballot for " + name + "?"
+        return render(request, templ, dict(doc=doc, question=question))
+
+@role_required('Secretariat', 'RSAB Chair')
+def close_rsab_ballot(request, name):
+    doc = get_object_or_404(Document, docalias__name=name)
+    if doc.stream.slug != "editorial" or doc.type_id != "draft":
+        raise Http404
+
+    by = request.user.person
+
+    if request.method == 'POST':
+        button = request.POST.get("rsab_button")
+        if button == 'Yes':
+            ballot = close_ballot(doc, by, "rsab-approve")
+            email_rsab_ballot_closed(
+                request,
+                doc=doc,
+                ballot=BallotDocEvent.objects.get(pk=ballot.pk)
+            )
+        return HttpResponseRedirect(doc.get_absolute_url())
+        
+    templ = 'doc/ballot/rsab_ballot_close.html'
+    question = "Confirm closing the ballot for " + name + "?"
+    return render(request, templ, dict(doc=doc, question=question))
+
+def rsab_ballot_status(request):
+    possible_docs = Document.objects.filter(docevent__ballotdocevent__isnull=False)
+    docs = []
+    for doc in possible_docs:
+        if doc.ballot_open("rsab-approve"):
+            ballot = doc.active_ballot()
+            if ballot:
+                doc.ballot = ballot
+
+            docs.append(doc)
+    return render(request, 'doc/rsab_ballot_status.html', {'docs':docs}) 
+    # Possible TODO: add a menu item to show this? Maybe only if you're in rsab or an rswg chair?
+    # There will be so few of these that the general community would follow them from the rswg docs page.
+    # Maybe the view isn't actually needed at all...

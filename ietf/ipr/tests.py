@@ -147,8 +147,16 @@ class IprTests(TestCase):
         r = self.client.get(url + "?submit=draft&id=%s" % draft.name)
         self.assertContains(r, ipr.title)
 
+        # find by id, mixed case letters
+        r = self.client.get(url + "?submit=draft&id=%s" % draft.name.swapcase())
+        self.assertContains(r, ipr.title)
+
         # find draft
         r = self.client.get(url + "?submit=draft&draft=%s" % draft.name)
+        self.assertContains(r, ipr.title)
+
+        # find draft, mixed case letters
+        r = self.client.get(url + "?submit=draft&draft=%s" % draft.name.swapcase())
         self.assertContains(r, ipr.title)
 
         # search + select document
@@ -583,7 +591,7 @@ I would like to revoke this declaration.
             get_payload_text(outbox[len_before + 1]).replace('\n', ' ')
         )
         self.assertIn(f'{settings.IDTRACKER_BASE_URL}{urlreverse("ietf.ipr.views.showlist")}', get_payload_text(outbox[len_before]).replace('\n',' '))
-        self.assertIn(f'{settings.IDTRACKER_BASE_URL}{urlreverse("ietf.ipr.views.history",kwargs=dict(id=ipr.pk))}', get_payload_text(outbox[len_before+1]).replace('\n',' '))
+        self.assertIn(f'{settings.IDTRACKER_BASE_URL}{urlreverse("ietf.ipr.views.show",kwargs=dict(id=ipr.pk))}', get_payload_text(outbox[len_before+1]).replace('\n',' '))
 
     def test_notify_generic(self):
         RoleFactory(name_id='ad',group__acronym='gen')
@@ -710,7 +718,7 @@ Subject: test
         post_data = {
             'iprdocrel_set-TOTAL_FORMS' : 1,
             'iprdocrel_set-INITIAL_FORMS' : 0,
-            'iprdocrel_set-0-id': disclosure.pk,
+            'iprdocrel_set-0-id': '',
             "iprdocrel_set-0-document": disclosure.docs.first().pk,
             "iprdocrel_set-0-revisions": disclosure.docs.first().document.rev,
             'holder_legal_name': disclosure.holder_legal_name,

@@ -1,4 +1,4 @@
-# helpers for handling last calls on Internet Drafts
+# helpers for handling last calls on Internet-Drafts
 
 from django.db.models import Q
 

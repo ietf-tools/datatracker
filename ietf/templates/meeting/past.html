@@ -2,11 +2,13 @@
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
 {% load ietf_filters static %}
+{% load cache %}
 {% block pagehead %}
     <link rel="stylesheet" href="{% static "ietf/css/list.css" %}">
 {% endblock %}
 {% block title %}Past Meetings{% endblock %}
 {% block content %}
+    {% cache 3600 pastmeetings %}
     {% origin %}
     <h1>Past Meetings</h1>
     {% if meetings %}
@@ -55,6 +57,7 @@
     {% else %}
         <h2>No past meetings</h2>
     {% endif %}
+    {% endcache %}
 {% endblock %}
 {% block js %}
     <script src="{% static "ietf/js/list.js" %}"></script>

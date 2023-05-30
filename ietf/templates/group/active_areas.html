@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
-{% load origin textfilters ietf_filters%}
+{% load origin textfilters ietf_filters static %}
 {% block title %}Active areas{% endblock %}
 {% block content %}
     {% origin %}
@@ -43,8 +43,24 @@
             </li>
         {% endfor %}
     </ul>
+    <p>
+        The following diagrams show the sizes of the different areas and working groups,
+        based on the number of documents - and pages - a group has worked on in the last three years.
+    </p>
+    <div class="row mt-3">
+        <div class="col-sm chart text-center" data-area="ietf" data-dataset="docs">
+            <div class="spinner-border" role="status">
+              <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+        <div class="col-sm chart text-center" data-area="ietf" data-dataset="pages">
+            <div class="spinner-border" role="status">
+              <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+    </div>
     {% for area in areas %}
-        <h2 class="mt-3" id="id-{{ area.acronym|slugify }}">
+        <h2 class="mt-5" id="id-{{ area.acronym|slugify }}">
             {{ area.name }}
             <a href="{% url 'ietf.group.views.active_groups' group_type='wg' %}#{{ area.acronym }}">({{ area.acronym|upper }})</a>
         </h2>
@@ -53,5 +69,14 @@
                 {{ area.description|urlize_ietf_docs|linkify|safe }}
             </p>
         {% endif %}
+        {% include "group/group_stats_modal.html" with group=area only %}
     {% endfor %}
+{% endblock %}
+{% block js %}
+    <script src="{% static 'ietf/js/highcharts.js' %}"></script>
+    <script>
+        $(function () {
+            group_stats("{% url 'ietf.group.views.group_stats_data' %}", ".chart");
+        });
+    </script>
 {% endblock %}

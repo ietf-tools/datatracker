@@ -1,4 +1,4 @@
-{% load humanize tz %}{% autoescape off %}{% load ietf_filters %}BEGIN:VCALENDAR
+{% load humanize tz %}{% autoescape off %}{% load ietf_filters textfilters %}BEGIN:VCALENDAR
 VERSION:2.0
 METHOD:PUBLISH
 PRODID:-//IETF//datatracker.ietf.org ical upcoming//EN
@@ -10,14 +10,15 @@ SUMMARY:{% if item.session.name %}{{item.session.group.acronym|lower}} - {{item.
 CLASS:PUBLIC
 DTSTART{% ics_date_time item.timeslot.local_start_time item.schedule.meeting.time_zone %}
 DTEND{% ics_date_time item.timeslot.local_end_time item.schedule.meeting.time_zone %}
-DTSTAMP{% ics_date_time item.timeslot.modified|utc 'utc' %}
-{% if item.session.agenda %}URL:{{item.session.agenda.get_href}}
-DESCRIPTION:{{item.timeslot.name|ics_esc}}\n{% if item.session.agenda_note %}
+DTSTAMP{% ics_date_time item.timeslot.modified|utc 'utc' %}{% if item.session.agenda %}
+URL:{{item.session.agenda.get_href}}{% endif %}
+DESCRIPTION:{% if item.timeslot.name %}{{item.timeslot.name|ics_esc}}\n{% endif %}{% if item.session.agenda_note %}
  Note: {{item.session.agenda_note|ics_esc}}\n{% endif %}{% for material in item.session.materials.all %}
  \n{{material.type}}{% if material.type.name != "Agenda" %}
   ({{material.title|ics_esc}}){% endif %}:
-  {{material.get_href}}\n{% endfor %}
-{% endif %}END:VEVENT
+  {{material.get_href}}\n{% endfor %}{% if item.session.remote_instructions %}
+ Remote instructions: {{ item.session.remote_instructions }}\n{% endif %}
+END:VEVENT
 {% endfor %}{% for meeting in ietfs %}BEGIN:VEVENT
 UID:ietf-{{ meeting.number }}
 SUMMARY:IETF {{ meeting.number }}{% if meeting.city %}

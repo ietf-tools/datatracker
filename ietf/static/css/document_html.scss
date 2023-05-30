@@ -6,6 +6,9 @@ $btn-font-family: inherit !default;
 $nav-link-font-weight: inherit !default;
 $tooltip-margin: inherit !default;
 
+$font-family-sans-serif: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", "Liberation Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+$font-family-monospace: "Noto Sans Mono", SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+
 @import "bootstrap/scss/functions";
 @import "bootstrap/scss/variables";
 @import "bootstrap/scss/maps";
@@ -108,28 +111,15 @@ $tooltip-margin: inherit !default;
     }
 
     @media screen {
-        @include media-breakpoint-only(xs) {
-            font-size: min(7pt, var(--doc-ptsize-max));
-        }
 
-        @include media-breakpoint-up(sm) {
-            font-size: min(9.5pt, var(--doc-ptsize-max));
+        // the viewport-width ("vw") constants are magic; they seem to work for
+        // many monospace fonts, but may need tweaking
+        @include media-breakpoint-up(xs) {
+            font-size: min(2.2vw, var(--doc-ptsize-max));
         }
 
         @include media-breakpoint-up(md) {
-            font-size: min(9.5pt, var(--doc-ptsize-max));
-        }
-
-        @include media-breakpoint-up(lg) {
-            font-size: min(11pt, var(--doc-ptsize-max));
-        }
-
-        @include media-breakpoint-up(xl) {
-            font-size: min(13pt, var(--doc-ptsize-max));
-        }
-
-        @include media-breakpoint-up(xxl) {
-            font-size: min(16pt, var(--doc-ptsize-max));
+            font-size: min(1.6vw, var(--doc-ptsize-max));
         }
 
         .grey,
@@ -165,6 +155,27 @@ $tooltip-margin: inherit !default;
 }
 
 .rfcmarkup {
+
+    // A lot of plaintext documents seem to have line lengths >72ch.
+    // To handle that, we calculate with 80ch here and adjust some of the
+    // font sizes down accordingly.
+    pre {
+        width: 80ch;
+        white-space: pre-wrap;
+    }
+
+    @media screen {
+
+        // the viewport-width ("vw") constants are magic; they seem to work for
+        // many monospace fonts, but may need tweaking
+        @include media-breakpoint-up(xs) {
+            font-size: min(2vw, var(--doc-ptsize-max));
+        }
+
+        @include media-breakpoint-up(md) {
+            font-size: min(1.5vw, var(--doc-ptsize-max));
+        }
+    }
 
     h1,
     h2,

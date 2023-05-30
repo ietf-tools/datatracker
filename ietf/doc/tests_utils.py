@@ -355,13 +355,13 @@ class RebuildReferenceRelationsTests(TestCase):
         result = rebuild_reference_relations(self.doc, {})
         self.assertCountEqual(result.keys(), ['errors'])
         self.assertEqual(len(result['errors']), 1)
-        self.assertIn('No draft text available', result['errors'][0],
-                      'Error should be reported if no draft file is given')
+        self.assertIn('No Internet-Draft text available', result['errors'][0],
+                      'Error should be reported if no Internet-Draft file is given')
 
         result = rebuild_reference_relations(self.doc, {'md': 'cant-do-this.md'})
         self.assertCountEqual(result.keys(), ['errors'])
         self.assertEqual(len(result['errors']), 1)
-        self.assertIn('No draft text available', result['errors'][0],
+        self.assertIn('No Internet-Draft text available', result['errors'][0],
                       'Error should be reported if no XML or plaintext file is given')
 
     @patch.object(XMLDraft, 'get_refs')

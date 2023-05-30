@@ -26,9 +26,17 @@
                 {% endif %}
                 {% if document_html %}<br>{% endif %}
                 {% if has_verified_errata or has_errata %}
-                    <a class="{% if document_html %}btn btn-danger btn-sm my-1{% else %}badge rounded-pill bg-danger text-decoration-none text-light{% endif %}"
+                    <a class="{% if document_html %}btn btn-primary btn-sm my-1{% else %}badge rounded-pill bg-danger text-decoration-none text-light{% endif %}"
                        href="https://www.rfc-editor.org/errata_search.php?rfc={{ doc.rfc_number }}" title="Click to view errata." rel="nofollow">
-                        Errata
+                        {% if document_html %}View errata{% else %}Errata{% endif %}
+                    </a>
+                {% endif %}
+                {% if document_html and doc.get_state_slug == "rfc" and not snapshot %}
+                    <a class="btn btn-sm btn-warning"
+                       title="Click to report an error in the document."
+                       href="https://www.rfc-editor.org/errata.php#reportnew"
+                       target="_blank">
+                        Report errata
                     </a>
                 {% endif %}
                 {% if doc.related_ipr %}
@@ -85,7 +93,7 @@
                 <th scope="row">Compare versions</th>
                 <td class="edit"></td>
                 <td>
-                    {% include "doc/document_history_form.html" with doc=doc diff_revisions=diff_revisions action=rfcdiff_base_url document_html=document_html only %}
+                    {% include "doc/document_history_form.html" with doc=doc diff_revisions=diff_revisions action=rfcdiff_base_url document_html=document_html snapshot=snapshot only %}
                 </td>
             </tr>
         {% endif %}
@@ -394,7 +402,6 @@ href="{% url 'ietf.doc.views_draft.review_possibly_replaces' name=doc.name %}">E
     {% endif %}
     {% endif %}
     {% with doc.docextresource_set.all as resources %}
-        {% if document_html and resources or document_html and doc.group and doc.group.list_archive %}
         {% if resources or doc.group and doc.group.list_archive or can_edit_stream_info or can_edit_individual %}
             <tr>
                 <td>
@@ -442,7 +449,6 @@ href="{% url 'ietf.doc.views_draft.review_possibly_replaces' name=doc.name %}">E
                     {% endif %}
                 </td>
             </tr>
-        {% endif %}
         {% endif %}
     {% endwith %}
 </tbody>

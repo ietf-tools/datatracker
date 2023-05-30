@@ -134,7 +134,7 @@ class EditMeetingScheduleTests(IetfSeleniumTestCase):
         self.assertEqual(session_info_container.find_element(By.CSS_SELECTOR, ".other-session .time").text, "not yet scheduled")
 
         # deselect
-        self.driver.find_element(By.CSS_SELECTOR, '.drop-target').click()
+        self.driver.find_element(By.CSS_SELECTOR, '.timeslot[data-type="regular"] .drop-target').click()
 
         self.assertEqual(session_info_container.find_elements(By.CSS_SELECTOR, ".title"), [])
         self.assertNotIn('other-session-selected', s2b_element.get_attribute('class'))
@@ -193,9 +193,9 @@ class EditMeetingScheduleTests(IetfSeleniumTestCase):
 
         # violated due to constraints - both the timeslot and its timeslot label
         self.assertTrue(self.driver.find_elements(By.CSS_SELECTOR, '#timeslot{}.would-violate-hint'.format(slot1.pk)))
-        # Find the timeslot label for slot1 - it's the first timeslot in the first room group
+        # Find the timeslot label for slot1 - it's the first timeslot in the room group containing room 1
         slot1_roomgroup_elt = self.driver.find_element(By.CSS_SELECTOR,
-            '.day-flow .day:first-child .room-group:nth-child(2)'  # count from 2 - first-child is the day label
+            f'.day-flow .day:first-child .room-group[data-rooms="{room1.pk}"]'
         )
         self.assertTrue(
             slot1_roomgroup_elt.find_elements(By.CSS_SELECTOR,
@@ -833,7 +833,7 @@ class EditMeetingScheduleTests(IetfSeleniumTestCase):
     def test_session_constraint_hints(self):
         """Selecting a session should mark conflicting sessions
 
-        To test for recurrence of https://trac.ietf.org/trac/ietfdb/ticket/3327 need to have some constraints that
+        To test for recurrence of https://github.com/ietf-tools/datatracker/issues/3327 need to have some constraints that
         do not conflict. Testing with only violated constraints does not exercise the code adequately.
         """
         meeting = MeetingFactory(type_id='ietf', date=date_today(), populate_schedule=False)

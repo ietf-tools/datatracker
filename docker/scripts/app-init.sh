@@ -4,6 +4,9 @@ WORKSPACEDIR="/workspace"
 
 sudo service rsyslog start &>/dev/null
 
+# Add /workspace as a safe git directory
+git config --global --add safe.directory /workspace
+
 # Turn off git info in zsh prompt (causes slowdowns)
 git config oh-my-zsh.hide-info 1
 
@@ -28,10 +31,12 @@ yarn build
 yarn legacy:build
 
 # Copy config files if needed
+cp $WORKSPACEDIR/docker/configs/settings_postgresqldb.py $WORKSPACEDIR/ietf/settings_postgresqldb.py
 
 if [ ! -f "$WORKSPACEDIR/ietf/settings_local.py" ]; then
     echo "Setting up a default settings_local.py ..."
     cp $WORKSPACEDIR/docker/configs/settings_local.py $WORKSPACEDIR/ietf/settings_local.py
+
 else
     echo "Using existing ietf/settings_local.py file"
     if ! cmp -s $WORKSPACEDIR/docker/configs/settings_local.py $WORKSPACEDIR/ietf/settings_local.py; then
@@ -47,17 +52,6 @@ else
     echo "Using existing ietf/settings_local_debug.py file"
     if ! cmp -s $WORKSPACEDIR/docker/configs/settings_local_debug.py $WORKSPACEDIR/ietf/settings_local_debug.py; then
         echo "NOTE: Differences detected compared to docker/configs/settings_local_debug.py!"
-        echo "We'll assume you made these deliberately."
-    fi
-fi
-
-if [ ! -f "$WORKSPACEDIR/ietf/settings_local_sqlitetest.py" ]; then
-    echo "Setting up a default settings_local_sqlitetest.py ..."
-    cp $WORKSPACEDIR/docker/configs/settings_local_sqlitetest.py $WORKSPACEDIR/ietf/settings_local_sqlitetest.py
-else
-    echo "Using existing ietf/settings_local_sqlitetest.py file"
-    if ! cmp -s $WORKSPACEDIR/docker/configs/settings_local_sqlitetest.py $WORKSPACEDIR/ietf/settings_local_sqlitetest.py; then
-        echo "NOTE: Differences detected compared to docker/configs/settings_local_sqlitetest.py!"
         echo "We'll assume you made these deliberately."
     fi
 fi
@@ -88,7 +82,7 @@ curl -fsSL https://github.com/ietf-tools/datatracker/releases/download/baseline/
 
 if [ -n "$EDITOR_VSCODE" ]; then
     echo "Waiting for DB container to come online ..."
-    /usr/local/bin/wait-for localhost:3306 -- echo "DB ready"
+    /usr/local/bin/wait-for db:5432 -- echo "PostgreSQL ready"
 fi
 
 # Run memcached
@@ -103,8 +97,7 @@ echo "Running initial checks..."
 
 # Migrate, adjusting to what the current state of the underlying database might be:
 
-/usr/local/bin/python $WORKSPACEDIR/ietf/manage.py migrate --settings=settings_local
-
+/usr/local/bin/python $WORKSPACEDIR/ietf/manage.py migrate --fake-initial --settings=settings_local
 
 echo "-----------------------------------------------------------------"
 echo "Done!"
@@ -121,7 +114,7 @@ if [ -z "$EDITOR_VSCODE" ]; then
         echo
         echo "to start a development instance of the Datatracker."
         echo
-        echo "    ietf/manage.py test --settings=settings_sqlitetest"
+        echo "    ietf/manage.py test --settings=settings_postgrestest"
         echo
         echo "to run all the python tests."
         echo

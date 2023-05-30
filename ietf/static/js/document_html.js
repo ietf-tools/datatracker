@@ -42,20 +42,25 @@ document.addEventListener("DOMContentLoaded", function (event) {
 
     // Set up a nav pane
     const toc_pane = document.getElementById("toc-nav");
-    populate_nav(toc_pane,
-        `#content h2, #content h3, #content h4, #content h5, #content h6
-         #content .h1, #content .h2, #content .h3, #content .h4, #content .h5, #content .h6`,
-        ["py-0"]);
+    const headings = document.querySelectorAll(`#content :is(h2, h3, h4, h5, h6, .h2, .h3, .h4, .h5, .h6)`);
+    populate_nav(toc_pane, headings, ["py-0"]);
 
     // activate pref buttons selected by pref cookies or localStorage
     const in_localStorage = ["deftab", "reflinks"];
+    const btn_pref = {
+        "sidebar": "on",
+        "deftab": "docinfo",
+        "htmlconf": "html",
+        "pagedeps": "reference",
+        "reflinks": "refsection"
+    };
     document.querySelectorAll("#pref-tab-pane .btn-check")
         .forEach(btn => {
             const id = btn.id.replace("-radio", "");
 
             const val = in_localStorage.includes(btn.name) ?
                 localStorage.getItem(btn.name) : cookies.get(btn.name);
-            if (val == id) {
+            if (val === id || (val === null && btn_pref[btn.name] === id)) {
                 btn.checked = true;
             }
 

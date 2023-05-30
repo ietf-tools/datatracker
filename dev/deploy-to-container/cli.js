@@ -155,6 +155,19 @@ async function main () {
   } else {
     console.info('Existing assets docker volume found.')
   }
+  
+  // Get shared test docker volume
+  console.info('Querying shared test docker volume...')
+  try {
+    const testVolume = await dock.getVolume(`dt-test-${branch}`)
+    console.info('Attempting to delete any existing shared test docker volume...')
+    await testVolume.remove({ force: true })
+  } catch (err) {}
+  console.info('Creating new shared test docker volume...')
+  await dock.createVolume({
+    Name: `dt-test-${branch}`
+  })
+  console.info('Created shared test docker volume successfully.')
 
   // Create DB container
   console.info(`Creating DB docker container... [dt-db-${branch}]`)
@@ -211,7 +224,8 @@ async function main () {
       ],
       HostConfig: {
         Binds: [
-          'dt-assets:/assets'
+          'dt-assets:/assets',
+          `dt-test-${branch}:/test`
         ],
         Init: true,
         NetworkMode: 'shared',
@@ -233,7 +247,8 @@ async function main () {
     Env: [
       `LETSENCRYPT_HOST=${hostname}`,
       `VIRTUAL_HOST=${hostname}`,
-      `VIRTUAL_PORT=8000`
+      `VIRTUAL_PORT=8000`,
+      `PGHOST=dt-db-${branch}`
     ],
     Labels: {
       appversion: `${argv.appversion}` ?? '0.0.0',
@@ -243,7 +258,8 @@ async function main () {
     },
     HostConfig: {
       Binds: [
-        'dt-assets:/assets'
+        'dt-assets:/assets',
+        `dt-test-${branch}:/test`
       ],
       NetworkMode: 'shared',
       RestartPolicy: {

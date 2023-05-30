@@ -1,4 +1,4 @@
-{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{# Copyright The IETF Trust 2015-2022, All Rights Reserved #}
 {% load origin %}
 {% origin %}
 {% load ietf_filters %}
@@ -24,7 +24,7 @@
         <div class="modal-body">{{ ballot_content }}</div>
         <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-            {% if editable and user|has_role:"Area Director,Secretariat,IRSG Member" %}
+            {% if editable and user|has_role:"Area Director,Secretariat,IRSG Member,RSAB Member" %}
                 {% if user|can_ballot:doc %}
                     <a class="btn btn-primary"
                        href="{% url "ietf.doc.views_ballot.edit_position" name=doc.name ballot_id=ballot_id %}">
@@ -39,7 +39,7 @@
                         <a class="btn btn-warning"
                            href="{% url 'ietf.doc.views_ballot.defer_ballot' name=doc.name %}">Defer ballot</a>
                     {% endif %}
-                    {% if user|has_role:"Secretariat" and ballot_type_slug != "irsg-approve" %}
+                    {% if user|has_role:"Secretariat" %}
                         <a class="btn btn-danger"
                            href="{% url 'ietf.doc.views_ballot.clear_ballot' name=doc.name ballot_type_slug=ballot_type_slug %}">
                             Clear ballot

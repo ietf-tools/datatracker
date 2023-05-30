@@ -5,7 +5,6 @@
 {% load ietf_filters static classname tz %}
 {% block pagehead %}
     <link rel="stylesheet" href="{% static "ietf/css/list.css" %}">
-    <link rel="stylesheet" href="{% static "ietf/js/fullcalendar.css" %}">
 {% endblock %}
 {% block title %}Upcoming Meetings{% endblock %}
 {% block content %}
@@ -137,6 +136,7 @@
                       {% with session=entry %}
                           {
                               group: '{% if session.group %}{{session.group.acronym}}{% endif %}{% if session.name %} - {{session.name}}{% endif %}',
+                              current_status: '{{ session.current_status }}',
                               filter_keywords: ["{{ session.filter_keywords|join:'","' }}"],
                               start_moment: moment.utc('{{session.official_timeslotassignment.timeslot.time | utc | date:"Y-m-d H:i"}}'),
                               end_moment: moment.utc('{{session.official_timeslotassignment.timeslot.end_time | utc | date:"Y-m-d H:i"}}'),

@@ -3,6 +3,7 @@
 
 
 from django import forms
+from django.template.defaultfilters import pluralize
 
 import debug                            # pyflakes:ignore
 
@@ -80,17 +81,18 @@ class SessionForm(forms.Form):
     timeranges    = NameModelMultipleChoiceField(widget=forms.CheckboxSelectMultiple, required=False,
                                                  queryset=TimerangeName.objects.all())
     adjacent_with_wg = forms.ChoiceField(required=False)
+    send_notifications = forms.BooleanField(label="Send notification emails?", required=False, initial=False)
 
     def __init__(self, group, meeting, data=None, *args, **kwargs):
-        if 'hidden' in kwargs:
-            self.hidden = kwargs.pop('hidden')
-        else:
-            self.hidden = False
+        self.hidden = kwargs.pop('hidden', False)
+        self.notifications_optional = kwargs.pop('notifications_optional', False)
 
         self.group = group
         formset_class = sessiondetailsformset_factory(max_num=3 if group.features.acts_like_wg else 50)
         self.session_forms = formset_class(group=self.group, meeting=meeting, data=data)
         super(SessionForm, self).__init__(data=data, *args, **kwargs)
+        if not self.notifications_optional:
+            self.fields['send_notifications'].widget = forms.HiddenInput()
 
         # Allow additional sessions for non-wg-like groups
         if not self.group.features.acts_like_wg:
@@ -233,6 +235,28 @@ class SessionForm(forms.Form):
 
     def clean_comments(self):
         return clean_text_field(self.cleaned_data['comments'])
+
+    def clean_bethere(self):
+        bethere = self.cleaned_data["bethere"]
+        if bethere:
+            extra = set(
+                Person.objects.filter(
+                    role__group=self.group, role__name__in=["chair", "ad"]
+                )
+                & bethere
+            )
+            if extra:
+                extras = ", ".join(e.name for e in extra)
+                raise forms.ValidationError(
+                    (
+                        f"Please remove the following person{pluralize(len(extra))}, the system "
+                        f"tracks their availability due to their role{pluralize(len(extra))}: {extras}."
+                    )
+                )
+        return bethere
+
+    def clean_send_notifications(self):
+        return True if not self.notifications_optional else self.cleaned_data['send_notifications']
 
     def is_valid(self):
         return super().is_valid() and self.session_forms.is_valid()

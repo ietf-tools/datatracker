@@ -200,7 +200,7 @@ class SearchableField(forms.MultipleChoiceField):
 #    model = None  # must be filled in by subclass
     model = None  # type:Optional[Type[models.Model]]
 #    max_entries = None  # may be overridden in __init__
-    max_entries = None # type: Optional[int] 
+    max_entries = None # type: Optional[int]
     min_search_length = None # type: Optional[int]
     default_hint_text = 'Type a value to search'
     
@@ -319,6 +319,13 @@ class SearchableField(forms.MultipleChoiceField):
 
 
         return objs.first() if self.max_entries == 1 else objs
+
+    def has_changed(self, initial, data):
+        # When max_entries == 1, we behave like a ChoiceField so initial will likely be a single
+        # value. Make it a list so MultipleChoiceField's has_changed() can work with it.
+        if initial is not None and self.max_entries == 1 and not isinstance(initial, (list, tuple)):
+            initial = [initial]
+        return super().has_changed(initial, data)
 
 
 class IETFJSONField(jsonfield.fields.forms.JSONField):

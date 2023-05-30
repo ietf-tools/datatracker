@@ -44,7 +44,7 @@ class SessionRequestTestCase(TestCase):
         meeting = MeetingFactory(type_id='ietf', date=date_today())
         SessionFactory.create_batch(2, meeting=meeting, status_id='sched')
         SessionFactory.create_batch(2, meeting=meeting, status_id='disappr')
-        # An additional unscheduled group comes from make_immutable_base_data
+        # Several unscheduled groups come from make_immutable_base_data
         url = reverse('ietf.secr.sreq.views.main')
         self.client.login(username="secretary", password="secretary+password")
         r = self.client.get(url)
@@ -52,7 +52,7 @@ class SessionRequestTestCase(TestCase):
         sched = r.context['scheduled_groups']
         self.assertEqual(len(sched), 2)
         unsched = r.context['unscheduled_groups']
-        self.assertEqual(len(unsched), 11)
+        self.assertEqual(len(unsched), 12)
 
     def test_approve(self):
         meeting = MeetingFactory(type_id='ietf', date=date_today())
@@ -505,7 +505,7 @@ class SubmitRequestCase(TestCase):
             list(session.constraints().get(name='timerange').timeranges.all().values('name')),
             list(TimerangeName.objects.filter(name__in=['thursday-afternoon-early', 'thursday-afternoon-late']).values('name'))
         )
-        self.assertEqual(list(session.joint_with_groups.all()), [group3, group4])
+        self.assertEqual(set(list(session.joint_with_groups.all())), set([group3, group4]))
 
     def test_submit_request_invalid(self):
         MeetingFactory(type_id='ietf', date=date_today())

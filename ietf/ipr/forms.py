@@ -413,7 +413,7 @@ class ThirdPartyIprDisclosureForm(IprDisclosureFormBase):
         
 class SearchForm(forms.Form):
     state =    forms.MultipleChoiceField(choices=[], widget=forms.CheckboxSelectMultiple,required=False)
-    draft =    forms.CharField(label="Draft name", max_length=128, required=False)
+    draft =    forms.CharField(label="Internet-Draft name", max_length=128, required=False)
     rfc =      forms.IntegerField(label="RFC number", required=False)
     holder =   forms.CharField(label="Name of patent owner/applicant", max_length=128,required=False)
     patent =   forms.CharField(label="Text in patent information", max_length=128,required=False)

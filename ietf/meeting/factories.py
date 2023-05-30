@@ -110,6 +110,7 @@ class SessionFactory(factory.django.DjangoModelFactory):
     group = factory.SubFactory(GroupFactory)
     requested_duration = datetime.timedelta(hours=1)
     on_agenda = factory.lazy_attribute(lambda obj: SessionPurposeName.objects.get(pk=obj.purpose_id).on_agenda)
+    has_onsite_tool = factory.lazy_attribute(lambda obj: obj.purpose_id == 'regular')
 
     @factory.post_generation
     def status_id(obj, create, extracted, **kwargs):

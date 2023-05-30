@@ -21,9 +21,8 @@ function get_level(el) {
     return h.charAt(h.length - 1);
 }
 
-export function populate_nav(nav, heading_selector, classes) {
+export function populate_nav(nav, headings, classes) {
     // Extract section headings from document
-    const headings = document.querySelectorAll(heading_selector);
     const min_level = Math.min(...Array.from(headings)
         .map(get_level));
 
@@ -38,7 +37,7 @@ export function populate_nav(nav, heading_selector, classes) {
             while (level < cur_level) {
                 let nav = nav_stack.pop();
                 cur_level--;
-                nav_stack[level].appendChild(nav);
+                nav_stack[cur_level].appendChild(nav);
             }
         } else {
             while (level > cur_level) {

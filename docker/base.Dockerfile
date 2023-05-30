@@ -15,6 +15,10 @@ RUN curl -fsSL https://deb.nodesource.com/setup_16.x | bash -
 RUN curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
 RUN echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/debian \
     $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+    
+# Add PostgreSQL Source 
+RUN echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" | tee /etc/apt/sources.list.d/pgdg.list
+RUN wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add -
 
 # Install the packages we need
 RUN apt-get update --fix-missing && apt-get install -qy \
@@ -23,51 +27,53 @@ RUN apt-get update --fix-missing && apt-get install -qy \
 	bash \
 	build-essential \
 	curl \
-    default-jdk \
-    docker-ce-cli \
+	default-jdk \
+	docker-ce-cli \
 	enscript \
 	gawk \
-    g++ \
+	g++ \
 	gcc \
 	ghostscript \
 	git \
 	gnupg \
 	jq \
 	less \
-    libcairo2-dev \
-    libgtk2.0-0 \
-    libgtk-3-0 \
-    libnotify-dev \
-    libgconf-2-4 \
-    libgbm-dev \
-    libnss3 \
-    libxss1 \
-    libasound2 \
-    libxtst6 \
+	libcairo2-dev \
+	libgtk2.0-0 \
+	libgtk-3-0 \
+	libnotify-dev \
+	libgconf-2-4 \
+	libgbm-dev \
+	libnss3 \
+	libxss1 \
+	libasound2 \
+	libxtst6 \
 	libmagic-dev \
 	libmariadb-dev \
-    libmemcached-tools \
+	libmemcached-tools \
 	locales \
-    make \
+	make \
 	mariadb-client \
-    memcached \
-    nano \
-    netcat \
-    nodejs \
+	memcached \
+	nano \
+	netcat \
+	nodejs \
+    	pgloader \
 	pigz \
+	postgresql-client-14 \
 	pv \
 	python3-ipython \
 	ripgrep \
 	rsync \
 	rsyslog \
-    ruby \
-    ruby-rubygems \
+	ruby \
+	ruby-rubygems \
 	unzip \
 	wget \
-    xauth \
-    xvfb \
-    yang-tools \
-    zsh
+	xauth \
+	xvfb \
+	yang-tools \
+	zsh
 
 # Install kramdown-rfc2629 (ruby)
 RUN gem install kramdown-rfc2629
