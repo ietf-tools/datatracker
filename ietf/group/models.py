@@ -6,6 +6,8 @@ import email.utils
 import jsonfield
 import os
 import re
+import datetime
+import pytz
 
 from django.conf import settings
 from django.core.validators import RegexValidator
@@ -392,10 +394,29 @@ class Role(models.Model):
         return formataddr((self.person.plain_name(), self.email.address))
 
     def started_in_role(self):
-        history = Person.objects.filter(pk=self.person.pk, rolehistory__name=self.name, rolehistory__group__group=self.group).values_list('rolehistory__group__time').order_by('rolehistory__group__time').first()
-        current = Person.objects.filter(pk=self.person.pk, role__name=self.name, role__group=self.group).values_list('role__group__time').first()
+        EPOCH = datetime.datetime(2011, 12, 9, 20, 0, tzinfo=pytz.utc)
+        history = (
+            Person.objects.filter(
+                pk=self.person.pk,
+                rolehistory__name=self.name,
+                rolehistory__group__group=self.group,
+            )
+            .values_list("rolehistory__group__time")
+            .order_by("rolehistory__group__time")
+            .first()
+        )
+        print("history", self.person.plain_name(), history)
+        current = (
+            Person.objects.filter(
+                pk=self.person.pk, role__name=self.name, role__group=self.group
+            )
+            .values_list("role__group__time")
+            .first()
+        )
+        print("current", self.person.plain_name(), current)
         start = history[0] if history and history[0] < current[0] else current[0]
-        return start
+        print("start", self.person.plain_name(), start)
+        return (start, start == EPOCH)
 
 
     class Meta:

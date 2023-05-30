@@ -252,7 +252,7 @@ height: 100vh;
                     </td>
                     <td>
                         {% for r in roles %}
-                            {% role_person_link r %}{% with started=r.started_in_role|timesince %}<span class="ms-1 badge rounded-pill bg-secondary" title="{{ r.person }} has been {{ r.name }} for {{ group.acronym|upper }} for {{ started }}.">{% with since=started|split:','|first %}{{ since|split|first }}{{ since|split|last|make_list|first }}{% endwith %}</span>{% endwith %}{% if not forloop.last %}{% if roles|length > 3%}<br>{% else %},{% endif %}{% endif %}
+                            {% role_person_link r %}{% with started=r.started_in_role.0|timesince %}<span class="ms-1 badge rounded-pill bg-secondary" title="{{ r.person }} has been {{ r.name }} for {{ group.acronym|upper }} for {{ r.started_in_role.1|yesno:"more than ," }}{{ started }}.">{{ r.started_in_role.1|yesno:">," }}{% with since=started|split:','|first %}{{ since|split|first }}{{ since|split|last|make_list|first }}{% endwith %}</span>{% endwith %}{% if not forloop.last %}{% if roles|length > 3%}<br>{% else %},{% endif %}{% endif %}
                         {% endfor %}
                     </td>
                 </tr>
