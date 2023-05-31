@@ -171,7 +171,7 @@
                 </li>
             {% endfor %}
         {% endif %}
-        {% with user|active_nomcoms as nomcoms %}{% if nomcoms %}
+        {% if user|active_nomcoms %}
             {% if flavor == 'top' %}
                 <li><hr class="dropdown-divider">
                 </li>
@@ -179,15 +179,15 @@
             <li {% if flavor == 'top' %}class="dropdown-header"{% else %}class="nav-item fw-bolder"{% endif %}>
             	NomComs
             </li>
-            {% for nomcom in nomcoms %}
+            {% for g in user|active_nomcoms %}
                 <li>
                     <a class="dropdown-item {% if flavor != 'top' %}text-wrap link-primary{% endif %}"
-                       href="{% url "ietf.nomcom.views.private_index" nomcom.year %}">
-                        {{ nomcom|capfirst }}
+                       href="{% url "ietf.nomcom.views.private_index" g.nomcom_set.first.year %}">
+                        {{ g.acronym|capfirst }}
                     </a>
                 </li>
             {% endfor %}
-        {% endif %}{% endwith %}
+        {% endif %}
     {% endif %}
     {% if flavor == 'top' %}
         <li><hr class="dropdown-divider">
