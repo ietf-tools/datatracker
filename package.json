@@ -18,7 +18,7 @@
     "@fullcalendar/vue3": "6.1.8",
     "@popperjs/core": "2.11.7",
     "@twuni/emojify": "1.0.2",
-    "bootstrap": "5.3.0-alpha3",
+    "bootstrap": "5.3.0",
     "bootstrap-icons": "1.10.5",
     "browser-fs-access": "0.33.1",
     "caniuse-lite": "1.0.30001481",
