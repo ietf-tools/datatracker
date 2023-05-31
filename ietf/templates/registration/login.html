@@ -1,5 +1,6 @@
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% extends "base.html" %}
+{% load static %}
 {% load origin %}
 {% load django_bootstrap5 %}
 {% block title %}Sign in{% endblock %}
@@ -18,19 +19,5 @@
     </form>
 {% endblock %}
 {% block js %}
-    <script>
-        /**
-        * Disable Submit Button on Form Submit
-        */
-        function onLoginSubmit (ev) {
-            const submitBtn = document.querySelector('#dt-login-form button[type=submit]')
-            if (submitBtn) {
-                submitBtn.disabled = true
-                submitBtn.innerHTML = 'Signing in...'
-            }
-        }
-        $(document).ready(function () {
-            document.querySelector('#dt-login-form').addEventListener('submit', onLoginSubmit)
-        })
-    </script>
+    <script src="{% static 'ietf/js/login.js' %}"></script>
 {% endblock %}

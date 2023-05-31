@@ -133,6 +133,7 @@
         "ietf/static/js/js-cookie.js",
         "ietf/static/js/liaisons.js",
         "ietf/static/js/list.js",
+        "ietf/static/js/login.js",
         "ietf/static/js/manage-community-list.js",
         "ietf/static/js/manage-review-requests.js",
         "ietf/static/js/meeting-interim-request.js",
