@@ -1213,7 +1213,9 @@ def process_submission_text(filename, revision):
             f"Text Internet-Draft revision ({text_draft.revision}) "
             f"disagrees with submission revision ({revision})"
         )
-    title = _normalize_title(text_draft.get_title())
+    title = text_draft.get_title()
+    if title:
+        title = _normalize_title(title)
     if not title:
         # This test doesn't work well - the text_draft parser tends to grab "Abstract" as
         # the title if there's an empty title.
