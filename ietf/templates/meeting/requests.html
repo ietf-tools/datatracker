@@ -98,7 +98,6 @@
                     <th scope="col" data-sort="group">Group</th>
                     <th scope="col" class="d-none d-lg-table-cell" data-sort="count">Length</th>
                     <th scope="col" class="d-none d-lg-table-cell" data-sort="num">Size</th>
-                    <th scope="col" class="d-none d-lg-table-cell" data-sort="num">Purpose</th>
                     <th scope="col" class="d-none d-lg-table-cell" data-sort="requester">Requester</th>
                     <th scope="col" class="d-none d-lg-table-cell" data-sort="ad">AD</th>
                     <th scope="col" data-sort="constraints">Constraints</th>
@@ -120,6 +119,9 @@
                             <a href="{% url "ietf.secr.sreq.views.edit" num=meeting.number acronym=session.group.acronym %}">
                                 {{ session.group.acronym }}
                             </a>
+                            {% if session.purpose_id != "regular" %}
+                                <br><span class="badge rounded-pill bg-info">{{session.purpose}}</span>
+                            {% endif %}
                             {% if session.joint_with_groups.count %}joint with {{ session.joint_with_groups_acronyms|join:' ' }}{% endif %}
                             {% if session.requested_duration %}
                                 <div class="d-lg-none">
@@ -139,7 +141,6 @@
                             {% if session.requested_duration %}{{ session.requested_duration|stringformat:"s"|slice:"0:4" }}{% endif %}
                         </td>
                         <td class="d-none d-lg-table-cell">{{ session.attendees|default:"" }}</td>
-                        <td class="d-none d-lg-table-cell">{% if session.purpose_id != "regular" %}{{session.purpose}}{% endif %}</td>
                         <td class="d-none d-lg-table-cell">{% person_link session.requested_by_person with_email=False %}</td>
                         <td class="d-none d-lg-table-cell">
                             {% if session.group.ad_role %}
