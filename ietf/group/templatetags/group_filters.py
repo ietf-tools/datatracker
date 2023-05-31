@@ -25,6 +25,8 @@ def active_nomcoms(user):
             group__type_id='nomcom',  # just in case...
             group__state__slug='active',
         )
+        .distinct()
+        .order_by("group__acronym")
     )
 
 @register.inclusion_tag('person/person_link.html')
