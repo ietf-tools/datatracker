@@ -158,7 +158,7 @@ class SessionRequestTestCase(TestCase):
             list(TimerangeName.objects.filter(name__in=['thursday-afternoon-early', 'thursday-afternoon-late']).values('name'))
         )
         self.assertFalse(sessions[0].joint_with_groups.count())
-        self.assertEqual(list(sessions[1].joint_with_groups.all()), [group3, group4])
+        self.assertEqual(set(list(sessions[1].joint_with_groups.all())), set([group3, group4]))
 
         # Check whether the updated data is visible on the view page
         r = self.client.get(redirect_url)
