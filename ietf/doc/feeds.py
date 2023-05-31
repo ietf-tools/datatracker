@@ -45,7 +45,7 @@ class DocumentChangesFeed(Feed):
         return "History of change entries for %s." % obj.display_name()
 
     def items(self, obj):
-        events = obj.docevent_set.all().order_by("-time","-id")
+        events = obj.docevent_set.all().order_by("-time","-id").select_related("by", "newrevisiondocevent", "submissiondocevent")
         augment_events_with_revision(obj, events)
         return events
 

@@ -2610,7 +2610,7 @@ class rfc8989EligibilityTests(TestCase):
             self.assertEqual(set(list_eligible(nomcom=nomcom)),set(eligible))
             Person.objects.filter(pk__in=[p.pk for p in eligible.union(ineligible)]).delete()
 
-class rfc8989bisEligibilityTests(TestCase):
+class rfc9389EligibilityTests(TestCase):
 
     def setUp(self):
         super().setUp()

@@ -97,7 +97,7 @@ class SchedulingEventInline(admin.TabularInline):
 
 class SessionAdmin(admin.ModelAdmin):
     list_display = [
-        "meeting", "name", "group_acronym", "purpose", "attendees", "has_onsite_tool", "requested", "current_status"
+        "meeting", "name", "group_acronym", "purpose", "attendees", "has_onsite_tool", "chat_room", "requested", "current_status"
     ]
     list_filter = ["purpose", "meeting", ]
     raw_id_fields = ["meeting", "group", "materials", "joint_with_groups", "tombstone_for"]

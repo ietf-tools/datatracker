@@ -3975,6 +3975,7 @@ class EditTests(TestCase):
             'remote_instructions': 'Do this do that',
             'attendees': '103',
             'comments': 'So much to say',
+            'chat_room': 'xyzzy',
         }
         r = self.client.post(url, post_data)
         self.assertNoFormPostErrors(r)
@@ -3989,6 +3990,7 @@ class EditTests(TestCase):
         self.assertEqual(session.remote_instructions, 'Do this do that')
         self.assertEqual(session.attendees, 103)
         self.assertEqual(session.comments, 'So much to say')
+        self.assertEqual(session.chat_room, 'xyzzy')
 
         # Verify return to correct schedule when sched query parameter is present
         other_schedule = ScheduleFactory(meeting=session.meeting)
