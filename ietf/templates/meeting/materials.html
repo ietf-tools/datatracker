@@ -52,17 +52,18 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for session in plenaries %}
-                            {% include "meeting/group_materials.html" %}
+                        {% regroup plenaries by materials_key as named_sessions %}
+                        {% for ns in named_sessions %}
+                            {% include "meeting/group_materials.html" with sessions=ns.list %}
                         {% endfor %}
                     </tbody>
                 </table>
             {% endif %}
             <!-- Working groups -->
-            {% regroup ietf|dictsort:"group.parent.acronym" by group.parent.name as areas %}
-            {% for sessions in areas %}
-                <h2 class="mt-4" id="{{ sessions.list.0.group.parent.acronym }}">
-                    {{ sessions.list.0.group.parent.acronym|upper }} <small>{{ sessions.grouper }}</small>
+            {% regroup ietf by group.parent.name as areas %}
+            {% for area in areas %}
+                <h2 class="mt-4" id="{{ area.acronym }}">
+                    {{ area.list.0.group.parent.acronym|upper }} <small>{{ area.grouper }}</small>
                 </h2>
                 <table class="table table-sm table-striped tablesorter">
                     <thead>
@@ -79,10 +80,9 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for session in sessions.list|dictsort:"group.acronym" %}
-                            {% ifchanged session.group.acronym %}
-                                {% include "meeting/group_materials.html" %}
-                            {% endifchanged %}
+                        {% regroup area.list by materials_key as named_sessions %}
+                        {% for ns in named_sessions %}
+                            {% include "meeting/group_materials.html" with sessions=ns.list %}
                         {% endfor %}
                     </tbody>
                 </table>
@@ -110,11 +110,9 @@
                             </tr>
                         </thead>
                         <tbody>
-                            {% for session in training %}
-                                {% ifchanged %}
-                                    {# TODO: Find a better way to represent purposed sessions in both materials and proceedings #}
-                                    {% include "meeting/group_materials.html" %}
-                                {% endifchanged %}
+                            {% regroup training by materials_key as named_sessions %}
+                            {% for ns in named_sessions %}
+                                {% include "meeting/group_materials.html" with sessions=ns.list %}
                             {% endfor %}
                         </tbody>
                     </table>
@@ -152,10 +150,9 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for session in iab %}
-                            {% ifchanged session.group.acronym %}
-                                {% include "meeting/group_materials.html" %}
-                            {% endifchanged %}
+                        {% regroup iab by materials_key as named_sessions %}
+                        {% for ns in named_sessions %}
+                            {% include "meeting/group_materials.html" with sessions=ns.list %}
                         {% endfor %}
                     </tbody>
                 </table>
@@ -192,10 +189,9 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for session in irtf|dictsort:"group.acronym" %}
-                            {% ifchanged session.group.acronym %}
-                                {% include "meeting/group_materials.html" %}
-                            {% endifchanged %}
+                        {% regroup irtf by materials_key as named_sessions %}
+                        {% for ns in named_sessions %}
+                            {% include "meeting/group_materials.html" with sessions=ns.list %}
                         {% endfor %}
                     </tbody>
                 </table>
@@ -231,10 +227,9 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for session in other|dictsort:"group.acronym" %}
-                            {% ifchanged session.group.acronym %}
-                                {% include "meeting/group_materials.html" %}
-                            {% endifchanged %}
+                        {% regroup other by materials_key as named_sessions %}
+                        {% for ns in named_sessions %}
+                            {% include "meeting/group_materials.html" with sessions=ns.list %}
                         {% endfor %}
                     </tbody>
                 </table>

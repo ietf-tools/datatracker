@@ -1,8 +1,9 @@
 {# Copyright The IETF Trust 2015-2019, All Rights Reserved #}
 {% load origin %}
 {% origin %}
-{% load ietf_filters proceedings_filters managed_groups %}
+{% load ietf_filters proceedings_filters materials_filters managed_groups %}
 {% load tz %}
+{% with sessions.0 as session %}
 <tr>
     <td>
         {% if session.name %}
@@ -16,70 +17,76 @@
             {% endif %}
         {% endif %}
     </td>
-    {% if session.all_meeting_sessions_cancelled %}
+    {% if sessions|all_meeting_sessions_cancelled %}
         <td colspan="{% if user|has_role:'Secretariat' or user_groups %}6{% else %}5{% endif %}">
             <span class="badge rounded-pill bg-danger">Session cancelled</span>
         </td>
     {% else %}
         <td>
-            {% if session.all_meeting_agendas %}
-                {% for agenda in session.all_meeting_agendas %}
-                    {% if session.all_meeting_agendas|length == 1 %}
+            {% with sessions|all_meeting_agendas as agendas %}
+                {% if agendas %}
+                    {% if agendas|length == 1 %}
                         {% if agenda.time > old %}
                             <i class="small bi bi-bell"
                                   title="Last Update: {{ agenda.time|utc|date:"Y-m-d H:i:s" }} UTC"></i>
                         {% endif %}
-                        <a href="{{ session.all_meeting_agendas.0|meeting_href:session.meeting }}">Agenda</a>
+                        <a href="{{ agendas.0|meeting_href:session.meeting }}">Agenda</a>
                         <br>
                     {% else %}
-                        <a href="{{ agenda|meeting_href:session.meeting }}">
-                            Agenda {{ agenda.sessionpresentation_set.first.session.official_timeslotassignment.timeslot.time|date:"D G:i" }}
-                        </a>
-                        <br>
-                    {% endif %}
-                {% endfor %}
-            {% else %}
-                {% if show_agenda == "True" %}<span class="badge rounded-pill bg-warning">No agenda</span>{% endif %}
-            {% endif %}
-        </td>
-        <td>
-            {% if session.all_meeting_minutes %}
-                {% if session.all_meeting_minutes|length == 1 %}
-                    <a href="{{ session.all_meeting_minutes.0|meeting_href:session.meeting }}">Minutes</a>
-                    <br>
-                {% else %}
-                    {% for minutes in session.all_meeting_minutes %}
-                        <a href="{{ minutes|meeting_href:session.meeting }}">
-                            Minutes {{ minutes.sessionpresentation_set.first.session.official_timeslotassignment.timeslot.time|date:"D G:i" }}
-                        </a>
-                        <br>
-                    {% endfor %}
-                {% endif %}
-            {% else %}
-                {% if show_agenda == "True" %}<span class="badge rounded-pill bg-warning">No minutes</span>{% endif %}
-            {% endif %}
-            {% if session.type_id == 'regular' and show_agenda == "True" %}
-                {% if session.all_meeting_bluesheets %}
-                    {% if session.all_meeting_bluesheets|length == 1 %}
-                        <a href="{{ session.all_meeting_bluesheets.0|meeting_href:session.meeting }}">Bluesheets</a>
-                        <br>
-                    {% else %}
-                        {% for bluesheets in session.all_meeting_bluesheets %}
-                            <a href="{{ bluesheets|meeting_href:session.meeting }}">
-                                Bluesheets
-                                <br>
-                                <span class="small float-end">{{ bluesheets.sessionpresentation_set.first.session.official_timeslotassignment.timeslot.time|date:"D G:i" }}</span>
+                        {% for agenda in agendas %}
+                            <a href="{{ agenda|meeting_href:session.meeting }}">
+                                Agenda {{ agenda.sessionpresentation_set.first.session.official_timeslotassignment.timeslot.time|date:"D G:i" }}
                             </a>
                             <br>
                         {% endfor %}
                     {% endif %}
                 {% else %}
-                    <span class="badge rounded-pill bg-warning">No bluesheets</span>
+                    {% if show_agenda == "True" %}<span class="badge rounded-pill bg-warning">No agenda</span>{% endif %}
                 {% endif %}
+            {% endwith %}
+        </td>
+        <td>
+            {% with sessions|all_meeting_minutes as minutess %}
+                {% if minutess %}
+                    {% if minutess|length == 1 %}
+                        <a href="{{ minutess.0|meeting_href:session.meeting }}">Minutes</a>
+                        <br>
+                    {% else %}
+                        {% for minutes in minutess %}
+                            <a href="{{ minutes|meeting_href:session.meeting }}">
+                                Minutes {{ minutes.sessionpresentation_set.first.session.official_timeslotassignment.timeslot.time|date:"D G:i" }}
+                            </a>
+                            <br>
+                        {% endfor %}
+                    {% endif %}
+                {% else %}
+                    {% if show_agenda == "True" %}<span class="badge rounded-pill bg-warning">No minutes</span>{% endif %}
+                {% endif %}
+            {% endwith %}
+            {% if session.type_id == 'regular' and show_agenda == "True" %}
+                {% with sessions|all_meeting_bluesheets as bluesheets %}
+                    {% if bluesheets %}
+                        {% if bluesheets|length == 1 %}
+                            <a href="{{ bluesheets.0|meeting_href:session.meeting }}">Bluesheets</a>
+                            <br>
+                        {% else %}
+                            {% for bluesheet in bluesheets %}
+                                <a href="{{ bluesheet|meeting_href:session.meeting }}">
+                                    Bluesheets
+                                    <br>
+                                    <span class="small float-end">{{ bluesheet.sessionpresentation_set.first.session.official_timeslotassignment.timeslot.time|date:"D G:i" }}</span>
+                                </a>
+                                <br>
+                            {% endfor %}
+                        {% endif %}
+                    {% else %}
+                        <span class="badge rounded-pill bg-warning">No bluesheets</span>
+                    {% endif %}
+                {% endwith %}
             {% endif %}
         </td>
         <td>
-            {% with session.all_meeting_slides as slides %}
+            {% with sessions|all_meeting_slides as slides %}
                 {% for slide in slides %}
                     {% if slide.time > old %}
                         <i class="small bi bi-bell"
@@ -93,7 +100,7 @@
             {% endwith %}
         </td>
         <td>
-            {% with session.all_meeting_drafts as drafts %}
+            {% with sessions|all_meeting_drafts as drafts %}
                 {% for draft in drafts %}
                     {% if draft.time > old %}
                         <i class="small bi bi-bell"
@@ -122,3 +129,4 @@
         {% endif %}
     {% endif %}
 </tr>
+{% endwith %}

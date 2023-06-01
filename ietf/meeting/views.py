@@ -155,7 +155,7 @@ def materials(request, num=None):
     ).distinct().select_related('meeting__schedule', 'group__state', 'group__parent')).order_by('group__acronym')
 
     plenaries = sessions.filter(name__icontains='plenary')
-    ietf      = sessions.filter(group__parent__type__slug = 'area').exclude(group__acronym='edu')
+    ietf      = sessions.filter(group__parent__type__slug = 'area').exclude(group__acronym='edu').order_by('group__parent__acronym', 'group__acronym', 'name')
     irtf      = sessions.filter(group__parent__acronym = 'irtf')
     training  = sessions.filter(group__acronym__in=['edu','iaoc'], type_id__in=['regular', 'other', ])
     iab       = sessions.filter(group__parent__acronym = 'iab')

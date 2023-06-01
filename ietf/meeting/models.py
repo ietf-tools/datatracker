@@ -1105,6 +1105,9 @@ class Session(models.Model):
     def drafts(self):
         return list(self.materials.filter(type='draft'))
 
+    def materials_key(self):
+        return (self.group.acronym, self.name)
+
     # The utilities below are used in the proceedings and materials
     # templates, and should be moved there - then we could also query
     # out the needed information in a few passes and speed up those
