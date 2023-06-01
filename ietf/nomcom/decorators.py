@@ -3,10 +3,11 @@
 
 
 import functools
+from urllib.parse import quote as urlquote
 
 from django.urls import reverse
 from django.http import HttpResponseRedirect
-from django.utils.http import urlquote
+
 
 
 def nomcom_private_key_required(view_func):

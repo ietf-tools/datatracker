@@ -765,7 +765,9 @@ def drafts_in_iesg_process(request):
             if s.slug == "lc":
                 for d in docs:
                     e = d.latest_event(LastCallDocEvent, type="sent_last_call")
-                    d.lc_expires = e.expires if e else datetime.datetime.min
+                    # If we don't have an event, use an arbitrary date in the past (but not datetime.datetime.min,
+                    # which causes problems with timezone conversions)
+                    d.lc_expires = e.expires if e else datetime.datetime(1950, 1, 1)
                 docs = list(docs)
                 docs.sort(key=lambda d: d.lc_expires)
 

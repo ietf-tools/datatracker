@@ -64,7 +64,7 @@
                             </a>
                         </td>
                         <td>
-                            {% ifequal ref.source.get_state.slug 'rfc' %}
+                            {% if ref.source.get_state.slug == 'rfc' %}
                                 {% with ref.source.std_level as lvl %}
                                     {% if lvl %}{{ lvl }}{% endif %}
                                 {% endwith %}
@@ -72,7 +72,7 @@
                                 {% with ref.source.intended_std_level as lvl %}
                                     {% if lvl %}{{ lvl }}{% endif %}
                                 {% endwith %}
-                            {% endifequal %}
+                            {% endif %}
                         </td>
                         <td>{{ ref.relationship.name }}</td>
                         <td>{{ ref.is_downref|default:'' }}</td>

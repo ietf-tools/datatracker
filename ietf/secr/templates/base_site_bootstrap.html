@@ -1,7 +1,7 @@
 {% extends "base_secr_bootstrap.html" %}
 {% load i18n %}
 {% load ietf_filters %}
-{% load staticfiles %}
+{% load static %}
 
 {% block title %}{{ title }}{% if user|has_role:"Secretariat" %} Secretariat Dashboard {% else %} WG Chair Dashboard {% endif %}{% endblock %}
 

@@ -24,7 +24,7 @@ from django.test import override_settings
 from django.test.client import RequestFactory
 from django.urls import reverse as urlreverse
 from django.utils import timezone
-from django.utils.encoding import force_str, force_text
+from django.utils.encoding import force_str
 import debug                            # pyflakes:ignore
 
 from ietf.submit.utils import (expirable_submissions, expire_submission, find_submission_filenames,
@@ -750,10 +750,10 @@ class SubmitTests(BaseSubmitTestCase):
         self.assertTrue("New Version Notification" in outbox[-2]["Subject"])
         self.assertTrue(name in get_payload_text(outbox[-2]))
         interesting_address = {'ietf':'mars', 'irtf':'irtf-chair', 'iab':'iab-chair', 'ise':'rfc-ise'}[draft.stream_id]
-        self.assertTrue(interesting_address in force_text(outbox[-2].as_string()))
+        self.assertTrue(interesting_address in force_str(outbox[-2].as_string()))
         if draft.stream_id == 'ietf':
-            self.assertTrue(draft.ad.role_email("ad").address in force_text(outbox[-2].as_string()))
-            self.assertTrue(ballot_position.balloter.role_email("ad").address in force_text(outbox[-2].as_string()))
+            self.assertTrue(draft.ad.role_email("ad").address in force_str(outbox[-2].as_string()))
+            self.assertTrue(ballot_position.balloter.role_email("ad").address in force_str(outbox[-2].as_string()))
         self.assertTrue("New Version Notification" in outbox[-1]["Subject"])
         self.assertTrue(name in get_payload_text(outbox[-1]))
         r = self.client.get(urlreverse('ietf.doc.views_search.recent_drafts'))
@@ -1204,15 +1204,15 @@ class SubmitTests(BaseSubmitTestCase):
         
         Unlike some other tests in this module, does not confirm draft if this would be required.
         """
-        orig_draft = DocumentFactory(
+        orig_draft: Document = DocumentFactory(  # type: ignore[annotation-unchecked]
             type_id='draft',
             group=GroupFactory(type_id=group_type) if group_type else None,
             stream_id=stream_type,
-        )  # type: Document
+        )
         name = orig_draft.name
         group = orig_draft.group
         new_rev = '%02d' % (int(orig_draft.rev) + 1)
-        author = PersonFactory()  # type: Person
+        author: Person = PersonFactory()  # type: ignore[annotation-unchecked]
         DocumentAuthor.objects.create(person=author, document=orig_draft)
         orig_draft.docextresource_set.create(name_id='faq', value='https://faq.example.com/')
         orig_draft.docextresource_set.create(name_id='wiki', value='https://wiki.example.com', display_name='Test Wiki')
@@ -1982,7 +1982,7 @@ class SubmitTests(BaseSubmitTestCase):
         group = GroupFactory()
         # someone to be notified of resource suggestion when permission not granted
         RoleFactory(group=group, person=PersonFactory(), name_id='chair')
-        submission = SubmissionFactory(state_id='grp-appr', group=group)  # type: Submission
+        submission: Submission = SubmissionFactory(state_id='grp-appr', group=group)  # type: ignore[annotation-unchecked]
         SubmissionExtResourceFactory(submission=submission)
 
         # use secretary user to ensure we have permission to approve
@@ -2000,7 +2000,7 @@ class SubmitTests(BaseSubmitTestCase):
         group = GroupFactory()
         # someone to be notified of resource suggestion when permission not granted
         RoleFactory(group=group, person=PersonFactory(), name_id='chair')
-        submission = SubmissionFactory(state_id=state, group=group)  # type: Submission
+        submission: Submission = SubmissionFactory(state_id=state, group=group)  # type: ignore[annotation-unchecked]
         SubmissionExtResourceFactory(submission=submission)
 
         url = urlreverse(
@@ -2052,7 +2052,7 @@ class SubmitTests(BaseSubmitTestCase):
 
     def test_forcepost_with_extresources(self):
         # state needs to be one that has 'posted' as a next state
-        submission = SubmissionFactory(state_id='grp-appr')  # type: Submission
+        submission: Submission = SubmissionFactory(state_id='grp-appr')  # type: ignore[annotation-unchecked]
         SubmissionExtResourceFactory(submission=submission)
 
         url = urlreverse(
