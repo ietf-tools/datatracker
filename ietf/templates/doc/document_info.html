@@ -238,9 +238,7 @@ href="{% url 'ietf.doc.views_draft.review_possibly_replaces' name=doc.name %}">E
                 {% endif %}
                 {% if document_html %}
                     {% if doc.stream.name|lower in 'iab,ietf,irtf' %}
-                        <div title="{{ stream_desc }}">
-                            {% include "logo.html" with org=doc.stream.name|lower classes="w-25 mt-1" only %}
-                        </div>
+                        {% include "logo.html" with org=doc.stream.name|lower classes="w-25 mt-1" title=stream_desc only %}
                     {% else %}
                         {{ stream_desc }}
                     {% endif %}

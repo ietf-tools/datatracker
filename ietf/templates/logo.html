@@ -7,5 +7,6 @@
             media="(prefers-color-scheme: dark)">
     <img alt="{{ org|upper }} Logo"
          {% if classes %}class="{{ classes }}"{% endif %}
+         {% if title %}title="{{ title }}"{% endif %}
          src="{% static 'ietf/images/'|add:org|add:'-logo.svg' %}">
 </picture>
