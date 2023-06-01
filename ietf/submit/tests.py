@@ -3354,7 +3354,7 @@ class AsyncSubmissionTests(BaseSubmitTestCase):
         self.assertEqual(output["title"], "Correct Draft Title")
         self.assertIsNone(output["abstract"])
         self.assertEqual(len(output["authors"]), 1)  # not checking in detail, parsing is unreliable
-        self.assertIsNone(output["document_date"])
+        self.assertEqual(output["document_date"], date_today())
         self.assertIsNone(output["pages"])
         self.assertIsNone(output["words"])
         self.assertIsNone(output["first_two_pages"])

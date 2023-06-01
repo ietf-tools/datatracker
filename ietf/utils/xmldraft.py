@@ -133,6 +133,17 @@ class XMLDraft(Draft):
     def get_title(self):
         return self.xmlroot.findtext('front/title').strip()
 
+    def get_creation_date(self):
+        date_elt = self.xmlroot.find("front/date")
+        if date_elt is not None:
+            try:
+                year = date_elt.get("year")
+                month = date_elt.get("month")
+                return self._construct_creation_date(year, month, date_elt.get("day", None))
+            except ValueError:
+                pass
+        return None
+    
     # todo fix the implementation of XMLDraft.get_abstract()
     #
     # This code was pulled from ietf.submit.forms where it existed for some time.
