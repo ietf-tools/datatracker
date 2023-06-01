@@ -243,7 +243,7 @@ class PlaintextDraft(Draft):
         """
         super().__init__()
         assert isinstance(text, str)
-        self.source = source
+        self.source = str(source)
         self.rawtext = text
         self.name_from_source = name_from_source
 
