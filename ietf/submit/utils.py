@@ -1213,11 +1213,9 @@ def process_submission_text(filename, revision):
             f"Text Internet-Draft revision ({text_draft.revision}) "
             f"disagrees with submission revision ({revision})"
         )
-    title = _normalize_title(text_draft.get_title())
-    if not title:
-        # This test doesn't work well - the text_draft parser tends to grab "Abstract" as
-        # the title if there's an empty title.
-        raise SubmissionError("Could not extract a title from the text")
+    title = text_draft.get_title()
+    if title:
+        title = _normalize_title(title)
 
     # Drops \r, \n, <, >. Based on get_draft_meta() behavior
     trans_table = str.maketrans("", "", "\r\n<>")
@@ -1233,7 +1231,7 @@ def process_submission_text(filename, revision):
     return {
         "filename": text_draft.filename,
         "rev": text_draft.revision,
-        "title": _normalize_title(text_draft.get_title()),
+        "title": title,
         "authors": authors,
         "abstract": text_draft.get_abstract(),
         "document_date": text_draft.get_creation_date(),
@@ -1285,6 +1283,9 @@ def process_and_validate_submission(submission):
             # Items to get from text only if XML not available
             submission.title = text_metadata["title"]
             submission.authors = text_metadata["authors"]
+
+        if not submission.title:
+            raise SubmissionError("Could not determine the title of the draft")
 
         # Items always to get from text, even when XML is available
         submission.abstract = text_metadata["abstract"]
