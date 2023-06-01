@@ -1159,7 +1159,7 @@ def process_submission_xml(filename, revision):
             for auth in xml_draft.get_author_list()
         ],
         "abstract": None,  # not supported from XML
-        "document_date": None,  # not supported from XML
+        "document_date": xml_draft.get_creation_date(),
         "pages": None,  # not supported from XML
         "words": None,  # not supported from XML
         "first_two_pages": None,  # not supported from XML
@@ -1286,9 +1286,14 @@ def process_and_validate_submission(submission):
             submission.title = text_metadata["title"]
             submission.authors = text_metadata["authors"]
 
+        # Items to get from text only when not available from XML
+        if xml_metadata and xml_metadata.get("document_date", None) is not None:
+            submission.document_date = xml_metadata["document_date"]
+        else:
+            submission.document_date = text_metadata["document_date"]
+
         # Items always to get from text, even when XML is available
         submission.abstract = text_metadata["abstract"]
-        submission.document_date = text_metadata["document_date"]
         submission.pages = text_metadata["pages"]
         submission.words = text_metadata["words"]
         submission.first_two_pages = text_metadata["first_two_pages"]
