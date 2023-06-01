@@ -237,7 +237,7 @@ def api_submit(request):
                 fill_in_submission(form, submission, authors, abstract, file_size)
                 apply_checkers(submission, file_name)
 
-                create_submission_event(request, submission, desc="Uploaded submission")
+                create_submission_event(request, submission, desc="Uploaded submission via api_submit")
 
                 errors = validate_submission(submission)
                 if errors:
