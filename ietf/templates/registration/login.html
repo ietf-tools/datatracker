@@ -1,12 +1,13 @@
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% extends "base.html" %}
+{% load static %}
 {% load origin %}
 {% load django_bootstrap5 %}
 {% block title %}Sign in{% endblock %}
 {% block content %}
     {% origin %}
     <h1>Sign in</h1>
-    <form method="post">
+    <form method="post" id="dt-login-form">
         {% csrf_token %}
         {% bootstrap_form form %}
         <div class="mt-4 mb-3">
@@ -16,4 +17,7 @@
         </div>
         Don't have an account? <a href="{% url 'ietf.ietfauth.views.create_account' %}">Create an account</a>.
     </form>
+{% endblock %}
+{% block js %}
+    <script src="{% static 'ietf/js/login.js' %}"></script>
 {% endblock %}
