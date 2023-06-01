@@ -539,6 +539,8 @@ SECURE_HSTS_SECONDS             = 3600
 #SECURE_REDIRECT_EXEMPT
 #SECURE_SSL_HOST 
 #SECURE_SSL_REDIRECT             = True
+# Relax the COOP policy to allow Meetecho authentication pop-up
+SECURE_CROSS_ORIGIN_OPENER_POLICY = "unsafe-none"
 
 # Override this in your settings_local with the IP addresses relevant for you:
 INTERNAL_IPS = (
