@@ -238,17 +238,9 @@ href="{% url 'ietf.doc.views_draft.review_possibly_replaces' name=doc.name %}">E
                 {% endif %}
                 {% if document_html %}
                     {% if doc.stream.name|lower in 'iab,ietf,irtf' %}
-                        <img alt="{{ doc.stream.name|upper }} Logo"
-                             title="{{ stream_desc }}"
-                             class="w-25 mt-1"
-                             {% if doc.stream.name|lower == 'iab' %}
-                                 src="{% static 'ietf/images/iab-logo.svg' %}"
-                             {% elif doc.stream.name|lower == 'ietf' %}
-                                 src="{% static 'ietf/images/ietf-logo.svg' %}"
-                             {% elif doc.stream.name|lower == 'irtf' %}
-                                 src="{% static 'ietf/images/irtf-logo.svg' %}"
-                             {% endif %}
-                             >
+                        <div title="{{ stream_desc }}">
+                            {% include "logo.html" with org=doc.stream.name|lower classes="w-25 mt-1" only %}
+                        </div>
                     {% else %}
                         {{ stream_desc }}
                     {% endif %}
