@@ -405,7 +405,6 @@ class Role(models.Model):
             .order_by("rolehistory__group__time")
             .first()
         )
-        print("history", self.person.plain_name(), history)
         current = (
             Person.objects.filter(
                 pk=self.person.pk, role__name=self.name, role__group=self.group
@@ -413,9 +412,7 @@ class Role(models.Model):
             .values_list("role__group__time")
             .first()
         )
-        print("current", self.person.plain_name(), current)
         start = history[0] if history and history[0] < current[0] else current[0]
-        print("start", self.person.plain_name(), start)
         return (start, start == EPOCH)
 
 
