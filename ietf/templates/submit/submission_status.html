@@ -147,8 +147,7 @@
             take a few minutes for complex drafts or during periods of heavy load.
             {% with earliest_event=submission.submissionevent_set.last %}
             {% if earliest_event %}
-            Your draft was uploaded at {{ earliest_event.time }}<span id="time-since-uploaded" class="d-none">
-            ({{ earliest_event.time|timesince }} ago)</span>.
+            Your draft was uploaded at {{ earliest_event.time }}.
             {% endif %}
             {% endwith %}
             Please contact the secretariat for assistance if it has been more than an hour.

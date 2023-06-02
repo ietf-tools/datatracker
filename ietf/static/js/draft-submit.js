@@ -70,10 +70,8 @@ $(function () {
     const submissionValidatingAlert = document.getElementById('submission-validating-alert');
     if (submissionValidatingAlert) {
         let statusPollTimer;
-        const timeSinceDisplay = document.getElementById("time-since-uploaded");
         const statusUrl = submissionValidatingAlert.dataset['submissionStatusUrl'];
         const statusPollInterval = 3000; // ms
-        timeSinceDisplay.classList.remove("d-none");
 
         function checkStatus() {
             const xhr = new XMLHttpRequest();
