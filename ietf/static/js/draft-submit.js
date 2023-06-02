@@ -71,9 +71,13 @@ $(function () {
     if (submissionValidatingAlert) {
         let statusPollTimer;
         const statusUrl = submissionValidatingAlert.dataset['submissionStatusUrl'];
-        const statusPollInterval = 3000; // ms
+        let statusPollInterval = 2000; // ms
+        const maxPollInterval = 32000; // ms
 
         function checkStatus() {
+            if (statusPollInterval < maxPollInterval) {
+                statusPollInterval *= 2;
+            }
             const xhr = new XMLHttpRequest();
             xhr.open("GET", statusUrl, true);
             xhr.onload = (e) => {
