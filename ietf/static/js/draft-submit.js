@@ -66,7 +66,7 @@ $(function () {
 
         });
 
-    // Reload page periodically if the enableAutoReload checkbox is present and checked
+    // If draft is validating, poll until validation is complete, then reload the page
     const submissionValidatingAlert = document.getElementById('submission-validating-alert');
     if (submissionValidatingAlert) {
         let statusPollTimer;
