@@ -62,8 +62,6 @@ services:
     static:
         image: ghcr.io/ietf-tools/static:latest
         restart: unless-stopped
-        ports:
-            - 8001:80
 
     mq:
         image: rabbitmq:3-alpine
