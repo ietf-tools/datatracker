@@ -25,7 +25,6 @@ from ietf.secr.sreq.forms import (SessionForm, ToolStatusForm, allowed_conflicti
 from ietf.secr.utils.decorators import check_permissions
 from ietf.secr.utils.group import get_my_groups
 from ietf.utils.mail import send_mail
-from ietf.person.models import Person
 from ietf.mailtrigger.utils import gather_address_lists
 
 # -------------------------------------------------
