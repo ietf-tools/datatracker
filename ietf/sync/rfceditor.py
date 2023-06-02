@@ -12,7 +12,7 @@ from xml.dom import pulldom, Node
 
 from django.conf import settings
 from django.utils import timezone
-from django.utils.encoding import smart_bytes, force_str, force_text
+from django.utils.encoding import smart_bytes, force_str
 
 import debug                            # pyflakes:ignore
 
@@ -583,7 +583,7 @@ def post_approved_draft(url, name):
         if r.status_code != 200:
             raise RuntimeError("Status code is not 200 OK (it's %s)." % r.status_code)
 
-        if force_text(r.text) != "OK":
+        if force_str(r.text) != "OK":
             raise RuntimeError('Response is not "OK" (it\'s "%s").' % r.text)
 
     except Exception as e:

@@ -15,7 +15,7 @@ from django.core.management.base import CommandError
 from django.core.management.commands.loaddata import Command as LoadCommand, humanize
 from django.db import DatabaseError, IntegrityError, router, transaction
 from django.db.models import ManyToManyField
-from django.utils.encoding import force_text
+from django.utils.encoding import force_str
 
 from ietf.utils.models import ForeignKey
 
@@ -234,7 +234,7 @@ class Command(LoadCommand):
                                 'object_name': obj.object._meta.object_name,
                                 'pk': obj.object.pk,
                                 'data': obj_to_dict(obj.object),
-                                'error_msg': force_text(e)
+                                'error_msg': force_str(e)
                             },)
                             raise
                 if objects and show_progress:

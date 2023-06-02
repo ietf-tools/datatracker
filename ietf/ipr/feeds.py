@@ -6,7 +6,7 @@ from django.contrib.syndication.views import Feed
 from django.utils.feedgenerator import Atom1Feed
 from django.urls import reverse_lazy
 from django.utils.safestring import mark_safe
-from django.utils.encoding import force_text
+from django.utils.encoding import force_str
 
 from ietf.ipr.models import IprDisclosureBase
 
@@ -25,7 +25,7 @@ class LatestIprDisclosuresFeed(Feed):
         return mark_safe(item.title)
 
     def item_description(self, item):
-        return force_text(item.title)
+        return force_str(item.title)
         
     def item_pubdate(self, item):
         return item.time

@@ -1159,7 +1159,7 @@ def process_submission_xml(filename, revision):
             for auth in xml_draft.get_author_list()
         ],
         "abstract": None,  # not supported from XML
-        "document_date": None,  # not supported from XML
+        "document_date": xml_draft.get_creation_date(),
         "pages": None,  # not supported from XML
         "words": None,  # not supported from XML
         "first_two_pages": None,  # not supported from XML
@@ -1213,11 +1213,9 @@ def process_submission_text(filename, revision):
             f"Text Internet-Draft revision ({text_draft.revision}) "
             f"disagrees with submission revision ({revision})"
         )
-    title = _normalize_title(text_draft.get_title())
-    if not title:
-        # This test doesn't work well - the text_draft parser tends to grab "Abstract" as
-        # the title if there's an empty title.
-        raise SubmissionError("Could not extract a title from the text")
+    title = text_draft.get_title()
+    if title:
+        title = _normalize_title(title)
 
     # Drops \r, \n, <, >. Based on get_draft_meta() behavior
     trans_table = str.maketrans("", "", "\r\n<>")
@@ -1233,7 +1231,7 @@ def process_submission_text(filename, revision):
     return {
         "filename": text_draft.filename,
         "rev": text_draft.revision,
-        "title": _normalize_title(text_draft.get_title()),
+        "title": title,
         "authors": authors,
         "abstract": text_draft.get_abstract(),
         "document_date": text_draft.get_creation_date(),
@@ -1265,7 +1263,11 @@ def process_and_validate_submission(submission):
         # Parse text, whether uploaded or generated from XML
         text_metadata = process_submission_text(submission.name, submission.rev)
 
-        if xml_metadata and xml_metadata["title"] != text_metadata["title"]:
+        if (
+            ".txt" in submission.file_types
+            and xml_metadata
+            and xml_metadata["title"] != text_metadata["title"]
+        ):
             raise SubmissionError(
                 f"Text Internet-Draft title ({text_metadata['title']}) "
                 f"disagrees with XML Internet-Draft title ({xml_metadata['title']})"
@@ -1275,15 +1277,24 @@ def process_and_validate_submission(submission):
         if xml_metadata is not None:
             # Items preferred / only available from XML
             submission.xml_version = xml_metadata["xml_version"]
+            submission.title = xml_metadata["title"]
             submission.authors = xml_metadata["authors"]
         else:
             # Items to get from text only if XML not available
+            submission.title = text_metadata["title"]
             submission.authors = text_metadata["authors"]
 
+        if not submission.title:
+            raise SubmissionError("Could not determine the title of the draft")
+
+        # Items to get from text only when not available from XML
+        if xml_metadata and xml_metadata.get("document_date", None) is not None:
+            submission.document_date = xml_metadata["document_date"]
+        else:
+            submission.document_date = text_metadata["document_date"]
+
         # Items always to get from text, even when XML is available
-        submission.title = text_metadata["title"]  # verified above this agrees with XML, if present
         submission.abstract = text_metadata["abstract"]
-        submission.document_date = text_metadata["document_date"]
         submission.pages = text_metadata["pages"]
         submission.words = text_metadata["words"]
         submission.first_two_pages = text_metadata["first_two_pages"]

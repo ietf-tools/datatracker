@@ -17,6 +17,7 @@ import tempfile
 
 from calendar import timegm
 from collections import OrderedDict, Counter, deque, defaultdict, namedtuple
+from functools import partialmethod
 from urllib.parse import parse_qs, unquote, urlencode, urlsplit, urlunsplit
 from tempfile import mkstemp
 from wsgiref.handlers import format_date_time
@@ -38,7 +39,6 @@ from django.template import TemplateDoesNotExist
 from django.template.loader import render_to_string
 from django.utils import timezone
 from django.utils.encoding import force_str
-from django.utils.functional import curry
 from django.utils.text import slugify
 from django.views.decorators.cache import cache_page
 from django.views.decorators.csrf import ensure_csrf_cookie, csrf_exempt
@@ -2730,7 +2730,7 @@ def upload_session_agenda(request, session_id, num):
                   })
 
 
-def upload_session_slides(request, session_id, num, name):
+def upload_session_slides(request, session_id, num, name=None):
     # num is redundant, but we're dragging it along an artifact of where we are in the current URL structure
     session = get_object_or_404(Session,pk=session_id)
     if not session.can_manage_materials(request.user):
@@ -3210,8 +3210,8 @@ def interim_request(request):
             if meeting_type in ('single', 'multi-day'):
                 meeting = form.save(date=get_earliest_session_date(formset))
 
-                # need to use curry here to pass custom variable to form init
-                SessionFormset.form.__init__ = curry(
+                # need to use partialmethod here to pass custom variable to form init
+                SessionFormset.form.__init__ = partialmethod(
                     InterimSessionModelForm.__init__,
                     user=request.user,
                     group=group,
@@ -3233,7 +3233,7 @@ def interim_request(request):
             # subsequently dealt with individually
             elif meeting_type == 'series':
                 series = []
-                SessionFormset.form.__init__ = curry(
+                SessionFormset.form.__init__ = partialmethod(
                     InterimSessionModelForm.__init__,
                     user=request.user,
                     group=group,
@@ -3453,7 +3453,7 @@ def interim_request_edit(request, number):
         group = Group.objects.get(pk=form.data['group'])
         is_approved = is_interim_meeting_approved(meeting)
 
-        SessionFormset.form.__init__ = curry(
+        SessionFormset.form.__init__ = partialmethod(
             InterimSessionModelForm.__init__,
             user=request.user,
             group=group,
