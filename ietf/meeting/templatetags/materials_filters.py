@@ -44,4 +44,6 @@ def all_meeting_slides(ss):
 def all_meeting_drafts(ss):
     return _uniq(_flatten([s.drafts() for s in ss]))
 
-
+@register.filter
+def timesort(ss):
+    return sorted(ss, key=lambda s: s.official_timeslotassignment().timeslot.time)

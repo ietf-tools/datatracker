@@ -3,7 +3,7 @@
 {% origin %}
 {% load ietf_filters proceedings_filters materials_filters managed_groups %}
 {% load tz %}
-{% with sessions.0 as session %}
+{% with sessions=sessions|timesort session=sessions.0 %}
 <tr>
     <td>
         {% if session.name %}
