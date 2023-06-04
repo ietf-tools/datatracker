@@ -428,7 +428,11 @@ def make_nomineeposition_for_newperson(nomcom, candidate_name, candidate_email, 
 def getheader(header_text, default="utf-8"):
     """Decode the specified header"""
 
-    tuples = decode_header(header_text)
+    try:
+        tuples = decode_header(header_text)
+    except TypeError:
+        return ""
+
     header_sections = [ text.decode(charset or default) if isinstance(text, bytes) else text for text, charset in tuples]
     return "".join(header_sections)
 
