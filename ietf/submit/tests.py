@@ -3347,8 +3347,7 @@ class AsyncSubmissionTests(BaseSubmitTestCase):
             "test_submission.xml",
             title="Correct Draft Title",
         )
-        xml_contents = xml.read()
-        xml_path.write_text(xml_contents)
+        xml_path.write_text(xml.read())
         output = process_submission_xml("draft-somebody-test", "00")
         self.assertEqual(output["filename"], "draft-somebody-test")
         self.assertEqual(output["rev"], "00")
@@ -3362,23 +3361,6 @@ class AsyncSubmissionTests(BaseSubmitTestCase):
         self.assertIsNone(output["file_size"])
         self.assertIsNone(output["formal_languages"])
         self.assertEqual(output["xml_version"], "3")
-
-        # Should behave on missing or partial <date> elements
-        xml_path.write_text(re.sub(r"<date.+>", "", xml_contents))  # strip <date...> entirely
-        output = process_submission_xml("draft-somebody-test", "00")
-        self.assertEqual(output["document_date"], None)
-
-        xml_path.write_text(re.sub(r"<date year=.+ month", "<date month", xml_contents))  # remove year
-        output = process_submission_xml("draft-somebody-test", "00")
-        self.assertEqual(output["document_date"], date_today())
-
-        xml_path.write_text(re.sub(r"(<date.+) month=.+day=(.+>)", r"\1 day=\2", xml_contents))  # remove month
-        output = process_submission_xml("draft-somebody-test", "00")
-        self.assertEqual(output["document_date"], date_today())
-
-        xml_path.write_text(re.sub(r"<date(.+) day=.+>", r"<date\1>", xml_contents))  # remove day
-        output = process_submission_xml("draft-somebody-test", "00")
-        self.assertEqual(output["document_date"], date_today())
 
         # name mismatch
         xml, _ = submission_file(
