@@ -88,7 +88,13 @@ fi
 trap 'trap "" TERM; cleanup' TERM
 # start celery in the background so we can trap the TERM signal
 if [[ -n "${DEV_MODE}" ]]; then
-  watchmedo auto-restart --patterns='*.py' --recursive -- celery --app="${CELERY_APP:-ietf}" "${CELERY_OPTS[@]}" "$@" &
+  watchmedo auto-restart \
+            --patterns '*.py' \
+            --directory 'ietf' \
+            --recursive \
+            --debounce-interval 5 \
+            -- \
+            celery --app="${CELERY_APP:-ietf}" "${CELERY_OPTS[@]}" "$@" &
   celery_pid=$!
 else
   celery --app="${CELERY_APP:-ietf}" "${CELERY_OPTS[@]}" "$@" &
