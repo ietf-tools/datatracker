@@ -11,7 +11,7 @@ from django.utils.html import strip_tags
 from django.conf import settings
 from django.urls import reverse as urlreverse
 from django.utils import timezone
-from django.utils.encoding import force_text
+from django.utils.encoding import force_str
 
 import debug                            # pyflakes:ignore
 from ietf.doc.templatetags.mail_filters import std_level_prompt
@@ -175,7 +175,7 @@ def generate_ballot_writeup(request, doc):
     e.doc = doc
     e.rev = doc.rev
     e.desc = "Ballot writeup was generated"
-    e.text = force_text(render_to_string("doc/mail/ballot_writeup.txt", {'iana': iana, 'doc': doc }))
+    e.text = force_str(render_to_string("doc/mail/ballot_writeup.txt", {'iana': iana, 'doc': doc }))
 
     # caller is responsible for saving, if necessary
     return e
@@ -187,7 +187,7 @@ def generate_ballot_rfceditornote(request, doc):
     e.doc = doc
     e.rev = doc.rev
     e.desc = "RFC Editor Note for ballot was generated"
-    e.text = force_text(render_to_string("doc/mail/ballot_rfceditornote.txt"))
+    e.text = force_str(render_to_string("doc/mail/ballot_rfceditornote.txt"))
     e.save()
     
     return e
@@ -232,7 +232,7 @@ def generate_last_call_announcement(request, doc):
     e.doc = doc
     e.rev = doc.rev
     e.desc = "Last call announcement was generated"
-    e.text = force_text(mail)
+    e.text = force_str(mail)
 
     # caller is responsible for saving, if necessary
     return e
@@ -252,7 +252,7 @@ def generate_approval_mail(request, doc):
     e.doc = doc
     e.rev = doc.rev
     e.desc = "Ballot approval text was generated"
-    e.text = force_text(mail)
+    e.text = force_str(mail)
 
     # caller is responsible for saving, if necessary
     return e

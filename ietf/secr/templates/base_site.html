@@ -1,7 +1,7 @@
 {% extends "base_secr.html" %}
 {% load i18n %}
 {% load ietf_filters %}
-{% load staticfiles %}
+{% load static %}
 
 {% block title %}{{ title }}{% if user|has_role:"Secretariat" %} Secretariat Dashboard {% else %} IETF Dashboard {% endif %}{% endblock %}
 

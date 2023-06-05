@@ -67,7 +67,7 @@ class Command(BaseCommand):
                 pprint(connection.queries)
                 raise
 
-        objects = []                    # type: List[object]
+        objects: List[object] = []  # type: ignore[annotation-unchecked]
         model_objects = {}
 
         import ietf.name.models

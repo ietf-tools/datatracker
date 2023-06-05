@@ -9,10 +9,11 @@ from django.core.cache import cache
 from django.core.exceptions import ObjectDoesNotExist, FieldError
 from django.core.serializers.json import Serializer
 from django.http import HttpResponse
-from django.utils.encoding import smart_text
+from django.utils.encoding import smart_str
 from django.db.models import Field
-from django.db.models.query import QuerySet
 from django.db.models.signals import post_save, post_delete, m2m_changed
+
+from django_stubs_ext import QuerySetAny
 
 import debug                            # pyflakes:ignore
 
@@ -121,7 +122,7 @@ class AdminJsonSerializer(Serializer):
         for name in expansions:
             try:
                 field = getattr(obj, name)
-                #self._current["_"+name] = smart_text(field)
+                #self._current["_"+name] = smart_str(field)
                 if not isinstance(field, Field):
                     options = self.options.copy()
                     options["expand"] = [ v[len(name)+2:] for v in options["expand"] if v.startswith(name+"__") ]
@@ -145,7 +146,7 @@ class AdminJsonSerializer(Serializer):
                                 field_value = None
                         else:
                             field_value = field
-                        if isinstance(field_value, QuerySet) or isinstance(field_value, list):
+                        if isinstance(field_value, QuerySetAny) or isinstance(field_value, list):
                             self._current[name] = dict([ (rel.pk, self.expand_related(rel, name)) for rel in field_value ])
                         else:
                             if hasattr(field_value, "_meta"):
@@ -188,10 +189,10 @@ class AdminJsonSerializer(Serializer):
                 related = related.natural_key()
             elif field.remote_field.field_name == related._meta.pk.name:
                 # Related to remote object via primary key
-                related = smart_text(related._get_pk_val(), strings_only=True)
+                related = smart_str(related._get_pk_val(), strings_only=True)
             else:
                 # Related to remote object via other field
-                related = smart_text(getattr(related, field.remote_field.field_name), strings_only=True)
+                related = smart_str(getattr(related, field.remote_field.field_name), strings_only=True)
         self._current[field.name] = related
 
     def handle_m2m_field(self, obj, field):
@@ -201,7 +202,7 @@ class AdminJsonSerializer(Serializer):
             elif self.use_natural_keys and hasattr(field.remote_field.to, 'natural_key'):
                 m2m_value = lambda value: value.natural_key()
             else:
-                m2m_value = lambda value: smart_text(value._get_pk_val(), strings_only=True)
+                m2m_value = lambda value: smart_str(value._get_pk_val(), strings_only=True)
             self._current[field.name] = [m2m_value(related)
                                for related in getattr(obj, field.name).iterator()]
 
@@ -221,7 +222,7 @@ class JsonExportMixin(object):
 #             obj = None
 # 
 #         if obj is None:
-#             raise Http404(_('%(name)s object with primary key %(key)r does not exist.') % {'name': force_text(self.model._meta.verbose_name), 'key': escape(object_id)})
+#             raise Http404(_('%(name)s object with primary key %(key)r does not exist.') % {'name': force_str(self.model._meta.verbose_name), 'key': escape(object_id)})
 # 
 #         content_type = 'application/json'
 #         return HttpResponse(serialize([ obj ], sort_keys=True, indent=3)[2:-2], content_type=content_type)
@@ -264,6 +265,6 @@ class JsonExportMixin(object):
             qd = dict( ( k, json.loads(v)[0] )  for k,v in items )
         except (FieldError, ValueError) as e:
             return HttpResponse(json.dumps({"error": str(e)}, sort_keys=True, indent=3), content_type=content_type)
-        text = json.dumps({smart_text(self.model._meta): qd}, sort_keys=True, indent=3)
+        text = json.dumps({smart_str(self.model._meta): qd}, sort_keys=True, indent=3)
         return HttpResponse(text, content_type=content_type)
         
