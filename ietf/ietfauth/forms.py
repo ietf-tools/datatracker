@@ -11,13 +11,13 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.contrib.auth.models import User
 
-from django_password_strength.widgets import PasswordStrengthInput, PasswordConfirmationInput
-
 import debug                            # pyflakes:ignore
 
 from ietf.person.models import Person, Email
 from ietf.mailinglists.models import Allowlisted
 from ietf.utils.text import isascii
+
+from .widgets import PasswordStrengthInput, PasswordConfirmationInput
 
 
 class RegistrationForm(forms.Form):

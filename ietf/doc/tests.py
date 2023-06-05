@@ -1779,7 +1779,7 @@ class DocTestCase(TestCase):
         self.client.login(username='ad', password='ad+password')
         r = self.client.post(urlreverse('ietf.doc.views_status_change.change_state',kwargs=dict(name=doc.name)),dict(new_state=iesgeval_pk))
         self.assertEqual(r.status_code, 302)
-        r = self.client.get(r._headers["location"][1])
+        r = self.client.get(r.headers["location"])
         self.assertContains(r, ">IESG Evaluation<")
         self.assertEqual(len(outbox), 2)
         self.assertIn('iesg-secretary',outbox[0]['To'])

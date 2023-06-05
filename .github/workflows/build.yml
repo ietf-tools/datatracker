@@ -62,7 +62,7 @@ jobs:
       uses: ietf-tools/semver-action@v1
       with:
         token: ${{ github.token }}
-        branch: main
+        branch: release
         skipInvalidTags: true
         
     - name: Set Next Version Env Var
@@ -91,10 +91,10 @@ jobs:
           echo "pkg_version=$NEXT_VERSION" >> $GITHUB_OUTPUT
           echo "::notice::Release $NEXT_VERSION created using branch $GITHUB_REF_NAME"
         else
-          echo "Using TEST mode: 10.0.0-dev.$GITHUB_RUN_NUMBER"
+          echo "Using TEST mode: 11.0.0-dev.$GITHUB_RUN_NUMBER"
           echo "should_deploy=false" >> $GITHUB_OUTPUT
-          echo "pkg_version=10.0.0-dev.$GITHUB_RUN_NUMBER" >> $GITHUB_OUTPUT
-          echo "::notice::Non-production build 10.0.0-dev.$GITHUB_RUN_NUMBER created using branch $GITHUB_REF_NAME"
+          echo "pkg_version=11.0.0-dev.$GITHUB_RUN_NUMBER" >> $GITHUB_OUTPUT
+          echo "::notice::Non-production build 11.0.0-dev.$GITHUB_RUN_NUMBER created using branch $GITHUB_REF_NAME"
         fi
 
   # -----------------------------------------------------------------

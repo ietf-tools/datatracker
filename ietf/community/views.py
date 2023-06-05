@@ -22,6 +22,7 @@ from ietf.community.utils import docs_tracked_by_community_list, docs_matching_c
 from ietf.community.utils import states_of_significant_change, reset_name_contains_index_for_rule
 from ietf.doc.models import DocEvent, Document
 from ietf.doc.utils_search import prepare_document_table
+from ietf.utils.http import is_ajax
 from ietf.utils.response import permission_denied
 
 def view_list(request, username=None):
@@ -142,7 +143,7 @@ def track_document(request, name, username=None, acronym=None):
         if not doc in clist.added_docs.all():
             clist.added_docs.add(doc)
 
-        if request.is_ajax():
+        if is_ajax(request):
             return HttpResponse(json.dumps({ 'success': True }), content_type='application/json')
         else:
             return HttpResponseRedirect(clist.get_absolute_url())
@@ -162,7 +163,7 @@ def untrack_document(request, name, username=None, acronym=None):
         if clist.pk is not None:
             clist.added_docs.remove(doc)
 
-        if request.is_ajax():
+        if is_ajax(request):
             return HttpResponse(json.dumps({ 'success': True }), content_type='application/json')
         else:
             return HttpResponseRedirect(clist.get_absolute_url())

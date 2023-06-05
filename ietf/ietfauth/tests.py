@@ -98,7 +98,7 @@ class IetfAuthTests(TestCase):
         self.assertEqual(urlsplit(r["Location"])[2], urlreverse(ietf.ietfauth.views.profile))
 
         # try logging out
-        r = self.client.get(urlreverse('django.contrib.auth.views.logout'))
+        r = self.client.post(urlreverse('django.contrib.auth.views.logout'), {})
         self.assertEqual(r.status_code, 200)
         self.assertNotContains(r, "accounts/logout")
 
@@ -215,7 +215,7 @@ class IetfAuthTests(TestCase):
         self.assertContains(r, "Allowlist entry creation successful")
 
         # log out
-        r = self.client.get(urlreverse('django.contrib.auth.views.logout'))
+        r = self.client.post(urlreverse('django.contrib.auth.views.logout'), {})
         self.assertEqual(r.status_code, 200)
 
         # register and verify allowlisted email
@@ -664,7 +664,7 @@ class IetfAuthTests(TestCase):
                                         "new_password_confirmation": "foobar",
                                        })
         self.assertEqual(r.status_code, 200)
-        self.assertFormError(r, 'form', 'current_password', 'Invalid password')
+        self.assertFormError(r.context["form"], 'current_password', 'Invalid password')
 
         # mismatching new passwords
         r = self.client.post(chpw_url, {"current_password": "password",
@@ -672,7 +672,7 @@ class IetfAuthTests(TestCase):
                                         "new_password_confirmation": "barfoo",
                                        })
         self.assertEqual(r.status_code, 200)
-        self.assertFormError(r, 'form', None, "The password confirmation is different than the new password")
+        self.assertFormError(r.context["form"], None, "The password confirmation is different than the new password")
 
         # correct password change
         r = self.client.post(chpw_url, {"current_password": "password",
@@ -711,7 +711,7 @@ class IetfAuthTests(TestCase):
                                         "password": "password",
                                        })
         self.assertEqual(r.status_code, 200)
-        self.assertFormError(r, 'form', 'username',
+        self.assertFormError(r.context["form"], 'username',
             "Select a valid choice. fiddlesticks is not one of the available choices.")
 
         # wrong password
@@ -719,7 +719,7 @@ class IetfAuthTests(TestCase):
                                         "password": "foobar",
                                        })
         self.assertEqual(r.status_code, 200)
-        self.assertFormError(r, 'form', 'password', 'Invalid password')
+        self.assertFormError(r.context["form"], 'password', 'Invalid password')
 
         # correct username change
         r = self.client.post(chun_url, {"username": "othername@example.org",
