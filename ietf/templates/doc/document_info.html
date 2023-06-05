@@ -100,7 +100,7 @@
     {% endif %}
     <tr>
         <td></td>
-        <th scope="row">Author{{ doc.authors|pluralize }}</th>
+        <th scope="row">Author{% if doc.pk %}{{ doc.authors|pluralize }}{% endif %}</th>
         <td class="edit">
             {% if can_edit_authors %}
                 <a class="btn btn-primary btn-sm"
@@ -109,9 +109,9 @@
         </td>
         <td>
             {# Implementation that uses the current primary email for each author #}
-            {% for author in doc.authors %}
+            {% if doc.pk %}{% for author in doc.authors %}
                 {% person_link author %}{% if not forloop.last %},{% endif %}
-            {% endfor %}
+            {% endfor %}{% endif %}
             {% if document_html and not snapshot or document_html and doc.rev == latest_rev%}
                 <br>
                 <a class="btn btn-primary btn-sm mt-1" href="mailto:{{ doc.name }}@ietf.org?subject={{ doc.name}}" title="Send email to the document authors">Email authors</a>
