@@ -50,7 +50,7 @@ if [ ! -f "$WORKSPACEDIR/ietf/settings_local_debug.py" ]; then
     echo "Setting up a default settings_local_debug.py ..."
 else
     echo "Renaming existing ietf/settings_local_debug.py to ietf/settings_local_debug.py.bak"
-    mv -f $WORKSPACEDIR/ietf/settings_local.py $WORKSPACEDIR/ietf/settings_local.py.bak
+    mv -f $WORKSPACEDIR/ietf/settings_local_debug.py $WORKSPACEDIR/ietf/settings_local_debug.py.bak
 fi
 cp $WORKSPACEDIR/docker/configs/settings_local_debug.py $WORKSPACEDIR/ietf/settings_local_debug.py
 
