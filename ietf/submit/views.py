@@ -268,6 +268,8 @@ def api_submit(request):
             return err(500, "IO Error: %s" % str(e))
         except ValidationError as e:
             exception = e
+            debug.say("Validation Error")
+            debug.show("e")
             return err(400, "Validation Error: %s" % str(e))
         except Exception as e:
             exception = e

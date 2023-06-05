@@ -118,9 +118,12 @@ class BaseSubmitTestCase(TestCase):
 def submission_file_contents(name_in_doc, group, templatename, author=None, email=None, title=None, year=None, ascii=True):
     _today = date_today()
     # construct appropriate text draft
+    debug.show("settings.BASE_DIR")
+    debug.say("about to read template")
     f = io.open(os.path.join(settings.BASE_DIR, "submit", templatename))
     template = f.read()
     f.close()
+    debug.show("template")
 
     if author is None:
         author = PersonFactory()
