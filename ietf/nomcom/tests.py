@@ -1038,15 +1038,15 @@ class NomcomViewsTest(TestCase):
             "Hey, you sass that hoopy Ford Prefect?\n" \
             "There's a frood who really knows where his towel is.\n"
 
-        def paste_feedback_email(text):
-            test_data = {'email_text': text}
-            response = self.client.post(feedback_url, test_data)
-            self.assertEqual(response.status_code, 200)
-            self.assertContains(response, 'The feedback email has been registered.')
+        test_data = {'email_text': body}
+        response = self.client.post(feedback_url, test_data)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Missing email headers')
 
-        paste_feedback_email(headers)
-        paste_feedback_email(body)
-        paste_feedback_email(headers + body)
+        test_data = {'email_text': headers + body}
+        response = self.client.post(feedback_url, test_data)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'The feedback email has been registered.')
 
 
 class NomineePositionStateSaveTest(TestCase):
