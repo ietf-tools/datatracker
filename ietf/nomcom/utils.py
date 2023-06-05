@@ -12,6 +12,7 @@ import tempfile
 
 from collections import defaultdict
 from email import message_from_string, message_from_bytes
+from email.errors import HeaderParseError
 from email.header import decode_header
 from email.iterators import typed_subpart_iterator
 from email.utils import parseaddr
@@ -481,6 +482,9 @@ def parse_email(text):
     body = get_body(msg)
     subject = getheader(msg['Subject'])
     __, addr = parseaddr(msg['From'])
+    if not addr:
+        raise HeaderParseError
+
     return addr.lower(), subject, body
 
 
