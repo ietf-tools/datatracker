@@ -94,14 +94,13 @@ echo "Running initial checks..."
 
 /usr/local/bin/python $WORKSPACEDIR/ietf/manage.py migrate --fake-initial --settings=settings_local
 
-echo "-----------------------------------------------------------------"
-echo "Done!"
-echo "-----------------------------------------------------------------"
-
 if [ -z "$EDITOR_VSCODE" ]; then
     CODE=0
     python -m smtpd -n -c DebuggingServer localhost:2025 &
     if [ -z "$*" ]; then
+        echo "-----------------------------------------------------------------"
+        echo "Ready!"
+        echo "-----------------------------------------------------------------"
         echo
         echo "You can execute arbitrary commands now, e.g.,"
         echo
