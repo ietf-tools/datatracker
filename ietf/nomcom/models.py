@@ -130,7 +130,7 @@ class Nomination(models.Model):
     nominator_email = models.EmailField(verbose_name='Nominator Email', blank=True)
     user = ForeignKey(User, editable=False, null=True, on_delete=models.SET_NULL)
     time = models.DateTimeField(auto_now_add=True)
-    share_nominator = models.BooleanField(verbose_name='Share nominator name with candidate', default=False,
+    share_nominator = models.BooleanField(verbose_name='OK to share nominator\'s name with candidate', default=False,
                                           help_text='Check this box to allow the NomCom to let the '
                                                     'person you are nominating know that you were '
                                                     'one of the people who nominated them. If you '
