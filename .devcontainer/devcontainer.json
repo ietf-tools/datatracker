@@ -7,6 +7,7 @@
     "workspaceFolder": "/workspace",
     "shutdownAction": "stopCompose",
     "postCreateCommand": "/docker-init.sh",
+    "postStartCommand": "/docker-start.sh",
     "containerEnv": {
         "EDITOR_VSCODE": "true"
     },
