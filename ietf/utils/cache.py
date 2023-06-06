@@ -15,3 +15,5 @@ class LenientMemcacheCache(PyMemcacheCache):
         except MemcacheServerError as err:
             if "object too large for cache" in str(err):
                 log(f"Memcache failed to cache large object for {key}")
+            else:
+                raise
