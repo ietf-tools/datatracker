@@ -73,7 +73,7 @@
     "pug": "3.0.2",
     "sass": "1.62.1",
     "seedrandom": "3.0.5",
-    "vite": "4.3.4"
+    "vite": "4.3.9"
   },
   "targets": {
     "ietf": {

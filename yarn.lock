@@ -6420,7 +6420,7 @@ browserlist@latest:
     slugify: 1.6.6
     sortablejs: 1.15.0
     vanillajs-datepicker: 1.3.2
-    vite: 4.3.4
+    vite: 4.3.9
     vue: 3.2.47
     vue-router: 4.2.0
     zxcvbn: 4.4.2
@@ -7142,9 +7142,9 @@ browserlist@latest:
   languageName: node
   linkType: hard
 
-"vite@npm:4.3.4":
-  version: 4.3.4
-  resolution: "vite@npm:4.3.4"
+"vite@npm:4.3.9":
+  version: 4.3.9
+  resolution: "vite@npm:4.3.9"
   dependencies:
     esbuild: ^0.17.5
     fsevents: ~2.3.2
@@ -7175,7 +7175,7 @@ browserlist@latest:
       optional: true
   bin:
     vite: bin/vite.js
-  checksum: 90ce3923ef3e9a491851fb34effece43858d0ba915db17ea6ad0eb649bd77d81c69a71aafc55a6fbd11e4134b1a79eb7e2e3553f055d390d32ca0ff7c645acf6
+  checksum: 8c45a516278d1e0425fac00c0877336790f71484a851a318346a70e0d2aef9f3b9651deb2f9f002c791ceb920eda7d6a3cda753bdefd657321c99f448b02dd25
   languageName: node
   linkType: hard
 
