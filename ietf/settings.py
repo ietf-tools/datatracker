@@ -729,13 +729,13 @@ CACHE_MIDDLEWARE_KEY_PREFIX = ''
 # This setting is possibly overridden further down, after the import of settings_local
 CACHES = {
     'default': {
-        'BACKEND': 'django.core.cache.backends.memcached.PyMemcacheCache',
+        'BACKEND': 'ietf.utils.cache.LenientMemcacheCache',
         'LOCATION': '127.0.0.1:11211',
         'VERSION': __version__,
         'KEY_PREFIX': 'ietf:dt',
     },
     'sessions': {
-        'BACKEND': 'django.core.cache.backends.memcached.PyMemcacheCache',
+        'BACKEND': 'ietf.utils.cache.LenientMemcacheCache',
         'LOCATION': '127.0.0.1:11211',
         # No release-specific VERSION setting.
         'KEY_PREFIX': 'ietf:dt',
@@ -1242,7 +1242,7 @@ if SERVER_MODE != 'production':
     CACHES = {
         'default': {
             'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
-            #'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
+            #'BACKEND': 'ietf.utils.cache.LenientMemcacheCache',
             #'LOCATION': '127.0.0.1:11211',
             #'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
             'VERSION': __version__,
