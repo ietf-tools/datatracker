@@ -547,24 +547,12 @@ class MeetingTests(BaseMeetingTestCase):
         self.assertTrue(named_row)
 
         for material in (sp.document for sp in plain_session.sessionpresentation_set.all()):
-            if material.type_id == 'draft':
-                expected_url = urlreverse(
-                    'ietf.doc.views_doc.document_main',
-                    kwargs={'name': material.canonical_name()},
-                )
-            else:
-                expected_url = material.get_href(meeting)
+            expected_url = material.get_href(meeting)
             self.assertTrue(plain_row.find(f'a[href="{expected_url}"]'))
             self.assertFalse(named_row.find(f'a[href="{expected_url}"]'))
 
         for material in (sp.document for sp in named_session.sessionpresentation_set.all()):
-            if material.type_id == 'draft':
-                expected_url = urlreverse(
-                    'ietf.doc.views_doc.document_main',
-                    kwargs={'name': material.canonical_name()},
-                )
-            else:
-                expected_url = material.get_href(meeting)
+            expected_url = material.get_href(meeting)
             self.assertFalse(plain_row.find(f'a[href="{expected_url}"]'))
             self.assertTrue(named_row.find(f'a[href="{expected_url}"]'))
 
