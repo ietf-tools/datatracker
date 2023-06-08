@@ -11,7 +11,7 @@ from pathlib import PurePath, Path
 from django.conf import settings
 from django.core.management.base import BaseCommand
 
-from ietf.doc.models import Document, DocAlias
+from ietf.doc.models import Document, DocAlias, DocEvent
 from ietf.meeting.models import Meeting, Schedule, Session, SchedulingEvent, SchedTimeSessAssignment, TimeSlot
 
 def nametimes_by_year():
@@ -52,6 +52,14 @@ class Command(BaseCommand):
                     uploaded_filename = minutes_filename,
                 )
                 DocAlias.objects.create(name=doc.name).docs.add(doc)
+                e = DocEvent.objects.create(
+                        type="comment",
+                        doc = doc,
+                        rev = "00",
+                        by_id = 1, # The "(System)" person
+                        desc = "Minutes moved into datatracker from iab wordpress website",
+                )
+                doc.save_with_history([e])
                 # Create Meeting - Add a note about noon utc fake meeting times
                 meeting = Meeting.objects.create(
                     number=meeting_name,
