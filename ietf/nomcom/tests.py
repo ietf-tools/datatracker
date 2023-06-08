@@ -4,6 +4,7 @@
 
 import datetime
 import io
+import mock
 import random
 import shutil
 
@@ -98,6 +99,7 @@ class NomcomViewsTest(TestCase):
         self.private_nominate_newperson_url = reverse('ietf.nomcom.views.private_nominate_newperson', kwargs={'year': self.year})
         self.add_questionnaire_url = reverse('ietf.nomcom.views.private_questionnaire', kwargs={'year': self.year})
         self.private_feedback_url = reverse('ietf.nomcom.views.private_feedback', kwargs={'year': self.year})
+        self.private_feedback_email_url = reverse('ietf.nomcom.views.private_feedback_email', kwargs={'year': self.year})
         self.positions_url = reverse('ietf.nomcom.views.list_positions', kwargs={'year': self.year})        
         self.edit_position_url = reverse('ietf.nomcom.views.edit_position', kwargs={'year': self.year})
 
@@ -1011,6 +1013,43 @@ class NomcomViewsTest(TestCase):
             nominee_position.save()
 
 
+    def test_private_feedback_email(self):
+        self.access_chair_url(self.private_feedback_email_url)
+
+        feedback_url = self.private_feedback_email_url
+        response = self.client.get(feedback_url)
+        self.assertEqual(response.status_code, 200)
+
+        nomcom = get_nomcom_by_year(self.year)
+        if not nomcom.public_key:
+            self.assertNotContains(response, "paste-email-feedback-form")
+
+        # save the cert file in tmp
+        with io.open(self.cert_file.name, 'r') as fd:
+            nomcom.public_key.save('cert', File(fd))
+
+        response = self.client.get(feedback_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "paste-email-feedback-form")
+
+        headers = \
+            "From: Zaphod Beeblebrox <president@galaxy>\n" \
+            "Subject: Ford Prefect\n\n"
+        body = \
+            "Hey, you sass that hoopy Ford Prefect?\n" \
+            "There's a frood who really knows where his towel is.\n"
+
+        test_data = {'email_text': body}
+        response = self.client.post(feedback_url, test_data)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Missing email headers')
+
+        test_data = {'email_text': headers + body}
+        response = self.client.post(feedback_url, test_data)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'The feedback email has been registered.')
+
+
 class NomineePositionStateSaveTest(TestCase):
     """Tests for the NomineePosition save override method"""
 
@@ -1577,6 +1616,16 @@ class NewActiveNomComTests(TestCase):
         login_testing_unauthorized(self,self.chair.user.username,url)
         response = self.client.get(url)
         self.assertEqual(response.status_code,200)
+        # Check that we get an error if there's an encoding problem talking to openssl
+        # "\xc3\x28" is an invalid utf8 string
+        with mock.patch("ietf.nomcom.utils.pipe", return_value=(0, b"\xc3\x28", None)):
+            response = self.client.post(url, {'key': force_str(key)})
+        self.assertFormError(
+            response.context["form"],
+            None,
+            "An internal error occurred while adding your private key to your session."
+            f"Please contact the secretariat for assistance ({settings.SECRETARIAT_SUPPORT_EMAIL})",
+        )
         response = self.client.post(url,{'key': force_str(key)})
         self.assertEqual(response.status_code,302)
 
@@ -1993,7 +2042,7 @@ class NoPublicKeyTests(TestCase):
         text_bits = [x.xpath('.//text()') for x in q('.alert-warning')]
         flat_text_bits = [item for sublist in text_bits for item in sublist]
         self.assertTrue(any(['not yet' in y for y in flat_text_bits]))
-        self.assertEqual(bool(q('form:not(.navbar-form)')),expected_form)
+        self.assertEqual(bool(q('#content form:not(.navbar-form)')),expected_form)
         self.client.logout()
 
     def test_not_yet(self):

@@ -24,7 +24,8 @@ class AffiliationAlias(models.Model):
 
     def save(self, *args, **kwargs):
         self.alias = self.alias.lower()
-        super(AffiliationAlias, self).save(*args, **kwargs)
+        update_fields = {"alias"}.union(kwargs.pop("update_fields", set()))
+        super(AffiliationAlias, self).save(update_fields=update_fields, *args, **kwargs)
 
     class Meta:
         verbose_name_plural = "affiliation aliases"

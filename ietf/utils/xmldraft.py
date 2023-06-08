@@ -1,5 +1,6 @@
 # Copyright The IETF Trust 2022, All Rights Reserved
 # -*- coding: utf-8 -*-
+import datetime
 import io
 import re
 import xml2rfc
@@ -7,6 +8,8 @@ import xml2rfc
 import debug  # pyflakes: ignore
 
 from contextlib import ExitStack
+from xml2rfc.util.date import augment_date, extract_date
+from ietf.utils.timezone import date_today
 
 from .draft import Draft
 
@@ -133,6 +136,24 @@ class XMLDraft(Draft):
     def get_title(self):
         return self.xmlroot.findtext('front/title').strip()
 
+    def get_creation_date(self):
+        date_elt = self.xmlroot.find("front/date")
+        if date_elt is not None:
+            # ths mimics handling of date elements in the xml2rfc text/html writers
+            today = date_today()
+            year, month, day = extract_date(date_elt, today)
+            year, month, day = augment_date(year, month, day, today)
+            if day is None:
+                # Must choose a day for a datetime.date. Per RFC 7991 sect 2.17, we use
+                # today's date if it is consistent with the rest of the date. Otherwise,
+                # arbitrariy (and consistent with the text parser) assume the 15th.
+                if year == today.year and month == today.month:
+                    day = today.day
+                else:
+                    day = 15
+            return datetime.date(year, month, day)
+        return None
+    
     # todo fix the implementation of XMLDraft.get_abstract()
     #
     # This code was pulled from ietf.submit.forms where it existed for some time.

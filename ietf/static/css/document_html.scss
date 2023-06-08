@@ -141,6 +141,7 @@ $font-family-monospace: "Noto Sans Mono", SFMono-Regular, Menlo, Monaco, Consola
     pre,
     code {
         font-size: 1em;
+        overflow: visible;
     }
 
     pre {
@@ -333,11 +334,13 @@ tbody.meta tr {
         page-break-inside: avoid;
     }
 
+/*
     a:link,
     a:visited {
         // color: inherit;
         // text-decoration: none;
     }
+*/
 
     .newpage {
         page-break-before: always !important;

@@ -1,7 +1,7 @@
 # Copyright The IETF Trust 2013-2020, All Rights Reserved
 
 from django.conf import settings
-from django.conf.urls import include
+from django.urls import include
 from django.views.generic import RedirectView
 
 from ietf.community import views as community_views

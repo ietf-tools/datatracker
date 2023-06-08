@@ -62,8 +62,6 @@ services:
     static:
         image: ghcr.io/ietf-tools/static:latest
         restart: unless-stopped
-        ports:
-            - 8001:80
 
     mq:
         image: rabbitmq:3-alpine
@@ -76,6 +74,7 @@ services:
             CELERY_APP: ietf
             CELERY_ROLE: worker
             UPDATE_REQUIREMENTS_FROM: requirements.txt
+            DEV_MODE: yes
         command:
             - '--loglevel=INFO'
         depends_on:
