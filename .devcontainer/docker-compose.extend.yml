@@ -18,5 +18,8 @@ services:
     pgadmin:
         network_mode: service:db
 
+    static:
+        network_mode: service:db
+
 volumes:
     datatracker-vscode-ext:

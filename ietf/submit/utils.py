@@ -941,8 +941,10 @@ def render_missing_formats(submission):
         xmltree.tree = v2v3.convert2to3()
 
     # --- Prep the xml ---
+    today = date_today()
     prep = xml2rfc.PrepToolWriter(xmltree, quiet=True, liberal=True, keep_pis=[xml2rfc.V3_PI_TARGET])
     prep.options.accept_prepped = True
+    prep.options.date = today
     xmltree.tree = prep.prep()
     if xmltree.tree == None:
         raise SubmissionError(f'Error from xml2rfc (prep): {prep.errors}')
@@ -952,6 +954,7 @@ def render_missing_formats(submission):
     if not txt_path.exists():
         writer = xml2rfc.TextWriter(xmltree, quiet=True)
         writer.options.accept_prepped = True
+        writer.options.date = today
         writer.write(txt_path)
         log.log(
             'In %s: xml2rfc %s generated %s from %s (version %s)' % (
@@ -966,6 +969,7 @@ def render_missing_formats(submission):
     # --- Convert to html ---
     html_path = staging_path(submission.name, submission.rev, '.html')
     writer = xml2rfc.HtmlWriter(xmltree, quiet=True)
+    writer.options.date = today
     writer.write(str(html_path))
     log.log(
         'In %s: xml2rfc %s generated %s from %s (version %s)' % (

@@ -178,7 +178,10 @@ STATICFILES_FINDERS = (
     'django.contrib.staticfiles.finders.AppDirectoriesFinder',
 )
 
+# Client-side static.ietf.org URL
 STATIC_IETF_ORG = "https://static.ietf.org"
+# Server-side static.ietf.org URL (used in pdfized)
+STATIC_IETF_ORG_INTERNAL = STATIC_IETF_ORG
 
 WSGI_APPLICATION = "ietf.wsgi.application"
 
@@ -726,13 +729,13 @@ CACHE_MIDDLEWARE_KEY_PREFIX = ''
 # This setting is possibly overridden further down, after the import of settings_local
 CACHES = {
     'default': {
-        'BACKEND': 'django.core.cache.backends.memcached.PyMemcacheCache',
+        'BACKEND': 'ietf.utils.cache.LenientMemcacheCache',
         'LOCATION': '127.0.0.1:11211',
         'VERSION': __version__,
         'KEY_PREFIX': 'ietf:dt',
     },
     'sessions': {
-        'BACKEND': 'django.core.cache.backends.memcached.PyMemcacheCache',
+        'BACKEND': 'ietf.utils.cache.LenientMemcacheCache',
         'LOCATION': '127.0.0.1:11211',
         # No release-specific VERSION setting.
         'KEY_PREFIX': 'ietf:dt',
@@ -1239,7 +1242,7 @@ if SERVER_MODE != 'production':
     CACHES = {
         'default': {
             'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
-            #'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
+            #'BACKEND': 'ietf.utils.cache.LenientMemcacheCache',
             #'LOCATION': '127.0.0.1:11211',
             #'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
             'VERSION': __version__,
@@ -1292,6 +1295,6 @@ if SERVER_MODE != 'production':
     # Cannot have this set to True if we're using http: from the dev-server:
     CSRF_COOKIE_SECURE = False
     CSRF_COOKIE_SAMESITE = 'Lax'
+    CSRF_TRUSTED_ORIGINS = ['http://localhost:8000']
     SESSION_COOKIE_SECURE = False
     SESSION_COOKIE_SAMESITE = 'Lax'
-    
