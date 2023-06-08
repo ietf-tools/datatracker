@@ -7,6 +7,7 @@
     "workspaceFolder": "/workspace",
     "shutdownAction": "stopCompose",
     "postCreateCommand": "/docker-init.sh",
+    "postStartCommand": "/docker-start.sh",
     "containerEnv": {
         "EDITOR_VSCODE": "true"
     },
@@ -66,7 +67,7 @@
     },
     
     // Use 'forwardPorts' to make a list of ports inside the container available locally.
-    "forwardPorts": [3000, 5432, 5433, 8000, 8001],
+    "forwardPorts": [3000, 5432, 5433, 8000],
     
     "portsAttributes": {
         "3000": {
@@ -82,12 +83,12 @@
             "onAutoForward": "silent"
         },
         "8000": {
-            "label": "Datatracker",
+            "label": "NGINX",
             "onAutoForward": "notify"
         },
         "8001": {
-            "label": "Static",
-            "onAutoForward": "silent"
+            "label": "Datatracker",
+            "onAutoForward": "ignore"
         }
     },
     

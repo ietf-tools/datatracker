@@ -36,7 +36,7 @@
 {% else %}{# TODO: We need a card image for individual I-Ds. #}
 <meta property="article:section" content="Individual Internet-Draft">
 {% endif %}
-{% for author in doc.documentauthor_set.all %}<meta property="article:author" content="{{ author.person.name}}">
-{% endfor %}
+{% if doc.pk %}{% for author in doc.documentauthor_set.all %}<meta property="article:author" content="{{ author.person.name}}">
+{% endfor %}{% endif %}
 {% if published %}<meta property="article:published_time" content="{{ published.time|date:'Y-m-d' }}">{% endif %}
 {% if expires %}<meta property="article:expiration_time" content="{{ expires.time|date:'Y-m-d' }}">{% endif %}

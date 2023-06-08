@@ -32,7 +32,6 @@ docutils>=0.18.1    # Used only by dbtemplates for RestructuredText
 types-docutils>=0.18.1
 factory-boy>=3.2.1
 github3.py>=3.2.0
-google-i18n-address<3  # for xml2rfc
 gunicorn>=20.1.0
 hashids>=1.3.1
 html2text>=2020.1.16    # Used only to clean comment field of secr/sreq

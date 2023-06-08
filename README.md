@@ -18,6 +18,7 @@
 - [Changelog](https://github.com/ietf-tools/datatracker/releases)
 - [Contributing](https://github.com/ietf-tools/.github/blob/main/CONTRIBUTING.md)
 - [Getting Started](#getting-started) - *[ tl;dr ](#the-tldr-to-get-going)*
+    - [Creating a Fork](#creating-a-fork)
     - [Git Cloning Tips](#git-cloning-tips)
     - [Docker Dev Environment](docker/README.md)
 - [Database & Assets](#database--assets)
@@ -46,6 +47,12 @@ This project is following the standard **Git Feature Workflow** development mode
 > Make sure to read the [Styleguides](https://github.com/ietf-tools/.github/blob/main/CONTRIBUTING.md#styleguides) section to ensure a cohesive code format across the project.
 
 You can submit bug reports, enhancement and new feature requests in the [discussions](https://github.com/ietf-tools/datatracker/discussions) area. Accepted tickets will be converted to issues.
+
+#### Creating a Fork
+
+Click the <kbd>Fork</kbd> button in the top-right corner of the repository to create a personal copy that you can work on.
+
+> Note that some GitHub Actions might be enabled by default in your fork. You should disable them by going to **Settings** > **Actions** > **General** and selecting **Disable actions** (then Save).
 
 #### Git Cloning Tips
 
