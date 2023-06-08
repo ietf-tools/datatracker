@@ -12,6 +12,7 @@ import tempfile
 
 from collections import defaultdict
 from email import message_from_string, message_from_bytes
+from email.errors import HeaderParseError
 from email.header import decode_header
 from email.iterators import typed_subpart_iterator
 from email.utils import parseaddr
@@ -442,7 +443,11 @@ def make_nomineeposition_for_newperson(nomcom, candidate_name, candidate_email, 
 def getheader(header_text, default="utf-8"):
     """Decode the specified header"""
 
-    tuples = decode_header(header_text)
+    try:
+        tuples = decode_header(header_text)
+    except TypeError:
+        return ""
+
     header_sections = [ text.decode(charset or default) if isinstance(text, bytes) else text for text, charset in tuples]
     return "".join(header_sections)
 
@@ -491,6 +496,9 @@ def parse_email(text):
     body = get_body(msg)
     subject = getheader(msg['Subject'])
     __, addr = parseaddr(msg['From'])
+    if not addr:
+        raise HeaderParseError
+
     return addr.lower(), subject, body
 
 
