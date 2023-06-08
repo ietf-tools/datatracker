@@ -224,7 +224,6 @@ def _get_materials_doc(meeting, name):
     raise Document.DoesNotExist
 
 
-@cache_page(1 * 60)
 def materials_document(request, document, num=None, ext=None):
     meeting=get_meeting(num,type_in=['ietf','interim'])
     num = meeting.number
