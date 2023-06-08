@@ -17,4 +17,7 @@ COPY requirements.txt /tmp/pip-tmp/
 RUN pip3 --disable-pip-version-check --no-cache-dir install -r /tmp/pip-tmp/requirements.txt
 RUN rm -rf /tmp/pip-tmp
 
+# Add watchmedo utility for dev containers
+RUN pip3 --disable-pip-version-check --no-cache-dir install watchdog[watchmedo]
+
 ENTRYPOINT [ "/docker-init.sh" ]

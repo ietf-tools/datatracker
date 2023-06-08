@@ -74,6 +74,7 @@ services:
             CELERY_APP: ietf
             CELERY_ROLE: worker
             UPDATE_REQUIREMENTS_FROM: requirements.txt
+            DEV_MODE: yes
         command:
             - '--loglevel=INFO'
         depends_on:
