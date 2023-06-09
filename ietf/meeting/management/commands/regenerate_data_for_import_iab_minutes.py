@@ -3,58 +3,60 @@
 import datetime
 import json
 
-from collections import defaultdict 
+from collections import defaultdict
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
 from django.core.management.base import BaseCommand
 
-class Command(BaseCommand):
 
+class Command(BaseCommand):
     help = "Regenerates the json used by import_iab_minutes"
 
     def handle(self, *args, **options):
         ntby = build_nametimes_by_year()
-        with Path(__file__).parent.joinpath("data_for_import_iab_minutes").open("w") as file:
+        with Path(__file__).parent.joinpath("data_for_import_iab_minutes").open(
+            "w"
+        ) as file:
             file.write(json.dumps(ntby, sort_keys=True))
 
+
 def make_time_tuple(date, start_hour, start_minute, end_hour, end_minute, tz):
-    start = datetime.datetime(date.year, date.month, date.day, start_hour, start_minute, tzinfo=ZoneInfo(tz)).astimezone(datetime.timezone.utc)
-    end = datetime.datetime(date.year, date.month, date.day, end_hour, end_minute, tzinfo=ZoneInfo(tz)).astimezone(datetime.timezone.utc)
-    return (
-        (
-            start.hour,
-            start.minute,
-            (end-start).seconds
-        )
-    )
+    start = datetime.datetime(
+        date.year, date.month, date.day, start_hour, start_minute, tzinfo=ZoneInfo(tz)
+    ).astimezone(datetime.timezone.utc)
+    end = datetime.datetime(
+        date.year, date.month, date.day, end_hour, end_minute, tzinfo=ZoneInfo(tz)
+    ).astimezone(datetime.timezone.utc)
+    return (start.hour, start.minute, (end - start).seconds)
+
 
 def get_time(name):
     """
-        From Cindy:
-        2011-04-06 (and likely earlier) - 2013-02-27: 0930-1100 PST8PDT
-        2013-03-27 - 2015-04-08: 0700-0830 PST8PDT
-        2015-04-15 - 2016-03-23: 0800-0930 PST8PDT
-        2016-04-20 - 2016-11-02: 0700-0830 PST8PDT
-        2016-11-20 - 2019-03-13: 2000-2130 UTC
-        2019-04-10 - 2019-10-02: 1330-1430 UTC
-        2019-10-16 - 2020-03-18: 2130-2230 UTC
-        2020-04-01 - 2020-10-14: 1330-1430 UTC
-        2020-10-21 - 2021-03-03: 2130-2230 UTC
-        2021-03-24 - Present: 0700-0800 PST8PDT
+    From Cindy:
+    2011-04-06 (and likely earlier) - 2013-02-27: 0930-1100 PST8PDT
+    2013-03-27 - 2015-04-08: 0700-0830 PST8PDT
+    2015-04-15 - 2016-03-23: 0800-0930 PST8PDT
+    2016-04-20 - 2016-11-02: 0700-0830 PST8PDT
+    2016-11-20 - 2019-03-13: 2000-2130 UTC
+    2019-04-10 - 2019-10-02: 1330-1430 UTC
+    2019-10-16 - 2020-03-18: 2130-2230 UTC
+    2020-04-01 - 2020-10-14: 1330-1430 UTC
+    2020-10-21 - 2021-03-03: 2130-2230 UTC
+    2021-03-24 - Present: 0700-0800 PST8PDT
     """
     date_string = name.split(".")[0]
-    date = datetime.date(*map(int,date_string.split("-")))
+    date = datetime.date(*map(int, date_string.split("-")))
     times = None
-    if datetime.date(2011,4,6) <= date <= datetime.date(2013,2,27):
+    if datetime.date(2011, 4, 6) <= date <= datetime.date(2013, 2, 27):
         times = make_time_tuple(date, 9, 30, 11, 0, "PST8PDT")
-    elif datetime.date(2013,3,27) <= date <= datetime.date(2015,4,8):
+    elif datetime.date(2013, 3, 27) <= date <= datetime.date(2015, 4, 8):
         times = make_time_tuple(date, 7, 0, 8, 30, "PST8PDT")
-    elif datetime.date(2015,4,15) <= date <= datetime.date(2016,3,23):
+    elif datetime.date(2015, 4, 15) <= date <= datetime.date(2016, 3, 23):
         times = make_time_tuple(date, 8, 0, 9, 30, "PST8PDT")
-    elif datetime.date(2016,11,20) <= date <= datetime.date(2019,3,13):
+    elif datetime.date(2016, 11, 20) <= date <= datetime.date(2019, 3, 13):
         times = make_time_tuple(date, 20, 0, 21, 30, "UTC")
-    elif datetime.date(2019, 4, 10) <= date <= datetime.date(2019,10,2):
+    elif datetime.date(2019, 4, 10) <= date <= datetime.date(2019, 10, 2):
         times = make_time_tuple(date, 13, 30, 14, 30, "UTC")
     elif datetime.date(2019, 10, 16) <= date <= datetime.date(2020, 3, 18):
         times = make_time_tuple(date, 21, 30, 22, 30, "UTC")
@@ -62,14 +64,11 @@ def get_time(name):
         times = make_time_tuple(date, 13, 30, 14, 30, "UTC")
     elif datetime.date(2020, 10, 21) <= date <= datetime.date(2021, 3, 3):
         times = make_time_tuple(date, 21, 30, 22, 30, "UTC")
-    elif datetime.date(2021, 3, 24) <= date :
+    elif datetime.date(2021, 3, 24) <= date:
         times = make_time_tuple(date, 7, 0, 8, 0, "PST8PDT")
     else:
         times = make_time_tuple(date, 12, 0, 12, 5, "UTC")
     return times
-
-
-
 
 
 def build_nametimes_by_year():
@@ -864,9 +863,10 @@ def build_nametimes_by_year():
 
     nametimes_by_year = defaultdict(list)
     for name in sorted(scraped_basenames):
-        date, ext = name.split('.')
-        year, month, day = map(int,date.split("-"))
+        date, ext = name.split(".")
+        year, month, day = map(int, date.split("-"))
         start_hour, start_minute, duration = get_time(name)
-        nametimes_by_year[year].append( (month, day, ext, start_hour, start_minute, duration) )
+        nametimes_by_year[year].append(
+            (month, day, ext, start_hour, start_minute, duration)
+        )
     return nametimes_by_year
-
