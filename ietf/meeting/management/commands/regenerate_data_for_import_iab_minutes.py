@@ -4,7 +4,7 @@ import datetime
 import json
 
 from collections import defaultdict 
-from pathlib import PurePath
+from pathlib import Path
 from zoneinfo import ZoneInfo
 
 from django.core.management.base import BaseCommand
@@ -15,7 +15,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         ntby = build_nametimes_by_year()
-        with open(PurePath(__file__).parent.joinpath("data_for_import_iab_minutes"),"w") as file:
+        with Path(__file__).parent.joinpath("data_for_import_iab_minutes").open("w") as file:
             file.write(json.dumps(ntby, sort_keys=True))
 
 def make_time_tuple(date, start_hour, start_minute, end_hour, end_minute, tz):

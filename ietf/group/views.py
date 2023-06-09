@@ -828,13 +828,13 @@ def email_aliases(request, acronym=None, group_type=None):
 
     return render(request,'group/email_aliases.html',{'aliases':aliases,'ietf_domain':settings.IETF_DOMAIN,'group':group})
 
-def meetings(request, acronym=None, group_type=None):
-    group = get_group_or_404(acronym,group_type) if acronym else None
+def meetings(request, acronym, group_type=None):
+    group = get_group_or_404(acronym,group_type)
 
     four_years_ago = timezone.now()-datetime.timedelta(days=4*365)
 
     sessions = group.session_set.with_current_status().filter(
-        meeting__date__gt=four_years_ago if not group.acronym == 'iab' else datetime.date(1970,1,1),
+        meeting__date__gt=four_years_ago if group.acronym != 'iab' else datetime.date(1970,1,1),
         type__in=['regular','plenary','other']
     ).filter(
         current_status__in=['sched','schedw','appr','canceled'],

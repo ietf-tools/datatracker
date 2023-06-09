@@ -7,7 +7,7 @@ import shutil
 import subprocess
 import tempfile
 
-from pathlib import PurePath, Path
+from pathlib import Path
 from django.conf import settings
 from django.core.management.base import BaseCommand
 
@@ -15,7 +15,7 @@ from ietf.doc.models import Document, DocAlias, DocEvent
 from ietf.meeting.models import Meeting, Schedule, Session, SchedulingEvent, SchedTimeSessAssignment, TimeSlot
 
 def nametimes_by_year():
-    with open(PurePath(__file__).parent.joinpath("data_for_import_iab_minutes"),"r") as file:
+    with Path(__file__).parent.joinpath("data_for_import_iab_minutes").open() as file:
         return json.loads(file.read())
 class Command(BaseCommand):
 
