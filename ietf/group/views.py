@@ -83,7 +83,7 @@ from ietf.group.utils import (get_charter_text, can_manage_all_groups_of_type,
 from ietf.ietfauth.utils import has_role, is_authorized_in_group
 from ietf.mailtrigger.utils import gather_relevant_expansions
 from ietf.meeting.helpers import get_meeting
-from ietf.meeting.utils import group_sessions, add_event_info_to_session_qs
+from ietf.meeting.utils import group_sessions
 from ietf.name.models import GroupTypeName, StreamName
 from ietf.person.models import Email, Person
 from ietf.review.models import (ReviewRequest, ReviewAssignment, ReviewerSettings, 
@@ -828,18 +828,22 @@ def email_aliases(request, acronym=None, group_type=None):
 
     return render(request,'group/email_aliases.html',{'aliases':aliases,'ietf_domain':settings.IETF_DOMAIN,'group':group})
 
-def meetings(request, acronym=None, group_type=None):
-    group = get_group_or_404(acronym,group_type) if acronym else None
+def meetings(request, acronym, group_type=None):
+    group = get_group_or_404(acronym, group_type)
 
-    four_years_ago = timezone.now()-datetime.timedelta(days=4*365)
+    four_years_ago = timezone.now() - datetime.timedelta(days=4 * 365)
 
-    sessions = add_event_info_to_session_qs(
-        group.session_set.filter(
-            meeting__date__gt=four_years_ago,
-            type__in=['regular','plenary','other']
+    sessions = (
+        group.session_set.with_current_status()
+        .filter(
+            meeting__date__gt=four_years_ago
+            if group.acronym != "iab"
+            else datetime.date(1970, 1, 1),
+            type__in=["regular", "plenary", "other"],
         )
-    ).filter(
-        current_status__in=['sched','schedw','appr','canceled'],
+        .filter(
+            current_status__in=["sched", "schedw", "appr", "canceled"],
+        )
     )
     sessions = list(sessions)
     for s in sessions:
@@ -847,19 +851,40 @@ def meetings(request, acronym=None, group_type=None):
 
     future, in_progress, recent, past = group_sessions(sessions)
 
-    can_edit = group.has_role(request.user,group.features.groupman_roles)
-    can_always_edit = has_role(request.user,["Secretariat","Area Director"])
+    can_edit = group.has_role(request.user, group.features.groupman_roles)
+    can_always_edit = has_role(request.user, ["Secretariat", "Area Director"])
 
-    return render(request,'group/meetings.html',
-                  construct_group_menu_context(request, group, "meetings", group_type, {
-                     'group':group,
-                     'future':future,
-                     'in_progress':in_progress,
-                     'recent':recent,
-                     'past':past,
-                     'can_edit':can_edit,
-                     'can_always_edit':can_always_edit,
-                  }))
+    far_past = []
+    if group.acronym == "iab":
+        recent_past = []
+        for s in past:
+            if s.time >= four_years_ago:
+                recent_past.append(s)
+            else:
+                far_past.append(s)
+        past = recent_past
+
+    return render(
+        request,
+        "group/meetings.html",
+        construct_group_menu_context(
+            request,
+            group,
+            "meetings",
+            group_type,
+            {
+                "group": group,
+                "future": future,
+                "in_progress": in_progress,
+                "recent": recent,
+                "past": past,
+                "far_past": far_past,
+                "can_edit": can_edit,
+                "can_always_edit": can_always_edit,
+            },
+        ),
+    )
+
 
 def chair_photos(request, group_type=None):
     roles = sorted(Role.objects.filter(group__type=group_type, group__state='active', name_id='chair'),key=lambda x: x.person.last_name()+x.person.name+x.group.acronym)
