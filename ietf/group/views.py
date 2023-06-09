@@ -83,7 +83,7 @@ from ietf.group.utils import (get_charter_text, can_manage_all_groups_of_type,
 from ietf.ietfauth.utils import has_role, is_authorized_in_group
 from ietf.mailtrigger.utils import gather_relevant_expansions
 from ietf.meeting.helpers import get_meeting
-from ietf.meeting.utils import group_sessions, add_event_info_to_session_qs
+from ietf.meeting.utils import group_sessions
 from ietf.name.models import GroupTypeName, StreamName
 from ietf.person.models import Email, Person
 from ietf.review.models import (ReviewRequest, ReviewAssignment, ReviewerSettings, 
