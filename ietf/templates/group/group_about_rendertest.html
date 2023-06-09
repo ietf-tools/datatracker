@@ -40,15 +40,15 @@
 {% block js %}
     <script>
         $(document).ready(function() {
-            $('input[name=widthconstraint]').trigger("change", function() {
+            $('input[name=widthconstraint]').on("change", function() {
                 if ($(this).is(':checked')) {
                     $('.rightcontent').css('max-width','700px')
                 } else {
                     $('.rightcontent').css('max-width','')
                 }
             });
-            $('input[name=widthconstraint').prop('checked', true);
-            $('.rightcontent').css('max-width','700px')
+            $('input[name=widthconstraint').prop('checked', false);
+            $('.rightcontent').css('max-width','')
         });
     </script>
 {% endblock %}
