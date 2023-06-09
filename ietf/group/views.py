@@ -848,6 +848,17 @@ def meetings(request, acronym=None, group_type=None):
     can_edit = group.has_role(request.user,group.features.groupman_roles)
     can_always_edit = has_role(request.user,["Secretariat","Area Director"])
 
+    if group.acronym == "iab":
+        recent_past = []
+        far_past = []
+        for s in past:
+            if s.time >= four_years_ago:
+                recent_past.append(s)
+            else:
+                far_past.append(s)
+        past = recent_past
+
+
     return render(request,'group/meetings.html',
                   construct_group_menu_context(request, group, "meetings", group_type, {
                      'group':group,
@@ -855,6 +866,7 @@ def meetings(request, acronym=None, group_type=None):
                      'in_progress':in_progress,
                      'recent':recent,
                      'past':past,
+                     'far_past':far_past,
                      'can_edit':can_edit,
                      'can_always_edit':can_always_edit,
                   }))
