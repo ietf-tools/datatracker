@@ -848,9 +848,9 @@ def meetings(request, acronym=None, group_type=None):
     can_edit = group.has_role(request.user,group.features.groupman_roles)
     can_always_edit = has_role(request.user,["Secretariat","Area Director"])
 
+    far_past = []
     if group.acronym == "iab":
         recent_past = []
-        far_past = []
         for s in past:
             if s.time >= four_years_ago:
                 recent_past.append(s)
