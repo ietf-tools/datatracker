@@ -644,7 +644,7 @@ class DocumentInfo(models.Model):
                     stylesheets=stylesheets,
                     font_config=font_config,
                     presentational_hints=True,
-                    optimize_size=("fonts", "images"),
+                    optimize_images=True,
                 )
             except AssertionError:
                 pdf = None

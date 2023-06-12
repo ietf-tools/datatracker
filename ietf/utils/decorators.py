@@ -91,7 +91,7 @@ def require_api_key(f):
 
 
 def _memoize(func, self, *args, **kwargs):
-    ''''Memoize wrapper for instance methouds.  Use @lru_cache for functions.'''
+    '''Memoize wrapper for instance methods.  Use @lru_cache for functions.'''
     if kwargs:  # frozenset is used to ensure hashability
         key = args, frozenset(list(kwargs.items()))
     else:

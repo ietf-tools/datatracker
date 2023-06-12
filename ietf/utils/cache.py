@@ -1,7 +1,7 @@
 # Copyright The IETF Trust 2023, All Rights Reserved
 # -*- coding: utf-8 -*-
 
-from django.core.cache.backends.memcached import PyMemcacheCache
+from django.core.cache.backends.memcached import PyMemcacheCache, DEFAULT_TIMEOUT
 from pymemcache.exceptions import MemcacheServerError
 
 from .log import log
@@ -9,7 +9,7 @@ from .log import log
 
 class LenientMemcacheCache(PyMemcacheCache):
     """PyMemcacheCache backend that tolerates failed inserts due to object size"""
-    def set(self, key, value, timeout=None, version=None):
+    def set(self, key, value, timeout=DEFAULT_TIMEOUT, version=None):
         try:
             super().set(key, value, timeout, version)
         except MemcacheServerError as err:
