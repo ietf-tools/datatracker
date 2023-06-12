@@ -1,7 +1,8 @@
 # Copyright The IETF Trust 2023, All Rights Reserved
 # -*- coding: utf-8 -*-
 
-from django.core.cache.backends.memcached import PyMemcacheCache, DEFAULT_TIMEOUT
+from django.core.cache.backends.base import DEFAULT_TIMEOUT
+from django.core.cache.backends.memcached import PyMemcacheCache
 from pymemcache.exceptions import MemcacheServerError
 
 from .log import log
