@@ -857,11 +857,7 @@ class Document(DocumentInfo):
                 if a:
                     name = a.name
             elif self.type_id == "charter":
-                from ietf.doc.utils_charter import charter_name_for_group # Imported locally to avoid circular imports
-                try:
-                    name = charter_name_for_group(self.chartered_group)
-                except Group.DoesNotExist:
-                    pass
+                raise RuntimeError("Don't call this!!")
             self._canonical_name = name
         return self._canonical_name
 

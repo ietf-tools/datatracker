@@ -3,10 +3,8 @@
 
 
 # Python imports
-from pathlib import Path
 
 # Django imports
-from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 
 # Datatracker imports
