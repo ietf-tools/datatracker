@@ -835,30 +835,36 @@ def approve(request, name):
 def charter_with_milestones_txt(request, name, rev):
     charter = get_object_or_404(Document, type="charter", docalias__name=name)
 
-    revision_event = charter.latest_event(NewRevisionDocEvent, type="new_revision", rev=rev)
+    revision_event = charter.latest_event(
+        NewRevisionDocEvent, type="new_revision", rev=rev
+    )
     if not revision_event:
         return HttpResponseNotFound("Revision %s not found in database" % rev)
 
     # read charter text
     c = find_history_active_at(charter, revision_event.time) or charter
-    filename = '%s-%s.txt' % (c.canonical_name(), rev)
+    filename = "%s-%s.txt" % (c.canonical_name(), rev)
 
     charter_text = ""
 
     try:
-        with io.open(os.path.join(settings.CHARTER_PATH, filename), 'r') as f:
-            charter_text = force_str(f.read(), errors='ignore')
+        with io.open(os.path.join(settings.CHARTER_PATH, filename), "r") as f:
+            charter_text = force_str(f.read(), errors="ignore")
     except IOError:
         charter_text = "Error reading charter text %s" % filename
 
     milestones = historic_milestones_for_charter(charter, rev)
 
     # wrap the output nicely
-    wrapper = textwrap.TextWrapper(initial_indent="", subsequent_indent=" " * 11, width=80, break_long_words=False)
+    wrapper = textwrap.TextWrapper(
+        initial_indent="", subsequent_indent=" " * 11, width=80, break_long_words=False
+    )
     for m in milestones:
         m.desc_filled = wrapper.fill(m.desc)
 
-    return render(request, 'doc/charter/charter_with_milestones.txt',
-                  dict(charter_text=charter_text,
-                       milestones=milestones),
-                  content_type="text/plain; charset=%s"%settings.DEFAULT_CHARSET)
+    return render(
+        request,
+        "doc/charter/charter_with_milestones.txt",
+        dict(charter_text=charter_text, milestones=milestones),
+        content_type="text/plain; charset=%s" % settings.DEFAULT_CHARSET,
+    )
