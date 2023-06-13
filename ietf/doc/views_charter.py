@@ -508,7 +508,7 @@ class ReviewAnnouncementTextForm(forms.Form):
         return self.cleaned_data["announcement_text"].replace("\r", "")
 
 
-@role_required('Area Director','Secretariat')
+@role_required("Area Director", "Secretariat")
 def review_announcement_text(request, name):
     """Editing of review announcement text"""
     charter = get_object_or_404(Document, type="charter", name=name)
@@ -517,7 +517,9 @@ def review_announcement_text(request, name):
     by = request.user.person
 
     existing = charter.latest_event(WriteupDocEvent, type="changed_review_announcement")
-    existing_new_work = charter.latest_event(WriteupDocEvent, type="changed_new_work_text")
+    existing_new_work = charter.latest_event(
+        WriteupDocEvent, type="changed_new_work_text"
+    )
 
     if not existing:
         (existing, existing_new_work) = default_review_text(group, charter, by)
@@ -530,19 +532,23 @@ def review_announcement_text(request, name):
         existing_new_work.by = by
         existing_new_work.type = "changed_new_work_text"
         existing_new_work.desc = "%s review text was changed" % group.type.name
-        existing_new_work.text = derive_new_work_text(existing.text,group)
+        existing_new_work.text = derive_new_work_text(existing.text, group)
         existing_new_work.time = timezone.now()
 
-    form = ReviewAnnouncementTextForm(initial=dict(announcement_text=escape(existing.text),new_work_text=escape(existing_new_work.text)))
+    form = ReviewAnnouncementTextForm(
+        initial=dict(
+            announcement_text=escape(existing.text),
+            new_work_text=escape(existing_new_work.text),
+        )
+    )
 
-    if request.method == 'POST':
+    if request.method == "POST":
         form = ReviewAnnouncementTextForm(request.POST)
         if "save_text" in request.POST and form.is_valid():
-
             now = timezone.now()
             events = []
 
-            t = form.cleaned_data['announcement_text']
+            t = form.cleaned_data["announcement_text"]
             if t != existing.text:
                 e = WriteupDocEvent(doc=charter, rev=charter.rev)
                 e.by = by
@@ -556,11 +562,11 @@ def review_announcement_text(request, name):
                 existing.save()
                 events.append(existing)
 
-            t = form.cleaned_data['new_work_text']
+            t = form.cleaned_data["new_work_text"]
             if t != existing_new_work.text:
                 e = WriteupDocEvent(doc=charter, rev=charter.rev)
                 e.by = by
-                e.type = "changed_new_work_text" 
+                e.type = "changed_new_work_text"
                 e.desc = "%s new work message text was changed" % (group.type.name)
                 e.text = t
                 e.time = now
@@ -573,31 +579,69 @@ def review_announcement_text(request, name):
                 charter.save_with_history(events)
 
             if request.GET.get("next", "") == "approve":
-                return redirect('ietf.doc.views_charter.approve', name=charter.canonical_name())
+                return redirect(
+                    "ietf.doc.views_charter.approve", name=charter.canonical_name()
+                )
 
-            return redirect('ietf.doc.views_doc.document_writeup', name=charter.canonical_name())
+            return redirect(
+                "ietf.doc.views_doc.document_writeup", name=charter.canonical_name()
+            )
 
         if "regenerate_text" in request.POST:
             (existing, existing_new_work) = default_review_text(group, charter, by)
             existing.save()
             existing_new_work.save()
-            form = ReviewAnnouncementTextForm(initial=dict(announcement_text=escape(existing.text),
-                                                           new_work_text=escape(existing_new_work.text)))
+            form = ReviewAnnouncementTextForm(
+                initial=dict(
+                    announcement_text=escape(existing.text),
+                    new_work_text=escape(existing_new_work.text),
+                )
+            )
 
-        if any(x in request.POST for x in ['send_annc_only','send_nw_only','send_both']) and form.is_valid():
-            if any(x in request.POST for x in ['send_annc_only','send_both']):
-                parsed_msg = send_mail_preformatted(request, form.cleaned_data['announcement_text'])
-                messages.success(request, "The email To: '%s' with Subject: '%s' has been sent." % (parsed_msg["To"],parsed_msg["Subject"],))
-            if any(x in request.POST for x in ['send_nw_only','send_both']):
-                parsed_msg = send_mail_preformatted(request, form.cleaned_data['new_work_text'])
-                messages.success(request, "The email To: '%s' with Subject: '%s' has been sent." % (parsed_msg["To"],parsed_msg["Subject"],))
-            return redirect('ietf.doc.views_doc.document_writeup', name=charter.name)
+        if (
+            any(
+                x in request.POST
+                for x in ["send_annc_only", "send_nw_only", "send_both"]
+            )
+            and form.is_valid()
+        ):
+            if any(x in request.POST for x in ["send_annc_only", "send_both"]):
+                parsed_msg = send_mail_preformatted(
+                    request, form.cleaned_data["announcement_text"]
+                )
+                messages.success(
+                    request,
+                    "The email To: '%s' with Subject: '%s' has been sent."
+                    % (
+                        parsed_msg["To"],
+                        parsed_msg["Subject"],
+                    ),
+                )
+            if any(x in request.POST for x in ["send_nw_only", "send_both"]):
+                parsed_msg = send_mail_preformatted(
+                    request, form.cleaned_data["new_work_text"]
+                )
+                messages.success(
+                    request,
+                    "The email To: '%s' with Subject: '%s' has been sent."
+                    % (
+                        parsed_msg["To"],
+                        parsed_msg["Subject"],
+                    ),
+                )
+            return redirect("ietf.doc.views_doc.document_writeup", name=charter.name)
 
-    return render(request, 'doc/charter/review_announcement_text.html',
-                  dict(charter=charter,
-                       back_url=urlreverse('ietf.doc.views_doc.document_writeup', kwargs=dict(name=charter.name)),
-                       announcement_text_form=form,
-                  ))
+    return render(
+        request,
+        "doc/charter/review_announcement_text.html",
+        dict(
+            charter=charter,
+            back_url=urlreverse(
+                "ietf.doc.views_doc.document_writeup", kwargs=dict(name=charter.name)
+            ),
+            announcement_text_form=form,
+        ),
+    )
 
 @role_required('Area Director','Secretariat')
 def action_announcement_text(request, name):
