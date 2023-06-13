@@ -166,6 +166,7 @@ def fill_in_charter_info(group, include_drafts=False):
         group.charter_text = get_charter_text(group)
     else:
         group.charter_text = "Not chartered yet."
+    group.charter_html = markdown.markdown(group.charter_text)
 
 def extract_last_name(role):
     return role.person.name_parts()[3]
