@@ -172,6 +172,12 @@ def command_line_safe_secret(secret):
     return base64.encodebytes(secret).decode('utf-8').rstrip()
 
 def retrieve_nomcom_private_key(request, year):
+    """Retrieve decrypted nomcom private key from the session store
+
+    Retrieves encrypted, ascii-armored private key from the session store, encodes 
+    as utf8 bytes, then decrypts. Raises UnicodeError if the value in the session
+    store cannot be encoded as utf8.
+    """
     private_key = request.session.get('NOMCOM_PRIVATE_KEY_%s' % year, None)
 
     if not private_key:
@@ -183,7 +189,8 @@ def retrieve_nomcom_private_key(request, year):
             settings.OPENSSL_COMMAND,
             command_line_safe_secret(settings.NOMCOM_APP_SECRET)
         ),
-        private_key
+        # The openssl command expects ascii-armored input, so utf8 encoding should be valid
+        private_key.encode("utf8")
     )
     if code != 0:
         log("openssl error: %s:\n  Error %s: %s" %(command, code, error))        
@@ -191,6 +198,12 @@ def retrieve_nomcom_private_key(request, year):
 
 
 def store_nomcom_private_key(request, year, private_key):
+    """Put encrypted nomcom private key in the session store
+    
+    Encrypts the private key using openssl, then decodes the ascii-armored output
+    as utf8 and adds to the session store. Raises UnicodeError if the openssl's
+    output cannot be decoded as utf8.
+    """
     if not private_key:
         request.session['NOMCOM_PRIVATE_KEY_%s' % year] = ''
     else:
@@ -205,8 +218,9 @@ def store_nomcom_private_key(request, year, private_key):
         if code != 0:
             log("openssl error: %s:\n  Error %s: %s" %(command, code, error))        
         if error and error!=b"*** WARNING : deprecated key derivation used.\nUsing -iter or -pbkdf2 would be better.\n":
-            out = ''
-        request.session['NOMCOM_PRIVATE_KEY_%s' % year] = out
+            out = b''
+        # The openssl command output in 'out' is an ascii-armored value, so should be utf8-decodable
+        request.session['NOMCOM_PRIVATE_KEY_%s' % year] = out.decode("utf8")
 
 
 def validate_private_key(key):

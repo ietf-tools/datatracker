@@ -34,15 +34,15 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
           "packageLocation": "./",\
           "packageDependencies": [\
             ["@faker-js/faker", "npm:8.0.1"],\
-            ["@fullcalendar/bootstrap5", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.7"],\
-            ["@fullcalendar/core", "npm:6.1.7"],\
-            ["@fullcalendar/daygrid", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.6"],\
-            ["@fullcalendar/icalendar", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.7"],\
-            ["@fullcalendar/interaction", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.7"],\
-            ["@fullcalendar/list", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.7"],\
-            ["@fullcalendar/luxon2", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.7"],\
-            ["@fullcalendar/timegrid", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.7"],\
-            ["@fullcalendar/vue3", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.7"],\
+            ["@fullcalendar/bootstrap5", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.8"],\
+            ["@fullcalendar/core", "npm:6.1.8"],\
+            ["@fullcalendar/daygrid", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.8"],\
+            ["@fullcalendar/icalendar", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.8"],\
+            ["@fullcalendar/interaction", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.8"],\
+            ["@fullcalendar/list", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.8"],\
+            ["@fullcalendar/luxon3", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.8"],\
+            ["@fullcalendar/timegrid", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.8"],\
+            ["@fullcalendar/vue3", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.8"],\
             ["@parcel/optimizer-data-url", "npm:2.8.3"],\
             ["@parcel/transformer-inline-string", "npm:2.8.3"],\
             ["@parcel/transformer-sass", "npm:2.8.3"],\
@@ -50,7 +50,7 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["@rollup/pluginutils", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:5.0.2"],\
             ["@twuni/emojify", "npm:1.0.2"],\
             ["@vitejs/plugin-vue", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:4.2.1"],\
-            ["bootstrap", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:5.2.3"],\
+            ["bootstrap", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:5.3.0"],\
             ["bootstrap-icons", "npm:1.10.5"],\
             ["browser-fs-access", "npm:0.33.1"],\
             ["browserlist", "npm:1.0.1"],\
@@ -502,18 +502,18 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
         }]\
       ]],\
       ["@fullcalendar/bootstrap5", [\
-        ["npm:6.1.7", {\
-          "packageLocation": "./.yarn/cache/@fullcalendar-bootstrap5-npm-6.1.7-6c442ff939-25783fec80.zip/node_modules/@fullcalendar/bootstrap5/",\
+        ["npm:6.1.8", {\
+          "packageLocation": "./.yarn/cache/@fullcalendar-bootstrap5-npm-6.1.8-bbeae5dafc-c78ef0d62e.zip/node_modules/@fullcalendar/bootstrap5/",\
           "packageDependencies": [\
-            ["@fullcalendar/bootstrap5", "npm:6.1.7"]\
+            ["@fullcalendar/bootstrap5", "npm:6.1.8"]\
           ],\
           "linkType": "SOFT"\
         }],\
-        ["virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.7", {\
-          "packageLocation": "./.yarn/__virtual__/@fullcalendar-bootstrap5-virtual-d641a1c9f9/0/cache/@fullcalendar-bootstrap5-npm-6.1.7-6c442ff939-25783fec80.zip/node_modules/@fullcalendar/bootstrap5/",\
+        ["virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.8", {\
+          "packageLocation": "./.yarn/__virtual__/@fullcalendar-bootstrap5-virtual-d0fea3107b/0/cache/@fullcalendar-bootstrap5-npm-6.1.8-bbeae5dafc-c78ef0d62e.zip/node_modules/@fullcalendar/bootstrap5/",\
           "packageDependencies": [\
-            ["@fullcalendar/bootstrap5", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.7"],\
-            ["@fullcalendar/core", "npm:6.1.7"],\
+            ["@fullcalendar/bootstrap5", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.8"],\
+            ["@fullcalendar/core", "npm:6.1.8"],\
             ["@types/fullcalendar__core", null]\
           ],\
           "packagePeers": [\
@@ -524,48 +524,28 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
         }]\
       ]],\
       ["@fullcalendar/core", [\
-        ["npm:6.1.7", {\
-          "packageLocation": "./.yarn/cache/@fullcalendar-core-npm-6.1.7-f021bcbbf8-d42f0f069b.zip/node_modules/@fullcalendar/core/",\
+        ["npm:6.1.8", {\
+          "packageLocation": "./.yarn/cache/@fullcalendar-core-npm-6.1.8-da04efa804-66c13078c9.zip/node_modules/@fullcalendar/core/",\
           "packageDependencies": [\
-            ["@fullcalendar/core", "npm:6.1.7"],\
+            ["@fullcalendar/core", "npm:6.1.8"],\
             ["preact", "npm:10.12.1"]\
           ],\
           "linkType": "HARD"\
         }]\
       ]],\
       ["@fullcalendar/daygrid", [\
-        ["npm:6.1.6", {\
-          "packageLocation": "./.yarn/cache/@fullcalendar-daygrid-npm-6.1.6-13b72a08b0-e7b60e359b.zip/node_modules/@fullcalendar/daygrid/",\
+        ["npm:6.1.8", {\
+          "packageLocation": "./.yarn/cache/@fullcalendar-daygrid-npm-6.1.8-3f45184389-a99441c81d.zip/node_modules/@fullcalendar/daygrid/",\
           "packageDependencies": [\
-            ["@fullcalendar/daygrid", "npm:6.1.6"]\
+            ["@fullcalendar/daygrid", "npm:6.1.8"]\
           ],\
           "linkType": "SOFT"\
         }],\
-        ["npm:6.1.7", {\
-          "packageLocation": "./.yarn/cache/@fullcalendar-daygrid-npm-6.1.7-bb16b58bd9-6f5e06d105.zip/node_modules/@fullcalendar/daygrid/",\
+        ["virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.8", {\
+          "packageLocation": "./.yarn/__virtual__/@fullcalendar-daygrid-virtual-77be6a5058/0/cache/@fullcalendar-daygrid-npm-6.1.8-3f45184389-a99441c81d.zip/node_modules/@fullcalendar/daygrid/",\
           "packageDependencies": [\
-            ["@fullcalendar/daygrid", "npm:6.1.7"]\
-          ],\
-          "linkType": "SOFT"\
-        }],\
-        ["virtual:4132da971e14ad1fe0fd08826ee5e453ecc047f5188755393fdd3a41ea53d3bda87f2afc98efffec56468b1f7ef290b0d7f888c8638abb2171593e375bb65ba1#npm:6.1.7", {\
-          "packageLocation": "./.yarn/__virtual__/@fullcalendar-daygrid-virtual-a258a3200c/0/cache/@fullcalendar-daygrid-npm-6.1.7-bb16b58bd9-6f5e06d105.zip/node_modules/@fullcalendar/daygrid/",\
-          "packageDependencies": [\
-            ["@fullcalendar/daygrid", "virtual:4132da971e14ad1fe0fd08826ee5e453ecc047f5188755393fdd3a41ea53d3bda87f2afc98efffec56468b1f7ef290b0d7f888c8638abb2171593e375bb65ba1#npm:6.1.7"],\
-            ["@fullcalendar/core", "npm:6.1.7"],\
-            ["@types/fullcalendar__core", null]\
-          ],\
-          "packagePeers": [\
-            "@fullcalendar/core",\
-            "@types/fullcalendar__core"\
-          ],\
-          "linkType": "HARD"\
-        }],\
-        ["virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.6", {\
-          "packageLocation": "./.yarn/__virtual__/@fullcalendar-daygrid-virtual-c806a244df/0/cache/@fullcalendar-daygrid-npm-6.1.6-13b72a08b0-e7b60e359b.zip/node_modules/@fullcalendar/daygrid/",\
-          "packageDependencies": [\
-            ["@fullcalendar/daygrid", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.6"],\
-            ["@fullcalendar/core", "npm:6.1.7"],\
+            ["@fullcalendar/daygrid", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.8"],\
+            ["@fullcalendar/core", "npm:6.1.8"],\
             ["@types/fullcalendar__core", null]\
           ],\
           "packagePeers": [\
@@ -576,18 +556,18 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
         }]\
       ]],\
       ["@fullcalendar/icalendar", [\
-        ["npm:6.1.7", {\
-          "packageLocation": "./.yarn/cache/@fullcalendar-icalendar-npm-6.1.7-87629ada23-de621be062.zip/node_modules/@fullcalendar/icalendar/",\
+        ["npm:6.1.8", {\
+          "packageLocation": "./.yarn/cache/@fullcalendar-icalendar-npm-6.1.8-bee329d052-f322ce54bb.zip/node_modules/@fullcalendar/icalendar/",\
           "packageDependencies": [\
-            ["@fullcalendar/icalendar", "npm:6.1.7"]\
+            ["@fullcalendar/icalendar", "npm:6.1.8"]\
           ],\
           "linkType": "SOFT"\
         }],\
-        ["virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.7", {\
-          "packageLocation": "./.yarn/__virtual__/@fullcalendar-icalendar-virtual-1bfdcc5d9c/0/cache/@fullcalendar-icalendar-npm-6.1.7-87629ada23-de621be062.zip/node_modules/@fullcalendar/icalendar/",\
+        ["virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.8", {\
+          "packageLocation": "./.yarn/__virtual__/@fullcalendar-icalendar-virtual-0660ccc07e/0/cache/@fullcalendar-icalendar-npm-6.1.8-bee329d052-f322ce54bb.zip/node_modules/@fullcalendar/icalendar/",\
           "packageDependencies": [\
-            ["@fullcalendar/icalendar", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.7"],\
-            ["@fullcalendar/core", "npm:6.1.7"],\
+            ["@fullcalendar/icalendar", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.8"],\
+            ["@fullcalendar/core", "npm:6.1.8"],\
             ["@types/fullcalendar__core", null],\
             ["@types/ical.js", null],\
             ["ical.js", "npm:1.5.0"]\
@@ -602,18 +582,18 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
         }]\
       ]],\
       ["@fullcalendar/interaction", [\
-        ["npm:6.1.7", {\
-          "packageLocation": "./.yarn/cache/@fullcalendar-interaction-npm-6.1.7-c7a3547608-ee72c9cbc2.zip/node_modules/@fullcalendar/interaction/",\
+        ["npm:6.1.8", {\
+          "packageLocation": "./.yarn/cache/@fullcalendar-interaction-npm-6.1.8-6c6b6987db-3ef0da6dca.zip/node_modules/@fullcalendar/interaction/",\
           "packageDependencies": [\
-            ["@fullcalendar/interaction", "npm:6.1.7"]\
+            ["@fullcalendar/interaction", "npm:6.1.8"]\
           ],\
           "linkType": "SOFT"\
         }],\
-        ["virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.7", {\
-          "packageLocation": "./.yarn/__virtual__/@fullcalendar-interaction-virtual-3563939498/0/cache/@fullcalendar-interaction-npm-6.1.7-c7a3547608-ee72c9cbc2.zip/node_modules/@fullcalendar/interaction/",\
+        ["virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.8", {\
+          "packageLocation": "./.yarn/__virtual__/@fullcalendar-interaction-virtual-39f9dba62d/0/cache/@fullcalendar-interaction-npm-6.1.8-6c6b6987db-3ef0da6dca.zip/node_modules/@fullcalendar/interaction/",\
           "packageDependencies": [\
-            ["@fullcalendar/interaction", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.7"],\
-            ["@fullcalendar/core", "npm:6.1.7"],\
+            ["@fullcalendar/interaction", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.8"],\
+            ["@fullcalendar/core", "npm:6.1.8"],\
             ["@types/fullcalendar__core", null]\
           ],\
           "packagePeers": [\
@@ -624,18 +604,18 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
         }]\
       ]],\
       ["@fullcalendar/list", [\
-        ["npm:6.1.7", {\
-          "packageLocation": "./.yarn/cache/@fullcalendar-list-npm-6.1.7-197e29fffe-a435caf918.zip/node_modules/@fullcalendar/list/",\
+        ["npm:6.1.8", {\
+          "packageLocation": "./.yarn/cache/@fullcalendar-list-npm-6.1.8-39b471f8da-b5c397040e.zip/node_modules/@fullcalendar/list/",\
           "packageDependencies": [\
-            ["@fullcalendar/list", "npm:6.1.7"]\
+            ["@fullcalendar/list", "npm:6.1.8"]\
           ],\
           "linkType": "SOFT"\
         }],\
-        ["virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.7", {\
-          "packageLocation": "./.yarn/__virtual__/@fullcalendar-list-virtual-83328d51c1/0/cache/@fullcalendar-list-npm-6.1.7-197e29fffe-a435caf918.zip/node_modules/@fullcalendar/list/",\
+        ["virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.8", {\
+          "packageLocation": "./.yarn/__virtual__/@fullcalendar-list-virtual-a4f877cc68/0/cache/@fullcalendar-list-npm-6.1.8-39b471f8da-b5c397040e.zip/node_modules/@fullcalendar/list/",\
           "packageDependencies": [\
-            ["@fullcalendar/list", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.7"],\
-            ["@fullcalendar/core", "npm:6.1.7"],\
+            ["@fullcalendar/list", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.8"],\
+            ["@fullcalendar/core", "npm:6.1.8"],\
             ["@types/fullcalendar__core", null]\
           ],\
           "packagePeers": [\
@@ -645,19 +625,19 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
           "linkType": "HARD"\
         }]\
       ]],\
-      ["@fullcalendar/luxon2", [\
-        ["npm:6.1.7", {\
-          "packageLocation": "./.yarn/cache/@fullcalendar-luxon2-npm-6.1.7-5de0c768c0-ddbf0075b3.zip/node_modules/@fullcalendar/luxon2/",\
+      ["@fullcalendar/luxon3", [\
+        ["npm:6.1.8", {\
+          "packageLocation": "./.yarn/cache/@fullcalendar-luxon3-npm-6.1.8-7f233a53e1-7e84200641.zip/node_modules/@fullcalendar/luxon3/",\
           "packageDependencies": [\
-            ["@fullcalendar/luxon2", "npm:6.1.7"]\
+            ["@fullcalendar/luxon3", "npm:6.1.8"]\
           ],\
           "linkType": "SOFT"\
         }],\
-        ["virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.7", {\
-          "packageLocation": "./.yarn/__virtual__/@fullcalendar-luxon2-virtual-66f46ee050/0/cache/@fullcalendar-luxon2-npm-6.1.7-5de0c768c0-ddbf0075b3.zip/node_modules/@fullcalendar/luxon2/",\
+        ["virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.8", {\
+          "packageLocation": "./.yarn/__virtual__/@fullcalendar-luxon3-virtual-3a7af6083c/0/cache/@fullcalendar-luxon3-npm-6.1.8-7f233a53e1-7e84200641.zip/node_modules/@fullcalendar/luxon3/",\
           "packageDependencies": [\
-            ["@fullcalendar/luxon2", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.7"],\
-            ["@fullcalendar/core", "npm:6.1.7"],\
+            ["@fullcalendar/luxon3", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.8"],\
+            ["@fullcalendar/core", "npm:6.1.8"],\
             ["@types/fullcalendar__core", null],\
             ["@types/luxon", null],\
             ["luxon", "npm:3.3.0"]\
@@ -672,19 +652,19 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
         }]\
       ]],\
       ["@fullcalendar/timegrid", [\
-        ["npm:6.1.7", {\
-          "packageLocation": "./.yarn/cache/@fullcalendar-timegrid-npm-6.1.7-02f357f08e-7455aa0391.zip/node_modules/@fullcalendar/timegrid/",\
+        ["npm:6.1.8", {\
+          "packageLocation": "./.yarn/cache/@fullcalendar-timegrid-npm-6.1.8-22d8c05e30-122786fd40.zip/node_modules/@fullcalendar/timegrid/",\
           "packageDependencies": [\
-            ["@fullcalendar/timegrid", "npm:6.1.7"]\
+            ["@fullcalendar/timegrid", "npm:6.1.8"]\
           ],\
           "linkType": "SOFT"\
         }],\
-        ["virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.7", {\
-          "packageLocation": "./.yarn/__virtual__/@fullcalendar-timegrid-virtual-4132da971e/0/cache/@fullcalendar-timegrid-npm-6.1.7-02f357f08e-7455aa0391.zip/node_modules/@fullcalendar/timegrid/",\
+        ["virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.8", {\
+          "packageLocation": "./.yarn/__virtual__/@fullcalendar-timegrid-virtual-768bdb99c1/0/cache/@fullcalendar-timegrid-npm-6.1.8-22d8c05e30-122786fd40.zip/node_modules/@fullcalendar/timegrid/",\
           "packageDependencies": [\
-            ["@fullcalendar/timegrid", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.7"],\
-            ["@fullcalendar/core", "npm:6.1.7"],\
-            ["@fullcalendar/daygrid", "virtual:4132da971e14ad1fe0fd08826ee5e453ecc047f5188755393fdd3a41ea53d3bda87f2afc98efffec56468b1f7ef290b0d7f888c8638abb2171593e375bb65ba1#npm:6.1.7"],\
+            ["@fullcalendar/timegrid", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.8"],\
+            ["@fullcalendar/core", "npm:6.1.8"],\
+            ["@fullcalendar/daygrid", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.8"],\
             ["@types/fullcalendar__core", null]\
           ],\
           "packagePeers": [\
@@ -695,18 +675,18 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
         }]\
       ]],\
       ["@fullcalendar/vue3", [\
-        ["npm:6.1.7", {\
-          "packageLocation": "./.yarn/cache/@fullcalendar-vue3-npm-6.1.7-82f4bfa1dd-da6ef3897e.zip/node_modules/@fullcalendar/vue3/",\
+        ["npm:6.1.8", {\
+          "packageLocation": "./.yarn/cache/@fullcalendar-vue3-npm-6.1.8-a4963d0029-cff81d98ae.zip/node_modules/@fullcalendar/vue3/",\
           "packageDependencies": [\
-            ["@fullcalendar/vue3", "npm:6.1.7"]\
+            ["@fullcalendar/vue3", "npm:6.1.8"]\
           ],\
           "linkType": "SOFT"\
         }],\
-        ["virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.7", {\
-          "packageLocation": "./.yarn/__virtual__/@fullcalendar-vue3-virtual-4929c05b77/0/cache/@fullcalendar-vue3-npm-6.1.7-82f4bfa1dd-da6ef3897e.zip/node_modules/@fullcalendar/vue3/",\
+        ["virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.8", {\
+          "packageLocation": "./.yarn/__virtual__/@fullcalendar-vue3-virtual-f86317f38e/0/cache/@fullcalendar-vue3-npm-6.1.8-a4963d0029-cff81d98ae.zip/node_modules/@fullcalendar/vue3/",\
           "packageDependencies": [\
-            ["@fullcalendar/vue3", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.7"],\
-            ["@fullcalendar/core", "npm:6.1.7"],\
+            ["@fullcalendar/vue3", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.8"],\
+            ["@fullcalendar/core", "npm:6.1.8"],\
             ["@types/fullcalendar__core", null],\
             ["@types/vue", null],\
             ["vue", "npm:3.2.47"]\
@@ -2960,10 +2940,10 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
           ],\
           "linkType": "SOFT"\
         }],\
-        ["npm:5.2.3", {\
-          "packageLocation": "./.yarn/cache/bootstrap-npm-5.2.3-7458283a23-0211805dec.zip/node_modules/bootstrap/",\
+        ["npm:5.3.0", {\
+          "packageLocation": "./.yarn/cache/bootstrap-npm-5.3.0-240c38a3b2-29a83cc8ca.zip/node_modules/bootstrap/",\
           "packageDependencies": [\
-            ["bootstrap", "npm:5.2.3"]\
+            ["bootstrap", "npm:5.3.0"]\
           ],\
           "linkType": "SOFT"\
         }],\
@@ -2980,10 +2960,10 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
           ],\
           "linkType": "HARD"\
         }],\
-        ["virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:5.2.3", {\
-          "packageLocation": "./.yarn/__virtual__/bootstrap-virtual-c4952ffff0/0/cache/bootstrap-npm-5.2.3-7458283a23-0211805dec.zip/node_modules/bootstrap/",\
+        ["virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:5.3.0", {\
+          "packageLocation": "./.yarn/__virtual__/bootstrap-virtual-3c63ba6f80/0/cache/bootstrap-npm-5.3.0-240c38a3b2-29a83cc8ca.zip/node_modules/bootstrap/",\
           "packageDependencies": [\
-            ["bootstrap", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:5.2.3"],\
+            ["bootstrap", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:5.3.0"],\
             ["@popperjs/core", "npm:2.11.7"],\
             ["@types/popperjs__core", null]\
           ],\
@@ -7732,15 +7712,15 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
           "packageDependencies": [\
             ["root-workspace-0b6124", "workspace:."],\
             ["@faker-js/faker", "npm:8.0.1"],\
-            ["@fullcalendar/bootstrap5", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.7"],\
-            ["@fullcalendar/core", "npm:6.1.7"],\
-            ["@fullcalendar/daygrid", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.6"],\
-            ["@fullcalendar/icalendar", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.7"],\
-            ["@fullcalendar/interaction", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.7"],\
-            ["@fullcalendar/list", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.7"],\
-            ["@fullcalendar/luxon2", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.7"],\
-            ["@fullcalendar/timegrid", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.7"],\
-            ["@fullcalendar/vue3", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.7"],\
+            ["@fullcalendar/bootstrap5", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.8"],\
+            ["@fullcalendar/core", "npm:6.1.8"],\
+            ["@fullcalendar/daygrid", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.8"],\
+            ["@fullcalendar/icalendar", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.8"],\
+            ["@fullcalendar/interaction", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.8"],\
+            ["@fullcalendar/list", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.8"],\
+            ["@fullcalendar/luxon3", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.8"],\
+            ["@fullcalendar/timegrid", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.8"],\
+            ["@fullcalendar/vue3", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.8"],\
             ["@parcel/optimizer-data-url", "npm:2.8.3"],\
             ["@parcel/transformer-inline-string", "npm:2.8.3"],\
             ["@parcel/transformer-sass", "npm:2.8.3"],\
@@ -7748,7 +7728,7 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["@rollup/pluginutils", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:5.0.2"],\
             ["@twuni/emojify", "npm:1.0.2"],\
             ["@vitejs/plugin-vue", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:4.2.1"],\
-            ["bootstrap", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:5.2.3"],\
+            ["bootstrap", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:5.3.0"],\
             ["bootstrap-icons", "npm:1.10.5"],\
             ["browser-fs-access", "npm:0.33.1"],\
             ["browserlist", "npm:1.0.1"],\

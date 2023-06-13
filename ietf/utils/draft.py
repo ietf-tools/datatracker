@@ -189,6 +189,46 @@ class Draft:
 
     def get_wordcount(self):
         raise NotImplementedError
+    
+    @staticmethod
+    def _construct_creation_date(year, month, day=None):
+        """Construct a date for the document
+        
+        Roughly follows RFC 7991 section 2.17, but only allows missing day and
+        assumes the 15th if day is not specified month/year are not current.
+        
+        year: integer or string with 4-digit year
+        month: integer or string with numeric or English month. Some abbreviations recognized.
+        day: integer or string with numeric day of month. Optional.
+        
+        Raises ValueError if there is a problem interpreting the data
+        """
+        year = int(year)
+        day = int(day)
+        if isinstance(month, str):
+            month = month.lower()
+            if month in month_names:
+                month = month_names.index(month) + 1
+            elif month in month_names_abbrev3:
+                month = month_names_abbrev3.index(month) + 1
+            elif month in month_names_abbrev4:
+                month = month_names_abbrev4.index(month) + 1
+            elif month.isdigit() and int(month) in range(1, 13):
+                month = int(month)
+            else:
+                raise ValueError("Unrecognized month")
+        today = date_today()
+        if not day:
+            # if the date was given with only month and year, use
+            # today's date if month and year is today's month and
+            # year, otherwise pick the middle of the month.
+            # Don't use today's day for month and year in the past
+            if month == today.month and year == today.year:
+                day = today.day
+            else:
+                day = 15
+        return datetime.date(year, month, day)
+
 
 # ----------------------------------------------------------------------
 
@@ -203,7 +243,7 @@ class PlaintextDraft(Draft):
         """
         super().__init__()
         assert isinstance(text, str)
-        self.source = source
+        self.source = str(source)
         self.rawtext = text
         self.name_from_source = name_from_source
 
@@ -460,27 +500,7 @@ class PlaintextDraft(Draft):
                 day = int( md.get( 'day', 0 ) )
                 year = int( md['year'] )
                 try:
-                    if   mon in month_names:
-                        month = month_names.index( mon ) + 1
-                    elif mon in month_names_abbrev3:
-                        month = month_names_abbrev3.index( mon ) + 1
-                    elif mon in month_names_abbrev4:
-                        month = month_names_abbrev4.index( mon ) + 1
-                    elif mon.isdigit() and int(mon) in range(1,13):
-                        month = int(mon)
-                    else:
-                        continue
-                    today = date_today()
-                    if day==0:
-                        # if the date was given with only month and year, use
-                        # today's date if month and year is today's month and
-                        # year, otherwise pick the middle of the month.
-                        # Don't use today's day for month and year in the past
-                        if month==today.month and year==today.year:
-                            day = today.day
-                        else:
-                            day = 15
-                    self._creation_date = datetime.date(year, month, day)
+                    self._creation_date = self._construct_creation_date(year, mon, day)
                     return self._creation_date
                 except ValueError:
                     # mon abbreviation not in _MONTH_NAMES

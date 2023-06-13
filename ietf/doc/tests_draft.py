@@ -573,7 +573,7 @@ class ResurrectTests(DraftFileMixin, TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertEqual(len(q('form [type=submit]')), 1)
+        self.assertEqual(len(q('#content form [type=submit]')), 1)
 
 
         # request resurrect
@@ -609,7 +609,7 @@ class ResurrectTests(DraftFileMixin, TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertEqual(len(q('form [type=submit]')), 1)
+        self.assertEqual(len(q('#content form [type=submit]')), 1)
 
         # complete resurrect
         events_before = draft.docevent_set.count()

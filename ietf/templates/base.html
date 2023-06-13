@@ -6,7 +6,7 @@
 {% origin %}
 {% load django_bootstrap5 %}
 {% load django_vite %}
-<html lang="en" {% block html_attrs %}{% endblock %}>
+<html data-bs-theme="auto" lang="en" {% block html_attrs %}{% endblock %}>
     <head>
         {% analytical_head_top %}
         <meta charset="utf-8">
@@ -19,6 +19,8 @@
         <link href="{{ settings.STATIC_IETF_ORG }}/fonts/noto-sans-mono/import.css" rel="stylesheet">
         <link rel="stylesheet" href="{% static 'ietf/css/ietf.css' %}">
         <link rel="stylesheet" href="{% static 'ietf/css/select2.css' %}">
+        {# load this in the head, to prevent flickering #}
+        <script src="{% static 'ietf/js/theme.js' %}"></script>
         <style>
             {% block morecss %}{% endblock %}
         </style>
@@ -33,7 +35,7 @@
           data-group-menu-data-url="{% url 'ietf.group.views.group_menu_data' %}">
         {% analytical_body_top %}
         <a class="visually-hidden visually-hidden-focusable" href="#content">Skip to main content</a>
-        <nav class="navbar navbar-expand-lg {% if server_mode and server_mode != "production" %} navbar-light bg-warning {% else %} navbar-dark bg-secondary {% endif %}  {% if navbar_mode %} {{ navbar_mode }} {% else %} fixed-top {% endif %}">
+        <nav class="navbar navbar-expand-lg fixed-top {% if server_mode and server_mode != "production" %}bg-warning navbar-light{% else %}navbar-dark bg-secondary{% endif %}">
             <div class="container-fluid">
                 <a class="navbar-brand" href="/">
                     <img alt="IETF Logo" class="me-2"
@@ -87,7 +89,7 @@
         <div class="pt-3 container-fluid">
             <div class="row">
                 {% if request.COOKIES.left_menu == "on" and not hide_menu %}
-                    <div class="d-none d-md-block bg-light py-3 leftmenu small">
+                    <div class="d-none d-md-block bg-light-subtle py-3 leftmenu small">
                         <ul class="nav nav-pills flex-column">
                             {% include "base/menu.html" with flavor="left" %}
                         </ul>
@@ -115,8 +117,7 @@
             </div>
         </div>
         {% block footer %}
-            <footer class="col-md-12 col-sm-12 bg-white text-center position-sticky">
-                <hr class="mx-3">
+            <footer class="col-md-12 col-sm-12 border-top mt-5 py-5 bg-light-subtle text-center position-sticky">
                 <a href="https://www.ietf.org/" class="p-3">IETF</a>
                 <a href="https://www.ietf.org/iesg/" class="p-3">IESG</a>
                 <a href="https://www.iab.org/" class="p-3">IAB</a>

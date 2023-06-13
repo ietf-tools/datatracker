@@ -13,7 +13,7 @@ from django.urls import reverse as urlreverse
 from django.core.exceptions import ValidationError
 from django.contrib.sites.models import Site
 from django.template.loader import render_to_string
-from django.utils.encoding import force_text, force_str
+from django.utils.encoding import force_str
 
 import debug                            # pyflakes:ignore
 
@@ -202,7 +202,7 @@ def get_reply_to():
     address with "plus addressing" using a random string.  Guaranteed to be unique"""
     local,domain = get_base_submission_message_address().split('@')
     while True:
-        rand = force_text(base64.urlsafe_b64encode(os.urandom(12)))
+        rand = force_str(base64.urlsafe_b64encode(os.urandom(12)))
         address = "{}+{}@{}".format(local,rand,domain)
         q = Message.objects.filter(reply_to=address)
         if not q:
