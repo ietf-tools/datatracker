@@ -8,6 +8,8 @@ import json
 import os
 import textwrap
 
+from pathlib import Path
+
 from django.http import HttpResponseRedirect, HttpResponseNotFound, Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse as urlreverse
@@ -32,7 +34,7 @@ from ietf.doc.utils_charter import ( historic_milestones_for_charter,
     generate_ballot_writeup, generate_issue_ballot_mail, next_revision,
     derive_new_work_text,
     change_group_state_after_charter_approval, fix_charter_revision_after_approval,
-    split_charter_name)
+    split_charter_name, charter_name_for_group)
 from ietf.doc.mails import email_state_changed, email_charter_internal_review
 from ietf.group.mails import email_admin_re_charter
 from ietf.group.models import Group, ChangeStateGroupEvent, MilestoneGroupEvent
@@ -42,6 +44,7 @@ from ietf.ietfauth.utils import has_role, role_required
 from ietf.name.models import GroupStateName
 from ietf.person.models import Person
 from ietf.utils.history import find_history_active_at
+from ietf.utils.log import assertion
 from ietf.utils.mail import send_mail_preformatted 
 from ietf.utils.textupload import get_cleaned_text_file_content
 from ietf.utils.response import permission_denied
@@ -365,23 +368,24 @@ def submit(request, name, option=None):
     if not name.startswith('charter-'):
         raise Http404
 
+    # Charters are named "charter-<ietf|irtf>-<group acronym>"
     charter = Document.objects.filter(type="charter", name=name).first()
     if charter:
         group = charter.group
-        charter_canonical_name = charter.canonical_name()
+        assertion("charter.name == charter_name_for_group(group)")
         charter_rev = charter.rev
     else:
         top_org, group_acronym = split_charter_name(name)
         group = get_object_or_404(Group, acronym=group_acronym)
-        charter_canonical_name = name
+        if name != charter_name_for_group(group):
+            raise Http404  # do not allow creation of misnamed charters
         charter_rev = "00-00"
 
     if not can_manage_all_groups_of_type(request.user, group.type_id) or not group.features.has_chartering_process:
         permission_denied(request, "You don't have permission to access this view.")
 
-
-    path = os.path.join(settings.CHARTER_PATH, '%s-%s.txt' % (charter_canonical_name, charter_rev))
-    not_uploaded_yet = charter_rev.endswith("-00") and not os.path.exists(path)
+    charter_filename = Path(settings.CHARTER_PATH) / f"{name}-{charter_rev}.txt"
+    not_uploaded_yet = charter_rev.endswith("-00") and not charter_filename.exists()
 
     if not_uploaded_yet or not charter:
         # this case is special - we recently chartered or rechartered and have no file yet
@@ -408,7 +412,7 @@ def submit(request, name, option=None):
                     abstract=group.name,
                     rev=next_rev,
                 )
-                DocAlias.objects.create(name=charter.name).docs.add(charter)
+                DocAlias.objects.create(name=name).docs.add(charter)
 
                 charter.set_state(State.objects.get(used=True, type="charter", slug="notrev"))
 
@@ -419,14 +423,14 @@ def submit(request, name, option=None):
 
             events = []
             e = NewRevisionDocEvent(doc=charter, by=request.user.person, type="new_revision")
-            e.desc = "New version available: <b>%s-%s.txt</b>" % (charter.canonical_name(), charter.rev)
+            e.desc = "New version available: <b>%s-%s.txt</b>" % (charter.name, charter.rev)
             e.rev = charter.rev
             e.save()
             events.append(e)
 
             # Save file on disk
-            filename = os.path.join(settings.CHARTER_PATH, '%s-%s.txt' % (charter.canonical_name(), charter.rev))
-            with io.open(filename, 'w', encoding='utf-8') as destination:
+            charter_filename = charter_filename.with_name(f"{name}-{charter.rev}")  # update rev
+            with charter_filename.open('w', encoding='utf-8') as destination:
                 if form.cleaned_data['txt']:
                     destination.write(form.cleaned_data['txt'])
                 else:
@@ -449,14 +453,11 @@ def submit(request, name, option=None):
             last_approved = charter.rev.split("-")[0]
             h = charter.history_set.filter(rev=last_approved).order_by("-time", "-id").first()
             if h:
-                charter_canonical_name = h.canonical_name()
-                charter_rev = h.rev
-
-        filename = os.path.join(settings.CHARTER_PATH, '%s-%s.txt' % (charter_canonical_name, charter_rev))
+                assertion("h.name == charter_name_for_group(group)")
+                charter_filename = charter_filename.with_name(f"{name}-{h.rev}.txt")  # update rev
 
         try:
-            with io.open(filename, 'r') as f:
-                init["content"] = f.read()
+            init["content"] = charter_filename.read_text()
         except IOError:
             pass
         form = UploadForm(initial=init)
