@@ -1059,7 +1059,7 @@ def augment_docs_and_user_with_user_info(docs, user):
                 reviewteamsettings__isnull=False, role__person__user=user, role__name='reviewer')
 
         doc_pks = [d.pk for d in docs]
-        clist = CommunityList.objects.filter(user=user).first()
+        clist = CommunityList.objects.filter(person=Person.objects.get(user=user)).first()
         if clist:
             tracked.update(
                 docs_tracked_by_community_list(clist).filter(pk__in=doc_pks).values_list("pk", flat=True))

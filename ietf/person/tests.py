@@ -373,13 +373,16 @@ class PersonUtilsTests(TestCase):
         request.user = user
         source = PersonFactory()
         target = PersonFactory()
+        mars = RoleFactory(name_id='chair',group__acronym='mars').group
         source_id = source.pk
         source_email = source.email_set.first()
         source_alias = source.alias_set.first()
         source_user = source.user
+        communitylist = CommunityList.objects.create(person=source, group=mars)
         merge_persons(request, source, target, file=StringIO())
         self.assertTrue(source_email in target.email_set.all())
         self.assertTrue(source_alias in target.alias_set.all())
+        self.assertIn(communitylist, target.communitylist_set.all())
         self.assertFalse(Person.objects.filter(id=source_id))
         self.assertFalse(source_user.is_active)
 
@@ -404,7 +407,6 @@ class PersonUtilsTests(TestCase):
         source = person.user
         target = UserFactory()
         mars = RoleFactory(name_id='chair',group__acronym='mars').group
-        communitylist = CommunityList.objects.create(user=source, group=mars)
         nomcom = NomComFactory()
         position = PositionFactory(nomcom=nomcom)
         nominee = NomineeFactory(nomcom=nomcom, person=mars.get_chair().person)
@@ -413,7 +415,6 @@ class PersonUtilsTests(TestCase):
         nomination = NominationFactory(nominee=nominee, user=source, position=position, comments=feedback)
 
         merge_users(source, target)
-        self.assertIn(communitylist, target.communitylist_set.all())
         self.assertIn(feedback, target.feedback_set.all())
         self.assertIn(nomination, target.nomination_set.all())
 

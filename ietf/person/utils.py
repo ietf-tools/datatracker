@@ -31,6 +31,11 @@ def merge_persons(request, source, target, file=sys.stdout, verbose=False):
         email.save()
         changes.append('EMAIL ACTION: {} no longer marked as primary'.format(email.address))
 
+    # handle community list
+    for communitylist in source.communitylist_set.all():
+        source.communitylist_set.remove(communitylist)
+        target.communitylist_set.add(communitylist)
+
     changes.append(handle_users(source, target))
     reviewer_changes = handle_reviewer_settings(source, target)
     if reviewer_changes:
@@ -128,10 +133,6 @@ def move_related_objects(source, target, file, verbose=False):
 
 def merge_users(source, target):
     '''Move related objects from source user to target user'''
-    # handle community list
-    for communitylist in source.communitylist_set.all():
-        source.communitylist_set.remove(communitylist)
-        target.communitylist_set.add(communitylist)
     # handle feedback
     for feedback in source.feedback_set.all():
         feedback.user = target
