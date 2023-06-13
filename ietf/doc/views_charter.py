@@ -365,9 +365,6 @@ class UploadForm(forms.Form):
 
 @login_required
 def submit(request, name, option=None):
-    if not name.startswith("charter-"):
-        raise Http404
-
     # Charters are named "charter-<ietf|irtf>-<group acronym>"
     charter = Document.objects.filter(type="charter", name=name).first()
     if charter:
