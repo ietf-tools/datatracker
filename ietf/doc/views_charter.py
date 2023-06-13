@@ -365,7 +365,7 @@ class UploadForm(forms.Form):
 
 @login_required
 def submit(request, name, option=None):
-    if not name.startswith('charter-'):
+    if not name.startswith("charter-"):
         raise Http404
 
     # Charters are named "charter-<ietf|irtf>-<group acronym>"
@@ -381,7 +381,10 @@ def submit(request, name, option=None):
             raise Http404  # do not allow creation of misnamed charters
         charter_rev = "00-00"
 
-    if not can_manage_all_groups_of_type(request.user, group.type_id) or not group.features.has_chartering_process:
+    if (
+        not can_manage_all_groups_of_type(request.user, group.type_id)
+        or not group.features.has_chartering_process
+    ):
         permission_denied(request, "You don't have permission to access this view.")
 
     charter_filename = Path(settings.CHARTER_PATH) / f"{name}-{charter_rev}.txt"
@@ -392,12 +395,14 @@ def submit(request, name, option=None):
         next_rev = charter_rev
     else:
         # search history for possible collisions with abandoned efforts
-        prev_revs = list(charter.history_set.order_by('-time').values_list('rev', flat=True))
+        prev_revs = list(
+            charter.history_set.order_by("-time").values_list("rev", flat=True)
+        )
         next_rev = next_revision(charter.rev)
         while next_rev in prev_revs:
             next_rev = next_revision(next_rev)
 
-    if request.method == 'POST':
+    if request.method == "POST":
         form = UploadForm(request.POST, request.FILES)
         if form.is_valid():
             # Also save group history so we can search for it
@@ -414,7 +419,9 @@ def submit(request, name, option=None):
                 )
                 DocAlias.objects.create(name=name).docs.add(charter)
 
-                charter.set_state(State.objects.get(used=True, type="charter", slug="notrev"))
+                charter.set_state(
+                    State.objects.get(used=True, type="charter", slug="notrev")
+                )
 
                 group.charter = charter
                 group.save()
@@ -422,39 +429,56 @@ def submit(request, name, option=None):
                 charter.rev = next_rev
 
             events = []
-            e = NewRevisionDocEvent(doc=charter, by=request.user.person, type="new_revision")
-            e.desc = "New version available: <b>%s-%s.txt</b>" % (charter.name, charter.rev)
+            e = NewRevisionDocEvent(
+                doc=charter, by=request.user.person, type="new_revision"
+            )
+            e.desc = "New version available: <b>%s-%s.txt</b>" % (
+                charter.name,
+                charter.rev,
+            )
             e.rev = charter.rev
             e.save()
             events.append(e)
 
             # Save file on disk
-            charter_filename = charter_filename.with_name(f"{name}-{charter.rev}")  # update rev
-            with charter_filename.open('w', encoding='utf-8') as destination:
-                if form.cleaned_data['txt']:
-                    destination.write(form.cleaned_data['txt'])
+            charter_filename = charter_filename.with_name(
+                f"{name}-{charter.rev}"
+            )  # update rev
+            with charter_filename.open("w", encoding="utf-8") as destination:
+                if form.cleaned_data["txt"]:
+                    destination.write(form.cleaned_data["txt"])
                 else:
-                    destination.write(form.cleaned_data['content'])
+                    destination.write(form.cleaned_data["content"])
 
-            if option in ['initcharter','recharter'] and charter.ad == None:
-                charter.ad = getattr(group.ad_role(),'person',None)
+            if option in ["initcharter", "recharter"] and charter.ad == None:
+                charter.ad = getattr(group.ad_role(), "person", None)
 
             charter.save_with_history(events)
 
             if option:
-                return redirect('ietf.doc.views_charter.change_state', name=charter.name, option=option)
+                return redirect(
+                    "ietf.doc.views_charter.change_state",
+                    name=charter.name,
+                    option=option,
+                )
             else:
                 return redirect("ietf.doc.views_doc.document_main", name=charter.name)
     else:
-        init = { "content": "" }
+        init = {"content": ""}
 
         if not_uploaded_yet and charter:
             # use text from last approved revision
             last_approved = charter.rev.split("-")[0]
-            h = charter.history_set.filter(rev=last_approved).order_by("-time", "-id").first()
+            h = (
+                charter.history_set.filter(rev=last_approved)
+                .order_by("-time", "-id")
+                .first()
+            )
             if h:
                 assertion("h.name == charter_name_for_group(group)")
-                charter_filename = charter_filename.with_name(f"{name}-{h.rev}.txt")  # update rev
+                charter_filename = charter_filename.with_name(
+                    f"{name}-{h.rev}.txt"
+                )  # update rev
 
         try:
             init["content"] = charter_filename.read_text()
@@ -463,12 +487,16 @@ def submit(request, name, option=None):
         form = UploadForm(initial=init)
         fill_in_charter_info(group)
 
-    return render(request, 'doc/charter/submit.html', {
-        'form': form,
-        'next_rev': next_rev,
-        'group': group,
-        'name': name,
-    })
+    return render(
+        request,
+        "doc/charter/submit.html",
+        {
+            "form": form,
+            "next_rev": next_rev,
+            "group": group,
+            "name": name,
+        },
+    )
 
 class ActionAnnouncementTextForm(forms.Form):
     announcement_text = forms.CharField(widget=forms.Textarea, required=True, strip=False)
