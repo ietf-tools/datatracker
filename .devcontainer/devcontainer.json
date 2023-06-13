@@ -67,7 +67,7 @@
     },
     
     // Use 'forwardPorts' to make a list of ports inside the container available locally.
-    "forwardPorts": [3000, 5432, 5433, 8000],
+    "forwardPorts": [3000, 5432, 8000],
     
     "portsAttributes": {
         "3000": {
@@ -76,10 +76,6 @@
         },
         "5432": {
             "label": "PostgreSQL",
-            "onAutoForward": "silent"
-        },
-        "5433": {
-            "label": "pgAdmin",
             "onAutoForward": "silent"
         },
         "8000": {
