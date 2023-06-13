@@ -3,10 +3,11 @@
 
 
 import datetime
-import io
 import os
 import re
 import shutil
+
+from pathlib import Path
 
 from django.conf import settings
 from django.urls import reverse as urlreverse
@@ -62,10 +63,9 @@ def next_approved_revision(rev):
     return "%#02d" % (int(m.group('major')) + 1)
 
 def read_charter_text(doc):
-    filename = os.path.join(settings.CHARTER_PATH, '%s-%s.txt' % (doc.name, doc.rev))
+    filename = Path(settings.CHARTER_PATH) / f"{doc.name}-{doc.rev}.txt"
     try:
-        with io.open(filename, 'r') as f:
-            return f.read()
+        return filename.read_text()
     except IOError:
         return "Error: couldn't read charter text"
 
