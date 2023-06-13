@@ -643,7 +643,7 @@ def review_announcement_text(request, name):
         ),
     )
 
-@role_required('Area Director','Secretariat')
+@role_required("Area Director", "Secretariat")
 def action_announcement_text(request, name):
     """Editing of action announcement text"""
     charter = get_object_or_404(Document, type="charter", name=name)
@@ -658,16 +658,18 @@ def action_announcement_text(request, name):
     if not existing:
         raise Http404
 
-    form = ActionAnnouncementTextForm(initial=dict(announcement_text=escape(existing.text)))
+    form = ActionAnnouncementTextForm(
+        initial=dict(announcement_text=escape(existing.text))
+    )
 
-    if request.method == 'POST':
+    if request.method == "POST":
         form = ActionAnnouncementTextForm(request.POST)
         if "save_text" in request.POST and form.is_valid():
-            t = form.cleaned_data['announcement_text']
+            t = form.cleaned_data["announcement_text"]
             if t != existing.text:
                 e = WriteupDocEvent(doc=charter, rev=charter.rev)
                 e.by = by
-                e.type = "changed_action_announcement" 
+                e.type = "changed_action_announcement"
                 e.desc = "%s action text was changed" % group.type.name
                 e.text = t
                 e.save()
@@ -675,25 +677,46 @@ def action_announcement_text(request, name):
                 existing.save()
 
             if request.GET.get("next", "") == "approve":
-                return redirect('ietf.doc.views_charter.approve', name=charter.canonical_name())
+                return redirect(
+                    "ietf.doc.views_charter.approve", name=charter.canonical_name()
+                )
 
-            return redirect('ietf.doc.views_doc.document_writeup', name=charter.canonical_name())
+            return redirect(
+                "ietf.doc.views_doc.document_writeup", name=charter.canonical_name()
+            )
 
         if "regenerate_text" in request.POST:
             e = default_action_text(group, charter, by)
             e.save()
-            form = ActionAnnouncementTextForm(initial=dict(announcement_text=escape(e.text)))
+            form = ActionAnnouncementTextForm(
+                initial=dict(announcement_text=escape(e.text))
+            )
 
         if "send_text" in request.POST and form.is_valid():
-            parsed_msg = send_mail_preformatted(request, form.cleaned_data['announcement_text'])
-            messages.success(request, "The email To: '%s' with Subject: '%s' has been sent." % (parsed_msg["To"],parsed_msg["Subject"],))
-            return redirect('ietf.doc.views_doc.document_writeup', name=charter.name)
+            parsed_msg = send_mail_preformatted(
+                request, form.cleaned_data["announcement_text"]
+            )
+            messages.success(
+                request,
+                "The email To: '%s' with Subject: '%s' has been sent."
+                % (
+                    parsed_msg["To"],
+                    parsed_msg["Subject"],
+                ),
+            )
+            return redirect("ietf.doc.views_doc.document_writeup", name=charter.name)
 
-    return render(request, 'doc/charter/action_announcement_text.html',
-                  dict(charter=charter,
-                       back_url=urlreverse('ietf.doc.views_doc.document_writeup', kwargs=dict(name=charter.name)),
-                       announcement_text_form=form,
-                  ))
+    return render(
+        request,
+        "doc/charter/action_announcement_text.html",
+        dict(
+            charter=charter,
+            back_url=urlreverse(
+                "ietf.doc.views_doc.document_writeup", kwargs=dict(name=charter.name)
+            ),
+            announcement_text_form=form,
+        ),
+    )
 
 class BallotWriteupForm(forms.Form):
     ballot_writeup = forms.CharField(widget=forms.Textarea, required=True, strip=False)
