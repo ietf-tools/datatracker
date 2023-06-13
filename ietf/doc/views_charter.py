@@ -437,7 +437,7 @@ def submit(request, name, option=None):
 
             # Save file on disk
             charter_filename = charter_filename.with_name(
-                f"{name}-{charter.rev}"
+                f"{name}-{charter.rev}.txt"
             )  # update rev
             with charter_filename.open("w", encoding="utf-8") as destination:
                 if form.cleaned_data["txt"]:
