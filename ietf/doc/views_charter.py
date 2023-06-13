@@ -580,11 +580,11 @@ def review_announcement_text(request, name):
 
             if request.GET.get("next", "") == "approve":
                 return redirect(
-                    "ietf.doc.views_charter.approve", name=charter.canonical_name()
+                    "ietf.doc.views_charter.approve", name=charter.name
                 )
 
             return redirect(
-                "ietf.doc.views_doc.document_writeup", name=charter.canonical_name()
+                "ietf.doc.views_doc.document_writeup", name=charter.name
             )
 
         if "regenerate_text" in request.POST:
@@ -678,11 +678,11 @@ def action_announcement_text(request, name):
 
             if request.GET.get("next", "") == "approve":
                 return redirect(
-                    "ietf.doc.views_charter.approve", name=charter.canonical_name()
+                    "ietf.doc.views_charter.approve", name=charter.name
                 )
 
             return redirect(
-                "ietf.doc.views_doc.document_writeup", name=charter.canonical_name()
+                "ietf.doc.views_doc.document_writeup", name=charter.name
             )
 
         if "regenerate_text" in request.POST:
