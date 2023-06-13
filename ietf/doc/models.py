@@ -627,7 +627,7 @@ class DocumentInfo(models.Model):
             stylesheets.append(finders.find("ietf/css/document_html_txt.css"))
         else:
             text = self.htmlized()
-        stylesheets.append(f'{settings.STATIC_IETF_ORG}/fonts/noto-sans-mono/import.css')
+        stylesheets.append(f'{settings.STATIC_IETF_ORG_INTERNAL}/fonts/noto-sans-mono/import.css')
 
         cache = caches["pdfized"]
         cache_key = name.split(".")[0]
@@ -644,7 +644,7 @@ class DocumentInfo(models.Model):
                     stylesheets=stylesheets,
                     font_config=font_config,
                     presentational_hints=True,
-                    optimize_size=("fonts", "images"),
+                    optimize_images=True,
                 )
             except AssertionError:
                 pdf = None

@@ -99,6 +99,7 @@ class NomcomViewsTest(TestCase):
         self.private_nominate_newperson_url = reverse('ietf.nomcom.views.private_nominate_newperson', kwargs={'year': self.year})
         self.add_questionnaire_url = reverse('ietf.nomcom.views.private_questionnaire', kwargs={'year': self.year})
         self.private_feedback_url = reverse('ietf.nomcom.views.private_feedback', kwargs={'year': self.year})
+        self.private_feedback_email_url = reverse('ietf.nomcom.views.private_feedback_email', kwargs={'year': self.year})
         self.positions_url = reverse('ietf.nomcom.views.list_positions', kwargs={'year': self.year})        
         self.edit_position_url = reverse('ietf.nomcom.views.edit_position', kwargs={'year': self.year})
 
@@ -1010,6 +1011,43 @@ class NomcomViewsTest(TestCase):
         if state != nominee_position.state:
             nominee_position.state = state
             nominee_position.save()
+
+
+    def test_private_feedback_email(self):
+        self.access_chair_url(self.private_feedback_email_url)
+
+        feedback_url = self.private_feedback_email_url
+        response = self.client.get(feedback_url)
+        self.assertEqual(response.status_code, 200)
+
+        nomcom = get_nomcom_by_year(self.year)
+        if not nomcom.public_key:
+            self.assertNotContains(response, "paste-email-feedback-form")
+
+        # save the cert file in tmp
+        with io.open(self.cert_file.name, 'r') as fd:
+            nomcom.public_key.save('cert', File(fd))
+
+        response = self.client.get(feedback_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "paste-email-feedback-form")
+
+        headers = \
+            "From: Zaphod Beeblebrox <president@galaxy>\n" \
+            "Subject: Ford Prefect\n\n"
+        body = \
+            "Hey, you sass that hoopy Ford Prefect?\n" \
+            "There's a frood who really knows where his towel is.\n"
+
+        test_data = {'email_text': body}
+        response = self.client.post(feedback_url, test_data)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Missing email headers')
+
+        test_data = {'email_text': headers + body}
+        response = self.client.post(feedback_url, test_data)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'The feedback email has been registered.')
 
 
 class NomineePositionStateSaveTest(TestCase):

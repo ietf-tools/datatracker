@@ -20,6 +20,7 @@ from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils.encoding import force_bytes, force_str
 
+from email.errors import HeaderParseError
 
 from ietf.dbtemplate.models import DBTemplate
 from ietf.dbtemplate.views import group_template_edit, group_template_show
@@ -652,9 +653,12 @@ def private_feedback_email(request, year):
         form = FeedbackEmailForm(data=request.POST,
                                  nomcom=nomcom)
         if form.is_valid():
-            form.save()
-            form = FeedbackEmailForm(nomcom=nomcom)
-            messages.success(request, 'The feedback email has been registered.')
+            try:
+                form.save()
+                form = FeedbackEmailForm(nomcom=nomcom)
+                messages.success(request, 'The feedback email has been registered.')
+            except HeaderParseError:
+                messages.error(request, 'Missing email headers')
 
     return render(request, template,
                               {'form': form,
