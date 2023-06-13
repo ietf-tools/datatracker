@@ -856,8 +856,6 @@ class Document(DocumentInfo):
                 a = self.docalias.filter(name__startswith="rfc").order_by('-name').first()
                 if a:
                     name = a.name
-            elif self.type_id == "charter":
-                raise RuntimeError("Don't call this!!")
             self._canonical_name = name
         return self._canonical_name
 
