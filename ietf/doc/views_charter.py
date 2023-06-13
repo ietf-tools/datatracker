@@ -3,9 +3,7 @@
 
 
 import datetime
-import io
 import json
-import os
 import textwrap
 
 from pathlib import Path
@@ -832,6 +830,7 @@ def approve(request, name):
                   dict(charter=charter,
                        announcement=escape(announcement)))
 
+
 def charter_with_milestones_txt(request, name, rev):
     charter = get_object_or_404(Document, type="charter", docalias__name=name)
 
@@ -843,15 +842,12 @@ def charter_with_milestones_txt(request, name, rev):
 
     # read charter text
     c = find_history_active_at(charter, revision_event.time) or charter
-    filename = "%s-%s.txt" % (c.canonical_name(), rev)
-
-    charter_text = ""
-
+    filename = Path(settings.CHARTER_PATH) / f"{c.name}-{rev}.txt"
     try:
-        with io.open(os.path.join(settings.CHARTER_PATH, filename), "r") as f:
+        with filename.open() as f:
             charter_text = force_str(f.read(), errors="ignore")
     except IOError:
-        charter_text = "Error reading charter text %s" % filename
+        charter_text = f"Error reading charter text {filename.name}"
 
     milestones = historic_milestones_for_charter(charter, rev)
 
