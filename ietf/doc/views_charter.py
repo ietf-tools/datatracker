@@ -899,7 +899,7 @@ def approve(request, name):
 
 
 def charter_with_milestones_txt(request, name, rev):
-    charter = get_object_or_404(Document, type="charter", docalias__name=name)
+    charter = get_object_or_404(Document, type="charter", name=name)
 
     revision_event = charter.latest_event(
         NewRevisionDocEvent, type="new_revision", rev=rev
