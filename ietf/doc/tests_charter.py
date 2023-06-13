@@ -540,6 +540,24 @@ class EditCharterTests(TestCase):
         group = Group.objects.get(pk=group.pk)
         self.assertEqual(group.charter, charter)
 
+    def test_submit_charter_with_invalid_name(self):
+        self.client.login(username="secretary", password="secretary+password")
+        ietf_group = GroupFactory(type_id="wg")
+        for bad_name in ("charter-irtf-{}", "charter-randomjunk-{}", "charter-ietf-thisisnotagroup"):
+            url = urlreverse("ietf.doc.views_charter.submit", kwargs={"name": bad_name.format(ietf_group.acronym)})
+            r = self.client.get(url)
+            self.assertEqual(r.status_code, 404, f"GET of charter named {bad_name} should 404")
+            r = self.client.post(url, {})
+            self.assertEqual(r.status_code, 404, f"POST of charter named {bad_name} should 404")
+
+        irtf_group = GroupFactory(type_id="rg")
+        for bad_name in ("charter-ietf-{}", "charter-whatisthis-{}", "charter-irtf-thisisnotagroup"):
+            url = urlreverse("ietf.doc.views_charter.submit", kwargs={"name": bad_name.format(irtf_group.acronym)})
+            r = self.client.get(url)
+            self.assertEqual(r.status_code, 404, f"GET of charter named {bad_name} should 404")
+            r = self.client.post(url, {})
+            self.assertEqual(r.status_code, 404, f"POST of charter named {bad_name} should 404")
+
     def test_edit_review_announcement_text(self):
         area = GroupFactory(type_id='area')
         RoleFactory(name_id='ad',group=area,person=Person.objects.get(user__username='ad'))
