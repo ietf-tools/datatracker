@@ -3,8 +3,7 @@
 
 
 # Python imports
-import io
-import os
+from pathlib import Path
 
 # Django imports
 from django.conf import settings
@@ -14,27 +13,6 @@ from django.core.exceptions import ObjectDoesNotExist
 from ietf.group.models import Group
 from ietf.ietfauth.utils import has_role
 
-
-
-
-def current_nomcom():
-    qs = Group.objects.filter(acronym__startswith='nomcom',state__slug="active").order_by('-time')
-    if qs.count():
-        return qs[0]
-    else:
-        return None
-
-def get_charter_text(group):
-    '''
-    Takes a group object and returns the text or the group's charter as a string
-    '''
-    charter = group.charter
-    path = os.path.join(settings.CHARTER_PATH, '%s-%s.txt' % (charter.canonical_name(), charter.rev))
-    f = io.open(path,'r')
-    text = f.read()
-    f.close()
-
-    return text
 
 def get_my_groups(user,conclude=False):
     '''
