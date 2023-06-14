@@ -268,7 +268,6 @@ class RfcFeed(Feed):
             {"doiuri": "http://dx.doi.org/10.17487/%s" % item.canonical_name().upper()}
         )
 
-        # TODO
         # R104 Publisher (Mandatory - but we need a string from them first)
         extra.update({"dcterms_publisher": "rfc-editor.org"})
 
