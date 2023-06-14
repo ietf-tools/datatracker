@@ -57,4 +57,4 @@ SLIDE_STAGING_PATH = 'test/staging/'
 DE_GFM_BINARY = '/usr/local/bin/de-gfm'
 
 STATIC_IETF_ORG = "/_static"
-STATIC_IETF_ORG_INTERNAL = "http://localhost:80"
+STATIC_IETF_ORG_INTERNAL = "http://static"

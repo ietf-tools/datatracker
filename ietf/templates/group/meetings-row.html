@@ -11,7 +11,6 @@
             {% endif %}
         </td>
         <td>
-            {% if s.name %}{{ s.name }}{% endif %}
             {% if s.current_status == "sched" %}
                 {{ s.time|date:"Y-m-d" }}
             {% else %}
@@ -25,6 +24,9 @@
                     </a>
                 {% endif %}
             {% endif %}
+        </td>
+        <td>
+            {% if s.name %}{{ s.name }}{% endif %}
         </td>
         <td>
             {% if s.current_status == "sched" %}{{ s.time|date:"D" }}{% endif %}
