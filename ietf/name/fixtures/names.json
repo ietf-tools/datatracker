@@ -2541,6 +2541,34 @@
   },
   {
     "fields": {
+      "desc": "",
+      "name": "Created",
+      "next_states": [
+        176
+      ],
+      "order": 1,
+      "slug": "created",
+      "type": "rfc",
+      "used": true
+    },
+    "model": "doc.state",
+    "pk": 175
+  },
+  {
+    "fields": {
+      "desc": "",
+      "name": "Published",
+      "next_states": [],
+      "order": 2,
+      "slug": "published",
+      "type": "rfc",
+      "used": true
+    },
+    "model": "doc.state",
+    "pk": 176
+  },
+  {
+    "fields": {
       "label": "State"
     },
     "model": "doc.statetype",
@@ -2720,6 +2748,13 @@
     },
     "model": "doc.statetype",
     "pk": "review"
+  },
+  {
+    "fields": {
+      "label": "State"
+    },
+    "model": "doc.statetype",
+    "pk": "rfc"
   },
   {
     "fields": {
@@ -10559,6 +10594,17 @@
     },
     "model": "name.doctypename",
     "pk": "review"
+  },
+  {
+    "fields": {
+      "desc": "",
+      "name": "RFC",
+      "order": 0,
+      "prefix": "rfc",
+      "used": true
+    },
+    "model": "name.doctypename",
+    "pk": "rfc"
   },
   {
     "fields": {
