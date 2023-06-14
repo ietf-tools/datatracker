@@ -117,8 +117,9 @@ class GroupPagesTests(TestCase):
 
         chair = Email.objects.filter(role__group=group, role__name="chair")[0]
 
-        with (Path(settings.CHARTER_PATH) / ("%s-%s.txt" % (group.charter.canonical_name(), group.charter.rev))).open("w") as f:
-            f.write("This is a charter.")
+        (
+            Path(settings.CHARTER_PATH) / f"{group.charter.name}-{group.charter.rev}.txt"
+         ).write_text("This is a charter.")
 
         url = urlreverse('ietf.group.views.wg_summary_area', kwargs=dict(group_type="wg"))
         r = self.client.get(url)
@@ -264,8 +265,9 @@ class GroupPagesTests(TestCase):
         group = CharterFactory().group
         draft = WgDraftFactory(group=group)
 
-        with (Path(settings.CHARTER_PATH) / ("%s-%s.txt" % (group.charter.canonical_name(), group.charter.rev))).open("w") as f:
-            f.write("This is a charter.")
+        (
+            Path(settings.CHARTER_PATH) / f"{group.charter.name}-{group.charter.rev}.txt"
+        ).write_text("This is a charter.")
 
         milestone = GroupMilestone.objects.create(
             group=group,
@@ -674,8 +676,9 @@ class GroupEditTests(TestCase):
         self.assertTrue(len(q('form .is-invalid')) > 0)
         
         # edit info
-        with (Path(settings.CHARTER_PATH) / ("%s-%s.txt" % (group.charter.canonical_name(), group.charter.rev))).open("w") as f:
-            f.write("This is a charter.")
+        (
+            Path(settings.CHARTER_PATH) / f"{group.charter.name}-{group.charter.rev}.txt"
+        ).write_text("This is a charter.")
         area = group.parent
         ad = Person.objects.get(name="Areað Irector")
         state = GroupStateName.objects.get(slug="bof")
@@ -717,7 +720,9 @@ class GroupEditTests(TestCase):
         self.assertEqual(group.list_archive, "archive.mars")
         self.assertEqual(group.description, '')
 
-        self.assertTrue((Path(settings.CHARTER_PATH) / ("%s-%s.txt" % (group.charter.canonical_name(), group.charter.rev))).exists())
+        self.assertTrue(
+            (Path(settings.CHARTER_PATH) / f"{group.charter.name}-{group.charter.rev}.txt").exists()
+        )
         self.assertEqual(len(outbox), 2)
         self.assertTrue('Personnel change' in outbox[0]['Subject'])
         for prefix in ['ad1','ad2','aread','marschairman','marsdelegate']:

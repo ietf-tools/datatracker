@@ -856,12 +856,6 @@ class Document(DocumentInfo):
                 a = self.docalias.filter(name__startswith="rfc").order_by('-name').first()
                 if a:
                     name = a.name
-            elif self.type_id == "charter":
-                from ietf.doc.utils_charter import charter_name_for_group # Imported locally to avoid circular imports
-                try:
-                    name = charter_name_for_group(self.chartered_group)
-                except Group.DoesNotExist:
-                    pass
             self._canonical_name = name
         return self._canonical_name
 

@@ -3,10 +3,10 @@
 
 
 import datetime
-import io
 import json
-import os
 import textwrap
+
+from pathlib import Path
 
 from django.http import HttpResponseRedirect, HttpResponseNotFound, Http404
 from django.shortcuts import get_object_or_404, redirect, render
@@ -32,7 +32,7 @@ from ietf.doc.utils_charter import ( historic_milestones_for_charter,
     generate_ballot_writeup, generate_issue_ballot_mail, next_revision,
     derive_new_work_text,
     change_group_state_after_charter_approval, fix_charter_revision_after_approval,
-    split_charter_name)
+    split_charter_name, charter_name_for_group)
 from ietf.doc.mails import email_state_changed, email_charter_internal_review
 from ietf.group.mails import email_admin_re_charter
 from ietf.group.models import Group, ChangeStateGroupEvent, MilestoneGroupEvent
@@ -42,6 +42,7 @@ from ietf.ietfauth.utils import has_role, role_required
 from ietf.name.models import GroupStateName
 from ietf.person.models import Person
 from ietf.utils.history import find_history_active_at
+from ietf.utils.log import assertion
 from ietf.utils.mail import send_mail_preformatted 
 from ietf.utils.textupload import get_cleaned_text_file_content
 from ietf.utils.response import permission_denied
@@ -362,38 +363,41 @@ class UploadForm(forms.Form):
 
 @login_required
 def submit(request, name, option=None):
-    if not name.startswith('charter-'):
-        raise Http404
-
+    # Charters are named "charter-<ietf|irtf>-<group acronym>"
     charter = Document.objects.filter(type="charter", name=name).first()
     if charter:
         group = charter.group
-        charter_canonical_name = charter.canonical_name()
+        assertion("charter.name == charter_name_for_group(group)")
         charter_rev = charter.rev
     else:
         top_org, group_acronym = split_charter_name(name)
         group = get_object_or_404(Group, acronym=group_acronym)
-        charter_canonical_name = name
+        if name != charter_name_for_group(group):
+            raise Http404  # do not allow creation of misnamed charters
         charter_rev = "00-00"
 
-    if not can_manage_all_groups_of_type(request.user, group.type_id) or not group.features.has_chartering_process:
+    if (
+        not can_manage_all_groups_of_type(request.user, group.type_id)
+        or not group.features.has_chartering_process
+    ):
         permission_denied(request, "You don't have permission to access this view.")
 
-
-    path = os.path.join(settings.CHARTER_PATH, '%s-%s.txt' % (charter_canonical_name, charter_rev))
-    not_uploaded_yet = charter_rev.endswith("-00") and not os.path.exists(path)
+    charter_filename = Path(settings.CHARTER_PATH) / f"{name}-{charter_rev}.txt"
+    not_uploaded_yet = charter_rev.endswith("-00") and not charter_filename.exists()
 
     if not_uploaded_yet or not charter:
         # this case is special - we recently chartered or rechartered and have no file yet
         next_rev = charter_rev
     else:
         # search history for possible collisions with abandoned efforts
-        prev_revs = list(charter.history_set.order_by('-time').values_list('rev', flat=True))
+        prev_revs = list(
+            charter.history_set.order_by("-time").values_list("rev", flat=True)
+        )
         next_rev = next_revision(charter.rev)
         while next_rev in prev_revs:
             next_rev = next_revision(next_rev)
 
-    if request.method == 'POST':
+    if request.method == "POST":
         form = UploadForm(request.POST, request.FILES)
         if form.is_valid():
             # Also save group history so we can search for it
@@ -408,9 +412,11 @@ def submit(request, name, option=None):
                     abstract=group.name,
                     rev=next_rev,
                 )
-                DocAlias.objects.create(name=charter.name).docs.add(charter)
+                DocAlias.objects.create(name=name).docs.add(charter)
 
-                charter.set_state(State.objects.get(used=True, type="charter", slug="notrev"))
+                charter.set_state(
+                    State.objects.get(used=True, type="charter", slug="notrev")
+                )
 
                 group.charter = charter
                 group.save()
@@ -418,56 +424,74 @@ def submit(request, name, option=None):
                 charter.rev = next_rev
 
             events = []
-            e = NewRevisionDocEvent(doc=charter, by=request.user.person, type="new_revision")
-            e.desc = "New version available: <b>%s-%s.txt</b>" % (charter.canonical_name(), charter.rev)
+            e = NewRevisionDocEvent(
+                doc=charter, by=request.user.person, type="new_revision"
+            )
+            e.desc = "New version available: <b>%s-%s.txt</b>" % (
+                charter.name,
+                charter.rev,
+            )
             e.rev = charter.rev
             e.save()
             events.append(e)
 
             # Save file on disk
-            filename = os.path.join(settings.CHARTER_PATH, '%s-%s.txt' % (charter.canonical_name(), charter.rev))
-            with io.open(filename, 'w', encoding='utf-8') as destination:
-                if form.cleaned_data['txt']:
-                    destination.write(form.cleaned_data['txt'])
+            charter_filename = charter_filename.with_name(
+                f"{name}-{charter.rev}.txt"
+            )  # update rev
+            with charter_filename.open("w", encoding="utf-8") as destination:
+                if form.cleaned_data["txt"]:
+                    destination.write(form.cleaned_data["txt"])
                 else:
-                    destination.write(form.cleaned_data['content'])
+                    destination.write(form.cleaned_data["content"])
 
-            if option in ['initcharter','recharter'] and charter.ad == None:
-                charter.ad = getattr(group.ad_role(),'person',None)
+            if option in ["initcharter", "recharter"] and charter.ad == None:
+                charter.ad = getattr(group.ad_role(), "person", None)
 
             charter.save_with_history(events)
 
             if option:
-                return redirect('ietf.doc.views_charter.change_state', name=charter.name, option=option)
+                return redirect(
+                    "ietf.doc.views_charter.change_state",
+                    name=charter.name,
+                    option=option,
+                )
             else:
                 return redirect("ietf.doc.views_doc.document_main", name=charter.name)
     else:
-        init = { "content": "" }
+        init = {"content": ""}
 
         if not_uploaded_yet and charter:
             # use text from last approved revision
             last_approved = charter.rev.split("-")[0]
-            h = charter.history_set.filter(rev=last_approved).order_by("-time", "-id").first()
+            h = (
+                charter.history_set.filter(rev=last_approved)
+                .order_by("-time", "-id")
+                .first()
+            )
             if h:
-                charter_canonical_name = h.canonical_name()
-                charter_rev = h.rev
-
-        filename = os.path.join(settings.CHARTER_PATH, '%s-%s.txt' % (charter_canonical_name, charter_rev))
+                assertion("h.name == charter_name_for_group(group)")
+                charter_filename = charter_filename.with_name(
+                    f"{name}-{h.rev}.txt"
+                )  # update rev
 
         try:
-            with io.open(filename, 'r') as f:
-                init["content"] = f.read()
+            init["content"] = charter_filename.read_text()
         except IOError:
             pass
         form = UploadForm(initial=init)
         fill_in_charter_info(group)
 
-    return render(request, 'doc/charter/submit.html', {
-        'form': form,
-        'next_rev': next_rev,
-        'group': group,
-        'name': name,
-    })
+    return render(
+        request,
+        "doc/charter/submit.html",
+        {
+            "form": form,
+            "next_rev": next_rev,
+            "group": group,
+            "name": name,
+        },
+    )
 
 class ActionAnnouncementTextForm(forms.Form):
     announcement_text = forms.CharField(widget=forms.Textarea, required=True, strip=False)
@@ -484,7 +508,7 @@ class ReviewAnnouncementTextForm(forms.Form):
         return self.cleaned_data["announcement_text"].replace("\r", "")
 
 
-@role_required('Area Director','Secretariat')
+@role_required("Area Director", "Secretariat")
 def review_announcement_text(request, name):
     """Editing of review announcement text"""
     charter = get_object_or_404(Document, type="charter", name=name)
@@ -493,7 +517,9 @@ def review_announcement_text(request, name):
     by = request.user.person
 
     existing = charter.latest_event(WriteupDocEvent, type="changed_review_announcement")
-    existing_new_work = charter.latest_event(WriteupDocEvent, type="changed_new_work_text")
+    existing_new_work = charter.latest_event(
+        WriteupDocEvent, type="changed_new_work_text"
+    )
 
     if not existing:
         (existing, existing_new_work) = default_review_text(group, charter, by)
@@ -506,19 +532,23 @@ def review_announcement_text(request, name):
         existing_new_work.by = by
         existing_new_work.type = "changed_new_work_text"
         existing_new_work.desc = "%s review text was changed" % group.type.name
-        existing_new_work.text = derive_new_work_text(existing.text,group)
+        existing_new_work.text = derive_new_work_text(existing.text, group)
         existing_new_work.time = timezone.now()
 
-    form = ReviewAnnouncementTextForm(initial=dict(announcement_text=escape(existing.text),new_work_text=escape(existing_new_work.text)))
+    form = ReviewAnnouncementTextForm(
+        initial=dict(
+            announcement_text=escape(existing.text),
+            new_work_text=escape(existing_new_work.text),
+        )
+    )
 
-    if request.method == 'POST':
+    if request.method == "POST":
         form = ReviewAnnouncementTextForm(request.POST)
         if "save_text" in request.POST and form.is_valid():
-
             now = timezone.now()
             events = []
 
-            t = form.cleaned_data['announcement_text']
+            t = form.cleaned_data["announcement_text"]
             if t != existing.text:
                 e = WriteupDocEvent(doc=charter, rev=charter.rev)
                 e.by = by
@@ -532,11 +562,11 @@ def review_announcement_text(request, name):
                 existing.save()
                 events.append(existing)
 
-            t = form.cleaned_data['new_work_text']
+            t = form.cleaned_data["new_work_text"]
             if t != existing_new_work.text:
                 e = WriteupDocEvent(doc=charter, rev=charter.rev)
                 e.by = by
-                e.type = "changed_new_work_text" 
+                e.type = "changed_new_work_text"
                 e.desc = "%s new work message text was changed" % (group.type.name)
                 e.text = t
                 e.time = now
@@ -549,33 +579,71 @@ def review_announcement_text(request, name):
                 charter.save_with_history(events)
 
             if request.GET.get("next", "") == "approve":
-                return redirect('ietf.doc.views_charter.approve', name=charter.canonical_name())
+                return redirect(
+                    "ietf.doc.views_charter.approve", name=charter.name
+                )
 
-            return redirect('ietf.doc.views_doc.document_writeup', name=charter.canonical_name())
+            return redirect(
+                "ietf.doc.views_doc.document_writeup", name=charter.name
+            )
 
         if "regenerate_text" in request.POST:
             (existing, existing_new_work) = default_review_text(group, charter, by)
             existing.save()
             existing_new_work.save()
-            form = ReviewAnnouncementTextForm(initial=dict(announcement_text=escape(existing.text),
-                                                           new_work_text=escape(existing_new_work.text)))
+            form = ReviewAnnouncementTextForm(
+                initial=dict(
+                    announcement_text=escape(existing.text),
+                    new_work_text=escape(existing_new_work.text),
+                )
+            )
 
-        if any(x in request.POST for x in ['send_annc_only','send_nw_only','send_both']) and form.is_valid():
-            if any(x in request.POST for x in ['send_annc_only','send_both']):
-                parsed_msg = send_mail_preformatted(request, form.cleaned_data['announcement_text'])
-                messages.success(request, "The email To: '%s' with Subject: '%s' has been sent." % (parsed_msg["To"],parsed_msg["Subject"],))
-            if any(x in request.POST for x in ['send_nw_only','send_both']):
-                parsed_msg = send_mail_preformatted(request, form.cleaned_data['new_work_text'])
-                messages.success(request, "The email To: '%s' with Subject: '%s' has been sent." % (parsed_msg["To"],parsed_msg["Subject"],))
-            return redirect('ietf.doc.views_doc.document_writeup', name=charter.name)
+        if (
+            any(
+                x in request.POST
+                for x in ["send_annc_only", "send_nw_only", "send_both"]
+            )
+            and form.is_valid()
+        ):
+            if any(x in request.POST for x in ["send_annc_only", "send_both"]):
+                parsed_msg = send_mail_preformatted(
+                    request, form.cleaned_data["announcement_text"]
+                )
+                messages.success(
+                    request,
+                    "The email To: '%s' with Subject: '%s' has been sent."
+                    % (
+                        parsed_msg["To"],
+                        parsed_msg["Subject"],
+                    ),
+                )
+            if any(x in request.POST for x in ["send_nw_only", "send_both"]):
+                parsed_msg = send_mail_preformatted(
+                    request, form.cleaned_data["new_work_text"]
+                )
+                messages.success(
+                    request,
+                    "The email To: '%s' with Subject: '%s' has been sent."
+                    % (
+                        parsed_msg["To"],
+                        parsed_msg["Subject"],
+                    ),
+                )
+            return redirect("ietf.doc.views_doc.document_writeup", name=charter.name)
 
-    return render(request, 'doc/charter/review_announcement_text.html',
-                  dict(charter=charter,
-                       back_url=urlreverse('ietf.doc.views_doc.document_writeup', kwargs=dict(name=charter.name)),
-                       announcement_text_form=form,
-                  ))
+    return render(
+        request,
+        "doc/charter/review_announcement_text.html",
+        dict(
+            charter=charter,
+            back_url=urlreverse(
+                "ietf.doc.views_doc.document_writeup", kwargs=dict(name=charter.name)
+            ),
+            announcement_text_form=form,
+        ),
+    )
 
-@role_required('Area Director','Secretariat')
+@role_required("Area Director", "Secretariat")
 def action_announcement_text(request, name):
     """Editing of action announcement text"""
     charter = get_object_or_404(Document, type="charter", name=name)
@@ -590,16 +658,18 @@ def action_announcement_text(request, name):
     if not existing:
         raise Http404
 
-    form = ActionAnnouncementTextForm(initial=dict(announcement_text=escape(existing.text)))
+    form = ActionAnnouncementTextForm(
+        initial=dict(announcement_text=escape(existing.text))
+    )
 
-    if request.method == 'POST':
+    if request.method == "POST":
         form = ActionAnnouncementTextForm(request.POST)
         if "save_text" in request.POST and form.is_valid():
-            t = form.cleaned_data['announcement_text']
+            t = form.cleaned_data["announcement_text"]
             if t != existing.text:
                 e = WriteupDocEvent(doc=charter, rev=charter.rev)
                 e.by = by
-                e.type = "changed_action_announcement" 
+                e.type = "changed_action_announcement"
                 e.desc = "%s action text was changed" % group.type.name
                 e.text = t
                 e.save()
@@ -607,25 +677,46 @@ def action_announcement_text(request, name):
                 existing.save()
 
             if request.GET.get("next", "") == "approve":
-                return redirect('ietf.doc.views_charter.approve', name=charter.canonical_name())
+                return redirect(
+                    "ietf.doc.views_charter.approve", name=charter.name
+                )
 
-            return redirect('ietf.doc.views_doc.document_writeup', name=charter.canonical_name())
+            return redirect(
+                "ietf.doc.views_doc.document_writeup", name=charter.name
+            )
 
         if "regenerate_text" in request.POST:
             e = default_action_text(group, charter, by)
             e.save()
-            form = ActionAnnouncementTextForm(initial=dict(announcement_text=escape(e.text)))
+            form = ActionAnnouncementTextForm(
+                initial=dict(announcement_text=escape(e.text))
+            )
 
         if "send_text" in request.POST and form.is_valid():
-            parsed_msg = send_mail_preformatted(request, form.cleaned_data['announcement_text'])
-            messages.success(request, "The email To: '%s' with Subject: '%s' has been sent." % (parsed_msg["To"],parsed_msg["Subject"],))
-            return redirect('ietf.doc.views_doc.document_writeup', name=charter.name)
+            parsed_msg = send_mail_preformatted(
+                request, form.cleaned_data["announcement_text"]
+            )
+            messages.success(
+                request,
+                "The email To: '%s' with Subject: '%s' has been sent."
+                % (
+                    parsed_msg["To"],
+                    parsed_msg["Subject"],
+                ),
+            )
+            return redirect("ietf.doc.views_doc.document_writeup", name=charter.name)
 
-    return render(request, 'doc/charter/action_announcement_text.html',
-                  dict(charter=charter,
-                       back_url=urlreverse('ietf.doc.views_doc.document_writeup', kwargs=dict(name=charter.name)),
-                       announcement_text_form=form,
-                  ))
+    return render(
+        request,
+        "doc/charter/action_announcement_text.html",
+        dict(
+            charter=charter,
+            back_url=urlreverse(
+                "ietf.doc.views_doc.document_writeup", kwargs=dict(name=charter.name)
+            ),
+            announcement_text_form=form,
+        ),
+    )
 
 class BallotWriteupForm(forms.Form):
     ballot_writeup = forms.CharField(widget=forms.Textarea, required=True, strip=False)
@@ -806,33 +897,37 @@ def approve(request, name):
                   dict(charter=charter,
                        announcement=escape(announcement)))
 
-def charter_with_milestones_txt(request, name, rev):
-    charter = get_object_or_404(Document, type="charter", docalias__name=name)
 
-    revision_event = charter.latest_event(NewRevisionDocEvent, type="new_revision", rev=rev)
+def charter_with_milestones_txt(request, name, rev):
+    charter = get_object_or_404(Document, type="charter", name=name)
+
+    revision_event = charter.latest_event(
+        NewRevisionDocEvent, type="new_revision", rev=rev
+    )
     if not revision_event:
         return HttpResponseNotFound("Revision %s not found in database" % rev)
 
     # read charter text
     c = find_history_active_at(charter, revision_event.time) or charter
-    filename = '%s-%s.txt' % (c.canonical_name(), rev)
-
-    charter_text = ""
-
+    filename = Path(settings.CHARTER_PATH) / f"{c.name}-{rev}.txt"
     try:
-        with io.open(os.path.join(settings.CHARTER_PATH, filename), 'r') as f:
-            charter_text = force_str(f.read(), errors='ignore')
+        with filename.open() as f:
+            charter_text = force_str(f.read(), errors="ignore")
     except IOError:
-        charter_text = "Error reading charter text %s" % filename
+        charter_text = f"Error reading charter text {filename.name}"
 
     milestones = historic_milestones_for_charter(charter, rev)
 
     # wrap the output nicely
-    wrapper = textwrap.TextWrapper(initial_indent="", subsequent_indent=" " * 11, width=80, break_long_words=False)
+    wrapper = textwrap.TextWrapper(
+        initial_indent="", subsequent_indent=" " * 11, width=80, break_long_words=False
+    )
     for m in milestones:
         m.desc_filled = wrapper.fill(m.desc)
 
-    return render(request, 'doc/charter/charter_with_milestones.txt',
-                  dict(charter_text=charter_text,
-                       milestones=milestones),
-                  content_type="text/plain; charset=%s"%settings.DEFAULT_CHARSET)
+    return render(
+        request,
+        "doc/charter/charter_with_milestones.txt",
+        dict(charter_text=charter_text, milestones=milestones),
+        content_type="text/plain; charset=%s" % settings.DEFAULT_CHARSET,
+    )
