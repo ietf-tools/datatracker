@@ -3,10 +3,24 @@
 {% origin %}
 
 <picture>
-    <source srcset="{% static 'ietf/images/'|add:org|add:'-logo-white.svg' %}"
+    <source
+         {% if org == "iab" %}
+             srcset="{% static 'ietf/images/iab-logo-white.svg' %}"
+         {% elif org == "ietf" %}
+             srcset="{% static 'ietf/images/ietf-logo-white.svg' %}"
+         {% elif org == "irtf" %}
+            srcset="{% static 'ietf/images/irtf-logo-white.svg' %}"
+         {% endif %}
             media="(prefers-color-scheme: dark)">
     <img alt="{{ org|upper }} Logo"
          {% if classes %}class="{{ classes }}"{% endif %}
          {% if title %}title="{{ title }}"{% endif %}
-         src="{% static 'ietf/images/'|add:org|add:'-logo.svg' %}">
+         {% if org == "iab" %}
+             src="{% static 'ietf/images/iab-logo.svg' %}"
+         {% elif org == "ietf" %}
+             src="{% static 'ietf/images/ietf-logo.svg' %}"
+         {% elif org == "irtf" %}
+             src="{% static 'ietf/images/irtf-logo.svg' %}"
+         {% endif %}
+         >
 </picture>
