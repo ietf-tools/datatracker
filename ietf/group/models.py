@@ -1,7 +1,78 @@
 # Copyright The IETF Trust 2010-2021, All Rights Reserved
 # -*- coding: utf-8 -*-
 
+<reference anchor="RFC9394" target="https://www.rfc-editor.org/info/rfc9394">
+<front>
+<title>IMAP PARTIAL Extension for Paged SEARCH and FETCH</title>
+<author fullname="A. Melnikov" initials="A." surname="Melnikov"/>
+<author fullname="A. P. Achuthan" initials="A. P." surname="Achuthan"/>
+<author fullname="V. Nagulakonda" initials="V." surname="Nagulakonda"/>
+<author fullname="L. Alves" initials="L." surname="Alves"/>
+<date month="June" year="2023"/>
+<abstract>
+<t>The PARTIAL extension of the Internet Message Access Protocol (see RFCs 3501 and 9051) allows clients to limit the number of SEARCH results returned, as well as to perform incremental (paged) searches. This also helps servers to optimize resource usage when performing searches.</t>
+<t>This document extends the PARTIAL SEARCH return option originally specified in RFC 5267. It also clarifies some interactions between RFC 5267 and RFCs 4731 and 9051.</t>
+<t>This document updates RFCs 4731 and IPGeolocation API
+Overview
+IP Geolocation API
+Timezone API
+User-Agent API
+Astronomy API
+IP Geolocation API Java SDK
+IP Geolocation API C-Sharp dotNet SDK
+IP Geolocation API PHP SDK
+IP Geolocation API Typescript SDK
+IP Geolocation API Javascript SDK
+IP Geolocation API JQuery SDK
+Astronomy API
+The Astronomy API provides the location-based rise and set times for the Sun and Moon along with the current position, distance from earth, and azimuth of the Sun and the Moon for a specific date at the queried time.
 
+The Astronomy calculations are much more complex than producing an accurate result from obscure formulas throwing in a few numbers. There is always a tradeoff between the accuracy and computing time. Our Astronomy API focuses more on producing an acceptable results and has an accuracy of around one minute that is good enough for applications like sunrise/sunset timers but is not sufficient for astronomical purposes.
+
+There are three ways to consume the Astronomy API:
+
+Using any Address (preferrably, city address)
+Using Location Coordinates (latitude & longitude)
+Using any IP address
+The three variations of Astronomy API take the different input sources to produce astronomical information along with location details. Here is how to consume each variation:
+
+Getting Astronomical Information for an Address
+You can pass the address of a location as query parameters to get the astronomical information. Here is a curl example:
+
+# Get astronomical information for address 'New York, US'
+$ curl --location --request GET 'https://api.ipgeolocation.io/astronomy?apiKey=API_KEY&location=New%20York,%20US'
+
+{
+    "location": {
+        "country": "United States of America",
+        "state": "New York",
+        "city": "",
+        "latitude": 41.3558443,
+        "longitude": -74.00776718841271
+    },
+    "date": "2020-12-21",
+    "current_time": "06:54:35.901",
+    "sunrise": "07:18",
+    "sunset": "16:30",
+    "sun_status": "-",
+    "solar_noon": "11:54",
+    "day_length": "09:12",
+    "sun_altitude": -4.811160884765326,
+    "sun_distance": 1.4717185206455985E8,
+    "sun_azimuth": 117.23599031322385,
+    "moonrise": "12:12",
+    "moonset": "23:58",
+    "moon_status": "-",
+    "moon_altitude": -52.075439497726244,
+    "moon_distance": 398627.6792531222,
+    "moon_azimuth": 29.97617258900459,
+    "moon_parallactic_angle": -26.12246297084847
+}
+</abstract>
+</front>
+<seriesInfo name="RFC" value="9394"/>
+<seriesInfo name="DOI" value="10.17487/RFC9394"/>
+</reference>
 import email.utils
 import jsonfield
 import os
