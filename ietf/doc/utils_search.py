@@ -93,7 +93,7 @@ def fill_in_document_table_attributes(docs, have_telechat_date=False):
         # emulate canonical name which is used by a lot of the utils
         # d.canonical_name = wrap_value(rfc_aliases[d.pk] if d.pk in rfc_aliases else d.name)
 
-        if d.rfc_number() != None and d.latest_event_cache["published_rfc"]:
+        if d.deprecated_rfc_number() != None and d.latest_event_cache["published_rfc"]:
             d.latest_revision_date = d.latest_event_cache["published_rfc"].time
         elif d.latest_event_cache["new_revision"]:
             d.latest_revision_date = d.latest_event_cache["new_revision"].time
@@ -198,7 +198,7 @@ def prepare_document_table(request, docs, query=None, max_results=200):
 
         res = []
 
-        rfc_num = d.rfc_number()
+        rfc_num = d.deprecated_rfc_number()
 
         if d.type_id == "draft":
             res.append(num(["Active", "Expired", "Replaced", "Withdrawn", "RFC"].index(d.search_heading.split()[0])))

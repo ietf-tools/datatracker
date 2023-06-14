@@ -343,7 +343,7 @@ def rfcdiff_latest_json(request, name, rev=None):
                 # not sure what to do if non-numeric values come back, so at least log it
                 log.assertion('doc.rfc_number().isdigit()') # .rfc_number() is expensive...
                 log.assertion('doc.rev.isdigit()')
-                if int(doc.rfc_number()) in HAS_TOMBSTONE and prev_rev != '00':
+                if int(doc.deprecated_rfc_number()) in HAS_TOMBSTONE and prev_rev != '00':
                     prev_rev = f'{(int(doc.rev)-1):02d}'
                 response['previous'] = f'{doc.name}-{prev_rev}'
                 response['previous_url'] = get_previous_url(doc.name, prev_rev)

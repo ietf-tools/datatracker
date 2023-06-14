@@ -970,7 +970,7 @@ class RfcdiffSupportTests(TestCase):
         draft = reload_db_objects(draft)
         rfc = draft
 
-        number = rfc.rfc_number()
+        number = rfc.deprecated_rfc_number()
         received = self.getJson(dict(name=number))
         self.assertEqual(
             received,

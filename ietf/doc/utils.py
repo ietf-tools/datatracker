@@ -1022,7 +1022,7 @@ def build_file_urls(doc: Union[Document, DocHistory]):
         if "txt" in found_types:
             file_urls.append(("htmlized", urlreverse('ietf.doc.views_doc.document_html', kwargs=dict(name=name))))
             if doc.tags.filter(slug="verified-errata").exists():
-                file_urls.append(("with errata", settings.RFC_EDITOR_INLINE_ERRATA_URL.format(rfc_number=doc.rfc_number())))
+                file_urls.append(("with errata", settings.RFC_EDITOR_INLINE_ERRATA_URL.format(rfc_number=doc.deprecated_rfc_number())))
         file_urls.append(("bibtex", urlreverse('ietf.doc.views_doc.document_bibtex',kwargs=dict(name=name))))
     elif doc.rev:
         base_path = os.path.join(settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR, doc.name + "-" + doc.rev + ".")
@@ -1141,7 +1141,7 @@ def generate_idnits2_rfc_status():
 def generate_idnits2_rfcs_obsoleted():
     obsdict = defaultdict(list)
     for r in RelatedDocument.objects.filter(relationship_id='obs'):
-        obsdict[int(r.target.document.rfc_number())].append(int(r.source.rfc_number()))
+        obsdict[int(r.target.document.deprecated_rfc_number())].append(int(r.source.deprecated_rfc_number()))
     for k in obsdict:
         obsdict[k] = sorted(obsdict[k])
     return render_to_string('doc/idnits2-rfcs-obsoleted.txt', context={'obsitems':sorted(obsdict.items())})

@@ -534,7 +534,7 @@ def group_documents_txt(request, acronym, group_type=None):
 
     rows = []
     for d in itertools.chain(docs, docs_related):
-        rfc_number = d.rfc_number()
+        rfc_number = d.deprecated_rfc_number()
         if rfc_number != None:
             name = rfc_number
         else:

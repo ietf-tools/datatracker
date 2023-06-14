@@ -345,7 +345,7 @@ class DocumentInfo(models.Model):
                      iesg_state_summary = iesg_state_summary + "::"+"::".join(tag.name for tag in iesg_substate)
              
             if state.slug == "rfc":
-                return "RFC %s (%s)" % (self.rfc_number(), self.std_level)
+                return "RFC %s (%s)" % (self.deprecated_rfc_number(), self.std_level)
             elif state.slug == "repl":
                 rs = self.related_that("replaces")
                 if rs:
@@ -380,7 +380,7 @@ class DocumentInfo(models.Model):
             self._cached_is_rfc = self.pk and self.type_id == 'draft' and self.states.filter(type='draft',slug='rfc').exists()
         return self._cached_is_rfc
 
-    def rfc_number(self):
+    def deprecated_rfc_number(self):
         if not hasattr(self, '_cached_rfc_number'):
             self._cached_rfc_number = None
             if self.is_rfc():
@@ -394,7 +394,7 @@ class DocumentInfo(models.Model):
 
     @property
     def rfcnum(self):
-        return self.rfc_number()
+        return self.deprecated_rfc_number()
 
     def author_list(self):
         best_addresses = []
