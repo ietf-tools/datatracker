@@ -1,6 +1,9 @@
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
-{% load origin markup_tags %}
+{% load origin markup_tags static %}
+{% block pagehead %}
+    <link rel="stylesheet" href="{% static "ietf/css/list.css" %}">
+{% endblock %}
 {% block title %}IETF {{ meeting.number }} proceedings{% endblock %}
 {% block content %}
     {% origin %}
@@ -12,4 +15,7 @@
     </h1>
     <h2>Attendee list of IETF {{ meeting.number }} meeting</h2>
     {{ template|safe }}
+{% endblock %}
+{% block js %}
+    <script src="{% static "ietf/js/list.js" %}"></script>
 {% endblock %}
