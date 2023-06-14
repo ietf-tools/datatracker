@@ -273,14 +273,20 @@ $(document)
                 $(table)[0]
                     .dispatchEvent(new Event("tablesorter:done"));
 
-                // if there is a data-default-sort attribute on a column, pre-sort the table on that
-                const presort_col = $(header_row).children("[data-default-sort]:first");
-                if (presort_col) {
-                    const order = presort_col.attr("data-default-sort");
-                    if (order == "asc" || order == "desc") {
-                        $.each(list_instance, (i, e) => {
-                            e.sort(presort_col.attr("data-sort"), { order: order, sortFunction: text_sort });
-                        });
+                // check if there is a sort query argument, and leave the table alone if so
+                const params = new Proxy(new URLSearchParams(window.location.search), {
+                    get: (searchParams, prop) => searchParams.get(prop),
+                });
+                if (!params.sort) {
+                    // else, if there is a data-default-sort attribute on a column, pre-sort the table on that
+                    const presort_col = $(header_row).children("[data-default-sort]:first");
+                    if (presort_col) {
+                        const order = presort_col.attr("data-default-sort");
+                        if (order == "asc" || order == "desc") {
+                            $.each(list_instance, (i, e) => {
+                                e.sort(presort_col.attr("data-sort"), { order: order, sortFunction: text_sort });
+                            });
+                        }
                     }
                 }
             });
