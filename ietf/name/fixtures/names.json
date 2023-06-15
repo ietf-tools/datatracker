@@ -9928,6 +9928,17 @@
   {
     "fields": {
       "desc": "",
+      "name": "Became RFC",
+      "order": 0,
+      "revname": "Became RFC as",
+      "used": true
+    },
+    "model": "name.docrelationshipname",
+    "pk": "became-rfc"
+  },
+  {
+    "fields": {
+      "desc": "",
       "name": "conflict reviews",
       "order": 0,
       "revname": "Conflict reviewed by",

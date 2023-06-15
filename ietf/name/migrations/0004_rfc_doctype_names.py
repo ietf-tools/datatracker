@@ -12,6 +12,13 @@ def forward(apps, schema_editor):
         prefix="rfc",
     )
     
+    DocRelationshipName = apps.get_model("name", "DocRelationshipName")
+    DocRelationshipName.objects.get_or_create(
+        slug="became-rfc",
+        name="Became RFC",
+        used=True,
+        revname="Became RFC as",
+    )
 
 class Migration(migrations.Migration):
     dependencies = [
