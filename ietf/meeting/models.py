@@ -1254,7 +1254,8 @@ class Session(models.Model):
         return Constraint.objects.filter(target=self.group, meeting=self.meeting).order_by('name__name')
 
     def official_timeslotassignment(self):
-        if not hasattr(self, "_cache_official_timeslotassignment"):
+        # cache only non-None values
+        if getattr(self, "_cache_official_timeslotassignment", None) is None:
             self._cache_official_timeslotassignment = self.timeslotassignments.filter(schedule__in=[self.meeting.schedule, self.meeting.schedule.base if self.meeting.schedule else None]).first()
         return self._cache_official_timeslotassignment
 
