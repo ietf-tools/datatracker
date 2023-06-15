@@ -599,6 +599,7 @@ class NomcomViewsTest(TestCase):
         self.nominate_view(public=True,confirmation=True)
 
         self.assertEqual(len(outbox), messages_before + 3)
+        self.assertEqual(Message.objects.count(), 2)
 
         self.assertEqual('IETF Nomination Information', outbox[-3]['Subject'])
         self.assertEqual(self.email_from, outbox[-3]['From'])
@@ -906,6 +907,8 @@ class NomcomViewsTest(TestCase):
         # We're interested in the confirmation receipt here
         self.assertEqual(len(outbox),3)
         self.assertEqual('NomCom comment confirmation', outbox[2]['Subject'])
+        self.assertEqual(Message.objects.count(), 2)
+        self.assertFalse(Message.objects.filter(subject="NomCom comment confirmation").exists())
         email_body = get_payload_text(outbox[2])
         self.assertIn(position, email_body)
         self.assertNotIn('$', email_body)
