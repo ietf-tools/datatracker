@@ -45,8 +45,8 @@ def can_manage_community_list(user, clist):
     if not user or not user.is_authenticated:
         return False
 
-    if clist.user:
-        return user == clist.user
+    if clist.person:
+        return user == clist.person.user
     elif clist.group:
         if has_role(user, 'Secretariat'):
             return True

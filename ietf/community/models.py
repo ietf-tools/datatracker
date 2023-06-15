@@ -16,19 +16,9 @@ class CommunityList(models.Model):
     group = ForeignKey(Group, blank=True, null=True)
     added_docs = models.ManyToManyField(Document)
 
-    @property
-    def user(self):
-        try:
-            return self.person.user
-        except AttributeError:
-            return None
-
     def long_name(self):
         if self.person:
-            try:
-                return 'Personal I-D list of %s' % self.person.user.username
-            except AttributeError:
-                return 'I-D list'
+            return 'Personal I-D list of %s' % self.person.plain_name()
         elif self.group:
             return 'I-D list for %s' % self.group.name
         else:
