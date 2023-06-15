@@ -4,7 +4,6 @@ on:
   pull_request:
     branches:
       - 'main'
-      - 'feat/django4'
     paths:
       - 'client/**'
       - 'ietf/**'
