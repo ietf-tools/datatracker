@@ -458,7 +458,7 @@ class NominateNewPersonForm(forms.ModelForm):
                           'year': self.nomcom.year(),
                       }
                 path = nomcom_template_path + NOMINATION_RECEIPT_TEMPLATE
-                send_mail(None, to_email, from_email, subject, path, context, cc=cc)
+                send_mail(None, to_email, from_email, subject, path, context, cc=cc, copy=False, save=False)
 
         return nomination
 

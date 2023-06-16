@@ -600,7 +600,7 @@ class NomcomViewsTest(TestCase):
 
         self.assertEqual(len(outbox), messages_before + 3)
         self.assertEqual(Message.objects.count(), 2)
-        self.assertFalse(Message.objects.filter(subject="NomCom comment confirmation").exists())
+        self.assertFalse(Message.objects.filter(subject="Nomination receipt").exists())
 
         self.assertEqual('IETF Nomination Information', outbox[-3]['Subject'])
         self.assertEqual(self.email_from, outbox[-3]['From'])
@@ -668,8 +668,9 @@ class NomcomViewsTest(TestCase):
 
     def test_private_nominate_newperson(self):
         self.access_member_url(self.private_nominate_url)
-        return self.nominate_newperson_view(public=False)
-        self.client.logout()
+        value = self.nominate_newperson_view(public=False)
+        self.assertFalse(Message.objects.filter(subject="Nomination receipt").exists())
+        return value
 
     def test_private_nominate_newperson_who_already_exists(self):
         EmailFactory(address='nominee@example.com')
