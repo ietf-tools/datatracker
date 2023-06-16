@@ -15,9 +15,9 @@ def forward(apps, schema_editor):
     DocRelationshipName = apps.get_model("name", "DocRelationshipName")
     DocRelationshipName.objects.get_or_create(
         slug="became-rfc",
-        name="Became RFC",
+        name="became RFC",
         used=True,
-        revname="Became RFC as",
+        revname="came from draft",
     )
 
 class Migration(migrations.Migration):
