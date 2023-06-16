@@ -439,7 +439,7 @@ def clean_helper(form, formtype):
 
            if not re.match(r'(?i)rfc\d{1,4}',key):
               errors.append(key+" is not a valid RFC - please use the form RFCn\n")
-           elif not DocAlias.objects.filter(name=key):
+           elif not Document.objects.filter(name=key):
               errors.append(key+" does not exist\n")
 
            if new_relations[key] not in STATUSCHANGE_RELATIONS:
@@ -564,9 +564,8 @@ def start_rfc_status_change(request, name=None):
             DocAlias.objects.create( name= 'status-change-'+form.cleaned_data['document_name']).docs.add(status_change)
             
             for key in form.cleaned_data['relations']:
-                status_change.relateddocument_set.create(target=DocAlias.objects.get(name=key),
+                status_change.relateddocument_set.create(target=Document.objects.get(name=key),
                                                          relationship_id=form.cleaned_data['relations'][key])
-
 
             tc_date = form.cleaned_data['telechat_date']
             if tc_date:
@@ -609,7 +608,7 @@ def edit_relations(request, name):
             new_relations=form.cleaned_data['relations']
             status_change.relateddocument_set.filter(relationship__slug__in=STATUSCHANGE_RELATIONS).delete()
             for key in new_relations:
-                status_change.relateddocument_set.create(target=DocAlias.objects.get(name=key),
+                status_change.relateddocument_set.create(target=Document.objects.get(name=key),
                                                          relationship_id=new_relations[key])
             c = DocEvent(type="added_comment", doc=status_change, rev=status_change.rev, by=login)
             c.desc = "Affected RFC list changed.\nOLD:"

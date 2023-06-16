@@ -23,7 +23,7 @@ from django.utils import timezone
 
 import debug                            # pyflakes:ignore
 
-from ietf.doc.models import ( Document, DocAlias, RelatedDocument, State,
+from ietf.doc.models import ( Document, RelatedDocument, State,
     StateType, DocEvent, ConsensusDocEvent, TelechatDocEvent, WriteupDocEvent, StateDocEvent,
     IanaExpertDocEvent, IESG_SUBSTATE_TAGS)
 from ietf.doc.mails import ( email_pulled_from_rfc_queue, email_resurrect_requested,

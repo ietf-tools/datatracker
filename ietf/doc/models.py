@@ -969,7 +969,7 @@ class Document(DocumentInfo):
         iprs = (
             IprDocRel.objects.filter(
                 document__in=list(self.docalias.all())
-                + [x.docalias.first() for x in self.all_related_that_doc(("obs", "replaces"))]
+                + [x.docalias.first() for x in self.all_related_that_doc(("obs", "replaces"))] # this really is docalias until IprDocRel changes
             )
             .filter(disclosure__state__in=("posted", "removed"))
             .values_list("disclosure", flat=True)

@@ -31,7 +31,7 @@ from ietf.community.models import CommunityList
 from ietf.community.utils import docs_tracked_by_community_list
 
 from ietf.doc.models import Document, DocHistory, State, DocumentAuthor, DocHistoryAuthor
-from ietf.doc.models import DocAlias, RelatedDocument, RelatedDocHistory, BallotType, DocReminder
+from ietf.doc.models import RelatedDocument, RelatedDocHistory, BallotType, DocReminder
 from ietf.doc.models import DocEvent, ConsensusDocEvent, BallotDocEvent, IRSGBallotDocEvent, NewRevisionDocEvent, StateDocEvent
 from ietf.doc.models import TelechatDocEvent, DocumentActionHolder, EditedAuthorsDocEvent
 from ietf.name.models import DocReminderTypeName, DocRelationshipName
@@ -771,9 +771,9 @@ def rebuild_reference_relations(doc, filenames):
     errors = []
     unfound = set()
     for ( ref, refType ) in refs.items():
-        refdoc = DocAlias.objects.filter(name=ref)
+        refdoc = Document.objects.filter(name=ref)
         if not refdoc and re.match(r"^draft-.*-\d{2}$", ref):
-            refdoc = DocAlias.objects.filter(name=ref[:-3])
+            refdoc = Document.objects.filter(name=ref[:-3])
         count = refdoc.count()
         # As of Dec 2021, DocAlias has a unique constraint on the name field, so count > 1 should not occur
         if count == 0:

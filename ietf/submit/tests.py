@@ -371,7 +371,7 @@ class SubmitTests(BaseSubmitTestCase):
         mailbox_before = len(outbox)
         replaced_alias = draft.docalias.first()
         r = self.supply_extra_metadata(name, status_url, author.ascii, author.email().address.lower(),
-                                       replaces=[str(replaced_alias.pk), str(sug_replaced_alias.pk)])
+                                       replaces=[str(draft.pk), str(sug_replaced_draft.pk)])
 
         self.assertEqual(r.status_code, 302)
         status_url = r["Location"]

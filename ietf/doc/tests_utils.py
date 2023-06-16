@@ -328,11 +328,11 @@ class RebuildReferenceRelationsTests(TestCase):
         self.normative, self.informative, self.unknown = WgRfcFactory.create_batch(3)
         for relationship in ['refnorm', 'refinfo', 'refunk', 'refold']:
             self.doc.relateddocument_set.create(
-                target=WgRfcFactory().docalias.first(),
+                target=WgRfcFactory(),
                 relationship_id=relationship,
             )
         self.updated = WgRfcFactory()  # related document that should be left alone
-        self.doc.relateddocument_set.create(target=self.updated.docalias.first(), relationship_id='updates')
+        self.doc.relateddocument_set.create(target=self.updated, relationship_id='updates')
         self.assertCountEqual(self.doc.relateddocument_set.values_list('relationship__slug', flat=True),
                               ['refnorm', 'refinfo', 'refold', 'refunk', 'updates'],
                               'Test conditions set up incorrectly: wrong prior document relationships')
@@ -389,7 +389,7 @@ class RebuildReferenceRelationsTests(TestCase):
                 (self.normative.canonical_name(), 'refnorm'),
                 (self.informative.canonical_name(), 'refinfo'),
                 (self.unknown.canonical_name(), 'refunk'),
-                (self.updated.docalias.first().name, 'updates'),
+                (self.updated.name, 'updates'),
             ]
         )
 
@@ -420,7 +420,7 @@ class RebuildReferenceRelationsTests(TestCase):
                 (self.normative.canonical_name(), 'refnorm'),
                 (self.informative.canonical_name(), 'refinfo'),
                 (self.unknown.canonical_name(), 'refunk'),
-                (self.updated.docalias.first().name, 'updates'),
+                (self.updated.name, 'updates'),
             ]
         )
 
@@ -452,6 +452,6 @@ class RebuildReferenceRelationsTests(TestCase):
                 (self.normative.canonical_name(), 'refnorm'),
                 (self.informative.canonical_name(), 'refinfo'),
                 (self.unknown.canonical_name(), 'refunk'),
-                (self.updated.docalias.first().name, 'updates'),
+                (self.updated.name, 'updates'),
             ]
         )
