@@ -49,7 +49,7 @@ class Migration(migrations.Migration):
             field=ietf.utils.models.ForeignKey(
                 default=1, # A lie, but a convenient one - no relations point here.
                 on_delete=django.db.models.deletion.CASCADE,
-                related_name="target",
+                related_name="targets_related",
                 to="doc.document",
                 db_index=False,
             ),
@@ -61,7 +61,7 @@ class Migration(migrations.Migration):
             name="target",
             field=ietf.utils.models.ForeignKey(
                 on_delete=django.db.models.deletion.CASCADE,
-                related_name="target",
+                related_name="targets_related",
                 to="doc.document",
                 db_index=True,
             ),

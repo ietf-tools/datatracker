@@ -673,7 +673,7 @@ def edit_info(request, name):
                         e.save()
                         events.append(e)
 
-                replaces = Document.objects.filter(target__source=doc, target__relationship="replaces") # TODO: again target needs to change
+                replaces = Document.objects.filter(targets_related__source=doc, targets_related__relationship="replaces")
                 if replaces:
                     # this should perhaps be somewhere else, e.g. the
                     # place where the replace relationship is established?

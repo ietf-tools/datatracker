@@ -667,7 +667,7 @@ STATUSCHANGE_RELATIONS = ('tops','tois','tohist','toinf','tobcp','toexp')
 
 class RelatedDocument(models.Model):
     source = ForeignKey('Document')
-    target = ForeignKey('Document', related_name='target')
+    target = ForeignKey('Document', related_name='targets_related')
     relationship = ForeignKey(DocRelationshipName)
     def action(self):
         return self.relationship.name

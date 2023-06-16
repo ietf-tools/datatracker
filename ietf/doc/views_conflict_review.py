@@ -416,7 +416,7 @@ def start_review_sanity_check(request, name):
         raise Http404
 
     # sanity check that there's not already a conflict review document for this document
-    if [ rel.source for rel in doc_to_review.target.filter(relationship='conflrev') ]: # TODO whould be targets or targets_related
+    if [ rel.source for rel in doc_to_review.targets_related.filter(relationship='conflrev') ]:
         raise Http404
 
     return doc_to_review
