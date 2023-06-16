@@ -30,14 +30,12 @@ def forward(apps, schema_editor):
         assert rfc_alias.docs.count() == 1, f"DocAlias {rfc_alias} is linked to more than 1 Document"
         draft = rfc_alias.docs.first()
         if draft.name.startswith("rfc"):
-            print(f"Converting {draft.name} to type rfc")
             rfc = draft
             rfc.type = rfc_doctype
             rfc.rfc_number = int(draft.name[3:])
             rfc.save()
             rfc.states.set([rfc_published_state])
         else:
-            print(f"Creating rfc named {rfc_alias.name} for {draft.name}")
             rfc = Document.objects.create(
                 type=rfc_doctype,
                 name=rfc_alias.name,
