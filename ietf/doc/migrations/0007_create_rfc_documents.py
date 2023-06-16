@@ -55,14 +55,14 @@ def forward(apps, schema_editor):
             rfc.formal_languages.set(draft.formal_languages.all())
             
             # Copy Authors
-            for dai in draft.documentauthor_set.all():
+            for da in draft.documentauthor_set.all():
                 DocumentAuthor.objects.create(
                     document=rfc,
-                    person=dai.person,
-                    email=dai.email,
-                    affiliation=dai.affiliation,
-                    country=dai.country,
-                    order=dai.order,
+                    person=da.person,
+                    email=da.email,
+                    affiliation=da.affiliation,
+                    country=da.country,
+                    order=da.order,
                 )
 
 
