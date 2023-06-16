@@ -63,7 +63,7 @@ from ietf.doc.utils import (augment_events_with_revision,
     needed_ballot_positions, nice_consensus, prettify_std_name, update_telechat, has_same_ballot,
     get_initial_notify, make_notify_changed_event, make_rev_history, default_consensus,
     add_events_message_info, get_unicode_document_content,
-    augment_docs_and_user_with_user_info, irsg_needed_ballot_positions, add_action_holder_change_event,
+    augment_docs_and_person_with_person_info, irsg_needed_ballot_positions, add_action_holder_change_event,
     build_file_urls, update_documentauthors, fuzzy_find_documents,
     bibxml_for_draft)
 from ietf.doc.utils_bofreq import bofreq_editors, bofreq_responsible
@@ -458,7 +458,8 @@ def document_main(request, name, rev=None, document_html=False):
             elif can_edit_stream_info and (iesg_state_slug in ('idexists','watching')):
                 actions.append(("Submit to IESG for Publication", urlreverse('ietf.doc.views_draft.to_iesg', kwargs=dict(name=doc.name))))
 
-        augment_docs_and_user_with_user_info([doc], request.user)
+        if request.user.is_authenticated:
+            augment_docs_and_person_with_person_info([doc], request.user.person)
 
         published = doc.latest_event(type="published_rfc")
         started_iesg_process = doc.latest_event(type="started_iesg_process")

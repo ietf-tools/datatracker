@@ -23,14 +23,14 @@
             </a>
             <br>
         {% endif %}
-        {% if user.review_teams %}
+        {% if user.person.review_teams %}
             <a class="review-wish-add-remove-doc ajax {% if not doc.has_review_wish %}d-none{% endif %}"
                href="{% url "ietf.doc.views_review.review_wishes_remove" name=doc.name %}?next={{ request.get_full_path|urlencode }}"
                aria-label="Remove from your review wishes for all teams"
                title="Remove from your review wishes for all teams">
                 <i class="bi bi-chat-left-heart-fill"></i>
             </a>
-            <a class="review-wish-add-remove-doc {% if user.review_teams|length_is:"1" %}ajax {% endif %} {% if doc.has_review_wish %}d-none{% endif %}"
+            <a class="review-wish-add-remove-doc {% if user.person.review_teams|length_is:"1" %}ajax {% endif %} {% if doc.has_review_wish %}d-none{% endif %}"
                href="{% url "ietf.doc.views_review.review_wish_add" name=doc.name %}?next={{ request.get_full_path|urlencode }}"
                aria-label="Add to your review wishes"
                title="Add to your review wishes">
