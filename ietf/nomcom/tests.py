@@ -600,6 +600,7 @@ class NomcomViewsTest(TestCase):
 
         self.assertEqual(len(outbox), messages_before + 3)
         self.assertEqual(Message.objects.count(), 2)
+        self.assertFalse(Message.objects.filter(subject="NomCom comment confirmation").exists())
 
         self.assertEqual('IETF Nomination Information', outbox[-3]['Subject'])
         self.assertEqual(self.email_from, outbox[-3]['From'])
