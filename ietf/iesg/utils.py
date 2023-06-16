@@ -32,10 +32,10 @@ def telechat_page_count(date=None, docs=None):
             pages_for_action += d.pages or 0
         elif d.type_id == 'statchg':
             for rel in d.related_that_doc(STATUSCHANGE_RELATIONS):
-                pages_for_action += rel.document.pages or 0
+                pages_for_action += rel.pages or 0
         elif d.type_id == 'conflrev':
             for rel in d.related_that_doc('conflrev'):
-                pages_for_action += rel.document.pages or 0
+                pages_for_action += rel.pages or 0
         else:
             pass
 
@@ -43,10 +43,10 @@ def telechat_page_count(date=None, docs=None):
     for d in for_approval-set(drafts):
         if d.type_id == 'statchg':
             for rel in d.related_that_doc(STATUSCHANGE_RELATIONS):
-                related_pages += rel.document.pages or 0
+                related_pages += rel.pages or 0
         elif d.type_id == 'conflrev':
             for rel in d.related_that_doc('conflrev'):
-                related_pages += rel.document.pages or 0
+                related_pages += rel.pages or 0
         else:
             # There's really nothing to rely on to give a reading load estimate for charters
             pass

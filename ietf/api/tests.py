@@ -934,7 +934,7 @@ class RfcdiffSupportTests(TestCase):
         self.assertNotIn('previous', received, 'Rev 00 has no previous name when not replacing a draft')
 
         replaced = IndividualDraftFactory()
-        RelatedDocument.objects.create(relationship_id='replaces',source=draft,target=replaced.docalias.first())
+        RelatedDocument.objects.create(relationship_id='replaces',source=draft,target=replaced)
         received = self.getJson(dict(name=draft.name, rev='00'))
         self.assertEqual(received['previous'], f'{replaced.name}-{replaced.rev}',
                          'Rev 00 has a previous name when replacing a draft')

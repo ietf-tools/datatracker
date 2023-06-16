@@ -218,7 +218,7 @@ def needed_ballot_positions(doc, active_positions):
         else:
             related_set = RelatedDocHistory.objects.none()
         for rel in related_set.filter(relationship__slug__in=['tops', 'tois', 'tohist', 'toinf', 'tobcp', 'toexp']):
-            if (rel.target.document.std_level_id in ['bcp','ps','ds','std']) or (rel.relationship_id in ['tops','tois','tobcp']):
+            if (rel.target.std_level_id in ['bcp','ps','ds','std']) or (rel.relationship_id in ['tops','tois','tobcp']):
                 needed = two_thirds_rule(recused=len(recuse))
                 break
     else:
@@ -783,7 +783,7 @@ def rebuild_reference_relations(doc, filenames):
             errors.append("Too many DocAlias objects found for %s"%ref)
         else:
             # Don't add references to ourself
-            if doc != refdoc[0].document:
+            if doc != refdoc[0]:
                 RelatedDocument.objects.get_or_create( source=doc, target=refdoc[ 0 ], relationship=DocRelationshipName.objects.get( slug='ref%s' % refType ) )
     if unfound:
         warnings.append('There were %d references with no matching DocAlias'%len(unfound))
@@ -821,26 +821,26 @@ def set_replaces_for_document(request, doc, new_replaces, by, email_subject, com
 
     for d in old_replaces:
         if d not in new_replaces:
-            other_addrs = gather_address_lists('doc_replacement_changed',doc=d.document)
+            other_addrs = gather_address_lists('doc_replacement_changed',doc=d)
             to.update(other_addrs.to)
             cc.update(other_addrs.cc)
             RelatedDocument.objects.filter(source=doc, target=d, relationship=relationship).delete()
             if not RelatedDocument.objects.filter(target=d, relationship=relationship):
-                s = 'active' if d.document.expires > timezone.now() else 'expired'
-                d.document.set_state(State.objects.get(type='draft', slug=s))
+                s = 'active' if d.expires > timezone.now() else 'expired'
+                d.set_state(State.objects.get(type='draft', slug=s))
 
     for d in new_replaces:
         if d not in old_replaces:
-            other_addrs = gather_address_lists('doc_replacement_changed',doc=d.document)
+            other_addrs = gather_address_lists('doc_replacement_changed',doc=d)
             to.update(other_addrs.to)
             cc.update(other_addrs.cc)
             RelatedDocument.objects.create(source=doc, target=d, relationship=relationship)
-            d.document.set_state(State.objects.get(type='draft', slug='repl'))
+            d.set_state(State.objects.get(type='draft', slug='repl'))
             
-            if d.document.stream_id in ('irtf','ise','iab'):
-                repl_state = State.objects.get(type_id='draft-stream-%s'%d.document.stream_id, slug='repl')
-                d.document.set_state(repl_state)
-                events.append(StateDocEvent.objects.create(doc=d.document, rev=d.document.rev, by=by, type='changed_state', desc="Set stream state to Replaced",state_type=repl_state.type, state=repl_state))
+            if d.stream_id in ('irtf','ise','iab'):
+                repl_state = State.objects.get(type_id='draft-stream-%s'%d.stream_id, slug='repl')
+                d.set_state(repl_state)
+                events.append(StateDocEvent.objects.create(doc=d, rev=d.rev, by=by, type='changed_state', desc="Set stream state to Replaced",state_type=repl_state.type, state=repl_state))
 
     # make sure there are no lingering suggestions duplicating new replacements
     RelatedDocument.objects.filter(source=doc, target__in=new_replaces, relationship="possibly-replaces").delete()
@@ -910,7 +910,7 @@ def extract_complete_replaces_ancestor_mapping_for_docs(names):
             break
 
         relations = ( RelatedDocument.objects.filter(source__name__in=front, relationship="replaces")
-                          .select_related("target").values_list("source__name", "target__docs__name") )
+                          .select_related("target").values_list("source__name", "target__name") )
         if not relations:
             break
 
@@ -1141,7 +1141,7 @@ def generate_idnits2_rfc_status():
 def generate_idnits2_rfcs_obsoleted():
     obsdict = defaultdict(list)
     for r in RelatedDocument.objects.filter(relationship_id='obs'):
-        obsdict[int(r.target.document.rfc_number())].append(int(r.source.rfc_number()))
+        obsdict[int(r.target.rfc_number())].append(int(r.source.rfc_number()))
     for k in obsdict:
         obsdict[k] = sorted(obsdict[k])
     return render_to_string('doc/idnits2-rfcs-obsoleted.txt', context={'obsitems':sorted(obsdict.items())})

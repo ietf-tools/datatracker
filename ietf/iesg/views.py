@@ -172,7 +172,7 @@ def agenda_json(request, date=None):
 
                 elif doc.type_id == 'conflrev':
                     docinfo['rev'] = doc.rev
-                    td = doc.relateddocument_set.get(relationship__slug='conflrev').target.document
+                    td = doc.relateddocument_set.get(relationship__slug='conflrev').target
                     docinfo['target-docname'] = td.canonical_name()
                     docinfo['target-title'] = td.title
                     docinfo['target-rev'] = td.rev

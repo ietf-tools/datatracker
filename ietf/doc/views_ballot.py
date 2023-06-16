@@ -953,7 +953,7 @@ def approve_downrefs(request, name):
 
     login = request.user.person
 
-    downrefs_to_rfc = [rel for rel in doc.relateddocument_set.all() if rel.is_downref() and not rel.is_approved_downref() and rel.target.document.is_rfc()]
+    downrefs_to_rfc = [rel for rel in doc.relateddocument_set.all() if rel.is_downref() and not rel.is_approved_downref() and rel.target.is_rfc()]
 
     downrefs_to_rfc_qs = RelatedDocument.objects.filter(pk__in=[r.pk for r in downrefs_to_rfc])        
 
@@ -968,12 +968,12 @@ def approve_downrefs(request, name):
                 c = DocEvent(type="downref_approved", doc=rel.source,
                         rev=rel.source.rev, by=login)
                 c.desc = "Downref to RFC %s approved by Last Call for %s-%s" % (
-                        rel.target.document.rfc_number(), rel.source, rel.source.rev)
+                        rel.target.rfc_number(), rel.source, rel.source.rev)
                 c.save()
-                c = DocEvent(type="downref_approved", doc=rel.target.document,
-                        rev=rel.target.document.rev, by=login)
+                c = DocEvent(type="downref_approved", doc=rel.target,
+                        rev=rel.target.rev, by=login)
                 c.desc = "Downref to RFC %s approved by Last Call for %s-%s" % (
-                        rel.target.document.rfc_number(), rel.source, rel.source.rev)
+                        rel.target.rfc_number(), rel.source, rel.source.rev)
                 c.save()
 
             return HttpResponseRedirect(doc.get_absolute_url())

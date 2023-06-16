@@ -8,7 +8,7 @@ from django import forms
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.core.validators import validate_email
 
-from ietf.doc.fields import SearchableDocAliasesField, SearchableDocAliasField
+from ietf.doc.fields import SearchableDocumentField, SearchableDocumentsField
 from ietf.doc.models import RelatedDocument, DocExtResource
 from ietf.iesg.models import TelechatDate
 from ietf.iesg.utils import telechat_page_count
@@ -134,11 +134,11 @@ class ActionHoldersForm(forms.Form):
 IESG_APPROVED_STATE_LIST = ("ann", "rfcqueue", "pub")
 
 class AddDownrefForm(forms.Form):
-    rfc = SearchableDocAliasField(
+    rfc = SearchableDocumentField(
                 label="Referenced RFC",
                 help_text="The RFC that is approved for downref",
                 required=True)
-    drafts = SearchableDocAliasesField(
+    drafts = SearchableDocumentsField(
                 label="Internet-Drafts that makes the reference",
                 help_text="The Internet-Drafts that approve the downref in their Last Call",
                 required=True)
@@ -148,7 +148,7 @@ class AddDownrefForm(forms.Form):
             raise forms.ValidationError("Please provide a referenced RFC and a referencing Internet-Draft")
 
         rfc = self.cleaned_data['rfc']
-        if not rfc.document.is_rfc():
+        if not rfc.is_rfc():
             raise forms.ValidationError("Cannot find the RFC: " + rfc.name)
         return rfc
 
@@ -158,10 +158,10 @@ class AddDownrefForm(forms.Form):
 
         v_err_names = []
         drafts = self.cleaned_data['drafts']
-        for da in drafts:
-            state = da.document.get_state("draft-iesg")
+        for d in drafts:
+            state = d.get_state("draft-iesg")
             if not state or state.slug not in IESG_APPROVED_STATE_LIST:
-                v_err_names.append(da.name)
+                v_err_names.append(d.name)
         if v_err_names:
             raise forms.ValidationError("Internet-Draft is not yet approved: " + ", ".join(v_err_names))
         return drafts
@@ -173,23 +173,23 @@ class AddDownrefForm(forms.Form):
         v_err_pairs = []
         rfc = self.cleaned_data['rfc']
         drafts = self.cleaned_data['drafts']
-        for da in drafts:
-            if RelatedDocument.objects.filter(source=da.document, target=rfc, relationship_id='downref-approval'):
-                v_err_pairs.append(da.name + " --> RFC " + rfc.document.rfc_number())
+        for d in drafts:
+            if RelatedDocument.objects.filter(source=d, target=rfc, relationship_id='downref-approval'):
+                v_err_pairs.append(d.name + " --> RFC " + rfc.rfc_number())
         if v_err_pairs:
             raise forms.ValidationError("Downref is already in the registry: " + ", ".join(v_err_pairs))
 
         if 'save_downref_anyway' not in self.data:
         # this check is skipped if the save_downref_anyway button is used
             v_err_refnorm = ""
-            for da in drafts:
-                if not RelatedDocument.objects.filter(source=da.document, target=rfc, relationship_id='refnorm'):
+            for d in drafts:
+                if not RelatedDocument.objects.filter(source=d, target=rfc, relationship_id='refnorm'):
                     if v_err_refnorm:
-                        v_err_refnorm = v_err_refnorm + " or " + da.name
+                        v_err_refnorm = v_err_refnorm + " or " + d.name
                     else:
-                        v_err_refnorm = da.name
+                        v_err_refnorm = d.name
             if v_err_refnorm:
-                v_err_refnorm_prefix = "There does not seem to be a normative reference to RFC " + rfc.document.rfc_number() + " by "
+                v_err_refnorm_prefix = "There does not seem to be a normative reference to RFC " + rfc.rfc_number() + " by "
                 raise forms.ValidationError(v_err_refnorm_prefix  + v_err_refnorm)
 
 

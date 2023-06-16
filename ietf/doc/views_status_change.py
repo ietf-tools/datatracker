@@ -98,8 +98,8 @@ def change_state(request, name, option=None):
                         relationship__slug__in=STATUSCHANGE_RELATIONS
                     )
                     related_doc_info = [
-                        dict(title=rel_doc.target.document.title,
-                             canonical_name=rel_doc.target.document.canonical_name(),
+                        dict(title=rel_doc.target.title,
+                             canonical_name=rel_doc.target.canonical_name(),
                              newstatus=newstatus(rel_doc))
                         for rel_doc in related_docs
                     ]
@@ -309,7 +309,7 @@ def default_approval_text(status_change,relateddoc):
 
     current_text = status_change.text_or_error() # pyflakes:ignore
 
-    if relateddoc.target.document.std_level_id in ('std','ps','ds','bcp',):
+    if relateddoc.target.std_level_id in ('std','ps','ds','bcp',):
         action = "Protocol Action"
     else:
         action = "Document Action"
@@ -320,7 +320,7 @@ def default_approval_text(status_change,relateddoc):
                                dict(status_change=status_change,
                                     status_change_url = settings.IDTRACKER_BASE_URL+status_change.get_absolute_url(),
                                     relateddoc= relateddoc,
-                                    relateddoc_url = settings.IDTRACKER_BASE_URL+relateddoc.target.document.get_absolute_url(),
+                                    relateddoc_url = settings.IDTRACKER_BASE_URL+relateddoc.target.get_absolute_url(),
                                     approved_text = current_text,
                                     action=action,
                                     newstatus=newstatus(relateddoc),
@@ -388,7 +388,7 @@ def approve(request, name):
 
             for rel in status_change.relateddocument_set.filter(relationship__slug__in=STATUSCHANGE_RELATIONS):
                 # Add a document event to each target
-                c = DocEvent(type="added_comment", doc=rel.target.document, rev=rel.target.document.rev, by=login)
+                c = DocEvent(type="added_comment", doc=rel.target, rev=rel.target.rev, by=login)
                 c.desc = "New status of %s approved by the IESG\n%s%s" % (newstatus(rel), settings.IDTRACKER_BASE_URL,reverse('ietf.doc.views_doc.document_main', kwargs={'name': status_change.name}))
                 c.save()
 
@@ -399,7 +399,7 @@ def approve(request, name):
         init = []
         for rel in status_change.relateddocument_set.filter(relationship__slug__in=STATUSCHANGE_RELATIONS):
             init.append({"announcement_text" : escape(default_approval_text(status_change,rel)),
-                         "label": "Announcement text for %s to %s"%(rel.target.document.canonical_name(),newstatus(rel)),
+                         "label": "Announcement text for %s to %s"%(rel.target.canonical_name(),newstatus(rel)),
                        })
         formset = AnnouncementFormSet(initial=init)
         for form in formset.forms:
@@ -605,7 +605,7 @@ def edit_relations(request, name):
     
             old_relations={}
             for rel in status_change.relateddocument_set.filter(relationship__slug__in=STATUSCHANGE_RELATIONS):
-                old_relations[rel.target.document.canonical_name()]=rel.relationship.slug
+                old_relations[rel.target.canonical_name()]=rel.relationship.slug
             new_relations=form.cleaned_data['relations']
             status_change.relateddocument_set.filter(relationship__slug__in=STATUSCHANGE_RELATIONS).delete()
             for key in new_relations:
@@ -626,7 +626,7 @@ def edit_relations(request, name):
     else: 
         relations={}
         for rel in status_change.relateddocument_set.filter(relationship__slug__in=STATUSCHANGE_RELATIONS):
-            relations[rel.target.document.canonical_name()]=rel.relationship.slug
+            relations[rel.target.canonical_name()]=rel.relationship.slug
         init = { "relations":relations, 
                }
         form = EditStatusChangeForm(initial=init)
@@ -653,8 +653,8 @@ def generate_last_call_text(request, doc):
                                      settings=settings,
                                      requester=requester,
                                      expiration_date=expiration_date.strftime("%Y-%m-%d"),
-                                     changes=['%s from %s to %s\n    (%s)'%(rel.target.name.upper(),rel.target.document.std_level.name,newstatus(rel),rel.target.document.title) for rel in doc.relateddocument_set.filter(relationship__slug__in=STATUSCHANGE_RELATIONS)],
-                                     urls=[rel.target.document.get_absolute_url() for rel in doc.relateddocument_set.filter(relationship__slug__in=STATUSCHANGE_RELATIONS)],
+                                     changes=['%s from %s to %s\n    (%s)'%(rel.target.name.upper(),rel.target.std_level.name,newstatus(rel),rel.target.title) for rel in doc.relateddocument_set.filter(relationship__slug__in=STATUSCHANGE_RELATIONS)],
+                                     urls=[rel.target.get_absolute_url() for rel in doc.relateddocument_set.filter(relationship__slug__in=STATUSCHANGE_RELATIONS)],
                                      cc=cc
                                     )
                                )

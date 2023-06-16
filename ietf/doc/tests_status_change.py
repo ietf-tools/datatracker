@@ -74,7 +74,7 @@ class StatusChangeTests(TestCase):
         self.assertEqual(status_change.rev,'00')
         self.assertEqual(status_change.ad.name,'Areað Irector')
         self.assertEqual(status_change.notify,'ipu@ietf.org')
-        self.assertTrue(status_change.relateddocument_set.filter(relationship__slug='tois',target__docs__name='draft-ietf-random-thing'))
+        self.assertTrue(status_change.relateddocument_set.filter(relationship__slug='tois',target__name='draft-ietf-random-thing'))
 
         # Verify that it's possible to start a status change without a responsible ad.
         r = self.client.post(url,dict(

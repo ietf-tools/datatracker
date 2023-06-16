@@ -85,13 +85,13 @@
             {% if downrefs %}
                 <h2 id="downrefs">Downward References</h2>
                 {% for ref in downrefs %}
-                    <p>Add {{ref.target.document.canonical_name}}
-                        ({{ref.target.document.std_level}} - {{ref.target.document.stream.desc}})
+                    <p>Add {{ref.target.canonical_name}}
+                        ({{ref.target.std_level}} - {{ref.target.stream.desc}})
                         to downref registry.<br>
-                        {% if not ref.target.document.std_level %}
+                        {% if not ref.target.std_level %}
                             +++ Warning: The standards level has not been set yet!!!<br>
                         {% endif %}
-                        {% if not ref.target.document.stream %}
+                        {% if not ref.target.stream %}
                             +++ Warning: document stream has not been set yet!!!<br>
                         {% endif %}
                 {% endfor %}</p>

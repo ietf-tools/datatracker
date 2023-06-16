@@ -355,7 +355,7 @@ def rfcdiff_latest_json(request, name, rev=None):
             if doc.rev == '00':
                 replaces_docs = (history.doc if condition=='historic version' else doc).related_that_doc('replaces')
                 if replaces_docs:
-                    replaces = replaces_docs[0].document
+                    replaces = replaces_docs[0]
                     response['previous'] = f'{replaces.name}-{replaces.rev}'
                     response['previous_url'] = get_previous_url(replaces.name, replaces.rev)
                 else:

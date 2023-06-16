@@ -38,7 +38,7 @@ from ietf.doc.utils import ( add_state_change_event, can_adopt_draft, can_unadop
     set_replaces_for_document, default_consensus, tags_suffix, can_edit_docextresources,
     update_doc_extresources )
 from ietf.doc.lastcall import request_last_call
-from ietf.doc.fields import SearchableDocAliasesField
+from ietf.doc.fields import SearchableDocumentsField
 from ietf.doc.forms import ExtResourceForm
 from ietf.group.models import Group, Role, GroupFeatures
 from ietf.iesg.models import TelechatDate
@@ -333,7 +333,7 @@ def change_stream(request, name):
                                    ))
 
 class ReplacesForm(forms.Form):
-    replaces = SearchableDocAliasesField(required=False)
+    replaces = SearchableDocumentsField(required=False)
     comment = forms.CharField(widget=forms.Textarea, required=False, strip=False)
 
     def __init__(self, *args, **kwargs):
@@ -343,9 +343,9 @@ class ReplacesForm(forms.Form):
 
     def clean_replaces(self):
         for d in self.cleaned_data['replaces']:
-            if d.document == self.doc:
+            if d == self.doc:
                 raise forms.ValidationError("An Internet-Draft can't replace itself")
-            if d.document.type_id == "draft" and d.document.get_state_slug() == "rfc":
+            if d.type_id == "draft" and d.get_state_slug() == "rfc":
                 raise forms.ValidationError("An Internet-Draft can't replace an RFC")
         return self.cleaned_data['replaces']
 
@@ -383,7 +383,7 @@ def replaces(request, name):
                    ))
 
 class SuggestedReplacesForm(forms.Form):
-    replaces = forms.ModelMultipleChoiceField(queryset=DocAlias.objects.all(),
+    replaces = forms.ModelMultipleChoiceField(queryset=Document.objects.all(),
                                               label="Suggestions", required=False, widget=forms.CheckboxSelectMultiple,
                                               help_text="Select only the documents that are replaced by this document")
     comment = forms.CharField(label="Optional comment", widget=forms.Textarea, required=False, strip=False)
@@ -673,7 +673,7 @@ def edit_info(request, name):
                         e.save()
                         events.append(e)
 
-                replaces = Document.objects.filter(docalias__relateddocument__source=doc, docalias__relateddocument__relationship="replaces")
+                replaces = Document.objects.filter(target__source=doc, target__relationship="replaces") # TODO: again target needs to change
                 if replaces:
                     # this should perhaps be somewhere else, e.g. the
                     # place where the replace relationship is established?

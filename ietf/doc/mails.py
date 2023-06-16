@@ -54,7 +54,7 @@ def email_ad_approved_doc(request, doc, text):
 
 def email_ad_approved_conflict_review(request, review, ok_to_publish):
     """Email notification when AD approves a conflict review"""
-    conflictdoc = review.relateddocument_set.get(relationship__slug='conflrev').target.document
+    conflictdoc = review.relateddocument_set.get(relationship__slug='conflrev').target
     (to, cc) = gather_address_lists("ad_approved_conflict_review")
     frm = request.user.person.formatted_email()
     send_mail(request,

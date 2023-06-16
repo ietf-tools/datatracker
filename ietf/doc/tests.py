@@ -625,15 +625,15 @@ Man                    Expires September 22, 2015               [Page 3]
         # Docs for testing relationships. Does not test 'possibly-replaces'. The 'replaced_by' direction
         # is tested separately below.
         replaced = IndividualDraftFactory()
-        draft.relateddocument_set.create(relationship_id='replaces',source=draft,target=replaced.docalias.first())
+        draft.relateddocument_set.create(relationship_id='replaces',source=draft,target=replaced)
         obsoleted = IndividualDraftFactory()
-        draft.relateddocument_set.create(relationship_id='obs',source=draft,target=obsoleted.docalias.first())
+        draft.relateddocument_set.create(relationship_id='obs',source=draft,target=obsoleted)
         obsoleted_by = IndividualDraftFactory()
-        obsoleted_by.relateddocument_set.create(relationship_id='obs',source=obsoleted_by,target=draft.docalias.first())
+        obsoleted_by.relateddocument_set.create(relationship_id='obs',source=obsoleted_by,target=draft)
         updated = IndividualDraftFactory()
-        draft.relateddocument_set.create(relationship_id='updates',source=draft,target=updated.docalias.first())
+        draft.relateddocument_set.create(relationship_id='updates',source=draft,target=updated)
         updated_by = IndividualDraftFactory()
-        updated_by.relateddocument_set.create(relationship_id='updates',source=obsoleted_by,target=draft.docalias.first())
+        updated_by.relateddocument_set.create(relationship_id='updates',source=obsoleted_by,target=draft)
 
         external_resource = DocExtResourceFactory(doc=draft)
 
@@ -819,7 +819,7 @@ Man                    Expires September 22, 2015               [Page 3]
             shepherd_id=draft.shepherd_id, ad_id=draft.ad_id, expires=draft.expires,
             notify=draft.notify, note=draft.note)
         rel = RelatedDocument.objects.create(source=replacement,
-                                             target=draft.docalias.get(name__startswith="draft"),
+                                             target=draft,
                                              relationship_id="replaces")
 
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)))
@@ -891,7 +891,7 @@ Man                    Expires September 22, 2015               [Page 3]
         draft = WgRfcFactory()
         status_change_doc = StatusChangeFactory(
             group=draft.group,
-            changes_status_of=[('tops', draft.docalias.first())],
+            changes_status_of=[('tops', draft)],
         )
         status_change_url = urlreverse(
             'ietf.doc.views_doc.document_main',
@@ -899,7 +899,7 @@ Man                    Expires September 22, 2015               [Page 3]
         )
         proposed_status_change_doc = StatusChangeFactory(
             group=draft.group,
-            changes_status_of=[('tobcp', draft.docalias.first())],
+            changes_status_of=[('tobcp', draft)],
             states=[State.objects.get(slug='needshep', type='statchg')],
         )
         proposed_status_change_url = urlreverse(
@@ -1610,7 +1610,7 @@ class DocTestCase(TestCase):
         statchg = StatusChangeFactory()
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=statchg.name)))
         self.assertEqual(r.status_code, 200)
-        r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=statchg.relateddocument_set.first().target.document)))
+        r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=statchg.relateddocument_set.first().target)))
         self.assertEqual(r.status_code, 302)
 
     def test_document_charter(self):
@@ -1771,8 +1771,8 @@ class DocTestCase(TestCase):
         self.assertNotContains(r, 'more YES or NO')
 
         # status change
-        DocAlias.objects.create(name='rfc9998').docs.add(IndividualDraftFactory())
-        DocAlias.objects.create(name='rfc9999').docs.add(IndividualDraftFactory())
+        Document.objects.create(name='rfc9998')
+        Document.objects.create(name='rfc9999')
         doc = DocumentFactory(type_id='statchg',name='status-change-imaginary-mid-review')
         iesgeval_pk = str(State.objects.get(slug='iesgeval',type__slug='statchg').pk)
         empty_outbox()
@@ -1785,12 +1785,12 @@ class DocTestCase(TestCase):
         self.assertIn('iesg-secretary',outbox[0]['To'])
         self.assertIn('drafts-eval',outbox[1]['To'])
 
-        doc.relateddocument_set.create(target=DocAlias.objects.get(name='rfc9998'),relationship_id='tohist')
+        doc.relateddocument_set.create(target=Document.objects.get(name='rfc9998'),relationship_id='tohist')
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_ballot", kwargs=dict(name=doc.name)))
         self.assertNotContains(r, 'Needs a YES')
         self.assertNotContains(r, 'more YES or NO')
 
-        doc.relateddocument_set.create(target=DocAlias.objects.get(name='rfc9999'),relationship_id='tois')
+        doc.relateddocument_set.create(target=Document.objects.get(name='rfc9999'),relationship_id='tois')
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_ballot", kwargs=dict(name=doc.name)))
         self.assertContains(r, 'more YES or NO')
 
@@ -2088,7 +2088,7 @@ class ReferencesTest(TestCase):
 
     def test_references(self):
         doc1 = WgDraftFactory(name='draft-ietf-mars-test')
-        doc2 = IndividualDraftFactory(name='draft-imaginary-independent-submission').docalias.first()
+        doc2 = IndividualDraftFactory(name='draft-imaginary-independent-submission')
         RelatedDocument.objects.get_or_create(source=doc1,target=doc2,relationship=DocRelationshipName.objects.get(slug='refnorm'))
         url = urlreverse('ietf.doc.views_doc.document_references', kwargs=dict(name=doc1.name))
         r = self.client.get(url)
