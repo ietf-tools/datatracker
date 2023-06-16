@@ -69,6 +69,7 @@ def forward(apps, schema_editor):
 class Migration(migrations.Migration):
     dependencies = [
         ("doc", "0006_dochistory_rfc_number_document_rfc_number"),
+        ("name", "0004_rfc_doctype_names"),
     ]
 
     operations = [
