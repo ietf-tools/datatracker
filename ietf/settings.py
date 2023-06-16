@@ -458,6 +458,7 @@ INSTALLED_APPS = [
     'django_markup',
     'oidc_provider',
     'simple_history',
+    'strawberry.django',
     'tastypie',
     'widget_tweaks',
     # IETF apps
