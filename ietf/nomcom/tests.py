@@ -122,7 +122,7 @@ class NomcomViewsTest(TestCase):
         self.check_url_status(url, 200)
         self.client.logout()
         login_testing_unauthorized(self, MEMBER_USER, url)
-        return self.check_url_status(url, 200)
+        self.check_url_status(url, 200)
 
     def access_chair_url(self, url):
         login_testing_unauthorized(self, COMMUNITY_USER, url)
@@ -134,7 +134,7 @@ class NomcomViewsTest(TestCase):
         login_testing_unauthorized(self, COMMUNITY_USER, url)
         login_testing_unauthorized(self, CHAIR_USER, url)
         login_testing_unauthorized(self, SECRETARIAT_USER, url)
-        return self.check_url_status(url, 200)
+        self.check_url_status(url, 200)
 
     def test_private_index_view(self):
         """Verify private home view"""
@@ -627,8 +627,7 @@ class NomcomViewsTest(TestCase):
 
     def test_private_nominate(self):
         self.access_member_url(self.private_nominate_url)
-        return self.nominate_view(public=False)
-        self.client.logout()
+        self.nominate_view(public=False)
 
     def test_public_nominate_newperson(self):
         login_testing_unauthorized(self, COMMUNITY_USER, self.public_nominate_url)
@@ -668,14 +667,13 @@ class NomcomViewsTest(TestCase):
 
     def test_private_nominate_newperson(self):
         self.access_member_url(self.private_nominate_url)
-        value = self.nominate_newperson_view(public=False)
+        self.nominate_newperson_view(public=False, confirmation=True)
         self.assertFalse(Message.objects.filter(subject="Nomination receipt").exists())
-        return value
 
     def test_private_nominate_newperson_who_already_exists(self):
         EmailFactory(address='nominee@example.com')
         self.access_member_url(self.private_nominate_newperson_url)
-        return self.nominate_newperson_view(public=False)       
+        self.nominate_newperson_view(public=False)       
 
     def test_public_nominate_with_automatic_questionnaire(self):
         nomcom = get_nomcom_by_year(self.year)
@@ -847,8 +845,7 @@ class NomcomViewsTest(TestCase):
 
     def test_add_questionnaire(self):
         self.access_chair_url(self.add_questionnaire_url)
-        return self.add_questionnaire()
-        self.client.logout()
+        self.add_questionnaire()
 
     def add_questionnaire(self, *args, **kwargs):
         public = kwargs.pop('public', False)
@@ -925,7 +922,7 @@ class NomcomViewsTest(TestCase):
 
     def test_private_feedback(self):
         self.access_member_url(self.private_feedback_url)
-        return self.feedback_view(public=False)
+        self.feedback_view(public=False)
 
     def feedback_view(self, *args, **kwargs):
         public = kwargs.pop('public', True)
