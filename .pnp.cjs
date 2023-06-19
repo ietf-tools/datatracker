@@ -3151,7 +3151,7 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
         ["virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:5.3.0", {\
           "packageLocation": "./.yarn/__virtual__/bootstrap-virtual-3c63ba6f80/0/cache/bootstrap-npm-5.3.0-240c38a3b2-29a83cc8ca.zip/node_modules/bootstrap/",\
           "packageDependencies": [\
-            ["bootstrap", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:5.2.3"],\
+            ["bootstrap", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:5.3.0"],\
             ["@popperjs/core", "npm:2.11.8"],\
             ["@types/popperjs__core", null]\
           ],\
