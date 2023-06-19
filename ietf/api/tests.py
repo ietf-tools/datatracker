@@ -24,7 +24,7 @@ import debug                            # pyflakes:ignore
 import ietf
 from ietf.doc.utils import get_unicode_document_content
 from ietf.doc.models import RelatedDocument, State
-from ietf.doc.factories import IndividualDraftFactory, WgDraftFactory
+from ietf.doc.factories import IndividualDraftFactory, WgDraftFactory, WgRfcFactory
 from ietf.group.factories import RoleFactory
 from ietf.meeting.factories import MeetingFactory, SessionFactory
 from ietf.meeting.models import Session
