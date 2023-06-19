@@ -1166,7 +1166,7 @@ class ReminderTest(TestCase):
         feedback = Feedback.objects.create(nomcom=self.nomcom,
                                            comments=self.nomcom.encrypt('some non-empty comments'),
                                            type=FeedbackTypeName.objects.get(slug='questio'),
-                                           user=User.objects.get(username=CHAIR_USER))
+                                           person=User.objects.get(username=CHAIR_USER).person)
         feedback.positions.add(gen)
         feedback.nominees.add(n)
 

@@ -15,7 +15,7 @@ from ietf.name.models import FeedbackTypeName, NomineePositionStateName
 from ietf.nomcom.models import ( NomCom, Nomination, Nominee, NomineePosition,
                                  Position, Feedback, ReminderDates, Topic, Volunteer )
 from ietf.nomcom.utils import (NOMINATION_RECEIPT_TEMPLATE, FEEDBACK_RECEIPT_TEMPLATE,
-                               get_user_email, validate_private_key, validate_public_key,
+                               get_person_email, validate_private_key, validate_public_key,
                                make_nomineeposition, make_nomineeposition_for_newperson,
                                create_feedback_email)
 from ietf.person.models import Email
@@ -256,7 +256,7 @@ class NominateForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         self.nomcom = kwargs.pop('nomcom', None)
-        self.user = kwargs.pop('user', None)
+        self.person = kwargs.pop('person', None)
         self.public = kwargs.pop('public', None)
 
         super(NominateForm, self).__init__(*args, **kwargs)
@@ -273,7 +273,7 @@ class NominateForm(forms.ModelForm):
 
         if not self.public:
             self.fields.pop('confirmation')
-            author = get_user_email(self.user)
+            author = get_person_email(self.person)
             if author:
                 self.fields['nominator_email'].initial = author.address
                 help_text = """(Nomcom Chair/Member: please fill this in. Use your own email address if the person making the
@@ -303,7 +303,7 @@ class NominateForm(forms.ModelForm):
 
         author = None
         if self.public:
-            author = get_user_email(self.user)
+            author = get_person_email(self.person)
         else:
             if nominator_email:
                 emails = Email.objects.filter(address=nominator_email)
@@ -314,7 +314,7 @@ class NominateForm(forms.ModelForm):
         feedback = Feedback.objects.create(nomcom=self.nomcom,
                                            comments=self.nomcom.encrypt(qualifications),
                                            type=FeedbackTypeName.objects.get(slug='nomina'),
-                                           user=self.user)
+                                           person=self.person)
         feedback.positions.add(position)
         feedback.nominees.add(nominee)
 
@@ -326,7 +326,7 @@ class NominateForm(forms.ModelForm):
         nomination.nominee = nominee
         nomination.comments = feedback
         nomination.share_nominator = share_nominator
-        nomination.user = self.user
+        nomination.person = self.person
 
         if commit:
             nomination.save()
@@ -361,7 +361,7 @@ class NominateNewPersonForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         self.nomcom = kwargs.pop('nomcom', None)
-        self.user = kwargs.pop('user', None)
+        self.person = kwargs.pop('person', None)
         self.public = kwargs.pop('public', None)
 
         super(NominateNewPersonForm, self).__init__(*args, **kwargs)
@@ -375,7 +375,7 @@ class NominateNewPersonForm(forms.ModelForm):
 
         if not self.public:
             self.fields.pop('confirmation')
-            author = get_user_email(self.user)
+            author = get_person_email(self.person)
             if author:
                 self.fields['nominator_email'].initial = author.address
                 help_text = """(Nomcom Chair/Member: please fill this in. Use your own email address if the person making the
@@ -416,7 +416,7 @@ class NominateNewPersonForm(forms.ModelForm):
 
         author = None
         if self.public:
-            author = get_user_email(self.user)
+            author = get_person_email(self.person)
         else:
             if nominator_email:
                 emails = Email.objects.filter(address=nominator_email)
@@ -429,7 +429,7 @@ class NominateNewPersonForm(forms.ModelForm):
         feedback = Feedback.objects.create(nomcom=self.nomcom,
                                            comments=self.nomcom.encrypt(qualifications),
                                            type=FeedbackTypeName.objects.get(slug='nomina'),
-                                           user=self.user)
+                                           person=self.person)
         feedback.positions.add(position)
         feedback.nominees.add(nominee)
 
@@ -441,7 +441,7 @@ class NominateNewPersonForm(forms.ModelForm):
         nomination.nominee = nominee
         nomination.comments = feedback
         nomination.share_nominator = share_nominator
-        nomination.user = self.user
+        nomination.person = self.person
 
         if commit:
             nomination.save()
@@ -476,7 +476,7 @@ class FeedbackForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         self.nomcom = kwargs.pop('nomcom', None)
-        self.user = kwargs.pop('user', None)
+        self.person = kwargs.pop('person', None)
         self.public = kwargs.pop('public', None)
         self.position = kwargs.pop('position', None)
         self.nominee = kwargs.pop('nominee', None)
@@ -484,7 +484,7 @@ class FeedbackForm(forms.ModelForm):
 
         super(FeedbackForm, self).__init__(*args, **kwargs)
 
-        author = get_user_email(self.user)
+        author = get_person_email(self.person)
 
         if self.public:
             self.fields.pop('nominator_email')
@@ -514,7 +514,7 @@ class FeedbackForm(forms.ModelForm):
 
         author = None
         if self.public:
-            author = get_user_email(self.user)
+            author = get_person_email(self.person)
         else:
             nominator_email = self.cleaned_data['nominator_email']
             if nominator_email:
@@ -525,7 +525,7 @@ class FeedbackForm(forms.ModelForm):
             feedback.author = author.address
 
         feedback.nomcom = self.nomcom
-        feedback.user = self.user
+        feedback.person = self.person
         feedback.type = FeedbackTypeName.objects.get(slug='comment')
         feedback.comments = self.nomcom.encrypt(comment_text)
         feedback.save()
@@ -578,7 +578,7 @@ class QuestionnaireForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         self.nomcom = kwargs.pop('nomcom', None)
-        self.user = kwargs.pop('user', None)
+        self.person = kwargs.pop('person', None)
 
         super(QuestionnaireForm, self).__init__(*args, **kwargs)
         self.fields['nominee'] = PositionNomineeField(nomcom=self.nomcom, required=True)
@@ -588,13 +588,13 @@ class QuestionnaireForm(forms.ModelForm):
         comment_text = self.cleaned_data['comment_text']
         (position, nominee) = self.cleaned_data['nominee']
 
-        author = get_user_email(self.user)
+        author = get_person_email(self.person)
 
         if author:
             feedback.author = author
 
         feedback.nomcom = self.nomcom
-        feedback.user = self.user
+        feedback.person = self.person
         feedback.type = FeedbackTypeName.objects.get(slug='questio')
         feedback.comments = self.nomcom.encrypt(comment_text)
         feedback.save()
@@ -659,9 +659,9 @@ class PendingFeedbackForm(forms.ModelForm):
         model = Feedback
         fields = ('type', )
 
-    def set_nomcom(self, nomcom, user):
+    def set_nomcom(self, nomcom, person):
         self.nomcom = nomcom
-        self.user = user
+        self.person = person
         #self.fields['nominee'] = MultiplePositionNomineeField(nomcom=self.nomcom,
                                                               #required=True,
                                                               #widget=forms.SelectMultiple,
@@ -670,7 +670,7 @@ class PendingFeedbackForm(forms.ModelForm):
     def save(self, commit=True):
         feedback = super(PendingFeedbackForm, self).save(commit=False)
         feedback.nomcom = self.nomcom
-        feedback.user = self.user
+        feedback.person = self.person
         feedback.save()
         return feedback
 
@@ -700,9 +700,9 @@ class MutableFeedbackForm(forms.ModelForm):
         model = Feedback
         fields = ('type', )
 
-    def set_nomcom(self, nomcom, user, instances=None):
+    def set_nomcom(self, nomcom, person, instances=None):
         self.nomcom = nomcom
-        self.user = user
+        self.person = person
         instances = instances or []
         self.feedback_type = None
         for i in instances:
@@ -782,7 +782,7 @@ class MutableFeedbackForm(forms.ModelForm):
                 nominee=nominee,
                 comments=feedback,
                 nominator_email=nominator_email,
-                user=self.user)
+                person=self.person)
             return feedback
         else:
             feedback.save()

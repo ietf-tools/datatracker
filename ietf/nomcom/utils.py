@@ -84,26 +84,21 @@ def get_year_by_nomcom(nomcom):
     return m.group(0)
 
 
-def get_user_email(user):
-    # a user object already has an email field, but we don't want to
-    # overwrite anything that might be there, and we don't know that
-    # what's there is the right thing, so we cache the lookup results in a
-    # separate attribute
-    if not hasattr(user, "_email_cache"):
-        user._email_cache = None
-        if hasattr(user, "person"):
-            emails = user.person.email_set.filter(active=True).order_by('-time')
-            if emails:
-                user._email_cache = emails[0]
-                for email in emails:
-                    if email.address.lower() == user.username.lower():
-                        user._email_cache = email
+def get_person_email(person):
+    if not hasattr(person, "_email_cache"):
+        person._email_cache = None
+        emails = person.email_set.filter(active=True).order_by('-time')
+        if emails:
+            person._email_cache = emails[0]
+            for email in emails:
+                if email.address.lower() == person.user.username.lower():
+                    person._email_cache = email
         else:
             try: 
-                user._email_cache = Email.objects.get(address=user.username)
+                person._email_cache = Email.objects.get(address=person.user.username)
             except ObjectDoesNotExist:
                 pass
-    return user._email_cache
+    return person._email_cache
 
 def get_hash_nominee_position(date, nominee_position_id):
     return hmac.new(settings.NOMCOM_APP_SECRET, f"{date}{nominee_position_id}".encode('utf-8'), hashlib.sha256).hexdigest()
