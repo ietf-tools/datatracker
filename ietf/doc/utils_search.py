@@ -93,7 +93,7 @@ def fill_in_document_table_attributes(docs, have_telechat_date=False):
         # emulate canonical name which is used by a lot of the utils
         # d.canonical_name = wrap_value(rfc_aliases[d.pk] if d.pk in rfc_aliases else d.name)
 
-        if d.deprecated_rfc_number() != None and d.latest_event_cache["published_rfc"]:
+        if d.is_rfc() and d.latest_event_cache["published_rfc"]:
             d.latest_revision_date = d.latest_event_cache["published_rfc"].time
         elif d.latest_event_cache["new_revision"]:
             d.latest_revision_date = d.latest_event_cache["new_revision"].time
@@ -198,7 +198,7 @@ def prepare_document_table(request, docs, query=None, max_results=200):
 
         res = []
 
-        rfc_num = d.deprecated_rfc_number()
+        rfc_num = num(d.rfc_number) if d.rfc_number else None
 
         if d.type_id == "draft":
             res.append(num(["Active", "Expired", "Replaced", "Withdrawn", "RFC"].index(d.search_heading.split()[0])))
@@ -213,23 +213,23 @@ def prepare_document_table(request, docs, query=None, max_results=200):
         elif sort_key == "date":
             res.append(str(d.latest_revision_date.astimezone(ZoneInfo(settings.TIME_ZONE))))
         elif sort_key == "status":
-            if rfc_num != None:
-                res.append(num(rfc_num))
+            if rfc_num is not None:
+                res.append(rfc_num)
             else:
                 res.append(num(d.get_state().order) if d.get_state() else None)
         elif sort_key == "ipr":
             res.append(len(d.ipr()))
         elif sort_key == "ad":
-            if rfc_num != None:
-                res.append(num(rfc_num))
+            if rfc_num is not None:
+                res.append(rfc_num)
             elif d.get_state_slug() == "active":
                 if d.get_state("draft-iesg"):
                     res.append(d.get_state("draft-iesg").order)
                 else:
                     res.append(0)
         else:
-            if rfc_num != None:
-                res.append(num(rfc_num))
+            if rfc_num is not None:
+                res.append(rfc_num)
             else:
                 res.append(d.canonical_name())
 

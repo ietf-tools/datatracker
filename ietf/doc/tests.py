@@ -792,12 +792,12 @@ Man                    Expires September 22, 2015               [Page 3]
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_html", kwargs=dict(name=rfc.canonical_name())))
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertEqual(q('title').text(), f'RFC {rfc.deprecated_rfc_number()} - {rfc.title}')
+        self.assertEqual(q('title').text(), f'RFC {rfc.rfc_number} - {rfc.title}')
 
         # synonyms for the rfc should be redirected to its canonical view
-        r = self.client.get(urlreverse("ietf.doc.views_doc.document_html", kwargs=dict(name=rfc.deprecated_rfc_number())))
+        r = self.client.get(urlreverse("ietf.doc.views_doc.document_html", kwargs=dict(name=rfc.rfc_number)))
         self.assertRedirects(r, urlreverse("ietf.doc.views_doc.document_html", kwargs=dict(name=rfc.canonical_name())))
-        r = self.client.get(urlreverse("ietf.doc.views_doc.document_html", kwargs=dict(name=f'RFC {rfc.deprecated_rfc_number()}')))
+        r = self.client.get(urlreverse("ietf.doc.views_doc.document_html", kwargs=dict(name=f'RFC {rfc.rfc_number}')))
         self.assertRedirects(r, urlreverse("ietf.doc.views_doc.document_html", kwargs=dict(name=rfc.canonical_name())))
 
         # expired draft
@@ -1954,7 +1954,7 @@ class DocTestCase(TestCase):
                   std_level_id = 'ps',
                   time = datetime.datetime(2010, 10, 10, tzinfo=ZoneInfo(settings.TIME_ZONE)),
               )
-        num = rfc.deprecated_rfc_number()
+        num = rfc.rfc_number
         DocEventFactory.create(
             doc=rfc,
             type='published_rfc',
@@ -1979,7 +1979,7 @@ class DocTestCase(TestCase):
                   std_level_id =    'inf',
                   time =            datetime.datetime(1990, 4, 1, tzinfo=ZoneInfo(settings.TIME_ZONE)),
               )
-        num = april1.deprecated_rfc_number()
+        num = april1.rfc_number()
         DocEventFactory.create(
             doc=april1,
             type='published_rfc',

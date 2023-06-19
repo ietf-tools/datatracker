@@ -968,9 +968,9 @@ class RfcdiffSupportTests(TestCase):
         draft.set_state(State.objects.get(type_id='draft',slug='rfc'))
         draft.set_state(State.objects.get(type_id='draft-iesg', slug='pub'))
         draft = reload_db_objects(draft)
-        rfc = draft
+        rfc = WgRfcFactory(group=draft.group)  # todo link this with its pre-publication draft
 
-        number = rfc.deprecated_rfc_number()
+        number = rfc.rfc_number
         received = self.getJson(dict(name=number))
         self.assertEqual(
             received,

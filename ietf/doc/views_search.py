@@ -409,8 +409,8 @@ def shorten_group_name(name):
 
 def ad_dashboard_sort_key(doc):
 
-    if doc.type.slug=='draft' and doc.get_state_slug('draft') == 'rfc':
-        return "21%04d" % int(doc.deprecated_rfc_number())
+    if doc.type.slug=='rfc' and doc.get_state_slug('rfc') == 'published':
+        return "21%04d" % int(doc.rfc_number)
     if doc.type.slug=='statchg' and doc.get_state_slug('statchg') == 'appr-sent':
         return "22%d" % 0 # TODO - get the date of the transition into this state here
     if doc.type.slug=='conflrev' and doc.get_state_slug('conflrev') in ('appr-reqnopub-sent','appr-noprob-sent'):
