@@ -377,9 +377,7 @@ class DocumentInfo(models.Model):
             return state.name
 
     def is_rfc(self):
-        if not hasattr(self, '_cached_is_rfc'):
-            self._cached_is_rfc = self.pk and self.type_id == 'draft' and self.states.filter(type='draft',slug='rfc').exists()
-        return self._cached_is_rfc
+        return self.type_id == "rfc"
 
     def deprecated_rfc_number(self):
         if not hasattr(self, '_cached_rfc_number'):
