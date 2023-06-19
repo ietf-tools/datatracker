@@ -35,6 +35,7 @@ def forward(apps, schema_editor):
             rfc.rfc_number = int(draft.name[3:])
             rfc.save()
             rfc.states.set([rfc_published_state])
+            # Alias already points at the rfc document
         else:
             rfc = Document.objects.create(
                 type=rfc_doctype,
@@ -62,6 +63,9 @@ def forward(apps, schema_editor):
                     country=da.country,
                     order=da.order,
                 )
+                
+            # Point alias at the new rfc Document
+            rfc_alias.docs.set([rfc])
 
 
 class Migration(migrations.Migration):
