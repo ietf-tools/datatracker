@@ -1,8 +1,193 @@
-# Copyright The IETF Trust 2010-2021, All Rights Reserved
+it# Copyright The IETF Trust 2010-2021, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
-import email.utils
+
+发现域名
+关于威瑞信
+支持
+得到了心仪的网站名称？查看其是否可用：
+
+输入最适合您的域名
+服务条款
+关注我们
+
+   
+返回主菜单
+发现域名
+域名扩展
+域工具
+注册服务
+了解更多有关我们国际化域名 (IDN) 的信息
+得到了心仪的网站名称？查看其是否可用：
+
+输入最适合您的域名
+服务条款
+关注我们
+
+   
+返回主菜单
+关于威瑞信
+概述
+联系我们
+投资者
+招贤纳士
+Verisign Labs
+得到了心仪的网站名称？查看其是否可用：
+
+输入最适合您的域名
+服务条款
+关注我们
+
+   
+
+Verisign（威瑞信）授权声明
+披露或声明日期	IETF 索引编号	IPR 披露或声明的标题，以及 IETF 的超链接
+2023-01-12
+
+5904
+
+VeriSign, Inc.'s Statement about IPR related to draft-ietf-dprive-unilateral-probing
+
+2015 年 2 月 27 日
+
+2542
+
+关于与 draft-ietf-dnsop-qname-minimisation 相关的 IPR 的 VeriSign, Inc. 声明
+
+2020-08-05
+
+4261
+
+VeriSign, Inc.'s Statement about IPR related to Adaptive DNS Discovery (ADD) working group
+
+2020-08-04
+
+4256
+
+VeriSign, Inc.'s Statement about IPR related to Adaptive DNS Discovery (ADD) working group
+
+2018-05-31
+
+3201
+
+VeriSign, Inc.'s Statement about IPR related to draft-gould-carney-regext-registry
+
+2016 年 11 月 8 日
+
+2908
+
+关于与 draft-fregly-regext-rdap-search-regex 相关的 IPR 的 VeriSign, Inc. 声明
+
+2016 年 10 月 14 日
+
+2894
+
+关于与 draft-pounsett-transferring-automated-dnssec-zones 相关的 IPR 的 VeriSign, Inc. 声明
+
+2015 年 10 月 31 日
+
+2704
+
+关于与 draft-xie-eppext-nv-mapping 相关的 IPR 的 VeriSign, Inc. 声明
+
+2015 年 10 月 31 日
+
+2703
+
+关于与 draft-gould-eppext-verificationcode 相关的 IPR 的 VeriSign, Inc. 声明
+
+2015 年 3 月 18 日
+
+2553
+
+关于与美国出版专利号 US20130080341“在命名空间中保护知识产权 (IP)”和国际同等法律相关的 VeriSign, Inc. 通用许可证声明
+
+2015 年 3 月 18 日
+
+2552
+
+关于与美国出版专利申请编号 US20130173497；“创建新域的方法和系统”和国际同等法律相关的 VeriSign, Inc. 通用许可证声明
+
+2015 年 3 月 18 日
+
+2551
+
+关于与 US8,327,019；“通过 EPP 的智能请求路由方法和系统”及 US8,856,344；“通过 EPP 的智能多对多服务路由方法和系统”和国际同等法律相关的 VeriSign, Inc. 通用许可证声明
+
+2015 年 3 月 18 日
+
+2550
+
+关于与发布专利申请编号 US20130085932；“通过 WhoWas 服务在注册中跟踪域名历史”相关的 VeriSign, Inc. 通用许可证声明
+
+2015 年 2 月 25 日
+
+2539
+
+关于与 draft-ietf-dnsop-root-loopback 相关的 IPR 的 VeriSign, Inc. 声明
+
+2014 年 11 月 7 日
+
+2479
+
+关于与 draft-kong-eppext-bundling-registration-00 和 EPPEXT 邮件列表上 EPP 相关域扩展相关的 IPR 的 VeriSign, Inc. 声明
+
+2014 年 10 月 27 日
+
+2468
+
+关于与 draft-ietf-dane-smime-07 相关的 IPR 的 VeriSign, Inc. 声明“使用安全 DNS 关联证书与 S/MIME 的域名”
+
+2014 年 7 月 21 日
+
+2393
+
+关于与 draft-ietf-eppext-keyrelay 相关的 IPR 的 VeriSign, Inc. 声明
+
+2014 年 3 月 6 日
+
+2327
+
+关于与 draft-wallstrom-epp-registrant-problem-statement-00.txt 相关的 IPR 的 VeriSign, Inc. 声明
+
+2012 年 12 月 5 日
+
+1924
+
+关于与 draft-ietf-dnsop-rfc4641bis-13 和 draft-koch-dnsop-dnssec-operator-change-04 相关的 IPR 的 VeriSign, Inc. 声明
+
+2009 年 2 月 25 日
+
+1104
+
+关于与 draft-mraihi-mutual-oath-hotp-variants、draft-mraihi-totp-timebased、draft-ietf-keyprov-dskpp、draft-ietf-keyprov-pskc 和 RFC 4226 相关的 IPR 的 VeriSign, Inc. 声明
+
+2001 年 5 月 21 日
+
+36
+
+有关扩展供应协议 (EPP) 的声明
+
+共享
+共享推文共享电子邮件
+LANGUAGE:
+
+ENGLISH
+
+CHINESE (SIMPLIFIED)
+
+法律声明
+隐私
+CCPA NOTICE AT COLLECTION
+资源库
+站点地图
+COOKIE 设置
+© 2023 VeriSign, Inc. 保留所有权利。
+
+VERISIGN（威瑞信）、威瑞信标识及其他商标、服务标志和设计图案是威瑞信公司及其美国和其他国家子公司的注册或未注册商标。
+
+所有其他商标归其各自所有者拥有。 email.utils
 import jsonfield
 import os
 import re
