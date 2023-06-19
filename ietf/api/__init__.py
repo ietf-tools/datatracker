@@ -155,4 +155,4 @@ class ToOneField(tastypie.fields.ToOneField):
 
 class Serializer(tastypie.serializers.Serializer):
     def format_datetime(self, data):
-        return data.astimezone(datetime.timezone.utc).isoformat(timespec="seconds")
+        return data.astimezone(datetime.timezone.utc).replace(tzinfo=None).isoformat(timespec="seconds") + "Z"
