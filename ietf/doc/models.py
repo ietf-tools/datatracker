@@ -387,18 +387,6 @@ class DocumentInfo(models.Model):
     def is_rfc(self):
         return self.type_id == "rfc"
 
-    def deprecated_rfc_number(self):
-        if not hasattr(self, '_cached_rfc_number'):
-            self._cached_rfc_number = None
-            if self.is_rfc():
-                n = self.canonical_name()
-                if n.startswith("rfc"):
-                    self._cached_rfc_number = n[3:]
-                else:
-                    if isinstance(self,Document):
-                        logger.error("Document self.is_rfc() is True but self.canonical_name() is %s" % n)
-        return self._cached_rfc_number
-
     def author_list(self):
         best_addresses = []
         for author in self.documentauthor_set.all():
