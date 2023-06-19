@@ -119,64 +119,6 @@ class DocumentFactory(BaseDocumentFactory):
     group = factory.SubFactory('ietf.group.factories.GroupFactory',acronym='none')
 
 
-class IndividualDraftFactory(BaseDocumentFactory):
-
-    type_id = 'draft'
-    group = factory.SubFactory('ietf.group.factories.GroupFactory',acronym='none')
-
-    @factory.post_generation
-    def states(obj, create, extracted, **kwargs):
-        if not create:
-            return
-        if extracted:
-            for (state_type_id,state_slug) in extracted:
-                obj.set_state(State.objects.get(type_id=state_type_id,slug=state_slug))
-            if not obj.get_state('draft-iesg'):
-                obj.set_state(State.objects.get(type_id='draft-iesg',slug='idexists'))
-        else:
-            obj.set_state(State.objects.get(type_id='draft',slug='active'))
-            obj.set_state(State.objects.get(type_id='draft-iesg',slug='idexists'))
-
-class IndividualRfcFactory(IndividualDraftFactory):
-
-    alias2 = factory.RelatedFactory('ietf.doc.factories.DocAliasFactory','document',name=factory.Sequence(lambda n: 'rfc%04d'%(n+1000)))
-
-    @factory.post_generation
-    def states(obj, create, extracted, **kwargs):
-        if not create:
-            return
-        if extracted:
-            for (state_type_id,state_slug) in extracted:
-                obj.set_state(State.objects.get(type_id=state_type_id,slug=state_slug))
-        else:
-            obj.set_state(State.objects.get(type_id='draft',slug='rfc'))
-
-    @factory.post_generation
-    def reset_canonical_name(obj, create, extracted, **kwargs): 
-        if hasattr(obj, '_canonical_name'):
-            del obj._canonical_name
-        return None
-
-class WgDraftFactory(BaseDocumentFactory):
-    type_id = 'draft'
-    group = factory.SubFactory('ietf.group.factories.GroupFactory',type_id='wg')
-    stream_id = 'ietf'
-
-    @factory.post_generation
-    def states(obj, create, extracted, **kwargs):
-        if not create:
-            return
-        if extracted:
-            for (state_type_id,state_slug) in extracted:
-                obj.set_state(State.objects.get(type_id=state_type_id,slug=state_slug))
-            if not obj.get_state('draft-iesg'):
-                obj.set_state(State.objects.get(type_id='draft-iesg',slug='idexists'))
-        else:
-            obj.set_state(State.objects.get(type_id='draft',slug='active'))
-            obj.set_state(State.objects.get(type_id='draft-stream-ietf',slug='wg-doc'))
-            obj.set_state(State.objects.get(type_id='draft-iesg',slug='idexists'))
-
-
 class RfcFactory(BaseDocumentFactory):
     type_id = "rfc"
     rfc_number = factory.Sequence(lambda n: n + 1000)
@@ -198,6 +140,49 @@ class RfcFactory(BaseDocumentFactory):
         if hasattr(obj, '_canonical_name'):
             del obj._canonical_name
         return None
+
+
+class IndividualDraftFactory(BaseDocumentFactory):
+
+    type_id = 'draft'
+    group = factory.SubFactory('ietf.group.factories.GroupFactory',acronym='none')
+
+    @factory.post_generation
+    def states(obj, create, extracted, **kwargs):
+        if not create:
+            return
+        if extracted:
+            for (state_type_id,state_slug) in extracted:
+                obj.set_state(State.objects.get(type_id=state_type_id,slug=state_slug))
+            if not obj.get_state('draft-iesg'):
+                obj.set_state(State.objects.get(type_id='draft-iesg',slug='idexists'))
+        else:
+            obj.set_state(State.objects.get(type_id='draft',slug='active'))
+            obj.set_state(State.objects.get(type_id='draft-iesg',slug='idexists'))
+
+class IndividualRfcFactory(RfcFactory):
+    group = factory.SubFactory('ietf.group.factories.GroupFactory',acronym='none')
+
+
+class WgDraftFactory(BaseDocumentFactory):
+    type_id = 'draft'
+    group = factory.SubFactory('ietf.group.factories.GroupFactory',type_id='wg')
+    stream_id = 'ietf'
+
+    @factory.post_generation
+    def states(obj, create, extracted, **kwargs):
+        if not create:
+            return
+        if extracted:
+            for (state_type_id,state_slug) in extracted:
+                obj.set_state(State.objects.get(type_id=state_type_id,slug=state_slug))
+            if not obj.get_state('draft-iesg'):
+                obj.set_state(State.objects.get(type_id='draft-iesg',slug='idexists'))
+        else:
+            obj.set_state(State.objects.get(type_id='draft',slug='active'))
+            obj.set_state(State.objects.get(type_id='draft-stream-ietf',slug='wg-doc'))
+            obj.set_state(State.objects.get(type_id='draft-iesg',slug='idexists'))
+
 
 class WgRfcFactory(RfcFactory):
     group = factory.SubFactory('ietf.group.factories.GroupFactory',type_id='wg')
