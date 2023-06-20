@@ -1,6 +1,6 @@
 {% load ietf_filters %}{% filter linebreaks_lf %}{% comment %}
-{% endcomment %}Doc-tag: {{doc.name}};datatracker{% if doc.rfcnum %}
-Doc-rfcnum: {{doc.rfcnum}}{% endif %}
+{% endcomment %}Doc-tag: {{doc.name}};datatracker{% if doc.is_rfc %}
+Doc-rfcnum: {{doc.rfc_number}}{% endif %}
 Doc-created: {{doc.created|date:"Y-m-d"}};datatracker{% if doc.deststatus %}
 Doc-deststatus: {{doc.deststatus}};datatracker{% endif %}
 Doc-rev: {{doc.rev}};datatracker

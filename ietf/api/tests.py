@@ -24,7 +24,7 @@ import debug                            # pyflakes:ignore
 import ietf
 from ietf.doc.utils import get_unicode_document_content
 from ietf.doc.models import RelatedDocument, State
-from ietf.doc.factories import IndividualDraftFactory, WgDraftFactory
+from ietf.doc.factories import IndividualDraftFactory, WgDraftFactory, WgRfcFactory
 from ietf.group.factories import RoleFactory
 from ietf.meeting.factories import MeetingFactory, SessionFactory
 from ietf.meeting.models import Session
@@ -968,9 +968,9 @@ class RfcdiffSupportTests(TestCase):
         draft.set_state(State.objects.get(type_id='draft',slug='rfc'))
         draft.set_state(State.objects.get(type_id='draft-iesg', slug='pub'))
         draft = reload_db_objects(draft)
-        rfc = draft
+        rfc = WgRfcFactory(group=draft.group)  # todo link this with its pre-publication draft
 
-        number = rfc.rfc_number()
+        number = rfc.rfc_number
         received = self.getJson(dict(name=number))
         self.assertEqual(
             received,

@@ -1074,7 +1074,7 @@ def document_bibtex(request, name, rev=None):
         # This needs to be replaced with a lookup, as the mapping may change
         # over time.  Probably by updating ietf/sync/rfceditor.py to add the
         # as a DocAlias, and use a method on Document to retrieve it.
-        doi = "10.17487/RFC%04d" % int(doc.rfc_number())
+        doi = f"10.17487/RFC{doc.rfc_number:04d}"
     else:
         doi = None
 

@@ -705,7 +705,7 @@ LIAISON_ATTACH_URL = 'https://www.ietf.org/lib/dt/documents/LIAISON/' # should e
 DOC_HREFS = {
     "charter":  "https://www.ietf.org/charter/{doc.name}-{doc.rev}.txt",
     "draft":    "https://www.ietf.org/archive/id/{doc.name}-{doc.rev}.txt",
-    "rfc":      "https://www.rfc-editor.org/rfc/rfc{doc.rfcnum}.txt",
+    "rfc":      "https://www.rfc-editor.org/rfc/rfc{doc.rfc_number}.txt",
     "slides": "https://www.ietf.org/slides/{doc.name}-{doc.rev}",
     "procmaterials": "https://www.ietf.org/procmaterials/{doc.name}-{doc.rev}",
     "conflrev": "https://www.ietf.org/cr/{doc.name}-{doc.rev}.txt",
