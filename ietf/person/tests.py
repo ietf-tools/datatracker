@@ -25,11 +25,11 @@ from ietf.group.models import Group
 from ietf.nomcom.models import NomCom
 from ietf.nomcom.test_data import nomcom_test_data
 from ietf.nomcom.factories import NomComFactory, NomineeFactory, NominationFactory, FeedbackFactory, PositionFactory
-from ietf.person.factories import EmailFactory, PersonFactory, UserFactory
+from ietf.person.factories import EmailFactory, PersonFactory
 from ietf.person.models import Person, Alias
 from ietf.person.utils import (merge_persons, determine_merge_order, send_merge_notification,
     handle_users, get_extra_primary, dedupe_aliases, move_related_objects, merge_nominees,
-    handle_reviewer_settings, merge_users, get_dots)
+    handle_reviewer_settings, get_dots)
 from ietf.review.models import ReviewerSettings
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized
 from ietf.utils.mail import outbox, empty_outbox
@@ -373,13 +373,24 @@ class PersonUtilsTests(TestCase):
         request.user = user
         source = PersonFactory()
         target = PersonFactory()
+        mars = RoleFactory(name_id='chair',group__acronym='mars').group
         source_id = source.pk
         source_email = source.email_set.first()
         source_alias = source.alias_set.first()
         source_user = source.user
+        communitylist = CommunityList.objects.create(person=source, group=mars)
+        nomcom = NomComFactory()
+        position = PositionFactory(nomcom=nomcom)
+        nominee = NomineeFactory(nomcom=nomcom, person=mars.get_chair().person)
+        feedback = FeedbackFactory(person=source, author=source.email().address, nomcom=nomcom)
+        feedback.nominees.add(nominee)
+        nomination = NominationFactory(nominee=nominee, person=source, position=position, comments=feedback)
         merge_persons(request, source, target, file=StringIO())
         self.assertTrue(source_email in target.email_set.all())
         self.assertTrue(source_alias in target.alias_set.all())
+        self.assertIn(communitylist, target.communitylist_set.all())
+        self.assertIn(feedback, target.feedback_set.all())
+        self.assertIn(nomination, target.nomination_set.all())
         self.assertFalse(Person.objects.filter(id=source_id))
         self.assertFalse(source_user.is_active)
 
@@ -398,24 +409,6 @@ class PersonUtilsTests(TestCase):
         self.assertEqual(target.reviewersettings_set.count(), 1)
         rs = target.reviewersettings_set.first()
         self.assertEqual(rs.min_interval, 7)
-
-    def test_merge_users(self):
-        person = PersonFactory()
-        source = person.user
-        target = UserFactory()
-        mars = RoleFactory(name_id='chair',group__acronym='mars').group
-        communitylist = CommunityList.objects.create(user=source, group=mars)
-        nomcom = NomComFactory()
-        position = PositionFactory(nomcom=nomcom)
-        nominee = NomineeFactory(nomcom=nomcom, person=mars.get_chair().person)
-        feedback = FeedbackFactory(user=source, author=person.email().address, nomcom=nomcom)
-        feedback.nominees.add(nominee)
-        nomination = NominationFactory(nominee=nominee, user=source, position=position, comments=feedback)
-
-        merge_users(source, target)
-        self.assertIn(communitylist, target.communitylist_set.all())
-        self.assertIn(feedback, target.feedback_set.all())
-        self.assertIn(nomination, target.nomination_set.all())
 
     def test_dots(self):
         noroles = PersonFactory()

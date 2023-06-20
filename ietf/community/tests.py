@@ -5,7 +5,6 @@
 from pyquery import PyQuery
 
 from django.urls import reverse as urlreverse
-from django.contrib.auth.models import User
 
 from django_webtest import WebTest
 
@@ -38,7 +37,7 @@ class CommunityListTests(WebTest):
             states=[('draft-iesg','lc'),('draft','active')],
         )
 
-        clist = CommunityList.objects.create(user=User.objects.get(username="plain"))
+        clist = CommunityList.objects.create(person=plain)
 
         rule_group = SearchRule.objects.create(rule_type="group", group=draft.group, state=State.objects.get(type="draft", slug="active"), community_list=clist)
         rule_group_rfc = SearchRule.objects.create(rule_type="group_rfc", group=draft.group, state=State.objects.get(type="draft", slug="rfc"), community_list=clist)
@@ -90,7 +89,7 @@ class CommunityListTests(WebTest):
         self.assertTrue(draft in list(docs_matching_community_list_rule(rule_group_exp)))
 
     def test_view_list(self):
-        PersonFactory(user__username='plain')
+        person = PersonFactory(user__username='plain')
         draft = WgDraftFactory()
 
         url = urlreverse(ietf.community.views.view_list, kwargs={ "username": "plain" })
@@ -100,7 +99,7 @@ class CommunityListTests(WebTest):
         self.assertEqual(r.status_code, 200)
 
         # with list
-        clist = CommunityList.objects.create(user=User.objects.get(username="plain"))
+        clist = CommunityList.objects.create(person=person)
         if not draft in clist.added_docs.all():
             clist.added_docs.add(draft)
         SearchRule.objects.create(
@@ -131,7 +130,7 @@ class CommunityListTests(WebTest):
         form['documents'].options=[(draft.pk, True, draft.name)]
         page = form.submit('action',value='add_documents')
         self.assertEqual(page.status_int, 302)
-        clist = CommunityList.objects.get(user__username="plain")
+        clist = CommunityList.objects.get(person__user__username="plain")
         self.assertTrue(clist.added_docs.filter(pk=draft.pk))
         page = page.follow()
 
@@ -142,7 +141,7 @@ class CommunityListTests(WebTest):
         form = page.forms['remove_document_%s' % draft.pk]
         page = form.submit('action',value='remove_document')
         self.assertEqual(page.status_int, 302)
-        clist = CommunityList.objects.get(user__username="plain")
+        clist = CommunityList.objects.get(person__user__username="plain")
         self.assertTrue(not clist.added_docs.filter(pk=draft.pk))
         page = page.follow()
         
@@ -154,7 +153,7 @@ class CommunityListTests(WebTest):
             "author_rfc-state": State.objects.get(type="draft", slug="rfc").pk,
         })
         self.assertEqual(r.status_code, 302)
-        clist = CommunityList.objects.get(user__username="plain")
+        clist = CommunityList.objects.get(person__user__username="plain")
         self.assertTrue(clist.searchrule_set.filter(rule_type="author_rfc"))
 
         # add name_contains rule
@@ -165,7 +164,7 @@ class CommunityListTests(WebTest):
             "name_contains-state": State.objects.get(type="draft", slug="active").pk,
         })
         self.assertEqual(r.status_code, 302)
-        clist = CommunityList.objects.get(user__username="plain")
+        clist = CommunityList.objects.get(person__user__username="plain")
         self.assertTrue(clist.searchrule_set.filter(rule_type="name_contains"))
 
         # rule shows up on GET
@@ -181,7 +180,7 @@ class CommunityListTests(WebTest):
             "rule": rule.pk,
         })
 
-        clist = CommunityList.objects.get(user__username="plain")
+        clist = CommunityList.objects.get(person__user__username="plain")
         self.assertTrue(not clist.searchrule_set.filter(rule_type="author_rfc"))
 
     def test_manage_group_list(self):
@@ -222,7 +221,7 @@ class CommunityListTests(WebTest):
 
         r = self.client.post(url)
         self.assertEqual(r.status_code, 302)
-        clist = CommunityList.objects.get(user__username="plain")
+        clist = CommunityList.objects.get(person__user__username="plain")
         self.assertEqual(list(clist.added_docs.all()), [draft])
 
         # untrack
@@ -232,7 +231,7 @@ class CommunityListTests(WebTest):
 
         r = self.client.post(url)
         self.assertEqual(r.status_code, 302)
-        clist = CommunityList.objects.get(user__username="plain")
+        clist = CommunityList.objects.get(person__user__username="plain")
         self.assertEqual(list(clist.added_docs.all()), [])
 
     def test_track_untrack_document_through_ajax(self):
@@ -246,7 +245,7 @@ class CommunityListTests(WebTest):
         r = self.client.post(url, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.json()["success"], True)
-        clist = CommunityList.objects.get(user__username="plain")
+        clist = CommunityList.objects.get(person__user__username="plain")
         self.assertEqual(list(clist.added_docs.all()), [draft])
 
         # untrack
@@ -254,11 +253,11 @@ class CommunityListTests(WebTest):
         r = self.client.post(url, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.json()["success"], True)
-        clist = CommunityList.objects.get(user__username="plain")
+        clist = CommunityList.objects.get(person__user__username="plain")
         self.assertEqual(list(clist.added_docs.all()), [])
 
     def test_csv(self):
-        PersonFactory(user__username='plain')
+        person = PersonFactory(user__username='plain')
         draft = WgDraftFactory()
 
         url = urlreverse(ietf.community.views.export_to_csv, kwargs={ "username": "plain" })
@@ -268,7 +267,7 @@ class CommunityListTests(WebTest):
         self.assertEqual(r.status_code, 200)
 
         # with list
-        clist = CommunityList.objects.create(user=User.objects.get(username="plain"))
+        clist = CommunityList.objects.create(person=person)
         if not draft in clist.added_docs.all():
             clist.added_docs.add(draft)
         SearchRule.objects.create(
@@ -294,7 +293,7 @@ class CommunityListTests(WebTest):
         self.assertEqual(r.status_code, 200)
 
     def test_feed(self):
-        PersonFactory(user__username='plain')
+        person = PersonFactory(user__username='plain')
         draft = WgDraftFactory()
 
         url = urlreverse(ietf.community.views.feed, kwargs={ "username": "plain" })
@@ -304,7 +303,7 @@ class CommunityListTests(WebTest):
         self.assertEqual(r.status_code, 200)
 
         # with list
-        clist = CommunityList.objects.create(user=User.objects.get(username="plain"))
+        clist = CommunityList.objects.create(person=person)
         if not draft in clist.added_docs.all():
             clist.added_docs.add(draft)
         SearchRule.objects.create(
@@ -334,7 +333,7 @@ class CommunityListTests(WebTest):
         self.assertEqual(r.status_code, 200)
         
     def test_subscription(self):
-        PersonFactory(user__username='plain')
+        person = PersonFactory(user__username='plain')
         draft = WgDraftFactory()
 
         url = urlreverse(ietf.community.views.subscription, kwargs={ "username": "plain" })
@@ -346,7 +345,7 @@ class CommunityListTests(WebTest):
         self.assertEqual(r.status_code, 404)
 
         # subscription with list
-        clist = CommunityList.objects.create(user=User.objects.get(username="plain"))
+        clist = CommunityList.objects.create(person=person)
         if not draft in clist.added_docs.all():
             clist.added_docs.add(draft)
         SearchRule.objects.create(
@@ -387,10 +386,10 @@ class CommunityListTests(WebTest):
         self.assertEqual(r.status_code, 200)
         
     def test_notification(self):
-        PersonFactory(user__username='plain')
+        person = PersonFactory(user__username='plain')
         draft = WgDraftFactory()
 
-        clist = CommunityList.objects.create(user=User.objects.get(username="plain"))
+        clist = CommunityList.objects.create(person=person)
         if not draft in clist.added_docs.all():
             clist.added_docs.add(draft)
 

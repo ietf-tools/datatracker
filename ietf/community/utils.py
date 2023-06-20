@@ -37,7 +37,7 @@ def lookup_community_list(username=None, acronym=None):
         clist = CommunityList.objects.filter(group=group).first() or CommunityList(group=group)
     else:
         user = get_object_or_404(User, username__iexact=username)
-        clist = CommunityList.objects.filter(user=user).first() or CommunityList(user=user)
+        clist = CommunityList.objects.filter(person__user=user).first() or CommunityList(person=user.person)
 
     return clist
 
@@ -45,8 +45,8 @@ def can_manage_community_list(user, clist):
     if not user or not user.is_authenticated:
         return False
 
-    if clist.user:
-        return user == clist.user
+    if clist.person:
+        return user == clist.person.user
     elif clist.group:
         if has_role(user, 'Secretariat'):
             return True

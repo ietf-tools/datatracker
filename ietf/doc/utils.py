@@ -1047,29 +1047,26 @@ def build_file_urls(doc: Union[Document, DocHistory]):
 
     return file_urls, found_types
 
-def augment_docs_and_user_with_user_info(docs, user):
+def augment_docs_and_person_with_person_info(docs, person):
     """Add attribute to each document with whether the document is tracked
-    or has a review wish by the user or not, and the review teams the user is on."""
+    or has a review wish by the person or not, and the review teams the person is on."""
 
     tracked = set()
     review_wished = set()
-    
-    if user and user.is_authenticated:
-        user.review_teams = Group.objects.filter(
-                reviewteamsettings__isnull=False, role__person__user=user, role__name='reviewer')
 
-        doc_pks = [d.pk for d in docs]
-        clist = CommunityList.objects.filter(user=user).first()
-        if clist:
-            tracked.update(
-                docs_tracked_by_community_list(clist).filter(pk__in=doc_pks).values_list("pk", flat=True))
+    # used in templates
+    person.review_teams = Group.objects.filter(
+        reviewteamsettings__isnull=False, role__person=person, role__name='reviewer')
 
-        try:
-            wishes = ReviewWish.objects.filter(person=Person.objects.get(user=user))
-            wishes = wishes.filter(doc__pk__in=doc_pks).values_list("doc__pk", flat=True)
-            review_wished.update(wishes)
-        except Person.DoesNotExist:
-            pass
+    doc_pks = [d.pk for d in docs]
+    clist = CommunityList.objects.filter(person=person).first()
+    if clist:
+        tracked.update(
+            docs_tracked_by_community_list(clist).filter(pk__in=doc_pks).values_list("pk", flat=True))
+
+    wishes = ReviewWish.objects.filter(person=person)
+    wishes = wishes.filter(doc__pk__in=doc_pks).values_list("doc__pk", flat=True)
+    review_wished.update(wishes)
 
     for d in docs:
         d.tracked_in_personal_community_list = d.pk in tracked

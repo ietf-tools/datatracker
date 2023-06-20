@@ -31,6 +31,20 @@ def merge_persons(request, source, target, file=sys.stdout, verbose=False):
         email.save()
         changes.append('EMAIL ACTION: {} no longer marked as primary'.format(email.address))
 
+    # handle community list
+    for communitylist in source.communitylist_set.all():
+        source.communitylist_set.remove(communitylist)
+        target.communitylist_set.add(communitylist)
+
+    # handle feedback
+    for feedback in source.feedback_set.all():
+        feedback.person = target
+        feedback.save()
+    # handle nominations
+    for nomination in source.nomination_set.all():
+        nomination.person = target
+        nomination.save()
+
     changes.append(handle_users(source, target))
     reviewer_changes = handle_reviewer_settings(source, target)
     if reviewer_changes:
@@ -103,7 +117,6 @@ def handle_users(source,target,check_only=False):
     if source.user and target.user:
         message = "DATATRACKER LOGIN ACTION: retaining login: {}, removing login: {}".format(target.user,source.user)
         if not check_only:
-            merge_users(source.user, target.user)
             syslog.syslog('merge-person-records: deactivating user {}'.format(source.user.username))
             user = source.user
             source.user = None
@@ -125,21 +138,6 @@ def move_related_objects(source, target, file, verbose=False):
             print("Merging {}:{}".format(accessor,queryset.count()), file=file)
         kwargs = { field_name:target }
         queryset.update(**kwargs)
-
-def merge_users(source, target):
-    '''Move related objects from source user to target user'''
-    # handle community list
-    for communitylist in source.communitylist_set.all():
-        source.communitylist_set.remove(communitylist)
-        target.communitylist_set.add(communitylist)
-    # handle feedback
-    for feedback in source.feedback_set.all():
-        feedback.user = target
-        feedback.save()
-    # handle nominations
-    for nomination in source.nomination_set.all():
-        nomination.user = target
-        nomination.save()
 
 def dedupe_aliases(person):
     '''Check person for duplicate aliases and purge'''

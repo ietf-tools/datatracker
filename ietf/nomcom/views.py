@@ -458,23 +458,24 @@ def nominate(request, year, public, newperson):
                                'year': year,
                                'selected': 'nominate'})
 
+    person = request.user.person
     if request.method == 'POST':
         if newperson:
-            form = NominateNewPersonForm(data=request.POST, nomcom=nomcom, user=request.user, public=public)
+            form = NominateNewPersonForm(data=request.POST, nomcom=nomcom, person=person, public=public)
         else:
-            form = NominateForm(data=request.POST, nomcom=nomcom, user=request.user, public=public)
+            form = NominateForm(data=request.POST, nomcom=nomcom, person=person, public=public)
         if form.is_valid():
             form.save()
             messages.success(request, 'Your nomination has been registered. Thank you for the nomination.')
             if newperson:
                 return redirect('ietf.nomcom.views.%s_nominate' % ('public' if public else 'private'), year=year)
             else:
-                form = NominateForm(nomcom=nomcom, user=request.user, public=public)
+                form = NominateForm(nomcom=nomcom, person=person, public=public)
     else:
         if newperson:
-            form = NominateNewPersonForm(nomcom=nomcom, user=request.user, public=public)
+            form = NominateNewPersonForm(nomcom=nomcom, person=person, public=public)
         else:
-            form = NominateForm(nomcom=nomcom, user=request.user, public=public)
+            form = NominateForm(nomcom=nomcom, person=person, public=public)
 
     return render(request, template,
                               {'form': form,
@@ -499,6 +500,7 @@ def feedback(request, year, public):
     nominee = None
     position = None
     topic = None
+    person = request.user.person
     if nomcom.group.state_id != 'conclude':
         selected_nominee = request.GET.get('nominee')
         selected_position = request.GET.get('position')
@@ -510,7 +512,7 @@ def feedback(request, year, public):
             topic = get_object_or_404(Topic,id=selected_topic)
             if topic.audience_id == 'nomcom' and not nomcom.group.has_role(request.user, ['chair','advisor','liaison','member']):
                 raise Http404()
-            if topic.audience_id == 'nominees' and not nomcom.nominee_set.filter(person=request.user.person).exists():
+            if topic.audience_id == 'nominees' and not nomcom.nominee_set.filter(person=person).exists():
                 raise Http404()
 
     if public:
@@ -522,12 +524,12 @@ def feedback(request, year, public):
 
     if not nomcom.group.has_role(request.user, ['chair','advisor','liaison','member']):
         topics = topics.exclude(audience_id='nomcom')
-    if not nomcom.nominee_set.filter(person=request.user.person).exists():
+    if not nomcom.nominee_set.filter(person=person).exists():
         topics = topics.exclude(audience_id='nominees')
 
     user_comments = Feedback.objects.filter(nomcom=nomcom,
                                             type='comment',
-                                            author__in=request.user.person.email_set.filter(active='True')) 
+                                            author__in=person.email_set.filter(active='True')) 
     counter = Counter(user_comments.values_list('positions','nominees'))
     counts = dict()
     for pos,nom in counter:
@@ -580,11 +582,11 @@ def feedback(request, year, public):
     if request.method == 'POST':
         if nominee and position:
             form = FeedbackForm(data=request.POST,
-                                nomcom=nomcom, user=request.user,
+                                nomcom=nomcom, person=person,
                                 public=public, position=position, nominee=nominee)
         elif topic:
             form = FeedbackForm(data=request.POST,
-                                nomcom=nomcom, user=request.user,
+                                nomcom=nomcom, person=person,
                                 public=public, topic=topic)
         else:
             form = None
@@ -603,10 +605,10 @@ def feedback(request, year, public):
                 pass
     else:
         if nominee and position:
-            form = FeedbackForm(nomcom=nomcom, user=request.user, public=public,
+            form = FeedbackForm(nomcom=nomcom, person=person, public=public,
                                 position=position, nominee=nominee)
         elif topic:
-            form = FeedbackForm(nomcom=nomcom, user=request.user, public=public,
+            form = FeedbackForm(nomcom=nomcom, person=person, public=public,
                                 topic=topic)
         else:
             form = None
@@ -672,6 +674,7 @@ def private_questionnaire(request, year):
     has_publickey = nomcom.public_key and True or False
     questionnaire_response = None
     template = 'nomcom/private_questionnaire.html'
+    person = request.user.person
 
     if not has_publickey:
         messages.warning(request, "This Nomcom is not yet accepting questionnaires.")
@@ -692,14 +695,14 @@ def private_questionnaire(request, year):
 
     if request.method == 'POST':
         form = QuestionnaireForm(data=request.POST,
-                                 nomcom=nomcom, user=request.user)
+                                 nomcom=nomcom, person=person)
         if form.is_valid():
             form.save()
             messages.success(request, 'The questionnaire response has been registered.')
             questionnaire_response = force_str(form.cleaned_data['comment_text'])
-            form = QuestionnaireForm(nomcom=nomcom, user=request.user)
+            form = QuestionnaireForm(nomcom=nomcom, person=person)
     else:
-        form = QuestionnaireForm(nomcom=nomcom, user=request.user)
+        form = QuestionnaireForm(nomcom=nomcom, person=person)
 
     return render(request, template,
                               {'form': form,
@@ -738,15 +741,13 @@ def process_nomination_status(request, year, nominee_position_id, state, date, h
             if form.cleaned_data['comments']:
                 # This Feedback object is of type comment instead of nomina in order to not
                 # make answering "who nominated themselves" harder.
-                who = request.user
-                if isinstance(who,AnonymousUser):
-                    who = None
+                who = None if isinstance(request.user, AnonymousUser) else request.user.person
                 f = Feedback.objects.create(nomcom = nomcom,
                                             author = nominee_position.nominee.email,
                                             subject = '%s nomination %s'%(nominee_position.nominee.name(),state),
                                             comments = nomcom.encrypt(form.cleaned_data['comments']),
                                             type_id = 'comment', 
-                                            user = who,
+                                            person = who,
                                            )
                 f.positions.add(nominee_position.position)
                 f.nominees.add(nominee_position.nominee)
@@ -794,8 +795,9 @@ def view_feedback(request, year):
 
     sorted_nominees = sorted(nominees,key=lambda x:x.staterank)
 
+    reviewer = request.user.person
     for nominee in sorted_nominees:
-        last_seen = FeedbackLastSeen.objects.filter(reviewer=request.user.person,nominee=nominee).first()
+        last_seen = FeedbackLastSeen.objects.filter(reviewer=reviewer,nominee=nominee).first()
         nominee_feedback = []
         for ft in nominee_feedback_types:
             qs = nominee.feedback_set.by_type(ft.slug)
@@ -810,7 +812,7 @@ def view_feedback(request, year):
         nominees_feedback.append( {'nominee':nominee, 'feedback':nominee_feedback} )
     independent_feedback = [ft.feedback_set.get_by_nomcom(nomcom).count() for ft in independent_feedback_types]
     for topic in nomcom.topic_set.all():
-        last_seen = TopicFeedbackLastSeen.objects.filter(reviewer=request.user.person,topic=topic).first()
+        last_seen = TopicFeedbackLastSeen.objects.filter(reviewer=reviewer,topic=topic).first()
         topic_feedback = []
         for ft in topic_feedback_types:
             qs = topic.feedback_set.by_type(ft.slug)
@@ -857,6 +859,7 @@ def view_feedback_pending(request, year):
     except EmptyPage:
         feedback_page = paginator.page(paginator.num_pages)
     extra_step = False
+    person = request.user.person
     if request.method == 'POST' and request.POST.get('end'):
         extra_ids = request.POST.get('extra_ids', None)
         extra_step = True
@@ -865,7 +868,7 @@ def view_feedback_pending(request, year):
         formset.absolute_max = 2000     
         formset.validate_max = False
         for form in formset.forms:
-            form.set_nomcom(nomcom, request.user)
+            form.set_nomcom(nomcom, person)
         if formset.is_valid():
             formset.save()
             if extra_ids:
@@ -877,7 +880,7 @@ def view_feedback_pending(request, year):
                     extra.append(feedback)
                 formset = FullFeedbackFormSet(queryset=Feedback.objects.filter(id__in=[i.id for i in extra]))
                 for form in formset.forms:
-                    form.set_nomcom(nomcom, request.user, extra)
+                    form.set_nomcom(nomcom, person, extra)
                 extra_ids = None
             else:
                 messages.success(request, 'Feedback saved')
@@ -885,7 +888,7 @@ def view_feedback_pending(request, year):
     elif request.method == 'POST':
         formset = FeedbackFormSet(request.POST)
         for form in formset.forms:
-            form.set_nomcom(nomcom, request.user)
+            form.set_nomcom(nomcom, person)
         if formset.is_valid():
             extra = []
             nominations = []
@@ -905,12 +908,12 @@ def view_feedback_pending(request, year):
                 if nominations:
                     formset = FullFeedbackFormSet(queryset=Feedback.objects.filter(id__in=[i.id for i in nominations]))
                     for form in formset.forms:
-                        form.set_nomcom(nomcom, request.user, nominations)
+                        form.set_nomcom(nomcom, person, nominations)
                     extra_ids = ','.join(['%s:%s' % (i.id, i.type.pk) for i in extra])
                 else:
                     formset = FullFeedbackFormSet(queryset=Feedback.objects.filter(id__in=[i.id for i in extra]))
                     for form in formset.forms:
-                        form.set_nomcom(nomcom, request.user, extra)
+                        form.set_nomcom(nomcom, person, extra)
                 if moved:
                     messages.success(request, '%s messages classified. You must enter more information for the following feedback.' % moved)
             else:
@@ -919,7 +922,7 @@ def view_feedback_pending(request, year):
     else:
         formset = FeedbackFormSet(queryset=feedback_page.object_list)
         for form in formset.forms:
-            form.set_nomcom(nomcom, request.user)
+            form.set_nomcom(nomcom, person)
     type_dict = OrderedDict()
     for t in FeedbackTypeName.objects.all().order_by('pk'):
         rest = t.name
@@ -964,13 +967,14 @@ def view_feedback_topic(request, year, topic_id):
     nomcom = get_nomcom_by_year(year)
     topic = get_object_or_404(Topic, id=topic_id)
     feedback_types = FeedbackTypeName.objects.filter(slug__in=['comment',])
+    reviewer = request.user.person
 
-    last_seen = TopicFeedbackLastSeen.objects.filter(reviewer=request.user.person,topic=topic).first()
+    last_seen = TopicFeedbackLastSeen.objects.filter(reviewer=reviewer,topic=topic).first()
     last_seen_time = (last_seen and last_seen.time) or datetime.datetime(year=1, month=1, day=1, tzinfo=datetime.timezone.utc)
     if last_seen:
         last_seen.save()
     else:
-        TopicFeedbackLastSeen.objects.create(reviewer=request.user.person,topic=topic)
+        TopicFeedbackLastSeen.objects.create(reviewer=reviewer,topic=topic)
 
     return render(request, 'nomcom/view_feedback_topic.html',
                               {'year': year,
@@ -986,13 +990,14 @@ def view_feedback_nominee(request, year, nominee_id):
     nomcom = get_nomcom_by_year(year)
     nominee = get_object_or_404(Nominee, id=nominee_id)
     feedback_types = FeedbackTypeName.objects.filter(slug__in=settings.NOMINEE_FEEDBACK_TYPES)
+    reviewer = request.user.person
 
-    last_seen = FeedbackLastSeen.objects.filter(reviewer=request.user.person,nominee=nominee).first()
+    last_seen = FeedbackLastSeen.objects.filter(reviewer=reviewer,nominee=nominee).first()
     last_seen_time = (last_seen and last_seen.time) or datetime.datetime(year=1, month=1, day=1, tzinfo=datetime.timezone.utc)
     if last_seen:
         last_seen.save()
     else:
-        FeedbackLastSeen.objects.create(reviewer=request.user.person,nominee=nominee)
+        FeedbackLastSeen.objects.create(reviewer=reviewer,nominee=nominee)
 
     return render(request, 'nomcom/view_feedback_nominee.html',
                               {'year': year,
@@ -1243,15 +1248,15 @@ def configuration_help(request, year):
 @role_required("Nomcom Chair", "Nomcom Advisor")
 def edit_members(request, year):
     nomcom = get_nomcom_by_year(year)
-
     if nomcom.group.state_id=='conclude':
         permission_denied(request, 'This nomcom is closed.')
 
+    person = request.user.person
     if request.method=='POST':
         form = EditMembersForm(nomcom, data=request.POST)
         if form.is_valid():
-            update_role_set(nomcom.group, 'member', form.cleaned_data['members'], request.user.person)
-            update_role_set(nomcom.group, 'liaison', form.cleaned_data['liaisons'], request.user.person)
+            update_role_set(nomcom.group, 'member', form.cleaned_data['members'], person)
+            update_role_set(nomcom.group, 'liaison', form.cleaned_data['liaisons'], person)
             return HttpResponseRedirect(reverse('ietf.nomcom.views.private_index',kwargs={'year':year}))
     else:
         form = EditMembersForm(nomcom)

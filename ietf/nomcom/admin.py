@@ -21,9 +21,9 @@ class NomComAdmin(admin.ModelAdmin):
 admin.site.register(NomCom, NomComAdmin)
 
 class NominationAdmin(admin.ModelAdmin):
-    list_display = ['id', 'position', 'candidate_name', 'candidate_email', 'candidate_phone', 'nominee', 'comments', 'nominator_email', 'user', 'time', 'share_nominator']
+    list_display = ['id', 'position', 'candidate_name', 'candidate_email', 'candidate_phone', 'nominee', 'comments', 'nominator_email', 'person', 'time', 'share_nominator']
     list_filter = ['time', 'share_nominator']
-    raw_id_fields = ['nominee', 'comments', 'user']
+    raw_id_fields = ['nominee', 'comments', 'person']
 admin.site.register(Nomination, NominationAdmin)
 
 class NomineeAdmin(admin.ModelAdmin):
@@ -51,9 +51,9 @@ class FeedbackAdmin(admin.ModelAdmin):
         return ", ".join(n.person.ascii for n in obj.nominees.all())
     nominee.admin_order_field = 'nominees__person__ascii' # type: ignore # https://github.com/python/mypy/issues/2087
 
-    list_display = ['id', 'nomcom', 'author', 'nominee', 'subject', 'type', 'user', 'time']
+    list_display = ['id', 'nomcom', 'author', 'nominee', 'subject', 'type', 'person', 'time']
     list_filter = ['nomcom', 'type', 'time', ]
-    raw_id_fields = ['positions', 'topics', 'user']
+    raw_id_fields = ['positions', 'topics', 'person']
 admin.site.register(Feedback, FeedbackAdmin)
 
 

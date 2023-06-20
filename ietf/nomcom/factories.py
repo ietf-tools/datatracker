@@ -9,7 +9,7 @@ from faker import Faker
 
 from ietf.nomcom.models import NomCom, Position, Feedback, Nominee, NomineePosition, Nomination, Topic
 from ietf.group.factories import GroupFactory
-from ietf.person.factories import PersonFactory, UserFactory
+from ietf.person.factories import PersonFactory
 
 import debug                            # pyflakes:ignore
 
@@ -196,7 +196,7 @@ class NominationFactory(factory.django.DjangoModelFactory):
     candidate_email = factory.LazyAttribute(lambda obj: obj.nominee.person.email())
     candidate_phone = factory.Faker('phone_number')
     comments = factory.SubFactory(FeedbackFactory)
-    nominator_email = factory.LazyAttribute(lambda obj: obj.user.email)
-    user = factory.SubFactory(UserFactory)
+    nominator_email = factory.LazyAttribute(lambda obj: obj.person.user.email)
+    person = factory.SubFactory(PersonFactory)
     share_nominator = False
     

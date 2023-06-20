@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 
-from django.contrib.auth.models import User
 from django.db import models
 from django.db.models import signals
 from django.urls import reverse as urlreverse
@@ -13,13 +12,13 @@ from ietf.person.models import Person, Email
 from ietf.utils.models import ForeignKey
 
 class CommunityList(models.Model):
-    user = ForeignKey(User, blank=True, null=True)
+    person = ForeignKey(Person, blank=True, null=True)
     group = ForeignKey(Group, blank=True, null=True)
     added_docs = models.ManyToManyField(Document)
 
     def long_name(self):
-        if self.user:
-            return 'Personal I-D list of %s' % self.user.username
+        if self.person:
+            return 'Personal I-D list of %s' % self.person.plain_name()
         elif self.group:
             return 'I-D list for %s' % self.group.name
         else:
@@ -30,8 +29,8 @@ class CommunityList(models.Model):
 
     def get_absolute_url(self):
         import ietf.community.views
-        if self.user:
-            return urlreverse(ietf.community.views.view_list, kwargs={ 'username': self.user.username })
+        if self.person:
+            return urlreverse(ietf.community.views.view_list, kwargs={ 'username': self.person.user.username })
         elif self.group:
             return urlreverse("ietf.group.views.group_documents", kwargs={ 'acronym': self.group.acronym })
         return ""

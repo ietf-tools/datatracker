@@ -255,12 +255,14 @@ def subscription(request, username=None, acronym=None, group_type=None):
     if clist.pk is None:
         raise Http404
 
-    existing_subscriptions = EmailSubscription.objects.filter(community_list=clist, email__person__user=request.user)
+    person = request.user.person
+
+    existing_subscriptions = EmailSubscription.objects.filter(community_list=clist, email__person=person)
 
     if request.method == 'POST':
         action = request.POST.get("action")
         if action == "subscribe":
-            form = SubscriptionForm(request.user, clist, request.POST)
+            form = SubscriptionForm(person, clist, request.POST)
             if form.is_valid():
                 subscription = form.save(commit=False)
                 subscription.community_list = clist
@@ -273,7 +275,7 @@ def subscription(request, username=None, acronym=None, group_type=None):
 
             return HttpResponseRedirect("")
     else:
-        form = SubscriptionForm(request.user, clist)
+        form = SubscriptionForm(person, clist)
 
     return render(request, 'community/subscription.html', {
         'clist': clist,
