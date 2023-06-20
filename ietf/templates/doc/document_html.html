@@ -31,6 +31,15 @@
             <script src="{% static 'ietf/js/document_html.js' %}"></script>
             <script src="{% static 'ietf/js/theme.js' %}"></script>
         {% endif %}
+            <style>
+                {# Try and recolor black colors in SVGs for dark mode. This will need further tweaking. #}
+                svg *[fill='black'], svg text:not([fill]) {
+                    fill: currentColor;
+                }
+                svg *[stroke='black'] {
+                    stroke: currentColor;
+                }
+            </style>
         <link rel="alternate" type="application/atom+xml" title="Document changes" href="/feed/document-changes/{{ doc.name }}/">
         <meta name="description"
             {% if not snapshot and doc.get_state_slug == 'rfc' %}
