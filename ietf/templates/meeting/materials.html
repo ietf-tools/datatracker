@@ -52,17 +52,16 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for session in plenaries %}
+                        {% for entry in plenaries %}
                             {% include "meeting/group_materials.html" %}
                         {% endfor %}
                     </tbody>
                 </table>
             {% endif %}
             <!-- Working groups -->
-            {% regroup ietf|dictsort:"group.parent.acronym" by group.parent.name as areas %}
-            {% for sessions in areas %}
-                <h2 class="mt-4" id="{{ sessions.list.0.group.parent.acronym }}">
-                    {{ sessions.list.0.group.parent.acronym|upper }} <small>{{ sessions.grouper }}</small>
+            {% for area, meeting_groups, not_meeting_groups in ietf_areas %}
+                <h2 class="mt-4" id="{{ area.acronym }}">
+                    {{ area.acronym|upper }} <small>{{ area.name }}</small>
                 </h2>
                 <table class="table table-sm table-striped tablesorter">
                     <thead>
@@ -79,10 +78,8 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for session in sessions.list|dictsort:"group.acronym" %}
-                            {% ifchanged session.group.acronym %}
-                                {% include "meeting/group_materials.html" %}
-                            {% endifchanged %}
+                        {% for entry in meeting_groups %}
+                            {% include "meeting/group_materials.html" %}
                         {% endfor %}
                     </tbody>
                 </table>
@@ -110,11 +107,8 @@
                             </tr>
                         </thead>
                         <tbody>
-                            {% for session in training %}
-                                {% ifchanged %}
-                                    {# TODO: Find a better way to represent purposed sessions in both materials and proceedings #}
-                                    {% include "meeting/group_materials.html" %}
-                                {% endifchanged %}
+                            {% for entry in training %}
+                                {% include "meeting/group_materials.html" %}
                             {% endfor %}
                         </tbody>
                     </table>
@@ -152,10 +146,8 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for session in iab %}
-                            {% ifchanged session.group.acronym %}
-                                {% include "meeting/group_materials.html" %}
-                            {% endifchanged %}
+                        {% for entry in iab %}
+                            {% include "meeting/group_materials.html" %}
                         {% endfor %}
                     </tbody>
                 </table>
@@ -192,10 +184,8 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for session in irtf|dictsort:"group.acronym" %}
-                            {% ifchanged session.group.acronym %}
-                                {% include "meeting/group_materials.html" %}
-                            {% endifchanged %}
+                        {% for entry in irtf %}
+                            {% include "meeting/group_materials.html" %}
                         {% endfor %}
                     </tbody>
                 </table>
@@ -231,10 +221,8 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for session in other|dictsort:"group.acronym" %}
-                            {% ifchanged session.group.acronym %}
-                                {% include "meeting/group_materials.html" %}
-                            {% endifchanged %}
+                        {% for entry in other %}
+                            {% include "meeting/group_materials.html" %}
                         {% endfor %}
                     </tbody>
                 </table>

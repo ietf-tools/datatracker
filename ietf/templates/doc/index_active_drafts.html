@@ -5,7 +5,7 @@
 {% load cache %}
 {% block title %}Active Internet-Drafts{% endblock %}
 {% block content %}
-    {% cache 900 ietf_doc_index_active_drafts %}
+    {% cache 900 ietf_doc_index_active_drafts using="slowpages" %}
     {% origin %}
     <h1>Active Internet-Drafts</h1>
     <p>

@@ -392,6 +392,7 @@ class SecrMeetingTestCase(TestCase):
             'remote_instructions': 'http://webex.com/foobar',
         })
         self.assertRedirects(response, redirect_url)
+        session = Session.objects.get(pk=session.pk)  # get a clean instance to avoid cache problems
         timeslot = session.official_timeslotassignment().timeslot
         self.assertEqual(timeslot.time, new_time)
 

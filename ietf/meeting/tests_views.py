@@ -508,6 +508,66 @@ class MeetingTests(BaseMeetingTestCase):
 
         self.do_test_materials(meeting, session)
 
+    def test_named_session(self):
+        """Session with a name should appear separately in the materials"""
+        meeting = MeetingFactory(type_id='ietf', number='100')
+        meeting.importantdate_set.create(name_id='revsub',date=date_today() + datetime.timedelta(days=20))
+        group = GroupFactory()
+        plain_session = SessionFactory(meeting=meeting, group=group)
+        named_session = SessionFactory(meeting=meeting, group=group, name='I Got a Name')
+        for doc_type_id in ('agenda', 'minutes', 'bluesheets', 'slides', 'draft'):
+            # Set up sessions materials that will have distinct URLs for each session.
+            # This depends on settings.MEETING_DOC_HREFS and may need updating if that changes.
+            SessionPresentationFactory(
+                session=plain_session,
+                document__type_id=doc_type_id,
+                document__uploaded_filename=f'upload-{doc_type_id}-plain',
+                document__external_url=f'external_url-{doc_type_id}-plain',
+            )
+            SessionPresentationFactory(
+                session=named_session,
+                document__type_id=doc_type_id,
+                document__uploaded_filename=f'upload-{doc_type_id}-named',
+                document__external_url=f'external_url-{doc_type_id}-named',
+            )
+
+        url = urlreverse('ietf.meeting.views.materials', kwargs={'num': meeting.number})
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+
+        plain_label = q(f'div#{group.acronym}')
+        self.assertEqual(plain_label.text(), group.acronym)
+        plain_row = plain_label.closest('tr')
+        self.assertTrue(plain_row)
+
+        named_label = q(f'div#{slugify(named_session.name)}')
+        self.assertEqual(named_label.text(), named_session.name)
+        named_row = named_label.closest('tr')
+        self.assertTrue(named_row)
+
+        for material in (sp.document for sp in plain_session.sessionpresentation_set.all()):
+            if material.type_id == 'draft':
+                expected_url = urlreverse(
+                    'ietf.doc.views_doc.document_main',
+                    kwargs={'name': material.canonical_name()},
+                )
+            else:
+                expected_url = material.get_href(meeting)
+            self.assertTrue(plain_row.find(f'a[href="{expected_url}"]'))
+            self.assertFalse(named_row.find(f'a[href="{expected_url}"]'))
+
+        for material in (sp.document for sp in named_session.sessionpresentation_set.all()):
+            if material.type_id == 'draft':
+                expected_url = urlreverse(
+                    'ietf.doc.views_doc.document_main',
+                    kwargs={'name': material.canonical_name()},
+                )
+            else:
+                expected_url = material.get_href(meeting)
+            self.assertFalse(plain_row.find(f'a[href="{expected_url}"]'))
+            self.assertTrue(named_row.find(f'a[href="{expected_url}"]'))
+
     @override_settings(MEETING_MATERIALS_SERVE_LOCALLY=True)
     def test_meeting_materials_non_utf8(self):
         meeting = make_meeting_test_data()
@@ -556,7 +616,7 @@ class MeetingTests(BaseMeetingTestCase):
         self.assertContains(r, "1. More work items underway")
         
         
-        cont_disp = r._headers.get('content-disposition', ('Content-Disposition', ''))[1]
+        cont_disp = r.headers.get('content-disposition', ('Content-Disposition', ''))[1]
         cont_disp = re.split('; ?', cont_disp)
         cont_disp_settings = dict( e.split('=', 1) for e in cont_disp if '=' in e )
         filename = cont_disp_settings.get('filename', '').strip('"')
@@ -2357,7 +2417,7 @@ class EditTimeslotsTests(TestCase):
 
     def test_invalid_edit_timeslot(self):
         meeting = self.create_bare_meeting()
-        ts: TimeSlot = TimeSlotFactory(meeting=meeting, name='slot')  # n.b., colon indicates type hinting
+        ts: TimeSlot = TimeSlotFactory(meeting=meeting, name='slot')  # type: ignore[annotation-unchecked]
         self.login()
         r = self.client.post(
             self.edit_timeslot_url(ts),
@@ -3931,7 +3991,7 @@ class EditTests(TestCase):
             'base': meeting.schedule.base_id,
         })
         self.assertEqual(r.status_code, 200)
-        self.assertFormError(r, 'form', 'name', 'Enter a valid value.')
+        self.assertFormError(r.context["form"], 'name', 'Enter a valid value.')
         self.assertEqual(meeting.schedule_set.count(), orig_schedule_count, 'Schedule should not be created')
 
         r = self.client.post(url, {
@@ -3941,7 +4001,7 @@ class EditTests(TestCase):
             'base': meeting.schedule.base_id,
         })
         self.assertEqual(r.status_code, 200)
-        self.assertFormError(r, 'form', 'name', 'Enter a valid value.')
+        self.assertFormError(r.context["form"], 'name', 'Enter a valid value.')
         self.assertEqual(meeting.schedule_set.count(), orig_schedule_count, 'Schedule should not be created')
 
         # Non-ASCII alphanumeric characters
@@ -3952,7 +4012,7 @@ class EditTests(TestCase):
             'base': meeting.schedule.base_id,
         })
         self.assertEqual(r.status_code, 200)
-        self.assertFormError(r, 'form', 'name', 'Enter a valid value.')
+        self.assertFormError(r.context["form"], 'name', 'Enter a valid value.')
         self.assertEqual(meeting.schedule_set.count(), orig_schedule_count, 'Schedule should not be created')
 
     def test_edit_session(self):
@@ -4039,9 +4099,9 @@ class EditTests(TestCase):
         self.assertIn(return_url_unofficial, r.content.decode())
 
         r = self.client.post(url, {})
-        self.assertFormError(r, 'form', 'confirmed', 'This field is required.')
+        self.assertFormError(r.context["form"], 'confirmed', 'This field is required.')
         r = self.client.post(url_unofficial, {})
-        self.assertFormError(r, 'form', 'confirmed', 'This field is required.')
+        self.assertFormError(r.context["form"], 'confirmed', 'This field is required.')
 
         r = self.client.post(url, {'confirmed': 'on'})
         self.assertRedirects(r, return_url)
@@ -6520,8 +6580,8 @@ class ImportNotesTests(TestCase):
             r = self.client.get(url)  # try to import the same text
             self.assertContains(r, "This document is identical", status_code=200)
             q = PyQuery(r.content)
-            self.assertEqual(len(q('button:disabled[type="submit"]')), 1)
-            self.assertEqual(len(q('button:enabled[type="submit"]')), 0)
+            self.assertEqual(len(q('#content button:disabled[type="submit"]')), 1)
+            self.assertEqual(len(q('#content button:enabled[type="submit"]')), 0)
 
     def test_allows_import_on_existing_bad_unicode(self):
         """Should not be able to import text identical to the current revision"""
@@ -6545,8 +6605,8 @@ class ImportNotesTests(TestCase):
             r = self.client.get(url)  # try to import the same text
             self.assertNotContains(r, "This document is identical", status_code=200)
             q = PyQuery(r.content)
-            self.assertEqual(len(q('button:enabled[type="submit"]')), 1)
-            self.assertEqual(len(q('button:disabled[type="submit"]')), 0)
+            self.assertEqual(len(q('#content button:enabled[type="submit"]')), 1)
+            self.assertEqual(len(q('#content button:disabled[type="submit"]')), 0)
 
     def test_handles_missing_previous_revision_file(self):
         """Should still allow import if the file for the previous revision is missing"""
@@ -7975,7 +8035,7 @@ class ProceedingsTests(BaseMeetingTestCase):
                 invalid_file.seek(0)  # read the file contents again
                 r = self.client.post(url, {'file': invalid_file, 'external_url': ''})
                 self.assertEqual(r.status_code, 200)
-                self.assertFormError(r, 'form', 'file', 'Found an unexpected extension: .png.  Expected one of .pdf')
+                self.assertFormError(r.context["form"], 'file', 'Found an unexpected extension: .png.  Expected one of .pdf')
 
     def test_add_proceedings_material_doc_empty(self):
         """Upload proceedings materials document without specifying a file"""
@@ -7988,7 +8048,7 @@ class ProceedingsTests(BaseMeetingTestCase):
             )
             r = self.client.post(url, {'external_url': ''})
             self.assertEqual(r.status_code, 200)
-            self.assertFormError(r, 'form', 'file', 'This field is required')
+            self.assertFormError(r.context["form"], 'file', 'This field is required')
 
     def test_add_proceedings_material_url(self):
         """Add a URL as proceedings material"""
@@ -8012,7 +8072,7 @@ class ProceedingsTests(BaseMeetingTestCase):
             )
             r = self.client.post(url, {'use_url': 'on', 'external_url': "Ceci n'est pas une URL"})
             self.assertEqual(r.status_code, 200)
-            self.assertFormError(r, 'form', 'external_url', 'Enter a valid URL.')
+            self.assertFormError(r.context["form"], 'external_url', 'Enter a valid URL.')
 
     def test_add_proceedings_material_url_empty(self):
         """Add proceedings materials URL without specifying the URL"""
@@ -8025,7 +8085,7 @@ class ProceedingsTests(BaseMeetingTestCase):
             )
             r = self.client.post(url, {'use_url': 'on', 'external_url': ''})
             self.assertEqual(r.status_code, 200)
-            self.assertFormError(r, 'form', 'external_url', 'This field is required')
+            self.assertFormError(r.context["form"], 'external_url', 'This field is required')
 
     @override_settings(MEETING_DOC_HREFS={'procmaterials': '{doc.name}:{doc.rev}'})
     def test_replace_proceedings_material(self):

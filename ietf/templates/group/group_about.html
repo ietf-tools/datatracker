@@ -379,8 +379,7 @@ height: 100vh;
             {% if group.state_id == "proposed" %}proposed{% endif %}
             {{ group.type.desc.title }}
         </h2>
-        {# the linebreaks filter adds <p>, no surrounding <p> necessary: #}
-        {{ group.charter_text|urlize_ietf_docs|linkify|linebreaks }}
+        {{ group.charter_html }}
     {% else %}
         <h2 class="mt-3">
             {% if requested_close or group.state_id == "conclude" %}Final{% endif %}
