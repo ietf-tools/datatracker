@@ -10,7 +10,7 @@ DATABASES = {
         'HOST': '__DBHOST__',
         'PORT': 5432,
         'NAME': 'datatracker',
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'ENGINE': 'django.db.backends.postgresql',
         'USER': 'django',
         'PASSWORD': 'RkTkDPFnKpko',
     },

@@ -15,7 +15,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.template.loader import render_to_string
 from django.utils import timezone
-from django.utils.encoding import smart_text
+from django.utils.encoding import smart_str
 
 import debug                            # pyflakes:ignore
 
@@ -699,7 +699,7 @@ def handle_upload_file(file, filename, meeting, subdir, request=None, encoding=N
                     )
             else:
                 try:
-                    text = smart_text(text)
+                    text = smart_str(text)
                 except UnicodeDecodeError as e:
                     return "Failure trying to save '%s'. Hint: Try to upload as UTF-8: %s..." % (filename, str(e)[:120])
             # Whole file sanitization; add back what's missing from a complete

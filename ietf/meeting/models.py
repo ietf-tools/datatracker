@@ -1254,7 +1254,10 @@ class Session(models.Model):
         return Constraint.objects.filter(target=self.group, meeting=self.meeting).order_by('name__name')
 
     def official_timeslotassignment(self):
-        return self.timeslotassignments.filter(schedule__in=[self.meeting.schedule, self.meeting.schedule.base if self.meeting.schedule else None]).first()
+        # cache only non-None values
+        if getattr(self, "_cache_official_timeslotassignment", None) is None:
+            self._cache_official_timeslotassignment = self.timeslotassignments.filter(schedule__in=[self.meeting.schedule, self.meeting.schedule.base if self.meeting.schedule else None]).first()
+        return self._cache_official_timeslotassignment
 
     @property
     def people_constraints(self):
@@ -1317,8 +1320,11 @@ class Session(models.Model):
     def notes_url(self):
         return urljoin(settings.IETF_NOTES_URL, self.notes_id())
 
+
     def group_at_the_time(self):
-        return self.meeting.group_at_the_time(self.group)
+        if not hasattr(self,"_cached_group_at_the_time"):
+            self._cached_group_at_the_time = self.meeting.group_at_the_time(self.group)
+        return self._cached_group_at_the_time
 
     def group_parent_at_the_time(self):
         if self.group_at_the_time().parent:

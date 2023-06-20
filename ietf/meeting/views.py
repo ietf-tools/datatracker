@@ -17,6 +17,7 @@ import tempfile
 
 from calendar import timegm
 from collections import OrderedDict, Counter, deque, defaultdict, namedtuple
+from functools import partialmethod
 from urllib.parse import parse_qs, unquote, urlencode, urlsplit, urlunsplit
 from tempfile import mkstemp
 from wsgiref.handlers import format_date_time
@@ -38,7 +39,6 @@ from django.template import TemplateDoesNotExist
 from django.template.loader import render_to_string
 from django.utils import timezone
 from django.utils.encoding import force_str
-from django.utils.functional import curry
 from django.utils.text import slugify
 from django.views.decorators.cache import cache_page
 from django.views.decorators.csrf import ensure_csrf_cookie, csrf_exempt
@@ -155,7 +155,7 @@ def materials(request, num=None):
     ).distinct().select_related('meeting__schedule', 'group__state', 'group__parent')).order_by('group__acronym')
 
     plenaries = sessions.filter(name__icontains='plenary')
-    ietf      = sessions.filter(group__parent__type__slug = 'area').exclude(group__acronym='edu')
+    ietf      = sessions.filter(group__parent__type__slug = 'area').exclude(group__acronym='edu').order_by('group__parent__acronym', 'group__acronym')
     irtf      = sessions.filter(group__parent__acronym = 'irtf')
     training  = sessions.filter(group__acronym__in=['edu','iaoc'], type_id__in=['regular', 'other', ])
     iab       = sessions.filter(group__parent__acronym = 'iab')
@@ -179,12 +179,26 @@ def materials(request, num=None):
         for type_name in ProceedingsMaterialTypeName.objects.all()
     ]
 
+    plenaries, _ = organize_proceedings_sessions(plenaries)
+    irtf, _ = organize_proceedings_sessions(irtf)
+    training, _ = organize_proceedings_sessions(training)
+    iab, _ = organize_proceedings_sessions(iab)
+    other, _ = organize_proceedings_sessions(other)
+
+    ietf_areas = []
+    for area, area_sessions in itertools.groupby(
+            ietf,
+            key=lambda s: s.group.parent
+    ):
+        meeting_groups, not_meeting_groups = organize_proceedings_sessions(area_sessions)
+        ietf_areas.append((area, meeting_groups, not_meeting_groups))
+
     with timezone.override(meeting.tz()):
         return render(request, "meeting/materials.html", {
             'meeting': meeting,
             'proceedings_materials': proceedings_materials,
             'plenaries': plenaries,
-            'ietf': ietf,
+            'ietf_areas': ietf_areas,
             'training': training,
             'irtf': irtf,
             'iab': iab,
@@ -2730,7 +2744,7 @@ def upload_session_agenda(request, session_id, num):
                   })
 
 
-def upload_session_slides(request, session_id, num, name):
+def upload_session_slides(request, session_id, num, name=None):
     # num is redundant, but we're dragging it along an artifact of where we are in the current URL structure
     session = get_object_or_404(Session,pk=session_id)
     if not session.can_manage_materials(request.user):
@@ -3210,8 +3224,8 @@ def interim_request(request):
             if meeting_type in ('single', 'multi-day'):
                 meeting = form.save(date=get_earliest_session_date(formset))
 
-                # need to use curry here to pass custom variable to form init
-                SessionFormset.form.__init__ = curry(
+                # need to use partialmethod here to pass custom variable to form init
+                SessionFormset.form.__init__ = partialmethod(
                     InterimSessionModelForm.__init__,
                     user=request.user,
                     group=group,
@@ -3233,7 +3247,7 @@ def interim_request(request):
             # subsequently dealt with individually
             elif meeting_type == 'series':
                 series = []
-                SessionFormset.form.__init__ = curry(
+                SessionFormset.form.__init__ = partialmethod(
                     InterimSessionModelForm.__init__,
                     user=request.user,
                     group=group,
@@ -3453,7 +3467,7 @@ def interim_request_edit(request, number):
         group = Group.objects.get(pk=form.data['group'])
         is_approved = is_interim_meeting_approved(meeting)
 
-        SessionFormset.form.__init__ = curry(
+        SessionFormset.form.__init__ = partialmethod(
             InterimSessionModelForm.__init__,
             user=request.user,
             group=group,
@@ -3671,6 +3685,7 @@ def organize_proceedings_sessions(sessions):
             if s.current_status != 'notmeet' or s.sessionpresentation_set.exists():
                 by_name[s.name].append(s)  # for notmeet, only include sessions with materials
         for sess_name, ss in by_name.items():
+            session = ss[0] if ss else None
             def _format_materials(items):
                 """Format session/material for template
 
@@ -3697,6 +3712,7 @@ def organize_proceedings_sessions(sessions):
             entry = {
                 'group': group,
                 'name': sess_name,
+                'session': session,
                 'canceled': all_canceled,
                 'has_materials': s.sessionpresentation_set.exists(),
                 'agendas': _format_materials((s, s.agenda()) for s in ss),
@@ -3705,6 +3721,7 @@ def organize_proceedings_sessions(sessions):
                 'recordings': _format_materials((s, s.recordings()) for s in ss),
                 'slides': _format_materials((s, s.slides()) for s in ss),
                 'drafts': _format_materials((s, s.drafts()) for s in ss),
+                'last_update': session.last_update if hasattr(session, 'last_update') else None
             }
             if is_meeting:
                 meeting_groups.append(entry)

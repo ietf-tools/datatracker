@@ -16,7 +16,7 @@ from unicodedata import normalize
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.utils.text import slugify
-from django.utils.encoding import force_text
+from django.utils.encoding import force_str
 
 import debug                            # pyflakes:ignore
 
@@ -68,7 +68,7 @@ class PersonFactory(factory.django.DjangoModelFactory):
     # Some i18n names, e.g., "शिला के.सी." have a dot at the end that is also part of the ASCII, e.g., "Shilaa Kesii."
     # That trailing dot breaks extract_authors(). Avoid this issue by stripping the dot from the ASCII.
     # Some others have a trailing semicolon (e.g., "உயிரோவியம் தங்கராஐ;") - strip those, too.
-    ascii = factory.LazyAttribute(lambda p: force_text(unidecode_name(p.name)).rstrip(".;"))
+    ascii = factory.LazyAttribute(lambda p: force_str(unidecode_name(p.name)).rstrip(".;"))
 
     class Params:
         with_bio = factory.Trait(biography = "\n\n".join(fake.paragraphs())) # type: ignore

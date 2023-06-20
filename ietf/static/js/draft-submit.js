@@ -66,28 +66,31 @@ $(function () {
 
         });
 
-    // Reload page periodically if the enableAutoReload checkbox is present and checked
-    const autoReloadSwitch = document.getElementById("enableAutoReload");
-    const timeSinceDisplay = document.getElementById("time-since-uploaded");
-    if (autoReloadSwitch) {
-        const autoReloadTime = 30000; // ms
-        let autoReloadTimeoutId;
-        autoReloadSwitch.parentElement.classList.remove("d-none");
-        timeSinceDisplay.classList.remove("d-none");
-        autoReloadTimeoutId = setTimeout(() => location.reload(), autoReloadTime);
-        autoReloadSwitch.addEventListener("change", (e) => {
-            if (e.currentTarget.checked) {
-                if (!autoReloadTimeoutId) {
-                    autoReloadTimeoutId = setTimeout(() => location.reload(), autoReloadTime);
-                    timeSinceDisplay.classList.remove("d-none");
-                }
-            } else {
-                if (autoReloadTimeoutId) {
-                    clearTimeout(autoReloadTimeoutId);
-                    autoReloadTimeoutId = null;
-                    timeSinceDisplay.classList.add("d-none");
-                }
+    // If draft is validating, poll until validation is complete, then reload the page
+    const submissionValidatingAlert = document.getElementById('submission-validating-alert');
+    if (submissionValidatingAlert) {
+        let statusPollTimer;
+        const statusUrl = submissionValidatingAlert.dataset['submissionStatusUrl'];
+        let statusPollInterval = 2000; // ms
+        const maxPollInterval = 32000; // ms
+
+        function checkStatus() {
+            if (statusPollInterval < maxPollInterval) {
+                statusPollInterval *= 2;
             }
-        });
+            const xhr = new XMLHttpRequest();
+            xhr.open("GET", statusUrl, true);
+            xhr.onload = (e) => {
+                if (xhr.response && xhr.response.state !== 'validating') {
+                    location.reload();
+                } else {
+                    statusPollTimer = setTimeout(checkStatus, statusPollInterval);
+                }
+            };
+            xhr.onerror = (e) => {statusPollTimer = setTimeout(checkStatus, statusPollInterval);};
+            xhr.responseType = 'json';
+            xhr.send('');
+        }
+        statusPollTimer = setTimeout(checkStatus, statusPollInterval);
     }
 });
