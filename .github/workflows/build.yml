@@ -135,7 +135,7 @@ jobs:
           exit 1
         fi
         echo "Running tests..."
-        if [[ "x${{ github.event.inputs.ignoreLowerCoverage }}" == "xtrue" ]]; then
+        if [[ "x${{ github.event.inputs.ignoreLowerCoverage }}" == "true" ]]; then
           echo "Lower coverage failures will be ignored."
           ./ietf/manage.py test --settings=settings_postgrestest --ignore-lower-coverage
         else
