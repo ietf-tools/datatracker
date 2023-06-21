@@ -450,4 +450,19 @@ section > p, section > dl.references > dd {
    * doesn't break words at '/' like other browsers. */
   overflow-wrap: break-word;
 }
+
+/* From https://github.com/martinthomson/rfc-css/blob/main/rfc.css */
+/* SVG Trick: a prefix match works because only black and white are allowed */
+svg :is([stroke="black"], [stroke^="#000"]) {
+    stroke: var(--bs-body-color);
+}
+svg :is([stroke="white"], [stroke^="#fff"]) {
+    stroke: var(--bs-body-bg);
+}
+svg :is([fill="black"], [fill^="#000"], :not([fill])) {
+    fill: var(--bs-body-color);
+}
+svg :is([fill="white"], [fill^="#fff"]) {
+    fill: var(--bs-body-bg);
+}
 }

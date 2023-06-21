@@ -7,7 +7,7 @@
 (() => {
   "use strict";
 
-  const storedTheme = localStorage.getItem("theme");
+  const storedTheme = localStorage.getItem("theme") || "auto";
 
   const getPreferredTheme = () => {
     if (storedTheme) {
