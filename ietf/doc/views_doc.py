@@ -115,7 +115,7 @@ def render_document_top(request, doc, tab, name):
                 None if rsab_ballot else "RSAB Evaluation Ballot has not been created yet"
             ))
 
-    if iesg_ballot or doc.group.type_id == "wg":
+    if iesg_ballot or (doc.group and doc.group.type_id == "wg"):
         if doc.type_id in ("draft", "conflrev", "statchg"):
             tabs.append(
                 (
@@ -128,7 +128,7 @@ def render_document_top(request, doc, tab, name):
                     None,
                 )
             )
-        elif doc.type_id == "charter" and doc.group.type_id == "wg":
+        elif doc.type_id == "charter" and doc.group and doc.group.type_id == "wg":
             tabs.append(
                 (
                     "IESG Review",
@@ -141,7 +141,7 @@ def render_document_top(request, doc, tab, name):
                 )
             )
         if doc.type_id == "draft" or (
-            doc.type_id == "charter" and doc.group.type_id == "wg"
+            doc.type_id == "charter" and doc.group and doc.group.type_id == "wg"
         ):
             tabs.append(
                 (
