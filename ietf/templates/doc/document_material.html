@@ -36,7 +36,7 @@
                         {% doc_edit_button 'ietf.doc.views_material.edit_material' name=doc.name action="title" %}
                     {% endif %}
                 </td>
-                <th scope="row">{{ doc.title|default:'<span class="text-muted">(None)</span>' }}</th>
+                <th scope="row">{{ doc.title|default:'<span class="text-body-secondary">(None)</span>' }}</th>
             </tr>
             {% if doc.abstract or doc.type_id == 'slides' and can_manage_material and not snapshot %}
                 <tr>
@@ -60,7 +60,7 @@
                     {% if doc.get_state.name %}
                         {{ doc.get_state.name }}
                     {% else %}
-                        <span class="text-muted">(None)</span>
+                        <span class="text-body-secondary">(None)</span>
                     {% endif %}
                 </td>
             </tr>
@@ -100,7 +100,7 @@
                                     {% if pres.rev != doc.rev %}(version -{{ pres.rev }}){% endif %}{% if not forloop.last %},{% endif %}
                                 {% endfor %}
                             {% else %}
-                                <span class="text-muted">(None)</span>
+                                <span class="text-body-secondary">(None)</span>
                             {% endif %}
                         </td>
                     </tr>

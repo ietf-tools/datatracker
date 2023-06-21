@@ -4,7 +4,7 @@
 {% origin %}
 {% load ietf_filters static django_bootstrap5 %}
 {% block content %}
-    <h1>Set next reviewer in queue<br><small class="text-muted">{{ group.acronym }}</small></h1>
+    <h1>Set next reviewer in queue<br><small class="text-body-secondary">{{ group.acronym }}</small></h1>
     <form class="my-3" method="post">
         {% csrf_token %}
         {% bootstrap_form form %}

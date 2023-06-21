@@ -18,7 +18,7 @@
             </span>
         {% endif %}
     {% else %}
-        <a class="text-muted"
+        <a class="text-body-secondary"
            href="{% url 'ietf.doc.views_review.review_request' review_assignment.review_request.doc.name review_assignment.review_request.pk %}">
             {{ review_assignment.review_request.team.acronym|upper }} {{ review_assignment.review_request.type.name }} Review</a>
         <span class="badge rounded-pill ms-1 bg-secondary">

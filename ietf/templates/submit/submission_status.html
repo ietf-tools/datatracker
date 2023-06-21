@@ -293,7 +293,7 @@
                         {% if author.country %}
                             {{ author.country }}
                             {% if author.cleaned_country and author.country != author.cleaned_country %}
-                                <span class="text-muted">(understood to be {{ author.cleaned_country }})</span>
+                                <span class="text-body-secondary">(understood to be {{ author.cleaned_country }})</span>
                             {% endif %}
                         {% else %}
                             <i>unknown country</i>
