@@ -184,6 +184,7 @@ def interesting_doc_relations(doc):
 
     that_doc_relationships = ('replaces', 'possibly_replaces', 'updates', 'obs')
 
+    # TODO: This returns the relationships in database order, which may not be the order we want to display them in.
     interesting_relations_that = cls.objects.filter(target__docs=target, relationship__in=that_relationships).select_related('source')
     interesting_relations_that_doc = cls.objects.filter(source=doc, relationship__in=that_doc_relationships).prefetch_related('target__docs')
 
