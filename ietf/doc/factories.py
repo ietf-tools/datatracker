@@ -577,4 +577,21 @@ class EditorialRfcFactory(RgDraftFactory):
     def reset_canonical_name(obj, create, extracted, **kwargs): 
         if hasattr(obj, '_canonical_name'):
             del obj._canonical_name
-        return None          
+        return None
+    
+class StatementFactory(BaseDocumentFactory):
+    type_id = 'statement'
+    title = factory.Faker('sentence')
+    group = factory.SubFactory('ietf.group.factories.GroupFactory', acronym='iab')
+
+    name = factory.LazyAttribute(lambda o: 'statement-%s-%s'%(xslugify(o.group.acronym), xslugify(o.title)))
+
+    @factory.post_generation
+    def states(obj, create, extracted, **kwargs):
+        if not create:
+            return
+        if extracted:
+            for (state_type_id,state_slug) in extracted:
+                obj.set_state(State.objects.get(type_id=state_type_id,slug=state_slug))
+        else:
+            obj.set_state(State.objects.get(type_id='statement',slug='active'))
