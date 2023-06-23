@@ -23,6 +23,10 @@ def forward(apps, schema_editor):
             type="changed_state",
             desc__startswith="RFC Editor state",
         )
+        | Q(
+            type="changed_state",
+            desc__startswith="IANA Action state",
+        )
     )
 
     # queryset with events migrated only after the "published_rfc" event
