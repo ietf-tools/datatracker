@@ -2542,30 +2542,15 @@
   {
     "fields": {
       "desc": "",
-      "name": "Created",
-      "next_states": [
-        176
-      ],
-      "order": 1,
-      "slug": "created",
-      "type": "rfc",
-      "used": true
-    },
-    "model": "doc.state",
-    "pk": 175
-  },
-  {
-    "fields": {
-      "desc": "",
       "name": "Published",
       "next_states": [],
-      "order": 2,
+      "order": 1,
       "slug": "published",
       "type": "rfc",
       "used": true
     },
     "model": "doc.state",
-    "pk": 176
+    "pk": 175
   },
   {
     "fields": {

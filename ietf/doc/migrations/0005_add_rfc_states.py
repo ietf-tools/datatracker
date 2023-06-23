@@ -8,13 +8,9 @@ def forward(apps, schema_editor):
     rfc_statetype, _ = StateType.objects.get_or_create(slug="rfc", label="State")
 
     State = apps.get_model("doc", "State")
-    created_state, _ = State.objects.get_or_create(
-        type=rfc_statetype, slug="created", name="Created", used=True, order=1
+    State.objects.get_or_create(
+        type=rfc_statetype, slug="published", name="Published", used=True, order=1
     )
-    published_state, _ = State.objects.get_or_create(
-        type=rfc_statetype, slug="published", name="Published", used=True, order=2
-    )
-    created_state.next_states.add(published_state)
 
 
 class Migration(migrations.Migration):
