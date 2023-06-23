@@ -811,7 +811,7 @@ def document_main(request, name, rev=None, document_html=False):
 
     if doc.type_id == "statement":
         content = markdown.markdown(doc.text_or_error())
-        can_manage = has_role(request.user,['Secretariat']) # Add IAB or IESG as appropriate
+        can_manage = has_role(request.user,["Secretariat"]) # Add IAB or IESG as appropriate
         interesting_relations_that, interesting_relations_that_doc = interesting_doc_relations(doc)
 
         return render(request, "doc/document_statement.html",

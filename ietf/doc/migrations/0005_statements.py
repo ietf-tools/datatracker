@@ -2,13 +2,26 @@
 
 from django.db import migrations
 
+
 def forward(apps, schema_editor):
     StateType = apps.get_model("doc", "StateType")
     State = apps.get_model("doc", "State")
 
     StateType.objects.create(slug="statement", label="Statement State")
-    State.objects.create(slug="active", type_id="statement", name="Active", order=0, desc="The statement is active")
-    State.objects.create(slug="replaced", type_id="statement", name="Replaced", order=0, desc="The statement has been replaced")
+    State.objects.create(
+        slug="active",
+        type_id="statement",
+        name="Active",
+        order=0,
+        desc="The statement is active",
+    )
+    State.objects.create(
+        slug="replaced",
+        type_id="statement",
+        name="Replaced",
+        order=0,
+        desc="The statement has been replaced",
+    )
 
 
 def reverse(apps, schema_editor):
