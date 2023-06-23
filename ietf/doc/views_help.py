@@ -5,6 +5,7 @@ from ietf.doc.models import State, StateType, IESG_SUBSTATE_TAGS
 from ietf.name.models import DocRelationshipName,  DocTagName
 from ietf.doc.utils import get_tags_for_stream_id
 
+# TODO: This is haphazardly implemented. Either flesh it out or reconsider the utility of showing these in these this way.
 def state_help(request, type):
     slug, title = {
         "draft-iesg": ("draft-iesg", "IESG States for Internet-Drafts"),
@@ -19,6 +20,7 @@ def state_help(request, type):
         "status-change": ("statchg", "RFC Status Change States"),
         "bofreq": ("bofreq", "BOF Request States"),
         "procmaterials": ("procmaterials", "Proceedings Materials States"),
+        "statement": {"statement", "Statement States"}
         }.get(type, (None, None))
     state_type = get_object_or_404(StateType, slug=slug)
 
