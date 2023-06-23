@@ -70,7 +70,7 @@ def gather_relevant_expansions(**kwargs):
 
         relevant.add('doc_state_edited')
         
-        if not doc.type_id in ['bofreq',]:
+        if not doc.type_id in ['bofreq', 'statement']:
             relevant.update(['doc_telechat_details_changed','ballot_deferred','iesg_ballot_saved'])
 
         if doc.type_id in ['draft','statchg']:
