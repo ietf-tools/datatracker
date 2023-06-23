@@ -39,6 +39,9 @@ def forward(apps, schema_editor):
             "changed_ballot_approval_text",
             "changed_ballot_writeup_text",
         ]
+    ).exclude(
+        type="added_comment",
+        desc__contains="ballot set",  # excludes 311 comments that all apply to drafts
     )
 
     # special case for rfc 6312/6342 draft, which has two published_rfc events
