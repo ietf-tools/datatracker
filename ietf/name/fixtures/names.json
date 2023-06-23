@@ -2555,7 +2555,7 @@
   {
     "fields": {
       "desc": "The statement has been replaced",
-      "name": "Active",
+      "name": "Replaced",
       "next_states": [],
       "order": 0,
       "slug": "replaced",

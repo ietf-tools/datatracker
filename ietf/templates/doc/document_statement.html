@@ -20,8 +20,10 @@
                 <th scope="row">Type</th>
                 <td class="edit"></td>
                 <td>
-                    <span id="statement-type">{% if doc.group %}{{doc.group.acronym|upper}} {%endif%}Statement</span>
+                    <span id="statement-type">{% if doc.get_state.slug != "active" %}{{doc.get_state.name}} {% endif %}{% if doc.group %}{{doc.group.acronym|upper}} {%endif%}Statement</span>
                     {% if snapshot %}<span class="badge rounded-pill bg-warning">Snapshot</span>{% endif %}
+                    {% if replaced_by %}<div>Replaced by {{ replaced_by|urlize_related_source_list:False|join:", " }}</div>{% endif %}
+                    {% if replaces %}<div>Replaces {{ replaces|urlize_related_target_list:False|join:", " }}</div>{% endif %}
                 </td>
             </tr>
             <tr>

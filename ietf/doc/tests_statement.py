@@ -10,6 +10,7 @@ from django.conf import settings
 from django.urls import reverse as urlreverse
 
 from ietf.doc.factories import StatementFactory
+from ietf.doc.models import State
 from ietf.utils.test_utils import TestCase
 
 
@@ -40,3 +41,23 @@ This test section has some text.
         self.assertEqual(q("#statement-state").text(), "Active")
         self.assertEqual(q("#statement-type").text(), "IAB Statement")
         self.assertIn("has some text", q(".card-body").text())
+
+        doc.set_state(State.objects.get(type_id='statement',slug='replaced'))
+        doc2 = StatementFactory()
+        doc2.relateddocument_set.create(relationship_id='replaces', target=doc.docalias.first())
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        q = PyQuery(response.content)
+        self.assertEqual(q("#statement-state").text(), "Replaced")
+        self.assertEqual(q("#statement-type").text(), "Replaced IAB Statement")
+        self.assertEqual(q("#statement-type").next().text(), f"Replaced by {doc2.name}")
+
+        url = urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=doc2.name))
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        q = PyQuery(response.content)
+        self.assertEqual(q("#statement-type").text(), "IAB Statement")
+        self.assertEqual(q("#statement-type").next().text(), f"Replaces {doc.name}")
+
+
+
