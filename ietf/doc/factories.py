@@ -585,6 +585,7 @@ class StatementFactory(BaseDocumentFactory):
     group = factory.SubFactory('ietf.group.factories.GroupFactory', acronym='iab')
 
     name = factory.LazyAttribute(lambda o: 'statement-%s-%s'%(xslugify(o.group.acronym), xslugify(o.title)))
+    uploaded_filename = factory.LazyAttribute(lambda o: f"{o.name}-{o.rev}.md")
 
     @factory.post_generation
     def states(obj, create, extracted, **kwargs):

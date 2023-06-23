@@ -668,7 +668,6 @@ URL_REGEXPS = {
 # Override this in settings_local.py if needed
 # *_PATH variables ends with a slash/ .
 
-#DOCUMENT_PATH_PATTERN = '/a/www/ietf-ftp/{doc.type_id}/'
 DOCUMENT_PATH_PATTERN = '/a/ietfdata/doc/{doc.type_id}/'
 INTERNET_DRAFT_PATH = '/a/ietfdata/doc/draft/repository'
 INTERNET_DRAFT_PDF_PATH = '/a/www/ietf-datatracker/pdf/'

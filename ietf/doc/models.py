@@ -162,7 +162,7 @@ class DocumentInfo(models.Model):
                 self._cached_file_path = settings.CONFLICT_REVIEW_PATH
             elif self.type_id == "statchg":
                 self._cached_file_path = settings.STATUS_CHANGE_PATH
-            elif self.type_id == "bofreq":
+            elif self.type_id == "bofreq": # TODO: This is probably unneeded, as is the separate path setting
                 self._cached_file_path = settings.BOFREQ_PATH
             else:
                 self._cached_file_path = settings.DOCUMENT_PATH_PATTERN.format(doc=self)

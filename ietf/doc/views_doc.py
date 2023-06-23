@@ -809,7 +809,19 @@ def document_main(request, name, rev=None, document_html=False):
             )
         )
 
+    if doc.type_id == "statement":
+        content = markdown.markdown(doc.text_or_error())
+        can_manage = has_role(request.user,['Secretariat']) # Add IAB or IESG as appropriate
 
+        return render(request, "doc/document_statement.html",
+                                  dict(doc=doc,
+                                       top=top,
+                                       revisions=revisions,
+                                       latest_rev=latest_rev,
+                                       content=content,
+                                       snapshot=snapshot,
+                                       can_manage=can_manage,
+                                       ))
 
     raise Http404("Document not found: %s" % (name + ("-%s"%rev if rev else "")))
 
