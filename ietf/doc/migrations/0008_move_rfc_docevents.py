@@ -5,7 +5,7 @@ from django.db.models import Q
 
 
 def forward(apps, schema_editor):
-    """Move RFC events from the draft to the rfc Documet"""
+    """Move RFC events from the draft to the rfc Document"""
     DocAlias = apps.get_model("doc", "DocAlias")
     DocEvent = apps.get_model("doc", "DocEvent")
     Document = apps.get_model("doc", "Document")
