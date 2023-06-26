@@ -780,13 +780,13 @@ def rebuild_reference_relations(doc, filenames):
             unfound.add( "%s" % ref )
             continue
         elif count > 1:
-            errors.append("Too many DocAlias objects found for %s"%ref)
+            errors.append("Too many Document objects found for %s"%ref)
         else:
             # Don't add references to ourself
             if doc != refdoc[0]:
                 RelatedDocument.objects.get_or_create( source=doc, target=refdoc[ 0 ], relationship=DocRelationshipName.objects.get( slug='ref%s' % refType ) )
     if unfound:
-        warnings.append('There were %d references with no matching DocAlias'%len(unfound))
+        warnings.append('There were %d references with no matching Document'%len(unfound))
 
     ret = {}
     if errors:

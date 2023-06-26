@@ -325,7 +325,7 @@ class RebuildReferenceRelationsTests(TestCase):
         super().setUp()
         self.doc = WgDraftFactory()  # document under test
         # Other documents that should be found by rebuild_reference_relations
-        self.normative, self.informative, self.unknown = WgRfcFactory.create_batch(3)
+        self.normative, self.informative, self.unknown = WgRfcFactory.create_batch(3) # AMHERE - these need to have rfc names.
         for relationship in ['refnorm', 'refinfo', 'refunk', 'refold']:
             self.doc.relateddocument_set.create(
                 target=WgRfcFactory(),
@@ -409,7 +409,7 @@ class RebuildReferenceRelationsTests(TestCase):
         self.assertEqual(
             result,
             {
-                'warnings': ['There were 1 references with no matching DocAlias'],
+                'warnings': ['There were 1 references with no matching Document'],
                 'unfound': ['draft-not-found'],
             }
         )
