@@ -968,12 +968,12 @@ def approve_downrefs(request, name):
                 c = DocEvent(type="downref_approved", doc=rel.source,
                         rev=rel.source.rev, by=login)
                 c.desc = "Downref to RFC %s approved by Last Call for %s-%s" % (
-                        rel.target.rfc_number(), rel.source, rel.source.rev)
+                    rel.target.document.rfc_number, rel.source, rel.source.rev)
                 c.save()
                 c = DocEvent(type="downref_approved", doc=rel.target,
                         rev=rel.target.rev, by=login)
                 c.desc = "Downref to RFC %s approved by Last Call for %s-%s" % (
-                        rel.target.rfc_number(), rel.source, rel.source.rev)
+                    rel.target.document.rfc_number, rel.source, rel.source.rev)
                 c.save()
 
             return HttpResponseRedirect(doc.get_absolute_url())

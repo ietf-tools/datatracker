@@ -124,6 +124,7 @@ class DocumentInfo(models.Model):
     uploaded_filename = models.TextField(blank=True)
     note = models.TextField(blank=True)
     internal_comments = models.TextField(blank=True)
+    rfc_number = models.PositiveIntegerField(blank=True, null=True)  # only valid for type="rfc"
 
     def file_extension(self):
         if not hasattr(self, '_cached_extension'):
@@ -334,7 +335,9 @@ class DocumentInfo(models.Model):
         if not state:
             return "Unknown state"
     
-        if self.type_id == 'draft':
+        if self.type_id == "rfc":
+            return f"RFC {self.rfc_number} ({self.std_level})"
+        elif self.type_id == 'draft':
             iesg_state = self.get_state("draft-iesg")
             iesg_state_summary = None
             if iesg_state:
@@ -345,7 +348,13 @@ class DocumentInfo(models.Model):
                      iesg_state_summary = iesg_state_summary + "::"+"::".join(tag.name for tag in iesg_substate)
              
             if state.slug == "rfc":
-                return "RFC %s (%s)" % (self.rfc_number(), self.std_level)
+                # todo check this once became-rfc relationships are actually created
+                rfcs = self.related_that("became-rfc")  # should be only one
+                if len(rfcs) > 0:
+                    rfc = rfcs[0]
+                    return f"Became RFC {rfc.rfc_number} ({rfc.std_level})"
+                else:
+                    return "Became RFC"
             elif state.slug == "repl":
                 rs = self.related_that("replaces")
                 if rs:
@@ -376,25 +385,7 @@ class DocumentInfo(models.Model):
             return state.name
 
     def is_rfc(self):
-        if not hasattr(self, '_cached_is_rfc'):
-            self._cached_is_rfc = self.pk and self.type_id == 'draft' and self.states.filter(type='draft',slug='rfc').exists()
-        return self._cached_is_rfc
-
-    def rfc_number(self):
-        if not hasattr(self, '_cached_rfc_number'):
-            self._cached_rfc_number = None
-            if self.is_rfc():
-                n = self.canonical_name()
-                if n.startswith("rfc"):
-                    self._cached_rfc_number = n[3:]
-                else:
-                    if isinstance(self,Document):
-                        logger.error("Document self.is_rfc() is True but self.canonical_name() is %s" % n)
-        return self._cached_rfc_number
-
-    @property
-    def rfcnum(self):
-        return self.rfc_number()
+        return self.type_id == "rfc"
 
     def author_list(self):
         best_addresses = []

@@ -175,7 +175,7 @@ class AddDownrefForm(forms.Form):
         drafts = self.cleaned_data['drafts']
         for d in drafts:
             if RelatedDocument.objects.filter(source=d, target=rfc, relationship_id='downref-approval'):
-                v_err_pairs.append(d.name + " --> RFC " + rfc.rfc_number())
+                v_err_pairs.append(f"{d.name} --> RFC {rfc.rfc_number}")
         if v_err_pairs:
             raise forms.ValidationError("Downref is already in the registry: " + ", ".join(v_err_pairs))
 
@@ -189,7 +189,8 @@ class AddDownrefForm(forms.Form):
                     else:
                         v_err_refnorm = d.name
             if v_err_refnorm:
-                v_err_refnorm_prefix = "There does not seem to be a normative reference to RFC " + rfc.rfc_number() + " by "
+                v_err_refnorm_prefix = f"There does not seem to be a normative reference to RFC {rfc.rfc_number} by "
+                v_err_refnorm_prefix = f"There does not seem to be a normative reference to RFC {rfc.document.rfc_number} by "
                 raise forms.ValidationError(v_err_refnorm_prefix  + v_err_refnorm)
 
 
