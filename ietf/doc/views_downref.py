@@ -45,13 +45,11 @@ def downref_registry_add(request):
                         rev=d.rev, by=login)
                 c.desc = "Downref to RFC %s approved by Last Call for %s-%s" % (
                         rfc.rfc_number, d.name, d.rev)
-                    rfc.document.rfc_number, da.name, da.document.rev)
                 c.save()
                 c = DocEvent(type="downref_approved", doc=rfc,
                         rev=rfc.rev, by=login)
                 c.desc = "Downref to RFC %s approved by Last Call for %s-%s" % (
                         rfc.rfc_number, d.name, d.rev)
-                    rfc.document.rfc_number, da.name, da.document.rev)
                 c.save()
 
             return HttpResponseRedirect(urlreverse('ietf.doc.views_downref.downref_registry'))
