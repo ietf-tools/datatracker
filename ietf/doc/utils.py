@@ -1000,10 +1000,10 @@ def get_search_cache_key(params):
     return key
     
 def build_file_urls(doc: Union[Document, DocHistory]):
-    if doc.type_id != 'draft':
+    if doc.type_id not in  ['draft', 'rfc']:
         return [], []
 
-    if doc.is_rfc():
+    if doc.type_id == "rfc":
         name = doc.canonical_name()
         base_path = os.path.join(settings.RFC_PATH, name + ".")
         possible_types = settings.RFC_FILE_TYPES
@@ -1039,6 +1039,7 @@ def build_file_urls(doc: Union[Document, DocHistory]):
             file_urls.append(("pdfized", urlreverse('ietf.doc.views_doc.document_pdfized', kwargs=dict(name=doc.name, rev=doc.rev))))
         file_urls.append(("bibtex", urlreverse('ietf.doc.views_doc.document_bibtex',kwargs=dict(name=doc.name,rev=doc.rev))))
     else:
+        # TODO: look at the state of the database post migration and update this comment, or remove the block
         # As of 2022-12-14, there are 1463 Document and 3136 DocHistory records with type='draft' and rev=''.
         # All of these are in the rfc state and are covered by the above cases.
         log.unreachable('2022-12-14')
