@@ -34,7 +34,13 @@
             </tr>
             <tr>
                 <td></td>
-                <th scope="row">Last updated</th>
+                <th scope="row">Published</th>
+                <td class="edit"></td>
+                <td>{{ published|date:"Y-m-d" }}</td>
+            </tr>
+            <tr>
+                <td></td>
+                <th scope="row">Metadata last updated</th>
                 <td class="edit"></td>
                 <td>{{ doc.time|date:"Y-m-d" }}</td>
             </tr>

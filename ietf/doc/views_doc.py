@@ -813,12 +813,14 @@ def document_main(request, name, rev=None, document_html=False):
         content = markdown.markdown(doc.text_or_error())
         can_manage = has_role(request.user,["Secretariat"]) # Add IAB or IESG as appropriate
         interesting_relations_that, interesting_relations_that_doc = interesting_doc_relations(doc)
+        published = doc.latest_event(type="published_statement").time
 
         return render(request, "doc/document_statement.html",
                                   dict(doc=doc,
                                        top=top,
                                        revisions=revisions,
                                        latest_rev=latest_rev,
+                                       published=published,
                                        content=content,
                                        snapshot=snapshot,
                                        replaces=interesting_relations_that_doc.filter(relationship="replaces"),
