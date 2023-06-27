@@ -998,14 +998,11 @@ def get_search_cache_key(params):
     kwargs = dict([ (k,v) for (k,v) in list(params.items()) if k in fields ])
     key = "doc:document:search:" + hashlib.sha512(json.dumps(kwargs, sort_keys=True).encode('utf-8')).hexdigest()
     return key
-    
-def build_file_urls(doc: Union[Document, DocHistory]):
-    if doc.type_id not in  ['draft', 'rfc']:
-        return [], []
 
+
+def build_file_urls(doc: Union[Document, DocHistory]):
     if doc.type_id == "rfc":
-        name = doc.canonical_name()
-        base_path = os.path.join(settings.RFC_PATH, name + ".")
+        base_path = os.path.join(settings.RFC_PATH, doc.name + ".")
         possible_types = settings.RFC_FILE_TYPES
         found_types = [t for t in possible_types if os.path.exists(base_path + t)]
 
@@ -1014,17 +1011,17 @@ def build_file_urls(doc: Union[Document, DocHistory]):
         file_urls = []
         for t in found_types:
             label = "plain text" if t == "txt" else t
-            file_urls.append((label, base + name + "." + t))
+            file_urls.append((label, base + doc.name + "." + t))
 
         if "pdf" not in found_types and "txt" in found_types:
-            file_urls.append(("pdf", base + "pdfrfc/" + name + ".txt.pdf"))
+            file_urls.append(("pdf", base + "pdfrfc/" + doc.name + ".txt.pdf"))
 
         if "txt" in found_types:
-            file_urls.append(("htmlized", urlreverse('ietf.doc.views_doc.document_html', kwargs=dict(name=name))))
+            file_urls.append(("htmlized", urlreverse('ietf.doc.views_doc.document_html', kwargs=dict(name=doc.name))))
             if doc.tags.filter(slug="verified-errata").exists():
                 file_urls.append(("with errata", settings.RFC_EDITOR_INLINE_ERRATA_URL.format(rfc_number=doc.rfc_number)))
-        file_urls.append(("bibtex", urlreverse('ietf.doc.views_doc.document_bibtex',kwargs=dict(name=name))))
-    elif doc.rev:
+        file_urls.append(("bibtex", urlreverse('ietf.doc.views_doc.document_bibtex',kwargs=dict(name=doc.name))))
+    elif doc.type_id == "draft" and doc.rev != "":
         base_path = os.path.join(settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR, doc.name + "-" + doc.rev + ".")
         possible_types = settings.IDSUBMIT_FILE_TYPES
         found_types = [t for t in possible_types if os.path.exists(base_path + t)]
@@ -1039,13 +1036,14 @@ def build_file_urls(doc: Union[Document, DocHistory]):
             file_urls.append(("pdfized", urlreverse('ietf.doc.views_doc.document_pdfized', kwargs=dict(name=doc.name, rev=doc.rev))))
         file_urls.append(("bibtex", urlreverse('ietf.doc.views_doc.document_bibtex',kwargs=dict(name=doc.name,rev=doc.rev))))
     else:
-        # TODO: look at the state of the database post migration and update this comment, or remove the block
-        # As of 2022-12-14, there are 1463 Document and 3136 DocHistory records with type='draft' and rev=''.
-        # All of these are in the rfc state and are covered by the above cases.
-        log.unreachable('2022-12-14')
+        if doc.type_id == "draft":
+            # TODO: look at the state of the database post migration and update this comment, or remove the block
+            # As of 2022-12-14, there are 1463 Document and 3136 DocHistory records with type='draft' and rev=''.
+            # All of these are in the rfc state and are covered by the above cases.
+            log.unreachable('2022-12-14')
         file_urls = []
         found_types = []
-
+        
     return file_urls, found_types
 
 def augment_docs_and_user_with_user_info(docs, user):
