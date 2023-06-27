@@ -34,7 +34,7 @@ def reverse(apps, schema_editor):
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("doc", "0004_alter_dochistory_ad_alter_dochistory_shepherd_and_more"),
+        ("doc", "0005_alter_docevent_type"),
         ("name", "0004_statements"),
     ]
 

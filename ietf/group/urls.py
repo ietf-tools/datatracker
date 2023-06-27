@@ -48,6 +48,7 @@ info_detail_urls = [
     url(r'^secretarysettings/$', views.change_review_secretary_settings),
     url(r'^reset_next_reviewer/$', views.reset_next_reviewer),
     url(r'^email-aliases/$', RedirectView.as_view(pattern_name=views.email,permanent=False),name='ietf.group.urls_info_details.redirect.email'),
+    url(r'^statements/$', views.statements),
 ]
 
 

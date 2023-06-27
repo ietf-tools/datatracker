@@ -1290,7 +1290,11 @@ EVENT_TYPES = [
     ("removed_related_ipr", "Removed related IPR"),
 
     # Bofreq Editor events
-    ("changed_editors", "Changed BOF Request editors")
+    ("changed_editors", "Changed BOF Request editors"),
+
+    # Statement events
+    ("published_statement", "Published statement"),
+    
     ]
 
 class DocEvent(models.Model):
