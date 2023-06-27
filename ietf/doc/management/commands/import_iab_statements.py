@@ -23,6 +23,9 @@ class Command(BaseCommand):
     help = "Performs a one-time import of IAB statements"
 
     def handle(self, *args, **options):
+        if Document.objects.filter(type="statement", group__acronym="iab").exists():
+            print("IAB statement documents already exist - exiting")
+            exit(-1)
         tmpdir = tempfile.mkdtemp()
         process = subprocess.Popen(
             ["git", "clone", "https://github.com/kesara/iab-scraper.git", tmpdir],
