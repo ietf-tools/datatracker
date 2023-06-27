@@ -41,69 +41,78 @@ class Command(BaseCommand):
             exit(-1)
 
         spreadsheet_rows = load_spreadsheet()
-        for index, (file_fix, date_string, title, url, _) in enumerate(spreadsheet_rows):
-            name = url.split("/")[6].lower()
-            if name.startswith("iabs"):
-                name = name[5:]
-            elif name.startswith("iab"):
-                name = name[4:]
-            if index == 1:
-                name += "-archive" # https://www.iab.org/documents/correspondence-reports-documents/2015-2/iab-statement-on-identifiers-and-unicode-7-0-0/archive/
-            if index == 100:
-                name = "2010-" + name # https://www.iab.org/documents/correspondence-reports-documents/docs2010/iab-statement-on-the-rpki/
-            if index == 152:
-                name = "2018-" + name # https://www.iab.org/documents/correspondence-reports-documents/2018-2/iab-statement-on-the-rpki/
-            docname = f"statement-iab-{xslugify(name)}"
-            ext = None
-            base_sourcename = f"{date_string}-{file_fix}" if file_fix != "" else date_string
-            if Path(tmpdir).joinpath("iab_statements", f"{base_sourcename}.md").exists():
-                ext = "md"
-            elif Path(tmpdir).joinpath("iab_statements", f"{base_sourcename}.pdf").exists():
-                ext="pdf"
-            if ext is None:
-                debug.show('f"Could not find {Path(tmpdir).joinpath("iab_statements", f"{base_path}.md")}"')
-                continue
-            filename = f"{docname}-00.{ext}"
-            # Create Document
-            doc = Document.objects.create(
-                name=docname,
-                type_id="statement",
-                title=title,
-                group_id=7,  # The IAB group
-                rev="00",
-                uploaded_filename=filename,
-            )
-            DocAlias.objects.create(name=doc.name).docs.add(doc)
-            year, month, day = [int(part) for part in date_string.split("-")]
-            e1 = DocEvent.objects.create(
-                time = datetime.datetime(year, month, day, 12, 00, tzinfo=datetime.timezone.utc),
-                type="published_statement",
-                doc=doc,
-                rev="00",
-                by_id=1,
-                desc="Statement published (note: The 1200Z time of day is inaccurate - the actual time of day is not known)"
-            )
-            e2 = DocEvent.objects.create(
-                type="added_comment",
-                doc=doc,
-                rev="00",
-                by_id=1,  # The "(System)" person
-                desc="Statement moved into datatracker from iab wordpress website",
-            )
-            doc.save_with_history([e1, e2])                
+        with open('iab_statement_redirects.csv','w') as redirect_file:
+            redirect_writer = csv.writer(redirect_file)
+            for index, (file_fix, date_string, title, url, _) in enumerate(spreadsheet_rows):
+                name = url.split("/")[6].lower()
+                if name.startswith("iabs"):
+                    name = name[5:]
+                elif name.startswith("iab"):
+                    name = name[4:]
+                if index == 1:
+                    name += "-archive" # https://www.iab.org/documents/correspondence-reports-documents/2015-2/iab-statement-on-identifiers-and-unicode-7-0-0/archive/
+                if index == 100:
+                    name = "2010-" + name # https://www.iab.org/documents/correspondence-reports-documents/docs2010/iab-statement-on-the-rpki/
+                if index == 152:
+                    name = "2018-" + name # https://www.iab.org/documents/correspondence-reports-documents/2018-2/iab-statement-on-the-rpki/
+                docname = f"statement-iab-{xslugify(name)}"
+                ext = None
+                base_sourcename = f"{date_string}-{file_fix}" if file_fix != "" else date_string
+                if Path(tmpdir).joinpath("iab_statements", f"{base_sourcename}.md").exists():
+                    ext = "md"
+                elif Path(tmpdir).joinpath("iab_statements", f"{base_sourcename}.pdf").exists():
+                    ext="pdf"
+                if ext is None:
+                    debug.show('f"Could not find {Path(tmpdir).joinpath("iab_statements", f"{base_path}.md")}"')
+                    continue
+                filename = f"{docname}-00.{ext}"
+                # Create Document
+                doc = Document.objects.create(
+                    name=docname,
+                    type_id="statement",
+                    title=title,
+                    group_id=7,  # The IAB group
+                    rev="00",
+                    uploaded_filename=filename,
+                )
+                DocAlias.objects.create(name=doc.name).docs.add(doc)
+                year, month, day = [int(part) for part in date_string.split("-")]
+                e1 = DocEvent.objects.create(
+                    time = datetime.datetime(year, month, day, 12, 00, tzinfo=datetime.timezone.utc),
+                    type="published_statement",
+                    doc=doc,
+                    rev="00",
+                    by_id=1,
+                    desc="Statement published (note: The 1200Z time of day is inaccurate - the actual time of day is not known)"
+                )
+                e2 = DocEvent.objects.create(
+                    type="added_comment",
+                    doc=doc,
+                    rev="00",
+                    by_id=1,  # The "(System)" person
+                    desc="Statement moved into datatracker from iab wordpress website",
+                )
+                doc.save_with_history([e1, e2])                
 
-            # Put file in place
-            source = Path(tmpdir).joinpath(
-                "iab_statements", f"{base_sourcename}.{ext}"
-            )
-            dest = Path(settings.DOCUMENT_PATH_PATTERN.format(doc=doc)).joinpath(
-                filename
-            )
-            if dest.exists():
-                print(f"WARNING: {dest} already exists - not overwriting it.")
-            else:
-                os.makedirs(dest.parent, exist_ok=True)
-                shutil.copy(source, dest)
+                # Put file in place
+                source = Path(tmpdir).joinpath(
+                    "iab_statements", f"{base_sourcename}.{ext}"
+                )
+                dest = Path(settings.DOCUMENT_PATH_PATTERN.format(doc=doc)).joinpath(
+                    filename
+                )
+                if dest.exists():
+                    print(f"WARNING: {dest} already exists - not overwriting it.")
+                else:
+                    os.makedirs(dest.parent, exist_ok=True)
+                    shutil.copy(source, dest)
+                
+                redirect_writer.writerow(
+                    [
+                        url,
+                        f"https://datatracker.ietf.org/doc/{docname}",
+                    ]
+                )
 
 
         shutil.rmtree(tmpdir)
