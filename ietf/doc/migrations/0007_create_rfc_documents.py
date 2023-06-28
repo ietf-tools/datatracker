@@ -24,7 +24,7 @@ def forward(apps, schema_editor):
     assert set(found_by_name) == set(found_by_state), "mismatch between rfcs identified by state and docalias"
     
     # As of 2023-06-15, there is one Document with two rfc aliases: rfc6312 and rfc6342 are the same Document. This 
-    # was due to a publication error. We'll handle that specially.
+    # was due to a publication error. Because we go alias-by-alias, no special handling is needed in this migration.
     
     for rfc_alias in rfc_docaliases.order_by("name"):
         assert rfc_alias.docs.count() == 1, f"DocAlias {rfc_alias} is linked to more than 1 Document"
