@@ -92,7 +92,7 @@ class CommunityListTests(WebTest):
         person = PersonFactory(user__username='plain')
         draft = WgDraftFactory()
 
-        url = urlreverse(ietf.community.views.view_list, kwargs={ "username": "plain" })
+        url = urlreverse(ietf.community.views.view_list, kwargs={ "email_or_name": person.email() })
 
         # without list
         r = self.client.get(url)
@@ -114,11 +114,11 @@ class CommunityListTests(WebTest):
 
     def test_manage_personal_list(self):
 
-        PersonFactory(user__username='plain')
+        person = PersonFactory(user__username='plain')
         ad = Person.objects.get(user__username='ad')
         draft = WgDraftFactory(authors=[ad])
 
-        url = urlreverse(ietf.community.views.manage_list, kwargs={ "username": "plain" })
+        url = urlreverse(ietf.community.views.manage_list, kwargs={ "email_or_name": person.email() })
         login_testing_unauthorized(self, "plain", url)
 
         page = self.app.get(url, user='plain')
@@ -209,10 +209,10 @@ class CommunityListTests(WebTest):
             self.assertEqual(r.status_code, 200)
 
     def test_track_untrack_document(self):
-        PersonFactory(user__username='plain')
+        person = PersonFactory(user__username='plain')
         draft = WgDraftFactory()
 
-        url = urlreverse(ietf.community.views.track_document, kwargs={ "username": "plain", "name": draft.name })
+        url = urlreverse(ietf.community.views.track_document, kwargs={ "email_or_name": person.email(), "name": draft.name })
         login_testing_unauthorized(self, "plain", url)
 
         # track
@@ -225,7 +225,7 @@ class CommunityListTests(WebTest):
         self.assertEqual(list(clist.added_docs.all()), [draft])
 
         # untrack
-        url = urlreverse(ietf.community.views.untrack_document, kwargs={ "username": "plain", "name": draft.name })
+        url = urlreverse(ietf.community.views.untrack_document, kwargs={ "email_or_name": person.email(), "name": draft.name })
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
 
@@ -235,10 +235,10 @@ class CommunityListTests(WebTest):
         self.assertEqual(list(clist.added_docs.all()), [])
 
     def test_track_untrack_document_through_ajax(self):
-        PersonFactory(user__username='plain')
+        person = PersonFactory(user__username='plain')
         draft = WgDraftFactory()
 
-        url = urlreverse(ietf.community.views.track_document, kwargs={ "username": "plain", "name": draft.name })
+        url = urlreverse(ietf.community.views.track_document, kwargs={ "email_or_name": person.email(), "name": draft.name })
         login_testing_unauthorized(self, "plain", url)
 
         # track
@@ -249,7 +249,7 @@ class CommunityListTests(WebTest):
         self.assertEqual(list(clist.added_docs.all()), [draft])
 
         # untrack
-        url = urlreverse(ietf.community.views.untrack_document, kwargs={ "username": "plain", "name": draft.name })
+        url = urlreverse(ietf.community.views.untrack_document, kwargs={ "email_or_name": person.email(), "name": draft.name })
         r = self.client.post(url, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.json()["success"], True)
@@ -260,7 +260,7 @@ class CommunityListTests(WebTest):
         person = PersonFactory(user__username='plain')
         draft = WgDraftFactory()
 
-        url = urlreverse(ietf.community.views.export_to_csv, kwargs={ "username": "plain" })
+        url = urlreverse(ietf.community.views.export_to_csv, kwargs={ "email_or_name": person.email() })
 
         # without list
         r = self.client.get(url)
@@ -296,7 +296,7 @@ class CommunityListTests(WebTest):
         person = PersonFactory(user__username='plain')
         draft = WgDraftFactory()
 
-        url = urlreverse(ietf.community.views.feed, kwargs={ "username": "plain" })
+        url = urlreverse(ietf.community.views.feed, kwargs={ "email_or_name": person.email() })
 
         # without list
         r = self.client.get(url)
@@ -336,7 +336,7 @@ class CommunityListTests(WebTest):
         person = PersonFactory(user__username='plain')
         draft = WgDraftFactory()
 
-        url = urlreverse(ietf.community.views.subscription, kwargs={ "username": "plain" })
+        url = urlreverse(ietf.community.views.subscription, kwargs={ "email_or_name": person.email() })
 
         login_testing_unauthorized(self, "plain", url)
 

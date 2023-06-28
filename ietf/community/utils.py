@@ -13,8 +13,8 @@ from ietf.community.models import CommunityList, EmailSubscription, SearchRule
 from ietf.doc.models import Document, State
 from ietf.group.models import Role, Group
 from ietf.person.models import Person
+from ietf.person.utils import lookup_persons
 from ietf.ietfauth.utils import has_role
-from django.contrib.auth.models import User
 from django.shortcuts import get_object_or_404
 
 from ietf.utils.mail import send_mail
@@ -29,15 +29,22 @@ def states_of_significant_change():
         Q(type="draft", slug__in=['rfc', 'dead'])
     )
 
-def lookup_community_list(username=None, acronym=None):
-    assert username or acronym
+class MultiplePersonError(Exception):
+    """More than one Person record matches the given email or name"""
+    pass
+
+def lookup_community_list(email_or_name=None, acronym=None):
+    assert email_or_name or acronym
 
     if acronym:
         group = get_object_or_404(Group, acronym=acronym)
         clist = CommunityList.objects.filter(group=group).first() or CommunityList(group=group)
     else:
-        user = get_object_or_404(User, username__iexact=username)
-        clist = CommunityList.objects.filter(person__user=user).first() or CommunityList(person=user.person)
+        persons = lookup_persons(email_or_name)
+        if len(persons) > 1:
+            raise MultiplePersonError(r"\r\n".join([p.email() for p in persons]))
+        person = persons[0]
+        clist = CommunityList.objects.filter(person=person).first() or CommunityList(person=person)
 
     return clist
 
