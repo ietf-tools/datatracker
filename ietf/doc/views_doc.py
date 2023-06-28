@@ -1028,7 +1028,7 @@ def document_history(request, name):
     add_events_message_info(events)
 
     # figure out if the current user can add a comment to the history
-    if doc.type_id == "draft" and doc.group is not None:
+    if doc.type_id in ("draft", "rfc") and doc.group is not None:
         can_add_comment = bool(
             has_role(
                 request.user,
@@ -1047,6 +1047,15 @@ def document_history(request, name):
         can_add_comment = has_role(
             request.user, ("Area Director", "Secretariat", "IRTF Chair")
         )
+
+    # Get related docs whose history should be linked
+    if doc.type_id == "draft":
+        related = doc.related_that_doc("became-rfc")
+    elif doc.type_id == "rfc":
+        related = doc.related_that("became-rfc")
+    else:
+        related = []
+
     return render(
         request,
         "doc/document_history.html",
@@ -1055,6 +1064,7 @@ def document_history(request, name):
             "top": top,
             "diff_revisions": diff_revisions,
             "events": events,
+            "related": related,
             "can_add_comment": can_add_comment,
         },
     )
