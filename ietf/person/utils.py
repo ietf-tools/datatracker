@@ -12,10 +12,11 @@ from django.contrib import admin
 from django.core.cache import cache
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Q
+from django.http import Http404
 
 import debug                            # pyflakes:ignore
 
-from ietf.person.models import Person
+from ietf.person.models import Person, Alias, Email
 from ietf.utils.mail import send_mail
 
 def merge_persons(request, source, target, file=sys.stdout, verbose=False):
@@ -246,3 +247,17 @@ def get_dots(person):
         if roles.filter(group__acronym__startswith='nomcom', name_id__in=('chair','member')).exists():
             dots.append('nomcom')
         return dots
+
+def lookup_persons(email_or_name):
+    aliases = Alias.objects.filter(name=email_or_name)
+    persons = set(a.person for a in aliases)
+
+    if '@' in email_or_name:
+        emails = Email.objects.filter(address=email_or_name)
+        persons.update(e.person for e in emails)
+
+    persons = [p for p in persons if p and p.id]
+    if not persons:
+        raise Http404
+    persons.sort(key=lambda p: p.id)
+    return persons
