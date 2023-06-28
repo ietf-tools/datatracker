@@ -23,7 +23,6 @@ from ietf.utils.text import xslugify
 from ietf.utils.timezone import date_today
 
 
-
 def draft_name_generator(type_id,group,n):
         return '%s-%s-%s-%s%d'%( 
               type_id,
@@ -586,6 +585,13 @@ class StatementFactory(BaseDocumentFactory):
 
     name = factory.LazyAttribute(lambda o: 'statement-%s-%s'%(xslugify(o.group.acronym), xslugify(o.title)))
     uploaded_filename = factory.LazyAttribute(lambda o: f"{o.name}-{o.rev}.md")
+
+    published_statement_event = factory.RelatedFactory(
+        'ietf.doc.factories.DocEventFactory',
+        'doc',
+        type="published_statement",
+        time=timezone.now()-datetime.timedelta(days=1)
+    )
 
     @factory.post_generation
     def states(obj, create, extracted, **kwargs):

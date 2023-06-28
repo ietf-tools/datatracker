@@ -657,6 +657,7 @@ URL_REGEXPS = {
     "acronym": r"(?P<acronym>[-a-z0-9]+)",
     "bofreq": r"(?P<name>bofreq-[-a-z0-9]+)",
     "charter": r"(?P<name>charter-[-a-z0-9]+)",
+    "statement": r"(?P<name>statement-[-a-z0-9]+)",
     "date": r"(?P<date>\d{4}-\d{2}-\d{2})",
     "name": r"(?P<name>[A-Za-z0-9._+-]+?)",
     "document": r"(?P<document>[a-z][-a-z0-9]+)", # regular document names

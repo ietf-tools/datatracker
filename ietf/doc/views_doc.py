@@ -810,7 +810,23 @@ def document_main(request, name, rev=None, document_html=False):
         )
 
     if doc.type_id == "statement":
-        content = markdown.markdown(doc.text_or_error())
+        if doc.uploaded_filename:
+            basename = doc.uploaded_filename.split(".")[0] # strip extension
+        else:
+            basename = doc.name
+        variants = set([match.name.split(".")[1] for match in Path(doc.get_file_path()).glob(f"{basename}.*")])
+        inlineable = any([ext in variants for ext in ["md", "txt"]])
+        if inlineable:
+            content = markdown.markdown(doc.text_or_error())
+        else:
+            content = "No format available to display inline"
+            if "pdf" in variants:
+                pdf_url = urlreverse(
+                    "ietf.doc.views_statement.serve_pdf",
+                    kwargs=dict(name=doc.name, rev=doc.rev),
+                )
+                content += f" - Download [pdf]({pdf_url})"
+            content = markdown.markdown(content)
         can_manage = has_role(request.user,["Secretariat"]) # Add IAB or IESG as appropriate
         interesting_relations_that, interesting_relations_that_doc = interesting_doc_relations(doc)
         published = doc.latest_event(type="published_statement").time

@@ -169,6 +169,7 @@ urlpatterns = [
 
     url(r'^%(charter)s/' % settings.URL_REGEXPS, include('ietf.doc.urls_charter')),
     url(r'^%(bofreq)s/' % settings.URL_REGEXPS, include('ietf.doc.urls_bofreq')),
+    url(r'^%(statement)s/' % settings.URL_REGEXPS, include('ietf.doc.urls_statement')),
     url(r'^%(name)s/conflict-review/' % settings.URL_REGEXPS, include('ietf.doc.urls_conflict_review')),
     url(r'^%(name)s/status-change/' % settings.URL_REGEXPS, include('ietf.doc.urls_status_change')),
     url(r'^%(name)s/material/' % settings.URL_REGEXPS, include('ietf.doc.urls_material')),
