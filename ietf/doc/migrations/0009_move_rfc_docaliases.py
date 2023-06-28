@@ -4,12 +4,25 @@ from django.db import migrations
 
 
 def forward(apps, schema_editor):
-    """Point "rfc..." DocAliases at the rfc-type Document"""
+    """Point "rfc..." DocAliases at the rfc-type Document
+
+    Creates a became-rfc RelatedDocument to preserve the connection between the draft and the rfc.
+    """
     DocAlias = apps.get_model("doc", "DocAlias")
     Document = apps.get_model("doc", "Document")
+    RelatedDocument = apps.get_model("doc", "RelatedDocument")
+
     for rfc_alias in DocAlias.objects.filter(name__startswith="rfc"):
         rfc = Document.objects.get(name=rfc_alias.name)
-        rfc_alias.docs.set([rfc])
+        if not rfc_alias.docs.filter(pk=rfc.pk).exists():
+            # If the DocAlias was not already pointing at the rfc, it was pointing at the draft
+            # it came from. Create the relationship between draft and rfc Documents.
+            RelatedDocument.objects.create(
+                source=rfc_alias.docs.first(),  # the draft Document
+                target=rfc_alias,  # alias that will point to the rfc Document
+                relationship_id="became-rfc",
+            )
+            rfc_alias.docs.set([rfc])
 
 
 class Migration(migrations.Migration):
