@@ -8,13 +8,13 @@
   },
   "devDependencies": {
     "@playwright/test": "1.35.1",
-    "eslint": "8.42.0",
+    "eslint": "8.43.0",
     "eslint-config-standard": "17.1.0",
     "eslint-plugin-import": "2.27.5",
-    "eslint-plugin-n": "16.0.0",
+    "eslint-plugin-n": "16.0.1",
     "eslint-plugin-node": "11.1.0",
     "eslint-plugin-promise": "6.1.1",
-    "npm-check-updates": "16.10.12"
+    "npm-check-updates": "16.10.13"
   },
   "dependencies": {
     "@faker-js/faker": "8.0.2",
