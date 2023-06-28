@@ -1029,20 +1029,35 @@ def document_history(request, name):
 
     # figure out if the current user can add a comment to the history
     if doc.type_id == "draft" and doc.group != None:
-        can_add_comment = bool(has_role(request.user, ("Area Director", "Secretariat", "IRTF Chair", "IANA", "RFC Editor")) or (
-            request.user.is_authenticated and
-            Role.objects.filter(name__in=("chair", "secr"),
-                group__acronym=doc.group.acronym,
-                person__user=request.user)))
+        can_add_comment = bool(
+            has_role(
+                request.user,
+                ("Area Director", "Secretariat", "IRTF Chair", "IANA", "RFC Editor"),
+            )
+            or (
+                request.user.is_authenticated
+                and Role.objects.filter(
+                    name__in=("chair", "secr"),
+                    group__acronym=doc.group.acronym,
+                    person__user=request.user,
+                )
+            )
+        )
     else:
-        can_add_comment = has_role(request.user, ("Area Director", "Secretariat", "IRTF Chair"))
-    return render(request, "doc/document_history.html",
-                              dict(doc=doc,
-                                   top=top,
-                                   diff_revisions=diff_revisions,
-                                   events=events,
-                                   can_add_comment=can_add_comment,
-                                   ))
+        can_add_comment = has_role(
+            request.user, ("Area Director", "Secretariat", "IRTF Chair")
+        )
+    return render(
+        request,
+        "doc/document_history.html",
+        dict(
+            doc=doc,
+            top=top,
+            diff_revisions=diff_revisions,
+            events=events,
+            can_add_comment=can_add_comment,
+        ),
+    )
 
 
 def document_bibtex(request, name, rev=None):
