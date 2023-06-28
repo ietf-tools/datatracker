@@ -34,7 +34,7 @@
         <thead>
             <tr>
                 <th scope="col" data-sort="date">Date</th>
-                <th scope="col" data-sort="rev">Rev.</th>
+                {% if doc.type_id != "rfc" %}<th scope="col" data-sort="rev">Rev.</th>{% endif %}
                 <th scope="col" data-sort="by">By</th>
                 <th scope="col" data-sort="action">Action</th>
             </tr>
@@ -45,7 +45,7 @@
                     <td>
                         <div title="{{ e.time|date:'Y-m-d H:i:s O' }}">{{ e.time|date:"Y-m-d" }}</div>
                     </td>
-                    <td class="text-end">{{ e.rev }}</td>
+                    {% if doc.type_id != "rfc" %}<td class="text-end">{{ e.rev }}</td>{% endif %}
                     <td>{{ e.by|escape }}</td>
                     <td>{{ e.desc|format_history_text }}</td>
                 </tr>
