@@ -2,7 +2,25 @@ blank_issues_enabled: false
 contact_links:
   - name: Help and questions
     url: https://github.com/ietf-tools/datatracker/discussions/categories/help-questions
-    about: Need help? Have a question on setting up the project or its usage?
+220 SN1NAM02FT0049.mail.protection.outlook.com Microsoft ESMTP MAIL Service ready at Wed, 28 Jun 2023 12:02:11 +0000 [129 ms]
+EHLO keeper-us-east-1d.mxtoolbox.com
+250-SN1NAM02FT0049.mail.protection.outlook.com Hello [18.209.86.113]
+250-SIZE 157286400
+250-PIPELINING
+250-DSN
+250-ENHANCEDSTATUSCODES
+250-STARTTLS
+250-8BITMIME
+250-BINARYMIME
+250-CHUNKING
+250 SMTPUTF8 [162 ms]
+MAIL FROM:<supertool@mxtoolboxsmtpdiag.com>
+250 2.1.0 Sender OK [209 ms]
+RCPT TO:<test@mxtoolboxsmtpdiag.com>
+250 2.1.5 Recipient OK [148 ms]
+
+LookupServer 1240ms
+about: Need help? Have a question on setting up the project or its usage?
   - name: Discuss new ideas
     url: https://github.com/ietf-tools/datatracker/discussions/categories/ideas
     about: Submit ideas for new features or improvements to be discussed.
