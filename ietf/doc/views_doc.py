@@ -1050,13 +1050,13 @@ def document_history(request, name):
     return render(
         request,
         "doc/document_history.html",
-        dict(
-            doc=doc,
-            top=top,
-            diff_revisions=diff_revisions,
-            events=events,
-            can_add_comment=can_add_comment,
-        ),
+        {
+            "doc": doc,
+            "top": top,
+            "diff_revisions": diff_revisions,
+            "events": events,
+            "can_add_comment": can_add_comment,
+        },
     )
 
 
