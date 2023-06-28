@@ -1028,7 +1028,7 @@ def document_history(request, name):
     add_events_message_info(events)
 
     # figure out if the current user can add a comment to the history
-    if doc.type_id == "draft" and doc.group != None:
+    if doc.type_id == "draft" and doc.group is not None:
         can_add_comment = bool(
             has_role(
                 request.user,
