@@ -813,7 +813,7 @@ def document_main(request, name, rev=None, document_html=False):
         if doc.uploaded_filename:
             basename = doc.uploaded_filename.split(".")[0] # strip extension
         else:
-            basename = doc.name
+            basename = f"{doc.name}-{doc.rev}"
         variants = set([match.name.split(".")[1] for match in Path(doc.get_file_path()).glob(f"{basename}.*")])
         inlineable = any([ext in variants for ext in ["md", "txt"]])
         if inlineable:

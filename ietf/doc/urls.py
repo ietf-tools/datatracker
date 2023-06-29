@@ -37,7 +37,7 @@ from django.conf import settings
 from django.urls import include
 from django.views.generic import RedirectView
 
-from ietf.doc import views_search, views_draft, views_ballot, views_status_change, views_doc, views_downref, views_stats, views_help, views_bofreq
+from ietf.doc import views_search, views_draft, views_ballot, views_status_change, views_doc, views_downref, views_stats, views_help, views_bofreq, views_statement
 from ietf.utils.urls import url
 
 session_patterns = [
@@ -57,6 +57,7 @@ urlpatterns = [
     url(r'^start-rfc-status-change/(?:%(name)s/)?$' % settings.URL_REGEXPS, views_status_change.start_rfc_status_change),
     url(r'^bof-requests/?$', views_bofreq.bof_requests),
     url(r'^bof-requests/new/$', views_bofreq.new_bof_request),
+    url(r'^statement/new/$', views_statement.new_statement),
     url(r'^iesg/?$', views_search.drafts_in_iesg_process),
     url(r'^email-aliases/?$', views_doc.email_aliases),
     url(r'^downref/?$', views_downref.downref_registry),

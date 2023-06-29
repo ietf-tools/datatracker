@@ -186,7 +186,7 @@ class DocumentInfo(models.Model):
             elif self.type_id == 'review':
                 # TODO: This will be wrong if a review is updated on the same day it was created (or updated more than once on the same day)
                 self._cached_base_name = "%s.txt" % self.name
-            elif self.type_id == 'bofreq':
+            elif self.type_id in ['bofreq', 'statement']:
                 self._cached_base_name = "%s-%s.md" % (self.name, self.rev)
             else:
                 if self.rev:
