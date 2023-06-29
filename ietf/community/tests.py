@@ -18,12 +18,12 @@ from ietf.group.models import Group
 from ietf.group.utils import setup_default_community_list_for_group
 from ietf.doc.models import State
 from ietf.doc.utils import add_state_change_event
-from ietf.person.models import Person, Email
+from ietf.person.models import Person, Email, Alias
 from ietf.utils.test_utils import login_testing_unauthorized
 from ietf.utils.mail import outbox
 from ietf.doc.factories import WgDraftFactory
 from ietf.group.factories import GroupFactory, RoleFactory
-from ietf.person.factories import PersonFactory
+from ietf.person.factories import PersonFactory, EmailFactory, AliasFactory
 
 class CommunityListTests(WebTest):
     def test_rule_matching(self):
@@ -88,15 +88,26 @@ class CommunityListTests(WebTest):
         # rule -> docs
         self.assertTrue(draft in list(docs_matching_community_list_rule(rule_group_exp)))
 
+    def complex_person(self, *args, **kwargs):
+        person = PersonFactory(*args, **kwargs)
+        EmailFactory(person=person)
+        AliasFactory(person=person)
+        return person
+
+    def email_or_name_set(self, person):
+        return [e for e in Email.objects.filter(person=person)] + \
+               [a for a in Alias.objects.filter(person=person)]
+
     def test_view_list(self):
-        person = PersonFactory(user__username='plain')
+        person = self.complex_person(user__username='plain')
         draft = WgDraftFactory()
 
-        url = urlreverse(ietf.community.views.view_list, kwargs={ "email_or_name": person.email() })
-
         # without list
-        r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
+        for id in self.email_or_name_set(person):
+            url = urlreverse(ietf.community.views.view_list, kwargs={ "email_or_name": id })
+            #debug.show('url')
+            r = self.client.get(url)
+            self.assertEqual(r.status_code, 200)
 
         # with list
         clist = CommunityList.objects.create(person=person)
@@ -108,80 +119,85 @@ class CommunityListTests(WebTest):
             state=State.objects.get(type="draft", slug="active"),
             text="test",
         )
-        r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
-        self.assertContains(r, draft.name)
+        for id in self.email_or_name_set(person):
+            url = urlreverse(ietf.community.views.view_list, kwargs={ "email_or_name": id })
+            r = self.client.get(url)
+            self.assertEqual(r.status_code, 200)
+            self.assertContains(r, draft.name)
 
     def test_manage_personal_list(self):
-
-        person = PersonFactory(user__username='plain')
+        person = self.complex_person(user__username='plain')
         ad = Person.objects.get(user__username='ad')
         draft = WgDraftFactory(authors=[ad])
 
         url = urlreverse(ietf.community.views.manage_list, kwargs={ "email_or_name": person.email() })
         login_testing_unauthorized(self, "plain", url)
 
-        page = self.app.get(url, user='plain')
-        self.assertEqual(page.status_int, 200)
+        for id in self.email_or_name_set(person):
+            url = urlreverse(ietf.community.views.manage_list, kwargs={ "email_or_name": id })
+            #debug.show('id')
+            #debug.show('url')
+            page = self.app.get(url, user='plain')
+            self.assertEqual(page.status_int, 200)
 
-        # add document
-        self.assertIn('add_document', page.forms)
-        form = page.forms['add_document']
-        form['documents'].options=[(draft.pk, True, draft.name)]
-        page = form.submit('action',value='add_documents')
-        self.assertEqual(page.status_int, 302)
-        clist = CommunityList.objects.get(person__user__username="plain")
-        self.assertTrue(clist.added_docs.filter(pk=draft.pk))
-        page = page.follow()
+            # add document
+            self.assertIn('add_document', page.forms)
+            form = page.forms['add_document']
+            form['documents'].options=[(draft.pk, True, draft.name)]
+            page = form.submit('action',value='add_documents')
+            self.assertEqual(page.status_int, 302)
+            clist = CommunityList.objects.get(person__user__username="plain")
+            self.assertTrue(clist.added_docs.filter(pk=draft.pk))
+            page = page.follow()
 
-        self.assertContains(page, draft.name)
+            self.assertContains(page, draft.name)
 
-        # remove document
-        self.assertIn('remove_document_%s' % draft.pk, page.forms)
-        form = page.forms['remove_document_%s' % draft.pk]
-        page = form.submit('action',value='remove_document')
-        self.assertEqual(page.status_int, 302)
-        clist = CommunityList.objects.get(person__user__username="plain")
-        self.assertTrue(not clist.added_docs.filter(pk=draft.pk))
-        page = page.follow()
+            # remove document
+            self.assertIn('remove_document_%s' % draft.pk, page.forms)
+            form = page.forms['remove_document_%s' % draft.pk]
+            page = form.submit('action',value='remove_document')
+            self.assertEqual(page.status_int, 302)
+            clist = CommunityList.objects.get(person__user__username="plain")
+            self.assertTrue(not clist.added_docs.filter(pk=draft.pk))
+            page = page.follow()
         
-        # add rule
-        r = self.client.post(url, {
-            "action": "add_rule",
-            "rule_type": "author_rfc",
-            "author_rfc-person": Person.objects.filter(documentauthor__document=draft).first().pk,
-            "author_rfc-state": State.objects.get(type="draft", slug="rfc").pk,
-        })
-        self.assertEqual(r.status_code, 302)
-        clist = CommunityList.objects.get(person__user__username="plain")
-        self.assertTrue(clist.searchrule_set.filter(rule_type="author_rfc"))
+            # add rule
+            r = self.client.post(url, {
+                "action": "add_rule",
+                "rule_type": "author_rfc",
+                "author_rfc-person": Person.objects.filter(documentauthor__document=draft).first().pk,
+                "author_rfc-state": State.objects.get(type="draft", slug="rfc").pk,
+            })
+            self.assertEqual(r.status_code, 302)
+            clist = CommunityList.objects.get(person__user__username="plain")
+            self.assertTrue(clist.searchrule_set.filter(rule_type="author_rfc"))
 
-        # add name_contains rule
-        r = self.client.post(url, {
-            "action": "add_rule",
-            "rule_type": "name_contains",
-            "name_contains-text": "draft.*mars",
-            "name_contains-state": State.objects.get(type="draft", slug="active").pk,
-        })
-        self.assertEqual(r.status_code, 302)
-        clist = CommunityList.objects.get(person__user__username="plain")
-        self.assertTrue(clist.searchrule_set.filter(rule_type="name_contains"))
+            # add name_contains rule
+            r = self.client.post(url, {
+                "action": "add_rule",
+                "rule_type": "name_contains",
+                "name_contains-text": "draft.*mars",
+                "name_contains-state": State.objects.get(type="draft", slug="active").pk,
+            })
+            self.assertEqual(r.status_code, 302)
+            clist = CommunityList.objects.get(person__user__username="plain")
+            self.assertTrue(clist.searchrule_set.filter(rule_type="name_contains"))
 
-        # rule shows up on GET
-        r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
-        rule = clist.searchrule_set.filter(rule_type="author_rfc").first()
-        q = PyQuery(r.content)
-        self.assertEqual(len(q('#r%s' % rule.pk)), 1)
+            # rule shows up on GET
+            r = self.client.get(url)
+            self.assertEqual(r.status_code, 200)
+            rule = clist.searchrule_set.filter(rule_type="author_rfc").first()
+            q = PyQuery(r.content)
+            self.assertEqual(len(q('#r%s' % rule.pk)), 1)
 
-        # remove rule
-        r = self.client.post(url, {
-            "action": "remove_rule",
-            "rule": rule.pk,
-        })
+            # remove rule
+            r = self.client.post(url, {
+                "action": "remove_rule",
+                "rule": rule.pk,
+            })
 
-        clist = CommunityList.objects.get(person__user__username="plain")
-        self.assertTrue(not clist.searchrule_set.filter(rule_type="author_rfc"))
+            clist = CommunityList.objects.get(person__user__username="plain")
+            self.assertTrue(not clist.searchrule_set.filter(rule_type="author_rfc"))
 
     def test_manage_group_list(self):
         draft = WgDraftFactory(group__acronym='mars')
@@ -203,83 +219,96 @@ class CommunityListTests(WebTest):
             p = PersonFactory()
             g.role_set.create(name_id={'area':'ad','program':'lead'}[gtype],person=p, email=p.email())
             url = urlreverse(ietf.community.views.manage_list, kwargs={ "acronym": g.acronym })
+            #debug.show('url')
             setup_default_community_list_for_group(g)
             self.client.login(username=p.user.username,password=p.user.username+"+password")
             r = self.client.get(url)
             self.assertEqual(r.status_code, 200)
 
     def test_track_untrack_document(self):
-        person = PersonFactory(user__username='plain')
+        person = self.complex_person(user__username='plain')
         draft = WgDraftFactory()
 
         url = urlreverse(ietf.community.views.track_document, kwargs={ "email_or_name": person.email(), "name": draft.name })
         login_testing_unauthorized(self, "plain", url)
 
-        # track
-        r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
+        for id in self.email_or_name_set(person):
+            url = urlreverse(ietf.community.views.track_document, kwargs={ "email_or_name": id, "name": draft.name })
+            #debug.show('url')
 
-        r = self.client.post(url)
-        self.assertEqual(r.status_code, 302)
-        clist = CommunityList.objects.get(person__user__username="plain")
-        self.assertEqual(list(clist.added_docs.all()), [draft])
+            # track
+            r = self.client.get(url)
+            self.assertEqual(r.status_code, 200)
 
-        # untrack
-        url = urlreverse(ietf.community.views.untrack_document, kwargs={ "email_or_name": person.email(), "name": draft.name })
-        r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
+            r = self.client.post(url)
+            self.assertEqual(r.status_code, 302)
+            clist = CommunityList.objects.get(person__user__username="plain")
+            self.assertEqual(list(clist.added_docs.all()), [draft])
 
-        r = self.client.post(url)
-        self.assertEqual(r.status_code, 302)
-        clist = CommunityList.objects.get(person__user__username="plain")
-        self.assertEqual(list(clist.added_docs.all()), [])
+            # untrack
+            url = urlreverse(ietf.community.views.untrack_document, kwargs={ "email_or_name": id, "name": draft.name })
+            #debug.show('url')
+            r = self.client.get(url)
+            self.assertEqual(r.status_code, 200)
+
+            r = self.client.post(url)
+            self.assertEqual(r.status_code, 302)
+            clist = CommunityList.objects.get(person__user__username="plain")
+            self.assertEqual(list(clist.added_docs.all()), [])
 
     def test_track_untrack_document_through_ajax(self):
-        person = PersonFactory(user__username='plain')
+        person = self.complex_person(user__username='plain')
         draft = WgDraftFactory()
 
         url = urlreverse(ietf.community.views.track_document, kwargs={ "email_or_name": person.email(), "name": draft.name })
         login_testing_unauthorized(self, "plain", url)
 
-        # track
-        r = self.client.post(url, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
-        self.assertEqual(r.status_code, 200)
-        self.assertEqual(r.json()["success"], True)
-        clist = CommunityList.objects.get(person__user__username="plain")
-        self.assertEqual(list(clist.added_docs.all()), [draft])
+        for id in self.email_or_name_set(person):
+            url = urlreverse(ietf.community.views.track_document, kwargs={ "email_or_name": id, "name": draft.name })
+            #debug.show('url')
 
-        # untrack
-        url = urlreverse(ietf.community.views.untrack_document, kwargs={ "email_or_name": person.email(), "name": draft.name })
-        r = self.client.post(url, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
-        self.assertEqual(r.status_code, 200)
-        self.assertEqual(r.json()["success"], True)
-        clist = CommunityList.objects.get(person__user__username="plain")
-        self.assertEqual(list(clist.added_docs.all()), [])
+            # track
+            r = self.client.post(url, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.json()["success"], True)
+            clist = CommunityList.objects.get(person__user__username="plain")
+            self.assertEqual(list(clist.added_docs.all()), [draft])
+
+            # untrack
+            url = urlreverse(ietf.community.views.untrack_document, kwargs={ "email_or_name": id, "name": draft.name })
+            #debug.show('url')
+            r = self.client.post(url, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.json()["success"], True)
+            clist = CommunityList.objects.get(person__user__username="plain")
+            self.assertEqual(list(clist.added_docs.all()), [])
 
     def test_csv(self):
-        person = PersonFactory(user__username='plain')
+        person = self.complex_person(user__username='plain')
         draft = WgDraftFactory()
 
-        url = urlreverse(ietf.community.views.export_to_csv, kwargs={ "email_or_name": person.email() })
+        for id in self.email_or_name_set(person):
+            url = urlreverse(ietf.community.views.export_to_csv, kwargs={ "email_or_name": id })
+            #debug.show('url')
 
-        # without list
-        r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
+            # without list
+            r = self.client.get(url)
+            self.assertEqual(r.status_code, 200)
 
-        # with list
-        clist = CommunityList.objects.create(person=person)
-        if not draft in clist.added_docs.all():
-            clist.added_docs.add(draft)
-        SearchRule.objects.create(
-            community_list=clist,
-            rule_type="name_contains",
-            state=State.objects.get(type="draft", slug="active"),
-            text="test",
-        )
-        r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
-        # this is a simple-minded test, we don't actually check the fields
-        self.assertContains(r, draft.name)
+            # with list
+            clist = CommunityList.objects.create(person=person)
+            if not draft in clist.added_docs.all():
+                clist.added_docs.add(draft)
+            SearchRule.objects.create(
+                community_list=clist,
+                rule_type="name_contains",
+                state=State.objects.get(type="draft", slug="active"),
+                text="test",
+            )
+            r = self.client.get(url)
+            self.assertEqual(r.status_code, 200)
+            # this is a simple-minded test, we don't actually check the fields
+            self.assertContains(r, draft.name)
 
     def test_csv_for_group(self):
         draft = WgDraftFactory()
@@ -293,33 +322,35 @@ class CommunityListTests(WebTest):
         self.assertEqual(r.status_code, 200)
 
     def test_feed(self):
-        person = PersonFactory(user__username='plain')
+        person = self.complex_person(user__username='plain')
         draft = WgDraftFactory()
 
-        url = urlreverse(ietf.community.views.feed, kwargs={ "email_or_name": person.email() })
+        for id in self.email_or_name_set(person):
+            url = urlreverse(ietf.community.views.feed, kwargs={ "email_or_name": id })
+            #debug.show('url')
 
-        # without list
-        r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
+            # without list
+            r = self.client.get(url)
+            self.assertEqual(r.status_code, 200)
 
-        # with list
-        clist = CommunityList.objects.create(person=person)
-        if not draft in clist.added_docs.all():
-            clist.added_docs.add(draft)
-        SearchRule.objects.create(
-            community_list=clist,
-            rule_type="name_contains",
-            state=State.objects.get(type="draft", slug="active"),
-            text="test",
-        )
-        r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
-        self.assertContains(r, draft.name)
+            # with list
+            clist = CommunityList.objects.create(person=person)
+            if not draft in clist.added_docs.all():
+                clist.added_docs.add(draft)
+            SearchRule.objects.create(
+                community_list=clist,
+                rule_type="name_contains",
+                state=State.objects.get(type="draft", slug="active"),
+                text="test",
+            )
+            r = self.client.get(url)
+            self.assertEqual(r.status_code, 200)
+            self.assertContains(r, draft.name)
 
-        # only significant
-        r = self.client.get(url + "?significant=1")
-        self.assertEqual(r.status_code, 200)
-        self.assertNotContains(r, '<entry>')
+            # only significant
+            r = self.client.get(url + "?significant=1")
+            self.assertEqual(r.status_code, 200)
+            self.assertNotContains(r, '<entry>')
 
     def test_feed_for_group(self):
         draft = WgDraftFactory()
@@ -333,16 +364,19 @@ class CommunityListTests(WebTest):
         self.assertEqual(r.status_code, 200)
         
     def test_subscription(self):
-        person = PersonFactory(user__username='plain')
+        person = self.complex_person(user__username='plain')
         draft = WgDraftFactory()
 
         url = urlreverse(ietf.community.views.subscription, kwargs={ "email_or_name": person.email() })
-
         login_testing_unauthorized(self, "plain", url)
 
-        # subscription without list
-        r = self.client.get(url)
-        self.assertEqual(r.status_code, 404)
+        for id in self.email_or_name_set(person):
+            url = urlreverse(ietf.community.views.subscription, kwargs={ "email_or_name": id })
+            #debug.show('url')
+
+            # subscription without list
+            r = self.client.get(url)
+            self.assertEqual(r.status_code, 404)
 
         # subscription with list
         clist = CommunityList.objects.create(person=person)
@@ -354,22 +388,26 @@ class CommunityListTests(WebTest):
             state=State.objects.get(type="draft", slug="active"),
             text="test",
         )
-        r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
 
-        # subscribe
-        email = Email.objects.filter(person__user__username="plain").first()
-        r = self.client.post(url, { "email": email.pk, "notify_on": "significant", "action": "subscribe" })
-        self.assertEqual(r.status_code, 302)
+        for email in Email.objects.filter(person=person):
+            url = urlreverse(ietf.community.views.subscription, kwargs={ "email_or_name": email })
+            #debug.show('url')
 
-        subscription = EmailSubscription.objects.filter(community_list=clist, email=email, notify_on="significant").first()
+            r = self.client.get(url)
+            self.assertEqual(r.status_code, 200)
 
-        self.assertTrue(subscription)
+            # subscribe
+            r = self.client.post(url, { "email": email.pk, "notify_on": "significant", "action": "subscribe" })
+            self.assertEqual(r.status_code, 302)
 
-        # delete subscription
-        r = self.client.post(url, { "subscription_id": subscription.pk, "action": "unsubscribe" })
-        self.assertEqual(r.status_code, 302)
-        self.assertEqual(EmailSubscription.objects.filter(community_list=clist, email=email, notify_on="significant").count(), 0)
+            subscription = EmailSubscription.objects.filter(community_list=clist, email=email, notify_on="significant").first()
+
+            self.assertTrue(subscription)
+
+            # delete subscription
+            r = self.client.post(url, { "subscription_id": subscription.pk, "action": "unsubscribe" })
+            self.assertEqual(r.status_code, 302)
+            self.assertEqual(EmailSubscription.objects.filter(community_list=clist, email=email, notify_on="significant").count(), 0)
 
     def test_subscription_for_group(self):
         draft = WgDraftFactory(group__acronym='mars')
@@ -384,7 +422,7 @@ class CommunityListTests(WebTest):
         # test GET, rest is tested with personal list
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-        
+
     def test_notification(self):
         person = PersonFactory(user__username='plain')
         draft = WgDraftFactory()
