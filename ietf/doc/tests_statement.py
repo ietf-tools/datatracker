@@ -2,8 +2,6 @@
 
 import debug  # pyflakes:ignore
 
-import os
-
 from pyquery import PyQuery
 
 from pathlib import Path
@@ -186,7 +184,7 @@ This test section has some text.
                 if postdict["statement_submission"] == "enter":
                     self.assertEqual(f"# {username}", doc.text())
                 else:
-                    self.assertEqual(f"not valid pdf", doc.text())
+                    self.assertEqual("not valid pdf", doc.text())
                 self.assertEqual(docevent_count + 1, doc.docevent_set.count())
                 self.assertEqual(0, len(outbox))
                 rev = doc.rev
