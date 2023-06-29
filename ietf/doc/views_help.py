@@ -1,3 +1,5 @@
+# Copyright The IETF Trust 2013-2023, All Rights Reserved
+
 from django.shortcuts import render, get_object_or_404
 from django.http import Http404
 

@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2013-2020, All Rights Reserved
+# Copyright The IETF Trust 2013-2023, All Rights Reserved
 
 from django.conf import settings
 from django.urls import include
