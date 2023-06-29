@@ -6,5 +6,5 @@ from ietf.utils.urls import url
 
 urlpatterns = [
     url(r"^(?:%(rev)s/)?pdf/$" % settings.URL_REGEXPS, views_statement.serve_pdf),
-    url(r'^submit/$', views_statement.submit),
+    url(r"^submit/$", views_statement.submit),
 ]

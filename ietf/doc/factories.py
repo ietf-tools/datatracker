@@ -579,18 +579,20 @@ class EditorialRfcFactory(RgDraftFactory):
         return None
     
 class StatementFactory(BaseDocumentFactory):
-    type_id = 'statement'
-    title = factory.Faker('sentence')
-    group = factory.SubFactory('ietf.group.factories.GroupFactory', acronym='iab')
+    type_id = "statement"
+    title = factory.Faker("sentence")
+    group = factory.SubFactory("ietf.group.factories.GroupFactory", acronym="iab")
 
-    name = factory.LazyAttribute(lambda o: 'statement-%s-%s'%(xslugify(o.group.acronym), xslugify(o.title)))
+    name = factory.LazyAttribute(
+        lambda o: "statement-%s-%s" % (xslugify(o.group.acronym), xslugify(o.title))
+    )
     uploaded_filename = factory.LazyAttribute(lambda o: f"{o.name}-{o.rev}.md")
 
     published_statement_event = factory.RelatedFactory(
-        'ietf.doc.factories.DocEventFactory',
-        'doc',
+        "ietf.doc.factories.DocEventFactory",
+        "doc",
         type="published_statement",
-        time=timezone.now()-datetime.timedelta(days=1)
+        time=timezone.now() - datetime.timedelta(days=1),
     )
 
     @factory.post_generation
@@ -598,7 +600,7 @@ class StatementFactory(BaseDocumentFactory):
         if not create:
             return
         if extracted:
-            for (state_type_id,state_slug) in extracted:
-                obj.set_state(State.objects.get(type_id=state_type_id,slug=state_slug))
+            for state_type_id, state_slug in extracted:
+                obj.set_state(State.objects.get(type_id=state_type_id, slug=state_slug))
         else:
-            obj.set_state(State.objects.get(type_id='statement',slug='active'))
+            obj.set_state(State.objects.get(type_id="statement", slug="active"))

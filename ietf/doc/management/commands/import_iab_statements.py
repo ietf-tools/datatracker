@@ -1,6 +1,6 @@
 # Copyright The IETF Trust 2023, All Rights Reserved
 
-import debug # pyflakes:ignore
+import debug  # pyflakes:ignore
 
 import csv
 import datetime
@@ -18,6 +18,7 @@ from django.core.management.base import BaseCommand
 
 from ietf.doc.models import Document, DocAlias, DocEvent, State
 from ietf.utils.text import xslugify
+
 
 class Command(BaseCommand):
     help = "Performs a one-time import of IAB statements"
@@ -41,29 +42,47 @@ class Command(BaseCommand):
             exit(-1)
 
         spreadsheet_rows = load_spreadsheet()
-        with open('iab_statement_redirects.csv','w') as redirect_file:
+        with open("iab_statement_redirects.csv", "w") as redirect_file:
             redirect_writer = csv.writer(redirect_file)
-            for index, (file_fix, date_string, title, url, _) in enumerate(spreadsheet_rows):
+            for index, (file_fix, date_string, title, url, _) in enumerate(
+                spreadsheet_rows
+            ):
                 name = url.split("/")[6].lower()
                 if name.startswith("iabs"):
                     name = name[5:]
                 elif name.startswith("iab"):
                     name = name[4:]
                 if index == 1:
-                    name += "-archive" # https://www.iab.org/documents/correspondence-reports-documents/2015-2/iab-statement-on-identifiers-and-unicode-7-0-0/archive/
+                    name += "-archive"  # https://www.iab.org/documents/correspondence-reports-documents/2015-2/iab-statement-on-identifiers-and-unicode-7-0-0/archive/
                 if index == 100:
-                    name = "2010-" + name # https://www.iab.org/documents/correspondence-reports-documents/docs2010/iab-statement-on-the-rpki/
+                    name = (
+                        "2010-" + name
+                    )  # https://www.iab.org/documents/correspondence-reports-documents/docs2010/iab-statement-on-the-rpki/
                 if index == 152:
-                    name = "2018-" + name # https://www.iab.org/documents/correspondence-reports-documents/2018-2/iab-statement-on-the-rpki/
+                    name = (
+                        "2018-" + name
+                    )  # https://www.iab.org/documents/correspondence-reports-documents/2018-2/iab-statement-on-the-rpki/
                 docname = f"statement-iab-{xslugify(name)}"
                 ext = None
-                base_sourcename = f"{date_string}-{file_fix}" if file_fix != "" else date_string
-                if Path(tmpdir).joinpath("iab_statements", f"{base_sourcename}.md").exists():
+                base_sourcename = (
+                    f"{date_string}-{file_fix}" if file_fix != "" else date_string
+                )
+                if (
+                    Path(tmpdir)
+                    .joinpath("iab_statements", f"{base_sourcename}.md")
+                    .exists()
+                ):
                     ext = "md"
-                elif Path(tmpdir).joinpath("iab_statements", f"{base_sourcename}.pdf").exists():
-                    ext="pdf"
+                elif (
+                    Path(tmpdir)
+                    .joinpath("iab_statements", f"{base_sourcename}.pdf")
+                    .exists()
+                ):
+                    ext = "pdf"
                 if ext is None:
-                    debug.show('f"Could not find {Path(tmpdir).joinpath("iab_statements", f"{base_path}.md")}"')
+                    debug.show(
+                        'f"Could not find {Path(tmpdir).joinpath("iab_statements", f"{base_path}.md")}"'
+                    )
                     continue
                 filename = f"{docname}-00.{ext}"
                 # Create Document
@@ -75,16 +94,18 @@ class Command(BaseCommand):
                     rev="00",
                     uploaded_filename=filename,
                 )
-                doc.set_state(State.objects.get(type_id="statement",slug="active"))
+                doc.set_state(State.objects.get(type_id="statement", slug="active"))
                 DocAlias.objects.create(name=doc.name).docs.add(doc)
                 year, month, day = [int(part) for part in date_string.split("-")]
                 e1 = DocEvent.objects.create(
-                    time = datetime.datetime(year, month, day, 12, 00, tzinfo=datetime.timezone.utc),
+                    time=datetime.datetime(
+                        year, month, day, 12, 00, tzinfo=datetime.timezone.utc
+                    ),
                     type="published_statement",
                     doc=doc,
                     rev="00",
                     by_id=1,
-                    desc="Statement published (note: The 1200Z time of day is inaccurate - the actual time of day is not known)"
+                    desc="Statement published (note: The 1200Z time of day is inaccurate - the actual time of day is not known)",
                 )
                 e2 = DocEvent.objects.create(
                     type="added_comment",
@@ -93,7 +114,7 @@ class Command(BaseCommand):
                     by_id=1,  # The "(System)" person
                     desc="Statement moved into datatracker from iab wordpress website",
                 )
-                doc.save_with_history([e1, e2])                
+                doc.save_with_history([e1, e2])
 
                 # Put file in place
                 source = Path(tmpdir).joinpath(
@@ -107,7 +128,7 @@ class Command(BaseCommand):
                 else:
                     os.makedirs(dest.parent, exist_ok=True)
                     shutil.copy(source, dest)
-                
+
                 redirect_writer.writerow(
                     [
                         url,
@@ -115,13 +136,11 @@ class Command(BaseCommand):
                     ]
                 )
 
-
         shutil.rmtree(tmpdir)
 
+
 def load_spreadsheet():
-   
-    csv_dump= \
-'''2002-03-01,IAB RFC Publication Process Description(txt) March 2003,https://www.iab.org/documents/correspondence-reports-documents/docs2003/iab-rfc-publication-process/,deprecated
+    csv_dump = '''2002-03-01,IAB RFC Publication Process Description(txt) March 2003,https://www.iab.org/documents/correspondence-reports-documents/docs2003/iab-rfc-publication-process/,deprecated
 2015-01-27,IAB Statement on Identifiers and Unicode 7.0.0 (archive),https://www.iab.org/documents/correspondence-reports-documents/2015-2/iab-statement-on-identifiers-and-unicode-7-0-0/archive/,deprecated
 2010-02-05,Response to the EC’s RFI on Forums and Consortiums,https://www.iab.org/documents/correspondence-reports-documents/docs2010/response-to-the-ecs-rfi-on-forums-and-consortiums/,https://www.iab.org/wp-content/IAB-uploads/2011/03/2010-02-05-IAB-Response-Euro-ICT-Questionnaire.pdf
 2011-03-30,IAB responds to NTIA Request for Comments on the IANA Functions,https://www.iab.org/documents/correspondence-reports-documents/2011-2/iab-responds-to-ntia-request-for-comments-on-the-iana-functions/,https://www.iab.org/wp-content/IAB-uploads/2011/04/2011-03-30-iab-iana-noi-response.pdf
@@ -287,7 +306,7 @@ def load_spreadsheet():
 '''
 
     rows = []
-    date_count = defaultdict(lambda:0)
+    date_count = defaultdict(lambda: 0)
     with io.StringIO(csv_dump) as csv_file:
         reader = csv.reader(csv_file)
         for row in reader:
@@ -295,7 +314,7 @@ def load_spreadsheet():
             if date_count[date] == 0:
                 row.insert(0, "")
             else:
-                row.insert(0,date_count[date])
+                row.insert(0, date_count[date])
                 date_count[date] += 1
             rows.append(row)
     return rows
