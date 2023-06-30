@@ -180,9 +180,9 @@ def interesting_doc_relations(doc):
     else:
         raise TypeError("Expected this method to be called with a Document or DocHistory object")
 
-    that_relationships = STATUSCHANGE_RELATIONS + ('conflrev', 'replaces', 'possibly_replaces', 'updates', 'obs') 
+    that_relationships = STATUSCHANGE_RELATIONS + ('conflrev', 'replaces', 'possibly_replaces', 'updates', 'obs', 'became_rfc') 
 
-    that_doc_relationships = ('replaces', 'possibly_replaces', 'updates', 'obs')
+    that_doc_relationships = ('replaces', 'possibly_replaces', 'updates', 'obs', 'became_rfc')
 
     # TODO: This returns the relationships in database order, which may not be the order we want to display them in.
     interesting_relations_that = cls.objects.filter(target__docs=target, relationship__in=that_relationships).select_related('source')
@@ -1084,9 +1084,9 @@ def document_history(request, name):
 
     # Get related docs whose history should be linked
     if doc.type_id == "draft":
-        related = doc.related_that_doc("became-rfc")
+        related = doc.related_that_doc("became_rfc")
     elif doc.type_id == "rfc":
-        related = doc.related_that("became-rfc")
+        related = doc.related_that("became_rfc")
     else:
         related = []
 
