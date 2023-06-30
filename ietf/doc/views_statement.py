@@ -19,6 +19,8 @@ from ietf.ietfauth.utils import role_required
 from ietf.utils.text import xslugify
 from ietf.utils.textupload import get_cleaned_text_file_content
 
+CONST_PDF_REV_NOTICE = "The current revision of this statement is in pdf format"
+
 
 @cache_control(max_age=3600)
 def serve_pdf(self, name, rev=None):
@@ -61,16 +63,13 @@ class StatementUploadForm(forms.Form):
                     "\r", ""
                 )
                 default_content = render_to_string(
-                    "doc/statement/statement_template.md", {"settings": settings}
+                    "doc/statement/statement_template.md", {}
                 )
                 if markdown_content == default_content:
                     raise forms.ValidationError(
                         "The example content may not be saved. Edit it to contain the next revision statement content."
                     )
-                if (
-                    markdown_content
-                    == "The current revision of this statement is in pdf format"
-                ):
+                if markdown_content == CONST_PDF_REV_NOTICE:
                     raise forms.ValidationError(
                         "Not proceeding with the text noting that the current version is pdf. Did you mean to upload a new PDF?"
                     )
@@ -146,7 +145,7 @@ def submit(request, name):
 
     else:
         if statement.uploaded_filename.endswith("pdf"):
-            text = "The current revision of this statement is in pdf format"
+            text = CONST_PDF_REV_NOTICE
         else:
             text = statement.text_or_error()
         init = {
