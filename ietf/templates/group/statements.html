@@ -9,7 +9,15 @@
 {% block group_content %}
     {% origin %}
     <h2 class="my-3">{{group.acronym|upper}} Statements</h2>
-    {% origin %}
+    {% if request.user|has_role:"Secretariat" %}
+    <div class="buttonlist">
+        <a id="start_button"
+           class="btn btn-primary"
+           href="{% url 'ietf.doc.views_statement.new_statement' %}">
+            Start New Statement
+        </a>
+    </div>
+    {% endif %}
     <table class="my-3 table table-sm table-striped tablesorter">
         <thead>
             <tr>

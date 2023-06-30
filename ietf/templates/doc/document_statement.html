@@ -106,6 +106,16 @@
             </tr>
         </tbody>
     </table>
+    {% if not snapshot %}
+    {% if request.user|has_role:"Secretariat" %}
+        <p id="change-statement">
+            <a class="btn btn-primary"
+               href="{% url 'ietf.doc.views_statement.submit' name=doc.name %}">
+                Edit or upload revised statement text
+            </a>
+        </p>
+    {% endif %}
+{% endif %}
 
     <div class="card mt-5">
         <div class="card-header">
