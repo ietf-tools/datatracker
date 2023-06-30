@@ -2541,6 +2541,32 @@
   },
   {
     "fields": {
+      "desc": "The statement is active",
+      "name": "Active",
+      "next_states": [],
+      "order": 0,
+      "slug": "active",
+      "type": "statement",
+      "used": true
+    },
+    "model": "doc.state",
+    "pk": 175
+  },
+  {
+    "fields": {
+      "desc": "The statement has been replaced",
+      "name": "Replaced",
+      "next_states": [],
+      "order": 0,
+      "slug": "replaced",
+      "type": "statement",
+      "used": true
+    },
+    "model": "doc.state",
+    "pk": 176
+  },
+  {
+    "fields": {
       "label": "State"
     },
     "model": "doc.statetype",
@@ -2741,6 +2767,13 @@
     },
     "model": "doc.statetype",
     "pk": "statchg"
+  },
+  {
+    "fields": {
+      "label": "Statement State"
+    },
+    "model": "doc.statetype",
+    "pk": "statement"
   },
   {
     "fields": {
@@ -10596,6 +10629,17 @@
   {
     "fields": {
       "desc": "",
+      "name": "Statement",
+      "order": 0,
+      "prefix": "statement",
+      "used": true
+    },
+    "model": "name.doctypename",
+    "pk": "statement"
+  },
+  {
+    "fields": {
+      "desc": "",
       "name": "RFC Editor Auth48 status",
       "order": 0,
       "used": true
@@ -16385,7 +16429,7 @@
     "fields": {
       "command": "xym",
       "switch": "--version",
-      "time": "2023-05-14T07:09:32.713Z",
+      "time": "2023-06-21T07:09:38.578Z",
       "used": true,
       "version": "xym 0.7.0"
     },
@@ -16396,7 +16440,7 @@
     "fields": {
       "command": "pyang",
       "switch": "--version",
-      "time": "2023-05-14T07:09:33.045Z",
+      "time": "2023-06-21T07:09:38.928Z",
       "used": true,
       "version": "pyang 2.5.3"
     },
@@ -16407,7 +16451,7 @@
     "fields": {
       "command": "yanglint",
       "switch": "--version",
-      "time": "2023-05-14T07:09:33.065Z",
+      "time": "2023-06-21T07:09:38.948Z",
       "used": true,
       "version": "yanglint SO 1.9.2"
     },
@@ -16418,9 +16462,9 @@
     "fields": {
       "command": "xml2rfc",
       "switch": "--version",
-      "time": "2023-05-14T07:09:33.970Z",
+      "time": "2023-06-21T07:09:39.903Z",
       "used": true,
-      "version": "xml2rfc 3.17.1"
+      "version": "xml2rfc 3.17.3"
     },
     "model": "utils.versioninfo",
     "pk": 4
