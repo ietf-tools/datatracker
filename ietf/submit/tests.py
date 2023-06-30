@@ -1142,7 +1142,7 @@ class SubmitTests(BaseSubmitTestCase):
         self.verify_bibxml_ids_creation(draft)
 
     def test_submit_update_individual(self):
-        IndividualDraftFactory(name='draft-ietf-random-thing', states=[('draft','rfc')], other_aliases=['rfc9999',], pages=5)
+        IndividualDraftFactory(name='draft-ietf-random-thing', states=[('draft','active'),('draft-iesg','approved')], pages=5)
         ad=Person.objects.get(user__username='ad')
         # Group of None here does not reflect real individual submissions
         draft = IndividualDraftFactory(group=None, ad = ad, authors=[ad,], notify='aliens@example.mars', pages=5)
@@ -1152,23 +1152,14 @@ class SubmitTests(BaseSubmitTestCase):
         status_url, author = self.do_submission(name,rev)
         mailbox_before = len(outbox)
 
-        replaced_alias = draft.docalias.first()
-        r = self.supply_extra_metadata(name, status_url, "Submitter Name", "author@example.com", replaces=[str(replaced_alias.pk)])
+        r = self.supply_extra_metadata(name, status_url, "Submitter Name", "author@example.com", replaces=[str(draft.pk)])
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, 'cannot replace itself')
         self._assert_extresources_in_table(r, [])
         self._assert_extresources_form(r, [])
 
-        replaced_alias = DocAlias.objects.get(name='draft-ietf-random-thing')
-        r = self.supply_extra_metadata(name, status_url, "Submitter Name", "author@example.com", replaces=[str(replaced_alias.pk)])
-        self.assertEqual(r.status_code, 200)
-        self.assertContains(r, 'cannot replace an RFC')
-        self._assert_extresources_in_table(r, [])
-        self._assert_extresources_form(r, [])
-
-        replaced_alias.document.set_state(State.objects.get(type='draft-iesg',slug='approved'))
-        replaced_alias.document.set_state(State.objects.get(type='draft',slug='active'))
-        r = self.supply_extra_metadata(name, status_url, "Submitter Name", "author@example.com", replaces=[str(replaced_alias.pk)])
+        replaced = Document.objects.get(name='draft-ietf-random-thing')
+        r = self.supply_extra_metadata(name, status_url, "Submitter Name", "author@example.com", replaces=[str(replaced.pk)])
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, 'approved by the IESG and cannot')
         self._assert_extresources_in_table(r, [])
@@ -3105,7 +3096,7 @@ class SubmissionUploadFormTests(BaseSubmitTestCase):
             files=files_dict,
         )
         self.assertFalse(form.is_valid())
-        self.assertIn('An Internet-Draft cannot replace an RFC', form.errors['replaces'])
+        self.assertIn('An Internet-Draft can only replace another Internet-Draft', form.errors['replaces'])
 
         # can't replace draft approved by iesg
         existing_drafts[0].set_state(State.objects.get(type='draft-iesg', slug='approved'))

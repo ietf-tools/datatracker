@@ -28,7 +28,7 @@ import debug                            # pyflakes:ignore
 from ietf.doc.models import Document
 from ietf.group.models import Group
 from ietf.ietfauth.utils import has_role
-from ietf.doc.fields import SearchableDocAliasesField
+from ietf.doc.fields import SearchableDocumentsField
 from ietf.doc.models import DocAlias
 from ietf.ipr.mail import utc_from_string
 from ietf.meeting.models import Meeting
@@ -683,9 +683,9 @@ class SubmissionAutoUploadForm(SubmissionBaseUploadForm):
         if self.cleaned_data['replaces']:
             names_replaced = [s.strip() for s in self.cleaned_data['replaces'].split(',')]
             self.cleaned_data['replaces'] = ','.join(names_replaced)
-            aliases_replaced = DocAlias.objects.filter(name__in=names_replaced)
-            if len(names_replaced) != len(aliases_replaced):
-                known_names = aliases_replaced.values_list('name', flat=True)
+            documents_replaced = Document.objects.filter(name__in=names_replaced)
+            if len(names_replaced) != len(documents_replaced):
+                known_names = documents_replaced.values_list('name', flat=True)
                 unknown_names = [n for n in names_replaced if n not in known_names]
                 self.add_error(
                     'replaces',
@@ -693,27 +693,22 @@ class SubmissionAutoUploadForm(SubmissionBaseUploadForm):
                         'Unknown Internet-Draft name(s): ' + ', '.join(unknown_names)
                     ),
                 )
-            for alias in aliases_replaced:
-                if alias.document.name == self.filename:
+            for doc in documents_replaced:
+                if doc.name == self.filename:
                     self.add_error(
                         'replaces',
                         forms.ValidationError("An Internet-Draft cannot replace itself"),
                     )
-                elif alias.document.type_id != "draft":
+                elif doc.type_id != "draft":
                     self.add_error(
                         'replaces',
                         forms.ValidationError("An Internet-Draft can only replace another Internet-Draft"),
                     )
-                elif alias.document.get_state_slug() == "rfc":
-                    self.add_error(
-                        'replaces',
-                        forms.ValidationError("An Internet-Draft cannot replace an RFC"),
-                    )
-                elif alias.document.get_state_slug('draft-iesg') in ('approved', 'ann', 'rfcqueue'):
+                elif doc.get_state_slug('draft-iesg') in ('approved', 'ann', 'rfcqueue'):
                     self.add_error(
                         'replaces',
                         forms.ValidationError(
-                            alias.name + " is approved by the IESG and cannot be replaced"
+                            doc.name + " is approved by the IESG and cannot be replaced"
                         ),
                     )
             return cleaned_data
@@ -754,22 +749,20 @@ class SubmitterForm(NameEmailForm):
         return line
 
 class ReplacesForm(forms.Form):
-    replaces = SearchableDocAliasesField(required=False, help_text="Any Internet-Drafts that this document replaces (approval required for replacing an Internet-Draft you are not the author of)")
+    replaces = SearchableDocumentsField(required=False, help_text="Any Internet-Drafts that this document replaces (approval required for replacing an Internet-Draft you are not the author of)")
 
     def __init__(self, *args, **kwargs):
         self.name = kwargs.pop("name")
         super(ReplacesForm, self).__init__(*args, **kwargs)
 
     def clean_replaces(self):
-        for alias in self.cleaned_data['replaces']:
-            if alias.document.name == self.name:
+        for doc in self.cleaned_data['replaces']:
+            if doc.name == self.name:
                 raise forms.ValidationError("An Internet-Draft cannot replace itself.")
-            if alias.document.type_id != "draft":
+            if doc.type_id != "draft":
                 raise forms.ValidationError("An Internet-Draft can only replace another Internet-Draft")
-            if alias.document.get_state_slug() == "rfc":
-                raise forms.ValidationError("An Internet-Draft cannot replace an RFC")
-            if alias.document.get_state_slug('draft-iesg') in ('approved','ann','rfcqueue'):
-                raise forms.ValidationError(alias.name+" is approved by the IESG and cannot be replaced")
+            if doc.get_state_slug('draft-iesg') in ('approved','ann','rfcqueue'):
+                raise forms.ValidationError(doc.name+" is approved by the IESG and cannot be replaced")
         return self.cleaned_data['replaces']
 
 class EditSubmissionForm(forms.ModelForm):

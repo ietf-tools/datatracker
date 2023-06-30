@@ -316,7 +316,7 @@ def make_test_data():
     doc_alias = DocAlias.objects.create(name=draft.name)
     doc_alias.docs.add(draft)
 
-    RelatedDocument.objects.create(source=draft, target=old_alias, relationship=DocRelationshipName.objects.get(slug='replaces'))
+    RelatedDocument.objects.create(source=draft, target=old_draft, relationship=DocRelationshipName.objects.get(slug='replaces'))
     old_draft.set_state(State.objects.get(type='draft', slug='repl'))
 
     DocumentAuthor.objects.create(
