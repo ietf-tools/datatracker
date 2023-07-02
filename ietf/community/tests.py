@@ -1,12 +1,10 @@
-# Copyright The IETF Trust 2016-2020, All Rights Reserved
+# Copyright The IETF Trust 2016-2023, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
 from pyquery import PyQuery
 
 from django.urls import reverse as urlreverse
-
-from django_webtest import WebTest
 
 import debug                            # pyflakes:ignore
 
@@ -19,13 +17,13 @@ from ietf.group.utils import setup_default_community_list_for_group
 from ietf.doc.models import State
 from ietf.doc.utils import add_state_change_event
 from ietf.person.models import Person, Email, Alias
-from ietf.utils.test_utils import login_testing_unauthorized
+from ietf.utils.test_utils import TestCase, login_testing_unauthorized
 from ietf.utils.mail import outbox
 from ietf.doc.factories import WgDraftFactory
 from ietf.group.factories import GroupFactory, RoleFactory
 from ietf.person.factories import PersonFactory, EmailFactory, AliasFactory
 
-class CommunityListTests(WebTest):
+class CommunityListTests(TestCase):
     def test_rule_matching(self):
         plain = PersonFactory(user__username='plain')
         ad = Person.objects.get(user__username='ad')
@@ -137,30 +135,36 @@ class CommunityListTests(WebTest):
             url = urlreverse(ietf.community.views.manage_list, kwargs={ "email_or_name": id })
             #debug.show('id')
             #debug.show('url')
-            page = self.app.get(url, user='plain')
-            self.assertEqual(page.status_int, 200)
+            r = self.client.get(url, user='plain')
+            self.assertEqual(r.status_code, 200)
+
+            # We can't call post() with follow=True because that 404's if
+            # the url contains unicode. The view redirects to url='', so
+            # django.test.client._handle_redirects() is somehow failing to
+            # properly reconstruct the url.
+            # Whatever, follow the redirect manually.
+            def follow(r):
+                redirect_url = r.url or url
+                return self.client.get(redirect_url, user='plain')
 
             # add document
-            self.assertIn('add_document', page.forms)
-            form = page.forms['add_document']
-            form['documents'].options=[(draft.pk, True, draft.name)]
-            page = form.submit('action',value='add_documents')
-            self.assertEqual(page.status_int, 302)
+            self.assertContains(r, 'add_document')
+            r = self.client.post(url, {'action': 'add_documents', 'documents': draft.pk})
+            self.assertEqual(r.status_code, 302)
             clist = CommunityList.objects.get(person__user__username="plain")
             self.assertTrue(clist.added_docs.filter(pk=draft.pk))
-            page = page.follow()
-
-            self.assertContains(page, draft.name)
+            r = follow(r)
+            self.assertContains(r, draft.name, status_code=200)
 
             # remove document
-            self.assertIn('remove_document_%s' % draft.pk, page.forms)
-            form = page.forms['remove_document_%s' % draft.pk]
-            page = form.submit('action',value='remove_document')
-            self.assertEqual(page.status_int, 302)
+            self.assertContains(r, 'remove_document_%s' % draft.pk)
+            r = self.client.post(url, {'action': 'remove_document', 'document': draft.pk})
+            self.assertEqual(r.status_code, 302)
             clist = CommunityList.objects.get(person__user__username="plain")
             self.assertTrue(not clist.added_docs.filter(pk=draft.pk))
-            page = page.follow()
-        
+            r = follow(r)
+            self.assertNotContains(r, draft.name, status_code=200)
+
             # add rule
             r = self.client.post(url, {
                 "action": "add_rule",
