@@ -72,4 +72,4 @@ Unidecode>=1.3.4
 weasyprint>=59
 xml2rfc>=3.12.4
 xym>=0.6,<1.0
-pydantic<2 # Temporary pin until inflect can catch up.
+pydantic<3 # Temporary pin until inflect can catch up.
