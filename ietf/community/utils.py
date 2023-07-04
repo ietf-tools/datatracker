@@ -42,7 +42,7 @@ def lookup_community_list(email_or_name=None, acronym=None):
     else:
         persons = lookup_persons(email_or_name)
         if len(persons) > 1:
-            raise MultiplePersonError(r"\r\n".join([p.email() for p in persons]))
+            raise MultiplePersonError(r"\r\n".join([p.user.username for p in persons]))
         person = persons[0]
         clist = CommunityList.objects.filter(person=person).first() or CommunityList(person=person)
 

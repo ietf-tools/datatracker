@@ -86,6 +86,16 @@ class CommunityListTests(TestCase):
         # rule -> docs
         self.assertTrue(draft in list(docs_matching_community_list_rule(rule_group_exp)))
 
+    def test_view_list_duplicates(self):
+        person = PersonFactory(name="John Q. Public", user__username="bazquux@example.com")
+        PersonFactory(name="John Q. Public", user__username="foobar@example.com")
+
+        url = urlreverse(ietf.community.views.view_list, kwargs={ "email_or_name": person.plain_name()})
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 300)
+        self.assertIn("bazquux@example.com", r.content.decode())
+        self.assertIn("foobar@example.com", r.content.decode())
+
     def complex_person(self, *args, **kwargs):
         person = PersonFactory(*args, **kwargs)
         EmailFactory(person=person)

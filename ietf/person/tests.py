@@ -157,6 +157,16 @@ class PersonTests(TestCase):
         img = Image.open(BytesIO(r.content))
         self.assertEqual(img.width, 200)
 
+    def test_person_photo_duplicates(self):
+        person = PersonFactory(name="bazquux@example.com", user__username="bazquux@example.com", with_bio=True)
+        PersonFactory(name="bazquux@example.com", user__username="foobar@example.com", with_bio=True)
+
+        url = urlreverse("ietf.person.views.photo", kwargs={ "email_or_name": person.plain_name()})
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 300)
+        self.assertIn("bazquux@example.com", r.content.decode())
+        self.assertIn("foobar@example.com", r.content.decode())
+
     def test_name_methods(self):
         person = PersonFactory(name="Dr. Jens F. Möller", )
 
