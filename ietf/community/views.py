@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2012-2020, All Rights Reserved
+# Copyright The IETF Trust 2012-2023, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -28,7 +28,7 @@ from ietf.utils.response import permission_denied
 
 def view_list(request, email_or_name=None):
     try:
-        clist = lookup_community_list(email_or_name)
+        clist = lookup_community_list(request, email_or_name)
     except MultiplePersonError as err:
         return HttpResponse(str(err), status=300)
 
@@ -50,7 +50,7 @@ def manage_list(request, email_or_name=None, acronym=None):
     # we need to be a bit careful because clist may not exist in the
     # database so we can't call related stuff on it yet
     try:
-        clist = lookup_community_list(email_or_name, acronym)
+        clist = lookup_community_list(request, email_or_name, acronym)
     except MultiplePersonError as err:
         return HttpResponse(str(err), status=300)
 
@@ -141,7 +141,7 @@ def track_document(request, name, email_or_name=None, acronym=None):
 
     if request.method == "POST":
         try:
-            clist = lookup_community_list(email_or_name, acronym)
+            clist = lookup_community_list(request, email_or_name, acronym)
         except MultiplePersonError as err:
             return HttpResponse(str(err), status=300)
         if not can_manage_community_list(request.user, clist):
@@ -166,7 +166,7 @@ def track_document(request, name, email_or_name=None, acronym=None):
 def untrack_document(request, name, email_or_name=None, acronym=None):
     doc = get_object_or_404(Document, docalias__name=name)
     try:
-        clist = lookup_community_list(email_or_name, acronym)
+        clist = lookup_community_list(request, email_or_name, acronym)
     except MultiplePersonError as err:
         return HttpResponse(str(err), status=300)
     if not can_manage_community_list(request.user, clist):
@@ -188,7 +188,7 @@ def untrack_document(request, name, email_or_name=None, acronym=None):
 
 def export_to_csv(request, email_or_name=None, acronym=None):
     try:
-        clist = lookup_community_list(email_or_name, acronym)
+        clist = lookup_community_list(request, email_or_name, acronym)
     except MultiplePersonError as err:
         return HttpResponse(str(err), status=300)
 
@@ -232,7 +232,7 @@ def export_to_csv(request, email_or_name=None, acronym=None):
 
 def feed(request, email_or_name=None, acronym=None):
     try:
-        clist = lookup_community_list(email_or_name, acronym)
+        clist = lookup_community_list(request, email_or_name, acronym)
     except MultiplePersonError as err:
         return HttpResponse(str(err), status=300)
 
@@ -271,7 +271,7 @@ def feed(request, email_or_name=None, acronym=None):
 @login_required
 def subscription(request, email_or_name=None, acronym=None):
     try:
-        clist = lookup_community_list(email_or_name, acronym)
+        clist = lookup_community_list(request, email_or_name, acronym)
         if clist.pk is None:
             raise Http404
     except MultiplePersonError as err:

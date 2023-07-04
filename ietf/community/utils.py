@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2016-2020, All Rights Reserved
+# Copyright The IETF Trust 2016-2023, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -33,7 +33,7 @@ class MultiplePersonError(Exception):
     """More than one Person record matches the given email or name"""
     pass
 
-def lookup_community_list(email_or_name=None, acronym=None):
+def lookup_community_list(request, email_or_name=None, acronym=None):
     assert email_or_name or acronym
 
     if acronym:
@@ -42,8 +42,12 @@ def lookup_community_list(email_or_name=None, acronym=None):
     else:
         persons = lookup_persons(email_or_name)
         if len(persons) > 1:
-            raise MultiplePersonError(r"\r\n".join([p.user.username for p in persons]))
-        person = persons[0]
+            if hasattr(request.user, 'person') and request.user.person in persons:
+                person = request.user.person
+            else:
+                raise MultiplePersonError("\r\n".join([p.user.username for p in persons]))
+        else:
+            person = persons[0]
         clist = CommunityList.objects.filter(person=person).first() or CommunityList(person=person)
 
     return clist
