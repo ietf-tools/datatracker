@@ -144,7 +144,7 @@ class XMLDraft(Draft):
             return today
         year, month, day = extract_date(date_elt, today)
         year, month, day = augment_date(year, month, day, today)
-        if day is None:
+        if not day:
             # Must choose a day for a datetime.date. Per RFC 7991 sect 2.17, we use
             # today's date if it is consistent with the rest of the date. Otherwise,
             # arbitrariy (and consistent with the text parser) assume the 15th.
