@@ -292,9 +292,6 @@ def document_main(request, name, rev=None, document_html=False):
 
         search_archive = quote(search_archive, safe="~")
 
-        # conflict reviews
-        conflict_reviews = [r.source.name for r in interesting_relations_that.filter(relationship="conflrev")]
-
         # status changes
         status_changes = []
         proposed_status_changes = []
@@ -385,7 +382,6 @@ def document_main(request, name, rev=None, document_html=False):
                                        updated_by=interesting_relations_that.filter(relationship="updates"),
                                        obsoletes=interesting_relations_that_doc.filter(relationship="obs"),
                                        obsoleted_by=interesting_relations_that.filter(relationship="obs"),
-                                       conflict_reviews=conflict_reviews,
                                        status_changes=status_changes,
                                        proposed_status_changes=proposed_status_changes,
                                        rfc_aliases=rfc_aliases,
@@ -410,9 +406,6 @@ def document_main(request, name, rev=None, document_html=False):
                                        search_archive=search_archive,
                                        # actions=actions,
                                        presentations=presentations,
-                                       # review_assignments=review_assignments,
-                                       # no_review_from_teams=no_review_from_teams,
-                                       # due_date=due_date,
                                        diff_revisions=diff_revisions
                                        ))
 

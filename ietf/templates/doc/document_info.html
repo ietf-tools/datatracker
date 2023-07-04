@@ -339,67 +339,69 @@ href="{% url 'ietf.doc.views_draft.review_possibly_replaces' name=doc.name %}">E
             </tr>
         {% endif %}
     {% endfor %}
-    {% if review_assignments or can_request_review %}
-        <tr>
-            <td></td>
-            <th scope="row">
-                Reviews
-            </th>
-            <td class="edit">
-            </td>
-            <td>
-                {% for review_assignment in review_assignments %}
-                    {% include "doc/review_assignment_summary.html" with current_doc_name=doc.name current_rev=doc.rev %}
-                {% endfor %}
-                {% if no_review_from_teams %}
-                    {% for team in no_review_from_teams %}
-                        {{ team.acronym.upper }}{% if not forloop.last %},{% endif %}
-                    {% endfor %}
-                    will not review this version
-                {% endif %}
-                {% if can_request_review or can_submit_unsolicited_review_for_teams %}
-                    <div {% if review_assignments or no_review_from_teams %}class="mt-3"{% endif %}>
-                        {% if can_request_review %}
-                        <a class="btn btn-primary btn-sm"
-                           href="{% url "ietf.doc.views_review.request_review" doc.name %}">
-                            <i class="bi bi-check-circle">
-                            </i>
-                            Request review
-                        </a>
+        {% if not doc.is_rfc %}{# do not show reviews or conflict_reviews for RFCs, even if present #}
+            {% if review_assignments or can_request_review %}
+                <tr>
+                    <td></td>
+                    <th scope="row">
+                        Reviews
+                    </th>
+                    <td class="edit">
+                    </td>
+                    <td>
+                        {% for review_assignment in review_assignments %}
+                            {% include "doc/review_assignment_summary.html" with current_doc_name=doc.name current_rev=doc.rev %}
+                        {% endfor %}
+                        {% if no_review_from_teams %}
+                            {% for team in no_review_from_teams %}
+                                {{ team.acronym.upper }}{% if not forloop.last %},{% endif %}
+                            {% endfor %}
+                            will not review this version
                         {% endif %}
-                        {% if can_submit_unsolicited_review_for_teams|length == 1 %}
-                            <a class="btn btn-primary btn-sm"
-                               href="{% url "ietf.doc.views_review.complete_review" doc.name can_submit_unsolicited_review_for_teams.0.acronym %}">
-                                <i class="bi bi-pencil-square">
-                                </i>
-                                Submit unsolicited review
-                            </a>
-                        {% elif can_submit_unsolicited_review_for_teams %}
-                            <a class="btn btn-primary btn-sm"
-                               href="{% url "ietf.doc.views_review.submit_unsolicited_review_choose_team" doc.name %}">
-                                <i class="bi bi-pencil-square">
-                                </i>
-                                Submit unsolicited review
-                            </a>
+                        {% if can_request_review or can_submit_unsolicited_review_for_teams %}
+                            <div {% if review_assignments or no_review_from_teams %}class="mt-3"{% endif %}>
+                                {% if can_request_review %}
+                                    <a class="btn btn-primary btn-sm"
+                                       href="{% url "ietf.doc.views_review.request_review" doc.name %}">
+                                        <i class="bi bi-check-circle">
+                                        </i>
+                                        Request review
+                                    </a>
+                                {% endif %}
+                                {% if can_submit_unsolicited_review_for_teams|length == 1 %}
+                                    <a class="btn btn-primary btn-sm"
+                                       href="{% url "ietf.doc.views_review.complete_review" doc.name can_submit_unsolicited_review_for_teams.0.acronym %}">
+                                        <i class="bi bi-pencil-square">
+                                        </i>
+                                        Submit unsolicited review
+                                    </a>
+                                {% elif can_submit_unsolicited_review_for_teams %}
+                                    <a class="btn btn-primary btn-sm"
+                                       href="{% url "ietf.doc.views_review.submit_unsolicited_review_choose_team" doc.name %}">
+                                        <i class="bi bi-pencil-square">
+                                        </i>
+                                        Submit unsolicited review
+                                    </a>
+                                {% endif %}
+                            </div>
                         {% endif %}
-                    </div>
-                {% endif %}
-            </td>
-        </tr>
-    {% endif %}
-    {% if conflict_reviews %}
-        <tr>
-            <td></td>
-            <th scope="row">
-                IETF conflict review
-            </th>
-            <td class="edit">
-            </td>
-            <td>
-                {{ conflict_reviews|join:", "|urlize_ietf_docs }}
-            </td>
-        </tr>
-    {% endif %}
+                    </td>
+                </tr>
+            {% endif %}
+            {% if conflict_reviews %}
+                <tr>
+                    <td></td>
+                    <th scope="row">
+                        IETF conflict review
+                    </th>
+                    <td class="edit">
+                    </td>
+                    <td>
+                        {{ conflict_reviews|join:", "|urlize_ietf_docs }}
+                    </td>
+                </tr>
+            {% endif %}
+        {% endif %}
     {% endif %}
     {% with doc.docextresource_set.all as resources %}
         {% if resources or doc.group and doc.group.list_archive or can_edit_stream_info or can_edit_individual %}
