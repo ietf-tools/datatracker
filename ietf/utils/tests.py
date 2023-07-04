@@ -400,6 +400,44 @@ class XMLDraftTests(TestCase):
             }
         )
 
+    def test_parse_creation_date(self):
+        # override date_today to avoid skew when test runs around midnight
+        today = datetime.date.today()
+        with patch("ietf.utils.xmldraft.date_today", return_value=today):
+            # Note: using a dict as a stand-in for XML elements, which rely on the get() method 
+            self.assertEqual(
+                XMLDraft.parse_creation_date({"year": "2022", "month": "11", "day": "24"}),
+                datetime.date(2022, 11, 24),
+                "Fully specified date should be parsed"
+            )
+            # Cases where the date is empty - either literally missing or filled in with blank strings.
+            self.assertEqual(XMLDraft.parse_creation_date(None), today, "No date should be treated as 'today'")
+            self.assertEqual(
+                XMLDraft.parse_creation_date({"day": ""}), today
+            )
+            self.assertEqual(XMLDraft.parse_creation_date({}), today)
+            self.assertEqual(
+                XMLDraft.parse_creation_date({"year": ""}), today
+            )
+            self.assertEqual(
+                XMLDraft.parse_creation_date({"month": ""}), today
+            )
+            self.assertEqual(
+                XMLDraft.parse_creation_date({"day": ""}), today
+            )
+            self.assertEqual(
+                XMLDraft.parse_creation_date({"year": "", "month": ""}), today
+            )
+            self.assertEqual(
+                XMLDraft.parse_creation_date({"year": "", "day": ""}), today
+            )
+            self.assertEqual(
+                XMLDraft.parse_creation_date({"month": "", "day": ""}), today
+            )
+            self.assertEqual(
+                XMLDraft.parse_creation_date({"year": "", "month": "", "day": ""}), today
+            )
+
 
 class NameTests(TestCase):
 
