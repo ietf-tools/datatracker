@@ -138,22 +138,22 @@ class XMLDraft(Draft):
 
     @staticmethod
     def parse_creation_date(date_elt):
-        if date_elt is not None:
-            # ths mimics handling of date elements in the xml2rfc text/html writers
-            today = date_today()
-            year, month, day = extract_date(date_elt, today)
-            year, month, day = augment_date(year, month, day, today)
-            if day is None:
-                # Must choose a day for a datetime.date. Per RFC 7991 sect 2.17, we use
-                # today's date if it is consistent with the rest of the date. Otherwise,
-                # arbitrariy (and consistent with the text parser) assume the 15th.
-                if year == today.year and month == today.month:
-                    day = today.day
-                else:
-                    day = 15
-            return datetime.date(year, month, day)
+        today = date_today()
+        # ths mimics handling of date elements in the xml2rfc text/html writers
+        if date_elt is None:
+            return today
+        year, month, day = extract_date(date_elt, today)
+        year, month, day = augment_date(year, month, day, today)
+        if day is None:
+            # Must choose a day for a datetime.date. Per RFC 7991 sect 2.17, we use
+            # today's date if it is consistent with the rest of the date. Otherwise,
+            # arbitrariy (and consistent with the text parser) assume the 15th.
+            if year == today.year and month == today.month:
+                day = today.day
+            else:
+                day = 15
+        return datetime.date(year, month, day)
 
-        return None
 
     def get_creation_date(self):
         return self.parse_creation_date(self.xmlroot.find("front/date"))
