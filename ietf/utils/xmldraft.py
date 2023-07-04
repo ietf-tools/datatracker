@@ -138,10 +138,10 @@ class XMLDraft(Draft):
 
     @staticmethod
     def parse_creation_date(date_elt):
+        if date_elt is None:
+            return None
         today = date_today()
         # ths mimics handling of date elements in the xml2rfc text/html writers
-        if date_elt is None:
-            return today
         year, month, day = extract_date(date_elt, today)
         year, month, day = augment_date(year, month, day, today)
         if not day:

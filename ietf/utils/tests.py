@@ -410,8 +410,9 @@ class XMLDraftTests(TestCase):
                 datetime.date(2022, 11, 24),
                 "Fully specified date should be parsed"
             )
-            # Cases where the date is empty - either literally missing or filled in with blank strings.
-            self.assertEqual(XMLDraft.parse_creation_date(None), today, "No date should be treated as 'today'")
+            self.assertEqual(XMLDraft.parse_creation_date(None), None, "return None if input is None")
+            # Cases where the date is empty - missing fields or fields filled in with blank strings.
+            self.assertEqual(XMLDraft.parse_creation_date({}), today)
             self.assertEqual(
                 XMLDraft.parse_creation_date({"day": ""}), today
             )
