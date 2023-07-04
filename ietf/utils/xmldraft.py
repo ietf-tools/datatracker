@@ -154,10 +154,9 @@ class XMLDraft(Draft):
                 day = 15
         return datetime.date(year, month, day)
 
-
     def get_creation_date(self):
         return self.parse_creation_date(self.xmlroot.find("front/date"))
-    
+
     # todo fix the implementation of XMLDraft.get_abstract()
     #
     # This code was pulled from ietf.submit.forms where it existed for some time.
