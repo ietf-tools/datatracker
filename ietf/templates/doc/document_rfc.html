@@ -1,0 +1,764 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2016-2020, All Rights Reserved #}
+{% load origin %}
+{% load static %}
+{% load ietf_filters %}
+{% load person_filters %}
+{% load textfilters %}
+{% block html_attrs %}prefix="og: http://ogp.me/ns# article: http://ogp.me/ns/article#"{% endblock %}
+{% block pagehead %}
+    {% include "doc/opengraph.html" %}
+    <link rel="alternate"
+          type="application/atom+xml"
+          title="Document changes"
+          href="/feed/document-changes/{{ name }}/">
+    <meta name="description"
+          content="{{ doc.title }} {% if doc.get_state_slug == 'rfc' and not snapshot %}(RFC {{ rfc_number }}{% if published %}, {{ doc.pub_date|date:'F Y' }}{% endif %}{% if obsoleted_by %}; obsoleted by {% for rel in obsoleted_by %}{{ rel.source.canonical_name|prettystdname}}{% if not forloop.last%}, {% endif %}{% endfor %}{% endif %}){% endif %}">
+{% endblock %}
+{% block morecss %}.inline { display: inline; }{% endblock %}
+{% block title %}
+    {% if doc.get_state_slug == "rfc" and not snapshot %}
+        RFC {{ rfc_number }} - {{ doc.title }}
+    {% else %}
+        {{ name }}-{{ doc.rev }} - {{ doc.title }}
+    {% endif %}
+{% endblock %}
+{% block content %}
+    {% origin %}
+    {{ top|safe }}
+    {% include "doc/revisions_list.html"  with document_html=document_html %}
+    <div id="timeline"></div>
+    {% if doc.rev != latest_rev %}
+        <div class="alert alert-warning my-3">The information below is for an old version of the document.</div>
+    {% else %}
+        {% if doc.get_state_slug == "rfc" and snapshot %}
+            <div class="alert alert-warning my-3">
+                The information below is for an old version of the document that is already published as an RFC.
+            </div>
+        {% endif %}
+    {% endif %}
+    <table class="table table-sm table-borderless">
+        {% include "doc/document_info.html" %}
+        <tbody class="meta border-top">
+            {% if milestones %}
+            <tr>
+                <td></td>
+                <th scope="row">
+                    Associated
+                        {% if doc.stream_id == 'ietf' %}
+                            WG
+                        {% else %}
+                            {{ doc.stream }}
+                        {% endif %} milestone{{ milestones|pluralize }}</th>
+                <td class="edit"></td>
+                <td>
+                    <dl class="row">
+                        {% for m in milestones %}
+                            <dt class="col-sm-2 my-0">{{ m.due|date:"M Y" }}</dt>
+                            <dd class="col-sm-10 my-0">{{ m.desc }}</dd>
+                        {% endfor %}
+                    </dl>
+                </td>
+            </tr>
+            {% endif %}
+            {% if consensus and not doc.stream_id == 'ietf' %}
+                <tr>
+                    <td></td>
+                    <th scope="row">
+                        Consensus boilerplate
+                    </th>
+                    <td class="edit">
+                        {% if can_edit_stream_info and not snapshot %}
+                            <a class="btn btn-primary btn-sm"
+                               href="{% url 'ietf.doc.views_draft.edit_consensus' name=doc.name %}">
+                                Edit
+                            </a>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span class="{% if consensus != "Yes" %}text-danger{% else %}text-success{% endif %}"
+                              title="Whether the document is the result of a community consensus process as defined in RFC 5741">
+                            {{ consensus }}
+                        </span>
+                    </td>
+                </tr>
+            {% endif %}
+            {% if presentations or user|has_role:"Secretariat,Area Director,WG Chair,WG Secretary,RG Chair,RG Secretary,IRTF Chair,Team Chair" or can_edit_stream_info %}
+                <tr>
+                    <td></td>
+                    <th scope="row">
+                        On agenda
+                    </th>
+                    <td class="edit">
+                        {% if not snapshot %}
+                            {% if user|has_role:"Secretariat,Area Director,WG Chair,WG Secretary,RG Chair,RG Secretary,IRTF Chair,Team Chair" or can_edit_stream_info %}
+                                {% doc_edit_button "ietf.doc.views_doc.all_presentations" name=doc.name %}
+                            {% endif %}
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if presentations %}
+                            {% for pres in presentations %}
+                                <a href="{% url 'ietf.meeting.views.agenda_ical' num=pres.session.meeting.number session_id=pres.session.id %}">
+                                    <i class="bi bi-calendar">
+                                    </i>
+                                </a>
+                                {{ pres.session.short_name }} at {{ pres.session.meeting }}
+                                {% if pres.rev and pres.rev != doc.rev %}(version -{{ pres.rev }}){% endif %}{% if not forloop.last %},{% endif %}
+                            {% endfor %}
+                        {% else %}
+                            <span class="text-muted">
+                                (None)
+                            </span>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endif %}
+            {% if doc.stream_id == 'ietf' or doc.stream_id == 'ise' or doc.stream_id == 'irtf' or doc.stream_id == 'editorial' %}
+                <tr>
+                    <td></td>
+                    <th scope="row">
+                        Document shepherd
+                    </th>
+                    <td class="edit">
+                        {% if can_edit_stream_info and not snapshot %}
+                            <a class="btn btn-primary btn-sm"
+                               href="{% url 'ietf.doc.views_draft.edit_shepherd' name=doc.name %}">
+                                Edit
+                            </a>
+                        {% elif is_shepherd %}
+                            <a class="btn btn-primary btn-sm"
+                               href="{% url 'ietf.doc.views_draft.change_shepherd_email' name=doc.name %}">
+                                Change Email
+                            </a>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if doc.shepherd %}
+                            {% person_link doc.shepherd.person %}
+                        {% else %}
+                            <span class="text-muted">
+                                    (None)
+                                </span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% if shepherd_writeup or can_edit_shepherd_writeup %}
+                    <tr>
+                        <td></td>
+                        <th scope="row">
+                            Shepherd write-up
+                        </th>
+                        <td class="edit">
+                            {% if can_edit_shepherd_writeup %}
+                                {% url 'ietf.doc.views_draft.edit_shepherd_writeup' name=doc.name as doc_edit_url %}
+                                {% if doc_edit_url %}
+                                    <a class="btn btn-primary btn-sm" href="{{ doc_edit_url }}">
+                                        Edit
+                                    </a>
+                                {% endif %}
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if shepherd_writeup %}
+                                <a class="btn btn-primary btn-sm"
+                                   href="{% url 'ietf.doc.views_doc.document_shepherd_writeup' name=doc.name %}">
+                                    Show
+                                </a>
+                                <span class="badge rounded-pill bg-secondary">Last changed {{ shepherd_writeup.time|date:"Y-m-d" }}</span>
+                            {% else %}
+                                <span class="text-muted">
+                                    (None)
+                                </span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endif %}
+            {% else %}
+                <tr>
+                    <td></td>
+                    <th scope="row">
+                        RFC Editor Note
+                    </th>
+                    <td class="edit">
+                        {% if can_edit_stream_info %}
+                            <a class="btn btn-primary btn-sm"
+                               href="{% url 'ietf.doc.views_ballot.ballot_rfceditornote' name=doc.name %}">
+                                Edit
+                            </a>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if doc.has_rfc_editor_note %}
+                            (last changed {{ doc.has_rfc_editor_note|date:"Y-m-d" }})
+                        {% else %}
+                            <span class="text-muted">
+                                (None)
+                            </span>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endif %}
+            {% if published and started_iesg_process and published.time < started_iesg_process.time %}
+                <tr>
+                    <td></td>
+                    <th scope="col" colspan="3" class="warning">
+                        This information refers to IESG processing after the RFC was initially published:
+                    </th>
+                </tr>
+            {% endif %}
+        </tbody>
+        {% if not doc.stream_id == 'iab' %}
+            <tbody class="meta border-top">
+                <tr>
+                    <th scope="row">
+                        IESG
+                    </th>
+                    <th scope="row">
+                        <a href="{% url "ietf.help.views.state" doc=doc.type.slug type="iesg" %}">
+                            IESG state
+                        </a>
+                    </th>
+                    <td class="edit">
+                        {% if iesg_state.slug != 'idexists' and can_edit %}
+                            <a class="btn btn-primary btn-sm"
+                               href="{% url 'ietf.doc.views_draft.change_state' name=doc.name %}">
+                                Edit
+                            </a>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span class="{% if iesg_state_summary|slugify == 'expired' %}text-danger{% endif %}">
+                            {% if iesg_state_summary|striptags == iesg_state_summary %}
+                                {{ iesg_state_summary|default:"I-D Exists"|urlize_ietf_docs }}
+                            {% else %}
+                                {{ iesg_state_summary|default:"I-D Exists" }}
+                            {% endif %}
+                        </span>
+                    </td>
+                </tr>
+                {% if doc.action_holders_enabled %}
+                    <tr>
+                        <td></td>
+                        <th scope="row">
+                            Action Holder{{ doc.documentactionholder_set.all|pluralize }}
+                        </th>
+                        <td class="edit">
+                            {% if can_edit %}
+                                <a class="btn btn-primary btn-sm"
+                                   href="{% url 'ietf.doc.views_doc.edit_action_holders' name=doc.name %}">
+                                    Edit
+                                </a>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div>
+                                {% if doc.action_holders.exists %}
+                                    {% for action_holder in doc.documentactionholder_set.all %}
+                                        <div>
+                                            {% person_link action_holder.person title=action_holder.role_for_doc %} {{ action_holder|action_holder_badge }}
+                                        </div>
+                                    {% endfor %}
+                                    {% if can_edit %}
+                                        <a class="btn btn-primary btn-sm mt-3"
+                                           href="{% url "ietf.doc.views_doc.remind_action_holders" name=doc.name %}">
+                                            <i class="bi bi-envelope">
+                                            </i>
+                                            Send reminder email
+                                        </a>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="text-muted">
+                                        (None)
+                                    </span>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endif %}
+                    {% if consensus and doc.stream_id == 'ietf' %}
+                        <tr>
+                            <td></td>
+                            <th scope="row">
+                                Consensus boilerplate
+                            </th>
+                            <td class="edit">
+                                {% if can_edit or can_edit_stream_info and not snapshot %}
+                                    <a class="btn btn-primary btn-sm"
+                                       href="{% url 'ietf.doc.views_draft.edit_consensus' name=doc.name %}">
+                                        Edit
+                                    </a>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="{% if consensus != "Yes" %}text-danger{% else %}text-success{% endif %}"
+                                      title="Whether the document is the result of a community consensus process as defined in RFC 5741">
+                                    {{ consensus }}
+                                </span>
+                            </td>
+                        </tr>
+                    {% endif %}
+                    <tr>
+                        <td></td>
+                        <th scope="row">
+                            Telechat date
+                        </th>
+                        <td class="edit">
+                            {% if can_edit and not snapshot %}
+                                <a class="btn btn-primary btn-sm"
+                                   href="{% url 'ietf.doc.views_doc.telechat_date' name=doc.name %}">
+                                    Edit
+                                </a>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if telechat %}
+                                On agenda of {{ telechat.telechat_date }} IESG telechat
+                                {% if telechat.returning_item %}(returning item){% endif %}
+                            {% else %}
+                                <span class="text-muted">
+                                    (None)
+                                </span>
+                            {% endif %}
+                            {% if iesg_ballot_summary %}
+                                <br>
+                                <i>{{ iesg_ballot_summary }}</i>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td></td>
+                        <th scope="row">
+                            Responsible AD
+                        </th>
+                        <td class="edit">
+                            {% if can_edit %}
+                                <a class="btn btn-primary btn-sm"
+                                   href="{% url 'ietf.doc.views_draft.edit_ad' name=doc.name %}">
+                                    Edit
+                                </a>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if doc.ad %}
+                                {% person_link doc.ad %}
+                            {% else %}
+                                <span class="text-muted">
+                                    (None)
+                                </span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% if iesg_state.slug != 'idexists' %}
+                        {% if doc.note or can_edit %}
+                            <tr>
+                                <td></td>
+                                <th scope="row">
+                                    IESG note
+                                </th>
+                                <td class="edit">
+                                    {% if can_edit and not snapshot %}
+                                        <a class="btn btn-primary btn-sm"
+                                           href="{% url 'ietf.doc.views_draft.edit_iesg_note' name=doc.name %}">
+                                            Edit
+                                        </a>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if doc.note %}
+                                        {{ doc.note|linebreaksbr }}
+                                    {% else %}
+                                        <span class="text-muted">
+                                            (None)
+                                        </span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endif %}
+                    {% endif %}
+                    <tr>
+                        <td></td>
+                        <th scope="row">
+                            Send notices to
+                        </th>
+                        <td class="edit">
+                            {% if can_edit_notify and not snapshot %}
+                                <a class="btn btn-primary btn-sm"
+                                   href="{% url 'ietf.doc.views_doc.edit_notify' name=doc.name %}">
+                                    Edit
+                                </a>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if doc.notify %}
+                                {{ doc.notify|linkify }}
+                            {% else %}
+                                <span class="text-muted">
+                                    (None)
+                                </span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                </tbody>
+            {% endif %}
+            {% if can_edit_iana_state or iana_review_state or iana_experts_state or iana_experts_comment %}
+                <tbody class="meta border-top">
+                    {% if iana_review_state or can_edit_iana_state %}
+                        <tr>
+                            <th scope="row">
+                                IANA
+                            </th>
+                            <th scope="row">
+                                <a href="{% url "ietf.help.views.state" doc=doc.type.slug type="iana-review" %}">
+                                    IANA review state
+                                </a>
+                            </th>
+                            <td class="edit">
+                                {% if can_edit_iana_state and not snapshot %}
+                                    <a class="btn btn-primary btn-sm"
+                                       href="{% url 'ietf.doc.views_draft.change_iana_state' name=doc.name state_type="iana-review" %}">
+                                        Edit
+                                    </a>
+                                {% endif %}
+                            </td>
+                            <td class="{% if iana_review_state|slugify|slice:7 != "iana-ok" %}text-danger{% else %}text-success{% endif %}">
+                                {% if not iana_review_state %}
+                                    <span class="text-muted">
+                                        (None)
+                                    </span>
+                                {% else %}
+                                    {{ iana_review_state }}
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endif %}
+                    {% if iana_action_state or can_edit_iana_state %}
+                        <tr>
+                            <th scope="row">
+                                {% if not can_edit_iana_state and not iana_review_state %}IANA{% endif %}
+                            </th>
+                            <th scope="row">
+                                <a href="{% url "ietf.help.views.state" doc=doc.type.slug type="iana-action" %}">
+                                    IANA action state
+                                </a>
+                            </th>
+                            <td class="edit">
+                                {% if can_edit_iana_state and not snapshot %}
+                                    <a class="btn btn-primary btn-sm"
+                                       href="{% url 'ietf.doc.views_draft.change_iana_state' name=doc.name state_type="iana-action" %}">
+                                        Edit
+                                    </a>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if not iana_action_state %}
+                                    <span class="text-muted">
+                                        (None)
+                                    </span>
+                                {% else %}
+                                    {{ iana_action_state }}
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endif %}
+                    {% if iana_experts_state or can_edit_iana_state %}
+                        <tr>
+                            <th scope="row">
+                                {% if not can_edit_iana_state and not iana_review_state and not iana_action_state %}IANA{% endif %}
+                            </th>
+                            <th scope="row">
+                                <a href="{% url "ietf.help.views.state" doc=doc.type.slug type="iana-experts" %}">
+                                    IANA expert review state
+                                </a>
+                            </th>
+                            <td class="edit">
+                                {% if can_edit_iana_state and not snapshot %}
+                                    <a class="btn btn-primary btn-sm"
+                                       href="{% url 'ietf.doc.views_draft.change_iana_state' name=doc.name state_type="iana-experts" %}">
+                                        Edit
+                                    </a>
+                                {% endif %}
+                            </td>
+                            <td class="{% if iana_experts_state|slugify|slice:"-2:" != "ok" %}text-danger{% else %}text-success{% endif %}">
+                                {% if not iana_experts_state %}
+                                    <span class="text-muted">
+                                        (None)
+                                    </span>
+                                {% else %}
+                                    {{ iana_experts_state }}
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endif %}
+                    {% if iana_experts_comment or can_edit_iana_state %}
+                        <tr>
+                            <th scope="row">
+                                {% if not can_edit_iana_state and not iana_review_state and not iana_action_state and not iana_experts_state %}
+                                    IANA
+                                {% endif %}
+                            </th>
+                            <th scope="row">
+                                IANA expert review comments
+                            </th>
+                            <td class="edit">
+                                {% if can_edit_iana_state and not snapshot %}
+                                    <a class="btn btn-primary btn-sm"
+                                       href="{% url 'ietf.doc.views_draft.add_iana_experts_comment' name=doc.name %}">
+                                        Edit
+                                    </a>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if not iana_experts_comment %}
+                                    <span class="text-muted">
+                                        (None)
+                                    </span>
+                                {% else %}
+                                    {{ iana_experts_comment }}
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            {% endif %}
+            {% if rfc_editor_state %}
+                <tbody class="meta border-top">
+                    <tr>
+                        <th scope="row">
+                            RFC Editor
+                        </th>
+                        <th scope="row">
+                            <a href="{% url "ietf.help.views.state" doc=doc.type.slug type="rfceditor" %}">
+                                RFC Editor state
+                            </a>
+                        </th>
+                        <td class="edit">
+                        </td>
+                        <td>
+                            {{ rfc_editor_state }}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td></td>
+                        <th scope="row">
+                            Details
+                        </th>
+                        <td class="edit">
+                        </td>
+                        <td>
+                            <div>
+                                <a href="https://www.rfc-editor.org/queue2.html#{{ doc.name }}">
+                                    Publication queue entry
+                                </a>
+                            </div>
+                            {% if rfc_editor_auth48_url %}
+                                <div>
+                                    <a href="{{ rfc_editor_auth48_url }}">
+                                        Auth48 status
+                                    </a>
+                                </div>
+                            {% endif %}
+                        </td>
+                    </tr>
+                </tbody>
+            {% endif %}
+        </table>
+        <div class="buttonlist">
+            <a class="btn btn-primary btn-sm"
+               href="mailto:{{ doc.name }}@ietf.org?subject=Mail%20regarding%20{{ doc.name }}">
+                <i class="bi bi-envelope">
+                </i>
+                Email authors
+            </a>
+            {% if doc.group.type.slug == 'wg' or doc.group.type.slug == 'rg' %}
+                <a class="btn btn-primary btn-sm"
+                   href="mailto:{{ doc.group.list_email }}?subject=Mail%20regarding%20{{ doc.name }}">
+                    <i class="bi bi-envelope">
+                    </i>
+                    Email {{ doc.group.type }}
+                </a>
+            {% endif %}
+            <a class="btn btn-primary btn-sm"
+               href="{% url "ietf.ipr.views.search" %}?submit=draft&amp;id={{ doc.name }}"
+               rel="nofollow">
+                <i class="bi bi-lightning">
+                </i>
+                IPR
+                {% if doc.related_ipr %}
+                    <span class="badge rounded-pill">
+                        {{ doc.related_ipr|length }}
+                    </span>
+                {% endif %}
+            </a>
+            <a class="btn btn-primary btn-sm"
+               href="{% url 'ietf.doc.views_doc.document_references' doc.canonical_name %}"
+               rel="nofollow">
+                <i class="bi bi-arrow-left">
+                </i>
+                References
+            </a>
+            <a class="btn btn-primary btn-sm"
+               href="{% url 'ietf.doc.views_doc.document_referenced_by' doc.canonical_name %}"
+               rel="nofollow">
+                <i class="bi bi-arrow-right">
+                </i>
+                Referenced by
+            </a>
+            <a class="btn btn-primary btn-sm"
+               href="{{ settings.IDNITS_BASE_URL }}?url=https://www.ietf.org/archive/id/{{ doc.filename_with_rev }}"
+               rel="nofollow"
+               target="_blank">
+                <i class="bi bi-exclamation">
+                </i>
+                Nits
+            </a>
+            <div class="dropdown inline">
+                <button class="btn btn-primary btn-sm dropdown-toggle"
+                        type="button"
+                        id="ddSearchMenu"
+                        data-bs-toggle="dropdown"
+                        aria-expanded="true">
+                    <i class="bi bi-search">
+                    </i>
+                    Search lists
+                </button>
+                <ul class="dropdown-menu" role="menu">
+                    <li role="presentation">
+                        <a class="dropdown-item"
+                           href="https://mailarchive.ietf.org/arch/search?q=%22{{ doc.name }}%22"
+                           rel="nofollow"
+                           target="_blank">
+                            IETF Mail Archive
+                        </a>
+                    </li>
+                    <li role="presentation">
+                        <a class="dropdown-item"
+                           href="https://www.google.com/search?as_q={{ doc.name }}&amp;as_sitesearch={{ search_archive }}"
+                           rel="nofollow"
+                           target="_blank">
+                            Google
+                        </a>
+                    </li>
+                    {% if user|has_role:"Area Director" %}
+                        <li role="presentation">
+                            <a class="dropdown-item"
+                               href="https://www.iesg.org/bin/c5i?mid=6&amp;rid=77&amp;target={{ doc.name }}"
+                               rel="nofollow"
+                               target="_blank">
+                                ARO
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+            {% if user.is_authenticated %}
+                <a class="btn btn-primary btn-sm track-untrack-doc {% if not doc.tracked_in_personal_community_list %}hide{% endif %}"
+                   href="{% url "ietf.community.views.untrack_document" username=user.username name=doc.name %}"
+                   title="Remove from your personal I-D list">
+                    <i class="bi bi-bookmark-check-fill">
+                    </i>
+                    Untrack
+                </a>
+                <a class="btn btn-primary btn-sm track-untrack-doc {% if doc.tracked_in_personal_community_list %}hide{% endif %}"
+                   href="{% url "ietf.community.views.track_document" username=user.username name=doc.name %}"
+                   title="Add to your personal I-D list">
+                    <i class="bi bi-bookmark">
+                    </i>
+                    Track
+                </a>
+            {% endif %}
+            {% if user.review_teams %}
+                <a class="btn btn-primary btn-sm review-wish-add-remove-doc ajax {% if not doc.has_review_wish %}hide{% endif %}"
+                   href="{% url "ietf.doc.views_review.review_wishes_remove" name=doc.name %}?next={{ request.get_full_path|urlencode }}"
+                   title="Remove from your review wishes for all teams">
+                    <i class="bi bi-chat-left-heart-fill">
+                    </i>
+                    Remove review wishes
+                </a>
+                <a class="btn btn-primary btn-sm review-wish-add-remove-doc {% if user.review_teams|length_is:"1" %}ajax {% endif %}{% if doc.has_review_wish %}hide{% endif %}"
+                   href="{% url "ietf.doc.views_review.review_wish_add" name=doc.name %}?next={{ request.get_full_path|urlencode }}"
+                   title="Add to your review wishes">
+                    <i class="bi bi-chat-left-heart">
+                    </i>
+                    Add review wish
+                </a>
+            {% endif %}
+            {% if can_edit and iesg_state.slug != 'idexists' %}
+                <a class="btn btn-primary btn-sm"
+                   href="{% url 'ietf.doc.views_ballot.lastcalltext' name=doc.name %}">
+                    Last call text
+                </a>
+                <a class="btn btn-primary btn-sm"
+                   href="{% url 'ietf.doc.views_ballot.ballot_writeupnotes' name=doc.name %}">
+                    Ballot text
+                </a>
+                <a class="btn btn-primary btn-sm"
+                   href="{% url 'ietf.doc.views_ballot.ballot_approvaltext' name=doc.name %}">
+                    Announcement text
+                </a>
+            {% endif %}
+            {% if actions %}
+                {% for label, url in actions %}
+                    <a class="btn btn-primary btn-sm" href="{{ url }}">
+                        {{ label|capfirst_allcaps }}
+                    </a>
+                {% endfor %}
+            {% endif %}
+        </div>
+        {% if doc.get_state_slug == "active" or doc.get_state_slug == "rfc" %}
+            <div class="card mt-5">
+                <div class="card-header">
+                    {% if doc.get_state_slug == "rfc" and not snapshot %}
+                        RFC {{ rfc_number }}
+                    {% else %}
+                        {{ name }}-{{ doc.rev }}
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    <pre>{{ content|sanitize|safe|default:"(Unavailable)" }}</pre>
+                </div>
+            </div>
+            {% if split_content %}
+                <a class="btn btn-primary my-3" href="?include_text=1">
+                    <i class="bi bi-caret-down">
+                    </i>
+                    Show full document
+                </a>
+            {% endif %}
+        {% else %}
+            <div class="card border-warning mt-5">
+                <div class="card-header bg-warning">
+                    <p><b>This Internet-Draft is no longer active. A copy of
+                    the expired Internet-Draft is available in these formats:</b></p>
+
+                    {% include "doc/document_format_buttons.html" %}
+                </div>
+                <div class="card-body">
+                    <p class="h5 card-title">
+                        Abstract
+                    </p>
+                    <p class="card-text">
+                        {{ doc.abstract }}
+                    </p>
+                    <p class="h5 card-title">
+                        Authors
+                    </p>
+                    <p class="card-text">
+                        {% for author in doc.documentauthor_set.all %}
+                            {% person_link author.person %}
+                            {% if not forloop.last %}<br>{% endif %}
+                        {% endfor %}
+                    </p>
+                    <p class="text-muted card-text">
+                        (Note: The e-mail addresses provided for the authors of this Internet-Draft may no longer be valid.)
+                    </p>
+                </div>
+            </div>
+        {% endif %}
+    {% endblock %}
+    {% block js %}
+        <script src="{% static 'ietf/js/d3.js' %}">
+        </script>
+        <script src="{% static 'ietf/js/document_timeline.js' %}">
+        </script>
+    {% endblock %}

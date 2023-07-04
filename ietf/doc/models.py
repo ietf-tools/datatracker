@@ -994,7 +994,7 @@ class Document(DocumentInfo):
 
         This is the rfc publication date for RFCs, and the new-revision date for other documents.
         """
-        if self.get_state_slug() == "rfc":
+        if self.is_rfc():
             # As of Sept 2022, in ietf.sync.rfceditor.update_docs_from_rfc_index() `published_rfc` events are
             # created with a timestamp whose date *in the PST8PDT timezone* is the official publication date
             # assigned by the RFC editor.
