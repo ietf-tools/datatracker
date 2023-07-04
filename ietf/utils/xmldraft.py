@@ -136,8 +136,8 @@ class XMLDraft(Draft):
     def get_title(self):
         return self.xmlroot.findtext('front/title').strip()
 
-    def get_creation_date(self):
-        date_elt = self.xmlroot.find("front/date")
+    @staticmethod
+    def parse_creation_date(date_elt):
         if date_elt is not None:
             # ths mimics handling of date elements in the xml2rfc text/html writers
             today = date_today()
@@ -152,7 +152,11 @@ class XMLDraft(Draft):
                 else:
                     day = 15
             return datetime.date(year, month, day)
+
         return None
+
+    def get_creation_date(self):
+        return self.parse_creation_date(self.xmlroot.find("front/date"))
     
     # todo fix the implementation of XMLDraft.get_abstract()
     #
