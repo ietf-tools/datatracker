@@ -4429,10 +4429,10 @@ browserlist@latest:
   languageName: node
   linkType: hard
 
-"highcharts@npm:11.0.1":
-  version: 11.0.1
-  resolution: "highcharts@npm:11.0.1"
-  checksum: 773a7b876502d616b7c5f522610b061cc714233a6ecdd7f7d073151fdf53bc597c01a758fbda5bba9069a0ee487e7defddfbdb1de73a78db6267a9257250137c
+"highcharts@npm:11.1.0":
+  version: 11.1.0
+  resolution: "highcharts@npm:11.1.0"
+  checksum: f9b8cdc38b3b41bcc4c3a2331d9b1c769400639e2d0094484a0f5274aaba619551b95b442a69f7f4e47c2c8445681e3651f6036207fe1928a1a982f5278ae85e
   languageName: node
   linkType: hard
 
@@ -6651,7 +6651,7 @@ browserlist@latest:
     eslint-plugin-promise: 6.1.1
     eslint-plugin-vue: 9.14.1
     file-saver: 2.0.5
-    highcharts: 11.0.1
+    highcharts: 11.1.0
     html-validate: 7.18.1
     ical.js: 1.5.0
     jquery: 3.7.0
@@ -6670,7 +6670,7 @@ browserlist@latest:
     pinia: 2.1.3
     pinia-plugin-persist: 1.0.0
     pug: 3.0.2
-    sass: 1.62.1
+    sass: 1.63.4
     seedrandom: 3.0.5
     select2: 4.1.0-rc.0
     select2-bootstrap-5-theme: 1.3.0
@@ -6734,16 +6734,16 @@ browserlist@latest:
   languageName: node
   linkType: hard
 
-"sass@npm:1.62.1":
-  version: 1.62.1
-  resolution: "sass@npm:1.62.1"
+"sass@npm:1.63.4":
+  version: 1.63.4
+  resolution: "sass@npm:1.63.4"
   dependencies:
     chokidar: ">=3.0.0 <4.0.0"
     immutable: ^4.0.0
     source-map-js: ">=0.6.2 <2.0.0"
   bin:
     sass: sass.js
-  checksum: 1b1b3584b38a63dd94156b65f13b90e3f84b170a38c3d5e3fa578b7a32a37aeb349b4926b0eaf9448d48e955e86b1ee01b13993f19611dad8068af07a607c13b
+  checksum: 12bde5beff85a7018157d90c8b9d5aec8b56832f89fcfeca146f10936eecf97e669d22fd41f812b3407ed259bbb114d69c9ecbfc7ee9b15308211fb910cdf5eb
   languageName: node
   linkType: hard
 
