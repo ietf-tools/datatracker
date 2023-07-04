@@ -437,6 +437,24 @@ class XMLDraftTests(TestCase):
             self.assertEqual(
                 XMLDraft.parse_creation_date({"year": "", "month": "", "day": ""}), today
             )
+            self.assertEqual(
+                XMLDraft.parse_creation_date({"year": str(today.year), "month": str(today.month), "day": ""}),
+                today,
+            )
+            # When year/month do not match, day should be 15th of the month
+            self.assertEqual(
+                XMLDraft.parse_creation_date({"year": str(today.year - 1), "month": str(today.month), "day": ""}),
+                datetime.date(today.year - 1, today.month, 15),
+            )
+            self.assertEqual(
+                XMLDraft.parse_creation_date(
+                    {
+                        "year": str(today.year), 
+                        "month": "1" if today.month != 1 else "2", 
+                        "day": "",
+                    }),
+                datetime.date(today.year, 1 if today.month != 1 else 2, 15),
+            )
 
 
 class NameTests(TestCase):
