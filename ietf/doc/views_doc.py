@@ -264,12 +264,6 @@ def document_main(request, name, rev=None, document_html=False):
             roles = []
 
         can_change_stream = bool(can_edit or roles)
-        can_edit_iana_state = has_role(request.user, ("Secretariat", "IANA"))
-
-        can_edit_replaces = has_role(request.user, ("Area Director", "Secretariat", "IRTF Chair", "WG Chair", "RG Chair", "WG Secretary", "RG Secretary"))
-
-        is_author = request.user.is_authenticated and doc.documentauthor_set.filter(person__user=request.user).exists()
-        can_view_possibly_replaces = can_edit_replaces or is_author
 
         rfc_aliases = [prettify_std_name(a) for a in aliases
                        if a.startswith("fyi") or a.startswith("std") or a.startswith("bcp")]
