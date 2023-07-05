@@ -11,7 +11,7 @@
         <th scope="row">{% if document_html %}Document type{% else %}Type{% endif %}</th>
         <td class="edit"></td>
         <td>
-            {% if doc.is_rfc %}
+            {% if doc.type_id == "rfc" %}
                 <span class="text-success">RFC
                     {% if not document_html %}
                     - {{ doc.std_level }}
@@ -19,7 +19,7 @@
                         <span class="badge rounded-pill badge-{% if not snapshot %}{{ doc|std_level_to_label_format }}{% else %}draft{% endif %}">{{ doc.std_level }}</span>
                     {% endif %}
                 </span>
-                {% if doc.is_rfc %}
+                {% if doc.type_id == "rfc" %}
                     {% if document_html %}<br>{% else %}({% endif %}{{ doc.pub_date|date:"F Y" }}{% if not document_html %}){% endif %}
                 {% else %}
                     <span class="text-muted">(Publication date unknown)</span>
@@ -132,7 +132,7 @@
         </td>
     </tr>
     {% endif %}
-    {% if not doc.is_rfc %}
+    {% if doc.type_id != "rfc" %}
         {% if replaces or not document_html and can_edit_stream_info %}
             <tr>
                 <td></td>
@@ -265,7 +265,7 @@
             {% endif %}
         </td>
     </tr>
-    {% if not doc.is_rfc and not snapshot %}
+    {% if doc.type_id != "rfc" and not snapshot %}
         <tr>
             <td></td>
             <th scope="row">
@@ -341,7 +341,7 @@
             </tr>
         {% endif %}
     {% endfor %}
-        {% if not doc.is_rfc %}{# do not show reviews or conflict_reviews for RFCs, even if present #}
+        {% if doc.type_id != "rfc" %}{# do not show reviews or conflict_reviews for RFCs, even if present #}
             {% if review_assignments or can_request_review %}
                 <tr>
                     <td></td>

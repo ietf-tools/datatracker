@@ -240,7 +240,7 @@ def document_main(request, name, rev=None, document_html=False):
 
 
     # specific document types
-    if doc.is_rfc():
+    if doc.type_id == "rfc":
         split_content = request.COOKIES.get("full_draft", settings.USER_PREFERENCE_DEFAULTS["full_draft"]) == "off"
         if request.GET.get('include_text') == "0":
             split_content = True
@@ -988,7 +988,7 @@ def document_html(request, name, rev=None):
     doc = found.documents.get()
     rev = found.matched_rev
 
-    if not requested_rev and doc.is_rfc(): # Someone asked for /doc/html/8989
+    if not requested_rev and doc.type_id == "rfc": # Someone asked for /doc/html/8989
         if not name.startswith('rfc'):
             return redirect('ietf.doc.views_doc.document_html', name=doc.canonical_name())
 
@@ -998,7 +998,12 @@ def document_html(request, name, rev=None):
     if not os.path.exists(doc.get_file_name()):
         raise Http404("File not found: %s" % doc.get_file_name())
 
-    return document_main(request, name=doc.name if requested_rev else doc.canonical_name(), rev=doc.rev if requested_rev or not doc.is_rfc() else None, document_html=True)
+    return document_main(
+        request,
+        name=doc.name if requested_rev else doc.canonical_name(),
+        rev=doc.rev if requested_rev or doc.type_id != "rfc" else None,
+        document_html=True,
+    )
 
 def document_pdfized(request, name, rev=None, ext=None):
 
@@ -1221,7 +1226,7 @@ def document_bibtex(request, name, rev=None):
                 doc = h
                 break
 
-    if doc.is_rfc():
+    if doc.type_id == "rfc":
         # This needs to be replaced with a lookup, as the mapping may change
         # over time.  Probably by updating ietf/sync/rfceditor.py to add the
         # as a DocAlias, and use a method on Document to retrieve it.

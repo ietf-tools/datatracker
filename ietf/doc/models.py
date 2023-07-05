@@ -245,7 +245,7 @@ class DocumentInfo(models.Model):
                     format = settings.DOC_HREFS[self.type_id]
             elif self.type_id in settings.DOC_HREFS:
                 self.is_meeting_related = False
-                if self.is_rfc():
+                if self.type_id == "rfc":
                     format = settings.DOC_HREFS['rfc']
                 else:
                     format = settings.DOC_HREFS[self.type_id]
@@ -382,9 +382,6 @@ class DocumentInfo(models.Model):
                 return state.name
         else:
             return state.name
-
-    def is_rfc(self):
-        return self.type_id == "rfc"
 
     def author_list(self):
         best_addresses = []
@@ -994,7 +991,7 @@ class Document(DocumentInfo):
 
         This is the rfc publication date for RFCs, and the new-revision date for other documents.
         """
-        if self.is_rfc():
+        if self.type_id == "rfc":
             # As of Sept 2022, in ietf.sync.rfceditor.update_docs_from_rfc_index() `published_rfc` events are
             # created with a timestamp whose date *in the PST8PDT timezone* is the official publication date
             # assigned by the RFC editor.

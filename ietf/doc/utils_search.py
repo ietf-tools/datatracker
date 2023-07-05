@@ -93,7 +93,7 @@ def fill_in_document_table_attributes(docs, have_telechat_date=False):
         # emulate canonical name which is used by a lot of the utils
         # d.canonical_name = wrap_value(rfc_aliases[d.pk] if d.pk in rfc_aliases else d.name)
 
-        if d.is_rfc() and d.latest_event_cache["published_rfc"]:
+        if d.type_id == "rfc" and d.latest_event_cache["published_rfc"]:
             d.latest_revision_date = d.latest_event_cache["published_rfc"].time
         elif d.latest_event_cache["new_revision"]:
             d.latest_revision_date = d.latest_event_cache["new_revision"].time
