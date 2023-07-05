@@ -180,9 +180,9 @@ def interesting_doc_relations(doc):
     else:
         raise TypeError("Expected this method to be called with a Document or DocHistory object")
 
-    that_relationships = STATUSCHANGE_RELATIONS + ('conflrev', 'replaces', 'possibly_replaces', 'updates', 'obs') 
+    that_relationships = STATUSCHANGE_RELATIONS + ('conflrev', 'replaces', 'possibly_replaces', 'updates', 'obs', 'became_rfc') 
 
-    that_doc_relationships = ('replaces', 'possibly_replaces', 'updates', 'obs')
+    that_doc_relationships = ('replaces', 'possibly_replaces', 'updates', 'obs', 'became_rfc')
 
     # TODO: This returns the relationships in database order, which may not be the order we want to display them in.
     interesting_relations_that = cls.objects.filter(target__docs=target, relationship__in=that_relationships).select_related('source')
@@ -240,7 +240,137 @@ def document_main(request, name, rev=None, document_html=False):
 
 
     # specific document types
-    if doc.type_id == "draft":
+    if doc.is_rfc():
+        split_content = request.COOKIES.get("full_draft", settings.USER_PREFERENCE_DEFAULTS["full_draft"]) == "off"
+        if request.GET.get('include_text') == "0":
+            split_content = True
+        elif request.GET.get('include_text') == "1":
+            split_content = False
+        else:
+            pass
+
+        interesting_relations_that, interesting_relations_that_doc = interesting_doc_relations(doc)
+
+        can_edit = has_role(request.user, ("Area Director", "Secretariat"))
+        can_edit_authors = has_role(request.user, ("Secretariat"))
+
+        stream_slugs = StreamName.objects.values_list("slug", flat=True)
+        # For some reason, AnonymousUser has __iter__, but is not iterable,
+        # which causes problems in the filter() below.  Work around this:  
+        if request.user.is_authenticated:
+            roles = Role.objects.filter(group__acronym__in=stream_slugs, person__user=request.user)
+            roles = group_features_role_filter(roles, request.user.person, 'docman_roles')
+        else:
+            roles = []
+
+        can_change_stream = bool(can_edit or roles)
+
+        rfc_aliases = [prettify_std_name(a) for a in aliases
+                       if a.startswith("fyi") or a.startswith("std") or a.startswith("bcp")]
+
+        file_urls, found_types = build_file_urls(doc)
+        content = doc.text_or_error() # pyflakes:ignore
+        content = markup_txt.markup(maybe_split(content, split=split_content))
+
+        if not found_types:
+            content = "This RFC is not currently available online."
+            split_content = False
+        elif "txt" not in found_types:
+            content = "This RFC is not available in plain text format."
+            split_content = False
+
+        # mailing list search archive
+        search_archive = "www.ietf.org/mail-archive/web/"
+        if doc.stream_id == "ietf" and group.type_id == "wg" and group.list_archive:
+            search_archive = group.list_archive
+
+        search_archive = quote(search_archive, safe="~")
+
+        # status changes
+        status_changes = []
+        proposed_status_changes = []
+        for r in interesting_relations_that.filter(relationship__in=STATUSCHANGE_RELATIONS):
+            state_slug = r.source.get_state_slug()
+            if state_slug in ('appr-sent', 'appr-pend'):
+                status_changes.append(r)
+            elif state_slug in ('needshep','adrev','iesgeval','defer','appr-pr'):
+                proposed_status_changes.append(r)
+            else:
+                pass
+
+        presentations = doc.future_presentations()
+
+        augment_docs_and_user_with_user_info([doc], request.user)
+
+        exp_comment = doc.latest_event(IanaExpertDocEvent,type="comment")
+        iana_experts_comment = exp_comment and exp_comment.desc
+
+        # Do not show the Auth48 URL in the "Additional URLs" section
+        additional_urls = doc.documenturl_set.exclude(tag_id='auth48')
+
+        html = None
+        js = None
+        css = None
+        diff_revisions = None
+        simple_diff_revisions = None
+        if document_html:
+            diff_revisions=get_diff_revisions(request, name, doc if isinstance(doc,Document) else doc.doc)
+            simple_diff_revisions = [t[1] for t in diff_revisions if t[0] == doc.name]
+            simple_diff_revisions.reverse()
+            if rev and rev != doc.rev: 
+                # No DocHistory was found matching rev - snapshot will be false
+                # and doc will be a Document object, not a DocHistory
+                snapshot = True
+                doc = doc.fake_history_obj(rev)
+            else:
+                html = doc.html_body()
+                if request.COOKIES.get("pagedeps") == "inline":
+                    js = Path(finders.find("ietf/js/document_html.js")).read_text()
+                    css = Path(finders.find("ietf/css/document_html_inline.css")).read_text()
+                    if html:
+                        css += Path(finders.find("ietf/css/document_html_txt.css")).read_text()
+
+        # todo replace document_html?
+        return render(request, "doc/document_rfc.html" if document_html is False else "doc/document_html.html",
+                                  dict(doc=doc,
+                                       document_html=document_html,
+                                       css=css,
+                                       js=js,
+                                       html=html,
+                                       group=group,
+                                       top=top,
+                                       name=doc.name,
+                                       content=content,
+                                       split_content=split_content,
+                                       revisions=simple_diff_revisions if document_html else revisions,
+                                       snapshot=snapshot,
+                                       latest_rev=latest_rev,
+                                       can_edit=can_edit,
+                                       can_edit_authors=can_edit_authors,
+                                       can_change_stream=can_change_stream,
+                                       rfc_number=doc.rfc_number,
+                                       draft_name=doc.name,
+                                       updates=interesting_relations_that_doc.filter(relationship="updates"),
+                                       updated_by=interesting_relations_that.filter(relationship="updates"),
+                                       obsoletes=interesting_relations_that_doc.filter(relationship="obs"),
+                                       obsoleted_by=interesting_relations_that.filter(relationship="obs"),
+                                       status_changes=status_changes,
+                                       proposed_status_changes=proposed_status_changes,
+                                       rfc_aliases=rfc_aliases,
+                                       has_errata=doc.pk and doc.tags.filter(slug="errata"), # doc.pk == None if using a fake_history_obj
+                                       file_urls=file_urls,
+                                       additional_urls=additional_urls,
+                                       rfc_editor_state=doc.get_state("draft-rfceditor"),
+                                       iana_review_state=doc.get_state("draft-iana-review"),
+                                       iana_action_state=doc.get_state("draft-iana-action"),
+                                       iana_experts_state=doc.get_state("draft-iana-experts"),
+                                       iana_experts_comment=iana_experts_comment,
+                                       search_archive=search_archive,
+                                       presentations=presentations,
+                                       diff_revisions=diff_revisions
+                                       ))
+
+    elif doc.type_id == "draft":
         split_content = request.COOKIES.get("full_draft", settings.USER_PREFERENCE_DEFAULTS["full_draft"]) == "off"
         if request.GET.get('include_text') == "0":
             split_content = True
@@ -278,43 +408,13 @@ def document_main(request, name, rev=None, document_html=False):
         is_author = request.user.is_authenticated and doc.documentauthor_set.filter(person__user=request.user).exists()
         can_view_possibly_replaces = can_edit_replaces or is_author
 
-        rfc_number = name[3:] if name.startswith("rfc") else None
-        draft_name = None
-        for a in aliases:
-            if a.startswith("draft"):
-                draft_name = a
-
-        rfc_aliases = [prettify_std_name(a) for a in aliases
-                       if a.startswith("fyi") or a.startswith("std") or a.startswith("bcp")]
-
         latest_revision = None
 
-        # Workaround to allow displaying last rev of draft that became rfc as a draft
-        # This should be unwound when RFCs become their own documents.
-        if snapshot:
-            doc.name = doc.doc.name
-            name = doc.doc.name
-        else:
-            name = doc.name
-
         file_urls, found_types = build_file_urls(doc)
-        if not snapshot and doc.get_state_slug() == "rfc":
-            # content
-            content = doc.text_or_error() # pyflakes:ignore
-            content = markup_txt.markup(maybe_split(content, split=split_content))
-
         content = doc.text_or_error() # pyflakes:ignore
         content = markup_txt.markup(maybe_split(content, split=split_content))
 
-        if not snapshot and doc.get_state_slug() == "rfc":
-            if not found_types:
-                content = "This RFC is not currently available online."
-                split_content = False
-            elif "txt" not in found_types:
-                content = "This RFC is not available in plain text format."
-                split_content = False
-        else:
-            latest_revision = doc.latest_event(NewRevisionDocEvent, type="new_revision")
+        latest_revision = doc.latest_event(NewRevisionDocEvent, type="new_revision")
 
         # ballot
         iesg_ballot_summary = None
@@ -494,7 +594,7 @@ def document_main(request, name, rev=None, document_html=False):
 
         augment_docs_and_user_with_user_info([doc], request.user)
 
-        published = doc.latest_event(type="published_rfc")
+        published = doc.latest_event(type="published_rfc")  # todo rethink this now that published_rfc is on rfc
         started_iesg_process = doc.latest_event(type="started_iesg_process")
 
         review_assignments = review_assignments_to_list_for_docs([doc]).get(doc.name, [])
@@ -511,12 +611,6 @@ def document_main(request, name, rev=None, document_html=False):
 
         # Do not show the Auth48 URL in the "Additional URLs" section
         additional_urls = doc.documenturl_set.exclude(tag_id='auth48')
-
-        # Stream description passing test
-        if doc.stream != None:
-            stream_desc = doc.stream.desc
-        else:
-            stream_desc = "(None)"
 
         html = None
         js = None
@@ -548,12 +642,11 @@ def document_main(request, name, rev=None, document_html=False):
                                        html=html,
                                        group=group,
                                        top=top,
-                                       name=name,
+                                       name=doc.name,
                                        content=content,
                                        split_content=split_content,
                                        revisions=simple_diff_revisions if document_html else revisions,
                                        snapshot=snapshot,
-                                       stream_desc=stream_desc,
                                        latest_revision=latest_revision,
                                        latest_rev=latest_rev,
                                        can_edit=can_edit,
@@ -571,8 +664,7 @@ def document_main(request, name, rev=None, document_html=False):
                                        can_request_review=can_request_review,
                                        can_submit_unsolicited_review_for_teams=can_submit_unsolicited_review_for_teams,
 
-                                       rfc_number=rfc_number,
-                                       draft_name=draft_name,
+                                       draft_name=doc.name,
                                        telechat=telechat,
                                        iesg_ballot_summary=iesg_ballot_summary,
                                        submission=submission,
@@ -589,7 +681,7 @@ def document_main(request, name, rev=None, document_html=False):
                                        conflict_reviews=conflict_reviews,
                                        status_changes=status_changes,
                                        proposed_status_changes=proposed_status_changes,
-                                       rfc_aliases=rfc_aliases,
+                                       # rfc_aliases=rfc_aliases,
                                        has_errata=doc.pk and doc.tags.filter(slug="errata"), # doc.pk == None if using a fake_history_obj
                                        published=published,
                                        file_urls=file_urls,
@@ -618,7 +710,7 @@ def document_main(request, name, rev=None, document_html=False):
                                        diff_revisions=diff_revisions
                                        ))
 
-    if doc.type_id == "charter":
+    elif doc.type_id == "charter":
         content = doc.text_or_error()     # pyflakes:ignore
         content = markup_txt.markup(content)
 
@@ -655,7 +747,7 @@ def document_main(request, name, rev=None, document_html=False):
                                        can_manage=can_manage,
                                        ))
 
-    if doc.type_id == "bofreq":
+    elif doc.type_id == "bofreq":
         content = markdown.markdown(doc.text_or_error())
         editors = bofreq_editors(doc)
         responsible = bofreq_responsible(doc)
@@ -675,7 +767,7 @@ def document_main(request, name, rev=None, document_html=False):
                                        editor_can_manage=editor_can_manage,
                                        ))
 
-    if doc.type_id == "conflrev":
+    elif doc.type_id == "conflrev":
         filename = "%s-%s.txt" % (doc.canonical_name(), doc.rev)
         pathname = os.path.join(settings.CONFLICT_REVIEW_PATH,filename)
 
@@ -705,7 +797,7 @@ def document_main(request, name, rev=None, document_html=False):
                                        approved_states=('appr-reqnopub-pend','appr-reqnopub-sent','appr-noprob-pend','appr-noprob-sent'),
                                        ))
 
-    if doc.type_id == "statchg":
+    elif doc.type_id == "statchg":
         filename = "%s-%s.txt" % (doc.canonical_name(), doc.rev)
         pathname = os.path.join(settings.STATUS_CHANGE_PATH,filename)
 
@@ -739,7 +831,7 @@ def document_main(request, name, rev=None, document_html=False):
                                        sorted_relations=sorted_relations,
                                        ))
 
-    if doc.type_id in ("slides", "agenda", "minutes", "bluesheets", "procmaterials",):
+    elif doc.type_id in ("slides", "agenda", "minutes", "bluesheets", "procmaterials",):
         can_manage_material = can_manage_materials(request.user, doc.group)
         presentations = doc.future_presentations()
         if doc.uploaded_filename:
@@ -795,7 +887,7 @@ def document_main(request, name, rev=None, document_html=False):
                                        ))
 
 
-    if doc.type_id == "review":
+    elif doc.type_id == "review":
         basename = "{}.txt".format(doc.name)
         pathname = os.path.join(doc.get_file_path(), basename)
         content = get_unicode_document_content(basename, pathname)
@@ -821,7 +913,7 @@ def document_main(request, name, rev=None, document_html=False):
                            assignments=assignments,
                       ))
 
-    if doc.type_id in ("chatlog", "polls"):
+    elif doc.type_id in ("chatlog", "polls"):
         if isinstance(doc,DocHistory):
             session = doc.doc.sessionpresentation_set.last().session
         else:
@@ -1084,9 +1176,9 @@ def document_history(request, name):
 
     # Get related docs whose history should be linked
     if doc.type_id == "draft":
-        related = doc.related_that_doc("became-rfc")
+        related = doc.related_that_doc("became_rfc")
     elif doc.type_id == "rfc":
-        related = doc.related_that("became-rfc")
+        related = doc.related_that("became_rfc")
     else:
         related = []
 

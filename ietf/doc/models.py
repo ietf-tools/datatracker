@@ -348,10 +348,9 @@ class DocumentInfo(models.Model):
                      iesg_state_summary = iesg_state_summary + "::"+"::".join(tag.name for tag in iesg_substate)
              
             if state.slug == "rfc":
-                # todo check this once became-rfc relationships are actually created
-                rfcs = self.related_that("became-rfc")  # should be only one
+                rfcs = self.related_that_doc("became_rfc")  # should be only one
                 if len(rfcs) > 0:
-                    rfc = rfcs[0]
+                    rfc = rfcs[0].document
                     return f"Became RFC {rfc.rfc_number} ({rfc.std_level})"
                 else:
                     return "Became RFC"
@@ -995,7 +994,7 @@ class Document(DocumentInfo):
 
         This is the rfc publication date for RFCs, and the new-revision date for other documents.
         """
-        if self.get_state_slug() == "rfc":
+        if self.is_rfc():
             # As of Sept 2022, in ietf.sync.rfceditor.update_docs_from_rfc_index() `published_rfc` events are
             # created with a timestamp whose date *in the PST8PDT timezone* is the official publication date
             # assigned by the RFC editor.
