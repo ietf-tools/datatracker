@@ -1024,6 +1024,7 @@ def build_file_urls(doc: Union[Document, DocHistory]):
             if doc.tags.filter(slug="verified-errata").exists():
                 file_urls.append(("with errata", settings.RFC_EDITOR_INLINE_ERRATA_URL.format(rfc_number=doc.rfc_number())))
         file_urls.append(("bibtex", urlreverse('ietf.doc.views_doc.document_bibtex',kwargs=dict(name=name))))
+        file_urls.append(("bibxml", urlreverse('ietf.doc.views_doc.document_bibxml',kwargs=dict(name=name))))
     elif doc.rev:
         base_path = os.path.join(settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR, doc.name + "-" + doc.rev + ".")
         possible_types = settings.IDSUBMIT_FILE_TYPES
@@ -1038,6 +1039,7 @@ def build_file_urls(doc: Union[Document, DocHistory]):
             file_urls.append(("htmlized", urlreverse('ietf.doc.views_doc.document_html', kwargs=dict(name=doc.name, rev=doc.rev))))
             file_urls.append(("pdfized", urlreverse('ietf.doc.views_doc.document_pdfized', kwargs=dict(name=doc.name, rev=doc.rev))))
         file_urls.append(("bibtex", urlreverse('ietf.doc.views_doc.document_bibtex',kwargs=dict(name=doc.name,rev=doc.rev))))
+        file_urls.append(("bibxml", urlreverse('ietf.doc.views_doc.document_bibxml',kwargs=dict(name=doc.name,rev=doc.rev))))
     else:
         # As of 2022-12-14, there are 1463 Document and 3136 DocHistory records with type='draft' and rev=''.
         # All of these are in the rfc state and are covered by the above cases.
