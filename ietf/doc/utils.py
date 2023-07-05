@@ -1024,7 +1024,6 @@ def build_file_urls(doc: Union[Document, DocHistory]):
             if doc.tags.filter(slug="verified-errata").exists():
                 file_urls.append(("with errata", settings.RFC_EDITOR_INLINE_ERRATA_URL.format(rfc_number=doc.rfc_number())))
         file_urls.append(("bibtex", urlreverse('ietf.doc.views_doc.document_bibtex',kwargs=dict(name=name))))
-        file_urls.append(("bibxml", urlreverse('ietf.doc.views_doc.document_bibxml',kwargs=dict(name=name))))
     elif doc.rev:
         base_path = os.path.join(settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR, doc.name + "-" + doc.rev + ".")
         possible_types = settings.IDSUBMIT_FILE_TYPES

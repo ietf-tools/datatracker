@@ -312,11 +312,11 @@ class MiscTests(TestCase):
         self.assertEqual(types, ['xml'])
 
         urls, types = build_file_urls(WgRfcFactory(rev=''))
-        self.assertEqual(['pdf', 'bibtex', 'bibxml'], [t for t, _ in urls])
+        self.assertEqual(['pdf', 'bibtex'], [t for t, _ in urls])
         self.assertEqual(types, ['pdf'])
 
         urls, types = build_file_urls(WgRfcFactory(rev='23'))
-        self.assertEqual(['pdf', 'bibtex', 'bibxml'], [t for t, _ in urls])
+        self.assertEqual(['pdf', 'bibtex'], [t for t, _ in urls])
         self.assertEqual(types, ['pdf'])
 
 
