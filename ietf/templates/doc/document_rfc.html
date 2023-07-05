@@ -196,14 +196,7 @@
                 </i>
                 Referenced by
             </a>
-            <a class="btn btn-primary btn-sm"
-               href="{{ settings.IDNITS_BASE_URL }}?url=https://www.ietf.org/archive/id/{{ doc.filename_with_rev }}"
-               rel="nofollow"
-               target="_blank">
-                <i class="bi bi-exclamation">
-                </i>
-                Nits
-            </a>
+            {# document_draft shows Nits here, excluded for RFCs #}
             <div class="dropdown inline">
                 <button class="btn btn-primary btn-sm dropdown-toggle"
                         type="button"
