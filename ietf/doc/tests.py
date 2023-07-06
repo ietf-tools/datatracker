@@ -1981,7 +1981,7 @@ class DocTestCase(TestCase):
         r = self.client.get(url)
         entry = self._parse_bibtex_response(r)["rfc%s"%num]
         self.assertEqual(entry['series'],   'Request for Comments')
-        self.assertEqual(entry['number'],   num)
+        self.assertEqual(int(entry['number']),   num)
         self.assertEqual(entry['doi'],      '10.17487/RFC%s'%num)
         self.assertEqual(entry['year'],     '2010')
         self.assertEqual(entry['month'].lower()[0:3], 'oct')
@@ -1995,7 +1995,7 @@ class DocTestCase(TestCase):
                   std_level_id =    'inf',
                   time =            datetime.datetime(1990, 4, 1, tzinfo=ZoneInfo(settings.TIME_ZONE)),
               )
-        num = april1.rfc_number()
+        num = april1.rfc_number
         DocEventFactory.create(
             doc=april1,
             type='published_rfc',
@@ -2007,7 +2007,7 @@ class DocTestCase(TestCase):
         self.assertEqual(r.get('Content-Type'), 'text/plain; charset=utf-8')
         entry = self._parse_bibtex_response(r)["rfc%s"%num]
         self.assertEqual(entry['series'],   'Request for Comments')
-        self.assertEqual(entry['number'],   num)
+        self.assertEqual(int(entry['number']),   num)
         self.assertEqual(entry['doi'],      '10.17487/RFC%s'%num)
         self.assertEqual(entry['year'],     '1990')
         self.assertEqual(entry['month'].lower()[0:3],    'apr')

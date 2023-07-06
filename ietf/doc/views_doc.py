@@ -1241,31 +1241,35 @@ def document_bibtex(request, name, rev=None):
 
     doc = get_object_or_404(Document, docalias__name=name)
 
-    latest_revision = doc.latest_event(NewRevisionDocEvent, type="new_revision")
-    replaced_by = [d.name for d in doc.related_that("replaces")]
-    published = doc.latest_event(type="published_rfc") is not None
-    rfc = latest_revision.doc if latest_revision and latest_revision.doc.get_state_slug() == "rfc" else None
+    doi = None
+    draft_became_rfc = None
+    replaced_by = None
+    latest_revision = None
+    if doc.type_id == "draft":
+        latest_revision = doc.latest_event(NewRevisionDocEvent, type="new_revision")
+        replaced_by = [d.name for d in doc.related_that("replaces")]
+        draft_became_rfc_alias = next(iter(doc.related_that_doc("became_rfc")), None)
 
-    if rev != None and rev != doc.rev:
-        # find the entry in the history
-        for h in doc.history_set.order_by("-time"):
-            if rev == h.rev:
-                doc = h
-                break
-
-    if doc.type_id == "rfc":
+        if rev != None and rev != doc.rev:
+            # find the entry in the history
+            for h in doc.history_set.order_by("-time"):
+                if rev == h.rev:
+                    doc = h
+                    break
+        
+        if draft_became_rfc_alias:
+            draft_became_rfc = draft_became_rfc_alias.document
+        
+    elif doc.type_id == "rfc":
         # This needs to be replaced with a lookup, as the mapping may change
         # over time.  Probably by updating ietf/sync/rfceditor.py to add the
         # as a DocAlias, and use a method on Document to retrieve it.
         doi = f"10.17487/RFC{doc.rfc_number:04d}"
-    else:
-        doi = None
 
     return render(request, "doc/document_bibtex.bib",
                               dict(doc=doc,
                                    replaced_by=replaced_by,
-                                   published=published,
-                                   rfc=rfc,
+                                   published_as=draft_became_rfc,
                                    latest_revision=latest_revision,
                                    doi=doi,
                                ),
