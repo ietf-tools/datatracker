@@ -7,7 +7,10 @@ def forward(apps, schema_editor):
     DocAlias = apps.get_model("doc", "DocAlias")
     Document = apps.get_model("doc", "Document")
     RelatedDocument = apps.get_model("doc", "RelatedDocument")
-    for rfc_alias in DocAlias.objects.filter(name__startswith="rfc"):
+    for rfc_alias in DocAlias.objects.filter(name__startswith="rfc").exclude(
+        docs__type__slug="rfc"
+    ):
+        # Move these over to the RFC
         RelatedDocument.objects.filter(
             relationship__slug__in=(
                 "tobcp",
@@ -21,6 +24,17 @@ def forward(apps, schema_editor):
             ),
             source__docalias=rfc_alias,
         ).update(source=Document.objects.get(name=rfc_alias.name))
+        # Duplicate references on the RFC but keep the ones on the draft as well
+        originals = list(
+            RelatedDocument.objects.filter(
+                relationship__slug__in=("refinfo", "refnorm", "refold", "refunk"),
+                source__docalias=rfc_alias,
+            )
+        )
+        for o in originals:
+            o.pk = None
+            o.source = Document.objects.get(name=rfc_alias.name)
+        RelatedDocument.objects.bulk_create(originals)
 
 
 class Migration(migrations.Migration):
