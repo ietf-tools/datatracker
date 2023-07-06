@@ -140,10 +140,10 @@ This will create packages under `ietf/static/dist-neue`, which are then served b
 
 #### Parcel *(Legacy/jQuery)*
 
-The Datatracker includes these packages from the various Javascript and CSS files in `ietf/static/js` and `ietf/static/css`, respectively.
+The Datatracker includes these packages from the various Javascript and CSS files in `ietf/static/js` and `ietf/static/css` respectively, bundled using Parcel.
 Static images are likewise in `ietf/static/images`.
 
-Whenever changes are made to the files under `ietf/static`, you must re-run `parcel` to package them:
+Whenever changes are made to the files under `ietf/static`, you must re-run the build command to package them:
 
 ``` shell
 yarn legacy:build
