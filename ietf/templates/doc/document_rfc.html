@@ -17,11 +17,7 @@
 {% endblock %}
 {% block morecss %}.inline { display: inline; }{% endblock %}
 {% block title %}
-    {% if doc.get_state_slug == "rfc" and not snapshot %}
         RFC {{ rfc_number }} - {{ doc.title }}
-    {% else %}
-        {{ name }}-{{ doc.rev }} - {{ doc.title }}
-    {% endif %}
 {% endblock %}
 {% block content %}
     {% origin %}
@@ -29,12 +25,6 @@
     <div id="timeline"></div>
     {% if doc.rev != latest_rev %}
         <div class="alert alert-warning my-3">The information below is for an old version of the document.</div>
-    {% else %}
-        {% if doc.get_state_slug == "rfc" and snapshot %}
-            <div class="alert alert-warning my-3">
-                The information below is for an old version of the document that is already published as an RFC.
-            </div>
-        {% endif %}
     {% endif %}
     <table class="table table-sm table-borderless">
         {% include "doc/document_info.html" %}

@@ -1169,8 +1169,14 @@ def fuzzy_find_documents(name, rev=None):
     if re.match("^[0-9]+$", name):
         name = f'rfc{name}'
 
+    if name.startswith("rfc"):
+        sought_type = "rfc"
+        log.assertion("rev is None")
+    else:
+        sought_type = "draft"
+
     # see if we can find a document using this name
-    docs = Document.objects.filter(docalias__name=name, type_id='draft')
+    docs = Document.objects.filter(docalias__name=name, type_id=sought_type)
     if rev and not docs.exists():
         # No document found, see if the name/rev split has been misidentified.
         # Handles some special cases, like draft-ietf-tsvwg-ieee-802-11.

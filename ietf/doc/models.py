@@ -137,18 +137,17 @@ class DocumentInfo(models.Model):
 
     def get_file_path(self):
         if not hasattr(self, '_cached_file_path'):
-            if self.type_id == "draft":
+            if self.type_id == "rfc":
+                self._cached_file_path = settings.RFC_PATH
+            elif self.type_id == "draft":
                 if self.is_dochistory():
                     self._cached_file_path = settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR
                 else:
-                    if self.get_state_slug() == "rfc":
-                        self._cached_file_path = settings.RFC_PATH
+                    draft_state = self.get_state('draft')
+                    if draft_state and draft_state.slug == 'active':
+                        self._cached_file_path = settings.INTERNET_DRAFT_PATH
                     else:
-                        draft_state = self.get_state('draft')
-                        if draft_state and draft_state.slug == 'active':
-                            self._cached_file_path = settings.INTERNET_DRAFT_PATH
-                        else:
-                            self._cached_file_path = settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR
+                        self._cached_file_path = settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR
             elif self.meeting_related() and self.type_id in (
                     "agenda", "minutes", "slides", "bluesheets", "procmaterials", "chatlog", "polls"
             ):
@@ -173,14 +172,13 @@ class DocumentInfo(models.Model):
         if not hasattr(self, '_cached_base_name'):
             if self.uploaded_filename:
                 self._cached_base_name = self.uploaded_filename
+            if self.type_id == 'rfc':
+                self._cached_base_name = "%s.txt" % self.canonical_name()  
             elif self.type_id == 'draft':
                 if self.is_dochistory():
                     self._cached_base_name = "%s-%s.txt" % (self.doc.name, self.rev)
                 else:
-                    if self.get_state_slug() == 'rfc':
-                        self._cached_base_name = "%s.txt" % self.canonical_name()
-                    else:
-                        self._cached_base_name = "%s-%s.txt" % (self.name, self.rev)
+                    self._cached_base_name = "%s-%s.txt" % (self.name, self.rev)
             elif self.type_id in ["slides", "agenda", "minutes", "bluesheets", "procmaterials", ] and self.meeting_related():
                 ext = 'pdf' if self.type_id == 'procmaterials' else 'txt'
                 self._cached_base_name = f'{self.canonical_name()}-{self.rev}.{ext}'
