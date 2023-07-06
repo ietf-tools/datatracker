@@ -1907,7 +1907,7 @@ class DocTestCase(TestCase):
         self.assertContains(r, doc.name)
 
     def test_rfc_feed(self):
-        rfc = WgRfcFactory(alias2__name="rfc9000")
+        rfc = WgRfcFactory(rfc_number=9000)
         DocEventFactory(doc=rfc, type="published_rfc")
         r = self.client.get("/feed/rfc/")
         self.assertTrue(r.status_code, 200)
