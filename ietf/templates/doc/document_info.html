@@ -52,7 +52,6 @@
                 {% if proposed_status_changes %}
                     <div>Proposed status changed by {{ proposed_status_changes|urlize_related_source_list|join:", " }}</div>
                 {% endif %}
-                {% if rfc_aliases %}<div>Also known as {{ rfc_aliases|join:", "|urlize_ietf_docs }}</div>{% endif %}
                 {% if draft_name %}
                     <div>
                         Was

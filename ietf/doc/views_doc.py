@@ -194,11 +194,10 @@ def document_main(request, name, rev=None, document_html=False):
     doc = get_object_or_404(Document.objects.select_related(), docalias__name=name)
 
     # take care of possible redirections
-    aliases = DocAlias.objects.filter(docs=doc).values_list("name", flat=True)
-    if document_html is False and rev==None and doc.type_id == "draft" and not name.startswith("rfc"):
-        for a in aliases:
-            if a.startswith("rfc"):
-                return redirect("ietf.doc.views_doc.document_main", name=a)
+    if document_html is False and rev is None:
+        became_rfc = next(iter(doc.related_that_doc("became_rfc")), None)
+        if became_rfc:
+            return redirect("ietf.doc.views_doc.document_main", name=became_rfc.name)
     
     revisions = []
     for h in doc.history_set.order_by("time", "id"):
@@ -265,9 +264,6 @@ def document_main(request, name, rev=None, document_html=False):
 
         can_change_stream = bool(can_edit or roles)
 
-        rfc_aliases = [prettify_std_name(a) for a in aliases
-                       if a.startswith("fyi") or a.startswith("std") or a.startswith("bcp")]
-
         file_urls, found_types = build_file_urls(doc)
         content = doc.text_or_error() # pyflakes:ignore
         content = markup_txt.markup(maybe_split(content, split=split_content))
@@ -329,6 +325,10 @@ def document_main(request, name, rev=None, document_html=False):
                     css = Path(finders.find("ietf/css/document_html_inline.css")).read_text()
                     if html:
                         css += Path(finders.find("ietf/css/document_html_txt.css")).read_text()
+        draft_that_became_rfc = None
+        became_rfc_alias = next(iter(doc.related_that("became_rfc")), None)
+        if became_rfc_alias:
+            draft_that_became_rfc = became_rfc_alias.document
         # submission
         submission = ""
         if group is None:
@@ -343,13 +343,12 @@ def document_main(request, name, rev=None, document_html=False):
             else:
                 submission = group.acronym
             submission = '<a href="%s">%s</a>' % (group.about_url(), submission)
-            draft_alias = next(iter(doc.related_that("became_rfc")), None)
             # Should be unreachable?
             if (
-                draft_alias
-                and draft_alias.document.stream_id
-                and draft_alias.document.get_state_slug(
-                    "draft-stream-%s" % draft_alias.document.stream_id
+                draft_that_became_rfc
+                and draft_that_became_rfc.stream_id
+                and draft_that_became_rfc.get_state_slug(
+                    "draft-stream-%s" % draft_that_became_rfc.stream_id
                 )
                 == "c-adopt"
             ):
@@ -375,14 +374,13 @@ def document_main(request, name, rev=None, document_html=False):
                                        can_edit_authors=can_edit_authors,
                                        can_change_stream=can_change_stream,
                                        rfc_number=doc.rfc_number,
-                                       draft_name=doc.name,
+                                       draft_name=draft_that_became_rfc and draft_that_became_rfc.name,
                                        updates=interesting_relations_that_doc.filter(relationship="updates"),
                                        updated_by=interesting_relations_that.filter(relationship="updates"),
                                        obsoletes=interesting_relations_that_doc.filter(relationship="obs"),
                                        obsoleted_by=interesting_relations_that.filter(relationship="obs"),
                                        status_changes=status_changes,
                                        proposed_status_changes=proposed_status_changes,
-                                       rfc_aliases=rfc_aliases,
                                        has_errata=doc.pk and doc.tags.filter(slug="errata"), # doc.pk == None if using a fake_history_obj
                                        file_urls=file_urls,
                                        additional_urls=additional_urls,
@@ -708,7 +706,6 @@ def document_main(request, name, rev=None, document_html=False):
                                        conflict_reviews=conflict_reviews,
                                        status_changes=status_changes,
                                        proposed_status_changes=proposed_status_changes,
-                                       # rfc_aliases=rfc_aliases,
                                        has_errata=doc.pk and doc.tags.filter(slug="errata"), # doc.pk == None if using a fake_history_obj
                                        published=published,
                                        file_urls=file_urls,
