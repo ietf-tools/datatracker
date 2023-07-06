@@ -329,6 +329,32 @@ def document_main(request, name, rev=None, document_html=False):
                     css = Path(finders.find("ietf/css/document_html_inline.css")).read_text()
                     if html:
                         css += Path(finders.find("ietf/css/document_html_txt.css")).read_text()
+        # submission
+        submission = ""
+        if group is None:
+            submission = "unknown"
+        elif group.type_id == "individ":
+            submission = "individual"
+        elif group.type_id == "area" and doc.stream_id == "ietf":
+            submission = "individual in %s area" % group.acronym
+        else:
+            if group.features.acts_like_wg and not group.type_id == "edwg":
+                submission = "%s %s" % (group.acronym, group.type)
+            else:
+                submission = group.acronym
+            submission = '<a href="%s">%s</a>' % (group.about_url(), submission)
+            draft_alias = next(iter(doc.related_that("became_rfc")), None)
+            # Should be unreachable?
+            if (
+                draft_alias
+                and draft_alias.document.stream_id
+                and draft_alias.document.get_state_slug(
+                    "draft-stream-%s" % draft_alias.document.stream_id
+                )
+                == "c-adopt"
+            ):
+                submission = "candidate for %s" % submission
+
 
         # todo replace document_html?
         return render(request, "doc/document_rfc.html" if document_html is False else "doc/document_html.html",
@@ -367,7 +393,8 @@ def document_main(request, name, rev=None, document_html=False):
                                        iana_experts_comment=iana_experts_comment,
                                        search_archive=search_archive,
                                        presentations=presentations,
-                                       diff_revisions=diff_revisions
+                                       diff_revisions=diff_revisions,
+                                       submission=submission
                                        ))
 
     elif doc.type_id == "draft":
