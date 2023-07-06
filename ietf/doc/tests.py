@@ -1490,11 +1490,9 @@ Man                    Expires September 22, 2015               [Page 3]
             self.assertEqual(r.status_code, 200)
             self.assert_correct_wg_group_link(r, group)
 
-            rfc = WgRfcFactory(name='draft-rfc-document-%s' % group_type_id, group=group)
+            rfc = WgRfcFactory(group=group)
             DocEventFactory.create(doc=rfc, type='published_rfc', time=event_datetime)
-            # get the rfc name to avoid a redirect
-            rfc_name = rfc.docalias.filter(name__startswith='rfc').first().name
-            r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=rfc_name)))
+            r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=rfc.name)))
             self.assertEqual(r.status_code, 200)
             self.assert_correct_wg_group_link(r, group)
 
@@ -1508,8 +1506,7 @@ Man                    Expires September 22, 2015               [Page 3]
             rfc = WgRfcFactory(name='draft-rfc-document-%s' % group_type_id, group=group)
             DocEventFactory.create(doc=rfc, type='published_rfc', time=event_datetime)
             # get the rfc name to avoid a redirect
-            rfc_name = rfc.docalias.filter(name__startswith='rfc').first().name
-            r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=rfc_name)))
+            r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=rfc.name)))
             self.assertEqual(r.status_code, 200)
             self.assert_correct_non_wg_group_link(r, group)
 
