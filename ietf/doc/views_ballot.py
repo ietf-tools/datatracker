@@ -953,7 +953,13 @@ def approve_downrefs(request, name):
 
     login = request.user.person
 
-    downrefs_to_rfc = [rel for rel in doc.relateddocument_set.all() if rel.is_downref() and not rel.is_approved_downref() and rel.target.document.is_rfc()]
+    downrefs_to_rfc = [
+        rel
+        for rel in doc.relateddocument_set.all()
+        if rel.is_downref()
+        and not rel.is_approved_downref()
+        and rel.target.document.type_id == "rfc"
+    ]
 
     downrefs_to_rfc_qs = RelatedDocument.objects.filter(pk__in=[r.pk for r in downrefs_to_rfc])        
 

@@ -317,12 +317,9 @@ def get_previous_url(name, rev=None):
     previous_url = ''
     if condition in ('historic version', 'current version'):
         doc = history if history else document
-        if found_rev:
-            doc.is_rfc = lambda: False
         previous_url = doc.get_href()
     elif condition == 'version dochistory not found':
         document.rev = found_rev
-        document.is_rfc = lambda: False
         previous_url = document.get_href()
     return previous_url
 
@@ -335,7 +332,7 @@ def rfcdiff_latest_json(request, name, rev=None):
         raise Http404
     elif condition in ('historic version', 'current version'):
         doc = history if history else document
-        if not found_rev and doc.is_rfc():
+        if not found_rev and doc.type_id == "rfc":
             response['content_url'] = doc.get_href()
             response['name']=doc.canonical_name()
             if doc.name != doc.canonical_name():
@@ -345,7 +342,6 @@ def rfcdiff_latest_json(request, name, rev=None):
                 response['previous'] = f'{doc.name}-{prev_rev}'
                 response['previous_url'] = get_previous_url(doc.name, prev_rev)
         else:
-            doc.is_rfc = lambda: False
             response['content_url'] = doc.get_href()
             response['rev'] = doc.rev
             response['name'] = doc.name
@@ -371,7 +367,6 @@ def rfcdiff_latest_json(request, name, rev=None):
         response['name'] = document.name
         response['rev'] = found_rev
         document.rev = found_rev
-        document.is_rfc = lambda: False
         response['content_url'] = document.get_href()
         # not sure what to do if non-numeric values come back, so at least log it
         log.assertion('found_rev.isdigit()')
