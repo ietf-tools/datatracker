@@ -805,21 +805,20 @@ def recent_drafts(request, days=7):
     })
 
 
-def index_all_drafts(request):
+def index_all_drafts(request): # Should we rename this
     # try to be efficient since this view returns a lot of data
     categories = []
 
-    for s in ("active", "rfc", "expired", "repl", "auth-rm", "ietf-rm"):
+    # Gather drafts
+    for s in ("active", "expired", "repl", "auth-rm", "ietf-rm"):
         state = State.objects.get(type="draft", slug=s)
 
-        if state.slug == "rfc":
-            heading = "RFCs"
-        elif state.slug in ("ietf-rm", "auth-rm"):
+        if state.slug in ("ietf-rm", "auth-rm"):
             heading = "Internet-Drafts %s" % state.name
         else:
             heading = "%s Internet-Drafts" % state.name
 
-        draft_names = DocAlias.objects.filter(docs__states=state).values_list("name", "docs__name")
+        draft_names = DocAlias.objects.filter(docs__type_id="draft", docs__states=state).values_list("name", "docs__name")
 
         names = []
         names_to_skip = set()
@@ -828,24 +827,52 @@ def index_all_drafts(request):
             if name != doc:
                 if not name.startswith("rfc"):
                     name, doc = doc, name
-                names_to_skip.add(doc)
-
-            if name.startswith("rfc"):
-                name = name.upper()
-                sort_key = '%09d' % (100000000-int(name[3:]))
+                names_to_skip.add(doc) # this is filtering out subseries docaliases (which we will delete, so TODO clean this out after doing so)
 
             names.append((name, sort_key))
 
         names.sort(key=lambda t: t[1])
 
         names = [f'<a href=\"{urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=n))}\">{n}</a>'
-                 for n, __ in names if n not in names_to_skip]
+                 for n, __ in names if n not in names_to_skip]        
 
         categories.append((state,
                       heading,
                       len(names),
                       "<br>".join(names)
                       ))
+    
+    # gather RFCs
+    rfc_names = DocAlias.objects.filter(docs__type_id="rfc").values_list("name", "docs__name")
+    names = []
+    names_to_skip = set()
+    for name, doc in rfc_names:
+        sort_key = name
+        if name != doc: # There are some std docalias that pointed to rfc names pre-migration.
+            if not name.startswith("rfc"):
+                name, doc = doc, name
+            names_to_skip.add(doc) # this is filtering out those std docaliases (which we will delete, so TODO clean this out after doing so)
+        name = name.upper()
+        sort_key = '%09d' % (100000000-int(name[3:]))
+
+        names.append((name, sort_key))
+
+    names.sort(key=lambda t: t[1])
+
+    names = [f'<a href=\"{urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=n))}\">{n}</a>'
+                for n, __ in names if n not in names_to_skip]
+    
+    state = State.objects.get(type_id="rfc", slug="published")
+
+    categories.append((state,
+                    "RFCs",
+                    len(names),
+                    "<br>".join(names)
+                    ))
+    
+    # Return to the previous section ordering
+    categories = categories[0:1]+categories[5:]+categories[1:5]
+
     return render(request, 'doc/index_all_drafts.html', { "categories": categories })
 
 def index_active_drafts(request):
