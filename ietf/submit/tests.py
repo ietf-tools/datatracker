@@ -3099,13 +3099,15 @@ class SubmissionUploadFormTests(BaseSubmitTestCase):
 
         # can't replace RFC
         rfc = WgRfcFactory()
+        draft = WgDraftFactory(states=[("draft", "rfc")])
+        draft.relateddocument_set.create(relationship_id="became_rfc", target=rfc.docalias.first())
         form = SubmissionAutoUploadForm(
             request_factory.get('/some/url'),
-            data={'user': auth.user.username, 'replaces': rfc.name},
+            data={'user': auth.user.username, 'replaces': draft.name},
             files=files_dict,
         )
         self.assertFalse(form.is_valid())
-        self.assertIn('An Internet-Draft cannot replace an RFC', form.errors['replaces'])
+        self.assertIn('An Internet-Draft cannot replace another Internet-Draft that has become an RFC', form.errors['replaces'])
 
         # can't replace draft approved by iesg
         existing_drafts[0].set_state(State.objects.get(type='draft-iesg', slug='approved'))
