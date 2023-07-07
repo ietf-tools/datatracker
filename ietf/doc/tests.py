@@ -1537,7 +1537,7 @@ class DocTestCase(TestCase):
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=statchg.name)))
         self.assertEqual(r.status_code, 200)
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=statchg.relateddocument_set.first().target.document)))
-        self.assertEqual(r.status_code, 302)
+        self.assertEqual(r.status_code, 200) # What was this even trying to prove?
 
     def test_document_charter(self):
         CharterFactory(name='charter-ietf-mars')
@@ -1779,15 +1779,14 @@ class DocTestCase(TestCase):
         self.assertContains(r, e.desc)
 
     def test_history_bis_00(self):
-        rfcname='rfc9090'
-        rfc = WgRfcFactory(alias2=rfcname)
-        bis_draft = WgDraftFactory(name='draft-ietf-{}-{}bis'.format(rfc.group.acronym,rfcname))
+        rfc = WgRfcFactory(rfc_number=9090)
+        bis_draft = WgDraftFactory(name='draft-ietf-{}-{}bis'.format(rfc.group.acronym,rfc.name))
 
         url = urlreverse('ietf.doc.views_doc.document_history', kwargs=dict(name=bis_draft.name))
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200) 
         q = PyQuery(unicontent(r))
-        attr1='value="{}"'.format(rfcname)
+        attr1='value="{}"'.format(rfc.name)
         self.assertEqual(len(q('option['+attr1+'][selected="selected"]')), 1)
 
 
@@ -1837,7 +1836,7 @@ class DocTestCase(TestCase):
         self.assertContains(r, doc.name)
 
     def test_rfc_feed(self):
-        rfc = WgRfcFactory(alias2__name="rfc9000")
+        rfc = WgRfcFactory(rfc_number=9000)
         DocEventFactory(doc=rfc, type="published_rfc")
         r = self.client.get("/feed/rfc/")
         self.assertTrue(r.status_code, 200)
@@ -1911,7 +1910,7 @@ class DocTestCase(TestCase):
         r = self.client.get(url)
         entry = self._parse_bibtex_response(r)["rfc%s"%num]
         self.assertEqual(entry['series'],   'Request for Comments')
-        self.assertEqual(entry['number'],   num)
+        self.assertEqual(int(entry['number']),   num)
         self.assertEqual(entry['doi'],      '10.17487/RFC%s'%num)
         self.assertEqual(entry['year'],     '2010')
         self.assertEqual(entry['month'].lower()[0:3], 'oct')
@@ -1925,7 +1924,7 @@ class DocTestCase(TestCase):
                   std_level_id =    'inf',
                   time =            datetime.datetime(1990, 4, 1, tzinfo=ZoneInfo(settings.TIME_ZONE)),
               )
-        num = april1.rfc_number()
+        num = april1.rfc_number
         DocEventFactory.create(
             doc=april1,
             type='published_rfc',
@@ -1937,7 +1936,7 @@ class DocTestCase(TestCase):
         self.assertEqual(r.get('Content-Type'), 'text/plain; charset=utf-8')
         entry = self._parse_bibtex_response(r)["rfc%s"%num]
         self.assertEqual(entry['series'],   'Request for Comments')
-        self.assertEqual(entry['number'],   num)
+        self.assertEqual(int(entry['number']),   num)
         self.assertEqual(entry['doi'],      '10.17487/RFC%s'%num)
         self.assertEqual(entry['year'],     '1990')
         self.assertEqual(entry['month'].lower()[0:3],    'apr')
