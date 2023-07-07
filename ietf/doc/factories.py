@@ -122,7 +122,7 @@ class DocumentFactory(BaseDocumentFactory):
 class RfcFactory(BaseDocumentFactory):
     type_id = "rfc"
     rfc_number = factory.Sequence(lambda n: n + 1000)
-    name = factory.LazyAttribute(lambda o: f"rfc{o.rfc_number:04d}")
+    name = factory.LazyAttribute(lambda o: f"rfc{o.rfc_number:d}")
     expires = None
 
     @factory.post_generation

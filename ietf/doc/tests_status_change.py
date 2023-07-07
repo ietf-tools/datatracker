@@ -14,7 +14,7 @@ from textwrap import wrap
 from django.conf import settings
 from django.urls import reverse as urlreverse
 
-from ietf.doc.factories import DocumentFactory, IndividualRfcFactory, WgRfcFactory
+from ietf.doc.factories import DocumentFactory, IndividualRfcFactory, WgRfcFactory, WgDraftFactory
 from ietf.doc.models import ( Document, DocAlias, State, DocEvent,
     BallotPositionDocEvent, NewRevisionDocEvent, TelechatDocEvent, WriteupDocEvent )
 from ietf.doc.utils import create_ballot_if_not_open
@@ -449,9 +449,16 @@ class StatusChangeTests(TestCase):
         
     def setUp(self):
         super().setUp()
-        IndividualRfcFactory(alias2__name='rfc14',name='draft-was-never-issued',std_level_id='unkn')
-        WgRfcFactory(alias2__name='rfc9999',name='draft-ietf-random-thing',std_level_id='ps')
-        WgRfcFactory(alias2__name='rfc9998',name='draft-ietf-random-other-thing',std_level_id='inf')
+        IndividualRfcFactory(rfc_number=14,std_level_id='unkn') # draft was never issued
+
+        rfc = WgRfcFactory(rfc_number=9999,std_level_id='ps')
+        draft = WgDraftFactory(name='draft-ietf-random-thing')
+        draft.relateddocument_set.create(relationship_id="became_rfc", target=rfc.docalias.first())
+
+        rfc = WgRfcFactory(rfc_number=9998,std_level_id='inf')
+        draft = WgDraftFactory(name='draft-ietf-random-other-thing')
+        draft.relateddocument_set.create(relationship_id="became_rfc", target=rfc.docalias.first())
+
         DocumentFactory(type_id='statchg',name='status-change-imaginary-mid-review',notify='notify@example.org')
 
 class StatusChangeSubmitTests(TestCase):
