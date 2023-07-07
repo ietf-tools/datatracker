@@ -1421,6 +1421,8 @@ Man                    Expires September 22, 2015               [Page 3]
             self.assert_correct_wg_group_link(r, group)
 
             rfc = WgRfcFactory(group=group)
+            draft = WgDraftFactory(group=group)
+            draft.relateddocument_set.create(relationship_id="became_rfc", target=rfc.docalias.first())
             DocEventFactory.create(doc=rfc, type='published_rfc', time=event_datetime)
             r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=rfc.name)))
             self.assertEqual(r.status_code, 200)
@@ -1433,7 +1435,9 @@ Man                    Expires September 22, 2015               [Page 3]
             self.assertEqual(r.status_code, 200)
             self.assert_correct_non_wg_group_link(r, group)
 
-            rfc = WgRfcFactory(name='draft-rfc-document-%s' % group_type_id, group=group)
+            rfc = WgRfcFactory(group=group)
+            draft = WgDraftFactory(name='draft-rfc-document-%s'% group_type_id, group=group)
+            draft.relateddocument_set.create(relationship_id="became_rfc", target=rfc.docalias.first())
             DocEventFactory.create(doc=rfc, type='published_rfc', time=event_datetime)
             r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=rfc.name)))
             self.assertEqual(r.status_code, 200)
