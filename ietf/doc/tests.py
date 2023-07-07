@@ -2681,16 +2681,12 @@ class RawIdTests(TestCase):
         self.should_succeed(dict(name=draft.name, rev='00',ext='txt'))
         self.should_404(dict(name=draft.name, rev='00',ext='html'))
 
-    def test_raw_id_rfc(self):
-        rfc = WgRfcFactory()
-        dir = settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR
-        (Path(dir) / f'{rfc.name}-{rfc.rev}.txt').touch()
-        self.should_succeed(dict(name=rfc.name))
-        self.should_404(dict(name=rfc.canonical_name()))
+    # test_raw_id_rfc intentionally removed
+    # an rfc is no longer a pseudo-version of a draft.
 
     def test_non_draft(self):
-        charter = CharterFactory()
-        self.should_404(dict(name=charter.name))
+        for doc in [CharterFactory(), WgRfcFactory()]:
+            self.should_404(dict(name=doc.name))
 
 class PdfizedTests(TestCase):
 
