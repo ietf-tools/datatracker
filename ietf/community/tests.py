@@ -113,9 +113,8 @@ class CommunityListTests(TestCase):
         # without list
         for id in self.email_or_name_set(person):
             url = urlreverse(ietf.community.views.view_list, kwargs={ "email_or_name": id })
-            #debug.show('url')
             r = self.client.get(url)
-            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.status_code, 200, msg=f"id='{id}', url='{url}'")
 
         # with list
         clist = CommunityList.objects.create(person=person)
@@ -130,7 +129,7 @@ class CommunityListTests(TestCase):
         for id in self.email_or_name_set(person):
             url = urlreverse(ietf.community.views.view_list, kwargs={ "email_or_name": id })
             r = self.client.get(url)
-            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.status_code, 200, msg=f"id='{id}', url='{url}'")
             self.assertContains(r, draft.name)
 
     def test_manage_personal_list(self):
@@ -143,16 +142,12 @@ class CommunityListTests(TestCase):
 
         for id in self.email_or_name_set(person):
             url = urlreverse(ietf.community.views.manage_list, kwargs={ "email_or_name": id })
-            #debug.show('id')
-            #debug.show('url')
             r = self.client.get(url, user='plain')
-            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.status_code, 200, msg=f"id='{id}', url='{url}'")
 
             # We can't call post() with follow=True because that 404's if
-            # the url contains unicode. The view redirects to url='', so
-            # django.test.client._handle_redirects() is somehow failing to
-            # properly reconstruct the url.
-            # Whatever, follow the redirect manually.
+            # the url contains unicode, because the django test client
+            # apparently re-encodes the already-encoded url.
             def follow(r):
                 redirect_url = r.url or url
                 return self.client.get(redirect_url, user='plain')
@@ -160,7 +155,7 @@ class CommunityListTests(TestCase):
             # add document
             self.assertContains(r, 'add_document')
             r = self.client.post(url, {'action': 'add_documents', 'documents': draft.pk})
-            self.assertEqual(r.status_code, 302)
+            self.assertEqual(r.status_code, 302, msg=f"id='{id}', url='{url}'")
             clist = CommunityList.objects.get(person__user__username="plain")
             self.assertTrue(clist.added_docs.filter(pk=draft.pk))
             r = follow(r)
@@ -169,7 +164,7 @@ class CommunityListTests(TestCase):
             # remove document
             self.assertContains(r, 'remove_document_%s' % draft.pk)
             r = self.client.post(url, {'action': 'remove_document', 'document': draft.pk})
-            self.assertEqual(r.status_code, 302)
+            self.assertEqual(r.status_code, 302, msg=f"id='{id}', url='{url}'")
             clist = CommunityList.objects.get(person__user__username="plain")
             self.assertTrue(not clist.added_docs.filter(pk=draft.pk))
             r = follow(r)
@@ -182,7 +177,7 @@ class CommunityListTests(TestCase):
                 "author_rfc-person": Person.objects.filter(documentauthor__document=draft).first().pk,
                 "author_rfc-state": State.objects.get(type="draft", slug="rfc").pk,
             })
-            self.assertEqual(r.status_code, 302)
+            self.assertEqual(r.status_code, 302, msg=f"id='{id}', url='{url}'")
             clist = CommunityList.objects.get(person__user__username="plain")
             self.assertTrue(clist.searchrule_set.filter(rule_type="author_rfc"))
 
@@ -193,13 +188,13 @@ class CommunityListTests(TestCase):
                 "name_contains-text": "draft.*mars",
                 "name_contains-state": State.objects.get(type="draft", slug="active").pk,
             })
-            self.assertEqual(r.status_code, 302)
+            self.assertEqual(r.status_code, 302, msg=f"id='{id}', url='{url}'")
             clist = CommunityList.objects.get(person__user__username="plain")
             self.assertTrue(clist.searchrule_set.filter(rule_type="name_contains"))
 
             # rule shows up on GET
             r = self.client.get(url)
-            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.status_code, 200, msg=f"id='{id}', url='{url}'")
             rule = clist.searchrule_set.filter(rule_type="author_rfc").first()
             q = PyQuery(r.content)
             self.assertEqual(len(q('#r%s' % rule.pk)), 1)
@@ -233,7 +228,6 @@ class CommunityListTests(TestCase):
             p = PersonFactory()
             g.role_set.create(name_id={'area':'ad','program':'lead'}[gtype],person=p, email=p.email())
             url = urlreverse(ietf.community.views.manage_list, kwargs={ "acronym": g.acronym })
-            #debug.show('url')
             setup_default_community_list_for_group(g)
             self.client.login(username=p.user.username,password=p.user.username+"+password")
             r = self.client.get(url)
@@ -248,25 +242,23 @@ class CommunityListTests(TestCase):
 
         for id in self.email_or_name_set(person):
             url = urlreverse(ietf.community.views.track_document, kwargs={ "email_or_name": id, "name": draft.name })
-            #debug.show('url')
 
             # track
             r = self.client.get(url)
-            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.status_code, 200, msg=f"id='{id}', url='{url}'")
 
             r = self.client.post(url)
-            self.assertEqual(r.status_code, 302)
+            self.assertEqual(r.status_code, 302, msg=f"id='{id}', url='{url}'")
             clist = CommunityList.objects.get(person__user__username="plain")
             self.assertEqual(list(clist.added_docs.all()), [draft])
 
             # untrack
             url = urlreverse(ietf.community.views.untrack_document, kwargs={ "email_or_name": id, "name": draft.name })
-            #debug.show('url')
             r = self.client.get(url)
-            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.status_code, 200, msg=f"id='{id}', url='{url}'")
 
             r = self.client.post(url)
-            self.assertEqual(r.status_code, 302)
+            self.assertEqual(r.status_code, 302, msg=f"id='{id}', url='{url}'")
             clist = CommunityList.objects.get(person__user__username="plain")
             self.assertEqual(list(clist.added_docs.all()), [])
 
@@ -279,20 +271,18 @@ class CommunityListTests(TestCase):
 
         for id in self.email_or_name_set(person):
             url = urlreverse(ietf.community.views.track_document, kwargs={ "email_or_name": id, "name": draft.name })
-            #debug.show('url')
 
             # track
             r = self.client.post(url, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
-            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.status_code, 200, msg=f"id='{id}', url='{url}'")
             self.assertEqual(r.json()["success"], True)
             clist = CommunityList.objects.get(person__user__username="plain")
             self.assertEqual(list(clist.added_docs.all()), [draft])
 
             # untrack
             url = urlreverse(ietf.community.views.untrack_document, kwargs={ "email_or_name": id, "name": draft.name })
-            #debug.show('url')
             r = self.client.post(url, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
-            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.status_code, 200, msg=f"id='{id}', url='{url}'")
             self.assertEqual(r.json()["success"], True)
             clist = CommunityList.objects.get(person__user__username="plain")
             self.assertEqual(list(clist.added_docs.all()), [])
@@ -303,11 +293,10 @@ class CommunityListTests(TestCase):
 
         for id in self.email_or_name_set(person):
             url = urlreverse(ietf.community.views.export_to_csv, kwargs={ "email_or_name": id })
-            #debug.show('url')
 
             # without list
             r = self.client.get(url)
-            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.status_code, 200, msg=f"id='{id}', url='{url}'")
 
             # with list
             clist = CommunityList.objects.create(person=person)
@@ -320,7 +309,7 @@ class CommunityListTests(TestCase):
                 text="test",
             )
             r = self.client.get(url)
-            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.status_code, 200, msg=f"id='{id}', url='{url}'")
             # this is a simple-minded test, we don't actually check the fields
             self.assertContains(r, draft.name)
 
@@ -341,11 +330,10 @@ class CommunityListTests(TestCase):
 
         for id in self.email_or_name_set(person):
             url = urlreverse(ietf.community.views.feed, kwargs={ "email_or_name": id })
-            #debug.show('url')
 
             # without list
             r = self.client.get(url)
-            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.status_code, 200, msg=f"id='{id}', url='{url}'")
 
             # with list
             clist = CommunityList.objects.create(person=person)
@@ -358,12 +346,12 @@ class CommunityListTests(TestCase):
                 text="test",
             )
             r = self.client.get(url)
-            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.status_code, 200, msg=f"id='{id}', url='{url}'")
             self.assertContains(r, draft.name)
 
             # only significant
             r = self.client.get(url + "?significant=1")
-            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.status_code, 200, msg=f"id='{id}', url='{url}'")
             self.assertNotContains(r, '<entry>')
 
     def test_feed_for_group(self):
@@ -386,11 +374,10 @@ class CommunityListTests(TestCase):
 
         for id in self.email_or_name_set(person):
             url = urlreverse(ietf.community.views.subscription, kwargs={ "email_or_name": id })
-            #debug.show('url')
 
             # subscription without list
             r = self.client.get(url)
-            self.assertEqual(r.status_code, 404)
+            self.assertEqual(r.status_code, 404, msg=f"id='{id}', url='{url}'")
 
         # subscription with list
         clist = CommunityList.objects.create(person=person)
@@ -405,7 +392,6 @@ class CommunityListTests(TestCase):
 
         for email in Email.objects.filter(person=person):
             url = urlreverse(ietf.community.views.subscription, kwargs={ "email_or_name": email })
-            #debug.show('url')
 
             r = self.client.get(url)
             self.assertEqual(r.status_code, 200)

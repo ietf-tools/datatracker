@@ -11,11 +11,9 @@ import debug                            # pyflakes:ignore
 
 from ietf.community.models import CommunityList, EmailSubscription, SearchRule
 from ietf.doc.models import Document, State
-from ietf.group.models import Role, Group
+from ietf.group.models import Role
 from ietf.person.models import Person
-from ietf.person.utils import lookup_persons
 from ietf.ietfauth.utils import has_role
-from django.shortcuts import get_object_or_404
 
 from ietf.utils.mail import send_mail
 
@@ -28,29 +26,6 @@ def states_of_significant_change():
         Q(type="draft-stream-ise", slug__in=['receive', 'ise-rev', 'iesg-rev', 'rfc-edit', 'iesghold']) |
         Q(type="draft", slug__in=['rfc', 'dead'])
     )
-
-class MultiplePersonError(Exception):
-    """More than one Person record matches the given email or name"""
-    pass
-
-def lookup_community_list(request, email_or_name=None, acronym=None):
-    assert email_or_name or acronym
-
-    if acronym:
-        group = get_object_or_404(Group, acronym=acronym)
-        clist = CommunityList.objects.filter(group=group).first() or CommunityList(group=group)
-    else:
-        persons = lookup_persons(email_or_name)
-        if len(persons) > 1:
-            if hasattr(request.user, 'person') and request.user.person in persons:
-                person = request.user.person
-            else:
-                raise MultiplePersonError("\r\n".join([p.user.username for p in persons]))
-        else:
-            person = persons[0]
-        clist = CommunityList.objects.filter(person=person).first() or CommunityList(person=person)
-
-    return clist
 
 def can_manage_community_list(user, clist):
     if not user or not user.is_authenticated:

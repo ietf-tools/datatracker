@@ -15,16 +15,40 @@ from django.utils.html import strip_tags
 
 import debug                            # pyflakes:ignore
 
-from ietf.community.models import SearchRule, EmailSubscription
+from ietf.community.models import CommunityList, EmailSubscription, SearchRule
 from ietf.community.forms import SearchRuleTypeForm, SearchRuleForm, AddDocumentsForm, SubscriptionForm
-from ietf.community.utils import lookup_community_list, can_manage_community_list
+from ietf.community.utils import can_manage_community_list
 from ietf.community.utils import docs_tracked_by_community_list, docs_matching_community_list_rule
 from ietf.community.utils import states_of_significant_change, reset_name_contains_index_for_rule
-from ietf.community.utils import MultiplePersonError
+from ietf.group.models import Group
 from ietf.doc.models import DocEvent, Document
 from ietf.doc.utils_search import prepare_document_table
+from ietf.person.utils import lookup_persons
 from ietf.utils.http import is_ajax
 from ietf.utils.response import permission_denied
+
+class MultiplePersonError(Exception):
+    """More than one Person record matches the given email or name"""
+    pass
+
+def lookup_community_list(request, email_or_name=None, acronym=None):
+    assert email_or_name or acronym
+
+    if acronym:
+        group = get_object_or_404(Group, acronym=acronym)
+        clist = CommunityList.objects.filter(group=group).first() or CommunityList(group=group)
+    else:
+        persons = lookup_persons(email_or_name)
+        if len(persons) > 1:
+            if hasattr(request.user, 'person') and request.user.person in persons:
+                person = request.user.person
+            else:
+                raise MultiplePersonError("\r\n".join([p.user.username for p in persons]))
+        else:
+            person = persons[0]
+        clist = CommunityList.objects.filter(person=person).first() or CommunityList(person=person)
+
+    return clist
 
 def view_list(request, email_or_name=None):
     try:
