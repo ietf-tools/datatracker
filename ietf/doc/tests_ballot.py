@@ -1121,8 +1121,8 @@ class RegenerateLastCallTestCase(TestCase):
         self.assertFalse("contains these normative down" in lc_text)
 
         rfc = IndividualRfcFactory.create(
+                  rfc_number=6666,
                   stream_id='ise',
-                  other_aliases=['rfc6666',],
                   states=[('draft','rfc'),('draft-iesg','pub')],
                   std_level_id='inf',
               )
