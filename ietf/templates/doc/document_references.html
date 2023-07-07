@@ -51,7 +51,7 @@
                             </a>
                         </td>
                         <td>
-                            {% if ref.target.document.get_state.slug == 'rfc' %}
+                            {% if ref.target.document.type_id == "rfc" %}
                                 {% with ref.target.document.std_level as lvl %}
                                     {% if lvl %}{{ lvl }}{% endif %}
                                 {% endwith %}

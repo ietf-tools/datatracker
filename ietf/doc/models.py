@@ -641,10 +641,20 @@ class DocumentInfo(models.Model):
         return self.relations_that_doc(('refnorm','refinfo','refunk','refold'))
 
     def referenced_by(self):
-        return self.relations_that(('refnorm','refinfo','refunk','refold')).filter(source__states__type__slug='draft',source__states__slug__in=['rfc','active'])
-
+        return self.relations_that(("refnorm", "refinfo", "refunk", "refold")).filter(
+            models.Q(
+                source__type__slug="draft",
+                source__states__type__slug="draft",
+                source__states__slug="active",
+            )
+            | models.Q(source__type__slug="rfc")
+        )
+    
+    
     def referenced_by_rfcs(self):
-        return self.relations_that(('refnorm','refinfo','refunk','refold')).filter(source__states__type__slug='draft',source__states__slug='rfc')
+        return self.relations_that(("refnorm", "refinfo", "refunk", "refold")).filter(
+            source__type__slug="rfc"
+        )
 
     class Meta:
         abstract = True
