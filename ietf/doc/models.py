@@ -172,7 +172,7 @@ class DocumentInfo(models.Model):
         if not hasattr(self, '_cached_base_name'):
             if self.uploaded_filename:
                 self._cached_base_name = self.uploaded_filename
-            if self.type_id == 'rfc':
+            elif self.type_id == 'rfc':
                 self._cached_base_name = "%s.txt" % self.canonical_name()  
             elif self.type_id == 'draft':
                 if self.is_dochistory():
