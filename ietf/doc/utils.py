@@ -1110,7 +1110,7 @@ def generate_idnits2_rfc_status():
         'unkn': 'U',
     }
 
-    rfcs = Document.objects.filter(type_id='rfc',states__slug='published',states__type='rfc')
+    rfcs = Document.objects.filter(type_id='rfc')
     for rfc in rfcs:
         offset = int(rfc.rfc_number)-1
         blob[offset] = symbols[rfc.std_level_id]

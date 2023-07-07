@@ -2129,9 +2129,16 @@ def idnits2_rfc_status(request):
 
 def idnits2_state(request, name, rev=None):
     doc = get_object_or_404(Document, docalias__name=name)
-    if doc.type_id!='draft':
+    if doc.type_id not in ["draft", "rfc"]:
         raise Http404
-    zero_revision = NewRevisionDocEvent.objects.filter(doc=doc,rev='00').first()
+    zero_revision = None
+    if doc.type_id == "rfc":
+        draft_alias = next(iter(doc.related_that('became_rfc')), None)
+        if draft_alias:
+            draft = draft_alias.document
+            zero_revision = NewRevisionDocEvent.objects.filter(doc=draft,rev='00').first()
+    else:
+        zero_revision = NewRevisionDocEvent.objects.filter(doc=doc,rev='00').first()
     if zero_revision:
         doc.created = zero_revision.time
     else:
