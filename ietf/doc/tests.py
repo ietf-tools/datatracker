@@ -1850,7 +1850,7 @@ class DocTestCase(TestCase):
         self.assertContains(r, e.desc)
 
     def test_history_bis_00(self):
-        rfc = WgRfcFactory(name='rfc9090')
+        rfc = WgRfcFactory(rfc_number=9090)
         bis_draft = WgDraftFactory(name='draft-ietf-{}-{}bis'.format(rfc.group.acronym,rfc.name))
 
         url = urlreverse('ietf.doc.views_doc.document_history', kwargs=dict(name=bis_draft.name))
