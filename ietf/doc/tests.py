@@ -1536,8 +1536,8 @@ class DocTestCase(TestCase):
         statchg = StatusChangeFactory()
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=statchg.name)))
         self.assertEqual(r.status_code, 200)
-        r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=statchg.relateddocument_set.first().target.document)))
-        self.assertEqual(r.status_code, 200) # What was this even trying to prove?
+        r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=statchg.relateddocument_set.first().target.document.name)))
+        self.assertEqual(r.status_code, 200)
 
     def test_document_charter(self):
         CharterFactory(name='charter-ietf-mars')
