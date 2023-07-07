@@ -2595,10 +2595,10 @@ class Idnits2SupportTests(TestCase):
     settings_temp_path_overrides = TestCase.settings_temp_path_overrides + ['DERIVED_DIR']
 
     def test_obsoleted(self):
-        rfc = WgRfcFactory(alias2__name='rfc1001')
-        WgRfcFactory(alias2__name='rfc1003',relations=[('obs',rfc)])
-        rfc = WgRfcFactory(alias2__name='rfc1005')
-        WgRfcFactory(alias2__name='rfc1007',relations=[('obs',rfc)])
+        rfc = WgRfcFactory(rfc_number=1001)
+        WgRfcFactory(rfc_number=1003,relations=[('obs',rfc)])
+        rfc = WgRfcFactory(rfc_number=1005)
+        WgRfcFactory(rfc_number=1007,relations=[('obs',rfc)])
 
         url = urlreverse('ietf.doc.views_doc.idnits2_rfcs_obsoleted')
         r = self.client.get(url)
@@ -2623,6 +2623,8 @@ class Idnits2SupportTests(TestCase):
 
     def test_idnits2_state(self):
         rfc = WgRfcFactory()
+        draft = WgDraftFactory()
+        draft.relateddocument_set.create(relationship_id="became_rfc", target=rfc.docalias.first())
         url = urlreverse('ietf.doc.views_doc.idnits2_state', kwargs=dict(name=rfc.canonical_name()))
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
