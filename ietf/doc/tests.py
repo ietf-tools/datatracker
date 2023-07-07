@@ -2705,24 +2705,27 @@ class PdfizedTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 404)
 
+    # This takes a _long_ time (32s on a 2022 m1 macbook pro) - is it worth what it covers?
     def test_pdfized(self):
-        rfc = WgRfcFactory(create_revisions=range(0,2))
+        rfc = WgRfcFactory()
+        draft = WgDraftFactory(create_revisions=range(0,2))
+        draft.relateddocument_set.create(relationship_id="became_rfc", target=rfc.docalias.first())
 
         dir = settings.RFC_PATH
-        with (Path(dir) / f'{rfc.canonical_name()}.txt').open('w') as f:
+        with (Path(dir) / f'{rfc.name}.txt').open('w') as f:
             f.write('text content')
         dir = settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR
         for r in range(0,2):
-            with (Path(dir) / f'{rfc.name}-{r:02d}.txt').open('w') as f:
+            with (Path(dir) / f'{draft.name}-{r:02d}.txt').open('w') as f:
                 f.write('text content')
 
-        self.should_succeed(dict(name=rfc.canonical_name()))
         self.should_succeed(dict(name=rfc.name))
+        self.should_succeed(dict(name=draft.name))
         for r in range(0,2):
-            self.should_succeed(dict(name=rfc.name,rev=f'{r:02d}'))
+            self.should_succeed(dict(name=draft.name,rev=f'{r:02d}'))
             for ext in ('pdf','txt','html','anythingatall'):
-                self.should_succeed(dict(name=rfc.name,rev=f'{r:02d}',ext=ext))
-        self.should_404(dict(name=rfc.name,rev='02'))
+                self.should_succeed(dict(name=draft.name,rev=f'{r:02d}',ext=ext))
+        self.should_404(dict(name=draft.name,rev='02'))
 
 class NotifyValidationTests(TestCase):
     def test_notify_validation(self):
