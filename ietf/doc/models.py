@@ -686,7 +686,7 @@ class RelatedDocument(models.Model):
         if source_lvl not in ['bcp','ps','ds','std']:
             return None
 
-        if self.target.document.get_state().slug == 'rfc':
+        if self.target.document.type_id == 'rfc':
             if not self.target.document.std_level:
                 target_lvl = 'unkn'
             else:
@@ -709,8 +709,8 @@ class RelatedDocument(models.Model):
 
     def is_approved_downref(self):
 
-        if self.target.document.get_state().slug == 'rfc':
-           if RelatedDocument.objects.filter(relationship_id='downref-approval', target=self.target):
+        if self.target.document.type_id == "rfc":
+           if RelatedDocument.objects.filter(relationship_id='downref-approval', target=self.target).exists():
               return "Approved Downref"
 
         return False
