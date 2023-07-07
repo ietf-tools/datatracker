@@ -3699,25 +3699,9 @@ class RefsTests(BaseSubmitTestCase):
 
 
 class PostSubmissionTests(BaseSubmitTestCase):
-    @override_settings(RFC_FILE_TYPES=('txt', 'xml'), IDSUBMIT_FILE_TYPES=('pdf', 'md'))
-    def test_find_submission_filenames_rfc(self):
-        """Posting an RFC submission should use RFC_FILE_TYPES"""
-        rfc = IndividualRfcFactory()
-        path = Path(self.staging_dir)
-        for ext in ['txt', 'xml', 'pdf', 'md']:
-            (path / f'{rfc.name}-{rfc.rev}.{ext}').touch()
-        files = find_submission_filenames(rfc)
-        self.assertCountEqual(
-            files,
-            {
-                'txt': f'{path}/{rfc.name}-{rfc.rev}.txt',
-                'xml': f'{path}/{rfc.name}-{rfc.rev}.xml',
-                # should NOT find the pdf or md
-            }
-        )
 
     @override_settings(RFC_FILE_TYPES=('txt', 'xml'), IDSUBMIT_FILE_TYPES=('pdf', 'md'))
-    def test_find_submission_filenames_draft(self):
+    def test_find_submission_filenames(self):
         """Posting an I-D submission should use IDSUBMIT_FILE_TYPES"""
         draft = WgDraftFactory()
         path = Path(self.staging_dir)
