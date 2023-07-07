@@ -2079,10 +2079,14 @@ class GenerateDraftAliasesTests(TestCase):
        mars.role_set.create(name_id='chair', person=marschairman, email=marschairman.email())
        doc1 = IndividualDraftFactory(authors=[author1], shepherd=shepherd.email(), ad=ad)
        doc2 = WgDraftFactory(name='draft-ietf-mars-test', group__acronym='mars', authors=[author2], ad=ad)
-       doc3 = WgRfcFactory.create(name='draft-ietf-mars-finished', group__acronym='mars', authors=[author3], ad=ad, std_level_id='ps', states=[('draft','rfc'),('draft-iesg','pub')], time=a_month_ago)
-       DocEventFactory.create(doc=doc3, type='published_rfc', time=a_month_ago)
-       doc4 = WgRfcFactory.create(authors=[author4,author5], ad=ad, std_level_id='ps', states=[('draft','rfc'),('draft-iesg','pub')], time=datetime.datetime(2010,10,10, tzinfo=ZoneInfo(settings.TIME_ZONE)))
-       DocEventFactory.create(doc=doc4, type='published_rfc', time=datetime.datetime(2010, 10, 10, tzinfo=RPC_TZINFO))
+       doc3 = WgDraftFactory.create(name='draft-ietf-mars-finished', group__acronym='mars', authors=[author3], ad=ad, std_level_id='ps', states=[('draft','rfc'),('draft-iesg','pub')], time=a_month_ago)
+       rfc3 = WgRfcFactory()
+       DocEventFactory.create(doc=rfc3, type='published_rfc', time=a_month_ago)
+       doc3.relateddocument_set.create(relationship_id="became_rfc", target=rfc3.docalias.first())
+       doc4 = WgDraftFactory.create(authors=[author4,author5], ad=ad, std_level_id='ps', states=[('draft','rfc'),('draft-iesg','pub')], time=datetime.datetime(2010,10,10, tzinfo=ZoneInfo(settings.TIME_ZONE)))
+       rfc4 = WgRfcFactory()
+       DocEventFactory.create(doc=rfc4, type='published_rfc', time=datetime.datetime(2010, 10, 10, tzinfo=RPC_TZINFO))
+       doc4.relateddocument_set.create(relationship_id="became_rfc", target=rfc4.docalias.first())
        doc5 = IndividualDraftFactory(authors=[author6])
 
        args = [ ]
@@ -2093,7 +2097,7 @@ class GenerateDraftAliasesTests(TestCase):
 
        with open(settings.DRAFT_ALIASES_PATH) as afile:
            acontent = afile.read()
-           self.assertTrue(all([x in acontent for x in [
+           for x in [
                'xfilter-' + doc1.name,
                'xfilter-' + doc1.name + '.ad',
                'xfilter-' + doc1.name + '.authors',
@@ -2111,19 +2115,22 @@ class GenerateDraftAliasesTests(TestCase):
                'xfilter-' + doc5.name,
                'xfilter-' + doc5.name + '.authors',
                'xfilter-' + doc5.name + '.all',
-           ]]))
-           self.assertFalse(all([x in acontent for x in [
+           ]:
+               self.assertIn(x, acontent)
+
+           for x in [
                'xfilter-' + doc1.name + '.chairs',
                'xfilter-' + doc2.name + '.shepherd',
                'xfilter-' + doc3.name + '.shepherd',
                'xfilter-' + doc4.name,
                'xfilter-' + doc5.name + '.shepherd',
                'xfilter-' + doc5.name + '.ad',
-           ]]))
+           ]:
+               self.assertNotIn(x, acontent)
 
        with open(settings.DRAFT_VIRTUAL_PATH) as vfile:
            vcontent = vfile.read()
-           self.assertTrue(all([x in vcontent for x in [
+           for x in [
                ad.email_address(),
                shepherd.email_address(),
                marschairman.email_address(),
@@ -2131,12 +2138,16 @@ class GenerateDraftAliasesTests(TestCase):
                author2.email_address(),
                author3.email_address(),
                author6.email_address(),
-           ]]))
-           self.assertFalse(all([x in vcontent for x in [
+           ]:
+               self.assertIn(x, vcontent)
+
+           for x in [
                author4.email_address(),
                author5.email_address(),
-           ]]))
-           self.assertTrue(all([x in vcontent for x in [
+           ]:
+               self.assertNotIn(x, vcontent)
+
+           for x in [
                'xfilter-' + doc1.name,
                'xfilter-' + doc1.name + '.ad',
                'xfilter-' + doc1.name + '.authors',
@@ -2154,15 +2165,18 @@ class GenerateDraftAliasesTests(TestCase):
                'xfilter-' + doc5.name,
                'xfilter-' + doc5.name + '.authors',
                'xfilter-' + doc5.name + '.all',
-           ]]))
-           self.assertFalse(all([x in vcontent for x in [
+           ]:
+               self.assertIn(x, vcontent)
+
+           for x in [
                'xfilter-' + doc1.name + '.chairs',
                'xfilter-' + doc2.name + '.shepherd',
                'xfilter-' + doc3.name + '.shepherd',
                'xfilter-' + doc4.name,
                'xfilter-' + doc5.name + '.shepherd',
                'xfilter-' + doc5.name + '.ad',
-           ]]))
+           ]:
+               self.assertNotIn(x, vcontent)
 
 class EmailAliasesTests(TestCase):
 
