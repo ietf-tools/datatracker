@@ -107,7 +107,7 @@ class IESGAgendaTests(TestCase):
         super().setUp()
         mars = GroupFactory(acronym='mars',parent=Group.objects.get(acronym='farfut'))
         wgdraft = WgDraftFactory(name='draft-ietf-mars-test', group=mars, intended_std_level_id='ps')
-        rfc = IndividualRfcFactory.create(stream_id='irtf', rfc_number=6666, states=[('draft','rfc'),('draft-iesg','pub')], std_level_id='inf', )
+        rfc = IndividualRfcFactory.create(stream_id='irtf', rfc_number=6666, std_level_id='inf', )
         wgdraft.relateddocument_set.create(target=rfc.docalias.get(name='rfc6666'), relationship_id='refnorm')
         ise_draft = IndividualDraftFactory(name='draft-imaginary-independent-submission')
         ise_draft.stream = StreamName.objects.get(slug="ise")
