@@ -327,17 +327,28 @@ def get_previous_url(name, rev=None):
 def rfcdiff_latest_json(request, name, rev=None):
     response = dict()
     condition, document, history, found_rev = find_doc_for_rfcdiff(name, rev)
-
+    if document.type_id == "rfc":
+        draft_alias = next(iter(document.related_that('became_rfc')), None)
     if condition == 'no such document':
         raise Http404
     elif condition in ('historic version', 'current version'):
         doc = history if history else document
-        if not found_rev and doc.type_id == "rfc":
-            response['content_url'] = doc.get_href()
-            response['name']=doc.canonical_name()
-            if doc.name != doc.canonical_name():
+        if doc.type_id == "rfc":
+                response['content_url'] = doc.get_href()
+                response['name']=doc.name
+                if draft_alias:
+                    draft = draft_alias.document
+                    prev_rev = draft.rev
+                    if doc.rfc_number in HAS_TOMBSTONE and prev_rev != '00':
+                        prev_rev = f'{(int(draft.rev)-1):02d}'
+                    response['previous'] = f'{draft.name}-{prev_rev}'
+                    response['previous_url'] = get_previous_url(draft.name, prev_rev)            
+        elif doc.type_id == "draft" and not found_rev and doc.relateddocument_set.filter(relationship_id="became_rfc").exists():
+                rfc = doc.related_that_doc("became_rfc")[0].document
+                response['content_url'] = rfc.get_href()
+                response['name']=rfc.name
                 prev_rev = doc.rev
-                if doc.rfc_number in HAS_TOMBSTONE and prev_rev != '00':
+                if rfc.rfc_number in HAS_TOMBSTONE and prev_rev != '00':
                     prev_rev = f'{(int(doc.rev)-1):02d}'
                 response['previous'] = f'{doc.name}-{prev_rev}'
                 response['previous_url'] = get_previous_url(doc.name, prev_rev)
