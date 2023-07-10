@@ -9,13 +9,13 @@
 <tr {% if color_ad_position %}{% with doc|ballotposition:user as pos %}{% if pos %}class="position-{{ pos.slug }}-row"{% endif %}{% endwith %}{% endif %}>
     <td>
         {% if user.is_authenticated %}
-            <a href="{% url "ietf.community.views.untrack_document" username=request.user.username name=doc.name %}"
+            <a href="{% url "ietf.community.views.untrack_document" email_or_name=request.user.username name=doc.name %}"
                class="track-untrack-doc {% if not doc.tracked_in_personal_community_list %}d-none{% endif %}"
                aria-label="Remove from your personal I-D list"
                title="Remove from your personal I-D list">
                 <i class="bi bi-bookmark-check-fill"></i>
             </a>
-            <a href="{% url "ietf.community.views.track_document" username=request.user.username name=doc.name %}"
+            <a href="{% url "ietf.community.views.track_document" email_or_name=request.user.username name=doc.name %}"
                class="track-untrack-doc {% if doc.tracked_in_personal_community_list %}d-none{% endif %}"
                aria-label="Add to your personal I-D list"
                title="Add to your personal I-D list">

@@ -8,16 +8,16 @@ from PIL import Image
 from django.contrib import messages
 from django.db.models import Q
 from django.http import HttpResponse, Http404
-from django.shortcuts import render, get_object_or_404, redirect
+from django.shortcuts import render, redirect
 from django.utils import timezone
 
 import debug                            # pyflakes:ignore
 
 from ietf.ietfauth.utils import role_required
-from ietf.person.models import Email, Person, Alias
+from ietf.person.models import Email, Person
 from ietf.person.fields import select2_id_name_json
 from ietf.person.forms import MergeForm
-from ietf.person.utils import handle_users, merge_persons
+from ietf.person.utils import handle_users, merge_persons, lookup_persons
 
 
 def ajax_select2_search(request, model_name):
@@ -69,30 +69,14 @@ def ajax_select2_search(request, model_name):
 
 
 def profile(request, email_or_name):
-    aliases = Alias.objects.filter(name=email_or_name)
-    persons = set(a.person for a in aliases)
-
-    if '@' in email_or_name:
-        emails = Email.objects.filter(address=email_or_name)
-        persons.update(e.person for e in emails)
-
-    persons = [p for p in persons if p and p.id]
-    if not persons:
-        raise Http404
-    persons.sort(key=lambda p: p.id)
+    persons = lookup_persons(email_or_name)
     return render(request, 'person/profile.html', {'persons': persons, 'today': timezone.now()})
 
 
 def photo(request, email_or_name):
-    if '@' in email_or_name:
-        persons = [ get_object_or_404(Email, address=email_or_name).person, ]
-    else:
-        aliases = Alias.objects.filter(name=email_or_name)
-        persons = list(set([ a.person for a in aliases ]))
-        if not persons:
-            raise Http404("No such person")
+    persons = lookup_persons(email_or_name)
     if len(persons) > 1:
-        return HttpResponse(r"\r\n".join([p.email() for p in persons]), status=300)
+        return HttpResponse(r"\r\n".join([p.user.username for p in persons]), status=300)
     person = persons[0]
     if not person.photo:
         raise Http404("No photo found")

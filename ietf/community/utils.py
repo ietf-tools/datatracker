@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2016-2020, All Rights Reserved
+# Copyright The IETF Trust 2016-2023, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -11,11 +11,9 @@ import debug                            # pyflakes:ignore
 
 from ietf.community.models import CommunityList, EmailSubscription, SearchRule
 from ietf.doc.models import Document, State
-from ietf.group.models import Role, Group
+from ietf.group.models import Role
 from ietf.person.models import Person
 from ietf.ietfauth.utils import has_role
-from django.contrib.auth.models import User
-from django.shortcuts import get_object_or_404
 
 from ietf.utils.mail import send_mail
 
@@ -28,18 +26,6 @@ def states_of_significant_change():
         Q(type="draft-stream-ise", slug__in=['receive', 'ise-rev', 'iesg-rev', 'rfc-edit', 'iesghold']) |
         Q(type="draft", slug__in=['rfc', 'dead'])
     )
-
-def lookup_community_list(username=None, acronym=None):
-    assert username or acronym
-
-    if acronym:
-        group = get_object_or_404(Group, acronym=acronym)
-        clist = CommunityList.objects.filter(group=group).first() or CommunityList(group=group)
-    else:
-        user = get_object_or_404(User, username__iexact=username)
-        clist = CommunityList.objects.filter(person__user=user).first() or CommunityList(person=user.person)
-
-    return clist
 
 def can_manage_community_list(user, clist):
     if not user or not user.is_authenticated:
