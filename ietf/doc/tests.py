@@ -626,7 +626,7 @@ Man                    Expires September 22, 2015               [Page 3]
         replaced = IndividualDraftFactory()
         draft.relateddocument_set.create(relationship_id='replaces',source=draft,target=replaced.docalias.first())
 
-        external_resource = DocExtResourceFactory(doc=draft)
+        DocExtResourceFactory(doc=draft)
 
         # these tests aren't testing all attributes yet, feel free to
         # expand them

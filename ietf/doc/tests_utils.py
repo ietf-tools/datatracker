@@ -14,7 +14,7 @@ from ietf.person.factories import PersonFactory
 from ietf.utils.test_utils import TestCase, name_of_file_containing, reload_db_objects
 from ietf.person.models import Person
 from ietf.doc.factories import DocumentFactory, WgRfcFactory, WgDraftFactory
-from ietf.doc.models import State, DocumentActionHolder, DocumentAuthor, Document
+from ietf.doc.models import State, DocumentActionHolder, DocumentAuthor
 from ietf.doc.utils import (update_action_holders, add_state_change_event, update_documentauthors,
                             fuzzy_find_documents, rebuild_reference_relations, build_file_urls)
 from ietf.utils.draft import Draft, PlaintextDraft
