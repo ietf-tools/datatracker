@@ -32,7 +32,7 @@ from ietf.submit.utils import (expirable_submissions, expire_submission, find_su
                                process_and_accept_uploaded_submission, SubmissionError, process_submission_text,
                                process_submission_xml, process_uploaded_submission, 
                                process_and_validate_submission)
-from ietf.doc.factories import (DocumentFactory, WgDraftFactory, IndividualDraftFactory, IndividualRfcFactory,
+from ietf.doc.factories import (DocumentFactory, WgDraftFactory, IndividualDraftFactory,
                                 ReviewFactory, WgRfcFactory)
 from ietf.doc.models import ( Document, DocAlias, DocEvent, State,
     BallotPositionDocEvent, DocumentAuthor, SubmissionDocEvent )

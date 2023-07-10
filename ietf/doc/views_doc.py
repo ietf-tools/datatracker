@@ -54,13 +54,13 @@ from django.contrib.staticfiles import finders
 
 import debug                            # pyflakes:ignore
 
-from ietf.doc.models import ( Document, DocAlias, DocHistory, DocEvent, BallotDocEvent, BallotType,
+from ietf.doc.models import ( Document, DocHistory, DocEvent, BallotDocEvent, BallotType,
     ConsensusDocEvent, NewRevisionDocEvent, TelechatDocEvent, WriteupDocEvent, IanaExpertDocEvent,
     IESG_BALLOT_ACTIVE_STATES, STATUSCHANGE_RELATIONS, DocumentActionHolder, DocumentAuthor,
     RelatedDocument, RelatedDocHistory)
 from ietf.doc.utils import (augment_events_with_revision,
     can_adopt_draft, can_unadopt_draft, get_chartering_type, get_tags_for_stream_id,
-    needed_ballot_positions, nice_consensus, prettify_std_name, update_telechat, has_same_ballot,
+    needed_ballot_positions, nice_consensus, update_telechat, has_same_ballot,
     get_initial_notify, make_notify_changed_event, make_rev_history, default_consensus,
     add_events_message_info, get_unicode_document_content,
     augment_docs_and_user_with_user_info, irsg_needed_ballot_positions, add_action_holder_change_event,
