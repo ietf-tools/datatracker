@@ -101,8 +101,20 @@ class ReviewTests(TestCase):
 
         self.assertEqual(list(suggested_review_requests_for_team(team)), [])
 
+        # blocked by an already existing request (don't suggest it again)
+        review_req.state_id = "requested"
+        review_req.save()
+        self.assertEqual(list(suggested_review_requests_for_team(team)), [])
+
+        # ... but not for a previous version
+        review_req.requested_rev = prev_rev
+        review_req.save()
+        self.assertEqual(len(suggested_review_requests_for_team(team)), 1)
+
+
         # blocked by completion
         review_req.state = ReviewRequestStateName.objects.get(slug="assigned")
+        review_req.requested_rev = ""
         review_req.save()
         assignment.state = ReviewAssignmentStateName.objects.get(slug="completed")
         assignment.reviewed_rev = review_req.doc.rev
@@ -115,6 +127,7 @@ class ReviewTests(TestCase):
         assignment.save()
 
         self.assertEqual(len(suggested_review_requests_for_team(team)), 1)
+
 
     def test_suggested_review_requests_on_lc_and_telechat(self):
         review_req = ReviewRequestFactory(state_id='assigned')
