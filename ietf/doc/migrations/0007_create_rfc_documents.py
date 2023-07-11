@@ -40,6 +40,7 @@ def forward(apps, schema_editor):
                 type=rfc_doctype,
                 name=rfc_alias.name,
                 rfc_number=int(rfc_alias.name[3:]),
+                time=draft.time,
                 title=draft.title,
                 stream=draft.stream,
                 group=draft.group,
