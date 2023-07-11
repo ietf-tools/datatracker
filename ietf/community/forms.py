@@ -42,7 +42,10 @@ class SearchRuleForm(forms.ModelForm):
             if rule_type == "group_exp":
                 restrict_state("draft", "expired")
             else:
-                restrict_state("draft", "rfc" if rule_type.endswith("rfc") else "active")
+                if rule_type.endswith("rfc"):
+                    restrict_state("rfc", "published")
+                else:
+                    restrict_state("draft", "active")
             
             if rule_type.startswith("area"):
                 self.fields["group"].label = "Area"
@@ -70,7 +73,10 @@ class SearchRuleForm(forms.ModelForm):
             del self.fields["text"]
 
         elif rule_type in ["author", "author_rfc", "shepherd", "ad"]:
-            restrict_state("draft", "rfc" if rule_type.endswith("rfc") else "active")
+            if rule_type.endswith("rfc"):
+                restrict_state("rfc", "published")
+            else:
+                restrict_state("draft", "active")
 
             if rule_type.startswith("author"):
                 self.fields["person"].label = "Author"
@@ -84,7 +90,10 @@ class SearchRuleForm(forms.ModelForm):
             del self.fields["text"]
 
         elif rule_type == "name_contains":
-            restrict_state("draft", "rfc" if rule_type.endswith("rfc") else "active")
+            if rule_type.endswith("rfc"):
+                restrict_state("rfc", "published")
+            else:
+                restrict_state("draft", "active")
 
             del self.fields["person"]
             del self.fields["group"]
