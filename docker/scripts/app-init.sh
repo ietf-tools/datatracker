@@ -4,6 +4,9 @@ WORKSPACEDIR="/workspace"
 
 sudo service rsyslog start &>/dev/null
 
+# Add /workspace as a safe git directory
+git config --global --add safe.directory /workspace
+
 # Turn off git info in zsh prompt (causes slowdowns)
 git config oh-my-zsh.hide-info 1
 
@@ -18,9 +21,16 @@ sudo chown dev:dev "/assets"
 echo "Fix chromedriver /dev/shm permissions..."
 sudo chmod 1777 /dev/shm
 
+# Run nginx
+echo "Starting nginx..."
+sudo nginx
+
 # Build node packages that requrie native compilation
 echo "Compiling native node packages..."
 yarn rebuild
+
+# Silence Browserlist warnings
+export BROWSERSLIST_IGNORE_OLD_DATA=1
 
 # Generate static assets
 echo "Building static assets... (this could take a minute or two)"
@@ -28,57 +38,31 @@ yarn build
 yarn legacy:build
 
 # Copy config files if needed
-cp $WORKSPACEDIR/docker/configs/settings_mysqldb.py $WORKSPACEDIR/ietf/settings_mysqldb.py
 cp $WORKSPACEDIR/docker/configs/settings_postgresqldb.py $WORKSPACEDIR/ietf/settings_postgresqldb.py
 
 if [ ! -f "$WORKSPACEDIR/ietf/settings_local.py" ]; then
     echo "Setting up a default settings_local.py ..."
-    cp $WORKSPACEDIR/docker/configs/settings_local.py $WORKSPACEDIR/ietf/settings_local.py
-
 else
-    echo "Using existing ietf/settings_local.py file"
-    if ! cmp -s $WORKSPACEDIR/docker/configs/settings_local.py $WORKSPACEDIR/ietf/settings_local.py; then
-        echo "NOTE: Differences detected compared to docker/configs/settings_local.py!"
-        echo "We'll assume you made these deliberately."
-    fi
+    echo "Renaming existing ietf/settings_local.py to ietf/settings_local.py.bak"
+    mv -f $WORKSPACEDIR/ietf/settings_local.py $WORKSPACEDIR/ietf/settings_local.py.bak
 fi
+cp $WORKSPACEDIR/docker/configs/settings_local.py $WORKSPACEDIR/ietf/settings_local.py
 
 if [ ! -f "$WORKSPACEDIR/ietf/settings_local_debug.py" ]; then
     echo "Setting up a default settings_local_debug.py ..."
-    cp $WORKSPACEDIR/docker/configs/settings_local_debug.py $WORKSPACEDIR/ietf/settings_local_debug.py
 else
-    echo "Using existing ietf/settings_local_debug.py file"
-    if ! cmp -s $WORKSPACEDIR/docker/configs/settings_local_debug.py $WORKSPACEDIR/ietf/settings_local_debug.py; then
-        echo "NOTE: Differences detected compared to docker/configs/settings_local_debug.py!"
-        echo "We'll assume you made these deliberately."
-    fi
+    echo "Renaming existing ietf/settings_local_debug.py to ietf/settings_local_debug.py.bak"
+    mv -f $WORKSPACEDIR/ietf/settings_local_debug.py $WORKSPACEDIR/ietf/settings_local_debug.py.bak
 fi
-
-if [ ! -f "$WORKSPACEDIR/ietf/settings_local_sqlitetest.py" ]; then
-    echo "Setting up a default settings_local_sqlitetest.py ..."
-    cp $WORKSPACEDIR/docker/configs/settings_local_sqlitetest.py $WORKSPACEDIR/ietf/settings_local_sqlitetest.py
-else
-    echo "Using existing ietf/settings_local_sqlitetest.py file"
-    if ! cmp -s $WORKSPACEDIR/docker/configs/settings_local_sqlitetest.py $WORKSPACEDIR/ietf/settings_local_sqlitetest.py; then
-        echo "NOTE: Differences detected compared to docker/configs/settings_local_sqlitetest.py!"
-        echo "We'll assume you made these deliberately."
-    fi
-fi
+cp $WORKSPACEDIR/docker/configs/settings_local_debug.py $WORKSPACEDIR/ietf/settings_local_debug.py
 
 if [ ! -f "$WORKSPACEDIR/ietf/settings_local_vite.py" ]; then
     echo "Setting up a default settings_local_vite.py ..."
-    cp $WORKSPACEDIR/docker/configs/settings_local_vite.py $WORKSPACEDIR/ietf/settings_local_vite.py
 else
-    echo "Using existing ietf/settings_local_vite.py file"
-    if ! cmp -s $WORKSPACEDIR/docker/configs/settings_local_vite.py $WORKSPACEDIR/ietf/settings_local_vite.py; then
-        echo "NOTE: Differences detected compared to docker/configs/settings_local_vite.py!"
-        echo "We'll assume you made these deliberately."
-    fi
+    echo "Renaming existing ietf/settings_local_vite.py to ietf/settings_local_vite.py.bak"
+    mv -f $WORKSPACEDIR/ietf/settings_local_vite.py $WORKSPACEDIR/ietf/settings_local_vite.py.bak
 fi
-
-# Recondition settings to make changing databases easier. (Remember that we may have developers starting with settings_local from earlier work)
-python docker/scripts/db-include-fix.py
-cat $WORKSPACEDIR/ietf/settings_local.py | sed 's/from ietf.settings_mysqldb import DATABASES/from ietf.settings_postgresqldb import DATABASES/' > /tmp/settings_local.py && mv /tmp/settings_local.py $WORKSPACEDIR/ietf/settings_local.py
+cp $WORKSPACEDIR/docker/configs/settings_local_vite.py $WORKSPACEDIR/ietf/settings_local_vite.py
 
 # Create data directories
 
@@ -98,9 +82,6 @@ if [ -n "$EDITOR_VSCODE" ]; then
     /usr/local/bin/wait-for db:5432 -- echo "PostgreSQL ready"
 fi
 
-# Make sure PG search path is set
-psql -U django -h db -d ietf -v ON_ERROR_STOP=1 -c '\x' -c 'ALTER USER django set search_path=ietf_utf8,django,public;'
-
 # Run memcached
 
 echo "Starting memcached..."
@@ -115,22 +96,21 @@ echo "Running initial checks..."
 
 /usr/local/bin/python $WORKSPACEDIR/ietf/manage.py migrate --fake-initial --settings=settings_local
 
-echo "-----------------------------------------------------------------"
-echo "Done!"
-echo "-----------------------------------------------------------------"
-
 if [ -z "$EDITOR_VSCODE" ]; then
     CODE=0
     python -m smtpd -n -c DebuggingServer localhost:2025 &
     if [ -z "$*" ]; then
+        echo "-----------------------------------------------------------------"
+        echo "Ready!"
+        echo "-----------------------------------------------------------------"
         echo
         echo "You can execute arbitrary commands now, e.g.,"
         echo
-        echo "    ietf/manage.py runserver 0.0.0.0:8000"
+        echo "    ietf/manage.py runserver 0.0.0.0:8001"
         echo
         echo "to start a development instance of the Datatracker."
         echo
-        echo "    ietf/manage.py test --settings=settings_sqlitetest"
+        echo "    ietf/manage.py test --settings=settings_postgrestest"
         echo
         echo "to run all the python tests."
         echo

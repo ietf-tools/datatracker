@@ -209,7 +209,7 @@ class TemplateChecksTestCase(TestCase):
         errors = []
         for path, template in self.templates.items():
             origin = str(template.origin).replace(settings.BASE_DIR, '')
-            for node in template:
+            for node in template.nodelist:
                 for child in node.get_nodes_by_type(node_type):
                     errors += func(child, origin, *args, **kwargs)
         if errors:
@@ -399,6 +399,56 @@ class XMLDraftTests(TestCase):
                 'rfc1207': XMLDraft.REF_TYPE_UNKNOWN,
             }
         )
+
+    def test_parse_creation_date(self):
+        # override date_today to avoid skew when test runs around midnight
+        today = datetime.date.today()
+        with patch("ietf.utils.xmldraft.date_today", return_value=today):
+            # Note: using a dict as a stand-in for XML elements, which rely on the get() method
+            self.assertEqual(
+                XMLDraft.parse_creation_date({"year": "2022", "month": "11", "day": "24"}),
+                datetime.date(2022, 11, 24),
+                "Fully specified date should be parsed",
+            )
+            self.assertEqual(
+                XMLDraft.parse_creation_date(None), None, "return None if input is None"
+            )
+            # Cases where the date is empty - missing fields or fields filled in with blank strings.
+            self.assertEqual(XMLDraft.parse_creation_date({}), today)
+            self.assertEqual(XMLDraft.parse_creation_date({"day": ""}), today)
+            self.assertEqual(XMLDraft.parse_creation_date({}), today)
+            self.assertEqual(XMLDraft.parse_creation_date({"year": ""}), today)
+            self.assertEqual(XMLDraft.parse_creation_date({"month": ""}), today)
+            self.assertEqual(XMLDraft.parse_creation_date({"day": ""}), today)
+            self.assertEqual(XMLDraft.parse_creation_date({"year": "", "month": ""}), today)
+            self.assertEqual(XMLDraft.parse_creation_date({"year": "", "day": ""}), today)
+            self.assertEqual(XMLDraft.parse_creation_date({"month": "", "day": ""}), today)
+            self.assertEqual(
+                XMLDraft.parse_creation_date({"year": "", "month": "", "day": ""}), today
+            )
+            self.assertEqual(
+                XMLDraft.parse_creation_date(
+                    {"year": str(today.year), "month": str(today.month), "day": ""}
+                ),
+                today,
+            )
+            # When year/month do not match, day should be 15th of the month
+            self.assertEqual(
+                XMLDraft.parse_creation_date(
+                    {"year": str(today.year - 1), "month": str(today.month), "day": ""}
+                ),
+                datetime.date(today.year - 1, today.month, 15),
+            )
+            self.assertEqual(
+                XMLDraft.parse_creation_date(
+                    {
+                        "year": str(today.year),
+                        "month": "1" if today.month != 1 else "2",
+                        "day": "",
+                    }
+                ),
+                datetime.date(today.year, 1 if today.month != 1 else 2, 15),
+            )
 
 
 class NameTests(TestCase):

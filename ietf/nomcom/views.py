@@ -18,8 +18,9 @@ from django.http import Http404, HttpResponseRedirect, HttpResponse
 from django.shortcuts import render, get_object_or_404, redirect
 from django.template.loader import render_to_string
 from django.urls import reverse
-from django.utils.encoding import force_bytes, force_text
+from django.utils.encoding import force_bytes, force_str
 
+from email.errors import HeaderParseError
 
 from ietf.dbtemplate.models import DBTemplate
 from ietf.dbtemplate.views import group_template_edit, group_template_show
@@ -158,8 +159,16 @@ def private_key(request, year):
     if request.method == 'POST':
         form = PrivateKeyForm(data=request.POST)
         if form.is_valid():
-            store_nomcom_private_key(request, year, force_bytes(form.cleaned_data.get('key', '')))
-            return HttpResponseRedirect(back_url)
+            try:
+                store_nomcom_private_key(request, year, force_bytes(form.cleaned_data.get('key', '')))
+            except UnicodeError:
+                form.add_error(
+                    None, 
+                    "An internal error occurred while adding your private key to your session."
+                    f"Please contact the secretariat for assistance ({settings.SECRETARIAT_SUPPORT_EMAIL})"
+                )
+            else:
+                return HttpResponseRedirect(back_url)
     else:
         form = PrivateKeyForm()
 
@@ -644,9 +653,12 @@ def private_feedback_email(request, year):
         form = FeedbackEmailForm(data=request.POST,
                                  nomcom=nomcom)
         if form.is_valid():
-            form.save()
-            form = FeedbackEmailForm(nomcom=nomcom)
-            messages.success(request, 'The feedback email has been registered.')
+            try:
+                form.save()
+                form = FeedbackEmailForm(nomcom=nomcom)
+                messages.success(request, 'The feedback email has been registered.')
+            except HeaderParseError:
+                messages.error(request, 'Missing email headers')
 
     return render(request, template,
                               {'form': form,
@@ -684,7 +696,7 @@ def private_questionnaire(request, year):
         if form.is_valid():
             form.save()
             messages.success(request, 'The questionnaire response has been registered.')
-            questionnaire_response = force_text(form.cleaned_data['comment_text'])
+            questionnaire_response = force_str(form.cleaned_data['comment_text'])
             form = QuestionnaireForm(nomcom=nomcom, user=request.user)
     else:
         form = QuestionnaireForm(nomcom=nomcom, user=request.user)
@@ -1094,6 +1106,41 @@ def edit_template(request, year, template_id):
 def list_positions(request, year):
     nomcom = get_nomcom_by_year(year)
     positions = nomcom.position_set.order_by('-is_open')
+    if request.method == 'POST':
+        if nomcom.group.state_id != 'active':
+            messages.warning(request, "This nomcom is not active. Request administrative assistance if Position state needs to change.")
+        else:
+            action = request.POST.get('action')
+            positions_to_modify = request.POST.getlist('selected')
+            if positions_to_modify:
+                positions = positions.filter(id__in=positions_to_modify)
+                if action == "set_iesg":
+                    positions.update(is_iesg_position=True)
+                    messages.success(request,'The selected positions have been set as IESG Positions')
+                elif action == "unset_iesg":
+                    positions.update(is_iesg_position=False)
+                    messages.success(request,'The selected positions have been set as NOT IESG Positions')
+                elif action == "set_open":
+                    positions.update(is_open=True)
+                    messages.success(request,'The selected positions have been set as Open')
+                elif action == "unset_open":
+                    positions.update(is_open=False)
+                    messages.success(request,'The selected positions have been set as NOT Open')
+                elif action == "set_accept_nom":
+                    positions.update(accepting_nominations=True)
+                    messages.success(request,'The selected positions have been set as Accepting Nominations')
+                elif action == "unset_accept_nom":
+                    positions.update(accepting_nominations=False)
+                    messages.success(request,'The selected positions have been set as NOT Accepting Nominations')
+                elif action == "set_accept_fb":
+                    positions.update(accepting_feedback=True)
+                    messages.success(request,'The selected positions have been set as Accepting Feedback')
+                elif action == "unset_accept_fb":
+                    positions.update(accepting_feedback=False)
+                    messages.success(request,'The selected positions have been set as NOT Accepting Feedback')
+                positions = nomcom.position_set.order_by('-is_open')
+            else:
+                messages.warning(request, "Please select some positions to work with")
 
     return render(request, 'nomcom/list_positions.html',
                               {'positions': positions,
@@ -1332,4 +1379,13 @@ def private_volunteers_csv(request, year, public=False):
     for v in volunteers:
         writer.writerow([v.person.last_name(), v.person.first_name(), v.person.ascii_name(), v.affiliation, v.person.email(), v.qualifications, v.eligible])
     return response
+
+@role_required("Nomcom Chair", "Nomcom Advisor", "Secretariat")
+def qualified_volunteer_list_for_announcement(request, year, public=False):
+    _, volunteers = extract_volunteers(year)
+    qualified_volunteers = [v for v in volunteers if v.eligible]
+    return render(request, 'nomcom/qualified_volunteer_list_for_announcement.txt',
+                dict(volunteers=qualified_volunteers),
+                content_type="text/plain; charset=%s"%settings.DEFAULT_CHARSET)
+
 

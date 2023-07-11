@@ -18,7 +18,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.core import serializers
 from django.db import DEFAULT_DB_ALIAS, DatabaseError, IntegrityError, connections
 from django.db.models.signals import post_save
-from django.utils.encoding import force_text
+from django.utils.encoding import force_str
 import django.core.management.commands.loaddata as loaddata
 
 import debug                            # pyflakes:ignore
@@ -91,7 +91,7 @@ class Command(loaddata.Command):
                         obj.save(using=self.using)
                         self.loaded_object_count += 1
                     except (DatabaseError, IntegrityError, ObjectDoesNotExist, AttributeError) as e:
-                        error_msg = force_text(e)
+                        error_msg = force_str(e)
                         if "Duplicate entry" in error_msg:
                             pass
                         else:

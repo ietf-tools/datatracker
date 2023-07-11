@@ -83,7 +83,7 @@ from ietf.group.utils import (get_charter_text, can_manage_all_groups_of_type,
 from ietf.ietfauth.utils import has_role, is_authorized_in_group
 from ietf.mailtrigger.utils import gather_relevant_expansions
 from ietf.meeting.helpers import get_meeting
-from ietf.meeting.utils import group_sessions, add_event_info_to_session_qs
+from ietf.meeting.utils import group_sessions
 from ietf.name.models import GroupTypeName, StreamName
 from ietf.person.models import Email, Person
 from ietf.review.models import (ReviewRequest, ReviewAssignment, ReviewerSettings, 
@@ -166,6 +166,7 @@ def fill_in_charter_info(group, include_drafts=False):
         group.charter_text = get_charter_text(group)
     else:
         group.charter_text = "Not chartered yet."
+    group.charter_html = markdown.markdown(group.charter_text)
 
 def extract_last_name(role):
     return role.person.name_parts()[3]
@@ -300,8 +301,27 @@ def active_groups(request, group_type=None):
         raise Http404
 
 def active_group_types(request):
-    grouptypes = GroupTypeName.objects.filter(slug__in=['wg','rg','ag','rag','team','dir','review','area','program','iabasg','adm']).filter(group__state='active').annotate(group_count=Count('group'))
-    return render(request, 'group/active_groups.html', {'grouptypes':grouptypes})
+    grouptypes = (
+        GroupTypeName.objects.filter(
+            slug__in=[
+                "wg",
+                "rg",
+                "ag",
+                "rag",
+                "team",
+                "dir",
+                "review",
+                "area",
+                "program",
+                "iabasg",
+                "adm",
+            ]
+        )
+        .filter(group__state="active")
+        .order_by('order', 'name')  # default ordering ignored for "GROUP BY" queries, make it explicit
+        .annotate(group_count=Count("group"))
+    )
+    return render(request, "group/active_groups.html", {"grouptypes": grouptypes})
 
 def active_dirs(request):
     dirs = Group.objects.filter(type__in=['dir', 'review'], state="active").order_by("name")
@@ -544,6 +564,7 @@ def group_about(request, acronym, group_type=None):
     can_provide_update = can_provide_status_update(request.user, group)
     status_update = group.latest_event(type="status_update")
 
+    subgroups = Group.objects.filter(parent=group, state="active").exclude(type__slug__in=["sdo", "individ", "nomcom"]).order_by("type", "acronym")
 
     return render(request, 'group/group_about.html',
                   construct_group_menu_context(request, group, "about", group_type, {
@@ -556,6 +577,7 @@ def group_about(request, acronym, group_type=None):
                       "charter_submit_url": charter_submit_url,
                       "editable_roles": group.used_roles or group.features.default_used_roles,
                       "closing_note": e,
+                      "subgroups": subgroups,
                   }))
 
 def all_status(request):
@@ -807,18 +829,22 @@ def email_aliases(request, acronym=None, group_type=None):
 
     return render(request,'group/email_aliases.html',{'aliases':aliases,'ietf_domain':settings.IETF_DOMAIN,'group':group})
 
-def meetings(request, acronym=None, group_type=None):
-    group = get_group_or_404(acronym,group_type) if acronym else None
+def meetings(request, acronym, group_type=None):
+    group = get_group_or_404(acronym, group_type)
 
-    four_years_ago = timezone.now()-datetime.timedelta(days=4*365)
+    four_years_ago = timezone.now() - datetime.timedelta(days=4 * 365)
 
-    sessions = add_event_info_to_session_qs(
-        group.session_set.filter(
-            meeting__date__gt=four_years_ago,
-            type__in=['regular','plenary','other']
+    sessions = (
+        group.session_set.with_current_status()
+        .filter(
+            meeting__date__gt=four_years_ago
+            if group.acronym != "iab"
+            else datetime.date(1970, 1, 1),
+            type__in=["regular", "plenary", "other"],
         )
-    ).filter(
-        current_status__in=['sched','schedw','appr','canceled'],
+        .filter(
+            current_status__in=["sched", "schedw", "appr", "canceled"],
+        )
     )
     sessions = list(sessions)
     for s in sessions:
@@ -826,19 +852,40 @@ def meetings(request, acronym=None, group_type=None):
 
     future, in_progress, recent, past = group_sessions(sessions)
 
-    can_edit = group.has_role(request.user,group.features.groupman_roles)
-    can_always_edit = has_role(request.user,["Secretariat","Area Director"])
+    can_edit = group.has_role(request.user, group.features.groupman_roles)
+    can_always_edit = has_role(request.user, ["Secretariat", "Area Director"])
 
-    return render(request,'group/meetings.html',
-                  construct_group_menu_context(request, group, "meetings", group_type, {
-                     'group':group,
-                     'future':future,
-                     'in_progress':in_progress,
-                     'recent':recent,
-                     'past':past,
-                     'can_edit':can_edit,
-                     'can_always_edit':can_always_edit,
-                  }))
+    far_past = []
+    if group.acronym == "iab":
+        recent_past = []
+        for s in past:
+            if s.time >= four_years_ago:
+                recent_past.append(s)
+            else:
+                far_past.append(s)
+        past = recent_past
+
+    return render(
+        request,
+        "group/meetings.html",
+        construct_group_menu_context(
+            request,
+            group,
+            "meetings",
+            group_type,
+            {
+                "group": group,
+                "future": future,
+                "in_progress": in_progress,
+                "recent": recent,
+                "past": past,
+                "far_past": far_past,
+                "can_edit": can_edit,
+                "can_always_edit": can_always_edit,
+            },
+        ),
+    )
+
 
 def chair_photos(request, group_type=None):
     roles = sorted(Role.objects.filter(group__type=group_type, group__state='active', name_id='chair'),key=lambda x: x.person.last_name()+x.person.name+x.group.acronym)
@@ -866,60 +913,6 @@ def group_photos(request, group_type=None, acronym=None):
                       'roles': roles,
                       'group':group }))
 
-
-
-## XXX Remove after testing
-# def get_or_create_initial_charter(group, group_type):
-#     charter_name = charter_name_for_group(group)
-# 
-#     try:
-#         charter = Document.objects.get(docalias__name=charter_name)
-#     except Document.DoesNotExist:
-#         charter = Document(
-#             name=charter_name,
-#             type_id="charter",
-#             title=group.name,
-#             group=group,
-#             abstract=group.name,
-#             rev="00-00",
-#         )
-#         charter.save()
-#         charter.set_state(State.objects.get(used=True, type="charter", slug="notrev"))
-# 
-#         # Create an alias as well
-#         DocAlias.objects.create(name=charter.name).docs.add(charter)
-# 
-#     return charter
-# 
-# @login_required
-# def submit_initial_charter(request, group_type=None, acronym=None):
-# 
-#     # This needs refactoring.
-#     # The signature assumed you could have groups with the same name, but with different types, which we do not allow.
-#     # Consequently, this can be called with an existing group acronym and a type 
-#     # that doesn't match the existing group type. The code below essentially ignores the group_type argument.
-#     #
-#     # If possible, the use of get_or_create_initial_charter should be moved
-#     # directly into charter_submit, and this function should go away.
-# 
-#     if acronym==None:
-#         raise Http404
-# 
-#     group = get_object_or_404(Group, acronym=acronym)
-#     if not group.features.has_chartering_process:
-#         raise Http404
-# 
-#     # This is where we start ignoring the passed in group_type
-#     group_type = group.type_id
-# 
-#     if not can_manage_group(request.user, group):
-#         permission_denied(request, "You don't have permission to access this view")
-# 
-#     if not group.charter:
-#         group.charter = get_or_create_initial_charter(group, group_type)
-#         group.save()
-# 
-#     return redirect('ietf.doc.views_charter.submit', name=group.charter.name, option="initcharter")
 
 @login_required
 def edit(request, group_type=None, acronym=None, action="edit", field=None):

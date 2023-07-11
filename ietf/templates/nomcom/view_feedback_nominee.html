@@ -78,9 +78,9 @@
                             <dt class="col-sm-2">
                                 Feedback
                             </dt>
-                            <dd class="col-sm-10 pasted"><pre>
-                                {% decrypt feedback.comments request year 1 %}
-                            </pre></dd>
+                            <dd class="col-sm-10 pasted">
+                                <pre>{% decrypt feedback.comments request year 1 %}</pre>
+                            </dd>
                         </dl>
                         {% if not forloop.last %}<hr>{% endif %}
                     {% endif %}

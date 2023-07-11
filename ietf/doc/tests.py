@@ -40,7 +40,7 @@ from ietf.doc.factories import ( DocumentFactory, DocEventFactory, CharterFactor
     ConflictReviewFactory, WgDraftFactory, IndividualDraftFactory, WgRfcFactory, 
     IndividualRfcFactory, StateDocEventFactory, BallotPositionDocEventFactory, 
     BallotDocEventFactory, DocumentAuthorFactory, NewRevisionDocEventFactory,
-    StatusChangeFactory, BofreqFactory, DocExtResourceFactory)
+    StatusChangeFactory, BofreqFactory, DocExtResourceFactory, RgDraftFactory)
 from ietf.doc.forms import NotifyForm
 from ietf.doc.fields import SearchableDocumentsField
 from ietf.doc.utils import create_ballot_if_not_open, uppercase_std_abbreviated_name
@@ -617,7 +617,9 @@ Man                    Expires September 22, 2015               [Page 3]
                 f.write(self.draft_text)
 
     def test_document_draft(self):
-        draft = WgDraftFactory(name='draft-ietf-mars-test',rev='01')
+        draft = WgDraftFactory(name='draft-ietf-mars-test',rev='01', create_revisions=range(0,2))
+
+
         HolderIprDisclosureFactory(docs=[draft])
         
         # Docs for testing relationships. Does not test 'possibly-replaces'. The 'replaced_by' direction
@@ -785,6 +787,7 @@ Man                    Expires September 22, 2015               [Page 3]
         self.assertEqual(len(q('#sidebar option[value="draft-ietf-mars-test-00"][selected="selected"]')), 1)
 
         rfc = WgRfcFactory()
+        rfc.save_with_history([DocEventFactory(doc=rfc)])
         (Path(settings.RFC_PATH) / rfc.get_base_name()).touch()
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_html", kwargs=dict(name=rfc.canonical_name())))
         self.assertEqual(r.status_code, 200)
@@ -1776,7 +1779,7 @@ class DocTestCase(TestCase):
         self.client.login(username='ad', password='ad+password')
         r = self.client.post(urlreverse('ietf.doc.views_status_change.change_state',kwargs=dict(name=doc.name)),dict(new_state=iesgeval_pk))
         self.assertEqual(r.status_code, 302)
-        r = self.client.get(r._headers["location"][1])
+        r = self.client.get(r.headers["location"])
         self.assertContains(r, ">IESG Evaluation<")
         self.assertEqual(len(outbox), 2)
         self.assertIn('iesg-secretary',outbox[0]['To'])
@@ -1908,11 +1911,31 @@ class DocTestCase(TestCase):
         self.assertContains(r, doc.name)
 
     def test_rfc_feed(self):
-        WgRfcFactory()
+        rfc = WgRfcFactory(alias2__name="rfc9000")
+        DocEventFactory(doc=rfc, type="published_rfc")
         r = self.client.get("/feed/rfc/")
         self.assertTrue(r.status_code, 200)
+        q = PyQuery(r.content[39:]) # Strip off the xml declaration
+        self.assertEqual(len(q("item")), 1)
+        item = q("item")[0]
+        media_content = item.findall("{http://search.yahoo.com/mrss/}content")
+        self.assertEqual(len(media_content),4)
+        types = set([m.attrib["type"] for m in media_content])
+        self.assertEqual(types, set(["application/rfc+xml", "text/plain", "text/html", "application/pdf"]))
+        rfcs_2016 = WgRfcFactory.create_batch(3) # rfc numbers will be well below v3
+        for rfc in rfcs_2016:
+            e = DocEventFactory(doc=rfc, type="published_rfc")
+            e.time = e.time.replace(year=2016)
+            e.save()
         r = self.client.get("/feed/rfc/2016")
         self.assertTrue(r.status_code, 200)
+        q = PyQuery(r.content[39:])
+        self.assertEqual(len(q("item")), 3)
+        item = q("item")[0]
+        media_content = item.findall("{http://search.yahoo.com/mrss/}content")
+        self.assertEqual(len(media_content), 3)
+        types = set([m.attrib["type"] for m in media_content])
+        self.assertEqual(types, set(["text/plain", "text/html", "application/pdf"]))
 
     def test_state_help(self):
         url = urlreverse('ietf.doc.views_help.state_help', kwargs=dict(type="draft-iesg"))
@@ -2819,3 +2842,45 @@ class NotifyValidationTests(TestCase):
             self.assertFalse(f.is_valid())
             self.assertTrue("Invalid addresses" in f.errors["notify"][0])
             self.assertTrue("Duplicate addresses" in f.errors["notify"][0])
+
+class CanRequestConflictReviewTests(TestCase):
+    def test_gets_request_conflict_review_action_button(self):
+        ise_draft = IndividualDraftFactory(stream_id="ise")
+        irtf_draft = RgDraftFactory()
+
+        # This is blunt, trading off precision for time. A more thorough test would ensure
+        # that the text is in a button and that the correct link is absent/present as well.
+
+        target_string = "Begin IETF conflict review"
+
+        url = urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=irtf_draft.name))
+        r = self.client.get(url)
+        self.assertNotContains(r, target_string)
+        self.client.login(username="secretary", password="secretary+password")
+        r = self.client.get(url)
+        self.assertContains(r, target_string)
+        self.client.logout()
+        self.client.login(username="irtf-chair", password="irtf-chair+password")
+        r = self.client.get(url)
+        self.assertContains(r, target_string)
+        self.client.logout()
+        self.client.login(username="ise-chair", password="ise-chair+password")
+        r = self.client.get(url)
+        self.assertNotContains(r, target_string)
+        self.client.logout()
+
+        url = urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=ise_draft.name))
+        r = self.client.get(url)
+        self.assertNotContains(r, target_string)
+        self.client.login(username="secretary", password="secretary+password")
+        r = self.client.get(url)
+        self.assertContains(r, target_string)
+        self.client.logout()
+        self.client.login(username="irtf-chair", password="irtf-chair+password")
+        r = self.client.get(url)
+        self.assertNotContains(r, target_string)
+        self.client.logout()
+        self.client.login(username="ise-chair", password="ise-chair+password")
+        r = self.client.get(url)
+        self.assertContains(r, target_string)
+

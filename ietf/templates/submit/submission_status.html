@@ -133,17 +133,26 @@
             This submission is awaiting the first Internet-Draft upload.
         </p>
     {% elif submission.state_id == 'validating' %}
-        <p class="alert alert-warning my-3">
-            This submission is still being processed and validated. This normally takes a few minutes after
-            submission.
+        <div class="alert alert-danger my-3">
+            Notice: The Internet-Draft submission process has changed as of Datatracker version 10.3.0.
+            Your Internet-Draft is currently being processed and validated asynchronously. Results will be
+            displayed at this URL when they are available. If JavaScript is enabled in your
+            browser, this page will refreshed automatically. If JavaScript is not enabled, 
+            please reload this page in a few minutes to see the results.
+        </div>
+        <div id="submission-validating-alert"
+             class="alert alert-warning my-3"
+             data-submission-status-url="{% url 'ietf.submit.views.api_submission_status' submission_id=submission.pk %}">
+            This submission is being processed and validated. This usually takes a few seconds but may
+            take a few minutes for complex drafts or during periods of heavy load.
             {% with earliest_event=submission.submissionevent_set.last %}
-                {% if earliest_event %}
-                    It has been {{ earliest_event.time|timesince }} since submission.
-                {% endif %}
+            {% if earliest_event %}
+            Your draft was uploaded at {{ earliest_event.time }}.
+            {% endif %}
             {% endwith %}
             Please contact the secretariat for assistance if it has been more than an hour.
-        </p>
-    {% else %}
+        </div>
+        {% else %}
         <h2 class="mt-5">Meta-data from the submission</h2>
         {% if errors %}
             <div class="alert alert-danger my-3">
@@ -516,7 +525,7 @@
         </a>
     {% endif %}
     {% if show_send_full_url %}
-        <div class="alert alert-danger my-3">
+        <div class="alert alert-info my-3">
             <p>
                 You are not allowed to modify or cancel this submission. You can
                 only modify or cancel this submission from the same URL you were
@@ -535,7 +544,7 @@
             <form class="mt-3" method="post">
                 {% csrf_token %}
                 <input type="hidden" name="action" value="sendfullurl">
-                <button class="btn btn-danger" type="submit">
+                <button class="btn btn-primary" type="submit">
                     Request full access URL
                 </button>
             </form>

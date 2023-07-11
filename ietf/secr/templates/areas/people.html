@@ -1,10 +1,8 @@
 {% extends "base_site.html" %}
-{% load staticfiles %}
+{% load static %}
 {% block title %}Areas - People{% endblock %}
 
 {% block extrahead %}{{ block.super }}
-    <link rel="stylesheet" href="{% static 'ietf/css/jquery-ui.css' %}">
-    <script src="{% static 'ietf/js/jquery-ui.js' %}"></script>
     <script src="{% static 'secr/js/utils.js' %}"></script>
 {% endblock %}
 

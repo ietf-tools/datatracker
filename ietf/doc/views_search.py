@@ -65,6 +65,7 @@ from ietf.name.models import DocTagName, DocTypeName, StreamName
 from ietf.person.models import Person
 from ietf.person.utils import get_active_ads
 from ietf.utils.draft_search import normalize_draftname
+from ietf.utils.log import log
 from ietf.doc.utils_search import prepare_document_table
 
 
@@ -222,12 +223,14 @@ def search(request):
             return HttpResponseBadRequest("form not valid: %s" % form.errors)
 
         cache_key = get_search_cache_key(get_params)
-        results = cache.get(cache_key)
-        if not results:
+        cached_val = cache.get(cache_key)
+        if cached_val:
+            [results, meta] = cached_val
+        else:
             results = retrieve_search_results(form)
-            cache.set(cache_key, results)
-
-        results, meta = prepare_document_table(request, results, get_params)
+            results, meta = prepare_document_table(request, results, get_params)
+            cache.set(cache_key, [results, meta]) # for settings.CACHE_MIDDLEWARE_SECONDS
+            log(f"Search results computed for {get_params}")
         meta['searching'] = True
     else:
         form = SearchForm()
@@ -461,7 +464,7 @@ def ad_dashboard_sort_key(doc):
 
 
 def ad_workload(request):
-    delta = datetime.timedelta(days=30)
+    delta = datetime.timedelta(days=120)
     right_now = timezone.now()
 
     ads = []
@@ -765,7 +768,9 @@ def drafts_in_iesg_process(request):
             if s.slug == "lc":
                 for d in docs:
                     e = d.latest_event(LastCallDocEvent, type="sent_last_call")
-                    d.lc_expires = e.expires if e else datetime.datetime.min
+                    # If we don't have an event, use an arbitrary date in the past (but not datetime.datetime.min,
+                    # which causes problems with timezone conversions)
+                    d.lc_expires = e.expires if e else datetime.datetime(1950, 1, 1)
                 docs = list(docs)
                 docs.sort(key=lambda d: d.lc_expires)
 
@@ -844,11 +849,12 @@ def index_all_drafts(request):
     return render(request, 'doc/index_all_drafts.html', { "categories": categories })
 
 def index_active_drafts(request):
+    slowcache = caches['slowpages']
     cache_key = 'doc:index_active_drafts'
-    groups = cache.get(cache_key)
+    groups = slowcache.get(cache_key)
     if not groups:
         groups = active_drafts_index_by_group()
-        cache.set(cache_key, groups, 15*60)
+        slowcache.set(cache_key, groups, 15*60)
     return render(request, "doc/index_active_drafts.html", { 'groups': groups })
 
 def ajax_select2_search_docs(request, model_name, doc_type):

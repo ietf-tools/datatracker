@@ -10,9 +10,6 @@ from ietf.settings_postgresqldb import DATABASES   # pyflakes:ignore
 IDSUBMIT_IDNITS_BINARY = "/usr/local/bin/idnits"
 IDSUBMIT_REPOSITORY_PATH = "test/id/"
 IDSUBMIT_STAGING_PATH = "test/staging/"
-INTERNET_DRAFT_ARCHIVE_DIR = "test/archive/"
-INTERNET_ALL_DRAFTS_ARCHIVE_DIR = "test/archive/"
-RFC_PATH = "test/rfc/"
 
 AGENDA_PATH = '/assets/www6s/proceedings/'
 MEETINGHOST_LOGO_PATH = AGENDA_PATH
@@ -52,8 +49,12 @@ CONFLICT_REVIEW_PATH = '/assets/ietf-ftp/conflict-reviews/'
 STATUS_CHANGE_PATH = '/assets/ietf-ftp/status-changes/'
 INTERNET_DRAFT_ARCHIVE_DIR = '/assets/archive/id'
 INTERNET_ALL_DRAFTS_ARCHIVE_DIR = '/assets/archive/id'
+BIBXML_BASE_PATH = '/assets/ietfdata/derived/bibxml'
 
 NOMCOM_PUBLIC_KEYS_DIR = 'data/nomcom_keys/public_keys/'
 SLIDE_STAGING_PATH = 'test/staging/'
 
 DE_GFM_BINARY = '/usr/local/bin/de-gfm'
+
+STATIC_IETF_ORG = "/_static"
+STATIC_IETF_ORG_INTERNAL = "http://static"

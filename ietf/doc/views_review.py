@@ -11,7 +11,7 @@ import requests
 import email.utils
 
 from django.utils import timezone
-from django.utils.http import is_safe_url
+from django.utils.http import url_has_allowed_host_and_scheme
 
 from simple_history.utils import update_change_reason
 
@@ -53,6 +53,7 @@ from ietf.utils.textupload import get_cleaned_text_file_content
 from ietf.utils.mail import send_mail_message
 from ietf.mailtrigger.utils import gather_address_lists
 from ietf.utils.fields import MultiEmailField
+from ietf.utils.http import is_ajax
 from ietf.utils.response import permission_denied
 from ietf.utils.timezone import date_today, DEADLINE_TZINFO
 
@@ -347,6 +348,7 @@ def assign_reviewer(request, name, request_id):
 
 class RejectReviewerAssignmentForm(forms.Form):
     message_to_secretary = forms.CharField(widget=forms.Textarea, required=False, help_text="Optional explanation of rejection, will be emailed to team secretary if filled in", strip=False)
+    wants_to_be_next = forms.BooleanField(label="I want to be assigned new document immediately", required=False)
 
 @login_required
 def reject_reviewer_assignment(request, name, assignment_id):
@@ -388,11 +390,12 @@ def reject_reviewer_assignment(request, name, assignment_id):
             )
 
             policy = get_reviewer_queue_policy(review_assignment.review_request.team)
-            policy.return_reviewer_to_rotation_top(review_assignment.reviewer.person)
+            policy.return_reviewer_to_rotation_top(review_assignment.reviewer.person, form.cleaned_data['wants_to_be_next'])
 
             msg = render_to_string("review/reviewer_assignment_rejected.txt", {
                 "by": request.user.person,
-                "message_to_secretary": form.cleaned_data.get("message_to_secretary")
+                "message_to_secretary": form.cleaned_data.get("message_to_secretary"),
+                "wants_to_be_next" : form.cleaned_data['wants_to_be_next']
             })
 
             email_review_assignment_change(request, review_assignment, "Reviewer assignment rejected", msg, by=request.user.person, notify_secretary=True, notify_reviewer=True, notify_requested_by=False)
@@ -438,7 +441,7 @@ def withdraw_reviewer_assignment(request, name, assignment_id):
         )            
 
         policy = get_reviewer_queue_policy(review_assignment.review_request.team)
-        policy.return_reviewer_to_rotation_top(review_assignment.reviewer.person)
+        policy.return_reviewer_to_rotation_top(review_assignment.reviewer.person, True)
         
         msg = "Review assignment withdrawn by %s"%request.user.person
 
@@ -1085,11 +1088,16 @@ def review_wishes_remove(request, name):
 
 
 def _generate_ajax_or_redirect_response(request, doc):
-    redirect_url = request.GET.get('next')
-    url_is_safe = is_safe_url(url=redirect_url, allowed_hosts=request.get_host(),
-                              require_https=request.is_secure())
-    if request.is_ajax():
-        return HttpResponse(json.dumps({'success': True}), content_type='application/json')
+    redirect_url = request.GET.get("next")
+    url_is_safe = url_has_allowed_host_and_scheme(
+        url=redirect_url,
+        allowed_hosts=request.get_host(),
+        require_https=request.is_secure(),
+    )
+    if is_ajax(request):
+        return HttpResponse(
+            json.dumps({"success": True}), content_type="application/json"
+        )
     elif url_is_safe:
         return HttpResponseRedirect(redirect_url)
     else:

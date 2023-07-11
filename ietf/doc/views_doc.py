@@ -114,13 +114,46 @@ def render_document_top(request, doc, tab, name):
                 rsab_ballot,  
                 None if rsab_ballot else "RSAB Evaluation Ballot has not been created yet"
             ))
-    if doc.type_id in ("draft","conflrev", "statchg"):
-        tabs.append(("IESG Evaluation Record", "ballot", urlreverse("ietf.doc.views_doc.document_ballot", kwargs=dict(name=name)), iesg_ballot,  None if iesg_ballot else "IESG Evaluation Ballot has not been created yet"))
-    elif doc.type_id == "charter" and doc.group.type_id == "wg":
-        tabs.append(("IESG Review", "ballot", urlreverse("ietf.doc.views_doc.document_ballot", kwargs=dict(name=name)), iesg_ballot, None if iesg_ballot else "IESG Review Ballot has not been created yet"))
-    
-    if doc.type_id == "draft" or (doc.type_id == "charter" and doc.group.type_id == "wg"):
-        tabs.append(("IESG Writeups", "writeup", urlreverse('ietf.doc.views_doc.document_writeup', kwargs=dict(name=name)), True, None))
+
+    if iesg_ballot or (doc.group and doc.group.type_id == "wg"):
+        if doc.type_id in ("draft", "conflrev", "statchg"):
+            tabs.append(
+                (
+                    "IESG Evaluation Record",
+                    "ballot",
+                    urlreverse(
+                        "ietf.doc.views_doc.document_ballot", kwargs=dict(name=name)
+                    ),
+                    iesg_ballot,
+                    None,
+                )
+            )
+        elif doc.type_id == "charter" and doc.group and doc.group.type_id == "wg":
+            tabs.append(
+                (
+                    "IESG Review",
+                    "ballot",
+                    urlreverse(
+                        "ietf.doc.views_doc.document_ballot", kwargs=dict(name=name)
+                    ),
+                    iesg_ballot,
+                    None,
+                )
+            )
+        if doc.type_id == "draft" or (
+            doc.type_id == "charter" and doc.group and doc.group.type_id == "wg"
+        ):
+            tabs.append(
+                (
+                    "IESG Writeups",
+                    "writeup",
+                    urlreverse(
+                        "ietf.doc.views_doc.document_writeup", kwargs=dict(name=name)
+                    ),
+                    True,
+                    None,
+                )
+            )
 
     tabs.append(("Email expansions","email",urlreverse('ietf.doc.views_doc.document_email', kwargs=dict(name=name)), True, None))
     tabs.append(("History", "history", urlreverse('ietf.doc.views_doc.document_history', kwargs=dict(name=name)), True, None))
@@ -151,6 +184,7 @@ def interesting_doc_relations(doc):
 
     that_doc_relationships = ('replaces', 'possibly_replaces', 'updates', 'obs')
 
+    # TODO: This returns the relationships in database order, which may not be the order we want to display them in.
     interesting_relations_that = cls.objects.filter(target__docs=target, relationship__in=that_relationships).select_related('source')
     interesting_relations_that_doc = cls.objects.filter(source=doc, relationship__in=that_doc_relationships).prefetch_related('target__docs')
 
@@ -244,7 +278,7 @@ def document_main(request, name, rev=None, document_html=False):
         is_author = request.user.is_authenticated and doc.documentauthor_set.filter(person__user=request.user).exists()
         can_view_possibly_replaces = can_edit_replaces or is_author
 
-        rfc_number = name[3:] if name.startswith("") else None
+        rfc_number = name[3:] if name.startswith("rfc") else None
         draft_name = None
         for a in aliases:
             if a.startswith("draft"):
@@ -427,12 +461,20 @@ def document_main(request, name, rev=None, document_html=False):
                         urlreverse('ietf.doc.views_ballot.close_rsab_ballot', kwargs=dict(name=doc.name))
                     ))
 
-        if (doc.get_state_slug() not in ["rfc", "expired"] and doc.stream_id in ("ise", "irtf")
-            and has_role(request.user, ("Secretariat", "IRTF Chair")) and not conflict_reviews and not snapshot):
-            label = "Begin IETF Conflict Review"
-            if not doc.intended_std_level:
-                label += " (note that intended status is not set)"
-            actions.append((label, urlreverse('ietf.doc.views_conflict_review.start_review', kwargs=dict(name=doc.name))))
+        if (
+            doc.get_state_slug() not in ["rfc", "expired"]
+            and not conflict_reviews
+            and not snapshot
+        ):
+            if (
+                doc.stream_id == "ise" and has_role(request.user, ("Secretariat", "ISE"))
+            ) or (
+                doc.stream_id == "irtf" and has_role(request.user, ("Secretariat", "IRTF Chair"))
+            ):
+                label = "Begin IETF conflict review" # Note that the template feeds this through capfirst_allcaps
+                if not doc.intended_std_level:
+                    label += " (note that intended status is not set)"
+                actions.append((label, urlreverse('ietf.doc.views_conflict_review.start_review', kwargs=dict(name=doc.name))))
 
         if doc.get_state_slug() not in ["rfc", "expired"] and not snapshot:
             if can_request_rfc_publication(request.user, doc):
@@ -479,13 +521,25 @@ def document_main(request, name, rev=None, document_html=False):
         html = None
         js = None
         css = None
+        diff_revisions = None
+        simple_diff_revisions = None
         if document_html:
-            html = doc.html_body()
-            if request.COOKIES.get("pagedeps") == "inline":
-                js = Path(finders.find("ietf/js/document_html.js")).read_text()
-                css = Path(finders.find("ietf/css/document_html_inline.css")).read_text()
-                if html:
-                    css += Path(finders.find("ietf/css/document_html_txt.css")).read_text()
+            diff_revisions=get_diff_revisions(request, name, doc if isinstance(doc,Document) else doc.doc)
+            simple_diff_revisions = [t[1] for t in diff_revisions if t[0] == doc.name]
+            simple_diff_revisions.reverse()
+            if rev and rev != doc.rev: 
+                # No DocHistory was found matching rev - snapshot will be false
+                # and doc will be a Document object, not a DocHistory
+                snapshot = True
+                doc = doc.fake_history_obj(rev)
+            else:
+                html = doc.html_body()
+                if request.COOKIES.get("pagedeps") == "inline":
+                    js = Path(finders.find("ietf/js/document_html.js")).read_text()
+                    css = Path(finders.find("ietf/css/document_html_inline.css")).read_text()
+                    if html:
+                        css += Path(finders.find("ietf/css/document_html_txt.css")).read_text()
+
         return render(request, "doc/document_draft.html" if document_html is False else "doc/document_html.html",
                                   dict(doc=doc,
                                        document_html=document_html,
@@ -497,7 +551,7 @@ def document_main(request, name, rev=None, document_html=False):
                                        name=name,
                                        content=content,
                                        split_content=split_content,
-                                       revisions=revisions,
+                                       revisions=simple_diff_revisions if document_html else revisions,
                                        snapshot=snapshot,
                                        stream_desc=stream_desc,
                                        latest_revision=latest_revision,
@@ -536,7 +590,7 @@ def document_main(request, name, rev=None, document_html=False):
                                        status_changes=status_changes,
                                        proposed_status_changes=proposed_status_changes,
                                        rfc_aliases=rfc_aliases,
-                                       has_errata=doc.tags.filter(slug="errata"),
+                                       has_errata=doc.pk and doc.tags.filter(slug="errata"), # doc.pk == None if using a fake_history_obj
                                        published=published,
                                        file_urls=file_urls,
                                        additional_urls=additional_urls,
@@ -561,7 +615,7 @@ def document_main(request, name, rev=None, document_html=False):
                                        review_assignments=review_assignments,
                                        no_review_from_teams=no_review_from_teams,
                                        due_date=due_date,
-                                       diff_revisions=get_diff_revisions(request, name, doc if isinstance(doc,Document) else doc.doc) if document_html else None
+                                       diff_revisions=diff_revisions
                                        ))
 
     if doc.type_id == "charter":
@@ -831,6 +885,7 @@ def document_raw_id(request, name, rev=None, ext=None):
         raise Http404
 
 def document_html(request, name, rev=None):
+    requested_rev = rev
     found = fuzzy_find_documents(name, rev)
     num_found = found.documents.count()
     if num_found == 0:
@@ -841,7 +896,7 @@ def document_html(request, name, rev=None):
     doc = found.documents.get()
     rev = found.matched_rev
 
-    if doc.is_rfc() and rev is None:
+    if not requested_rev and doc.is_rfc(): # Someone asked for /doc/html/8989
         if not name.startswith('rfc'):
             return redirect('ietf.doc.views_doc.document_html', name=doc.canonical_name())
 
@@ -851,7 +906,7 @@ def document_html(request, name, rev=None):
     if not os.path.exists(doc.get_file_name()):
         raise Http404("File not found: %s" % doc.get_file_name())
 
-    return document_main(request, name=doc.name, rev=doc.rev if not doc.is_rfc() else None, document_html=True)
+    return document_main(request, name=doc.name if requested_rev else doc.canonical_name(), rev=doc.rev if requested_rev or not doc.is_rfc() else None, document_html=True)
 
 def document_pdfized(request, name, rev=None, ext=None):
 

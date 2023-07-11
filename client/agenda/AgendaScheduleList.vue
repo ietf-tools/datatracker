@@ -1061,7 +1061,7 @@ onBeforeUnmount(() => {
 
   &-cell-ts {
     border-right: 1px solid $gray-300 !important;
-    // -> Use system font instead of Montserrat so that all digits align vertically
+    // -> Use system font instead of Inter so that all digits align vertically
     font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
     font-size: 1rem;
     font-weight: 700;

@@ -1,11 +1,9 @@
 {% extends "base_site_bootstrap.html" %}
-{% load staticfiles %}
+{% load static %}
 
 {% block title %}Meetings{% endblock %}
 
 {% block extrahead %}{{ block.super }}
-    <link rel="stylesheet" href="{% static 'ietf/css/jquery-ui.css' %}">
-    <script src="{% static 'ietf/js/jquery-ui.js' %}"></script>
     <script src="{% static 'secr/js/utils.js' %}"></script>
     <script src="{% static 'secr/js/dynamic_inlines.js' %}"></script>
 {% endblock %}

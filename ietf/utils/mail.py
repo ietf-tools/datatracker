@@ -27,7 +27,7 @@ from django.core.validators import validate_email
 from django.template.loader import render_to_string
 from django.template import Context,RequestContext
 from django.utils import timezone
-from django.utils.encoding import force_text, force_str, force_bytes
+from django.utils.encoding import force_str, force_bytes
 
 import debug                            # pyflakes:ignore
 
@@ -137,7 +137,7 @@ def send_smtp(msg, bcc=None):
                 server.quit()
             except smtplib.SMTPServerDisconnected:
                 pass
-        subj = force_text(msg.get('Subject', '[no subject]'))
+        subj = force_str(msg.get('Subject', '[no subject]'))
         tau = time.time() - mark
         log("sent email (%.3fs) from '%s' to %s id %s subject '%s'" % (tau, frm, to, msg.get('Message-ID', ''), subj))
     
@@ -166,7 +166,7 @@ def copy_email(msg, to, toUser=False, originalBcc=None):
     # Overwrite the From: header, so that the copy from a development or
     # test server doesn't look like spam.
     new['From'] = settings.DEFAULT_FROM_EMAIL
-    new['Subject'] = '[Django %s] %s' % (settings.SERVER_MODE, force_text(msg.get('Subject', '[no subject]')))
+    new['Subject'] = '[Django %s] %s' % (settings.SERVER_MODE, force_str(msg.get('Subject', '[no subject]')))
     new['To'] = to
     send_smtp(new)
 
@@ -325,7 +325,7 @@ def show_that_mail_was_sent(request,leadline,msg,bcc):
             from ietf.ietfauth.utils import has_role
             if has_role(request.user,['Area Director','Secretariat','IANA','RFC Editor','ISE','IAD','IRTF Chair','WG Chair','RG Chair','WG Secretary','RG Secretary']):
                 info =  "%s at %s %s\n" % (leadline,timezone.now().strftime("%Y-%m-%d %H:%M:%S"),settings.TIME_ZONE)
-                info += "Subject: %s\n" % force_text(msg.get('Subject','[no subject]'))
+                info += "Subject: %s\n" % force_str(msg.get('Subject','[no subject]'))
                 info += "To: %s\n" % msg.get('To','[no to]')
                 if msg.get('Cc'):
                     info += "Cc: %s\n" % msg.get('Cc')
@@ -336,7 +336,7 @@ def show_that_mail_was_sent(request,leadline,msg,bcc):
 def save_as_message(request, msg, bcc):
     by = ((request and request.user and not request.user.is_anonymous and request.user.person)
             or ietf.person.models.Person.objects.get(name="(System)"))
-    headers, body = force_text(str(msg)).split('\n\n', 1)
+    headers, body = force_str(str(msg)).split('\n\n', 1)
     kwargs = {'by': by, 'body': body, 'content_type': msg.get_content_type(), 'bcc': bcc or '' }
     for (arg, field) in [
             ('cc',              'Cc'),

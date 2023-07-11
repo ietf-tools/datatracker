@@ -6,7 +6,7 @@ import re
 from django import template
 from django.conf import settings
 from django.template.defaultfilters import linebreaksbr, force_escape
-from django.utils.encoding import force_text, DjangoUnicodeDecodeError
+from django.utils.encoding import force_str, DjangoUnicodeDecodeError
 from django.utils.safestring import mark_safe
 
 import debug           # pyflakes:ignore
@@ -55,8 +55,10 @@ def formatted_email(address):
 
 @register.simple_tag
 def decrypt(string, request, year, plain=False):
-    key = retrieve_nomcom_private_key(request, year)
-
+    try:
+        key = retrieve_nomcom_private_key(request, year)
+    except UnicodeError:
+        return f"-*- Encrypted text [Error retrieving private key, contact the secretariat ({settings.SECRETARIAT_SUPPORT_EMAIL})]"
     if not key:
         return '-*- Encrypted text [No private key provided] -*-'
 
@@ -68,7 +70,7 @@ def decrypt(string, request, year, plain=False):
     code, out, error = pipe(command % (settings.OPENSSL_COMMAND,
                             encrypted_file.name), key)
     try:
-        out = force_text(out)
+        out = force_str(out)
     except DjangoUnicodeDecodeError:
         pass
     if code != 0:

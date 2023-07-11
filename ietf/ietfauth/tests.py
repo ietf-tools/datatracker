@@ -24,10 +24,11 @@ from pyquery import PyQuery
 from unittest import skipIf
 from urllib.parse import urlsplit
 
+import django.core.signing
 from django.urls import reverse as urlreverse
 from django.contrib.auth.models import User
 from django.conf import settings
-from django.template.loader import render_to_string 
+from django.template.loader import render_to_string
 from django.utils import timezone
 
 import debug                            # pyflakes:ignore
@@ -97,7 +98,7 @@ class IetfAuthTests(TestCase):
         self.assertEqual(urlsplit(r["Location"])[2], urlreverse(ietf.ietfauth.views.profile))
 
         # try logging out
-        r = self.client.get(urlreverse('django.contrib.auth.views.logout'))
+        r = self.client.post(urlreverse('django.contrib.auth.views.logout'), {})
         self.assertEqual(r.status_code, 200)
         self.assertNotContains(r, "accounts/logout")
 
@@ -214,7 +215,7 @@ class IetfAuthTests(TestCase):
         self.assertContains(r, "Allowlist entry creation successful")
 
         # log out
-        r = self.client.get(urlreverse('django.contrib.auth.views.logout'))
+        r = self.client.post(urlreverse('django.contrib.auth.views.logout'), {})
         self.assertEqual(r.status_code, 200)
 
         # register and verify allowlisted email
@@ -563,6 +564,21 @@ class IetfAuthTests(TestCase):
         self.assertIn(active_address, to)
         self.assertNotIn(person.user.username, to)
 
+    def test_reset_password_without_username(self):
+        """Reset password using non-username email address"""
+        url = urlreverse('ietf.ietfauth.views.password_reset')
+        person = PersonFactory()
+        secondary_address = EmailFactory(person=person).address
+        inactive_secondary_address = EmailFactory(person=person, active=False).address
+        empty_outbox()
+        r = self.client.post(url, { 'username': secondary_address})
+        self.assertContains(r, 'We have sent you an email with instructions', status_code=200)
+        self.assertEqual(len(outbox), 1)
+        to = outbox[0].get('To')
+        self.assertIn(person.user.username, to)
+        self.assertIn(secondary_address, to)
+        self.assertNotIn(inactive_secondary_address, to)
+
     def test_review_overview(self):
         review_req = ReviewRequestFactory()
         assignment = ReviewAssignmentFactory(review_request=review_req,reviewer=EmailFactory(person__user__username='reviewer'))
@@ -648,7 +664,7 @@ class IetfAuthTests(TestCase):
                                         "new_password_confirmation": "foobar",
                                        })
         self.assertEqual(r.status_code, 200)
-        self.assertFormError(r, 'form', 'current_password', 'Invalid password')
+        self.assertFormError(r.context["form"], 'current_password', 'Invalid password')
 
         # mismatching new passwords
         r = self.client.post(chpw_url, {"current_password": "password",
@@ -656,7 +672,7 @@ class IetfAuthTests(TestCase):
                                         "new_password_confirmation": "barfoo",
                                        })
         self.assertEqual(r.status_code, 200)
-        self.assertFormError(r, 'form', None, "The password confirmation is different than the new password")
+        self.assertFormError(r.context["form"], None, "The password confirmation is different than the new password")
 
         # correct password change
         r = self.client.post(chpw_url, {"current_password": "password",
@@ -695,7 +711,7 @@ class IetfAuthTests(TestCase):
                                         "password": "password",
                                        })
         self.assertEqual(r.status_code, 200)
-        self.assertFormError(r, 'form', 'username',
+        self.assertFormError(r.context["form"], 'username',
             "Select a valid choice. fiddlesticks is not one of the available choices.")
 
         # wrong password
@@ -703,7 +719,7 @@ class IetfAuthTests(TestCase):
                                         "password": "foobar",
                                        })
         self.assertEqual(r.status_code, 200)
-        self.assertFormError(r, 'form', 'password', 'Invalid password')
+        self.assertFormError(r.context["form"], 'password', 'Invalid password')
 
         # correct username change
         r = self.client.post(chun_url, {"username": "othername@example.org",
@@ -921,6 +937,72 @@ class IetfAuthTests(TestCase):
         self.assertEqual(person.personextresource_set.count(), 3)
         self.assertEqual(person.personextresource_set.get(name__slug='github_repo').display_name, 'Some display text')
         self.assertIn(person.personextresource_set.first().name.slug, str(person.personextresource_set.first()))
+
+    def test_confirm_new_email(self):
+        person = PersonFactory()
+        valid_auth = django.core.signing.dumps(
+            [person.user.username, "new_email@example.com"], salt="add_email"
+        )
+        invalid_auth = django.core.signing.dumps(
+            [person.user.username, "not_this_one@example.com"], salt="pepper"
+        )
+
+        # Test that we check the salt
+        r = self.client.get(
+            urlreverse("ietf.ietfauth.views.confirm_new_email", kwargs={"auth": invalid_auth})
+        )
+        self.assertEqual(r.status_code, 404)
+        r = self.client.post(
+            urlreverse("ietf.ietfauth.views.confirm_new_email", kwargs={"auth": invalid_auth})
+        )
+        self.assertEqual(r.status_code, 404)
+
+        # Now check that the valid auth works
+        self.assertFalse(
+            person.email_set.filter(address__icontains="new_email@example.com").exists()
+        )
+        confirm_url = urlreverse(
+            "ietf.ietfauth.views.confirm_new_email", kwargs={"auth": valid_auth}
+        )
+        r = self.client.get(confirm_url)
+        self.assertContains(r, urllib.parse.quote(confirm_url), status_code=200)
+        r = self.client.post(confirm_url, data={"action": "confirm"})
+        self.assertContains(r, "has been updated", status_code=200)
+        self.assertTrue(
+            person.email_set.filter(address__icontains="new_email@example.com").exists()
+        )
+
+        # Authorizing a second time should be handled gracefully
+        r = self.client.post(confirm_url, data={"action": "confirm"})
+        self.assertContains(r, "already includes", status_code=200)
+
+        # Another person should not be able to add the same address and should be told so,
+        # whether they use the same or different letter case
+        other_person = PersonFactory()
+        other_auth = django.core.signing.dumps(
+            [other_person.user.username, "new_email@example.com"], salt="add_email"
+        )
+        r = self.client.post(
+            urlreverse("ietf.ietfauth.views.confirm_new_email", kwargs={"auth": other_auth}),
+            data={"action": "confirm"},
+        )
+        self.assertContains(r, "in use by another user", status_code=200)
+
+        other_auth = django.core.signing.dumps(
+            [other_person.user.username, "NeW_eMaIl@eXaMpLe.CoM"], salt="add_email"
+        )
+        r = self.client.post(
+            urlreverse("ietf.ietfauth.views.confirm_new_email", kwargs={"auth": other_auth}),
+            data={"action": "confirm"},
+        )
+
+        self.assertContains(r, "in use by another user", status_code=200)
+        self.assertFalse(
+            other_person.email_set.filter(address__icontains="new_email@example.com").exists()
+        )
+        self.assertTrue(
+            person.email_set.filter(address__icontains="new_email@example.com").exists()
+        )
 
 
 class OpenIDConnectTests(TestCase):

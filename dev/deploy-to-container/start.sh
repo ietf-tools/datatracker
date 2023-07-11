@@ -24,7 +24,7 @@ chmod +x ./app-create-dirs.sh
 
 if [ -n "$PGHOST" ]; then
     echo "Altering PG search path..."
-    psql -U django -h $PGHOST -d ietf -v ON_ERROR_STOP=1 -c '\x' -c 'ALTER USER django set search_path=ietf_utf8,django,public;'
+    psql -U django -h $PGHOST -d datatracker -v ON_ERROR_STOP=1 -c '\x' -c 'ALTER USER django set search_path=datatracker,public;'
 fi
 
 echo "Running Datatracker checks..."

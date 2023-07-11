@@ -25,7 +25,6 @@ from ietf.secr.sreq.forms import (SessionForm, ToolStatusForm, allowed_conflicti
 from ietf.secr.utils.decorators import check_permissions
 from ietf.secr.utils.group import get_my_groups
 from ietf.utils.mail import send_mail
-from ietf.person.models import Person
 from ietf.mailtrigger.utils import gather_address_lists
 
 # -------------------------------------------------
@@ -404,15 +403,6 @@ def confirm(request, acronym):
         'group': group,
         'session_conflicts': session_conflicts},
     )
-
-#Move this into make_initial
-def add_essential_people(group,initial):
-    # This will be easier when the form uses Person instead of Email
-    people = set()
-    if 'bethere' in initial:
-        people.update(initial['bethere'])
-    people.update(Person.objects.filter(role__group=group, role__name__in=['chair','ad']))
-    initial['bethere'] = list(people)
     
 
 def session_changed(session):
@@ -699,14 +689,12 @@ def new(request, acronym):
             return redirect('ietf.secr.sreq.views.new', acronym=acronym)
 
         initial = get_initial_session(previous_sessions, prune_conflicts=True)
-        add_essential_people(group,initial)
         if 'resources' in initial:
             initial['resources'] = [x.pk for x in initial['resources']]
         form = SessionForm(group, meeting, initial=initial, notifications_optional=has_role(request.user, "Secretariat"))
 
     else:
         initial={}
-        add_essential_people(group,initial)
         form = SessionForm(group, meeting, initial=initial, notifications_optional=has_role(request.user, "Secretariat"))
 
     return render(request, 'sreq/new.html', {
@@ -742,6 +730,7 @@ def no_session(request, acronym):
         requested_duration=datetime.timedelta(0),
         type_id='regular',
         purpose_id='regular',
+        has_onsite_tool=group.features.acts_like_wg,
     )
     SchedulingEvent.objects.create(
         session=session,

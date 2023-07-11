@@ -308,7 +308,7 @@ def email_review_assignment_change(request, review_assignment, subject, msg, by,
         doc=review_assignment.review_request.doc,
         group=review_assignment.review_request.team,
         review_assignment=review_assignment,
-        skip_review_secretary=not notify_secretary,
+        skip_secretary=not notify_secretary,
         skip_review_reviewer=not notify_reviewer,
         skip_review_requested_by=not notify_requested_by,
     )
@@ -328,11 +328,11 @@ def email_review_request_change(request, review_req, subject, msg, by, notify_se
     was done by that party."""    
     (to, cc) = gather_address_lists(
         'review_req_changed',
-        skipped_recipients=[Person.objects.get(name="(System)").formatted_email(), by.email_address()],
+        skipped_recipients=[Person.objects.get(name="(System)").formatted_email()],
         doc=review_req.doc,
         group=review_req.team,
         review_request=review_req,
-        skip_review_secretary=not notify_secretary,
+        skip_secretary=not notify_secretary,
         skip_review_reviewer=not notify_reviewer,
         skip_review_requested_by=not notify_requested_by,
     )
@@ -382,7 +382,8 @@ def assign_review_request_to_reviewer(request, review_req, reviewer, add_skip=Fa
     # with a different view on a ReviewAssignment.
     log.assertion('reviewer is not None')
 
-    if review_req.reviewassignment_set.filter(reviewer=reviewer).exists():
+    # cannot reference reviewassignment_set relation until pk exists
+    if review_req.pk is not None and review_req.reviewassignment_set.filter(reviewer=reviewer).exists():
         return
 
     # Note that assigning a review no longer unassigns other reviews
@@ -430,9 +431,9 @@ def assign_review_request_to_reviewer(request, review_req, reviewer, add_skip=Fa
 
     email_review_request_change(
         request, review_req,
-        "%s %s assignment: %s" % (review_req.team.acronym.capitalize(), review_req.type.name,review_req.doc.name),
+        "For %s, %s %s review by %s assigned: %s" % (reviewer.person.name, review_req.team.acronym.capitalize(), review_req.type.name, review_req.deadline, review_req.doc.name),
         msg ,
-        by=request.user.person, notify_secretary=False, notify_reviewer=True, notify_requested_by=False)
+        by=request.user.person, notify_secretary=True, notify_reviewer=True, notify_requested_by=True)
 
 
 def close_review_request(request, review_req, close_state, close_comment=''):
@@ -600,7 +601,9 @@ def suggested_review_requests_for_team(team):
     res.sort(key=lambda r: (r.deadline, r.doc_id), reverse=True)
     return res
 
-def extract_revision_ordered_review_assignments_for_documents_and_replaced(review_assignment_queryset, names):
+def extract_revision_ordered_review_assignments_for_documents_and_replaced(
+    review_assignment_queryset, names
+):
     """Extracts all review assignments for document names (including replaced ancestors), return them neatly sorted."""
 
     names = set(names)
@@ -609,8 +612,13 @@ def extract_revision_ordered_review_assignments_for_documents_and_replaced(revie
 
     assignments_for_each_doc = defaultdict(list)
     replacement_name_set = set(e for l in replaces.values() for e in l) | names
-    for r in ( review_assignment_queryset.filter(review_request__doc__name__in=replacement_name_set)
-                                        .order_by("-reviewed_rev","-assigned_on", "-id").iterator()):
+    for r in (
+        review_assignment_queryset.filter(
+            review_request__doc__name__in=replacement_name_set
+        )
+        .order_by("-reviewed_rev", "-assigned_on", "-id")
+        .iterator(chunk_size=2000)  # chunk_size not tested, using pre-Django 5 default value
+    ):
         assignments_for_each_doc[r.review_request.doc.name].append(r)
 
     # now collect in breadth-first order to keep the revision order intact
@@ -648,7 +656,10 @@ def extract_revision_ordered_review_assignments_for_documents_and_replaced(revie
 
     return res
 
-def extract_revision_ordered_review_requests_for_documents_and_replaced(review_request_queryset, names):
+
+def extract_revision_ordered_review_requests_for_documents_and_replaced(
+    review_request_queryset, names
+):
     """Extracts all review requests for document names (including replaced ancestors), return them neatly sorted."""
 
     names = set(names)
@@ -656,7 +667,13 @@ def extract_revision_ordered_review_requests_for_documents_and_replaced(review_r
     replaces = extract_complete_replaces_ancestor_mapping_for_docs(names)
 
     requests_for_each_doc = defaultdict(list)
-    for r in review_request_queryset.filter(doc__name__in=set(e for l in replaces.values() for e in l) | names).order_by("-time", "-id").iterator():
+    for r in (
+        review_request_queryset.filter(
+            doc__name__in=set(e for l in replaces.values() for e in l) | names
+        )
+        .order_by("-time", "-id")
+        .iterator(chunk_size=2000)  # chunk_size not tested, using pre-Django 5 default value
+    ):
         requests_for_each_doc[r.doc.name].append(r)
 
     # now collect in breadth-first order to keep the revision order intact

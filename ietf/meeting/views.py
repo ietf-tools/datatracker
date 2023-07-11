@@ -17,6 +17,7 @@ import tempfile
 
 from calendar import timegm
 from collections import OrderedDict, Counter, deque, defaultdict, namedtuple
+from functools import partialmethod
 from urllib.parse import parse_qs, unquote, urlencode, urlsplit, urlunsplit
 from tempfile import mkstemp
 from wsgiref.handlers import format_date_time
@@ -25,7 +26,7 @@ from django import forms
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import (HttpResponse, HttpResponseRedirect, HttpResponseForbidden,
                          HttpResponseNotFound, Http404, HttpResponseBadRequest,
-                         JsonResponse, HttpResponseGone)
+                         JsonResponse, HttpResponseGone, HttpResponseNotAllowed)
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -38,7 +39,6 @@ from django.template import TemplateDoesNotExist
 from django.template.loader import render_to_string
 from django.utils import timezone
 from django.utils.encoding import force_str
-from django.utils.functional import curry
 from django.utils.text import slugify
 from django.views.decorators.cache import cache_page
 from django.views.decorators.csrf import ensure_csrf_cookie, csrf_exempt
@@ -101,7 +101,9 @@ from .forms import (InterimMeetingModelForm, InterimAnnounceForm, InterimSession
     InterimCancelForm, InterimSessionInlineFormSet, RequestMinutesForm,
     UploadAgendaForm, UploadBlueSheetForm, UploadMinutesForm, UploadSlidesForm)
 
+request_summary_exclude_group_types = ['team']
 
+    
 def get_interim_menu_entries(request):
     '''Setup menu entries for interim meeting view tabs'''
     entries = []
@@ -153,7 +155,7 @@ def materials(request, num=None):
     ).distinct().select_related('meeting__schedule', 'group__state', 'group__parent')).order_by('group__acronym')
 
     plenaries = sessions.filter(name__icontains='plenary')
-    ietf      = sessions.filter(group__parent__type__slug = 'area').exclude(group__acronym='edu')
+    ietf      = sessions.filter(group__parent__type__slug = 'area').exclude(group__acronym='edu').order_by('group__parent__acronym', 'group__acronym')
     irtf      = sessions.filter(group__parent__acronym = 'irtf')
     training  = sessions.filter(group__acronym__in=['edu','iaoc'], type_id__in=['regular', 'other', ])
     iab       = sessions.filter(group__parent__acronym = 'iab')
@@ -177,12 +179,26 @@ def materials(request, num=None):
         for type_name in ProceedingsMaterialTypeName.objects.all()
     ]
 
+    plenaries, _ = organize_proceedings_sessions(plenaries)
+    irtf, _ = organize_proceedings_sessions(irtf)
+    training, _ = organize_proceedings_sessions(training)
+    iab, _ = organize_proceedings_sessions(iab)
+    other, _ = organize_proceedings_sessions(other)
+
+    ietf_areas = []
+    for area, area_sessions in itertools.groupby(
+            ietf,
+            key=lambda s: s.group.parent
+    ):
+        meeting_groups, not_meeting_groups = organize_proceedings_sessions(area_sessions)
+        ietf_areas.append((area, meeting_groups, not_meeting_groups))
+
     with timezone.override(meeting.tz()):
         return render(request, "meeting/materials.html", {
             'meeting': meeting,
             'proceedings_materials': proceedings_materials,
             'plenaries': plenaries,
-            'ietf': ietf,
+            'ietf_areas': ietf_areas,
             'training': training,
             'irtf': irtf,
             'iab': iab,
@@ -1745,10 +1761,10 @@ def agenda_extract_schedule (item):
             "chat" : item.session.chat_room_url(),
             "chatArchive" : item.session.chat_archive_url(),
             "recordings": list(map(agenda_extract_recording, item.session.recordings())),
-            "videoStream": item.timeslot.location.video_stream_url() if item.timeslot.location else "",
-            "audioStream": item.timeslot.location.audio_stream_url() if item.timeslot.location else "",
+            "videoStream": item.session.video_stream_url() or "",
+            "audioStream": item.session.audio_stream_url() or "",
             "webex": item.timeslot.location.webex_url() if item.timeslot.location else "",
-            "onsiteTool": item.timeslot.location.onsite_tool_url() if item.timeslot.location else "",
+            "onsiteTool": item.session.onsite_tool_url() or "",
             "calendar": reverse(
                 'ietf.meeting.views.agenda_ical',
                 kwargs={'num': item.schedule.meeting.number, 'session_id': item.session.id},
@@ -2238,6 +2254,70 @@ def agenda_json(request, num=None):
         response['Last-Modified'] = format_date_time(timegm(last_modified.timetuple()))
     return response
 
+def request_summary_filter(session):
+    if (session.group.area is None
+            or session.group.type.slug in request_summary_exclude_group_types
+            or session.current_status == 'notmeet'):
+        return False
+    return True
+
+def get_area_column(area):
+    if area is None:
+        return ''
+    if area.type.slug in ['rfcedtyp']:
+        name = 'OTHER'
+    else:
+        name = area.acronym.upper()
+    return name
+
+def get_summary_by_area(sessions):
+    """Returns summary by area for list of session requests.
+    Summary is a two dimensional array[row=session duration][col=session area count]
+    It also includes row and column headers as well as a totals row.
+    """
+
+    # first build a dictionary of counts, key=(duration,area)
+    durations = set()
+    areas = set()
+    duration_totals = defaultdict(int)
+    data = defaultdict(int)
+    for session in sessions:
+        area_column = get_area_column(session.group.area)
+        duration = session.requested_duration.seconds / 3600
+        key = (duration, area_column)
+        data[key] = data[key] + 1
+        durations.add(duration)
+        areas.add(area_column)
+        duration_totals[duration] = duration_totals[duration] + 1
+
+    # build two dimensional array for use in template
+    rows = []
+    sorted_areas = sorted(areas)
+    # move "other" to end
+    if 'OTHER' in sorted_areas:
+        sorted_areas.remove('OTHER')
+        sorted_areas.append('OTHER')
+    # add header row
+    rows.append(['Duration'] + sorted_areas + ['TOTAL SLOTS', 'TOTAL HOURS'])
+    for duration in sorted(durations):
+        rows.append([duration] + [data[(duration, a)] for a in sorted_areas] + [duration_totals[duration]] + [duration_totals[duration] * duration])
+    # add total row
+    rows.append(['Total Slots'] + [sum([rows[r][c] for r in range(1, len(rows))]) for c in range(1, len(rows[0]))])
+    rows.append(['Total Hours'] + [sum([d * data[(d, area)] for d in durations]) for area in sorted_areas])
+    return rows
+
+def get_summary_by_type(sessions):
+    counter = Counter([s.group.type.name for s in sessions])
+    data = counter.most_common()
+    data.insert(0, ('Group Type', 'Count'))
+    return data
+
+def get_summary_by_purpose(sessions):
+    counter = Counter([s.purpose.name for s in sessions])
+    data = counter.most_common()
+    data.insert(0, ('Purpose', 'Count'))
+    return data
+
 def meeting_requests(request, num=None):
     meeting = get_meeting(num)
     groups_to_show = Group.objects.filter(
@@ -2253,7 +2333,7 @@ def meeting_requests(request, num=None):
         ).with_current_status().with_requested_by().exclude(
             requested_by=0
         ).prefetch_related(
-            "group","group__ad_role__person"
+            "group", "group__ad_role__person", "group__type"
         )
     )
 
@@ -2276,11 +2356,13 @@ def meeting_requests(request, num=None):
     )
 
     groups_not_meeting = groups_to_show.exclude(
-        acronym__in = [session.group.acronym for session in sessions]
+        acronym__in=[session.group.acronym for session in sessions]
     ).order_by(
         "parent__acronym",
         "acronym",
     ).prefetch_related("parent")
+
+    summary_sessions = list(filter(request_summary_filter, sessions))
 
     return render(
         request,
@@ -2289,6 +2371,9 @@ def meeting_requests(request, num=None):
             "meeting": meeting,
             "sessions": sessions,
             "groups_not_meeting": groups_not_meeting,
+            "summary_by_area": get_summary_by_area(summary_sessions),
+            "summary_by_group_type": get_summary_by_type(summary_sessions),
+            "summary_by_purpose": get_summary_by_purpose(summary_sessions),
         },
     )
 
@@ -2659,7 +2744,7 @@ def upload_session_agenda(request, session_id, num):
                   })
 
 
-def upload_session_slides(request, session_id, num, name):
+def upload_session_slides(request, session_id, num, name=None):
     # num is redundant, but we're dragging it along an artifact of where we are in the current URL structure
     session = get_object_or_404(Session,pk=session_id)
     if not session.can_manage_materials(request.user):
@@ -3139,8 +3224,8 @@ def interim_request(request):
             if meeting_type in ('single', 'multi-day'):
                 meeting = form.save(date=get_earliest_session_date(formset))
 
-                # need to use curry here to pass custom variable to form init
-                SessionFormset.form.__init__ = curry(
+                # need to use partialmethod here to pass custom variable to form init
+                SessionFormset.form.__init__ = partialmethod(
                     InterimSessionModelForm.__init__,
                     user=request.user,
                     group=group,
@@ -3162,7 +3247,7 @@ def interim_request(request):
             # subsequently dealt with individually
             elif meeting_type == 'series':
                 series = []
-                SessionFormset.form.__init__ = curry(
+                SessionFormset.form.__init__ = partialmethod(
                     InterimSessionModelForm.__init__,
                     user=request.user,
                     group=group,
@@ -3382,7 +3467,7 @@ def interim_request_edit(request, number):
         group = Group.objects.get(pk=form.data['group'])
         is_approved = is_interim_meeting_approved(meeting)
 
-        SessionFormset.form.__init__ = curry(
+        SessionFormset.form.__init__ = partialmethod(
             InterimSessionModelForm.__init__,
             user=request.user,
             group=group,
@@ -3600,6 +3685,7 @@ def organize_proceedings_sessions(sessions):
             if s.current_status != 'notmeet' or s.sessionpresentation_set.exists():
                 by_name[s.name].append(s)  # for notmeet, only include sessions with materials
         for sess_name, ss in by_name.items():
+            session = ss[0] if ss else None
             def _format_materials(items):
                 """Format session/material for template
 
@@ -3626,6 +3712,7 @@ def organize_proceedings_sessions(sessions):
             entry = {
                 'group': group,
                 'name': sess_name,
+                'session': session,
                 'canceled': all_canceled,
                 'has_materials': s.sessionpresentation_set.exists(),
                 'agendas': _format_materials((s, s.agenda()) for s in ss),
@@ -3634,6 +3721,7 @@ def organize_proceedings_sessions(sessions):
                 'recordings': _format_materials((s, s.recordings()) for s in ss),
                 'slides': _format_materials((s, s.slides()) for s in ss),
                 'drafts': _format_materials((s, s.drafts()) for s in ss),
+                'last_update': session.last_update if hasattr(session, 'last_update') else None
             }
             if is_meeting:
                 meeting_groups.append(entry)
@@ -3801,6 +3889,65 @@ class OldUploadRedirect(RedirectView):
 @role_required('Recording Manager')
 @csrf_exempt
 def api_set_session_video_url(request):
+    """Set video URL for session
+
+    parameters:
+      apikey: the poster's personal API key
+      session_id: id of session to update
+      url: The recording url (on YouTube, or whatever)
+    """
+    def err(code, text):
+        return HttpResponse(text, status=code, content_type='text/plain')
+
+    if request.method != 'POST':
+        return HttpResponseNotAllowed(
+            content="Method not allowed", content_type="text/plain", permitted_methods=('POST',)
+        )
+
+    # Temporary: fall back to deprecated interface if we have old-style parameters.
+    # Do away with this once meetecho is using the new pk-based interface.
+    if any(k in request.POST for k in ['meeting', 'group', 'item']):
+        return deprecated_api_set_session_video_url(request)
+
+    session_id = request.POST.get('session_id', None)
+    if session_id is None:
+        return err(400, 'Missing session_id parameter')
+    incoming_url = request.POST.get('url', None)
+    if incoming_url is None:
+        return err(400, 'Missing url parameter')
+
+    try:
+        session = Session.objects.get(pk=session_id)
+    except Session.DoesNotExist:
+        return err(400, f"Session not found with session_id '{session_id}'")
+    except ValueError:
+        return err(400, "Invalid session_id: {session_id}")
+
+    try:
+        URLValidator()(incoming_url)
+    except ValidationError:
+        return err(400, f"Invalid url value: '{incoming_url}'")
+
+    recordings = [(r.name, r.title, r) for r in session.recordings() if 'video' in r.title.lower()]
+    if recordings:
+        r = recordings[-1][-1]
+        if r.external_url != incoming_url:
+            e = DocEvent.objects.create(doc=r, rev=r.rev, type="added_comment", by=request.user.person,
+                                        desc="External url changed from %s to %s" % (r.external_url, incoming_url))
+            r.external_url = incoming_url
+            r.save_with_history([e])
+    else:
+        time = session.official_timeslotassignment().timeslot.time
+        title = 'Video recording for %s on %s at %s' % (session.group.acronym, time.date(), time.time())
+        create_recording(session, incoming_url, title=title, user=request.user.person)
+    return HttpResponse("Done", status=200, content_type='text/plain')
+
+
+def deprecated_api_set_session_video_url(request):
+    """Set video URL for session (deprecated)
+
+    Uses meeting/group/item to identify session.
+    """
     def err(code, text):
         return HttpResponse(text, status=code, content_type='text/plain')
     if request.method == 'POST':
@@ -3974,6 +4121,64 @@ def api_upload_polls(request):
 @role_required('Recording Manager', 'Secretariat')
 @csrf_exempt
 def api_upload_bluesheet(request):
+    """Upload bluesheet for a session
+
+    parameters:
+      apikey: the poster's personal API key
+      session_id: id of session to update
+      bluesheet: json blob with
+          [{'name': 'Name', 'affiliation': 'Organization', }, ...]
+    """
+    def err(code, text):
+        return HttpResponse(text, status=code, content_type='text/plain')
+
+    if request.method != 'POST':
+        return HttpResponseNotAllowed(
+            content="Method not allowed", content_type="text/plain", permitted_methods=('POST',)
+        )
+
+    # Temporary: fall back to deprecated interface if we have old-style parameters.
+    # Do away with this once meetecho is using the new pk-based interface.
+    if any(k in request.POST for k in ['meeting', 'group', 'item']):
+        return deprecated_api_upload_bluesheet(request)
+
+    session_id = request.POST.get('session_id', None)
+    if session_id is None:
+        return err(400, 'Missing session_id parameter')
+    bjson = request.POST.get('bluesheet', None)
+    if bjson is None:
+        return err(400, 'Missing bluesheet parameter')
+
+    try:
+        session = Session.objects.get(pk=session_id)
+    except Session.DoesNotExist:
+        return err(400, f"Session not found with session_id '{session_id}'")
+    except ValueError:
+        return err(400, f"Invalid session_id '{session_id}'")
+
+    try:
+        data = json.loads(bjson)
+    except json.decoder.JSONDecodeError:
+        return err(400, f"Invalid json value: '{bjson}'")
+
+    text = render_to_string('meeting/bluesheet.txt', {
+            'data': data,
+            'session': session,
+        })
+
+    fd, name = tempfile.mkstemp(suffix=".txt", text=True)
+    os.close(fd)
+    with open(name, "w") as file:
+        file.write(text)
+    with open(name, "br") as file:
+        save_err = save_bluesheet(request, session, file)
+    if save_err:
+        return err(400, save_err)
+
+    return HttpResponse("Done", status=200, content_type='text/plain')
+
+
+def deprecated_api_upload_bluesheet(request):
     def err(code, text):
         return HttpResponse(text, status=code, content_type='text/plain')
     if request.method == 'POST':

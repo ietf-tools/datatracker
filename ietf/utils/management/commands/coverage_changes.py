@@ -73,6 +73,7 @@ class Command(BaseCommand):
             data = json.load(file)
         except ValueError as e:
             raise CommandError("Failure to read json data from %s: %s" % (filename, e))
+        file.close()
         version = version or data["version"]
         if not version in data:
             raise CommandError("There is no data for version %s available in %s" % (version, filename))

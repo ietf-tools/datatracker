@@ -9,13 +9,20 @@
     <p id="instructions" class="alert alert-info my-3">
         {% if nomcom.group.state_id == 'conclude' %}
             Feedback to this NomCom is closed.
+        {% elif positions|length != 0 and topics|length != 0 %}
+            Select a nominee or topic from the list on the right to obtain a new feedback form.
+        {% elif positions|length != 0 %}
+            Select a nominee from the list on the right to obtain a new feedback form.
+        {% elif topics|length != 0 %}
+            Select a topic from the list on the right to obtain a new feedback form.
         {% else %}
-            Select a nominee from the list of nominees on the right to obtain a new feedback form.
+            This NomCom is not accepting feedback at this time.
         {% endif %}
     </p>
     {% if nomcom|has_publickey %}
         <div class="row">
             <div id="nominees" class="col-sm-2 order-last">
+                {% if positions|length != 0 %}
                 <h2 class="navskip mt-4">Nominees</h2>
                 <p>
                     A number after a name indicates
@@ -31,9 +38,9 @@
                             {% for np in p.nomineeposition_set.accepted.not_duplicated %}
                                 <a class="btn btn-primary position-relative"
                                    {% if nomcom.group.state_id != 'conclude' %}href="?nominee={{ np.nominee.id }}&amp;position={{ np.position.id }}"{% endif %}
-                                   title="{% if count %}{{ count }} earlier comment{{ count|pluralize }} from you {% else %}You have not yet provided feedback {% endif %} on {{ np.nominee.email.address }} as {{ np.position }}">
-                                    {{ np.nominee.name }}
                                     {% with count=counts|lookup:np.position.id|lookup:np.nominee.id %}
+                                       title="{% if count %}{{ count }} earlier comment{{ count|pluralize }} from you {% else %}You have not yet provided feedback {% endif %} on {{ np.nominee.email.address }} as {{ np.position }}">
+                                        {{ np.nominee.name }}
                                         <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
                                             {{ count | default:"0" }}
                                         </span>
@@ -43,6 +50,8 @@
                         </div>
                     {% endif %}
                 {% endfor %}
+                {% endif %}
+                {% if topics|length != 0 %}
                 <h2 class="navskip mt-4">Topics</h2>
                 <div class="d-grid gap-3">
                     {% for t in topics %}
@@ -58,6 +67,7 @@
                         </a>
                     {% endfor %}
                 </div>
+                {% endif %}
             </div>
             <div class="col-sm-10">
                 {% if form %}

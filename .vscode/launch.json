@@ -12,7 +12,7 @@
             "program": "${workspaceFolder}/ietf/manage.py",
             "args": [
                 "runserver",
-                "0.0.0.0:8000",
+                "0.0.0.0:8001",
                 "--settings=settings_local"
             ],
             "django": true,
@@ -30,7 +30,7 @@
             "program": "${workspaceFolder}/ietf/manage.py",
             "args": [
                 "runserver",
-                "0.0.0.0:8000",
+                "0.0.0.0:8001",
                 "--settings=settings_local_vite"
             ],
             "django": true,
@@ -48,7 +48,7 @@
             "program": "${workspaceFolder}/ietf/manage.py",
             "args": [
                 "runserver",
-                "0.0.0.0:8000",
+                "0.0.0.0:8001",
                 "--settings=settings_local_debug"
             ],
             "django": true,

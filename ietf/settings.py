@@ -13,12 +13,18 @@ import warnings
 from typing import Any, Dict, List, Tuple # pyflakes:ignore
 
 warnings.simplefilter("always", DeprecationWarning)
-warnings.filterwarnings("ignore", message="'urllib3\[secure\]' extra is deprecated")
-warnings.filterwarnings("ignore", message="The logout\(\) view is superseded by")
+warnings.filterwarnings("ignore", message="pkg_resources is deprecated as an API")
+warnings.filterwarnings("ignore", "Log out via GET requests is deprecated")  # happens in oidc_provider
+warnings.filterwarnings("ignore", module="tastypie", message="The django.utils.datetime_safe module is deprecated.")
+warnings.filterwarnings("ignore", module="oidc_provider", message="The django.utils.timezone.utc alias is deprecated.")
+warnings.filterwarnings("ignore", message="The USE_DEPRECATED_PYTZ setting,")  # https://github.com/ietf-tools/datatracker/issues/5635
+warnings.filterwarnings("ignore", message="The USE_L10N setting is deprecated.")  # https://github.com/ietf-tools/datatracker/issues/5648
+warnings.filterwarnings("ignore", message="django.contrib.auth.hashers.CryptPasswordHasher is deprecated.")  # https://github.com/ietf-tools/datatracker/issues/5663
+warnings.filterwarnings("ignore", message="'urllib3\\[secure\\]' extra is deprecated")
+warnings.filterwarnings("ignore", message="The logout\\(\\) view is superseded by")
 warnings.filterwarnings("ignore", message="Report.file_reporters will no longer be available in Coverage.py 4.2", module="coverage.report")
-warnings.filterwarnings("ignore", message="{% load staticfiles %} is deprecated")
 warnings.filterwarnings("ignore", message="Using or importing the ABCs from 'collections' instead of from 'collections.abc' is deprecated", module="bleach")
-warnings.filterwarnings("ignore", message="HTTPResponse.getheader\(\) is deprecated", module='selenium.webdriver')
+warnings.filterwarnings("ignore", message="HTTPResponse.getheader\\(\\) is deprecated", module='selenium.webdriver')
 try:
     import syslog
     syslog.openlog(str("datatracker"), syslog.LOG_PID, syslog.LOG_USER)
@@ -75,14 +81,10 @@ MANAGERS = ADMINS
 
 DATABASES = {
     'default': {
-        'NAME': 'ietf_utf8',
-        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'datatracker',
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
         'USER': 'ietf',
-        #'PASSWORD': 'ietf',
-        'OPTIONS': {
-            'sql_mode': 'STRICT_TRANS_TABLES',
-            'init_command': 'SET storage_engine=MyISAM; SET names "utf8"'
-        },
+        #'PASSWORD': 'somepassword',
     },
 }
 
@@ -105,7 +107,23 @@ SITE_ID = 1
 # to load the internationalization machinery.
 USE_I18N = False
 
+# Django 4.0 changed the default setting of USE_L10N to True. The setting
+# is deprecated and will be removed in Django 5.0.
+USE_L10N = False
+
 USE_TZ = True
+USE_DEPRECATED_PYTZ = True  # supported until Django 5
+
+# The DjangoDivFormRenderer is a transitional class that opts in to defaulting to the div.html
+# template for formsets. This will become the default behavior in Django 5.0. This configuration
+# can be removed at that point.
+# See https://docs.djangoproject.com/en/4.2/releases/4.1/#forms
+FORM_RENDERER = "django.forms.renderers.DjangoDivFormRenderer"
+
+# Default primary key field type to use for models that don’t have a field with primary_key=True.
+# In the future (relative to 4.2), the default will become 'django.db.models.BigAutoField.'
+DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
+
 
 if SERVER_MODE == 'production':
     MEDIA_ROOT = '/a/www/www6s/lib/dt/media/'
@@ -141,7 +159,6 @@ IETF_NOTES_URL = 'https://notes.ietf.org/'  # HedgeDoc base URL
 # Absolute path to the directory static files should be collected to.
 # Example: "/var/www/example.com/static/"
 
-
 SERVE_CDN_PHOTOS = True
 
 SERVE_CDN_FILES_LOCALLY_IN_DEV_MODE = True
@@ -160,6 +177,11 @@ STATICFILES_FINDERS = (
     'django.contrib.staticfiles.finders.FileSystemFinder',
     'django.contrib.staticfiles.finders.AppDirectoriesFinder',
 )
+
+# Client-side static.ietf.org URL
+STATIC_IETF_ORG = "https://static.ietf.org"
+# Server-side static.ietf.org URL (used in pdfized)
+STATIC_IETF_ORG_INTERNAL = STATIC_IETF_ORG
 
 WSGI_APPLICATION = "ietf.wsgi.application"
 
@@ -319,7 +341,12 @@ UTILS_LOGGER_LEVELS: Dict[str, str] = {
 
 
 X_FRAME_OPTIONS = 'SAMEORIGIN'
-CSRF_TRUSTED_ORIGINS = ['ietf.org', '*.ietf.org', 'meetecho.com', '*.meetecho.com', 'gather.town', '*.gather.town', ]
+CSRF_TRUSTED_ORIGINS = [
+    "https://ietf.org",
+    "https://*.ietf.org",
+    'https://meetecho.com',
+    'https://*.meetecho.com',
+]
 CSRF_COOKIE_SAMESITE = 'None'
 CSRF_COOKIE_SECURE = True
 
@@ -329,11 +356,7 @@ SESSION_COOKIE_SAMESITE = 'None'
 SESSION_COOKIE_SECURE = True
 
 SESSION_EXPIRE_AT_BROWSER_CLOSE = False
-# We want to use the JSON serialisation, as it's safer -- but there is /secr/
-# code which stashes objects in the session that can't be JSON serialized.
-# Switch when that code is rewritten.
-#SESSION_SERIALIZER = "django.contrib.sessions.serializers.JSONSerializer"
-SESSION_SERIALIZER = 'django.contrib.sessions.serializers.PickleSerializer'
+SESSION_SERIALIZER = "django.contrib.sessions.serializers.JSONSerializer"
 SESSION_ENGINE = "django.contrib.sessions.backends.cache"
 SESSION_SAVE_EVERY_REQUEST = True
 SESSION_CACHE_ALIAS = 'sessions'
@@ -433,8 +456,6 @@ INSTALLED_APPS = [
     'django_celery_beat',
     'corsheaders',
     'django_markup',
-    'django_password_strength',
-    'form_utils',
     'oidc_provider',
     'simple_history',
     'tastypie',
@@ -521,6 +542,8 @@ SECURE_HSTS_SECONDS             = 3600
 #SECURE_REDIRECT_EXEMPT
 #SECURE_SSL_HOST 
 #SECURE_SSL_REDIRECT             = True
+# Relax the COOP policy to allow Meetecho authentication pop-up
+SECURE_CROSS_ORIGIN_OPENER_POLICY = "unsafe-none"
 
 # Override this in your settings_local with the IP addresses relevant for you:
 INTERNAL_IPS = (
@@ -536,7 +559,9 @@ IDNITS_BASE_URL = "https://author-tools.ietf.org/api/idnits"
 IDNITS_SERVICE_URL = "https://author-tools.ietf.org/idnits"
 
 # Content security policy configuration (django-csp)
-CSP_DEFAULT_SRC = ("'self'", "'unsafe-inline'", f"data: {IDTRACKER_BASE_URL} https://www.ietf.org/ https://analytics.ietf.org/ https://fonts.googleapis.com/")
+# (In current production, the Content-Security-Policy header is completely set by nginx configuration, but
+#  we try to keep this in sync to avoid confusion)
+CSP_DEFAULT_SRC = ("'self'", "'unsafe-inline'", f"data: {IDTRACKER_BASE_URL} http://ietf.org/ https://www.ietf.org/ https://analytics.ietf.org/ https://static.ietf.org")
 
 # The name of the method to use to invoke the test suite
 TEST_RUNNER = 'ietf.utils.test_runner.IetfTestRunner'
@@ -655,11 +680,6 @@ STATUS_CHANGE_PATH = '/a/ietfdata/doc/status-change'
 AGENDA_PATH = '/a/www/www6s/proceedings/'
 MEETINGHOST_LOGO_PATH = AGENDA_PATH  # put these in the same place as other proceedings files
 IPR_DOCUMENT_PATH = '/a/www/ietf-ftp/ietf/IPR/'
-IESG_TASK_FILE = '/a/www/www6/iesg/internal/task.txt'
-IESG_ROLL_CALL_FILE = '/a/www/www6/iesg/internal/rollcall.txt'
-IESG_ROLL_CALL_URL = 'https://www6.ietf.org/iesg/internal/rollcall.txt'
-IESG_MINUTES_FILE = '/a/www/www6/iesg/internal/minutes.txt'
-IESG_MINUTES_URL = 'https://www6.ietf.org/iesg/internal/minutes.txt'
 IESG_WG_EVALUATION_DIR = "/a/www/www6/iesg/evaluation"
 # Move drafts to this directory when they expire
 INTERNET_DRAFT_ARCHIVE_DIR = '/a/ietfdata/doc/draft/collection/draft-archive/'
@@ -709,13 +729,13 @@ CACHE_MIDDLEWARE_KEY_PREFIX = ''
 # This setting is possibly overridden further down, after the import of settings_local
 CACHES = {
     'default': {
-        'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
+        'BACKEND': 'ietf.utils.cache.LenientMemcacheCache',
         'LOCATION': '127.0.0.1:11211',
         'VERSION': __version__,
         'KEY_PREFIX': 'ietf:dt',
     },
     'sessions': {
-        'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
+        'BACKEND': 'ietf.utils.cache.LenientMemcacheCache',
         'LOCATION': '127.0.0.1:11211',
         # No release-specific VERSION setting.
         'KEY_PREFIX': 'ietf:dt',
@@ -1124,14 +1144,13 @@ ACCOUNT_REQUEST_EMAIL = 'account-request@ietf.org'
 
 SILENCED_SYSTEM_CHECKS = [
     "fields.W342",  # Setting unique=True on a ForeignKey has the same effect as using a OneToOneField.
+    "fields.W905",  # django.contrib.postgres.fields.CICharField is deprecated. (see https://github.com/ietf-tools/datatracker/issues/5660)
 ]
 
 CHECKS_LIBRARY_PATCHES_TO_APPLY = [
     'patch/change-oidc-provider-field-sizes-228.patch',
     'patch/fix-oidc-access-token-post.patch',
     'patch/fix-jwkest-jwt-logging.patch',
-    'patch/fix-django-password-strength-kwargs.patch',
-    'patch/add-django-http-cookie-value-none.patch',
     'patch/django-cookie-delete-with-all-settings.patch',
     'patch/tastypie-django22-fielderror-response.patch',
 ]
@@ -1185,6 +1204,10 @@ CELERY_BEAT_SYNC_EVERY = 1  # update DB after every event
 #     'request_timeout': 3.01,  # python-requests doc recommend slightly > a multiple of 3 seconds
 # }
 
+# Meetecho URLs - instantiate with url.format(session=some_session)
+MEETECHO_ONSITE_TOOL_URL = "https://meetings.conf.meetecho.com/onsite{session.meeting.number}/?session={session.pk}"
+MEETECHO_VIDEO_STREAM_URL = "https://meetings.conf.meetecho.com/ietf{session.meeting.number}/?session={session.pk}"
+MEETECHO_AUDIO_STREAM_URL = "https://mp3.conf.meetecho.com/ietf{session.meeting.number}/{session.pk}.m3u"
 
 # Put the production SECRET_KEY in settings_local.py, and also any other
 # sensitive or site-specific changes.  DO NOT commit settings_local.py to svn.
@@ -1219,7 +1242,7 @@ if SERVER_MODE != 'production':
     CACHES = {
         'default': {
             'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
-            #'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
+            #'BACKEND': 'ietf.utils.cache.LenientMemcacheCache',
             #'LOCATION': '127.0.0.1:11211',
             #'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
             'VERSION': __version__,
@@ -1272,6 +1295,6 @@ if SERVER_MODE != 'production':
     # Cannot have this set to True if we're using http: from the dev-server:
     CSRF_COOKIE_SECURE = False
     CSRF_COOKIE_SAMESITE = 'Lax'
+    CSRF_TRUSTED_ORIGINS += ['http://localhost:8000']
     SESSION_COOKIE_SECURE = False
     SESSION_COOKIE_SAMESITE = 'Lax'
-    

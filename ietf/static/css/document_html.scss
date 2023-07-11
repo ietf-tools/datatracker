@@ -6,6 +6,9 @@ $btn-font-family: inherit !default;
 $nav-link-font-weight: inherit !default;
 $tooltip-margin: inherit !default;
 
+$font-family-sans-serif: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", "Liberation Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+$font-family-monospace: "Noto Sans Mono", SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+
 @import "bootstrap/scss/functions";
 @import "bootstrap/scss/variables";
 @import "bootstrap/scss/maps";
@@ -138,6 +141,7 @@ $tooltip-margin: inherit !default;
     pre,
     code {
         font-size: 1em;
+        overflow: visible;
     }
 
     pre {
@@ -330,11 +334,13 @@ tbody.meta tr {
         page-break-inside: avoid;
     }
 
+/*
     a:link,
     a:visited {
         // color: inherit;
         // text-decoration: none;
     }
+*/
 
     .newpage {
         page-break-before: always !important;

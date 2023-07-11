@@ -1,8 +1,8 @@
 # Copyright The IETF Trust 2007-2020, All Rights Reserved
 
-from django.conf.urls import include
-from django.views.generic import RedirectView
 from django.conf import settings
+from django.urls import include
+from django.views.generic import RedirectView
 
 from ietf.meeting import views, views_proceedings
 from ietf.utils.urls import url
@@ -10,8 +10,7 @@ from ietf.utils.urls import url
 class AgendaRedirectView(RedirectView):
     ignore_kwargs = ('owner', 'name')
     def get_redirect_url(self, *args, **kwargs):
-        for kwarg in self.ignore_kwargs:
-            kwargs.pop(kwarg, None)
+        kwargs = {k: v for k, v in kwargs.items() if v is not None and k not in self.ignore_kwargs}
         return super().get_redirect_url(*args, **kwargs)
 
 safe_for_all_meeting_types = [
@@ -78,10 +77,10 @@ type_ietf_only_patterns_id_optional = [
     url(r'^agenda/agenda\.ics$', views.agenda_ical),
     url(r'^agenda\.ics$', views.agenda_ical),
     url(r'^agenda.json$', views.agenda_json),
-    url(r'^agenda/week-view(?:.html)?/?$', RedirectView.as_view(pattern_name='agenda', permanent=True)),
+    url(r'^agenda/week-view(?:.html)?/?$', AgendaRedirectView.as_view(pattern_name='agenda', permanent=True)),
     url(r'^floor-plan/?$', views.agenda, name='floor-plan'),
     url(r'^floor-plan/(?P<floor>[-a-z0-9_]+)/?$', RedirectView.as_view(pattern_name='floor-plan', permanent=True)),
-    url(r'^week-view(?:.html)?/?$', RedirectView.as_view(pattern_name='agenda', permanent=True)),
+    url(r'^week-view(?:.html)?/?$', AgendaRedirectView.as_view(pattern_name='agenda', permanent=True)),
     url(r'^materials(?:.html)?/?$', views.materials),
     url(r'^request_minutes/?$', views.request_minutes),
     url(r'^materials/%(document)s((?P<ext>\.[a-z0-9]+)|/)?$' % settings.URL_REGEXPS, views.materials_document),

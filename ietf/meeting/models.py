@@ -1051,6 +1051,8 @@ class Session(models.Model):
     modified = models.DateTimeField(auto_now=True)
     remote_instructions = models.CharField(blank=True,max_length=1024)
     on_agenda = models.BooleanField(default=True, help_text='Is this session visible on the meeting agenda?')
+    has_onsite_tool = models.BooleanField(default=False, help_text="Does this session use the officially supported onsite and remote tooling?")
+    chat_room = models.CharField(blank=True, max_length=32, help_text='Name of Zulip stream, if different from group acronym')
 
     tombstone_for = models.ForeignKey('Session', blank=True, null=True, help_text="This session is the tombstone for a session that was rescheduled", on_delete=models.CASCADE)
 
@@ -1252,7 +1254,10 @@ class Session(models.Model):
         return Constraint.objects.filter(target=self.group, meeting=self.meeting).order_by('name__name')
 
     def official_timeslotassignment(self):
-        return self.timeslotassignments.filter(schedule__in=[self.meeting.schedule, self.meeting.schedule.base if self.meeting.schedule else None]).first()
+        # cache only non-None values
+        if getattr(self, "_cache_official_timeslotassignment", None) is None:
+            self._cache_official_timeslotassignment = self.timeslotassignments.filter(schedule__in=[self.meeting.schedule, self.meeting.schedule.base if self.meeting.schedule else None]).first()
+        return self._cache_official_timeslotassignment
 
     @property
     def people_constraints(self):
@@ -1284,7 +1289,10 @@ class Session(models.Model):
         return self._agenda_file
 
     def chat_room_name(self):
-        if self.type_id=='plenary':
+        if self.chat_room:
+            return self.chat_room
+        # At some point, add a migration to add "plenary" chat room name to existing sessions in the database.
+        elif self.type_id=='plenary':
             return 'plenary'
         else:
             return self.group_at_the_time().acronym
@@ -1312,12 +1320,42 @@ class Session(models.Model):
     def notes_url(self):
         return urljoin(settings.IETF_NOTES_URL, self.notes_id())
 
+
     def group_at_the_time(self):
-        return self.meeting.group_at_the_time(self.group)
+        if not hasattr(self,"_cached_group_at_the_time"):
+            self._cached_group_at_the_time = self.meeting.group_at_the_time(self.group)
+        return self._cached_group_at_the_time
 
     def group_parent_at_the_time(self):
         if self.group_at_the_time().parent:
             return self.meeting.group_at_the_time(self.group_at_the_time().parent)
+
+    def audio_stream_url(self):
+        if (
+            self.meeting.type.slug == "ietf"
+            and self.has_onsite_tool
+            and (url := getattr(settings, "MEETECHO_AUDIO_STREAM_URL", ""))
+        ):
+            return url.format(session=self)
+        return None
+
+    def video_stream_url(self):
+        if (
+            self.meeting.type.slug == "ietf"
+            and self.has_onsite_tool
+            and (url := getattr(settings, "MEETECHO_VIDEO_STREAM_URL", ""))
+        ):
+            return url.format(session=self)
+        return None
+
+    def onsite_tool_url(self):
+        if (
+            self.meeting.type.slug == "ietf"
+            and self.has_onsite_tool
+            and (url := getattr(settings, "MEETECHO_ONSITE_TOOL_URL", ""))
+        ):
+            return url.format(session=self)
+        return None
 
 
 class SchedulingEvent(models.Model):

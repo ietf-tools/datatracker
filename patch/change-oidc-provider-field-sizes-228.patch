@@ -143,15 +143,6 @@ diff -ur oidc_provider.orig/migrations/0015_change_client_code.py oidc_provider/
 diff -ur oidc_provider.orig/migrations/0016_userconsent_and_verbosenames.py oidc_provider/migrations/0016_userconsent_and_verbosenames.py
 --- oidc_provider.orig/migrations/0016_userconsent_and_verbosenames.py	2018-04-13 21:43:28.000000000 +0200
 +++ oidc_provider/migrations/0016_userconsent_and_verbosenames.py	2020-06-07 13:34:26.826716519 +0200
-@@ -20,7 +20,7 @@
-             model_name='userconsent',
-             name='date_given',
-             field=models.DateTimeField(
--                default=datetime.datetime(2016, 6, 10, 17, 53, 48, 889808, tzinfo=utc), verbose_name='Date Given'),
-+                default=datetime.datetime(2016, 6, 10, 17, 53, 48, 889808), verbose_name='Date Given'),
-             preserve_default=False,
-         ),
-         migrations.AlterField(
 @@ -32,12 +32,12 @@
          migrations.AlterField(
              model_name='client',
@@ -290,7 +281,7 @@ diff -ur oidc_provider.orig/migrations/0021_refresh_token_not_unique.py oidc_pro
 diff -ur oidc_provider.orig/models.py oidc_provider/models.py
 --- oidc_provider.orig/models.py	2018-09-14 21:34:52.000000000 +0200
 +++ oidc_provider/models.py	2020-06-07 13:34:26.830716635 +0200
-@@ -67,8 +67,8 @@
+@@ -66,8 +66,8 @@
          verbose_name=_(u'Client Type'),
          help_text=_(u'<b>Confidential</b> clients are capable of maintaining the confidentiality'
                      u' of their credentials. <b>Public</b> clients are incapable.'))
@@ -301,7 +292,7 @@ diff -ur oidc_provider.orig/models.py oidc_provider/models.py
      response_types = models.ManyToManyField(ResponseType)
      jwt_alg = models.CharField(
          max_length=10,
-@@ -78,15 +78,15 @@
+@@ -77,15 +77,15 @@
          help_text=_(u'Algorithm used to encode ID Tokens.'))
      date_created = models.DateField(auto_now_add=True, verbose_name=_(u'Date Created'))
      website_url = models.CharField(
@@ -320,7 +311,7 @@ diff -ur oidc_provider.orig/models.py oidc_provider/models.py
      logo = models.FileField(
          blank=True, default='', upload_to='oidc_provider/clients', verbose_name=_(u'Logo Image'))
      reuse_consent = models.BooleanField(
-@@ -186,12 +186,12 @@
+@@ -185,12 +185,12 @@
  
      user = models.ForeignKey(
          settings.AUTH_USER_MODEL, verbose_name=_(u'User'), on_delete=models.CASCADE)
@@ -337,7 +328,7 @@ diff -ur oidc_provider.orig/models.py oidc_provider/models.py
  
      class Meta:
          verbose_name = _(u'Authorization Code')
-@@ -205,8 +205,8 @@
+@@ -204,8 +204,8 @@
  
      user = models.ForeignKey(
          settings.AUTH_USER_MODEL, null=True, verbose_name=_(u'User'), on_delete=models.CASCADE)

@@ -3,7 +3,7 @@
 
 
 from django.contrib import admin
-from django.utils.encoding import force_text
+from django.utils.encoding import force_str
 
 from ietf.utils.models import VersionInfo
 
@@ -14,7 +14,7 @@ def name(obj):
         if callable(obj.name):
             name = obj.name()
         else:
-            name = force_text(obj.name)
+            name = force_str(obj.name)
         if name:
             return name
     return str(obj)
