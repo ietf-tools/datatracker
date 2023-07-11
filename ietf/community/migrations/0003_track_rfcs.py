@@ -8,6 +8,7 @@ def forward(apps, schema_editor):
     CommunityList = apps.get_model("community", "CommunityList")
     RelatedDocument = apps.get_model("doc", "RelatedDocument")
 
+    # Handle individually tracked documents
     for cl in CommunityList.objects.all():
         for rfc in set(
             RelatedDocument.objects.filter(
@@ -17,11 +18,30 @@ def forward(apps, schema_editor):
         ):
             cl.added_docs.add(rfc)
 
+    # Handle rules
+    SearchRule = apps.get_model("community", "SearchRule")
+    State = apps.get_model("doc", "State")
+    draft_rfc_state = State.objects.get(type_id="draft", slug="rfc")
+    rfc_published_state = State.objects.get(type_id="rfc", slug="published")
+    SearchRule.objects.filter(state=draft_rfc_state).update(state=rfc_published_state)
+
+
+def reverse(apps, schema_editor):
+    Document = apps.get_model("doc", "Document")
+    for rfc in Document.objects.filter(type__slug="rfc"):
+        rfc.communitylist_set.clear()
+
+    SearchRule = apps.get_model("community", "SearchRule")
+    State = apps.get_model("doc", "State")
+    draft_rfc_state = State.objects.get(type_id="draft", slug="rfc")
+    rfc_published_state = State.objects.get(type_id="rfc", slug="published")
+    SearchRule.objects.filter(state=rfc_published_state).update(state=draft_rfc_state)
+
 
 class Migration(migrations.Migration):
     dependencies = [
         ("community", "0002_auto_20230320_1222"),
         ("doc", "0010_move_rfc_docaliases"),
     ]
-
-    operations = [migrations.RunPython(forward)]
+    
+    operations = [migrations.RunPython(forward, reverse)]
