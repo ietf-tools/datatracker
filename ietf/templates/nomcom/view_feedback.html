@@ -55,14 +55,16 @@
                 {% endfor %}
             </tbody>
             <tfoot>
-                <th scope="row">Totals</th>
-                <td></td>
-                <td></td>
-                {% for fbtype_count in staterank.list|feedback_totals %}
-                <td>
-                    {{ fbtype_count }}
-                </td>
-                {% endfor %}
+                <tr>
+                    <th scope="row">Totals</th>
+                    <td></td>
+                    <td></td>
+                    {% for fbtype_count in staterank.list|feedback_totals %}
+                    <td>
+                        {{ fbtype_count }}
+                    </td>
+                    {% endfor %}
+                </tr>
             </tfoot>
         </table>
     {% endfor %}
