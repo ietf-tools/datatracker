@@ -19,6 +19,8 @@ from ietf.ipr.sitemaps import IPRMap
 from ietf.liaisons.sitemaps import LiaisonMap
 from ietf.utils.urls import url
 
+from strawberry.django.views import GraphQLView
+from ietf.schema import schema
 
 admin.autodiscover()
 
@@ -67,6 +69,9 @@ urlpatterns = [
     url(r'^sync/', include('ietf.sync.urls')),
     url(r'^templates/', include('ietf.dbtemplate.urls')),
     url(r'^(?P<group_type>(wg|rg|ag|rag|team|dir|review|area|program|iabasg|adhoc|ise|adm|rfcedtyp|edwg|edappr))/', include(grouptype_urls)),
+
+    # GraphQL
+    path('graphql/', GraphQLView.as_view(schema=schema)),
 
     # Redirects
     url(r'^(?P<path>public)/', include('ietf.redirects.urls')),
