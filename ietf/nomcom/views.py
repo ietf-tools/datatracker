@@ -209,7 +209,7 @@ def private_index(request, year):
                     nominations.update(state='pending')
                     messages.success(request,'The selected nominations have been set as pending')
                 elif action == 'email':
-                    mailto = ','.join([np.nominee.email.name_and_email() for np in nominations])
+                    mailto = ','.join([np.nominee.email.email_address() for np in nominations])
             else:
                 messages.warning(request, "Please, select some nominations to work with")
 
