@@ -1,6 +1,6 @@
+# Copyright The IETF Trust 2023, All Rights Reserved
 import strawberry
 from strawberry import auto
-from typing import List
 from . import models
 
 @strawberry.django.filters.filter(models.Meeting)
@@ -10,7 +10,6 @@ class MeetingFilter:
 
 @strawberry.django.type(
     models.Meeting,
-    description='Meeting Object'
 )
 class Meeting:
     id: auto

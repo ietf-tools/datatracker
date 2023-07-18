@@ -1,13 +1,10 @@
-from typing import List
-import strawberry
+# Copyright The IETF Trust 2023, All Rights Reserved
+from strawberry import Schema
+from strawberry.tools import merge_types
+from ietf.meeting.schema import Query as MeetingQuery
+from ietf.person.schema import Query as PersonQuery
 
-from ietf.meeting.types import Meeting, MeetingFilter
+queries = (MeetingQuery, PersonQuery)
 
-@strawberry.type
-class Query:
-    meetingById: Meeting = strawberry.django.field()
-    meetings: List[Meeting] = strawberry.django.field(pagination=True, filters=MeetingFilter)
-
-schema = strawberry.Schema(
-    Query
-)
+Query = merge_types("Query", queries)
+schema = Schema(query=Query)
