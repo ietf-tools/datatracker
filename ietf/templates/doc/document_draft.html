@@ -73,7 +73,7 @@
                                 {{ stream_state }}
                             </span>
                         {% else %}
-                            <span class="text-muted">
+                            <span class="text-body-secondary">
                                 (None)
                             </span>
                         {% endif %}
@@ -85,7 +85,7 @@
                             </div>
                         {% endif %}
                         {% if due_date %}
-                            <span class="text-muted">(Due date {{ due_date }})</span>
+                            <span class="text-body-secondary">(Due date {{ due_date }})</span>
                         {% endif %}
                     </td>
                 {% else %}
@@ -95,7 +95,7 @@
                     <td class="edit">
                     </td>
                     <td>
-                        <span class="text-muted">(No stream defined)</span>
+                        <span class="text-body-secondary">(No stream defined)</span>
                     </td>
                 {% endif %}
             </tr>
@@ -166,7 +166,7 @@
                                 {% if pres.rev and pres.rev != doc.rev %}(version -{{ pres.rev }}){% endif %}{% if not forloop.last %},{% endif %}
                             {% endfor %}
                         {% else %}
-                            <span class="text-muted">
+                            <span class="text-body-secondary">
                                 (None)
                             </span>
                         {% endif %}
@@ -196,7 +196,7 @@
                         {% if doc.shepherd %}
                             {% person_link doc.shepherd.person %}
                         {% else %}
-                            <span class="text-muted">
+                            <span class="text-body-secondary">
                                     (None)
                                 </span>
                         {% endif %}
@@ -226,7 +226,7 @@
                                 </a>
                                 <span class="badge rounded-pill bg-secondary">Last changed {{ shepherd_writeup.time|date:"Y-m-d" }}</span>
                             {% else %}
-                                <span class="text-muted">
+                                <span class="text-body-secondary">
                                     (None)
                                 </span>
                             {% endif %}
@@ -251,7 +251,7 @@
                         {% if doc.has_rfc_editor_note %}
                             (last changed {{ doc.has_rfc_editor_note|date:"Y-m-d" }})
                         {% else %}
-                            <span class="text-muted">
+                            <span class="text-body-secondary">
                                 (None)
                             </span>
                         {% endif %}
@@ -327,7 +327,7 @@
                                         </a>
                                     {% endif %}
                                 {% else %}
-                                    <span class="text-muted">
+                                    <span class="text-body-secondary">
                                         (None)
                                     </span>
                                 {% endif %}
@@ -375,7 +375,7 @@
                                 On agenda of {{ telechat.telechat_date }} IESG telechat
                                 {% if telechat.returning_item %}(returning item){% endif %}
                             {% else %}
-                                <span class="text-muted">
+                                <span class="text-body-secondary">
                                     (None)
                                 </span>
                             {% endif %}
@@ -402,7 +402,7 @@
                             {% if doc.ad %}
                                 {% person_link doc.ad %}
                             {% else %}
-                                <span class="text-muted">
+                                <span class="text-body-secondary">
                                     (None)
                                 </span>
                             {% endif %}
@@ -427,7 +427,7 @@
                                     {% if doc.note %}
                                         {{ doc.note|linebreaksbr }}
                                     {% else %}
-                                        <span class="text-muted">
+                                        <span class="text-body-secondary">
                                             (None)
                                         </span>
                                     {% endif %}
@@ -452,7 +452,7 @@
                             {% if doc.notify %}
                                 {{ doc.notify|linkify }}
                             {% else %}
-                                <span class="text-muted">
+                                <span class="text-body-secondary">
                                     (None)
                                 </span>
                             {% endif %}
@@ -482,7 +482,7 @@
                             </td>
                             <td class="{% if iana_review_state|slugify|slice:7 != "iana-ok" %}text-danger{% else %}text-success{% endif %}">
                                 {% if not iana_review_state %}
-                                    <span class="text-muted">
+                                    <span class="text-body-secondary">
                                         (None)
                                     </span>
                                 {% else %}
@@ -511,7 +511,7 @@
                             </td>
                             <td>
                                 {% if not iana_action_state %}
-                                    <span class="text-muted">
+                                    <span class="text-body-secondary">
                                         (None)
                                     </span>
                                 {% else %}
@@ -540,7 +540,7 @@
                             </td>
                             <td class="{% if iana_experts_state|slugify|slice:"-2:" != "ok" %}text-danger{% else %}text-success{% endif %}">
                                 {% if not iana_experts_state %}
-                                    <span class="text-muted">
+                                    <span class="text-body-secondary">
                                         (None)
                                     </span>
                                 {% else %}
@@ -569,7 +569,7 @@
                             </td>
                             <td>
                                 {% if not iana_experts_comment %}
-                                    <span class="text-muted">
+                                    <span class="text-body-secondary">
                                         (None)
                                     </span>
                                 {% else %}
@@ -808,7 +808,7 @@
                             {% if not forloop.last %}<br>{% endif %}
                         {% endfor %}
                     </p>
-                    <p class="text-muted card-text">
+                    <p class="text-body-secondary card-text">
                         (Note: The e-mail addresses provided for the authors of this Internet-Draft may no longer be valid.)
                     </p>
                 </div>

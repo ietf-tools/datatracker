@@ -41,7 +41,7 @@ class PasswordStrengthInput(PasswordInput):
             <div class="progress" style="margin-bottom: 10px;">
                 <div class="progress-bar progress-bar-warning password_strength_bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="5" style="width: 0%%"></div>
             </div>
-            <p class="text-muted password_strength_info hidden">
+            <p class="text-body-secondary password_strength_info hidden">
                 <span class="label label-danger">
                     %s
                 </span>
@@ -89,7 +89,7 @@ class PasswordConfirmationInput(PasswordInput):
             
         confirmation_markup = """
         <div style="margin-top: 10px;" class="hidden password_strength_info">
-            <p class="text-muted">
+            <p class="text-body-secondary">
                 <span class="label label-danger">
                     %s
                 </span>
