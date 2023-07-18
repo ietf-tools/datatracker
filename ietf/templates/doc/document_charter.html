@@ -14,7 +14,7 @@
     {% origin %}
     {{ top|safe }}
     {% include "doc/revisions_list.html" %}
-    <div id="timeline"></div>
+    <div id="doc-timeline"></div>
     {% if doc.rev|charter_major_rev != latest_rev|charter_major_rev %}
         <div class="alert alert-warning my-3">
             The information below is for an older
