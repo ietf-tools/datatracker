@@ -1,6 +1,7 @@
 # Copyright The IETF Trust 2017-2020, All Rights Reserved
 
 from django import template
+from django.utils.html import mark_safe
 
 import debug  # pyflakes:ignore
 
@@ -59,11 +60,11 @@ def person_link(person, **kwargs):
         )
         email = person.email_address()
         return {
-            "name": name,
-            "plain_name": plain_name,
-            "email": email,
-            "title": title,
-            "class": cls,
+            "name": mark_safe(name),
+            "plain_name": mark_safe(plain_name),
+            "email": mark_safe(email),
+            "title": mark_safe(title),
+            "class": mark_safe(cls),
             "with_email": with_email,
         }
     else:
@@ -83,10 +84,10 @@ def email_person_link(email, **kwargs):
     )
     email = email.address
     return {
-        "name": name,
-        "plain_name": plain_name,
-        "email": email,
-        "title": title,
-        "class": cls,
+        "name": mark_safe(name),
+        "plain_name": mark_safe(plain_name),
+        "email": mark_safe(email),
+        "title": mark_safe(title),
+        "class": mark_safe(cls),
         "with_email": with_email,
     }
