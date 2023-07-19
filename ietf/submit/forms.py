@@ -29,7 +29,6 @@ from ietf.doc.models import Document
 from ietf.group.models import Group
 from ietf.ietfauth.utils import has_role
 from ietf.doc.fields import SearchableDocumentsField
-from ietf.doc.models import DocAlias
 from ietf.ipr.mail import utc_from_string
 from ietf.meeting.models import Meeting
 from ietf.message.models import Message
