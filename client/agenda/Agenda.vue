@@ -533,6 +533,13 @@ onMounted(() => {
     color: $blue-700;
     position: relative;
 
+    @at-root .theme-dark & {
+      border: 1px solid $blue-800;
+      background: linear-gradient(to top, lighten($blue-900, 2%), lighten($blue-900, 5%));
+      color: $blue-100;
+      box-shadow: inset 0 0 0 1px #000;
+    }
+
     > button {
       position: absolute;
       top: 15px;

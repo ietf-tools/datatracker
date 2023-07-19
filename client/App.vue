@@ -27,6 +27,21 @@ const siteStore = useSiteStore()
 const appContainer = ref(null)
 
 // --------------------------------------------------------------------
+// Set user theme
+// --------------------------------------------------------------------
+
+const desiredTheme = window.localStorage?.getItem('theme')
+if (desiredTheme === 'dark') {
+  siteStore.theme = 'dark'
+} else if (desiredTheme === 'light') {
+  siteStore.theme = 'light'
+} else if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
+  siteStore.theme = 'dark'
+} else {
+  siteStore.theme = 'light'
+}
+
+// --------------------------------------------------------------------
 // Handle browser resize
 // --------------------------------------------------------------------
 
