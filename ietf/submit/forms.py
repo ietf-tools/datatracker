@@ -704,6 +704,11 @@ class SubmissionAutoUploadForm(SubmissionBaseUploadForm):
                         'replaces',
                         forms.ValidationError("An Internet-Draft can only replace another Internet-Draft"),
                     )
+                elif doc.get_state_slug() == "rfc":
+                    self.add_error(
+                        'replaces',
+                        forms.ValidationError("An Internet-Draft cannot replace another Internet-Draft that has become an RFC"),
+                    )
                 elif doc.get_state_slug('draft-iesg') in ('approved', 'ann', 'rfcqueue'):
                     self.add_error(
                         'replaces',

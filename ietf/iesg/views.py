@@ -151,7 +151,7 @@ def agenda_json(request, date=None):
                 if doc.type_id == "draft":
                     docinfo['rev'] = doc.rev
                     docinfo['intended-std-level'] = str(doc.intended_std_level)
-                    if doc.is_rfc():
+                    if doc.type_id == "rfc":
                         docinfo['rfc-number'] = doc.rfc_number
 
                     iana_state = doc.get_state("draft-iana-review")

@@ -54,7 +54,7 @@ class Command(BaseCommand):
             doc =  getattr(obj, docattr)
             time = getattr(obj, timeattr)
             if not obj.rev:
-                if not doc.is_rfc():
+                if doc.type_id != "rfc":
                     self.stdout.write("Bad revision number: %-52s: '%s'" % (doc.name, obj.rev))
                 continue
             rev = int(obj.rev.lstrip('0') or '0')

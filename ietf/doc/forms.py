@@ -148,7 +148,7 @@ class AddDownrefForm(forms.Form):
             raise forms.ValidationError("Please provide a referenced RFC and a referencing Internet-Draft")
 
         rfc = self.cleaned_data['rfc']
-        if not rfc.is_rfc():
+        if rfc.document.type_id != "rfc":
             raise forms.ValidationError("Cannot find the RFC: " + rfc.name)
         return rfc
 

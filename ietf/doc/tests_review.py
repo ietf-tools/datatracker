@@ -137,9 +137,17 @@ class ReviewTests(TestCase):
         url = urlreverse('ietf.doc.views_review.request_review', kwargs={ "name": doc.name })
         login_testing_unauthorized(self, "ad", url)
 
-        # get should fail
+        # get should fail - all non draft types 404
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 404)
+
+        # Can only request reviews on active draft documents
+        doc = WgDraftFactory(states=[("draft","rfc")])
+        url = urlreverse('ietf.doc.views_review.request_review', kwargs={ "name": doc.name })
         r = self.client.get(url)
         self.assertEqual(r.status_code, 403)
+
+
 
     def test_doc_page(self):
 

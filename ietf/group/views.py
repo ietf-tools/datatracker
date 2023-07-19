@@ -534,7 +534,7 @@ def group_documents_txt(request, acronym, group_type=None):
 
     rows = []
     for d in itertools.chain(docs, docs_related):
-        if d.is_rfc():
+        if d.type_id == "rfc":
             name = str(d.rfc_number)
         else:
             name = "%s-%s" % (d.name, d.rev)

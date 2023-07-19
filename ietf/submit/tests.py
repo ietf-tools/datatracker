@@ -32,7 +32,7 @@ from ietf.submit.utils import (expirable_submissions, expire_submission, find_su
                                process_and_accept_uploaded_submission, SubmissionError, process_submission_text,
                                process_submission_xml, process_uploaded_submission, 
                                process_and_validate_submission)
-from ietf.doc.factories import (DocumentFactory, WgDraftFactory, IndividualDraftFactory, IndividualRfcFactory,
+from ietf.doc.factories import (DocumentFactory, WgDraftFactory, IndividualDraftFactory,
                                 ReviewFactory, WgRfcFactory)
 from ietf.doc.models import ( Document, DocAlias, DocEvent, State,
     BallotPositionDocEvent, DocumentAuthor, SubmissionDocEvent )
@@ -3090,13 +3090,15 @@ class SubmissionUploadFormTests(BaseSubmitTestCase):
 
         # can't replace RFC
         rfc = WgRfcFactory()
+        draft = WgDraftFactory(states=[("draft", "rfc")])
+        draft.relateddocument_set.create(relationship_id="became_rfc", target=rfc.docalias.first())
         form = SubmissionAutoUploadForm(
             request_factory.get('/some/url'),
-            data={'user': auth.user.username, 'replaces': rfc.name},
+            data={'user': auth.user.username, 'replaces': draft.name},
             files=files_dict,
         )
         self.assertFalse(form.is_valid())
-        self.assertIn('An Internet-Draft can only replace another Internet-Draft', form.errors['replaces'])
+        self.assertIn('An Internet-Draft can only replace another Internet-Draft that has become an RFC', form.errors['replaces'])
 
         # can't replace draft approved by iesg
         existing_drafts[0].set_state(State.objects.get(type='draft-iesg', slug='approved'))
@@ -3688,25 +3690,9 @@ class RefsTests(BaseSubmitTestCase):
 
 
 class PostSubmissionTests(BaseSubmitTestCase):
-    @override_settings(RFC_FILE_TYPES=('txt', 'xml'), IDSUBMIT_FILE_TYPES=('pdf', 'md'))
-    def test_find_submission_filenames_rfc(self):
-        """Posting an RFC submission should use RFC_FILE_TYPES"""
-        rfc = IndividualRfcFactory()
-        path = Path(self.staging_dir)
-        for ext in ['txt', 'xml', 'pdf', 'md']:
-            (path / f'{rfc.name}-{rfc.rev}.{ext}').touch()
-        files = find_submission_filenames(rfc)
-        self.assertCountEqual(
-            files,
-            {
-                'txt': f'{path}/{rfc.name}-{rfc.rev}.txt',
-                'xml': f'{path}/{rfc.name}-{rfc.rev}.xml',
-                # should NOT find the pdf or md
-            }
-        )
 
     @override_settings(RFC_FILE_TYPES=('txt', 'xml'), IDSUBMIT_FILE_TYPES=('pdf', 'md'))
-    def test_find_submission_filenames_draft(self):
+    def test_find_submission_filenames(self):
         """Posting an I-D submission should use IDSUBMIT_FILE_TYPES"""
         draft = WgDraftFactory()
         path = Path(self.staging_dir)

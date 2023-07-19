@@ -287,7 +287,7 @@ def find_submission_filenames(draft):
     """
     path = pathlib.Path(settings.IDSUBMIT_STAGING_PATH)
     stem = f'{draft.name}-{draft.rev}'
-    allowed_types = settings.RFC_FILE_TYPES if draft.get_state_slug() == 'rfc' else settings.IDSUBMIT_FILE_TYPES
+    allowed_types = settings.IDSUBMIT_FILE_TYPES
     candidates = {ext: path / f'{stem}.{ext}' for ext in allowed_types}
     return {ext: str(filename) for ext, filename in candidates.items() if filename.exists()}
 

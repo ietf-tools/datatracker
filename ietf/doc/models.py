@@ -137,18 +137,17 @@ class DocumentInfo(models.Model):
 
     def get_file_path(self):
         if not hasattr(self, '_cached_file_path'):
-            if self.type_id == "draft":
+            if self.type_id == "rfc":
+                self._cached_file_path = settings.RFC_PATH
+            elif self.type_id == "draft":
                 if self.is_dochistory():
                     self._cached_file_path = settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR
                 else:
-                    if self.get_state_slug() == "rfc":
-                        self._cached_file_path = settings.RFC_PATH
+                    draft_state = self.get_state('draft')
+                    if draft_state and draft_state.slug == 'active':
+                        self._cached_file_path = settings.INTERNET_DRAFT_PATH
                     else:
-                        draft_state = self.get_state('draft')
-                        if draft_state and draft_state.slug == 'active':
-                            self._cached_file_path = settings.INTERNET_DRAFT_PATH
-                        else:
-                            self._cached_file_path = settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR
+                        self._cached_file_path = settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR
             elif self.meeting_related() and self.type_id in (
                     "agenda", "minutes", "slides", "bluesheets", "procmaterials", "chatlog", "polls"
             ):
@@ -173,14 +172,13 @@ class DocumentInfo(models.Model):
         if not hasattr(self, '_cached_base_name'):
             if self.uploaded_filename:
                 self._cached_base_name = self.uploaded_filename
+            elif self.type_id == 'rfc':
+                self._cached_base_name = "%s.txt" % self.canonical_name()  
             elif self.type_id == 'draft':
                 if self.is_dochistory():
                     self._cached_base_name = "%s-%s.txt" % (self.doc.name, self.rev)
                 else:
-                    if self.get_state_slug() == 'rfc':
-                        self._cached_base_name = "%s.txt" % self.canonical_name()
-                    else:
-                        self._cached_base_name = "%s-%s.txt" % (self.name, self.rev)
+                    self._cached_base_name = "%s-%s.txt" % (self.name, self.rev)
             elif self.type_id in ["slides", "agenda", "minutes", "bluesheets", "procmaterials", ] and self.meeting_related():
                 ext = 'pdf' if self.type_id == 'procmaterials' else 'txt'
                 self._cached_base_name = f'{self.canonical_name()}-{self.rev}.{ext}'
@@ -245,7 +243,7 @@ class DocumentInfo(models.Model):
                     format = settings.DOC_HREFS[self.type_id]
             elif self.type_id in settings.DOC_HREFS:
                 self.is_meeting_related = False
-                if self.is_rfc():
+                if self.type_id == "rfc":
                     format = settings.DOC_HREFS['rfc']
                 else:
                     format = settings.DOC_HREFS[self.type_id]
@@ -348,10 +346,9 @@ class DocumentInfo(models.Model):
                      iesg_state_summary = iesg_state_summary + "::"+"::".join(tag.name for tag in iesg_substate)
              
             if state.slug == "rfc":
-                # todo check this once became-rfc relationships are actually created
-                rfcs = self.related_that("became-rfc")  # should be only one
+                rfcs = self.related_that_doc("became_rfc")  # should be only one
                 if len(rfcs) > 0:
-                    rfc = rfcs[0]
+                    rfc = rfcs[0].document
                     return f"Became RFC {rfc.rfc_number} ({rfc.std_level})"
                 else:
                     return "Became RFC"
@@ -383,9 +380,6 @@ class DocumentInfo(models.Model):
                 return state.name
         else:
             return state.name
-
-    def is_rfc(self):
-        return self.type_id == "rfc"
 
     def author_list(self):
         best_addresses = []
@@ -646,10 +640,20 @@ class DocumentInfo(models.Model):
         return self.relations_that_doc(('refnorm','refinfo','refunk','refold'))
 
     def referenced_by(self):
-        return self.relations_that(('refnorm','refinfo','refunk','refold')).filter(source__states__type__slug='draft',source__states__slug__in=['rfc','active'])
-
+        return self.relations_that(("refnorm", "refinfo", "refunk", "refold")).filter(
+            models.Q(
+                source__type__slug="draft",
+                source__states__type__slug="draft",
+                source__states__slug="active",
+            )
+            | models.Q(source__type__slug="rfc")
+        )
+    
+    
     def referenced_by_rfcs(self):
-        return self.relations_that(('refnorm','refinfo','refunk','refold')).filter(source__states__type__slug='draft',source__states__slug='rfc')
+        return self.relations_that(("refnorm", "refinfo", "refunk", "refold")).filter(
+            source__type__slug="rfc"
+        )
 
     class Meta:
         abstract = True
@@ -681,7 +685,7 @@ class RelatedDocument(models.Model):
         if source_lvl not in ['bcp','ps','ds','std']:
             return None
 
-        if self.target.get_state().slug == 'rfc':
+        if self.target.type_id == 'rfc':
             if not self.target.std_level:
                 target_lvl = 'unkn'
             else:
@@ -704,8 +708,8 @@ class RelatedDocument(models.Model):
 
     def is_approved_downref(self):
 
-        if self.target.get_state().slug == 'rfc':
-           if RelatedDocument.objects.filter(relationship_id='downref-approval', target=self.target):
+        if self.target.type_id == 'rfc':
+           if RelatedDocument.objects.filter(relationship_id='downref-approval', target=self.target).exists():
               return "Approved Downref"
 
         return False
@@ -1002,7 +1006,7 @@ class Document(DocumentInfo):
 
         This is the rfc publication date for RFCs, and the new-revision date for other documents.
         """
-        if self.get_state_slug() == "rfc":
+        if self.type_id == "rfc":
             # As of Sept 2022, in ietf.sync.rfceditor.update_docs_from_rfc_index() `published_rfc` events are
             # created with a timestamp whose date *in the PST8PDT timezone* is the official publication date
             # assigned by the RFC editor.

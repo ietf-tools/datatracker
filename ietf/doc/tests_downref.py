@@ -22,7 +22,7 @@ class Downref(TestCase):
         self.draftalias = self.draft.docalias.get(name='draft-ietf-mars-test')
         self.doc = WgDraftFactory(name='draft-ietf-mars-approved-document',states=[('draft-iesg','rfcqueue')])
         self.docalias = self.doc.docalias.get(name='draft-ietf-mars-approved-document')
-        self.rfc = WgRfcFactory(name='rfc9998')
+        self.rfc = WgRfcFactory(rfc_number=9998)
         self.rfcalias = self.rfc.docalias.get(name='rfc9998')
         RelatedDocument.objects.create(source=self.doc, target=self.rfc, relationship_id='downref-approval')
 
@@ -100,7 +100,7 @@ class Downref(TestCase):
     def test_downref_last_call(self):
         draft = WgDraftFactory(name='draft-ietf-mars-ready-for-lc-document',intended_std_level_id='ps',states=[('draft-iesg','iesg-eva')])
         WgDraftFactory(name='draft-ietf-mars-another-approved-document',states=[('draft-iesg','rfcqueue')])
-        rfc9999 = WgRfcFactory(name='rfc9999', std_level_id=None)
+        rfc9999 = WgRfcFactory(alias2__name='rfc9999', std_level_id=None)
         RelatedDocument.objects.create(source=draft, target=rfc9999, relationship_id='refnorm')
         url = urlreverse('ietf.doc.views_ballot.lastcalltext', kwargs=dict(name=draft.name))
         login_testing_unauthorized(self, "secretary", url)

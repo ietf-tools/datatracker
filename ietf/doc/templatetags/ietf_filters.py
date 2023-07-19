@@ -556,7 +556,7 @@ def consensus(doc):
 @register.filter
 def std_level_to_label_format(doc):
     """Returns valid Bootstrap classes to label a status level badge."""
-    if doc.is_rfc():
+    if doc.type_id == "rfc":
         if doc.related_that("obs"):
             return "obs"
         else:

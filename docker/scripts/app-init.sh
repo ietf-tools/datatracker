@@ -22,13 +22,15 @@ echo "Fix chromedriver /dev/shm permissions..."
 sudo chmod 1777 /dev/shm
 
 # Run nginx
-
 echo "Starting nginx..."
 sudo nginx
 
 # Build node packages that requrie native compilation
 echo "Compiling native node packages..."
 yarn rebuild
+
+# Silence Browserlist warnings
+export BROWSERSLIST_IGNORE_OLD_DATA=1
 
 # Generate static assets
 echo "Building static assets... (this could take a minute or two)"

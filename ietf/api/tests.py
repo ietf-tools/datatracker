@@ -964,11 +964,11 @@ class RfcdiffSupportTests(TestCase):
 
     def do_rfc_test(self, draft_name):
         draft = WgDraftFactory(name=draft_name, create_revisions=range(0,2))
-        draft.docalias.create(name=f'rfc{self.next_rfc_number():04}')
+        rfc = WgRfcFactory(group=draft.group, rfc_number=self.next_rfc_number())
+        draft.relateddocument_set.create(relationship_id="became_rfc", target=rfc.docalias.first())
         draft.set_state(State.objects.get(type_id='draft',slug='rfc'))
         draft.set_state(State.objects.get(type_id='draft-iesg', slug='pub'))
-        draft = reload_db_objects(draft)
-        rfc = WgRfcFactory(group=draft.group)  # todo link this with its pre-publication draft
+        draft, rfc = reload_db_objects(draft, rfc)
 
         number = rfc.rfc_number
         received = self.getJson(dict(name=number))
@@ -976,7 +976,7 @@ class RfcdiffSupportTests(TestCase):
             received,
             dict(
                 content_url=rfc.get_href(),
-                name=rfc.canonical_name(),
+                name=rfc.name,
                 previous=f'{draft.name}-{draft.rev}',
                 previous_url= draft.history_set.get(rev=draft.rev).get_href(),
             ),
@@ -1016,11 +1016,11 @@ class RfcdiffSupportTests(TestCase):
 
     def test_rfc_with_tombstone(self):
         draft = WgDraftFactory(create_revisions=range(0,2))
-        draft.docalias.create(name='rfc3261') # See views_doc.HAS_TOMBSTONE
+        rfc = WgRfcFactory(rfc_number=3261,group=draft.group)# See views_doc.HAS_TOMBSTONE
+        draft.relateddocument_set.create(relationship_id="became_rfc", target=rfc.docalias.first())
         draft.set_state(State.objects.get(type_id='draft',slug='rfc'))
         draft.set_state(State.objects.get(type_id='draft-iesg', slug='pub'))
         draft = reload_db_objects(draft)
-        rfc = draft
 
         # Some old rfcs had tombstones that shouldn't be used for comparisons
         received = self.getJson(dict(name=rfc.canonical_name()))
@@ -1028,11 +1028,11 @@ class RfcdiffSupportTests(TestCase):
 
     def do_rfc_with_broken_history_test(self, draft_name):
         draft = WgDraftFactory(rev='10', name=draft_name)
-        draft.docalias.create(name=f'rfc{self.next_rfc_number():04}')
+        rfc = WgRfcFactory(group=draft.group, rfc_number=self.next_rfc_number())
+        draft.relateddocument_set.create(relationship_id="became_rfc", target=rfc.docalias.first())
         draft.set_state(State.objects.get(type_id='draft',slug='rfc'))
         draft.set_state(State.objects.get(type_id='draft-iesg', slug='pub'))
         draft = reload_db_objects(draft)
-        rfc = draft
 
         received = self.getJson(dict(name=draft.name))
         self.assertEqual(
