@@ -11,7 +11,7 @@
     <h1 class="title">
         IETF {{ meeting.number }} timeslot requests
         <br>
-        <small class="text-muted">{{ meeting.city }}, {{ meeting.country }}
+        <small class="text-body-secondary">{{ meeting.city }}, {{ meeting.country }}
             {% if meeting.venue_name %}– {{ meeting.venue_name }}{% endif %}
         </small>
     </h1>
@@ -116,7 +116,7 @@
     {% for area in area_sessions %}
         <h2 class="mt-5" id="{% firstof area.grouper.acronym "other-groups" %}">
             {% if area.grouper is not None %}
-                {{ area.grouper.acronym|upper }} <small class="text-muted">{{ area.grouper.name }}</small>
+                {{ area.grouper.acronym|upper }} <small class="text-body-secondary">{{ area.grouper.name }}</small>
             {% else %}
                 Other Groups
             {% endif %}

@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2012-2022, All Rights Reserved
+# Copyright The IETF Trust 2012-2023, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -122,7 +122,7 @@ class NomcomViewsTest(TestCase):
         self.check_url_status(url, 200)
         self.client.logout()
         login_testing_unauthorized(self, MEMBER_USER, url)
-        return self.check_url_status(url, 200)
+        self.check_url_status(url, 200)
 
     def access_chair_url(self, url):
         login_testing_unauthorized(self, COMMUNITY_USER, url)
@@ -134,7 +134,7 @@ class NomcomViewsTest(TestCase):
         login_testing_unauthorized(self, COMMUNITY_USER, url)
         login_testing_unauthorized(self, CHAIR_USER, url)
         login_testing_unauthorized(self, SECRETARIAT_USER, url)
-        return self.check_url_status(url, 200)
+        self.check_url_status(url, 200)
 
     def test_private_index_view(self):
         """Verify private home view"""
@@ -599,6 +599,8 @@ class NomcomViewsTest(TestCase):
         self.nominate_view(public=True,confirmation=True)
 
         self.assertEqual(len(outbox), messages_before + 3)
+        self.assertEqual(Message.objects.count(), 2)
+        self.assertFalse(Message.objects.filter(subject="Nomination receipt").exists())
 
         self.assertEqual('IETF Nomination Information', outbox[-3]['Subject'])
         self.assertEqual(self.email_from, outbox[-3]['From'])
@@ -625,8 +627,7 @@ class NomcomViewsTest(TestCase):
 
     def test_private_nominate(self):
         self.access_member_url(self.private_nominate_url)
-        return self.nominate_view(public=False)
-        self.client.logout()
+        self.nominate_view(public=False)
 
     def test_public_nominate_newperson(self):
         login_testing_unauthorized(self, COMMUNITY_USER, self.public_nominate_url)
@@ -666,13 +667,13 @@ class NomcomViewsTest(TestCase):
 
     def test_private_nominate_newperson(self):
         self.access_member_url(self.private_nominate_url)
-        return self.nominate_newperson_view(public=False)
-        self.client.logout()
+        self.nominate_newperson_view(public=False, confirmation=True)
+        self.assertFalse(Message.objects.filter(subject="Nomination receipt").exists())
 
     def test_private_nominate_newperson_who_already_exists(self):
         EmailFactory(address='nominee@example.com')
         self.access_member_url(self.private_nominate_newperson_url)
-        return self.nominate_newperson_view(public=False)       
+        self.nominate_newperson_view(public=False)       
 
     def test_public_nominate_with_automatic_questionnaire(self):
         nomcom = get_nomcom_by_year(self.year)
@@ -844,8 +845,7 @@ class NomcomViewsTest(TestCase):
 
     def test_add_questionnaire(self):
         self.access_chair_url(self.add_questionnaire_url)
-        return self.add_questionnaire()
-        self.client.logout()
+        self.add_questionnaire()
 
     def add_questionnaire(self, *args, **kwargs):
         public = kwargs.pop('public', False)
@@ -906,6 +906,8 @@ class NomcomViewsTest(TestCase):
         # We're interested in the confirmation receipt here
         self.assertEqual(len(outbox),3)
         self.assertEqual('NomCom comment confirmation', outbox[2]['Subject'])
+        self.assertEqual(Message.objects.count(), 2)
+        self.assertFalse(Message.objects.filter(subject="NomCom comment confirmation").exists())
         email_body = get_payload_text(outbox[2])
         self.assertIn(position, email_body)
         self.assertNotIn('$', email_body)
@@ -920,7 +922,7 @@ class NomcomViewsTest(TestCase):
 
     def test_private_feedback(self):
         self.access_member_url(self.private_feedback_url)
-        return self.feedback_view(public=False)
+        self.feedback_view(public=False)
 
     def feedback_view(self, *args, **kwargs):
         public = kwargs.pop('public', True)
@@ -1420,6 +1422,35 @@ class InactiveNomcomTests(TestCase):
         self.assertEqual(response.status_code, 200)
         q = PyQuery(response.content)
         self.assertFalse( q('#templateform') )
+
+class FeedbackIndexTests(TestCase):
+
+    def setUp(self):
+        super().setUp()
+        setup_test_public_keys_dir(self)
+        self.nc = NomComFactory.create(**nomcom_kwargs_for_year())
+        self.author = PersonFactory.create().email_set.first().address
+        self.member = self.nc.group.role_set.filter(name='member').first().person
+        self.nominee = self.nc.nominee_set.order_by('pk').first()
+        self.position = self.nc.position_set.first()
+        for type_id in ['comment','nomina','questio']:
+            f = FeedbackFactory.create(author=self.author,nomcom=self.nc,type_id=type_id)
+            f.positions.add(self.position)
+            f.nominees.add(self.nominee)
+
+    def tearDown(self):
+        teardown_test_public_keys_dir(self)
+        super().tearDown()
+
+    def test_feedback_index_totals(self):
+        url = reverse('ietf.nomcom.views.view_feedback',kwargs={'year':self.nc.year()})
+        login_testing_unauthorized(self, self.member.user.username, url)
+        provide_private_key_to_test_client(self)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code,200)
+        q = PyQuery(response.content)
+        r = q('tfoot').eq(0).find('td').contents()
+        self.assertEqual([a.strip() for a in r], ['1', '1', '1'])
 
 class FeedbackLastSeenTests(TestCase):
 

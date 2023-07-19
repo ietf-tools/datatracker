@@ -730,6 +730,7 @@ def no_session(request, acronym):
         requested_duration=datetime.timedelta(0),
         type_id='regular',
         purpose_id='regular',
+        has_onsite_tool=group.features.acts_like_wg,
     )
     SchedulingEvent.objects.create(
         session=session,

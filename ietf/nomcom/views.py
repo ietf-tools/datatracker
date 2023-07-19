@@ -190,6 +190,7 @@ def private_index(request, year):
     nomcom = get_nomcom_by_year(year)
     all_nominee_positions = NomineePosition.objects.get_by_nomcom(nomcom).not_duplicated()
     is_chair = nomcom.group.has_role(request.user, "chair")
+    mailto = None
     if is_chair and request.method == 'POST':
         if nomcom.group.state_id != 'active':
             messages.warning(request, "This nomcom is not active. Request administrative assistance if Nominee state needs to change.")
@@ -207,6 +208,8 @@ def private_index(request, year):
                 elif action == "set_as_pending":
                     nominations.update(state='pending')
                     messages.success(request,'The selected nominations have been set as pending')
+                elif action == 'email':
+                    mailto = ','.join([np.nominee.email.email_address() for np in nominations])
             else:
                 messages.warning(request, "Please, select some nominations to work with")
 
@@ -278,6 +281,7 @@ def private_index(request, year):
                                'selected_position': selected_position and int(selected_position) or None,
                                'selected': 'index',
                                'is_chair': is_chair,
+                               'mailto': mailto,
                               })
 
 
@@ -1106,6 +1110,41 @@ def edit_template(request, year, template_id):
 def list_positions(request, year):
     nomcom = get_nomcom_by_year(year)
     positions = nomcom.position_set.order_by('-is_open')
+    if request.method == 'POST':
+        if nomcom.group.state_id != 'active':
+            messages.warning(request, "This nomcom is not active. Request administrative assistance if Position state needs to change.")
+        else:
+            action = request.POST.get('action')
+            positions_to_modify = request.POST.getlist('selected')
+            if positions_to_modify:
+                positions = positions.filter(id__in=positions_to_modify)
+                if action == "set_iesg":
+                    positions.update(is_iesg_position=True)
+                    messages.success(request,'The selected positions have been set as IESG Positions')
+                elif action == "unset_iesg":
+                    positions.update(is_iesg_position=False)
+                    messages.success(request,'The selected positions have been set as NOT IESG Positions')
+                elif action == "set_open":
+                    positions.update(is_open=True)
+                    messages.success(request,'The selected positions have been set as Open')
+                elif action == "unset_open":
+                    positions.update(is_open=False)
+                    messages.success(request,'The selected positions have been set as NOT Open')
+                elif action == "set_accept_nom":
+                    positions.update(accepting_nominations=True)
+                    messages.success(request,'The selected positions have been set as Accepting Nominations')
+                elif action == "unset_accept_nom":
+                    positions.update(accepting_nominations=False)
+                    messages.success(request,'The selected positions have been set as NOT Accepting Nominations')
+                elif action == "set_accept_fb":
+                    positions.update(accepting_feedback=True)
+                    messages.success(request,'The selected positions have been set as Accepting Feedback')
+                elif action == "unset_accept_fb":
+                    positions.update(accepting_feedback=False)
+                    messages.success(request,'The selected positions have been set as NOT Accepting Feedback')
+                positions = nomcom.position_set.order_by('-is_open')
+            else:
+                messages.warning(request, "Please select some positions to work with")
 
     return render(request, 'nomcom/list_positions.html',
                               {'positions': positions,

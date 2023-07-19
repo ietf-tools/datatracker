@@ -1911,11 +1911,31 @@ class DocTestCase(TestCase):
         self.assertContains(r, doc.name)
 
     def test_rfc_feed(self):
-        WgRfcFactory()
+        rfc = WgRfcFactory(alias2__name="rfc9000")
+        DocEventFactory(doc=rfc, type="published_rfc")
         r = self.client.get("/feed/rfc/")
         self.assertTrue(r.status_code, 200)
+        q = PyQuery(r.content[39:]) # Strip off the xml declaration
+        self.assertEqual(len(q("item")), 1)
+        item = q("item")[0]
+        media_content = item.findall("{http://search.yahoo.com/mrss/}content")
+        self.assertEqual(len(media_content),4)
+        types = set([m.attrib["type"] for m in media_content])
+        self.assertEqual(types, set(["application/rfc+xml", "text/plain", "text/html", "application/pdf"]))
+        rfcs_2016 = WgRfcFactory.create_batch(3) # rfc numbers will be well below v3
+        for rfc in rfcs_2016:
+            e = DocEventFactory(doc=rfc, type="published_rfc")
+            e.time = e.time.replace(year=2016)
+            e.save()
         r = self.client.get("/feed/rfc/2016")
         self.assertTrue(r.status_code, 200)
+        q = PyQuery(r.content[39:])
+        self.assertEqual(len(q("item")), 3)
+        item = q("item")[0]
+        media_content = item.findall("{http://search.yahoo.com/mrss/}content")
+        self.assertEqual(len(media_content), 3)
+        types = set([m.attrib["type"] for m in media_content])
+        self.assertEqual(types, set(["text/plain", "text/html", "application/pdf"]))
 
     def test_state_help(self):
         url = urlreverse('ietf.doc.views_help.state_help', kwargs=dict(type="draft-iesg"))

@@ -88,7 +88,7 @@
             {% if entry.last_update %}
                 {{ entry.last_update|utc|date:"Y-m-d" }}
                 <br>
-                <small class="text-muted">{{ entry.last_update|utc|date:"H:i:s" }}&nbsp;UTC</small>
+                <small class="text-body-secondary">{{ entry.last_update|utc|date:"H:i:s" }}&nbsp;UTC</small>
             {% endif %}
         </td>
         {% if user|has_role:"Secretariat" or user_groups %}

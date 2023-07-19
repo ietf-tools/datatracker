@@ -58,7 +58,7 @@
             )
             i.bi.bi-x-square.me-2
             span Discard
-        n-divider: small.text-muted Calendar
+        n-divider: small.text-body-secondary Calendar
         n-button.mt-2(
           id='agenda-quickaccess-calview-btn'
           block
@@ -86,7 +86,7 @@
             i.bi.bi-calendar-check.me-2
             span {{ shortMode ? '.ics' : 'Add to your calendar...' }}
         template(v-if='agendaStore.meetingDays.length > 0')
-          n-divider: small.text-muted Jump to...
+          n-divider: small.text-body-secondary Jump to...
           ul.nav.nav-pills.flex-column.small.agenda-quickaccess-jumpto
             li.nav-item(v-if='agendaStore.isMeetingLive')
               a.nav-link(

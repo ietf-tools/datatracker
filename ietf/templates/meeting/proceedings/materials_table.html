@@ -26,7 +26,7 @@
                                 {% with timestamp=material.document.time|utc %}
                                     {{ timestamp|date:"Y-m-d" }}
                                     <br>
-                                    <small class="text-muted">{{ timestamp|date:"H:i:s" }} UTC</small>
+                                    <small class="text-body-secondary">{{ timestamp|date:"H:i:s" }} UTC</small>
                                 {% endwith %}
                             </td>
                         {% else %}

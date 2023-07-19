@@ -114,13 +114,46 @@ def render_document_top(request, doc, tab, name):
                 rsab_ballot,  
                 None if rsab_ballot else "RSAB Evaluation Ballot has not been created yet"
             ))
-    if doc.type_id in ("draft","conflrev", "statchg"):
-        tabs.append(("IESG Evaluation Record", "ballot", urlreverse("ietf.doc.views_doc.document_ballot", kwargs=dict(name=name)), iesg_ballot,  None if iesg_ballot else "IESG Evaluation Ballot has not been created yet"))
-    elif doc.type_id == "charter" and doc.group.type_id == "wg":
-        tabs.append(("IESG Review", "ballot", urlreverse("ietf.doc.views_doc.document_ballot", kwargs=dict(name=name)), iesg_ballot, None if iesg_ballot else "IESG Review Ballot has not been created yet"))
-    
-    if doc.type_id == "draft" or (doc.type_id == "charter" and doc.group.type_id == "wg"):
-        tabs.append(("IESG Writeups", "writeup", urlreverse('ietf.doc.views_doc.document_writeup', kwargs=dict(name=name)), True, None))
+
+    if iesg_ballot or (doc.group and doc.group.type_id == "wg"):
+        if doc.type_id in ("draft", "conflrev", "statchg"):
+            tabs.append(
+                (
+                    "IESG Evaluation Record",
+                    "ballot",
+                    urlreverse(
+                        "ietf.doc.views_doc.document_ballot", kwargs=dict(name=name)
+                    ),
+                    iesg_ballot,
+                    None,
+                )
+            )
+        elif doc.type_id == "charter" and doc.group and doc.group.type_id == "wg":
+            tabs.append(
+                (
+                    "IESG Review",
+                    "ballot",
+                    urlreverse(
+                        "ietf.doc.views_doc.document_ballot", kwargs=dict(name=name)
+                    ),
+                    iesg_ballot,
+                    None,
+                )
+            )
+        if doc.type_id == "draft" or (
+            doc.type_id == "charter" and doc.group and doc.group.type_id == "wg"
+        ):
+            tabs.append(
+                (
+                    "IESG Writeups",
+                    "writeup",
+                    urlreverse(
+                        "ietf.doc.views_doc.document_writeup", kwargs=dict(name=name)
+                    ),
+                    True,
+                    None,
+                )
+            )
 
     tabs.append(("Email expansions","email",urlreverse('ietf.doc.views_doc.document_email', kwargs=dict(name=name)), True, None))
     tabs.append(("History", "history", urlreverse('ietf.doc.views_doc.document_history', kwargs=dict(name=name)), True, None))
@@ -151,6 +184,7 @@ def interesting_doc_relations(doc):
 
     that_doc_relationships = ('replaces', 'possibly_replaces', 'updates', 'obs')
 
+    # TODO: This returns the relationships in database order, which may not be the order we want to display them in.
     interesting_relations_that = cls.objects.filter(target__docs=target, relationship__in=that_relationships).select_related('source')
     interesting_relations_that_doc = cls.objects.filter(source=doc, relationship__in=that_doc_relationships).prefetch_related('target__docs')
 
