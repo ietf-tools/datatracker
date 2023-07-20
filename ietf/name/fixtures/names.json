@@ -2987,7 +2987,7 @@
       "parent_types": [],
       "req_subm_approval": false,
       "role_order": "[\n    \"chair\",\n    \"member\"\n]",
-      "session_purposes": "[\n    \"officehourse\",\n    \"regular\"\n]",
+      "session_purposes": "[\n    \"officehours\",\n    \"regular\"\n]",
       "show_on_agenda": true
     },
     "model": "group.groupfeatures",

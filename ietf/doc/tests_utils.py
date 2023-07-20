@@ -310,7 +310,7 @@ class MiscTests(TestCase):
             build_file_urls(WgDraftFactory(rev=''))
 
         urls, types = build_file_urls(WgDraftFactory(rev='23'))
-        self.assertEqual(['xml', 'bibtex'], [t for t, _ in urls])
+        self.assertEqual(['xml', 'bibtex', 'bibxml'], [t for t, _ in urls])
         self.assertEqual(types, ['xml'])
 
         urls, types = build_file_urls(WgRfcFactory(rev=''))

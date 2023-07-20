@@ -646,6 +646,7 @@ class SubmissionManualUploadForm(SubmissionBaseUploadForm):
     def clean_txt(self):
         txt_file = self._clean_file("txt", PlainParser)
         if txt_file is not None:
+            txt_file.seek(0)
             bytes = txt_file.read()
             try:
                 text = bytes.decode(self.file_info["txt"].charset)
