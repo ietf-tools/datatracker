@@ -75,7 +75,7 @@ class ConflictReviewTests(TestCase):
         self.assertTrue(review_doc.latest_event(DocEvent,type="added_comment").desc.startswith("IETF conflict review requested"))
         self.assertTrue(doc.latest_event(DocEvent,type="added_comment").desc.startswith("IETF conflict review initiated"))
         self.assertTrue('Conflict Review requested' in outbox[-1]['Subject'])
-                
+
         # verify you can't start a review when a review is already in progress
         r = self.client.post(url,dict(ad="Areað Irector",create_in_state="Needs Shepherd",notify='ipu@ietf.org'))
         self.assertEqual(r.status_code, 404)
