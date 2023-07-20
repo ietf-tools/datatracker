@@ -30,7 +30,7 @@ django-widget-tweaks>=1.4.12
 djlint>=1.0.0    # To auto-indent templates via "djlint --profile django --reformat"
 docutils>=0.18.1    # Used only by dbtemplates for RestructuredText
 types-docutils>=0.18.1
-factory-boy<3.3
+factory-boy>=3.2.1,<3.3
 github3.py>=3.2.0
 gunicorn>=20.1.0
 hashids>=1.3.1
