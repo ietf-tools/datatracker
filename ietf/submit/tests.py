@@ -302,7 +302,7 @@ class SubmitTests(BaseSubmitTestCase):
             submission = Submission.objects.get(name=name)
             self.assertEqual(submission.submitter, email.utils.formataddr((submitter_name, submitter_email)))
             self.assertEqual([] if submission.replaces == "" else submission.replaces.split(','),
-                             [ d.name for d in DocAlias.objects.filter(pk__in=replaces) ])
+                             [ d.name for d in Document.objects.filter(pk__in=replaces) ])
             self.assertCountEqual(
                 [str(r) for r in submission.external_resources.all()],
                 [str(r) for r in extresources] if extresources else [],
@@ -418,7 +418,7 @@ class SubmitTests(BaseSubmitTestCase):
         self.assertEqual(authors[0].person, author)
         self.assertEqual(set(draft.formal_languages.all()), set(FormalLanguageName.objects.filter(slug="json")))
         self.assertEqual(draft.relations_that_doc("replaces").count(), 1)
-        self.assertTrue(draft.relations_that_doc("replaces").first().target, replaced_alias)
+        self.assertTrue(draft.relations_that_doc("replaces").first().target, draft)
         self.assertEqual(draft.relations_that_doc("possibly-replaces").count(), 1)
         self.assertTrue(draft.relations_that_doc("possibly-replaces").first().target, sug_replaced_alias)
         self.assertEqual(len(outbox), mailbox_before + 5)
@@ -3097,7 +3097,7 @@ class SubmissionUploadFormTests(BaseSubmitTestCase):
             files=files_dict,
         )
         self.assertFalse(form.is_valid())
-        self.assertIn('An Internet-Draft can only replace another Internet-Draft that has become an RFC', form.errors['replaces'])
+        self.assertIn('An Internet-Draft cannot replace another Internet-Draft that has become an RFC', form.errors['replaces'])
 
         # can't replace draft approved by iesg
         existing_drafts[0].set_state(State.objects.get(type='draft-iesg', slug='approved'))

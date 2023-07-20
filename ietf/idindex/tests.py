@@ -52,8 +52,13 @@ class IndexTests(TestCase):
 
         RelatedDocument.objects.create(
             relationship=DocRelationshipName.objects.get(slug="replaces"),
-            source=Document.objects.create(type_id="draft", rev="00", name="draft-test-replacement"),
-            target=draft.docalias.get(name__startswith="draft"))
+            source=Document.objects.create(
+                type_id="draft",
+                rev="00",
+                name="draft-test-replacement"
+            ),
+            target=draft
+        )
 
         txt = all_id_txt()
         self.assertTrue(draft.name + "-" + draft.rev in txt)
@@ -111,8 +116,12 @@ class IndexTests(TestCase):
         draft.set_state(State.objects.get(type="draft", slug="repl"))
         RelatedDocument.objects.create(
             relationship=DocRelationshipName.objects.get(slug="replaces"),
-            source=Document.objects.create(type_id="draft", rev="00", name="draft-test-replacement"),
-            target=draft.docalias.get(name__startswith="draft"))
+            source=Document.objects.create(
+                type_id="draft",
+                rev="00", 
+                name="draft-test-replacement"
+            ),
+            target=draft)
 
         t = get_fields(all_id2_txt())
         self.assertEqual(t[5], "draft-test-replacement")

@@ -360,7 +360,7 @@ class RFCSyncTests(TestCase):
         self.assertTrue(DocAlias.objects.filter(name="bcp1", docs=doc))
         self.assertTrue(DocAlias.objects.filter(name="fyi1", docs=doc))
         self.assertTrue(DocAlias.objects.filter(name="std1", docs=doc))
-        self.assertTrue(RelatedDocument.objects.filter(source=doc, target__name="rfc123", relationship="updates"))
+        self.assertTrue(RelatedDocument.objects.filter(source=doc, target__name="rfc123", relationship="updates").exists())
         self.assertEqual(doc.title, "A Testing RFC")
         self.assertEqual(doc.abstract, "This is some interesting text.")
         self.assertEqual(doc.get_state_slug(), "rfc")
