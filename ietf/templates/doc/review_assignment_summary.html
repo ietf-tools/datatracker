@@ -10,10 +10,10 @@
                 -{{ review_assignment.reviewed_rev }}){% endif %}
             by {{ review_assignment.reviewer.person.plain_name }}</a>
         {% if review_assignment.state_id == "part-completed" %}
-            <span class="badge rounded-pill ms-1 bg-secondary">Partially completed</span>
+            <span class="badge rounded-pill text-bg-secondary ms-1">Partially completed</span>
         {% endif %}
         {% if review_assignment.result %}
-            <span class="badge rounded-pill ms-1 {% if review_assignment.result.name|slice:5|slugify == 'ready' %}bg-success{% else %}bg-info{% endif %}">
+            <span class="badge rounded-pill {% if review_assignment.result.name|slice:5|slugify == 'ready' %}text-bg-success{% else %}text-bg-info{% endif %} ms-1">
                 {{ review_assignment.result.name }}
             </span>
         {% endif %}
@@ -21,7 +21,7 @@
         <a class="text-body-secondary"
            href="{% url 'ietf.doc.views_review.review_request' review_assignment.review_request.doc.name review_assignment.review_request.pk %}">
             {{ review_assignment.review_request.team.acronym|upper }} {{ review_assignment.review_request.type.name }} Review</a>
-        <span class="badge rounded-pill ms-1 bg-secondary">
+        <span class="badge rounded-pill text-bg-secondary ms-1">
             Incomplete, due {{ review_assignment.review_request.deadline|date:"Y-m-d" }}
         </span>
     {% endif %}

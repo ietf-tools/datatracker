@@ -180,7 +180,7 @@
                     <div class="h5 d-flex mt-4"
                          id="{{ doc.name|slugify }}_{{ p.balloter.plain_name|slugify }}">
                         <div class="flex-fill text-body-secondary">
-                            {{ p.balloter.plain_name }} <span class="badge rounded-pill bg-secondary">Former IESG member</span>
+                            {{ p.balloter.plain_name }} <span class="badge rounded-pill text-bg-secondary">Former IESG member</span>
                         </div>
                         <div class="flex-fill text-end">
                             {% if p.old_positions %}<span class="text-body-secondary small">(was {{ p.old_positions|join:", " }})</span>{% endif %}

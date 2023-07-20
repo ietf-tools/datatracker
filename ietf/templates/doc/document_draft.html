@@ -224,7 +224,7 @@
                                    href="{% url 'ietf.doc.views_doc.document_shepherd_writeup' name=doc.name %}">
                                     Show
                                 </a>
-                                <span class="badge rounded-pill bg-secondary">Last changed {{ shepherd_writeup.time|date:"Y-m-d" }}</span>
+                                <span class="badge rounded-pill text-bg-secondary">Last changed {{ shepherd_writeup.time|date:"Y-m-d" }}</span>
                             {% else %}
                                 <span class="text-body-secondary">
                                     (None)
@@ -644,7 +644,7 @@
                 </i>
                 IPR
                 {% if doc.related_ipr %}
-                    <span class="badge rounded-pill">
+                    <span class="badge rounded-pill text-bg-secondary">
                         {{ doc.related_ipr|length }}
                     </span>
                 {% endif %}

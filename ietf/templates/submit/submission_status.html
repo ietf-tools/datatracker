@@ -373,7 +373,7 @@
                             <div>
                                 {{ res.name.name }}: {{ res.value }}
                                 {% if res.display_name %}(as &quot;{{ res.display_name }}&quot;){% endif %}
-                            {% if external_resources.show_changes and added %}<span class="badge rounded-pill bg-success">New</span>{% endif %}
+                            {% if external_resources.show_changes and added %}<span class="badge rounded-pill text-bg-success">New</span>{% endif %}
                             </div>
                         {% endwith %}
                     {% empty %}
@@ -392,7 +392,7 @@
                                 <div>
                                     {{ res.name.name }}: {{ res.value }}
                                     {% if res.display_name %}(as &quot;{{ res.display_name }}&quot;){% endif %}
-                                {% if removed %}<span class="badge rounded-pill bg-warning">Removed</span>{% endif %}
+                                {% if removed %}<span class="badge rounded-pill text-bg-warning">Removed</span>{% endif %}
                                 </div>
                             {% endwith %}
                         {% empty %}

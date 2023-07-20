@@ -51,7 +51,7 @@
                         <td>{% person_link e.by %}</td>
                         <td class="text-break">
                             {% if e.message %}
-                                {% if e.response_due %}<span class="badge rounded-pill bg-info">Response due {{ e.response_due|date:"Y-m-d" }}</span>{% endif %}
+                                {% if e.response_due %}<span class="badge rounded-pill text-bg-info">Response due {{ e.response_due|date:"Y-m-d" }}</span>{% endif %}
                                 {# FIXME: can't do format_history_text, because that inserts a <div> into the <pre>, which is illegal. Need to rework the snippeting. #}
                                 <pre>{{ e.message|render_message_for_history|urlize_ietf_docs|linkify }}</pre>
                             {% else %}
