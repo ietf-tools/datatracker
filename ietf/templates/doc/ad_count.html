@@ -2,7 +2,7 @@
 {% load ietf_filters %}
 
 {% if prev or count %}
-    <span{% if count == 0 %} class="text-muted"{% endif %}>{{ count }}</span>
+    <span{% if count == 0 %} class="text-body-secondary"{% endif %}>{{ count }}</span>
     {% if user|has_role:"Area Director,Secretariat" %}
         <i data-bs-toggle="popover"
             {% if count != prev %}
@@ -21,11 +21,11 @@
             {% endif %}
         {% with label.2 as up_is_good %}
             {% if prev < count %}
-                   class="bi bi-arrow-up-right-circle{% if count %}-fill{% endif %} {{ up_is_good|yesno:'text-success,text-danger,text-muted' }}"
+                   class="bi bi-arrow-up-right-circle{% if count %}-fill{% endif %} {{ up_is_good|yesno:'text-success,text-danger,text-body-secondary' }}"
             {% elif prev > count %}
-                   class="bi bi-arrow-down-right-circle{% if count %}-fill{% endif %} {{ up_is_good|yesno:'text-danger,text-success,text-muted' }}"
+                   class="bi bi-arrow-down-right-circle{% if count %}-fill{% endif %} {{ up_is_good|yesno:'text-danger,text-success,text-body-secondary' }}"
             {% else %}
-                   class="bi bi-arrow-right-circle text-muted"
+                   class="bi bi-arrow-right-circle text-body-secondary"
             {% endif %}
             ></i>
         {% endwith %}

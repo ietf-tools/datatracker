@@ -234,12 +234,21 @@
                         <option value="set_as_declined">
                             Set as declined
                         </option>
+                        <option value="email">
+                            Generate email list
+                        </option>
                     </select>
                 </div>
                 <button class="btn btn-warning"  type="submit" title="Run action">
                     Apply
                 </button>
             </form>
+            {% if mailto %}
+                <br>
+                <a class="btn btn-primary btn-sm"
+		   href="mailto:{{ mailto }}">Mail to selected nominees
+                </a>
+            {% endif %}
         {% endif %}
     {% endif %}
 {% endblock %}

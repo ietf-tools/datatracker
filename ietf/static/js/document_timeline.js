@@ -86,7 +86,7 @@ function scale_x() {
 }
 
 function update_x_axis() {
-    d3.select("#timeline svg .x.axis")
+    d3.select("#doc-timeline svg .x.axis")
         .call(x_axis)
         .selectAll("text")
         .style("text-anchor", "end")
@@ -96,7 +96,7 @@ function update_x_axis() {
 function update_timeline() {
     bar_y = {};
     scale_x();
-    var chart = d3.select("#timeline svg")
+    var chart = d3.select("#doc-timeline svg")
         .attr("width", width);
     // enter data (skip the last pseudo entry)
     var bar = chart.selectAll("g")
@@ -111,12 +111,12 @@ function draw_timeline() {
     bar_height = parseFloat($("body")
         .css("line-height"));
 
-    var div = $("#timeline");
+    var div = $("#doc-timeline");
     div.addClass("my-3");
     if (div.is(":empty")) {
         div.append("<svg></svg>");
     }
-    var chart = d3.select("#timeline svg")
+    var chart = d3.select("#doc-timeline svg")
         .attr("width", width);
 
     var defs = chart.append("defs");
@@ -249,7 +249,7 @@ d3.json("doc.json")
                 published: expiration_date(data[data.length - 1])
             });
 
-            width = $("#timeline")
+            width = $("#doc-timeline")
                 .width();
             draw_timeline();
         }
@@ -258,11 +258,11 @@ d3.json("doc.json")
 $(window)
     .on({
         resize: function () {
-            var g = $("#timeline svg");
+            var g = $("#doc-timeline svg");
             g.remove();
-            width = $("#timeline")
+            width = $("#doc-timeline")
                 .width();
-            $("#timeline")
+            $("#doc-timeline")
                 .append(g);
             update_timeline();
         }
