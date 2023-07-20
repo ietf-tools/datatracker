@@ -104,7 +104,7 @@
                     </div>
                     {% if p.pos.blocking and p.discuss %}
                         <div class="card border-danger {% if p.comment %} mb-2{% endif %}">
-                            <div class="card-header bg-danger text-light">
+                            <div class="card-header text-bg-danger">
                                 <div>
                                     <b>{{ p.pos.name }}</b>
                                     ({{ p.discuss_time|date:"Y-m-d" }}{% if not p.for_current_revision and p.get_dochistory.rev %}{% if p.discuss_time %} {% endif %}for -{{ p.get_dochistory.rev }}{% endif %})
@@ -180,7 +180,7 @@
                     <div class="h5 d-flex mt-4"
                          id="{{ doc.name|slugify }}_{{ p.balloter.plain_name|slugify }}">
                         <div class="flex-fill text-body-secondary">
-                            {{ p.balloter.plain_name }} <span class="badge rounded-pill bg-secondary">Former IESG member</span>
+                            {{ p.balloter.plain_name }} <span class="badge rounded-pill text-bg-secondary">Former IESG member</span>
                         </div>
                         <div class="flex-fill text-end">
                             {% if p.old_positions %}<span class="text-body-secondary small">(was {{ p.old_positions|join:", " }})</span>{% endif %}

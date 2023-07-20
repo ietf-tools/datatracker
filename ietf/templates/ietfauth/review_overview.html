@@ -51,7 +51,7 @@
                         <td>{{ r.review_request.type.name }}</td>
                         <td>
                             {{ r.review_request.deadline|date:"Y-m-d" }}
-                            {% if r.due %}<span class="badge rounded-pill bg-warning">{{ r.due }} day{{ r.due|pluralize }}</span>{% endif %}
+                            {% if r.due %}<span class="badge rounded-pill text-bg-warning">{{ r.due }} day{{ r.due|pluralize }}</span>{% endif %}
                         </td>
                     </tr>
                 {% endfor %}
@@ -98,10 +98,10 @@
                         <td>{{ r.review_request.type.name }}</td>
                         <td>
                             {{ r.review_request.deadline|date:"Y-m-d" }}
-                            {% if r.due %}<span class="badge rounded-pill bg-warning">{{ r.due }} day{{ r.due|pluralize }}</span>{% endif %}
+                            {% if r.due %}<span class="badge rounded-pill text-bg-warning">{{ r.due }} day{{ r.due|pluralize }}</span>{% endif %}
                         </td>
                         <td>
-                            <span class="{% if r.state_id == "completed" or r.state_id == "part-completed" %}bg-success{% endif %}">{{ r.state.name }}</span>
+                            <span class="badge rounded-pill {% if r.state_id == "completed" or r.state_id == "part-completed" %}text-bg-success{% else %}text-bg-secondary{% endif %}">{{ r.state.name }}</span>
                         </td>
                         <td>
                             {% if r.result %}{{ r.result.name }}{% endif %}

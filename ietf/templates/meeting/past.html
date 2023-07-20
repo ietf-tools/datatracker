@@ -37,7 +37,7 @@
                         <td>
                             {% if meeting.type_id == "interim" %}
                                 <a href="{% url 'ietf.meeting.views.session_details' num=meeting.number acronym=meeting.responsible_group.acronym %}">{{ meeting.number }}</a>
-                                {% if meeting.interim_meeting_cancelled %}<span class="badge rounded-pill bg-warning">Cancelled</span>{% endif %}
+                                {% if meeting.interim_meeting_cancelled %}<span class="badge rounded-pill text-bg-warning">Cancelled</span>{% endif %}
                             {% else %}
                                 <a href="{% url 'agenda' num=meeting.number %}">IETF-{{ meeting.number }}</a>
                             {% endif %}

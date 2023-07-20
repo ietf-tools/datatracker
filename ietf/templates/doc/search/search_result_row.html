@@ -85,12 +85,12 @@
             {% endcomment %}
             <b>{{ doc.title }}</b>
             {% if doc.has_verified_errata %}
-                <a class="badge rounded-pill bg-danger text-decoration-none text-light float-end"
+                <a class="badge rounded-pill text-bg-danger text-decoration-none float-end"
                    href="https://www.rfc-editor.org/errata_search.php?rfc={{ doc.rfc_number }}">
                     Errata
                 </a>
             {% elif doc.has_errata %}
-                <a class="badge rounded-pill bg-warning text-decoration-none text-light float-end"
+                <a class="badge rounded-pill text-bg-warning text-decoration-none float-end"
                    href="https://www.rfc-editor.org/errata_search.php?rfc={{ doc.rfc_number }}">
                     Errata
                 </a>
@@ -124,19 +124,19 @@
                 {% if doc.latest_revision_date|timesince_days|new_enough:request %}
                     <br>
                     <div class="float-end">
-                        <span class="badge rounded-pill bg-success">New</span>
+                        <span class="badge rounded-pill text-bg-success">New</span>
                     </div>
                 {% endif %}
                 {% if doc.get_state_slug == "active" and doc.expirable and doc.expires|timesince_days|expires_soon:request %}
                     <br>
-                    <span class="badge rounded-pill bg-warning">Expires soon</span>
+                    <span class="badge rounded-pill text-bg-warning">Expires soon</span>
                 {% endif %}
             </td>
             {% include "doc/search/status_columns.html" %}
             <td class="text-center d-none d-sm-table-cell">
                 {% if doc.related_ipr %}
                     <a href="{% url "ietf.ipr.views.search" %}?submit=draft&amp;id={{ doc.name }}">
-                        <span class="badge rounded-pill bg-info">{{ doc.related_ipr|length }}</span>
+                        <span class="badge rounded-pill text-bg-info">{{ doc.related_ipr|length }}</span>
                     </a>
                 {% endif %}
             </td>
