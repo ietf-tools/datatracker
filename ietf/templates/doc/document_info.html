@@ -150,7 +150,7 @@
                             {{ replaces|urlize_related_target_list:document_html|join:", " }}
                         {% endif %}
                     {% else %}
-                        <span class="text-muted">(None)</span>
+                        <span class="text-body-secondary">(None)</span>
                     {% endif %}
                 </td>
             </tr>
@@ -232,7 +232,7 @@
                 </a>
             {% endif %}
         </td>
-        <td {% if doc.stream is None %}class="text-muted"{%endif%}>
+        <td {% if doc.stream is None %}class="text-body-secondary"{%endif%}>
             {% if doc.stream is not None %}
                 {% if doc.stream.name|lower in 'iab,irtf,ise,editorial' %}
                     <a href="{% url 'ietf.group.views.stream_documents' acronym=doc.stream.name|lower %}">
