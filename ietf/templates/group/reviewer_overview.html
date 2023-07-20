@@ -44,67 +44,106 @@
         </div>
     {% endif %}
     {% if reviewers %}
-        <table class="table reviewer-overview tablesorter">
+        <table class="table table-sm table-borderless reviewer-overview tablesorter">
             <thead>
                 <tr>
-                    <th scope="col" data-sort="num">Next</th>
+                    <th scope="col" data-sort="next">Next</th>
                     <th scope="col" data-sort="reviewer">Reviewer</th>
-                    <th scope="col" data-sort="assigned">Recent history</th>
-                    <th scope="col" data-sort="num">Days since completed</th>
+                    <th scope="col"></th>
+                    <th scope="col" data-sort="assigned">Assigned</th>
+                    <th scope="col" data-sort="deadline">Deadline</th>
+                    <th scope="col" data-sort="state">State</th>
+                    <th scope="col" data-sort="review_time">Days for review</th>
+                    <th scope="col" data-sort="doc">Document</th>
+                    <th scope="col" data-sort="completed_time">Days since review</th>
                     <th scope="col" data-sort="settings">Settings</th>
                 </tr>
             </thead>
             <tbody>
                 {% for person in reviewers %}
-                    <tr {% if person.completely_unavailable %}class="table-danger" title="Is not available to do reviews at this time." {% elif person.busy %}class="table-secondary" title="Has already been assigned a document within the given interval." {% elif person.settings.skip_next %}class="table-warning" title="Will be skipped the next time at the top of rotation." {% endif %}>
-                        <td>{{ forloop.counter }}</td>
+                    {% with next=forloop.counter %}
+                    {% if person.latest_reqs %}
+                        {% for assn_pk, req_pk, doc_name, reviewed_rev, assigned_time, deadline, state, assignment_to_closure_days in person.latest_reqs %}
+                            <tr {% if person.completely_unavailable %}class="border-top table-danger" title="Is not available to do reviews at this time." {% elif person.busy %}class="border-top table-secondary" title="Has already been assigned a document within the given interval." {% elif person.settings.skip_next %}class="border-top table-warning" title="Will be skipped the next time at the top of rotation." {% elif forloop.counter == 1 %}class="border-top"{% endif %}>
+
+                            {% if forloop.counter == 1 %}
+                                <td class="text-end" {% if person.latest_reqs|length > 1 %} rowspan="{{person.latest_reqs|length}}"{% endif %}>{{ next }}</td>
+                                <td {% if person.latest_reqs|length > 1 %} rowspan="{{person.latest_reqs|length}}"{% endif %}>
+                                    {% person_link person with_email=False %}
+                                </td>
+                                <td {% if person.latest_reqs|length > 1 %} rowspan="{{person.latest_reqs|length}}"{% endif %}>
+                                    {% if person.settings_url %}
+                                        <a href="{{ person.settings_url }}" class="btn btn-primary btn-sm"
+                                            title="{{ person.settings.expertise }}">Edit
+                                        </a>
+                                    {% endif %}
+                                </td>
+                            {% endif %}
+
+                            <td>
+                                {{ assigned_time|date }}
+                            </td>
+                            <td>
+                                <a href="{% url 'ietf.doc.views_review.review_request' name=doc_name request_id=req_pk %}">{{ deadline|date }}</a>
+                            </td>
+                            <td>
+                                <span class="badge rounded-pill bg-{% if state.slug == 'completed' or state.slug == 'part-completed' %}success{% elif state.slug == 'no-response' %}danger{% elif state.slug == 'overtaken' %}warning{% elif state.slug == 'requested' or state.slug == 'accepted' %}primary{% else %}secondary{% endif %}">{{ state.name }}</span>
+                            </td>
+                            <td class="text-end">
+                                {% if assignment_to_closure_days != None %}
+                                    {{ assignment_to_closure_days }}
+                                {% endif %}
+                            </td>
+                            <td class="text-nowrap">
+                                {{ doc_name|urlize_ietf_docs }}
+                                {% if reviewed_rev %}-{{ reviewed_rev }}{% endif %}
+                            </td>
+
+                            {% if forloop.counter == 1 %}
+                                <td{% if person.latest_reqs|length > 1 %} rowspan="{{person.latest_reqs|length}}"{% endif %}>
+                                    {% if person.days_since_completed_review != 9999 %}
+                                        {{ person.days_since_completed_review }}
+                                    {% endif %}
+                                </td>
+                                <td{% if person.latest_reqs|length > 1 %} rowspan="{{person.latest_reqs|length}}"{% endif %}>
+                                    {% if person.settings.min_interval %}
+                                        <b>{{ person.settings.get_min_interval_display }}</b>
+                                        <br>
+                                    {% endif %}
+                                    {% if person.settings.skip_next %}
+                                        <b>Skip:</b> {{ person.settings.skip_next }}
+                                        <br>
+                                    {% endif %}
+                                    {% if person.settings.filter_re %}
+                                        <b>Filter:</b> <code title="{{ person.settings.filter_re }}">{{ person.settings.filter_re|truncatechars:15 }}</code>
+                                        <br>
+                                    {% endif %}
+                                    {% if person.unavailable_periods %}
+                                        {% include "review/unavailable_table.html" with unavailable_periods=person.unavailable_periods %}
+                                    {% endif %}
+                                </td>
+                            {% endif %}
+                            </tr>
+                        {% endfor %}
+
+                    {% else %}
+                    <tr {% if person.completely_unavailable %}class="border-top table-danger" title="Is not available to do reviews at this time." {% elif person.busy %}class="border-top table-secondary" title="Has already been assigned a document within the given interval." {% elif person.settings.skip_next %}class="border-top table-warning" title="Will be skipped the next time at the top of rotation." {% elif forloop.counter == 1 %}class="border-top"{% endif %}>
+                        <td class="text-end">{{ next }}</td>
                         <td>
-                            {% person_link person %}
+                            {% person_link person with_email=False %}
+                        </td>
+                        <td>
                             {% if person.settings_url %}
-                                <a href="{{ person.settings_url }}" class="btn btn-primary btn-small float-end"
+                                <a href="{{ person.settings_url }}" class="btn btn-primary btn-sm"
                                     title="{{ person.settings.expertise }}">Edit
                                 </a>
                             {% endif %}
                         </td>
-                        <td>
-                            {% if person.latest_reqs %}
-                                <table class="table table-sm table-borderless">
-                                    <thead>
-                                        <tr>
-                                            <th scope="col">Assigned</th>
-                                            <th scope="col">Deadline</th>
-                                            <th scope="col">State</th>
-                                            <th scope="col">Review time</th>
-                                            <th scope="col">Document</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                    {% for assn_pk, req_pk, doc_name, reviewed_rev, assigned_time, deadline, state, assignment_to_closure_days in person.latest_reqs %}
-                                        <tr>
-                                            <td>
-                                                {{ assigned_time|date }}
-                                            </td>
-                                            <td>
-                                                <a href="{% url 'ietf.doc.views_review.review_request' name=doc_name request_id=req_pk %}">{{ deadline|date }}</a>
-                                            </td>
-                                            <td>
-                                                <span class="badge rounded-pill bg-{% if state.slug == 'completed' or state.slug == 'part-completed' %}success{% elif state.slug == 'no-response' %}danger{% elif state.slug == 'overtaken' %}warning{% elif state.slug == 'requested' or state.slug == 'accepted' %}primary{% else %}secondary{% endif %}">{{ state.name }}</span>
-                                            </td>
-                                            <td>
-                                                {% if assignment_to_closure_days != None %}
-                                                    {{ assignment_to_closure_days }} day{{ assignment_to_closure_days|pluralize }}
-                                                {% endif %}
-                                            </td>
-                                            <td class="text-nowrap">
-                                                {{ doc_name }}
-                                                {% if reviewed_rev %}-{{ reviewed_rev }}{% endif %}
-                                            </td>
-                                        </tr>
-                                    {% endfor %}
-                                    </tbody>
-                                </table>
-                            {% endif %}
-                        </td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
                         <td>
                             {% if person.days_since_completed_review != 9999 %}
                                 {{ person.days_since_completed_review }}
@@ -128,6 +167,8 @@
                             {% endif %}
                         </td>
                     </tr>
+                    {% endif %}
+                    {% endwith %}
                 {% endfor %}
             </tbody>
         </table>
