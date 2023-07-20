@@ -130,9 +130,8 @@ class Command(BaseCommand):
         for draft in interesting_drafts.distinct().iterator():
             # Omit drafts that became RFCs, unless they were published in the last DEFAULT_YEARS
             if draft.get_state_slug()=="rfc":
-                rfc_alias = next(iter(draft.related_that_doc("became_rfc")), None)
-                log.assertion("rfc_alias is not None")
-                rfc = rfc_alias.document
+                rfc = next(iter(draft.related_that_doc("became_rfc")), None)
+                log.assertion("rfc is not None")
                 if rfc.latest_event(type='published_rfc').time < show_since:
                     continue
 

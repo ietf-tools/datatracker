@@ -965,7 +965,7 @@ class RfcdiffSupportTests(TestCase):
     def do_rfc_test(self, draft_name):
         draft = WgDraftFactory(name=draft_name, create_revisions=range(0,2))
         rfc = WgRfcFactory(group=draft.group, rfc_number=self.next_rfc_number())
-        draft.relateddocument_set.create(relationship_id="became_rfc", target=rfc.docalias.first())
+        draft.relateddocument_set.create(relationship_id="became_rfc", target=rfc)
         draft.set_state(State.objects.get(type_id='draft',slug='rfc'))
         draft.set_state(State.objects.get(type_id='draft-iesg', slug='pub'))
         draft, rfc = reload_db_objects(draft, rfc)
@@ -1017,7 +1017,7 @@ class RfcdiffSupportTests(TestCase):
     def test_rfc_with_tombstone(self):
         draft = WgDraftFactory(create_revisions=range(0,2))
         rfc = WgRfcFactory(rfc_number=3261,group=draft.group)# See views_doc.HAS_TOMBSTONE
-        draft.relateddocument_set.create(relationship_id="became_rfc", target=rfc.docalias.first())
+        draft.relateddocument_set.create(relationship_id="became_rfc", target=rfc)
         draft.set_state(State.objects.get(type_id='draft',slug='rfc'))
         draft.set_state(State.objects.get(type_id='draft-iesg', slug='pub'))
         draft = reload_db_objects(draft)
@@ -1029,7 +1029,7 @@ class RfcdiffSupportTests(TestCase):
     def do_rfc_with_broken_history_test(self, draft_name):
         draft = WgDraftFactory(rev='10', name=draft_name)
         rfc = WgRfcFactory(group=draft.group, rfc_number=self.next_rfc_number())
-        draft.relateddocument_set.create(relationship_id="became_rfc", target=rfc.docalias.first())
+        draft.relateddocument_set.create(relationship_id="became_rfc", target=rfc)
         draft.set_state(State.objects.get(type_id='draft',slug='rfc'))
         draft.set_state(State.objects.get(type_id='draft-iesg', slug='pub'))
         draft = reload_db_objects(draft)

@@ -771,16 +771,16 @@ Man                    Expires September 22, 2015               [Page 3]
         rfc = WgRfcFactory(group=draft.group, name="rfc123456")
         rfc.save_with_history([DocEvent.objects.create(doc=rfc, rev=None, type="published_rfc", by=Person.objects.get(name="(System)"))])
 
-        draft.relateddocument_set.create(relationship_id="became_rfc", target=rfc.docalias.first())
+        draft.relateddocument_set.create(relationship_id="became_rfc", target=rfc)
 
         obsoleted = IndividualRfcFactory()
-        rfc.relateddocument_set.create(relationship_id='obs',target=obsoleted.docalias.first())
+        rfc.relateddocument_set.create(relationship_id='obs',target=obsoleted)
         obsoleted_by = IndividualRfcFactory()
-        obsoleted_by.relateddocument_set.create(relationship_id='obs',target=rfc.docalias.first())
+        obsoleted_by.relateddocument_set.create(relationship_id='obs',target=rfc)
         updated = IndividualRfcFactory()
-        rfc.relateddocument_set.create(relationship_id='updates',target=updated.docalias.first())
+        rfc.relateddocument_set.create(relationship_id='updates',target=updated)
         updated_by = IndividualRfcFactory()
-        updated_by.relateddocument_set.create(relationship_id='updates',target=rfc.docalias.first())
+        updated_by.relateddocument_set.create(relationship_id='updates',target=rfc)
 
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)))
         self.assertEqual(r.status_code, 302)
@@ -1430,7 +1430,7 @@ Man                    Expires September 22, 2015               [Page 3]
 
             rfc = WgRfcFactory(group=group)
             draft = WgDraftFactory(group=group)
-            draft.relateddocument_set.create(relationship_id="became_rfc", target=rfc.docalias.first())
+            draft.relateddocument_set.create(relationship_id="became_rfc", target=rfc)
             DocEventFactory.create(doc=rfc, type='published_rfc', time=event_datetime)
             r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=rfc.name)))
             self.assertEqual(r.status_code, 200)
@@ -1445,7 +1445,7 @@ Man                    Expires September 22, 2015               [Page 3]
 
             rfc = WgRfcFactory(group=group)
             draft = WgDraftFactory(name='draft-rfc-document-%s'% group_type_id, group=group)
-            draft.relateddocument_set.create(relationship_id="became_rfc", target=rfc.docalias.first())
+            draft.relateddocument_set.create(relationship_id="became_rfc", target=rfc)
             DocEventFactory.create(doc=rfc, type='published_rfc', time=event_datetime)
             r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=rfc.name)))
             self.assertEqual(r.status_code, 200)
@@ -2111,7 +2111,7 @@ class GenerateDraftAliasesTests(TestCase):
         rfc3 = WgRfcFactory()
         DocEventFactory.create(doc=rfc3, type="published_rfc", time=a_month_ago)
         doc3.relateddocument_set.create(
-            relationship_id="became_rfc", target=rfc3.docalias.first()
+            relationship_id="became_rfc", target=rfc3
         )
         doc4 = WgDraftFactory.create(
             authors=[author4, author5],
@@ -2127,7 +2127,7 @@ class GenerateDraftAliasesTests(TestCase):
             time=datetime.datetime(2010, 10, 10, tzinfo=RPC_TZINFO),
         )
         doc4.relateddocument_set.create(
-            relationship_id="became_rfc", target=rfc4.docalias.first()
+            relationship_id="became_rfc", target=rfc4
         )
         doc5 = IndividualDraftFactory(authors=[author6])
 
@@ -2680,7 +2680,7 @@ class Idnits2SupportTests(TestCase):
     def test_idnits2_state(self):
         rfc = WgRfcFactory()
         draft = WgDraftFactory()
-        draft.relateddocument_set.create(relationship_id="became_rfc", target=rfc.docalias.first())
+        draft.relateddocument_set.create(relationship_id="became_rfc", target=rfc)
         url = urlreverse('ietf.doc.views_doc.idnits2_state', kwargs=dict(name=rfc.canonical_name()))
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
@@ -2767,7 +2767,7 @@ class PdfizedTests(TestCase):
     def test_pdfized(self):
         rfc = WgRfcFactory()
         draft = WgDraftFactory(create_revisions=range(0,2))
-        draft.relateddocument_set.create(relationship_id="became_rfc", target=rfc.docalias.first())
+        draft.relateddocument_set.create(relationship_id="became_rfc", target=rfc)
 
         dir = settings.RFC_PATH
         with (Path(dir) / f'{rfc.name}.txt').open('w') as f:

@@ -148,7 +148,7 @@ class AddDownrefForm(forms.Form):
             raise forms.ValidationError("Please provide a referenced RFC and a referencing Internet-Draft")
 
         rfc = self.cleaned_data['rfc']
-        if rfc.document.type_id != "rfc":
+        if rfc.type_id != "rfc":
             raise forms.ValidationError("Cannot find the RFC: " + rfc.name)
         return rfc
 
@@ -190,7 +190,6 @@ class AddDownrefForm(forms.Form):
                         v_err_refnorm = d.name
             if v_err_refnorm:
                 v_err_refnorm_prefix = f"There does not seem to be a normative reference to RFC {rfc.rfc_number} by "
-                v_err_refnorm_prefix = f"There does not seem to be a normative reference to RFC {rfc.document.rfc_number} by "
                 raise forms.ValidationError(v_err_refnorm_prefix  + v_err_refnorm)
 
 

@@ -253,7 +253,7 @@ class MiscTests(TestCase):
     def do_fuzzy_find_documents_rfc_test(self, name):
         draft = WgDraftFactory(name=name, create_revisions=(0, 1, 2))
         rfc = WgRfcFactory()
-        draft.relateddocument_set.create(relationship_id="became_rfc", target=rfc.docalias.first())
+        draft.relateddocument_set.create(relationship_id="became_rfc", target=rfc)
         draft, rfc = reload_db_objects(draft, rfc)
 
         # by canonical name
@@ -380,7 +380,7 @@ class RebuildReferenceRelationsTests(TestCase):
         self.assertEqual(
             result,
             {
-                'warnings': ['There were 1 references with no matching DocAlias'],
+                'warnings': ['There were 1 references with no matching Document'],
                 'unfound': ['draft-not-found'],
             }
         )
@@ -443,7 +443,7 @@ class RebuildReferenceRelationsTests(TestCase):
         self.assertEqual(
             result,
             {
-                'warnings': ['There were 1 references with no matching DocAlias'],
+                'warnings': ['There were 1 references with no matching Document'],
                 'unfound': ['draft-not-found'],
             }
         )
