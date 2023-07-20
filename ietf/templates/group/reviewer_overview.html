@@ -94,9 +94,8 @@
                                     {{ assignment_to_closure_days }}
                                 {% endif %}
                             </td>
-                            <td class="text-nowrap">
-                                {{ doc_name|urlize_ietf_docs }}
-                                {% if reviewed_rev %}-{{ reviewed_rev }}{% endif %}
+                            <td>
+                                {{ doc_name }}{% if reviewed_rev %}-{{ reviewed_rev }}{% endif %}
                             </td>
 
                             {% if forloop.counter == 1 %}
@@ -106,21 +105,7 @@
                                     {% endif %}
                                 </td>
                                 <td{% if person.latest_reqs|length > 1 %} rowspan="{{person.latest_reqs|length}}"{% endif %}>
-                                    {% if person.settings.min_interval %}
-                                        <b>{{ person.settings.get_min_interval_display }}</b>
-                                        <br>
-                                    {% endif %}
-                                    {% if person.settings.skip_next %}
-                                        <b>Skip:</b> {{ person.settings.skip_next }}
-                                        <br>
-                                    {% endif %}
-                                    {% if person.settings.filter_re %}
-                                        <b>Filter:</b> <code title="{{ person.settings.filter_re }}">{{ person.settings.filter_re|truncatechars:15 }}</code>
-                                        <br>
-                                    {% endif %}
-                                    {% if person.unavailable_periods %}
-                                        {% include "review/unavailable_table.html" with unavailable_periods=person.unavailable_periods %}
-                                    {% endif %}
+                                    {% include "review/unavailable_table.html" with person=person unavailable_periods=person.unavailable_periods %}
                                 </td>
                             {% endif %}
                             </tr>
@@ -150,21 +135,7 @@
                             {% endif %}
                         </td>
                         <td>
-                            {% if person.settings.min_interval %}
-                                <b>{{ person.settings.get_min_interval_display }}</b>
-                                <br>
-                            {% endif %}
-                            {% if person.settings.skip_next %}
-                                <b>Skip:</b> {{ person.settings.skip_next }}
-                                <br>
-                            {% endif %}
-                            {% if person.settings.filter_re %}
-                                <b>Filter:</b> <code title="{{ person.settings.filter_re }}">{{ person.settings.filter_re|truncatechars:15 }}</code>
-                                <br>
-                            {% endif %}
-                            {% if person.unavailable_periods %}
-                                {% include "review/unavailable_table.html" with unavailable_periods=person.unavailable_periods %}
-                            {% endif %}
+                            {% include "review/unavailable_table.html" with person=person unavailable_periods=person.unavailable_periods %}
                         </td>
                     </tr>
                     {% endif %}
