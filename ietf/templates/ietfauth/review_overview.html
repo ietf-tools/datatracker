@@ -101,7 +101,7 @@
                             {% if r.due %}<span class="badge rounded-pill bg-warning">{{ r.due }} day{{ r.due|pluralize }}</span>{% endif %}
                         </td>
                         <td>
-                            <span class="{% if r.state_id == "completed" or r.state_id == "part-completed" %}bg-success{% endif %}">{{ r.state.name }}</span>
+                            <span class="badge rounded-pill {% if r.state_id == "completed" or r.state_id == "part-completed" %}bg-success{% else %}bg-secondary{% endif %}">{{ r.state.name }}</span>
                         </td>
                         <td>
                             {% if r.result %}{{ r.result.name }}{% endif %}
