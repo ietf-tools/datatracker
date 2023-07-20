@@ -84,7 +84,7 @@ import {
 import FullCalendar from '@fullcalendar/vue3'
 import timeGridPlugin from '@fullcalendar/timegrid'
 import interactionPlugin from '@fullcalendar/interaction'
-import luxonPlugin from '@fullcalendar/luxon2'
+import luxonPlugin from '@fullcalendar/luxon3'
 import bootstrap5Plugin from '@fullcalendar/bootstrap5'
 
 import AgendaDetailsModal from './AgendaDetailsModal.vue'

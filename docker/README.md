@@ -29,9 +29,9 @@ This project includes a devcontainer configuration which automates the setup of 
 ### Initial Setup
 
 1. Launch [VS Code](https://code.visualstudio.com/)
-2. Under the **Extensions** tab, ensure you have the **Remote - Containers** ([ms-vscode-remote.remote-containers](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers)) extension installed.
+2. Under the **Extensions** tab, ensure you have the **Dev Containers** ([ms-vscode-remote.remote-containers](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers)) extension installed.
   * On Linux, note that the Snap installation of VS Code is [incompatible with this plugin](https://code.visualstudio.com/docs/devcontainers/containers#_system-requirements:~:text=snap%20package%20is%20not%20supported). 
-  * On Windows, you also need the **Remote - WSL** ([ms-vscode-remote.remote-wsl](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-wsl)) extension to take advantage of the WSL 2 *(Windows Subsystem for Linux)* native integration.
+  * On Windows, you also need the **WSL** ([ms-vscode-remote.remote-wsl](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-wsl)) extension to take advantage of the WSL 2 *(Windows Subsystem for Linux)* native integration.
 2. Open the top-level directory of the datatracker code you fetched above.
 3. A prompt inviting you to reopen the project in containers will appear in the bottom-right corner. Click the **Reopen in Container** button. If you missed the prompt, you can press `F1`, start typing `reopen in container` task and launch it.
 4. VS Code will relaunch in the dev environment and create the containers automatically.
@@ -87,11 +87,10 @@ You can also open the datatracker project folder and click the **Reopen in conta
     On Linux / macOS:
 
     ```sh
-    cd docker
-    ./run
+    ./docker/run # or whatever path you need
     ```
 
-    > Note that you can pass the `-r` flag to `./run` to force a rebuild of the containers. This is useful if you switched branches and that the existing containers still contain configurations from the old branch. You should also use this if you don't regularly keep up with main and your containers reflect a much older version of the branch.
+    > Note that you can pass the `-r` flag to `run` to force a rebuild of the containers. This is useful if you switched branches and that the existing containers still contain configurations from the old branch. You should also use this if you don't regularly keep up with main and your containers reflect a much older version of the branch.
 
     On Windows *(using Powershell)*:
     ```sh

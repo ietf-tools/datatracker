@@ -8,7 +8,7 @@
     {% origin %}
     {{ top|safe }}
     {% include "doc/revisions_list.html" %}
-    <div id="timeline"></div>
+    <div id="doc-timeline"></div>
     {% if doc.rev != latest_rev %}
         <div class="alert alert-warning my-3">The information below is for an old version of the document.</div>
     {% endif %}
@@ -32,7 +32,7 @@
             <tr>
                 <th scope="row">Title</th>
                 <td class="edit"></td>
-                <th scope="row">{{ doc.title|default:'<span class="text-muted">(None)</span>' }}</th>
+                <th scope="row">{{ doc.title|default:'<span class="text-body-secondary">(None)</span>' }}</th>
             </tr>
             <tr>
                 <th scope="row">Session</th>

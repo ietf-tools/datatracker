@@ -6,7 +6,7 @@
 [![License](https://img.shields.io/github/license/ietf-tools/datatracker)](https://github.com/ietf-tools/datatracker/blob/main/LICENSE)
 [![Code Coverage](https://codecov.io/gh/ietf-tools/datatracker/branch/feat/bs5/graph/badge.svg?token=V4DXB0Q28C)](https://codecov.io/gh/ietf-tools/datatracker)  
 [![Python Version](https://img.shields.io/badge/python-3.9-blue?logo=python&logoColor=white)](#prerequisites)
-[![Django Version](https://img.shields.io/badge/django-2.x-51be95?logo=django&logoColor=white)](#prerequisites)
+[![Django Version](https://img.shields.io/badge/django-4.x-51be95?logo=django&logoColor=white)](#prerequisites)
 [![Node Version](https://img.shields.io/badge/node.js-16.x-green?logo=node.js&logoColor=white)](#prerequisites)
 [![MariaDB Version](https://img.shields.io/badge/postgres-14-blue?logo=postgresql&logoColor=white)](#prerequisites)
 
@@ -18,6 +18,7 @@
 - [Changelog](https://github.com/ietf-tools/datatracker/releases)
 - [Contributing](https://github.com/ietf-tools/.github/blob/main/CONTRIBUTING.md)
 - [Getting Started](#getting-started) - *[ tl;dr ](#the-tldr-to-get-going)*
+    - [Creating a Fork](#creating-a-fork)
     - [Git Cloning Tips](#git-cloning-tips)
     - [Docker Dev Environment](docker/README.md)
 - [Database & Assets](#database--assets)
@@ -47,9 +48,17 @@ This project is following the standard **Git Feature Workflow** development mode
 
 You can submit bug reports, enhancement and new feature requests in the [discussions](https://github.com/ietf-tools/datatracker/discussions) area. Accepted tickets will be converted to issues.
 
+#### Creating a Fork
+
+Click the <kbd>Fork</kbd> button in the top-right corner of the repository to create a personal copy that you can work on.
+
+> Note that some GitHub Actions might be enabled by default in your fork. You should disable them by going to **Settings** > **Actions** > **General** and selecting **Disable actions** (then Save).
+
 #### Git Cloning Tips
 
 As outlined in the [Contributing](https://github.com/ietf-tools/.github/blob/main/CONTRIBUTING.md) guide, you will first want to create a fork of the datatracker project in your personal GitHub account before cloning it.
+
+Windows developers: [Start with WSL2 from the beginning](https://github.com/ietf-tools/.github/blob/main/docs/windows-dev.md).
 
 Because of the extensive history of this project, cloning the datatracker project locally can take a long time / disk space. You can speed up the cloning process by limiting the history depth, for example *(replace `USERNAME` with your GitHub username)*:
 
@@ -133,10 +142,10 @@ This will create packages under `ietf/static/dist-neue`, which are then served b
 
 #### Parcel *(Legacy/jQuery)*
 
-The Datatracker includes these packages from the various Javascript and CSS files in `ietf/static/js` and `ietf/static/css`, respectively.
+The Datatracker includes these packages from the various Javascript and CSS files in `ietf/static/js` and `ietf/static/css` respectively, bundled using Parcel.
 Static images are likewise in `ietf/static/images`.
 
-Whenever changes are made to the files under `ietf/static`, you must re-run `parcel` to package them:
+Whenever changes are made to the files under `ietf/static`, you must re-run the build command to package them:
 
 ``` shell
 yarn legacy:build

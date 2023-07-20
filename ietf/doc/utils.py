@@ -17,7 +17,6 @@ from zoneinfo import ZoneInfo
 
 from django.conf import settings
 from django.contrib import messages
-from django.db.models import QuerySet
 from django.forms import ValidationError
 from django.http import Http404
 from django.template.loader import render_to_string
@@ -25,6 +24,7 @@ from django.utils import timezone
 from django.utils.html import escape
 from django.urls import reverse as urlreverse
 
+from django_stubs_ext import QuerySetAny
 
 import debug                            # pyflakes:ignore
 from ietf.community.models import CommunityList
@@ -345,7 +345,7 @@ def augment_events_with_revision(doc, events):
     """Take a set of events for doc and add a .rev attribute with the
     revision they refer to by checking NewRevisionDocEvents."""
 
-    if isinstance(events, QuerySet):
+    if isinstance(events, QuerySetAny):
         qs = events.filter(newrevisiondocevent__isnull=False)
     else:
         qs = NewRevisionDocEvent.objects.filter(doc=doc)
@@ -353,7 +353,7 @@ def augment_events_with_revision(doc, events):
 
     if doc.type_id == "draft" and doc.get_state_slug() == "rfc":
         # add fake "RFC" revision
-        if isinstance(events, QuerySet):
+        if isinstance(events, QuerySetAny):
             e = events.filter(type="published_rfc").order_by('time').last()
         else:
             e = doc.latest_event(type="published_rfc")
@@ -1038,6 +1038,7 @@ def build_file_urls(doc: Union[Document, DocHistory]):
             file_urls.append(("htmlized", urlreverse('ietf.doc.views_doc.document_html', kwargs=dict(name=doc.name, rev=doc.rev))))
             file_urls.append(("pdfized", urlreverse('ietf.doc.views_doc.document_pdfized', kwargs=dict(name=doc.name, rev=doc.rev))))
         file_urls.append(("bibtex", urlreverse('ietf.doc.views_doc.document_bibtex',kwargs=dict(name=doc.name,rev=doc.rev))))
+        file_urls.append(("bibxml", urlreverse('ietf.doc.views_doc.document_bibxml',kwargs=dict(name=doc.name,rev=doc.rev))))
     else:
         # As of 2022-12-14, there are 1463 Document and 3136 DocHistory records with type='draft' and rev=''.
         # All of these are in the rfc state and are covered by the above cases.

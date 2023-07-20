@@ -12,7 +12,7 @@ from django.conf import settings
 from django.urls import reverse as urlreverse
 from django.template.loader import render_to_string
 from django.utils import timezone
-from django.utils.encoding import smart_text, force_text
+from django.utils.encoding import smart_str, force_str
 
 import debug                            # pyflakes:ignore
 
@@ -153,7 +153,7 @@ def generate_ballot_writeup(request, doc):
     e.doc = doc
     e.rev = doc.rev,
     e.desc = "Ballot writeup was generated"
-    e.text = force_text(render_to_string("doc/charter/ballot_writeup.txt"))
+    e.text = force_str(render_to_string("doc/charter/ballot_writeup.txt"))
 
     # caller is responsible for saving, if necessary
     return e
@@ -197,7 +197,7 @@ def derive_new_work_text(review_text,group):
                                            'Reply_to':'<iesg@ietf.org>'})
     if not addrs.cc:
         del m['Cc']
-    return smart_text(m.as_string())
+    return smart_str(m.as_string())
 
 def default_review_text(group, charter, by):
     now = timezone.now()

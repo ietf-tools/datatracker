@@ -22,7 +22,7 @@
                 {% if published %}
                     {% if document_html %}<br>{% else %}({% endif %}{{ doc.pub_date|date:"F Y" }}{% if not document_html %}){% endif %}
                 {% else %}
-                    <span class="text-muted">(Publication date unknown)</span>
+                    <span class="text-body-secondary">(Publication date unknown)</span>
                 {% endif %}
                 {% if document_html %}<br>{% endif %}
                 {% if has_verified_errata or has_errata %}
@@ -100,7 +100,7 @@
     {% endif %}
     <tr>
         <td></td>
-        <th scope="row">Author{{ doc.authors|pluralize }}</th>
+        <th scope="row">Author{% if doc.pk %}{{ doc.authors|pluralize }}{% endif %}</th>
         <td class="edit">
             {% if can_edit_authors %}
                 <a class="btn btn-primary btn-sm"
@@ -109,9 +109,9 @@
         </td>
         <td>
             {# Implementation that uses the current primary email for each author #}
-            {% for author in doc.authors %}
+            {% if doc.pk %}{% for author in doc.authors %}
                 {% person_link author %}{% if not forloop.last %},{% endif %}
-            {% endfor %}
+            {% endfor %}{% endif %}
             {% if document_html and not snapshot or document_html and doc.rev == latest_rev%}
                 <br>
                 <a class="btn btn-primary btn-sm mt-1" href="mailto:{{ doc.name }}@ietf.org?subject={{ doc.name}}" title="Send email to the document authors">Email authors</a>
@@ -127,7 +127,7 @@
         <td>
             {{ doc.time|date:"Y-m-d" }}
             {% if latest_revision and latest_revision.time|date:"Y-m-d" != doc.time|date:"Y-m-d" %}
-                <span class="text-muted">(Latest revision {{ latest_revision.time|date:"Y-m-d" }})</span>
+                <span class="text-body-secondary">(Latest revision {{ latest_revision.time|date:"Y-m-d" }})</span>
             {% endif %}
         </td>
     </tr>
@@ -150,7 +150,7 @@
                         {{ replaces|urlize_related_target_list:document_html|join:", " }}
                     {% endif %}
                 {% else %}
-                    <span class="text-muted">(None)</span>
+                    <span class="text-body-secondary">(None)</span>
                 {% endif %}
             </td>
         </tr>
@@ -231,7 +231,7 @@ href="{% url 'ietf.doc.views_draft.review_possibly_replaces' name=doc.name %}">E
                 </a>
             {% endif %}
         </td>
-        <td {% if stream_desc == "(None)" %}class="text-muted"{%endif%}>
+        <td {% if stream_desc == "(None)" %}class="text-body-secondary"{%endif%}>
             {% if stream_desc != "(None)" %}
                 {% if doc.stream.name|lower in 'iab,irtf,ise,editorial' %}
                     <a href="{% url 'ietf.group.views.stream_documents' acronym=doc.stream.name|lower %}">
@@ -281,7 +281,7 @@ href="{% url 'ietf.doc.views_draft.review_possibly_replaces' name=doc.name %}">E
                 {% if doc.intended_std_level %}
                     {{ doc.intended_std_level }}
                 {% else %}
-                    <span class="text-muted">
+                    <span class="text-body-secondary">
                         (None)
                     </span>
                 {% endif %}

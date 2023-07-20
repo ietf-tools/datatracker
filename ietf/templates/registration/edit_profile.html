@@ -76,7 +76,7 @@
                     <a href="{% url 'ietf.doc.views_doc.document_main' name='rfc8713' %}">RFC 8713</a>
                     for eligibility requirements.
                     For the 2021 and 2022 NomComs, see also
-                    <a href="{% url 'ietf.doc.views_doc.document_main' name='rfc8989' %}">RFC 8989</a>.
+                    <a href="{% url 'ietf.doc.views_doc.document_main' name='rfc9389' %}">RFC 9389</a>.
                 </p>
             {% endif %}
         </div>
@@ -229,7 +229,7 @@
                 $('<input class="form-control mb-1" name="new_email" placeholder="You will get a confirmation challenge. To add an address that cannot be confirmed this way, contact the secretariat.">')
                     .appendTo(container)
                     .trigger("focus");
-                $('<div class="float-end text-muted small mb-3">Remember to submit the form for the new email challenge to be sent.</div>')
+                $('<div class="float-end text-body-secondary small mb-3">Remember to submit the form for the new email challenge to be sent.</div>')
                     .appendTo(container);
             })
         });

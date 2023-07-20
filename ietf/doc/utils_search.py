@@ -140,17 +140,36 @@ def fill_in_document_table_attributes(docs, have_telechat_date=False):
         d.obsoleted_by_list = []
         d.updated_by_list = []
 
-    xed_by = RelatedDocument.objects.filter(target__name__in=list(rfc_aliases.values()),
-                                            relationship__in=("obs", "updates")).select_related('target')
-    rel_rfc_aliases = dict([ (a.document.id, re.sub(r"rfc(\d+)", r"RFC \1", a.name, flags=re.IGNORECASE)) for a in DocAlias.objects.filter(name__startswith="rfc", docs__id__in=[rel.source_id for rel in xed_by]) ])
+    # Revisit this block after RFCs become first-class Document objects
+    xed_by = list(
+        RelatedDocument.objects.filter(
+            target__name__in=list(rfc_aliases.values()),
+            relationship__in=("obs", "updates"),
+        ).select_related("target")
+    )
+    rel_rfc_aliases = {
+        a.document.id: re.sub(r"rfc(\d+)", r"RFC \1", a.name, flags=re.IGNORECASE)
+        for a in DocAlias.objects.filter(
+            name__startswith="rfc", docs__id__in=[rel.source_id for rel in xed_by]
+        )
+    }
+    xed_by.sort(
+        key=lambda rel: int(
+            re.sub(
+                r"rfc\s*(\d+)",
+                r"\1",
+                rel_rfc_aliases[rel.source_id],
+                flags=re.IGNORECASE,
+            )
+        )
+    )
     for rel in xed_by:
         d = doc_dict[rel.target.document.id]
+        s = rel_rfc_aliases[rel.source_id]
         if rel.relationship_id == "obs":
-            l = d.obsoleted_by_list
+            d.obsoleted_by_list.append(s)
         elif rel.relationship_id == "updates":
-            l = d.updated_by_list
-        l.append(rel_rfc_aliases[rel.source_id])
-        l.sort()
+            d.updated_by_list.append(s)
 
 def augment_docs_with_related_docs_info(docs):
     """Augment all documents with related documents information.

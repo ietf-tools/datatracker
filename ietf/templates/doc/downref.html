@@ -14,6 +14,15 @@
         <a class="btn btn-warning my-3"
            href="{% url "ietf.doc.views_downref.downref_registry_add" %}">Add downref</a>
     {% endif %}
+    <div class="alert alert-info">
+        <p>
+            <a href="https://www.rfc-editor.org/rfc/rfc3967.html">RFC 3967</a>,
+            titled "Clarifying when Standards Track Documents may Refer Normatively to Documents at a Lower Level", specifies the rules for downward references (DOWNREFs):
+        </p>
+        <p class="mb-0">
+            "IETF procedures generally require that a standards track RFC may not have a normative reference to another standards track document at a lower maturity level or to a non standards track specification (other than specifications from other standards bodies). For example, a standards track document may not have a normative reference to an informational RFC. Exceptions to this rule are sometimes needed as the IETF uses informational RFCs to describe non-IETF standards or IETF-specific modes of use of such standards."
+        </p>
+</div>
     <table class="table table-sm table-striped tablesorter">
         <thead>
             <tr>

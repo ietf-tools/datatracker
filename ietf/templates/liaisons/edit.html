@@ -19,7 +19,7 @@
     {% origin %}
     <h1 class="mb-3">
         {% if liaison %}
-            Edit liaison<br><small class="text-muted">{{ liaison }}</small>
+            Edit liaison<br><small class="text-body-secondary">{{ liaison }}</small>
         {% else %}
             Send Liaison Statement
         {% endif %}
@@ -47,21 +47,43 @@
           method="post"
           enctype="multipart/form-data"
           data-edit-form="{{ form.edit }}"
-          data-ajax-info-url="{% url "ietf.liaisons.views.ajax_get_liaison_info" %}">
+          data-ajax-info-url="{% url 'ietf.liaisons.views.ajax_get_liaison_info' %}">
         {% csrf_token %}
-        {% for fieldset in form.fieldsets %}
-            <h2>{{ fieldset.name }}</h2>
-            {% for field in fieldset %}
-                {% if field.id_for_label != "id_attachments" %}
-                    {% bootstrap_field field layout="horizontal" %}
-                {% else %}
-                    <div class="row mb-3">
-                        <p class="col-md-2 fw-bold col-form-label">{{ field.label }}</p>
-                        <div class="col-md-10">{{ field }}</div>
-                    </div>
-                {% endif %}
-            {% endfor %}
-        {% endfor %}
+        <h2>From</h2>
+            {% bootstrap_field form.from_groups layout="horizontal" %}
+            {% bootstrap_field form.from_contact layout="horizontal" %}
+            {% bootstrap_field form.response_contacts layout="horizontal" %}
+            {% if form.approved %}
+                {% bootstrap_field form.approved layout="horizontal" %}
+            {% endif %}
+        <h2>To</h2>
+            {% bootstrap_field form.to_groups layout="horizontal" %}
+            {% bootstrap_field form.to_contacts layout="horizontal" %}
+        <h2>Other email addresses</h2>
+            {% bootstrap_field form.technical_contacts layout="horizontal" %}
+            {% if form.action_holder_contacts %}
+                {% bootstrap_field form.action_holder_contacts layout="horizontal" %}
+            {% endif %}
+            {% bootstrap_field form.cc_contacts layout="horizontal" %}
+        <h2>Purpose</h2>
+            {% bootstrap_field form.purpose layout="horizontal" %}
+            {% bootstrap_field form.deadline layout="horizontal" %}
+        <h2>Reference</h2>
+            {% bootstrap_field form.other_identifiers layout="horizontal" %}
+            {% bootstrap_field form.related_to layout="horizontal" %}
+        <h2>Liaison Statement</h2>
+            {% bootstrap_field form.title layout="horizontal" %}
+            {% bootstrap_field form.submitted_date layout="horizontal" %}
+            {% bootstrap_field form.body layout="horizontal" %}
+            <div class="row mb-3">
+                <p class="col-md-2 fw-bold col-form-label">{{ form.attachments.label }}</p>
+                <div class="col-md-10">{{ form.attachments }}</div>
+            </div>
+        <h2>Add attachment</h2>
+            {% bootstrap_field form.attach_title layout="horizontal" %}
+            {% bootstrap_field form.attach_file layout="horizontal" %}
+            {% bootstrap_field form.attach_button layout="horizontal" %}
+
         <a class="btn btn-danger float-end"
            href="{% if liaison %}{% url 'ietf.liaisons.views.liaison_detail' object_id=liaison.pk %}{% else %}{% url 'ietf.liaisons.views.liaison_list' %}{% endif %}">
             Cancel

@@ -10,11 +10,11 @@ import re
 import requests
 
 from email.utils import parsedate_to_datetime
+from urllib.parse import quote as urlquote
 
 from django.conf import settings
 from django.utils import timezone
 from django.utils.encoding import smart_bytes, force_str
-from django.utils.http import urlquote
 
 import debug                            # pyflakes:ignore
 

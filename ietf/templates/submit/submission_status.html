@@ -137,25 +137,20 @@
             Notice: The Internet-Draft submission process has changed as of Datatracker version 10.3.0.
             Your Internet-Draft is currently being processed and validated asynchronously. Results will be
             displayed at this URL when they are available. If JavaScript is enabled in your
-            browser, this page will refreshed automatically. If JavaScript is not enabled, or if you
-            disable the automatic refresh with the toggle below, please reload this page in a few
-            minutes to see the results.
+            browser, this page will refreshed automatically. If JavaScript is not enabled, 
+            please reload this page in a few minutes to see the results.
         </div>
-        <div class="alert alert-warning my-3">
-            This submission is being processed and validated. This normally takes a few minutes after
-            submission.
+        <div id="submission-validating-alert"
+             class="alert alert-warning my-3"
+             data-submission-status-url="{% url 'ietf.submit.views.api_submission_status' submission_id=submission.pk %}">
+            This submission is being processed and validated. This usually takes a few seconds but may
+            take a few minutes for complex drafts or during periods of heavy load.
             {% with earliest_event=submission.submissionevent_set.last %}
             {% if earliest_event %}
-            Your draft was uploaded at {{ earliest_event.time }}<span id="time-since-uploaded" class="d-none">
-            ({{ earliest_event.time|timesince }} ago)</span>.
+            Your draft was uploaded at {{ earliest_event.time }}.
             {% endif %}
             {% endwith %}
             Please contact the secretariat for assistance if it has been more than an hour.
-
-            <div class="form-check form-switch mt-3 d-none">{# hide with d-none unless javascript makes it visible #}
-                <input class="form-check-input" type="checkbox" id="enableAutoReload" checked>
-                <label class="form-check-label" for="enableAutoReload"> Refresh automatically </label>
-            </div>
         </div>
         {% else %}
         <h2 class="mt-5">Meta-data from the submission</h2>
@@ -298,7 +293,7 @@
                         {% if author.country %}
                             {{ author.country }}
                             {% if author.cleaned_country and author.country != author.cleaned_country %}
-                                <span class="text-muted">(understood to be {{ author.cleaned_country }})</span>
+                                <span class="text-body-secondary">(understood to be {{ author.cleaned_country }})</span>
                             {% endif %}
                         {% else %}
                             <i>unknown country</i>

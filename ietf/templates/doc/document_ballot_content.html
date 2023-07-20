@@ -11,10 +11,10 @@
             </p>
             {% for p in positions %}
                 <div class="balloter-name mb-2">
-                    {% if p.is_old_pos %}<span class="text-muted">({% endif %}{% if p.comment or p.discuss %}<a href="#{{ doc.name|slugify }}_{{ p.balloter.plain_name|slugify }}">{% endif %}{{ p.balloter.plain_name }}{% if p.comment or p.discuss %}</a>{% endif %}{% if p.is_old_pos %})</span>{% endif %}
+                    {% if p.is_old_pos %}<span class="text-body-secondary">({% endif %}{% if p.comment or p.discuss %}<a href="#{{ doc.name|slugify }}_{{ p.balloter.plain_name|slugify }}">{% endif %}{{ p.balloter.plain_name }}{% if p.comment or p.discuss %}</a>{% endif %}{% if p.is_old_pos %})</span>{% endif %}
                 </div>
             {% empty %}
-                <span class="text-muted">(None)</span>
+                <span class="text-body-secondary">(None)</span>
             {% endfor %}
             <br>
         {% endfor %}
@@ -91,7 +91,7 @@
                             {{ p.balloter.plain_name }}
                         </div>
                         <div class="flex-fill text-end">
-                            {% if p.old_positions %}<span class="text-muted small">(was {{ p.old_positions|join:", " }})</span>{% endif %}
+                            {% if p.old_positions %}<span class="text-body-secondary small">(was {{ p.old_positions|join:", " }})</span>{% endif %}
                             <span class="badge rounded-pill {{ p.pos|pos_to_label_format }}">{{ p.pos }}</span>
                             {% if user|has_role:"Secretariat" %}
                                 <a href="{% url "ietf.doc.views_ballot.edit_position" name=doc.name ballot_id=ballot.pk %}?balloter={{ p.balloter.pk }}"
@@ -179,11 +179,11 @@
                 {% if p.is_old_pos %}
                     <div class="h5 d-flex mt-4"
                          id="{{ doc.name|slugify }}_{{ p.balloter.plain_name|slugify }}">
-                        <div class="flex-fill text-muted">
+                        <div class="flex-fill text-body-secondary">
                             {{ p.balloter.plain_name }} <span class="badge rounded-pill bg-secondary">Former IESG member</span>
                         </div>
                         <div class="flex-fill text-end">
-                            {% if p.old_positions %}<span class="text-muted small">(was {{ p.old_positions|join:", " }})</span>{% endif %}
+                            {% if p.old_positions %}<span class="text-body-secondary small">(was {{ p.old_positions|join:", " }})</span>{% endif %}
                             <span class="badge rounded-pill {{ p.pos|pos_to_label_format }}">{{ p.pos }}</span>
                             {% if user|has_role:"Secretariat" %}
                                 <a href="{% url "ietf.doc.views_ballot.edit_position" name=doc.name ballot_id=ballot.pk %}?balloter={{ p.balloter.pk }}"

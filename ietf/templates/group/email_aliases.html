@@ -14,7 +14,7 @@
         Group email aliases
         {% if group %}
             <br>
-            <span class="text-muted">{{ group.acronym }}</span>
+            <span class="text-body-secondary">{{ group.acronym }}</span>
         {% endif %}
     </h1>
     {% regroup aliases|dictsort:"acronym" by acronym as alias_list %}

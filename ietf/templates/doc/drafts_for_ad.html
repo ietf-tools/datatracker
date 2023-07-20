@@ -31,12 +31,12 @@
                             {% if doc.ad %}
                                 {% person_link doc.ad %}
                             {% else %}
-                                <span class="text-muted">(None)</span>
+                                <span class="text-body-secondary">(None)</span>
                             {% endif %}
                         </td>
                         <td>
                             {% for p in doc.blocking_positions %}
-                                <span {% if p.is_old_pos %}class="text-muted"{% endif %}>
+                                <span {% if p.is_old_pos %}class="text-body-secondary"{% endif %}>
                                     {% if p.is_old_pos %}
                                         {% person_link p.balloter class="text-reset" %}
                                     {% else %}

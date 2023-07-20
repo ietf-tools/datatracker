@@ -30,12 +30,21 @@ COPY docker/scripts/app-setup-python.sh /tmp/library-scripts/docker-setup-python
 RUN sed -i 's/\r$//' /tmp/library-scripts/docker-setup-python.sh && chmod +x /tmp/library-scripts/docker-setup-python.sh
 RUN bash /tmp/library-scripts/docker-setup-python.sh "none" "/usr/local" "${PIPX_HOME}" "${USERNAME}"
 
+# Setup nginx
+COPY docker/scripts/app-setup-nginx.sh /tmp/library-scripts/docker-setup-nginx.sh
+RUN sed -i 's/\r$//' /tmp/library-scripts/docker-setup-nginx.sh && chmod +x /tmp/library-scripts/docker-setup-nginx.sh
+RUN bash /tmp/library-scripts/docker-setup-nginx.sh
+COPY docker/configs/nginx-proxy.conf /etc/nginx/sites-available/default
+COPY docker/configs/nginx-502.html /var/www/html/502.html
+
 # Remove library scripts for final image
 RUN rm -rf /tmp/library-scripts
 
 # Copy the startup file
 COPY docker/scripts/app-init.sh /docker-init.sh
+COPY docker/scripts/app-start.sh /docker-start.sh
 RUN sed -i 's/\r$//' /docker-init.sh && chmod +x /docker-init.sh
+RUN sed -i 's/\r$//' /docker-start.sh && chmod +x /docker-start.sh
 
 # Fix user UID / GID to match host
 RUN groupmod --gid $USER_GID $USERNAME \

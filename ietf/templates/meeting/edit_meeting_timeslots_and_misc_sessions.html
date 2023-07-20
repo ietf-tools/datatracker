@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015-2020, All Rights Reserved #}
 {% load origin %}
-{% load staticfiles %}
+{% load static %}
 {% load ietf_filters %}
 {% load django_bootstrap5 %}
 {% block title %}{{ schedule.name }}: IETF {{ meeting.number }} meeting agenda{% endblock %}
@@ -12,7 +12,7 @@
     <h1>
         IETF {{ meeting.number }} meeting agenda
         <br>
-        <small class="text-muted">{{ schedule.name }}</small>
+        <small class="text-body-secondary">{{ schedule.name }}</small>
     </h1>
     {% origin %}
     <div class="my-3 edit-meeting-timeslots-and-misc-sessions {% if not can_edit %}read-only{% endif %}"

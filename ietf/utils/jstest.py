@@ -81,7 +81,7 @@ class IetfSeleniumTestCase(IetfLiveServerTestCase):
         self.driver.get(url)
         self.driver.find_element(By.NAME, 'username').send_keys(username)
         self.driver.find_element(By.NAME, 'password').send_keys(password)
-        self.driver.find_element(By.XPATH, '//button[@type="submit"]').click()
+        self.driver.find_element(By.XPATH, '//*[@id="content"]//button[@type="submit"]').click()
 
     def scroll_to_element(self, element):
         """Scroll an element into view"""

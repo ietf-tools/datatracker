@@ -13,8 +13,7 @@ from django.utils.html import escape
 from django.template.defaultfilters import truncatewords_html, linebreaksbr, stringfilter, striptags
 from django.utils.safestring import mark_safe, SafeData
 from django.utils.html import strip_tags
-from django.utils.encoding import force_text
-from django.utils.encoding import force_str # pyflakes:ignore force_str is used in the doctests
+from django.utils.encoding import force_str
 from django.urls import reverse as urlreverse
 from django.core.cache import cache
 from django.core.exceptions import ValidationError
@@ -132,7 +131,7 @@ register.filter('fill', fill)
 @register.filter
 def prettystdname(string, space=" "):
     from ietf.doc.utils import prettify_std_name
-    return prettify_std_name(force_text(string or ""), space)
+    return prettify_std_name(force_str(string or ""), space)
 
 @register.filter
 def rfceditor_info_url(rfcnum : str):
