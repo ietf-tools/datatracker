@@ -9,7 +9,7 @@
     <h1>
         Shepherd writeup
         <br>
-        <small class="text-muted">{{ doc.canonical_name }}</small>
+        <small class="text-body-secondary">{{ doc.canonical_name }}</small>
     </h1>
     <pre class="border p-3 my-3">{{writeup|maybewordwrap|urlize_ietf_docs|linkify}}</pre>
     {% if can_edit %}
