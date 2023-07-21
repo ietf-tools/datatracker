@@ -963,7 +963,6 @@ def view_feedback_unrelated(request, year):
     reclassify = request.GET.get('reclassify') is not None
     is_chair = nomcom.group.has_role(request.user, "chair")
     if reclassify and is_chair and request.method == 'POST':
-        action = request.POST.get('action')
         feedback_to_modify = request.POST.getlist('selected')
         if feedback_to_modify:
             for ft in feedback_types:
@@ -999,7 +998,6 @@ def view_feedback_topic(request, year, topic_id, reflassify=False):
     reclassify = request.GET.get('reclassify') is not None
     is_chair = nomcom.group.has_role(request.user, "chair")
     if reclassify and is_chair and request.method == 'POST':
-        action = request.POST.get('action')
         feedback_to_modify = request.POST.getlist('selected')
         if feedback_to_modify:
             feedback = topic.feedback_set.filter(id__in=feedback_to_modify)
@@ -1036,7 +1034,6 @@ def view_feedback_nominee(request, year, nominee_id):
     reclassify = request.GET.get('reclassify') is not None
     is_chair = nomcom.group.has_role(request.user, "chair")
     if reclassify and is_chair and request.method == 'POST':
-        action = request.POST.get('action')
         feedback_to_modify = request.POST.getlist('selected')
         if feedback_to_modify:
             feedback = nominee.feedback_set.filter(id__in=feedback_to_modify)
