@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2012-2020, All Rights Reserved
+# Copyright The IETF Trust 2012-2023, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -828,6 +828,8 @@ def view_feedback(request, year):
             topic_feedback.append( (ft.name,count,newflag) )
         topics_feedback.append ( {'topic':topic, 'feedback':topic_feedback} )
 
+    reclassify = request.GET.get('reclassify') is not None
+
     return render(request, 'nomcom/view_feedback.html',
                               {'year': year,
                                'selected': 'view_feedback',
@@ -838,7 +840,9 @@ def view_feedback(request, year):
                                'topics_feedback': topics_feedback,
                                'independent_feedback': independent_feedback,
                                'nominees_feedback': nominees_feedback,
-                               'nomcom': nomcom})
+                               'nomcom': nomcom,
+                               'reclassify': reclassify,
+                               })
 
 
 @role_required("Nomcom Chair", "Nomcom Advisor")
@@ -956,15 +960,31 @@ def view_feedback_unrelated(request, year):
         feedback_types.append({'ft': ft,
                                'feedback': ft.feedback_set.get_by_nomcom(nomcom)})
 
+    reclassify = request.GET.get('reclassify') is not None
+    is_chair = nomcom.group.has_role(request.user, "chair")
+    if reclassify and is_chair and request.method == 'POST':
+        action = request.POST.get('action')
+        feedback_to_modify = request.POST.getlist('selected')
+        if feedback_to_modify:
+            for ft in feedback_types:
+                feedback = ft['feedback'].filter(id__in=feedback_to_modify)
+                feedback.update(type=None)
+            messages.success(request, 'The selected feedback has been de-classified. Please reclassify it in the Pending emails tab.')
+        else:
+            messages.warning(request, "Please select some feedback to work with")
+
     return render(request, 'nomcom/view_feedback_unrelated.html',
                               {'year': year,
                                'selected': 'view_feedback',
                                'feedback_types': feedback_types,
-                               'nomcom': nomcom})
+                               'nomcom': nomcom,
+                               'is_chair': is_chair,
+                               'reclassify': reclassify,
+                               })
 
 @role_required("Nomcom")
 @nomcom_private_key_required
-def view_feedback_topic(request, year, topic_id):
+def view_feedback_topic(request, year, topic_id, reflassify=False):
     nomcom = get_nomcom_by_year(year)
     topic = get_object_or_404(Topic, id=topic_id)
     feedback_types = FeedbackTypeName.objects.filter(slug__in=['comment',])
@@ -976,13 +996,28 @@ def view_feedback_topic(request, year, topic_id):
     else:
         TopicFeedbackLastSeen.objects.create(reviewer=request.user.person,topic=topic)
 
+    reclassify = request.GET.get('reclassify') is not None
+    is_chair = nomcom.group.has_role(request.user, "chair")
+    if reclassify and is_chair and request.method == 'POST':
+        action = request.POST.get('action')
+        feedback_to_modify = request.POST.getlist('selected')
+        if feedback_to_modify:
+            feedback = topic.feedback_set.filter(id__in=feedback_to_modify)
+            feedback.update(type=None)
+            messages.success(request, 'The selected feedback has been de-classified. Please reclassify it in the Pending emails tab.')
+        else:
+            messages.warning(request, "Please select some feedback to work with")
+
     return render(request, 'nomcom/view_feedback_topic.html',
                               {'year': year,
                                'selected': 'view_feedback',
                                'topic': topic,
                                'feedback_types': feedback_types,
                                'last_seen_time' : last_seen_time,
-                               'nomcom': nomcom})
+                               'nomcom': nomcom,
+                               'is_chair': is_chair,
+                               'reclassify': reclassify,
+                               })
 
 @role_required("Nomcom")
 @nomcom_private_key_required
@@ -998,13 +1033,30 @@ def view_feedback_nominee(request, year, nominee_id):
     else:
         FeedbackLastSeen.objects.create(reviewer=request.user.person,nominee=nominee)
 
+    reclassify = request.GET.get('reclassify') is not None
+    is_chair = nomcom.group.has_role(request.user, "chair")
+    if reclassify and is_chair and request.method == 'POST':
+        action = request.POST.get('action')
+        feedback_to_modify = request.POST.getlist('selected')
+        if feedback_to_modify:
+            feedback = nominee.feedback_set.filter(id__in=feedback_to_modify)
+            feedback.update(type=None)
+            for fb in feedback:
+                fb.nominees.clear()
+            messages.success(request, 'The selected feedback has been de-classified. Please reclassify it in the Pending emails tab.')
+        else:
+            messages.warning(request, "Please select some feedback to work with")
+
     return render(request, 'nomcom/view_feedback_nominee.html',
                               {'year': year,
                                'selected': 'view_feedback',
                                'nominee': nominee,
                                'feedback_types': feedback_types,
                                'last_seen_time' : last_seen_time,
-                               'nomcom': nomcom})
+                               'nomcom': nomcom,
+                               'is_chair': is_chair,
+                               'reclassify': reclassify,
+                               })
 
 
 @role_required("Nomcom Chair", "Nomcom Advisor")

@@ -31,17 +31,17 @@
                 {% for fb_dict in staterank.list %}
                     <tr>
                         <td>
-                            <a href="{% url 'ietf.nomcom.views.view_feedback_nominee' year=year nominee_id=fb_dict.nominee.id %}">
+                            <a href="{% url 'ietf.nomcom.views.view_feedback_nominee' year=year nominee_id=fb_dict.nominee.id %}{% if reclassify %}?reclassify{% endif %}">
                                 {{ fb_dict.nominee.person.first_name }}
                             </a>
                         </td>
                         <td>
-                            <a href="{% url 'ietf.nomcom.views.view_feedback_nominee' year=year nominee_id=fb_dict.nominee.id %}">
+                            <a href="{% url 'ietf.nomcom.views.view_feedback_nominee' year=year nominee_id=fb_dict.nominee.id %}{% if reclassify %}?reclassify{% endif %}">
                                 {{ fb_dict.nominee.person.last_name }}
                             </a>
                         </td>
                         <td>
-                            <a href="{% url 'ietf.nomcom.views.view_feedback_nominee' year=year nominee_id=fb_dict.nominee.id %}">
+                            <a href="{% url 'ietf.nomcom.views.view_feedback_nominee' year=year nominee_id=fb_dict.nominee.id %}{% if reclassify %}?reclassify{% endif %}">
                                 {{ fb_dict.nominee.email.address }}
                             </a>
                         </td>
@@ -80,7 +80,7 @@
             {% for fb_dict in topics_feedback %}
                 <tr>
                     <td>
-                        <a href="{% url 'ietf.nomcom.views.view_feedback_topic' year=year topic_id=fb_dict.topic.id %}">
+                        <a href="{% url 'ietf.nomcom.views.view_feedback_topic' year=year topic_id=fb_dict.topic.id %}{% if reclassify %}?reclassify{% endif %}">
                             {{ fb_dict.topic.subject }}
                         </a>
                     </td>
@@ -106,7 +106,7 @@
             <tbody>
                 <tr>
                     <td>
-                        <a href="{% url 'ietf.nomcom.views.view_feedback_unrelated' year %}">View feedback not related to nominees</a>
+                        <a href="{% url 'ietf.nomcom.views.view_feedback_unrelated' year %}{% if reclassify %}?reclassify{% endif %}">View feedback not related to nominees</a>
                     </td>
                     {% for count in independent_feedback %}<td>{{ count }}</td>{% endfor %}
                 </tr>

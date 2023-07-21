@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{# Copyright The IETF Trust 2015-2023, All Rights Reserved #}
 {% load origin %}
 {% load nomcom_tags %}
 {% load ietf_filters %}
@@ -83,6 +83,9 @@
                         </li>
                         <li class="dropdown-item">
                             <a href="{% url "ietf.nomcom.views.private_merge_nominee" year %}">Merge nominee records</a>
+                        </li>
+                        <li class="dropdown-item">
+                            <a href="{% url "ietf.nomcom.views.view_feedback" year %}?reclassify">Reclassify feedback</a>
                         </li>
                     {% endif %}
                     <li role="presentation" class="dropdown-header">NomCom configuration</li>

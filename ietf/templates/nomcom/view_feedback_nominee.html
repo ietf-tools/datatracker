@@ -1,5 +1,5 @@
 {% extends "nomcom/nomcom_private_base.html" %}
-{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{# Copyright The IETF Trust 2015-2023, All Rights Reserved #}
 {% load origin %}
 {% load nomcom_tags textfilters %}
 {% block subtitle %}- View feedback about {{ nominee.email.person.name }}{% endblock %}
@@ -22,9 +22,24 @@
         {% for ft in feedback_types %}
             <div role="tabpanel" class="tab-pane {% if forloop.first %} active{% endif %}"
                  id="{{ ft.slug }}">
+                {% if is_chair and nomcom.group.state_id == 'active' and reclassify %}
+                    <form class="form-inline" id="batch-action-form" method="post">
+                    {% csrf_token %}
+                {% endif %}
                 {% for feedback in nominee.feedback_set.all %}
                     {% if feedback.type.slug == ft.slug %}
                         <dl class="row">
+                            {% if is_chair and nomcom.group.state_id == 'active' and reclassify %}
+                            <dt class="col-sm-2">
+                                <input class="batch-select form-check-input"
+                                       type="checkbox"
+                                       value="{{ feedback.id }}"
+                                       id="id-{{ feedback.id }}"
+                                       aria-label="feedback.id"
+                                       name="selected">
+                            </dt>
+                            <dd/>
+                            {% endif %}
                             <dt class="col-sm-2">
                                 {% if feedback.time > last_seen_time %}<span class="badge rounded-pill bg-success">New</span>{% endif %}
                                 From
@@ -85,11 +100,16 @@
                         {% if not forloop.last %}<hr>{% endif %}
                     {% endif %}
                 {% endfor %}
+                {% if is_chair and nomcom.group.state_id == 'active' and reclassify and nominee.feedback_set.all|length > 0 %}
+                    <p><button class="btn btn-warning"  type="submit" title="Run action">
+                        Reclassify
+                    </button></p>
+                {% endif %}
             </div>
         {% endfor %}
     </div>
     <a class="btn btn-secondary"
-       href="{% url 'ietf.nomcom.views.view_feedback' year %}">Back</a>
+       href="{% url 'ietf.nomcom.views.view_feedback' year %}{% if reclassify %}?reclassify{% endif %}">Back</a>
 {% endblock %}
 {% block js %}
     <script>
