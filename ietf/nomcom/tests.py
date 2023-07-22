@@ -2863,3 +2863,85 @@ class VolunteerDecoratorUnitTests(TestCase):
                 self.assertEqual(v.qualifications,'path_2')
             if v.person == author_person:
                 self.assertEqual(v.qualifications,'path_3')
+
+class ReclassifyFeedbackTests(TestCase):
+    """Tests for feedback reclassification"""
+
+    def setUp(self):
+        super().setUp()
+        setup_test_public_keys_dir(self)
+        nomcom_test_data()
+        self.nc = NomComFactory.create(**nomcom_kwargs_for_year())
+        self.chair = self.nc.group.role_set.filter(name='chair').first().person
+        self.nominee = self.nc.nominee_set.order_by('pk').first()
+        self.position = self.nc.position_set.first()
+        self.topic = self.nc.topic_set.first()
+
+    def tearDown(self):
+        teardown_test_public_keys_dir(self)
+        super().tearDown()
+
+    def test_reclassify_feedback_nominee(self):
+        url = reverse('ietf.nomcom.views.view_feedback_nominee', kwargs={'year':self.nc.year(), 'nominee_id':self.nominee.id})
+        login_testing_unauthorized(self,self.chair.user.username,url)
+        provide_private_key_to_test_client(self)
+
+        fb = FeedbackFactory.create(nomcom=self.nc,type_id='comment')
+        fb.positions.add(self.position)
+        fb.nominees.add(self.nominee)
+        fb.save()
+        self.assertEqual(Feedback.objects.comments().count(), 1)
+
+        response = self.client.post(url + '?reclassify', {'selected': []})
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Please select some feedback")
+
+        response = self.client.post(url + '?reclassify', {'selected': [fb.id]})
+        self.assertEqual(response.status_code, 200)
+
+        fb = Feedback.objects.get(id=fb.id)
+        self.assertEqual(fb.type_id,None)
+        self.assertEqual(Feedback.objects.comments().count(), 0)
+        self.assertEqual(Feedback.objects.filter(type=None).count(), 1)
+
+    def test_reclassify_feedback_topic(self):
+        url = reverse('ietf.nomcom.views.view_feedback_topic', kwargs={'year':self.nc.year(), 'topic_id':self.topic.id})
+        login_testing_unauthorized(self,self.chair.user.username,url)
+        provide_private_key_to_test_client(self)
+
+        fb = FeedbackFactory.create(nomcom=self.nc,type_id='comment')
+        fb.topics.add(self.topic)
+        fb.save()
+        self.assertEqual(Feedback.objects.comments().count(), 1)
+
+        response = self.client.post(url + '?reclassify', {'selected': []})
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Please select some feedback")
+
+        response = self.client.post(url + '?reclassify', {'selected': [fb.id]})
+        self.assertEqual(response.status_code, 200)
+
+        fb = Feedback.objects.get(id=fb.id)
+        self.assertEqual(fb.type_id,None)
+        self.assertEqual(Feedback.objects.comments().count(), 0)
+        self.assertEqual(Feedback.objects.filter(type=None).count(), 1)
+
+    def test_reclassify_feedback_unrelated(self):
+        url = reverse('ietf.nomcom.views.view_feedback_unrelated', kwargs={'year':self.nc.year()})
+        login_testing_unauthorized(self,self.chair.user.username,url)
+        provide_private_key_to_test_client(self)
+
+        fb = FeedbackFactory(nomcom=self.nc,type_id='junk')
+        self.assertEqual(Feedback.objects.filter(type='junk').count(), 1)
+
+        response = self.client.post(url + '?reclassify', {'selected': []})
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Please select some feedback")
+
+        response = self.client.post(url + '?reclassify', {'selected': [fb.id]})
+        self.assertEqual(response.status_code, 200)
+
+        fb = Feedback.objects.get(id=fb.id)
+        self.assertEqual(fb.type_id,None)
+        self.assertEqual(Feedback.objects.filter(type='junk').count(), 0)
+        self.assertEqual(Feedback.objects.filter(type=None).count(), 1)
