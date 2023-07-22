@@ -69,11 +69,11 @@ def ajax_select2_search(request, model_name):
 
 
 def profile(request, email_or_name):
-    aliases = Alias.objects.filter(name=email_or_name)
+    aliases = Alias.objects.filter(name__icontains=email_or_name)
     persons = set(a.person for a in aliases)
 
     if '@' in email_or_name:
-        emails = Email.objects.filter(address=email_or_name)
+        emails = Email.objects.filter(address__icontains=email_or_name)
         persons.update(e.person for e in emails)
 
     persons = [p for p in persons if p and p.id]
