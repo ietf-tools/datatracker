@@ -179,7 +179,11 @@ def docs_tracked_by_community_list(clist):
     # in theory, we could use an OR query, but databases seem to have
     # trouble with OR queries and complicated joins so do the OR'ing
     # manually
-    doc_ids = set(clist.added_docs.values_list("pk", flat=True))
+    doc_ids = set()
+    for doc in clist.added_docs.all():
+        doc_ids.add(doc.pk)
+        doc_ids.update(alias.docs.first().pk for alias in doc.related_that_doc("became_rfc"))
+
     for rule in clist.searchrule_set.all():
         doc_ids = doc_ids | set(docs_matching_community_list_rule(rule).values_list("pk", flat=True))
 
