@@ -79,19 +79,18 @@ def manage_list(request, username=None, acronym=None, group_type=None):
         rule_type_form = SearchRuleTypeForm(request.POST)
         if rule_type_form.is_valid():
             rule_type = rule_type_form.cleaned_data['rule_type']
-
-        if rule_type:
-            rule_form = SearchRuleForm(clist, rule_type, request.POST)
-            if rule_form.is_valid():
-                if clist.pk is None:
-                    clist.save()
-
-                rule = rule_form.save(commit=False)
-                rule.community_list = clist
-                rule.rule_type = rule_type
-                rule.save()
-                if rule.rule_type == "name_contains":
-                    reset_name_contains_index_for_rule(rule)
+            if rule_type:
+                rule_form = SearchRuleForm(clist, rule_type, request.POST)
+                if rule_form.is_valid():
+                    if clist.pk is None:
+                        clist.save()
+    
+                    rule = rule_form.save(commit=False)
+                    rule.community_list = clist
+                    rule.rule_type = rule_type
+                    rule.save()
+                    if rule.rule_type == "name_contains":
+                        reset_name_contains_index_for_rule(rule)
 
                 return HttpResponseRedirect("")
     else:
