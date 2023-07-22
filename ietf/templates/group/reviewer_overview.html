@@ -50,13 +50,40 @@
                     <th scope="col" data-sort="next">Next</th>
                     <th scope="col" data-sort="reviewer">Reviewer</th>
                     <th scope="col"></th>
-                    <th scope="col" data-sort="assigned">Assigned</th>
-                    <th scope="col" data-sort="deadline">Deadline</th>
+                    <th scope="col" data-sort="assigned">
+                        <div class="d-none d-lg-block">
+                            Assigned
+                        </div>
+                        <div class="d-lg-none">
+                            <i class="bi bi-calendar-plus"></i>
+                        </div>
+                    </th>
+                    <th scope="col" data-sort="deadline">
+                        <div class="d-none d-lg-block">
+                            Deadline
+                        </div>
+                        <div class="d-lg-none">
+                            <i class="bi bi-alarm"></i>
+                        </div>
+                    </th>
                     <th scope="col" data-sort="state">State</th>
-                    <th scope="col" data-sort="review_time">Days for review</th>
+                    <th scope="col" data-sort="review_time">
+                        <div class="d-none d-lg-block">
+                            Days for review
+                        </div>
+                        <div class="d-lg-none">
+                            <i class="bi bi-stopwatch"></i>
+                        </div>
+                    </th>
                     <th scope="col" data-sort="doc">Document</th>
-                    <th scope="col" data-sort="completed_time">Days since review</th>
-                    <th scope="col" data-sort="settings">Settings</th>
+                    <th scope="col" data-sort="completed_time">
+                        <div class="d-none d-lg-block">
+                            Days since review
+                        </div>
+                        <div class="d-lg-none">
+                            <i class="bi bi-calendar-event"></i>
+                        </div>
+                    </th>
                 </tr>
             </thead>
             <tbody>
@@ -72,19 +99,25 @@
                                     {% person_link person with_email=False %}
                                 </td>
                                 <td {% if person.latest_reqs|length > 1 %} rowspan="{{person.latest_reqs|length}}"{% endif %}>
+                                    <div class="text-nowrap">
                                     {% if person.settings_url %}
                                         <a href="{{ person.settings_url }}" class="btn btn-primary btn-sm"
-                                            title="{{ person.settings.expertise }}">Edit
+                                            title="{{ person.settings.expertise }}">
+                                            <i class="bi bi-pencil"></i>
                                         </a>
                                     {% endif %}
+                                    <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#modal{{next}}">
+                                      <i class="bi bi-search"></i>
+                                    </button>
+                                    </div>
                                 </td>
                             {% endif %}
 
                             <td>
-                                {{ assigned_time|date }}
+                                {{ assigned_time|date|split:"-"|join:"-<wbr>" }}
                             </td>
                             <td>
-                                <a href="{% url 'ietf.doc.views_review.review_request' name=doc_name request_id=req_pk %}">{{ deadline|date }}</a>
+                                <a href="{% url 'ietf.doc.views_review.review_request' name=doc_name request_id=req_pk %}">{{ deadline|date|split:"-"|join:"-<wbr>" }}</a>
                             </td>
                             <td>
                                 <span class="badge rounded-pill bg-{% if state.slug == 'completed' or state.slug == 'part-completed' %}success{% elif state.slug == 'no-response' %}danger{% elif state.slug == 'overtaken' %}warning{% elif state.slug == 'requested' or state.slug == 'accepted' %}primary{% else %}secondary{% endif %}">{{ state.name }}</span>
@@ -99,13 +132,29 @@
                             </td>
 
                             {% if forloop.counter == 1 %}
-                                <td{% if person.latest_reqs|length > 1 %} rowspan="{{person.latest_reqs|length}}"{% endif %}>
+                                <td class="text-end"{% if person.latest_reqs|length > 1 %} rowspan="{{person.latest_reqs|length}}"{% endif %}>
                                     {% if person.days_since_completed_review != 9999 %}
                                         {{ person.days_since_completed_review }}
                                     {% endif %}
                                 </td>
                                 <td{% if person.latest_reqs|length > 1 %} rowspan="{{person.latest_reqs|length}}"{% endif %}>
-                                    {% include "review/unavailable_table.html" with person=person unavailable_periods=person.unavailable_periods %}
+                                    <div class="modal fade" id="modal{{next}}" tabindex="-1" aria-labelledby="modallabel{{next}}" aria-hidden="true">
+                                      <div class="modal-dialog">
+                                        <div class="modal-content">
+                                          <div class="modal-header">
+                                            <h1 class="modal-title fs-5" id="modallabel{{next}}">Reviewer settings</h1>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                          </div>
+                                          <div class="modal-body">
+                                            {% include "review/unavailable_table.html" with person=person unavailable_periods=person.unavailable_periods %}
+                                          </div>
+                                          <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                            <button type="button" class="btn btn-primary">Save changes</button>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </div>
                                 </td>
                             {% endif %}
                             </tr>
@@ -120,9 +169,13 @@
                         <td>
                             {% if person.settings_url %}
                                 <a href="{{ person.settings_url }}" class="btn btn-primary btn-sm"
-                                    title="{{ person.settings.expertise }}">Edit
+                                    title="{{ person.settings.expertise }}">
+                                    <i class="bi bi-pencil"></i>
                                 </a>
                             {% endif %}
+                                    <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#modal{{next}}">
+                                      <i class="bi bi-search"></i>
+                                    </button>
                         </td>
                         <td></td>
                         <td></td>
@@ -135,7 +188,23 @@
                             {% endif %}
                         </td>
                         <td>
-                            {% include "review/unavailable_table.html" with person=person unavailable_periods=person.unavailable_periods %}
+                            <div class="modal fade" id="modal{{next}}" tabindex="-1" aria-labelledby="modallabel{{next}}" aria-hidden="true">
+                              <div class="modal-dialog">
+                                <div class="modal-content">
+                                  <div class="modal-header">
+                                    <h1 class="modal-title fs-5" id="modallabel{{next}}">Reviewer settings</h1>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                  </div>
+                                  <div class="modal-body">
+                                    {% include "review/unavailable_table.html" with person=person unavailable_periods=person.unavailable_periods %}
+                                  </div>
+                                  <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                    <button type="button" class="btn btn-primary">Save changes</button>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
                         </td>
                     </tr>
                     {% endif %}
