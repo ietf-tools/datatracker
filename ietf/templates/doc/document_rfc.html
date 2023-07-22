@@ -72,7 +72,7 @@
                             {% if doc.ad %}
                                 {% person_link doc.ad %}
                             {% else %}
-                                <span class="text-muted">
+                                <span class="text-body-secondary">
                                     (None)
                                 </span>
                             {% endif %}
@@ -95,7 +95,7 @@
                             {% if doc.notify %}
                                 {{ doc.notify|linkify }}
                             {% else %}
-                                <span class="text-muted">
+                                <span class="text-body-secondary">
                                     (None)
                                 </span>
                             {% endif %}
@@ -324,7 +324,7 @@
                             {% if not forloop.last %}<br>{% endif %}
                         {% endfor %}
                     </p>
-                    <p class="text-muted card-text">
+                    <p class="text-body-secondary card-text">
                         (Note: The e-mail addresses provided for the authors of this Internet-Draft may no longer be valid.)
                     </p>
                 </div>

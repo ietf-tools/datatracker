@@ -12,7 +12,7 @@
     <h1>
         Delete IETF {{ meeting.number }} Schedule
         <br>
-        <small class="text-muted">{{ schedule.owner }}/{{ schedule.name }}</small>
+        <small class="text-body-secondary">{{ schedule.owner }}/{{ schedule.name }}</small>
     </h1>
     <form method="post" class="my-3" enctype="multipart/form-data">
         {% csrf_token %}

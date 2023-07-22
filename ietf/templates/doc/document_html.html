@@ -61,7 +61,7 @@
                 title="Show metadata sidebar">
         <i class="bi bi-layout-sidebar-reverse"></i>
         </button>
-        <nav class="navbar navbar-light bg-light px-1 fixed-top d-print-none d-md-none">
+        <nav class="navbar bg-light px-1 fixed-top d-print-none d-md-none">
             <a class="nav-link ps-1"
                href="{% url 'ietf.doc.views_doc.document_main' name=doc.canonical_name %}">
                 {% if not snapshot and doc.get_state_slug == "rfc" %}

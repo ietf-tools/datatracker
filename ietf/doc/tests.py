@@ -2558,6 +2558,7 @@ class ChartTests(ResourceTestCaseMixin, TestCase):
         d = r.json()
         self.assertEqual(len(d), 1)
         self.assertEqual(len(d[0]), 2)
+        self.assertEqual(d[0][1], 1) 
 
         page_url = urlreverse('ietf.person.views.profile', kwargs=dict(email_or_name=person.name))
         r = self.client.get(page_url)

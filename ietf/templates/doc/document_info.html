@@ -22,7 +22,7 @@
                 {% if doc.pub_date %}
                     {% if document_html %}<br>{% else %}({% endif %}{{ doc.pub_date|date:"F Y" }}{% if not document_html %}){% endif %}
                 {% else %}
-                    <span class="text-muted">(Publication date unknown)</span>
+                    <span class="text-body-secondary">(Publication date unknown)</span>
                 {% endif %}
                 {% if document_html %}<br>{% endif %}
                 {% if has_verified_errata or has_errata %}
@@ -126,7 +126,7 @@
         <td>
             {{ doc.time|date:"Y-m-d" }}
             {% if latest_revision and latest_revision.time|date:"Y-m-d" != doc.time|date:"Y-m-d" %}
-                <span class="text-muted">(Latest revision {{ latest_revision.time|date:"Y-m-d" }})</span>
+                <span class="text-body-secondary">(Latest revision {{ latest_revision.time|date:"Y-m-d" }})</span>
             {% endif %}
         </td>
     </tr>
@@ -150,7 +150,7 @@
                             {{ replaces|urlize_related_target_list:document_html|join:", " }}
                         {% endif %}
                     {% else %}
-                        <span class="text-muted">(None)</span>
+                        <span class="text-body-secondary">(None)</span>
                     {% endif %}
                 </td>
             </tr>
@@ -232,7 +232,7 @@
                 </a>
             {% endif %}
         </td>
-        <td {% if doc.stream is None %}class="text-muted"{%endif%}>
+        <td {% if doc.stream is None %}class="text-body-secondary"{%endif%}>
             {% if doc.stream is not None %}
                 {% if doc.stream.name|lower in 'iab,irtf,ise,editorial' %}
                     <a href="{% url 'ietf.group.views.stream_documents' acronym=doc.stream.name|lower %}">
@@ -282,7 +282,7 @@
                 {% if doc.intended_std_level %}
                     {{ doc.intended_std_level }}
                 {% else %}
-                    <span class="text-muted">
+                    <span class="text-body-secondary">
                         (None)
                     </span>
                 {% endif %}

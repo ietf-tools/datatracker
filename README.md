@@ -58,6 +58,8 @@ Click the <kbd>Fork</kbd> button in the top-right corner of the repository to cr
 
 As outlined in the [Contributing](https://github.com/ietf-tools/.github/blob/main/CONTRIBUTING.md) guide, you will first want to create a fork of the datatracker project in your personal GitHub account before cloning it.
 
+Windows developers: [Start with WSL2 from the beginning](https://github.com/ietf-tools/.github/blob/main/docs/windows-dev.md).
+
 Because of the extensive history of this project, cloning the datatracker project locally can take a long time / disk space. You can speed up the cloning process by limiting the history depth, for example *(replace `USERNAME` with your GitHub username)*:
 
 - To fetch only up to the 10 latest commits:

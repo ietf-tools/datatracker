@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2012-2022, All Rights Reserved
+# Copyright The IETF Trust 2012-2023, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -1422,6 +1422,35 @@ class InactiveNomcomTests(TestCase):
         self.assertEqual(response.status_code, 200)
         q = PyQuery(response.content)
         self.assertFalse( q('#templateform') )
+
+class FeedbackIndexTests(TestCase):
+
+    def setUp(self):
+        super().setUp()
+        setup_test_public_keys_dir(self)
+        self.nc = NomComFactory.create(**nomcom_kwargs_for_year())
+        self.author = PersonFactory.create().email_set.first().address
+        self.member = self.nc.group.role_set.filter(name='member').first().person
+        self.nominee = self.nc.nominee_set.order_by('pk').first()
+        self.position = self.nc.position_set.first()
+        for type_id in ['comment','nomina','questio']:
+            f = FeedbackFactory.create(author=self.author,nomcom=self.nc,type_id=type_id)
+            f.positions.add(self.position)
+            f.nominees.add(self.nominee)
+
+    def tearDown(self):
+        teardown_test_public_keys_dir(self)
+        super().tearDown()
+
+    def test_feedback_index_totals(self):
+        url = reverse('ietf.nomcom.views.view_feedback',kwargs={'year':self.nc.year()})
+        login_testing_unauthorized(self, self.member.user.username, url)
+        provide_private_key_to_test_client(self)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code,200)
+        q = PyQuery(response.content)
+        r = q('tfoot').eq(0).find('td').contents()
+        self.assertEqual([a.strip() for a in r], ['1', '1', '1'])
 
 class FeedbackLastSeenTests(TestCase):
 
