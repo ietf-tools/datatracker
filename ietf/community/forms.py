@@ -31,6 +31,8 @@ class SearchRuleForm(forms.ModelForm):
         super(SearchRuleForm, self).__init__(*args, **kwargs)
 
         def restrict_state(state_type, slug=None):
+            if "state" not in self.fields:
+                raise RuntimeError(f"Rule type {rule_type} cannot include state filtering")
             f = self.fields['state']
             f.queryset = f.queryset.filter(used=True).filter(type=state_type)
             if slug:
@@ -40,9 +42,7 @@ class SearchRuleForm(forms.ModelForm):
                 f.widget = forms.HiddenInput()
 
         if rule_type.endswith("_rfc"):
-            self.fields["state"].queryset = State.objects.none()
-            self.fields["state"].initial = None
-            self.fields["state"].widget = forms.HiddenInput()
+            del self.fields["state"]  # rfc rules must not look at document states
 
         if rule_type in ["group", "group_rfc", "area", "area_rfc", "group_exp"]:
             if rule_type == "group_exp":
