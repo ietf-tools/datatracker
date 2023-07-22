@@ -3777,6 +3777,10 @@ def proceedings(request, num=None):
         sessions.filter(group__parent__acronym = 'iab')
         .exclude(current_status='notmeet')
     )
+    editorial, _ = organize_proceedings_sessions(
+        sessions.filter(group__acronym__in=['rsab','rswg'])
+        .exclude(current_status='notmeet')
+    )
 
     ietf = sessions.filter(group__parent__type__slug = 'area').exclude(group__acronym='edu').order_by('group__parent__acronym', 'group__acronym')
     ietf_areas = []
@@ -3796,6 +3800,7 @@ def proceedings(request, num=None):
             'training': training,
             'irtf': irtf,
             'iab': iab,
+            'editorial': editorial,
             'ietf_areas': ietf_areas,
             'cut_off_date': cut_off_date,
             'cor_cut_off_date': cor_cut_off_date,
