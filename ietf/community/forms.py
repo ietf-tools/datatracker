@@ -9,6 +9,7 @@ from django.db.models import Q
 
 from ietf.community.models import SearchRule, EmailSubscription
 from ietf.doc.fields import SearchableDocumentsField
+from ietf.doc.models import State
 from ietf.person.models import Person
 from ietf.person.fields import SearchablePersonField
 
@@ -38,13 +39,16 @@ class SearchRuleForm(forms.ModelForm):
                 f.initial = f.queryset[0].pk
                 f.widget = forms.HiddenInput()
 
+        if rule_type.endswith("_rfc"):
+            self.fields["state"].queryset = State.objects.none()
+            self.fields["state"].initial = None
+            self.fields["state"].widget = forms.HiddenInput()
+
         if rule_type in ["group", "group_rfc", "area", "area_rfc", "group_exp"]:
             if rule_type == "group_exp":
                 restrict_state("draft", "expired")
             else:
-                if rule_type.endswith("rfc"):
-                    restrict_state("rfc", "published")
-                else:
+                if not rule_type.endswith("_rfc"):
                     restrict_state("draft", "active")
             
             if rule_type.startswith("area"):
@@ -73,9 +77,7 @@ class SearchRuleForm(forms.ModelForm):
             del self.fields["text"]
 
         elif rule_type in ["author", "author_rfc", "shepherd", "ad"]:
-            if rule_type.endswith("rfc"):
-                restrict_state("rfc", "published")
-            else:
+            if not rule_type.endswith("_rfc"):
                 restrict_state("draft", "active")
 
             if rule_type.startswith("author"):
@@ -90,9 +92,7 @@ class SearchRuleForm(forms.ModelForm):
             del self.fields["text"]
 
         elif rule_type == "name_contains":
-            if rule_type.endswith("rfc"):
-                restrict_state("rfc", "published")
-            else:
+            if not rule_type.endswith("_rfc"):
                 restrict_state("draft", "active")
 
             del self.fields["person"]
