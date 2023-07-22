@@ -223,7 +223,7 @@ def document_main(request, name, rev=None, document_html=False):
                 break
 
         if not snapshot and document_html is False:
-                return redirect('ietf.doc.views_doc.document_main', name=name)
+            return redirect('ietf.doc.views_doc.document_main', name=name)
 
         if doc.type_id == "charter":
             # find old group, too
