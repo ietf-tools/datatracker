@@ -1704,9 +1704,11 @@ def api_get_session_materials (request, session_id=None):
         })
     else:
         pass  # no action available if it's past cutoff
-
+    
+    agenda = session.agenda() 
+    agenda_url = agenda.get_href() if agenda is not None else None
     return JsonResponse({
-        "url": session.agenda().get_href(),
+        "url": agenda_url,
         "slides": {
             "decks": list(map(agenda_extract_slide, session.slides())),
             "actions": slides_actions,
