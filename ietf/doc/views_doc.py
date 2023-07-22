@@ -218,9 +218,8 @@ def document_main(request, name, rev=None, document_html=False):
                 snapshot = True
                 doc = h
                 break
-
-        if not snapshot and document_html is False:
-            return redirect('ietf.doc.views_doc.document_main', name=name)
+        else:
+            raise Http404()
 
         if doc.type_id == "charter":
             # find old group, too
@@ -1103,6 +1102,8 @@ def document_bibtex(request, name, rev=None):
             if rev == h.rev:
                 doc = h
                 break
+        else:
+            raise Http404()
 
     if doc.is_rfc():
         # This needs to be replaced with a lookup, as the mapping may change

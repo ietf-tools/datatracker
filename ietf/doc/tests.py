@@ -1558,9 +1558,9 @@ Man                    Expires September 22, 2015               [Page 3]
             self.assertEqual(r.status_code, 200)
             self.assertContains(r, "%s-01"%docname)
 
-            # Fetch version number which is too large, that should redirect to main page
+            # Fetch version number which is too large, that should return 404
             r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=doc.name,rev="02")))
-            self.assertEqual(r.status_code, 302)
+            self.assertEqual(r.status_code, 404)
 
             # Fetch 00 version which should result that version
             r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=doc.name,rev="00")))
@@ -2032,6 +2032,11 @@ class DocTestCase(TestCase):
         self.assertEqual(entry['url'],      settings.IDTRACKER_BASE_URL + urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name, rev=draft.rev)))
         #
         self.assertNotIn('doi', entry)
+
+        # check for non-existent revision
+        url = urlreverse('ietf.doc.views_doc.document_bibtex', kwargs=dict(name=draft.name, rev='99'))
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 404)
 
     def test_document_bibxml(self):
         draft = IndividualDraftFactory.create()
