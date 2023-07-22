@@ -99,50 +99,75 @@ def docs_matching_community_list_rule(rule):
 
 
 def community_list_rules_matching_doc(doc):
+    rules = SearchRule.objects.none()
+    if doc.type_id not in ["draft", "rfc"]:
+        return rules  # none
     states = list(doc.states.values_list("pk", flat=True))
 
-    rules = SearchRule.objects.none()
-
+    # group and area rules
     if doc.group_id:
         groups = [doc.group_id]
         if doc.group.parent_id:
             groups.append(doc.group.parent_id)
+        rules_to_add = SearchRule.objects.filter(group__in=groups)
+        if doc.type_id == "rfc":
+            rules_to_add = rules_to_add.filter(rule_type__in=["group_rfc", "area_rfc"])
+        else:
+            rules_to_add = rules_to_add.filter(
+                rule_type__in=["group", "area", "group_exp"],
+                state__in=states,
+            )
+        rules |= rules_to_add
+
+    # state rules (only relevant for I-Ds)
+    if doc.type_id == "draft":
         rules |= SearchRule.objects.filter(
-            rule_type__in=['group', 'area', 'group_rfc', 'area_rfc', 'group_exp'],
+            rule_type__in=[
+                "state_iab",
+                "state_iana",
+                "state_iesg",
+                "state_irtf",
+                "state_ise",
+                "state_rfceditor",
+                "state_ietf",
+            ],
             state__in=states,
-            group__in=groups
         )
 
-    rules |= SearchRule.objects.filter(
-        rule_type__in=['state_iab', 'state_iana', 'state_iesg', 'state_irtf', 'state_ise', 'state_rfceditor', 'state_ietf'],
-        state__in=states,
-    )
-
-    rules |= SearchRule.objects.filter(
-        rule_type__in=["author", "author_rfc"],
-        state__in=states,
-        person__in=list(Person.objects.filter(documentauthor__document=doc)),
-    )
-
-    if doc.ad_id:
+    # author rules
+    if doc.type_id == "rfc":
         rules |= SearchRule.objects.filter(
-            rule_type="ad",
+            rule_type="author_rfc",
+            person__in=list(Person.objects.filter(documentauthor__document=doc)),
+        )
+    else:
+        rules |= SearchRule.objects.filter(
+            rule_type="author",
             state__in=states,
-            person=doc.ad_id,
+            person__in=list(Person.objects.filter(documentauthor__document=doc)),
         )
 
-    if doc.shepherd_id:
-        rules |= SearchRule.objects.filter(
-            rule_type="shepherd",
-            state__in=states,
-            person__email=doc.shepherd_id,
-        )
+    # Other draft-only rules rules
+    if doc.type_id == "draft":
+        if doc.ad_id:
+            rules |= SearchRule.objects.filter(
+                rule_type="ad",
+                state__in=states,
+                person=doc.ad_id,
+            )
 
-    rules |= SearchRule.objects.filter(
-        rule_type="name_contains",
-        state__in=states,
-        name_contains_index=doc, # search our materialized index to avoid full scan
-    )
+        if doc.shepherd_id:
+            rules |= SearchRule.objects.filter(
+                rule_type="shepherd",
+                state__in=states,
+                person__email=doc.shepherd_id,
+            )
+
+        rules |= SearchRule.objects.filter(
+            rule_type="name_contains",
+            state__in=states,
+            name_contains_index=doc,  # search our materialized index to avoid full scan
+        )
 
     return rules
 
