@@ -18,24 +18,27 @@ def forward(apps, schema_editor):
         ):
             cl.added_docs.add(rfc)
 
-    # Handle rules
+    # Handle rules - rules ending with _rfc should no longer filter by state.
+    # There are 9 CommunityLists with invalid author_rfc rules that are filtering
+    # by (draft, active) instead of (draft, rfc) state before migration. All but one
+    # also includes an author rule for (draft, active), so these will start following
+    # RFCs as well. The one exception will start tracking RFCs instead of I-Ds, which
+    # is probably what was intended, but will be a change in their user experience.
     SearchRule = apps.get_model("community", "SearchRule")
-    State = apps.get_model("doc", "State")
-    draft_rfc_state = State.objects.get(type_id="draft", slug="rfc")
-    rfc_published_state = State.objects.get(type_id="rfc", slug="published")
-    SearchRule.objects.filter(state=draft_rfc_state).update(state=rfc_published_state)
-
+    rfc_rules = SearchRule.objects.filter(rule_type__endswith="_rfc")
+    rfc_rules.update(state=None)
 
 def reverse(apps, schema_editor):
     Document = apps.get_model("doc", "Document")
     for rfc in Document.objects.filter(type__slug="rfc"):
         rfc.communitylist_set.clear()
 
+    # See the comment above regarding author_rfc
     SearchRule = apps.get_model("community", "SearchRule")
     State = apps.get_model("doc", "State")
-    draft_rfc_state = State.objects.get(type_id="draft", slug="rfc")
-    rfc_published_state = State.objects.get(type_id="rfc", slug="published")
-    SearchRule.objects.filter(state=rfc_published_state).update(state=draft_rfc_state)
+    SearchRule.objects.filter(rule_type__endswith="_rfc").update(
+        state=State.objects.get(type_id="draft", slug="rfc")
+    )
 
 
 class Migration(migrations.Migration):
@@ -43,5 +46,5 @@ class Migration(migrations.Migration):
         ("community", "0002_auto_20230320_1222"),
         ("doc", "0010_move_rfc_docaliases"),
     ]
-    
+
     operations = [migrations.RunPython(forward, reverse)]
