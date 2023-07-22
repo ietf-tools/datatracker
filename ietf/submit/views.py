@@ -183,6 +183,7 @@ def api_submission_status(request, submission_id):
         {
             'id': str(submission.pk),
             'state': submission.state.slug,
+            'state_desc': submission.state.name,
         }
     )
 
