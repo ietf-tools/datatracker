@@ -261,6 +261,17 @@ class SearchTests(TestCase):
         parsed = urlparse(r["Location"])
         self.assertEqual(parsed.path, urlreverse('ietf.doc.views_search.search'))
         self.assertEqual(parse_qs(parsed.query)["name"][0], "draft-ietf-doesnotexist-42")
+    
+    def test_search_rfc(self):
+        rfc = WgRfcFactory(name="rfc0000")
+        
+        # search for existing RFC should redirect directly to the RFC page
+        r = self.client.get(urlreverse('ietf.doc.views_search.search_for_name', kwargs=dict(name=rfc.name)))
+        self.assertRedirects(r, f'/doc/{rfc.name}/', status_code=302, target_status_code=200)
+
+        # search for existing RFC with revision number should redirect to the RFC page
+        r = self.client.get(urlreverse('ietf.doc.views_search.search_for_name', kwargs=dict(name=rfc.name + "-99")), follow=True)
+        self.assertRedirects(r, f'/doc/{rfc.name}/', status_code=302, target_status_code=200)
 
     def test_frontpage(self):
         r = self.client.get("/")
@@ -1558,9 +1569,9 @@ Man                    Expires September 22, 2015               [Page 3]
             self.assertEqual(r.status_code, 200)
             self.assertContains(r, "%s-01"%docname)
 
-            # Fetch version number which is too large, that should return 404
+            # Fetch version number which is too large, that should redirect to main page
             r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=doc.name,rev="02")))
-            self.assertEqual(r.status_code, 404)
+            self.assertEqual(r.status_code, 302)
 
             # Fetch 00 version which should result that version
             r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=doc.name,rev="00")))
@@ -1617,6 +1628,10 @@ class DocTestCase(TestCase):
         CharterFactory(name='charter-ietf-mars')
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name="charter-ietf-mars")))
         self.assertEqual(r.status_code, 200)
+    
+    def test_incorrect_rfc_url(self):
+        r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name="rfc8989", rev="00")))
+        self.assertEqual(r.status_code, 404)
 
     def test_document_conflict_review(self):
         ConflictReviewFactory(name='conflict-review-imaginary-irtf-submission')

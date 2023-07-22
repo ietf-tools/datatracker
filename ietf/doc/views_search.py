@@ -290,8 +290,8 @@ def search_for_name(request, name):
             redirect_to = find_unique(rev_split.group(1))
             if redirect_to:
                 rev = rev_split.group(2)
-                # check if we can redirect directly to the rev
-                if DocHistory.objects.filter(doc__docalias__name=redirect_to, rev=rev).exists():
+                # check if we can redirect directly to the rev if it's draft, if rfc - always redirect to main page
+                if not redirect_to.startswith('rfc') and DocHistory.objects.filter(doc__docalias__name=redirect_to, rev=rev).exists():
                     return cached_redirect(cache_key, urlreverse("ietf.doc.views_doc.document_main", kwargs={ "name": redirect_to, "rev": rev }))
                 else:
                     return cached_redirect(cache_key, urlreverse("ietf.doc.views_doc.document_main", kwargs={ "name": redirect_to }))

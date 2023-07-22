@@ -191,6 +191,9 @@ def interesting_doc_relations(doc):
     return interesting_relations_that, interesting_relations_that_doc
 
 def document_main(request, name, rev=None, document_html=False):
+    if name.startswith("rfc") and rev is not None:
+        raise Http404()
+
     doc = get_object_or_404(Document.objects.select_related(), docalias__name=name)
 
     # take care of possible redirections
@@ -218,8 +221,9 @@ def document_main(request, name, rev=None, document_html=False):
                 snapshot = True
                 doc = h
                 break
-        else:
-            raise Http404()
+
+        if not snapshot and document_html is False:
+                return redirect('ietf.doc.views_doc.document_main', name=name)
 
         if doc.type_id == "charter":
             # find old group, too
