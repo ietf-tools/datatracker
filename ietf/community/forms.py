@@ -9,7 +9,6 @@ from django.db.models import Q
 
 from ietf.community.models import SearchRule, EmailSubscription
 from ietf.doc.fields import SearchableDocumentsField
-from ietf.doc.models import State
 from ietf.person.models import Person
 from ietf.person.fields import SearchablePersonField
 
