@@ -685,7 +685,7 @@ def last_call(request, name):
     form = LastCallTextForm(initial=dict(last_call_text=escape(last_call_event.text)))
 
     if request.method == 'POST':
-        if "save_last_call_text" in request.POST or "send_last_call_request" in request.POST and status_change.ad is not None:
+        if "save_last_call_text" in request.POST or ("send_last_call_request" in request.POST and status_change.ad is not None):
             form = LastCallTextForm(request.POST)
             if form.is_valid():
                 events = []
