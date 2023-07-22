@@ -79,6 +79,11 @@ def review_assignments_to_list_for_docs(docs):
 
     return extract_revision_ordered_review_assignments_for_documents_and_replaced(assignment_qs, doc_names)
 
+def review_requests_to_list_for_docs(docs):
+    review_requests_qs = ReviewRequest.objects.filter(Q(state_id='requested'))
+    doc_names = [d.name for d in docs]
+    return extract_revision_ordered_review_requests_for_documents_and_replaced(review_requests_qs, doc_names)
+
 def augment_review_requests_with_events(review_reqs):
     req_dict = { r.pk: r for r in review_reqs }
     for e in ReviewRequestDocEvent.objects.filter(review_request__in=review_reqs, type__in=["assigned_review_request", "closed_review_request"]).order_by("time"):

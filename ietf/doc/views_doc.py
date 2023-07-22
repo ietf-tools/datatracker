@@ -79,7 +79,7 @@ from ietf.mailtrigger.utils import gather_relevant_expansions
 from ietf.meeting.models import Session
 from ietf.meeting.utils import group_sessions, get_upcoming_manageable_sessions, sort_sessions, add_event_info_to_session_qs
 from ietf.review.models import ReviewAssignment
-from ietf.review.utils import can_request_review_of_doc, review_assignments_to_list_for_docs
+from ietf.review.utils import can_request_review_of_doc, review_assignments_to_list_for_docs, review_requests_to_list_for_docs
 from ietf.review.utils import no_review_from_teams_on_doc
 from ietf.utils import markup_txt, log, markdown
 from ietf.utils.draft import PlaintextDraft
@@ -498,6 +498,7 @@ def document_main(request, name, rev=None, document_html=False):
         started_iesg_process = doc.latest_event(type="started_iesg_process")
 
         review_assignments = review_assignments_to_list_for_docs([doc]).get(doc.name, [])
+        review_requests = review_requests_to_list_for_docs([doc]).get(doc.name, [])
         no_review_from_teams = no_review_from_teams_on_doc(doc, rev or doc.rev)
 
         exp_comment = doc.latest_event(IanaExpertDocEvent,type="comment")
@@ -613,6 +614,7 @@ def document_main(request, name, rev=None, document_html=False):
                                        actions=actions,
                                        presentations=presentations,
                                        review_assignments=review_assignments,
+                                       review_requests=review_requests,
                                        no_review_from_teams=no_review_from_teams,
                                        due_date=due_date,
                                        diff_revisions=diff_revisions

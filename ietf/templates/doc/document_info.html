@@ -351,6 +351,9 @@ href="{% url 'ietf.doc.views_draft.review_possibly_replaces' name=doc.name %}">E
                 {% for review_assignment in review_assignments %}
                     {% include "doc/review_assignment_summary.html" with current_doc_name=doc.name current_rev=doc.rev %}
                 {% endfor %}
+                {% for review_request in review_requests %}
+                    {% include "doc/review_request_summary.html" with current_doc_name=doc.name current_rev=doc.rev %}
+                {% endfor %}
                 {% if no_review_from_teams %}
                     {% for team in no_review_from_teams %}
                         {{ team.acronym.upper }}{% if not forloop.last %},{% endif %}
