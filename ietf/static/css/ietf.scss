@@ -84,6 +84,23 @@ html {
     scroll-padding-top: 60px;
 }
 
+// Make submenus open on hover.
+@include media-breakpoint-up(lg) {
+    :is(.dropdown-menu, .leftmenu .nav)>li>ul {
+        display: none;
+    }
+
+    :is(.dropdown-menu, .leftmenu .nav)>li:hover>ul {
+        display: block;
+    }
+
+    :is(.dropdown-menu, .leftmenu .nav) .dropdown-menu {
+        top: 0;
+        left: 100%;
+        right: auto;
+    }
+}
+
 // Make textareas in forms use a monospace font
 textarea.form-control {
     font-family: $font-family-code;
