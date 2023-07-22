@@ -851,7 +851,7 @@ def badgeify(blob):
     """
     config = [
         (r"rejected|not ready", "danger", "x-lg"),
-        (r"complete|accepted|ready", "success", ""),  # check-lg"),
+        (r"complete|accepted|ready", "success", ""),
         (r"has nits|almost ready", "info", "info-lg"),
         (r"has issues", "warning", "exclamation-lg"),
         (r"assigned", "info", "person-plus-fill"),
