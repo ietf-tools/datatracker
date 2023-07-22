@@ -41,7 +41,7 @@ class ReviewTests(TestCase):
             r = self.client.get(url)
             self.assertEqual(r.status_code, 200)
             self.assertContains(r, review_req.doc.name)
-            self.assertContains(r, assignment.reviewer.person.name)
+            self.assertContains(r, escape(assignment.reviewer.person.name))
 
         url = urlreverse(ietf.group.views.review_requests, kwargs={ 'acronym': group.acronym })
 
@@ -183,7 +183,7 @@ class ReviewTests(TestCase):
                     urlreverse(ietf.group.views.reviewer_overview, kwargs={ 'acronym': group.acronym, 'group_type': group.type_id })]:
             r = self.client.get(url)
             self.assertEqual(r.status_code, 200)
-            self.assertContains(r, reviewer.name)
+            self.assertContains(r, escape(reviewer.name))
             self.assertContains(r, review_req1.doc.name)
             # without a login, reason for being unavailable should not be seen
             self.assertNotContains(r, "Availability")
