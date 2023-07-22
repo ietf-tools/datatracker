@@ -874,5 +874,4 @@ def badgeify(blob):
                 """
             )
 
-    print(text)
     return text
