@@ -54,11 +54,7 @@
                     {% endif %}
                 </td>
                 <td>
-                    {% if "no-problem" in doc.get_state.name|slugify %}
-                        <span class="text-success">{{ doc.get_state.name}}</span>
-                    {% else %}
-                        {{ doc.get_state.name }}
-                    {% endif %}
+                    {{ doc.get_state.name|badgeify }}
                 </td>
             </tr>
         </tbody>

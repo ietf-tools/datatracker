@@ -842,3 +842,37 @@ def is_valid_url(url):
     except ValidationError:
         return False
     return True
+
+
+@register.filter
+def badgeify(blob):
+    """
+    Add an appropriate bootstrap badge around "text", based on its contents.
+    """
+    config = [
+        (r"rejected|not ready", "danger", "x-lg"),
+        (r"complete|accepted|ready", "success", ""),  # check-lg"),
+        (r"has nits|almost ready", "info", "info-lg"),
+        (r"has issues", "warning", "exclamation-lg"),
+        (r"assigned", "info", "person-plus-fill"),
+        (r"will not review|overtaken by events|withdrawn", "secondary", "dash-lg"),
+    ]
+    text = str(blob)
+
+    for pattern, color, icon in config:
+        if re.search(pattern, text, flags=re.IGNORECASE):
+            # Shorten the badge text
+            text = re.sub(r"with ", "w/", text, flags=re.IGNORECASE)
+            text = re.sub(r"document", "doc", text, flags=re.IGNORECASE)
+            text = re.sub(r"will not", "won't", text, flags=re.IGNORECASE)
+
+            return mark_safe(
+                f"""
+                <span class="badge rounded-pill text-bg-{color}">
+                    <i class="bi bi-{icon}"></i> {text.capitalize()}
+                </span>
+                """
+            )
+
+    print(text)
+    return text
