@@ -20,18 +20,18 @@
     </ul>
     <div class="tab-content">
         {% for ft in feedback_types %}
+            {% if is_chair and nomcom.group.state_id == 'active' and reclassify and ft.feedback|length > 0 %}
+                <form class="form-inline" id="batch-action-form-{{ ft.slug }}" method="post">
+                {% csrf_token %}
+            {% endif %}
             <div role="tabpanel" class="tab-pane {% if forloop.first %} active{% endif %}"
                  id="{{ ft.ft.slug }}">
-                {% if is_chair and nomcom.group.state_id == 'active' and reclassify %}
-                    <form class="form-inline" id="batch-action-form" method="post">
-                    {% csrf_token %}
-                {% endif %}
                 {% for feedback in ft.feedback %}
                     {% if not forloop.first %}
                         <hr>
                     {% endif %}
                     <dl class="row">
-                        {% if is_chair and nomcom.group.state_id == 'active' and reclassify %}
+                        {% if is_chair and nomcom.group.state_id == 'active' and reclassify and ft.feedback|length > 0 %}
                         <dt class="col-sm-2">
                             <input class="batch-select form-check-input"
                                    type="checkbox"
@@ -40,7 +40,7 @@
                                    aria-label="feedback.id"
                                    name="selected">
                         </dt>
-                        <dd/>
+                        <dd></dd>
                         {% endif %}
                         <dt class="col-sm-2">
                             From
@@ -70,12 +70,13 @@
                         </dd>
                     </dl>
                 {% endfor %}
-                {% if is_chair and nomcom.group.state_id == 'active' and reclassify and ft.feedback|length > 0 %}
+            </div>
+            {% if is_chair and nomcom.group.state_id == 'active' and reclassify and ft.feedback|length > 0 %}
                     <p><button class="btn btn-warning"  type="submit" title="Run action">
                         Reclassify
                     </button></p>
-                {% endif %}
-            </div>
+                </form>
+            {% endif %}
         {% endfor %}
     </div>
     <p>
