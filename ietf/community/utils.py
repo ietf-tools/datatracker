@@ -71,24 +71,32 @@ def update_name_contains_indexes_with_new_doc(doc):
         if re.search(r.text, doc.name) and not doc in r.name_contains_index.all():
             r.name_contains_index.add(doc)
 
+
 def docs_matching_community_list_rule(rule):
     docs = Document.objects.all()
+    
+    if rule.rule_type.endswith("_rfc"):
+        docs = docs.filter(type_id="rfc")  # rule.state is ignored for RFCs
+    else:
+        docs = docs.filter(type_id="draft", states=rule.state)
+    
     if rule.rule_type in ['group', 'area', 'group_rfc', 'area_rfc']:
-        return docs.filter(Q(group=rule.group_id) | Q(group__parent=rule.group_id), states=rule.state)
+        return docs.filter(Q(group=rule.group_id) | Q(group__parent=rule.group_id))
     elif rule.rule_type in ['group_exp']:
-        return docs.filter(group=rule.group_id, states=rule.state)
+        return docs.filter(group=rule.group_id)
     elif rule.rule_type.startswith("state_"):
-        return docs.filter(states=rule.state)
+        return docs
     elif rule.rule_type in ["author", "author_rfc"]:
-        return docs.filter(states=rule.state, documentauthor__person=rule.person)
+        return docs.filter(documentauthor__person=rule.person)
     elif rule.rule_type == "ad":
-        return docs.filter(states=rule.state, ad=rule.person)
+        return docs.filter(ad=rule.person)
     elif rule.rule_type == "shepherd":
-        return docs.filter(states=rule.state, shepherd__person=rule.person)
+        return docs.filter(shepherd__person=rule.person)
     elif rule.rule_type == "name_contains":
-        return docs.filter(states=rule.state, searchrule=rule)
+        return docs.filter(searchrule=rule)
 
     raise NotImplementedError
+
 
 def community_list_rules_matching_doc(doc):
     states = list(doc.states.values_list("pk", flat=True))
