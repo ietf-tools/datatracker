@@ -40,7 +40,7 @@ def model_to_timeline_data(model, field='time', **kwargs):
     assert field in [ f.name for f in model._meta.get_fields() ]
 
     objects = ( model.objects.filter(**kwargs)
-                                .annotate(date=TruncDate(field))
+                                .annotate(date=TruncDate(field, tzinfo=datetime.timezone.utc))
                                 .order_by('date')
                                 .values('date')
                                 .annotate(count=Count('id')))
