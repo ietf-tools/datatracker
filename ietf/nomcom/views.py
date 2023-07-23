@@ -190,6 +190,7 @@ def private_index(request, year):
     nomcom = get_nomcom_by_year(year)
     all_nominee_positions = NomineePosition.objects.get_by_nomcom(nomcom).not_duplicated()
     is_chair = nomcom.group.has_role(request.user, "chair")
+    mailto = None
     if is_chair and request.method == 'POST':
         if nomcom.group.state_id != 'active':
             messages.warning(request, "This nomcom is not active. Request administrative assistance if Nominee state needs to change.")
@@ -207,6 +208,8 @@ def private_index(request, year):
                 elif action == "set_as_pending":
                     nominations.update(state='pending')
                     messages.success(request,'The selected nominations have been set as pending')
+                elif action == 'email':
+                    mailto = ','.join([np.nominee.email.email_address() for np in nominations])
             else:
                 messages.warning(request, "Please, select some nominations to work with")
 
@@ -233,7 +236,7 @@ def private_index(request, year):
                 'position__id':p.pk,
                 'position': p,
               } for p in positions]
-    states = list(NomineePositionStateName.objects.values('slug', 'name')) + [{'slug': questionnaire_state, 'name': 'Questionnaire'}]
+    states = [{'slug': questionnaire_state, 'name': 'Accepted and sent Questionnaire'}] + list(NomineePositionStateName.objects.values('slug', 'name'))
     positions = set([ n.position for n in all_nominee_positions.order_by('position__name') ])
     for s in stats:
         for state in states:
@@ -278,6 +281,7 @@ def private_index(request, year):
                                'selected_position': selected_position and int(selected_position) or None,
                                'selected': 'index',
                                'is_chair': is_chair,
+                               'mailto': mailto,
                               })
 
 

@@ -604,17 +604,6 @@ def all_status(request):
                   }
                  )
 
-def group_about_rendertest(request, acronym, group_type=None):
-    group = get_group_or_404(acronym, group_type)
-    charter = None
-    if group.charter:
-        charter = get_charter_text(group)
-    try:
-        rendered = markdown.markdown(charter)
-    except Exception as e:
-        rendered = f'Markdown rendering failed: {e}'
-    return render(request, 'group/group_about_rendertest.html', {'group':group, 'charter':charter, 'rendered':rendered})
-
 def group_about_status(request, acronym, group_type=None):
     group = get_group_or_404(acronym, group_type)
     status_update = group.latest_event(type='status_update')
