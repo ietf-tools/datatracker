@@ -2887,7 +2887,7 @@ def propose_session_slides(request, session_id, num):
             submission.filename = filename
             submission.save()
 
-            (to, cc) = gather_address_lists('slides_proposed', group=session.group).as_strings() 
+            (to, cc) = gather_address_lists('slides_proposed', group=session.group, proposer=request.user.person).as_strings()
             msg_txt = render_to_string("meeting/slides_proposed.txt", {
                     "to": to,
                     "cc": cc,
