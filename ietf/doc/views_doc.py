@@ -191,6 +191,9 @@ def interesting_doc_relations(doc):
     return interesting_relations_that, interesting_relations_that_doc
 
 def document_main(request, name, rev=None, document_html=False):
+    if name.startswith("rfc") and rev is not None:
+        raise Http404()
+
     doc = get_object_or_404(Document.objects.select_related(), docalias__name=name)
 
     # take care of possible redirections
@@ -1080,6 +1083,9 @@ def document_history(request, name):
 
 
 def document_bibtex(request, name, rev=None):
+    if name.startswith('rfc') and rev is not None:
+        raise Http404()
+
     # Make sure URL_REGEXPS did not grab too much for the rev number
     if rev != None and len(rev) != 2:
         mo = re.search(r"^(?P<m>[0-9]{1,2})-(?P<n>[0-9]{2})$", rev)
