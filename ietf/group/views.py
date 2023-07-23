@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright The IETF Trust 2009-2022, All Rights Reserved
+# Copyright The IETF Trust 2009-2023, All Rights Reserved
 #
 # Portion Copyright (C) 2010 Nokia Corporation and/or its subsidiary(-ies).
 # All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com>
@@ -48,7 +48,7 @@ from simple_history.utils import update_change_reason
 from django import forms
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
-from django.db.models import Q, Count
+from django.db.models import Q, Count, OuterRef, Subquery
 from django.http import HttpResponse, HttpResponseRedirect, Http404, JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.template.loader import render_to_string
@@ -61,7 +61,7 @@ import debug                            # pyflakes:ignore
 
 from ietf.community.models import CommunityList, EmailSubscription
 from ietf.community.utils import docs_tracked_by_community_list
-from ietf.doc.models import DocTagName, State, DocAlias, RelatedDocument, Document
+from ietf.doc.models import DocTagName, State, DocAlias, RelatedDocument, Document, DocEvent
 from ietf.doc.templatetags.ietf_filters import clean_whitespace
 from ietf.doc.utils import get_chartering_type, get_tags_for_stream_id
 from ietf.doc.utils_charter import charter_name_for_group, replace_charter_of_replaced_group
@@ -2082,7 +2082,32 @@ def reset_next_reviewer(request, acronym, group_type=None):
 
     return render(request, 'group/reset_next_reviewer.html', { 'group':group, 'form': form,})
 
-
+def statements(request, acronym, group_type=None):
+    if not acronym in ["iab", "iesg"]:
+        raise Http404
+    group = get_group_or_404(acronym, group_type)
+    statements = group.document_set.filter(type_id="statement").annotate(
+        published=Subquery(
+            DocEvent.objects.filter(
+                doc=OuterRef("pk"),
+                type="published_statement"
+            ).order_by("-time").values("time")[:1]
+        )
+    ).order_by("-published")
+    return render(
+        request,
+        "group/statements.html",
+        construct_group_menu_context(
+            request,
+            group,
+            "statements",
+            group_type,
+            {
+                "group": group,
+                "statements": statements,
+            },
+        ),
+    )
 
 
 
