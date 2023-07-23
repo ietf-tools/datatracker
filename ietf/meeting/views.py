@@ -275,16 +275,11 @@ def materials_document(request, document, num=None, ext=None):
         file_ext = os.path.splitext(filename)
         if len(file_ext) == 2 and file_ext[1] == '.md' and mtype == 'text/plain':
             sorted_accept = sort_accept_tuple(request.META.get('HTTP_ACCEPT'))
-            for atype in sorted_accept:
-                if atype[0] == 'text/markdown':
-                    content_type = content_type.replace('plain', 'markdown', 1)
-                    break;
-                elif atype[0] == 'text/html':
-                    bytes = "<html>\n<head><base target=\"_blank\" /></head>\n<body>\n%s\n</body>\n</html>\n" % markdown.markdown(bytes.decode(encoding=chset))
-                    content_type = content_type.replace('plain', 'html', 1)
-                    break;
-                elif atype[0] == 'text/plain':
-                    break;
+            accept_keys = {x[0] for x in sorted_accept}
+
+            # for .md documents - return `text/markdown` unless explicitly asked for another format
+            if 'text/markdown' in accept_keys or '*/*' in accept_keys:
+                content_type = content_type.replace('plain', 'markdown', 1)
 
         response = HttpResponse(bytes, content_type=content_type)
         response['Content-Disposition'] = 'inline; filename="%s"' % basename
