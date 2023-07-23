@@ -2008,6 +2008,12 @@ class DocTestCase(TestCase):
         #
         self.assertNotIn('day', entry)
 
+        # test for incorrect case - revision for RFC
+        rfc = WgRfcFactory(name="rfc0000")
+        url = urlreverse('ietf.doc.views_doc.document_bibtex', kwargs=dict(name=rfc.name, rev='00'))
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 404)
+
         april1 = IndividualRfcFactory.create(
                   stream_id =       'ise',
                   states =          [('draft','rfc'),('draft-iesg','pub')],
@@ -2047,11 +2053,6 @@ class DocTestCase(TestCase):
         self.assertEqual(entry['url'],      settings.IDTRACKER_BASE_URL + urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name, rev=draft.rev)))
         #
         self.assertNotIn('doi', entry)
-
-        # check for non-existent revision
-        url = urlreverse('ietf.doc.views_doc.document_bibtex', kwargs=dict(name=draft.name, rev='99'))
-        r = self.client.get(url)
-        self.assertEqual(r.status_code, 404)
 
     def test_document_bibxml(self):
         draft = IndividualDraftFactory.create()

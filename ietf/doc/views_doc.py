@@ -1083,6 +1083,9 @@ def document_history(request, name):
 
 
 def document_bibtex(request, name, rev=None):
+    if name.startswith('rfc') and rev is not None:
+        raise Http404()
+
     # Make sure URL_REGEXPS did not grab too much for the rev number
     if rev != None and len(rev) != 2:
         mo = re.search(r"^(?P<m>[0-9]{1,2})-(?P<n>[0-9]{2})$", rev)
@@ -1106,8 +1109,6 @@ def document_bibtex(request, name, rev=None):
             if rev == h.rev:
                 doc = h
                 break
-        else:
-            raise Http404()
 
     if doc.is_rfc():
         # This needs to be replaced with a lookup, as the mapping may change
