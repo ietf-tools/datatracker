@@ -16,7 +16,7 @@ def reverse(apps, schema_editor):
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("doc", "0005_relate_no_aliases"),
+        ("doc", "0011_relate_no_aliases"),
     ]
 
     operations = [
