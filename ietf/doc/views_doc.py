@@ -1113,7 +1113,7 @@ def document_bibtex(request, name, rev=None):
         doi = None
 
     if doc.is_dochistory():
-        latest_event = doc.latest_event(type='new_revision')
+        latest_event = doc.latest_event(type='new_revision', rev=rev)
         if latest_event:
             doc.pub_date = latest_event.time
 
