@@ -1118,6 +1118,11 @@ def document_bibtex(request, name, rev=None):
     else:
         doi = None
 
+    if doc.is_dochistory():
+        latest_event = doc.latest_event(type='new_revision', rev=rev)
+        if latest_event:
+            doc.pub_date = latest_event.time
+
     return render(request, "doc/document_bibtex.bib",
                               dict(doc=doc,
                                    replaced_by=replaced_by,
