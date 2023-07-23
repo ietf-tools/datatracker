@@ -6333,7 +6333,6 @@ class MaterialsTests(TestCase):
             self.assertEqual(session.slidesubmission_set.count(),1)
             self.assertEqual(len(outbox),1)
 
-
             r = self.client.get(session_overview_url)
             self.assertEqual(r.status_code, 200)
             q = PyQuery(r.content)
