@@ -152,7 +152,7 @@ class Person(models.Model):
                 e = self.email_set.order_by("-time").first()
             log.assertion(statement="e is not None", note=f"Person {self.pk} has no Email objects")
             self._cached_email_allowing_unactive = e
-        return self._cached_email_allowin_unactive
+        return self._cached_email_allowing_unactive
     def email_address(self):
         e = self.email()
         if e:
