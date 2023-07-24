@@ -7632,6 +7632,13 @@ class ProceedingsTests(BaseMeetingTestCase):
             'Correct title and link for each ProceedingsMaterial should appear in the correct order'
         )
 
+    def _assertGroupSessions(self, response, meeting):
+        """Checks that group/sessions are present"""
+        pq = PyQuery(response.content)
+        sections = ["plenaries", "gen", "iab", "editorial", "irtf", "training"]
+        for section in sections:
+            self.assertEqual(len(pq(f"#{section}")), 1, f"{section} section should exists in proceedings")
+
     def test_proceedings(self):
         """Proceedings should be displayed correctly
 
@@ -7644,6 +7651,20 @@ class ProceedingsTests(BaseMeetingTestCase):
         GroupEventFactory(group=session.group,type='status_update')
         SessionPresentationFactory(document__type_id='recording',session=session)
         SessionPresentationFactory(document__type_id='recording',session=session,document__title="Audio recording for tests")
+
+        # Add various group sessions
+        groups = []
+        parent_groups = [
+                GroupFactory.create(type_id="area", acronym="gen"),
+                GroupFactory.create(acronym="iab"),
+                GroupFactory.create(acronym="irtf"),
+                ]
+        for parent in parent_groups:
+            groups.append(GroupFactory.create(parent=parent))
+        for acronym in ["rsab", "edu"]:
+            groups.append(GroupFactory.create(acronym=acronym))
+        for group in groups:
+            SessionFactory(meeting=meeting, group=group)
 
         self.write_materials_files(meeting, session)
         self._create_proceedings_materials(meeting)
@@ -7691,6 +7712,7 @@ class ProceedingsTests(BaseMeetingTestCase):
         # configurable contents
         self._assertMeetingHostsDisplayed(r, meeting)
         self._assertProceedingsMaterialsDisplayed(r, meeting)
+        self._assertGroupSessions(r, meeting)
 
     def test_named_session(self):
         """Session with a name should appear separately in the proceedings"""
