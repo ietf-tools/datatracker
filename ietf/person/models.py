@@ -145,6 +145,14 @@ class Person(models.Model):
                 e = self.email_set.filter(active=True).order_by("-time").first()
             self._cached_email = e
         return self._cached_email
+    def email_allowing_unactive(self):
+        if not hasattr(self, "_cached_email_allowing_unactive"):
+            e = self.email()
+            if not e:
+                e = self.email_set.order_by("-time").first()
+            log.assertion(statement="e is not None", note=f"Person {self.pk} has no Email objects")
+            self._cached_email_allowing_unactive = e
+        return self._cached_email_allowin_unactive
     def email_address(self):
         e = self.email()
         if e:
