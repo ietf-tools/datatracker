@@ -1,5 +1,5 @@
 {% extends "nomcom/nomcom_private_base.html" %}
-{# Copyright The IETF Trust 2017-2023, All Rights Reserved #}
+{# Copyright The IETF Trust 2017, All Rights Reserved #}
 {% load origin %}
 {% load nomcom_tags textfilters %}
 {% block subtitle %}- View feedback about {{ topic.subject }}{% endblock %}
@@ -20,26 +20,11 @@
     </ul>
     <div class="tab-content">
         {% for ft in feedback_types %}
-            {% if is_chair and nomcom.group.state_id == 'active' and reclassify and topic.feedback_set.all|length > 0 %}
-                <form class="form-inline" id="batch-action-form-{{ ft.slug }}" method="post">
-                {% csrf_token %}
-            {% endif %}
             <div role="tabpanel" class="tab-pane {% if forloop.first %} active{% endif %}"
                  id="{{ ft.slug }}">
                 {% for feedback in topic.feedback_set.all %}
                     {% if feedback.type.slug == ft.slug %}
                         <dl class="row">
-                            {% if is_chair and nomcom.group.state_id == 'active' and reclassify and topic.feedback_set.all|length > 0 %}
-                            <dt class="col-sm-2">
-                                <input class="batch-select form-check-input"
-                                       type="checkbox"
-                                       value="{{ feedback.id }}"
-                                       id="id-{{ feedback.id }}"
-                                       aria-label="feedback.id"
-                                       name="selected">
-                            </dt>
-                            <dd></dd>
-                            {% endif %}
                             <dt class="col-sm-2">
                                 {% if feedback.time > last_seen_time %}<span class="badge rounded-pill bg-success">New</span>{% endif %}
                                 From
@@ -64,16 +49,10 @@
                     {% endif %}
                 {% endfor %}
             </div>
-            {% if is_chair and nomcom.group.state_id == 'active' and reclassify and topic.feedback_set.all|length > 0 %}
-                    <p><button class="btn btn-warning"  type="submit" title="Run action">
-                        Reclassify
-                    </button></p>
-                </form>
-            {% endif %}
         {% endfor %}
     </div>
     <a class="btn btn-secondary"
-       href="{% url 'ietf.nomcom.views.view_feedback' year %}{% if reclassify %}?reclassify{% endif %}">Back</a>
+       href="{% url 'ietf.nomcom.views.view_feedback' year %}">Back</a>
 {% endblock %}
 {% block js %}
     <script>

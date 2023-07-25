@@ -1,11 +1,11 @@
 {% extends "nomcom/nomcom_private_base.html" %}
-{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{# Copyright The IETF Trust 2023, All Rights Reserved #}
 {% load origin %}
 {% load nomcom_tags textfilters %}
-{% block subtitle %}- View feedback about {{ nominee.email.person.name }}{% endblock %}
+{% block subtitle %}- Reclassify feedback about {{ nominee.email.person.name }}{% endblock %}
 {% block nomcom_content %}
     {% origin %}
-    <h2>Feedback about {{ nominee }}</h2>
+    <h2>Reclassify feedback about {{ nominee }}</h2>
     <ul class="nav nav-tabs my-3" role="tablist">
         {% for ft in feedback_types %}
             <li class="nav-item">
@@ -81,6 +81,17 @@
                             <dd class="col-sm-10 pasted">
                                 <pre>{% decrypt feedback.comments request year 1 %}</pre>
                             </dd>
+                            <dt class="col-sm-2">
+                                <form id="reclassify-{{ feedback.id }}" method="post">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="feedback_id" value="{{ feedback.id }}">
+                                    <button class="btn btn-warning" type="submit">
+                                        Reclassify
+                                    </button>
+                                </form>
+                            </dt>
+                            <dd>
+                            </dd>
                         </dl>
                         {% if not forloop.last %}<hr>{% endif %}
                     {% endif %}
@@ -89,7 +100,7 @@
         {% endfor %}
     </div>
     <a class="btn btn-secondary"
-       href="{% url 'ietf.nomcom.views.view_feedback' year %}">Back</a>
+       href="{% url 'ietf.nomcom.views.reclassify_feedback' year %}">Back</a>
 {% endblock %}
 {% block js %}
     <script>

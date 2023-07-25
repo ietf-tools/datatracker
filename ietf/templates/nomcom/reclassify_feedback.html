@@ -1,5 +1,5 @@
 {% extends "nomcom/nomcom_private_base.html" %}
-{# Copyright The IETF Trust 2015-2023, All Rights Reserved #}
+{# Copyright The IETF Trust 2023, All Rights Reserved #}
 {% load origin static %}
 {% load nomcom_tags %}
 {% block subtitle %}- View feedback{% endblock %}
@@ -8,7 +8,7 @@
 {% endblock %}
 {% block nomcom_content %}
     {% origin %}
-    <h2 class="mt-3">Feedback related to nominees</h2>
+    <h2 class="mt-3">Reclassify feedback related to nominees</h2>
     {% regroup nominees_feedback by nominee.staterank as stateranked_nominees %}
     {% for staterank in stateranked_nominees %}
         {% if staterank.grouper == 0 %}
@@ -31,17 +31,17 @@
                 {% for fb_dict in staterank.list %}
                     <tr>
                         <td>
-                            <a href="{% url 'ietf.nomcom.views.view_feedback_nominee' year=year nominee_id=fb_dict.nominee.id %}">
+                            <a href="{% url 'ietf.nomcom.views.reclassify_feedback_nominee' year=year nominee_id=fb_dict.nominee.id %}">
                                 {{ fb_dict.nominee.person.first_name }}
                             </a>
                         </td>
                         <td>
-                            <a href="{% url 'ietf.nomcom.views.view_feedback_nominee' year=year nominee_id=fb_dict.nominee.id %}">
+                            <a href="{% url 'ietf.nomcom.views.reclassify_feedback_nominee' year=year nominee_id=fb_dict.nominee.id %}">
                                 {{ fb_dict.nominee.person.last_name }}
                             </a>
                         </td>
                         <td>
-                            <a href="{% url 'ietf.nomcom.views.view_feedback_nominee' year=year nominee_id=fb_dict.nominee.id %}">
+                            <a href="{% url 'ietf.nomcom.views.reclassify_feedback_nominee' year=year nominee_id=fb_dict.nominee.id %}">
                                 {{ fb_dict.nominee.email.address }}
                             </a>
                         </td>
@@ -68,7 +68,7 @@
             </tfoot>
         </table>
     {% endfor %}
-    <h2 class="mt-5" id="topics">Feedback related to topics</h2>
+    <h2 class="mt-5" id="topics">Reclassify feedback related to topics</h2>
     <table class="table table-sm table-striped tablesorter">
         <thead>
             <tr>
@@ -80,7 +80,7 @@
             {% for fb_dict in topics_feedback %}
                 <tr>
                     <td>
-                        <a href="{% url 'ietf.nomcom.views.view_feedback_topic' year=year topic_id=fb_dict.topic.id %}">
+                        <a href="{% url 'ietf.nomcom.views.reclassify_feedback_topic' year=year topic_id=fb_dict.topic.id %}">
                             {{ fb_dict.topic.subject }}
                         </a>
                     </td>
@@ -95,7 +95,7 @@
         </tbody>
     </table>
     {% if independent_feedback_types %}
-        <h2 class="mt-5" id="misc">Feedback not related to Nominees</h2>
+        <h2 class="mt-5" id="misc">Reclassify feedback not related to Nominees</h2>
         <table class="table table-sm table-striped tablesorter">
             <thead>
                 <tr>
@@ -106,7 +106,7 @@
             <tbody>
                 <tr>
                     <td>
-                        <a href="{% url 'ietf.nomcom.views.view_feedback_unrelated' year %}">View feedback not related to nominees</a>
+                        <a href="{% url 'ietf.nomcom.views.reclassify_feedback_unrelated' year %}">View feedback not related to nominees</a>
                     </td>
                     {% for count in independent_feedback %}<td>{{ count }}</td>{% endfor %}
                 </tr>

@@ -1,11 +1,11 @@
 {% extends "nomcom/nomcom_private_base.html" %}
-{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{# Copyright The IETF Trust 2023, All Rights Reserved #}
 {% load origin %}
 {% load nomcom_tags textfilters %}
-{% block subtitle %}- View feedback about {{ nominee.email.person.name }}{% endblock %}
+{% block subtitle %}- Reclassify feedback about {{ topic.subject }}{% endblock %}
 {% block nomcom_content %}
     {% origin %}
-    <h2>Feedback about {{ nominee }}</h2>
+    <h2>Reclassify feedback about {{ topic.subject }}</h2>
     <ul class="nav nav-tabs my-3" role="tablist">
         {% for ft in feedback_types %}
             <li class="nav-item">
@@ -22,7 +22,7 @@
         {% for ft in feedback_types %}
             <div role="tabpanel" class="tab-pane {% if forloop.first %} active{% endif %}"
                  id="{{ ft.slug }}">
-                {% for feedback in nominee.feedback_set.all %}
+                {% for feedback in topic.feedback_set.all %}
                     {% if feedback.type.slug == ft.slug %}
                         <dl class="row">
                             <dt class="col-sm-2">
@@ -31,9 +31,6 @@
                             </dt>
                             <dd class="col-sm-10">
                                 {{ feedback.author|formatted_email|default:"Anonymous"|linkify }}
-                                {% if ft.slug == "nomina" and feedback.nomination_set.first.share_nominator %}
-                                    <span class="badge rounded-pill bg-info">OK to share name with nominee</span>
-                                {% endif %}
                             </dd>
                             <dt class="col-sm-2">
                                 Date
@@ -41,45 +38,22 @@
                             <dd class="col-sm-10">
                                 {{ feedback.time|date:"Y-m-d" }}
                             </dd>
-                            {% if ft.slug == "nomina" %}
-                                {% for fn in feedback.nomination_set.all %}
-                                    {% if fn.candidate_name %}
-                                        <dt class="col-sm-2">
-                                            Nominee
-                                        </dt>
-                                        <dd class="col-sm-10">
-                                            {{ fn.candidate_name }}
-                                        </dd>
-                                    {% endif %}
-                                    {% if fn.candidate_phone %}
-                                        <dt class="col-sm-2">
-                                            Nominee phone
-                                        </dt>
-                                        <dd class="col-sm-10">
-                                            {{ fn.candidate_phone }}
-                                        </dd>
-                                    {% endif %}
-                                {% endfor %}
-                            {% endif %}
-                            <dt class="col-sm-2">
-                                Positions
-                            </dt>
-                            <dd class="col-sm-10">
-                                {{ feedback.positions.all|join:"," }}
-                            </dd>
-                            {% if feedback.subject %}
-                                <dt class="col-sm-2">
-                                    Subject
-                                </dt>
-                                <dd class="col-sm-10">
-                                    {{ feedback.subject }}
-                                </dd>
-                            {% endif %}
                             <dt class="col-sm-2">
                                 Feedback
                             </dt>
                             <dd class="col-sm-10 pasted">
                                 <pre>{% decrypt feedback.comments request year 1 %}</pre>
+                            </dd>
+                            <dt class="col-sm-2">
+                                <form id="reclassify-{{ feedback.id }}" method="post">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="feedback_id" value="{{ feedback.id }}">
+                                    <button class="btn btn-warning" type="submit">
+                                        Reclassify
+                                    </button>
+                                </form>
+                            </dt>
+                            <dd>
                             </dd>
                         </dl>
                         {% if not forloop.last %}<hr>{% endif %}
@@ -89,7 +63,7 @@
         {% endfor %}
     </div>
     <a class="btn btn-secondary"
-       href="{% url 'ietf.nomcom.views.view_feedback' year %}">Back</a>
+       href="{% url 'ietf.nomcom.views.reclassify_feedback' year %}">Back</a>
 {% endblock %}
 {% block js %}
     <script>

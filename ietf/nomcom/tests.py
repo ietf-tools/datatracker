@@ -2882,7 +2882,7 @@ class ReclassifyFeedbackTests(TestCase):
         super().tearDown()
 
     def test_reclassify_feedback_nominee(self):
-        url = reverse('ietf.nomcom.views.view_feedback_nominee', kwargs={'year':self.nc.year(), 'nominee_id':self.nominee.id})
+        url = reverse('ietf.nomcom.views.reclassify_feedback_nominee', kwargs={'year':self.nc.year(), 'nominee_id':self.nominee.id})
         login_testing_unauthorized(self,self.chair.user.username,url)
         provide_private_key_to_test_client(self)
 
@@ -2892,11 +2892,7 @@ class ReclassifyFeedbackTests(TestCase):
         fb.save()
         self.assertEqual(Feedback.objects.comments().count(), 1)
 
-        response = self.client.post(url + '?reclassify', {'selected': []})
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Please select some feedback")
-
-        response = self.client.post(url + '?reclassify', {'selected': [fb.id]})
+        response = self.client.post(url, {'feedback_id': fb.id})
         self.assertEqual(response.status_code, 200)
 
         fb = Feedback.objects.get(id=fb.id)
@@ -2905,7 +2901,7 @@ class ReclassifyFeedbackTests(TestCase):
         self.assertEqual(Feedback.objects.filter(type=None).count(), 1)
 
     def test_reclassify_feedback_topic(self):
-        url = reverse('ietf.nomcom.views.view_feedback_topic', kwargs={'year':self.nc.year(), 'topic_id':self.topic.id})
+        url = reverse('ietf.nomcom.views.reclassify_feedback_topic', kwargs={'year':self.nc.year(), 'topic_id':self.topic.id})
         login_testing_unauthorized(self,self.chair.user.username,url)
         provide_private_key_to_test_client(self)
 
@@ -2914,11 +2910,7 @@ class ReclassifyFeedbackTests(TestCase):
         fb.save()
         self.assertEqual(Feedback.objects.comments().count(), 1)
 
-        response = self.client.post(url + '?reclassify', {'selected': []})
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Please select some feedback")
-
-        response = self.client.post(url + '?reclassify', {'selected': [fb.id]})
+        response = self.client.post(url, {'feedback_id': fb.id})
         self.assertEqual(response.status_code, 200)
 
         fb = Feedback.objects.get(id=fb.id)
@@ -2927,18 +2919,14 @@ class ReclassifyFeedbackTests(TestCase):
         self.assertEqual(Feedback.objects.filter(type=None).count(), 1)
 
     def test_reclassify_feedback_unrelated(self):
-        url = reverse('ietf.nomcom.views.view_feedback_unrelated', kwargs={'year':self.nc.year()})
+        url = reverse('ietf.nomcom.views.reclassify_feedback_unrelated', kwargs={'year':self.nc.year()})
         login_testing_unauthorized(self,self.chair.user.username,url)
         provide_private_key_to_test_client(self)
 
         fb = FeedbackFactory(nomcom=self.nc,type_id='junk')
         self.assertEqual(Feedback.objects.filter(type='junk').count(), 1)
 
-        response = self.client.post(url + '?reclassify', {'selected': []})
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Please select some feedback")
-
-        response = self.client.post(url + '?reclassify', {'selected': [fb.id]})
+        response = self.client.post(url, {'feedback_id': fb.id})
         self.assertEqual(response.status_code, 200)
 
         fb = Feedback.objects.get(id=fb.id)
