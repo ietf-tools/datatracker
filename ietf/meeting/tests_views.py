@@ -648,6 +648,20 @@ class MeetingTests(BaseMeetingTestCase):
             self.assertFalse(row.find("a:contains(\"Bad Slideshow\")"))
 
             # test with no meeting number in url
+            # Add various group sessions
+            groups = []
+            parent_groups = [
+                    GroupFactory.create(type_id="area", acronym="gen"),
+                    GroupFactory.create(acronym="iab"),
+                    GroupFactory.create(acronym="irtf"),
+                    ]
+            for parent in parent_groups:
+                groups.append(GroupFactory.create(parent=parent))
+            for acronym in ["rsab", "edu"]:
+                groups.append(GroupFactory.create(acronym=acronym))
+            for group in groups:
+                SessionFactory(meeting=meeting, group=group)
+            self.write_materials_files(meeting, session)
             url = urlreverse("ietf.meeting.views.materials", kwargs=dict())
             r = self.client.get(url)
             self.assertEqual(r.status_code, 200)
@@ -657,6 +671,10 @@ class MeetingTests(BaseMeetingTestCase):
             self.assertTrue(row.find('a:contains("Minutes")'))
             self.assertTrue(row.find('a:contains("Slideshow")'))
             self.assertFalse(row.find("a:contains(\"Bad Slideshow\")"))
+            # test for different sections
+            sections = ["plenaries", "gen", "iab", "editorial", "irtf", "training"]
+            for section in sections:
+                self.assertEqual(len(q(f"#{section}")), 1, f"{section} section should exists in proceedings")
 
             # test with a loggged-in wg chair
             self.client.login(username="marschairman", password="marschairman+password")
