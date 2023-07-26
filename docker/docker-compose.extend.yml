@@ -11,7 +11,7 @@ services:
             - /workspace/__pycache__
             - /workspace/.vite
             - /workspace/.yarn/unplugged
-            - /Users/lars/Documents/IETF/assets:/assets
+            - app-assets:/assets
     db:
         ports:
             - '5432'
