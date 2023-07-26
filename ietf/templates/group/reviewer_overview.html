@@ -23,7 +23,6 @@
         Status of the reviewers in {{ group.acronym }}, ordered by their
         rotation with the next reviewer in the rotation at the top. Rows with darker backgrounds have the following meaning:
     </p>
-    111
     <div class="reviewer-overview">
         <p class="alert alert-info my-3">
             Has already been assigned a document within the given interval.
@@ -35,7 +34,6 @@
             Is not available to do reviews at this time.
         </p>
     </div>
-    222
     {% if can_reset_next_reviewer %}
         <div>
             <a href="{% url 'ietf.group.views.reset_next_reviewer' acronym=group.acronym %}"
@@ -45,7 +43,6 @@
             </a>
         </div>
     {% endif %}
-    333
     {% if reviewers %}
         <table class="table table-sm table-striped reviewer-overview tablesorter">
             <thead>
