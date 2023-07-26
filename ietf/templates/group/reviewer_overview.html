@@ -76,11 +76,15 @@
                             <div class="text-nowrap">
                                 {% if person.settings_url %}
                                     <a href="{{ person.settings_url }}" class="btn btn-primary btn-sm"
-                                        title="{{ person.settings.expertise }}">
+                                        aria-label="Change settings for {{ person.name }}">
                                         <i class="bi bi-gear"></i>
                                     </a>
                                 {% endif %}
-                                <button type="button" class="btn btn-primary btn-sm d-xl-none" data-bs-toggle="modal" data-bs-target="#modal{{ forloop.counter }}">
+                                <button type="button"
+                                        class="btn btn-primary btn-sm d-xl-none"
+                                        aria-label="View settings for {{ person.name }}"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#modal{{ forloop.counter }}">
                                   <i class="bi bi-search"></i>
                                 </button>
                             </div>
@@ -120,7 +124,7 @@
 
                         <td class="d-none d-xl-table-cell w-25">
                             {% include "review/unavailable_table.html" with person=person unavailable_periods=person.unavailable_periods %}
-                            <div class="modal modal-xl fade"" id="modal{{ forloop.counter }}" tabindex="-1" aria-labelledby="modallabel{{ forloop.counter }}" aria-hidden="true">
+                            <div class="modal modal-xl fade" id="modal{{ forloop.counter }}" tabindex="-1" aria-labelledby="modallabel{{ forloop.counter }}" aria-hidden="true">
                               <div class="modal-dialog">
                                 <div class="modal-content">
                                   <div class="modal-header">
