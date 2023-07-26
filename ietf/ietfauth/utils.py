@@ -223,7 +223,7 @@ def is_bofreq_editor(user, doc):
 def openid_userinfo(claims, user):
     # Populate claims dict.
     person = get_object_or_404(Person, user=user)
-    email = person.email()
+    email = person.email_allowing_inactive()
     if person.photo:
         photo_url = person.cdn_photo_url()
     else:

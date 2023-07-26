@@ -725,6 +725,15 @@ class CustomApiTests(TestCase):
         self.assertEqual(r.status_code, 200)
         jsondata = r.json()
         self.assertEqual(jsondata['success'], True)
+    
+    def test_api_get_session_matherials_no_agenda_meeting_url(self):
+        meeting = MeetingFactory(type_id='ietf')
+        session = SessionFactory(meeting=meeting)
+        url = urlreverse('ietf.meeting.views.api_get_session_materials', kwargs={'session_id': session.pk})
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+
+
 
 class DirectAuthApiTests(TestCase):
 

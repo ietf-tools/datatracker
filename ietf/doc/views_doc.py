@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2009-2022, All Rights Reserved
+# Copyright The IETF Trust 2009-2023, All Rights Reserved
 # -*- coding: utf-8 -*-
 #
 # Parts Copyright (C) 2009-2010 Nokia Corporation and/or its subsidiary(-ies).
@@ -79,7 +79,7 @@ from ietf.mailtrigger.utils import gather_relevant_expansions
 from ietf.meeting.models import Session
 from ietf.meeting.utils import group_sessions, get_upcoming_manageable_sessions, sort_sessions, add_event_info_to_session_qs
 from ietf.review.models import ReviewAssignment
-from ietf.review.utils import can_request_review_of_doc, review_assignments_to_list_for_docs
+from ietf.review.utils import can_request_review_of_doc, review_assignments_to_list_for_docs, review_requests_to_list_for_docs
 from ietf.review.utils import no_review_from_teams_on_doc
 from ietf.utils import markup_txt, log, markdown
 from ietf.utils.draft import PlaintextDraft
@@ -191,6 +191,9 @@ def interesting_doc_relations(doc):
     return interesting_relations_that, interesting_relations_that_doc
 
 def document_main(request, name, rev=None, document_html=False):
+    if name.startswith("rfc") and rev is not None:
+        raise Http404()
+
     doc = get_object_or_404(Document.objects.select_related(), docalias__name=name)
 
     # take care of possible redirections
@@ -498,6 +501,7 @@ def document_main(request, name, rev=None, document_html=False):
         started_iesg_process = doc.latest_event(type="started_iesg_process")
 
         review_assignments = review_assignments_to_list_for_docs([doc]).get(doc.name, [])
+        review_requests = review_requests_to_list_for_docs([doc]).get(doc.name, [])
         no_review_from_teams = no_review_from_teams_on_doc(doc, rev or doc.rev)
 
         exp_comment = doc.latest_event(IanaExpertDocEvent,type="comment")
@@ -613,6 +617,7 @@ def document_main(request, name, rev=None, document_html=False):
                                        actions=actions,
                                        presentations=presentations,
                                        review_assignments=review_assignments,
+                                       review_requests=review_requests,
                                        no_review_from_teams=no_review_from_teams,
                                        due_date=due_date,
                                        diff_revisions=diff_revisions
@@ -842,7 +847,40 @@ def document_main(request, name, rev=None, document_html=False):
             )
         )
 
+    if doc.type_id == "statement":
+        if doc.uploaded_filename:
+            basename = doc.uploaded_filename.split(".")[0] # strip extension
+        else:
+            basename = f"{doc.name}-{doc.rev}"
+        variants = set([match.name.split(".")[1] for match in Path(doc.get_file_path()).glob(f"{basename}.*")])
+        inlineable = any([ext in variants for ext in ["md", "txt"]])
+        if inlineable:
+            content = markdown.markdown(doc.text_or_error())
+        else:
+            content = "No format available to display inline"
+            if "pdf" in variants:
+                pdf_url = urlreverse(
+                    "ietf.doc.views_statement.serve_pdf",
+                    kwargs=dict(name=doc.name, rev=doc.rev),
+                )
+                content += f" - Download [pdf]({pdf_url})"
+            content = markdown.markdown(content)
+        can_manage = has_role(request.user,["Secretariat"]) # Add IAB or IESG as appropriate
+        interesting_relations_that, interesting_relations_that_doc = interesting_doc_relations(doc)
+        published = doc.latest_event(type="published_statement").time
 
+        return render(request, "doc/document_statement.html",
+                                  dict(doc=doc,
+                                       top=top,
+                                       revisions=revisions,
+                                       latest_rev=latest_rev,
+                                       published=published,
+                                       content=content,
+                                       snapshot=snapshot,
+                                       replaces=interesting_relations_that_doc.filter(relationship="replaces"),
+                                       replaced_by=interesting_relations_that.filter(relationship="replaces"),
+                                       can_manage=can_manage,
+                                       ))
 
     raise Http404("Document not found: %s" % (name + ("-%s"%rev if rev else "")))
 
@@ -1080,6 +1118,9 @@ def document_history(request, name):
 
 
 def document_bibtex(request, name, rev=None):
+    if name.startswith('rfc') and rev is not None:
+        raise Http404()
+
     # Make sure URL_REGEXPS did not grab too much for the rev number
     if rev != None and len(rev) != 2:
         mo = re.search(r"^(?P<m>[0-9]{1,2})-(?P<n>[0-9]{2})$", rev)
@@ -1111,6 +1152,11 @@ def document_bibtex(request, name, rev=None):
         doi = "10.17487/RFC%04d" % int(doc.rfc_number())
     else:
         doi = None
+
+    if doc.is_dochistory():
+        latest_event = doc.latest_event(type='new_revision', rev=rev)
+        if latest_event:
+            doc.pub_date = latest_event.time
 
     return render(request, "doc/document_bibtex.bib",
                               dict(doc=doc,
