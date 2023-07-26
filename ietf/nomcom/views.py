@@ -962,6 +962,8 @@ def reclassify_feedback_maybe(request):
         feedback_id = request.POST.get('feedback_id', None)
         feedback = get_object_or_404(Feedback, id=feedback_id)
         feedback.type = None
+        feedback.nominees.clear()
+        feedback.topics.clear()
         feedback.save()
         messages.success(request, 'The selected feedback has been de-classified. Please reclassify it in the Pending emails tab.')
 
