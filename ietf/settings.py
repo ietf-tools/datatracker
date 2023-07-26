@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2007-2022, All Rights Reserved
+# Copyright The IETF Trust 2007-2023, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -802,7 +802,7 @@ NOMCOM_PUBLIC_KEYS_DIR = '/a/www/nomcom/public_keys/'
 NOMCOM_FROM_EMAIL = 'nomcom-chair-{year}@ietf.org'
 OPENSSL_COMMAND = '/usr/bin/openssl'
 DAYS_TO_EXPIRE_NOMINATION_LINK = ''
-NOMINEE_FEEDBACK_TYPES = ['comment', 'questio', 'nomina']
+NOMINEE_FEEDBACK_TYPES = ['comment', 'questio', 'nomina', 'obe']
 
 # SlideSubmission settings
 SLIDE_STAGING_PATH = '/a/www/www6s/staging/'
