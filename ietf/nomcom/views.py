@@ -770,6 +770,11 @@ def process_nomination_status(request, year, nominee_position_id, state, date, h
 @role_required("Nomcom Chair", "Nomcom Advisor")
 @nomcom_private_key_required
 def reclassify_feedback(request, year):
+    referer = request.META.get('HTTP_REFERER', None)
+    if 'nominee' in referer or 'topic' in referer or 'unrelated' in referer:
+        url = referer.replace('view', 'reclassify')
+        return HttpResponseRedirect(url)
+
     return view_or_reclassify_feedback(request, year, reclassify=True)
 
 @role_required("Nomcom")
