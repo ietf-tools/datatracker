@@ -1,6 +1,12 @@
-
-
+{% load origin %}
+{% origin %}
 <table class="m-0 p-0 table table-sm table-borderless">
+    <thead class="d-nones">
+        <tr>
+            <th class="p-0 col-3"></th>
+            <th class="p-0 col"></th>
+        </tr>
+    </thead>
     <tbody>
     {% if person %}
         {% if person.settings.min_interval %}
@@ -18,7 +24,7 @@
         {% if person.settings.filter_re %}
             <tr>
                 <th class="bg-transparent p-0 pe-1" scope="row">Filter:</th>
-                <td class="bg-transparent p-0"><code title="{{ person.settings.filter_re }}">{{ person.settings.filter_re|truncatechars:15 }}</code></td>
+                <td class="bg-transparent p-0"><code title="{{ person.settings.filter_re }}">{{ person.settings.filter_re }}</code></td>
             </tr>
         {% endif %}
     {% endif %}

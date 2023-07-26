@@ -23,8 +23,9 @@
         Status of the reviewers in {{ group.acronym }}, ordered by their
         rotation with the next reviewer in the rotation at the top. Rows with darker backgrounds have the following meaning:
     </p>
+    111
     <div class="reviewer-overview">
-        <p class="alert alert-secondary my-3">
+        <p class="alert alert-info my-3">
             Has already been assigned a document within the given interval.
         </p>
         <p class="alert alert-warning my-3">
@@ -34,6 +35,7 @@
             Is not available to do reviews at this time.
         </p>
     </div>
+    222
     {% if can_reset_next_reviewer %}
         <div>
             <a href="{% url 'ietf.group.views.reset_next_reviewer' acronym=group.acronym %}"
@@ -43,156 +45,86 @@
             </a>
         </div>
     {% endif %}
+    333
     {% if reviewers %}
-        <table class="table table-sm table-borderless reviewer-overview tablesorter">
+        <table class="table table-sm table-striped reviewer-overview tablesorter">
             <thead>
                 <tr>
                     <th scope="col" data-sort="next">Next</th>
                     <th scope="col" data-sort="reviewer">Reviewer</th>
-                    <th scope="col"></th>
-                    <th scope="col" data-sort="assigned">
-                        <div class="d-none d-lg-block">
-                            Assigned
-                        </div>
-                        <div class="d-lg-none">
-                            <i class="bi bi-calendar-plus"></i>
-                        </div>
-                    </th>
-                    <th scope="col" data-sort="deadline">
-                        <div class="d-none d-lg-block">
-                            Deadline
-                        </div>
-                        <div class="d-lg-none">
-                            <i class="bi bi-alarm"></i>
+                    <th scope="col">
+                        <div class="row">
+                            <div class="col-md-2 me-1">Assigned</div>
+                            <div class="col-md-2 me-1 d-none d-lg-block">Deadline</div>
+                            <div class="col-md-2 me-1">State</div>
+                            <div class="col-md-1 me-1 d-none d-lg-block">Days for review</div>
+                            <div class="col">Document</div>
                         </div>
                     </th>
-                    <th scope="col" data-sort="state">State</th>
-                    <th scope="col" data-sort="review_time">
-                        <div class="d-none d-lg-block">
-                            Days for review
-                        </div>
-                        <div class="d-lg-none">
-                            <i class="bi bi-stopwatch"></i>
-                        </div>
-                    </th>
-                    <th scope="col" data-sort="doc">Document</th>
-                    <th scope="col" data-sort="completed_time">
-                        <div class="d-none d-lg-block">
-                            Days since review
-                        </div>
-                        <div class="d-lg-none">
-                            <i class="bi bi-calendar-event"></i>
-                        </div>
-                    </th>
+                    <th scope="col" data-sort="num">Days since review</th>
+                    <th scope="col" class="d-none d-xl-table-cell w-25">Settings</th>
                 </tr>
             </thead>
             <tbody>
                 {% for person in reviewers %}
-                    {% with next=forloop.counter %}
-                    {% if person.latest_reqs %}
-                        {% for assn_pk, req_pk, doc_name, reviewed_rev, assigned_time, deadline, state, assignment_to_closure_days in person.latest_reqs %}
-                            <tr {% if person.completely_unavailable %}class="border-top table-danger" title="Is not available to do reviews at this time." {% elif person.busy %}class="border-top table-secondary" title="Has already been assigned a document within the given interval." {% elif person.settings.skip_next %}class="border-top table-warning" title="Will be skipped the next time at the top of rotation." {% elif forloop.counter == 1 %}class="border-top"{% endif %}>
+                    <tr {% if person.completely_unavailable %}class="table-danger" title="Is not available to do reviews at this time." {% elif person.busy %}class="table-info" title="Has already been assigned a document within the given interval." {% elif person.settings.skip_next %}class="table-warning" title="Will be skipped the next time at the top of rotation." {% endif %}>
+                        <td>{{ forloop.counter }}</td>
 
-                            {% if forloop.counter == 1 %}
-                                <td class="text-end" {% if person.latest_reqs|length > 1 %} rowspan="{{person.latest_reqs|length}}"{% endif %}>{{ next }}</td>
-                                <td {% if person.latest_reqs|length > 1 %} rowspan="{{person.latest_reqs|length}}"{% endif %}>
-                                    {% person_link person with_email=False %}
-                                </td>
-                                <td {% if person.latest_reqs|length > 1 %} rowspan="{{person.latest_reqs|length}}"{% endif %}>
-                                    <div class="text-nowrap">
-                                    {% if person.settings_url %}
-                                        <a href="{{ person.settings_url }}" class="btn btn-primary btn-sm"
-                                            title="{{ person.settings.expertise }}">
-                                            <i class="bi bi-pencil"></i>
-                                        </a>
-                                    {% endif %}
-                                    <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#modal{{next}}">
-                                      <i class="bi bi-search"></i>
-                                    </button>
-                                    </div>
-                                </td>
-                            {% endif %}
-
-                            <td>
-                                {{ assigned_time|date|split:"-"|join:"-<wbr>" }}
-                            </td>
-                            <td>
-                                <a href="{% url 'ietf.doc.views_review.review_request' name=doc_name request_id=req_pk %}">{{ deadline|date|split:"-"|join:"-<wbr>" }}</a>
-                            </td>
-                            <td>
-                                <span class="badge rounded-pill bg-{% if state.slug == 'completed' or state.slug == 'part-completed' %}success{% elif state.slug == 'no-response' %}danger{% elif state.slug == 'overtaken' %}warning{% elif state.slug == 'requested' or state.slug == 'accepted' %}primary{% else %}secondary{% endif %}">{{ state.name }}</span>
-                            </td>
-                            <td class="text-end">
-                                {% if assignment_to_closure_days != None %}
-                                    {{ assignment_to_closure_days }}
-                                {% endif %}
-                            </td>
-                            <td>
-                                {{ doc_name }}{% if reviewed_rev %}-{{ reviewed_rev }}{% endif %}
-                            </td>
-
-                            {% if forloop.counter == 1 %}
-                                <td class="text-end"{% if person.latest_reqs|length > 1 %} rowspan="{{person.latest_reqs|length}}"{% endif %}>
-                                    {% if person.days_since_completed_review != 9999 %}
-                                        {{ person.days_since_completed_review }}
-                                    {% endif %}
-                                </td>
-                                <td{% if person.latest_reqs|length > 1 %} rowspan="{{person.latest_reqs|length}}"{% endif %}>
-                                    <div class="modal fade" id="modal{{next}}" tabindex="-1" aria-labelledby="modallabel{{next}}" aria-hidden="true">
-                                      <div class="modal-dialog">
-                                        <div class="modal-content">
-                                          <div class="modal-header">
-                                            <h1 class="modal-title fs-5" id="modallabel{{next}}">Reviewer settings</h1>
-                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                          </div>
-                                          <div class="modal-body">
-                                            {% include "review/unavailable_table.html" with person=person unavailable_periods=person.unavailable_periods %}
-                                          </div>
-                                          <div class="modal-footer">
-                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                                            <button type="button" class="btn btn-primary">Save changes</button>
-                                          </div>
-                                        </div>
-                                      </div>
-                                    </div>
-                                </td>
-                            {% endif %}
-                            </tr>
-                        {% endfor %}
-
-                    {% else %}
-                    <tr {% if person.completely_unavailable %}class="border-top table-danger" title="Is not available to do reviews at this time." {% elif person.busy %}class="border-top table-secondary" title="Has already been assigned a document within the given interval." {% elif person.settings.skip_next %}class="border-top table-warning" title="Will be skipped the next time at the top of rotation." {% elif forloop.counter == 1 %}class="border-top"{% endif %}>
-                        <td class="text-end">{{ next }}</td>
                         <td>
                             {% person_link person with_email=False %}
+
+                            <div class="text-nowrap">
+                                {% if person.settings_url %}
+                                    <a href="{{ person.settings_url }}" class="btn btn-primary btn-sm"
+                                        title="{{ person.settings.expertise }}">
+                                        <i class="bi bi-gear"></i>
+                                    </a>
+                                {% endif %}
+                                <button type="button" class="btn btn-primary btn-sm d-xl-none" data-bs-toggle="modal" data-bs-target="#modal{{ forloop.counter }}">
+                                  <i class="bi bi-search"></i>
+                                </button>
+                            </div>
                         </td>
+
                         <td>
-                            {% if person.settings_url %}
-                                <a href="{{ person.settings_url }}" class="btn btn-primary btn-sm"
-                                    title="{{ person.settings.expertise }}">
-                                    <i class="bi bi-pencil"></i>
-                                </a>
+                            {% if person.latest_reqs %}
+                                {% for assn_pk, req_pk, doc_name, reviewed_rev, assigned_time, deadline, state, assignment_to_closure_days in person.latest_reqs %}
+                                    <div class="row {% if not forloop.last %}border-bottom mb-1 pb-1{% endif %}">
+                                        <div class="col-md-2 me-1">
+                                            {{ assigned_time|date|split:"-"|join:"-<wbr>" }}
+                                        </div>
+                                        <div class="col-md-2 me-1 d-none d-lg-block">
+                                            <a href="{% url 'ietf.doc.views_review.review_request' name=doc_name request_id=req_pk %}">{{ deadline|date|split:"-"|join:"-<wbr>" }}</a>
+                                        </div>
+                                        <div class="col-md-2 me-1">
+                                            <span class="badge rounded-pill bg-{% if state.slug == 'completed' or state.slug == 'part-completed' %}success{% elif state.slug == 'no-response' %}danger{% elif state.slug == 'overtaken' %}warning{% elif state.slug == 'requested' or state.slug == 'accepted' %}primary{% else %}secondary{% endif %} text-wrap">{{ state.name }}</span>
+                                        </div>
+                                        <div class="col-md-1 me-1 text-end d-none d-lg-block">
+                                            {% if assignment_to_closure_days != None %}
+                                                {{ assignment_to_closure_days }}
+                                            {% endif %}
+                                        </div>
+                                        <div class="col">
+                                            {{ doc_name }}{% if reviewed_rev %}-{{ reviewed_rev }}{% endif %}
+                                        </div>
+                                    </div>
+                                {% endfor %}
                             {% endif %}
-                                    <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#modal{{next}}">
-                                      <i class="bi bi-search"></i>
-                                    </button>
                         </td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td>
+
+                        <td class="text-end">
                             {% if person.days_since_completed_review != 9999 %}
                                 {{ person.days_since_completed_review }}
                             {% endif %}
                         </td>
-                        <td>
-                            <div class="modal fade" id="modal{{next}}" tabindex="-1" aria-labelledby="modallabel{{next}}" aria-hidden="true">
+
+                        <td class="d-none d-xl-table-cell w-25">
+                            {% include "review/unavailable_table.html" with person=person unavailable_periods=person.unavailable_periods %}
+                            <div class="modal modal-xl fade"" id="modal{{ forloop.counter }}" tabindex="-1" aria-labelledby="modallabel{{ forloop.counter }}" aria-hidden="true">
                               <div class="modal-dialog">
                                 <div class="modal-content">
                                   <div class="modal-header">
-                                    <h1 class="modal-title fs-5" id="modallabel{{next}}">Reviewer settings</h1>
+                                    <h1 class="modal-title fs-5" id="modallabel{{ forloop.counter }}">Reviewer settings</h1>
                                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                   </div>
                                   <div class="modal-body">
@@ -206,9 +138,8 @@
                               </div>
                             </div>
                         </td>
+
                     </tr>
-                    {% endif %}
-                    {% endwith %}
                 {% endfor %}
             </tbody>
         </table>
