@@ -25,6 +25,7 @@ urlpatterns = [
     url(r'^(?P<year>\d{4})/private/reclassify-feedback/unrelated/$', views.reclassify_feedback_unrelated),
     url(r'^(?P<year>\d{4})/private/reclassify-feedback/nominee/(?P<nominee_id>\d+)$', views.reclassify_feedback_nominee),
     url(r'^(?P<year>\d{4})/private/reclassify-feedback/topic/(?P<topic_id>\d+)$', views.reclassify_feedback_topic),
+    url(r'^(?P<year>\d{4})/private/reclassify-feedback/(?P<feedback_id>\d+)$', views.reclassify_feedback_item),
     url(r'^(?P<year>\d{4})/private/edit/nominee/(?P<nominee_id>\d+)$', views.edit_nominee),
     url(r'^(?P<year>\d{4})/private/merge-nominee/?$', views.private_merge_nominee),
     url(r'^(?P<year>\d{4})/private/merge-person/?$', views.private_merge_person),

@@ -962,20 +962,52 @@ def view_feedback_pending(request, year):
                               })
 
 
-def reclassify_feedback_maybe(request):
+@role_required("Nomcom Chair", "Nomcom Advisor")
+@nomcom_private_key_required
+def reclassify_feedback_item(request, year, feedback_id):
+    nomcom = get_nomcom_by_year(year)
+    feedback = get_object_or_404(Feedback, id=feedback_id)
+
     if request.method == 'POST':
-        feedback_id = request.POST.get('feedback_id', None)
-        feedback = get_object_or_404(Feedback, id=feedback_id)
-        feedback.type = None
-        feedback.nominees.clear()
-        feedback.topics.clear()
+        type = request.POST.get('type')
+        if type == 'unclassified':
+            feedback.type = None
+            feedback.nominees.clear()
+            feedback.topics.clear()
+        else:
+            feedback.type = FeedbackTypeName.objects.get(slug=type)
         feedback.save()
-        messages.success(request, 'The selected feedback has been de-classified. Please reclassify it in the Pending emails tab.')
+        back_url = request.POST.get('back_url')
+        return HttpResponseRedirect(back_url)
+    else:
+        back_url = request.META.get('HTTP_REFERER', None)
+
+    type_dict = OrderedDict()
+    for t in FeedbackTypeName.objects.all().order_by('pk'):
+        rest = t.name
+        slug = rest[0]
+        rest = rest[1:]
+        while slug in type_dict and rest:
+            slug = rest[0]
+            rest = rest[1]
+        type_dict[slug] = t
+    return render(request, 'nomcom/reclassify_feedback_item.html',
+                              {'year': year,
+                               'nomcom': nomcom,
+                               'feedback': feedback,
+                               'type_dict': type_dict,
+                               'types': FeedbackTypeName.objects.all().order_by('pk'),
+                               'back_url': back_url,
+                               'is_chair_task' : True,
+                              })
 
 @role_required("Nomcom Chair", "Nomcom Advisor")
 @nomcom_private_key_required
 def reclassify_feedback_unrelated(request, year):
-    reclassify_feedback_maybe(request)
+    if request.method == 'POST':
+        feedback_id = request.POST.get('feedback_id', None)
+        return HttpResponseRedirect(reverse('ietf.nomcom.views.reclassify_feedback_item',kwargs={'year':year, 'feedback_id': feedback_id}))
+
     return view_or_reclassify_feedback_unrelated(request, year, reclassify=True)
 
 @role_required("Nomcom")
@@ -1002,7 +1034,10 @@ def view_or_reclassify_feedback_unrelated(request, year, reclassify=False):
 @role_required("Nomcom Chair", "Nomcom Advisor")
 @nomcom_private_key_required
 def reclassify_feedback_topic(request, year, topic_id):
-    reclassify_feedback_maybe(request)
+    if request.method == 'POST':
+        feedback_id = request.POST.get('feedback_id', None)
+        return HttpResponseRedirect(reverse('ietf.nomcom.views.reclassify_feedback_item',kwargs={'year':year, 'feedback_id': feedback_id}))
+
     return view_or_reclassify_feedback_topic(request, year, topic_id, reclassify=True)
 
 @role_required("Nomcom")
@@ -1036,7 +1071,10 @@ def view_or_reclassify_feedback_topic(request, year, topic_id, reclassify):
 @role_required("Nomcom Chair", "Nomcom Advisor")
 @nomcom_private_key_required
 def reclassify_feedback_nominee(request, year, nominee_id):
-    reclassify_feedback_maybe(request)
+    if request.method == 'POST':
+        feedback_id = request.POST.get('feedback_id', None)
+        return HttpResponseRedirect(reverse('ietf.nomcom.views.reclassify_feedback_item',kwargs={'year':year, 'feedback_id': feedback_id}))
+
     return view_or_reclassify_feedback_nominee(request, year, nominee_id, reclassify=True)
 
 @role_required("Nomcom")
