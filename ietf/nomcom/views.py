@@ -771,7 +771,7 @@ def process_nomination_status(request, year, nominee_position_id, state, date, h
 @nomcom_private_key_required
 def reclassify_feedback(request, year):
     referer = request.META.get('HTTP_REFERER', None)
-    if 'nominee' in referer or 'topic' in referer or 'unrelated' in referer:
+    if 'view' in referer and ('nominee' in referer or 'topic' in referer or 'unrelated' in referer):
         url = referer.replace('view', 'reclassify')
         return HttpResponseRedirect(url)
 
