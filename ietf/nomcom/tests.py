@@ -2893,12 +2893,15 @@ class ReclassifyFeedbackTests(TestCase):
         self.assertEqual(Feedback.objects.comments().count(), 1)
 
         response = self.client.post(url, {'feedback_id': fb.id})
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 302)
+        response = self.client.post(response.url, {'type': 'obe', 'back_url': url})
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, url)
 
         fb = Feedback.objects.get(id=fb.id)
-        self.assertEqual(fb.type_id,None)
+        self.assertEqual(fb.type_id,'obe')
         self.assertEqual(Feedback.objects.comments().count(), 0)
-        self.assertEqual(Feedback.objects.filter(type=None).count(), 1)
+        self.assertEqual(Feedback.objects.filter(type='obe').count(), 1)
 
     def test_reclassify_feedback_topic(self):
         url = reverse('ietf.nomcom.views.reclassify_feedback_topic', kwargs={'year':self.nc.year(), 'topic_id':self.topic.id})
@@ -2911,7 +2914,10 @@ class ReclassifyFeedbackTests(TestCase):
         self.assertEqual(Feedback.objects.comments().count(), 1)
 
         response = self.client.post(url, {'feedback_id': fb.id})
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 302)
+        response = self.client.post(response.url, {'type': 'unclassified', 'back_url': url})
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, url)
 
         fb = Feedback.objects.get(id=fb.id)
         self.assertEqual(fb.type_id,None)
@@ -2923,13 +2929,16 @@ class ReclassifyFeedbackTests(TestCase):
         login_testing_unauthorized(self,self.chair.user.username,url)
         provide_private_key_to_test_client(self)
 
-        fb = FeedbackFactory(nomcom=self.nc,type_id='junk')
-        self.assertEqual(Feedback.objects.filter(type='junk').count(), 1)
+        fb = FeedbackFactory(nomcom=self.nc, type_id='read')
+        self.assertEqual(Feedback.objects.filter(type='read').count(), 1)
 
         response = self.client.post(url, {'feedback_id': fb.id})
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 302)
+        response = self.client.post(response.url, {'type': 'junk', 'back_url': url})
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, url)
 
         fb = Feedback.objects.get(id=fb.id)
-        self.assertEqual(fb.type_id,None)
-        self.assertEqual(Feedback.objects.filter(type='junk').count(), 0)
-        self.assertEqual(Feedback.objects.filter(type=None).count(), 1)
+        self.assertEqual(fb.type_id, 'junk')
+        self.assertEqual(Feedback.objects.filter(type='read').count(), 0)
+        self.assertEqual(Feedback.objects.filter(type='junk').count(), 1)
