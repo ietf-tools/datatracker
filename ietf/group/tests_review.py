@@ -212,13 +212,13 @@ class ReviewTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         # review team members can see reason for being unavailable
-        self.assertContains(r, "Availability")
+        self.assertContains(r, "Available")
 
         self.client.login(username="secretary", password="secretary+password")
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         # secretariat can see reason for being unavailable
-        self.assertContains(r, "Availability")
+        self.assertContains(r, "Available")
 
         # add one closed review with no response and see it is visible
         review_req2 = ReviewRequestFactory(state_id='completed',team=team)
