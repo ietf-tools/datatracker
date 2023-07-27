@@ -2892,11 +2892,8 @@ class ReclassifyFeedbackTests(TestCase):
         fb.save()
         self.assertEqual(Feedback.objects.comments().count(), 1)
 
-        response = self.client.post(url, {'feedback_id': fb.id})
-        self.assertEqual(response.status_code, 302)
-        response = self.client.post(response.url, {'type': 'obe', 'back_url': url})
-        self.assertEqual(response.status_code, 302)
-        self.assertEqual(response.url, url)
+        response = self.client.post(url, {'feedback_id': fb.id, 'type': 'obe'})
+        self.assertEqual(response.status_code, 200)
 
         fb = Feedback.objects.get(id=fb.id)
         self.assertEqual(fb.type_id,'obe')
@@ -2913,11 +2910,8 @@ class ReclassifyFeedbackTests(TestCase):
         fb.save()
         self.assertEqual(Feedback.objects.comments().count(), 1)
 
-        response = self.client.post(url, {'feedback_id': fb.id})
-        self.assertEqual(response.status_code, 302)
-        response = self.client.post(response.url, {'type': 'unclassified', 'back_url': url})
-        self.assertEqual(response.status_code, 302)
-        self.assertEqual(response.url, url)
+        response = self.client.post(url, {'feedback_id': fb.id, 'type': 'unclassified'})
+        self.assertEqual(response.status_code, 200)
 
         fb = Feedback.objects.get(id=fb.id)
         self.assertEqual(fb.type_id,None)
@@ -2932,11 +2926,8 @@ class ReclassifyFeedbackTests(TestCase):
         fb = FeedbackFactory(nomcom=self.nc, type_id='read')
         self.assertEqual(Feedback.objects.filter(type='read').count(), 1)
 
-        response = self.client.post(url, {'feedback_id': fb.id})
-        self.assertEqual(response.status_code, 302)
-        response = self.client.post(response.url, {'type': 'junk', 'back_url': url})
-        self.assertEqual(response.status_code, 302)
-        self.assertEqual(response.url, url)
+        response = self.client.post(url, {'feedback_id': fb.id, 'type': 'junk'})
+        self.assertEqual(response.status_code, 200)
 
         fb = Feedback.objects.get(id=fb.id)
         self.assertEqual(fb.type_id, 'junk')

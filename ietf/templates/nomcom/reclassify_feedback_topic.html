@@ -4,7 +4,10 @@
 {% load nomcom_tags textfilters %}
 {% block subtitle %}- Reclassify feedback about {{ topic.subject }}{% endblock %}
 {% block nomcom_content %}
-    {% origin %}
+{% origin %}
+{% if feedback %}
+    {% include "nomcom/reclassify_feedback_item.html" %}
+{% else %}
     <h2>Reclassify feedback about {{ topic.subject }}</h2>
     <ul class="nav nav-tabs my-3" role="tablist">
         {% for ft in feedback_types %}
@@ -64,6 +67,7 @@
     </div>
     <a class="btn btn-secondary"
        href="{% url 'ietf.nomcom.views.reclassify_feedback' year %}">Back</a>
+{% endif %}
 {% endblock %}
 {% block js %}
     <script>

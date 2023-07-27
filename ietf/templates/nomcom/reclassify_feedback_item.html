@@ -1,10 +1,5 @@
-{% extends "nomcom/nomcom_private_base.html" %}
 {# Copyright The IETF Trust 2023, All Rights Reserved #}
-{% load origin %}
 {% load nomcom_tags textfilters %}
-{% block subtitle %}- Reclassify feedback item{% endblock %}
-{% block nomcom_content %}
-    {% origin %}
     <h2 class="mt-3">Reclassify feedback item</h2>
     <form method="post">
         {% csrf_token %}
@@ -103,7 +98,6 @@
                 </tr>
             </tbody>
         </table>
-        <input type="hidden" name="back_url" value="{{ back_url }}">
+        <input type="hidden" name="feedback_id" value="{{ feedback.id }}">
         <button class="btn btn-primary" type="submit">Classify</button>
     </form>
-{% endblock %}
