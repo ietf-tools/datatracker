@@ -17,7 +17,7 @@ from django.utils.html import escape
 import debug                            # pyflakes:ignore
 
 from ietf.doc.models import DocEvent, BallotPositionDocEvent, TelechatDocEvent
-from ietf.doc.models import Document, DocAlias, State, RelatedDocument
+from ietf.doc.models import Document, State, RelatedDocument
 from ietf.doc.factories import WgDraftFactory, IndividualDraftFactory, ConflictReviewFactory, BaseDocumentFactory, CharterFactory, WgRfcFactory, IndividualRfcFactory
 from ietf.doc.utils import create_ballot_if_not_open
 from ietf.group.factories import RoleFactory, GroupFactory

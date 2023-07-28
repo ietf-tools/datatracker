@@ -17,7 +17,7 @@ from ietf.group.models import Group, GroupHistory, Role, RoleHistory
 from ietf.iesg.models import TelechatDate
 from ietf.ipr.models import HolderIprDisclosure, IprDocRel, IprDisclosureStateName, IprLicenseTypeName
 from ietf.meeting.models import Meeting, ResourceAssociation
-from ietf.name.models import StreamName, DocRelationshipName, RoomResourceName, ConstraintName
+from ietf.name.models import DocRelationshipName, RoomResourceName, ConstraintName
 from ietf.person.models import Person, Email
 from ietf.group.utils import setup_default_community_list_for_group
 from ietf.review.models import (ReviewRequest, ReviewerSettings, ReviewResultName, ReviewTypeName, ReviewTeamSettings )
