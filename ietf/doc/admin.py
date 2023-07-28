@@ -126,7 +126,7 @@ admin.site.register(DocReminder, DocReminderAdmin)
 class RelatedDocumentAdmin(admin.ModelAdmin):
     list_display = ['source', 'target', 'relationship', ]
     list_filter = ['relationship', ]
-    search_fields = ['source__name', 'target__name', 'target__name', ]
+    search_fields = ['source__name', 'target__name', ]
     raw_id_fields = ['source', 'target', ]
 admin.site.register(RelatedDocument, RelatedDocumentAdmin)
 
