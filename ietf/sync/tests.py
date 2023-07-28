@@ -14,7 +14,7 @@ from django.utils import timezone
 
 import debug                            # pyflakes:ignore
 
-from ietf.doc.factories import WgDraftFactory
+from ietf.doc.factories import WgDraftFactory, RfcFactory
 from ietf.doc.models import Document, DocAlias, DocEvent, DeletedEvent, DocTagName, RelatedDocument, State, StateDocEvent
 from ietf.doc.utils import add_state_change_event
 from ietf.group.factories import GroupFactory
@@ -235,9 +235,7 @@ class RFCSyncTests(TestCase):
         # too, but for testing purposes ...
         doc.action_holders.add(doc.ad)  # not normally set, but add to be sure it's cleared
 
-        updated_doc = Document.objects.create(name="draft-ietf-something")
-        DocAlias.objects.create(name=updated_doc.name).docs.add(updated_doc)
-        DocAlias.objects.create(name="rfc123").docs.add(updated_doc)
+        RfcFactory(rfc_number=123)
 
         today = date_today()
 
@@ -360,7 +358,7 @@ class RFCSyncTests(TestCase):
         self.assertTrue(DocAlias.objects.filter(name="bcp1", docs=doc))
         self.assertTrue(DocAlias.objects.filter(name="fyi1", docs=doc))
         self.assertTrue(DocAlias.objects.filter(name="std1", docs=doc))
-        self.assertTrue(RelatedDocument.objects.filter(source=doc, target__name="rfc123", relationship="updates"))
+        self.assertTrue(RelatedDocument.objects.filter(source=doc, target__name="rfc123", relationship="updates").exists())
         self.assertEqual(doc.title, "A Testing RFC")
         self.assertEqual(doc.abstract, "This is some interesting text.")
         self.assertEqual(doc.get_state_slug(), "rfc")

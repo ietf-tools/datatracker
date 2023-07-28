@@ -12,11 +12,12 @@ from django.utils.encoding import smart_str
 import debug                            # pyflakes:ignore
 
 from ietf.doc.models import Document, DocAlias, State, DocumentAuthor, DocEvent, RelatedDocument, NewRevisionDocEvent
+from ietf.doc.factories import IndividualDraftFactory, ConflictReviewFactory, StatusChangeFactory, WgDraftFactory, WgRfcFactory
 from ietf.group.models import Group, GroupHistory, Role, RoleHistory
 from ietf.iesg.models import TelechatDate
 from ietf.ipr.models import HolderIprDisclosure, IprDocRel, IprDisclosureStateName, IprLicenseTypeName
 from ietf.meeting.models import Meeting, ResourceAssociation
-from ietf.name.models import StreamName, DocRelationshipName, RoomResourceName, ConstraintName
+from ietf.name.models import DocRelationshipName, RoomResourceName, ConstraintName
 from ietf.person.models import Person, Email
 from ietf.group.utils import setup_default_community_list_for_group
 from ietf.review.models import (ReviewRequest, ReviewerSettings, ReviewResultName, ReviewTypeName, ReviewTeamSettings )
@@ -316,7 +317,7 @@ def make_test_data():
     doc_alias = DocAlias.objects.create(name=draft.name)
     doc_alias.docs.add(draft)
 
-    RelatedDocument.objects.create(source=draft, target=old_alias, relationship=DocRelationshipName.objects.get(slug='replaces'))
+    RelatedDocument.objects.create(source=draft, target=old_draft, relationship=DocRelationshipName.objects.get(slug='replaces'))
     old_draft.set_state(State.objects.get(type='draft', slug='repl'))
 
     DocumentAuthor.objects.create(
@@ -391,37 +392,27 @@ def make_test_data():
         )
 
     # an independent submission before review
-    doc = Document.objects.create(name='draft-imaginary-independent-submission',type_id='draft',rev='00',
-        title="Some Independent Notes on Imagination")
-    doc.set_state(State.objects.get(used=True, type="draft", slug="active"))    
-    DocAlias.objects.create(name=doc.name).docs.add(doc)
+    IndividualDraftFactory(title="Some Independent Notes on Imagination")
 
     # an irtf submission mid review
-    doc = Document.objects.create(name='draft-imaginary-irtf-submission', type_id='draft',rev='00',
-        stream=StreamName.objects.get(slug='irtf'), title="The Importance of Research Imagination")
-    docalias = DocAlias.objects.create(name=doc.name)
-    docalias.docs.add(doc)
-    doc.set_state(State.objects.get(type="draft", slug="active"))
-    crdoc = Document.objects.create(name='conflict-review-imaginary-irtf-submission', type_id='conflrev',
-        rev='00', notify="fsm@ietf.org", title="Conflict Review of IRTF Imagination Document")
-    DocAlias.objects.create(name=crdoc.name).docs.add(crdoc)
-    crdoc.set_state(State.objects.get(name='Needs Shepherd', type__slug='conflrev'))
-    crdoc.relateddocument_set.create(target=docalias,relationship_id='conflrev')
+    doc = IndividualDraftFactory(name="draft-imaginary-irtf-submission", stream_id="irtf", title="The Importance of Research Imagination")
+    ConflictReviewFactory(name="conflict-review-imaginary-irtf-submission", review_of=doc, notify="fsm@ietf.org", title="Conflict Review of IRTF Imagination Document")
     
     # A status change mid review
     iesg = Group.objects.get(acronym='iesg')
-    doc = Document.objects.create(name='status-change-imaginary-mid-review',type_id='statchg', rev='00',
-        notify="fsm@ietf.org", group=iesg, title="Status Change Review without Imagination")
-    doc.set_state(State.objects.get(slug='needshep',type__slug='statchg'))
-    docalias = DocAlias.objects.create(name='status-change-imaginary-mid-review')
-    docalias.docs.add(doc)
+    doc = StatusChangeFactory(
+        name='status-change-imaginary-mid-review',
+        notify="fsm@ietf.org", 
+        group=iesg, 
+        title="Status Change Review without Imagination",
+        states= [State.objects.get(type_id="statchg",slug="needshep")]
+    )
 
     # Some things for a status change to affect
     def rfc_for_status_change_test_factory(name,rfc_num,std_level_id):
-        target_rfc = Document.objects.create(name=name, type_id='draft', std_level_id=std_level_id, notify="%s@ietf.org"%name)
-        target_rfc.set_state(State.objects.get(slug='rfc',type__slug='draft'))
-        DocAlias.objects.create(name=name).docs.add(target_rfc)
-        DocAlias.objects.create(name='rfc%d'%rfc_num).docs.add(target_rfc)
+        target_rfc = WgRfcFactory(rfc_number=rfc_num, std_level_id=std_level_id)
+        source_draft = WgDraftFactory(name=name, states=[("draft","rfc")], notify=f"{name}@ietf.org")
+        source_draft.relateddocument_set.create(relationship_id="became_rfc", target=target_rfc)
         return target_rfc
     rfc_for_status_change_test_factory('draft-ietf-random-thing',9999,'ps')
     rfc_for_status_change_test_factory('draft-ietf-random-otherthing',9998,'inf')

@@ -302,7 +302,7 @@ class SubmitTests(BaseSubmitTestCase):
             submission = Submission.objects.get(name=name)
             self.assertEqual(submission.submitter, email.utils.formataddr((submitter_name, submitter_email)))
             self.assertEqual([] if submission.replaces == "" else submission.replaces.split(','),
-                             [ d.name for d in DocAlias.objects.filter(pk__in=replaces) ])
+                             [ d.name for d in Document.objects.filter(pk__in=replaces) ])
             self.assertCountEqual(
                 [str(r) for r in submission.external_resources.all()],
                 [str(r) for r in extresources] if extresources else [],
@@ -369,9 +369,8 @@ class SubmitTests(BaseSubmitTestCase):
 
         # supply submitter info, then draft should be in and ready for approval
         mailbox_before = len(outbox)
-        replaced_alias = draft.docalias.first()
         r = self.supply_extra_metadata(name, status_url, author.ascii, author.email().address.lower(),
-                                       replaces=[str(replaced_alias.pk), str(sug_replaced_alias.pk)])
+                                       replaces=[str(draft.pk), str(sug_replaced_draft.pk)])
 
         self.assertEqual(r.status_code, 302)
         status_url = r["Location"]
@@ -419,7 +418,7 @@ class SubmitTests(BaseSubmitTestCase):
         self.assertEqual(authors[0].person, author)
         self.assertEqual(set(draft.formal_languages.all()), set(FormalLanguageName.objects.filter(slug="json")))
         self.assertEqual(draft.relations_that_doc("replaces").count(), 1)
-        self.assertTrue(draft.relations_that_doc("replaces").first().target, replaced_alias)
+        self.assertTrue(draft.relations_that_doc("replaces").first().target, draft)
         self.assertEqual(draft.relations_that_doc("possibly-replaces").count(), 1)
         self.assertTrue(draft.relations_that_doc("possibly-replaces").first().target, sug_replaced_alias)
         self.assertEqual(len(outbox), mailbox_before + 5)
@@ -1142,7 +1141,7 @@ class SubmitTests(BaseSubmitTestCase):
         self.verify_bibxml_ids_creation(draft)
 
     def test_submit_update_individual(self):
-        IndividualDraftFactory(name='draft-ietf-random-thing', states=[('draft','rfc')], other_aliases=['rfc9999',], pages=5)
+        IndividualDraftFactory(name='draft-ietf-random-thing', states=[('draft','active'),('draft-iesg','approved')], pages=5)
         ad=Person.objects.get(user__username='ad')
         # Group of None here does not reflect real individual submissions
         draft = IndividualDraftFactory(group=None, ad = ad, authors=[ad,], notify='aliens@example.mars', pages=5)
@@ -1152,23 +1151,14 @@ class SubmitTests(BaseSubmitTestCase):
         status_url, author = self.do_submission(name,rev)
         mailbox_before = len(outbox)
 
-        replaced_alias = draft.docalias.first()
-        r = self.supply_extra_metadata(name, status_url, "Submitter Name", "author@example.com", replaces=[str(replaced_alias.pk)])
+        r = self.supply_extra_metadata(name, status_url, "Submitter Name", "author@example.com", replaces=[str(draft.pk)])
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, 'cannot replace itself')
         self._assert_extresources_in_table(r, [])
         self._assert_extresources_form(r, [])
 
-        replaced_alias = DocAlias.objects.get(name='draft-ietf-random-thing')
-        r = self.supply_extra_metadata(name, status_url, "Submitter Name", "author@example.com", replaces=[str(replaced_alias.pk)])
-        self.assertEqual(r.status_code, 200)
-        self.assertContains(r, 'cannot replace an RFC')
-        self._assert_extresources_in_table(r, [])
-        self._assert_extresources_form(r, [])
-
-        replaced_alias.document.set_state(State.objects.get(type='draft-iesg',slug='approved'))
-        replaced_alias.document.set_state(State.objects.get(type='draft',slug='active'))
-        r = self.supply_extra_metadata(name, status_url, "Submitter Name", "author@example.com", replaces=[str(replaced_alias.pk)])
+        replaced = Document.objects.get(name='draft-ietf-random-thing')
+        r = self.supply_extra_metadata(name, status_url, "Submitter Name", "author@example.com", replaces=[str(replaced.pk)])
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, 'approved by the IESG and cannot')
         self._assert_extresources_in_table(r, [])
@@ -1262,7 +1252,7 @@ class SubmitTests(BaseSubmitTestCase):
             status_url,
             "Submitter Name",
             "submitter@example.com",
-            replaces=[str(replaced_draft.docalias.first().pk)],
+            replaces=[str(replaced_draft.pk)],
         )
         
         submission = Submission.objects.get(name=name, rev=rev)
@@ -1412,7 +1402,7 @@ class SubmitTests(BaseSubmitTestCase):
             "edit-pages": "123",
             "submitter-name": "Some Random Test Person",
             "submitter-email": "random@example.com",
-            "replaces": [str(draft.docalias.first().pk)],
+            "replaces": [str(draft.pk)],
             "edit-note": "no comments",
             "authors-0-name": "Person 1",
             "authors-0-email": "person1@example.com",
@@ -1431,7 +1421,7 @@ class SubmitTests(BaseSubmitTestCase):
         self.assertEqual(submission.pages, 123)
         self.assertEqual(submission.note, "no comments")
         self.assertEqual(submission.submitter, "Some Random Test Person <random@example.com>")
-        self.assertEqual(submission.replaces, draft.docalias.first().name)
+        self.assertEqual(submission.replaces, draft.name)
         self.assertEqual(submission.state_id, "manual")
 
         authors = submission.authors
@@ -3100,7 +3090,7 @@ class SubmissionUploadFormTests(BaseSubmitTestCase):
         # can't replace RFC
         rfc = WgRfcFactory()
         draft = WgDraftFactory(states=[("draft", "rfc")])
-        draft.relateddocument_set.create(relationship_id="became_rfc", target=rfc.docalias.first())
+        draft.relateddocument_set.create(relationship_id="became_rfc", target=rfc)
         form = SubmissionAutoUploadForm(
             request_factory.get('/some/url'),
             data={'user': auth.user.username, 'replaces': draft.name},

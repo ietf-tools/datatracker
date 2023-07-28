@@ -2017,10 +2017,10 @@ class ChangeReplacesTests(TestCase):
         
         # Post that says replacea replaces base a
         empty_outbox()
-        RelatedDocument.objects.create(source=self.replacea, target=self.basea.docalias.first(),
+        RelatedDocument.objects.create(source=self.replacea, target=self.basea,
                                        relationship=DocRelationshipName.objects.get(slug="possibly-replaces"))
         self.assertEqual(self.basea.get_state().slug,'active')
-        r = self.client.post(url, dict(replaces=self.basea.docalias.first().pk))
+        r = self.client.post(url, dict(replaces=self.basea.pk))
         self.assertEqual(r.status_code, 302)
         self.assertEqual(RelatedDocument.objects.filter(relationship__slug='replaces',source=self.replacea).count(),1) 
         self.assertEqual(Document.objects.get(name='draft-test-base-a').get_state().slug,'repl')
@@ -2034,7 +2034,7 @@ class ChangeReplacesTests(TestCase):
         # Post that says replaceboth replaces both base a and base b
         url = urlreverse('ietf.doc.views_draft.replaces', kwargs=dict(name=self.replaceboth.name))
         self.assertEqual(self.baseb.get_state().slug,'expired')
-        r = self.client.post(url, dict(replaces=[self.basea.docalias.first().pk, self.baseb.docalias.first().pk]))
+        r = self.client.post(url, dict(replaces=[self.basea.pk, self.baseb.pk]))
         self.assertEqual(r.status_code, 302)
         self.assertEqual(Document.objects.get(name='draft-test-base-a').get_state().slug,'repl')
         self.assertEqual(Document.objects.get(name='draft-test-base-b').get_state().slug,'repl')
@@ -2065,7 +2065,7 @@ class ChangeReplacesTests(TestCase):
 
 
     def test_review_possibly_replaces(self):
-        replaced = self.basea.docalias.first()
+        replaced = self.basea
         RelatedDocument.objects.create(source=self.replacea, target=replaced,
                                        relationship=DocRelationshipName.objects.get(slug="possibly-replaces"))
 
@@ -2093,7 +2093,7 @@ class MoreReplacesTests(TestCase):
             new_doc = IndividualDraftFactory(stream_id=stream)
 
             url = urlreverse('ietf.doc.views_draft.replaces', kwargs=dict(name=new_doc.name))
-            r = self.client.post(url, dict(replaces=old_doc.docalias.first().pk))
+            r = self.client.post(url, dict(replaces=old_doc.pk))
             self.assertEqual(r.status_code,302)
             old_doc = Document.objects.get(name=old_doc.name)
             self.assertEqual(old_doc.get_state_slug('draft'),'repl')

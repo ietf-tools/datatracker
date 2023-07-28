@@ -288,8 +288,8 @@ def urlize_related_target_list(related, document_html=False):
     """Convert a list of RelatedDocuments into list of links using the target document's canonical name"""
     links = []
     for rel in related:
-        name=rel.target.document.canonical_name()
-        title = rel.target.document.title
+        name=rel.target.canonical_name()
+        title = rel.target.title
         url = urlreverse('ietf.doc.views_doc.document_main' if document_html is False else 'ietf.doc.views_doc.document_html', kwargs=dict(name=name))
         name = escape(name)
         title = escape(title)

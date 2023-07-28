@@ -253,7 +253,7 @@ class MiscTests(TestCase):
     def do_fuzzy_find_documents_rfc_test(self, name):
         draft = WgDraftFactory(name=name, create_revisions=(0, 1, 2))
         rfc = WgRfcFactory()
-        draft.relateddocument_set.create(relationship_id="became_rfc", target=rfc.docalias.first())
+        draft.relateddocument_set.create(relationship_id="became_rfc", target=rfc)
         draft, rfc = reload_db_objects(draft, rfc)
 
         # by canonical name
@@ -327,14 +327,14 @@ class RebuildReferenceRelationsTests(TestCase):
         super().setUp()
         self.doc = WgDraftFactory()  # document under test
         # Other documents that should be found by rebuild_reference_relations
-        self.normative, self.informative, self.unknown = WgRfcFactory.create_batch(3)
+        self.normative, self.informative, self.unknown = WgRfcFactory.create_batch(3) # AMHERE - these need to have rfc names.
         for relationship in ['refnorm', 'refinfo', 'refunk', 'refold']:
             self.doc.relateddocument_set.create(
-                target=WgRfcFactory().docalias.first(),
+                target=WgRfcFactory(),
                 relationship_id=relationship,
             )
         self.updated = WgRfcFactory()  # related document that should be left alone
-        self.doc.relateddocument_set.create(target=self.updated.docalias.first(), relationship_id='updates')
+        self.doc.relateddocument_set.create(target=self.updated, relationship_id='updates')
         self.assertCountEqual(self.doc.relateddocument_set.values_list('relationship__slug', flat=True),
                               ['refnorm', 'refinfo', 'refold', 'refunk', 'updates'],
                               'Test conditions set up incorrectly: wrong prior document relationships')
@@ -380,7 +380,7 @@ class RebuildReferenceRelationsTests(TestCase):
         self.assertEqual(
             result,
             {
-                'warnings': ['There were 1 references with no matching DocAlias'],
+                'warnings': ['There were 1 references with no matching Document'],
                 'unfound': ['draft-not-found'],
             }
         )
@@ -391,7 +391,7 @@ class RebuildReferenceRelationsTests(TestCase):
                 (self.normative.canonical_name(), 'refnorm'),
                 (self.informative.canonical_name(), 'refinfo'),
                 (self.unknown.canonical_name(), 'refunk'),
-                (self.updated.docalias.first().name, 'updates'),
+                (self.updated.name, 'updates'),
             ]
         )
 
@@ -411,7 +411,7 @@ class RebuildReferenceRelationsTests(TestCase):
         self.assertEqual(
             result,
             {
-                'warnings': ['There were 1 references with no matching DocAlias'],
+                'warnings': ['There were 1 references with no matching Document'],
                 'unfound': ['draft-not-found'],
             }
         )
@@ -422,7 +422,7 @@ class RebuildReferenceRelationsTests(TestCase):
                 (self.normative.canonical_name(), 'refnorm'),
                 (self.informative.canonical_name(), 'refinfo'),
                 (self.unknown.canonical_name(), 'refunk'),
-                (self.updated.docalias.first().name, 'updates'),
+                (self.updated.name, 'updates'),
             ]
         )
 
@@ -443,7 +443,7 @@ class RebuildReferenceRelationsTests(TestCase):
         self.assertEqual(
             result,
             {
-                'warnings': ['There were 1 references with no matching DocAlias'],
+                'warnings': ['There were 1 references with no matching Document'],
                 'unfound': ['draft-not-found'],
             }
         )
@@ -454,6 +454,6 @@ class RebuildReferenceRelationsTests(TestCase):
                 (self.normative.canonical_name(), 'refnorm'),
                 (self.informative.canonical_name(), 'refinfo'),
                 (self.unknown.canonical_name(), 'refunk'),
-                (self.updated.docalias.first().name, 'updates'),
+                (self.updated.name, 'updates'),
             ]
         )

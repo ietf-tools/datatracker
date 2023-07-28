@@ -803,8 +803,8 @@ class ApproveBallotTests(TestCase):
                   desc='Last call announcement was changed',
                   text='this is simple last call text.' )
         rfc = IndividualRfcFactory.create(
+                  name = "rfc6666",
                   stream_id='ise',
-                  other_aliases=['rfc6666',],
                   states=[('draft','rfc'),('draft-iesg','pub')],
                   std_level_id='inf', )
 
@@ -821,7 +821,7 @@ class ApproveBallotTests(TestCase):
         self.assertContains(r, "No downward references for")
 
         # Add a downref, the page should ask if it should be added to the registry
-        rel = draft.relateddocument_set.create(target=rfc.docalias.get(name='rfc6666'),relationship_id='refnorm')
+        rel = draft.relateddocument_set.create(target=rfc, relationship_id='refnorm')
         d = [rdoc for rdoc in draft.relateddocument_set.all() if rel.is_approved_downref()]
         original_len = len(d)
         r = self.client.get(url)
@@ -1127,7 +1127,7 @@ class RegenerateLastCallTestCase(TestCase):
                   std_level_id='inf',
               )
 
-        draft.relateddocument_set.create(target=rfc.docalias.get(name='rfc6666'),relationship_id='refnorm')
+        draft.relateddocument_set.create(target=rfc,relationship_id='refnorm')
 
         r = self.client.post(url, dict(regenerate_last_call_text="1"))
         self.assertEqual(r.status_code, 200)
@@ -1137,7 +1137,7 @@ class RegenerateLastCallTestCase(TestCase):
         self.assertTrue("rfc6666" in lc_text)
         self.assertTrue("Independent Submission" in lc_text)
 
-        draft.relateddocument_set.create(target=rfc.docalias.get(name='rfc6666'), relationship_id='downref-approval')
+        draft.relateddocument_set.create(target=rfc, relationship_id='downref-approval')
 
         r = self.client.post(url, dict(regenerate_last_call_text="1"))
         self.assertEqual(r.status_code, 200)

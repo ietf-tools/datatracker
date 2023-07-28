@@ -52,7 +52,7 @@
                     <td class="edit"></td>
                     <td>
                         {% for rel in relation_group.list %}
-                            {{ rel.target.document.canonical_name|upper|urlize_ietf_docs }}{% if not forloop.last %},{% endif %}
+                            {{ rel.target.canonical_name|upper|urlize_ietf_docs }}{% if not forloop.last %},{% endif %}
                         {% endfor %}
                     </td>
                 </tr>

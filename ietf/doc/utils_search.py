@@ -164,12 +164,11 @@ def fill_in_document_table_attributes(docs, have_telechat_date=False):
         )
     )
     for rel in xed_by:
-        d = doc_dict[rel.target.document.id]
-        s = rel_rfc_aliases[rel.source_id]
+        d = doc_dict[rel.target.id]
         if rel.relationship_id == "obs":
-            d.obsoleted_by_list.append(s)
+            d.obsoleted_by_list.append(rel.source)
         elif rel.relationship_id == "updates":
-            d.updated_by_list.append(s)
+            d.updated_by_list.append(rel.source)
 
 def augment_docs_with_related_docs_info(docs):
     """Augment all documents with related documents information.

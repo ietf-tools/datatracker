@@ -83,13 +83,7 @@ class BaseDocumentFactory(factory.django.DjangoModelFactory):
     def relations(obj, create, extracted, **kwargs): # pylint: disable=no-self-argument
         if create and extracted:
             for (rel_id, doc) in extracted:
-                if isinstance(doc, Document):
-                    docalias = doc.docalias.first()
-                elif isinstance(doc, DocAlias):
-                    docalias = doc
-                else:
-                    continue
-                obj.relateddocument_set.create(relationship_id=rel_id, target=docalias)
+                obj.relateddocument_set.create(relationship_id=rel_id, target=doc)
 
     @factory.post_generation
     def create_revisions(obj, create, extracted, **kwargs):  # pylint: disable=no-self-argument
@@ -244,7 +238,7 @@ class StatusChangeFactory(BaseDocumentFactory):
             for (rel, target) in extracted:
                 obj.relateddocument_set.create(relationship_id=rel,target=target)
         else:
-            obj.relateddocument_set.create(relationship_id='tobcp', target=WgRfcFactory().docalias.first())
+            obj.relateddocument_set.create(relationship_id='tobcp', target=WgRfcFactory())
 
     @factory.post_generation
     def states(obj, create, extracted, **kwargs):
@@ -271,9 +265,9 @@ class ConflictReviewFactory(BaseDocumentFactory):
         if not create:
             return
         if extracted:
-            obj.relateddocument_set.create(relationship_id='conflrev',target=extracted.docalias.first())
+            obj.relateddocument_set.create(relationship_id='conflrev',target=extracted)
         else:
-            obj.relateddocument_set.create(relationship_id='conflrev',target=DocumentFactory(name=obj.name.replace('conflict-review-','draft-'),type_id='draft',group=Group.objects.get(type_id='individ')).docalias.first())
+            obj.relateddocument_set.create(relationship_id='conflrev',target=DocumentFactory(name=obj.name.replace('conflict-review-','draft-'),type_id='draft',group=Group.objects.get(type_id='individ')))
 
 
     @factory.post_generation

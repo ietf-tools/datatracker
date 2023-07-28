@@ -453,9 +453,9 @@ class DocumentInfo(models.Model):
         if not isinstance(relationship, tuple):
             raise TypeError("Expected a string or tuple, received %s" % type(relationship))
         if isinstance(self, Document):
-            return RelatedDocument.objects.filter(target__docs=self, relationship__in=relationship).select_related('source')
+            return RelatedDocument.objects.filter(target=self, relationship__in=relationship).select_related('source')
         elif isinstance(self, DocHistory):
-            return RelatedDocHistory.objects.filter(target__docs=self.doc, relationship__in=relationship).select_related('source')
+            return RelatedDocHistory.objects.filter(target=self.doc, relationship__in=relationship).select_related('source')
         else:
             raise TypeError("Expected method called on Document or DocHistory")
 
@@ -489,8 +489,7 @@ class DocumentInfo(models.Model):
         for r in rels:
             if not r in related:
                 related += ( r, )
-                for doc in r.target.docs.all():
-                    related = doc.all_relations_that_doc(relationship, related)
+                related = r.target.all_relations_that_doc(relationship, related)
         return related
 
     def related_that(self, relationship):
@@ -663,7 +662,7 @@ STATUSCHANGE_RELATIONS = ('tops','tois','tohist','toinf','tobcp','toexp')
 
 class RelatedDocument(models.Model):
     source = ForeignKey('Document')
-    target = ForeignKey('DocAlias')
+    target = ForeignKey('Document', related_name='targets_related')
     relationship = ForeignKey(DocRelationshipName)
     def action(self):
         return self.relationship.name
@@ -686,16 +685,16 @@ class RelatedDocument(models.Model):
         if source_lvl not in ['bcp','ps','ds','std']:
             return None
 
-        if self.target.document.type_id == 'rfc':
-            if not self.target.document.std_level:
+        if self.target.type_id == 'rfc':
+            if not self.target.std_level:
                 target_lvl = 'unkn'
             else:
-                target_lvl = self.target.document.std_level.slug
+                target_lvl = self.target.std_level.slug
         else:
-            if not self.target.document.intended_std_level:
+            if not self.target.intended_std_level:
                 target_lvl = 'unkn'
             else:
-                target_lvl = self.target.document.intended_std_level.slug
+                target_lvl = self.target.intended_std_level.slug
 
         rank = { 'ps':1, 'ds':2, 'std':3, 'bcp':3 }
 
@@ -709,7 +708,7 @@ class RelatedDocument(models.Model):
 
     def is_approved_downref(self):
 
-        if self.target.document.type_id == "rfc":
+        if self.target.type_id == 'rfc':
            if RelatedDocument.objects.filter(relationship_id='downref-approval', target=self.target).exists():
               return "Approved Downref"
 
@@ -962,7 +961,15 @@ class Document(DocumentInfo):
         document directly or indirectly obsoletes or replaces
         """
         from ietf.ipr.models import IprDocRel
-        iprs = IprDocRel.objects.filter(document__in=list(self.docalias.all())+self.all_related_that_doc(('obs','replaces'))).filter(disclosure__state__in=('posted','removed')).values_list('disclosure', flat=True).distinct()
+        iprs = (
+            IprDocRel.objects.filter(
+                document__in=list(self.docalias.all())
+                + [x.docalias.first() for x in self.all_related_that_doc(("obs", "replaces"))] # this really is docalias until IprDocRel changes
+            )
+            .filter(disclosure__state__in=("posted", "removed"))
+            .values_list("disclosure", flat=True)
+            .distinct()
+        )
         return iprs
 
     def future_presentations(self):
@@ -1101,7 +1108,7 @@ class DocExtResource(ExtResource):
 
 class RelatedDocHistory(models.Model):
     source = ForeignKey('DocHistory')
-    target = ForeignKey('DocAlias', related_name="reversely_related_document_history_set")
+    target = ForeignKey('Document', related_name="reversely_related_document_history_set")
     relationship = ForeignKey(DocRelationshipName)
     def __str__(self):
         return u"%s %s %s" % (self.source.doc.name, self.relationship.name.lower(), self.target.name)

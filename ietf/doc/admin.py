@@ -43,6 +43,7 @@ class DocActionHolderInline(admin.TabularInline):
 
 class RelatedDocumentInline(admin.TabularInline):
     model = RelatedDocument
+    fk_name= 'source'
     def this(self, instance):
         return instance.source.canonical_name()
     readonly_fields = ['this', ]
@@ -125,7 +126,7 @@ admin.site.register(DocReminder, DocReminderAdmin)
 class RelatedDocumentAdmin(admin.ModelAdmin):
     list_display = ['source', 'target', 'relationship', ]
     list_filter = ['relationship', ]
-    search_fields = ['source__name', 'target__name', 'target__docs__name', ]
+    search_fields = ['source__name', 'target__name', ]
     raw_id_fields = ['source', 'target', ]
 admin.site.register(RelatedDocument, RelatedDocumentAdmin)
 

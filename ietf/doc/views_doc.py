@@ -184,9 +184,8 @@ def interesting_doc_relations(doc):
 
     that_doc_relationships = ('replaces', 'possibly_replaces', 'updates', 'obs', 'became_rfc')
 
-    # TODO: This returns the relationships in database order, which may not be the order we want to display them in.
-    interesting_relations_that = cls.objects.filter(target__docs=target, relationship__in=that_relationships).select_related('source')
-    interesting_relations_that_doc = cls.objects.filter(source=doc, relationship__in=that_doc_relationships).prefetch_related('target__docs')
+    interesting_relations_that = cls.objects.filter(target=target, relationship__in=that_relationships).select_related('source')
+    interesting_relations_that_doc = cls.objects.filter(source=doc, relationship__in=that_doc_relationships).prefetch_related('target')
 
     return interesting_relations_that, interesting_relations_that_doc
 
@@ -806,7 +805,7 @@ def document_main(request, name, rev=None, document_html=False):
         if doc.get_state_slug() in ("iesgeval", ) and doc.active_ballot():
             ballot_summary = needed_ballot_positions(doc, list(doc.active_ballot().active_balloter_positions().values()))
 
-        conflictdoc = doc.related_that_doc('conflrev')[0].document
+        conflictdoc = doc.related_that_doc('conflrev')[0]
 
         return render(request, "doc/document_conflict_review.html",
                                   dict(doc=doc,
@@ -1127,8 +1126,8 @@ def get_diff_revisions(request, name, doc):
     diff_documents = [doc]
     diff_documents.extend(
         Document.objects.filter(
-            docalias__relateddocument__source=doc,
-            docalias__relateddocument__relationship="replaces",
+            relateddocument__source=doc,
+            relateddocument__relationship="replaces",
         )
     )
 
@@ -1722,7 +1721,7 @@ def telechat_date(request, name):
 
 def doc_titletext(doc):
     if doc.type.slug=='conflrev':
-        conflictdoc = doc.relateddocument_set.get(relationship__slug='conflrev').target.document
+        conflictdoc = doc.relateddocument_set.get(relationship__slug='conflrev').target
         return 'the conflict review of %s' % conflictdoc.canonical_name()
     return doc.canonical_name()
     

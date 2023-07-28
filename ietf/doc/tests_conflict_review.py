@@ -70,12 +70,12 @@ class ConflictReviewTests(TestCase):
         self.assertEqual(review_doc.ad.name,'Areað Irector')
         self.assertEqual(review_doc.notify,'ipu@ietf.org')
         doc = Document.objects.get(name='draft-imaginary-independent-submission')
-        self.assertTrue(doc in [x.target.document for x in review_doc.relateddocument_set.filter(relationship__slug='conflrev')])
+        self.assertTrue(doc in [x.target for x in review_doc.relateddocument_set.filter(relationship__slug='conflrev')])
 
         self.assertTrue(review_doc.latest_event(DocEvent,type="added_comment").desc.startswith("IETF conflict review requested"))
         self.assertTrue(doc.latest_event(DocEvent,type="added_comment").desc.startswith("IETF conflict review initiated"))
         self.assertTrue('Conflict Review requested' in outbox[-1]['Subject'])
-        
+
         # verify you can't start a review when a review is already in progress
         r = self.client.post(url,dict(ad="Areað Irector",create_in_state="Needs Shepherd",notify='ipu@ietf.org'))
         self.assertEqual(r.status_code, 404)
@@ -119,7 +119,7 @@ class ConflictReviewTests(TestCase):
         self.assertEqual(review_doc.ad.name,'Ietf Chair')
         self.assertEqual(review_doc.notify,'ipu@ietf.org')
         doc = Document.objects.get(name='draft-imaginary-independent-submission')
-        self.assertTrue(doc in [x.target.document for x in review_doc.relateddocument_set.filter(relationship__slug='conflrev')])
+        self.assertTrue(doc in [x.target for x in review_doc.relateddocument_set.filter(relationship__slug='conflrev')])
 
         self.assertEqual(len(outbox), messages_before + 2)
 

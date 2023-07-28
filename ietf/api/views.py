@@ -344,7 +344,7 @@ def rfcdiff_latest_json(request, name, rev=None):
                     response['previous'] = f'{draft.name}-{prev_rev}'
                     response['previous_url'] = get_previous_url(draft.name, prev_rev)            
         elif doc.type_id == "draft" and not found_rev and doc.relateddocument_set.filter(relationship_id="became_rfc").exists():
-                rfc = doc.related_that_doc("became_rfc")[0].document
+                rfc = doc.related_that_doc("became_rfc")[0]
                 response['content_url'] = rfc.get_href()
                 response['name']=rfc.name
                 prev_rev = doc.rev
@@ -359,7 +359,7 @@ def rfcdiff_latest_json(request, name, rev=None):
             if doc.rev == '00':
                 replaces_docs = (history.doc if condition=='historic version' else doc).related_that_doc('replaces')
                 if replaces_docs:
-                    replaces = replaces_docs[0].document
+                    replaces = replaces_docs[0]
                     response['previous'] = f'{replaces.name}-{replaces.rev}'
                     response['previous_url'] = get_previous_url(replaces.name, replaces.rev)
                 else:

@@ -504,7 +504,7 @@ def update_replaces_from_submission(request, submission, draft):
     if request.user.is_authenticated:
         is_chair_of = list(Group.objects.filter(role__person__user=request.user, role__name="chair"))
 
-    replaces = DocAlias.objects.filter(name__in=submission.replaces.split(",")).prefetch_related("docs", "docs__group")
+    replaces = Document.objects.filter(name__in=submission.replaces.split(",")).prefetch_related("group")
     existing_replaces = list(draft.related_that_doc("replaces"))
     existing_suggested = set(draft.related_that_doc("possibly-replaces"))
 
@@ -516,14 +516,12 @@ def update_replaces_from_submission(request, submission, draft):
         if r in existing_replaces:
             continue
 
-        rdoc = r.document
-
-        if rdoc == draft:
+        if r == draft:
             continue
 
         if (is_secretariat
-            or (draft.group in is_chair_of and (rdoc.group.type_id == "individ" or rdoc.group in is_chair_of))
-            or (submitter_email and rdoc.documentauthor_set.filter(email__address__iexact=submitter_email).exists())):
+            or (draft.group in is_chair_of and (r.group.type_id == "individ" or r.group in is_chair_of))
+            or (submitter_email and r.documentauthor_set.filter(email__address__iexact=submitter_email).exists())):
             approved.append(r)
         else:
             if r not in existing_suggested:
