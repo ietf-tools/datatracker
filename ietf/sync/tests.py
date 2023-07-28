@@ -235,7 +235,7 @@ class RFCSyncTests(TestCase):
         # too, but for testing purposes ...
         doc.action_holders.add(doc.ad)  # not normally set, but add to be sure it's cleared
 
-        updated_doc = RfcFactory(rfc_number=123)
+        RfcFactory(rfc_number=123)
 
         today = date_today()
 
