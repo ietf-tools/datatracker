@@ -11113,8 +11113,9 @@
   {
     "fields": {
       "desc": "",
+      "legend": "C",
       "name": "Comment",
-      "order": 0,
+      "order": 1,
       "used": true
     },
     "model": "name.feedbacktypename",
@@ -11123,8 +11124,9 @@
   {
     "fields": {
       "desc": "",
+      "legend": "J",
       "name": "Junk",
-      "order": 0,
+      "order": 5,
       "used": true
     },
     "model": "name.feedbacktypename",
@@ -11133,8 +11135,9 @@
   {
     "fields": {
       "desc": "",
+      "legend": "N",
       "name": "Nomination",
-      "order": 0,
+      "order": 2,
       "used": true
     },
     "model": "name.feedbacktypename",
@@ -11143,8 +11146,9 @@
   {
     "fields": {
       "desc": "",
+      "legend": "O",
       "name": "Overcome by events",
-      "order": 0,
+      "order": 4,
       "used": true
     },
     "model": "name.feedbacktypename",
@@ -11153,8 +11157,9 @@
   {
     "fields": {
       "desc": "",
+      "legend": "Q",
       "name": "Questionnaire response",
-      "order": 0,
+      "order": 3,
       "used": true
     },
     "model": "name.feedbacktypename",
@@ -11163,8 +11168,9 @@
   {
     "fields": {
       "desc": "",
+      "legend": "R",
       "name": "Read",
-      "order": 0,
+      "order": 6,
       "used": true
     },
     "model": "name.feedbacktypename",

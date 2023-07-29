@@ -15,9 +15,9 @@
                     <th scope="row">U</th>
                     <td>Unclassified</td>
                 </tr>
-                {% for legend, t in type_dict.items %}
+                {% for t in types %}
                     <tr>
-                        <th scope="row">{{ legend }}</th>
+                        <th scope="row">{{ t.legend }}</th>
                         <td>{{ t.name }}</td>
                     </tr>
                 {% endfor %}
@@ -28,8 +28,8 @@
                 <tr>
                     <th scope="col">Date</th>
                     <th scope="col" class="text-center" title="Unclassified">U</th>
-                    {% for legend, t in type_dict.items %}
-                        <th scope="col" class="text-center" title="{{ t.name }}">{{ legend }}</th>
+                    {% for t in types %}
+                        <th scope="col" class="text-center" title="{{ t.name }}">{{ t.legend }}</th>
                     {% endfor %}
                     <th scope="col">Author</th>
                     <th scope="col">Subject</th>
@@ -49,7 +49,7 @@
                                aria-label="Unclassified"
                                title="Unclassified">
                     </td>
-                    {% for legend, t in type_dict.items %}
+                    {% for t in types %}
                         <td class="text-center">
                             <input type="radio"
                                    class="form-check-input"

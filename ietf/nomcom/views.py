@@ -4,7 +4,7 @@
 
 import datetime
 import re
-from collections import OrderedDict, Counter
+from collections import Counter
 import csv
 import hmac
 
@@ -856,18 +856,6 @@ def view_or_reclassify_feedback(request, year, reclassify):
                                })
 
 
-def type_dict():
-    td = OrderedDict()
-    for t in FeedbackTypeName.objects.all().order_by('pk'):
-        rest = t.name
-        slug = rest[0]
-        rest = rest[1:]
-        while slug in td and rest:
-            slug = rest[0]
-            rest = rest[1]
-        td[slug] = t
-    return td
-
 @role_required("Nomcom Chair", "Nomcom Advisor")
 @nomcom_private_key_required
 def view_feedback_pending(request, year):
@@ -956,9 +944,8 @@ def view_feedback_pending(request, year):
                                'selected': 'feedback_pending',
                                'formset': formset,
                                'extra_step': extra_step,
-                               'type_dict': type_dict(),
                                'extra_ids': extra_ids,
-                               'types': FeedbackTypeName.objects.all().order_by('pk'),
+                               'types': FeedbackTypeName.objects.all(),
                                'nomcom': nomcom,
                                'is_chair_task' : True,
                                'page': feedback_page,
@@ -975,15 +962,18 @@ def reclassify_feedback_unrelated(request, year):
         if type:
             if type == 'unclassified':
                 feedback.type = None
+                messages.success(request, 'The selected feedback has been de-classified. Please reclassify it in the Pending emails tab.')
             else:
                 feedback.type = FeedbackTypeName.objects.get(slug=type)
+                messages.success(request, 'The selected feedback has been reclassified.')
             feedback.save()
         else:
+            types = FeedbackTypeName.objects.exclude(slug__in=settings.NOMINEE_FEEDBACK_TYPES)
             return render(request, 'nomcom/reclassify_feedback_unrelated.html',
                               {'year': year,
                                'nomcom': get_nomcom_by_year(year),
                                'feedback': feedback,
-                               'type_dict': type_dict(),
+                               'types': types,
                                'is_chair_task' : True,
                               })
 
@@ -1015,22 +1005,10 @@ def reclassify_feedback_topic(request, year, topic_id):
     if request.method == 'POST':
         feedback_id = request.POST.get('feedback_id', None)
         feedback = get_object_or_404(Feedback, id=feedback_id)
-        type = request.POST.get('type', None)
-        if type:
-            if type == 'unclassified':
-                feedback.type = None
-                feedback.topics.clear()
-            else:
-                feedback.type = FeedbackTypeName.objects.get(slug=type)
-            feedback.save()
-        else:
-            return render(request, 'nomcom/reclassify_feedback_topic.html',
-                              {'year': year,
-                               'nomcom': get_nomcom_by_year(year),
-                               'feedback': feedback,
-                               'type_dict': type_dict(),
-                               'is_chair_task' : True,
-                              })
+        feedback.type = None
+        feedback.topics.clear()
+        feedback.save()
+        messages.success(request, 'The selected feedback has been de-classified. Please reclassify it in the Pending emails tab.')
 
     return view_or_reclassify_feedback_topic(request, year, topic_id, reclassify=True)
 
@@ -1072,15 +1050,18 @@ def reclassify_feedback_nominee(request, year, nominee_id):
             if type == 'unclassified':
                 feedback.type = None
                 feedback.nominees.clear()
+                messages.success(request, 'The selected feedback has been de-classified. Please reclassify it in the Pending emails tab.')
             else:
                 feedback.type = FeedbackTypeName.objects.get(slug=type)
+                messages.success(request, 'The selected feedback has been reclassified.')
             feedback.save()
         else:
+            types = FeedbackTypeName.objects.filter(slug__in=settings.NOMINEE_FEEDBACK_TYPES)
             return render(request, 'nomcom/reclassify_feedback_nominee.html',
                               {'year': year,
                                'nomcom': get_nomcom_by_year(year),
                                'feedback': feedback,
-                               'type_dict': type_dict(),
+                               'types': types,
                                'is_chair_task' : True,
                               })
 

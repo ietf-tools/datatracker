@@ -1450,7 +1450,7 @@ class FeedbackIndexTests(TestCase):
         self.assertEqual(response.status_code,200)
         q = PyQuery(response.content)
         r = q('tfoot').eq(0).find('td').contents()
-        self.assertEqual([a.strip() for a in r], ['1', '1', '0', '1'])
+        self.assertEqual([a.strip() for a in r], ['1', '1', '1', '0'])
 
 class FeedbackLastSeenTests(TestCase):
 
