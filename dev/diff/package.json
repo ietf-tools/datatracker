@@ -12,7 +12,7 @@
     "listr2": "^6.6.0",
     "lodash-es": "^4.17.21",
     "luxon": "^3.3.0",
-    "pretty-bytes": "^6.1.0",
+    "pretty-bytes": "^6.1.1",
     "tar": "^6.1.15",
     "yargs": "^17.7.2"
   },
