@@ -5,6 +5,7 @@ import debug  # pyflakes:ignore
 from pyquery import PyQuery
 
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 from django.conf import settings
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -68,7 +69,10 @@ This test section has some text.
         self.assertEqual(q("#statement-type").text(), "IAB Statement")
         self.assertIn("has some text", q(".card-body").text())
         published = doc.docevent_set.filter(type="published_statement").last().time
-        self.assertIn(published.date().isoformat(), q("#published").text())
+        self.assertIn(
+            published.astimezone(ZoneInfo(settings.TIME_ZONE)).date().isoformat(),
+            q("#published").text(),
+        )
 
         doc.set_state(State.objects.get(type_id="statement", slug="replaced"))
         doc2 = StatementFactory()
