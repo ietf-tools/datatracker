@@ -236,7 +236,7 @@ def private_index(request, year):
                 'position__id':p.pk,
                 'position': p,
               } for p in positions]
-    states = list(NomineePositionStateName.objects.values('slug', 'name')) + [{'slug': questionnaire_state, 'name': 'Questionnaire'}]
+    states = [{'slug': questionnaire_state, 'name': 'Accepted and sent Questionnaire'}] + list(NomineePositionStateName.objects.values('slug', 'name'))
     positions = set([ n.position for n in all_nominee_positions.order_by('position__name') ])
     for s in stats:
         for state in states:

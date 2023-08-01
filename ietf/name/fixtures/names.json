@@ -2541,6 +2541,32 @@
   },
   {
     "fields": {
+      "desc": "The statement is active",
+      "name": "Active",
+      "next_states": [],
+      "order": 0,
+      "slug": "active",
+      "type": "statement",
+      "used": true
+    },
+    "model": "doc.state",
+    "pk": 175
+  },
+  {
+    "fields": {
+      "desc": "The statement has been replaced",
+      "name": "Replaced",
+      "next_states": [],
+      "order": 0,
+      "slug": "replaced",
+      "type": "statement",
+      "used": true
+    },
+    "model": "doc.state",
+    "pk": 176
+  },
+  {
+    "fields": {
       "label": "State"
     },
     "model": "doc.statetype",
@@ -2741,6 +2767,13 @@
     },
     "model": "doc.statetype",
     "pk": "statchg"
+  },
+  {
+    "fields": {
+      "label": "Statement State"
+    },
+    "model": "doc.statetype",
+    "pk": "statement"
   },
   {
     "fields": {
@@ -5557,7 +5590,9 @@
   },
   {
     "fields": {
-      "cc": [],
+      "cc": [
+        "slides_proposer"
+      ],
       "desc": "Recipients when slides are proposed for a given session",
       "to": [
         "group_chairs",
@@ -6347,6 +6382,14 @@
     },
     "model": "mailtrigger.recipient",
     "pk": "session_requests"
+  },
+  {
+    "fields": {
+      "desc": "Person who proposed slides",
+      "template": "{{ proposer.email }}"
+    },
+    "model": "mailtrigger.recipient",
+    "pk": "slides_proposer"
   },
   {
     "fields": {
@@ -10596,6 +10639,17 @@
   {
     "fields": {
       "desc": "",
+      "name": "Statement",
+      "order": 0,
+      "prefix": "statement",
+      "used": true
+    },
+    "model": "name.doctypename",
+    "pk": "statement"
+  },
+  {
+    "fields": {
+      "desc": "",
       "name": "RFC Editor Auth48 status",
       "order": 0,
       "used": true
@@ -13180,7 +13234,7 @@
       "desc": "Flipchars",
       "name": "Flipcharts",
       "order": 0,
-      "used": true
+      "used": false
     },
     "model": "name.roomresourcename",
     "pk": "flipcharts"
@@ -13230,7 +13284,7 @@
       "desc": "Experimental Room Setup (U-Shape and classroom, subject to availability)",
       "name": "Experimental Room Setup (U-Shape and classroom)",
       "order": 0,
-      "used": true
+      "used": false
     },
     "model": "name.roomresourcename",
     "pk": "u-shape"
@@ -16385,7 +16439,7 @@
     "fields": {
       "command": "xym",
       "switch": "--version",
-      "time": "2023-05-14T07:09:32.713Z",
+      "time": "2023-07-17T07:09:47.664Z",
       "used": true,
       "version": "xym 0.7.0"
     },
@@ -16396,7 +16450,7 @@
     "fields": {
       "command": "pyang",
       "switch": "--version",
-      "time": "2023-05-14T07:09:33.045Z",
+      "time": "2023-07-17T07:09:48.075Z",
       "used": true,
       "version": "pyang 2.5.3"
     },
@@ -16407,7 +16461,7 @@
     "fields": {
       "command": "yanglint",
       "switch": "--version",
-      "time": "2023-05-14T07:09:33.065Z",
+      "time": "2023-07-17T07:09:48.104Z",
       "used": true,
       "version": "yanglint SO 1.9.2"
     },
@@ -16418,9 +16472,9 @@
     "fields": {
       "command": "xml2rfc",
       "switch": "--version",
-      "time": "2023-05-14T07:09:33.970Z",
+      "time": "2023-07-17T07:09:49.075Z",
       "used": true,
-      "version": "xml2rfc 3.17.1"
+      "version": "xml2rfc 3.17.4"
     },
     "model": "utils.versioninfo",
     "pk": 4

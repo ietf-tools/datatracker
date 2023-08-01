@@ -20,9 +20,9 @@
     {% else %}
         <a class="text-body-secondary"
            href="{% url 'ietf.doc.views_review.review_request' review_assignment.review_request.doc.name review_assignment.review_request.pk %}">
-            {{ review_assignment.review_request.team.acronym|upper }} {{ review_assignment.review_request.type.name }} Review</a>
+            {{ review_assignment.review_request.team.acronym|upper }} {{ review_assignment.review_request.type.name }} Review due {{ review_assignment.review_request.deadline|date:"Y-m-d" }}</a>
         <span class="badge rounded-pill ms-1 bg-secondary">
-            Incomplete, due {{ review_assignment.review_request.deadline|date:"Y-m-d" }}
+            Incomplete
         </span>
     {% endif %}
 </div>

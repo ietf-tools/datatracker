@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2023, All Rights Reserved #}
+{% load origin django_bootstrap5 static %}
+{% block title %}Upload new revision: {{ doc.name }}{% endblock %}
+{% block content %}
+    {% origin %}
+    <h1>
+        Upload New Revision
+        <br>
+        <small class="text-muted">{{ doc.name }}</small>
+    </h1>
+    <form class="upload-content form-horizontal mt-3"
+          method="post"
+          enctype="multipart/form-data">
+        {% csrf_token %}
+        {% bootstrap_form form layout="horizontal" %}
+        <button type="submit" class="btn btn-primary">Submit</button>
+        <a class="btn btn-secondary float-end" href="{{ doc.get_absolute_url }}">Back</a>
+    </form>
+{% endblock %}
+{% block js %}
+    <script src="{% static 'ietf/js/upload_statement.js' %}"></script>
+{% endblock %}

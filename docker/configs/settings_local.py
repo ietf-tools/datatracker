@@ -40,7 +40,7 @@ INTERNAL_IPS = [".".join(ip.split(".")[:-1] + ["1"]) for ip in ips] + ['127.0.0.
 #    'ietf.context_processors.sql_debug',
 # ]
 
-DOCUMENT_PATH_PATTERN = '/assets/ietf-ftp/{doc.type_id}/'
+DOCUMENT_PATH_PATTERN = '/assets/ietfdata/doc/{doc.type_id}/'
 INTERNET_DRAFT_PATH = '/assets/ietf-ftp/internet-drafts/'
 RFC_PATH = '/assets/ietf-ftp/rfc/'
 CHARTER_PATH = '/assets/ietf-ftp/charter/'
