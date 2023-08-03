@@ -488,12 +488,15 @@ def update_docs_from_rfc_index(index_data, errata_data, skip_older_than_date=Non
         def parse_relation_list(l):
             res = []
             for x in l:
-                if x[:3] in ("NIC", "IEN", "STD", "RTR"):
-                    # try translating this to RFCs that we can handle
-                    # sensibly; otherwise we'll have to ignore them
-                    l = DocAlias.objects.filter(name__startswith="rfc", docs__docalias__name=x.lower())
-                else:
-                    l = DocAlias.objects.filter(name=x.lower())
+                # This lookup wasn't finding anything but maybe some STD and we know 
+                # if the STD had more than one RFC the wrong thing happens
+                #
+                #if x[:3] in ("NIC", "IEN", "STD", "RTR"):
+                #    # try translating this to RFCs that we can handle
+                #    # sensibly; otherwise we'll have to ignore them
+                #   l = DocAlias.objects.filter(name__startswith="rfc", docs__docalias__name=x.lower())
+                #else:
+                l = Document.objects.filter(name=x.lower())
 
                 for a in l:
                     if a not in res:

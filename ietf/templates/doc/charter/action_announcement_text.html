@@ -21,7 +21,7 @@
         </button>
         {% if user|has_role:"Secretariat" %}
             <a class="btn btn-primary"
-               href="{% url 'ietf.doc.views_charter.approve' name=charter.canonical_name %}">
+               href="{% url 'ietf.doc.views_charter.approve' name=charter.name %}">
                 Charter approval page
             </a>
         {% endif %}

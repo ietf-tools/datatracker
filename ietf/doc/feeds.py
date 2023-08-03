@@ -224,8 +224,8 @@ class RfcFeed(Feed):
         extra.update({"dcterms_accessRights": "gratis"})
         extra.update({"dcterms_format": "text/html"})
         media_contents = []
-        if int(item.rfc_number()) < 8650:
-            if int(item.rfc_number()) not in [8, 9, 51, 418, 500, 530, 589]:
+        if item.rfc_number < 8650:
+            if item.rfc_number not in [8, 9, 51, 418, 500, 530, 589]:
                 for fmt, media_type in [("txt", "text/plain"), ("html", "text/html")]:
                     media_contents.append(
                         {
@@ -234,7 +234,7 @@ class RfcFeed(Feed):
                             "is_format_of": self.item_link(item),
                         }
                     )
-            if int(item.rfc_number()) not in [571, 587]:
+            if item.rfc_number not in [571, 587]:
                 media_contents.append(
                     {
                         "url": f"https://www.rfc-editor.org/rfc/pdfrfc/{item.canonical_name()}.txt.pdf",

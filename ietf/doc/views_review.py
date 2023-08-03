@@ -117,7 +117,7 @@ class RequestReviewForm(forms.ModelForm):
 
 @login_required
 def request_review(request, name):
-    doc = get_object_or_404(Document, name=name)
+    doc = get_object_or_404(Document, type_id="draft", name=name)
 
     if not can_request_review_of_doc(request.user, doc):
         permission_denied(request, "You do not have permission to perform this action")

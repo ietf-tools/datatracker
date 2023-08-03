@@ -1,11 +1,11 @@
 {% load ietf_filters %}{% load mail_filters %}{% autoescape off %}From: The IESG <iesg-secretary@ietf.org>
 To: {{ to }}{% if cc %} 
 Cc: {{ cc }}{% endif %}
-Subject: {{action}}: {{relateddoc.target.document.title}} to {{newstatus}} 
+Subject: {{action}}: {{relateddoc.target.title}} to {{newstatus}} 
 
 {% filter wordwrap:78 %}The IESG has approved changing the status of the following document:
-- {{relateddoc.target.document.title }}
-  ({{relateddoc.target.document.canonical_name }}) to {{ newstatus }}
+- {{relateddoc.target.title }}
+  ({{relateddoc.target.canonical_name }}) to {{ newstatus }}
 
 This {{action|lower}} is documented at:
 {{status_change_url}}

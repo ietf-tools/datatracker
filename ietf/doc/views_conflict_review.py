@@ -113,7 +113,7 @@ def send_conflict_review_ad_changed_email(request, review, event):
                                  by = request.user.person,
                                  event = event,
                                  review = review,
-                                 reviewed_doc = review.relateddocument_set.get(relationship__slug='conflrev').target.document,
+                                 reviewed_doc = review.relateddocument_set.get(relationship__slug='conflrev').target,
                                  review_url = settings.IDTRACKER_BASE_URL+review.get_absolute_url(),
                                )
                           )
@@ -128,7 +128,7 @@ def send_conflict_review_started_email(request, review):
                                  cc = addrs.cc,
                                  by = request.user.person,
                                  review = review,
-                                 reviewed_doc = review.relateddocument_set.get(relationship__slug='conflrev').target.document,
+                                 reviewed_doc = review.relateddocument_set.get(relationship__slug='conflrev').target,
                                  review_url = settings.IDTRACKER_BASE_URL+review.get_absolute_url(),
                                  )
                            )
@@ -137,7 +137,7 @@ def send_conflict_review_started_email(request, review):
 
     addrs = gather_address_lists('conflrev_requested_iana',doc=review).as_strings(compact=False)
     email_iana(request, 
-               review.relateddocument_set.get(relationship__slug='conflrev').target.document,
+               review.relateddocument_set.get(relationship__slug='conflrev').target,
                addrs.to,
                msg,
                cc=addrs.cc)
@@ -155,7 +155,7 @@ def send_conflict_eval_email(request,review):
     send_mail_preformatted(request,msg,override=override)
     addrs = gather_address_lists('ballot_issued_iana',doc=review).as_strings()
     email_iana(request, 
-               review.relateddocument_set.get(relationship__slug='conflrev').target.document,
+               review.relateddocument_set.get(relationship__slug='conflrev').target,
                addrs.to,
                msg,
                addrs.cc)
@@ -247,7 +247,7 @@ def submit(request, name):
                               {'form': form,
                                'next_rev': next_rev,
                                'review' : review,
-                               'conflictdoc' : review.relateddocument_set.get(relationship__slug='conflrev').target.document,
+                               'conflictdoc' : review.relateddocument_set.get(relationship__slug='conflrev').target,
                               })
 
 @role_required("Area Director", "Secretariat")
@@ -275,7 +275,7 @@ def edit_ad(request, name):
         form = AdForm(initial=init)
 
     
-    conflictdoc = review.relateddocument_set.get(relationship__slug='conflrev').target.document
+    conflictdoc = review.relateddocument_set.get(relationship__slug='conflrev').target
     titletext = 'the conflict review of %s-%s' % (conflictdoc.canonical_name(),conflictdoc.rev)
     return render(request, 'doc/change_ad.html',
                               {'form': form,
@@ -287,7 +287,7 @@ def edit_ad(request, name):
 def default_approval_text(review):
 
     current_text = review.text_or_error()      # pyflakes:ignore
-    conflictdoc = review.relateddocument_set.get(relationship__slug='conflrev').target.document
+    conflictdoc = review.relateddocument_set.get(relationship__slug='conflrev').target
     if conflictdoc.stream_id=='ise':
          receiver = 'Independent Submissions Editor'
     elif conflictdoc.stream_id=='irtf':
@@ -365,7 +365,7 @@ def approve_conflict_review(request, name):
     return render(request, 'doc/conflict_review/approve.html',
                               dict(
                                    review = review,
-                                   conflictdoc = review.relateddocument_set.get(relationship__slug='conflrev').target.document,   
+                                   conflictdoc = review.relateddocument_set.get(relationship__slug='conflrev').target,   
                                    form = form,
                                    ))
 
@@ -416,7 +416,7 @@ def start_review_sanity_check(request, name):
         raise Http404
 
     # sanity check that there's not already a conflict review document for this document
-    if [ rel.source for alias in doc_to_review.docalias.all() for rel in alias.relateddocument_set.filter(relationship='conflrev') ]:
+    if [ rel.source for rel in doc_to_review.targets_related.filter(relationship='conflrev') ]:
         raise Http404
 
     return doc_to_review
@@ -452,7 +452,7 @@ def build_conflict_review_document(login, doc_to_review, ad, notify, create_in_s
     DocAlias.objects.create( name=review_name).docs.add( conflict_review )
 
             
-    conflict_review.relateddocument_set.create(target=DocAlias.objects.get(name=doc_to_review.name),relationship_id='conflrev')
+    conflict_review.relateddocument_set.create(target=doc_to_review, relationship_id='conflrev')
 
     c = DocEvent(type="added_comment", doc=conflict_review, rev=conflict_review.rev, by=login)
     c.desc = "IETF conflict review requested"

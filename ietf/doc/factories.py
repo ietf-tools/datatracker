@@ -82,13 +82,7 @@ class BaseDocumentFactory(factory.django.DjangoModelFactory):
     def relations(obj, create, extracted, **kwargs): # pylint: disable=no-self-argument
         if create and extracted:
             for (rel_id, doc) in extracted:
-                if isinstance(doc, Document):
-                    docalias = doc.docalias.first()
-                elif isinstance(doc, DocAlias):
-                    docalias = doc
-                else:
-                    continue
-                obj.relateddocument_set.create(relationship_id=rel_id, target=docalias)
+                obj.relateddocument_set.create(relationship_id=rel_id, target=doc)
 
     @factory.post_generation
     def create_revisions(obj, create, extracted, **kwargs):  # pylint: disable=no-self-argument
@@ -118,6 +112,29 @@ class DocumentFactory(BaseDocumentFactory):
     group = factory.SubFactory('ietf.group.factories.GroupFactory',acronym='none')
 
 
+class RfcFactory(BaseDocumentFactory):
+    type_id = "rfc"
+    rfc_number = factory.Sequence(lambda n: n + 1000)
+    name = factory.LazyAttribute(lambda o: f"rfc{o.rfc_number:d}")
+    expires = None
+
+    @factory.post_generation
+    def states(obj, create, extracted, **kwargs):
+        if not create:
+            return
+        if extracted:
+            for (state_type_id,state_slug) in extracted:
+                obj.set_state(State.objects.get(type_id=state_type_id,slug=state_slug))
+        else:
+            obj.set_state(State.objects.get(type_id='rfc',slug='published'))
+
+    @factory.post_generation
+    def reset_canonical_name(obj, create, extracted, **kwargs): 
+        if hasattr(obj, '_canonical_name'):
+            del obj._canonical_name
+        return None
+
+
 class IndividualDraftFactory(BaseDocumentFactory):
 
     type_id = 'draft'
@@ -136,28 +153,11 @@ class IndividualDraftFactory(BaseDocumentFactory):
             obj.set_state(State.objects.get(type_id='draft',slug='active'))
             obj.set_state(State.objects.get(type_id='draft-iesg',slug='idexists'))
 
-class IndividualRfcFactory(IndividualDraftFactory):
+class IndividualRfcFactory(RfcFactory):
+    group = factory.SubFactory('ietf.group.factories.GroupFactory',acronym='none')
 
-    alias2 = factory.RelatedFactory('ietf.doc.factories.DocAliasFactory','document',name=factory.Sequence(lambda n: 'rfc%04d'%(n+1000)))
-
-    @factory.post_generation
-    def states(obj, create, extracted, **kwargs):
-        if not create:
-            return
-        if extracted:
-            for (state_type_id,state_slug) in extracted:
-                obj.set_state(State.objects.get(type_id=state_type_id,slug=state_slug))
-        else:
-            obj.set_state(State.objects.get(type_id='draft',slug='rfc'))
-
-    @factory.post_generation
-    def reset_canonical_name(obj, create, extracted, **kwargs): 
-        if hasattr(obj, '_canonical_name'):
-            del obj._canonical_name
-        return None
 
 class WgDraftFactory(BaseDocumentFactory):
-
     type_id = 'draft'
     group = factory.SubFactory('ietf.group.factories.GroupFactory',type_id='wg')
     stream_id = 'ietf'
@@ -176,30 +176,12 @@ class WgDraftFactory(BaseDocumentFactory):
             obj.set_state(State.objects.get(type_id='draft-stream-ietf',slug='wg-doc'))
             obj.set_state(State.objects.get(type_id='draft-iesg',slug='idexists'))
 
-class WgRfcFactory(WgDraftFactory):
 
-    alias2 = factory.RelatedFactory('ietf.doc.factories.DocAliasFactory','document',name=factory.Sequence(lambda n: 'rfc%04d'%(n+1000)))
-
+class WgRfcFactory(RfcFactory):
+    group = factory.SubFactory('ietf.group.factories.GroupFactory',type_id='wg')
+    stream_id = 'ietf'
     std_level_id = 'ps'
 
-    @factory.post_generation
-    def states(obj, create, extracted, **kwargs):
-        if not create:
-            return
-        if extracted:
-            for (state_type_id,state_slug) in extracted:
-                obj.set_state(State.objects.get(type_id=state_type_id,slug=state_slug))
-            if not obj.get_state('draft-iesg'):
-                obj.set_state(State.objects.get(type_id='draft-iesg', slug='pub'))
-        else:
-            obj.set_state(State.objects.get(type_id='draft',slug='rfc'))
-            obj.set_state(State.objects.get(type_id='draft-iesg', slug='pub'))
-
-    @factory.post_generation
-    def reset_canonical_name(obj, create, extracted, **kwargs): 
-        if hasattr(obj, '_canonical_name'):
-            del obj._canonical_name
-        return None
 
 class RgDraftFactory(BaseDocumentFactory):
 
@@ -222,33 +204,10 @@ class RgDraftFactory(BaseDocumentFactory):
             obj.set_state(State.objects.get(type_id='draft-iesg',slug='idexists'))
 
 
-class RgRfcFactory(RgDraftFactory):
-
-    alias2 = factory.RelatedFactory('ietf.doc.factories.DocAliasFactory','document',name=factory.Sequence(lambda n: 'rfc%04d'%(n+1000)))
-
+class RgRfcFactory(RfcFactory):
+    group = factory.SubFactory('ietf.group.factories.GroupFactory',type_id='rg')
+    stream_id = 'irtf'
     std_level_id = 'inf'
-
-    @factory.post_generation
-    def states(obj, create, extracted, **kwargs):
-        if not create:
-            return
-        if extracted:
-            for (state_type_id,state_slug) in extracted:
-                obj.set_state(State.objects.get(type_id=state_type_id,slug=state_slug))
-            if not obj.get_state('draft-stream-irtf'):
-                obj.set_state(State.objects.get(type_id='draft-stream-irtf', slug='pub'))
-            if not obj.get_state('draft-iesg'):
-                obj.set_state(State.objects.get(type_id='draft-iesg',slug='idexists'))
-        else:
-            obj.set_state(State.objects.get(type_id='draft',slug='rfc'))
-            obj.set_state(State.objects.get(type_id='draft-stream-irtf', slug='pub'))
-            obj.set_state(State.objects.get(type_id='draft-iesg',slug='idexists'))
-
-    @factory.post_generation
-    def reset_canonical_name(obj, create, extracted, **kwargs): 
-        if hasattr(obj, '_canonical_name'):
-            del obj._canonical_name
-        return None          
 
 
 class CharterFactory(BaseDocumentFactory):
@@ -278,7 +237,7 @@ class StatusChangeFactory(BaseDocumentFactory):
             for (rel, target) in extracted:
                 obj.relateddocument_set.create(relationship_id=rel,target=target)
         else:
-            obj.relateddocument_set.create(relationship_id='tobcp', target=WgRfcFactory().docalias.first())
+            obj.relateddocument_set.create(relationship_id='tobcp', target=WgRfcFactory())
 
     @factory.post_generation
     def states(obj, create, extracted, **kwargs):
@@ -305,9 +264,9 @@ class ConflictReviewFactory(BaseDocumentFactory):
         if not create:
             return
         if extracted:
-            obj.relateddocument_set.create(relationship_id='conflrev',target=extracted.docalias.first())
+            obj.relateddocument_set.create(relationship_id='conflrev',target=extracted)
         else:
-            obj.relateddocument_set.create(relationship_id='conflrev',target=DocumentFactory(name=obj.name.replace('conflict-review-','draft-'),type_id='draft',group=Group.objects.get(type_id='individ')).docalias.first())
+            obj.relateddocument_set.create(relationship_id='conflrev',target=DocumentFactory(name=obj.name.replace('conflict-review-','draft-'),type_id='draft',group=Group.objects.get(type_id='individ')))
 
 
     @factory.post_generation
@@ -550,33 +509,8 @@ class EditorialDraftFactory(BaseDocumentFactory):
             obj.set_state(State.objects.get(type_id='draft-stream-editorial',slug='active'))
             obj.set_state(State.objects.get(type_id='draft-iesg',slug='idexists'))
 
-class EditorialRfcFactory(RgDraftFactory):
-
-    alias2 = factory.RelatedFactory('ietf.doc.factories.DocAliasFactory','document',name=factory.Sequence(lambda n: 'rfc%04d'%(n+1000)))
-
-    std_level_id = 'inf'
-
-    @factory.post_generation
-    def states(obj, create, extracted, **kwargs):
-        if not create:
-            return
-        if extracted:
-            for (state_type_id,state_slug) in extracted:
-                obj.set_state(State.objects.get(type_id=state_type_id,slug=state_slug))
-            if not obj.get_state('draft-stream-editorial'):
-                obj.set_state(State.objects.get(type_id='draft-stream-editorial', slug='pub'))
-            if not obj.get_state('draft-iesg'):
-                obj.set_state(State.objects.get(type_id='draft-iesg',slug='idexists'))
-        else:
-            obj.set_state(State.objects.get(type_id='draft',slug='rfc'))
-            obj.set_state(State.objects.get(type_id='draft-stream-editorial', slug='pub'))
-            obj.set_state(State.objects.get(type_id='draft-iesg',slug='idexists'))
-
-    @factory.post_generation
-    def reset_canonical_name(obj, create, extracted, **kwargs): 
-        if hasattr(obj, '_canonical_name'):
-            del obj._canonical_name
-        return None
+class EditorialRfcFactory(RgRfcFactory):
+    pass
     
 class StatementFactory(BaseDocumentFactory):
     type_id = "statement"

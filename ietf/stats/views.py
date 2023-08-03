@@ -563,11 +563,11 @@ def document_stats(request, stats_type=None):
                 bins = defaultdict(set)
 
                 cite_relationships = list(DocRelationshipName.objects.filter(slug__in=['refnorm', 'refinfo', 'refunk', 'refold']))
-                person_filters &= Q(documentauthor__document__docalias__relateddocument__relationship__in=cite_relationships)
+                person_filters &= Q(documentauthor__document__relateddocument__relationship__in=cite_relationships)
 
                 person_qs = Person.objects.filter(person_filters)
 
-                for name, citations in person_qs.values_list("name").annotate(Count("documentauthor__document__docalias__relateddocument")):
+                for name, citations in person_qs.values_list("name").annotate(Count("documentauthor__document__relateddocument")):
                     bins[citations or 0].add(name)
 
                 total_persons = count_bins(bins)
@@ -587,11 +587,11 @@ def document_stats(request, stats_type=None):
                 bins = defaultdict(set)
 
                 cite_relationships = list(DocRelationshipName.objects.filter(slug__in=['refnorm', 'refinfo', 'refunk', 'refold']))
-                person_filters &= Q(documentauthor__document__docalias__relateddocument__relationship__in=cite_relationships)
+                person_filters &= Q(documentauthor__document__relateddocument__relationship__in=cite_relationships)
 
                 person_qs = Person.objects.filter(person_filters)
 
-                values = person_qs.values_list("name", "documentauthor__document").annotate(Count("documentauthor__document__docalias__relateddocument"))
+                values = person_qs.values_list("name", "documentauthor__document").annotate(Count("documentauthor__document__relateddocument"))
                 for name, ts in itertools.groupby(values.order_by("name"), key=lambda t: t[0]):
                     h_index = compute_hirsch_index([citations for _, document, citations in ts])
                     bins[h_index or 0].add(name)

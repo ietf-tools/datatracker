@@ -11,7 +11,7 @@
         <meta charset="utf-8">
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <title>
-            {% if not snapshot and doc.get_state_slug == "rfc" %}
+            {% if doc.type_id == "rfc" %}
                 RFC {{ doc.rfc_number }} - {{ doc.title }}
             {% else %}
                 {{ doc.name }}-{{ doc.rev }}

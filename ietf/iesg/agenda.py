@@ -66,7 +66,7 @@ def get_doc_section(doc):
     elif doc.type_id == 'statchg':
         protocol_action = False
         for relation in doc.relateddocument_set.filter(relationship__slug__in=('tops','tois','tohist','toinf','tobcp','toexp')):
-            if relation.relationship_id in ('tops','tois') or relation.target.document.std_level_id in ('std','ds','ps'):
+            if relation.relationship_id in ('tops','tois') or relation.target.std_level_id in ('std','ds','ps'):
                 protocol_action = True
         if protocol_action:
             s = "2.3"
@@ -186,7 +186,7 @@ def fill_in_agenda_docs(date, sections, docs=None):
 
             doc.review_assignments = review_assignments_for_docs.get(doc.name, [])
         elif doc.type_id == "conflrev":
-            doc.conflictdoc = doc.relateddocument_set.get(relationship__slug='conflrev').target.document
+            doc.conflictdoc = doc.relateddocument_set.get(relationship__slug='conflrev').target
         elif doc.type_id == "charter":
             pass
 

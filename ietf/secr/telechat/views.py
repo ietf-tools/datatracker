@@ -313,7 +313,7 @@ def doc_detail(request, date, name):
 
         # if this is a conflict review document add referenced document
         if doc.type_id == 'conflrev':
-            conflictdoc = doc.relateddocument_set.get(relationship__slug='conflrev').target.document
+            conflictdoc = doc.relateddocument_set.get(relationship__slug='conflrev').target
         else:
             conflictdoc = None
 

@@ -67,10 +67,8 @@ class SecrTelechatTestCase(TestCase):
     def test_doc_detail_draft_with_downref(self):
         ad = Person.objects.get(user__username="ad")
         draft = WgDraftFactory(ad=ad, intended_std_level_id='ps', states=[('draft-iesg','pub-req'),])
-        rfc = IndividualRfcFactory.create(stream_id='irtf', other_aliases=['rfc6666',],
-                  states=[('draft','rfc'),('draft-iesg','pub')], std_level_id='inf', )
-        draft.relateddocument_set.create(target=rfc.docalias.get(name='rfc6666'),
-                  relationship_id='refnorm')
+        rfc = IndividualRfcFactory.create(stream_id='irtf', rfc_number=6666, std_level_id='inf')
+        draft.relateddocument_set.create(target=rfc, relationship_id='refnorm')
         create_ballot_if_not_open(None, draft, ad, 'approve')
         d = get_next_telechat_date()
         date = d.strftime('%Y-%m-%d')

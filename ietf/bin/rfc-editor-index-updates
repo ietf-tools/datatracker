@@ -84,7 +84,7 @@ for changes, doc, rfc_published in ietf.sync.rfceditor.update_docs_from_rfc_inde
         new_rfcs.append(doc)
 
     for c in changes:
-        log("RFC%s, %s: %s" % (doc.rfcnum, doc.name, c))
+        log("RFC%s, %s: %s" % (doc.rfc_number, doc.name, c))
 
 sys.exit(0)
 

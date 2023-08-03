@@ -82,7 +82,7 @@ class StatisticsTests(TestCase):
         DocAlias.objects.create(name=referencing_draft.name).docs.add(referencing_draft)
         RelatedDocument.objects.create(
             source=referencing_draft,
-            target=draft.docalias.first(),
+            target=draft,
             relationship=DocRelationshipName.objects.get(slug="refinfo")
         )
         NewRevisionDocEvent.objects.create(

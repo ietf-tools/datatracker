@@ -31,7 +31,7 @@ from ietf.community.models import CommunityList
 from ietf.community.utils import docs_tracked_by_community_list
 
 from ietf.doc.models import Document, DocHistory, State, DocumentAuthor, DocHistoryAuthor
-from ietf.doc.models import DocAlias, RelatedDocument, RelatedDocHistory, BallotType, DocReminder
+from ietf.doc.models import RelatedDocument, RelatedDocHistory, BallotType, DocReminder
 from ietf.doc.models import DocEvent, ConsensusDocEvent, BallotDocEvent, IRSGBallotDocEvent, NewRevisionDocEvent, StateDocEvent
 from ietf.doc.models import TelechatDocEvent, DocumentActionHolder, EditedAuthorsDocEvent
 from ietf.name.models import DocReminderTypeName, DocRelationshipName
@@ -218,7 +218,7 @@ def needed_ballot_positions(doc, active_positions):
         else:
             related_set = RelatedDocHistory.objects.none()
         for rel in related_set.filter(relationship__slug__in=['tops', 'tois', 'tohist', 'toinf', 'tobcp', 'toexp']):
-            if (rel.target.document.std_level_id in ['bcp','ps','ds','std']) or (rel.relationship_id in ['tops','tois','tobcp']):
+            if (rel.target.std_level_id in ['bcp','ps','ds','std']) or (rel.relationship_id in ['tops','tois','tobcp']):
                 needed = two_thirds_rule(recused=len(recuse))
                 break
     else:
@@ -771,22 +771,22 @@ def rebuild_reference_relations(doc, filenames):
     errors = []
     unfound = set()
     for ( ref, refType ) in refs.items():
-        refdoc = DocAlias.objects.filter(name=ref)
+        refdoc = Document.objects.filter(name=ref)
         if not refdoc and re.match(r"^draft-.*-\d{2}$", ref):
-            refdoc = DocAlias.objects.filter(name=ref[:-3])
+            refdoc = Document.objects.filter(name=ref[:-3])
         count = refdoc.count()
         # As of Dec 2021, DocAlias has a unique constraint on the name field, so count > 1 should not occur
         if count == 0:
             unfound.add( "%s" % ref )
             continue
         elif count > 1:
-            errors.append("Too many DocAlias objects found for %s"%ref)
+            errors.append("Too many Document objects found for %s"%ref)
         else:
             # Don't add references to ourself
-            if doc != refdoc[0].document:
+            if doc != refdoc[0]:
                 RelatedDocument.objects.get_or_create( source=doc, target=refdoc[ 0 ], relationship=DocRelationshipName.objects.get( slug='ref%s' % refType ) )
     if unfound:
-        warnings.append('There were %d references with no matching DocAlias'%len(unfound))
+        warnings.append('There were %d references with no matching Document'%len(unfound))
 
     ret = {}
     if errors:
@@ -821,26 +821,26 @@ def set_replaces_for_document(request, doc, new_replaces, by, email_subject, com
 
     for d in old_replaces:
         if d not in new_replaces:
-            other_addrs = gather_address_lists('doc_replacement_changed',doc=d.document)
+            other_addrs = gather_address_lists('doc_replacement_changed',doc=d)
             to.update(other_addrs.to)
             cc.update(other_addrs.cc)
             RelatedDocument.objects.filter(source=doc, target=d, relationship=relationship).delete()
             if not RelatedDocument.objects.filter(target=d, relationship=relationship):
-                s = 'active' if d.document.expires > timezone.now() else 'expired'
-                d.document.set_state(State.objects.get(type='draft', slug=s))
+                s = 'active' if d.expires > timezone.now() else 'expired'
+                d.set_state(State.objects.get(type='draft', slug=s))
 
     for d in new_replaces:
         if d not in old_replaces:
-            other_addrs = gather_address_lists('doc_replacement_changed',doc=d.document)
+            other_addrs = gather_address_lists('doc_replacement_changed',doc=d)
             to.update(other_addrs.to)
             cc.update(other_addrs.cc)
             RelatedDocument.objects.create(source=doc, target=d, relationship=relationship)
-            d.document.set_state(State.objects.get(type='draft', slug='repl'))
+            d.set_state(State.objects.get(type='draft', slug='repl'))
             
-            if d.document.stream_id in ('irtf','ise','iab'):
-                repl_state = State.objects.get(type_id='draft-stream-%s'%d.document.stream_id, slug='repl')
-                d.document.set_state(repl_state)
-                events.append(StateDocEvent.objects.create(doc=d.document, rev=d.document.rev, by=by, type='changed_state', desc="Set stream state to Replaced",state_type=repl_state.type, state=repl_state))
+            if d.stream_id in ('irtf','ise','iab'):
+                repl_state = State.objects.get(type_id='draft-stream-%s'%d.stream_id, slug='repl')
+                d.set_state(repl_state)
+                events.append(StateDocEvent.objects.create(doc=d, rev=d.rev, by=by, type='changed_state', desc="Set stream state to Replaced",state_type=repl_state.type, state=repl_state))
 
     # make sure there are no lingering suggestions duplicating new replacements
     RelatedDocument.objects.filter(source=doc, target__in=new_replaces, relationship="possibly-replaces").delete()
@@ -910,7 +910,7 @@ def extract_complete_replaces_ancestor_mapping_for_docs(names):
             break
 
         relations = ( RelatedDocument.objects.filter(source__name__in=front, relationship="replaces")
-                          .select_related("target").values_list("source__name", "target__docs__name") )
+                          .select_related("target").values_list("source__name", "target__name") )
         if not relations:
             break
 
@@ -998,14 +998,11 @@ def get_search_cache_key(params):
     kwargs = dict([ (k,v) for (k,v) in list(params.items()) if k in fields ])
     key = "doc:document:search:" + hashlib.sha512(json.dumps(kwargs, sort_keys=True).encode('utf-8')).hexdigest()
     return key
-    
-def build_file_urls(doc: Union[Document, DocHistory]):
-    if doc.type_id != 'draft':
-        return [], []
 
-    if doc.get_state_slug() == "rfc":
-        name = doc.canonical_name()
-        base_path = os.path.join(settings.RFC_PATH, name + ".")
+
+def build_file_urls(doc: Union[Document, DocHistory]):
+    if doc.type_id == "rfc":
+        base_path = os.path.join(settings.RFC_PATH, doc.name + ".")
         possible_types = settings.RFC_FILE_TYPES
         found_types = [t for t in possible_types if os.path.exists(base_path + t)]
 
@@ -1014,17 +1011,17 @@ def build_file_urls(doc: Union[Document, DocHistory]):
         file_urls = []
         for t in found_types:
             label = "plain text" if t == "txt" else t
-            file_urls.append((label, base + name + "." + t))
+            file_urls.append((label, base + doc.name + "." + t))
 
         if "pdf" not in found_types and "txt" in found_types:
-            file_urls.append(("pdf", base + "pdfrfc/" + name + ".txt.pdf"))
+            file_urls.append(("pdf", base + "pdfrfc/" + doc.name + ".txt.pdf"))
 
         if "txt" in found_types:
-            file_urls.append(("htmlized", urlreverse('ietf.doc.views_doc.document_html', kwargs=dict(name=name))))
+            file_urls.append(("htmlized", urlreverse('ietf.doc.views_doc.document_html', kwargs=dict(name=doc.name))))
             if doc.tags.filter(slug="verified-errata").exists():
-                file_urls.append(("with errata", settings.RFC_EDITOR_INLINE_ERRATA_URL.format(rfc_number=doc.rfc_number())))
-        file_urls.append(("bibtex", urlreverse('ietf.doc.views_doc.document_bibtex',kwargs=dict(name=name))))
-    elif doc.rev:
+                file_urls.append(("with errata", settings.RFC_EDITOR_INLINE_ERRATA_URL.format(rfc_number=doc.rfc_number)))
+        file_urls.append(("bibtex", urlreverse('ietf.doc.views_doc.document_bibtex',kwargs=dict(name=doc.name))))
+    elif doc.type_id == "draft" and doc.rev != "":
         base_path = os.path.join(settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR, doc.name + "-" + doc.rev + ".")
         possible_types = settings.IDSUBMIT_FILE_TYPES
         found_types = [t for t in possible_types if os.path.exists(base_path + t)]
@@ -1040,12 +1037,14 @@ def build_file_urls(doc: Union[Document, DocHistory]):
         file_urls.append(("bibtex", urlreverse('ietf.doc.views_doc.document_bibtex',kwargs=dict(name=doc.name,rev=doc.rev))))
         file_urls.append(("bibxml", urlreverse('ietf.doc.views_doc.document_bibxml',kwargs=dict(name=doc.name,rev=doc.rev))))
     else:
-        # As of 2022-12-14, there are 1463 Document and 3136 DocHistory records with type='draft' and rev=''.
-        # All of these are in the rfc state and are covered by the above cases.
-        log.unreachable('2022-12-14')
+        if doc.type_id == "draft":
+            # TODO: look at the state of the database post migration and update this comment, or remove the block
+            # As of 2022-12-14, there are 1463 Document and 3136 DocHistory records with type='draft' and rev=''.
+            # All of these are in the rfc state and are covered by the above cases.
+            log.unreachable('2022-12-14')
         file_urls = []
         found_types = []
-
+        
     return file_urls, found_types
 
 def augment_docs_and_user_with_user_info(docs, user):
@@ -1112,16 +1111,16 @@ def generate_idnits2_rfc_status():
         'unkn': 'U',
     }
 
-    rfcs = Document.objects.filter(type_id='draft',states__slug='rfc',states__type='draft')
+    rfcs = Document.objects.filter(type_id='rfc')
     for rfc in rfcs:
-        offset = int(rfc.rfcnum)-1
+        offset = int(rfc.rfc_number)-1
         blob[offset] = symbols[rfc.std_level_id]
         if rfc.related_that('obs'):
             blob[offset] = 'O'
 
     # Workarounds for unusual states in the datatracker
 
-    # Document.get(docalias='rfc6312').rfcnum == 6342 
+    # Document.get(docalias='rfc6312').rfc_number == 6342 
     # 6312 was published with the wrong rfc number in it
     # weird workaround in the datatracker - there are two 
     # DocAliases starting with rfc - the canonical name code
@@ -1142,7 +1141,7 @@ def generate_idnits2_rfc_status():
 def generate_idnits2_rfcs_obsoleted():
     obsdict = defaultdict(list)
     for r in RelatedDocument.objects.filter(relationship_id='obs'):
-        obsdict[int(r.target.document.rfc_number())].append(int(r.source.rfc_number()))
+        obsdict[int(r.target.rfc_number)].append(int(r.source.rfc_number)) # Aren't these already guaranteed to be ints?
     for k in obsdict:
         obsdict[k] = sorted(obsdict[k])
     return render_to_string('doc/idnits2-rfcs-obsoleted.txt', context={'obsitems':sorted(obsdict.items())})
@@ -1171,8 +1170,14 @@ def fuzzy_find_documents(name, rev=None):
     if re.match("^[0-9]+$", name):
         name = f'rfc{name}'
 
+    if name.startswith("rfc"):
+        sought_type = "rfc"
+        log.assertion("rev is None")
+    else:
+        sought_type = "draft"
+
     # see if we can find a document using this name
-    docs = Document.objects.filter(docalias__name=name, type_id='draft')
+    docs = Document.objects.filter(docalias__name=name, type_id=sought_type)
     if rev and not docs.exists():
         # No document found, see if the name/rev split has been misidentified.
         # Handles some special cases, like draft-ietf-tsvwg-ieee-802-11.

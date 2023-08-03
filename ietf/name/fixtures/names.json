@@ -2567,6 +2567,19 @@
   },
   {
     "fields": {
+      "desc": "",
+      "name": "Published",
+      "next_states": [],
+      "order": 1,
+      "slug": "published",
+      "type": "rfc",
+      "used": true
+    },
+    "model": "doc.state",
+    "pk": 177
+  },
+  {
+    "fields": {
       "label": "State"
     },
     "model": "doc.statetype",
@@ -2746,6 +2759,13 @@
     },
     "model": "doc.statetype",
     "pk": "review"
+  },
+  {
+    "fields": {
+      "label": "State"
+    },
+    "model": "doc.statetype",
+    "pk": "rfc"
   },
   {
     "fields": {
@@ -9936,6 +9956,17 @@
   {
     "fields": {
       "desc": "",
+      "name": "Became RFC",
+      "order": 0,
+      "revname": "Became RFC as",
+      "used": true
+    },
+    "model": "name.docrelationshipname",
+    "pk": "became_rfc"
+  },
+  {
+    "fields": {
+      "desc": "",
       "name": "conflict reviews",
       "order": 0,
       "revname": "Conflict reviewed by",
@@ -10602,6 +10633,17 @@
     },
     "model": "name.doctypename",
     "pk": "review"
+  },
+  {
+    "fields": {
+      "desc": "",
+      "name": "RFC",
+      "order": 0,
+      "prefix": "rfc",
+      "used": true
+    },
+    "model": "name.doctypename",
+    "pk": "rfc"
   },
   {
     "fields": {

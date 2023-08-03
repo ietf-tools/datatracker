@@ -11,7 +11,7 @@
     <link rel="alternate"
           type="application/atom+xml"
           href="/feed/document-changes/{{ doc.name }}/">
-    <link rel="stylesheet" href="{% static "ietf/css/list.css" %}">
+    <link rel="stylesheet" href="{% static 'ietf/css/list.css' %}">
 {% endblock %}
 {% block content %}
     {% origin %}
@@ -20,7 +20,17 @@
         <h2 class="my-3">Revision differences</h2>
         {% include "doc/document_history_form.html" with doc=doc diff_revisions=diff_revisions action=rfcdiff_base_url snapshot=snapshot only %}
     {% endif %}
-    <h2 class="my-3">Document history</h2>
+    <h2 class="my-3">Document history
+    {% if related %}
+        <div class="float-end">
+        {% for related_docalias in related %}
+            <a class="btn btn-outline-primary btn-sm" 
+               href="{% url 'ietf.doc.views_doc.document_history' name=related_docalias.name %}">
+                Related history for {{ related_docalias.name }}
+            </a>
+        {% endfor %}
+        </div>
+    {% endif %}</h2>
     {% if can_add_comment %}
         <div class="buttonlist">
             <a class="btn btn-primary"
@@ -34,7 +44,7 @@
         <thead>
             <tr>
                 <th scope="col" data-sort="date">Date</th>
-                <th scope="col" data-sort="rev">Rev.</th>
+                {% if doc.type_id != "rfc" %}<th scope="col" data-sort="rev">Rev.</th>{% endif %}
                 <th scope="col" data-sort="by">By</th>
                 <th scope="col" data-sort="action">Action</th>
             </tr>
@@ -45,7 +55,7 @@
                     <td>
                         <div title="{{ e.time|date:'Y-m-d H:i:s O' }}">{{ e.time|date:"Y-m-d" }}</div>
                     </td>
-                    <td class="text-end">{{ e.rev }}</td>
+                    {% if doc.type_id != "rfc" %}<td class="text-end">{{ e.rev }}</td>{% endif %}
                     <td>{{ e.by|escape }}</td>
                     <td>{{ e.desc|format_history_text }}</td>
                 </tr>

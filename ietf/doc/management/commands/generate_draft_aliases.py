@@ -24,6 +24,7 @@ from ietf.doc.models import Document
 from ietf.group.utils import get_group_role_emails, get_group_ad_emails
 from ietf.utils.aliases import dump_sublist
 from utils.mail import parseaddr
+from ietf.utils import log
 
 DEFAULT_YEARS = 2
 
@@ -120,16 +121,18 @@ class Command(BaseCommand):
         vfile.write("%s anything\n" % settings.DRAFT_VIRTUAL_DOMAIN)
 
         # Internet-Drafts with active status or expired within DEFAULT_YEARS
-        drafts = Document.objects.filter(name__startswith='draft-')
+        drafts = Document.objects.filter(type_id="draft")
         active_drafts = drafts.filter(states__slug='active')
         inactive_recent_drafts = drafts.exclude(states__slug='active').filter(expires__gte=show_since)
         interesting_drafts = active_drafts | inactive_recent_drafts
 
         alias_domains = ['ietf.org', ]
         for draft in interesting_drafts.distinct().iterator():
-            # Omit RFCs, unless they were published in the last DEFAULT_YEARS
-            if draft.docalias.filter(name__startswith='rfc'):
-                if draft.latest_event(type='published_rfc').time < show_since:
+            # Omit drafts that became RFCs, unless they were published in the last DEFAULT_YEARS
+            if draft.get_state_slug()=="rfc":
+                rfc = next(iter(draft.related_that_doc("became_rfc")), None)
+                log.assertion("rfc is not None")
+                if rfc.latest_event(type='published_rfc').time < show_since:
                     continue
 
             alias = draft.name
