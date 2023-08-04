@@ -22,7 +22,7 @@ def forward(apps, schema_editor):
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("name", "0003_populate_telechatagendasectionname"),
+        ("name", "0004_statements"),
     ]
 
     operations = [

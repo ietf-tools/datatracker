@@ -1,0 +1,40 @@
+{% extends "group/group_base.html" %}
+{# Copyright The IETF Trust 2023, All Rights Reserved #}
+{% load origin %}
+{% load ietf_filters person_filters textfilters %}
+{% load static %}
+{% block pagehead %}
+    <link rel="stylesheet" href="{% static "ietf/css/list.css" %}">
+{% endblock %}
+{% block group_content %}
+    {% origin %}
+    <h2 class="my-3">{{group.acronym|upper}} Statements</h2>
+    {% if request.user|has_role:"Secretariat" %}
+    <div class="buttonlist">
+        <a id="start_button"
+           class="btn btn-primary"
+           href="{% url 'ietf.doc.views_statement.new_statement' %}">
+            Start New Statement
+        </a>
+    </div>
+    {% endif %}
+    <table class="my-3 table table-sm table-striped tablesorter">
+        <thead>
+            <tr>
+                <th class="col-1" scope="col" data-sort="date">Date</th>
+                <th scope="col" data-sort="statement">Statement</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for statement in statements %}
+            <tr>
+                <td title="{{ statement.published|date:'Y-m-d H:i:s O' }}">{{ statement.published|date:"Y-m-d" }}</td>
+                <td><a href="{% url 'ietf.doc.views_doc.document_main' name=statement.name %}">{{statement.title}}</a></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}
+{% block js %}
+    <script src="{% static "ietf/js/list.js" %}"></script>
+{% endblock %}

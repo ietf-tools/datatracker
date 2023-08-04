@@ -657,6 +657,7 @@ URL_REGEXPS = {
     "acronym": r"(?P<acronym>[-a-z0-9]+)",
     "bofreq": r"(?P<name>bofreq-[-a-z0-9]+)",
     "charter": r"(?P<name>charter-[-a-z0-9]+)",
+    "statement": r"(?P<name>statement-[-a-z0-9]+)",
     "date": r"(?P<date>\d{4}-\d{2}-\d{2})",
     "name": r"(?P<name>[A-Za-z0-9._+-]+?)",
     "document": r"(?P<document>[a-z][-a-z0-9]+)", # regular document names
@@ -668,7 +669,6 @@ URL_REGEXPS = {
 # Override this in settings_local.py if needed
 # *_PATH variables ends with a slash/ .
 
-#DOCUMENT_PATH_PATTERN = '/a/www/ietf-ftp/{doc.type_id}/'
 DOCUMENT_PATH_PATTERN = '/a/ietfdata/doc/{doc.type_id}/'
 INTERNET_DRAFT_PATH = '/a/ietfdata/doc/draft/repository'
 INTERNET_DRAFT_PDF_PATH = '/a/www/ietf-datatracker/pdf/'

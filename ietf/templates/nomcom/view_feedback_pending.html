@@ -1,5 +1,5 @@
 {% extends "nomcom/nomcom_private_base.html" %}
-{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{# Copyright The IETF Trust 2015-2023, All Rights Reserved #}
 {% load origin %}
 {% load django_bootstrap5 %}
 {% load static %}
@@ -73,10 +73,6 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <tr>
-                            <th scope="row">U</th>
-                            <td>Unclassified</td>
-                        </tr>
                         {% for legend, t in type_dict.items %}
                             <tr>
                                 <th scope="row">{{ legend }}</th>
@@ -89,7 +85,6 @@
                     <thead>
                         <tr>
                             <th scope="col">Date</th>
-                            <th scope="col" class="text-center" title="Unclassified">U</th>
                             {% for legend, t in type_dict.items %}<th scope="col" class="text-center" title="{{ t.name }}">{{ legend }}</th>{% endfor %}
                             <th scope="col">Author</th>
                             <th scope="col">Subject</th>
@@ -118,7 +113,7 @@
                                                title="{{ choice.1 }}">
                                     </td>
                                 {% endfor %}
-                                <td>{% person_link form.instance.author %}</td>
+                                <td>{{ form.instance.author }}</td>
                                 <td>{{ form.instance.subject }}</td>
                                 <td>
                                     <button type="button"

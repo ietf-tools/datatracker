@@ -721,7 +721,7 @@ def ballot_rfceditornote(request, name):
                 e = WriteupDocEvent(doc=doc, rev=doc.rev, by=login)
                 e.by = login
                 e.type = "changed_rfc_editor_note_text"
-                e.desc = "RFC Editor Note was changed"
+                e.desc = f"RFC Editor Note was changed to \n{t}"
                 e.text = t.rstrip()
                 e.save()
 

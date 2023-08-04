@@ -2868,7 +2868,7 @@ class ApiSubmissionTests(BaseSubmitTestCase):
         self.assertEqual(r.status_code, 200)
         self.assertEqual(
             r.json(),
-            {'id': str(s.pk), 'state': 'validating'},
+            {'id': str(s.pk), 'state': 'validating', 'state_desc': s.state.name},
         )
 
         s.state_id = 'uploaded'
@@ -2877,7 +2877,7 @@ class ApiSubmissionTests(BaseSubmitTestCase):
         self.assertEqual(r.status_code, 200)
         self.assertEqual(
             r.json(),
-            {'id': str(s.pk), 'state': 'uploaded'},
+            {'id': str(s.pk), 'state': 'uploaded', 'state_desc': s.state.name},
         )
 
         # try an invalid one

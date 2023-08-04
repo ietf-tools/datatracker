@@ -148,6 +148,7 @@
         "ietf/static/js/upcoming.js",
         "ietf/static/js/upload-material.js",
         "ietf/static/js/upload_bofreq.js",
+        "ietf/static/js/upload_statement.js",
         "ietf/static/js/zxcvbn.js"
       ]
     },
