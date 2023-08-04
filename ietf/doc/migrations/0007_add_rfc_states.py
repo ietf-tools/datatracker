@@ -15,7 +15,7 @@ def forward(apps, schema_editor):
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("doc", "0004_alter_dochistory_ad_alter_dochistory_shepherd_and_more"),
+        ("doc", "0006_statements"),
     ]
 
     operations = [

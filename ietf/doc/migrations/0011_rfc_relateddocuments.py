@@ -39,7 +39,7 @@ def forward(apps, schema_editor):
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("doc", "0008_move_rfc_docevents"),
+        ("doc", "0010_move_rfc_docevents"),
     ]
 
     operations = [migrations.RunPython(forward)]
