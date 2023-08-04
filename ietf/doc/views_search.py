@@ -497,6 +497,7 @@ def ad_workload(request):
         [
             ("Publication Requested Internet-Draft", False),
             ("AD Evaluation Internet-Draft", False),
+            ("Last Call Requested Internet-Draft", True),
             ("In Last Call Internet-Draft", True),
             ("Waiting for Writeup Internet-Draft", False),
             ("IESG Evaluation - Defer Internet-Draft", False),
@@ -532,6 +533,7 @@ def ad_workload(request):
         [
             ("Publication Requested Status Change", False),
             ("AD Evaluation Status Change", False),
+            ("Last Call Requested Status Change", True),
             ("In Last Call Status Change", True),
             ("Waiting for Writeup Status Change", False),
             ("IESG Evaluation Status Change", True),
