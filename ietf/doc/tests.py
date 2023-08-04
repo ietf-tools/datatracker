@@ -1920,12 +1920,7 @@ class DocTestCase(TestCase):
 
     @override_settings(RFC_EDITOR_INFO_BASE_URL='https://www.rfc-editor.ietf.org/info/')
     def test_document_bibtex(self):
-        rfc = WgRfcFactory.create(
-                  #other_aliases = ['rfc6020',],
-                  states = [('draft','rfc'),('draft-iesg','pub')],
-                  std_level_id = 'ps',
-                  time = datetime.datetime(2010, 10, 10, tzinfo=ZoneInfo(settings.TIME_ZONE)),
-              )
+        rfc = WgRfcFactory.create(time=datetime.datetime(2010, 10, 10, tzinfo=ZoneInfo(settings.TIME_ZONE)))
         num = rfc.rfc_number
         DocEventFactory.create(
             doc=rfc,
@@ -1953,7 +1948,6 @@ class DocTestCase(TestCase):
 
         april1 = IndividualRfcFactory.create(
                   stream_id =       'ise',
-                  states =          [('draft','rfc'),('draft-iesg','pub')],
                   std_level_id =    'inf',
                   time =            datetime.datetime(1990, 4, 1, tzinfo=ZoneInfo(settings.TIME_ZONE)),
               )
