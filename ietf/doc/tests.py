@@ -1920,70 +1920,85 @@ class DocTestCase(TestCase):
 
     @override_settings(RFC_EDITOR_INFO_BASE_URL='https://www.rfc-editor.ietf.org/info/')
     def test_document_bibtex(self):
-        rfc = WgRfcFactory.create(time=datetime.datetime(2010, 10, 10, tzinfo=ZoneInfo(settings.TIME_ZONE)))
+        rfc = WgRfcFactory.create(
+            time=datetime.datetime(2010, 10, 10, tzinfo=ZoneInfo(settings.TIME_ZONE))
+        )
         num = rfc.rfc_number
         DocEventFactory.create(
             doc=rfc,
-            type='published_rfc',
+            type="published_rfc",
             time=datetime.datetime(2010, 10, 10, tzinfo=RPC_TZINFO),
         )
         #
-        url = urlreverse('ietf.doc.views_doc.document_bibtex', kwargs=dict(name=rfc.name))
+        url = urlreverse("ietf.doc.views_doc.document_bibtex", kwargs=dict(name=rfc.name))
         r = self.client.get(url)
-        entry = self._parse_bibtex_response(r)["rfc%s"%num]
-        self.assertEqual(entry['series'],   'Request for Comments')
-        self.assertEqual(int(entry['number']),   num)
-        self.assertEqual(entry['doi'],      '10.17487/RFC%s'%num)
-        self.assertEqual(entry['year'],     '2010')
-        self.assertEqual(entry['month'].lower()[0:3], 'oct')
-        self.assertEqual(entry['url'],      f'https://www.rfc-editor.ietf.org/info/rfc{num}')
+        entry = self._parse_bibtex_response(r)["rfc%s" % num]
+        self.assertEqual(entry["series"], "Request for Comments")
+        self.assertEqual(int(entry["number"]), num)
+        self.assertEqual(entry["doi"], "10.17487/RFC%s" % num)
+        self.assertEqual(entry["year"], "2010")
+        self.assertEqual(entry["month"].lower()[0:3], "oct")
+        self.assertEqual(entry["url"], f"https://www.rfc-editor.ietf.org/info/rfc{num}")
         #
-        self.assertNotIn('day', entry)
-
+        self.assertNotIn("day", entry)
+    
         # test for incorrect case - revision for RFC
         rfc = WgRfcFactory(name="rfc0000")
-        url = urlreverse('ietf.doc.views_doc.document_bibtex', kwargs=dict(name=rfc.name, rev='00'))
+        url = urlreverse(
+            "ietf.doc.views_doc.document_bibtex", kwargs=dict(name=rfc.name, rev="00")
+        )
         r = self.client.get(url)
         self.assertEqual(r.status_code, 404)
-
+    
         april1 = IndividualRfcFactory.create(
-                  stream_id =       'ise',
-                  std_level_id =    'inf',
-                  time =            datetime.datetime(1990, 4, 1, tzinfo=ZoneInfo(settings.TIME_ZONE)),
-              )
+            stream_id="ise",
+            std_level_id="inf",
+            time=datetime.datetime(1990, 4, 1, tzinfo=ZoneInfo(settings.TIME_ZONE)),
+        )
         num = april1.rfc_number
         DocEventFactory.create(
             doc=april1,
-            type='published_rfc',
+            type="published_rfc",
             time=datetime.datetime(1990, 4, 1, tzinfo=RPC_TZINFO),
         )
         #
-        url = urlreverse('ietf.doc.views_doc.document_bibtex', kwargs=dict(name=april1.name))
+        url = urlreverse(
+            "ietf.doc.views_doc.document_bibtex", kwargs=dict(name=april1.name)
+        )
         r = self.client.get(url)
-        self.assertEqual(r.get('Content-Type'), 'text/plain; charset=utf-8')
-        entry = self._parse_bibtex_response(r)["rfc%s"%num]
-        self.assertEqual(entry['series'],   'Request for Comments')
-        self.assertEqual(int(entry['number']),   num)
-        self.assertEqual(entry['doi'],      '10.17487/RFC%s'%num)
-        self.assertEqual(entry['year'],     '1990')
-        self.assertEqual(entry['month'].lower()[0:3],    'apr')
-        self.assertEqual(entry['day'],      '1')
-        self.assertEqual(entry['url'],      f'https://www.rfc-editor.ietf.org/info/rfc{num}')
-
+        self.assertEqual(r.get("Content-Type"), "text/plain; charset=utf-8")
+        entry = self._parse_bibtex_response(r)["rfc%s" % num]
+        self.assertEqual(entry["series"], "Request for Comments")
+        self.assertEqual(int(entry["number"]), num)
+        self.assertEqual(entry["doi"], "10.17487/RFC%s" % num)
+        self.assertEqual(entry["year"], "1990")
+        self.assertEqual(entry["month"].lower()[0:3], "apr")
+        self.assertEqual(entry["day"], "1")
+        self.assertEqual(entry["url"], f"https://www.rfc-editor.ietf.org/info/rfc{num}")
+    
         draft = IndividualDraftFactory.create()
-        docname = '%s-%s' % (draft.name, draft.rev)
-        bibname = docname[6:]           # drop the 'draft-' prefix
-        url = urlreverse('ietf.doc.views_doc.document_bibtex', kwargs=dict(name=draft.name))
+        docname = "%s-%s" % (draft.name, draft.rev)
+        bibname = docname[6:]  # drop the 'draft-' prefix
+        url = urlreverse("ietf.doc.views_doc.document_bibtex", kwargs=dict(name=draft.name))
         r = self.client.get(url)
         entry = self._parse_bibtex_response(r)[bibname]
-        self.assertEqual(entry['note'],     'Work in Progress')
-        self.assertEqual(entry['number'],   docname)
-        self.assertEqual(entry['year'],     str(draft.pub_date().year))
-        self.assertEqual(entry['month'].lower()[0:3],    draft.pub_date().strftime('%b').lower())
-        self.assertEqual(entry['day'],      str(draft.pub_date().day))
-        self.assertEqual(entry['url'],      settings.IDTRACKER_BASE_URL + urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name, rev=draft.rev)))
+        self.assertEqual(entry["note"], "Work in Progress")
+        self.assertEqual(entry["number"], docname)
+        self.assertEqual(entry["year"], str(draft.pub_date().year))
+        self.assertEqual(
+            entry["month"].lower()[0:3], draft.pub_date().strftime("%b").lower()
+        )
+        self.assertEqual(entry["day"], str(draft.pub_date().day))
+        self.assertEqual(
+            entry["url"],
+            settings.IDTRACKER_BASE_URL
+            + urlreverse(
+                "ietf.doc.views_doc.document_main",
+                kwargs=dict(name=draft.name, rev=draft.rev),
+            ),
+        )
         #
-        self.assertNotIn('doi', entry)
+        self.assertNotIn("doi", entry)
 
     def test_document_bibxml(self):
         draft = IndividualDraftFactory.create()
