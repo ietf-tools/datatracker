@@ -952,7 +952,7 @@ def view_feedback_unrelated(request, year):
                 messages.success(request, 'The selected feedback has been de-classified. Please reclassify it in the Pending emails tab.')
             else:
                 feedback.type = FeedbackTypeName.objects.get(slug=type)
-                messages.success(request, 'The selected feedback has been reclassified.')
+                messages.success(request, f'The selected feedback has been reclassified as {feedback.type.name}.')
             feedback.save()
         else:
             return render(request, 'nomcom/view_feedback_unrelated.html',
@@ -1024,7 +1024,7 @@ def view_feedback_nominee(request, year, nominee_id):
                 messages.success(request, 'The selected feedback has been de-classified. Please reclassify it in the Pending emails tab.')
             else:
                 feedback.type = FeedbackTypeName.objects.get(slug=type)
-                messages.success(request, 'The selected feedback has been reclassified.')
+                messages.success(request, f'The selected feedback has been reclassified as {feedback.type.name}.')
             feedback.save()
         else:
             return render(request, 'nomcom/view_feedback_nominee.html',
