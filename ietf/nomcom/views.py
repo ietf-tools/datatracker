@@ -774,7 +774,7 @@ def view_feedback(request, year):
     nominees = Nominee.objects.get_by_nomcom(nomcom).not_duplicated().distinct()
     independent_feedback_types = []
     nominee_feedback_types = []
-    for ft in FeedbackTypeName.objects.all():
+    for ft in FeedbackTypeName.objects.filter(used=True):
         if ft.slug in settings.NOMINEE_FEEDBACK_TYPES:
             nominee_feedback_types.append(ft)
         else:
@@ -930,7 +930,7 @@ def view_feedback_pending(request, year):
                                'formset': formset,
                                'extra_step': extra_step,
                                'extra_ids': extra_ids,
-                               'types': FeedbackTypeName.objects.all(),
+                               'types': FeedbackTypeName.objects.filter(used=True),
                                'nomcom': nomcom,
                                'is_chair_task' : True,
                                'page': feedback_page,
@@ -958,13 +958,13 @@ def view_feedback_unrelated(request, year):
             return render(request, 'nomcom/view_feedback_unrelated.html',
                               {'year': year,
                                'nomcom': nomcom,
-                               'feedback_types': FeedbackTypeName.objects.exclude(slug__in=settings.NOMINEE_FEEDBACK_TYPES),
+                               'feedback_types': FeedbackTypeName.objects.filter(used=True).exclude(slug__in=settings.NOMINEE_FEEDBACK_TYPES),
                                'reclassify_feedback': feedback,
                                'is_chair_task' : True,
                               })
 
     feedback_types = []
-    for ft in FeedbackTypeName.objects.exclude(slug__in=settings.NOMINEE_FEEDBACK_TYPES):
+    for ft in FeedbackTypeName.objects.filter(used=True).exclude(slug__in=settings.NOMINEE_FEEDBACK_TYPES):
         feedback_types.append({'ft': ft,
                                'feedback': ft.feedback_set.get_by_nomcom(nomcom)})
     return render(request, 'nomcom/view_feedback_unrelated.html',
@@ -1011,7 +1011,7 @@ def view_feedback_topic(request, year, topic_id):
 def view_feedback_nominee(request, year, nominee_id):
     nomcom = get_nomcom_by_year(year)
     nominee = get_object_or_404(Nominee, id=nominee_id)
-    feedback_types = FeedbackTypeName.objects.filter(slug__in=settings.NOMINEE_FEEDBACK_TYPES)
+    feedback_types = FeedbackTypeName.objects.filter(used=True, slug__in=settings.NOMINEE_FEEDBACK_TYPES)
 
     if request.method == 'POST':
         feedback_id = request.POST.get('feedback_id', None)
