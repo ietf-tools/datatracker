@@ -767,22 +767,9 @@ def process_nomination_status(request, year, nominee_position_id, state, date, h
                                'selected': 'feedback',
                                'form': form })
 
-@role_required("Nomcom Chair", "Nomcom Advisor")
-@nomcom_private_key_required
-def reclassify_feedback(request, year):
-    referer = request.META.get('HTTP_REFERER', None)
-    if 'view' in referer and ('nominee' in referer or 'topic' in referer or 'unrelated' in referer):
-        url = referer.replace('view', 'reclassify')
-        return HttpResponseRedirect(url)
-
-    return view_or_reclassify_feedback(request, year, reclassify=True)
-
 @role_required("Nomcom")
 @nomcom_private_key_required
 def view_feedback(request, year):
-    return view_or_reclassify_feedback(request, year, reclassify=False)
-
-def view_or_reclassify_feedback(request, year, reclassify):
     nomcom = get_nomcom_by_year(year)
     nominees = Nominee.objects.get_by_nomcom(nomcom).not_duplicated().distinct()
     independent_feedback_types = []
@@ -840,8 +827,7 @@ def view_or_reclassify_feedback(request, year, reclassify):
             topic_feedback.append( (ft.name,count,newflag) )
         topics_feedback.append ( {'topic':topic, 'feedback':topic_feedback} )
 
-    template = 'nomcom/reclassify_feedback.html' if reclassify else 'nomcom/view_feedback.html'
-    return render(request, template,
+    return render(request, 'nomcom/view_feedback.html',
                               {'year': year,
                                'selected': 'view_feedback',
                                'nominees': nominees,
@@ -852,7 +838,6 @@ def view_or_reclassify_feedback(request, year, reclassify):
                                'independent_feedback': independent_feedback,
                                'nominees_feedback': nominees_feedback,
                                'nomcom': nomcom,
-                               'is_chair_task': reclassify,
                                })
 
 
@@ -952,9 +937,11 @@ def view_feedback_pending(request, year):
                               })
 
 
-@role_required("Nomcom Chair", "Nomcom Advisor")
+@role_required("Nomcom")
 @nomcom_private_key_required
-def reclassify_feedback_unrelated(request, year):
+def view_feedback_unrelated(request, year):
+    nomcom = get_nomcom_by_year(year)
+
     if request.method == 'POST':
         feedback_id = request.POST.get('feedback_id', None)
         feedback = get_object_or_404(Feedback, id=feedback_id)
@@ -968,40 +955,30 @@ def reclassify_feedback_unrelated(request, year):
                 messages.success(request, 'The selected feedback has been reclassified.')
             feedback.save()
         else:
-            types = FeedbackTypeName.objects.exclude(slug__in=settings.NOMINEE_FEEDBACK_TYPES)
-            return render(request, 'nomcom/reclassify_feedback_unrelated.html',
+            return render(request, 'nomcom/view_feedback_unrelated.html',
                               {'year': year,
-                               'nomcom': get_nomcom_by_year(year),
-                               'feedback': feedback,
-                               'types': types,
+                               'nomcom': nomcom,
+                               'feedback_types': FeedbackTypeName.objects.exclude(slug__in=settings.NOMINEE_FEEDBACK_TYPES),
+                               'reclassify_feedback': feedback,
                                'is_chair_task' : True,
                               })
 
-    return view_or_reclassify_feedback_unrelated(request, year, reclassify=True)
-
-@role_required("Nomcom")
-@nomcom_private_key_required
-def view_feedback_unrelated(request, year, reclassify=False):
-    return view_or_reclassify_feedback_unrelated(request, year, reclassify=False)
-
-def view_or_reclassify_feedback_unrelated(request, year, reclassify=False):
-    nomcom = get_nomcom_by_year(year)
     feedback_types = []
     for ft in FeedbackTypeName.objects.exclude(slug__in=settings.NOMINEE_FEEDBACK_TYPES):
         feedback_types.append({'ft': ft,
                                'feedback': ft.feedback_set.get_by_nomcom(nomcom)})
-
-    template = 'nomcom/reclassify_feedback_unrelated.html' if reclassify else 'nomcom/view_feedback_unrelated.html'
-    return render(request, template,
+    return render(request, 'nomcom/view_feedback_unrelated.html',
                               {'year': year,
                                'feedback_types': feedback_types,
                                'nomcom': nomcom,
-                               'is_chair_task': reclassify,
                                })
 
-@role_required("Nomcom Chair", "Nomcom Advisor")
+@role_required("Nomcom")
 @nomcom_private_key_required
-def reclassify_feedback_topic(request, year, topic_id):
+def view_feedback_topic(request, year, topic_id):
+    # At present, the only feedback type for topics is 'comment'.
+    # Reclassifying from 'comment' to 'comment' is a no-op,
+    # so the only meaningful action is to de-classify it.
     if request.method == 'POST':
         feedback_id = request.POST.get('feedback_id', None)
         feedback = get_object_or_404(Feedback, id=feedback_id)
@@ -1010,16 +987,8 @@ def reclassify_feedback_topic(request, year, topic_id):
         feedback.save()
         messages.success(request, 'The selected feedback has been de-classified. Please reclassify it in the Pending emails tab.')
 
-    return view_or_reclassify_feedback_topic(request, year, topic_id, reclassify=True)
-
-@role_required("Nomcom")
-@nomcom_private_key_required
-def view_feedback_topic(request, year, topic_id):
-    return view_or_reclassify_feedback_topic(request, year, topic_id, reclassify=False)
-
-def view_or_reclassify_feedback_topic(request, year, topic_id, reclassify):
-    nomcom = get_nomcom_by_year(year)
     topic = get_object_or_404(Topic, id=topic_id)
+    nomcom = get_nomcom_by_year(year)
     feedback_types = FeedbackTypeName.objects.filter(slug__in=['comment',])
 
     last_seen = TopicFeedbackLastSeen.objects.filter(reviewer=request.user.person,topic=topic).first()
@@ -1029,19 +998,21 @@ def view_or_reclassify_feedback_topic(request, year, topic_id, reclassify):
     else:
         TopicFeedbackLastSeen.objects.create(reviewer=request.user.person,topic=topic)
 
-    template = 'nomcom/reclassify_feedback_topic.html' if reclassify else 'nomcom/view_feedback_topic.html'
-    return render(request, template,
+    return render(request, 'nomcom/view_feedback_topic.html',
                               {'year': year,
                                'topic': topic,
                                'feedback_types': feedback_types,
                                'last_seen_time' : last_seen_time,
                                'nomcom': nomcom,
-                               'is_chair_task': reclassify,
                                })
 
-@role_required("Nomcom Chair", "Nomcom Advisor")
+@role_required("Nomcom")
 @nomcom_private_key_required
-def reclassify_feedback_nominee(request, year, nominee_id):
+def view_feedback_nominee(request, year, nominee_id):
+    nomcom = get_nomcom_by_year(year)
+    nominee = get_object_or_404(Nominee, id=nominee_id)
+    feedback_types = FeedbackTypeName.objects.filter(slug__in=settings.NOMINEE_FEEDBACK_TYPES)
+
     if request.method == 'POST':
         feedback_id = request.POST.get('feedback_id', None)
         feedback = get_object_or_404(Feedback, id=feedback_id)
@@ -1056,26 +1027,13 @@ def reclassify_feedback_nominee(request, year, nominee_id):
                 messages.success(request, 'The selected feedback has been reclassified.')
             feedback.save()
         else:
-            types = FeedbackTypeName.objects.filter(slug__in=settings.NOMINEE_FEEDBACK_TYPES)
-            return render(request, 'nomcom/reclassify_feedback_nominee.html',
+            return render(request, 'nomcom/view_feedback_nominee.html',
                               {'year': year,
-                               'nomcom': get_nomcom_by_year(year),
-                               'feedback': feedback,
-                               'types': types,
-                               'is_chair_task' : True,
+                               'nomcom': nomcom,
+                               'feedback_types': feedback_types,
+                               'reclassify_feedback': feedback,
+                               'is_chair_task': True,
                               })
-
-    return view_or_reclassify_feedback_nominee(request, year, nominee_id, reclassify=True)
-
-@role_required("Nomcom")
-@nomcom_private_key_required
-def view_feedback_nominee(request, year, nominee_id):
-    return view_or_reclassify_feedback_nominee(request, year, nominee_id, reclassify=False)
-
-def view_or_reclassify_feedback_nominee(request, year, nominee_id, reclassify):
-    nomcom = get_nomcom_by_year(year)
-    nominee = get_object_or_404(Nominee, id=nominee_id)
-    feedback_types = FeedbackTypeName.objects.filter(slug__in=settings.NOMINEE_FEEDBACK_TYPES)
 
     last_seen = FeedbackLastSeen.objects.filter(reviewer=request.user.person,nominee=nominee).first()
     last_seen_time = (last_seen and last_seen.time) or datetime.datetime(year=1, month=1, day=1, tzinfo=datetime.timezone.utc)
@@ -1084,14 +1042,12 @@ def view_or_reclassify_feedback_nominee(request, year, nominee_id, reclassify):
     else:
         FeedbackLastSeen.objects.create(reviewer=request.user.person,nominee=nominee)
 
-    template = 'nomcom/reclassify_feedback_nominee.html' if reclassify else 'nomcom/view_feedback_nominee.html'
-    return render(request, template,
+    return render(request, 'nomcom/view_feedback_nominee.html',
                               {'year': year,
                                'nominee': nominee,
                                'feedback_types': feedback_types,
                                'last_seen_time' : last_seen_time,
                                'nomcom': nomcom,
-                               'is_chair_task': reclassify,
                                })
 
 

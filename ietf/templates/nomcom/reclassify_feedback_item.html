@@ -15,10 +15,10 @@
                     <th scope="row">U</th>
                     <td>Unclassified</td>
                 </tr>
-                {% for t in types %}
+                {% for ft in feedback_types %}
                     <tr>
-                        <th scope="row">{{ t.legend }}</th>
-                        <td>{{ t.name }}</td>
+                        <th scope="row">{{ ft.legend }}</th>
+                        <td>{{ ft.name }}</td>
                     </tr>
                 {% endfor %}
             </tbody>
@@ -28,8 +28,8 @@
                 <tr>
                     <th scope="col">Date</th>
                     <th scope="col" class="text-center" title="Unclassified">U</th>
-                    {% for t in types %}
-                        <th scope="col" class="text-center" title="{{ t.name }}">{{ t.legend }}</th>
+                    {% for ft in feedback_types %}
+                        <th scope="col" class="text-center" title="{{ ft.name }}">{{ ft.legend }}</th>
                     {% endfor %}
                     <th scope="col">Author</th>
                     <th scope="col">Subject</th>
@@ -39,7 +39,7 @@
             <tbody>
                 <tr>
                     <!-- [html-validate-disable-block input-missing-label -- labelled via aria-label] -->
-                    <td>{{ feedback.time|date:"r" }}</td>
+                    <td>{{ reclassify_feedback.time|date:"r" }}</td>
                     <td class="text-center">
                         <input type="radio"
                                class="form-check-input"
@@ -49,44 +49,44 @@
                                aria-label="Unclassified"
                                title="Unclassified">
                     </td>
-                    {% for t in types %}
+                    {% for ft in feedback_types %}
                         <td class="text-center">
                             <input type="radio"
                                    class="form-check-input"
                                    name="type"
-                                   value="{{ t.slug }}"
-                                   id="{{ t.name|slugify }}"
-                                   aria-label="{{ t.name }}"
-                                   {% if feedback.type == t %}checked{% endif %}
-                                   title="{{ t.name }}">
+                                   value="{{ ft.slug }}"
+                                   id="{{ ft.name|slugify }}"
+                                   aria-label="{{ ft.name }}"
+                                   {% if reclassify_feedback.type == t %}checked{% endif %}
+                                   title="{{ ft.name }}">
                         </td>
                     {% endfor %}
-                    <td>{{ feedback.author }}</td>
-                    <td>{{ feedback.subject }}</td>
+                    <td>{{ reclassify_feedback.author }}</td>
+                    <td>{{ reclassify_feedback.subject }}</td>
                     <td>
                         <button type="button"
                                 class="btn btn-primary btn-sm"
                                 data-bs-toggle="modal"
-                                data-bs-target="#modal{{ feedback.id }}">
+                                data-bs-target="#modal{{ reclassify_feedback.id }}">
                             View
                         </button>
                         <div class="modal fade"
-                             id="modal{{ feedback.id }}"
+                             id="modal{{ reclassify_feedback.id }}"
                              tabindex="-1"
                              role="dialog"
-                             aria-labelledby="label{{ feedback.id }}"
+                             aria-labelledby="label{{ reclassify_feedback.id }}"
                              aria-hidden="true">
                             <div class="modal-dialog modal-dialog-scrollable modal-xl">
                                 <div class="modal-content">
                                     <div class="modal-header">
-                                        <p class="h5 modal-title" id="label{{ feedback.id }}">{{ feedback.subject }}</p>
+                                        <p class="h5 modal-title" id="label{{ reclassify_feedback.id }}">{{ reclassify_feedback.subject }}</p>
                                         <button type="button"
                                                 class="btn-close"
                                                 data-bs-dismiss="modal"
                                                 aria-label="Close"></button>
                                     </div>
                                     <div class="modal-body">
-                                        <pre>{% decrypt feedback.comments request year 1 %}</pre>
+                                        <pre>{% decrypt reclassify_feedback.comments request year 1 %}</pre>
                                     </div>
                                     <div class="modal-footer">
                                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -98,6 +98,6 @@
                 </tr>
             </tbody>
         </table>
-        <input type="hidden" name="feedback_id" value="{{ feedback.id }}">
+        <input type="hidden" name="feedback_id" value="{{ reclassify_feedback.id }}">
         <button class="btn btn-primary" type="submit">Classify</button>
     </form>

@@ -2882,7 +2882,7 @@ class ReclassifyFeedbackTests(TestCase):
         super().tearDown()
 
     def test_reclassify_feedback_nominee(self):
-        url = reverse('ietf.nomcom.views.reclassify_feedback_nominee', kwargs={'year':self.nc.year(), 'nominee_id':self.nominee.id})
+        url = reverse('ietf.nomcom.views.view_feedback_nominee', kwargs={'year':self.nc.year(), 'nominee_id':self.nominee.id})
         login_testing_unauthorized(self,self.chair.user.username,url)
         provide_private_key_to_test_client(self)
 
@@ -2901,7 +2901,7 @@ class ReclassifyFeedbackTests(TestCase):
         self.assertEqual(Feedback.objects.filter(type='obe').count(), 1)
 
     def test_reclassify_feedback_topic(self):
-        url = reverse('ietf.nomcom.views.reclassify_feedback_topic', kwargs={'year':self.nc.year(), 'topic_id':self.topic.id})
+        url = reverse('ietf.nomcom.views.view_feedback_topic', kwargs={'year':self.nc.year(), 'topic_id':self.topic.id})
         login_testing_unauthorized(self,self.chair.user.username,url)
         provide_private_key_to_test_client(self)
 
@@ -2919,7 +2919,7 @@ class ReclassifyFeedbackTests(TestCase):
         self.assertEqual(Feedback.objects.filter(type=None).count(), 1)
 
     def test_reclassify_feedback_unrelated(self):
-        url = reverse('ietf.nomcom.views.reclassify_feedback_unrelated', kwargs={'year':self.nc.year()})
+        url = reverse('ietf.nomcom.views.view_feedback_unrelated', kwargs={'year':self.nc.year()})
         login_testing_unauthorized(self,self.chair.user.username,url)
         provide_private_key_to_test_client(self)
 
