@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2011-2020, All Rights Reserved
+# Copyright The IETF Trust 2011-2023, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -311,6 +311,24 @@ class ChangeStateTests(TestCase):
         # action holders
         self.assertCountEqual(draft.action_holders.all(), [ad])
         
+    def test_iesg_state_edit_button(self):
+        ad = Person.objects.get(user__username="ad")
+        draft = WgDraftFactory(ad=ad,states=[('draft','active'),('draft-iesg','ad-eval')])
+
+        url = urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name))
+        self.client.login(username="ad", password="ad+password")
+
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertIn("Edit", q('tr:contains("IESG state")').text())
+
+        draft.set_state(State.objects.get(used=True, type="draft-iesg", slug="dead"))
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertNotIn("Edit", q('tr:contains("IESG state")').text())
+
 
 class EditInfoTests(TestCase):
     def test_edit_info(self):
