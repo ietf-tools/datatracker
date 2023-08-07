@@ -14,7 +14,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import AnonymousUser
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.forms.models import modelformset_factory, inlineformset_factory 
-from django.http import Http404, HttpResponseRedirect, HttpResponse
+from django.http import Http404, HttpResponseRedirect, HttpResponse, HttpResponseForbidden
 from django.shortcuts import render, get_object_or_404, redirect
 from django.template.loader import render_to_string
 from django.urls import reverse
@@ -943,6 +943,8 @@ def view_feedback_unrelated(request, year):
     nomcom = get_nomcom_by_year(year)
 
     if request.method == 'POST':
+        if not nomcom.group.has_role(request.user, ['chair','advisor']):
+            return HttpResponseForbidden('Restricted to roles: Nomcom Chair, Nomcom Advisor')
         feedback_id = request.POST.get('feedback_id', None)
         feedback = get_object_or_404(Feedback, id=feedback_id)
         type = request.POST.get('type', None)
@@ -980,6 +982,9 @@ def view_feedback_topic(request, year, topic_id):
     # Reclassifying from 'comment' to 'comment' is a no-op,
     # so the only meaningful action is to de-classify it.
     if request.method == 'POST':
+        nomcom = get_nomcom_by_year(year)
+        if not nomcom.group.has_role(request.user, ['chair','advisor']):
+            return HttpResponseForbidden('Restricted to roles: Nomcom Chair, Nomcom Advisor')
         feedback_id = request.POST.get('feedback_id', None)
         feedback = get_object_or_404(Feedback, id=feedback_id)
         feedback.type = None
@@ -1014,6 +1019,8 @@ def view_feedback_nominee(request, year, nominee_id):
     feedback_types = FeedbackTypeName.objects.filter(used=True, slug__in=settings.NOMINEE_FEEDBACK_TYPES)
 
     if request.method == 'POST':
+        if not nomcom.group.has_role(request.user, ['chair','advisor']):
+            return HttpResponseForbidden('Restricted to roles: Nomcom Chair, Nomcom Advisor')
         feedback_id = request.POST.get('feedback_id', None)
         feedback = get_object_or_404(Feedback, id=feedback_id)
         type = request.POST.get('type', None)

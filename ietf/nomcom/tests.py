@@ -2873,6 +2873,7 @@ class ReclassifyFeedbackTests(TestCase):
         nomcom_test_data()
         self.nc = NomComFactory.create(**nomcom_kwargs_for_year())
         self.chair = self.nc.group.role_set.filter(name='chair').first().person
+        self.member = self.nc.group.role_set.filter(name='member').first().person
         self.nominee = self.nc.nominee_set.order_by('pk').first()
         self.position = self.nc.position_set.first()
         self.topic = self.nc.topic_set.first()
@@ -2882,15 +2883,21 @@ class ReclassifyFeedbackTests(TestCase):
         super().tearDown()
 
     def test_reclassify_feedback_nominee(self):
-        url = reverse('ietf.nomcom.views.view_feedback_nominee', kwargs={'year':self.nc.year(), 'nominee_id':self.nominee.id})
-        login_testing_unauthorized(self,self.chair.user.username,url)
-        provide_private_key_to_test_client(self)
-
         fb = FeedbackFactory.create(nomcom=self.nc,type_id='comment')
         fb.positions.add(self.position)
         fb.nominees.add(self.nominee)
         fb.save()
         self.assertEqual(Feedback.objects.comments().count(), 1)
+
+        url = reverse('ietf.nomcom.views.view_feedback_nominee', kwargs={'year':self.nc.year(), 'nominee_id':self.nominee.id})
+        login_testing_unauthorized(self,self.member.user.username,url)
+        provide_private_key_to_test_client(self)
+        response = self.client.post(url, {'feedback_id': fb.id, 'type': 'obe'})
+        self.assertEqual(response.status_code, 403)
+
+        self.client.logout()
+        self.client.login(username=self.chair.user.username, password=self.chair.user.username + "+password")
+        provide_private_key_to_test_client(self)
 
         response = self.client.post(url, {'feedback_id': fb.id, 'type': 'obe'})
         self.assertEqual(response.status_code, 200)
@@ -2901,14 +2908,20 @@ class ReclassifyFeedbackTests(TestCase):
         self.assertEqual(Feedback.objects.filter(type='obe').count(), 1)
 
     def test_reclassify_feedback_topic(self):
-        url = reverse('ietf.nomcom.views.view_feedback_topic', kwargs={'year':self.nc.year(), 'topic_id':self.topic.id})
-        login_testing_unauthorized(self,self.chair.user.username,url)
-        provide_private_key_to_test_client(self)
-
         fb = FeedbackFactory.create(nomcom=self.nc,type_id='comment')
         fb.topics.add(self.topic)
         fb.save()
         self.assertEqual(Feedback.objects.comments().count(), 1)
+
+        url = reverse('ietf.nomcom.views.view_feedback_topic', kwargs={'year':self.nc.year(), 'topic_id':self.topic.id})
+        login_testing_unauthorized(self,self.member.user.username,url)
+        provide_private_key_to_test_client(self)
+        response = self.client.post(url, {'feedback_id': fb.id, 'type': 'unclassified'})
+        self.assertEqual(response.status_code, 403)
+
+        self.client.logout()
+        self.client.login(username=self.chair.user.username, password=self.chair.user.username + "+password")
+        provide_private_key_to_test_client(self)
 
         response = self.client.post(url, {'feedback_id': fb.id, 'type': 'unclassified'})
         self.assertEqual(response.status_code, 200)
@@ -2919,12 +2932,18 @@ class ReclassifyFeedbackTests(TestCase):
         self.assertEqual(Feedback.objects.filter(type=None).count(), 1)
 
     def test_reclassify_feedback_unrelated(self):
-        url = reverse('ietf.nomcom.views.view_feedback_unrelated', kwargs={'year':self.nc.year()})
-        login_testing_unauthorized(self,self.chair.user.username,url)
-        provide_private_key_to_test_client(self)
-
         fb = FeedbackFactory(nomcom=self.nc, type_id='read')
         self.assertEqual(Feedback.objects.filter(type='read').count(), 1)
+
+        url = reverse('ietf.nomcom.views.view_feedback_unrelated', kwargs={'year':self.nc.year()})
+        login_testing_unauthorized(self,self.member.user.username,url)
+        provide_private_key_to_test_client(self)
+        response = self.client.post(url, {'feedback_id': fb.id, 'type': 'junk'})
+        self.assertEqual(response.status_code, 403)
+
+        self.client.logout()
+        self.client.login(username=self.chair.user.username, password=self.chair.user.username + "+password")
+        provide_private_key_to_test_client(self)
 
         response = self.client.post(url, {'feedback_id': fb.id, 'type': 'junk'})
         self.assertEqual(response.status_code, 200)
