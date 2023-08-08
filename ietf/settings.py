@@ -1191,7 +1191,7 @@ else:
     MIDDLEWARE += DEV_MIDDLEWARE
     TEMPLATES[0]['OPTIONS']['context_processors'] += DEV_TEMPLATE_CONTEXT_PROCESSORS
 
-if not 'CACHES' in locals():
+if 'CACHES' not in locals():
     if SERVER_MODE == 'production':
         CACHES = {
             'default': {
@@ -1269,7 +1269,7 @@ if not 'CACHES' in locals():
                 },
             },
         }
-        
+
 # We provide a secret key only for test and development modes.  It's
 # absolutely vital that django fails to start in production mode unless a
 # secret key has been provided elsewhere, not in this file which is
