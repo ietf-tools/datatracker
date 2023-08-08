@@ -59,6 +59,6 @@ class Command(BaseCommand):
                                        position__nomcom=nc, position__name='Test Area Director', position__is_iesg_position=True,
                                       )
 
-                self.stdout.write("%s\n" % key)
+                self.stdout.write("%s\n" % key.decode())
                 self.stdout.write("Nomcom 7437 created. The private key can also be found at any time\nin ietf/nomcom/factories.py. Note that it is NOT a secure key.\n")
 
