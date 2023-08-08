@@ -516,11 +516,13 @@ def document_main(request, name, rev=None, document_html=False):
         # Do not show the Auth48 URL in the "Additional URLs" section
         additional_urls = doc.documenturl_set.exclude(tag_id='auth48')
 
-        # Stream description passing test
+        # Stream description and name passing test
         if doc.stream != None:
             stream_desc = doc.stream.desc
+            stream = "draft-stream-" + doc.stream.slug
         else:
             stream_desc = "(None)"
+            stream = "(None)"
 
         html = None
         js = None
@@ -557,6 +559,7 @@ def document_main(request, name, rev=None, document_html=False):
                                        split_content=split_content,
                                        revisions=simple_diff_revisions if document_html else revisions,
                                        snapshot=snapshot,
+                                       stream=stream,
                                        stream_desc=stream_desc,
                                        latest_revision=latest_revision,
                                        latest_rev=latest_rev,

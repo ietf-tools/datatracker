@@ -47,7 +47,7 @@
                 {% if doc.stream %}
                     <th scope="row">
                         {% if doc.stream.slug != "legacy" %}
-                            <a href="{% url "ietf.help.views.state" doc=doc.type.slug type=doc.stream.slug %}">
+                            <a href="{% url "ietf.doc.views_help.state_help" type=stream %}">
                                 {% if doc.stream_id == 'ietf' %}
                                     WG
                                 {% else %}
@@ -274,7 +274,7 @@
                         IESG
                     </th>
                     <th scope="row">
-                        <a href="{% url "ietf.help.views.state" doc=doc.type.slug type="iesg" %}">
+                        <a href="{% url "ietf.doc.views_help.state_help" type="draft-iesg" %}">
                             IESG state
                         </a>
                     </th>
@@ -468,7 +468,7 @@
                                 IANA
                             </th>
                             <th scope="row">
-                                <a href="{% url "ietf.help.views.state" doc=doc.type.slug type="iana-review" %}">
+                                <a href="{% url "ietf.doc.views_help.state_help" type="draft-iana-review" %}">
                                     IANA review state
                                 </a>
                             </th>
@@ -497,7 +497,7 @@
                                 {% if not can_edit_iana_state and not iana_review_state %}IANA{% endif %}
                             </th>
                             <th scope="row">
-                                <a href="{% url "ietf.help.views.state" doc=doc.type.slug type="iana-action" %}">
+                                <a href="{% url "ietf.doc.views_help.state_help" type="draft-iana-action" %}">
                                     IANA action state
                                 </a>
                             </th>
@@ -526,7 +526,7 @@
                                 {% if not can_edit_iana_state and not iana_review_state and not iana_action_state %}IANA{% endif %}
                             </th>
                             <th scope="row">
-                                <a href="{% url "ietf.help.views.state" doc=doc.type.slug type="iana-experts" %}">
+                                <a href="{% url "ietf.doc.views_help.state_help" type="draft-iana-experts" %}">
                                     IANA expert review state
                                 </a>
                             </th>
@@ -587,7 +587,7 @@
                             RFC Editor
                         </th>
                         <th scope="row">
-                            <a href="{% url "ietf.help.views.state" doc=doc.type.slug type="rfceditor" %}">
+                            <a href="{% url "ietf.doc.views_help.state_help" type="draft-rfceditor" %}">
                                 RFC Editor state
                             </a>
                         </th>
