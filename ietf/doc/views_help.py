@@ -1,3 +1,5 @@
+# Copyright The IETF Trust 2013-2023, All Rights Reserved
+
 from django.shortcuts import render, get_object_or_404
 from django.http import Http404
 
@@ -21,6 +23,7 @@ def state_help(request, type=None):
         "status-change": ("statchg", "RFC Status Change States"),
         "bofreq": ("bofreq", "BOF Request States"),
         "procmaterials": ("procmaterials", "Proceedings Materials States"),
+        "statement": {"statement", "Statement States"}
         }.get(type, (None, None))
     state_type = get_object_or_404(StateType, slug=slug)
 

@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{# Copyright The IETF Trust 2016-2020, All Rights Reserved #}
+{# Copyright The IETF Trust 2016-2023, All Rights Reserved #}
 {% load origin %}
 {% load static %}
 {% load ietf_filters %}
@@ -279,7 +279,7 @@
                         </a>
                     </th>
                     <td class="edit">
-                        {% if iesg_state.slug != 'idexists' and can_edit %}
+                        {% if iesg_state.slug != 'idexists' and iesg_state.slug != 'dead' and can_edit %}
                             <a class="btn btn-primary btn-sm"
                                href="{% url 'ietf.doc.views_draft.change_state' name=doc.name %}">
                                 Edit

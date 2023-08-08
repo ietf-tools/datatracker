@@ -206,6 +206,36 @@
             </tbody>
         </table>
     {% endif %}
+    <!-- Editorial Sessions -->
+    {% if editorial %}
+        <h2 class="mt-5" id="editorial">Editorial Stream</h2>
+        <table class="table table-sm table-striped tablesorter">
+            <thead>
+                <tr>
+                    <th scope="col" data-sort="group">
+                        Group
+                    </th>
+                    <th scope="col" data-sort="artifacts">
+                        Artifacts
+                    </th>
+                    <th scope="col" data-sort="recordings">
+                        Recordings
+                    </th>
+                    <th scope="col" data-sort="slides">
+                        Slides
+                    </th>
+                    <th scope="col" data-sort="drafts">
+                        Internet-Drafts
+                    </th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for entry in editorial %}
+                    {% include "meeting/group_proceedings.html" with entry=entry meeting=meeting show_agenda=True only %}
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
     {% endif %}
 {% endcache %}
 {% endblock %}

@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2007-2022, All Rights Reserved
+# Copyright The IETF Trust 2007-2023, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -10,6 +10,7 @@ import os
 import sys
 import datetime
 import warnings
+from hashlib import sha384
 from typing import Any, Dict, List, Tuple # pyflakes:ignore
 
 warnings.simplefilter("always", DeprecationWarning)
@@ -657,6 +658,7 @@ URL_REGEXPS = {
     "acronym": r"(?P<acronym>[-a-z0-9]+)",
     "bofreq": r"(?P<name>bofreq-[-a-z0-9]+)",
     "charter": r"(?P<name>charter-[-a-z0-9]+)",
+    "statement": r"(?P<name>statement-[-a-z0-9]+)",
     "date": r"(?P<date>\d{4}-\d{2}-\d{2})",
     "name": r"(?P<name>[A-Za-z0-9._+-]+?)",
     "document": r"(?P<document>[a-z][-a-z0-9]+)", # regular document names
@@ -668,7 +670,6 @@ URL_REGEXPS = {
 # Override this in settings_local.py if needed
 # *_PATH variables ends with a slash/ .
 
-#DOCUMENT_PATH_PATTERN = '/a/www/ietf-ftp/{doc.type_id}/'
 DOCUMENT_PATH_PATTERN = '/a/ietfdata/doc/{doc.type_id}/'
 INTERNET_DRAFT_PATH = '/a/ietfdata/doc/draft/repository'
 INTERNET_DRAFT_PDF_PATH = '/a/www/ietf-datatracker/pdf/'
@@ -733,6 +734,9 @@ CACHES = {
         'LOCATION': '127.0.0.1:11211',
         'VERSION': __version__,
         'KEY_PREFIX': 'ietf:dt',
+        'KEY_FUNCTION': lambda key, key_prefix, version: (
+            f"{key_prefix}:{version}:{sha384(key.encode('utf8')).hexdigest()}"
+        ),
     },
     'sessions': {
         'BACKEND': 'ietf.utils.cache.LenientMemcacheCache',
@@ -802,7 +806,7 @@ NOMCOM_PUBLIC_KEYS_DIR = '/a/www/nomcom/public_keys/'
 NOMCOM_FROM_EMAIL = 'nomcom-chair-{year}@ietf.org'
 OPENSSL_COMMAND = '/usr/bin/openssl'
 DAYS_TO_EXPIRE_NOMINATION_LINK = ''
-NOMINEE_FEEDBACK_TYPES = ['comment', 'questio', 'nomina']
+NOMINEE_FEEDBACK_TYPES = ['comment', 'questio', 'nomina', 'obe']
 
 # SlideSubmission settings
 SLIDE_STAGING_PATH = '/a/www/www6s/staging/'

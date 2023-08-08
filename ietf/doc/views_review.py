@@ -389,9 +389,6 @@ def reject_reviewer_assignment(request, name, assignment_id):
                 state=review_assignment.state,
             )
 
-            policy = get_reviewer_queue_policy(review_assignment.review_request.team)
-            policy.return_reviewer_to_rotation_top(review_assignment.reviewer.person, form.cleaned_data['wants_to_be_next'])
-
             msg = render_to_string("review/reviewer_assignment_rejected.txt", {
                 "by": request.user.person,
                 "message_to_secretary": form.cleaned_data.get("message_to_secretary"),
@@ -441,7 +438,7 @@ def withdraw_reviewer_assignment(request, name, assignment_id):
         )            
 
         policy = get_reviewer_queue_policy(review_assignment.review_request.team)
-        policy.return_reviewer_to_rotation_top(review_assignment.reviewer.person, True)
+        policy.set_wants_to_be_next(review_assignment.reviewer.person)
         
         msg = "Review assignment withdrawn by %s"%request.user.person
 

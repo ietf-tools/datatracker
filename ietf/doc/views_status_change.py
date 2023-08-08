@@ -418,7 +418,7 @@ def clean_helper(form, formtype):
         rfc_fields = {}
         status_fields={}
         for k in sorted(form.data.keys()):
-            v = form.data[k]
+            v = form.data[k].lower()
             if k.startswith('new_relation_row'):
                 if re.match(r'\d{1,4}',v):
                     v = 'rfc'+v
@@ -685,7 +685,7 @@ def last_call(request, name):
     form = LastCallTextForm(initial=dict(last_call_text=escape(last_call_event.text)))
 
     if request.method == 'POST':
-        if "save_last_call_text" in request.POST or "send_last_call_request" in request.POST:
+        if "save_last_call_text" in request.POST or ("send_last_call_request" in request.POST and status_change.ad is not None):
             form = LastCallTextForm(request.POST)
             if form.is_valid():
                 events = []
