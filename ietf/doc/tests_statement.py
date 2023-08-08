@@ -72,9 +72,7 @@ This test section has some text.
 
         doc.set_state(State.objects.get(type_id="statement", slug="replaced"))
         doc2 = StatementFactory()
-        doc2.relateddocument_set.create(
-            relationship_id="replaces", target=doc.docalias.first()
-        )
+        doc2.relateddocument_set.create(relationship_id="replaces", target=doc)
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
         q = PyQuery(response.content)
