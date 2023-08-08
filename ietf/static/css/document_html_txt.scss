@@ -1,8 +1,7 @@
-// Based on https://github.com/martinthomson/rfc-txt-html/blob/db4be92247979541cd26a32b7b2bf0e044ca098b/txt.css
-// (Version hash to make future merging easier.)
+// Based on https://github.com/martinthomson/rfc-txt-html/blob/main/txt.css
 
 :root {
-  --line: 1.2em;
+  --line: 1.3em;
   --block: 0 0 0 3ch;
   --paragraph: var(--line) 0 var(--line) 3ch;
 }
@@ -425,8 +424,8 @@ sup, sub {
 /* Authors */
 address, address.vcard {
   font-style: normal;
-  // margin: 2em 0 var(--line) 3ch;
-  margin-top: 2em;
+  // margin: var(--line) 0 var(--line) 3ch
+  margin-top: var(--line);
   margin-right: 0;
   margin-bottom: var(--line);
   margin-left: 3ch;

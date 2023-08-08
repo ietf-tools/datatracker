@@ -9,7 +9,7 @@
     <h1>
         IESG agenda
         <br>
-        <small class="text-muted">{{ date }}</small>
+        <small class="text-body-secondary">{{ date }}</small>
     </h1>
     {% include "iesg/nav.html" with active="agenda" %}
     {% if user|has_role:"Secretariat" %}
@@ -106,7 +106,7 @@
                         {% include "iesg/agenda_charter.html" %}
                     {% endif %}
                 {% empty %}
-                    <p class="text-muted">
+                    <p class="text-body-secondary">
                         (None)
                     </p>
                 {% endfor %}

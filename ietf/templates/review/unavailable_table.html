@@ -1,25 +1,54 @@
-<table class="mt-2 mb-0 table table-sm table-borderless">
+{% load origin %}
+{% origin %}
+<table class="m-0 p-0 table table-sm table-borderless">
+    <thead class="d-nones">
+        <tr>
+            <th scope="row" class="p-0 col-3"></th>
+            <th scope="row" class="p-0 col"></th>
+        </tr>
+    </thead>
     <tbody>
+    {% if person %}
+        {% if person.settings.min_interval %}
+            <tr>
+                <th class="bg-transparent p-0 pe-1" scope="row">Can review:</th>
+                <td class="bg-transparent p-0">{{ person.settings.get_min_interval_display }}</td>
+            </tr>
+        {% endif %}
+        {% if person.settings.skip_next %}
+            <tr>
+                <th class="bg-transparent p-0 pe-1" scope="row">Skip next:</th>
+                <td class="bg-transparent p-0">{{ person.settings.skip_next|yesno }}</td>
+            </tr>
+        {% endif %}
+        {% if person.settings.filter_re %}
+            <tr>
+                <th class="bg-transparent p-0 pe-1" scope="row">Filter:</th>
+                <td class="bg-transparent p-0"><code title="{{ person.settings.filter_re }}">{{ person.settings.filter_re }}</code></td>
+            </tr>
+        {% endif %}
+    {% endif %}
     {% for p in unavailable_periods %}
         <tr class="unavailable-period-{{ p.state }}">
-            <th scope="row">Period:</th>
-            <td>{{ p.state }}</td>
+            <th class="bg-transparent p-0 pe-1" scope="row">Period:</th>
+            <td class="bg-transparent p-0">{{ p.state }}</td>
         </tr>
         <tr class="unavailable-period-{{ p.state }}">
-            <th scope="row">Dates:</th>
-            <td>
-                {% if p.start_date or p.end_date %}{{ p.start_date|default:"&infin;" }} -{% endif %}
-                {{ p.end_date|default:"&infin;" }}
+            <th class="bg-transparent p-0 pe-1" scope="row">Dates:</th>
+            <td class="bg-transparent p-0">
+                {% if p.start_date or p.end_date %}{{ p.start_date|default:"&infin;" }}-{% endif %}{{ p.end_date|default:"&infin;" }}
             </td>
         </tr>
         <tr class="unavailable-period-{{ p.state }}">
-            <th scope="row">Availability:</th>
-            <td>{{ p.get_availability_display }}</td>
+            <th class="bg-transparent p-0 pe-1" scope="row">Available:</th>
+            <td class="bg-transparent p-0">{{ p.get_availability_display }}</td>
         </tr>
+        {% if p.reason %}
         <tr class="unavailable-period-{{ p.state }}">
-            <th scope="row">Reason:</th>
-            <td>{{ p.reason }}</td>
+            <th class="bg-transparent p-0 pe-1" scope="row">Reason:</th>
+            <td class="bg-transparent p-0">{{ p.reason }}</td>
         </tr>
+        {% endif %}
     {% endfor %}
     </tbody>
 </table>

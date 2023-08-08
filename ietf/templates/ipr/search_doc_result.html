@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="{% static "ietf/css/list.css" %}">
 {% endblock %}
 
-{% block search_header %}Document IPR search results<br><small class="text-muted">{{doc}}</small>{% endblock %}
+{% block search_header %}Document IPR search results<br><small class="text-body-secondary">{{doc}}</small>{% endblock %}
 
 {% block search_result %}
     <p class="alert alert-info my-3">Total number of IPR disclosures found: <b>{{ iprs|length }}</b>.</p>

@@ -11,7 +11,7 @@
     <h1>
         History for IPR disclosure
         <br>
-        <small class="text-muted">{{ ipr.title }}</small>
+        <small class="text-body-secondary">{{ ipr.title }}</small>
     </h1>
     {% include "ipr/details_tabs.html" %}
     {% if user|has_role:"Area Director,Secretariat,IANA,RFC Editor" %}

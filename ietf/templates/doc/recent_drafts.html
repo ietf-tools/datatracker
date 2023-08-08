@@ -13,7 +13,7 @@
         Internet-Drafts submitted during the last {{ days|default:7 }} days
         {% if pages %}
             <br>
-            <small class="text-muted">{{ pages }} pages</small>
+            <small class="text-body-secondary">{{ pages }} pages</small>
         {% endif %}
     </h1>
     {% include "doc/search/search_results.html" with start_table=True end_table=True %}

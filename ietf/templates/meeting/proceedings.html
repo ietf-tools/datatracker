@@ -46,7 +46,7 @@
     <!-- Working groups -->
     {% for area, meeting_groups, not_meeting_groups in ietf_areas %}
         <h2 class="mt-5" id="{{ area.acronym }}">
-            {{ area.acronym|upper }} <small class="text-muted">{{ area.name }}</small>
+            {{ area.acronym|upper }} <small class="text-body-secondary">{{ area.name }}</small>
         </h2>
         {% if meeting_groups %}
             <table class="table table-sm table-striped tablesorter">
@@ -118,7 +118,7 @@
     <!-- IAB Sessions -->
     {% if iab %}
         <h2 class="mt-5" id="iab">
-            IAB <small class="text-muted">Internet Architecture Board</small>
+            IAB <small class="text-body-secondary">Internet Architecture Board</small>
         </h2>
         <table class="table table-sm table-striped tablesorter">
             <thead>
@@ -150,7 +150,7 @@
     <!-- IRTF Sessions -->
     {% if irtf.meeting_groups  %}
         <h2 class="mt-5" id="irtf">
-            IRTF <small class="text-muted">Internet Research Task Force</small>
+            IRTF <small class="text-body-secondary">Internet Research Task Force</small>
         </h2>
         <table class="table table-sm table-striped tablesorter">
             <thead>
@@ -203,6 +203,36 @@
                 {% for entry in irtf.not_meeting %}{% if entry.has_materials %}
                     {% include "meeting/group_proceedings.html" with entry=entry meeting=meeting show_agenda=True only %}
                 {% endif %}{% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+    <!-- Editorial Sessions -->
+    {% if editorial %}
+        <h2 class="mt-5" id="editorial">Editorial Stream</h2>
+        <table class="table table-sm table-striped tablesorter">
+            <thead>
+                <tr>
+                    <th scope="col" data-sort="group">
+                        Group
+                    </th>
+                    <th scope="col" data-sort="artifacts">
+                        Artifacts
+                    </th>
+                    <th scope="col" data-sort="recordings">
+                        Recordings
+                    </th>
+                    <th scope="col" data-sort="slides">
+                        Slides
+                    </th>
+                    <th scope="col" data-sort="drafts">
+                        Internet-Drafts
+                    </th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for entry in editorial %}
+                    {% include "meeting/group_proceedings.html" with entry=entry meeting=meeting show_agenda=True only %}
+                {% endfor %}
             </tbody>
         </table>
     {% endif %}

@@ -7,7 +7,7 @@
 {% block title %}IETF {{ meeting.number }} Meeting Agenda: {{ schedule.owner }} / {{ schedule.name }}{% endblock %}
 {% block content %}
     {% origin %}
-    <h1>IETF {{ meeting.number }} Schedule<br><small class="text-muted">
+    <h1>IETF {{ meeting.number }} Schedule<br><small class="text-body-secondary">
     {{ schedule.owner }}/{{ schedule.name }} ({{ schedule.official_token }})</small></h1>
     <div class="my-3">
         {% if not schedule.is_official %}

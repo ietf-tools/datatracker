@@ -14,7 +14,7 @@
     {% origin %}
     {{ top|safe }}
     {% include "doc/revisions_list.html" %}
-    <div id="timeline"></div>
+    <div id="doc-timeline"></div>
     {% if doc.rev|charter_major_rev != latest_rev|charter_major_rev %}
         <div class="alert alert-warning my-3">
             The information below is for an older
@@ -152,7 +152,7 @@
                     </td>
                     <td>
                         {% if not telechat %}
-                            <span class="text-muted">(None)</span>
+                            <span class="text-body-secondary">(None)</span>
                         {% else %}
                             On agenda of {{ telechat.telechat_date|date:"Y-m-d" }} IESG telechat
                         {% endif %}
@@ -175,7 +175,7 @@
                     {% endif %}
                 </td>
                 <td>
-                    {{ doc.notify|default:'<span class="text-muted">(None)</span>' }}
+                    {{ doc.notify|default:'<span class="text-body-secondary">(None)</span>' }}
                 </td>
             </tr>
         </tbody>

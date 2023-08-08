@@ -12,7 +12,7 @@
     <h1>
         IPR Details
         <br>
-        <small class="text-muted">{{ ipr.title }}</small>
+        <small class="text-body-secondary">{{ ipr.title }}</small>
     </h1>
     {% include "ipr/details_tabs.html" %}
     <div class="buttonlist my-3">
@@ -455,7 +455,7 @@
         <h2 class="mt-5">
             {% cycle section %}. Disclosure of Patent Information
             <br>
-            <small class="text-muted">i.e., patents or patent applications required to be disclosed by {{ in_force_ipr_rfc|urlize_ietf_docs }}</small>
+            <small class="text-body-secondary">i.e., patents or patent applications required to be disclosed by {{ in_force_ipr_rfc|urlize_ietf_docs }}</small>
         </h2>
         <p>
             A. For granted patents or published pending patent applications, please provide the following information:

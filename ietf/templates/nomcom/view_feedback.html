@@ -1,5 +1,5 @@
 {% extends "nomcom/nomcom_private_base.html" %}
-{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{# Copyright The IETF Trust 2015-2023, All Rights Reserved #}
 {% load origin static %}
 {% load nomcom_tags %}
 {% block subtitle %}- View feedback{% endblock %}
@@ -54,6 +54,18 @@
                     </tr>
                 {% endfor %}
             </tbody>
+            <tfoot>
+                <tr>
+                    <th scope="row">Totals</th>
+                    <td></td>
+                    <td></td>
+                    {% for fbtype_count in staterank.list|feedback_totals %}
+                    <td>
+                        {{ fbtype_count }}
+                    </td>
+                    {% endfor %}
+                </tr>
+            </tfoot>
         </table>
     {% endfor %}
     <h2 class="mt-5" id="topics">Feedback related to topics</h2>

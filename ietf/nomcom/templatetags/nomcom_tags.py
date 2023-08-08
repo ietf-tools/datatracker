@@ -1,7 +1,9 @@
-# Copyright The IETF Trust 2013-2019, All Rights Reserved
+# Copyright The IETF Trust 2013-2023, All Rights Reserved
 import os
 import tempfile
 import re
+
+from collections import defaultdict
 
 from django import template
 from django.conf import settings
@@ -84,3 +86,11 @@ def decrypt(string, request, year, plain=False):
     if not plain:
         return force_escape(linebreaksbr(out))
     return mark_safe(force_escape(out))
+
+@register.filter
+def feedback_totals(staterank_list):
+    totals = defaultdict(lambda: 0)
+    for fb_dict in staterank_list:
+        for fbtype_name, fbtype_count, _ in fb_dict['feedback']:
+            totals[fbtype_name] += fbtype_count
+    return totals.values()

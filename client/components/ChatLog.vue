@@ -15,7 +15,7 @@
       )
       template(#default)
         div(v-html='item.text')
-  span.text-muted(v-else)
+  span.text-body-secondary(v-else)
     em No chat log available.
 </template>
   

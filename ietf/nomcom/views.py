@@ -1,10 +1,10 @@
-# Copyright The IETF Trust 2012-2020, All Rights Reserved
+# Copyright The IETF Trust 2012-2023, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
 import datetime
 import re
-from collections import OrderedDict, Counter
+from collections import Counter
 import csv
 import hmac
 
@@ -14,7 +14,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import AnonymousUser
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.forms.models import modelformset_factory, inlineformset_factory 
-from django.http import Http404, HttpResponseRedirect, HttpResponse
+from django.http import Http404, HttpResponseRedirect, HttpResponse, HttpResponseForbidden
 from django.shortcuts import render, get_object_or_404, redirect
 from django.template.loader import render_to_string
 from django.urls import reverse
@@ -190,6 +190,7 @@ def private_index(request, year):
     nomcom = get_nomcom_by_year(year)
     all_nominee_positions = NomineePosition.objects.get_by_nomcom(nomcom).not_duplicated()
     is_chair = nomcom.group.has_role(request.user, "chair")
+    mailto = None
     if is_chair and request.method == 'POST':
         if nomcom.group.state_id != 'active':
             messages.warning(request, "This nomcom is not active. Request administrative assistance if Nominee state needs to change.")
@@ -207,6 +208,8 @@ def private_index(request, year):
                 elif action == "set_as_pending":
                     nominations.update(state='pending')
                     messages.success(request,'The selected nominations have been set as pending')
+                elif action == 'email':
+                    mailto = ','.join([np.nominee.email.email_address() for np in nominations])
             else:
                 messages.warning(request, "Please, select some nominations to work with")
 
@@ -233,7 +236,7 @@ def private_index(request, year):
                 'position__id':p.pk,
                 'position': p,
               } for p in positions]
-    states = list(NomineePositionStateName.objects.values('slug', 'name')) + [{'slug': questionnaire_state, 'name': 'Questionnaire'}]
+    states = [{'slug': questionnaire_state, 'name': 'Accepted and sent Questionnaire'}] + list(NomineePositionStateName.objects.values('slug', 'name'))
     positions = set([ n.position for n in all_nominee_positions.order_by('position__name') ])
     for s in stats:
         for state in states:
@@ -278,6 +281,7 @@ def private_index(request, year):
                                'selected_position': selected_position and int(selected_position) or None,
                                'selected': 'index',
                                'is_chair': is_chair,
+                               'mailto': mailto,
                               })
 
 
@@ -763,7 +767,6 @@ def process_nomination_status(request, year, nominee_position_id, state, date, h
                                'selected': 'feedback',
                                'form': form })
 
-
 @role_required("Nomcom")
 @nomcom_private_key_required
 def view_feedback(request, year):
@@ -771,7 +774,7 @@ def view_feedback(request, year):
     nominees = Nominee.objects.get_by_nomcom(nomcom).not_duplicated().distinct()
     independent_feedback_types = []
     nominee_feedback_types = []
-    for ft in FeedbackTypeName.objects.all():
+    for ft in FeedbackTypeName.objects.filter(used=True):
         if ft.slug in settings.NOMINEE_FEEDBACK_TYPES:
             nominee_feedback_types.append(ft)
         else:
@@ -834,7 +837,8 @@ def view_feedback(request, year):
                                'topics_feedback': topics_feedback,
                                'independent_feedback': independent_feedback,
                                'nominees_feedback': nominees_feedback,
-                               'nomcom': nomcom})
+                               'nomcom': nomcom,
+                               })
 
 
 @role_required("Nomcom Chair", "Nomcom Advisor")
@@ -920,23 +924,13 @@ def view_feedback_pending(request, year):
         formset = FeedbackFormSet(queryset=feedback_page.object_list)
         for form in formset.forms:
             form.set_nomcom(nomcom, request.user)
-    type_dict = OrderedDict()
-    for t in FeedbackTypeName.objects.all().order_by('pk'):
-        rest = t.name
-        slug = rest[0]
-        rest = rest[1:]
-        while slug in type_dict and rest:
-            slug = rest[0]
-            rest = rest[1]
-        type_dict[slug] = t
     return render(request, 'nomcom/view_feedback_pending.html',
                               {'year': year,
                                'selected': 'feedback_pending',
                                'formset': formset,
                                'extra_step': extra_step,
-                               'type_dict': type_dict,
                                'extra_ids': extra_ids,
-                               'types': FeedbackTypeName.objects.all().order_by('pk'),
+                               'types': FeedbackTypeName.objects.filter(used=True),
                                'nomcom': nomcom,
                                'is_chair_task' : True,
                                'page': feedback_page,
@@ -947,22 +941,59 @@ def view_feedback_pending(request, year):
 @nomcom_private_key_required
 def view_feedback_unrelated(request, year):
     nomcom = get_nomcom_by_year(year)
+
+    if request.method == 'POST':
+        if not nomcom.group.has_role(request.user, ['chair','advisor']):
+            return HttpResponseForbidden('Restricted to roles: Nomcom Chair, Nomcom Advisor')
+        feedback_id = request.POST.get('feedback_id', None)
+        feedback = get_object_or_404(Feedback, id=feedback_id)
+        type = request.POST.get('type', None)
+        if type:
+            if type == 'unclassified':
+                feedback.type = None
+                messages.success(request, 'The selected feedback has been de-classified. Please reclassify it in the Pending emails tab.')
+            else:
+                feedback.type = FeedbackTypeName.objects.get(slug=type)
+                messages.success(request, f'The selected feedback has been reclassified as {feedback.type.name}.')
+            feedback.save()
+        else:
+            return render(request, 'nomcom/view_feedback_unrelated.html',
+                              {'year': year,
+                               'nomcom': nomcom,
+                               'feedback_types': FeedbackTypeName.objects.filter(used=True).exclude(slug__in=settings.NOMINEE_FEEDBACK_TYPES),
+                               'reclassify_feedback': feedback,
+                               'is_chair_task' : True,
+                              })
+
     feedback_types = []
-    for ft in FeedbackTypeName.objects.exclude(slug__in=settings.NOMINEE_FEEDBACK_TYPES):
+    for ft in FeedbackTypeName.objects.filter(used=True).exclude(slug__in=settings.NOMINEE_FEEDBACK_TYPES):
         feedback_types.append({'ft': ft,
                                'feedback': ft.feedback_set.get_by_nomcom(nomcom)})
-
     return render(request, 'nomcom/view_feedback_unrelated.html',
                               {'year': year,
-                               'selected': 'view_feedback',
                                'feedback_types': feedback_types,
-                               'nomcom': nomcom})
+                               'nomcom': nomcom,
+                               })
 
 @role_required("Nomcom")
 @nomcom_private_key_required
 def view_feedback_topic(request, year, topic_id):
-    nomcom = get_nomcom_by_year(year)
+    # At present, the only feedback type for topics is 'comment'.
+    # Reclassifying from 'comment' to 'comment' is a no-op,
+    # so the only meaningful action is to de-classify it.
+    if request.method == 'POST':
+        nomcom = get_nomcom_by_year(year)
+        if not nomcom.group.has_role(request.user, ['chair','advisor']):
+            return HttpResponseForbidden('Restricted to roles: Nomcom Chair, Nomcom Advisor')
+        feedback_id = request.POST.get('feedback_id', None)
+        feedback = get_object_or_404(Feedback, id=feedback_id)
+        feedback.type = None
+        feedback.topics.clear()
+        feedback.save()
+        messages.success(request, 'The selected feedback has been de-classified. Please reclassify it in the Pending emails tab.')
+
     topic = get_object_or_404(Topic, id=topic_id)
+    nomcom = get_nomcom_by_year(year)
     feedback_types = FeedbackTypeName.objects.filter(slug__in=['comment',])
 
     last_seen = TopicFeedbackLastSeen.objects.filter(reviewer=request.user.person,topic=topic).first()
@@ -974,18 +1005,42 @@ def view_feedback_topic(request, year, topic_id):
 
     return render(request, 'nomcom/view_feedback_topic.html',
                               {'year': year,
-                               'selected': 'view_feedback',
                                'topic': topic,
                                'feedback_types': feedback_types,
                                'last_seen_time' : last_seen_time,
-                               'nomcom': nomcom})
+                               'nomcom': nomcom,
+                               })
 
 @role_required("Nomcom")
 @nomcom_private_key_required
 def view_feedback_nominee(request, year, nominee_id):
     nomcom = get_nomcom_by_year(year)
     nominee = get_object_or_404(Nominee, id=nominee_id)
-    feedback_types = FeedbackTypeName.objects.filter(slug__in=settings.NOMINEE_FEEDBACK_TYPES)
+    feedback_types = FeedbackTypeName.objects.filter(used=True, slug__in=settings.NOMINEE_FEEDBACK_TYPES)
+
+    if request.method == 'POST':
+        if not nomcom.group.has_role(request.user, ['chair','advisor']):
+            return HttpResponseForbidden('Restricted to roles: Nomcom Chair, Nomcom Advisor')
+        feedback_id = request.POST.get('feedback_id', None)
+        feedback = get_object_or_404(Feedback, id=feedback_id)
+        type = request.POST.get('type', None)
+        if type:
+            if type == 'unclassified':
+                feedback.type = None
+                feedback.nominees.clear()
+                messages.success(request, 'The selected feedback has been de-classified. Please reclassify it in the Pending emails tab.')
+            else:
+                feedback.type = FeedbackTypeName.objects.get(slug=type)
+                messages.success(request, f'The selected feedback has been reclassified as {feedback.type.name}.')
+            feedback.save()
+        else:
+            return render(request, 'nomcom/view_feedback_nominee.html',
+                              {'year': year,
+                               'nomcom': nomcom,
+                               'feedback_types': feedback_types,
+                               'reclassify_feedback': feedback,
+                               'is_chair_task': True,
+                              })
 
     last_seen = FeedbackLastSeen.objects.filter(reviewer=request.user.person,nominee=nominee).first()
     last_seen_time = (last_seen and last_seen.time) or datetime.datetime(year=1, month=1, day=1, tzinfo=datetime.timezone.utc)
@@ -996,11 +1051,11 @@ def view_feedback_nominee(request, year, nominee_id):
 
     return render(request, 'nomcom/view_feedback_nominee.html',
                               {'year': year,
-                               'selected': 'view_feedback',
                                'nominee': nominee,
                                'feedback_types': feedback_types,
                                'last_seen_time' : last_seen_time,
-                               'nomcom': nomcom})
+                               'nomcom': nomcom,
+                               })
 
 
 @role_required("Nomcom Chair", "Nomcom Advisor")
