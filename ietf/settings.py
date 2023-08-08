@@ -10,6 +10,7 @@ import os
 import sys
 import datetime
 import warnings
+from hashlib import sha384
 from typing import Any, Dict, List, Tuple # pyflakes:ignore
 
 warnings.simplefilter("always", DeprecationWarning)
@@ -733,6 +734,9 @@ CACHES = {
         'LOCATION': '127.0.0.1:11211',
         'VERSION': __version__,
         'KEY_PREFIX': 'ietf:dt',
+        'KEY_FUNCTION': lambda key, key_prefix, version: (
+            f"{key_prefix}:{version}:{sha384(key.encode('utf8')).hexdigest()}"
+        ),
     },
     'sessions': {
         'BACKEND': 'ietf.utils.cache.LenientMemcacheCache',
