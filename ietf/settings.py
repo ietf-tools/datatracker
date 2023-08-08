@@ -1200,7 +1200,7 @@ if 'CACHES' not in locals():
                 'VERSION': __version__,
                 'KEY_PREFIX': 'ietf:dt',
                 'KEY_FUNCTION': lambda key, key_prefix, version: (
-                    f"{key_prefix}:{version}:{sha384(key.encode('utf8')).hexdigest()}"
+                    f"{key_prefix}:{version}:{sha384(str(key).encode('utf8')).hexdigest()}"
                 ),
             },
             'sessions': {
