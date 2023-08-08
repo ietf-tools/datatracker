@@ -58,7 +58,7 @@ from ietf.doc.models import ( Document, DocHistory, DocAlias, State,
     IESG_BALLOT_ACTIVE_STATES, IESG_STATCHG_CONFLREV_ACTIVE_STATES,
     IESG_CHARTER_ACTIVE_STATES )
 from ietf.doc.fields import select2_id_doc_name_json
-from ietf.doc.utils import get_search_cache_key, augment_events_with_revision
+from ietf.doc.utils import get_search_cache_key, augment_events_with_revision, needed_ballot_positions
 from ietf.group.models import Group
 from ietf.idindex.index import active_drafts_index_by_group
 from ietf.name.models import DocTagName, DocTypeName, StreamName
@@ -707,18 +707,20 @@ def docs_for_ad(request, name):
 
     for d in results:
         d.search_heading = ad_dashboard_group(d)
-    #
-    # Additional content showing docs with blocking positions by this ad
+
+    # Additional content showing docs with blocking positions by this AD,
+    # and docs that the AD hasn't balloted on that are lacking ballot positions to progress
     blocked_docs = []
+    not_balloted_docs = []
     if ad in get_active_ads():
-        possible_docs = Document.objects.filter(Q(states__type="draft-iesg",
-                                                  states__slug__in=IESG_BALLOT_ACTIVE_STATES) |
-                                                Q(states__type="charter",
-                                                  states__slug__in=IESG_CHARTER_ACTIVE_STATES) |
-                                                Q(states__type__in=("statchg", "conflrev"),
-                                                  states__slug__in=IESG_STATCHG_CONFLREV_ACTIVE_STATES),
-                                                docevent__ballotpositiondocevent__pos__blocking=True,
-                                                docevent__ballotpositiondocevent__balloter=ad).distinct()
+        iesg_docs = Document.objects.filter(Q(states__type="draft-iesg",
+                                              states__slug__in=IESG_BALLOT_ACTIVE_STATES) |
+                                            Q(states__type="charter",
+                                              states__slug__in=IESG_CHARTER_ACTIVE_STATES) |
+                                            Q(states__type__in=("statchg", "conflrev"),
+                                              states__slug__in=IESG_STATCHG_CONFLREV_ACTIVE_STATES)).distinct()
+        possible_docs = iesg_docs.filter(docevent__ballotpositiondocevent__pos__blocking=True,
+                                         docevent__ballotpositiondocevent__balloter=ad)
         for doc in possible_docs:
             ballot = doc.active_ballot()
             if not ballot:
@@ -739,12 +741,26 @@ def docs_for_ad(request, name):
         if blocked_docs:
             blocked_docs.sort(key=lambda d: min(p.time for p in d.blocking_positions if p.balloter==ad), reverse=True)
 
-        for d in blocked_docs:
-           if d.get_base_name() == 'charter-ietf-shmoo-01-04.txt':
-              print('Is in list')
+        possible_docs = iesg_docs.exclude(
+            Q(docevent__ballotpositiondocevent__balloter=ad)
+        )
+        for doc in possible_docs:
+            ballot = doc.active_ballot()
+            if (
+                not ballot
+                or doc.get_state_slug("draft") == "repl"
+                or (doc.telechat_date() and doc.telechat_date() > timezone.now().date())
+            ):
+                continue
+
+            iesg_ballot_summary = needed_ballot_positions(
+                doc, list(ballot.active_balloter_positions().values())
+            )
+            if re.search(r"\bNeeds\s+\d+", iesg_ballot_summary):
+                not_balloted_docs.append(doc)
 
     return render(request, 'doc/drafts_for_ad.html', {
-        'form':form, 'docs':results, 'meta':meta, 'ad_name': ad.plain_name(), 'blocked_docs': blocked_docs
+        'form':form, 'docs':results, 'meta':meta, 'ad_name': ad.plain_name(), 'blocked_docs': blocked_docs, 'not_balloted_docs': not_balloted_docs
     })
 def drafts_in_last_call(request):
     lc_state = State.objects.get(type="draft-iesg", slug="lc").pk
