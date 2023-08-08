@@ -31,5 +31,14 @@
                {% if position %}Save{% else %}Add{% endif %}</button>
         <a class="btn btn-secondary float-end" href="../">Back</a>
     </form>
+    {% if position.name %}
+        <h3>
+            Templates
+        </h3>
+        {% for template in position.get_templates %}
+            <a href="{% url 'ietf.nomcom.views.edit_template' year template.id %}">{{ template }}</a>
+            <br>
+        {% endfor %}
+    {% endif %}
 {% endblock %}
 {% block content_end %}{{ form.media.js }}{% endblock %}

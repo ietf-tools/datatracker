@@ -34,9 +34,9 @@
                 .removeClass("label-danger");
 
             widget
-                .find(".text-muted")
+                .find(".text-body-secondary")
                 .addClass("form-text")
-                .removeClass("text-muted");
+                .removeClass("text-body-secondary");
 
             self.initListeners();
         },

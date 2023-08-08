@@ -22,7 +22,7 @@
                 {% if published %}
                     {% if document_html %}<br>{% else %}({% endif %}{{ doc.pub_date|date:"F Y" }}{% if not document_html %}){% endif %}
                 {% else %}
-                    <span class="text-muted">(Publication date unknown)</span>
+                    <span class="text-body-secondary">(Publication date unknown)</span>
                 {% endif %}
                 {% if document_html %}<br>{% endif %}
                 {% if has_verified_errata or has_errata %}
@@ -127,7 +127,7 @@
         <td>
             {{ doc.time|date:"Y-m-d" }}
             {% if latest_revision and latest_revision.time|date:"Y-m-d" != doc.time|date:"Y-m-d" %}
-                <span class="text-muted">(Latest revision {{ latest_revision.time|date:"Y-m-d" }})</span>
+                <span class="text-body-secondary">(Latest revision {{ latest_revision.time|date:"Y-m-d" }})</span>
             {% endif %}
         </td>
     </tr>
@@ -150,7 +150,7 @@
                         {{ replaces|urlize_related_target_list:document_html|join:", " }}
                     {% endif %}
                 {% else %}
-                    <span class="text-muted">(None)</span>
+                    <span class="text-body-secondary">(None)</span>
                 {% endif %}
             </td>
         </tr>
@@ -231,7 +231,7 @@ href="{% url 'ietf.doc.views_draft.review_possibly_replaces' name=doc.name %}">E
                 </a>
             {% endif %}
         </td>
-        <td {% if stream_desc == "(None)" %}class="text-muted"{%endif%}>
+        <td {% if stream_desc == "(None)" %}class="text-body-secondary"{%endif%}>
             {% if stream_desc != "(None)" %}
                 {% if doc.stream.name|lower in 'iab,irtf,ise,editorial' %}
                     <a href="{% url 'ietf.group.views.stream_documents' acronym=doc.stream.name|lower %}">
@@ -281,7 +281,7 @@ href="{% url 'ietf.doc.views_draft.review_possibly_replaces' name=doc.name %}">E
                 {% if doc.intended_std_level %}
                     {{ doc.intended_std_level }}
                 {% else %}
-                    <span class="text-muted">
+                    <span class="text-body-secondary">
                         (None)
                     </span>
                 {% endif %}
@@ -349,7 +349,10 @@ href="{% url 'ietf.doc.views_draft.review_possibly_replaces' name=doc.name %}">E
             </td>
             <td>
                 {% for review_assignment in review_assignments %}
-                    {% include "doc/review_assignment_summary.html" with current_doc_name=doc.name current_rev=doc.rev %}
+                    {% include "doc/review_assignment_summary.html" with current_doc_name=doc.name current_rev=doc.rev review_assignment=review_assignment only %}
+                {% endfor %}
+                {% for review_request in review_requests %}
+                    {% include "doc/review_request_summary.html" with review_request=review_request only %}
                 {% endfor %}
                 {% if no_review_from_teams %}
                     {% for team in no_review_from_teams %}

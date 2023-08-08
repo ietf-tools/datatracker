@@ -10,7 +10,7 @@
     <h1>
         Edit session
         <br>
-        <small class="text-muted">{{ session|describe_with_tz }}</small>
+        <small class="text-body-secondary">{{ session|describe_with_tz }}</small>
     </h1>
     <form class="session-details-form my-3" method="post">
         {% csrf_token %}

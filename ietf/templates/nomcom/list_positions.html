@@ -1,6 +1,6 @@
 {% extends "nomcom/nomcom_private_base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
-{% load origin %}
+{% load origin static %}
 {% block subtitle %}- Positions{% endblock %}
 {% block nomcom_content %}
     {% origin %}
@@ -13,54 +13,129 @@
             <a href="{% url 'ietf.nomcom.views.configuration_help' year=nomcom.year %}">Configuration Hints</a>.
         </p>
     {% endif %}
+
+    {% if nomcom.group.state_id == 'active' %}
+        <form class="form-inline" id="batch-action-form" method="post">
+            {% csrf_token %}
+    {% endif %}
     {% if positions %}
-        {% regroup positions by is_open as posgroups %}
-        {% for group in posgroups %}
-            <h3>{{ group.grouper| yesno:"Open Positions,Closed Positions" }}</h3>
-            {% for position in group.list %}
-                <h4>
-                    {{ position.name }}
-                    {% if position.is_iesg_position %}(IESG){% endif %}
-                </h4>
-                {% if group.grouper %}
-                    <dl class="row">
-                        <dt class="col-sm-2">
-                            Accepting
-                        </dt>
-                        <dd class="col-sm-10">
-                            {% if position.accepting_nominations %}Nominations{% endif %}
-                            {% if position.accepting_nominations and position.accepting_feedback %}and{% endif %}
-                            {% if position.accepting_feedback %}Feedback{% endif %}
-                        </dd>
-                    </dl>
-                {% endif %}
-                <dl class="row">
-                    <dt class="col-sm-2">
-                        Templates
-                    </dt>
-                    <dd class="col-sm-10">
-                        {% for template in position.get_templates %}
-                            <a href="{% url 'ietf.nomcom.views.edit_template' year template.id %}">{{ template }}</a>
-                            <br>
-                        {% endfor %}
-                    </dd>
+        <table class="table table-sm table-striped table-hover tablesorter"
+               id="position-table">
+            <thead>
+                <tr>
                     {% if nomcom.group.state_id == 'active' %}
-                        <dt class="col-sm-2">
-                            Actions
-                        </dt>
-                        <dd class="col-sm-10">
-                            <a class="btn btn-primary btn-sm"
-                               href="{% url 'ietf.nomcom.views.edit_position' year position.id %}">Edit</a>
-                            <a class="btn btn-danger btn-sm"
-                               href="{% url 'ietf.nomcom.views.remove_position' year position.id %}">Remove</a>
-                        </dd>
+                        <th scope="colgroup" colspan="3">
+                            <i class="bi bi-check"></i>
+                        </th>
                     {% endif %}
-                </dl>
-            {% endfor %}
-        {% endfor %}
+                    <th scope="col" data-sort="position">
+                        Position
+                    </th>
+                    <th scope="col" data-sort="iesg">
+                        IESG
+                    </th>
+                    <th scope="col" data-sort="open">
+                        Open
+                    </th>
+                    <th scope="col" data-sort="accept_nom">
+                        Accepting Nominations
+                    </th>
+                    <th scope="col" data-sort="accept_fb">
+                        Accepting Feedback
+                    </th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- [html-validate-disable-block input-missing-label -- labelled via aria-label] -->
+                {% for position in positions %}
+                    <tr>
+                        {% if nomcom.group.state_id == 'active' %}
+                            <td>
+                                <input class="batch-select form-check-input"
+                                       type="checkbox"
+                                       value="{{ position.id }}"
+                                       id="id-{{ position.id }}"
+                                       aria-label="position.name"
+                                       name="selected">
+                            </td>
+                            <td class="edit">
+                                <a class="btn btn-primary btn-sm"
+                                   href="{% url 'ietf.nomcom.views.edit_position' year position.id %}">
+                                    Edit
+                                </a>
+                            </td>
+                            <td class="remove">
+                                <a class="btn btn-danger btn-sm"
+                                   href="{% url 'ietf.nomcom.views.remove_position' year position.id %}">
+                                    Remove
+                                </a>
+                            </td>
+                        {% endif %}
+                        <td>
+                            {{ position.name }}
+                        </td>
+                        <td>
+                            {{ position.is_iesg_position|yesno:"✓," }}
+                        </td>
+                        <td>
+                            {{ position.is_open|yesno:"✓," }}
+                        </td>
+                        <td>
+                            {{ position.accepting_nominations|yesno:"✓," }}
+                        </td>
+                        <td>
+                            {{ position.accepting_feedback|yesno:"✓," }}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% if nomcom.group.state_id == 'active' %}
+            <div class="mb-3">
+                <label class="form-label" for="action">
+                    Action:
+                </label>
+                <select class="form-select" name="action" id="action">
+                    <option value="" selected="selected">
+                        ---------
+                    </option>
+                    <option value="set_iesg">
+                        Is IESG Position: Yes
+                    </option>
+                    <option value="unset_iesg">
+                        Is IESG Position: No
+                    </option>
+                    <option value="set_open">
+                        Is Open: Yes
+                    </option>
+                    <option value="unset_open">
+                        Is Open: No
+                    </option>
+                    <option value="set_accept_nom">
+                        Is Accepting Nominations: Yes
+                    </option>
+                    <option value="unset_accept_nom">
+                        Is Accepting Nominations: No
+                    </option>
+                    <option value="set_accept_bf">
+                        Is Accepting Feedback: Yes
+                    </option>
+                    <option value="unset_accept_fb">
+                        Is Accepting Feedback: No
+                    </option>
+                </select>
+            </div>
+            <button class="btn btn-warning"  type="submit" title="Run action">
+                Apply
+            </button>
+        </form>
+        {% endif %}
     {% else %}
         <p>
             There are no positions defined.
         </p>
     {% endif %}
+{% endblock %}
+{% block js %}
+    <script src="{% static "ietf/js/list.js" %}"></script>
 {% endblock %}

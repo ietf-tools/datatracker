@@ -46,7 +46,7 @@
         {% endfor %}
     </td>
     <td class="doc">
-        {% if doc.pages %}<small class="float-end text-muted d-none d-sm-block">{{ doc.pages }} page{{ doc.pages|pluralize }}</small>{% endif %}
+        {% if doc.pages %}<small class="float-end text-body-secondary d-none d-sm-block">{{ doc.pages }} page{{ doc.pages|pluralize }}</small>{% endif %}
         <div>
             <a href="{{ doc.get_absolute_url }}">
                 {% if doc.get_state_slug == "rfc" %}
@@ -55,7 +55,7 @@
                     {{ doc.name }}-{{ doc.rev }}
                 {% endif %}
             </a>
-            {% if doc.get_state_slug == "rfc" and "draft" in doc.name %}<i class="text-muted">(was {{ doc.name }})</i>{% endif %}
+            {% if doc.get_state_slug == "rfc" and "draft" in doc.name %}<i class="text-body-secondary">(was {{ doc.name }})</i>{% endif %}
             <br>
             {% comment %}
             <div class="float-end">
@@ -147,7 +147,7 @@
                     {% endif %}
                     <br>
                     {% if doc.shepherd %}
-                        {% email_person_link doc.shepherd title="Shepherd" class="small text-muted" %}
+                        {% email_person_link doc.shepherd title="Shepherd" class="small text-body-secondary" %}
                     {% endif %}
                 </td>
             {% endif %}

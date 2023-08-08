@@ -12,7 +12,7 @@
     <h1>
         Review overview
         <br>
-        <small class="text-muted">{{ request.user }}</small>
+        <small class="text-body-secondary">{{ request.user }}</small>
     </h1>
     <h2 class="mt-4">Assigned reviews</h2>
     {% if open_review_assignments %}
@@ -101,7 +101,7 @@
                             {% if r.due %}<span class="badge rounded-pill bg-warning">{{ r.due }} day{{ r.due|pluralize }}</span>{% endif %}
                         </td>
                         <td>
-                            <span class="{% if r.state_id == "completed" or r.state_id == "part-completed" %}bg-success{% endif %}">{{ r.state.name }}</span>
+                            <span class="badge rounded-pill {% if r.state_id == "completed" or r.state_id == "part-completed" %}bg-success{% endif %}">{{ r.state.name }}</span>
                         </td>
                         <td>
                             {% if r.result %}{{ r.result.name }}{% endif %}
@@ -186,10 +186,10 @@
         <table class="table table-sm table-striped tablesorter">
             <thead>
                 <tr>
-                    <th scope="col">
+                    <th scope="col" data-sort="setting">
                         Setting
                     </th>
-                    <th scope="col">
+                    <th scope="col" data-sort="value">
                         Value
                     </th>
                 </tr>
@@ -208,7 +208,7 @@
                         Skip next assignments
                     </th>
                     <td>
-                        {{ t.reviewer_settings.skip_next }}
+                        {{ t.reviewer_settings.skip_next|yesno }}
                     </td>
                 </tr>
                 <tr>

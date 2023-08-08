@@ -9,8 +9,13 @@
     <h1>
         Last call text
         <br>
-        <small class="text-muted">{{ doc }}</small>
+        <small class="text-body-secondary">{{ doc }}</small>
     </h1>
+    {% if doc.ad is None %}
+    <div class="alert alert-warning my-3">
+        A responsible AD must be set before last call can be requested.
+    </div>
+    {% endif %}
     <form class="my-3 edit-last-call-text" method="post">
         {% csrf_token %}
         {% bootstrap_form last_call_form %}
@@ -18,15 +23,17 @@
                 class="btn btn-primary"
                 name="save_last_call_text"
                 value="Save Last Call Text">Save text</button>
-        <button type="submit"
-                class="btn btn-warning"
-                name="send_last_call_request"
-                value="Save and Request Last Call">
-            Save text &amp; request last call
-        </button>
-        {% if user|has_role:"Secretariat" %}
-            <a class="btn btn-warning"
-               href="{% url 'ietf.doc.views_ballot.make_last_call' name=doc.name %}">Issue last call</a>
+        {% if doc.ad is not None %}
+            <button type="submit"
+                    class="btn btn-warning"
+                    name="send_last_call_request"
+                    value="Save and Request Last Call">
+                Save text &amp; request last call
+            </button>
+            {% if user|has_role:"Secretariat" %}
+                <a class="btn btn-warning"
+                href="{% url 'ietf.doc.views_ballot.make_last_call' name=doc.name %}">Issue last call</a>
+            {% endif %}
         {% endif %}
         <button type="submit"
                 class="btn btn-danger"
