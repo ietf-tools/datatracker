@@ -28,7 +28,7 @@ if [ -n "$PGHOST" ]; then
 fi
 
 echo "Starting memcached..."
-/usr/bin/memcached -d
+/usr/bin/memcached -d -u root
 
 echo "Running Datatracker checks..."
 ./ietf/manage.py check
