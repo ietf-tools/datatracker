@@ -726,47 +726,6 @@ DOC_ACTION_HOLDER_AGE_LIMIT_DAYS = 20
 CACHE_MIDDLEWARE_SECONDS = 300
 CACHE_MIDDLEWARE_KEY_PREFIX = ''
 
-# The default with no CACHES setting is 'django.core.cache.backends.locmem.LocMemCache'
-# This setting is possibly overridden further down, after the import of settings_local
-CACHES = {
-    'default': {
-        'BACKEND': 'ietf.utils.cache.LenientMemcacheCache',
-        'LOCATION': '127.0.0.1:11211',
-        'VERSION': __version__,
-        'KEY_PREFIX': 'ietf:dt',
-        'KEY_FUNCTION': lambda key, key_prefix, version: (
-            f"{key_prefix}:{version}:{sha384(key.encode('utf8')).hexdigest()}"
-        ),
-    },
-    'sessions': {
-        'BACKEND': 'ietf.utils.cache.LenientMemcacheCache',
-        'LOCATION': '127.0.0.1:11211',
-        # No release-specific VERSION setting.
-        'KEY_PREFIX': 'ietf:dt',
-    },
-    'htmlized': {
-        'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
-        'LOCATION': '/a/cache/datatracker/htmlized',
-        'OPTIONS': {
-            'MAX_ENTRIES': 100000,      # 100,000
-        },
-    },
-    'pdfized': {
-        'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
-        'LOCATION': '/a/cache/datatracker/pdfized',
-        'OPTIONS': {
-            'MAX_ENTRIES': 100000,      # 100,000
-        },
-    },
-    'slowpages': {
-        'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
-        'LOCATION': '/a/cache/datatracker/slowpages',
-        'OPTIONS': {
-            'MAX_ENTRIES': 5000,
-        },
-    },
-}
-
 HTMLIZER_VERSION = 1
 HTMLIZER_URL_PREFIX = "/doc/html"
 HTMLIZER_CACHE_TIME = 60*60*24*14       # 14 days
@@ -1232,6 +1191,84 @@ else:
     MIDDLEWARE += DEV_MIDDLEWARE
     TEMPLATES[0]['OPTIONS']['context_processors'] += DEV_TEMPLATE_CONTEXT_PROCESSORS
 
+if 'CACHES' not in locals():
+    if SERVER_MODE == 'production':
+        CACHES = {
+            'default': {
+                'BACKEND': 'ietf.utils.cache.LenientMemcacheCache',
+                'LOCATION': '127.0.0.1:11211',
+                'VERSION': __version__,
+                'KEY_PREFIX': 'ietf:dt',
+                'KEY_FUNCTION': lambda key, key_prefix, version: (
+                    f"{key_prefix}:{version}:{sha384(str(key).encode('utf8')).hexdigest()}"
+                ),
+            },
+            'sessions': {
+                'BACKEND': 'ietf.utils.cache.LenientMemcacheCache',
+                'LOCATION': '127.0.0.1:11211',
+                # No release-specific VERSION setting.
+                'KEY_PREFIX': 'ietf:dt',
+            },
+            'htmlized': {
+                'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
+                'LOCATION': '/a/cache/datatracker/htmlized',
+                'OPTIONS': {
+                    'MAX_ENTRIES': 100000,      # 100,000
+                },
+            },
+            'pdfized': {
+                'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
+                'LOCATION': '/a/cache/datatracker/pdfized',
+                'OPTIONS': {
+                    'MAX_ENTRIES': 100000,      # 100,000
+                },
+            },
+            'slowpages': {
+                'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
+                'LOCATION': '/a/cache/datatracker/slowpages',
+                'OPTIONS': {
+                    'MAX_ENTRIES': 5000,
+                },
+            },
+        }
+    else:
+        CACHES = {
+            'default': {
+                'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
+                #'BACKEND': 'ietf.utils.cache.LenientMemcacheCache',
+                #'LOCATION': '127.0.0.1:11211',
+                #'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
+                'VERSION': __version__,
+                'KEY_PREFIX': 'ietf:dt',
+            },
+            'sessions': {
+                'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+            },
+            'htmlized': {
+                'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
+                #'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
+                'LOCATION': '/var/cache/datatracker/htmlized',
+                'OPTIONS': {
+                    'MAX_ENTRIES': 1000,
+                },
+            },
+            'pdfized': {
+                'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
+                #'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
+                'LOCATION': '/var/cache/datatracker/pdfized',
+                'OPTIONS': {
+                    'MAX_ENTRIES': 1000,
+                },
+            },
+            'slowpages': {
+                'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
+                #'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
+                'LOCATION': '/var/cache/datatracker/',
+                'OPTIONS': {
+                    'MAX_ENTRIES': 5000,
+                },
+            },
+        }
 
 # We provide a secret key only for test and development modes.  It's
 # absolutely vital that django fails to start in production mode unless a
@@ -1242,44 +1279,6 @@ if SERVER_MODE != 'production':
     loaders = TEMPLATES[0]['OPTIONS']['loaders']
     loaders = tuple(l for e in loaders for l in (e[1] if isinstance(e, tuple) and "cached.Loader" in e[0] else (e,)))
     TEMPLATES[0]['OPTIONS']['loaders'] = loaders
-
-    CACHES = {
-        'default': {
-            'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
-            #'BACKEND': 'ietf.utils.cache.LenientMemcacheCache',
-            #'LOCATION': '127.0.0.1:11211',
-            #'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
-            'VERSION': __version__,
-            'KEY_PREFIX': 'ietf:dt',
-        },
-        'sessions': {
-            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-        },
-        'htmlized': {
-            'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
-            #'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
-            'LOCATION': '/var/cache/datatracker/htmlized',
-            'OPTIONS': {
-                'MAX_ENTRIES': 1000,
-            },
-        },
-        'pdfized': {
-            'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
-            #'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
-            'LOCATION': '/var/cache/datatracker/pdfized',
-            'OPTIONS': {
-                'MAX_ENTRIES': 1000,
-            },
-        },
-        'slowpages': {
-            'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
-            #'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
-            'LOCATION': '/var/cache/datatracker/',
-            'OPTIONS': {
-                'MAX_ENTRIES': 5000,
-            },
-        },
-    }
     SESSION_ENGINE = "django.contrib.sessions.backends.db"
 
     if 'SECRET_KEY' not in locals():
