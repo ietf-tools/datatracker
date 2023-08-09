@@ -424,8 +424,8 @@ sup, sub {
 /* Authors */
 address, address.vcard {
   font-style: normal;
-  // margin: 2em 0 var(--line) 3ch;
-  margin-top: 2em;
+  // margin: var(--line) 0 var(--line) 3ch
+  margin-top: var(--line);
   margin-right: 0;
   margin-bottom: var(--line);
   margin-left: 3ch;
