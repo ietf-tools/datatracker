@@ -7,6 +7,7 @@ import datetime
 import re
 import requests
 
+from typing import Iterator
 from urllib.parse import urlencode
 from xml.dom import pulldom, Node
 
@@ -332,7 +333,9 @@ def parse_index(response):
     return data
 
 
-def update_docs_from_rfc_index(index_data, errata_data, skip_older_than_date=None):
+def update_docs_from_rfc_index(
+    index_data, errata_data, skip_older_than_date=None
+) -> Iterator[tuple[list[str], Document, bool]]:
     """Given parsed data from the RFC Editor index, update the documents in the database
 
     Yields a list of change descriptions for each document, if any.
