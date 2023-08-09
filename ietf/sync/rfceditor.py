@@ -342,7 +342,7 @@ def update_docs_from_rfc_index(index_data, errata_data, skip_older_than_date=Non
 
     errata = {}
     for item in errata_data:
-        name = item['doc-id']
+        name = item["doc-id"]
         if not name in errata:
             errata[name] = []
         errata[name].append(item)
@@ -357,7 +357,7 @@ def update_docs_from_rfc_index(index_data, errata_data, skip_older_than_date=Non
         "Best Current Practice": StdLevelName.objects.get(slug="bcp"),
         "Historic": StdLevelName.objects.get(slug="hist"),
         "Unknown": StdLevelName.objects.get(slug="unkn"),
-        }
+    }
 
     stream_mapping = {
         "IETF": StreamName.objects.get(slug="ietf"),
@@ -367,15 +367,32 @@ def update_docs_from_rfc_index(index_data, errata_data, skip_older_than_date=Non
         "Legacy": StreamName.objects.get(slug="legacy"),
     }
 
-    tag_has_errata = DocTagName.objects.get(slug='errata')
-    tag_has_verified_errata = DocTagName.objects.get(slug='verified-errata')
+    tag_has_errata = DocTagName.objects.get(slug="errata")
+    tag_has_verified_errata = DocTagName.objects.get(slug="verified-errata")
     relationship_obsoletes = DocRelationshipName.objects.get(slug="obs")
     relationship_updates = DocRelationshipName.objects.get(slug="updates")
 
     system = Person.objects.get(name="(System)")
 
-    for rfc_number, title, authors, rfc_published_date, current_status, updates, updated_by, obsoletes, obsoleted_by, also, draft, has_errata, stream, wg, file_formats, pages, abstract in index_data:
-
+    for (
+        rfc_number,
+        title,
+        authors,
+        rfc_published_date,
+        current_status,
+        updates,
+        updated_by,
+        obsoletes,
+        obsoleted_by,
+        also,
+        draft,
+        has_errata,
+        stream,
+        wg,
+        file_formats,
+        pages,
+        abstract,
+    ) in index_data:
         if skip_older_than_date and rfc_published_date < skip_older_than_date:
             # speed up the process by skipping old entries
             continue
@@ -402,7 +419,9 @@ def update_docs_from_rfc_index(index_data, errata_data, skip_older_than_date=Non
 
             if not doc:
                 changes.append("created document %s" % prettify_std_name(name))
-                doc = Document.objects.create(name=name, type=DocTypeName.objects.get(slug="draft"))
+                doc = Document.objects.create(
+                    name=name, type=DocTypeName.objects.get(slug="draft")
+                )
 
             # add alias
             alias, __ = DocAlias.objects.get_or_create(name=name)
@@ -435,12 +454,16 @@ def update_docs_from_rfc_index(index_data, errata_data, skip_older_than_date=Non
             doc.stream = stream_mapping[stream]
             changes.append("changed stream to %s" % doc.stream)
 
-        if not doc.group: # if we have no group assigned, check if RFC Editor has a suggestion
+        if (
+            not doc.group
+        ):  # if we have no group assigned, check if RFC Editor has a suggestion
             if wg:
                 doc.group = Group.objects.get(acronym=wg)
                 changes.append("set group to %s" % doc.group)
             else:
-                doc.group = Group.objects.get(type="individ") # fallback for newly created doc
+                doc.group = Group.objects.get(
+                    type="individ"
+                )  # fallback for newly created doc
 
         if not doc.latest_event(type="published_rfc"):
             e = DocEvent(doc=doc, rev=doc.rev, type="published_rfc")
@@ -469,33 +492,44 @@ def update_docs_from_rfc_index(index_data, errata_data, skip_older_than_date=Non
             e.save()
             events.append(e)
 
-            changes.append("added RFC published event at %s" % e.time.strftime("%Y-%m-%d"))
+            changes.append(
+                "added RFC published event at %s" % e.time.strftime("%Y-%m-%d")
+            )
             rfc_published = True
 
-        for t in ("draft-iesg", "draft-stream-iab", "draft-stream-irtf", "draft-stream-ise"):
+        for t in (
+            "draft-iesg",
+            "draft-stream-iab",
+            "draft-stream-irtf",
+            "draft-stream-ise",
+        ):
             prev_state = doc.get_state(t)
             if prev_state is not None:
                 if prev_state.slug not in ("pub", "idexists"):
-                    new_state = State.objects.select_related("type").get(used=True, type=t, slug="pub")
+                    new_state = State.objects.select_related("type").get(
+                        used=True, type=t, slug="pub"
+                    )
                     doc.set_state(new_state)
-                    changes.append("changed %s to %s" % (new_state.type.label, new_state))
+                    changes.append(
+                        "changed %s to %s" % (new_state.type.label, new_state)
+                    )
                     e = update_action_holders(doc, prev_state, new_state)
                     if e:
                         events.append(e)
-            elif t == 'draft-iesg':
-                doc.set_state(State.objects.get(type_id='draft-iesg', slug='idexists'))
+            elif t == "draft-iesg":
+                doc.set_state(State.objects.get(type_id="draft-iesg", slug="idexists"))
 
         def parse_relation_list(l):
             res = []
             for x in l:
-                # This lookup wasn't finding anything but maybe some STD and we know 
+                # This lookup wasn't finding anything but maybe some STD and we know
                 # if the STD had more than one RFC the wrong thing happens
                 #
-                #if x[:3] in ("NIC", "IEN", "STD", "RTR"):
+                # if x[:3] in ("NIC", "IEN", "STD", "RTR"):
                 #    # try translating this to RFCs that we can handle
                 #    # sensibly; otherwise we'll have to ignore them
                 #   l = DocAlias.objects.filter(name__startswith="rfc", docs__docalias__name=x.lower())
-                #else:
+                # else:
                 l = Document.objects.filter(name=x.lower())
 
                 for a in l:
@@ -504,14 +538,36 @@ def update_docs_from_rfc_index(index_data, errata_data, skip_older_than_date=Non
             return res
 
         for x in parse_relation_list(obsoletes):
-            if not RelatedDocument.objects.filter(source=doc, target=x, relationship=relationship_obsoletes):
-                r = RelatedDocument.objects.create(source=doc, target=x, relationship=relationship_obsoletes)
-                changes.append("created %s relation between %s and %s" % (r.relationship.name.lower(), prettify_std_name(r.source.name), prettify_std_name(r.target.name)))
+            if not RelatedDocument.objects.filter(
+                source=doc, target=x, relationship=relationship_obsoletes
+            ):
+                r = RelatedDocument.objects.create(
+                    source=doc, target=x, relationship=relationship_obsoletes
+                )
+                changes.append(
+                    "created %s relation between %s and %s"
+                    % (
+                        r.relationship.name.lower(),
+                        prettify_std_name(r.source.name),
+                        prettify_std_name(r.target.name),
+                    )
+                )
 
         for x in parse_relation_list(updates):
-            if not RelatedDocument.objects.filter(source=doc, target=x, relationship=relationship_updates):
-                r = RelatedDocument.objects.create(source=doc, target=x, relationship=relationship_updates)
-                changes.append("created %s relation between %s and %s" % (r.relationship.name.lower(), prettify_std_name(r.source.name), prettify_std_name(r.target.name)))
+            if not RelatedDocument.objects.filter(
+                source=doc, target=x, relationship=relationship_updates
+            ):
+                r = RelatedDocument.objects.create(
+                    source=doc, target=x, relationship=relationship_updates
+                )
+                changes.append(
+                    "created %s relation between %s and %s"
+                    % (
+                        r.relationship.name.lower(),
+                        prettify_std_name(r.source.name),
+                        prettify_std_name(r.target.name),
+                    )
+                )
 
         if also:
             for a in also:
@@ -520,14 +576,21 @@ def update_docs_from_rfc_index(index_data, errata_data, skip_older_than_date=Non
                     DocAlias.objects.create(name=a).docs.add(doc)
                     changes.append("created alias %s" % prettify_std_name(a))
 
-        doc_errata = errata.get('RFC%04d'%rfc_number, [])
-        all_rejected = doc_errata and all( er['errata_status_code']=='Rejected' for er in doc_errata )
+        doc_errata = errata.get("RFC%04d" % rfc_number, [])
+        all_rejected = doc_errata and all(
+            er["errata_status_code"] == "Rejected" for er in doc_errata
+        )
         if has_errata and not all_rejected:
             if not doc.tags.filter(pk=tag_has_errata.pk).exists():
                 doc.tags.add(tag_has_errata)
                 changes.append("added Errata tag")
-            has_verified_errata = any([ er['errata_status_code']=='Verified' for er in doc_errata ])
-            if has_verified_errata and not doc.tags.filter(pk=tag_has_verified_errata.pk).exists():
+            has_verified_errata = any(
+                [er["errata_status_code"] == "Verified" for er in doc_errata]
+            )
+            if (
+                has_verified_errata
+                and not doc.tags.filter(pk=tag_has_verified_errata.pk).exists()
+            ):
                 doc.tags.add(tag_has_verified_errata)
                 changes.append("added Verified Errata tag")
         else:
@@ -542,13 +605,16 @@ def update_docs_from_rfc_index(index_data, errata_data, skip_older_than_date=Non
                 changes.append("removed Verified Errata tag")
 
         if changes:
-            events.append(DocEvent.objects.create(
-                doc=doc,
-                rev=doc.rev,
-                by=system,
-                type="sync_from_rfc_editor",
-                desc="Received changes through RFC Editor sync (%s)" % ", ".join(changes),
-            ))
+            events.append(
+                DocEvent.objects.create(
+                    doc=doc,
+                    rev=doc.rev,
+                    by=system,
+                    type="sync_from_rfc_editor",
+                    desc="Received changes through RFC Editor sync (%s)"
+                    % ", ".join(changes),
+                )
+            )
 
             doc.save_with_history(events)
 
