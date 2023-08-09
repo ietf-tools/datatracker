@@ -41,48 +41,48 @@ from django.db import models
 cursor = db.connection.cursor()
 
 def check_foreign_key(model, field):
-    print "Checking foreign key", model._meta.db_table+"."+field.column
-    print "    points to:", field.rel.to._meta.db_table+"."+field.rel.field_name
+    print("Checking foreign key", model._meta.db_table+"."+field.column)
+    print("    points to:", field.rel.to._meta.db_table+"."+field.rel.field_name)
     sql = "SELECT src.%s,src.%s FROM %s AS src LEFT OUTER JOIN %s as dst on src.%s=dst.%s WHERE src.%s IS NOT NULL AND dst.%s IS NULL;" % (model._meta.pk.column, field.column, model._meta.db_table, field.rel.to._meta.db_table, field.column, field.rel.get_related_field().column, field.column, field.rel.get_related_field().column)
-    #print sql
+    #print(sql)
     cursor.execute(sql)
     rows = cursor.fetchall()
     if len(rows) == 0:
-        print "    OK, no hanging rows found"
+        print("    OK, no hanging rows found")
     else:
-        print "    ERROR, found", len(rows), "hanging rows"
+        print("    ERROR, found", len(rows), "hanging rows")
         for row in rows[0:20]:
-            print "   ", row
-        print "    Use the following SQL to debug:"
-        print sql
+            print("   ", row)
+        print("    Use the following SQL to debug:")
+        print(sql)
 
 def check_not_null(model, field):
-    print "Checking NULL values", model._meta.db_table+"."+field.column
+    print("Checking NULL values", model._meta.db_table+"."+field.column)
     sql = "SELECT x.%s,x.%s FROM %s as x WHERE x.%s IS NULL" % (model._meta.pk.column, field.column, model._meta.db_table, field.column)
     cursor.execute(sql)
     rows = cursor.fetchall()
     if len(rows) == 0:
-        print "    OK"
+        print("    OK")
     else:
-        print "    ERROR, found", len(rows), "NULL rows"
+        print("    ERROR, found", len(rows), "NULL rows")
         for row in rows[0:20]:
-            print "   ", row
-        print "    Use the following SQL to debug:"
-        print sql
+            print("   ", row)
+        print("    Use the following SQL to debug:")
+        print(sql)
 
 def check_unique(model,field):
-    print "Checking unique values", model._meta.db_table+"."+field.column
+    print("Checking unique values", model._meta.db_table+"."+field.column)
     sql = "SELECT %s FROM %s GROUP BY %s HAVING COUNT(*)>1" % (field.column, model._meta.db_table, field.column)
     cursor.execute(sql)
     rows = cursor.fetchall()
     if len(rows) == 0:
-        print "    OK"
+        print("    OK")
     else:
-        print "    ERROR, found non-unique rows"
+        print("    ERROR, found non-unique rows")
         for row in rows[0:20]:
-            print "   ", row
-        print "    Use the following SQL to debug:"
-        print sql
+            print("   ", row)
+        print("    Use the following SQL to debug:")
+        print(sql)
 
 APPS = ['announcements','idrfc','idtracker','iesg','ietfauth','ipr','liaisons','proceedings','redirects']
 all_models = []
@@ -90,7 +90,7 @@ for app_label in APPS:
     all_models.extend(models.get_models(models.get_app(app_label)))
 
 for model in all_models:
-    print "\n\nChecking %s (table %s)" % (model._meta.object_name, model._meta.db_table)
+    print("\n\nChecking %s (table %s)" % (model._meta.object_name, model._meta.db_table))
     for f in model._meta.fields:
         if isinstance(f, ForeignKey):
             check_foreign_key(model,f)

@@ -27,7 +27,7 @@ system = Person.objects.get(name="(System)")
 expired = State.objects.get(type='draft',slug='expired')
 
 names = set()
-print 'collecting draft names ...'
+print('collecting draft names ...')
 versions = 0
 for p in Path(settings.INTERNET_DRAFT_PATH).glob('draft*.txt'):
     n = str(p).split('/')[-1].split('-')
@@ -46,7 +46,7 @@ for p in Path(settings.INTERNET_DRAFT_PATH).glob('draft*.txt'):
         names.add('-'.join(n[:-1]))
 
 count=0
-print 'iterating through names ...'
+print('iterating through names ...')
 for name in sorted(names):
     if not Document.objects.filter(name=name).exists():
         paths = list(Path(settings.INTERNET_DRAFT_PATH).glob('%s-??.txt'%name))
@@ -64,10 +64,10 @@ for name in sorted(names):
                 try:
                     draft = PlaintextDraft(text, txt_file.name, name_from_source=True)
                 except Exception as e:
-                    print name, rev, "Can't parse", p,":",e
+                    print(name, rev, "Can't parse", p,":",e)
                     continue
             if draft.errors and draft.errors.keys()!=['draftname',]:
-                print "Errors - could not process", name, rev, datetime.datetime.fromtimestamp(p.stat().st_mtime, datetime.timezone.utc), draft.errors, draft.get_title().encode('utf8')
+                print("Errors - could not process", name, rev, datetime.datetime.fromtimestamp(p.stat().st_mtime, datetime.timezone.utc), draft.errors, draft.get_title().encode('utf8'))
             else:
                 time = datetime.datetime.fromtimestamp(p.stat().st_mtime, datetime.timezone.utc)
                 if not doc:
@@ -148,4 +148,4 @@ for name in sorted(names):
                 doc.time = time
                 doc.rev = rev
                 doc.save_with_history(events)
-                print "Added",name, rev
+                print("Added",name, rev)

@@ -41,17 +41,17 @@ from django.db import models
 cursor = db.connection.cursor()
 
 def check_non_ascii(model, field):
-    #print "    Checking", field.column
+    #print("    Checking", field.column)
     sql = "SELECT src.%s,src.%s FROM %s AS src WHERE src.%s RLIKE '[^\\t-~]+'" % (model._meta.pk.column, field.column, model._meta.db_table, field.column)
     #print sql
     cursor.execute(sql)
     rows = cursor.fetchall()
     if len(rows) > 0:
-        print "    NON-ASCII: %s.%s (%d rows)" % (model._meta.db_table,field.column, len(rows))
+        print("    NON-ASCII: %s.%s (%d rows)" % (model._meta.db_table,field.column, len(rows)))
         #for row in rows[0:20]:
-        #    print "   ", row
-        #print "    Use the following SQL to debug:"
-        #print sql
+        #    print("   ", row)
+        #print("    Use the following SQL to debug:")
+        #print(sql)
 
 APPS = ['announcements', 'idrfc','idtracker','iesg','ietfauth','ipr','liaisons','proceedings','redirects']
 all_models = []
@@ -59,7 +59,7 @@ for app_label in APPS:
     all_models.extend(models.get_models(models.get_app(app_label)))
 
 for model in all_models:
-    print "\nChecking %s (table %s)" % (model._meta.object_name, model._meta.db_table)
+    print("\nChecking %s (table %s)" % (model._meta.object_name, model._meta.db_table))
     for f in model._meta.fields:
         if isinstance(f, CharField) or isinstance(f, TextField):
             check_non_ascii(model,f)
