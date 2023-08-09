@@ -19,6 +19,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils.encoding import force_bytes, force_str
+from django.utils.text import slugify
 
 from email.errors import HeaderParseError
 
@@ -1023,24 +1024,38 @@ def view_feedback_nominee(request, year, nominee_id):
             return HttpResponseForbidden('Restricted to roles: Nomcom Chair, Nomcom Advisor')
         feedback_id = request.POST.get('feedback_id', None)
         feedback = get_object_or_404(Feedback, id=feedback_id)
-        type = request.POST.get('type', None)
-        if type:
-            if type == 'unclassified':
-                feedback.type = None
-                feedback.nominees.clear()
-                messages.success(request, 'The selected feedback has been de-classified. Please reclassify it in the Pending emails tab.')
+        submit = request.POST.get('submit', None)
+        if submit == 'download':
+            fn = f'questio-{slugify(nominee.name())}-{feedback.time.date()}.txt'
+            response = render_to_string('nomcom/download_questio.txt',
+                                        {'year': year,
+                                         'nominee': nominee,
+                                         'feedback': feedback,
+                                         'positions': ','.join([str(p) for p in feedback.positions.all()]),
+                                         },
+                                        request=request)
+            response = HttpResponse(response, content_type='text/plain')
+            response['Content-Disposition'] = f'attachment; filename="{fn}"'
+            return response
+        elif submit == 'reclassify':
+            type = request.POST.get('type', None)
+            if type:
+                if type == 'unclassified':
+                    feedback.type = None
+                    feedback.nominees.clear()
+                    messages.success(request, 'The selected feedback has been de-classified. Please reclassify it in the Pending emails tab.')
+                else:
+                    feedback.type = FeedbackTypeName.objects.get(slug=type)
+                    messages.success(request, f'The selected feedback has been reclassified as {feedback.type.name}.')
+                feedback.save()
             else:
-                feedback.type = FeedbackTypeName.objects.get(slug=type)
-                messages.success(request, f'The selected feedback has been reclassified as {feedback.type.name}.')
-            feedback.save()
-        else:
-            return render(request, 'nomcom/view_feedback_nominee.html',
-                              {'year': year,
-                               'nomcom': nomcom,
-                               'feedback_types': feedback_types,
-                               'reclassify_feedback': feedback,
-                               'is_chair_task': True,
-                              })
+                return render(request, 'nomcom/view_feedback_nominee.html',
+                                  {'year': year,
+                                   'nomcom': nomcom,
+                                   'feedback_types': feedback_types,
+                                   'reclassify_feedback': feedback,
+                                   'is_chair_task': True,
+                                  })
 
     last_seen = FeedbackLastSeen.objects.filter(reviewer=request.user.person,nominee=nominee).first()
     last_seen_time = (last_seen and last_seen.time) or datetime.datetime(year=1, month=1, day=1, tzinfo=datetime.timezone.utc)
