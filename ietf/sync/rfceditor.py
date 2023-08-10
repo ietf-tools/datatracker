@@ -420,7 +420,7 @@ def update_docs_from_rfc_index(
 
         if draft_name:
             try:
-                draft = Document.objects.get(name=draft_name)
+                draft = Document.objects.get(name=draft_name, type_id="draft")
             except Document.DoesNotExist:
                 pass
             else:
