@@ -7,7 +7,7 @@ import datetime
 import re
 import requests
 
-from typing import Iterator
+from typing import Iterator, Optional
 from urllib.parse import urlencode
 from xml.dom import pulldom, Node
 
@@ -388,7 +388,7 @@ def update_docs_from_rfc_index(
         obsoletes,
         obsoleted_by,
         also,
-        draft,
+        draft_name,
         has_errata,
         stream,
         wg,
@@ -403,66 +403,101 @@ def update_docs_from_rfc_index(
         # we assume two things can happen: we get a new RFC, or an
         # attribute has been updated at the RFC Editor (RFC Editor
         # attributes take precedence over our local attributes)
-        events = []
-        changes = []
+        rfc_events = []
+        rfc_changes = []
         rfc_published = False
+        draft_events = []
+        draft_changes = []
 
-        # make sure we got the document and alias
-        doc = None
-        name = "rfc%s" % rfc_number
-        a = DocAlias.objects.filter(name=name)
-        if a:
-            doc = a[0].document
-        else:
-            if draft:
-                try:
-                    doc = Document.objects.get(name=draft)
-                except Document.DoesNotExist:
-                    pass
-
-            if not doc:
-                changes.append("created document %s" % prettify_std_name(name))
-                doc = Document.objects.create(
-                    name=name, type=DocTypeName.objects.get(slug="draft")
-                )
-
-            # add alias
-            alias, __ = DocAlias.objects.get_or_create(name=name)
+        # Find the document
+        doc, created_rfc = Document.objects.get_or_create(
+            rfc_number=rfc_number,
+            type_id="rfc",
+            defaults={"name": f"rfc{rfc_number}"}
+        )
+        if created_rfc:
+            rfc_changes.append(f"created document {prettify_std_name(doc.name)}")
+            # Create DocAlias (for consistency until we drop DocAlias altogether)
+            alias, _ = DocAlias.objects.get_or_create(name=doc.name)
             alias.docs.add(doc)
-            changes.append("created alias %s" % prettify_std_name(name))
+            rfc_changes.append("created alias %s" % prettify_std_name(doc.name))
+
+        if draft_name:
+            try:
+                draft = Document.objects.get(name=draft_name)
+            except Document.DoesNotExist:
+                pass
+            else:
+                # Ensure the draft is in the "rfc" state and move its files to the archive
+                # if necessary.
+                if draft.get_state_slug() != "rfc":
+                    draft.set_state(State.objects.get(used=True, type="draft", slug="rfc"))
+                    move_draft_files_to_archive(draft, draft.rev)
+                    draft_changes.append(
+                        f"changed state to {draft.get_state()}"
+                    )
+
+                # Ensure the draft and rfc are linked with a "became_rfc" relationship
+                r, created_relateddoc = RelatedDocument.objects.get_or_create(
+                    source=draft, target=doc, relationship_id="became_rfc"
+                )
+                if created_relateddoc:
+                    change = "created {rel_name} relationship between {pretty_draft_name} and {pretty_rfc_name}".format(
+                        rel_name=r.relationship.name.lower(),
+                        pretty_draft_name=prettify_std_name(draft),
+                        pretty_rfc_name=prettify_std_name(doc),
+                    )
+                    draft_changes.append(change)
+                    rfc_changes.append(change)
+
+                # Ensure draft is in the correct iesg and stream states
+                for t in (
+                    "draft-iesg",
+                    "draft-stream-iab",
+                    "draft-stream-irtf",
+                    "draft-stream-ise",
+                ):
+                    prev_state = draft.get_state(t)
+                    if prev_state is not None:
+                        if prev_state.slug not in ("pub", "idexists"):
+                            new_state = State.objects.select_related("type").get(
+                                used=True, type=t, slug="pub"
+                            )
+                            draft.set_state(new_state)
+                            draft_changes.append(f"changed {new_state.type.label} to {new_state}")
+                            e = update_action_holders(draft, prev_state, new_state)
+                            if e:
+                                draft_events.append(e)
+                    elif t == "draft-iesg":
+                        draft.set_state(State.objects.get(type_id="draft-iesg", slug="idexists"))
 
         # check attributes
         if title != doc.title:
             doc.title = title
-            changes.append("changed title to '%s'" % doc.title)
+            rfc_changes.append("changed title to '%s'" % doc.title)
 
         if abstract and abstract != doc.abstract:
             doc.abstract = abstract
-            changes.append("changed abstract to '%s'" % doc.abstract)
+            rfc_changes.append("changed abstract to '%s'" % doc.abstract)
 
         if pages and int(pages) != doc.pages:
             doc.pages = int(pages)
-            changes.append("changed pages to %s" % doc.pages)
+            rfc_changes.append("changed pages to %s" % doc.pages)
 
         if std_level_mapping[current_status] != doc.std_level:
             doc.std_level = std_level_mapping[current_status]
-            changes.append("changed standardization level to %s" % doc.std_level)
-
-        if doc.get_state_slug() != "rfc":
-            doc.set_state(State.objects.get(used=True, type="draft", slug="rfc"))
-            move_draft_files_to_archive(doc, doc.rev)
-            changes.append("changed state to %s" % doc.get_state())
+            rfc_changes.append("changed standardization level to %s" % doc.std_level)
 
         if doc.stream != stream_mapping[stream]:
             doc.stream = stream_mapping[stream]
-            changes.append("changed stream to %s" % doc.stream)
+            rfc_changes.append("changed stream to %s" % doc.stream)
 
         if (
             not doc.group
         ):  # if we have no group assigned, check if RFC Editor has a suggestion
             if wg:
                 doc.group = Group.objects.get(acronym=wg)
-                changes.append("set group to %s" % doc.group)
+                rfc_changes.append("set group to %s" % doc.group)
             else:
                 doc.group = Group.objects.get(
                     type="individ"
@@ -493,34 +528,12 @@ def update_docs_from_rfc_index(
             e.by = system
             e.desc = "RFC published"
             e.save()
-            events.append(e)
+            rfc_events.append(e)
 
-            changes.append(
+            rfc_changes.append(
                 "added RFC published event at %s" % e.time.strftime("%Y-%m-%d")
             )
             rfc_published = True
-
-        for t in (
-            "draft-iesg",
-            "draft-stream-iab",
-            "draft-stream-irtf",
-            "draft-stream-ise",
-        ):
-            prev_state = doc.get_state(t)
-            if prev_state is not None:
-                if prev_state.slug not in ("pub", "idexists"):
-                    new_state = State.objects.select_related("type").get(
-                        used=True, type=t, slug="pub"
-                    )
-                    doc.set_state(new_state)
-                    changes.append(
-                        "changed %s to %s" % (new_state.type.label, new_state)
-                    )
-                    e = update_action_holders(doc, prev_state, new_state)
-                    if e:
-                        events.append(e)
-            elif t == "draft-iesg":
-                doc.set_state(State.objects.get(type_id="draft-iesg", slug="idexists"))
 
         def parse_relation_list(l):
             res = []
@@ -547,7 +560,7 @@ def update_docs_from_rfc_index(
                 r = RelatedDocument.objects.create(
                     source=doc, target=x, relationship=relationship_obsoletes
                 )
-                changes.append(
+                rfc_changes.append(
                     "created %s relation between %s and %s"
                     % (
                         r.relationship.name.lower(),
@@ -563,7 +576,7 @@ def update_docs_from_rfc_index(
                 r = RelatedDocument.objects.create(
                     source=doc, target=x, relationship=relationship_updates
                 )
-                changes.append(
+                rfc_changes.append(
                     "created %s relation between %s and %s"
                     % (
                         r.relationship.name.lower(),
@@ -577,16 +590,16 @@ def update_docs_from_rfc_index(
                 a = a.lower()
                 if not DocAlias.objects.filter(name=a):
                     DocAlias.objects.create(name=a).docs.add(doc)
-                    changes.append("created alias %s" % prettify_std_name(a))
+                    rfc_changes.append("created alias %s" % prettify_std_name(a))
 
-        doc_errata = errata.get("RFC%04d" % rfc_number, [])
+        doc_errata = errata.get("RFC%04d" % rfc_number, [])  # rfc10k problem here
         all_rejected = doc_errata and all(
             er["errata_status_code"] == "Rejected" for er in doc_errata
         )
         if has_errata and not all_rejected:
             if not doc.tags.filter(pk=tag_has_errata.pk).exists():
                 doc.tags.add(tag_has_errata)
-                changes.append("added Errata tag")
+                rfc_changes.append("added Errata tag")
             has_verified_errata = any(
                 [er["errata_status_code"] == "Verified" for er in doc_errata]
             )
@@ -595,34 +608,46 @@ def update_docs_from_rfc_index(
                 and not doc.tags.filter(pk=tag_has_verified_errata.pk).exists()
             ):
                 doc.tags.add(tag_has_verified_errata)
-                changes.append("added Verified Errata tag")
+                rfc_changes.append("added Verified Errata tag")
         else:
             if doc.tags.filter(pk=tag_has_errata.pk):
                 doc.tags.remove(tag_has_errata)
                 if all_rejected:
-                    changes.append("removed Errata tag (all errata rejected)")
+                    rfc_changes.append("removed Errata tag (all errata rejected)")
                 else:
-                    changes.append("removed Errata tag")
+                    rfc_changes.append("removed Errata tag")
             if doc.tags.filter(pk=tag_has_verified_errata.pk):
                 doc.tags.remove(tag_has_verified_errata)
-                changes.append("removed Verified Errata tag")
+                rfc_changes.append("removed Verified Errata tag")
 
-        if changes:
-            events.append(
+        # Update the draft first
+        if draft_changes:
+            draft_events.append(
+                DocEvent.objects.create(
+                    doc=draft,
+                    rev=doc.rev,
+                    by=system,
+                    type="sync_from_rfc_editor",
+                    desc="Received changes through RFC Editor sync (%s)"
+                         % ", ".join(draft_changes),
+                )
+            )
+            draft.save_with_history(draft_events)
+            yield draft_changes, draft, False  # yield changes to the draft
+
+        if rfc_changes:
+            rfc_events.append(
                 DocEvent.objects.create(
                     doc=doc,
                     rev=doc.rev,
                     by=system,
                     type="sync_from_rfc_editor",
                     desc="Received changes through RFC Editor sync (%s)"
-                    % ", ".join(changes),
+                         % ", ".join(rfc_changes),
                 )
             )
-
-            doc.save_with_history(events)
-
-        if changes:
-            yield changes, doc, rfc_published
+            doc.save_with_history(rfc_events)
+            yield rfc_changes, doc, rfc_published  # yield changes to the RFC
 
 
 def post_approved_draft(url, name):
