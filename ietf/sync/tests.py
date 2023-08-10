@@ -347,11 +347,10 @@ class RFCSyncTests(TestCase):
         draft_abstract_before = draft_doc.abstract
         draft_pages_before = draft_doc.pages
         changes = []
-        for cs, d, rfc_published in rfceditor.update_docs_from_rfc_index(data, errata, today - datetime.timedelta(days=30)):
-            changes.append(cs)
+        for _, d, rfc_published in rfceditor.update_docs_from_rfc_index(data, errata, today - datetime.timedelta(days=30)):
+            changes.append({"doc_pk": d.pk, "rfc_published": rfc_published})  # we ignore the actual change list
 
         draft_doc = Document.objects.get(name=draft_doc.name)
-
         draft_events = draft_doc.docevent_set.all()
         self.assertEqual(len(draft_events) - event_count_before, 2)
         self.assertEqual(draft_events[0].type, "sync_from_rfc_editor")
@@ -384,6 +383,13 @@ class RFCSyncTests(TestCase):
         self.assertEqual(rfc_doc.abstract, "This is some interesting text.")
         self.assertEqual(rfc_doc.std_level_id, "ps")
         self.assertEqual(rfc_doc.pages, 42)
+
+        # check that we got the expected changes
+        self.assertEqual(len(changes), 2)
+        self.assertEqual(changes[0]["doc_pk"], draft_doc.pk)
+        self.assertEqual(changes[0]["rfc_published"], False)
+        self.assertEqual(changes[1]["doc_pk"], rfc_doc.pk)
+        self.assertEqual(changes[1]["rfc_published"], True)
 
         # make sure we can apply it again with no changes
         changed = list(rfceditor.update_docs_from_rfc_index(data, errata, today - datetime.timedelta(days=30)))
