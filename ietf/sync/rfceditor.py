@@ -7,7 +7,7 @@ import datetime
 import re
 import requests
 
-from typing import Iterator
+from typing import Iterator, Optional, Union
 from urllib.parse import urlencode
 from xml.dom import pulldom, Node
 
@@ -417,7 +417,7 @@ def update_docs_from_rfc_index(
                 log(f"Warning: RFC index for {rfc_number} referred to unknown draft {draft_name}")
 
         # Find or create the RFC document
-        creation_args = {"name": f"rfc{rfc_number}"}
+        creation_args: dict[str, Optional[Union[str, int]]] = {"name": f"rfc{rfc_number}"}
         if draft:
             creation_args.update(
                 {
