@@ -532,7 +532,7 @@ def update_docs_from_rfc_index(
             doc.stream = stream_mapping[stream]
             rfc_changes.append(f"{verbed} stream to {doc.stream}")
 
-        if doc.get_state(rfc_published_state.type) != rfc_published_state:
+        if doc.get_state() != rfc_published_state:
             doc.set_state(rfc_published_state)
             rfc_changes.append(f"{verbed} {rfc_published_state.type.label} to {rfc_published_state}")
 
