@@ -84,7 +84,7 @@ class AbstractReviewerQueuePolicy:
             rotation_list = self._filter_unavailable_reviewers(rotation_list)
         return rotation_list
 
-    def return_reviewer_to_rotation_top(self, reviewer_person, wants_to_be_next):
+    def set_wants_to_be_next(self, reviewer_person):
         """
         Return a reviewer to the top of the rotation, e.g. because they rejected a review,
         and should retroactively not have been rotated over.
@@ -475,14 +475,13 @@ class RotateAlphabeticallyReviewerQueuePolicy(AbstractReviewerQueuePolicy):
     
         return reviewers[next_reviewer_index:] + reviewers[:next_reviewer_index]
 
-    def return_reviewer_to_rotation_top(self, reviewer_person, wants_to_be_next):
+    def set_wants_to_be_next(self, reviewer_person):
         # As RotateAlphabetically does not keep a full rotation list,
         # returning someone to a particular order is complex.
         # Instead, the "assign me next" flag is set.
-        if wants_to_be_next:
-            settings = self._reviewer_settings_for(reviewer_person)
-            settings.request_assignment_next = wants_to_be_next
-            settings.save()
+        settings = self._reviewer_settings_for(reviewer_person)
+        settings.request_assignment_next = True
+        settings.save()
 
     def _update_skip_next(self, rotation_pks, assignee_person):
         """Decrement skip_next for all users skipped
@@ -570,14 +569,13 @@ class LeastRecentlyUsedReviewerQueuePolicy(AbstractReviewerQueuePolicy):
         rotation_list += reviewers_with_assignment
         return rotation_list
 
-    def return_reviewer_to_rotation_top(self, reviewer_person, wants_to_be_next):
+    def set_wants_to_be_next(self, reviewer_person):
         # Reviewer rotation for this policy ignores rejected/withdrawn
         # reviews, so it automatically adjusts the position of someone
         # who rejected a review and no further action is needed.
-        if wants_to_be_next:
-            settings = self._reviewer_settings_for(reviewer_person)
-            settings.request_assignment_next = wants_to_be_next
-            settings.save()
+        settings = self._reviewer_settings_for(reviewer_person)
+        settings.request_assignment_next = True
+        settings.save()
 
 
 QUEUE_POLICY_NAME_MAPPING = {

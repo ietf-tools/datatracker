@@ -186,10 +186,10 @@
         <table class="table table-sm table-striped tablesorter">
             <thead>
                 <tr>
-                    <th scope="col">
+                    <th scope="col" data-sort="setting">
                         Setting
                     </th>
-                    <th scope="col">
+                    <th scope="col" data-sort="value">
                         Value
                     </th>
                 </tr>
@@ -208,7 +208,7 @@
                         Skip next assignments
                     </th>
                     <td>
-                        {{ t.reviewer_settings.skip_next }}
+                        {{ t.reviewer_settings.skip_next|yesno }}
                     </td>
                 </tr>
                 <tr>

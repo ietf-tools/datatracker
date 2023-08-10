@@ -159,18 +159,19 @@ def materials(request, num=None):
     irtf      = sessions.filter(group__parent__acronym = 'irtf')
     training  = sessions.filter(group__acronym__in=['edu','iaoc'], type_id__in=['regular', 'other', ])
     iab       = sessions.filter(group__parent__acronym = 'iab')
+    editorial      = sessions.filter(group__acronym__in=['rsab','rswg'])
 
-    session_pks = [s.pk for ss in [plenaries, ietf, irtf, training, iab] for s in ss]
+    session_pks = [s.pk for ss in [plenaries, ietf, irtf, training, iab, editorial] for s in ss]
     other     = sessions.filter(type__in=['regular'], group__type__features__has_meetings=True).exclude(pk__in=session_pks)
 
-    for topic in [plenaries, ietf, training, irtf, iab]:
+    for topic in [plenaries, ietf, training, irtf, iab, editorial]:
         for event in topic:
             date_list = []
             for slide_event in event.all_meeting_slides(): date_list.append(slide_event.time)
             for agenda_event in event.all_meeting_agendas(): date_list.append(agenda_event.time)
             if date_list: setattr(event, 'last_update', sorted(date_list, reverse=True)[0])
 
-    for session_list in [plenaries, ietf, training, irtf, iab, other]:
+    for session_list in [plenaries, ietf, training, irtf, iab, editorial, other]:
         for session in session_list:
             session.past_cutoff_date = past_cutoff_date
 
@@ -183,6 +184,7 @@ def materials(request, num=None):
     irtf, _ = organize_proceedings_sessions(irtf)
     training, _ = organize_proceedings_sessions(training)
     iab, _ = organize_proceedings_sessions(iab)
+    editorial, _ = organize_proceedings_sessions(editorial)
     other, _ = organize_proceedings_sessions(other)
 
     ietf_areas = []
@@ -202,6 +204,7 @@ def materials(request, num=None):
             'training': training,
             'irtf': irtf,
             'iab': iab,
+            'editorial': editorial,
             'other': other,
             'cut_off_date': cut_off_date,
             'cor_cut_off_date': cor_cut_off_date,
@@ -1704,9 +1707,11 @@ def api_get_session_materials (request, session_id=None):
         })
     else:
         pass  # no action available if it's past cutoff
-
+    
+    agenda = session.agenda() 
+    agenda_url = agenda.get_href() if agenda is not None else None
     return JsonResponse({
-        "url": session.agenda().get_href(),
+        "url": agenda_url,
         "slides": {
             "decks": list(map(agenda_extract_slide, session.slides())),
             "actions": slides_actions,
@@ -2885,7 +2890,7 @@ def propose_session_slides(request, session_id, num):
             submission.filename = filename
             submission.save()
 
-            (to, cc) = gather_address_lists('slides_proposed', group=session.group).as_strings() 
+            (to, cc) = gather_address_lists('slides_proposed', group=session.group, proposer=request.user.person).as_strings()
             msg_txt = render_to_string("meeting/slides_proposed.txt", {
                     "to": to,
                     "cc": cc,
@@ -3777,6 +3782,10 @@ def proceedings(request, num=None):
         sessions.filter(group__parent__acronym = 'iab')
         .exclude(current_status='notmeet')
     )
+    editorial, _ = organize_proceedings_sessions(
+        sessions.filter(group__acronym__in=['rsab','rswg'])
+        .exclude(current_status='notmeet')
+    )
 
     ietf = sessions.filter(group__parent__type__slug = 'area').exclude(group__acronym='edu').order_by('group__parent__acronym', 'group__acronym')
     ietf_areas = []
@@ -3796,6 +3805,7 @@ def proceedings(request, num=None):
             'training': training,
             'irtf': irtf,
             'iab': iab,
+            'editorial': editorial,
             'ietf_areas': ietf_areas,
             'cut_off_date': cut_off_date,
             'cor_cut_off_date': cor_cut_off_date,

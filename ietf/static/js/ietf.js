@@ -93,18 +93,6 @@ $(document)
 
 $(document)
     .ready(function () {
-
-        function dropdown_hover(e) {
-            var navbar = $(this)
-                .closest(".navbar");
-            if (navbar.length === 0 || navbar.find(".navbar-toggler")
-                .is(":hidden")) {
-                $(this)
-                    .children(".dropdown-toggle")
-                    .dropdown(e.type == "mouseenter" ? "show" : "hide");
-            }
-        }
-
         // load data for the menu
         $.ajax({
             url: $(document.body)
@@ -140,9 +128,6 @@ $(document)
                     }
                     attachTo.append(menu.join(""));
                 }
-
-                $("ul.nav li.dropdown, ul.nav li.dropend")
-                    .on("mouseenter mouseleave", dropdown_hover);
             }
         });
     });

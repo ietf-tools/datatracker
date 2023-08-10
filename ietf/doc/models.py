@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2010-2020, All Rights Reserved
+# Copyright The IETF Trust 2010-2023, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -162,7 +162,7 @@ class DocumentInfo(models.Model):
                 self._cached_file_path = settings.CONFLICT_REVIEW_PATH
             elif self.type_id == "statchg":
                 self._cached_file_path = settings.STATUS_CHANGE_PATH
-            elif self.type_id == "bofreq":
+            elif self.type_id == "bofreq": # TODO: This is probably unneeded, as is the separate path setting
                 self._cached_file_path = settings.BOFREQ_PATH
             else:
                 self._cached_file_path = settings.DOCUMENT_PATH_PATTERN.format(doc=self)
@@ -186,7 +186,7 @@ class DocumentInfo(models.Model):
             elif self.type_id == 'review':
                 # TODO: This will be wrong if a review is updated on the same day it was created (or updated more than once on the same day)
                 self._cached_base_name = "%s.txt" % self.name
-            elif self.type_id == 'bofreq':
+            elif self.type_id in ['bofreq', 'statement']:
                 self._cached_base_name = "%s-%s.md" % (self.name, self.rev)
             else:
                 if self.rev:
@@ -1290,7 +1290,11 @@ EVENT_TYPES = [
     ("removed_related_ipr", "Removed related IPR"),
 
     # Bofreq Editor events
-    ("changed_editors", "Changed BOF Request editors")
+    ("changed_editors", "Changed BOF Request editors"),
+
+    # Statement events
+    ("published_statement", "Published statement"),
+    
     ]
 
 class DocEvent(models.Model):
