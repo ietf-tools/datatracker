@@ -406,8 +406,6 @@ def update_docs_from_rfc_index(
         rfc_events = []
         rfc_changes = []
         rfc_published = False
-        draft_events = []
-        draft_changes = []
 
         # Find the document
         doc, created_rfc = Document.objects.get_or_create(
@@ -426,6 +424,9 @@ def update_docs_from_rfc_index(
             except Document.DoesNotExist:
                 pass
             else:
+                draft_events = []
+                draft_changes = []
+
                 # Ensure the draft is in the "rfc" state and move its files to the archive
                 # if necessary.
                 if draft.get_state_slug() != "rfc":
@@ -472,6 +473,18 @@ def update_docs_from_rfc_index(
                         draft.set_state(
                             State.objects.get(type_id="draft-iesg", slug="idexists")
                         )
+                if draft_changes:
+                    draft_events.append(
+                        DocEvent.objects.create(
+                            doc=draft,
+                            rev=doc.rev,
+                            by=system,
+                            type="sync_from_rfc_editor",
+                            desc=f"Received changes through RFC Editor sync ({', '.join(draft_changes)})",
+                        )
+                    )
+                    draft.save_with_history(draft_events)
+                    yield draft_changes, draft, False  # yield changes to the draft
 
         # check attributes
         if title != doc.title:
@@ -619,20 +632,6 @@ def update_docs_from_rfc_index(
             if doc.tags.filter(pk=tag_has_verified_errata.pk):
                 doc.tags.remove(tag_has_verified_errata)
                 rfc_changes.append("removed Verified Errata tag")
-
-        # Update the draft first
-        if draft_changes:
-            draft_events.append(
-                DocEvent.objects.create(
-                    doc=draft,
-                    rev=doc.rev,
-                    by=system,
-                    type="sync_from_rfc_editor",
-                    desc=f"Received changes through RFC Editor sync ({', '.join(draft_changes)})",
-                )
-            )
-            draft.save_with_history(draft_events)
-            yield draft_changes, draft, False  # yield changes to the draft
 
         if rfc_changes:
             rfc_events.append(
