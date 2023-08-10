@@ -1,5 +1,16 @@
 @import "bootstrap/scss/functions";
+
+// Enable color modes
+$color-mode-type: data;
+
 @import "bootstrap/scss/variables";
+@import "bootstrap/scss/variables-dark";
+@import "bootstrap/scss/maps";
 @import "bootstrap/scss/mixins";
+@import "bootstrap/scss/root";
+
+// FIXME: bs-5.3.0 workaround from https://github.com/apalfrey/select2-bootstrap-5-theme/issues/75#issuecomment-1573265695
+$s2bs5-border-color: $border-color;
+
 @import "select2/src/scss/core";
 @import "select2-bootstrap-5-theme/src/include-all";

@@ -3,9 +3,7 @@
 {% load static %}
 {% block title %}Error: Restricted Access{% endblock %}
 {% block content %}
-    <img class="col-2 mb-5"
-         src="{% static 'ietf/images/ietf-logo.svg' %}"
-         alt="IETF">
+    {% include "logo.html" with org="ietf" classes="col-2 mb-5" only %}
     <div class="alert alert-warning my-3">
         <h1>Restricted Access</h1>
         <hr>

@@ -65,7 +65,7 @@
                     <div class="row milestone{% if form.delete.data %} delete{% endif %}">
                         <div class="due handle col-md-2 col-form-label col-form-label-md">
                             {% if form.milestone.resolved %}
-                                <span class="badge rounded-pill bg-success">{{ form.milestone.resolved }}</span>
+                                <span class="badge rounded-pill text-bg-success">{{ form.milestone.resolved }}</span>
                             {% elif group.uses_milestone_dates and form.milestone.due %}
                                 <b>{{ form.milestone.due|date:"M Y" }}</b>
                             {% endif %}
@@ -74,12 +74,12 @@
                             <b>{{ form.milestone.desc|urlize_ietf_docs }}</b>
                             {% if form.needs_review %}
                                 <span title="This milestone is not active yet, awaiting {{ reviewer }} acceptance"
-                                      class="badge rounded-pill bg-warning">
+                                      class="badge rounded-pill text-bg-warning">
                                     Awaiting accept
                                 </span>
                             {% endif %}
-                            {% if form.changed %}<span class="badge rounded-pill bg-info">Changed</span>{% endif %}
-                            {% if form.delete.data %}<span class="badge rounded-pill bg-danger">Deleted</span>{% endif %}
+                            {% if form.changed %}<span class="badge rounded-pill text-bg-info">Changed</span>{% endif %}
+                            {% if form.delete.data %}<span class="badge rounded-pill text-bg-danger">Deleted</span>{% endif %}
                             {% for d in form.docs_names %}<div class="doc">{{ d }}</div>{% endfor %}
                         </div>
                     </div>
