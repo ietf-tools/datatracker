@@ -561,7 +561,7 @@ def update_docs_from_rfc_index(
                 #    # sensibly; otherwise we'll have to ignore them
                 #   l = DocAlias.objects.filter(name__startswith="rfc", docs__docalias__name=x.lower())
                 # else:
-                l = Document.objects.filter(name=x.lower())
+                l = Document.objects.filter(name=x.lower(), type_id="rfc")
 
                 for a in l:
                     if a not in res:
