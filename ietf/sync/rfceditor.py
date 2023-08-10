@@ -7,7 +7,7 @@ import datetime
 import re
 import requests
 
-from typing import Iterator, Optional
+from typing import Iterator
 from urllib.parse import urlencode
 from xml.dom import pulldom, Node
 
@@ -18,7 +18,7 @@ from django.utils.encoding import smart_bytes, force_str
 import debug                            # pyflakes:ignore
 
 from ietf.doc.models import ( Document, DocAlias, State, StateType, DocEvent, DocRelationshipName,
-    DocTagName, DocTypeName, RelatedDocument )
+    DocTagName, RelatedDocument )
 from ietf.doc.expire import move_draft_files_to_archive
 from ietf.doc.utils import add_state_change_event, prettify_std_name, update_action_holders
 from ietf.group.models import Group
@@ -342,8 +342,8 @@ def update_docs_from_rfc_index(
 
     The skip_older_than_date is a bare date, not a datetime.
     """
-
-    errata = {}
+    # Create dict mapping doc-id to list of errata records that apply to it
+    errata: dict[str, list[dict]] = {}
     for item in errata_data:
         name = item["doc-id"]
         if not name in errata:
@@ -443,8 +443,8 @@ def update_docs_from_rfc_index(
                 if created_relateddoc:
                     change = "created {rel_name} relationship between {pretty_draft_name} and {pretty_rfc_name}".format(
                         rel_name=r.relationship.name.lower(),
-                        pretty_draft_name=prettify_std_name(draft),
-                        pretty_rfc_name=prettify_std_name(doc),
+                        pretty_draft_name=prettify_std_name(draft_name),
+                        pretty_rfc_name=prettify_std_name(doc.name),
                     )
                     draft_changes.append(change)
                     rfc_changes.append(change)
