@@ -411,16 +411,14 @@ def update_docs_from_rfc_index(
 
         # Find the document
         doc, created_rfc = Document.objects.get_or_create(
-            rfc_number=rfc_number,
-            type_id="rfc",
-            defaults={"name": f"rfc{rfc_number}"}
+            rfc_number=rfc_number, type_id="rfc", defaults={"name": f"rfc{rfc_number}"}
         )
         if created_rfc:
             rfc_changes.append(f"created document {prettify_std_name(doc.name)}")
             # Create DocAlias (for consistency until we drop DocAlias altogether)
             alias, _ = DocAlias.objects.get_or_create(name=doc.name)
             alias.docs.add(doc)
-            rfc_changes.append("created alias %s" % prettify_std_name(doc.name))
+            rfc_changes.append(f"created alias {prettify_std_name(doc.name)}")
 
         if draft_name:
             try:
@@ -431,11 +429,11 @@ def update_docs_from_rfc_index(
                 # Ensure the draft is in the "rfc" state and move its files to the archive
                 # if necessary.
                 if draft.get_state_slug() != "rfc":
-                    draft.set_state(State.objects.get(used=True, type="draft", slug="rfc"))
-                    move_draft_files_to_archive(draft, draft.rev)
-                    draft_changes.append(
-                        f"changed state to {draft.get_state()}"
+                    draft.set_state(
+                        State.objects.get(used=True, type="draft", slug="rfc")
                     )
+                    move_draft_files_to_archive(draft, draft.rev)
+                    draft_changes.append(f"changed state to {draft.get_state()}")
 
                 # Ensure the draft and rfc are linked with a "became_rfc" relationship
                 r, created_relateddoc = RelatedDocument.objects.get_or_create(
@@ -464,40 +462,44 @@ def update_docs_from_rfc_index(
                                 used=True, type=t, slug="pub"
                             )
                             draft.set_state(new_state)
-                            draft_changes.append(f"changed {new_state.type.label} to {new_state}")
+                            draft_changes.append(
+                                f"changed {new_state.type.label} to {new_state}"
+                            )
                             e = update_action_holders(draft, prev_state, new_state)
                             if e:
                                 draft_events.append(e)
                     elif t == "draft-iesg":
-                        draft.set_state(State.objects.get(type_id="draft-iesg", slug="idexists"))
+                        draft.set_state(
+                            State.objects.get(type_id="draft-iesg", slug="idexists")
+                        )
 
         # check attributes
         if title != doc.title:
             doc.title = title
-            rfc_changes.append("changed title to '%s'" % doc.title)
+            rfc_changes.append(f"changed title to '{doc.title}'")
 
         if abstract and abstract != doc.abstract:
             doc.abstract = abstract
-            rfc_changes.append("changed abstract to '%s'" % doc.abstract)
+            rfc_changes.append(f"changed abstract to '{doc.abstract}'")
 
         if pages and int(pages) != doc.pages:
             doc.pages = int(pages)
-            rfc_changes.append("changed pages to %s" % doc.pages)
+            rfc_changes.append(f"changed pages to {doc.pages}")
 
         if std_level_mapping[current_status] != doc.std_level:
             doc.std_level = std_level_mapping[current_status]
-            rfc_changes.append("changed standardization level to %s" % doc.std_level)
+            rfc_changes.append(f"changed standardization level to {doc.std_level}")
 
         if doc.stream != stream_mapping[stream]:
             doc.stream = stream_mapping[stream]
-            rfc_changes.append("changed stream to %s" % doc.stream)
+            rfc_changes.append(f"changed stream to {doc.stream}")
 
         if (
             not doc.group
         ):  # if we have no group assigned, check if RFC Editor has a suggestion
             if wg:
                 doc.group = Group.objects.get(acronym=wg)
-                rfc_changes.append("set group to %s" % doc.group)
+                rfc_changes.append(f"set group to {doc.group}")
             else:
                 doc.group = Group.objects.get(
                     type="individ"
@@ -531,7 +533,7 @@ def update_docs_from_rfc_index(
             rfc_events.append(e)
 
             rfc_changes.append(
-                "added RFC published event at %s" % e.time.strftime("%Y-%m-%d")
+                f"added RFC published event at {e.time.strftime('%Y-%m-%d')}"
             )
             rfc_published = True
 
@@ -561,11 +563,10 @@ def update_docs_from_rfc_index(
                     source=doc, target=x, relationship=relationship_obsoletes
                 )
                 rfc_changes.append(
-                    "created %s relation between %s and %s"
-                    % (
-                        r.relationship.name.lower(),
-                        prettify_std_name(r.source.name),
-                        prettify_std_name(r.target.name),
+                    "created {rel_name} relation between {src_name} and {tgt_name}".format(
+                        rel_name=r.relationship.name.lower(),
+                        src_name=prettify_std_name(r.source.name),
+                        tgt_name=prettify_std_name(r.target.name),
                     )
                 )
 
@@ -577,11 +578,10 @@ def update_docs_from_rfc_index(
                     source=doc, target=x, relationship=relationship_updates
                 )
                 rfc_changes.append(
-                    "created %s relation between %s and %s"
-                    % (
-                        r.relationship.name.lower(),
-                        prettify_std_name(r.source.name),
-                        prettify_std_name(r.target.name),
+                    "created {rel_name} relation between {src_name} and {tgt_name}".format(
+                        rel_name=r.relationship.name.lower(),
+                        src_name=prettify_std_name(r.source.name),
+                        tgt_name=prettify_std_name(r.target.name),
                     )
                 )
 
@@ -590,7 +590,7 @@ def update_docs_from_rfc_index(
                 a = a.lower()
                 if not DocAlias.objects.filter(name=a):
                     DocAlias.objects.create(name=a).docs.add(doc)
-                    rfc_changes.append("created alias %s" % prettify_std_name(a))
+                    rfc_changes.append(f"created alias {prettify_std_name(a)}")
 
         doc_errata = errata.get("RFC%04d" % rfc_number, [])  # rfc10k problem here
         all_rejected = doc_errata and all(
@@ -628,8 +628,7 @@ def update_docs_from_rfc_index(
                     rev=doc.rev,
                     by=system,
                     type="sync_from_rfc_editor",
-                    desc="Received changes through RFC Editor sync (%s)"
-                         % ", ".join(draft_changes),
+                    desc=f"Received changes through RFC Editor sync ({', '.join(draft_changes)})",
                 )
             )
             draft.save_with_history(draft_events)
@@ -642,8 +641,7 @@ def update_docs_from_rfc_index(
                     rev=doc.rev,
                     by=system,
                     type="sync_from_rfc_editor",
-                    desc="Received changes through RFC Editor sync (%s)"
-                         % ", ".join(rfc_changes),
+                    desc=f"Received changes through RFC Editor sync ({', '.join(rfc_changes)})",
                 )
             )
             doc.save_with_history(rfc_events)
