@@ -511,29 +511,30 @@ def update_docs_from_rfc_index(
                 yield draft_changes, draft, False  # yield changes to the draft
 
         # check attributes
+        verbed = "set" if created_rfc else "changed"
         if title != doc.title:
             doc.title = title
-            rfc_changes.append(f"changed title to '{doc.title}'")
+            rfc_changes.append(f"{verbed} title to '{doc.title}'")
 
         if abstract and abstract != doc.abstract:
             doc.abstract = abstract
-            rfc_changes.append(f"changed abstract to '{doc.abstract}'")
+            rfc_changes.append(f"{verbed} abstract to '{doc.abstract}'")
 
         if pages and int(pages) != doc.pages:
             doc.pages = int(pages)
-            rfc_changes.append(f"changed pages to {doc.pages}")
+            rfc_changes.append(f"{verbed} pages to {doc.pages}")
 
         if std_level_mapping[current_status] != doc.std_level:
             doc.std_level = std_level_mapping[current_status]
-            rfc_changes.append(f"changed standardization level to {doc.std_level}")
+            rfc_changes.append(f"{verbed} standardization level to {doc.std_level}")
 
         if doc.stream != stream_mapping[stream]:
             doc.stream = stream_mapping[stream]
-            rfc_changes.append(f"changed stream to {doc.stream}")
+            rfc_changes.append(f"{verbed} stream to {doc.stream}")
 
         if doc.get_state(rfc_published_state.type) != rfc_published_state:
             doc.set_state(rfc_published_state)
-            rfc_changes.append(f"changed {rfc_published_state.type.label} to {rfc_published_state}")
+            rfc_changes.append(f"{verbed} {rfc_published_state.type.label} to {rfc_published_state}")
 
         # if we have no group assigned, check if RFC Editor has a suggestion
         if not doc.group:  
