@@ -422,7 +422,7 @@ def update_docs_from_rfc_index(
             try:
                 draft = Document.objects.get(name=draft_name, type_id="draft")
             except Document.DoesNotExist:
-                pass
+                log(f"Warning: RFC index for {rfc_number} referred to unknown draft {draft_name}")
             else:
                 draft_events = []
                 draft_changes = []
