@@ -374,6 +374,7 @@ def update_docs_from_rfc_index(
     tag_has_verified_errata = DocTagName.objects.get(slug="verified-errata")
     relationship_obsoletes = DocRelationshipName.objects.get(slug="obs")
     relationship_updates = DocRelationshipName.objects.get(slug="updates")
+    rfc_published_state = State.objects.get(type_id="rfc", slug="published")
 
     system = Person.objects.get(name="(System)")
 
@@ -407,9 +408,34 @@ def update_docs_from_rfc_index(
         rfc_changes = []
         rfc_published = False
 
-        # Find the document
+        # Find the draft, if any
+        draft = None
+        if draft_name:
+            try:
+                draft = Document.objects.get(name=draft_name, type_id="draft")
+            except Document.DoesNotExist:
+                log(f"Warning: RFC index for {rfc_number} referred to unknown draft {draft_name}")
+
+        # Find or create the RFC document
+        creation_args = {"name": f"rfc{rfc_number}"}
+        if draft:
+            creation_args.update(
+                {
+                    "title": draft.title,
+                    "stream": draft.stream,
+                    "group": draft.group,
+                    "abstract": draft.abstract,
+                    "pages": draft.pages,
+                    "words": draft.words,
+                    "std_level": draft.std_level,
+                    "ad": draft.ad,
+                    "external_url": draft.external_url,
+                    "uploaded_filename": draft.uploaded_filename,
+                    "note": draft.note,
+                }
+            )
         doc, created_rfc = Document.objects.get_or_create(
-            rfc_number=rfc_number, type_id="rfc", defaults={"name": f"rfc{rfc_number}"}
+            rfc_number=rfc_number, type_id="rfc", defaults=creation_args
         )
         if created_rfc:
             rfc_changes.append(f"created document {prettify_std_name(doc.name)}")
@@ -417,74 +443,71 @@ def update_docs_from_rfc_index(
             alias, _ = DocAlias.objects.get_or_create(name=doc.name)
             alias.docs.add(doc)
             rfc_changes.append(f"created alias {prettify_std_name(doc.name)}")
+            if draft:
+                doc.formal_languages.set(draft.formal_languages.all())
 
-        if draft_name:
-            try:
-                draft = Document.objects.get(name=draft_name, type_id="draft")
-            except Document.DoesNotExist:
-                log(f"Warning: RFC index for {rfc_number} referred to unknown draft {draft_name}")
-            else:
-                draft_events = []
-                draft_changes = []
+        if draft:
+            draft_events = []
+            draft_changes = []
 
-                # Ensure the draft is in the "rfc" state and move its files to the archive
-                # if necessary.
-                if draft.get_state_slug() != "rfc":
-                    draft.set_state(
-                        State.objects.get(used=True, type="draft", slug="rfc")
-                    )
-                    move_draft_files_to_archive(draft, draft.rev)
-                    draft_changes.append(f"changed state to {draft.get_state()}")
-
-                # Ensure the draft and rfc are linked with a "became_rfc" relationship
-                r, created_relateddoc = RelatedDocument.objects.get_or_create(
-                    source=draft, target=doc, relationship_id="became_rfc"
+            # Ensure the draft is in the "rfc" state and move its files to the archive
+            # if necessary.
+            if draft.get_state_slug() != "rfc":
+                draft.set_state(
+                    State.objects.get(used=True, type="draft", slug="rfc")
                 )
-                if created_relateddoc:
-                    change = "created {rel_name} relationship between {pretty_draft_name} and {pretty_rfc_name}".format(
-                        rel_name=r.relationship.name.lower(),
-                        pretty_draft_name=prettify_std_name(draft_name),
-                        pretty_rfc_name=prettify_std_name(doc.name),
-                    )
-                    draft_changes.append(change)
-                    rfc_changes.append(change)
+                move_draft_files_to_archive(draft, draft.rev)
+                draft_changes.append(f"changed state to {draft.get_state()}")
 
-                # Ensure draft is in the correct iesg and stream states
-                for t in (
-                    "draft-iesg",
-                    "draft-stream-iab",
-                    "draft-stream-irtf",
-                    "draft-stream-ise",
-                ):
-                    prev_state = draft.get_state(t)
-                    if prev_state is not None:
-                        if prev_state.slug not in ("pub", "idexists"):
-                            new_state = State.objects.select_related("type").get(
-                                used=True, type=t, slug="pub"
-                            )
-                            draft.set_state(new_state)
-                            draft_changes.append(
-                                f"changed {new_state.type.label} to {new_state}"
-                            )
-                            e = update_action_holders(draft, prev_state, new_state)
-                            if e:
-                                draft_events.append(e)
-                    elif t == "draft-iesg":
-                        draft.set_state(
-                            State.objects.get(type_id="draft-iesg", slug="idexists")
+            # Ensure the draft and rfc are linked with a "became_rfc" relationship
+            r, created_relateddoc = RelatedDocument.objects.get_or_create(
+                source=draft, target=doc, relationship_id="became_rfc"
+            )
+            if created_relateddoc:
+                change = "created {rel_name} relationship between {pretty_draft_name} and {pretty_rfc_name}".format(
+                    rel_name=r.relationship.name.lower(),
+                    pretty_draft_name=prettify_std_name(draft_name),
+                    pretty_rfc_name=prettify_std_name(doc.name),
+                )
+                draft_changes.append(change)
+                rfc_changes.append(change)
+
+            # Ensure draft is in the correct iesg and stream states
+            for t in (
+                "draft-iesg",
+                "draft-stream-iab",
+                "draft-stream-irtf",
+                "draft-stream-ise",
+            ):
+                prev_state = draft.get_state(t)
+                if prev_state is not None:
+                    if prev_state.slug not in ("pub", "idexists"):
+                        new_state = State.objects.select_related("type").get(
+                            used=True, type=t, slug="pub"
                         )
-                if draft_changes:
-                    draft_events.append(
-                        DocEvent.objects.create(
-                            doc=draft,
-                            rev=doc.rev,
-                            by=system,
-                            type="sync_from_rfc_editor",
-                            desc=f"Received changes through RFC Editor sync ({', '.join(draft_changes)})",
+                        draft.set_state(new_state)
+                        draft_changes.append(
+                            f"changed {new_state.type.label} to {new_state}"
                         )
+                        e = update_action_holders(draft, prev_state, new_state)
+                        if e:
+                            draft_events.append(e)
+                elif t == "draft-iesg":
+                    draft.set_state(
+                        State.objects.get(type_id="draft-iesg", slug="idexists")
                     )
-                    draft.save_with_history(draft_events)
-                    yield draft_changes, draft, False  # yield changes to the draft
+            if draft_changes:
+                draft_events.append(
+                    DocEvent.objects.create(
+                        doc=draft,
+                        rev=doc.rev,
+                        by=system,
+                        type="sync_from_rfc_editor",
+                        desc=f"Received changes through RFC Editor sync ({', '.join(draft_changes)})",
+                    )
+                )
+                draft.save_with_history(draft_events)
+                yield draft_changes, draft, False  # yield changes to the draft
 
         # check attributes
         if title != doc.title:
