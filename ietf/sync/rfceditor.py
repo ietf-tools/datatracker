@@ -443,6 +443,7 @@ def update_docs_from_rfc_index(
             alias, _ = DocAlias.objects.get_or_create(name=doc.name)
             alias.docs.add(doc)
             rfc_changes.append(f"created alias {prettify_std_name(doc.name)}")
+            doc.set_state(rfc_published_state)
             if draft:
                 doc.formal_languages.set(draft.formal_languages.all())
 
@@ -530,9 +531,12 @@ def update_docs_from_rfc_index(
             doc.stream = stream_mapping[stream]
             rfc_changes.append(f"changed stream to {doc.stream}")
 
-        if (
-            not doc.group
-        ):  # if we have no group assigned, check if RFC Editor has a suggestion
+        if doc.get_state(rfc_published_state.type) != rfc_published_state:
+            doc.set_state(rfc_published_state)
+            rfc_changes.append(f"changed {rfc_published_state.type.label} to {rfc_published_state}")
+
+        # if we have no group assigned, check if RFC Editor has a suggestion
+        if not doc.group:  
             if wg:
                 doc.group = Group.objects.get(acronym=wg)
                 rfc_changes.append(f"set group to {doc.group}")
