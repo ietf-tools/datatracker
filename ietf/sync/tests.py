@@ -226,14 +226,14 @@ class RFCSyncTests(TestCase):
 
     def test_rfc_index(self):
         area = GroupFactory(type_id='area')
-        doc = WgDraftFactory(
+        draft_doc = WgDraftFactory(
             group__parent=area,
             states=[('draft-iesg','rfcqueue'),('draft-stream-ise','rfc-edit')],
             ad=Person.objects.get(user__username='ad'),
         )
         # it's a bit strange to have draft-stream-ise set when draft-iesg is set
         # too, but for testing purposes ...
-        doc.action_holders.add(doc.ad)  # not normally set, but add to be sure it's cleared
+        draft_doc.action_holders.add(draft_doc.ad)  # not normally set, but add to be sure it's cleared
 
         RfcFactory(rfc_number=123)
 
@@ -298,10 +298,10 @@ class RFCSyncTests(TestCase):
     </rfc-entry>
 </rfc-index>''' % dict(year=today.strftime("%Y"),
                        month=today.strftime("%B"),
-                       name=doc.name,
-                       rev=doc.rev,
-                       area=doc.group.parent.acronym,
-                       group=doc.group.acronym)
+                       name=draft_doc.name,
+                       rev=draft_doc.rev,
+                       area=draft_doc.group.parent.acronym,
+                       group=draft_doc.group.acronym)
 
         errata = [{
                 "errata_id":1,
@@ -321,7 +321,7 @@ class RFCSyncTests(TestCase):
 
         data = rfceditor.parse_index(io.StringIO(t))
         self.assertEqual(len(data), 1)
-
+        
         rfc_number, title, authors, rfc_published_date, current_status, updates, updated_by, obsoletes, obsoleted_by, also, draft, has_errata, stream, wg, file_formats, pages, abstract = data[0]
 
         # currently, we only check what we actually use
@@ -332,43 +332,58 @@ class RFCSyncTests(TestCase):
         self.assertEqual(current_status, "Proposed Standard")
         self.assertEqual(updates, ["RFC123"])
         self.assertEqual(set(also), set(["BCP1", "FYI1", "STD1"]))
-        self.assertEqual(draft, doc.name)
-        self.assertEqual(wg, doc.group.acronym)
+        self.assertEqual(draft, draft_doc.name)
+        self.assertEqual(wg, draft_doc.group.acronym)
         self.assertEqual(has_errata, True)
         self.assertEqual(stream, "IETF")
         self.assertEqual(pages, "42")
         self.assertEqual(abstract, "This is some interesting text.")
 
-        draft_filename = "%s-%s.txt" % (doc.name, doc.rev)
+        draft_filename = "%s-%s.txt" % (draft_doc.name, draft_doc.rev)
         self.write_draft_file(draft_filename, 5000)
 
+        event_count_before = draft_doc.docevent_set.count()
+        draft_title_before = draft_doc.title
+        draft_abstract_before = draft_doc.abstract
+        draft_pages_before = draft_doc.pages
         changes = []
         for cs, d, rfc_published in rfceditor.update_docs_from_rfc_index(data, errata, today - datetime.timedelta(days=30)):
             changes.append(cs)
 
-        doc = Document.objects.get(name=doc.name)
+        draft_doc = Document.objects.get(name=draft_doc.name)
 
-        events = doc.docevent_set.all()
-        self.assertEqual(events[0].type, "sync_from_rfc_editor")
-        self.assertEqual(events[1].type, "changed_action_holders")
-        self.assertEqual(events[2].type, "published_rfc")
-        self.assertEqual(events[2].time.astimezone(RPC_TZINFO).date(), today)
-        self.assertTrue("errata" in doc.tags.all().values_list("slug", flat=True))
-        self.assertTrue(DocAlias.objects.filter(name="rfc1234", docs=doc))
-        self.assertTrue(DocAlias.objects.filter(name="bcp1", docs=doc))
-        self.assertTrue(DocAlias.objects.filter(name="fyi1", docs=doc))
-        self.assertTrue(DocAlias.objects.filter(name="std1", docs=doc))
-        self.assertTrue(RelatedDocument.objects.filter(source=doc, target__name="rfc123", relationship="updates").exists())
-        self.assertEqual(doc.title, "A Testing RFC")
-        self.assertEqual(doc.abstract, "This is some interesting text.")
-        self.assertEqual(doc.get_state_slug(), "rfc")
-        self.assertEqual(doc.get_state_slug("draft-iesg"), "pub")
-        self.assertCountEqual(doc.action_holders.all(), [])
-        self.assertEqual(doc.get_state_slug("draft-stream-ise"), "pub")
-        self.assertEqual(doc.std_level_id, "ps")
-        self.assertEqual(doc.pages, 42)
+        draft_events = draft_doc.docevent_set.all()
+        self.assertEqual(len(draft_events) - event_count_before, 2)
+        self.assertEqual(draft_events[0].type, "sync_from_rfc_editor")
+        self.assertEqual(draft_events[1].type, "changed_action_holders")
+        self.assertEqual(draft_doc.get_state_slug(), "rfc")
+        self.assertEqual(draft_doc.get_state_slug("draft-iesg"), "pub")
+        self.assertCountEqual(draft_doc.action_holders.all(), [])
+        self.assertEqual(draft_doc.get_state_slug("draft-stream-ise"), "pub")
+        self.assertEqual(draft_doc.title, draft_title_before)
+        self.assertEqual(draft_doc.abstract, draft_abstract_before)
+        self.assertEqual(draft_doc.pages, draft_pages_before)
         self.assertTrue(not os.path.exists(os.path.join(settings.INTERNET_DRAFT_PATH, draft_filename)))
         self.assertTrue(os.path.exists(os.path.join(settings.INTERNET_DRAFT_ARCHIVE_DIR, draft_filename)))
+
+        rfc_doc = Document.objects.filter(rfc_number=1234, type_id="rfc").first()
+        self.assertIsNotNone(rfc_doc, "RFC document should have been created")
+        rfc_events = rfc_doc.docevent_set.all()
+        self.assertEqual(len(rfc_events), 2)
+        self.assertEqual(rfc_events[0].type, "sync_from_rfc_editor")
+        self.assertEqual(rfc_events[1].type, "published_rfc")
+        self.assertEqual(rfc_events[1].time.astimezone(RPC_TZINFO).date(), today)
+        self.assertTrue("errata" in rfc_doc.tags.all().values_list("slug", flat=True))
+        self.assertTrue(DocAlias.objects.filter(name="rfc1234", docs=rfc_doc))
+        self.assertTrue(DocAlias.objects.filter(name="bcp1", docs=rfc_doc))
+        self.assertTrue(DocAlias.objects.filter(name="fyi1", docs=rfc_doc))
+        self.assertTrue(DocAlias.objects.filter(name="std1", docs=rfc_doc))
+        self.assertTrue(RelatedDocument.objects.filter(source=rfc_doc, target__name="rfc123", relationship="updates").exists())
+        self.assertTrue(RelatedDocument.objects.filter(source=draft_doc, target=rfc_doc, relationship="became_rfc").exists())
+        self.assertEqual(rfc_doc.title, "A Testing RFC")
+        self.assertEqual(rfc_doc.abstract, "This is some interesting text.")
+        self.assertEqual(rfc_doc.std_level_id, "ps")
+        self.assertEqual(rfc_doc.pages, 42)
 
         # make sure we can apply it again with no changes
         changed = list(rfceditor.update_docs_from_rfc_index(data, errata, today - datetime.timedelta(days=30)))
