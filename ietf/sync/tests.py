@@ -230,6 +230,8 @@ class RFCSyncTests(TestCase):
             group__parent=area,
             states=[('draft-iesg','rfcqueue'),('draft-stream-ise','rfc-edit')],
             ad=Person.objects.get(user__username='ad'),
+            external_url="http://my-external-url.example.com",
+            note="this is a note",
         )
         # it's a bit strange to have draft-stream-ise set when draft-iesg is set
         # too, but for testing purposes ...
@@ -372,6 +374,7 @@ class RFCSyncTests(TestCase):
         self.assertEqual(rfc_events[0].type, "sync_from_rfc_editor")
         self.assertEqual(rfc_events[1].type, "published_rfc")
         self.assertEqual(rfc_events[1].time.astimezone(RPC_TZINFO).date(), today)
+        self.assertEqual(rfc_doc.get_state_slug(), "published")
         self.assertTrue("errata" in rfc_doc.tags.all().values_list("slug", flat=True))
         self.assertTrue(DocAlias.objects.filter(name="rfc1234", docs=rfc_doc))
         self.assertTrue(DocAlias.objects.filter(name="bcp1", docs=rfc_doc))
@@ -383,6 +386,12 @@ class RFCSyncTests(TestCase):
         self.assertEqual(rfc_doc.abstract, "This is some interesting text.")
         self.assertEqual(rfc_doc.std_level_id, "ps")
         self.assertEqual(rfc_doc.pages, 42)
+        self.assertEqual(rfc_doc.stream, draft_doc.stream)
+        self.assertEqual(rfc_doc.group, draft_doc.group)
+        self.assertEqual(rfc_doc.words, draft_doc.words)
+        self.assertEqual(rfc_doc.ad, draft_doc.ad)
+        self.assertEqual(rfc_doc.external_url, draft_doc.external_url)
+        self.assertEqual(rfc_doc.note, draft_doc.note)
 
         # check that we got the expected changes
         self.assertEqual(len(changes), 2)
