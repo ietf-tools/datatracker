@@ -1485,7 +1485,7 @@ class FeedbackLastSeenTests(TestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code,200)
         q = PyQuery(response.content)
-        self.assertEqual( len(q('.bg-success')), 4 )
+        self.assertEqual( len(q('.text-bg-success')), 4 )
 
         f = self.nc.feedback_set.first()
         f.time = self.hour_ago
@@ -1495,20 +1495,20 @@ class FeedbackLastSeenTests(TestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code,200)
         q = PyQuery(response.content)
-        self.assertEqual( len(q('.bg-success')), 3 )
+        self.assertEqual( len(q('.text-bg-success')), 3 )
 
         FeedbackLastSeen.objects.update(time=self.second_from_now)
         response = self.client.get(url)
         self.assertEqual(response.status_code,200)
         q = PyQuery(response.content)
-        self.assertEqual( len(q('.bg-success')), 1 )
+        self.assertEqual( len(q('.text-bg-success')), 1 )
 
         TopicFeedbackLastSeen.objects.create(reviewer=self.member,topic=self.topic)
         TopicFeedbackLastSeen.objects.update(time=self.second_from_now)
         response = self.client.get(url)
         self.assertEqual(response.status_code,200)
         q = PyQuery(response.content)
-        self.assertEqual( len(q('.bg-success')), 0 )
+        self.assertEqual( len(q('.text-bg-success')), 0 )
 
     def test_feedback_nominee_badges(self):
         url = reverse('ietf.nomcom.views.view_feedback_nominee', kwargs={'year':self.nc.year(), 'nominee_id':self.nominee.id})
@@ -1517,7 +1517,7 @@ class FeedbackLastSeenTests(TestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code,200)
         q = PyQuery(response.content)
-        self.assertEqual( len(q('.bg-success')), 3 )
+        self.assertEqual( len(q('.text-bg-success')), 3 )
 
         f = self.nc.feedback_set.first()
         f.time = self.hour_ago
@@ -1527,13 +1527,13 @@ class FeedbackLastSeenTests(TestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code,200)
         q = PyQuery(response.content)
-        self.assertEqual( len(q('.bg-success')), 2 )
+        self.assertEqual( len(q('.text-bg-success')), 2 )
 
         FeedbackLastSeen.objects.update(time=self.second_from_now)
         response = self.client.get(url)
         self.assertEqual(response.status_code,200)
         q = PyQuery(response.content)
-        self.assertEqual( len(q('.bg-success')), 0 )
+        self.assertEqual( len(q('.text-bg-success')), 0 )
 
     def test_feedback_topic_badges(self):
         url = reverse('ietf.nomcom.views.view_feedback_topic', kwargs={'year':self.nc.year(), 'topic_id':self.topic.id})
@@ -1542,7 +1542,7 @@ class FeedbackLastSeenTests(TestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code,200)
         q = PyQuery(response.content)
-        self.assertEqual( len(q('.bg-success')), 1 )
+        self.assertEqual( len(q('.text-bg-success')), 1 )
 
         f = self.topic.feedback_set.first()
         f.time = self.hour_ago
@@ -1552,13 +1552,13 @@ class FeedbackLastSeenTests(TestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code,200)
         q = PyQuery(response.content)
-        self.assertEqual( len(q('.bg-success')), 0 )
+        self.assertEqual( len(q('.text-bg-success')), 0 )
 
         TopicFeedbackLastSeen.objects.update(time=self.second_from_now)
         response = self.client.get(url)
         self.assertEqual(response.status_code,200)
         q = PyQuery(response.content)
-        self.assertEqual( len(q('.bg-success')), 0 )
+        self.assertEqual( len(q('.text-bg-success')), 0 )
 
 class NewActiveNomComTests(TestCase):
 

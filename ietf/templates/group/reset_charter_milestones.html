@@ -30,7 +30,7 @@
                     <label class="form-check-label" for="id-{{ milestone.id }}">
                         {{ milestone.desc }}
                     </label>
-                    <span class="badge rounded-pill {% if milestone.resolved %}bg-success{% else %}bg-info{% endif %}">
+                    <span class="badge rounded-pill {% if milestone.resolved %}text-bg-success{% else %}text-bg-info{% endif %}">
                         {% if milestone.resolved %}
                             {{ milestone.resolved }}
                         {% else %}

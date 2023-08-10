@@ -212,9 +212,9 @@ def state_age_colored(doc):
             goal1 = 14
             goal2 = 28
         if days > goal2:
-            class_name = "bg-danger"
+            class_name = "text-bg-danger"
         elif days > goal1:
-            class_name = "bg-warning"
+            class_name = "text-bg-warning"
         else:
             # don't show a badge when things are in the green; clutters display
             # class_name = "text-success"
@@ -247,6 +247,6 @@ def auth48_alert_badge(doc):
 
     rfced_state = doc.get_state_slug('draft-rfceditor')
     if rfced_state == 'auth48':
-        return mark_safe('<span class="badge rounded-pill bg-info" title="AUTH48">AUTH48</span>')
+        return mark_safe('<span class="badge rounded-pill text-bg-info" title="AUTH48">AUTH48</span>')
 
     return ''

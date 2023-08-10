@@ -6,6 +6,7 @@ export const useSiteStore = defineStore('site', {
     criticalErrorLink: null,
     criticalErrorLinkText: null,
     isMobile: /Mobi/i.test(navigator.userAgent),
-    viewport: Math.round(window.innerWidth)
+    viewport: Math.round(window.innerWidth),
+    theme: null
   })
 })

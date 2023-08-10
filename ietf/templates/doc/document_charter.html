@@ -59,7 +59,7 @@
                 <th scope="row">
                     {{ group.name }} {{ group.type.name }}
                     <a href="{{ group.about_url }}">({{ group.acronym }})</a>
-                    {% if snapshot %}<span class="badge rounded-pill bg-warning">Snapshot</span>{% endif %}
+                    {% if snapshot %}<span class="badge rounded-pill text-bg-warning">Snapshot</span>{% endif %}
                 </th>
             </tr>
             <tr>
@@ -94,8 +94,8 @@
                     {% else %}
                         No document state
                     {% endif %}
-                    {% if chartering == "initial" %}<span class="badge rounded-pill bg-info">Initial chartering</span>{% endif %}
-                    {% if chartering == "rechartering" %}<span class="badge rounded-pill bg-info">Rechartering</span>{% endif %}
+                    {% if chartering == "initial" %}<span class="badge rounded-pill text-bg-info">Initial chartering</span>{% endif %}
+                    {% if chartering == "rechartering" %}<span class="badge rounded-pill text-bg-info">Rechartering</span>{% endif %}
                 </td>
             </tr>
         </tbody>

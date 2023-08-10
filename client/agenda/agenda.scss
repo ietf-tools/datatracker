@@ -10,6 +10,10 @@
     justify-content: space-between;
     align-items: center;
 
+    @at-root .theme-dark & {
+      color: $gray-300;
+    }
+
     @media screen and (max-width: $bs5-break-sm) {
       justify-content: center;
 
@@ -25,6 +29,10 @@
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       box-decoration-break: clone;
+
+      @at-root .theme-dark & {
+        background-image: linear-gradient(220deg, $yellow-200 20%, $orange-400 70%);
+      }
     }
   }
 

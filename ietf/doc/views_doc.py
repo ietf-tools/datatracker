@@ -542,6 +542,7 @@ def document_main(request, name, rev=None, document_html=False):
                 html = doc.html_body()
                 if request.COOKIES.get("pagedeps") == "inline":
                     js = Path(finders.find("ietf/js/document_html.js")).read_text()
+                    js += Path(finders.find("ietf/js/theme.js")).read_text()
                     css = Path(finders.find("ietf/css/document_html_inline.css")).read_text()
                     if html:
                         css += Path(finders.find("ietf/css/document_html_txt.css")).read_text()

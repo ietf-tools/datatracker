@@ -155,7 +155,7 @@
                                 {{ session.group.acronym }}
                             </a>
                             {% if session.purpose_id != "regular" %}
-                                <br><span class="badge rounded-pill bg-info">{{session.purpose}}</span>
+                                <br><span class="badge rounded-pill text-bg-info">{{session.purpose}}</span>
                             {% endif %}
                             {% if session.joint_with_groups.count %}joint with {{ session.joint_with_groups_acronyms|join:' ' }}{% endif %}
                             {% if session.requested_duration %}
@@ -169,7 +169,7 @@
                                 </div>
                             {% endif %}
                             {% if session.group.state.slug != "active" %}
-                                <br><span class="badge rounded-pill bg-success">{{ session.group.state.name }}</span>
+                                <br><span class="badge rounded-pill text-bg-success">{{ session.group.state.name }}</span>
                             {% endif %}
                         </td>
                         <td class="d-none d-lg-table-cell">

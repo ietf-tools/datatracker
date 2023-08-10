@@ -282,6 +282,10 @@ async function fetchSessionMaterials () {
   .bi {
     font-size: 20px;
     color: $indigo;
+
+    @at-root .theme-dark & {
+      color: $indigo-300;
+    }
   }
 
   .detail-header {
@@ -343,6 +347,11 @@ async function fetchSessionMaterials () {
     border-radius: 5px;
     font-weight: 500;
 
+    @at-root .theme-dark & {
+      background-color: $gray-900;
+      border-color: $gray-700;
+    }
+
     a {
       cursor: pointer;
 
@@ -365,6 +374,11 @@ async function fetchSessionMaterials () {
     margin-top: 12px;
     border-radius: 5px;
 
+    @at-root .theme-dark & {
+      background-color: $gray-900;
+      border-color: $gray-700;
+    }
+
     .bi {
       color: $blue;
     }
@@ -377,6 +391,10 @@ async function fetchSessionMaterials () {
       border: none;
       border-radius: 5px;
       display: block;
+
+      @at-root .theme-dark & {
+        background-color: $gray-900;
+      }
     }
   }
 

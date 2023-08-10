@@ -1,6 +1,11 @@
 // Import bootstrap helpers
 @import "bootstrap/scss/functions";
+
+// Enable color modes
+$color-mode-type: data;
+
 @import "bootstrap/scss/variables";
+@import "bootstrap/scss/variables-dark";
 
 table .sort {
     cursor: pointer;

@@ -14,7 +14,7 @@
                             {% if g|has_sessions:meeting_num %}
                                 <a href="{% url 'ietf.meeting.views.session_details' num=meeting_num acronym=g.acronym %}">{{ g.acronym }}</a>
                             {% else %}
-                                {{ g.acronym }} <span class="badge rounded-pill bg-info ms-2">No session requested</span>
+                                {{ g.acronym }} <span class="badge rounded-pill text-bg-info ms-2">No session requested</span>
                             {% endif %}
                         </li>
                     {% endfor %}
