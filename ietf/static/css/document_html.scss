@@ -4,7 +4,12 @@ $font-family-sans-serif: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, 
 $font-family-monospace: "Noto Sans Mono", SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 
 @import "bootstrap/scss/functions";
+
+// Enable color modes
+$color-mode-type: data;
+
 @import "bootstrap/scss/variables";
+@import "bootstrap/scss/variables-dark";
 @import "bootstrap/scss/maps";
 @import "bootstrap/scss/mixins";
 @import "bootstrap/scss/utilities";
@@ -66,6 +71,27 @@ $font-family-monospace: "Noto Sans Mono", SFMono-Regular, Menlo, Monaco, Consola
 
 .sidebar-toggle[aria-expanded="false"] {
     display: inherit;
+}
+
+// Toggle classes for dark/light modes
+[data-bs-theme="dark"] {
+    .d-dm-none {
+        display: none;
+    }
+
+    .d-lm-none {
+        display: initial;
+    }
+}
+
+[data-bs-theme="light"] {
+    .d-dm-none {
+        display: initial;
+    }
+
+    .d-lm-none {
+        display: none;
+    }
 }
 
 @media screen {

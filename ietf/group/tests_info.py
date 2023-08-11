@@ -472,13 +472,13 @@ class GroupPagesTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code,200)
         q = PyQuery(r.content)
-        self.assertEqual(q('.badge.bg-warning').text(),"Concluded WG")
+        self.assertEqual(q('.badge.text-bg-warning').text(),"Concluded WG")
         replaced_group = GroupFactory(state_id='replaced')
         url = urlreverse("ietf.group.views.history",kwargs={'acronym':replaced_group.acronym})
         r = self.client.get(url)
         self.assertEqual(r.status_code,200)
         q = PyQuery(r.content)
-        self.assertEqual(q('.badge.bg-warning').text(),"Replaced WG")
+        self.assertEqual(q('.badge.text-bg-warning').text(),"Replaced WG")
 
 
 class GroupEditTests(TestCase):

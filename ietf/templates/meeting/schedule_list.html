@@ -70,16 +70,16 @@
                             <td>{{ schedule.notes|linebreaksbr }}</td>
                             <td>
                                 {% if schedule.visible %}
-                                    <div class="badge rounded-pill bg-success">Visible</div>
+                                    <div class="badge rounded-pill text-bg-success">Visible</div>
                                 {% else %}
-                                    <div class="badge rounded-pill bg-warning">Hidden</div>
+                                    <div class="badge rounded-pill text-bg-warning">Hidden</div>
                                 {% endif %}
                             </td>
                             <td>
                                 {% if schedule.public %}
-                                    <div class="badge rounded-pill bg-success">Public</div>
+                                    <div class="badge rounded-pill text-bg-success">Public</div>
                                 {% else %}
-                                    <div class="badge rounded-pill bg-warning">Private</div>
+                                    <div class="badge rounded-pill text-bg-warning">Private</div>
                                 {% endif %}
                             </td>
                             <td>

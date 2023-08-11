@@ -83,7 +83,7 @@ If VS Code is not available to you, in your clone, type `cd docker; ./run`
 
 Once the containers are started, run the tests to make sure your checkout is a good place to start from (all tests should pass - if any fail, ask for help at tools-develop@). Inside the app container's shell type:
 ```sh
-ietf/manage.py test --settings=settings_postgrestest
+ietf/manage.py test --settings=settings_test
 ```
 
 Note that we recently moved the datatracker onto PostgreSQL - you may still find older documentation that suggests testing with settings_sqlitetest. That will no longer work.
@@ -228,7 +228,7 @@ before activating a new release.
 
 From a datatracker container, run the command:
 ```sh
-./ietf/manage.py test --settings=settings_postgrestest
+./ietf/manage.py test --settings=settings_test
 ```
 
 > You can limit the run to specific tests using the `--pattern` argument.

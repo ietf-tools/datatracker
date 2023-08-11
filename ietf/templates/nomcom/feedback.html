@@ -41,7 +41,7 @@
                                     {% with count=counts|lookup:np.position.id|lookup:np.nominee.id %}
                                        title="{% if count %}{{ count }} earlier comment{{ count|pluralize }} from you {% else %}You have not yet provided feedback {% endif %} on {{ np.nominee.email.address }} as {{ np.position }}">
                                         {{ np.nominee.name }}
-                                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill text-bg-danger">
                                             {{ count | default:"0" }}
                                         </span>
                                     {% endwith %}
@@ -60,7 +60,7 @@
                            title="{% if count %}{{ count }} earlier comment{{ count|pluralize }} from you {% else %}You have not yet provided feedback {% endif %} on {{ t.subject }}">
                             {{ t.subject }}
                             {% with count=topic_counts|lookup:t.id %}
-                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill text-bg-danger">
                                     {{ count | default:"0" }}
                                 </span>
                             {% endwith %}

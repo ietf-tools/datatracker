@@ -445,8 +445,8 @@ class SearchTests(TestCase):
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertEqual(len(q('td.doc')),3)
-        self.assertTrue(q('td.status span.bg-warning[title*="%s"]' % "for 15 days"))
-        self.assertTrue(q('td.status span.bg-danger[title*="%s"]' % "for 29 days"))
+        self.assertTrue(q('td.status span.text-bg-warning[title*="%s"]' % "for 15 days"))
+        self.assertTrue(q('td.status span.text-bg-danger[title*="%s"]' % "for 29 days"))
         for ah in [draft.action_holders.first() for draft in drafts]:
             self.assertContains(r, escape(ah.name))
 

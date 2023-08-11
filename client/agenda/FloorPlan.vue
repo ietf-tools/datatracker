@@ -258,6 +258,11 @@ onMounted(() => {
     border-radius: 5px;
     font-weight: 500;
 
+    @at-root .theme-dark & {
+      background-color: darken($gray-900, 5%);
+      border-color: $gray-700;
+    }
+
     a {
       cursor: pointer;
 
