@@ -346,6 +346,8 @@ def update_docs_from_rfc_index(
     errata: dict[str, list[dict]] = {}
     for item in errata_data:
         name = item["doc-id"]
+        if name.upper().startswith("RFC"):
+            name = f"RFC{int(name[3:])}"  # removes leading 0s on the rfc number
         if not name in errata:
             errata[name] = []
         errata[name].append(item)
@@ -633,7 +635,7 @@ def update_docs_from_rfc_index(
                     DocAlias.objects.create(name=a).docs.add(doc)
                     rfc_changes.append(f"created alias {prettify_std_name(a)}")
 
-        doc_errata = errata.get("RFC%04d" % rfc_number, [])  # rfc10k problem here
+        doc_errata = errata.get(f"RFC{rfc_number}", [])
         all_rejected = doc_errata and all(
             er["errata_status_code"] == "Rejected" for er in doc_errata
         )
