@@ -73,6 +73,27 @@ $color-mode-type: data;
     display: inherit;
 }
 
+// Toggle classes for dark/light modes
+[data-bs-theme="dark"] {
+    .d-dm-none {
+        display: none;
+    }
+
+    .d-lm-none {
+        display: initial;
+    }
+}
+
+[data-bs-theme="light"] {
+    .d-dm-none {
+        display: initial;
+    }
+
+    .d-lm-none {
+        display: none;
+    }
+}
+
 @media screen {
     @include media-breakpoint-down(md) {
         body {

@@ -88,6 +88,27 @@ html {
     scroll-padding-top: 60px;
 }
 
+// Toggle classes for dark/light modes
+[data-bs-theme="dark"] {
+    .d-dm-none {
+        display: none;
+    }
+
+    .d-lm-none {
+        display: initial;
+    }
+}
+
+[data-bs-theme="light"] {
+    .d-dm-none {
+        display: initial;
+    }
+
+    .d-lm-none {
+        display: none;
+    }
+}
+
 // Make submenus open on hover.
 @include media-breakpoint-up(lg) {
     .dropdown-menu>li>ul {
