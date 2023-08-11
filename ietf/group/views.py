@@ -1338,6 +1338,16 @@ def group_menu_data(request):
 #        groups_by_parent[g.parent_id].append({ 'acronym': g.acronym, 'name': escape(g.name), 'url': url })
         groups_by_parent[g.parent_id].append({ 'acronym': g.acronym, 'name': escape(g.name), 'type': escape(g.type.verbose_name or g.type.name), 'url': url })
 
+    iab = Group.objects.get(acronym="iab")
+    groups_by_parent[iab.pk].insert(
+        0,
+        {
+            "acronym": iab.acronym,
+            "name": iab.name,
+            "type": "Top Level Group",
+            "url": urlreverse("ietf.group.views.group_home", kwargs={"acronym": iab.acronym})
+        }
+    )
     return JsonResponse(groups_by_parent)
 
 
