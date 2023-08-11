@@ -2432,7 +2432,8 @@ def session_details(request, num, acronym):
 
     # we somewhat arbitrarily use the group of the last session we get from
     # get_sessions() above when checking can_manage_session_materials()
-    can_manage = can_manage_session_materials(request.user, session.group, session)
+    group = session.group
+    can_manage = can_manage_session_materials(request.user, group, session)
     can_view_request = can_view_interim_request(meeting, request.user)
 
     scheduled_sessions = [s for s in sessions if s.current_status == 'sched']
@@ -2450,7 +2451,7 @@ def session_details(request, num, acronym):
                     'unscheduled_sessions':unscheduled_sessions , 
                     'pending_suggestions' : pending_suggestions,
                     'meeting' :meeting ,
-                    'acronym' :acronym,
+                    'group': group,
                     'is_materials_manager' : session.group.has_role(request.user, session.group.features.matman_roles),
                     'can_manage_materials' : can_manage,
                     'can_view_request': can_view_request,
