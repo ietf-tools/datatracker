@@ -137,9 +137,9 @@ jobs:
         echo "Running tests..."
         if [[ "x${{ github.event.inputs.ignoreLowerCoverage }}" == "xtrue" ]]; then
           echo "Lower coverage failures will be ignored."
-          ./ietf/manage.py test --validate-html-harder --settings=settings_postgrestest --ignore-lower-coverage
+          ./ietf/manage.py test --validate-html-harder --settings=settings_test --ignore-lower-coverage
         else
-          ./ietf/manage.py test --validate-html-harder --settings=settings_postgrestest
+          ./ietf/manage.py test --validate-html-harder --settings=settings_test
         fi
         coverage xml
 

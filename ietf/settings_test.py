@@ -6,7 +6,7 @@
 # useful for speeding up tests that depend on the test database, try
 # for instance:
 #
-#   ./manage.py test --settings=settings_postgrestest doc.ChangeStateTestCase
+#   ./manage.py test --settings=settings_test doc.ChangeStateTestCase
 #
 
 import os 
