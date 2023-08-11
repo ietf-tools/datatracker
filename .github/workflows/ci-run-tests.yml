@@ -45,7 +45,7 @@ jobs:
           exit 1
         fi
         echo "Running tests..."
-        ./ietf/manage.py test --validate-html-harder --settings=settings_postgrestest
+        ./ietf/manage.py test --validate-html-harder --settings=settings_test
         coverage xml
 
     - name: Upload Coverage Results to Codecov
