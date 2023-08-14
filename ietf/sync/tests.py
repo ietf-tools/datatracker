@@ -228,13 +228,11 @@ class RFCSyncTests(TestCase):
         area = GroupFactory(type_id='area')
         draft_doc = WgDraftFactory(
             group__parent=area,
-            states=[('draft-iesg','rfcqueue'),('draft-stream-ise','rfc-edit')],
+            states=[('draft-iesg','rfcqueue')],
             ad=Person.objects.get(user__username='ad'),
             external_url="http://my-external-url.example.com",
             note="this is a note",
         )
-        # it's a bit strange to have draft-stream-ise set when draft-iesg is set
-        # too, but for testing purposes ...
         draft_doc.action_holders.add(draft_doc.ad)  # not normally set, but add to be sure it's cleared
 
         RfcFactory(rfc_number=123)
@@ -360,7 +358,6 @@ class RFCSyncTests(TestCase):
         self.assertEqual(draft_doc.get_state_slug(), "rfc")
         self.assertEqual(draft_doc.get_state_slug("draft-iesg"), "pub")
         self.assertCountEqual(draft_doc.action_holders.all(), [])
-        self.assertEqual(draft_doc.get_state_slug("draft-stream-ise"), "pub")
         self.assertEqual(draft_doc.title, draft_title_before)
         self.assertEqual(draft_doc.abstract, draft_abstract_before)
         self.assertEqual(draft_doc.pages, draft_pages_before)
