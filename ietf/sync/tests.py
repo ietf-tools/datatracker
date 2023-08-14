@@ -307,7 +307,7 @@ class RFCSyncTests(TestCase):
 
         errata = [{
                 "errata_id":1,
-                "doc-id":"RFC123",
+                "doc-id":"RFC123",  # n.b. this is not the same RFC as in the above index XML!
                 "errata_status_code":"Verified",
                 "errata_type_code":"Editorial",
                 "section": "4.1",
@@ -375,7 +375,11 @@ class RFCSyncTests(TestCase):
         self.assertEqual(rfc_events[1].type, "published_rfc")
         self.assertEqual(rfc_events[1].time.astimezone(RPC_TZINFO).date(), today)
         self.assertEqual(rfc_doc.get_state_slug(), "published")
-        self.assertTrue("errata" in rfc_doc.tags.all().values_list("slug", flat=True))
+        # Should have an "errata" tag because there is an errata-url in the index XML, but no "verified-errata" tag
+        # because there is no verified item in the errata JSON with doc-id matching the RFC document.
+        tag_slugs = rfc_doc.tags.values_list("slug", flat=True)
+        self.assertTrue("errata" in tag_slugs)
+        self.assertFalse("verified-errata" in tag_slugs)
         self.assertTrue(DocAlias.objects.filter(name="rfc1234", docs=rfc_doc))
         self.assertTrue(DocAlias.objects.filter(name="bcp1", docs=rfc_doc))
         self.assertTrue(DocAlias.objects.filter(name="fyi1", docs=rfc_doc))
