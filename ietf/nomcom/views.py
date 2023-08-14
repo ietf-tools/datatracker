@@ -1026,8 +1026,8 @@ def view_feedback_nominee(request, year, nominee_id):
         feedback = get_object_or_404(Feedback, id=feedback_id)
         submit = request.POST.get('submit', None)
         if submit == 'download':
-            fn = f'questio-{slugify(nominee.name())}-{feedback.time.date()}.txt'
-            response = render_to_string('nomcom/download_questio.txt',
+            fn = f'questionnaire-{slugify(nominee.name())}-{feedback.time.date()}.txt'
+            response = render_to_string('nomcom/download_questionnaire.txt',
                                         {'year': year,
                                          'nominee': nominee,
                                          'feedback': feedback,

@@ -2901,7 +2901,7 @@ class ReclassifyFeedbackTests(TestCase):
 
         response = self.client.post(url, {'feedback_id': fb.id, 'submit': 'download'})
         self.assertEqual(response.status_code, 200)
-        self.assertIn('questio', response['Content-Disposition'])
+        self.assertIn('questionnaire-', response['Content-Disposition'])
 
     def test_reclassify_feedback_nominee(self):
         fb = FeedbackFactory.create(nomcom=self.nc,type_id='comment')
