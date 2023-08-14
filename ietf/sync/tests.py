@@ -6,6 +6,7 @@ import os
 import io
 import json
 import datetime
+import mock
 import quopri
 
 from django.conf import settings
@@ -347,9 +348,11 @@ class RFCSyncTests(TestCase):
         draft_abstract_before = draft_doc.abstract
         draft_pages_before = draft_doc.pages
         changes = []
-        for _, d, rfc_published in rfceditor.update_docs_from_rfc_index(data, errata, today - datetime.timedelta(days=30)):
-            changes.append({"doc_pk": d.pk, "rfc_published": rfc_published})  # we ignore the actual change list
-
+        with mock.patch("ietf.sync.rfceditor.log") as mock_log:
+            for _, d, rfc_published in rfceditor.update_docs_from_rfc_index(data, errata, today - datetime.timedelta(days=30)):
+                changes.append({"doc_pk": d.pk, "rfc_published": rfc_published})  # we ignore the actual change list
+        self.assertFalse(mock_log.called, "No log messages expected")
+        
         draft_doc = Document.objects.get(name=draft_doc.name)
         draft_events = draft_doc.docevent_set.all()
         self.assertEqual(len(draft_events) - event_count_before, 2)
