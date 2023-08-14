@@ -89,7 +89,12 @@
                                 <form id="reclassify-{{ feedback.id }}" method="post">
                                     {% csrf_token %}
                                     <input type="hidden" name="feedback_id" value="{{ feedback.id }}">
-                                    <button class="btn btn-warning btn-sm" type="submit">
+                                    {% if ft.slug == "questio" %}
+                                    <p><button class="btn btn-warning btn-sm" type="submit" name="submit" value="download">
+                                        Download
+                                    </button></p>
+                                    {% endif %}
+                                    <button class="btn btn-warning btn-sm" type="submit" name="submit" value="reclassify">
                                         Reclassify
                                     </button>
                                 </form>
