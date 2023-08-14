@@ -475,30 +475,36 @@ def update_docs_from_rfc_index(
                 draft_changes.append(change)
                 rfc_changes.append(change)
 
-            # Ensure draft is in the correct iesg and stream states
-            for t in (
-                "draft-iesg",
-                "draft-stream-iab",
-                "draft-stream-irtf",
-                "draft-stream-ise",
-            ):
-                prev_state = draft.get_state(t)
-                if prev_state is not None:
-                    if prev_state.slug not in ("pub", "idexists"):
-                        new_state = State.objects.select_related("type").get(
-                            used=True, type=t, slug="pub"
-                        )
-                        draft.set_state(new_state)
-                        draft_changes.append(
-                            f"changed {new_state.type.label} to {new_state}"
-                        )
-                        e = update_action_holders(draft, prev_state, new_state)
-                        if e:
-                            draft_events.append(e)
-                elif t == "draft-iesg":
-                    draft.set_state(
-                        State.objects.get(type_id="draft-iesg", slug="idexists")
+            # Draft should be in the "pub" draft-iesg state - complain otherwise
+            iesg_state = draft.get_state("draft-iesg")
+            if iesg_state is None:
+                log(f'Warning while processing {doc.name}: {draft.name} has no "draft-iesg" state')
+            elif iesg_state.slug != "pub":
+                log(
+                    'Warning while processing {}: {} is in "draft-iesg" state {} (expected "pub")'.format(
+                        doc.name, draft.name, iesg_state.slug
                     )
+                )
+
+            # If the draft and RFC streams agree, move draft to "pub" stream state. If not, complain.
+            if draft.stream != doc.stream:
+                log("Warning while processing {}: draft {} stream is {} but RFC stream is {}".format(
+                    doc.name, draft.name, draft.stream, doc.stream
+                ))
+            elif draft.stream.slug in ["draft-stream-iab", "draft-stream-irtf", "draft-stream-ise"]:
+                stream_slug = draft.stream.slug
+                prev_state = draft.get_state(stream_slug)
+                if prev_state is None:
+                    log(f"Warning while processing {doc.name}: draft {draft.name} stream state was not set")
+                elif prev_state.slug != "pub":
+                    new_state = State.objects.select_related("type").get(used=True, type__slug=stream_slug, slug="pub")
+                    draft.set_state(new_state)
+                    draft_changes.append(
+                        f"changed {new_state.type.label} to {new_state}"
+                    )
+                    e = update_action_holders(draft, prev_state, new_state)
+                    if e:
+                        draft_events.append(e)
             if draft_changes:
                 draft_events.append(
                     DocEvent.objects.create(
