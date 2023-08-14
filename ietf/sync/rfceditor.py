@@ -498,12 +498,12 @@ def update_docs_from_rfc_index(
                 log("Warning while processing {}: draft {} stream is {} but RFC stream is {}".format(
                     doc.name, draft.name, draft.stream, doc.stream
                 ))
-            elif draft.stream.slug in ["draft-stream-iab", "draft-stream-irtf", "draft-stream-ise"]:
-                stream_slug = draft.stream.slug
+            elif draft.stream.slug in ["iab", "irtf", "ise"]:
+                stream_slug = f"draft-stream-{draft.stream.slug}"
                 prev_state = draft.get_state(stream_slug)
                 if prev_state is None:
                     log(f"Warning while processing {doc.name}: draft {draft.name} stream state was not set")
-                elif prev_state.slug != "pub":
+                if prev_state.slug != "pub":
                     new_state = State.objects.select_related("type").get(used=True, type__slug=stream_slug, slug="pub")
                     draft.set_state(new_state)
                     draft_changes.append(
