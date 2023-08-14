@@ -475,16 +475,23 @@ def update_docs_from_rfc_index(
                 draft_changes.append(change)
                 rfc_changes.append(change)
 
-            # Draft should be in the "pub" draft-iesg state - complain otherwise
-            iesg_state = draft.get_state("draft-iesg")
-            if iesg_state is None:
+            # Draft should be in the "pub" or "approved" draft-iesg state - complain otherwise
+            prev_iesg_state = draft.get_state("draft-iesg")
+            if prev_iesg_state is None:
                 log(f'Warning while processing {doc.name}: {draft.name} has no "draft-iesg" state')
-            elif iesg_state.slug != "pub":
-                log(
-                    'Warning while processing {}: {} is in "draft-iesg" state {} (expected "pub")'.format(
-                        doc.name, draft.name, iesg_state.slug
+            elif prev_iesg_state.slug != "pub":
+                if prev_iesg_state.slug != "rfcqueue":
+                    log(
+                        'Warning while processing {}: {} is in "draft-iesg" state {} (expected "rfcqueue")'.format(
+                            doc.name, draft.name, prev_iesg_state.slug
+                        )
                     )
-                )
+                new_iesg_state = State.objects.get(type_id="draft-iesg", slug="pub")
+                draft.set_state(new_iesg_state)
+                draft_changes.append(f"changed {new_iesg_state.type.label} to {new_iesg_state}")
+                e = update_action_holders(draft, prev_iesg_state, new_iesg_state)
+                if e:
+                    draft_events.append(e)
 
             # If the draft and RFC streams agree, move draft to "pub" stream state. If not, complain.
             if draft.stream != doc.stream:
