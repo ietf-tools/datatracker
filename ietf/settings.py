@@ -482,6 +482,7 @@ INSTALLED_APPS = [
     'ietf.redirects',
     'ietf.release',
     'ietf.review',
+    'ietf.rpc',
     'ietf.stats',
     'ietf.submit',
     'ietf.sync',
