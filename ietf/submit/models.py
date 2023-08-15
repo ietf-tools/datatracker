@@ -108,14 +108,14 @@ class Submission(models.Model):
     @property
     def active_wg_drafts_replaced(self):
         return Document.objects.filter(
-            docalias__name__in=self.replaces.split(','),
+            name__in=self.replaces.split(','),
             group__in=Group.objects.active_wgs()
         )
 
     @property
     def closed_wg_drafts_replaced(self):
         return Document.objects.filter(
-            docalias__name__in=self.replaces.split(','),
+            name__in=self.replaces.split(','),
             group__in=Group.objects.closed_wgs()
         )
 

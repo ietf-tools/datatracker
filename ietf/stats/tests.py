@@ -20,7 +20,7 @@ import ietf.stats.views
 
 from ietf.submit.models import Submission
 from ietf.doc.factories import WgDraftFactory, WgRfcFactory
-from ietf.doc.models import Document, DocAlias, State, RelatedDocument, NewRevisionDocEvent, DocumentAuthor
+from ietf.doc.models import Document, State, RelatedDocument, NewRevisionDocEvent, DocumentAuthor
 from ietf.group.factories import RoleFactory
 from ietf.meeting.factories import MeetingFactory, AttendedFactory
 from ietf.person.factories import PersonFactory
@@ -79,7 +79,6 @@ class StatisticsTests(TestCase):
             words=100
             )
         referencing_draft.set_state(State.objects.get(used=True, type="draft", slug="active"))
-        DocAlias.objects.create(name=referencing_draft.name).docs.add(referencing_draft)
         RelatedDocument.objects.create(
             source=referencing_draft,
             target=draft,

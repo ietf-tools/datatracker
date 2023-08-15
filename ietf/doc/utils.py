@@ -932,7 +932,7 @@ def make_rev_history(doc):
         if predecessors is None:
             predecessors = []
         if hasattr(doc, 'relateddocument_set'):
-            for document in in doc.related_that_doc('replaces'):
+            for document in doc.related_that_doc('replaces'):
                 if document not in predecessors:
                     predecessors.append(document)
                     predecessors.extend(get_predecessors(document, predecessors))

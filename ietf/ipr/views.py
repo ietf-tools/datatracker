@@ -38,7 +38,8 @@ from ietf.message.models import Message
 from ietf.message.utils import infer_message
 from ietf.name.models import IprLicenseTypeName
 from ietf.person.models import Person
-from ietf.secr.utils.document import get_rfc_num, is_draft
+from ietf.secr.utils.document import is_draft
+from ietf.utils import log
 from ietf.utils.draft_search import normalize_draftname
 from ietf.utils.mail import send_mail, send_mail_message
 from ietf.utils.response import permission_denied
@@ -71,10 +72,13 @@ def get_document_emails(ipr):
     for rel in ipr.iprdocrel_set.all():
         doc = rel.document.document
 
-        if is_draft(doc):
+        if doc.type_id=="draft":
             doc_info = 'Internet-Draft entitled "{}" ({})'.format(doc.title,doc.name)
+        elif doc.type_id=="rfc":
+            doc_info = 'RFC entitled "{}" (RFC{})'.format(doc.title, doc.rfc_number)
         else:
-            doc_info = 'RFC entitled "{}" (RFC{})'.format(doc.title,get_rfc_num(doc))
+            log.unreachable("2023-08-15")
+            return ""
 
         addrs = gather_address_lists('ipr_posted_on_doc',doc=doc).as_strings(compact=False)
 

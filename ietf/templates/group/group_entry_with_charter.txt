@@ -37,11 +37,11 @@ Goals and Milestones:
 {% for milestone in group.milestones %}  {% if milestone.resolved %}{{ milestone.resolved }}    {% else %}{{ milestone.due|date:"M Y" }}{% endif %} - {{ milestone.desc }}
 {% endfor %}
 Internet-Drafts:
-{% for alias in group.drafts %}  - {{ alias.document.title }} [{{ alias.name }}-{{ alias.document.rev }}] ({{ alias.document.pages }} pages)
+{% for document in group.drafts %}  - {{ document.title }} [{{ document.name }}-{{ document.rev }}] ({{ document.pages }} pages)
 {% endfor %}
 {% if group.rfcs %}Requests for Comments:
-{% for alias in group.rfcs %}  {{ alias.name.upper }}: {{ alias.document.title}} ({{ alias.document.pages }} pages){% for r in alias.rel %}
-           * {{ r.action }} {{ r.target.name|upper }}{% endfor %}{% for r in alias.invrel %}
+{% for document in group.rfcs %}  {{ document.name.upper }}: {{ document.title}} ({{ document.pages }} pages){% for r in document.rel %}
+           * {{ r.action }} {{ r.target.name|upper }}{% endfor %}{% for r in document.invrel %}
            * {% if r.relationsship == "obs" %}{{ r.inverse_action|upper }}{% else %}{{ r.action }}{% endif %} {{ r.source.canonical_name|upper }}{% endfor %}
 {% endfor %}
 {% else %}No Requests for Comments{% endif %}

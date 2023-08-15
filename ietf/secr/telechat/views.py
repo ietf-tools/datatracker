@@ -175,7 +175,7 @@ def doc_detail(request, date, name):
     This view displays the ballot information for the document, and lets the user make
     changes to ballot positions and document state.
     '''
-    doc = get_object_or_404(Document, docalias__name=name)
+    doc = get_object_or_404(Document, name=name)
     if not is_doc_on_telechat(doc, date):
         messages.warning(request, 'Dcoument: {name} is not on the Telechat agenda for {date}'.format(
             name=doc.name,
@@ -342,7 +342,7 @@ def doc_navigate(request, date, name, nav):
     nav  - [next|previous] which direction the user wants to navigate in the list of docs
     The view retrieves the appropriate document and redirects to the doc view.
     '''
-    doc = get_object_or_404(Document, docalias__name=name)
+    doc = get_object_or_404(Document, name=name)
     agenda = agenda_data(date=date)
     target = name
 

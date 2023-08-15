@@ -23,10 +23,10 @@
     <h2 class="my-3">Document history
     {% if related %}
         <div class="float-end">
-        {% for related_docalias in related %}
+        {% for related_document in related %}
             <a class="btn btn-outline-primary btn-sm" 
-               href="{% url 'ietf.doc.views_doc.document_history' name=related_docalias.name %}">
-                Related history for {{ related_docalias.name }}
+               href="{% url 'ietf.doc.views_doc.document_history' name=related_document.name %}">
+                Related history for {{ related_document.name }}
             </a>
         {% endfor %}
         </div>

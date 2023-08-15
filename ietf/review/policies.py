@@ -287,8 +287,6 @@ class AssignmentOrderResolver:
     def _collect_context(self):
         """Collect all relevant data about this team, document and review request."""
 
-        self.doc_aliases = DocAlias.objects.filter(docs=self.doc).values_list("name", flat=True)
-
         # This data is collected as a dict, keys being person IDs, values being numbers/objects.
         self.rotation_index = {p.pk: i for i, p in enumerate(self.rotation_list)}
         self.reviewer_settings = self._reviewer_settings_for_person_ids(self.possible_person_ids)
@@ -354,8 +352,7 @@ class AssignmentOrderResolver:
         add_boolean_score(+1, email.person_id in self.wish_to_review, "wishes to review document")
         add_boolean_score(-1, email.person_id in self.connections,
                           self.connections.get(email.person_id))  # reviewer is somehow connected: bad
-        add_boolean_score(-1, settings.filter_re and any(
-            re.search(settings.filter_re, n) for n in self.doc_aliases), "filter regexp matches")
+        add_boolean_score(-1, settings.filter_re and re.search(settings.filter_re, self.doc.name), "filter regexp matches")
         
         # minimum interval between reviews
         days_needed = self.days_needed_for_reviewers.get(email.person_id, 0)
