@@ -29,8 +29,13 @@ class RfcToBe(models.Model):
     internal_goal = models.DateTimeField(null=True)
 
     class Meta:
-        # todo validator to enforce draft null only if is_april_first_rfc
-        pass
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(draft__isnull=False) ^ models.Q(is_april_first_rfc=True),
+                name="draft_not_null_xor_is_april_first_rfc",
+                violation_error_message="draft must be null if and only if is_april_first_rfc",
+            )
+        ]
 
     
 class Cluster(models.Model):
