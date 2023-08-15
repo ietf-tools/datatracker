@@ -2,6 +2,7 @@ from django.db import models
 
 from ietf.doc.models import Document
 from ietf.name.models import StdLevelName, StreamName, SourceFormatName, TlpBoilerplateChoiceName
+from ietf.person.models import Person
 
 
 class RfcToBe(models.Model):
@@ -46,3 +47,39 @@ class Cluster(models.Model):
 class UnusableRfcNumber:
     number = models.PositiveIntegerField(primary_key=True)
     comment = models.TextField(blank=True)
+
+
+class RpcPerson(models.Model):
+    person = models.ForeignKey(Person, on_delete=models.PROTECT)
+    can_hold_role = models.ManyToManyField("RpcRole")
+    capable_of = models.ManyToManyField("Capability")
+
+
+ASSIGNMENT_STATE_CHOICES = (
+    ("unassigned", "unassigned"),
+    ("assigned", "assigned"),
+    ("in progress", "in progress"),
+    ("done", "done"),
+)
+
+
+class Assignment(models.Model):
+    """Assignment of an RpcPerson to an RfcToBe"""
+    rfc_to_be = models.ForeignKey(RfcToBe, on_delete=models.PROTECT)
+    person = models.ForeignKey(RpcPerson, on_delete=models.PROTECT)
+    state = models.CharField(max_length=32, choices=ASSIGNMENT_STATE_CHOICES, default="unassigned")
+    time_spent = models.DurationField()  # tbd
+
+
+class RpcRole(models.Model):
+    slug = models.CharField(max_length=32, primary_key=True)
+    name = models.CharField(max_length=255)
+    desc = models.TextField(blank=True)
+    # todo populate
+
+
+class Capability(models.Model):
+    slug = models.CharField(max_length=32, primary_key=True)
+    name = models.CharField(max_length=255)
+    desc = models.TextField(blank=True)
+    # todo populate
