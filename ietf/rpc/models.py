@@ -16,8 +16,10 @@ class RfcToBe(models.Model):
     published = models.DateTimeField(null=True)  # should match a DocEvent on the rfc Document
     is_april_first_rfc = models.BooleanField(default=False)
     draft = models.ForeignKey(Document, null=True, on_delete=models.PROTECT)  # only null if is_april_first_rfc is True
-    cluster = models.ForeignKey("Cluster", null=True, on_delete=models.SET_NULL)
     rfc_number = models.PositiveIntegerField()
+
+    cluster = models.ForeignKey("Cluster", null=True, on_delete=models.SET_NULL)
+    order_in_cluster = models.PositiveSmallIntegerField(default=1)
 
     submitted_format = models.ForeignKey(SourceFormatName, on_delete=models.PROTECT)
     submitted_std_level = models.ForeignKey(StdLevelName, on_delete=models.PROTECT, related_name="+")
@@ -37,6 +39,12 @@ class RfcToBe(models.Model):
                 check=models.Q(draft__isnull=False) ^ models.Q(is_april_first_rfc=True),
                 name="rfctobe_draft_not_null_xor_is_april_first_rfc",
                 violation_error_message="draft must be null if and only if is_april_first_rfc",
+            ),
+            models.UniqueConstraint(
+                fields=["cluster", "order_in_cluster"],
+                name="rfctobe_unique_order_in_cluster",
+                violation_error_message="order in cluster must be unique",
+                deferrable=models.Deferrable.DEFERRED,
             )
         ]
 
