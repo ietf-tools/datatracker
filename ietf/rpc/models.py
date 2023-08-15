@@ -1,7 +1,7 @@
 from django.db import models
 
 from ietf.doc.models import Document
-from ietf.name.models import StdLevelName, StreamName, SourceFormatName, TlpBoilerplateChoiceName
+from ietf.name.models import DocRelationshipName, StdLevelName, StreamName, SourceFormatName, TlpBoilerplateChoiceName
 from ietf.person.models import Person
 
 
@@ -103,3 +103,19 @@ class ActionHolder(models.Model):
     since_when = models.DateTimeField(auto_now=True)
     completed = models.DateTimeField(null=True)
     comment = models.TextField(blank=True)
+
+
+class RpcRelatedDocument(models.Model):
+    relationship = models.ForeignKey(DocRelationshipName, on_delete=models.PROTECT)
+    source = models.ForeignKey(RfcToBe, on_delete=models.PROTECT)
+    target_document = models.ForeignKey(Document, null=True, on_delete=models.PROTECT)
+    target_rfctobe = models.ForeignKey(RfcToBe, null=True, on_delete=models.PROTECT)
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(target_document__isnull=True) ^ models.Q(target_rfctobe__isnull=True),
+                name="exactly_one_target",
+                violation_error_message="exactly one target field must be set",
+            )
+        ]
