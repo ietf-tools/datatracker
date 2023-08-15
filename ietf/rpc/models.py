@@ -120,3 +120,33 @@ class RpcRelatedDocument(models.Model):
                 violation_error_message="exactly one target field must be set",
             )
         ]
+
+class RpcDocumentComment(models.Model):
+    document = models.ForeignKey(Document, null=True, on_delete=models.PROTECT)
+    rfc_to_be = models.ForeignKey(RfcToBe, null=True, on_delete=models.PROTECT)
+    comment = models.TextField()
+    by = models.ForeignKey(Person, on_delete=models.PROTECT)
+    time = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(document__isnull=True) ^ models.Q(rfc_to_be__isnull=True),
+                name="exactly_one_target",
+                violation_error_message="exactly one of document or rfc_to_be must be set",
+            )
+        ]
+
+
+class RpcAuthorComment(models.Model):
+    """
+    
+    Notes:
+        rjs = Person(...)
+        rjs.rpcauthorcomments_by.all()  # comments by
+        rjs.rpcauthorcomment_set.all()  # comments about
+    """
+    person = models.ForeignKey(Person, on_delete=models.PROTECT)
+    comment = models.TextField()
+    by = models.ForeignKey(Person, on_delete=models.PROTECT, related_name="rpcauthorcomments_by")
+    time = models.DateTimeField(default=timezone.now)
