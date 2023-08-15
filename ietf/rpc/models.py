@@ -96,3 +96,10 @@ class FinalApproval(models.Model):
     approver = models.ForeignKey(Person, on_delete=models.PROTECT)
     requested = models.DateTimeField(auto_now=True)
     approved = models.DateTimeField(null=True)
+
+
+class ActionHolder(models.Model):
+    person = models.ForeignKey(Person, on_delete=models.PROTECT)
+    since_when = models.DateTimeField(auto_now=True)
+    completed = models.DateTimeField(null=True)
+    comment = models.TextField(blank=True)
