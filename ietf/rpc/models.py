@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils import timezone
 
 from ietf.doc.models import Document
 from ietf.name.models import DocRelationshipName, StdLevelName, StreamName, SourceFormatName, TlpBoilerplateChoiceName
@@ -94,13 +95,13 @@ class RfcAuthor(models.Model):
 class FinalApproval(models.Model):
     rfc_to_be = models.ForeignKey(RfcToBe, on_delete=models.PROTECT)
     approver = models.ForeignKey(Person, on_delete=models.PROTECT)
-    requested = models.DateTimeField(auto_now=True)
+    requested = models.DateTimeField(default=timezone.now)
     approved = models.DateTimeField(null=True)
 
 
 class ActionHolder(models.Model):
     person = models.ForeignKey(Person, on_delete=models.PROTECT)
-    since_when = models.DateTimeField(auto_now=True)
+    since_when = models.DateTimeField(default=timezone.now)
     completed = models.DateTimeField(null=True)
     comment = models.TextField(blank=True)
 
