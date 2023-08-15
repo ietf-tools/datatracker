@@ -16,7 +16,7 @@ class RfcToBe(models.Model):
     published = models.DateTimeField(null=True)  # should match a DocEvent on the rfc Document
     is_april_first_rfc = models.BooleanField(default=False)
     draft = models.ForeignKey(Document, null=True, on_delete=models.PROTECT)  # only null if is_april_first_rfc is True
-    rfc_number = models.PositiveIntegerField()
+    rfc_number = models.PositiveIntegerField(null=True)
 
     cluster = models.ForeignKey("Cluster", null=True, on_delete=models.SET_NULL)
     order_in_cluster = models.PositiveSmallIntegerField(default=1)
