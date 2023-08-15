@@ -22,7 +22,7 @@ from django.utils import timezone
 
 import debug                            # pyflakes:ignore
 
-from ietf.doc.models import BallotDocEvent, DocAlias
+from ietf.doc.models import BallotDocEvent, Document
 from ietf.doc.models import ConsensusDocEvent
 from ietf.ietfauth.utils import can_request_rfc_publication as utils_can_request_rfc_publication
 from ietf.utils.html import sanitize_fragment
@@ -146,8 +146,9 @@ def doc_canonical_name(name):
         key = hash(n)
         found = cache.get(key)
         if not found:
-            exact = DocAlias.objects.filter(name=n).first()
+            exact = Document.objects.filter(name=n)
             found = exact.name if exact else "_"
+            # TODO review this cache policy (and the need for these entire function)
             cache.set(key, found, timeout=60*60*24)  # cache for one day
         return None if found == "_" else found
 

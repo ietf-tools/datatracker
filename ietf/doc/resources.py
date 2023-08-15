@@ -490,7 +490,7 @@ api.doc.register(BallotDocEventResource())
 from ietf.name.resources import DocRelationshipNameResource
 class RelatedDocumentResource(ModelResource):
     source           = ToOneField(DocumentResource, 'source')
-    target           = ToOneField(DocAliasResource, 'target')
+    target           = ToOneField(DocumentResource, 'target')
     relationship     = ToOneField(DocRelationshipNameResource, 'relationship')
     class Meta:
         cache = SimpleCache()
@@ -509,7 +509,7 @@ api.doc.register(RelatedDocumentResource())
 from ietf.name.resources import DocRelationshipNameResource
 class RelatedDocHistoryResource(ModelResource):
     source           = ToOneField(DocHistoryResource, 'source')
-    target           = ToOneField(DocAliasResource, 'target')
+    target           = ToOneField(DocumentResource, 'target')
     relationship     = ToOneField(DocRelationshipNameResource, 'relationship')
     class Meta:
         cache = SimpleCache()

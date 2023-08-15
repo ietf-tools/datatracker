@@ -193,7 +193,7 @@ def document_main(request, name, rev=None, document_html=False):
     if name.startswith("rfc") and rev is not None:
         raise Http404()
 
-    doc = get_object_or_404(Document.objects.select_related(), docalias__name=name)
+    doc = get_object_or_404(Document.objects.select_related(), name=name)
 
     # take care of possible redirections
     if document_html is False and rev is None:
@@ -328,9 +328,9 @@ def document_main(request, name, rev=None, document_html=False):
                     if html:
                         css += Path(finders.find("ietf/css/document_html_txt.css")).read_text()
         draft_that_became_rfc = None
-        became_rfc_alias = next(iter(doc.related_that("became_rfc")), None)
-        if became_rfc_alias:
-            draft_that_became_rfc = became_rfc_alias.document
+        became_rfc = next(iter(doc.related_that("became_rfc")), None)
+        if became_rfc:
+            draft_that_became_rfc = became_rfc
         # submission
         submission = ""
         if group is None:
@@ -1124,7 +1124,7 @@ def get_doc_email_aliases(name):
     return aliases
 
 def document_email(request,name):
-    doc = get_object_or_404(Document, docalias__name=name)
+    doc = get_object_or_404(Document, name=name)
     top = render_document_top(request, doc, "email", name)
 
     aliases = get_doc_email_aliases(name) if doc.type_id=='draft' else None
@@ -1168,12 +1168,15 @@ def get_diff_revisions(request, name, doc):
             relateddocument__relationship="replaces",
         )
     )
+    diff_documents.extend(
+        Document.objects.filter(
+            relateddocument__target=doc,
+            relateddocument__relationship="became_rfc"
+        )
+    )
 
-    if doc.get_state_slug() == "rfc":
+    if doc.tyoe_id == "rfc":
         e = doc.latest_event(type="published_rfc")
-        aliases = doc.docalias.filter(name__startswith="rfc")
-        if aliases:
-            name = aliases[0].name
         diff_revisions.append((name, "", e.time if e else doc.time, name))
 
     seen = set()
@@ -1209,7 +1212,7 @@ def get_diff_revisions(request, name, doc):
 
 
 def document_history(request, name):
-    doc = get_object_or_404(Document, docalias__name=name)
+    doc = get_object_or_404(Document, name=name)
     top = render_document_top(request, doc, "history", name)
     diff_revisions = get_diff_revisions(request, name, doc)
 
@@ -1276,7 +1279,7 @@ def document_bibtex(request, name, rev=None):
             name = name+"-"+rev
             rev = None
 
-    doc = get_object_or_404(Document, docalias__name=name)
+    doc = get_object_or_404(Document, name=name)
 
     doi = None
     draft_became_rfc = None
@@ -1285,7 +1288,7 @@ def document_bibtex(request, name, rev=None):
     if doc.type_id == "draft":
         latest_revision = doc.latest_event(NewRevisionDocEvent, type="new_revision")
         replaced_by = [d.name for d in doc.related_that("replaces")]
-        draft_became_rfc_alias = next(iter(doc.related_that_doc("became_rfc")), None)
+        draft_became_rfc = next(iter(doc.related_that_doc("became_rfc")), None)
 
         if rev != None and rev != doc.rev:
             # find the entry in the history
@@ -1293,14 +1296,10 @@ def document_bibtex(request, name, rev=None):
                 if rev == h.rev:
                     doc = h
                     break
-        
-        if draft_became_rfc_alias:
-            draft_became_rfc = draft_became_rfc_alias.document
-        
+
     elif doc.type_id == "rfc":
         # This needs to be replaced with a lookup, as the mapping may change
-        # over time.  Probably by updating ietf/sync/rfceditor.py to add the
-        # as a DocAlias, and use a method on Document to retrieve it.
+        # over time.
         doi = f"10.17487/RFC{doc.rfc_number:04d}"
 
     if doc.is_dochistory():
@@ -1348,7 +1347,7 @@ def document_bibxml(request, name, rev=None):
 
 
 def document_writeup(request, name):
-    doc = get_object_or_404(Document, docalias__name=name)
+    doc = get_object_or_404(Document, name=name)
     top = render_document_top(request, doc, "writeup", name)
 
     def text_from_writeup(event_type):
@@ -1412,7 +1411,7 @@ def document_writeup(request, name):
                                    ))
 
 def document_shepherd_writeup(request, name):
-    doc = get_object_or_404(Document, docalias__name=name)
+    doc = get_object_or_404(Document, name=name)
     lastwriteup = doc.latest_event(WriteupDocEvent,type="changed_protocol_writeup")
     if lastwriteup:
         writeup_text = lastwriteup.text
@@ -1449,12 +1448,12 @@ def document_shepherd_writeup_template(request, type):
 
 
 def document_references(request, name):
-    doc = get_object_or_404(Document,docalias__name=name)
+    doc = get_object_or_404(Document,name=name)
     refs = doc.references()
     return render(request, "doc/document_references.html",dict(doc=doc,refs=sorted(refs,key=lambda x:x.target.name),))
 
 def document_referenced_by(request, name):
-    doc = get_object_or_404(Document,docalias__name=name)
+    doc = get_object_or_404(Document,name=name)
     refs = doc.referenced_by()
     full = ( request.GET.get('full') != None )
     numdocs = refs.count()
@@ -1464,7 +1463,7 @@ def document_referenced_by(request, name):
        numdocs=None
     refs=sorted(refs,key=lambda x:(['refnorm','refinfo','refunk','refold'].index(x.relationship.slug),x.source.canonical_name()))
     return render(request, "doc/document_referenced_by.html",
-               dict(alias_name=name,
+               dict(name=name,
                     doc=doc,
                     numdocs=numdocs,
                     refs=refs,
@@ -1538,7 +1537,7 @@ def document_ballot_content(request, doc, ballot_id, editable=True):
                               request=request)
 
 def document_ballot(request, name, ballot_id=None):
-    doc = get_object_or_404(Document, docalias__name=name)
+    doc = get_object_or_404(Document, name=name)
     all_ballots = list(BallotDocEvent.objects.filter(doc=doc, type="created_ballot").order_by("time"))
     if not ballot_id:
         if all_ballots:
@@ -1574,7 +1573,7 @@ def document_ballot(request, name, ballot_id=None):
                                    ))
 
 def document_irsg_ballot(request, name, ballot_id=None):
-    doc = get_object_or_404(Document, docalias__name=name)
+    doc = get_object_or_404(Document, name=name)
     top = render_document_top(request, doc, "irsgballot", name)
     if not ballot_id:
         ballot = doc.latest_event(BallotDocEvent, type="created_ballot", ballot_type__slug='irsg-approve')
@@ -1593,7 +1592,7 @@ def document_irsg_ballot(request, name, ballot_id=None):
                                    ))
 
 def document_rsab_ballot(request, name, ballot_id=None):
-    doc = get_object_or_404(Document, docalias__name=name)
+    doc = get_object_or_404(Document, name=name)
     top = render_document_top(request, doc, "rsabballot", name)
     if not ballot_id:
         ballot = doc.latest_event(BallotDocEvent, type="created_ballot", ballot_type__slug='rsab-approve')
@@ -1615,7 +1614,7 @@ def document_rsab_ballot(request, name, ballot_id=None):
     )
 
 def ballot_popup(request, name, ballot_id):
-    doc = get_object_or_404(Document, docalias__name=name)
+    doc = get_object_or_404(Document, name=name)
     c = document_ballot_content(request, doc, ballot_id=ballot_id, editable=False)
     ballot = get_object_or_404(BallotDocEvent,id=ballot_id)
     return render(request, "doc/ballot_popup.html",
@@ -1628,7 +1627,7 @@ def ballot_popup(request, name, ballot_id):
 
 
 def document_json(request, name, rev=None):
-    doc = get_object_or_404(Document, docalias__name=name)
+    doc = get_object_or_404(Document, name=name)
 
     def extract_name(s):
         return s.name if s else None
@@ -1648,7 +1647,8 @@ def document_json(request, name, rev=None):
     data["expires"] = doc.expires.strftime("%Y-%m-%d %H:%M:%S") if doc.expires else None
     data["title"] = doc.title
     data["abstract"] = doc.abstract
-    data["aliases"] = list(doc.docalias.values_list("name", flat=True))
+    # Preserve aliases in this api? What about showing rfc_number directly?
+    data["aliases"] = list(doc.name)
     data["state"] = extract_name(doc.get_state())
     data["intended_std_level"] = extract_name(doc.intended_std_level)
     data["std_level"] = extract_name(doc.std_level)
@@ -1683,7 +1683,7 @@ class AddCommentForm(forms.Form):
 @role_required('Area Director', 'Secretariat', 'IRTF Chair', 'WG Chair', 'RG Chair', 'WG Secretary', 'RG Secretary', 'IANA', 'RFC Editor')
 def add_comment(request, name):
     """Add comment to history of document."""
-    doc = get_object_or_404(Document, docalias__name=name)
+    doc = get_object_or_404(Document, name=name)
 
     login = request.user.person
 
@@ -2173,14 +2173,13 @@ def idnits2_rfc_status(request):
 
 
 def idnits2_state(request, name, rev=None):
-    doc = get_object_or_404(Document, docalias__name=name)
+    doc = get_object_or_404(Document, name=name)
     if doc.type_id not in ["draft", "rfc"]:
         raise Http404
     zero_revision = None
     if doc.type_id == "rfc":
-        draft_alias = next(iter(doc.related_that('became_rfc')), None)
-        if draft_alias:
-            draft = draft_alias.document
+        draft = next(iter(doc.related_that('became_rfc')), None)
+        if draft:
             zero_revision = NewRevisionDocEvent.objects.filter(doc=draft,rev='00').first()
     else:
         zero_revision = NewRevisionDocEvent.objects.filter(doc=doc,rev='00').first()

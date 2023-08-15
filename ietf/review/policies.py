@@ -7,7 +7,7 @@ from django.db.models.aggregates import Max
 from django.utils import timezone
 from simple_history.utils import bulk_update_with_history
 
-from ietf.doc.models import DocumentAuthor, DocAlias
+from ietf.doc.models import DocumentAuthor
 from ietf.doc.utils import extract_complete_replaces_ancestor_mapping_for_docs
 from ietf.group.models import Role
 from ietf.person.models import Person

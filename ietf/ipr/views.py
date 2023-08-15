@@ -18,7 +18,7 @@ from django.utils.html import escape
 
 import debug                            # pyflakes:ignore
 
-from ietf.doc.models import DocAlias
+from ietf.doc.models import Document
 from ietf.group.models import Role, Group
 from ietf.ietfauth.utils import role_required, has_role
 from ietf.ipr.mail import (message_from_message, get_reply_to, get_update_submitter_emails)
@@ -663,18 +663,18 @@ def search(request):
                 doc = q
 
                 if docid:
-                    start = DocAlias.objects.filter(name__iexact=docid)
+                    start = Document.objects.filter(name__iexact=docid)
                 else:
                     if search_type == "draft":
                         q = normalize_draftname(q)
-                        start = DocAlias.objects.filter(name__icontains=q, name__startswith="draft")
+                        start = Document.objects.filter(name__icontains=q, name__startswith="draft")
                     elif search_type == "rfc":
-                        start = DocAlias.objects.filter(name="rfc%s" % q.lstrip("0"))
+                        start = Document.objects.filter(name="rfc%s" % q.lstrip("0"))
                 
                 # one match
                 if len(start) == 1:
                     first = start[0]
-                    doc = first.document
+                    doc = first
                     docs = related_docs(first)
                     iprs = iprs_from_docs(docs,states=states)
                     template = "ipr/search_doc_result.html"
@@ -706,7 +706,7 @@ def search(request):
             # Search by wg acronym
             # Document list with IPRs
             elif search_type == "group":
-                docs = list(DocAlias.objects.filter(docs__group=q))
+                docs = list(Document.objects.filter(docs__group=q))
                 related = []
                 for doc in docs:
                     doc.product_of_this_wg = True
@@ -720,7 +720,7 @@ def search(request):
             # Search by rfc and id title
             # Document list with IPRs
             elif search_type == "doctitle":
-                docs = list(DocAlias.objects.filter(docs__title__icontains=q))
+                docs = list(Document.objects.filter(docs__title__icontains=q))
                 related = []
                 for doc in docs:
                     related += related_docs(doc)

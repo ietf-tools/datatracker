@@ -41,7 +41,7 @@ class IprDisclosureBaseFactory(factory.django.DjangoModelFactory):
             return
         if extracted:
             for doc in extracted:
-                IprDocRel.objects.create(disclosure=self,document=doc.docalias.first())
+                IprDocRel.objects.create(disclosure=self,document=doc)
 
     @factory.post_generation
     def updates(self, create, extracted, **kwargs):

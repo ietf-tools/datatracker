@@ -53,15 +53,6 @@ class BaseDocumentFactory(factory.django.DjangoModelFactory):
     newrevisiondocevent = factory.RelatedFactory('ietf.doc.factories.NewRevisionDocEventFactory','doc')
 
     @factory.post_generation
-    def other_aliases(obj, create, extracted, **kwargs): # pylint: disable=no-self-argument
-        alias = DocAliasFactory(name=obj.name)
-        alias.docs.add(obj)
-        if create and extracted:
-            for name in extracted:
-                alias = DocAliasFactory(name=name)
-                alias.docs.add(obj)
-
-    @factory.post_generation
     def states(obj, create, extracted, **kwargs): # pylint: disable=no-self-argument
         if create and extracted:
             for (state_type_id,state_slug) in extracted:

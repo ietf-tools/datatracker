@@ -18,7 +18,7 @@ from django.utils import timezone
 
 from ietf.group.factories import RoleFactory
 from ietf.doc.factories import BofreqFactory, NewRevisionDocEventFactory
-from ietf.doc.models import State, Document, DocAlias, NewRevisionDocEvent
+from ietf.doc.models import State, Document, NewRevisionDocEvent
 from ietf.doc.utils_bofreq import bofreq_editors, bofreq_responsible
 from ietf.ietfauth.utils import has_role
 from ietf.person.factories import PersonFactory
@@ -366,7 +366,6 @@ This test section has some text.
                     name = f"bofreq-{xslugify(nobody.last_name())[:64]}-{postdict['title']}".replace(' ','-')
                     bofreq = Document.objects.filter(name=name,type_id='bofreq').first()
                     self.assertIsNotNone(bofreq)
-                    self.assertIsNotNone(DocAlias.objects.filter(name=name).first())
                     self.assertEqual(bofreq.title, postdict['title'])
                     self.assertEqual(bofreq.rev, '00')
                     self.assertEqual(bofreq.get_state_slug(), 'proposed')

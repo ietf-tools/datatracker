@@ -355,7 +355,7 @@ class DocumentInfo(models.Model):
             elif state.slug == "repl":
                 rs = self.related_that("replaces")
                 if rs:
-                    return mark_safe("Replaced by " + ", ".join("<a href=\"%s\">%s</a>" % (urlreverse('ietf.doc.views_doc.document_main', kwargs=dict(name=alias.document.name)), alias.document) for alias in rs))
+                    return mark_safe("Replaced by " + ", ".join("<a href=\"%s\">%s</a>" % (urlreverse('ietf.doc.views_doc.document_main', kwargs=dict(name=related.name)), related) for related in rs))
                 else:
                     return "Replaced"
             elif state.slug == "active":
@@ -493,10 +493,10 @@ class DocumentInfo(models.Model):
         return related
 
     def related_that(self, relationship):
-        return list(set([x.source.docalias.get(name=x.source.name) for x in self.relations_that(relationship)]))
+        return list(set([x.source for x in self.relations_that(relationship)]))
 
     def all_related_that(self, relationship, related=None):
-        return list(set([x.source.docalias.get(name=x.source.name) for x in self.all_relations_that(relationship)]))
+        return list(set([x.source for x in self.all_relations_that(relationship)]))
 
     def related_that_doc(self, relationship):
         return list(set([x.target for x in self.relations_that_doc(relationship)]))
@@ -843,20 +843,6 @@ class Document(DocumentInfo):
         e = model.objects.filter(doc=self).filter(**filter_args).order_by('-time', '-id').first()
         return e
 
-    def canonical_name(self):
-        if not hasattr(self, '_canonical_name'):
-            name = self.name
-            if self.type_id == "draft" and self.get_state_slug() == "rfc":
-                a = self.docalias.filter(name__startswith="rfc").order_by('-name').first()
-                if a:
-                    name = a.name
-            self._canonical_name = name
-        return self._canonical_name
-
-
-    def canonical_docalias(self):
-        return self.docalias.get(name=self.name)
-
     def display_name(self):
         name = self.canonical_name()
         if name.startswith('rfc'):
@@ -963,8 +949,8 @@ class Document(DocumentInfo):
         from ietf.ipr.models import IprDocRel
         iprs = (
             IprDocRel.objects.filter(
-                document__in=list(self.docalias.all())
-                + [x.docalias.first() for x in self.all_related_that_doc(("obs", "replaces"))] # this really is docalias until IprDocRel changes
+                document__in=list(self)
+                + self.all_related_that_doc(("obs", "replaces"))
             )
             .filter(disclosure__state__in=("posted", "removed"))
             .values_list("disclosure", flat=True)
@@ -1156,10 +1142,6 @@ class DocHistory(DocumentInfo):
     @property
     def groupmilestone_set(self):
         return self.doc.groupmilestone_set
-
-    @property
-    def docalias(self):
-        return self.doc.docalias
 
     def is_dochistory(self):
         return True

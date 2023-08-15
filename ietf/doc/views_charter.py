@@ -22,7 +22,7 @@ from django.utils.html import escape
 
 import debug                            # pyflakes:ignore
 
-from ietf.doc.models import ( Document, DocAlias, DocHistory, State, DocEvent,
+from ietf.doc.models import ( Document, DocHistory, State, DocEvent,
     BallotDocEvent, BallotPositionDocEvent, InitialReviewDocEvent, NewRevisionDocEvent,
     WriteupDocEvent, TelechatDocEvent )
 from ietf.doc.utils import ( add_state_change_event, close_open_ballots,
@@ -412,7 +412,6 @@ def submit(request, name, option=None):
                     abstract=group.name,
                     rev=next_rev,
                 )
-                DocAlias.objects.create(name=name).docs.add(charter)
 
                 charter.set_state(
                     State.objects.get(used=True, type="charter", slug="notrev")

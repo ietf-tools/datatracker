@@ -36,7 +36,7 @@ class DocumentChangesFeed(Feed):
     feed_type = Atom1Feed
 
     def get_object(self, request, name):
-        return Document.objects.get(docalias__name=name)
+        return Document.objects.get(name=name)
 
     def title(self, obj):
         return "Changes for %s" % obj.display_name()

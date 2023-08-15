@@ -16,7 +16,7 @@ from django.utils.html import escape
 
 import debug                            # pyflakes:ignore
 
-from ietf.doc.models import ( BallotDocEvent, BallotPositionDocEvent, DocAlias, DocEvent,
+from ietf.doc.models import ( BallotDocEvent, BallotPositionDocEvent, DocEvent,
     Document, NewRevisionDocEvent, State )
 from ietf.doc.utils import ( add_state_change_event, close_open_ballots,
     create_ballot_if_not_open, update_telechat )
@@ -448,9 +448,6 @@ def build_conflict_review_document(login, doc_to_review, ad, notify, create_in_s
         group=iesg_group,
     )
     conflict_review.set_state(create_in_state)
-
-    DocAlias.objects.create( name=review_name).docs.add( conflict_review )
-
             
     conflict_review.relateddocument_set.create(target=doc_to_review, relationship_id='conflrev')
 

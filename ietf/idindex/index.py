@@ -14,7 +14,7 @@ from django.utils import timezone
 
 import debug    # pyflakes:ignore
 
-from ietf.doc.models import Document, DocEvent, DocumentAuthor, RelatedDocument, DocAlias, State
+from ietf.doc.models import Document, DocEvent, DocumentAuthor, RelatedDocument, State
 from ietf.doc.models import LastCallDocEvent, NewRevisionDocEvent
 from ietf.doc.models import IESG_SUBSTATE_TAGS
 from ietf.doc.templatetags.ietf_filters import clean_whitespace
@@ -31,15 +31,17 @@ def all_id_txt():
         t = revision_time.get(name)
         return t.strftime("%Y-%m-%d") if t else ""
 
-    rfc_aliases = dict(DocAlias.objects.filter(name__startswith="rfc",
-                                               docs__states=State.objects.get(type="draft", slug="rfc")).values_list("docs__name", "name"))
+    rfcs = dict()
+    for rfc in Document.objects.filter(type_id="rfc"):
+        draft = next(iter(doc.related_that("became_rfc")), None)
+        rfcs[rfc.name] = draft.name if draft else rfc.name
 
     replacements = dict(RelatedDocument.objects.filter(target__states=State.objects.get(type="draft", slug="repl"),
                                                        relationship="replaces").values_list("target__name", "source__name"))
 
 
     # we need a distinct to prevent the queries below from multiplying the result
-    all_ids = Document.objects.filter(type="draft").order_by('name').exclude(name__startswith="rfc").distinct()
+    all_ids = Document.objects.filter(type="draft").order_by('name').distinct()
 
     res = ["\nInternet-Drafts Status Summary\n"]
 
@@ -77,9 +79,9 @@ def all_id_txt():
             last_field = ""
 
             if s.slug == "rfc":
-                a = rfc_aliases.get(name)
-                if a:
-                    last_field = a[3:]
+                rfc = rfcs.get(name)
+                if rfc:
+                    last_field = rfc[3:] # Rework this to take advantage of having the number at hand already.
             elif s.slug == "repl":
                 state += " replaced by " + replacements.get(name, "0")
 
@@ -112,8 +114,10 @@ def all_id2_txt():
     drafts = drafts.select_related('group', 'group__parent', 'ad', 'intended_std_level', 'shepherd', )
     drafts = drafts.prefetch_related("states")
 
-    rfc_aliases = dict(DocAlias.objects.filter(name__startswith="rfc",
-                                               docs__states=State.objects.get(type="draft", slug="rfc")).values_list("docs__name", "name"))
+    rfcs = dict()
+    for rfc in Document.objects.filter(type_id="rfc"):
+        draft = next(iter(doc.related_that("became_rfc")), None)
+        rfcs[rfc.name] = draft.name if draft else rfc.name
 
     replacements = dict(RelatedDocument.objects.filter(target__states=State.objects.get(type="draft", slug="repl"),
                                                        relationship="replaces").values_list("target__name", "source__name"))
@@ -164,9 +168,9 @@ def all_id2_txt():
         # 4
         rfc_number = ""
         if state == "rfc":
-            a = rfc_aliases.get(d.name)
-            if a:
-                rfc_number = a[3:]
+            rfc = rfcs.get(d.name)
+            if rfc:
+                rfc_number = rfc[3:]
         fields.append(rfc_number)
         # 5
         repl = ""

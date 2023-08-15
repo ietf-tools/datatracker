@@ -21,7 +21,7 @@ from django.utils.html import escape
 import debug                            # pyflakes:ignore
 from ietf.doc.mails import email_ad_approved_status_change
 
-from ietf.doc.models import ( Document, DocAlias, State, DocEvent, BallotDocEvent,
+from ietf.doc.models import ( Document, State, DocEvent, BallotDocEvent,
     BallotPositionDocEvent, NewRevisionDocEvent, WriteupDocEvent, STATUSCHANGE_RELATIONS )
 from ietf.doc.forms import AdForm
 from ietf.doc.lastcall import request_last_call
@@ -537,7 +537,7 @@ def start_rfc_status_change(request, name=None):
     if name:
        if not re.match("(?i)rfc[0-9]{1,4}",name):
            raise Http404
-       seed_rfc = get_object_or_404(Document, type="draft", docalias__name=name)
+       seed_rfc = get_object_or_404(Document, type="rfc", name=name)
 
     login = request.user.person
 
@@ -560,8 +560,6 @@ def start_rfc_status_change(request, name=None):
                 group=iesg_group,
             )
             status_change.set_state(form.cleaned_data['create_in_state'])
-
-            DocAlias.objects.create( name= 'status-change-'+form.cleaned_data['document_name']).docs.add(status_change)
             
             for key in form.cleaned_data['relations']:
                 status_change.relateddocument_set.create(target=Document.objects.get(name=key),

@@ -129,7 +129,7 @@ def manage_list(request, username=None, acronym=None, group_type=None):
 
 @login_required
 def track_document(request, name, username=None, acronym=None):
-    doc = get_object_or_404(Document, docalias__name=name)
+    doc = get_object_or_404(Document, name=name)
 
     if request.method == "POST":
         clist = lookup_community_list(username, acronym)
@@ -153,7 +153,7 @@ def track_document(request, name, username=None, acronym=None):
 
 @login_required
 def untrack_document(request, name, username=None, acronym=None):
-    doc = get_object_or_404(Document, docalias__name=name)
+    doc = get_object_or_404(Document, name=name)
     clist = lookup_community_list(username, acronym)
     if not can_manage_community_list(request.user, clist):
         permission_denied(request, "You do not have permission to access this view")

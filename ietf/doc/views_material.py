@@ -16,7 +16,7 @@ from django.urls import reverse as urlreverse
 
 import debug                            # pyflakes:ignore
 
-from ietf.doc.models import Document, DocAlias, DocTypeName, DocEvent, State
+from ietf.doc.models import Document, DocTypeName, DocEvent, State
 from ietf.doc.models import NewRevisionDocEvent
 from ietf.doc.utils import add_state_change_event, check_common_doc_name_rules
 from ietf.group.models import Group
@@ -155,10 +155,6 @@ def edit_material(request, name=None, acronym=None, action=None, doc_type=None):
                 with io.open(os.path.join(doc.get_file_path(), doc.name + "-" + doc.rev + file_ext), 'wb+') as dest:
                     for chunk in f.chunks():
                         dest.write(chunk)
-
-            if action == "new":
-                alias, __ = DocAlias.objects.get_or_create(name=doc.name)
-                alias.docs.add(doc)
 
             if prev_rev != doc.rev:
                 e = NewRevisionDocEvent(type="new_revision", doc=doc, rev=doc.rev)

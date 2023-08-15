@@ -4,10 +4,10 @@
 {% block pagehead %}
     <link rel="stylesheet" href="{% static "ietf/css/list.css" %}">
 {% endblock %}
-{% block title %}References to {{ alias_name }}{% endblock %}
+{% block title %}References to {{ name }}{% endblock %}
 {% block content %}
     {% origin %}
-    <h1>References to {{ alias_name }}</h1>
+    <h1>References to {{ name }}</h1>
     <p class="alert alert-info my-3">
         These dependencies are extracted using heuristics looking for strings with particular prefixes. Notably, this means that references to I-Ds by title only are not reflected here. If it's really important, please inspect the documents' references sections directly.
     </p>
@@ -42,7 +42,7 @@
                     <tr>
                         <td>
                             <a href="{% url 'ietf.doc.views_doc.document_main' name=name %}">{{ name|prettystdname }}</a>
-                            {% if ref.target.name != alias_name %}
+                            {% if ref.target.name != name %}
                                 <br>
                                 <span class="badge rounded-pill bg-info">As {{ ref.target.name }}</span>
                             {% endif %}

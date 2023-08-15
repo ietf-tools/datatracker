@@ -8,7 +8,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 import debug                            # pyflakes:ignore
 
 from ietf.doc.utils import add_state_change_event
-from ietf.doc.models import DocAlias, DocEvent, Document, NewRevisionDocEvent, State
+from ietf.doc.models import DocEvent, Document, NewRevisionDocEvent, State
 from ietf.ietfauth.utils import role_required
 from ietf.meeting.forms import FileUploadForm
 from ietf.meeting.models import Meeting, MeetingHost
@@ -97,10 +97,6 @@ def save_proceedings_material_doc(meeting, material_type, title, request, file=N
             rev="00",
         )
         created = True
-
-    # do this even if we did not create the document, just to be sure the alias exists
-    alias, _ = DocAlias.objects.get_or_create(name=doc.name)
-    alias.docs.add(doc)
 
     if file:
         if not created:

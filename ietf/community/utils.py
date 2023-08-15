@@ -60,7 +60,7 @@ def reset_name_contains_index_for_rule(rule):
     if not rule.rule_type == "name_contains":
         return
 
-    rule.name_contains_index.set(Document.objects.filter(docalias__name__regex=rule.text))
+    rule.name_contains_index.set(Document.objects.filter(name__regex=rule.text))
 
 def update_name_contains_indexes_with_new_doc(doc):
     for r in SearchRule.objects.filter(rule_type="name_contains"):
@@ -182,7 +182,7 @@ def docs_tracked_by_community_list(clist):
     doc_ids = set()
     for doc in clist.added_docs.all():
         doc_ids.add(doc.pk)
-        doc_ids.update(alias.docs.first().pk for alias in doc.related_that_doc("became_rfc"))
+        doc_ids.update(rfc.pk for rfc in doc.related_that_doc("became_rfc"))
 
     for rule in clist.searchrule_set.all():
         doc_ids = doc_ids | set(docs_matching_community_list_rule(rule).values_list("pk", flat=True))

@@ -33,7 +33,7 @@ from tastypie.test import ResourceTestCaseMixin
 
 import debug                            # pyflakes:ignore
 
-from ietf.doc.models import ( Document, DocAlias, DocRelationshipName, RelatedDocument, State,
+from ietf.doc.models import ( Document, DocRelationshipName, RelatedDocument, State,
     DocEvent, BallotPositionDocEvent, LastCallDocEvent, WriteupDocEvent, NewRevisionDocEvent, BallotType,
     EditedAuthorsDocEvent )
 from ietf.doc.factories import ( DocumentFactory, DocEventFactory, CharterFactory, 
@@ -324,7 +324,6 @@ class SearchTests(TestCase):
         draft.set_state(State.objects.get(type='draft-iesg', slug='lc'))
         rfc = IndividualDraftFactory(ad=ad)
         rfc.set_state(State.objects.get(type='draft', slug='rfc'))
-        DocAlias.objects.create(name='rfc6666').docs.add(rfc)
         conflrev = DocumentFactory(type_id='conflrev',ad=ad)
         conflrev.set_state(State.objects.get(type='conflrev', slug='iesgeval'))
         statchg = DocumentFactory(type_id='statchg',ad=ad)
@@ -414,19 +413,6 @@ class SearchTests(TestCase):
         self.assertEqual(r.status_code, 200)
         data = r.json()
         self.assertEqual(data[0]["id"], draft.pk)
-
-        # DocAlias
-        doc_alias = draft.docalias.first()
-
-        url = urlreverse('ietf.doc.views_search.ajax_select2_search_docs', kwargs={
-            "model_name": "docalias",
-            "doc_type": "draft",
-        })
-
-        r = self.client.get(url, dict(q=doc_alias.name))
-        self.assertEqual(r.status_code, 200)
-        data = r.json()
-        self.assertEqual(data[0]["id"], doc_alias.pk)
 
     def test_recent_drafts(self):
         # Three drafts to show with various warnings
