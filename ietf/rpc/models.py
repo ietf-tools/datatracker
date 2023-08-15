@@ -88,7 +88,6 @@ class RpcPerson(models.Model):
 
 
 ASSIGNMENT_STATE_CHOICES = (
-    ("unassigned", "unassigned"),
     ("assigned", "assigned"),
     ("in progress", "in progress"),
     ("done", "done"),
@@ -101,7 +100,7 @@ class Assignment(models.Model):
     rfc_to_be = models.ForeignKey(RfcToBe, on_delete=models.PROTECT)
     person = models.ForeignKey(RpcPerson, on_delete=models.PROTECT)
     state = models.CharField(
-        max_length=32, choices=ASSIGNMENT_STATE_CHOICES, default="unassigned"
+        max_length=32, choices=ASSIGNMENT_STATE_CHOICES, default="assigned"
     )
     time_spent = models.DurationField()  # tbd
 
