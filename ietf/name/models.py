@@ -151,3 +151,14 @@ class SlideSubmissionStatusName(NameModel):
     "Pending, Accepted, Rejected"
 class TelechatAgendaSectionName(NameModel):
     "roll_call", "minutes", "action_items"
+
+
+class SourceFormatName(NameModel):
+    """xml, md, txt"""
+    # todo populate
+
+
+class TlpBoilerplateChoiceName(NameModel):
+    """trust200902, noModificationTrust200902, noDerivativesTrust200902 pre5378Trust200902, 
+    trust200811, noModificationTrust200811, noDerivativesTrust200811"""
+    # todo populate
