@@ -165,8 +165,10 @@ class RpcRelatedDocument(models.Model):
     class Meta:
         constraints = [
             models.CheckConstraint(
-                check=models.Q(target_document__isnull=True)
-                ^ models.Q(target_rfctobe__isnull=True),
+                check=(
+                    models.Q(target_document__isnull=True)
+                    ^ models.Q(target_rfctobe__isnull=True)
+                ),
                 name="rpcrelateddocument_exactly_one_target",
                 violation_error_message="exactly one target field must be set",
             )
