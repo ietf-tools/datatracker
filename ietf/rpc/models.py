@@ -15,6 +15,7 @@ class RfcToBe(models.Model):
     is_april_first_rfc = models.BooleanField(default=False)
     draft = models.ForeignKey(Document, null=True, on_delete=models.PROTECT)  # only null if is_april_first_rfc is True
     cluster = models.ForeignKey("Cluster", null=True, on_delete=models.SET_NULL)
+    rfc_number = models.PositiveIntegerField()
 
     submitted_format = models.ForeignKey(SourceFormatName, on_delete=models.PROTECT)
     submitted_std_level = models.ForeignKey(StdLevelName, on_delete=models.PROTECT)
@@ -39,5 +40,9 @@ class RfcToBe(models.Model):
 
     
 class Cluster(models.Model):
-    pass
+    number = models.PositiveIntegerField(unique=True)
 
+
+class UnusableRfcNumber:
+    number = models.PositiveIntegerField(primary_key=True)
+    comment = models.TextField(blank=True)
