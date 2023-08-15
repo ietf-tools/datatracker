@@ -83,3 +83,16 @@ class Capability(models.Model):
     name = models.CharField(max_length=255)
     desc = models.TextField(blank=True)
     # todo populate
+
+
+class RfcAuthor(models.Model):
+    person = models.ForeignKey(Person, on_delete=models.PROTECT)
+    rfc_to_be = models.ForeignKey(RfcToBe, on_delete=models.PROTECT)
+    auth48_approved = models.DateTimeField(null=True)
+
+
+class FinalApproval(models.Model):
+    rfc_to_be = models.ForeignKey(RfcToBe, on_delete=models.PROTECT)
+    approver = models.ForeignKey(Person, on_delete=models.PROTECT)
+    requested = models.DateTimeField(auto_now=True)
+    approved = models.DateTimeField(null=True)
