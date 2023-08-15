@@ -20,13 +20,13 @@ class RfcToBe(models.Model):
     rfc_number = models.PositiveIntegerField()
 
     submitted_format = models.ForeignKey(SourceFormatName, on_delete=models.PROTECT)
-    submitted_std_level = models.ForeignKey(StdLevelName, on_delete=models.PROTECT)
-    submitted_boilerplate = models.ForeignKey(TlpBoilerplateChoiceName, on_delete=models.PROTECT)
-    submitted_stream = models.ForeignKey(StreamName, on_delete=models.PROTECT)
+    submitted_std_level = models.ForeignKey(StdLevelName, on_delete=models.PROTECT, related_name="+")
+    submitted_boilerplate = models.ForeignKey(TlpBoilerplateChoiceName, on_delete=models.PROTECT, related_name="+")
+    submitted_stream = models.ForeignKey(StreamName, on_delete=models.PROTECT, related_name="+")
 
-    intended_std_level = models.ForeignKey(StdLevelName, on_delete=models.PROTECT)
-    intended_boilerplate = models.ForeignKey(TlpBoilerplateChoiceName, on_delete=models.PROTECT)
-    intended_stream = models.ForeignKey(StreamName, on_delete=models.PROTECT)
+    intended_std_level = models.ForeignKey(StdLevelName, on_delete=models.PROTECT, related_name="+")
+    intended_boilerplate = models.ForeignKey(TlpBoilerplateChoiceName, on_delete=models.PROTECT, related_name="+")
+    intended_stream = models.ForeignKey(StreamName, on_delete=models.PROTECT, related_name="+")
 
     external_deadline = models.DateTimeField(null=True)
     internal_goal = models.DateTimeField(null=True)
@@ -35,7 +35,7 @@ class RfcToBe(models.Model):
         constraints = [
             models.CheckConstraint(
                 check=models.Q(draft__isnull=False) ^ models.Q(is_april_first_rfc=True),
-                name="draft_not_null_xor_is_april_first_rfc",
+                name="rfctobe_draft_not_null_xor_is_april_first_rfc",
                 violation_error_message="draft must be null if and only if is_april_first_rfc",
             )
         ]
@@ -107,21 +107,39 @@ class ActionHolder(models.Model):
 
 
 class RpcRelatedDocument(models.Model):
+    """Relationship between an RFC-to-be and a draft, RFC, or RFC-to-be
+
+    rtb = RfcToBe.objects.get(...)  # or Document.objects.get(...)
+    rtb.rpcrelateddocument_set.all()  # relationships where rtb is source
+    rtb.rpcrelateddocument_target_set()  # relationships where rtb is target
+    """
+
     relationship = models.ForeignKey(DocRelationshipName, on_delete=models.PROTECT)
     source = models.ForeignKey(RfcToBe, on_delete=models.PROTECT)
-    target_document = models.ForeignKey(Document, null=True, on_delete=models.PROTECT)
-    target_rfctobe = models.ForeignKey(RfcToBe, null=True, on_delete=models.PROTECT)
+    target_document = models.ForeignKey(
+        Document,
+        null=True,
+        on_delete=models.PROTECT,
+        related_name="rpcrelateddocument_target_set",
+    )
+    target_rfctobe = models.ForeignKey(
+        RfcToBe,
+        null=True,
+        on_delete=models.PROTECT,
+        related_name="rpcrelateddocument_target_set",
+    )
 
     class Meta:
         constraints = [
             models.CheckConstraint(
                 check=models.Q(target_document__isnull=True) ^ models.Q(target_rfctobe__isnull=True),
-                name="exactly_one_target",
+                name="rpcrelateddocument_exactly_one_target",
                 violation_error_message="exactly one target field must be set",
             )
         ]
 
 class RpcDocumentComment(models.Model):
+    """Private RPC comment about a draft, RFC or RFC-to-be"""
     document = models.ForeignKey(Document, null=True, on_delete=models.PROTECT)
     rfc_to_be = models.ForeignKey(RfcToBe, null=True, on_delete=models.PROTECT)
     comment = models.TextField()
@@ -132,14 +150,14 @@ class RpcDocumentComment(models.Model):
         constraints = [
             models.CheckConstraint(
                 check=models.Q(document__isnull=True) ^ models.Q(rfc_to_be__isnull=True),
-                name="exactly_one_target",
+                name="rpcdocumentcomment_exactly_one_target",
                 violation_error_message="exactly one of document or rfc_to_be must be set",
             )
         ]
 
 
 class RpcAuthorComment(models.Model):
-    """
+    """Private RPC comment about an author
     
     Notes:
         rjs = Person(...)
