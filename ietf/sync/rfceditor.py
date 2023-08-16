@@ -475,11 +475,20 @@ def update_docs_from_rfc_index(
                 draft_changes.append(change)
                 rfc_changes.append(change)
 
-            # Draft should be in the "pub" or "approved" draft-iesg state - complain otherwise
+            # Always set the "draft-iesg" state. This state should be set for all drafts, so
+            # log a warning if it is not set. What should happen here is that ietf stream
+            # RFCs come in as "rfcqueue" and are set to "pub" when they appear in the RFC index.
+            # Other stream documents should normally be "idexists" and be left that way. The
+            # code here *actually* leaves "draft-iesg" state alone if it is "idexists" or "pub",
+            # and changes any other state to "pub". If unset, it changes it to "idexists".
+            # This reflects historical behavior and should probably be updated, but a migration
+            # of existing drafts (and validation of the change) is needed before we change the
+            # handling.
             prev_iesg_state = draft.get_state("draft-iesg")
             if prev_iesg_state is None:
                 log(f'Warning while processing {doc.name}: {draft.name} has no "draft-iesg" state')
-            elif prev_iesg_state.slug != "pub":
+                new_iesg_state = State.objects.get(type_id="draft-iesg", slug="idexists")
+            elif prev_iesg_state.slug not in ("pub", "idexists"):
                 if prev_iesg_state.slug != "rfcqueue":
                     log(
                         'Warning while processing {}: {} is in "draft-iesg" state {} (expected "rfcqueue")'.format(
@@ -487,6 +496,10 @@ def update_docs_from_rfc_index(
                         )
                     )
                 new_iesg_state = State.objects.get(type_id="draft-iesg", slug="pub")
+            else:
+                new_iesg_state = prev_iesg_state
+
+            if new_iesg_state != prev_iesg_state:
                 draft.set_state(new_iesg_state)
                 draft_changes.append(f"changed {new_iesg_state.type.label} to {new_iesg_state}")
                 e = update_action_holders(draft, prev_iesg_state, new_iesg_state)
