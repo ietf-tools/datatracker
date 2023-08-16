@@ -105,6 +105,15 @@ class DraftForm(forms.ModelForm):
         }
         help_texts = { 'sections': 'Sections' }
 
+    def clean(self):
+        cleaned_data = super().clean()
+        revisions = cleaned_data.get("revisions")
+        document = cleaned_data.get("document")
+        if not document.name.startswith("rfc"):
+            if revisions.strip()=="":
+                self.add_error("revisions", "Revisions of this Internet-Draft for which this disclosure is relevant must be specified.")
+        return cleaned_data
+
 patent_number_help_text = "Enter one or more comma-separated patent publication or application numbers as two-letter country code and serial number, e.g.: US62/123456 or WO2017123456. Do not include thousands-separator commas in serial numbers.  It is preferable to use individual disclosures for each patent, even if this field permits multiple patents to be listed, in order to get inventor, title, and date information below correct." 
 validate_patent_number = RegexValidator(
                                     regex=(r"^("
