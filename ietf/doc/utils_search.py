@@ -60,7 +60,7 @@ def fill_in_document_table_attributes(docs, have_telechat_date=False):
     doc_dict = dict((d.pk, d) for d in docs)
     doc_ids = list(doc_dict.keys())
 
-    rfcs = dict((d.pk, d.name) for d in docs if d.type_id='rfc')
+    rfcs = dict((d.pk, d.name) for d in docs if d.type_id == "rfc")
 
     # latest event cache
     event_types = ("published_rfc",

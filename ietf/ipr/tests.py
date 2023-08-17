@@ -15,7 +15,7 @@ from django.utils import timezone
 
 import debug                            # pyflakes:ignore
 
-from ietf.doc.factories import DocumentFactory, WgDraftFactory, WgRfcFactory. RfcFactory
+from ietf.doc.factories import DocumentFactory, WgDraftFactory, WgRfcFactory, RfcFactory
 from ietf.group.factories import RoleFactory
 from ietf.ipr.factories import HolderIprDisclosureFactory, GenericIprDisclosureFactory, IprEventFactory
 from ietf.ipr.mail import (process_response_email, get_reply_to, get_update_submitter_emails,

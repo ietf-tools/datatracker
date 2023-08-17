@@ -38,7 +38,6 @@ from ietf.message.models import Message
 from ietf.message.utils import infer_message
 from ietf.name.models import IprLicenseTypeName
 from ietf.person.models import Person
-from ietf.secr.utils.document import is_draft
 from ietf.utils import log
 from ietf.utils.draft_search import normalize_draftname
 from ietf.utils.mail import send_mail, send_mail_message

@@ -249,7 +249,7 @@ def document_stats(request, stats_type=None):
 
                 bins = defaultdict(set)
 
-                for name, author_count in document_qs.values_list("name").annotate(Count("documentauthor")).values_list("name","documentauthor__count")
+                for name, author_count in document_qs.values_list("name").annotate(Count("documentauthor")).values_list("name","documentauthor__count"):
                     bins[author_count or 0].add(name)
 
                 series_data = []
@@ -265,7 +265,7 @@ def document_stats(request, stats_type=None):
 
                 bins = defaultdict(set)
 
-                for name, pages in document_qs.values_list("name", "pages")):
+                for name, pages in document_qs.values_list("name", "pages"):
                     bins[pages or 0].add(name)
 
                 series_data = []
@@ -284,7 +284,7 @@ def document_stats(request, stats_type=None):
 
                 bins = defaultdict(set)
 
-                for name, words in document_qs.values_list("name", "words")):
+                for name, words in document_qs.values_list("name", "words"):
                     bins[put_into_bin(words, bin_size)].add(canonical_name)
 
                 series_data = []
@@ -354,7 +354,7 @@ def document_stats(request, stats_type=None):
 
                 bins = defaultdict(set)
 
-                for name, formal_language_name in document_qs.values_list("name", "formal_languages__name")):
+                for name, formal_language_name in document_qs.values_list("name", "formal_languages__name"):
                     bins[formal_language_name or ""].add(canonical_name)
 
                 series_data = []
