@@ -110,7 +110,7 @@ class DraftForm(forms.ModelForm):
         revisions = cleaned_data.get("revisions")
         document = cleaned_data.get("document")
         if not document.name.startswith("rfc"):
-            if revisions.strip()=="":
+            if revisions.strip() == "":
                 self.add_error("revisions", "Revisions of this Internet-Draft for which this disclosure is relevant must be specified.")
         return cleaned_data
 

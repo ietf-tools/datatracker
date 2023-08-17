@@ -39,16 +39,16 @@ def draft_rev_at_time(iprdocrel):
     time = event.time
     if not NewRevisionDocEvent.objects.filter(doc=draft).exists():
         return ("","The draft's revision at the time this disclosure was posted could not be determined.")
-    revs_before = NewRevisionDocEvent.objects.filter(doc=draft, time__lte=time).order_by('-time')
-    if not revs_before.exists():
+    rev_event_before = NewRevisionDocEvent.objects.filter(doc=draft, time__lte=time).order_by('-time').first()
+    if rev_event_before is None:
         return ("","The draft's initial submission was after this disclosure was posted.")
-    result = revs_before[0].rev
-    return (result, "")
+    else:
+        return(rev_event_before.rev, "")
 
 @register.filter
 def no_revisions_message(iprdocrel):
     draft = iprdocrel.document.document
-    if draft.type_id != "draft" or iprdocrel.revisions.strip()!="":
+    if draft.type_id != "draft" or iprdocrel.revisions.strip() != "":
         return ""
     rev_at_time, exception = draft_rev_at_time(iprdocrel)
     current_rev = draft.rev
