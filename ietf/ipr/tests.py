@@ -855,4 +855,13 @@ Subject: test
         self.assertEqual(
             no_revisions_message(iprdocrel),
             "No revisions for this Internet-Draft were specified in this disclosure. The Internet-Draft's revision at the time this disclosure was posted could not be determined. Contact the discloser or patent holder if there are questions about which revisions this disclosure pertains to."
-        )       
+        )
+
+        # disclosed draft has only one revision
+        draft = WgDraftFactory(rev="00")
+        iprdocrel = IprDocRelFactory(document=draft.docalias.first(), revisions="")
+        IprEventFactory(type_id="posted",disclosure=iprdocrel.disclosure)
+        self.assertEqual(
+            no_revisions_message(iprdocrel),
+            "No revisions for this Internet-Draft were specified in this disclosure. However, there is only one revision of this Internet-Draft."
+        )
