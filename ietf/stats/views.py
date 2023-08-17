@@ -285,7 +285,7 @@ def document_stats(request, stats_type=None):
                 bins = defaultdict(set)
 
                 for name, words in document_qs.values_list("name", "words"):
-                    bins[put_into_bin(words, bin_size)].add(canonical_name)
+                    bins[put_into_bin(words, bin_size)].add(name)
 
                 series_data = []
                 for (value, words), names in sorted(bins.items(), key=lambda t: t[0][0]):
@@ -309,20 +309,20 @@ def document_stats(request, stats_type=None):
                     submission_types[doc_name] = file_types
 
                 doc_names_with_missing_types = {}
-                for doc_name, rev in document_qs.values_list("name", "rev"):
+                for doc_name, doc_type, rev in document_qs.values_list("name", "type_id" "rev"):
                     types = submission_types.get(doc_name)
                     if types:
                         for dot_ext in types.split(","):
-                            bins[dot_ext.lstrip(".").upper()].add(canonical_name)
+                            bins[dot_ext.lstrip(".").upper()].add(doc_name)
 
                     else:
 
-                        if canonical_name.startswith("rfc"):
-                            filename = canonical_name
+                        if doc_type == "rfc":
+                            filename = doc_name
                         else:
-                            filename = canonical_name + "-" + rev
+                            filename = doc_name + "-" + rev
 
-                        doc_names_with_missing_types[filename] = canonical_name
+                        doc_names_with_missing_types[filename] = doc_name
 
                 # look up the remaining documents on disk
                 for filename in itertools.chain(os.listdir(settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR), os.listdir(settings.RFC_PATH)):
@@ -335,10 +335,10 @@ def document_stats(request, stats_type=None):
                     if not any(ext==allowlisted_ext for allowlisted_ext in settings.DOCUMENT_FORMAT_ALLOWLIST):
                         continue
 
-                    canonical_name = doc_names_with_missing_types.get(basename)
+                    name = doc_names_with_missing_types.get(basename)
 
-                    if canonical_name:
-                        bins[ext.upper()].add(canonical_name)
+                    if name:
+                        bins[ext.upper()].add(name)
 
                 series_data = []
                 for fmt, names in sorted(bins.items(), key=lambda t: t[0]):
@@ -355,7 +355,7 @@ def document_stats(request, stats_type=None):
                 bins = defaultdict(set)
 
                 for name, formal_language_name in document_qs.values_list("name", "formal_languages__name"):
-                    bins[formal_language_name or ""].add(canonical_name)
+                    bins[formal_language_name or ""].add(name)
 
                 series_data = []
                 for formal_language, names in sorted(bins.items(), key=lambda t: t[0]):

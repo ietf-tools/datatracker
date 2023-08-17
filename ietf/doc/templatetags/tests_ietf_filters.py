@@ -8,7 +8,7 @@ from ietf.doc.factories import (
     CharterFactory,
     NewRevisionDocEventFactory,
 )
-from ietf.doc.models import State, DocEvent, Document
+from ietf.doc.models import DocEvent
 from ietf.doc.templatetags.ietf_filters import urlize_ietf_docs, is_valid_url
 from ietf.person.models import Person
 from ietf.utils.test_utils import TestCase

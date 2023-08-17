@@ -33,7 +33,7 @@ def all_id_txt():
 
     rfcs = dict()
     for rfc in Document.objects.filter(type_id="rfc"):
-        draft = next(iter(doc.related_that("became_rfc")), None)
+        draft = next(iter(rfc.related_that("became_rfc")), None)
         rfcs[rfc.name] = draft.name if draft else rfc.name
 
     replacements = dict(RelatedDocument.objects.filter(target__states=State.objects.get(type="draft", slug="repl"),
@@ -116,7 +116,7 @@ def all_id2_txt():
 
     rfcs = dict()
     for rfc in Document.objects.filter(type_id="rfc"):
-        draft = next(iter(doc.related_that("became_rfc")), None)
+        draft = next(iter(rfc.related_that("became_rfc")), None)
         rfcs[rfc.name] = draft.name if draft else rfc.name
 
     replacements = dict(RelatedDocument.objects.filter(target__states=State.objects.get(type="draft", slug="repl"),

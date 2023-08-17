@@ -17,7 +17,7 @@ from django.utils.encoding import smart_bytes, force_str
 
 import debug                            # pyflakes:ignore
 
-from ietf.doc.models import ( Document, DocAlias, State, StateType, DocEvent, DocRelationshipName,
+from ietf.doc.models import ( Document, State, StateType, DocEvent, DocRelationshipName,
     DocTagName, RelatedDocument )
 from ietf.doc.expire import move_draft_files_to_archive
 from ietf.doc.utils import add_state_change_event, prettify_std_name, update_action_holders
