@@ -824,7 +824,7 @@ Subject: test
         IprEventFactory(type_id="posted",time=now,disclosure=iprdocrel.disclosure)
         self.assertEqual(
             no_revisions_message(iprdocrel),
-            "No revisions for this draft were specified in this disclosure. The draft's revision was 02 at the time this disclosure was posted. Contact the discloser or patent holder if there are questions about which revisions this disclosure pertains to."
+            "No revisions for this Internet-Draft were specified in this disclosure. The Internet-Draft's revision was 02 at the time this disclosure was posted. Contact the discloser or patent holder if there are questions about which revisions this disclosure pertains to."
         )
 
         # Disclosure has more than one revision, none called out, disclosure after 01
@@ -834,7 +834,7 @@ Subject: test
         e.save()
         self.assertEqual(
             no_revisions_message(iprdocrel),
-            "No revisions for this draft were specified in this disclosure. The draft's revision was 01 at the time this disclosure was posted. Contact the discloser or patent holder if there are questions about which revisions this disclosure pertains to."
+            "No revisions for this Internet-Draft were specified in this disclosure. The Internet-Draft's revision was 01 at the time this disclosure was posted. Contact the discloser or patent holder if there are questions about which revisions this disclosure pertains to."
         )
 
         # Disclosure has more than one revision, none called out, disclosure was before the 00
@@ -844,7 +844,7 @@ Subject: test
         e.save()
         self.assertEqual(
             no_revisions_message(iprdocrel),
-            "No revisions for this draft were specified in this disclosure. The draft's initial submission was after this disclosure was posted. Contact the discloser or patent holder if there are questions about which revisions this disclosure pertains to."
+            "No revisions for this Internet-Draft were specified in this disclosure. The Internet-Draft's initial submission was after this disclosure was posted. Contact the discloser or patent holder if there are questions about which revisions this disclosure pertains to."
         )
 
         # disclosed draft has no NewRevisionDocEvents
@@ -854,5 +854,5 @@ Subject: test
         IprEventFactory(type_id="posted",disclosure=iprdocrel.disclosure)
         self.assertEqual(
             no_revisions_message(iprdocrel),
-            "No revisions for this draft were specified in this disclosure. The draft's revision at the time this disclosure was posted could not be determined. Contact the discloser or patent holder if there are questions about which revisions this disclosure pertains to."
+            "No revisions for this Internet-Draft were specified in this disclosure. The Internet-Draft's revision at the time this disclosure was posted could not be determined. Contact the discloser or patent holder if there are questions about which revisions this disclosure pertains to."
         )       

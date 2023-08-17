@@ -35,13 +35,13 @@ def draft_rev_at_time(iprdocrel):
     draft = iprdocrel.document.document
     event = iprdocrel.disclosure.get_latest_event_posted()
     if event is None:
-        return ("","The draft's revision at the time this disclosure was posted could not be determined.")
+        return ("","The Internet-Draft's revision at the time this disclosure was posted could not be determined.")
     time = event.time
     if not NewRevisionDocEvent.objects.filter(doc=draft).exists():
-        return ("","The draft's revision at the time this disclosure was posted could not be determined.")
+        return ("","The Internet-Draft's revision at the time this disclosure was posted could not be determined.")
     rev_event_before = NewRevisionDocEvent.objects.filter(doc=draft, time__lte=time).order_by('-time').first()
     if rev_event_before is None:
-        return ("","The draft's initial submission was after this disclosure was posted.")
+        return ("","The Internet-Draft's initial submission was after this disclosure was posted.")
     else:
         return(rev_event_before.rev, "")
 
@@ -53,14 +53,14 @@ def no_revisions_message(iprdocrel):
     rev_at_time, exception = draft_rev_at_time(iprdocrel)
     current_rev = draft.rev
 
-    first_line = "No revisions for this draft were specified in this disclosure."
+    first_line = "No revisions for this Internet-Draft were specified in this disclosure."
     contact_line = "Contact the discloser or patent holder if there are questions about which revisions this disclosure pertains to."
 
     if current_rev == "00":
-        return f"{first_line} However, there is only one revision of this draft."
+        return f"{first_line} However, there is only one revision of this Internet-Draft."
 
     if rev_at_time:
-        return f"{first_line} The draft's revision was {rev_at_time} at the time this disclosure was posted. {contact_line}"
+        return f"{first_line} The Internet-Draft's revision was {rev_at_time} at the time this disclosure was posted. {contact_line}"
     else:
         return f"{first_line} {exception} {contact_line}"
     
