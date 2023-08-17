@@ -99,7 +99,7 @@ You can also open the datatracker project folder and click the **Reopen in conta
 2. Wait for the containers to initialize. Upon completion, you will be dropped into a shell from which you can start the datatracker and execute related commands as usual, for example
 
     ```
-    ietf/manage.py runserver 0.0.0.0:8001
+    ietf/manage.py runserver 8001
     ```
 
     to start the datatracker.
