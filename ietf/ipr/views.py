@@ -709,13 +709,13 @@ def search(request):
             # Search by wg acronym
             # Document list with IPRs
             elif search_type == "group":
-                docs = list(Document.objects.filter(docs__group=q))
+                docs = list(Document.objects.filter(group=q))
                 related = []
                 for doc in docs:
                     doc.product_of_this_wg = True
                     related += related_docs(doc)
                 iprs = iprs_from_docs(list(set(docs+related)),states=states)
-                docs = [ doc for doc in docs if doc.document.ipr() ]
+                docs = [ doc for doc in docs if doc.ipr() ]
                 docs = sorted(docs, key=lambda x: max([ipr.disclosure.time for ipr in x.document.ipr()]), reverse=True)
                 template = "ipr/search_wg_result.html"
                 q = Group.objects.get(id=q).acronym     # make acronym for use in template
@@ -723,12 +723,12 @@ def search(request):
             # Search by rfc and id title
             # Document list with IPRs
             elif search_type == "doctitle":
-                docs = list(Document.objects.filter(docs__title__icontains=q))
+                docs = list(Document.objects.filter(title__icontains=q))
                 related = []
                 for doc in docs:
                     related += related_docs(doc)
                 iprs = iprs_from_docs(list(set(docs+related)),states=states)
-                docs = [ doc for doc in docs if doc.document.ipr() ]
+                docs = [ doc for doc in docs if doc.ipr() ]
                 docs = sorted(docs, key=lambda x: max([ipr.disclosure.time for ipr in x.document.ipr()]), reverse=True)
                 template = "ipr/search_doctitle_result.html"
 

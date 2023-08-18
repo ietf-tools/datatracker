@@ -8,7 +8,7 @@ def forward(apps, schema_editor):
     Document = apps.get_model("doc", "Document")
     RelatedDocument = apps.get_model("doc", "RelatedDocument")
     for rfc_alias in DocAlias.objects.filter(name__startswith="rfc").exclude(
-        docs__type__slug="rfc"
+        type_id="rfc"
     ):
         # Move these over to the RFC
         RelatedDocument.objects.filter(

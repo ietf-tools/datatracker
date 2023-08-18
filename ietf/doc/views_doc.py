@@ -1175,7 +1175,7 @@ def get_diff_revisions(request, name, doc):
         )
     )
 
-    if doc.tyoe_id == "rfc":
+    if doc.type_id == "rfc":
         e = doc.latest_event(type="published_rfc")
         diff_revisions.append((name, "", e.time if e else doc.time, name))
 

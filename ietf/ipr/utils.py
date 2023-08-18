@@ -45,7 +45,7 @@ def related_docs(doc, relationship=('replaces', 'obs')):
 
     results = [doc]
 
-    rels = list(doc.document.all_relations_that_doc(relationship))
+    rels = list(doc.all_relations_that_doc(relationship))
 
     for rel in rels:
         rel.target.related = rel

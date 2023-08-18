@@ -214,13 +214,13 @@ def document_stats(request, stats_type=None):
 
         if any(stats_type == t[0] for t in possible_document_stats_types):
             # filter documents
-            document_filters = Q(docs__type="draft")
+            document_filters = Q(type__in=["draft","rfc"]) # TODO - review lots of "rfc is a draft" assumptions below
 
             rfc_state = State.objects.get(type="draft", slug="rfc")
             if document_type == "rfc":
-                document_filters &= Q(docs__states=rfc_state)
+                document_filters &= Q(states=rfc_state)
             elif document_type == "draft":
-                document_filters &= ~Q(docs__states=rfc_state)
+                document_filters &= ~Q(states=rfc_state)
 
             if from_time:
                 # this is actually faster than joining in the database,
@@ -231,7 +231,7 @@ def document_stats(request, stats_type=None):
                     docevent__type__in=["published_rfc", "new_revision"],
                 ).values_list("pk"))
 
-                document_filters &= Q(docs__in=docs_within_time_constraint)
+                document_filters &= Q(pk__in=docs_within_time_constraint)
 
             document_qs = Document.objects.filter(document_filters)
 

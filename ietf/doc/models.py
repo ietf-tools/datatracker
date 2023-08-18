@@ -939,8 +939,9 @@ class Document(DocumentInfo):
 
     def ipr(self,states=('posted','removed')):
         """Returns the IPR disclosures against this document (as a queryset over IprDocRel)."""
-        from ietf.ipr.models import IprDocRel
-        return IprDocRel.objects.filter(document__docs=self, disclosure__state__in=states)
+        # from ietf.ipr.models import IprDocRel
+        # return IprDocRel.objects.filter(document__docs=self, disclosure__state__in=states) # TODO - clear these comments away
+        return self.iprdocrel_set.filter(disclosure__state__in=states)
 
     def related_ipr(self):
         """Returns the IPR disclosures against this document and those documents this

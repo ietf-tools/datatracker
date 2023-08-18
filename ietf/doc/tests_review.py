@@ -922,7 +922,7 @@ class ReviewTests(TestCase):
             date_today().isoformat(),
         ]
         review_name = "-".join(c for c in name_components if c).lower()
-        Document.objects.create(name=review_name,type_id='review',group=assignment.review_request.team)
+        d = Document.objects.create(name=review_name,type_id='review',group=assignment.review_request.team)
 
         r = self.client.post(url, data={
             "result": ReviewResultName.objects.get(reviewteamsettings_review_results_set__group=assignment.review_request.team, slug="ready").pk,

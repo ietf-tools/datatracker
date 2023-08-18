@@ -111,7 +111,7 @@ admin.site.register(DocHistory, DocHistoryAdmin)
 
 class DocAliasAdmin(admin.ModelAdmin):
     list_display = ['name', 'targets']
-    search_fields = ['name', 'docs__name']
+    search_fields = ['name']
     raw_id_fields = ['docs']
     def targets(self, obj):
         return ', '.join([o.name for o in obj.docs.all()])

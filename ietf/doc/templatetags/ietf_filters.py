@@ -146,7 +146,7 @@ def doc_name(name):
         key = hash(n)
         found = cache.get(key)
         if not found:
-            exact = Document.objects.filter(name=n)
+            exact = Document.objects.filter(name=n).first()
             found = exact.name if exact else "_"
             # TODO review this cache policy (and the need for these entire function)
             cache.set(key, found, timeout=60*60*24)  # cache for one day
@@ -250,14 +250,12 @@ def urlize_ietf_docs(string, autoescape=None):
         string,
         flags=re.IGNORECASE | re.ASCII,
     )
-    debug.show('string')
     string = re.sub(
         r"\b(?<![/\-:=#\"\'])((RFC|BCP|STD|FYI) *\n? *0*(\d+))\b",
         link_other_doc_match,
         string,
         flags=re.IGNORECASE | re.ASCII,
     )
-    debug.show('string')
 
     return mark_safe(string)
 

@@ -254,7 +254,7 @@ def search_for_name(request, name):
 
         startswith = Document.objects.filter(name__istartswith=n)[:2]
         if len(startswith) == 1:
-            return startswith.name
+            return startswith[0].name
 
         contains = Document.objects.filter(name__icontains=n)[:2]
         if len(contains) == 1:
@@ -818,7 +818,7 @@ def index_all_drafts(request): # Should we rename this
         else:
             heading = "%s Internet-Drafts" % state.name
 
-        drafts = Document.objects.filter(docs__type_id="draft", docs__states=state).order_by("name")
+        drafts = Document.objects.filter(type_id="draft", states=state).order_by("name")
 
         names = [
             f'<a href=\"{urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=doc.name))}\">{doc.name}</a>'
@@ -832,9 +832,9 @@ def index_all_drafts(request): # Should we rename this
                       ))
     
     # gather RFCs
-    rfcs = Document.objects.filter(docs__type_id="rfc").order_by('-rfc_number')
+    rfcs = Document.objects.filter(type_id="rfc").order_by('-rfc_number')
     names = [
-        f'<a href=\"{urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=rfc.name))}\">{rfc.name}</a>'
+        f'<a href=\"{urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=rfc.name))}\">{rfc.name.upper()}</a>'
         for rfc in rfcs
     ]
     
