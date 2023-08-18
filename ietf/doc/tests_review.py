@@ -922,7 +922,8 @@ class ReviewTests(TestCase):
             date_today().isoformat(),
         ]
         review_name = "-".join(c for c in name_components if c).lower()
-        d = Document.objects.create(name=review_name,type_id='review',group=assignment.review_request.team)
+
+        ReviewFactory(name=review_name,type_id='review',group=assignment.review_request.team)
 
         r = self.client.post(url, data={
             "result": ReviewResultName.objects.get(reviewteamsettings_review_results_set__group=assignment.review_request.team, slug="ready").pk,
@@ -938,10 +939,9 @@ class ReviewTests(TestCase):
         })
         self.assertEqual(r.status_code, 302)
         r2 = self.client.get(r.url)
-        # FIXME-LARS: this fails when the tests are run with --debug-mode, i.e., DEBUG is set:
-        if not settings.DEBUG:
-            self.assertEqual(len(r2.context['messages']),1)
-            self.assertIn('Attempt to save review failed', list(r2.context['messages'])[0].message)
+        self.assertEqual(r2.status_code, 200)
+        self.assertEqual(len(r2.context['messages']),1)
+        self.assertIn('Attempt to save review failed', list(r2.context['messages'])[0].message)
 
     def test_partially_complete_review(self):
         assignment, url = self.setup_complete_review_test()
