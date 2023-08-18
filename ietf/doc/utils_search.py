@@ -150,7 +150,7 @@ def fill_in_document_table_attributes(docs, have_telechat_date=False):
     rel_rfcs = {
         a.document.id: re.sub(r"rfc(\d+)", r"RFC \1", a.name, flags=re.IGNORECASE)
         for a in Document.objects.filter(
-            type_id="rfc", docs__id__in=[rel.source_id for rel in xed_by]
+            type_id="rfc", id__in=[rel.source_id for rel in xed_by]
         )
     }
     xed_by.sort(

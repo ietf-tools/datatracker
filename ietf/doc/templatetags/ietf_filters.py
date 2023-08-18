@@ -250,12 +250,15 @@ def urlize_ietf_docs(string, autoescape=None):
         string,
         flags=re.IGNORECASE | re.ASCII,
     )
+    debug.show('string')
     string = re.sub(
         r"\b(?<![/\-:=#\"\'])((RFC|BCP|STD|FYI) *\n? *0*(\d+))\b",
         link_other_doc_match,
         string,
         flags=re.IGNORECASE | re.ASCII,
     )
+    debug.show('string')
+
     return mark_safe(string)
 
 

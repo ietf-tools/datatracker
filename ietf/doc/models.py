@@ -949,7 +949,7 @@ class Document(DocumentInfo):
         from ietf.ipr.models import IprDocRel
         iprs = (
             IprDocRel.objects.filter(
-                document__in=list(self)
+                document__in=[self]
                 + self.all_related_that_doc(("obs", "replaces"))
             )
             .filter(disclosure__state__in=("posted", "removed"))
