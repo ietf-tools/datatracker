@@ -41,7 +41,7 @@ class IndexTests(TestCase):
 
         # published
         draft.set_state(State.objects.get(type="draft", slug="rfc"))
-        rfc = RfcFactory(number=1234)
+        rfc = RfcFactory(rfc_number=1234)
         draft.relateddocument_set.create(relationship_id="became_rfc", target=rfc)
 
         txt = all_id_txt()
