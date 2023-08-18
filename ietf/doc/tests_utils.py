@@ -340,16 +340,16 @@ class RebuildReferenceRelationsTests(TestCase):
                               'Test conditions set up incorrectly: wrong prior document relationships')
         for other_doc in [self.normative, self.informative, self.unknown]:
             self.assertEqual(
-                self.doc.relateddocument_set.filter(target__name=other_doc.canonical_name()).count(),
+                self.doc.relateddocument_set.filter(target__name=other_doc.name).count(),
                 0,
                 'Test conditions set up incorrectly: new documents already related',
             )
 
     def _get_refs_return_value(self):
         return {
-            self.normative.canonical_name(): Draft.REF_TYPE_NORMATIVE,
-            self.informative.canonical_name(): Draft.REF_TYPE_INFORMATIVE,
-            self.unknown.canonical_name(): Draft.REF_TYPE_UNKNOWN,
+            self.normative.name: Draft.REF_TYPE_NORMATIVE,
+            self.informative.name: Draft.REF_TYPE_INFORMATIVE,
+            self.unknown.name: Draft.REF_TYPE_UNKNOWN,
             'draft-not-found': Draft.REF_TYPE_NORMATIVE,
         }
 
@@ -388,9 +388,9 @@ class RebuildReferenceRelationsTests(TestCase):
         self.assertCountEqual(
             self.doc.relateddocument_set.values_list('target__name', 'relationship__slug'),
             [
-                (self.normative.canonical_name(), 'refnorm'),
-                (self.informative.canonical_name(), 'refinfo'),
-                (self.unknown.canonical_name(), 'refunk'),
+                (self.normative.name, 'refnorm'),
+                (self.informative.name, 'refinfo'),
+                (self.unknown.name, 'refunk'),
                 (self.updated.name, 'updates'),
             ]
         )
@@ -419,9 +419,9 @@ class RebuildReferenceRelationsTests(TestCase):
         self.assertCountEqual(
             self.doc.relateddocument_set.values_list('target__name', 'relationship__slug'),
             [
-                (self.normative.canonical_name(), 'refnorm'),
-                (self.informative.canonical_name(), 'refinfo'),
-                (self.unknown.canonical_name(), 'refunk'),
+                (self.normative.name, 'refnorm'),
+                (self.informative.name, 'refinfo'),
+                (self.unknown.name, 'refunk'),
                 (self.updated.name, 'updates'),
             ]
         )
@@ -451,9 +451,9 @@ class RebuildReferenceRelationsTests(TestCase):
         self.assertCountEqual(
             self.doc.relateddocument_set.values_list('target__name', 'relationship__slug'),
             [
-                (self.normative.canonical_name(), 'refnorm'),
-                (self.informative.canonical_name(), 'refinfo'),
-                (self.unknown.canonical_name(), 'refunk'),
+                (self.normative.name, 'refnorm'),
+                (self.informative.name, 'refinfo'),
+                (self.unknown.name, 'refunk'),
                 (self.updated.name, 'updates'),
             ]
         )

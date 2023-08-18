@@ -171,7 +171,7 @@ class UploadForm(forms.Form):
         return get_cleaned_text_file_content(self.cleaned_data["txt"])
 
     def save(self, review):
-        filename = os.path.join(settings.CONFLICT_REVIEW_PATH, '%s-%s.txt' % (review.canonical_name(), review.rev))
+        filename = os.path.join(settings.CONFLICT_REVIEW_PATH, '%s-%s.txt' % (review.name, review.rev))
         with io.open(filename, 'w', encoding='utf-8') as destination:
             if self.cleaned_data['txt']:
                 destination.write(self.cleaned_data['txt'])
@@ -185,7 +185,7 @@ def submit(request, name):
 
     login = request.user.person
 
-    path = os.path.join(settings.CONFLICT_REVIEW_PATH, '%s-%s.txt' % (review.canonical_name(), review.rev))
+    path = os.path.join(settings.CONFLICT_REVIEW_PATH, '%s-%s.txt' % (review.name, review.rev))
     not_uploaded_yet = review.rev == "00" and not os.path.exists(path)
 
     if not_uploaded_yet:
@@ -202,7 +202,7 @@ def submit(request, name):
 
                 events = []
                 e = NewRevisionDocEvent(doc=review, by=login, type="new_revision")
-                e.desc = "New version available: <b>%s-%s.txt</b>" % (review.canonical_name(), review.rev)
+                e.desc = "New version available: <b>%s-%s.txt</b>" % (review.name, review.rev)
                 e.rev = review.rev
                 e.save()
                 events.append(e)
@@ -234,7 +234,7 @@ def submit(request, name):
                                                 dict(),
                                               ))
         else:
-            filename = os.path.join(settings.CONFLICT_REVIEW_PATH, '%s-%s.txt' % (review.canonical_name(), review.rev))
+            filename = os.path.join(settings.CONFLICT_REVIEW_PATH, '%s-%s.txt' % (review.name, review.rev))
             try:
                 with io.open(filename, 'r') as f:
                     init["content"] = f.read()
@@ -276,7 +276,7 @@ def edit_ad(request, name):
 
     
     conflictdoc = review.relateddocument_set.get(relationship__slug='conflrev').target
-    titletext = 'the conflict review of %s-%s' % (conflictdoc.canonical_name(),conflictdoc.rev)
+    titletext = 'the conflict review of %s-%s' % (conflictdoc.name,conflictdoc.rev)
     return render(request, 'doc/change_ad.html',
                               {'form': form,
                                'doc': review,

@@ -770,7 +770,7 @@ def dependencies(request, acronym, group_type=None):
     graph = {
         "nodes": [
             {
-                "id": x.canonical_name(),
+                "id": x.name,
                 "rfc": x.get_state("draft").slug == "rfc",
                 "post-wg": not x.get_state("draft-iesg").slug
                 in ["idexists", "watching", "dead"],
@@ -788,8 +788,8 @@ def dependencies(request, acronym, group_type=None):
         ],
         "links": [
             {
-                "source": x.source.canonical_name(),
-                "target": x.target.canonical_name(),
+                "source": x.source.name,
+                "target": x.target.name,
                 "rel": "downref" if x.is_downref() else x.relationship.slug,
             }
             for x in links

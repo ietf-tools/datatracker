@@ -38,7 +38,7 @@
         </thead>
         <tbody>
             {% for ref in refs %}
-                {% with ref.source.canonical_name as name %}
+                {% with ref.source.name as name %}
                     <tr>
                         <td>
                             <a href="{% url 'ietf.doc.views_doc.document_main' name=name %}">{{ name|prettystdname }}</a>

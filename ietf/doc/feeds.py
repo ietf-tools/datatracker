@@ -46,7 +46,7 @@ class DocumentChangesFeed(Feed):
             raise FeedDoesNotExist
         return urlreverse(
             "ietf.doc.views_doc.document_history",
-            kwargs=dict(name=obj.canonical_name()),
+            kwargs=dict(name=obj.name),
         )
 
     def subtitle(self, obj):
@@ -86,7 +86,7 @@ class DocumentChangesFeed(Feed):
         return (
             urlreverse(
                 "ietf.doc.views_doc.document_history",
-                kwargs=dict(name=item.doc.canonical_name()),
+                kwargs=dict(name=item.doc.name),
             )
             + "#history-%s" % item.pk
         )
@@ -208,13 +208,13 @@ class RfcFeed(Feed):
         return [doc for doc, time in results]
 
     def item_title(self, item):
-        return "%s : %s" % (item.canonical_name(), item.title)
+        return "%s : %s" % (item.name, item.title)
 
     def item_description(self, item):
         return item.abstract
 
     def item_link(self, item):
-        return "https://rfc-editor.org/info/%s" % item.canonical_name()
+        return "https://rfc-editor.org/info/%s" % item.name
 
     def item_pubdate(self, item):
         return item.publication_time
@@ -229,7 +229,7 @@ class RfcFeed(Feed):
                 for fmt, media_type in [("txt", "text/plain"), ("html", "text/html")]:
                     media_contents.append(
                         {
-                            "url": f"https://rfc-editor.org/rfc/{item.canonical_name()}.{fmt}",
+                            "url": f"https://rfc-editor.org/rfc/{item.name}.{fmt}",
                             "media_type": media_type,
                             "is_format_of": self.item_link(item),
                         }
@@ -237,7 +237,7 @@ class RfcFeed(Feed):
             if item.rfc_number not in [571, 587]:
                 media_contents.append(
                     {
-                        "url": f"https://www.rfc-editor.org/rfc/pdfrfc/{item.canonical_name()}.txt.pdf",
+                        "url": f"https://www.rfc-editor.org/rfc/pdfrfc/{item.name}.txt.pdf",
                         "media_type": "application/pdf",
                         "is_format_of": self.item_link(item),
                     }
@@ -245,7 +245,7 @@ class RfcFeed(Feed):
         else:
             media_contents.append(
                 {
-                    "url": f"https://www.rfc-editor.org/rfc/{item.canonical_name()}.xml",
+                    "url": f"https://www.rfc-editor.org/rfc/{item.name}.xml",
                     "media_type": "application/rfc+xml",
                 }
             )
@@ -256,16 +256,16 @@ class RfcFeed(Feed):
             ]:
                 media_contents.append(
                     {
-                        "url": f"https://rfc-editor.org/rfc/{item.canonical_name()}.{fmt}",
+                        "url": f"https://rfc-editor.org/rfc/{item.name}.{fmt}",
                         "media_type": media_type,
-                        "is_format_of": f"https://www.rfc-editor.org/rfc/{item.canonical_name()}.xml",
+                        "is_format_of": f"https://www.rfc-editor.org/rfc/{item.name}.xml",
                     }
                 )
         extra.update({"media_contents": media_contents})
 
-        extra.update({"doi": "10.17487/%s" % item.canonical_name().upper()})
+        extra.update({"doi": "10.17487/%s" % item.name.upper()})
         extra.update(
-            {"doiuri": "http://dx.doi.org/10.17487/%s" % item.canonical_name().upper()}
+            {"doiuri": "http://dx.doi.org/10.17487/%s" % item.name.upper()}
         )
 
         # R104 Publisher (Mandatory - but we need a string from them first)

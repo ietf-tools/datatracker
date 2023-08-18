@@ -5,7 +5,7 @@ Subject: {{action}}: {{relateddoc.target.title}} to {{newstatus}}
 
 {% filter wordwrap:78 %}The IESG has approved changing the status of the following document:
 - {{relateddoc.target.title }}
-  ({{relateddoc.target.canonical_name }}) to {{ newstatus }}
+  ({{relateddoc.target.name }}) to {{ newstatus }}
 
 This {{action|lower}} is documented at:
 {{status_change_url}}

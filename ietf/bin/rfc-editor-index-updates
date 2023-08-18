@@ -99,7 +99,7 @@ if newpid == 0:
         pipe("%s -a %s %s" % (settings.RSYNC_BINARY,settings.RFC_TEXT_RSYNC_SOURCE,settings.RFC_PATH))
         for rfc in new_rfcs:
             rebuild_reference_relations(rfc)
-            log("Updated references for %s"%rfc.canonical_name())
+            log("Updated references for %s"%rfc.name)
     except:
         subject = "Exception in updating references for new rfcs: %s : %s" % (sys.exc_info()[0],sys.exc_info()[1])
         msg = "%s\n%s\n----\n%s"%(sys.exc_info()[0],sys.exc_info()[1],traceback.format_tb(sys.exc_info()[2])) 

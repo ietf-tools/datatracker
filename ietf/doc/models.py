@@ -173,7 +173,7 @@ class DocumentInfo(models.Model):
             if self.uploaded_filename:
                 self._cached_base_name = self.uploaded_filename
             elif self.type_id == 'rfc':
-                self._cached_base_name = "%s.txt" % self.canonical_name()  
+                self._cached_base_name = "%s.txt" % self.name  
             elif self.type_id == 'draft':
                 if self.is_dochistory():
                     self._cached_base_name = "%s-%s.txt" % (self.doc.name, self.rev)
@@ -181,7 +181,7 @@ class DocumentInfo(models.Model):
                     self._cached_base_name = "%s-%s.txt" % (self.name, self.rev)
             elif self.type_id in ["slides", "agenda", "minutes", "bluesheets", "procmaterials", ] and self.meeting_related():
                 ext = 'pdf' if self.type_id == 'procmaterials' else 'txt'
-                self._cached_base_name = f'{self.canonical_name()}-{self.rev}.{ext}'
+                self._cached_base_name = f'{self.name}-{self.rev}.{ext}'
             elif self.type_id == 'review':
                 # TODO: This will be wrong if a review is updated on the same day it was created (or updated more than once on the same day)
                 self._cached_base_name = "%s.txt" % self.name
@@ -189,9 +189,9 @@ class DocumentInfo(models.Model):
                 self._cached_base_name = "%s-%s.md" % (self.name, self.rev)
             else:
                 if self.rev:
-                    self._cached_base_name = "%s-%s.txt" % (self.canonical_name(), self.rev)
+                    self._cached_base_name = "%s-%s.txt" % (self.name, self.rev)
                 else:
-                    self._cached_base_name = "%s.txt" % (self.canonical_name(), )
+                    self._cached_base_name = "%s.txt" % (self.name, )
         return self._cached_base_name
 
     def get_file_name(self):
@@ -507,7 +507,7 @@ class DocumentInfo(models.Model):
     def replaces(self):
         return set([ d for r in self.related_that_doc("replaces") for d in r.docs.all() ])
 
-    def replaces_canonical_name(self):
+    def replaces_name(self):
         s = set([ r.document for r in self.related_that_doc("replaces")])
         first = list(s)[0] if s else None
         return None if first is None else first.filename_with_rev()
@@ -540,7 +540,7 @@ class DocumentInfo(models.Model):
         if self.get_state_slug() == "rfc":
             try:
                 html = Path(
-                    os.path.join(settings.RFC_PATH, self.canonical_name() + ".html")
+                    os.path.join(settings.RFC_PATH, self.name + ".html")
                 ).read_text()
             except (IOError, UnicodeDecodeError):
                 return None
@@ -805,7 +805,7 @@ class Document(DocumentInfo):
             name = self.name
             url = None
             if self.type_id == "draft" and self.get_state_slug() == "rfc":
-                name = self.canonical_name()
+                name = self.name
                 url = urlreverse('ietf.doc.views_doc.document_main', kwargs={ 'name': name }, urlconf="ietf.urls")
             elif self.type_id in ('slides','bluesheets','recording'):
                 session = self.session_set.first()
@@ -844,7 +844,7 @@ class Document(DocumentInfo):
         return e
 
     def display_name(self):
-        name = self.canonical_name()
+        name = self.name
         if name.startswith('rfc'):
             name = name.upper()
         return name
@@ -1109,10 +1109,7 @@ class DocHistoryAuthor(DocumentAuthorInfo):
 
 class DocHistory(DocumentInfo):
     doc = ForeignKey(Document, related_name="history_set")
-    # the name here is used to capture the canonical name at the time
-    # - it would perhaps be more elegant to simply call the attribute
-    # canonical_name and replace the function on Document with a
-    # property
+
     name = models.CharField(max_length=255)
 
     def __str__(self):
@@ -1123,11 +1120,6 @@ class DocHistory(DocumentInfo):
 
     def get_related_proceedings_material(self):
         return self.doc.get_related_proceedings_material()
-
-    def canonical_name(self):
-        if hasattr(self, '_canonical_name'):
-            return self._canonical_name
-        return self.name
 
     def latest_event(self, *args, **kwargs):
         kwargs["time__lte"] = self.time

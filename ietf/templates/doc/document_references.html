@@ -4,10 +4,10 @@
 {% block pagehead %}
     <link rel="stylesheet" href="{% static "ietf/css/list.css" %}">
 {% endblock %}
-{% block title %}References from {{ doc.canonical_name }}{% endblock %}
+{% block title %}References from {{ doc.name }}{% endblock %}
 {% block content %}
     {% origin %}
-    <h1>References from {{ doc.canonical_name }}</h1>
+    <h1>References from {{ doc.name }}</h1>
     <p class="my-3 alert alert-info">
         These dependencies are extracted using heuristics looking for strings with particular prefixes. Notably, this means that references to I-Ds by title only are not reflected here. If it's really important, please inspect the documents' references sections directly.
     </p>

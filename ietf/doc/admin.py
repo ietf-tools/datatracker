@@ -45,7 +45,7 @@ class RelatedDocumentInline(admin.TabularInline):
     model = RelatedDocument
     fk_name= 'source'
     def this(self, instance):
-        return instance.source.canonical_name()
+        return instance.source.name
     readonly_fields = ['this', ]
     fields = ['this', 'relationship', 'target', ]
     raw_id_fields = ['target']

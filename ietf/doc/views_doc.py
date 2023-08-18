@@ -796,7 +796,7 @@ def document_main(request, name, rev=None, document_html=False):
                                        ))
 
     elif doc.type_id == "conflrev":
-        filename = "%s-%s.txt" % (doc.canonical_name(), doc.rev)
+        filename = "%s-%s.txt" % (doc.name, doc.rev)
         pathname = os.path.join(settings.CONFLICT_REVIEW_PATH,filename)
 
         if doc.rev == "00" and not os.path.isfile(pathname):
@@ -826,7 +826,7 @@ def document_main(request, name, rev=None, document_html=False):
                                        ))
 
     elif doc.type_id == "statchg":
-        filename = "%s-%s.txt" % (doc.canonical_name(), doc.rev)
+        filename = "%s-%s.txt" % (doc.name, doc.rev)
         pathname = os.path.join(settings.STATUS_CHANGE_PATH,filename)
 
         if doc.rev == "00" and not os.path.isfile(pathname):
@@ -866,7 +866,7 @@ def document_main(request, name, rev=None, document_html=False):
             # we need to remove the extension for the globbing below to work
             basename = os.path.splitext(doc.uploaded_filename)[0]
         else:
-            basename = "%s-%s" % (doc.canonical_name(), doc.rev)
+            basename = "%s-%s" % (doc.name, doc.rev)
 
         pathname = os.path.join(doc.get_file_path(), basename)
 
@@ -1051,7 +1051,7 @@ def document_html(request, name, rev=None):
 
     if not requested_rev and doc.type_id == "rfc": # Someone asked for /doc/html/8989
         if not name.startswith('rfc'):
-            return redirect('ietf.doc.views_doc.document_html', name=doc.canonical_name())
+            return redirect('ietf.doc.views_doc.document_html', name=doc.name)
 
     if rev:
         doc = doc.history_set.filter(rev=rev).first() or doc.fake_history_obj(rev)
@@ -1061,7 +1061,7 @@ def document_html(request, name, rev=None):
 
     return document_main(
         request,
-        name=doc.name if requested_rev else doc.canonical_name(),
+        name=doc.name if requested_rev else doc.name,
         rev=doc.rev if requested_rev or doc.type_id != "rfc" else None,
         document_html=True,
     )
@@ -1461,7 +1461,7 @@ def document_referenced_by(request, name):
        refs=refs[:250]
     else:
        numdocs=None
-    refs=sorted(refs,key=lambda x:(['refnorm','refinfo','refunk','refold'].index(x.relationship.slug),x.source.canonical_name()))
+    refs=sorted(refs,key=lambda x:(['refnorm','refinfo','refunk','refold'].index(x.relationship.slug),x.source.name))
     return render(request, "doc/document_referenced_by.html",
                dict(name=name,
                     doc=doc,
@@ -1768,8 +1768,8 @@ def telechat_date(request, name):
 def doc_titletext(doc):
     if doc.type.slug=='conflrev':
         conflictdoc = doc.relateddocument_set.get(relationship__slug='conflrev').target
-        return 'the conflict review of %s' % conflictdoc.canonical_name()
-    return doc.canonical_name()
+        return 'the conflict review of %s' % conflictdoc.name
+    return doc.name
     
     
 def edit_notify(request, name):
@@ -2008,7 +2008,7 @@ def remind_action_holders(request, name):
         form = ReminderEmailForm(request.POST)
         if form.is_valid():
             email_remind_action_holders(request, doc, form.cleaned_data['note'])
-        return redirect('ietf.doc.views_doc.document_main', name=doc.canonical_name())
+        return redirect('ietf.doc.views_doc.document_main', name=doc.name)
 
     form = ReminderEmailForm()
     return render(

@@ -56,7 +56,7 @@ def save_document_in_history(doc):
     # copy fields
     fields = get_model_fields_as_dict(doc)
     fields["doc"] = doc
-    fields["name"] = doc.canonical_name()
+    fields["name"] = doc.name
 
     dochist = DocHistory(**fields)
     dochist.save()
@@ -978,8 +978,8 @@ def make_rev_history(doc):
     if e:
         url = urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=e.doc))
         history[url] = {
-            'name': e.doc.canonical_name(),
-            'rev': e.doc.canonical_name(),
+            'name': e.doc.name,
+            'rev': e.doc.name,
             'published': e.time.isoformat(),
             'url': url
         }
@@ -1120,12 +1120,12 @@ def generate_idnits2_rfc_status():
     # The explanation for 6312 is from before docalias was removed
     # The workaround is still needed, even if the datatracker
     # state no longer matches what's described here:
-    # Document.get(docalias='rfc6312').rfc_number == 6342 
-    # 6312 was published with the wrong rfc number in it
-    # weird workaround in the datatracker - there are two 
-    # DocAliases starting with rfc - the canonical name code
-    # searches for the lexically highest alias starting with rfc
-    # which is getting lucky.
+    #   Document.get(docalias='rfc6312').rfc_number == 6342 
+    #   6312 was published with the wrong rfc number in it
+    #   weird workaround in the datatracker - there are two 
+    #   DocAliases starting with rfc - the canonical name code
+    #   searches for the lexically highest alias starting with rfc
+    #   which is getting lucky.
     blob[6312 - 1] = 'O'
 
     # RFC200 is an old RFC List by Number

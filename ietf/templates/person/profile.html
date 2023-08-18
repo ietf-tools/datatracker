@@ -111,7 +111,7 @@
                                 {% with doc.referenced_by_rfcs.count as refbycount %}
                                     {% if refbycount %}
                                         <a class="text-end"
-                                           href="{% url 'ietf.doc.views_doc.document_referenced_by' doc.canonical_name %}"
+                                           href="{% url 'ietf.doc.views_doc.document_referenced_by' doc.name %}"
                                            rel="nofollow">
                                             {{ refbycount }} RFC{{ refbycount|pluralize }}
                                         </a>
@@ -132,7 +132,7 @@
             <ul>
                 {% for doc in person.active_drafts %}
                     <li>
-                        <a href="{{ doc.get_absolute_url }}">{{ doc.canonical_name }}</a>
+                        <a href="{{ doc.get_absolute_url }}">{{ doc.name }}</a>
                     </li>
                 {% endfor %}
             </ul>
@@ -148,7 +148,7 @@
                     {% if not doc.replaced_by %}
                         <li>
                             <a href="{{ doc.get_absolute_url }}">
-                                {{ doc.canonical_name }}
+                                {{ doc.name }}
                             </a>
                         </li>
                     {% endif %}

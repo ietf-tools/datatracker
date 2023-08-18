@@ -119,12 +119,6 @@ class RfcFactory(BaseDocumentFactory):
         else:
             obj.set_state(State.objects.get(type_id='rfc',slug='published'))
 
-    @factory.post_generation
-    def reset_canonical_name(obj, create, extracted, **kwargs): 
-        if hasattr(obj, '_canonical_name'):
-            del obj._canonical_name
-        return None
-
 
 class IndividualDraftFactory(BaseDocumentFactory):
 

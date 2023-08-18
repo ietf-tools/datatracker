@@ -27,8 +27,8 @@
                 </th>
                 <td class="edit"></td>
                 <td>
-                    <a href="{% url "ietf.doc.views_doc.document_main" name=conflictdoc.canonical_name %}">
-                        {% if conflictdoc.get_state_slug == 'rfc' %}{{ conflictdoc.canonical_name|prettystdname }}{% else %}{{ conflictdoc.canonical_name }}-{{ conflictdoc.rev }}{% endif %}</a>
+                    <a href="{% url "ietf.doc.views_doc.document_main" name=conflictdoc.name %}">
+                        {% if conflictdoc.get_state_slug == 'rfc' %}{{ conflictdoc.name|prettystdname }}{% else %}{{ conflictdoc.name }}-{{ conflictdoc.rev }}{% endif %}</a>
                     <span class="badge rounded-pill bg-info">{{ conflictdoc.stream }} stream</span>
                     {% if snapshot %}<span class="badge rounded-pill bg-warning">Snapshot</span>{% endif %}
                 </td>

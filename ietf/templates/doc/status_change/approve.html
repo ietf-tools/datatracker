@@ -2,13 +2,13 @@
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
 {% load django_bootstrap5 %}
-{% block title %}Approve {{ doc.canonical_name }}{% endblock %}
+{% block title %}Approve {{ doc.name }}{% endblock %}
 {% block content %}
     {% origin %}
     <h1>
         Approve
         <br>
-        <small class="text-body-secondary">{{ doc.canonical_name }}</small>
+        <small class="text-body-secondary">{{ doc.name }}</small>
     </h1>
     <form class="my-3" method="post">
         {% csrf_token %}

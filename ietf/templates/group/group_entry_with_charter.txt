@@ -42,7 +42,7 @@ Internet-Drafts:
 {% if group.rfcs %}Requests for Comments:
 {% for document in group.rfcs %}  {{ document.name.upper }}: {{ document.title}} ({{ document.pages }} pages){% for r in document.rel %}
            * {{ r.action }} {{ r.target.name|upper }}{% endfor %}{% for r in document.invrel %}
-           * {% if r.relationsship == "obs" %}{{ r.inverse_action|upper }}{% else %}{{ r.action }}{% endif %} {{ r.source.canonical_name|upper }}{% endfor %}
+           * {% if r.relationsship == "obs" %}{{ r.inverse_action|upper }}{% else %}{{ r.action }}{% endif %} {{ r.source.name|upper }}{% endfor %}
 {% endfor %}
 {% else %}No Requests for Comments{% endif %}
 {% endautoescape %}

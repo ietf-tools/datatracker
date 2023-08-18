@@ -249,7 +249,7 @@ def prepare_document_table(request, docs, query=None, max_results=200):
             if rfc_num is not None:
                 res.append(rfc_num)
             else:
-                res.append(d.canonical_name())
+                res.append(d.name)
 
         return res
 
