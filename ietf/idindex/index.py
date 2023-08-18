@@ -110,14 +110,15 @@ def file_types_for_drafts():
 def all_id2_txt():
     # this returns a lot of data so try to be efficient
 
-    drafts = Document.objects.filter(type="draft").exclude(name__startswith="rfc").order_by('name')
+    drafts = Document.objects.filter(type="draft").order_by('name')
     drafts = drafts.select_related('group', 'group__parent', 'ad', 'intended_std_level', 'shepherd', )
     drafts = drafts.prefetch_related("states")
 
     rfcs = dict()
     for rfc in Document.objects.filter(type_id="rfc"):
         draft = next(iter(rfc.related_that("became_rfc")), None)
-        rfcs[rfc.name] = draft.name if draft else rfc.name
+        if draft is not None:
+            rfcs[draft.name] = rfc.name
 
     replacements = dict(RelatedDocument.objects.filter(target__states=State.objects.get(type="draft", slug="repl"),
                                                        relationship="replaces").values_list("target__name", "source__name"))
