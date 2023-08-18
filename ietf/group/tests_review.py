@@ -236,7 +236,8 @@ class ReviewTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         # We should see the new document with status of no response
-        self.assertContains(r, "No Response")
+        print(r.content)
+        self.assertContains(r, "No response")
         self.assertContains(r, review_req1.doc.name)
         self.assertContains(r, review_req2.doc.name)
         # None of the reviews should be completed this time,
