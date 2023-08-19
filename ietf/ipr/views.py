@@ -69,7 +69,7 @@ def get_document_emails(ipr):
     has been posted"""
     messages = []
     for rel in ipr.iprdocrel_set.all():
-        doc = rel.document.document
+        doc = rel.document
 
         if doc.type_id=="draft":
             doc_info = 'Internet-Draft entitled "{}" ({})'.format(doc.title,doc.name)
@@ -716,7 +716,7 @@ def search(request):
                     related += related_docs(doc)
                 iprs = iprs_from_docs(list(set(docs+related)),states=states)
                 docs = [ doc for doc in docs if doc.ipr() ]
-                docs = sorted(docs, key=lambda x: max([ipr.disclosure.time for ipr in x.document.ipr()]), reverse=True)
+                docs = sorted(docs, key=lambda x: max([ipr.disclosure.time for ipr in x.ipr()]), reverse=True)
                 template = "ipr/search_wg_result.html"
                 q = Group.objects.get(id=q).acronym     # make acronym for use in template
 
@@ -729,7 +729,7 @@ def search(request):
                     related += related_docs(doc)
                 iprs = iprs_from_docs(list(set(docs+related)),states=states)
                 docs = [ doc for doc in docs if doc.ipr() ]
-                docs = sorted(docs, key=lambda x: max([ipr.disclosure.time for ipr in x.document.ipr()]), reverse=True)
+                docs = sorted(docs, key=lambda x: max([ipr.disclosure.time for ipr in x.ipr()]), reverse=True)
                 template = "ipr/search_doctitle_result.html"
 
             # Search by title of IPR disclosure

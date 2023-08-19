@@ -40,7 +40,7 @@ def iprs_from_docs(docs,**kwargs):
             iprdocrels += document.ipr(**kwargs)
     return list(set([i.disclosure for i in iprdocrels]))
     
-def related_docs(doc, relationship=('replaces', 'obs')):
+def related_docs(doc, relationship=('replaces', 'obs'), reverse_relationship=("became_rfc",)):
     """Returns list of related documents"""
 
     results = [doc]
@@ -51,6 +51,12 @@ def related_docs(doc, relationship=('replaces', 'obs')):
         rel.target.related = rel
         rel.target.relation = rel.relationship.revname
     results += [x.target for x in rels]
+
+    rev_rels = list(doc.all_relations_that(reverse_relationship))
+    for rel in rev_rels:
+        rel.source.related = rel
+        rel.source.relation = rel.relationship.name
+    results += [x.source for x in rev_rels]
 
     return list(set(results))
 

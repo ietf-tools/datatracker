@@ -720,7 +720,7 @@ Subject: test
             'iprdocrel_set-INITIAL_FORMS' : 0,
             'iprdocrel_set-0-id': '',
             "iprdocrel_set-0-document": disclosure.docs.first().pk,
-            "iprdocrel_set-0-revisions": disclosure.docs.first().document.rev,
+            "iprdocrel_set-0-revisions": disclosure.docs.first().rev,
             'holder_legal_name': disclosure.holder_legal_name,
             'patent_number': patent_dict['Number'],
             'patent_title': patent_dict['Title'],
