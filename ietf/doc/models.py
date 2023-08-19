@@ -1153,25 +1153,6 @@ class DocHistory(DocumentInfo):
         verbose_name = "document history"
         verbose_name_plural = "document histories"
 
-class DocAlias(models.Model):
-    """This is used for documents that may appear under multiple names,
-    and in particular for RFCs, which for continuity still keep the
-    same immutable Document.name, in the tables, but will be referred
-    to by RFC number, primarily, after achieving RFC status.
-    """
-    name = models.CharField(max_length=255, unique=True)
-    docs = models.ManyToManyField(Document, related_name='docalias')
-
-    @property
-    def document(self):
-        return self.docs.first()
-
-    def __str__(self):
-        return u"%s-->%s" % (self.name, ','.join([force_str(d.name) for d in self.docs.all() if isinstance(d, Document) ]))
-    document_link = admin_link("document")
-    class Meta:
-        verbose_name = "document alias"
-        verbose_name_plural = "document aliases"
 
 class DocReminder(models.Model):
     event = ForeignKey('DocEvent')

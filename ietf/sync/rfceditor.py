@@ -441,7 +441,6 @@ def update_docs_from_rfc_index(
         )
         if created_rfc:
             rfc_changes.append(f"created document {prettify_std_name(doc.name)}")
-            # Create DocAlias (for consistency until we drop DocAlias altogether)
             doc.set_state(rfc_published_state)
             if draft:
                 doc.formal_languages.set(draft.formal_languages.all())

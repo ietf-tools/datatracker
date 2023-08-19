@@ -16,7 +16,7 @@ from django.utils import timezone
 import debug                            # pyflakes:ignore
 
 from ietf.doc.factories import WgDraftFactory, RfcFactory
-from ietf.doc.models import Document, DocAlias, DocEvent, DeletedEvent, DocTagName, RelatedDocument, State, StateDocEvent
+from ietf.doc.models import Document, DocEvent, DeletedEvent, DocTagName, RelatedDocument, State, StateDocEvent
 from ietf.doc.utils import add_state_change_event
 from ietf.group.factories import GroupFactory
 from ietf.person.models import Person

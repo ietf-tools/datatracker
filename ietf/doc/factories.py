@@ -12,7 +12,7 @@ from typing import Optional         # pyflakes:ignore
 from django.conf import settings
 from django.utils import timezone
 
-from ietf.doc.models import ( Document, DocEvent, NewRevisionDocEvent, DocAlias, State, DocumentAuthor,
+from ietf.doc.models import ( Document, DocEvent, NewRevisionDocEvent, State, DocumentAuthor,
     StateDocEvent, BallotPositionDocEvent, BallotDocEvent, BallotType, IRSGBallotDocEvent, TelechatDocEvent,
     DocumentActionHolder, BofreqEditorDocEvent, BofreqResponsibleDocEvent, DocExtResource )
 from ietf.group.models import Group
@@ -269,23 +269,6 @@ class ReviewFactory(BaseDocumentFactory):
     type_id = 'review'
     name = factory.LazyAttribute(lambda o: 'review-doesnotexist-00-%s-%s'%(o.group.acronym,date_today().isoformat()))
     group = factory.SubFactory('ietf.group.factories.GroupFactory',type_id='review')
-
-class DocAliasFactory(factory.django.DjangoModelFactory):
-    class Meta:
-        model = DocAlias
-
-    @factory.post_generation
-    def document(self, create, extracted, **kwargs):
-        if create and extracted:
-            self.docs.add(extracted)
-
-    @factory.post_generation
-    def docs(self, create, extracted, **kwargs):
-        if create and extracted:
-            for doc in extracted:
-                if not doc in self.docs.all():
-                    self.docs.add(doc)
-
 
 class DocEventFactory(factory.django.DjangoModelFactory):
     class Meta:
