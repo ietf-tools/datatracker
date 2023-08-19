@@ -229,7 +229,7 @@ def document_stats(request, stats_type=None):
                     type="draft",
                     docevent__time__gte=from_time,
                     docevent__type__in=["published_rfc", "new_revision"],
-                ).values_list("pk"))
+                ).values_list("pk",flat=True))
 
                 document_filters &= Q(pk__in=docs_within_time_constraint)
 
@@ -309,7 +309,7 @@ def document_stats(request, stats_type=None):
                     submission_types[doc_name] = file_types
 
                 doc_names_with_missing_types = {}
-                for doc_name, doc_type, rev in document_qs.values_list("name", "type_id" "rev"):
+                for doc_name, doc_type, rev in document_qs.values_list("name", "type_id", "rev"):
                     types = submission_types.get(doc_name)
                     if types:
                         for dot_ext in types.split(","):
