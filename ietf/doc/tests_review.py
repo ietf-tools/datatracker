@@ -23,7 +23,7 @@ import ietf.review.mailarch
 
 from ietf.doc.factories import ( NewRevisionDocEventFactory, IndividualDraftFactory, WgDraftFactory,
                             WgRfcFactory, ReviewFactory, DocumentFactory)
-from ietf.doc.models import ( Document, DocumentAuthor, RelatedDocument, DocEvent, ReviewRequestDocEvent,
+from ietf.doc.models import ( DocumentAuthor, RelatedDocument, DocEvent, ReviewRequestDocEvent,
                             ReviewAssignmentDocEvent, )
 from ietf.group.factories import RoleFactory, ReviewTeamFactory
 from ietf.group.models import Group
