@@ -182,7 +182,7 @@ def docs_tracked_by_community_list(clist):
     doc_ids = set()
     for doc in clist.added_docs.all():
         doc_ids.add(doc.pk)
-        doc_ids.update(alias.docs.first().pk for alias in doc.related_that_doc("became_rfc"))
+        doc_ids.update(rfc.pk for rfc in doc.related_that_doc("became_rfc"))
 
     for rule in clist.searchrule_set.all():
         doc_ids = doc_ids | set(docs_matching_community_list_rule(rule).values_list("pk", flat=True))
