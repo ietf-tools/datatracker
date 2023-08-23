@@ -170,7 +170,7 @@ def agendas_to_import():
 
 
 class Command(BaseCommand):
-    help = "Performs a one-time import of older IAB minutes, creating Meetings to attach them to"
+    help = "Performs a one-time import of older IAB agendas"
 
     def handle(self, *args, **options):
         if Document.objects.filter(name="agenda-interim-2018-iab-26-20180905").exists():
