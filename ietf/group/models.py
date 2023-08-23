@@ -17,12 +17,14 @@ from django.utils import timezone
 import debug                            # pyflakes:ignore
 
 from ietf.name.models import (GroupStateName, GroupTypeName, DocTagName, GroupMilestoneStateName, RoleName,
-                              AgendaTypeName, AgendaFilterTypeName, ExtResourceName, SessionPurposeName)
+                              AgendaTypeName, AgendaFilterTypeName, ExtResourceName, SessionPurposeName,
+                              AppealArtifactTypeName )
 from ietf.person.models import Email, Person
 from ietf.utils.db import IETFJSONField
 from ietf.utils.mail import formataddr, send_mail_text
 from ietf.utils import log
 from ietf.utils.models import ForeignKey, OneToOneField
+from ietf.utils.timezone import date_today
 from ietf.utils.validators import JSONForeignKeyListValidator
 
 
@@ -409,6 +411,22 @@ class RoleHistory(models.Model):
     class Meta:
         verbose_name_plural = "role histories"
 
+class Appeal(models.Model):
+    name = models.CharField(max_length=512)
+
+    def date(self):
+        return self.appealartifact_set.aggregate(models.Min("date"))
+
+class AppealArtifact(models.Model):
+    artifact_type = ForeignKey(AppealArtifactTypeName)
+    date = models.DateField(default=date_today)
+    title = models.CharField(max_length=256)
+    order = models.IntegerField(default=0)
+    content_type = models.CharField(max_length=32)
+    # "Abusing" BinaryField (see the django docs) for the small number of
+    # these things we have on purpose. Later, any non-markdown content may
+    # move off into statics instead.
+    bits = models.BinaryField()
 
 # --- Signal hooks for group models ---
 

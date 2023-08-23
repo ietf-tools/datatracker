@@ -151,3 +151,6 @@ class SlideSubmissionStatusName(NameModel):
     "Pending, Accepted, Rejected"
 class TelechatAgendaSectionName(NameModel):
     "roll_call", "minutes", "action_items"
+
+class AppealArtifactTypeName(NameModel):
+    pass
