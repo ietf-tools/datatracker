@@ -14,21 +14,6 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.CreateModel(
-            name="Appeal",
-            fields=[
-                (
-                    "id",
-                    models.AutoField(
-                        auto_created=True,
-                        primary_key=True,
-                        serialize=False,
-                        verbose_name="ID",
-                    ),
-                ),
-                ("name", models.CharField(max_length=512)),
-            ],
-        ),
-        migrations.CreateModel(
             name="AppealArtifact",
             fields=[
                 (
@@ -50,6 +35,27 @@ class Migration(migrations.Migration):
                     ietf.utils.models.ForeignKey(
                         on_delete=django.db.models.deletion.CASCADE,
                         to="name.appealartifacttypename",
+                    ),
+                ),
+            ],
+        ),
+        migrations.CreateModel(
+            name="Appeal",
+            fields=[
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("name", models.CharField(max_length=512)),
+                (
+                    "group",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.PROTECT, to="group.group"
                     ),
                 ),
             ],

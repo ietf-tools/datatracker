@@ -413,6 +413,7 @@ class RoleHistory(models.Model):
 
 class Appeal(models.Model):
     name = models.CharField(max_length=512)
+    group = models.ForeignKey(Group, on_delete=models.PROTECT)
 
     def date(self):
         return self.appealartifact_set.aggregate(models.Min("date"))
