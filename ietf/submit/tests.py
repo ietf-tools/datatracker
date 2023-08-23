@@ -125,7 +125,7 @@ def submission_file_contents(name_in_doc, group, templatename, author=None, emai
     if author is None:
         author = PersonFactory()
     if email is None:
-        email = author.email().address.lower() if author.email() else None
+        email = author.email().address if author.email() else None
     if title is None:
         title = "Test Document"
     if year is None:
@@ -204,7 +204,7 @@ class SubmitTests(BaseSubmitTestCase):
         # Submit views assume there is a "next" IETF to look for cutoff dates against
         MeetingFactory(type_id='ietf', date=date_today()+datetime.timedelta(days=180))
 
-    def create_and_post_submission(self, name, rev, author, group=None, formats=("txt",), base_filename=None, ascii=True):
+    def create_and_post_submission(self, name, rev, author, email=None, group=None, formats=("txt",), base_filename=None, ascii=True):
         """Helper to create and post a submission
 
         If base_filename is None, defaults to 'test_submission'.
@@ -214,7 +214,7 @@ class SubmitTests(BaseSubmitTestCase):
 
         for format in formats:
             fn = '.'.join((base_filename or 'test_submission', format))
-            files[format], __ = submission_file(f'{name}-{rev}', f'{name}-{rev}.{format}', group, fn, author=author, ascii=ascii)
+            files[format], __ = submission_file(f'{name}-{rev}', f'{name}-{rev}.{format}', group, fn, author=author, email=email, ascii=ascii)
 
         r = self.post_to_upload_submission(url, files)
         if r.status_code == 302:
@@ -237,7 +237,7 @@ class SubmitTests(BaseSubmitTestCase):
                     self.assertTrue(os.path.exists(os.path.join(self.staging_dir, "%s-%s.%s" % (name, rev, 'html'))))
         return r
 
-    def do_submission(self, name, rev, group=None, formats: Tuple[str, ...]=("txt",), author=None, base_filename=None, ascii=True):
+    def do_submission(self, name, rev, group=None, formats: Tuple[str, ...]=("txt",), author=None, email=None, base_filename=None, ascii=True):
         """Simulate uploading a draft and waiting for validation results
         
         Returns the "full access" status URL and the author associated with the submitted draft.
@@ -273,7 +273,7 @@ class SubmitTests(BaseSubmitTestCase):
         if ascii:
             self.assertEqual(a["name"], author.ascii_name())
         if author.email():
-            self.assertEqual(a["email"], author.email().address.lower())
+            self.assertEqual(a["email"].lower(), author.email().address.lower())
         self.assertEqual(a["affiliation"], "Test Centre Inc.")
         self.assertEqual(a["country"], "UK")
 
@@ -331,7 +331,7 @@ class SubmitTests(BaseSubmitTestCase):
         self.assertTrue(os.path.exists(ref_rev_file_name))
 
 
-    def submit_new_wg(self, formats):
+    def submit_new_wg(self, formats, author=None, email=None):
         # submit new -> supply submitter info -> approve
         GroupFactory(type_id='wg',acronym='ames')
         mars = GroupFactory(type_id='wg', acronym='mars')
@@ -365,12 +365,12 @@ class SubmitTests(BaseSubmitTestCase):
         rev = "00"
         group = "mars"
 
-        status_url, author = self.do_submission(name, rev, group, formats)
+        status_url, author = self.do_submission(name, rev, group, formats, author, email)
 
         # supply submitter info, then draft should be in and ready for approval
         mailbox_before = len(outbox)
         replaced_alias = draft.docalias.first()
-        r = self.supply_extra_metadata(name, status_url, author.ascii, author.email().address.lower(),
+        r = self.supply_extra_metadata(name, status_url, author.ascii, author.email().address,
                                        replaces=[str(replaced_alias.pk), str(sug_replaced_alias.pk)])
 
         self.assertEqual(r.status_code, 302)
@@ -460,6 +460,20 @@ class SubmitTests(BaseSubmitTestCase):
     def test_submit_new_wg_txt_xml(self):
         self.submit_new_wg(["txt", "xml"])
 
+    def test_submit_new_wg_case_lower_upper(self):
+        author = PersonFactory()
+        email = EmailFactory(person=author, primary=True)
+        email.address = email.address.lower()
+        email.save()
+        self.submit_new_wg(["txt"], author=author, email=email.address.upper())
+
+    def test_submit_new_wg_case_upper_lower(self):
+        author = PersonFactory()
+        email = EmailFactory(person=author, primary=True)
+        email.address = email.address.upper()
+        email.save()
+        self.submit_new_wg(["txt"], author=author, email=email.address.lower())
+
     def test_submit_new_wg_as_author(self):
         """A new WG submission by a logged-in author needs chair approval"""
         # submit new -> supply submitter info -> approve
@@ -477,7 +491,7 @@ class SubmitTests(BaseSubmitTestCase):
         # supply submitter info, then draft should be in and ready for approval
         mailbox_before = len(outbox)
         self.client.login(username=username, password=username+'+password')  # log in as the author
-        r = self.supply_extra_metadata(name, status_url, author.ascii, author.email().address.lower(), replaces=[])
+        r = self.supply_extra_metadata(name, status_url, author.ascii, author.email().address, replaces=[])
         self.assertEqual(r.status_code, 302)
         status_url = r["Location"]
 
@@ -541,7 +555,7 @@ class SubmitTests(BaseSubmitTestCase):
     def test_submit_new_wg_with_extresources(self):
         self.submit_new_draft_with_extresources(group=GroupFactory())
 
-    def submit_existing(self, formats, change_authors=True, group_type='wg', stream_type='ietf'):
+    def submit_existing(self, formats, author=None, email=None, change_authors=True, group_type='wg', stream_type='ietf'):
         # submit new revision of existing -> supply submitter info -> prev authors confirm
 
         def _assert_authors_are_action_holders(draft, expect=True):
@@ -806,6 +820,20 @@ class SubmitTests(BaseSubmitTestCase):
     def test_submit_existing_iab(self):
         self.submit_existing(["txt"],stream_type='iab', group_type='individ')
 
+    def test_submit_existing_case_lower_upper(self):
+        author = PersonFactory()
+        email = EmailFactory(person=author, primary=True)
+        email.address = email.address.lower()
+        email.save()
+        self.submit_existing(["txt"], author=author, email=email.address.upper())
+
+    def test_submit_existing_case_upper_lower(self):
+        author = PersonFactory()
+        email = EmailFactory(person=author, primary=True)
+        email.address = email.address.upper()
+        email.save()
+        self.submit_existing(["txt"], author=author, email=email.address.lower())
+
     def do_submit_existing_concluded_wg_test(self, group_state_id='conclude', submit_as_author=False):
         """A revision to an existing WG draft should go to AD for approval if WG is not active"""
         ad = Person.objects.get(user__username='ad')
@@ -896,7 +924,7 @@ class SubmitTests(BaseSubmitTestCase):
         self.assertTrue("Confirm submission" in confirm_email["Subject"])
         self.assertTrue(name in confirm_email["Subject"])
         # both submitter and author get email
-        self.assertTrue(author.email().address.lower() in confirm_email["To"])
+        self.assertTrue(author.email().address.lower() in confirm_email["To"].lower())
         self.assertTrue("submitter@example.com" in confirm_email["To"])
         self.assertFalse("chairs have been copied" in str(confirm_email))
 
@@ -1083,7 +1111,7 @@ class SubmitTests(BaseSubmitTestCase):
         notification_email = outbox[-1]
         self.assertIn(name, notification_email["Subject"])
         self.assertIn("New Version Notification", notification_email["Subject"])
-        self.assertIn(author.email().address.lower(), notification_email["To"])
+        self.assertIn(author.email().address.lower(), notification_email["To"].lower())
 
         draft = Document.objects.get(docalias__name=name)
         self.assertEqual(draft.rev, rev)
@@ -3546,6 +3574,26 @@ class AsyncSubmissionTests(BaseSubmitTestCase):
         stale_submission = Submission.objects.get(pk=stale_submission.pk)
         self.assertEqual(stale_submission.state_id, 'cancel')
         self.assertEqual(stale_submission.submissionevent_set.count(), 2)
+
+    def test_process_and_accept_uploaded_submission_case(self):
+        """process_and_accept_uploaded_submission should be case-insensitive"""
+        xml, author = submission_file('draft-somebody-test-00', 'draft-somebody-test-00.xml', None, 'test_submission.xml')
+        xml_data = xml.read()
+        xml.close()
+
+        submission = SubmissionFactory(
+            name='draft-somebody-test',
+            rev='00',
+            file_types='.xml',
+            submitter=author.formatted_email().upper(),
+            state_id='validating',
+        )
+        xml_path = Path(settings.IDSUBMIT_STAGING_PATH) / 'draft-somebody-test-00.xml'
+        with xml_path.open('w') as f:
+            f.write(xml_data)
+        process_and_accept_uploaded_submission(submission)
+        submission = Submission.objects.get(pk=submission.pk)  # refresh
+        self.assertEqual(submission.state_id, 'auth')
 
 
 class ApiSubmitTests(BaseSubmitTestCase):
