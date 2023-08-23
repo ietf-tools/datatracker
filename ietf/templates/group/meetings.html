@@ -135,6 +135,10 @@
                         </td>
                         <td>
                             {% if not s.canceled %}
+                                <a class="btn btn-sm {% if not s.agenda %}btn-secondary disabled{% else %}btn-primary{% endif %}"
+                                {% if s.agenda %}href="{{ s.agenda.get_absolute_url }}"{% endif %}>
+                                    Agenda
+                                </a>
                                 <a class="btn btn-sm {% if not s.minutes %}btn-secondary disabled{% else %}btn-primary{% endif %}"
                                 {% if s.minutes %}href="{{ s.minutes.get_absolute_url }}"{% endif %}>
                                     Minutes
