@@ -78,14 +78,20 @@ class RfcToBeFactory(factory.django.DjangoModelFactory):
 
     draft = factory.SubFactory("ietf.doc.factories.WgDraftFactory")
     rfc_number = factory.Sequence(lambda n: n + 1000)
-    submitted_format = factory.SubFactory("ietf.name.factories.SourceFormatNameFactory", slug="xml-v3")
-    submitted_std_level = factory.SubFactory("ietf.name.factories.StdLevelNameFactory", slug="ps")
-    submitted_boilerplate = factory.SubFactory("ietf.name.factories.TlpBoilerplateChoiceNameFactory",slug="trust200902")
-    submitted_stream = factory.SubFactory("ietf.name.factories.StreamNameFactory",slug="ietf")
-    intended_std_level = factory.LazyAttribute(lambda o: o.submitted_std_level)
-    intended_boilerplate = factory.LazyAttribute(
-        lambda o: o.submitted_boilerplate
+    submitted_format = factory.SubFactory(
+        "ietf.name.factories.SourceFormatNameFactory", slug="xml-v3"
     )
+    submitted_std_level = factory.SubFactory(
+        "ietf.name.factories.StdLevelNameFactory", slug="ps"
+    )
+    submitted_boilerplate = factory.SubFactory(
+        "ietf.name.factories.TlpBoilerplateChoiceNameFactory", slug="trust200902"
+    )
+    submitted_stream = factory.SubFactory(
+        "ietf.name.factories.StreamNameFactory", slug="ietf"
+    )
+    intended_std_level = factory.LazyAttribute(lambda o: o.submitted_std_level)
+    intended_boilerplate = factory.LazyAttribute(lambda o: o.submitted_boilerplate)
     intended_stream = factory.LazyAttribute(lambda o: o.submitted_stream)
 
 

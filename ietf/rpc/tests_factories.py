@@ -18,6 +18,7 @@ from ietf.rpc.factories import (
 
 from ietf.utils.test_utils import TestCase
 
+
 class BasicRpcFactoryTests(TestCase):
     def test_default_factories_dont_crash(self):
         RpcPersonFactory()
@@ -32,6 +33,7 @@ class BasicRpcFactoryTests(TestCase):
         AssignmentFactory()
         RfcAuthorFactory()
         FinalApprovalFactory()
+
 
 class RpcPersonFactoryTests(TestCase):
     def test_bare(self):
