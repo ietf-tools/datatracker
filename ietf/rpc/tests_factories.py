@@ -49,3 +49,17 @@ class RpcPersonFactoryTests(TestCase):
         roles = RpcRoleFactory.create_batch(3)
         p = RpcPersonFactory(can_hold_role=roles)
         self.assertCountEqual(p.can_hold_role.all(), roles)
+
+
+class UnusableRfcNumberFactoryTests(TestCase):
+    def test_get_next_number(self):
+        UnusableRfcNumberFactory(number=5000000)
+        r = UnusableRfcNumberFactory()
+        self.assertEqual(r.number, 5000001)
+
+
+class ClusterFactoryTests(TestCase):
+    def test_get_next_number(self):
+        ClusterFactory(number=237)
+        c = ClusterFactory()
+        self.assertEqual(c.number, 238)
