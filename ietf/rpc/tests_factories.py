@@ -2,11 +2,37 @@
 # -*- coding: utf-8 -*-
 
 from ietf.rpc.factories import (
+    ActionHolderFactory,
+    AprilFirstRfcToBeFactory,
+    AssignmentFactory,
+    CapabilityFactory,
+    ClusterFactory,
+    FinalApprovalFactory,
+    RfcAuthorFactory,
     RpcPersonFactory,
     RpcRoleFactory,
+    RfcToBeFactory,
+    RpcAuthorCommentFactory,
+    UnusableRfcNumberFactory,
 )
 
 from ietf.utils.test_utils import TestCase
+
+
+class BasicRpcFactoryTests(TestCase):
+    def test_default_factories_dont_crash(self):
+        RpcPersonFactory()
+        RpcRoleFactory()
+        CapabilityFactory()
+        RfcToBeFactory()
+        AprilFirstRfcToBeFactory()
+        ActionHolderFactory()
+        RpcAuthorCommentFactory()
+        ClusterFactory()
+        UnusableRfcNumberFactory()
+        AssignmentFactory()
+        RfcAuthorFactory()
+        FinalApprovalFactory()
 
 
 class RpcPersonFactoryTests(TestCase):
@@ -23,3 +49,17 @@ class RpcPersonFactoryTests(TestCase):
         roles = RpcRoleFactory.create_batch(3)
         p = RpcPersonFactory(can_hold_role=roles)
         self.assertCountEqual(p.can_hold_role.all(), roles)
+
+
+class UnusableRfcNumberFactoryTests(TestCase):
+    def test_get_next_number(self):
+        UnusableRfcNumberFactory(number=5000000)
+        r = UnusableRfcNumberFactory()
+        self.assertEqual(r.number, 5000001)
+
+
+class ClusterFactoryTests(TestCase):
+    def test_get_next_number(self):
+        ClusterFactory(number=237)
+        c = ClusterFactory()
+        self.assertEqual(c.number, 238)
