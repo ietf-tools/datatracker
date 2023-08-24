@@ -17,7 +17,7 @@ def reverse(apps, schema_editor):
     RpcRole = apps.get_model("rpc", "RpcRole")
     RpcRole.objects.filter(
         slug__in=["formatting", "pe", "re", "finrev", "pub", "manager"]
-    )
+    ).delete()
 
 
 class Migration(migrations.Migration):
