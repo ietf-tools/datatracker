@@ -4,9 +4,13 @@
 
 import factory
 
+from ietf.doc.factories import WgDraftFactory
+from ietf.name.models import SourceFormatName, StdLevelName, StreamName, TlpBoilerplateChoiceName
+
 from .models import (
     ActionHolder,
     Capability,
+    RfcToBe,
     RpcAuthorComment,
     RpcPerson,
     RpcRole,
@@ -62,6 +66,26 @@ class CapabilityFactory(factory.django.DjangoModelFactory):
     slug = factory.Faker("word")
     name = factory.Faker("sentence")
     desc = factory.Faker("sentence")
+
+
+class RfcToBeFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = RfcToBe
+
+    draft = factory.SubFactory(WgDraftFactory)
+    rfc_number = factory.Sequence(lambda n: n + 1000)
+    submitted_format = SourceFormatName.objects.get(slug="xml-v3")
+    submitted_std_level = StdLevelName.objects.get(slug="ps")
+    submitted_boilerplate = TlpBoilerplateChoiceName.objects.get(slug="trust200902")
+    submitted_stream = StreamName.objects.get(slug="ietf")
+    intended_std_level = factory.LazyAttribute(lambda o: o.submitted_std_level)
+    intended_boilerplate = factory.LazyAttribute(lambda o: o.submitted_boilerplate)
+    intended_stream = factory.LazyAttribute(lambda o: o.submitted_stream)
+
+
+class AprilFirstRfcToBeFactory(RfcToBeFactory):
+    is_april_first_rfc = True
+    draft = None
 
 
 class ActionHolderFactory(factory.django.DjangoModelFactory):
