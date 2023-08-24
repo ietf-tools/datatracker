@@ -4,9 +4,6 @@
 
 import factory
 
-from ietf.doc.factories import WgDraftFactory
-from ietf.name.models import SourceFormatName, StdLevelName, StreamName, TlpBoilerplateChoiceName
-
 from .models import (
     ActionHolder,
     Capability,
@@ -72,15 +69,15 @@ class RfcToBeFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = RfcToBe
 
-    draft = factory.SubFactory(WgDraftFactory)
+    draft = factory.SubFactory("ietf.doc.factories.WgDraftFactory")
     rfc_number = factory.Sequence(lambda n: n + 1000)
-    submitted_format = SourceFormatName.objects.get(slug="xml-v3")
-    submitted_std_level = StdLevelName.objects.get(slug="ps")
-    submitted_boilerplate = TlpBoilerplateChoiceName.objects.get(slug="trust200902")
-    submitted_stream = StreamName.objects.get(slug="ietf")
-    intended_std_level = factory.LazyAttribute(lambda o: o.submitted_std_level)
-    intended_boilerplate = factory.LazyAttribute(lambda o: o.submitted_boilerplate)
-    intended_stream = factory.LazyAttribute(lambda o: o.submitted_stream)
+    submitted_format_id = "xml-v3"
+    submitted_std_level_id = "ps"
+    submitted_boilerplate_id = "trust200902"
+    submitted_stream_id = "ietf"
+    intended_std_level_id = factory.LazyAttribute(lambda o: o.submitted_std_level_id)
+    intended_boilerplate_id = factory.LazyAttribute(lambda o: o.submitted_boilerplate_id)
+    intended_stream_id = factory.LazyAttribute(lambda o: o.submitted_stream_id)
 
 
 class AprilFirstRfcToBeFactory(RfcToBeFactory):
