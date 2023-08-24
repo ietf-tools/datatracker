@@ -93,6 +93,10 @@ $color-mode-type: data;
     display: none;
 }
 
+.sidebar-toolbar {
+    z-index: 1;
+}
+
 // Toggle classes for dark/light modes
 [data-bs-theme="dark"] {
     .d-dm-none {
