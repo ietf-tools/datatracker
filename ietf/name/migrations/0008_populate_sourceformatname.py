@@ -5,10 +5,18 @@ from django.db import migrations
 
 def forward(apps, schema_editor):
     SourceFormatName = apps.get_model("name", "SourceFormatName")
-    SourceFormatName.objects.create(slug="xml-v3", name="RFCXML v3", used=True)
-    SourceFormatName.objects.create(slug="xml-v2", name="RFCXML v2", used=True)
-    SourceFormatName.objects.create(slug="md", name="Markdown", used=True)
-    SourceFormatName.objects.create(slug="txt", name="plaintext", used=True)
+    SourceFormatName.objects.create(
+        slug="xml-v3", name="RFCXML v3", desc="RFCXML v3", used=True,
+    )
+    SourceFormatName.objects.create(
+        slug="xml-v2", name="RFCXML v2", desc="RFCXML v2", used=True
+    )
+    SourceFormatName.objects.create(
+        slug="md", name="Markdown", desc="Markdown", used=True
+    )
+    SourceFormatName.objects.create(
+        slug="txt", name="plaintext", desc="plaintext", used=True
+    )
 
 
 def reverse(apps, schema_editor):
