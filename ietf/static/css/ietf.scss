@@ -12,8 +12,28 @@ $popover-max-width: 100%;
 
 // Override default fonts
 
-$font-family-sans-serif: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", "Liberation Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
-$font-family-monospace: "Noto Sans Mono", SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+$font-family-sans-serif: "Inter",
+system-ui,
+-apple-system,
+"Segoe UI",
+Roboto,
+"Helvetica Neue",
+"Noto Sans",
+"Liberation Sans",
+Arial,
+sans-serif,
+"Apple Color Emoji",
+"Segoe UI Emoji",
+"Segoe UI Symbol",
+"Noto Color Emoji";
+$font-family-monospace: "Noto Sans Mono",
+SFMono-Regular,
+Menlo,
+Monaco,
+Consolas,
+"Liberation Mono",
+"Courier New",
+monospace;
 
 // Enable color modes
 $color-mode-type: data;
@@ -506,29 +526,57 @@ td.position-empty {
     border: none !important;
 }
 
-tr.position-moretime-row,
-tr.position-notready-row,
-tr.position-discuss-row,
-tr.position-block-row {
-    background-color: tint-color($color-discuss, 85%);
+[data-bs-theme="light"] {
+
+    tr.position-moretime-row,
+    tr.position-notready-row,
+    tr.position-discuss-row,
+    tr.position-block-row {
+        background-color: tint-color($color-discuss, 85%);
+    }
+
+    tr.position-yes-row {
+        background-color: tint-color($color-yes, 75%);
+    }
+
+    tr.position-noobj-row {
+        background-color: tint-color($color-noobj, 50%);
+    }
+
+    tr.position-abstain-row {
+        background-color: tint-color($color-abstain, 85%);
+    }
+
+    tr.position-recuse-row {
+        background-color: tint-color($color-recuse, 85%);
+    }
 }
 
-tr.position-yes-row {
-    background-color: tint-color($color-yes, 75%);
-}
+[data-bs-theme="dark"] {
 
-tr.position-noobj-row {
-    background-color: tint-color($color-noobj, 50%);
-}
+    tr.position-moretime-row,
+    tr.position-notready-row,
+    tr.position-discuss-row,
+    tr.position-block-row {
+        background-color: shade-color($color-discuss, 85%);
+    }
 
-tr.position-abstain-row {
-    background-color: tint-color($color-abstain, 85%);
-}
+    tr.position-yes-row {
+        background-color: shade-color($color-yes, 75%);
+    }
 
-tr.position-recuse-row {
-    background-color: tint-color($color-recuse, 85%);
-}
+    tr.position-noobj-row {
+        background-color: shade-color($color-noobj, 75%);
+    }
 
+    tr.position-abstain-row {
+        background-color: shade-color($color-abstain, 85%);
+    }
+
+    tr.position-recuse-row {
+        background-color: shade-color($color-recuse, 85%);
+    }
+}
 
 /* === Edit Meeting Schedule ====================================== */
 

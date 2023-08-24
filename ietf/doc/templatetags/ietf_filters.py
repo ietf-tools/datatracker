@@ -856,6 +856,7 @@ def badgeify(blob):
         (r"has issues", "warning", "exclamation-lg"),
         (r"assigned", "info", "person-plus-fill"),
         (r"will not review|overtaken by events|withdrawn", "secondary", "dash-lg"),
+        (r"no response", "warning", "question-lg"),
     ]
     text = str(blob)
 
@@ -868,7 +869,7 @@ def badgeify(blob):
 
             return mark_safe(
                 f"""
-                <span class="badge rounded-pill text-bg-{color}">
+                <span class="badge rounded-pill text-bg-{color} text-wrap">
                     <i class="bi bi-{icon}"></i> {text.capitalize()}
                 </span>
                 """
