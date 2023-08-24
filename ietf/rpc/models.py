@@ -1,5 +1,8 @@
 # Copyright The IETF Trust 2023, All Rights Reserved
 # -*- coding: utf-8 -*-
+
+import datetime
+
 from django.db import models
 from django.utils import timezone
 
@@ -78,7 +81,7 @@ class Cluster(models.Model):
     number = models.PositiveIntegerField(unique=True)
 
 
-class UnusableRfcNumber:
+class UnusableRfcNumber(models.Model):
     number = models.PositiveIntegerField(primary_key=True)
     comment = models.TextField(blank=True)
 
@@ -104,7 +107,7 @@ class Assignment(models.Model):
     state = models.CharField(
         max_length=32, choices=ASSIGNMENT_STATE_CHOICES, default="assigned"
     )
-    time_spent = models.DurationField()  # tbd
+    time_spent = models.DurationField(default=datetime.timedelta(0))  # tbd
     # TBD - should Assingment capture RpcRole? Should it have a comment?
 
 

@@ -4,13 +4,20 @@
 
 import factory
 
+from django.db.models import Max
+
 from .models import (
     ActionHolder,
+    Assignment,
     Capability,
+    Cluster,
+    FinalApproval,
+    RfcAuthor,
     RfcToBe,
     RpcAuthorComment,
     RpcPerson,
     RpcRole,
+    UnusableRfcNumber,
 )
 
 
@@ -71,13 +78,15 @@ class RfcToBeFactory(factory.django.DjangoModelFactory):
 
     draft = factory.SubFactory("ietf.doc.factories.WgDraftFactory")
     rfc_number = factory.Sequence(lambda n: n + 1000)
-    submitted_format_id = "xml-v3"
-    submitted_std_level_id = "ps"
-    submitted_boilerplate_id = "trust200902"
-    submitted_stream_id = "ietf"
-    intended_std_level_id = factory.LazyAttribute(lambda o: o.submitted_std_level_id)
-    intended_boilerplate_id = factory.LazyAttribute(lambda o: o.submitted_boilerplate_id)
-    intended_stream_id = factory.LazyAttribute(lambda o: o.submitted_stream_id)
+    submitted_format = factory.SubFactory("ietf.name.factories.SourceFormatNameFactory", slug="xml-v3")
+    submitted_std_level = factory.SubFactory("ietf.name.factories.StdLevelNameFactory", slug="ps")
+    submitted_boilerplate = factory.SubFactory("ietf.name.factories.TlpBoilerplateChoiceNameFactory",slug="trust200902")
+    submitted_stream = factory.SubFactory("ietf.name.factories.StreamNameFactory",slug="ietf")
+    intended_std_level = factory.LazyAttribute(lambda o: o.submitted_std_level)
+    intended_boilerplate = factory.LazyAttribute(
+        lambda o: o.submitted_boilerplate
+    )
+    intended_stream = factory.LazyAttribute(lambda o: o.submitted_stream)
 
 
 class AprilFirstRfcToBeFactory(RfcToBeFactory):
@@ -100,3 +109,46 @@ class RpcAuthorCommentFactory(factory.django.DjangoModelFactory):
     person = factory.SubFactory("ietf.person.factories.PersonFactory")
     comment = factory.Faker("sentence")
     by = factory.SubFactory("ietf.person.factories.PersonFactory")
+
+
+class ClusterFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = Cluster
+
+    number = factory.LazyFunction(
+        lambda: Cluster.objects.aggregate(Max("number"))["number__max"] or 1
+    )
+
+
+class UnusableRfcNumberFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = UnusableRfcNumber
+
+    number = factory.LazyFunction(
+        lambda: UnusableRfcNumber.objects.aggregate(Max("number"))["number__max"] or 1
+    )
+    comment = factory.Faker("sentence")
+
+
+class AssignmentFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = Assignment
+
+    rfc_to_be = factory.SubFactory(RfcToBeFactory)
+    person = factory.SubFactory(RpcPersonFactory)
+
+
+class RfcAuthorFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = RfcAuthor
+
+    person = factory.SubFactory("ietf.person.factories.PersonFactory")
+    rfc_to_be = factory.SubFactory(RfcToBeFactory)
+
+
+class FinalApprovalFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = FinalApproval
+
+    rfc_to_be = factory.SubFactory(RfcToBeFactory)
+    approver = factory.SubFactory("ietf.person.factories.PersonFactory")

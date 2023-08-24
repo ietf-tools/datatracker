@@ -2,12 +2,36 @@
 # -*- coding: utf-8 -*-
 
 from ietf.rpc.factories import (
+    ActionHolderFactory,
+    AprilFirstRfcToBeFactory,
+    AssignmentFactory,
+    CapabilityFactory,
+    ClusterFactory,
+    FinalApprovalFactory,
+    RfcAuthorFactory,
     RpcPersonFactory,
     RpcRoleFactory,
+    RfcToBeFactory,
+    RpcAuthorCommentFactory,
+    UnusableRfcNumberFactory,
 )
 
 from ietf.utils.test_utils import TestCase
 
+class BasicRpcFactoryTests(TestCase):
+    def test_default_factories_dont_crash(self):
+        RpcPersonFactory()
+        RpcRoleFactory()
+        CapabilityFactory()
+        RfcToBeFactory()
+        AprilFirstRfcToBeFactory()
+        ActionHolderFactory()
+        RpcAuthorCommentFactory()
+        ClusterFactory()
+        UnusableRfcNumberFactory()
+        AssignmentFactory()
+        RfcAuthorFactory()
+        FinalApprovalFactory()
 
 class RpcPersonFactoryTests(TestCase):
     def test_bare(self):
