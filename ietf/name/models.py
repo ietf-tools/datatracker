@@ -150,4 +150,4 @@ class ExtResourceName(NameModel):
 class SlideSubmissionStatusName(NameModel):
     "Pending, Accepted, Rejected"
 class TelechatAgendaSectionName(NameModel):
-    "roll_call", "minutes", "action_items"
+    """roll_call, minutes, action_items"""
