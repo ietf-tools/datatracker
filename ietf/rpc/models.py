@@ -112,14 +112,12 @@ class RpcRole(models.Model):
     slug = models.CharField(max_length=32, primary_key=True)
     name = models.CharField(max_length=255)
     desc = models.TextField(blank=True)
-    # todo populate
 
 
 class Capability(models.Model):
     slug = models.CharField(max_length=32, primary_key=True)
     name = models.CharField(max_length=255)
     desc = models.TextField(blank=True)
-    # todo populate
 
 
 class RfcAuthor(models.Model):
