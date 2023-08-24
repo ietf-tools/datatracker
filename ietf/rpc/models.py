@@ -213,3 +213,6 @@ class RpcAuthorComment(models.Model):
         Person, on_delete=models.PROTECT, related_name="rpcauthorcomments_by"
     )
     time = models.DateTimeField(default=timezone.now)
+
+    def __str__(self):
+        return(f"RpcAuthorComment about {self.person.plain_ascii()} by {self.by.plain_ascii()} on {self.time:%Y-%m-%d}")
