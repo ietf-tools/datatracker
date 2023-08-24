@@ -5,12 +5,12 @@ from django.db import migrations
 
 def forward(apps, schema_editor):
     RpcRole = apps.get_model("rpc", "RpcRole")
-    RpcRole.objects.create(slug="formatting", name="Formatting", desc="Formatting an RFC")
+    RpcRole.objects.create(slug="formatting", name="Formatting", desc="RFCXML formatter")
     RpcRole.objects.create(slug="first_editor", name="First editor", desc="First editor of an RFC")  # was "pe"
     RpcRole.objects.create(slug="second_editor", name="Second editor", desc="Second editor of an RFC")  # was "re"
     RpcRole.objects.create(slug="final_review_editor", name="Final review editor",
                            desc="Performs editing during Final Review")
-    RpcRole.objects.create(slug="publisher", name="Publisher", desc="Publishes RFC")
+    RpcRole.objects.create(slug="publisher", name="Publisher", desc="RFC publisher")
     RpcRole.objects.create(slug="manager", name="Manager", desc="RPC Manager")
 
 
