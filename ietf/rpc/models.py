@@ -105,6 +105,7 @@ class Assignment(models.Model):
         max_length=32, choices=ASSIGNMENT_STATE_CHOICES, default="assigned"
     )
     time_spent = models.DurationField()  # tbd
+    # TBD - should Assingment capture RpcRole? Should it have a comment?
 
 
 class RpcRole(models.Model):
