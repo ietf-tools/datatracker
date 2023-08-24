@@ -122,7 +122,7 @@ class ClusterFactory(factory.django.DjangoModelFactory):
         model = Cluster
 
     number = factory.LazyFunction(
-        lambda: Cluster.objects.aggregate(Max("number"))["number__max"] or 1
+        lambda: 1 + (Cluster.objects.aggregate(Max("number"))["number__max"] or 0)
     )
 
 
@@ -131,7 +131,7 @@ class UnusableRfcNumberFactory(factory.django.DjangoModelFactory):
         model = UnusableRfcNumber
 
     number = factory.LazyFunction(
-        lambda: UnusableRfcNumber.objects.aggregate(Max("number"))["number__max"] or 1
+        lambda: 1 + (UnusableRfcNumber.objects.aggregate(Max("number"))["number__max"] or 0)
     )
     comment = factory.Faker("sentence")
 
