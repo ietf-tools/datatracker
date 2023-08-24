@@ -5,18 +5,19 @@ from django.db import migrations
 
 def forward(apps, schema_editor):
     RpcRole = apps.get_model("rpc", "RpcRole")
-    RpcRole.objects.create(slug="formatting", name="formatting", desc="Formatting an RFC")
-    RpcRole.objects.create(slug="pe", name="primary editor", desc="First editor of an RFC")
-    RpcRole.objects.create(slug="re", name="RFC editor", desc="Second editor of an RFC")
-    RpcRole.objects.create(slug="finrev", name="FinRev", desc="Performs final checks after AUTH48")
-    RpcRole.objects.create(slug="pub", name="PUB", desc="Publishes RFC")
-    RpcRole.objects.create(slug="manager", name="manager", desc="RPC Manager")
+    RpcRole.objects.create(slug="formatting", name="Formatting", desc="Formatting an RFC")
+    RpcRole.objects.create(slug="first_editor", name="First editor", desc="First editor of an RFC")  # was "pe"
+    RpcRole.objects.create(slug="second_editor", name="Second editor", desc="Second editor of an RFC")  # was "re"
+    RpcRole.objects.create(slug="final_review_editor", name="Final review editor",
+                           desc="Performs editing during Final Review")
+    RpcRole.objects.create(slug="publisher", name="Publisher", desc="Publishes RFC")
+    RpcRole.objects.create(slug="manager", name="Manager", desc="RPC Manager")
 
 
 def reverse(apps, schema_editor):
     RpcRole = apps.get_model("rpc", "RpcRole")
     RpcRole.objects.filter(
-        slug__in=["formatting", "pe", "re", "finrev", "pub", "manager"]
+        slug__in=["formatting", "first_editor", "second_editor", "final_review_editor", "publisher", "manager"]
     ).delete()
 
 
