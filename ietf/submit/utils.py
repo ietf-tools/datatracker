@@ -641,12 +641,14 @@ def cancel_submission(submission):
     submission.save()
     remove_submission_files(submission)
 
+
 def rename_submission_files(submission, prev_rev, new_rev):
     for ext in settings.IDSUBMIT_FILE_TYPES:
-        source = os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s.%s' % (submission.name, prev_rev, ext))
-        dest = os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s.%s' % (submission.name, new_rev, ext))
-        if os.path.exists(source):
-            os.rename(source, dest)
+        staging_path = Path(settings.IDSUBMIT_STAGING_PATH) 
+        source = staging_path / f"{submission.name}-{prev_rev}.{ext}"
+        dest = staging_path / f"{submission.name}-{new_rev}.{ext}"
+        if source.exists():
+            move(source, dest)
 
 
 def move_files_to_repository(submission):
