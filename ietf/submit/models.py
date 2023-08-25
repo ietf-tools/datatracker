@@ -79,7 +79,7 @@ class Submission(models.Model):
         return Document.objects.filter(name=self.name).first()
 
     def latest_checks(self):
-        """Latest applicable check of each type
+        """Latest check of each type, excluding any that did not apply
         
         Ignores any checks where passed is None
         """
