@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from django.conf import settings
-from django.core.management.base import BaseCommand, CommandError
+from django.core.management.base import BaseCommand, CommandError, CommandParser
 
 from ...factories import RpcPersonFactory
 
@@ -15,7 +15,6 @@ class Command(BaseCommand):
         if settings.SERVER_MODE == "production":
             raise CommandError("This command is not allowed in production mode")
 
-        
         # From "Manage Team Members" wireframe
         RpcPersonFactory(
             person__name="A. Travis",
@@ -28,7 +27,7 @@ class Command(BaseCommand):
             capable_of=["codecomp-abnf", "code-comp-xml", "codecomp-yang", "clusters-expert", "ianaconsid-intermediate", "xmlfmt-intermediate"],
         )
         RpcPersonFactory(
-            person__name="C. Brown",
+            person__name="Chuck Brown",
             can_hold_role=["formatting"],
             capable_of=["clusters-beginner"],
         )
