@@ -72,41 +72,39 @@
             {% endif %}
         {% endfor %}
         {% for check in submission.latest_checks %}
-            {% if check.passed != None %}
-                <button class="btn btn-{% if check.passed %}{% if check.warnings %}warning{% elif check.errors %}danger{% else %}success{% endif %}{% else %}danger{% endif %}"
-                        type="button"
-                        data-bs-toggle="modal"
-                        data-bs-target="#check-{{ check.pk }}">
-                    View {{ check.checker }}
-                </button>
-                <div class="modal fade"
-                     id="check-{{ check.pk }}"
-                     tabindex="-1"
-                     role="dialog"
-                     aria-labelledby="check-{{ check.pk }}"
-                     aria-hidden="true">
-                    <div class="modal-dialog modal-dialog-scrollable modal-xl">
-                        <div class="modal-content">
-                            <div class="modal-header">
-                                <p class="h5 modal-title" id="{{ check.checker|slugify }}-label">
-                                    {{ check.checker|title }} for {{ submission.name }}-{{ submission.rev }}
-                                </p>
-                                <button type="button"
-                                        class="btn-close"
-                                        data-bs-dismiss="modal"
-                                        aria-label="Close"></button>
-                            </div>
-                            <div class="modal-body" id="{{ check.checker|slugify }}-message">
-                            <pre>{{ check.message|urlize_ietf_docs|linkify }}</pre>
-                            </div>
-                            <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                            </div>
+            <button class="btn btn-{% if check.passed %}{% if check.warnings %}warning{% elif check.errors %}danger{% else %}success{% endif %}{% else %}danger{% endif %}"
+                    type="button"
+                    data-bs-toggle="modal"
+                    data-bs-target="#check-{{ check.pk }}">
+                View {{ check.checker }}
+            </button>
+            <div class="modal fade"
+                 id="check-{{ check.pk }}"
+                 tabindex="-1"
+                 role="dialog"
+                 aria-labelledby="check-{{ check.pk }}"
+                 aria-hidden="true">
+                <div class="modal-dialog modal-dialog-scrollable modal-xl">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <p class="h5 modal-title" id="{{ check.checker|slugify }}-label">
+                                {{ check.checker|title }} for {{ submission.name }}-{{ submission.rev }}
+                            </p>
+                            <button type="button"
+                                    class="btn-close"
+                                    data-bs-dismiss="modal"
+                                    aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body" id="{{ check.checker|slugify }}-message">
+                        <pre>{{ check.message|urlize_ietf_docs|linkify }}</pre>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                         </div>
                     </div>
                 </div>
-            {% endif %}
-        {% endfor %}
+            </div>
+    {% endfor %}
     {% endif %}
     <div class="modal fade"
          id="twopages"
