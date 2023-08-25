@@ -17,7 +17,6 @@
                   </button>
                 </div>
               </HeadlessTransitionChild>
-              <!-- Sidebar component, swap this element with another sidebar if you like -->
               <div class="flex grow flex-col gap-y-5 overflow-y-auto bg-white px-6 pb-2">
                 <div class="flex h-16 shrink-0 items-center">
                   <img class="h-8 w-auto" src="https://tailwindui.com/img/logos/mark.svg?color=violet&shade=600" alt="Your Company" />
@@ -58,7 +57,7 @@
     <div class="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-72 lg:flex-col">
       <!-- Sidebar component, swap this element with another sidebar if you like -->
       <div class="flex grow flex-col gap-y-5 overflow-y-auto border-r border-gray-200 dark:border-violet-600 bg-white dark:bg-violet-900 bg-gradient-to-tr from-violet-50 to-white dark:from-violet-950 dark:to-violet-900 px-6">
-        <div class="flex h-16 shrink-0 items-center text-violet-400 dark:text-violet-300 font-lightnormal">
+        <div class="flex h-16 shrink-0 items-center text-violet-500 dark:text-violet-300 font-light">
           <Icon name="uil:edit-alt" class="w-6 h-auto mr-2" aria-hidden="true" />
           RFC Production Center
         </div>
@@ -67,10 +66,10 @@
             <li>
               <ul role="list" class="-mx-2 space-y-1">
                 <li v-for="item in navigation" :key="item.name">
-                  <a :href="item.href" :class="[item.current ? 'bg-violet-50 dark:bg-violet-600 text-violet-600 dark:text-white' : 'text-gray-700 dark:text-violet-300 hover:text-violet-600 hover:bg-violet-50', 'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold']">
-                    <component :is="item.icon" :class="[item.current ? 'text-violet-600 dark:text-white' : 'text-gray-400 dark:text-violet-400 group-hover:text-violet-600', 'h-6 w-6 shrink-0']" aria-hidden="true" />
+                  <NuxtLink :to="item.href" :class="[item.href === currentBaseLink ? 'bg-violet-50 dark:bg-violet-600 text-violet-600 dark:text-white' : 'text-gray-700 dark:text-violet-300 hover:text-violet-600 hover:bg-violet-50 dark:hover:text-violet-100 dark:hover:bg-violet-800', 'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold']">
+                    <component :is="item.icon" :class="[item.href === currentBaseLink ? 'text-violet-600 dark:text-white' : 'text-gray-400 dark:text-violet-400 group-hover:text-violet-600 dark:group-hover:text-violet-100', 'h-6 w-6 shrink-0']" aria-hidden="true" />
                     {{ item.name }}
-                  </a>
+                  </NuxtLink>
                 </li>
               </ul>
             </li>
@@ -86,7 +85,7 @@
               </ul>
             </li>
             <li class="-mx-6 mt-auto">
-              <a href="#" class="flex items-center gap-x-4 px-6 py-3 text-sm font-semibold leading-6 text-gray-500 dark:text-violet-400 hover:bg-gray-50">
+              <a href="https://datatracker.ietf.org" class="flex items-center gap-x-4 px-6 py-3 text-sm font-semibold leading-6 text-gray-500 dark:text-violet-400 hover:bg-violet-500/5">
                 <Icon name="uil:arrow-left" class="h-8 w-8 text-gray-400 dark:text-violet-400" aria-hidden="true" />
                 <span>Go to Datatracker</span>
               </a>
@@ -94,18 +93,6 @@
           </ul>
         </nav>
       </div>
-    </div>
-
-    <div class="sticky top-0 z-40 flex items-center gap-x-6 bg-white dark:bg-gray-800 px-4 py-4 shadow-sm sm:px-6 lg:hidden">
-      <button type="button" class="-m-2.5 p-2.5 text-gray-700 lg:hidden" @click="sidebarOpen = true">
-        <span class="sr-only">Open sidebar</span>
-        <Icon name="uil:bars" class="h-6 w-6" aria-hidden="true" />
-      </button>
-      <div class="flex-1 text-sm font-semibold leading-6 text-gray-900">Dashboard</div>
-      <a href="#">
-        <span class="sr-only">Your profile</span>
-        <img class="h-8 w-8 rounded-full bg-gray-50" src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80" alt="" />
-      </a>
     </div>
 
     <main class="lg:pl-72">
@@ -127,28 +114,31 @@
           <div class="flex items-center gap-x-4 lg:gap-x-6">
             <!-- Site Theme Switcher -->
             <HeadlessMenu as="div" class="relative inline-block mr-4">
-              <HeadlessMenuButton class="focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2">
+              <HeadlessMenuButton class="rounded focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-500">
                 <span class="sr-only">Site Theme</span>
-                <Icon name="uil:moon" class="text-gray-500 dark:text-neutral-400 hover:text-sky-400 dark:hover:text-violet-400" size="1.25em" aria-hidden="true" />
+                <ColorScheme placeholder="..." tag="span">
+                  <Icon v-if="$colorMode.value === 'dark'" name="uil:moon" class="text-gray-500 dark:text-neutral-400 hover:text-violet-400 dark:hover:text-violet-400" size="1.25em" aria-hidden="true" />
+                  <Icon v-else name="uil:sun" class="text-gray-500 dark:text-white hover:text-violet-400 dark:hover:text-violet-400" size="1.25em" aria-hidden="true" />
+                </ColorScheme>
               </HeadlessMenuButton>
 
               <transition enter-active-class="transition ease-out duration-100" enter-from-class="transform opacity-0 scale-95" enter-to-class="transform opacity-100 scale-100" leave-active-class="transition ease-in duration-75" leave-from-class="transform opacity-100 scale-100" leave-to-class="transform opacity-0 scale-95">
                 <HeadlessMenuItems class="absolute right-0 z-10 mt-2 w-40 origin-top-right rounded-md bg-white dark:bg-neutral-800/90 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
                   <div class="py-1">
                     <HeadlessMenuItem v-slot="{ active }">
-                      <a @click="$colorMode.preference = 'dark'" :class="[active ? 'text-violet-900 dark:text-violet-300' : 'text-gray-700 dark:text-gray-100', 'flex items-center px-4 py-2 text-sm cursor-pointer']">
+                      <a @click="$colorMode.preference = 'dark'" :class="[active ? 'text-violet-500 dark:text-violet-300 bg-violet-50 dark:bg-violet-500/5' : 'text-gray-700 dark:text-gray-100', 'flex items-center px-4 py-2 text-sm cursor-pointer']">
                         <Icon name="uil:moon" class="mr-3" />
                         Dark
                       </a>
                     </HeadlessMenuItem>
                     <HeadlessMenuItem v-slot="{ active }">
-                      <a @click="$colorMode.preference = 'light'" :class="[active ? 'text-violet-900 dark:text-violet-300' : 'text-gray-700 dark:text-gray-100', 'flex items-center px-4 py-2 text-sm cursor-pointer']">
+                      <a @click="$colorMode.preference = 'light'" :class="[active ? 'text-violet-500 dark:text-violet-300 bg-violet-50 dark:bg-violet-500/5' : 'text-gray-700 dark:text-gray-100', 'flex items-center px-4 py-2 text-sm cursor-pointer']">
                         <Icon name="uil:sun" class="mr-3" />
                         Light
                       </a>
                     </HeadlessMenuItem>
                     <HeadlessMenuItem v-slot="{ active }">
-                      <a @click="$colorMode.preference = 'system'" :class="[active ? 'text-violet-900 dark:text-violet-300' : 'text-gray-700 dark:text-gray-100', 'flex items-center px-4 py-2 text-sm cursor-pointer']">
+                      <a @click="$colorMode.preference = 'system'" :class="[active ? 'text-violet-500 dark:text-violet-300 bg-violet-50 dark:bg-violet-500/5' : 'text-gray-700 dark:text-gray-100', 'flex items-center px-4 py-2 text-sm cursor-pointer']">
                         <Icon name="uil:desktop" class="mr-3" />
                         System
                       </a>
@@ -159,13 +149,13 @@
             </HeadlessMenu>
 
             <!-- View Notifications -->
-            <button type="button" class="-m-2.5 p-2.5 text-gray-400 dark:text-neutral-400 hover:text-gray-500 dark:hover:text-violet-400">
+            <button type="button" class="-m-2.5 mr-2 text-gray-400 dark:text-neutral-400 hover:text-gray-500 dark:hover:text-violet-400">
               <span class="sr-only">View notifications</span>
-              <Icon name="ci:bell" class="h-6 w-6" aria-hidden="true" />
+              <Icon name="ci:bell" size="1.25em" aria-hidden="true" />
             </button>
 
             <!-- Separator -->
-            <div class="hidden lg:block lg:h-6 lg:w-px lg:bg-gray-900/10" aria-hidden="true" />
+            <div class="hidden lg:block lg:h-6 lg:w-px lg:bg-gray-900/10 dark:lg:bg-white/20" aria-hidden="true" />
 
             <!-- Profile dropdown -->
             <HeadlessMenu as="div" class="relative">
@@ -218,12 +208,12 @@ useHead({
 })
 
 const navigation = [
-  { name: 'Dashboard', href: '#', icon: h(Icon, { name: 'uil:dashboard' }), current: true },
-  { name: 'Queue', href: '#', icon: h(Icon, { name: 'uil:list-ui-alt' }), current: false },
-  { name: 'Documents', href: '#', icon: h(Icon, { name: 'uil:file-copy-alt' }), current: false },
-  { name: 'Team', href: '#', icon: h(Icon, { name: 'uil:users-alt' }), current: false },
-  { name: 'Statistics', href: '#', icon: h(Icon, { name: 'uil:graph-bar' }), current: false },
-  { name: 'Final Reviews', href: '#', icon: h(Icon, { name: 'uil:cell' }), current: false },
+  { name: 'Dashboard', href: '/', icon: h(Icon, { name: 'uil:dashboard' }), current: true },
+  { name: 'Queue', href: '/queue', icon: h(Icon, { name: 'uil:list-ui-alt' }), current: false },
+  { name: 'Documents', href: '/docs', icon: h(Icon, { name: 'uil:file-copy-alt' }), current: false },
+  { name: 'Team', href: '/team', icon: h(Icon, { name: 'uil:users-alt' }), current: false },
+  { name: 'Statistics', href: '/stats', icon: h(Icon, { name: 'uil:graph-bar' }), current: false },
+  { name: 'Final Reviews', href: '/auth48', icon: h(Icon, { name: 'uil:cell' }), current: false },
 ]
 
 const teams = [
@@ -236,6 +226,9 @@ const userNavigation = [
   { name: 'Your profile', href: '#' },
   { name: 'Sign out', href: '#' },
 ]
+
+const route = useRoute()
+const currentBaseLink = computed(() => route.path.indexOf('/', 1) > 0 ? `/` + route.path.split('/')[1] : route.path)
 
 const sidebarOpen = ref(false)
 </script>
