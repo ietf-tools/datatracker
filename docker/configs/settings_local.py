@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2007-2019, All Rights Reserved
+# Copyright The IETF Trust 2007-2023, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 from ietf.settings import *                                          # pyflakes:ignore
@@ -58,3 +58,5 @@ DE_GFM_BINARY = '/usr/local/bin/de-gfm'
 
 STATIC_IETF_ORG = "/_static"
 STATIC_IETF_ORG_INTERNAL = "http://static"
+
+PUBLISH_IPR_STATES = ['posted', 'removed', 'removed_objfalse']

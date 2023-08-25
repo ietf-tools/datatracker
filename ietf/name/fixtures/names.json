@@ -12028,6 +12028,16 @@
   {
     "fields": {
       "desc": "",
+      "name": "Removed Objectively False",
+      "order": 5,
+      "used": true
+    },
+    "model": "name.iprdisclosurestatename",
+    "pk": "removed_objfalse"
+  },
+  {
+    "fields": {
+      "desc": "",
       "name": "Changed disclosure metadata",
       "order": 0,
       "used": true
