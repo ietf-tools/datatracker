@@ -40,8 +40,10 @@
         <p class="alert {% if passes_checks %}alert-success{% else %}alert-warning{% endif %} my-3">
             {% if passes_checks %}
                 Your Internet-Draft has been verified to pass the submission checks.
+            {% elif applied_any_checks %}
+                Your Internet-Draft failed at least one submission check.
             {% else %}
-                Your Internet-Draft has <b>NOT</b> been verified to pass the submission checks.
+                No submission checks were applied to your Internet-Draft.
             {% endif %}
         </p>
         {% if submission.authors|length > 5 %}
