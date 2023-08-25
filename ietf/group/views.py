@@ -111,7 +111,7 @@ from ietf.doc.models import LastCallDocEvent
 from ietf.name.models import ReviewAssignmentStateName
 from ietf.utils.mail import send_mail_text, parse_preformatted
 
-from ietf.ietfauth.utils import user_is_person
+from ietf.ietfauth.utils import user_is_person, role_required
 from ietf.dbtemplate.models import DBTemplate
 from ietf.mailtrigger.utils import gather_address_lists
 from ietf.mailtrigger.models import Recipient
@@ -2141,7 +2141,6 @@ def appeals(request, acronym, group_type=None):
 
 def appeal_artifact(request, acronym, artifact_id, group_type=None):
     artifact = get_object_or_404(AppealArtifact, pk=artifact_id)
-    debug.show("artifact.content_type")
     if artifact.content_type == "text/markdown;charset=utf-8":
         artifact_html = markdown.markdown(artifact.bits.tobytes().decode("utf-8"))
         return render(
@@ -2151,3 +2150,11 @@ def appeal_artifact(request, acronym, artifact_id, group_type=None):
         )
     else:
         return HttpResponse(artifact.bits, content_type=artifact.content_type)
+    
+@role_required("Secretariat")
+def appeal_artifact_markdown(request, acronym, artifact_id, group_type=None):
+    artifact = get_object_or_404(AppealArtifact, pk=artifact_id)
+    if artifact.content_type == "text/markdown;charset=utf-8":
+        return HttpResponse(artifact.bits, content_type=artifact.content_type)
+    else:
+        raise Http404

@@ -145,8 +145,7 @@ def work_to_do():
     item["parts"].append(
         dict(
             type="response",
-            date="2003-10-09",
-            title="IAB Responses from 1995-04-04 and 1995-04-05",
+            date="1995-04-05",
         )
     )
     work.append(item)
@@ -199,7 +198,6 @@ class Command(BaseCommand):
                         appeal = appeal,
                         artifact_type=artifact_type,
                         date=part["date"],
-                        title=getattr(part, "title", artifact_type.name),
                         content_type=content_type,
                         bits=bits,
                     )

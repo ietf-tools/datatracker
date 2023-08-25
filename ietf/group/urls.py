@@ -50,6 +50,8 @@ info_detail_urls = [
     url(r'^statements/$', views.statements),
     url(r'^appeals/$', views.appeals),
     url(r'^appeals/artifact/(?P<artifact_id>\d+)$', views.appeal_artifact),
+    url(r'^appeals/artifact/(?P<artifact_id>\d+)/markdown$', views.appeal_artifact_markdown),
+
 
 ]
 

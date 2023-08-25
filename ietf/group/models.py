@@ -419,6 +419,8 @@ class Appeal(models.Model):
     class Meta:
         ordering = ['-date', '-id']
 
+    def __str__(self):
+        return f"{self.date} - {self.name}"
 
 class AppealArtifact(models.Model):
     appeal = ForeignKey(Appeal)
@@ -430,16 +432,20 @@ class AppealArtifact(models.Model):
     # "Abusing" BinaryField (see the django docs) for the small number of
     # these things we have on purpose. Later, any non-markdown content may
     # move off into statics instead.
-    bits = models.BinaryField()
+    bits = models.BinaryField(editable=True)
 
     class Meta:
-        ordering = ['order', 'artifact_type__order']
+        ordering = ['date', 'order', 'artifact_type__order']
 
     def display_title(self):
         if self.title != "":
             return self.title
         else:
             return self.artifact_type.name
+        
+    
+    def __str__(self):
+        return f"{self.date} {self.display_title()} : {self.appeal.name}"
 
 # --- Signal hooks for group models ---
 
