@@ -418,9 +418,10 @@ class Appeal(models.Model):
 
 
 class AppealArtifact(models.Model):
+    appeal = ForeignKey(Appeal)
     artifact_type = ForeignKey(AppealArtifactTypeName)
     date = models.DateField(default=date_today)
-    title = models.CharField(max_length=256)
+    title = models.CharField(max_length=256, blank=True, help_text="The artifact_type.name will be used if this field is blank")
     order = models.IntegerField(default=0)
     content_type = models.CharField(max_length=32)
     # "Abusing" BinaryField (see the django docs) for the small number of
