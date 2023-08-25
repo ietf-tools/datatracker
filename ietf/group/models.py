@@ -416,6 +416,9 @@ class Appeal(models.Model):
     group = models.ForeignKey(Group, on_delete=models.PROTECT)
     date = models.DateField(default=date_today)
 
+    class Meta:
+        ordering = ['-date', '-id']
+
 
 class AppealArtifact(models.Model):
     appeal = ForeignKey(Appeal)
@@ -428,6 +431,15 @@ class AppealArtifact(models.Model):
     # these things we have on purpose. Later, any non-markdown content may
     # move off into statics instead.
     bits = models.BinaryField()
+
+    class Meta:
+        ordering = ['order', 'artifact_type__order']
+
+    def display_title(self):
+        if self.title != "":
+            return self.title
+        else:
+            return self.artifact_type.name
 
 # --- Signal hooks for group models ---
 
