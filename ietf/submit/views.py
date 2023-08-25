@@ -318,9 +318,9 @@ def submission_status(request, submission_id, access_token=None):
         raise Http404
 
     errors = validate_submission(submission)
-    checks_applied = submission.checks.exclude(passed__isnull=True)  # null indicates the check did not apply
-    applied_any_checks = checks_applied.exists()
-    passes_checks = applied_any_checks and all(c.passed for c in checks_applied)
+    latest_checks = submission.latest_checks()
+    applied_any_checks = len(latest_checks) > 0
+    passes_checks = applied_any_checks and all(c.passed for c in latest_checks)
 
     is_secretariat = has_role(request.user, "Secretariat")
     is_chair = submission.group and submission.group.has_role(request.user, "chair")
