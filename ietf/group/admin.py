@@ -327,11 +327,19 @@ class BinaryFileInput(forms.ClearableFileInput):
             bits = upload.read()
             return b64encode(bits).decode("ascii") # Who made this so hard?
             
+class RestrictContentTypeChoicesForm(forms.ModelForm):
+    content_type = forms.ChoiceField(
+        choices=(
+            ( "text/markdown;charset=utf-8", "Markdown"),
+            ( "application/pdf;charset=utf-8", "PDF")
+        )
+    )
 class AppealArtifactAdmin(admin.ModelAdmin):
     list_display = ["display_title", "appeal","date"]
     ordering = ["-appeal__date", "date"]
     formfield_overrides = {
         BinaryField: { "widget": BinaryFileInput() },
     }
+    form = RestrictContentTypeChoicesForm
 
 admin.site.register(AppealArtifact, AppealArtifactAdmin)
