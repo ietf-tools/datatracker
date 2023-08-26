@@ -155,33 +155,39 @@
         {% else %}
         <h2 class="mt-5">Meta-data from the submission</h2>
         {% if errors %}
-            <div class="alert alert-danger my-3">
-                <p>
-                    <b>Meta-Data errors found!</b>
-                </p>
-                <p >
-                    Please make sure that your Internet-Draft includes all of the required meta-data in the proper format.
-                </p>
-                <ul>
-                    <li>
-                        If your Internet-Draft <b>does</b> include all of the required meta-data in the proper format, and if
-                        the error(s) identified below are due to the failure of the tool to extract the meta-data correctly,
-                        then please use the "Adjust meta-data" button below, which will take you to the "Adjust screen" where
-                        you can correct the improperly extracted meta-data. You will then be able to submit your Internet-Draft
-                        to the Secretariat for manual posting.
-                    </li>
-                    <li>
-                        If your Internet-Draft <b>does not</b> include all of the required meta-data in the proper format, then
-                        please cancel this submission, update your Internet-Draft, and resubmit it.
-                    </li>
-                </ul>
-                <p class="mb-0">
-                    <b>Note:</b> The secretariat will <b>not</b> add any
-                    meta-data to your Internet-Draft or edit the meta-data. An
-                    Internet-Draft that does not include all of the required meta-data in
-                    the proper format <b>will</b> be returned to the submitter.
-                </p>
-            </div>
+            {% if submission.state.slug == "cancel" %}
+                <div class="alert alert-warning my-3">
+                    <b>Note:</b> The meta-data extracted from this cancelled draft has errors or is incomplete. 
+                </div>
+            {% else %}
+                <div class="alert alert-danger my-3">
+                    <p>
+                        <b>Meta-Data errors found!</b>
+                    </p>
+                    <p >
+                        Please make sure that your Internet-Draft includes all of the required meta-data in the proper format.
+                    </p>
+                    <ul>
+                        <li>
+                            If your Internet-Draft <b>does</b> include all of the required meta-data in the proper format, and if
+                            the error(s) identified below are due to the failure of the tool to extract the meta-data correctly,
+                            then please use the "Adjust meta-data" button below, which will take you to the "Adjust screen" where
+                            you can correct the improperly extracted meta-data. You will then be able to submit your Internet-Draft
+                            to the Secretariat for manual posting.
+                        </li>
+                        <li>
+                            If your Internet-Draft <b>does not</b> include all of the required meta-data in the proper format, then
+                            please cancel this submission, update your Internet-Draft, and resubmit it.
+                        </li>
+                    </ul>
+                    <p class="mb-0">
+                        <b>Note:</b> The secretariat will <b>not</b> add any
+                        meta-data to your Internet-Draft or edit the meta-data. An
+                        Internet-Draft that does not include all of the required meta-data in
+                        the proper format <b>will</b> be returned to the submitter.
+                    </p>
+                </div>
+            {% endif %}
         {% endif %}
     {% endif %}
     <table class="table table-sm table-striped">
