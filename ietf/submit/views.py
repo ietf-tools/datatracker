@@ -356,7 +356,21 @@ def submission_status(request, submission_id, access_token=None):
     message = None
 
     if submission.state_id == "cancel":
-        message = ('error', 'This submission has been cancelled, modification is no longer possible.')
+        # would be nice to have a less heuristic mechansim for reporting async processing failure
+        async_processing_error = submission.submissionevent_set.filter(
+            desc__startswith="Submission rejected: A system error occurred"
+        ).exists()
+        if async_processing_error:
+            message = (
+                "error",
+                "This submission has been cancelled due to a system error during processing. "
+                "Modification is no longer possible.",
+            )
+        else:
+            message = (
+                "error",
+                "This submission has been cancelled, modification is no longer possible.",
+            )
     elif submission.state_id == "auth":
         message = ('success', 'The submission is pending email authentication. An email has been sent to: %s' % ", ".join(confirmation_list))
     elif submission.state_id == "grp-appr":
