@@ -317,7 +317,10 @@ def submission_status(request, submission_id, access_token=None):
     if access_token and not key_matched:
         raise Http404
 
-    errors = validate_submission(submission)
+    if submission.state.slug == "cancel":
+        errors = {}
+    else:
+        errors = validate_submission(submission)
     passes_checks = all([ c.passed!=False for c in submission.checks.all() ])
 
     is_secretariat = has_role(request.user, "Secretariat")
