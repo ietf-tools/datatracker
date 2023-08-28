@@ -11,6 +11,8 @@ import time
 import traceback
 import xml2rfc
 
+from pathlib import Path
+from shutil import move
 from typing import Optional, Union  # pyflakes:ignore
 from unidecode import unidecode
 
@@ -639,24 +641,27 @@ def cancel_submission(submission):
     submission.save()
     remove_submission_files(submission)
 
+
 def rename_submission_files(submission, prev_rev, new_rev):
     for ext in settings.IDSUBMIT_FILE_TYPES:
-        source = os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s.%s' % (submission.name, prev_rev, ext))
-        dest = os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s.%s' % (submission.name, new_rev, ext))
-        if os.path.exists(source):
-            os.rename(source, dest)
+        staging_path = Path(settings.IDSUBMIT_STAGING_PATH) 
+        source = staging_path / f"{submission.name}-{prev_rev}.{ext}"
+        dest = staging_path / f"{submission.name}-{new_rev}.{ext}"
+        if source.exists():
+            move(source, dest)
+
 
 def move_files_to_repository(submission):
     for ext in settings.IDSUBMIT_FILE_TYPES:
-        source = os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s.%s' % (submission.name, submission.rev, ext))
-        dest = os.path.join(settings.IDSUBMIT_REPOSITORY_PATH, '%s-%s.%s' % (submission.name, submission.rev, ext))
-        if os.path.exists(source):
-            os.rename(source, dest)
-        else:
-            if os.path.exists(dest):
-                log.log("Intended to move '%s' to '%s', but found source missing while destination exists.")
-            elif ext in submission.file_types.split(','):
-                raise ValueError("Intended to move '%s' to '%s', but found source and destination missing.")
+        fname = f"{submission.name}-{submission.rev}.{ext}"
+        source = Path(settings.IDSUBMIT_STAGING_PATH) / fname
+        dest = Path(settings.IDSUBMIT_REPOSITORY_PATH) / fname
+        if source.exists():
+            move(source, dest)
+        elif dest.exists():
+            log.log("Intended to move '%s' to '%s', but found source missing while destination exists.")
+        elif ext in submission.file_types.split(','):
+            raise ValueError("Intended to move '%s' to '%s', but found source and destination missing.")
 
 
 def remove_staging_files(name, rev, exts=None):

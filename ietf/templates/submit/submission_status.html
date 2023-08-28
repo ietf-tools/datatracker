@@ -152,9 +152,13 @@
             {% endwith %}
             Please contact the secretariat for assistance if it has been more than an hour.
         </div>
-        {% else %}
+    {% else %}
         <h2 class="mt-5">Meta-data from the submission</h2>
-        {% if errors %}
+        {% if submission.state.slug == "cancel" %}
+            <div class="alert alert-warning my-3">
+                <b>Note:</b> The meta-data shown for a cancelled draft may be incorrect or incomplete.
+            </div>
+        {% elif errors %}
             <div class="alert alert-danger my-3">
                 <p>
                     <b>Meta-Data errors found!</b>
