@@ -14,6 +14,13 @@ from ietf.group.factories import (
 )
 class AppealTests(TestCase):
 
+    def test_download_name(self):
+        artifact = AppealArtifactFactory()
+        self.assertEqual(artifact.download_name(),f"{artifact.date}-appeal.md")
+        artifact = AppealArtifactFactory(content_type="application/pdf",artifact_type__slug="response")
+        self.assertEqual(artifact.download_name(),f"{artifact.date}-response.pdf")
+
+
     def test_appeal_list_view(self):
         appeal_date = datetime.date.today()-datetime.timedelta(days=14)
         response_date = appeal_date+datetime.timedelta(days=8)
