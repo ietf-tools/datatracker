@@ -19,7 +19,7 @@ class AppealTests(TestCase):
         response_date = appeal_date+datetime.timedelta(days=8)
         appeal = AppealFactory(name="A name to look for", date=appeal_date)
         appeal_artifact = AppealArtifactFactory(appeal=appeal, artifact_type__slug="appeal", date=appeal_date)
-        response_artifact = AppealArtifactFactory(appeal=appeal, artifact_type__slug="response", content_type="application/pdf;charset=utf-8", date=response_date)
+        response_artifact = AppealArtifactFactory(appeal=appeal, artifact_type__slug="response", content_type="application/pdf", date=response_date)
 
         url = urlreverse("ietf.group.views.appeals", kwargs=dict(acronym="iab"))
         r = self.client.get(url)
@@ -54,7 +54,7 @@ class AppealTests(TestCase):
         self.assertContains(r, "**Markdown**", status_code=200)
 
     def test_pdf_download(self):
-        artifact = AppealArtifactFactory(content_type="application/pdf;charset=utf-8") # The bits won't _really_ be pdf
+        artifact = AppealArtifactFactory(content_type="application/pdf") # The bits won't _really_ be pdf
         url = urlreverse("ietf.group.views.appeal_artifact", kwargs=dict(acronym="iab", artifact_id=artifact.pk))
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)

@@ -331,7 +331,7 @@ class RestrictContentTypeChoicesForm(forms.ModelForm):
     content_type = forms.ChoiceField(
         choices=(
             ( "text/markdown;charset=utf-8", "Markdown"),
-            ( "application/pdf;charset=utf-8", "PDF")
+            ( "application/pdf", "PDF")
         )
     )
 class AppealArtifactAdmin(admin.ModelAdmin):

@@ -186,7 +186,7 @@ class Command(BaseCommand):
             for part in item["parts"]:
                 bits_file_name = bits_name(item["date"], part)
                 if bits_file_name.endswith(".pdf"):
-                    content_type = "application/pdf;charset=utf-8"
+                    content_type = "application/pdf"
                 else:
                     content_type = "text/markdown;charset=utf-8"
                 with Path(tmpdir).joinpath("iab_appeals", bits_file_name).open(
