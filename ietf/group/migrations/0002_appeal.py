@@ -34,6 +34,9 @@ class Migration(migrations.Migration):
                     ),
                 ),
             ],
+            options={
+                "ordering": ["-date", "-id"],
+            },
         ),
         migrations.CreateModel(
             name="AppealArtifact",
@@ -58,7 +61,7 @@ class Migration(migrations.Migration):
                 ),
                 ("order", models.IntegerField(default=0)),
                 ("content_type", models.CharField(max_length=32)),
-                ("bits", models.BinaryField()),
+                ("bits", models.BinaryField(editable=True)),
                 (
                     "appeal",
                     ietf.utils.models.ForeignKey(
@@ -73,5 +76,8 @@ class Migration(migrations.Migration):
                     ),
                 ),
             ],
+            options={
+                "ordering": ["date", "order", "artifact_type__order"],
+            },
         ),
     ]
