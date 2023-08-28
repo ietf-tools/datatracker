@@ -321,7 +321,9 @@ def submission_status(request, submission_id, access_token=None):
         errors = {}
     else:
         errors = validate_submission(submission)
-    passes_checks = all([ c.passed!=False for c in submission.checks.all() ])
+    latest_checks = submission.latest_checks()
+    applied_any_checks = len(latest_checks) > 0
+    passes_checks = applied_any_checks and all(c.passed for c in latest_checks)
 
     is_secretariat = has_role(request.user, "Secretariat")
     is_chair = submission.group and submission.group.has_role(request.user, "chair")
@@ -547,6 +549,7 @@ def submission_status(request, submission_id, access_token=None):
         'selected': 'status',
         'submission': submission,
         'errors': errors,
+        'applied_any_checks': applied_any_checks,
         'passes_checks': passes_checks,
         'submitter_form': submitter_form,
         'replaces_form': replaces_form,
