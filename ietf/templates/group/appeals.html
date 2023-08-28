@@ -10,7 +10,7 @@
     {% origin %}
     <h2 class="my-3">{{group.acronym|upper}} Appeals</h2>
 
-    <table class="my-3 table table-sm table-striped tablesorter">
+    <table id="appeals" class="my-3 table table-sm table-striped tablesorter">
         <thead>
             <tr>
                 <th class="col-1" scope="col" data-sort="date">Date</th>
@@ -19,12 +19,12 @@
         </thead>
         <tbody>
             {% for appeal in appeals %}
-            <tr>
-                <td>{{ appeal.date|date:"Y-m-d" }}</td>
+            <tr id="appeal-{{forloop.counter}}">
+                <td id="appeal-{{forloop.counter}}-date">{{ appeal.date|date:"Y-m-d" }}</td>
                 <td>{{appeal.name}}
                     <div class="buttonlist">
                     {% for part in appeal.appealartifact_set.all %}
-                        <a class="btn btn-primary btn-sm" href="{% url 'ietf.group.views.appeal_artifact' acronym=group.acronym artifact_id=part.pk %}">{{part.display_title}} - {{part.date|date:"Y-m-d"}}</a>
+                        <a id="artifact-{{forloop.parentloop.counter}}-{{forloop.counter}}" class="btn btn-primary btn-sm" href="{% url 'ietf.group.views.appeal_artifact' acronym=group.acronym artifact_id=part.pk %}"{% if not part.is_markdown %} download="{{part.download_name}}"{%endif%}>{{part.display_title}} - {{part.date|date:"Y-m-d"}}</a>
                     {% endfor %}
                     </div>
                 </td>

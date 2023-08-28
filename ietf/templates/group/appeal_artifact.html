@@ -18,7 +18,7 @@
     {% if request.user|has_role:"Secretariat" %}
     <hr>
     <div>
-    <a class="btn btn-primary btn-sm" download="{{artifact.date}}-{{artifact.display_title|slugify}}.md" href="{% url 'ietf.group.views.appeal_artifact_markdown' acronym=artifact.appeal.group.acronym artifact_id=artifact.pk %}">Download markdown source</a>
+    <a class="btn btn-primary btn-sm" download="{{artifact.download_name}}" href="{% url 'ietf.group.views.appeal_artifact_markdown' acronym=artifact.appeal.group.acronym artifact_id=artifact.pk %}">Download markdown source</a>
     </div>
     {% endif %}
 {% endblock %}

@@ -2141,7 +2141,7 @@ def appeals(request, acronym, group_type=None):
 
 def appeal_artifact(request, acronym, artifact_id, group_type=None):
     artifact = get_object_or_404(AppealArtifact, pk=artifact_id)
-    if artifact.content_type == "text/markdown;charset=utf-8":
+    if artifact.is_markdown():
         artifact_html = markdown.markdown(artifact.bits.tobytes().decode("utf-8"))
         return render(
             request,
@@ -2149,12 +2149,18 @@ def appeal_artifact(request, acronym, artifact_id, group_type=None):
             dict(artifact=artifact, artifact_html=artifact_html)
         )
     else:
-        return HttpResponse(artifact.bits, content_type=artifact.content_type)
+        return HttpResponse(
+            artifact.bits, 
+            headers = {
+                "Content-Type": artifact.content_type,
+                "Content-Disposition": f'attachment; filename="{artifact.download_name()}"'
+            }
+        )
     
 @role_required("Secretariat")
 def appeal_artifact_markdown(request, acronym, artifact_id, group_type=None):
     artifact = get_object_or_404(AppealArtifact, pk=artifact_id)
-    if artifact.content_type == "text/markdown;charset=utf-8":
+    if artifact.is_markdown():
         return HttpResponse(artifact.bits, content_type=artifact.content_type)
     else:
         raise Http404

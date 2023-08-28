@@ -13,6 +13,7 @@ from django.db import models
 from django.db.models.deletion import CASCADE, PROTECT
 from django.dispatch import receiver
 from django.utils import timezone
+from django.utils.text import slugify
 
 import debug                            # pyflakes:ignore
 
@@ -442,8 +443,13 @@ class AppealArtifact(models.Model):
             return self.title
         else:
             return self.artifact_type.name
-        
+
+    def is_markdown(self):
+        return self.content_type == "text/markdown;charset=utf-8"
     
+    def download_name(self):
+        return f"{self.date}-{slugify(self.display_title())}.{'md' if self.is_markdown() else 'pdf'}"
+
     def __str__(self):
         return f"{self.date} {self.display_title()} : {self.appeal.name}"
 
