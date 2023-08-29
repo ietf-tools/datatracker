@@ -11775,11 +11775,22 @@
   },
   {
     "fields": {
+      "default_offset_days": -12,
+      "desc": "Early registration and payment cut-off at UTC 23:59",
+      "name": "Early cutoff",
+      "order": 0,
+      "used": true
+    },
+    "model": "name.importantdatename",
+    "pk": "early"
+  },
+  {
+    "fields": {
       "default_offset_days": -47,
       "desc": "Early Bird registration and payment cut-off at UTC 23:59",
       "name": "Earlybird cutoff",
       "order": 0,
-      "used": true
+      "used": false
     },
     "model": "name.importantdatename",
     "pk": "earlybird"
@@ -11900,10 +11911,21 @@
       "desc": "Standard rate registration and payment cut-off at UTC 23:59.",
       "name": "Standard rate registration ends",
       "order": 18,
-      "used": true
+      "used": false
     },
     "model": "name.importantdatename",
     "pk": "stdratecutoff"
+  },
+  {
+    "fields": {
+      "default_offset_days": -47,
+      "desc": "Super Early registration cutoff at UTC 23:59",
+      "name": "Super Early cutoff",
+      "order": 0,
+      "used": true
+    },
+    "model": "name.importantdatename",
+    "pk": "superearly"
   },
   {
     "fields": {
@@ -13589,6 +13611,46 @@
   },
   {
     "fields": {
+      "desc": "Markdown",
+      "name": "Markdown",
+      "order": 0,
+      "used": true
+    },
+    "model": "name.sourceformatname",
+    "pk": "md"
+  },
+  {
+    "fields": {
+      "desc": "plaintext",
+      "name": "plaintext",
+      "order": 0,
+      "used": true
+    },
+    "model": "name.sourceformatname",
+    "pk": "txt"
+  },
+  {
+    "fields": {
+      "desc": "RFCXML v2",
+      "name": "RFCXML v2",
+      "order": 0,
+      "used": true
+    },
+    "model": "name.sourceformatname",
+    "pk": "xml-v2"
+  },
+  {
+    "fields": {
+      "desc": "RFCXML v3",
+      "name": "RFCXML v3",
+      "order": 0,
+      "used": true
+    },
+    "model": "name.sourceformatname",
+    "pk": "xml-v3"
+  },
+  {
+    "fields": {
       "desc": "",
       "name": "Best Current Practice",
       "order": 0,
@@ -13996,6 +14058,76 @@
     },
     "model": "name.timeslottypename",
     "pk": "unavail"
+  },
+  {
+    "fields": {
+      "desc": "Historic value similar to noDerivativesTrust200902",
+      "name": "noDerivativesTrust200811",
+      "order": 0,
+      "used": true
+    },
+    "model": "name.tlpboilerplatechoicename",
+    "pk": "noDerivativesTrust200811"
+  },
+  {
+    "fields": {
+      "desc": "Notice from the text of sections 6.b and 6.c.ii of the TLP (may be used on I-Ds intended to provide background information to educateand facilitate discussions within IETF working groups but notintended to be published as RFCs)",
+      "name": "noDerivativesTrust200902",
+      "order": 0,
+      "used": true
+    },
+    "model": "name.tlpboilerplatechoicename",
+    "pk": "noDerivativesTrust200902"
+  },
+  {
+    "fields": {
+      "desc": "Historic value similar to noModificationTrust200902",
+      "name": "noModificationTrust200811",
+      "order": 0,
+      "used": true
+    },
+    "model": "name.tlpboilerplatechoicename",
+    "pk": "noModificationTrust200811"
+  },
+  {
+    "fields": {
+      "desc": "Notice from the text of sections 6.b and 6.c.i of the TLP (may be appropriate when republishing standards produced by a standards body other than the IETF, industry consortia, or companies, typically as an Informational RFC)",
+      "name": "noModificationTrust200902",
+      "order": 0,
+      "used": true
+    },
+    "model": "name.tlpboilerplatechoicename",
+    "pk": "noModificationTrust200902"
+  },
+  {
+    "fields": {
+      "desc": "Notice from the text of sections 6.b and 6.c.iii of the TLP (see TLP Modification of 15 Feb 2009 section of Trust FAQ)",
+      "name": "pre5378Trust200902",
+      "order": 0,
+      "used": true
+    },
+    "model": "name.tlpboilerplatechoicename",
+    "pk": "pre5378Trust200902"
+  },
+  {
+    "fields": {
+      "desc": "Historic value similar to trust200902",
+      "name": "trust200811",
+      "order": 0,
+      "used": true
+    },
+    "model": "name.tlpboilerplatechoicename",
+    "pk": "trust200811"
+  },
+  {
+    "fields": {
+      "desc": "Notice from the text of section 6.b of the TLP",
+      "name": "trust200902",
+      "order": 0,
+      "used": true
+    },
+    "model": "name.tlpboilerplatechoicename",
+    "pk": "trust200902"
   },
   {
     "fields": {
@@ -16455,7 +16587,7 @@
     "fields": {
       "command": "xym",
       "switch": "--version",
-      "time": "2023-07-17T07:09:47.664Z",
+      "time": "2023-08-28T07:09:44.643Z",
       "used": true,
       "version": "xym 0.7.0"
     },
@@ -16466,7 +16598,7 @@
     "fields": {
       "command": "pyang",
       "switch": "--version",
-      "time": "2023-07-17T07:09:48.075Z",
+      "time": "2023-08-28T07:09:45.017Z",
       "used": true,
       "version": "pyang 2.5.3"
     },
@@ -16477,7 +16609,7 @@
     "fields": {
       "command": "yanglint",
       "switch": "--version",
-      "time": "2023-07-17T07:09:48.104Z",
+      "time": "2023-08-28T07:09:45.069Z",
       "used": true,
       "version": "yanglint SO 1.9.2"
     },
@@ -16488,9 +16620,9 @@
     "fields": {
       "command": "xml2rfc",
       "switch": "--version",
-      "time": "2023-07-17T07:09:49.075Z",
+      "time": "2023-08-28T07:09:46.036Z",
       "used": true,
-      "version": "xml2rfc 3.17.4"
+      "version": "xml2rfc 3.18.0"
     },
     "model": "utils.versioninfo",
     "pk": 4

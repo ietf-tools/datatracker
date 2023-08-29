@@ -7,6 +7,7 @@ from ietf.rpc.factories import (
     AssignmentFactory,
     CapabilityFactory,
     ClusterFactory,
+    DispositionFactory,
     FinalApprovalFactory,
     RfcAuthorFactory,
     RpcPersonFactory,
@@ -24,6 +25,7 @@ class BasicRpcFactoryTests(TestCase):
         RpcPersonFactory()
         RpcRoleFactory()
         CapabilityFactory()
+        DispositionFactory()
         RfcToBeFactory()
         AprilFirstRfcToBeFactory()
         ActionHolderFactory()

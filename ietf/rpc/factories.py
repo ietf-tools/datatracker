@@ -11,6 +11,7 @@ from .models import (
     Assignment,
     Capability,
     Cluster,
+    Disposition,
     FinalApproval,
     RfcAuthor,
     RfcToBe,
@@ -71,11 +72,20 @@ class CapabilityFactory(factory.django.DjangoModelFactory):
     name = factory.Faker("sentence")
     desc = factory.Faker("sentence")
 
+class DispositionFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = Disposition
+        django_get_or_create = ("slug", )
+    
+    slug = factory.Faker("word")
+    name = factory.Faker("sentence")
+    desc = factory.Faker("sentence")
 
 class RfcToBeFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = RfcToBe
 
+    disposition = factory.SubFactory(DispositionFactory, slug="in_progress")
     draft = factory.SubFactory("ietf.doc.factories.WgDraftFactory")
     rfc_number = factory.Sequence(lambda n: n + 1000)
     submitted_format = factory.SubFactory(
