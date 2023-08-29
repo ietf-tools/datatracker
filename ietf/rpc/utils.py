@@ -18,7 +18,7 @@ def next_rfc_number(count=1) -> List[int]:
         RfcToBe.objects.aggregate(Max("rfc_number"))["rfc_number__max"] or 0,
         DocAlias.objects.filter(name__startswith="rfc").annotate(
             rfcnum=Cast(Substr("name", 4), PositiveIntegerField())
-        ).aggregate(Max("rfcnum"))["rfcnum__max"],
+        ).aggregate(Max("rfcnum"))["rfcnum__max"] or 0,
     ))
     # todo consider holes in the unavailable number sequence!
     return list(range(last_unavailable_number + 1, last_unavailable_number + 1 + count))
