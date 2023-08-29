@@ -219,7 +219,7 @@ class Migration(migrations.Migration):
                 (
                     "manager",
                     models.ForeignKey(
-                        limit_choices_to=models.Q(("can_hold_role__slug", "manager")),
+                        limit_choices_to={"can_hold_role__slug": "manager"},
                         null=True,
                         on_delete=django.db.models.deletion.PROTECT,
                         related_name="managed_people",
