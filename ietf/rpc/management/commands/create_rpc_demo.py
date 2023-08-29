@@ -4,7 +4,10 @@
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 
-from ...factories import RpcPersonFactory
+from ietf.doc.factories import WgDraftFactory
+from ietf.doc.models import DocAlias
+from ...factories import RfcToBeFactory, RpcPersonFactory
+from ...models import RfcToBe, UnusableRfcNumber
 
 
 class Command(BaseCommand):
@@ -15,6 +18,10 @@ class Command(BaseCommand):
         if settings.SERVER_MODE == "production":
             raise CommandError("This command is not allowed in production mode")
 
+        self.create_rpc_people()
+        self.create_documents()
+
+    def create_rpc_people(self):
         # From "Manage Team Members" wireframe
         bjenkins = RpcPersonFactory(
             person__name="B. Jenkins",
@@ -154,3 +161,13 @@ class Command(BaseCommand):
             capable_of=["xmlfmt-expert"],
             manager=bjenkins,
         )
+
+    def create_documents(self):
+        # Draft sent to RPC
+        WgDraftFactory()
+
+        # Draft sent to RPC and in progress as an RfcToBe
+        RfcToBeFactory(rfc_number=None)
+
+        # Draft published as an RFC
+        RfcToBeFactory(disposition__slug="published")

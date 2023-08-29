@@ -87,6 +87,9 @@ class Cluster(models.Model):
 class UnusableRfcNumber(models.Model):
     number = models.PositiveIntegerField(primary_key=True)
     comment = models.TextField(blank=True)
+    
+    class Meta:
+        ordering = ["number"]
 
 
 class RpcPerson(models.Model):
