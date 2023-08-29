@@ -17,6 +17,7 @@ from ietf.name.models import (
 from ietf.person.models import Person
 
 
+
 class RfcToBe(models.Model):
     """RPC representation of a pre-publication RFC
 
@@ -24,10 +25,7 @@ class RfcToBe(models.Model):
      * not in_progress and not published = abandoned without publication
     """
 
-    in_progress = models.BooleanField(default=True)
-    published = models.DateTimeField(
-        null=True
-    )  # should match a DocEvent on the rfc Document
+    disposition = models.ForeignKey("Disposition", on_delete=models.PROTECT)
     is_april_first_rfc = models.BooleanField(default=False)
     draft = models.ForeignKey(
         Document, null=True, on_delete=models.PROTECT
@@ -76,6 +74,22 @@ class RfcToBe(models.Model):
             ),
         ]
 
+class Disposition(models.Model):
+    slug = models.CharField(max_length=32, primary_key=True)
+    name = models.CharField(max_length=255)
+    desc = models.TextField(blank=True)
+
+class RfcToBeEventType(models.Model):
+    slug = models.CharField(max_length=32, primary_key=True)
+    name = models.CharField(max_length=255)
+    desc = models.TextField(blank=True)
+
+class RfcToBeEvent(models.Model):
+    type = models.ForeignKey("RfcToBeEvent", on_delete=models.PROTECT)
+    rfc_to_be = models.ForeignKey("RfcToBe", on_delete=models.PROTECT)
+    time = models.DateTimeField(default=timezone.now)
+    by = models.ForeignKey(Person, on_delete=models.PROTECT) # We may drop an approval event in addition to capturing an approval?
+    desc = models.TextField()
 
 class Cluster(models.Model):
     number = models.PositiveIntegerField(unique=True)

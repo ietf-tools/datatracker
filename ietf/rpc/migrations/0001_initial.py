@@ -4,16 +4,16 @@ import datetime
 from django.db import migrations, models
 import django.db.models.constraints
 import django.db.models.deletion
-import django.utils.timezone
+import django.utils.timezone # Is this the right timezone?
 
 
 class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ("name", "0009_populate_tlpboilerplatechoicename"),
         ("doc", "0006_statements"),
         ("person", "0001_initial"),
+        ("name", "0009_populate_tlpboilerplatechoicename"),
     ]
 
     operations = [
@@ -44,6 +44,17 @@ class Migration(migrations.Migration):
             ],
         ),
         migrations.CreateModel(
+            name="Disposition",
+            fields=[
+                (
+                    "slug",
+                    models.CharField(max_length=32, primary_key=True, serialize=False),
+                ),
+                ("name", models.CharField(max_length=255)),
+                ("desc", models.TextField(blank=True)),
+            ],
+        ),
+        migrations.CreateModel(
             name="RfcToBe",
             fields=[
                 (
@@ -55,8 +66,6 @@ class Migration(migrations.Migration):
                         verbose_name="ID",
                     ),
                 ),
-                ("in_progress", models.BooleanField(default=True)),
-                ("published", models.DateTimeField(null=True)),
                 ("is_april_first_rfc", models.BooleanField(default=False)),
                 ("rfc_number", models.PositiveIntegerField(null=True)),
                 ("order_in_cluster", models.PositiveSmallIntegerField(default=1)),
@@ -68,6 +77,13 @@ class Migration(migrations.Migration):
                         null=True,
                         on_delete=django.db.models.deletion.SET_NULL,
                         to="rpc.cluster",
+                    ),
+                ),
+                (
+                    "disposition",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.PROTECT,
+                        to="rpc.disposition",
                     ),
                 ),
                 (
@@ -133,6 +149,17 @@ class Migration(migrations.Migration):
                         to="name.streamname",
                     ),
                 ),
+            ],
+        ),
+        migrations.CreateModel(
+            name="RfcToBeEventType",
+            fields=[
+                (
+                    "slug",
+                    models.CharField(max_length=32, primary_key=True, serialize=False),
+                ),
+                ("name", models.CharField(max_length=255)),
+                ("desc", models.TextField(blank=True)),
             ],
         ),
         migrations.CreateModel(
@@ -287,6 +314,41 @@ class Migration(migrations.Migration):
                     "person",
                     models.ForeignKey(
                         on_delete=django.db.models.deletion.PROTECT, to="person.person"
+                    ),
+                ),
+            ],
+        ),
+        migrations.CreateModel(
+            name="RfcToBeEvent",
+            fields=[
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("time", models.DateTimeField(default=django.utils.timezone.now)),
+                ("desc", models.TextField()),
+                (
+                    "by",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.PROTECT, to="person.person"
+                    ),
+                ),
+                (
+                    "rfc_to_be",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.PROTECT, to="rpc.rfctobe"
+                    ),
+                ),
+                (
+                    "type",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.PROTECT,
+                        to="rpc.rfctobeevent",
                     ),
                 ),
             ],
