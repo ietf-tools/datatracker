@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from django.conf import settings
-from django.core.management.base import BaseCommand, CommandError, CommandParser
+from django.core.management.base import BaseCommand, CommandError
 
 from ...factories import RpcPersonFactory
 
