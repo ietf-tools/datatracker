@@ -92,8 +92,11 @@ class RpcPerson(models.Model):
     capable_of = models.ManyToManyField("Capability")
     hours_per_week = models.PositiveSmallIntegerField(default=40)
     manager = models.ForeignKey("RpcPerson", null=True, on_delete=models.PROTECT,
-                                limit_choices_to=models.Q(can_hold_role__slug="manager"),
+                                limit_choices_to={"can_hold_role__slug": "manager"},
                                 related_name="managed_people")
+    
+    def __str__(self):
+        return str(self.person)
 
 
 class RpcRole(models.Model):
