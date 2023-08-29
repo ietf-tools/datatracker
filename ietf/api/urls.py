@@ -11,6 +11,8 @@ from ietf.meeting import views as meeting_views
 from ietf.submit import views as submit_views
 from ietf.utils.urls import url
 
+import ietf.rpc.api as rpc_api
+
 api.autodiscover()
 
 urlpatterns = [
@@ -60,6 +62,7 @@ urlpatterns = [
     url(r'^rfcdiff-latest-json/(?P<name>[Rr][Ff][Cc] [0-9]+?)(\.txt|\.html)?/?$', api_views.rfcdiff_latest_json),
     # direct authentication
     url(r'^directauth/?$', api_views.directauth),
+    url(r'rpc/rpc_person/$', rpc_api.rpc_person),
 ]
 
 # Additional (standard) Tastypie endpoints
