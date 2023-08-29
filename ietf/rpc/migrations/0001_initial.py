@@ -213,8 +213,19 @@ class Migration(migrations.Migration):
                         verbose_name="ID",
                     ),
                 ),
+                ("hours_per_week", models.PositiveSmallIntegerField(default=40)),
                 ("can_hold_role", models.ManyToManyField(to="rpc.rpcrole")),
                 ("capable_of", models.ManyToManyField(to="rpc.capability")),
+                (
+                    "manager",
+                    models.ForeignKey(
+                        limit_choices_to={"can_hold_role__slug": "manager"},
+                        null=True,
+                        on_delete=django.db.models.deletion.PROTECT,
+                        related_name="managed_people",
+                        to="rpc.rpcperson",
+                    ),
+                ),
                 (
                     "person",
                     models.ForeignKey(
@@ -370,6 +381,7 @@ class Migration(migrations.Migration):
                         max_length=32,
                     ),
                 ),
+                ("comment", models.TextField(blank=True)),
                 ("time_spent", models.DurationField(default=datetime.timedelta(0))),
                 (
                     "person",
@@ -381,6 +393,12 @@ class Migration(migrations.Migration):
                     "rfc_to_be",
                     models.ForeignKey(
                         on_delete=django.db.models.deletion.PROTECT, to="rpc.rfctobe"
+                    ),
+                ),
+                (
+                    "role",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.PROTECT, to="rpc.rpcrole"
                     ),
                 ),
             ],

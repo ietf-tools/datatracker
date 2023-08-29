@@ -90,6 +90,19 @@ class RpcPerson(models.Model):
     person = models.ForeignKey(Person, on_delete=models.PROTECT)
     can_hold_role = models.ManyToManyField("RpcRole")
     capable_of = models.ManyToManyField("Capability")
+    hours_per_week = models.PositiveSmallIntegerField(default=40)
+    manager = models.ForeignKey("RpcPerson", null=True, on_delete=models.PROTECT,
+                                limit_choices_to={"can_hold_role__slug": "manager"},
+                                related_name="managed_people")
+    
+    def __str__(self):
+        return str(self.person)
+
+
+class RpcRole(models.Model):
+    slug = models.CharField(max_length=32, primary_key=True)
+    name = models.CharField(max_length=255)
+    desc = models.TextField(blank=True)
 
 
 ASSIGNMENT_STATE_CHOICES = (
@@ -104,17 +117,12 @@ class Assignment(models.Model):
 
     rfc_to_be = models.ForeignKey(RfcToBe, on_delete=models.PROTECT)
     person = models.ForeignKey(RpcPerson, on_delete=models.PROTECT)
+    role = models.ForeignKey(RpcRole, on_delete=models.PROTECT)
     state = models.CharField(
         max_length=32, choices=ASSIGNMENT_STATE_CHOICES, default="assigned"
     )
+    comment = models.TextField(blank=True)
     time_spent = models.DurationField(default=datetime.timedelta(0))  # tbd
-    # TBD - should Assingment capture RpcRole? Should it have a comment?
-
-
-class RpcRole(models.Model):
-    slug = models.CharField(max_length=32, primary_key=True)
-    name = models.CharField(max_length=255)
-    desc = models.TextField(blank=True)
 
 
 class Capability(models.Model):
