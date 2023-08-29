@@ -21,10 +21,6 @@ from ietf.person.models import Person
 class RfcToBe(models.Model):
     """RPC representation of a pre-publication RFC
 
-    Notes:
-     * not in_progress and not published = abandoned without publication
-    """
-
     disposition = models.ForeignKey("Disposition", on_delete=models.PROTECT)
     is_april_first_rfc = models.BooleanField(default=False)
     draft = models.ForeignKey(
