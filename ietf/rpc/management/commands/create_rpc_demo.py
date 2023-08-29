@@ -2,9 +2,12 @@
 # -*- coding: utf-8 -*-
 
 from django.conf import settings
-from django.core.management.base import BaseCommand, CommandError, CommandParser
+from django.core.management.base import BaseCommand, CommandError
 
-from ...factories import RpcPersonFactory
+from ietf.doc.factories import WgDraftFactory, WgRfcFactory
+
+from ...factories import RfcToBeFactory, RpcPersonFactory
+from ...utils import next_rfc_number
 
 
 class Command(BaseCommand):
@@ -15,6 +18,10 @@ class Command(BaseCommand):
         if settings.SERVER_MODE == "production":
             raise CommandError("This command is not allowed in production mode")
 
+        self.create_rpc_people()
+        self.create_documents()
+
+    def create_rpc_people(self):
         # From "Manage Team Members" wireframe
         bjenkins = RpcPersonFactory(
             person__name="B. Jenkins",
@@ -153,4 +160,22 @@ class Command(BaseCommand):
             can_hold_role=["formatting"],
             capable_of=["xmlfmt-expert"],
             manager=bjenkins,
+        )
+
+    def create_documents(self):
+        # Draft sent to RPC
+        WgDraftFactory(states=[("draft-iesg", "pub-req")])
+
+        # Draft sent to RPC and in progress as an RfcToBe
+        RfcToBeFactory(
+            rfc_number=None,
+            draft__states=[("draft-iesg", "rfcqueue")]
+        )
+
+        # Draft published as an RFC
+        rfc_number = next_rfc_number()[0]
+        RfcToBeFactory(
+            disposition__slug="published", 
+            rfc_number=rfc_number,
+            draft=WgRfcFactory(alias2__name=f"rfc{rfc_number}")
         )

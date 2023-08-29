@@ -73,11 +73,18 @@ class RfcToBe(models.Model):
             ),
         ]
 
+    def __str__(self):
+        name = f"RFC {self.rfc_number}" if self.rfc_number is not None else self.draft.name
+        return f"{name} ({self.disposition})"
+
 
 class Disposition(models.Model):
     slug = models.CharField(max_length=32, primary_key=True)
     name = models.CharField(max_length=255)
     desc = models.TextField(blank=True)
+
+    def __str__(self):
+        return self.name
 
 
 class Cluster(models.Model):
@@ -87,6 +94,9 @@ class Cluster(models.Model):
 class UnusableRfcNumber(models.Model):
     number = models.PositiveIntegerField(primary_key=True)
     comment = models.TextField(blank=True)
+    
+    class Meta:
+        ordering = ["number"]
 
 
 class RpcPerson(models.Model):
