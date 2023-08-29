@@ -35,7 +35,7 @@ class Command(BaseCommand):
             ],
             capable_of=[
                 "codecomp-abnf",
-                "code-comp-xml",
+                "codecomp-xml",
                 "codecomp-yang",
                 "clusters-expert",
                 "ianaconsid-intermediate",
