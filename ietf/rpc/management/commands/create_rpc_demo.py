@@ -5,9 +5,9 @@ from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 
 from ietf.doc.factories import WgDraftFactory
-from ietf.doc.models import DocAlias
+
 from ...factories import RfcToBeFactory, RpcPersonFactory
-from ...models import RfcToBe, UnusableRfcNumber
+from ...utils import next_rfc_number
 
 
 class Command(BaseCommand):
@@ -170,4 +170,7 @@ class Command(BaseCommand):
         RfcToBeFactory(rfc_number=None)
 
         # Draft published as an RFC
-        RfcToBeFactory(disposition__slug="published")
+        RfcToBeFactory(
+            disposition__slug="published", 
+            rfc_number=next_rfc_number()[0],
+        )
