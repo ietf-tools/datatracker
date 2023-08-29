@@ -19,7 +19,7 @@ from ietf.person.models import Person
 
 
 class RfcToBe(models.Model):
-    """RPC representation of a pre-publication RFC
+    """RPC representation of a pre-publication RFC"""
 
     disposition = models.ForeignKey("Disposition", on_delete=models.PROTECT)
     is_april_first_rfc = models.BooleanField(default=False)
