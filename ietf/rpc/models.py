@@ -6,6 +6,8 @@ import datetime
 from django.db import models
 from django.utils import timezone
 
+from simple_history.models import HistoricalRecords
+
 from ietf.doc.models import Document
 from ietf.name.models import (
     DocRelationshipName,
@@ -17,17 +19,11 @@ from ietf.name.models import (
 from ietf.person.models import Person
 
 
+
 class RfcToBe(models.Model):
-    """RPC representation of a pre-publication RFC
+    """RPC representation of a pre-publication RFC"""
 
-    Notes:
-     * not in_progress and not published = abandoned without publication
-    """
-
-    in_progress = models.BooleanField(default=True)
-    published = models.DateTimeField(
-        null=True
-    )  # should match a DocEvent on the rfc Document
+    disposition = models.ForeignKey("Disposition", on_delete=models.PROTECT)
     is_april_first_rfc = models.BooleanField(default=False)
     draft = models.ForeignKey(
         Document, null=True, on_delete=models.PROTECT
@@ -61,6 +57,8 @@ class RfcToBe(models.Model):
     external_deadline = models.DateTimeField(null=True)
     internal_goal = models.DateTimeField(null=True)
 
+    history = HistoricalRecords()
+
     class Meta:
         constraints = [
             models.CheckConstraint(
@@ -75,6 +73,11 @@ class RfcToBe(models.Model):
                 deferrable=models.Deferrable.DEFERRED,
             ),
         ]
+
+class Disposition(models.Model):
+    slug = models.CharField(max_length=32, primary_key=True)
+    name = models.CharField(max_length=255)
+    desc = models.TextField(blank=True)
 
 
 class Cluster(models.Model):
