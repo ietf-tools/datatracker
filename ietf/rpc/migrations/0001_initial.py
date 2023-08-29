@@ -4,7 +4,7 @@ import datetime
 from django.db import migrations, models
 import django.db.models.constraints
 import django.db.models.deletion
-import django.utils.timezone # Is this the right timezone?
+import django.utils.timezone
 
 
 class Migration(migrations.Migration):
