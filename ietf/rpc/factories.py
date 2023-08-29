@@ -72,14 +72,16 @@ class CapabilityFactory(factory.django.DjangoModelFactory):
     name = factory.Faker("sentence")
     desc = factory.Faker("sentence")
 
+
 class DispositionFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Disposition
-        django_get_or_create = ("slug", )
-    
+        django_get_or_create = ("slug",)
+
     slug = factory.Faker("word")
     name = factory.Faker("sentence")
     desc = factory.Faker("sentence")
+
 
 class RfcToBeFactory(factory.django.DjangoModelFactory):
     class Meta:
@@ -141,7 +143,8 @@ class UnusableRfcNumberFactory(factory.django.DjangoModelFactory):
         model = UnusableRfcNumber
 
     number = factory.LazyFunction(
-        lambda: 1 + (UnusableRfcNumber.objects.aggregate(Max("number"))["number__max"] or 0)
+        lambda: 1
+        + (UnusableRfcNumber.objects.aggregate(Max("number"))["number__max"] or 0)
     )
     comment = factory.Faker("sentence")
 

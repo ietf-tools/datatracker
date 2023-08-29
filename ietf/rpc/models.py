@@ -19,7 +19,6 @@ from ietf.name.models import (
 from ietf.person.models import Person
 
 
-
 class RfcToBe(models.Model):
     """RPC representation of a pre-publication RFC"""
 
@@ -74,6 +73,7 @@ class RfcToBe(models.Model):
             ),
         ]
 
+
 class Disposition(models.Model):
     slug = models.CharField(max_length=32, primary_key=True)
     name = models.CharField(max_length=255)
@@ -94,9 +94,13 @@ class RpcPerson(models.Model):
     can_hold_role = models.ManyToManyField("RpcRole")
     capable_of = models.ManyToManyField("Capability")
     hours_per_week = models.PositiveSmallIntegerField(default=40)
-    manager = models.ForeignKey("RpcPerson", null=True, on_delete=models.PROTECT,
-                                limit_choices_to={"can_hold_role__slug": "manager"},
-                                related_name="managed_people")
+    manager = models.ForeignKey(
+        "RpcPerson",
+        null=True,
+        on_delete=models.PROTECT,
+        limit_choices_to={"can_hold_role__slug": "manager"},
+        related_name="managed_people",
+    )
 
     def __str__(self):
         return str(self.person)
