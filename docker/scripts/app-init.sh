@@ -37,6 +37,13 @@ echo "Building static assets... (this could take a minute or two)"
 yarn build
 yarn legacy:build
 
+# Generate rpc-frontend static files
+echo "Building rpc-frontend website..."
+cd rpc-frontend
+npm install
+npm run generate
+cd ..
+
 # Copy config files if needed
 cp $WORKSPACEDIR/docker/configs/settings_postgresqldb.py $WORKSPACEDIR/ietf/settings_postgresqldb.py
 
