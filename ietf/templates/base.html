@@ -35,7 +35,7 @@
           data-group-menu-data-url="{% url 'ietf.group.views.group_menu_data' %}">
         {% analytical_body_top %}
         <a class="visually-hidden visually-hidden-focusable" href="#content">Skip to main content</a>
-        <nav class="navbar navbar-expand-lg fixed-top {% if server_mode and server_mode != "production" %}bg-danger-subtle{% else %}bg-secondary{% endif %}">
+        <nav class="navbar navbar-expand-lg fixed-top {% if server_mode and server_mode != "production" %}bg-danger-subtle{% else %}bg-secondary-subtle{% endif %}">
             <div class="container-fluid">
                 <a class="navbar-brand" href="/">
                     {% include "logo.html" with org="ietf" classes="me-2" nor=True only %}
@@ -50,7 +50,7 @@
                     </ul>
                 </div>
                 <div class="d-flex align-items-center">
-                    <a class="nav-link {% if server_mode and server_mode != "production" %}text-danger{% else %}text-warning{% endif %} d-none d-xl-inline me-xl-4"
+                    <a class="nav-link text-danger d-none d-xl-inline me-xl-4"
                        target="_blank"
                        href="https://github.com/ietf-tools/datatracker/issues/new/choose">
                         Report a bug

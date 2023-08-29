@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{# Copyright The IETF Trust 2015, 2017. All Rights Reserved. #}
+{# Copyright The IETF Trust 2015-2023. All Rights Reserved. #}
 {% load origin %}
 {% load ietf_filters ipr_filters textfilters %}
 {% block title %}IPR Details - {{ ipr.title }}{% endblock %}
@@ -388,6 +388,13 @@
                                         <dd class="col-sm-8 my-0">
                                             {{ iprdocrel.revisions }}
                                         </dd>
+                                    {% elif iprdocrel.doc_type == "Internet-Draft" %}
+                                        <dt class="{% if prev %}col-sm-4{% else %}col-sm-3{% endif %} my-0 fw-bolder fst-italic">
+                                            Notice:
+                                        </dt>
+                                        <dd class="{% if prev %}col-sm-8{% else %}col-sm-9{% endif %} my-0 fst-italic">
+                                            {{ iprdocrel|no_revisions_message }}
+                                        </dd>                                 
                                     {% endif %}
                                     {% if iprdocrel.sections %}
                                         <dt class="col-sm-4 my-0">
@@ -427,6 +434,13 @@
                                     <dd class="{% if prev %}col-sm-8{% else %}col-sm-9{% endif %} my-0">
                                         {{ iprdocrel.revisions }}
                                     </dd>
+                                {% elif iprdocrel.doc_type == "Internet-Draft" %}
+                                    <dt class="{% if prev %}col-sm-4{% else %}col-sm-3{% endif %} my-0 fw-bolder fst-italic">
+                                        Notice:
+                                    </dt>
+                                    <dd class="{% if prev %}col-sm-8{% else %}col-sm-9{% endif %} my-0 fst-italic">
+                                        {{ iprdocrel|no_revisions_message }}
+                                    </dd>                              
                                 {% endif %}
                                 {% if iprdocrel.sections %}
                                     <dt class="{% if prev %}col-sm-4{% else %}col-sm-3{% endif %} my-0">
