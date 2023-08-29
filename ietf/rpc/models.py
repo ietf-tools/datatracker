@@ -74,8 +74,7 @@ class RfcToBe(models.Model):
         ]
 
     def __str__(self):
-        name = f"RFC {self.rfc_number}" if self.rfc_number is not None else self.draft.name
-        return f"{name} ({self.disposition})"
+        return f"RfcToBe for {self.draft.name if self.rfc_number is None else self.rfc_number}"
 
 
 class Disposition(models.Model):
@@ -90,13 +89,19 @@ class Disposition(models.Model):
 class Cluster(models.Model):
     number = models.PositiveIntegerField(unique=True)
 
+    def __str__(self):
+        return f"cluster {self.number}"
+
 
 class UnusableRfcNumber(models.Model):
     number = models.PositiveIntegerField(primary_key=True)
     comment = models.TextField(blank=True)
-    
+
     class Meta:
         ordering = ["number"]
+
+    def __str__(self):
+        return str(self.number)
 
 
 class RpcPerson(models.Model):
@@ -121,6 +126,9 @@ class RpcRole(models.Model):
     name = models.CharField(max_length=255)
     desc = models.TextField(blank=True)
 
+    def __str__(self):
+        return self.name
+
 
 ASSIGNMENT_STATE_CHOICES = (
     ("assigned", "assigned"),
@@ -141,17 +149,26 @@ class Assignment(models.Model):
     comment = models.TextField(blank=True)
     time_spent = models.DurationField(default=datetime.timedelta(0))  # tbd
 
+    def __str__(self):
+        return f"{self.person} assigned as {self.role} for {self.rfc_to_be}"
+
 
 class Capability(models.Model):
     slug = models.CharField(max_length=32, primary_key=True)
     name = models.CharField(max_length=255)
     desc = models.TextField(blank=True)
 
+    def __str__(self):
+        return self.name
+
 
 class RfcAuthor(models.Model):
     person = models.ForeignKey(Person, on_delete=models.PROTECT)
     rfc_to_be = models.ForeignKey(RfcToBe, on_delete=models.PROTECT)
     auth48_approved = models.DateTimeField(null=True)
+
+    def __str__(self):
+        return f"{self.person} as author of {self.rfc_to_be}"
 
 
 class FinalApproval(models.Model):
@@ -160,12 +177,21 @@ class FinalApproval(models.Model):
     requested = models.DateTimeField(default=timezone.now)
     approved = models.DateTimeField(null=True)
 
+    def __str__(self):
+        if self.approved:
+            return f"final approval from {self.approver}"
+        else:
+            return f"request for final approval from {self.approver}"
+
 
 class ActionHolder(models.Model):
     person = models.ForeignKey(Person, on_delete=models.PROTECT)
     since_when = models.DateTimeField(default=timezone.now)
     completed = models.DateTimeField(null=True)
     comment = models.TextField(blank=True)
+
+    def __str__(self):
+        return f"{'Completed' if self.completed else 'Pending'} action held by {self.person}"
 
 
 class RpcRelatedDocument(models.Model):
@@ -203,6 +229,10 @@ class RpcRelatedDocument(models.Model):
             )
         ]
 
+    def __str__(self):
+        target = self.target_document if self.target_document else self.target_rfctobe
+        return f"{self.relationship} relationship from {self.source} to {target}"
+
 
 class RpcDocumentComment(models.Model):
     """Private RPC comment about a draft, RFC or RFC-to-be"""
@@ -223,6 +253,10 @@ class RpcDocumentComment(models.Model):
                 violation_error_message="exactly one of document or rfc_to_be must be set",
             )
         ]
+
+    def __str__(self):
+        target = self.document if self.document else self.rfc_to_be
+        return f"RpcDocumentComment about {target} by {self.by} on {self.time:%Y-%m-%d}"
 
 
 class RpcAuthorComment(models.Model):
