@@ -1,0 +1,3 @@
+[submodule "rpc-frontend"]
+	path = rpc-frontend
+	url = https://github.com/ietf-tools/rpc-frontend.git
