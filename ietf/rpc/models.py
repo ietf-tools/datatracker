@@ -94,7 +94,7 @@ class RpcPerson(models.Model):
     manager = models.ForeignKey("RpcPerson", null=True, on_delete=models.PROTECT,
                                 limit_choices_to={"can_hold_role__slug": "manager"},
                                 related_name="managed_people")
-    
+
     def __str__(self):
         return str(self.person)
 
@@ -199,8 +199,9 @@ class RpcDocumentComment(models.Model):
     class Meta:
         constraints = [
             models.CheckConstraint(
-                check=models.Q(document__isnull=True)
-                ^ models.Q(rfc_to_be__isnull=True),
+                check=(
+                    models.Q(document__isnull=True) ^ models.Q(rfc_to_be__isnull=True)
+                ),
                 name="rpcdocumentcomment_exactly_one_target",
                 violation_error_message="exactly one of document or rfc_to_be must be set",
             )
