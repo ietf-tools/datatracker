@@ -89,7 +89,6 @@ class RfcToBeFactory(factory.django.DjangoModelFactory):
 
     disposition = factory.SubFactory(DispositionFactory, slug="in_progress")
     draft = factory.SubFactory("ietf.doc.factories.WgDraftFactory")
-    rfc_number = factory.Sequence(lambda n: n + 1000)
     submitted_format = factory.SubFactory(
         "ietf.name.factories.SourceFormatNameFactory", slug="xml-v3"
     )
