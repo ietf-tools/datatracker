@@ -21,6 +21,10 @@ sudo chown dev:dev "/assets"
 echo "Fix chromedriver /dev/shm permissions..."
 sudo chmod 1777 /dev/shm
 
+# Fetch git modules
+echo "Fetching git submodules..."
+git submodule update --init --recursive
+
 # Run nginx
 echo "Starting nginx..."
 sudo nginx
