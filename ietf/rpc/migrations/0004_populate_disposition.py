@@ -4,7 +4,6 @@ from django.db import migrations
 
 def forward(apps, schema_editor):
     Disposition = apps.get_model("rpc", "Disposition")
-    RfcToBeEventType = apps.get_model("rpc", "RfcToBeEventType")
 
     Disposition.objects.create(
         slug = "in_progress",
@@ -21,28 +20,12 @@ def forward(apps, schema_editor):
         name = "Withdrawn",
         desc = "RfcToBe has been withdrawn"
     )
-    RfcToBeEventType.objects.create(
-        slug = "published",
-        name = "RFC published",
-        desc = "RFC published"
-    )
-    RfcToBeEventType.objects.create(
-        slug = "withdrawn",
-        name = "Withdrawn",
-        desc = "RfcToBe was withdrawn"
-    )
-    """
-        To Discuss: accepted/entered_queue, assigned, ... ?
-        A lot of DRY violation here.
-    """
 
 
 def reverse(apps, schema_editor):
     Disposition = apps.get_model("rpc", "Disposition")
-    RfcToBeEventType = apps.get_model("rpc", "RfcToBeEventType")
 
     Disposition.objects.all().delete()
-    RfcToBeEventType.objects.all().delete()
 
 class Migration(migrations.Migration):
     dependencies = [

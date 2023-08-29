@@ -6,6 +6,8 @@ import datetime
 from django.db import models
 from django.utils import timezone
 
+from simple_history.models import HistoricalRecords
+
 from ietf.doc.models import Document
 from ietf.name.models import (
     DocRelationshipName,
@@ -55,6 +57,8 @@ class RfcToBe(models.Model):
     external_deadline = models.DateTimeField(null=True)
     internal_goal = models.DateTimeField(null=True)
 
+    history = HistoricalRecords()
+
     class Meta:
         constraints = [
             models.CheckConstraint(
@@ -75,17 +79,6 @@ class Disposition(models.Model):
     name = models.CharField(max_length=255)
     desc = models.TextField(blank=True)
 
-class RfcToBeEventType(models.Model):
-    slug = models.CharField(max_length=32, primary_key=True)
-    name = models.CharField(max_length=255)
-    desc = models.TextField(blank=True)
-
-class RfcToBeEvent(models.Model):
-    type = models.ForeignKey("RfcToBeEvent", on_delete=models.PROTECT)
-    rfc_to_be = models.ForeignKey("RfcToBe", on_delete=models.PROTECT)
-    time = models.DateTimeField(default=timezone.now)
-    by = models.ForeignKey(Person, on_delete=models.PROTECT) # We may drop an approval event in addition to capturing an approval?
-    desc = models.TextField()
 
 class Cluster(models.Model):
     number = models.PositiveIntegerField(unique=True)

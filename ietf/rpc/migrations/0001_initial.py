@@ -1,10 +1,12 @@
 # Copyright The IETF Trust 2023, All Rights Reserved
 
 import datetime
+from django.conf import settings
 from django.db import migrations, models
 import django.db.models.constraints
 import django.db.models.deletion
 import django.utils.timezone
+import simple_history.models
 
 
 class Migration(migrations.Migration):
@@ -13,6 +15,7 @@ class Migration(migrations.Migration):
     dependencies = [
         ("doc", "0006_statements"),
         ("person", "0001_initial"),
+        migrations.swappable_dependency(settings.AUTH_USER_MODEL),
         ("name", "0009_populate_tlpboilerplatechoicename"),
     ]
 
@@ -149,17 +152,6 @@ class Migration(migrations.Migration):
                         to="name.streamname",
                     ),
                 ),
-            ],
-        ),
-        migrations.CreateModel(
-            name="RfcToBeEventType",
-            fields=[
-                (
-                    "slug",
-                    models.CharField(max_length=32, primary_key=True, serialize=False),
-                ),
-                ("name", models.CharField(max_length=255)),
-                ("desc", models.TextField(blank=True)),
             ],
         ),
         migrations.CreateModel(
@@ -319,41 +311,6 @@ class Migration(migrations.Migration):
             ],
         ),
         migrations.CreateModel(
-            name="RfcToBeEvent",
-            fields=[
-                (
-                    "id",
-                    models.AutoField(
-                        auto_created=True,
-                        primary_key=True,
-                        serialize=False,
-                        verbose_name="ID",
-                    ),
-                ),
-                ("time", models.DateTimeField(default=django.utils.timezone.now)),
-                ("desc", models.TextField()),
-                (
-                    "by",
-                    models.ForeignKey(
-                        on_delete=django.db.models.deletion.PROTECT, to="person.person"
-                    ),
-                ),
-                (
-                    "rfc_to_be",
-                    models.ForeignKey(
-                        on_delete=django.db.models.deletion.PROTECT, to="rpc.rfctobe"
-                    ),
-                ),
-                (
-                    "type",
-                    models.ForeignKey(
-                        on_delete=django.db.models.deletion.PROTECT,
-                        to="rpc.rfctobeevent",
-                    ),
-                ),
-            ],
-        ),
-        migrations.CreateModel(
             name="RfcAuthor",
             fields=[
                 (
@@ -379,6 +336,158 @@ class Migration(migrations.Migration):
                     ),
                 ),
             ],
+        ),
+        migrations.CreateModel(
+            name="HistoricalRfcToBe",
+            fields=[
+                (
+                    "id",
+                    models.IntegerField(
+                        auto_created=True, blank=True, db_index=True, verbose_name="ID"
+                    ),
+                ),
+                ("is_april_first_rfc", models.BooleanField(default=False)),
+                ("rfc_number", models.PositiveIntegerField(null=True)),
+                ("order_in_cluster", models.PositiveSmallIntegerField(default=1)),
+                ("external_deadline", models.DateTimeField(null=True)),
+                ("internal_goal", models.DateTimeField(null=True)),
+                ("history_id", models.AutoField(primary_key=True, serialize=False)),
+                ("history_date", models.DateTimeField(db_index=True)),
+                ("history_change_reason", models.CharField(max_length=100, null=True)),
+                (
+                    "history_type",
+                    models.CharField(
+                        choices=[("+", "Created"), ("~", "Changed"), ("-", "Deleted")],
+                        max_length=1,
+                    ),
+                ),
+                (
+                    "cluster",
+                    models.ForeignKey(
+                        blank=True,
+                        db_constraint=False,
+                        null=True,
+                        on_delete=django.db.models.deletion.DO_NOTHING,
+                        related_name="+",
+                        to="rpc.cluster",
+                    ),
+                ),
+                (
+                    "disposition",
+                    models.ForeignKey(
+                        blank=True,
+                        db_constraint=False,
+                        null=True,
+                        on_delete=django.db.models.deletion.DO_NOTHING,
+                        related_name="+",
+                        to="rpc.disposition",
+                    ),
+                ),
+                (
+                    "draft",
+                    models.ForeignKey(
+                        blank=True,
+                        db_constraint=False,
+                        null=True,
+                        on_delete=django.db.models.deletion.DO_NOTHING,
+                        related_name="+",
+                        to="doc.document",
+                    ),
+                ),
+                (
+                    "history_user",
+                    models.ForeignKey(
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="+",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    "intended_boilerplate",
+                    models.ForeignKey(
+                        blank=True,
+                        db_constraint=False,
+                        null=True,
+                        on_delete=django.db.models.deletion.DO_NOTHING,
+                        related_name="+",
+                        to="name.tlpboilerplatechoicename",
+                    ),
+                ),
+                (
+                    "intended_std_level",
+                    models.ForeignKey(
+                        blank=True,
+                        db_constraint=False,
+                        null=True,
+                        on_delete=django.db.models.deletion.DO_NOTHING,
+                        related_name="+",
+                        to="name.stdlevelname",
+                    ),
+                ),
+                (
+                    "intended_stream",
+                    models.ForeignKey(
+                        blank=True,
+                        db_constraint=False,
+                        null=True,
+                        on_delete=django.db.models.deletion.DO_NOTHING,
+                        related_name="+",
+                        to="name.streamname",
+                    ),
+                ),
+                (
+                    "submitted_boilerplate",
+                    models.ForeignKey(
+                        blank=True,
+                        db_constraint=False,
+                        null=True,
+                        on_delete=django.db.models.deletion.DO_NOTHING,
+                        related_name="+",
+                        to="name.tlpboilerplatechoicename",
+                    ),
+                ),
+                (
+                    "submitted_format",
+                    models.ForeignKey(
+                        blank=True,
+                        db_constraint=False,
+                        null=True,
+                        on_delete=django.db.models.deletion.DO_NOTHING,
+                        related_name="+",
+                        to="name.sourceformatname",
+                    ),
+                ),
+                (
+                    "submitted_std_level",
+                    models.ForeignKey(
+                        blank=True,
+                        db_constraint=False,
+                        null=True,
+                        on_delete=django.db.models.deletion.DO_NOTHING,
+                        related_name="+",
+                        to="name.stdlevelname",
+                    ),
+                ),
+                (
+                    "submitted_stream",
+                    models.ForeignKey(
+                        blank=True,
+                        db_constraint=False,
+                        null=True,
+                        on_delete=django.db.models.deletion.DO_NOTHING,
+                        related_name="+",
+                        to="name.streamname",
+                    ),
+                ),
+            ],
+            options={
+                "verbose_name": "historical rfc to be",
+                "verbose_name_plural": "historical rfc to bes",
+                "ordering": ("-history_date", "-history_id"),
+                "get_latest_by": ("history_date", "history_id"),
+            },
+            bases=(simple_history.models.HistoricalChanges, models.Model),
         ),
         migrations.CreateModel(
             name="FinalApproval",
