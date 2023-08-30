@@ -53,7 +53,7 @@ from django.utils.cache import _generate_cache_key # type: ignore
 
 import debug                            # pyflakes:ignore
 
-from ietf.doc.models import ( Document, DocHistory, DocAlias, State,
+from ietf.doc.models import ( Document, DocHistory, State,
     LastCallDocEvent, NewRevisionDocEvent, IESG_SUBSTATE_TAGS,
     IESG_BALLOT_ACTIVE_STATES, IESG_STATCHG_CONFLREV_ACTIVE_STATES,
     IESG_CHARTER_ACTIVE_STATES )
@@ -166,7 +166,7 @@ def retrieve_search_results(form, all_types=False):
 
     # name
     if query["name"]:
-        docs = docs.filter(Q(docalias__name__icontains=query["name"]) |
+        docs = docs.filter(Q(name__icontains=query["name"]) |
                            Q(title__icontains=query["name"])).distinct()
 
     # rfc/active/old check buttons
@@ -248,17 +248,17 @@ def frontpage(request):
 
 def search_for_name(request, name):
     def find_unique(n):
-        exact = DocAlias.objects.filter(name__iexact=n).first()
+        exact = Document.objects.filter(name__iexact=n).first()
         if exact:
             return exact.name
 
-        aliases = DocAlias.objects.filter(name__istartswith=n)[:2]
-        if len(aliases) == 1:
-            return aliases[0].name
+        startswith = Document.objects.filter(name__istartswith=n)[:2]
+        if len(startswith) == 1:
+            return startswith[0].name
 
-        aliases = DocAlias.objects.filter(name__icontains=n)[:2]
-        if len(aliases) == 1:
-            return aliases[0].name
+        contains = Document.objects.filter(name__icontains=n)[:2]
+        if len(contains) == 1:
+            return contains[0].name
 
         return None
 
@@ -291,7 +291,7 @@ def search_for_name(request, name):
             if redirect_to:
                 rev = rev_split.group(2)
                 # check if we can redirect directly to the rev if it's draft, if rfc - always redirect to main page
-                if not redirect_to.startswith('rfc') and DocHistory.objects.filter(doc__docalias__name=redirect_to, rev=rev).exists():
+                if not redirect_to.startswith('rfc') and DocHistory.objects.filter(doc__name=redirect_to, rev=rev).exists():
                     return cached_redirect(cache_key, urlreverse("ietf.doc.views_doc.document_main", kwargs={ "name": redirect_to, "rev": rev }))
                 else:
                     return cached_redirect(cache_key, urlreverse("ietf.doc.views_doc.document_main", kwargs={ "name": redirect_to }))
@@ -818,23 +818,12 @@ def index_all_drafts(request): # Should we rename this
         else:
             heading = "%s Internet-Drafts" % state.name
 
-        draft_names = DocAlias.objects.filter(docs__type_id="draft", docs__states=state).values_list("name", "docs__name")
+        drafts = Document.objects.filter(type_id="draft", states=state).order_by("name")
 
-        names = []
-        names_to_skip = set()
-        for name, doc in draft_names:
-            sort_key = name
-            if name != doc:
-                if not name.startswith("rfc"):
-                    name, doc = doc, name
-                names_to_skip.add(doc) # this is filtering out subseries docaliases (which we will delete, so TODO clean this out after doing so)
-
-            names.append((name, sort_key))
-
-        names.sort(key=lambda t: t[1])
-
-        names = [f'<a href=\"{urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=n))}\">{n}</a>'
-                 for n, __ in names if n not in names_to_skip]        
+        names = [
+            f'<a href=\"{urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=doc.name))}\">{doc.name}</a>'
+            for doc in drafts
+        ]        
 
         categories.append((state,
                       heading,
@@ -843,24 +832,11 @@ def index_all_drafts(request): # Should we rename this
                       ))
     
     # gather RFCs
-    rfc_names = DocAlias.objects.filter(docs__type_id="rfc").values_list("name", "docs__name")
-    names = []
-    names_to_skip = set()
-    for name, doc in rfc_names:
-        sort_key = name
-        if name != doc: # There are some std docalias that pointed to rfc names pre-migration.
-            if not name.startswith("rfc"):
-                name, doc = doc, name
-            names_to_skip.add(doc) # this is filtering out those std docaliases (which we will delete, so TODO clean this out after doing so)
-        name = name.upper()
-        sort_key = '%09d' % (100000000-int(name[3:]))
-
-        names.append((name, sort_key))
-
-    names.sort(key=lambda t: t[1])
-
-    names = [f'<a href=\"{urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=n))}\">{n}</a>'
-                for n, __ in names if n not in names_to_skip]
+    rfcs = Document.objects.filter(type_id="rfc").order_by('-rfc_number')
+    names = [
+        f'<a href=\"{urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=rfc.name))}\">{rfc.name.upper()}</a>'
+        for rfc in rfcs
+    ]
     
     state = State.objects.get(type_id="rfc", slug="published")
 
@@ -884,23 +860,15 @@ def index_active_drafts(request):
         slowcache.set(cache_key, groups, 15*60)
     return render(request, "doc/index_active_drafts.html", { 'groups': groups })
 
-def ajax_select2_search_docs(request, model_name, doc_type):
-    if model_name == "docalias":
-        model = DocAlias
-    else:
-        model = Document
+def ajax_select2_search_docs(request, model_name, doc_type): # TODO - remove model_name argument...
+    model = Document # Earlier versions allowed searching over DocAlias which no longer exists
 
     q = [w.strip() for w in request.GET.get('q', '').split() if w.strip()]
 
     if not q:
         objs = model.objects.none()
     else:
-        qs = model.objects.all()
-
-        if model == Document:
-            qs = qs.filter(type=doc_type)
-        elif model == DocAlias:
-            qs = qs.filter(docs__type=doc_type)
+        qs = model.objects.filter(type=doc_type)
 
         for t in q:
             qs = qs.filter(name__icontains=t)

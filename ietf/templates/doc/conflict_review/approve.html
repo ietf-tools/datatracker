@@ -2,10 +2,10 @@
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
 {% load django_bootstrap5 %}
-{% block title %}Approve {{ review.canonical_name }}{% endblock %}
+{% block title %}Approve {{ review.name }}{% endblock %}
 {% block content %}
     {% origin %}
-    <h1>Approve {{ review.canonical_name }}</h1>
+    <h1>Approve {{ review.name }}</h1>
     <form class="my-3" method="post">
         {% csrf_token %}
         {% bootstrap_form form %}

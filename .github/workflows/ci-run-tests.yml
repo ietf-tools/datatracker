@@ -131,6 +131,7 @@ jobs:
       run: |
         echo "Running checks..."
         ./ietf/manage.py check
+        ./ietf/manage.py migrate --fake-initial
         echo "Starting datatracker..."
         ./ietf/manage.py runserver 0.0.0.0:8000 --settings=settings_local &
         echo "Waiting for datatracker to be ready..."

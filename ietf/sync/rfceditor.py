@@ -17,7 +17,7 @@ from django.utils.encoding import smart_bytes, force_str
 
 import debug                            # pyflakes:ignore
 
-from ietf.doc.models import ( Document, DocAlias, State, StateType, DocEvent, DocRelationshipName,
+from ietf.doc.models import ( Document, State, StateType, DocEvent, DocRelationshipName,
     DocTagName, RelatedDocument )
 from ietf.doc.expire import move_draft_files_to_archive
 from ietf.doc.utils import add_state_change_event, prettify_std_name, update_action_holders
@@ -156,7 +156,7 @@ def update_drafts_from_queue(drafts):
     names = [t[0] for t in drafts]
 
     drafts_in_db = dict((d.name, d)
-                        for d in Document.objects.filter(type="draft", docalias__name__in=names))
+                        for d in Document.objects.filter(type="draft", name__in=names))
 
     changed = set()
 
@@ -229,7 +229,7 @@ def update_drafts_from_queue(drafts):
 
 
     # remove tags and states for those not in the queue anymore
-    for d in Document.objects.exclude(docalias__name__in=names).filter(states__type="draft-rfceditor").distinct():
+    for d in Document.objects.exclude(name__in=names).filter(states__type="draft-rfceditor").distinct():
         d.tags.remove(*list(tag_mapping.values()))
         d.unset_state("draft-rfceditor")
         # we do not add a history entry here - most likely we already
@@ -441,10 +441,6 @@ def update_docs_from_rfc_index(
         )
         if created_rfc:
             rfc_changes.append(f"created document {prettify_std_name(doc.name)}")
-            # Create DocAlias (for consistency until we drop DocAlias altogether)
-            alias, _ = DocAlias.objects.get_or_create(name=doc.name)
-            alias.docs.add(doc)
-            rfc_changes.append(f"created alias {prettify_std_name(doc.name)}")
             doc.set_state(rfc_published_state)
             if draft:
                 doc.formal_languages.set(draft.formal_languages.all())
@@ -654,12 +650,15 @@ def update_docs_from_rfc_index(
                     )
                 )
 
-        if also:
-            for a in also:
-                a = a.lower()
-                if not DocAlias.objects.filter(name=a):
-                    DocAlias.objects.create(name=a).docs.add(doc)
-                    rfc_changes.append(f"created alias {prettify_std_name(a)}")
+        # This block attempted to alias subseries names to RFCs. 
+        # Handle that differently when we add subseries as a document type.
+        #
+        # if also:
+        #     for a in also:
+        #         a = a.lower()
+        #         if not DocAlias.objects.filter(name=a):
+        #             DocAlias.objects.create(name=a).docs.add(doc)
+        #             rfc_changes.append(f"created alias {prettify_std_name(a)}")
 
         doc_errata = errata.get(f"RFC{rfc_number}", [])
         all_rejected = doc_errata and all(

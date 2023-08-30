@@ -22,7 +22,7 @@ from django.utils import timezone
 
 import debug                            # pyflakes:ignore
 
-from ietf.doc.models import BallotDocEvent, DocAlias
+from ietf.doc.models import BallotDocEvent, Document
 from ietf.doc.models import ConsensusDocEvent
 from ietf.ietfauth.utils import can_request_rfc_publication as utils_can_request_rfc_publication
 from ietf.utils.html import sanitize_fragment
@@ -139,15 +139,16 @@ def rfceditor_info_url(rfcnum : str):
     return urljoin(settings.RFC_EDITOR_INFO_BASE_URL, f'rfc{rfcnum}')
 
 
-def doc_canonical_name(name):
+def doc_name(name):
     """Check whether a given document exists, and return its canonical name"""
 
     def find_unique(n):
         key = hash(n)
         found = cache.get(key)
         if not found:
-            exact = DocAlias.objects.filter(name=n).first()
+            exact = Document.objects.filter(name=n).first()
             found = exact.name if exact else "_"
+            # TODO review this cache policy (and the need for these entire function)
             cache.set(key, found, timeout=60*60*24)  # cache for one day
         return None if found == "_" else found
 
@@ -173,7 +174,7 @@ def doc_canonical_name(name):
 
 
 def link_charter_doc_match(match):
-    if not doc_canonical_name(match[0]):
+    if not doc_name(match[0]):
         return match[0]
     url = urlreverse(
         "ietf.doc.views_doc.document_main",
@@ -186,7 +187,7 @@ def link_non_charter_doc_match(match):
     name = match[0]
     # handle "I-D.*"" reference-style matches
     name = re.sub(r"^i-d\.(.*)", r"draft-\1", name, flags=re.IGNORECASE)
-    cname = doc_canonical_name(name)
+    cname = doc_name(name)
     if not cname:
         return match[0]
     if name == cname:
@@ -201,7 +202,7 @@ def link_non_charter_doc_match(match):
         url = urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=cname))
         return f'<a href="{url}">{match[0]}</a>'
 
-    cname = doc_canonical_name(name)
+    cname = doc_name(name)
     if not cname:
         return match[0]
     if name == cname:
@@ -221,7 +222,7 @@ def link_non_charter_doc_match(match):
 def link_other_doc_match(match):
     doc = match[2].strip().lower()
     rev = match[3]
-    if not doc_canonical_name(doc + rev):
+    if not doc_name(doc + rev):
         return match[0]
     url = urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=doc + rev))
     return f'<a href="{url}">{match[1]}</a>'
@@ -255,6 +256,7 @@ def urlize_ietf_docs(string, autoescape=None):
         string,
         flags=re.IGNORECASE | re.ASCII,
     )
+
     return mark_safe(string)
 
 
@@ -267,7 +269,7 @@ def urlize_related_source_list(related, document_html=False):
     names = set()
     titles = set()
     for rel in related:
-        name=rel.source.canonical_name()
+        name=rel.source.name
         title = rel.source.title
         if name in names and title in titles:
             continue
@@ -288,7 +290,7 @@ def urlize_related_target_list(related, document_html=False):
     """Convert a list of RelatedDocuments into list of links using the target document's canonical name"""
     links = []
     for rel in related:
-        name=rel.target.canonical_name()
+        name=rel.target.name
         title = rel.target.title
         url = urlreverse('ietf.doc.views_doc.document_main' if document_html is False else 'ietf.doc.views_doc.document_html', kwargs=dict(name=name))
         name = escape(name)

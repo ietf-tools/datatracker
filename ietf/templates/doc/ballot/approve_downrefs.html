@@ -12,16 +12,16 @@
     </h1>
     <p>
         The ballot for
-        <a href="{% url "ietf.doc.views_doc.document_main" name=doc.canonical_name %}">{{ doc }}</a>
+        <a href="{% url "ietf.doc.views_doc.document_main" name=doc.name %}">{{ doc }}</a>
         was just approved.
     </p>
     {% if not downrefs_to_rfc %}
         <p>
             No downward references for
-            <a href="{% url "ietf.doc.views_doc.document_main" name=doc.canonical_name %}">{{ doc }}</a>
+            <a href="{% url "ietf.doc.views_doc.document_main" name=doc.name %}">{{ doc }}</a>
         </p>
         <a class="btn btn-secondary"
-           href="{% url "ietf.doc.views_doc.document_main" name=doc.canonical_name %}">Back</a>
+           href="{% url "ietf.doc.views_doc.document_main" name=doc.name %}">Back</a>
     {% else %}
         <p>
             Add downward references to RFCs to the DOWNREF registry, if they were identified in the IETF Last Call and approved by the Sponsoring Area Director.
@@ -41,7 +41,7 @@
             {% csrf_token %}
             {% bootstrap_form approve_downrefs_form %}
             <a class="btn btn-primary"
-               href="{% url "ietf.doc.views_doc.document_main" name=doc.canonical_name %}">
+               href="{% url "ietf.doc.views_doc.document_main" name=doc.name %}">
                 Add no DOWNREF entries
             </a>
             <button type="submit" class="btn btn-warning" value="Save checked downrefs">Add checked DOWNREF entries</button>

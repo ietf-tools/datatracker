@@ -19,11 +19,8 @@ class Downref(TestCase):
         super().setUp()
         PersonFactory(name='Plain Man',user__username='plain')
         self.draft = WgDraftFactory(name='draft-ietf-mars-test')
-        self.draftalias = self.draft.docalias.get(name='draft-ietf-mars-test')
         self.doc = WgDraftFactory(name='draft-ietf-mars-approved-document',states=[('draft-iesg','rfcqueue')])
-        self.docalias = self.doc.docalias.get(name='draft-ietf-mars-approved-document')
         self.rfc = WgRfcFactory(rfc_number=9998)
-        self.rfcalias = self.rfc.docalias.get(name='rfc9998')
         RelatedDocument.objects.create(source=self.doc, target=self.rfc, relationship_id='downref-approval')
 
     def test_downref_registry(self):

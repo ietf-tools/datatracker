@@ -34,7 +34,7 @@ from ietf.group.models import Role, Group
 from ietf.person.models import Person
 from ietf.name.models import ReviewResultName, CountryName, DocRelationshipName, ReviewAssignmentStateName
 from ietf.person.name import plain_name
-from ietf.doc.models import DocAlias, Document, State, DocEvent
+from ietf.doc.models import Document, State, DocEvent
 from ietf.meeting.models import Meeting
 from ietf.stats.models import MeetingRegistration, CountryAlias
 from ietf.stats.utils import get_aliased_affiliations, get_aliased_countries, compute_hirsch_index
@@ -214,13 +214,13 @@ def document_stats(request, stats_type=None):
 
         if any(stats_type == t[0] for t in possible_document_stats_types):
             # filter documents
-            docalias_filters = Q(docs__type="draft")
+            document_filters = Q(type__in=["draft","rfc"]) # TODO - review lots of "rfc is a draft" assumptions below
 
             rfc_state = State.objects.get(type="draft", slug="rfc")
             if document_type == "rfc":
-                docalias_filters &= Q(docs__states=rfc_state)
+                document_filters &= Q(states=rfc_state)
             elif document_type == "draft":
-                docalias_filters &= ~Q(docs__states=rfc_state)
+                document_filters &= ~Q(states=rfc_state)
 
             if from_time:
                 # this is actually faster than joining in the database,
@@ -229,11 +229,11 @@ def document_stats(request, stats_type=None):
                     type="draft",
                     docevent__time__gte=from_time,
                     docevent__type__in=["published_rfc", "new_revision"],
-                ).values_list("pk"))
+                ).values_list("pk",flat=True))
 
-                docalias_filters &= Q(docs__in=docs_within_time_constraint)
+                document_filters &= Q(pk__in=docs_within_time_constraint)
 
-            docalias_qs = DocAlias.objects.filter(docalias_filters)
+            document_qs = Document.objects.filter(document_filters)
 
             if document_type == "rfc":
                 doc_label = "RFC"
@@ -242,28 +242,15 @@ def document_stats(request, stats_type=None):
             else:
                 doc_label = "document"
 
-            total_docs = docalias_qs.values_list("docs__name").distinct().count()
-
-            def generate_canonical_names(values):
-                for doc_id, ts in itertools.groupby(values.order_by("docs__name"), lambda a: a[0]):
-                    chosen = None
-                    for t in ts:
-                        if chosen is None:
-                            chosen = t
-                        else:
-                            if t[1].startswith("rfc"):
-                                chosen = t
-                            elif t[1].startswith("draft") and not chosen[1].startswith("rfc"):
-                                chosen = t
-                    yield chosen
+            total_docs = document_qs.values_list("name").distinct().count()
 
             if stats_type == "authors":
                 stats_title = "Number of authors for each {}".format(doc_label)
 
                 bins = defaultdict(set)
 
-                for name, canonical_name, author_count in generate_canonical_names(docalias_qs.values_list("docs__name", "name").annotate(Count("docs__documentauthor"))):
-                    bins[author_count or 0].add(canonical_name)
+                for name, author_count in document_qs.values_list("name").annotate(Count("documentauthor")).values_list("name","documentauthor__count"):
+                    bins[author_count or 0].add(name)
 
                 series_data = []
                 for author_count, names in sorted(bins.items(), key=lambda t: t[0]):
@@ -278,8 +265,8 @@ def document_stats(request, stats_type=None):
 
                 bins = defaultdict(set)
 
-                for name, canonical_name, pages in generate_canonical_names(docalias_qs.values_list("docs__name", "name", "docs__pages")):
-                    bins[pages or 0].add(canonical_name)
+                for name, pages in document_qs.values_list("name", "pages"):
+                    bins[pages or 0].add(name)
 
                 series_data = []
                 for pages, names in sorted(bins.items(), key=lambda t: t[0]):
@@ -297,8 +284,8 @@ def document_stats(request, stats_type=None):
 
                 bins = defaultdict(set)
 
-                for name, canonical_name, words in generate_canonical_names(docalias_qs.values_list("docs__name", "name", "docs__words")):
-                    bins[put_into_bin(words, bin_size)].add(canonical_name)
+                for name, words in document_qs.values_list("name", "words"):
+                    bins[put_into_bin(words, bin_size)].add(name)
 
                 series_data = []
                 for (value, words), names in sorted(bins.items(), key=lambda t: t[0][0]):
@@ -322,20 +309,20 @@ def document_stats(request, stats_type=None):
                     submission_types[doc_name] = file_types
 
                 doc_names_with_missing_types = {}
-                for doc_name, canonical_name, rev in generate_canonical_names(docalias_qs.values_list("docs__name", "name", "docs__rev")):
+                for doc_name, doc_type, rev in document_qs.values_list("name", "type_id", "rev"):
                     types = submission_types.get(doc_name)
                     if types:
                         for dot_ext in types.split(","):
-                            bins[dot_ext.lstrip(".").upper()].add(canonical_name)
+                            bins[dot_ext.lstrip(".").upper()].add(doc_name)
 
                     else:
 
-                        if canonical_name.startswith("rfc"):
-                            filename = canonical_name
+                        if doc_type == "rfc":
+                            filename = doc_name
                         else:
-                            filename = canonical_name + "-" + rev
+                            filename = doc_name + "-" + rev
 
-                        doc_names_with_missing_types[filename] = canonical_name
+                        doc_names_with_missing_types[filename] = doc_name
 
                 # look up the remaining documents on disk
                 for filename in itertools.chain(os.listdir(settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR), os.listdir(settings.RFC_PATH)):
@@ -348,10 +335,10 @@ def document_stats(request, stats_type=None):
                     if not any(ext==allowlisted_ext for allowlisted_ext in settings.DOCUMENT_FORMAT_ALLOWLIST):
                         continue
 
-                    canonical_name = doc_names_with_missing_types.get(basename)
+                    name = doc_names_with_missing_types.get(basename)
 
-                    if canonical_name:
-                        bins[ext.upper()].add(canonical_name)
+                    if name:
+                        bins[ext.upper()].add(name)
 
                 series_data = []
                 for fmt, names in sorted(bins.items(), key=lambda t: t[0]):
@@ -367,8 +354,8 @@ def document_stats(request, stats_type=None):
 
                 bins = defaultdict(set)
 
-                for name, canonical_name, formal_language_name in generate_canonical_names(docalias_qs.values_list("docs__name", "name", "docs__formal_languages__name")):
-                    bins[formal_language_name or ""].add(canonical_name)
+                for name, formal_language_name in document_qs.values_list("name", "formal_languages__name"):
+                    bins[formal_language_name or ""].add(name)
 
                 series_data = []
                 for formal_language, names in sorted(bins.items(), key=lambda t: t[0]):

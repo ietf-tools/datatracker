@@ -13,7 +13,7 @@
           title="Document changes"
           href="/feed/document-changes/{{ name }}/">
     <meta name="description"
-          content="{{ doc.title }} {% if doc.get_state_slug == 'rfc' and not snapshot %}(RFC {{ rfc_number }}{% if published %}, {{ doc.pub_date|date:'F Y' }}{% endif %}{% if obsoleted_by %}; obsoleted by {% for rel in obsoleted_by %}{{ rel.source.canonical_name|prettystdname}}{% if not forloop.last%}, {% endif %}{% endfor %}{% endif %}){% endif %}">
+          content="{{ doc.title }} {% if doc.get_state_slug == 'rfc' and not snapshot %}(RFC {{ rfc_number }}{% if published %}, {{ doc.pub_date|date:'F Y' }}{% endif %}{% if obsoleted_by %}; obsoleted by {% for rel in obsoleted_by %}{{ rel.source.name|prettystdname}}{% if not forloop.last%}, {% endif %}{% endfor %}{% endif %}){% endif %}">
 {% endblock %}
 {% block morecss %}.inline { display: inline; }{% endblock %}
 {% block title %}
@@ -650,14 +650,14 @@
                 {% endif %}
             </a>
             <a class="btn btn-primary btn-sm"
-               href="{% url 'ietf.doc.views_doc.document_references' doc.canonical_name %}"
+               href="{% url 'ietf.doc.views_doc.document_references' doc.name %}"
                rel="nofollow">
                 <i class="bi bi-arrow-left">
                 </i>
                 References
             </a>
             <a class="btn btn-primary btn-sm"
-               href="{% url 'ietf.doc.views_doc.document_referenced_by' doc.canonical_name %}"
+               href="{% url 'ietf.doc.views_doc.document_referenced_by' doc.name %}"
                rel="nofollow">
                 <i class="bi bi-arrow-right">
                 </i>

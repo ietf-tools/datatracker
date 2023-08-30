@@ -66,7 +66,7 @@ class ChangeStateForm(forms.Form):
         state = self.cleaned_data.get('state', '(None)')
         tag = self.cleaned_data.get('substate','')
         comment = self.cleaned_data['comment'].strip() # pyflakes:ignore
-        doc = get_object_or_404(Document, docalias__name=self.docname)
+        doc = get_object_or_404(Document, name=self.docname)
         prev = doc.get_state("draft-iesg")
     
         # tag handling is a bit awkward since the UI still works
@@ -86,7 +86,7 @@ class ChangeStateForm(forms.Form):
 def change_state(request, name):
     """Change IESG state of Internet-Draft, notifying parties as necessary
     and logging the change as a comment."""
-    doc = get_object_or_404(Document, docalias__name=name)
+    doc = get_object_or_404(Document, name=name)
 
     if (not doc.latest_event(type="started_iesg_process")) or doc.get_state_slug() == "expired":
         raise Http404
@@ -205,7 +205,7 @@ class AddIanaExpertsCommentForm(forms.Form):
 
 @role_required('Secretariat', 'IANA')
 def add_iana_experts_comment(request, name):
-    doc = get_object_or_404(Document, docalias__name = name)
+    doc = get_object_or_404(Document, name = name)
     if request.method == 'POST':
         form = AddIanaExpertsCommentForm(request.POST)
         if form.is_valid():
@@ -231,7 +231,7 @@ class ChangeIanaStateForm(forms.Form):
 def change_iana_state(request, name, state_type):
     """Change IANA review state of Internet-Draft. Normally, this is done via
     automatic sync, but this form allows one to set it manually."""
-    doc = get_object_or_404(Document, docalias__name=name)
+    doc = get_object_or_404(Document, name=name)
 
     state_type = doc.type_id + "-" + state_type
 
@@ -271,7 +271,7 @@ class ChangeStreamForm(forms.Form):
 def change_stream(request, name):
     """Change the stream of a Document of type 'draft', notifying parties as necessary
     and logging the change as a comment."""
-    doc = get_object_or_404(Document, docalias__name=name)
+    doc = get_object_or_404(Document, name=name)
     if not doc.type_id=='draft':
         raise Http404
 
@@ -352,7 +352,7 @@ class ReplacesForm(forms.Form):
 def replaces(request, name):
     """Change 'replaces' set of a Document of type 'draft' , notifying parties 
        as necessary and logging the change as a comment."""
-    doc = get_object_or_404(Document, docalias__name=name)
+    doc = get_object_or_404(Document, name=name)
     if doc.type_id != 'draft':
         raise Http404
     if not (has_role(request.user, ("Secretariat", "Area Director", "WG Chair", "RG Chair", "WG Secretary", "RG Secretary"))
@@ -396,7 +396,7 @@ class SuggestedReplacesForm(forms.Form):
         self.fields["replaces"].choices = [(d.pk, d.name) for d in suggested]
 
 def review_possibly_replaces(request, name):
-    doc = get_object_or_404(Document, docalias__name=name)
+    doc = get_object_or_404(Document, name=name)
     if doc.type_id != 'draft':
         raise Http404
     if not (has_role(request.user, ("Secretariat", "Area Director"))
@@ -451,7 +451,7 @@ class ChangeIntentionForm(forms.Form):
 def change_intention(request, name):
     """Change the intended publication status of a Document of type 'draft' , notifying parties 
        as necessary and logging the change as a comment."""
-    doc = get_object_or_404(Document, docalias__name=name)
+    doc = get_object_or_404(Document, name=name)
     if doc.type_id != 'draft':
         raise Http404
 
@@ -520,7 +520,7 @@ class EditInfoForm(forms.Form):
 
 def to_iesg(request,name):
     """ Submit an IETF stream document to the IESG for publication """ 
-    doc = get_object_or_404(Document, docalias__name=name, stream='ietf')
+    doc = get_object_or_404(Document, name=name, stream='ietf')
 
     if doc.get_state_slug('draft') == "expired" or doc.get_state_slug('draft-iesg') == 'pub-req' :
         raise Http404
@@ -633,7 +633,7 @@ def to_iesg(request,name):
 def edit_info(request, name):
     """Edit various Internet-Draft attributes, notifying parties as
     necessary and logging changes as document events."""
-    doc = get_object_or_404(Document, docalias__name=name)
+    doc = get_object_or_404(Document, name=name)
     if doc.get_state_slug() == "expired":
         raise Http404
 
@@ -791,7 +791,7 @@ def edit_info(request, name):
 @role_required('Area Director','Secretariat')
 def request_resurrect(request, name):
     """Request resurrect of expired Internet-Draft."""
-    doc = get_object_or_404(Document, docalias__name=name)
+    doc = get_object_or_404(Document, name=name)
     if doc.get_state_slug() != "expired":
         raise Http404
 
@@ -814,7 +814,7 @@ def request_resurrect(request, name):
 @role_required('Secretariat')
 def resurrect(request, name):
     """Resurrect expired Internet-Draft."""
-    doc = get_object_or_404(Document, docalias__name=name)
+    doc = get_object_or_404(Document, name=name)
     if doc.get_state_slug() != "expired":
         raise Http404
 

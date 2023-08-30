@@ -25,7 +25,7 @@ from django.utils import timezone
 
 import debug                            # pyflakes:ignore
 
-from ietf.doc.models import ( Document, State, DocAlias, DocEvent, SubmissionDocEvent,
+from ietf.doc.models import ( Document, State, DocEvent, SubmissionDocEvent,
     DocumentAuthor, AddedMessageEvent )
 from ietf.doc.models import NewRevisionDocEvent
 from ietf.doc.models import RelatedDocument, DocRelationshipName, DocExtResource
@@ -374,10 +374,6 @@ def post_submission(request, submission, approved_doc_desc, approved_subm_desc):
     )
     events.append(e)
     log.log(f"{submission.name}: created doc events")
-
-    # update related objects
-    alias, __ = DocAlias.objects.get_or_create(name=submission.name)
-    alias.docs.add(draft)
 
     draft.set_state(State.objects.get(used=True, type="draft", slug="active"))
 
@@ -1000,7 +996,7 @@ def accept_submission(submission: Submission, request: Optional[HttpRequest] = N
     docevent_from_submission(submission, desc="Uploaded new revision",
                              who=requester if requester_is_author else None)
 
-    replaces = DocAlias.objects.filter(name__in=submission.replaces_names)
+    replaces = Document.objects.filter(name__in=submission.replaces_names)
     pretty_replaces = '(none)' if not replaces else (
         ', '.join(prettify_std_name(r.name) for r in replaces)
     )

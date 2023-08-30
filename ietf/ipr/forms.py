@@ -14,7 +14,7 @@ from django.utils.encoding import force_str
 import debug                            # pyflakes:ignore
 
 from ietf.group.models import Group
-from ietf.doc.fields import SearchableDocAliasField
+from ietf.doc.fields import SearchableDocumentField
 from ietf.ipr.mail import utc_from_string
 from ietf.ipr.fields import SearchableIprDisclosuresField
 from ietf.ipr.models import (IprDocRel, IprDisclosureBase, HolderIprDisclosure,
@@ -95,7 +95,7 @@ class AddEmailForm(forms.Form):
         return self.cleaned_data
 
 class DraftForm(forms.ModelForm):
-    document = SearchableDocAliasField(label="I-D name/RFC number", required=True, doc_type="draft")
+    document = SearchableDocumentField(label="I-D name/RFC number", required=True, doc_type="draft") # TODO - this needs to be an or, or the form needs modification
 
     class Meta:
         model = IprDocRel

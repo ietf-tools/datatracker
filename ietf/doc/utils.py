@@ -56,7 +56,7 @@ def save_document_in_history(doc):
     # copy fields
     fields = get_model_fields_as_dict(doc)
     fields["doc"] = doc
-    fields["name"] = doc.canonical_name()
+    fields["name"] = doc.name
 
     dochist = DocHistory(**fields)
     dochist.save()
@@ -775,7 +775,6 @@ def rebuild_reference_relations(doc, filenames):
         if not refdoc and re.match(r"^draft-.*-\d{2}$", ref):
             refdoc = Document.objects.filter(name=ref[:-3])
         count = refdoc.count()
-        # As of Dec 2021, DocAlias has a unique constraint on the name field, so count > 1 should not occur
         if count == 0:
             unfound.add( "%s" % ref )
             continue
@@ -933,22 +932,20 @@ def make_rev_history(doc):
         if predecessors is None:
             predecessors = []
         if hasattr(doc, 'relateddocument_set'):
-            for alias in doc.related_that_doc('replaces'):
-                for document in alias.docs.all():
-                    if document not in predecessors:
-                        predecessors.append(document)
-                        predecessors.extend(get_predecessors(document, predecessors))
+            for document in doc.related_that_doc('replaces'):
+                if document not in predecessors:
+                    predecessors.append(document)
+                    predecessors.extend(get_predecessors(document, predecessors))
         return predecessors
 
     def get_ancestors(doc, ancestors = None):
         if ancestors is None:
             ancestors = []
         if hasattr(doc, 'relateddocument_set'):
-            for alias in doc.related_that('replaces'):
-                for document in alias.docs.all():
-                    if document not in ancestors:
-                        ancestors.append(document)
-                        ancestors.extend(get_ancestors(document, ancestors))
+            for document in doc.related_that('replaces'):
+                if document not in ancestors:
+                    ancestors.append(document)
+                    ancestors.extend(get_ancestors(document, ancestors))
         return ancestors
 
     def get_replaces_tree(doc):
@@ -981,8 +978,8 @@ def make_rev_history(doc):
     if e:
         url = urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=e.doc))
         history[url] = {
-            'name': e.doc.canonical_name(),
-            'rev': e.doc.canonical_name(),
+            'name': e.doc.name,
+            'rev': e.doc.name,
             'published': e.time.isoformat(),
             'url': url
         }
@@ -1120,12 +1117,15 @@ def generate_idnits2_rfc_status():
 
     # Workarounds for unusual states in the datatracker
 
-    # Document.get(docalias='rfc6312').rfc_number == 6342 
-    # 6312 was published with the wrong rfc number in it
-    # weird workaround in the datatracker - there are two 
-    # DocAliases starting with rfc - the canonical name code
-    # searches for the lexically highest alias starting with rfc
-    # which is getting lucky.
+    # The explanation for 6312 is from before docalias was removed
+    # The workaround is still needed, even if the datatracker
+    # state no longer matches what's described here:
+    #   Document.get(docalias='rfc6312').rfc_number == 6342 
+    #   6312 was published with the wrong rfc number in it
+    #   weird workaround in the datatracker - there are two 
+    #   DocAliases starting with rfc - the canonical name code
+    #   searches for the lexically highest alias starting with rfc
+    #   which is getting lucky.
     blob[6312 - 1] = 'O'
 
     # RFC200 is an old RFC List by Number
@@ -1177,12 +1177,12 @@ def fuzzy_find_documents(name, rev=None):
         sought_type = "draft"
 
     # see if we can find a document using this name
-    docs = Document.objects.filter(docalias__name=name, type_id=sought_type)
+    docs = Document.objects.filter(name=name, type_id=sought_type)
     if rev and not docs.exists():
         # No document found, see if the name/rev split has been misidentified.
         # Handles some special cases, like draft-ietf-tsvwg-ieee-802-11.
         name = '%s-%s' % (name, rev)
-        docs = Document.objects.filter(docalias__name=name, type_id='draft')
+        docs = Document.objects.filter(name=name, type_id='draft')
         if docs.exists():
             rev = None  # found a doc by name with rev = None, so update that
 

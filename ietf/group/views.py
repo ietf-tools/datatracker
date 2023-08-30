@@ -61,7 +61,7 @@ import debug                            # pyflakes:ignore
 
 from ietf.community.models import CommunityList, EmailSubscription
 from ietf.community.utils import docs_tracked_by_community_list
-from ietf.doc.models import DocTagName, State, DocAlias, RelatedDocument, Document, DocEvent
+from ietf.doc.models import DocTagName, State, RelatedDocument, Document, DocEvent
 from ietf.doc.templatetags.ietf_filters import clean_whitespace
 from ietf.doc.utils import get_chartering_type, get_tags_for_stream_id
 from ietf.doc.utils_charter import charter_name_for_group, replace_charter_of_replaced_group
@@ -186,17 +186,12 @@ def fill_in_wg_roles(group):
     group.secretaries = get_roles("secr", [])
 
 def fill_in_wg_drafts(group):
-    aliases = DocAlias.objects.filter(docs__type="draft", docs__group=group).prefetch_related('docs').order_by("name")
-    group.drafts = []
-    group.rfcs = []
-    for a in aliases:
-        if a.name.startswith("draft"):
-            group.drafts.append(a)
-        else:
-            group.rfcs.append(a)
-            a.remote_field = RelatedDocument.objects.filter(source=a.document,relationship_id__in=['obs','updates']).distinct()
-            a.invrel = RelatedDocument.objects.filter(target=a,relationship_id__in=['obs','updates']).distinct()
-
+    group.drafts = Document.objects.filter(type_id="draft", group=group).order_by("name")
+    group.rfcs = Document.objects.filter(type_id="rfc", group=group).order_by("rfc_number")
+    for rfc in group.rfcs:
+        # TODO: remote_field?
+        rfc.remote_field = RelatedDocument.objects.filter(source=rfc,relationship_id__in=['obs','updates']).distinct()
+        rfc.invrel = RelatedDocument.objects.filter(target=rfc,relationship_id__in=['obs','updates']).distinct()
 
 def check_group_email_aliases():
     pattern = re.compile(r'expand-(.*?)(-\w+)@.*? +(.*)$')
@@ -775,7 +770,7 @@ def dependencies(request, acronym, group_type=None):
     graph = {
         "nodes": [
             {
-                "id": x.canonical_name(),
+                "id": x.name,
                 "rfc": x.get_state("draft").slug == "rfc",
                 "post-wg": not x.get_state("draft-iesg").slug
                 in ["idexists", "watching", "dead"],
@@ -793,8 +788,8 @@ def dependencies(request, acronym, group_type=None):
         ],
         "links": [
             {
-                "source": x.source.canonical_name(),
-                "target": x.target.canonical_name(),
+                "source": x.source.name,
+                "target": x.target.name,
                 "rel": "downref" if x.is_downref() else x.relationship.slug,
             }
             for x in links

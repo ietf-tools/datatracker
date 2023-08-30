@@ -11,7 +11,7 @@ from django.utils.encoding import smart_str
 
 import debug                            # pyflakes:ignore
 
-from ietf.doc.models import Document, DocAlias, State, DocumentAuthor, DocEvent, RelatedDocument, NewRevisionDocEvent
+from ietf.doc.models import Document, State, DocumentAuthor, DocEvent, RelatedDocument, NewRevisionDocEvent
 from ietf.doc.factories import IndividualDraftFactory, ConflictReviewFactory, StatusChangeFactory, WgDraftFactory, WgRfcFactory
 from ietf.group.models import Group, GroupHistory, Role, RoleHistory
 from ietf.iesg.models import TelechatDate
@@ -177,7 +177,6 @@ def make_test_data():
     charter.set_state(State.objects.get(used=True, slug="approved", type="charter"))
     group.charter = charter
     group.save()
-    DocAlias.objects.create(name=charter.name).docs.add(charter)
     setup_default_community_list_for_group(group)
 
     # ames WG
@@ -199,7 +198,6 @@ def make_test_data():
         rev="00",
         )
     charter.set_state(State.objects.get(used=True, slug="infrev", type="charter"))
-    DocAlias.objects.create(name=charter.name).docs.add(charter)
     group.charter = charter
     group.save()
     setup_default_community_list_for_group(group)
@@ -244,7 +242,6 @@ def make_test_data():
     #    rev="00",
     #    )
     #charter.set_state(State.objects.get(used=True, slug="infrev", type="charter"))
-    #DocAlias.objects.create(name=charter.name).docs.add(charter)
     #group.charter = charter
     #group.save()
 
@@ -288,8 +285,6 @@ def make_test_data():
         expires=timezone.now(),
         )
     old_draft.set_state(State.objects.get(used=True, type="draft", slug="expired"))
-    old_alias = DocAlias.objects.create(name=old_draft.name)
-    old_alias.docs.add(old_draft)
 
     # draft
     draft = Document.objects.create(
@@ -313,9 +308,6 @@ def make_test_data():
     draft.set_state(State.objects.get(used=True, type="draft", slug="active"))
     draft.set_state(State.objects.get(used=True, type="draft-iesg", slug="pub-req"))
     draft.set_state(State.objects.get(used=True, type="draft-stream-%s" % draft.stream_id, slug="wg-doc"))
-
-    doc_alias = DocAlias.objects.create(name=draft.name)
-    doc_alias.docs.add(draft)
 
     RelatedDocument.objects.create(source=draft, target=old_draft, relationship=DocRelationshipName.objects.get(slug='replaces'))
     old_draft.set_state(State.objects.get(type='draft', slug='repl'))
@@ -363,7 +355,7 @@ def make_test_data():
 
     IprDocRel.objects.create(
         disclosure=ipr,
-        document=doc_alias,
+        document=draft,
         revisions='00',
         )
     

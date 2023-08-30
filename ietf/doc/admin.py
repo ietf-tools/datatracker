@@ -7,7 +7,7 @@ from django.db import models
 from django import forms
 
 from .models import (StateType, State, RelatedDocument, DocumentAuthor, Document, RelatedDocHistory,
-    DocHistoryAuthor, DocHistory, DocAlias, DocReminder, DocEvent, NewRevisionDocEvent,
+    DocHistoryAuthor, DocHistory, DocReminder, DocEvent, NewRevisionDocEvent,
     StateDocEvent, ConsensusDocEvent, BallotType, BallotDocEvent, WriteupDocEvent, LastCallDocEvent,
     TelechatDocEvent, BallotPositionDocEvent, ReviewRequestDocEvent, InitialReviewDocEvent,
     AddedMessageEvent, SubmissionDocEvent, DeletedEvent, EditedAuthorsDocEvent, DocumentURL,
@@ -27,10 +27,6 @@ class StateAdmin(admin.ModelAdmin):
     filter_horizontal = ["next_states"]
 admin.site.register(State, StateAdmin)
 
-# class DocAliasInline(admin.TabularInline):
-#     model = DocAlias
-#     extra = 1
-
 class DocAuthorInline(admin.TabularInline):
     model = DocumentAuthor
     raw_id_fields = ['person', 'email']
@@ -45,7 +41,7 @@ class RelatedDocumentInline(admin.TabularInline):
     model = RelatedDocument
     fk_name= 'source'
     def this(self, instance):
-        return instance.source.canonical_name()
+        return instance.source.name
     readonly_fields = ['this', ]
     fields = ['this', 'relationship', 'target', ]
     raw_id_fields = ['target']
@@ -71,7 +67,7 @@ class DocumentForm(forms.ModelForm):
 
 class DocumentAuthorAdmin(admin.ModelAdmin):
     list_display = ['id', 'document', 'person', 'email', 'affiliation', 'country', 'order']
-    search_fields = ['document__docalias__name', 'person__name', 'email__address', 'affiliation', 'country']
+    search_fields = ['document__name', 'person__name', 'email__address', 'affiliation', 'country']
     raw_id_fields = ["document", "person", "email"]
 admin.site.register(DocumentAuthor, DocumentAuthorAdmin)
     
@@ -108,14 +104,6 @@ class DocHistoryAdmin(admin.ModelAdmin):
         return instance.get_state()
 
 admin.site.register(DocHistory, DocHistoryAdmin)
-
-class DocAliasAdmin(admin.ModelAdmin):
-    list_display = ['name', 'targets']
-    search_fields = ['name', 'docs__name']
-    raw_id_fields = ['docs']
-    def targets(self, obj):
-        return ', '.join([o.name for o in obj.docs.all()])
-admin.site.register(DocAlias, DocAliasAdmin)
 
 class DocReminderAdmin(admin.ModelAdmin):
     list_display = ['id', 'event', 'type', 'due', 'active']

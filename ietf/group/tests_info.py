@@ -27,7 +27,7 @@ from django.utils.html import escape
 from ietf.community.models import CommunityList
 from ietf.community.utils import reset_name_contains_index_for_rule
 from ietf.doc.factories import WgDraftFactory, IndividualDraftFactory, CharterFactory, BallotDocEventFactory
-from ietf.doc.models import Document, DocAlias, DocEvent, State
+from ietf.doc.models import Document, DocEvent, State
 from ietf.doc.utils_charter import charter_name_for_group
 from ietf.group.admin import GroupForm as AdminGroupForm
 from ietf.group.factories import (GroupFactory, RoleFactory, GroupEventFactory, 
@@ -387,7 +387,6 @@ class GroupPagesTests(TestCase):
             type_id="slides",
         )
         doc.set_state(State.objects.get(type="slides", slug="active"))
-        DocAlias.objects.create(name=doc.name).docs.add(doc)
 
         for url in group_urlreverse_list(group, 'ietf.group.views.materials'):
             r = self.client.get(url)

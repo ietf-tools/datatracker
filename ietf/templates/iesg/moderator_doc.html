@@ -165,7 +165,7 @@ Parts Copyright (c) 2009 The IETF Trust, all rights reserved.
     {% if downrefs %}
         <p>If APPROVED - The Secretariat will add to the downref registry:<br>
             {% for ref in downrefs %}
-                + Add {{ref.target.canonical_name}}
+                + Add {{ref.target.name}}
                 ({{ref.target.std_level}} - {{ref.target.stream.desc}})
                 to downref registry.<br>
                 {% if not ref.target.std_level %}

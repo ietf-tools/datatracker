@@ -14,14 +14,14 @@
         {% csrf_token %}
         <p class="alert alert-danger my-3">
             <b>Clear the ballot for
-                <a href="{% url "ietf.doc.views_doc.document_main" name=doc.canonical_name %}">{{ doc }}</a>?
+                <a href="{% url "ietf.doc.views_doc.document_main" name=doc.name %}">{{ doc }}</a>?
             </b>
             <br>
             This will clear all ballot positions and discuss entries.
         </p>
         <button type="submit" class="btn btn-danger">Clear</button>
         <a class="btn btn-secondary float-end"
-           href="{% url "ietf.doc.views_doc.document_main" name=doc.canonical_name %}">
+           href="{% url "ietf.doc.views_doc.document_main" name=doc.name %}">
             Back
         </a>
     </form>

@@ -11,8 +11,8 @@ from django.utils import timezone
 
 import debug    # pyflakes:ignore
 
-from ietf.doc.factories import WgDraftFactory
-from ietf.doc.models import Document, DocAlias, RelatedDocument, State, LastCallDocEvent, NewRevisionDocEvent
+from ietf.doc.factories import WgDraftFactory, RfcFactory
+from ietf.doc.models import Document, RelatedDocument, State, LastCallDocEvent, NewRevisionDocEvent
 from ietf.group.factories import GroupFactory
 from ietf.name.models import DocRelationshipName
 from ietf.idindex.index import all_id_txt, all_id2_txt, id_index_txt
@@ -41,7 +41,8 @@ class IndexTests(TestCase):
 
         # published
         draft.set_state(State.objects.get(type="draft", slug="rfc"))
-        DocAlias.objects.create(name="rfc1234").docs.add(draft)
+        rfc = RfcFactory(rfc_number=1234)
+        draft.relateddocument_set.create(relationship_id="became_rfc", target=rfc)
 
         txt = all_id_txt()
         self.assertTrue(draft.name + "-" + draft.rev in txt)
@@ -108,7 +109,8 @@ class IndexTests(TestCase):
 
         # test RFC
         draft.set_state(State.objects.get(type="draft", slug="rfc"))
-        DocAlias.objects.create(name="rfc1234").docs.add(draft)
+        rfc = RfcFactory(rfc_number=1234)
+        draft.relateddocument_set.create(relationship_id="became_rfc", target=rfc)
         t = get_fields(all_id2_txt())
         self.assertEqual(t[4], "1234")
 

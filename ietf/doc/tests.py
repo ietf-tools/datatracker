@@ -33,7 +33,7 @@ from tastypie.test import ResourceTestCaseMixin
 
 import debug                            # pyflakes:ignore
 
-from ietf.doc.models import ( Document, DocAlias, DocRelationshipName, RelatedDocument, State,
+from ietf.doc.models import ( Document, DocRelationshipName, RelatedDocument, State,
     DocEvent, BallotPositionDocEvent, LastCallDocEvent, WriteupDocEvent, NewRevisionDocEvent, BallotType,
     EditedAuthorsDocEvent )
 from ietf.doc.factories import ( DocumentFactory, DocEventFactory, CharterFactory, 
@@ -324,7 +324,6 @@ class SearchTests(TestCase):
         draft.set_state(State.objects.get(type='draft-iesg', slug='lc'))
         rfc = IndividualDraftFactory(ad=ad)
         rfc.set_state(State.objects.get(type='draft', slug='rfc'))
-        DocAlias.objects.create(name='rfc6666').docs.add(rfc)
         conflrev = DocumentFactory(type_id='conflrev',ad=ad)
         conflrev.set_state(State.objects.get(type='conflrev', slug='iesgeval'))
         statchg = DocumentFactory(type_id='statchg',ad=ad)
@@ -348,7 +347,7 @@ class SearchTests(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, draft.name)
         self.assertContains(r, escape(draft.action_holders.first().name))
-        self.assertContains(r, rfc.canonical_name())
+        self.assertContains(r, rfc.name)
         self.assertContains(r, conflrev.name)
         self.assertContains(r, statchg.name)
         self.assertContains(r, charter.name)
@@ -396,7 +395,7 @@ class SearchTests(TestCase):
         r = self.client.get(urlreverse('ietf.doc.views_search.index_all_drafts'))
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, draft.name)
-        self.assertContains(r, rfc.canonical_name().upper())
+        self.assertContains(r, rfc.name.upper())
 
         r = self.client.get(urlreverse('ietf.doc.views_search.index_active_drafts'))
         self.assertEqual(r.status_code, 200)
@@ -414,19 +413,6 @@ class SearchTests(TestCase):
         self.assertEqual(r.status_code, 200)
         data = r.json()
         self.assertEqual(data[0]["id"], draft.pk)
-
-        # DocAlias
-        doc_alias = draft.docalias.first()
-
-        url = urlreverse('ietf.doc.views_search.ajax_select2_search_docs', kwargs={
-            "model_name": "docalias",
-            "doc_type": "draft",
-        })
-
-        r = self.client.get(url, dict(q=doc_alias.name))
-        self.assertEqual(r.status_code, 200)
-        data = r.json()
-        self.assertEqual(data[0]["id"], doc_alias.pk)
 
     def test_recent_drafts(self):
         # Three drafts to show with various warnings
@@ -656,7 +642,7 @@ Man                    Expires September 22, 2015               [Page 3]
         if settings.USER_PREFERENCE_DEFAULTS['full_draft'] == 'off':
             self.assertContains(r, "Show full document")
             self.assertNotContains(r, "Deimos street")
-        self.assertContains(r, replaced.canonical_name())
+        self.assertContains(r, replaced.name)
         self.assertContains(r, replaced.title)
 
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)) + "?include_text=0")
@@ -664,7 +650,7 @@ Man                    Expires September 22, 2015               [Page 3]
         self.assertContains(r, "Active Internet-Draft")
         self.assertContains(r, "Show full document")
         self.assertNotContains(r, "Deimos street")
-        self.assertContains(r, replaced.canonical_name())
+        self.assertContains(r, replaced.name)
         self.assertContains(r, replaced.title)
 
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)) + "?include_text=foo")
@@ -672,7 +658,7 @@ Man                    Expires September 22, 2015               [Page 3]
         self.assertContains(r, "Active Internet-Draft")
         self.assertNotContains(r, "Show full document")
         self.assertContains(r, "Deimos street")
-        self.assertContains(r, replaced.canonical_name())
+        self.assertContains(r, replaced.name)
         self.assertContains(r, replaced.title)
 
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)) + "?include_text=1")
@@ -680,7 +666,7 @@ Man                    Expires September 22, 2015               [Page 3]
         self.assertContains(r, "Active Internet-Draft")
         self.assertNotContains(r, "Show full document")
         self.assertContains(r, "Deimos street")
-        self.assertContains(r, replaced.canonical_name())
+        self.assertContains(r, replaced.name)
         self.assertContains(r, replaced.title)
 
         self.client.cookies = SimpleCookie({str('full_draft'): str('on')})
@@ -689,7 +675,7 @@ Man                    Expires September 22, 2015               [Page 3]
         self.assertContains(r, "Active Internet-Draft")
         self.assertNotContains(r, "Show full document")
         self.assertContains(r, "Deimos street")
-        self.assertContains(r, replaced.canonical_name())
+        self.assertContains(r, replaced.name)
         self.assertContains(r, replaced.title)
 
         self.client.cookies = SimpleCookie({str('full_draft'): str('off')})
@@ -698,7 +684,7 @@ Man                    Expires September 22, 2015               [Page 3]
         self.assertContains(r, "Active Internet-Draft")
         self.assertContains(r, "Show full document")
         self.assertNotContains(r, "Deimos street")
-        self.assertContains(r, replaced.canonical_name())
+        self.assertContains(r, replaced.name)
         self.assertContains(r, replaced.title)
 
         self.client.cookies = SimpleCookie({str('full_draft'): str('foo')})
@@ -708,7 +694,7 @@ Man                    Expires September 22, 2015               [Page 3]
         if settings.USER_PREFERENCE_DEFAULTS['full_draft'] == 'off':
             self.assertContains(r, "Show full document")
             self.assertNotContains(r, "Deimos street")
-        self.assertContains(r, replaced.canonical_name())
+        self.assertContains(r, replaced.name)
         self.assertContains(r, replaced.title)
 
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_html", kwargs=dict(name=draft.name)))
@@ -735,16 +721,16 @@ Man                    Expires September 22, 2015               [Page 3]
         rfc = WgRfcFactory()
         rfc.save_with_history([DocEventFactory(doc=rfc)])
         (Path(settings.RFC_PATH) / rfc.get_base_name()).touch()
-        r = self.client.get(urlreverse("ietf.doc.views_doc.document_html", kwargs=dict(name=rfc.canonical_name())))
+        r = self.client.get(urlreverse("ietf.doc.views_doc.document_html", kwargs=dict(name=rfc.name)))
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertEqual(q('title').text(), f'RFC {rfc.rfc_number} - {rfc.title}')
 
         # synonyms for the rfc should be redirected to its canonical view
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_html", kwargs=dict(name=rfc.rfc_number)))
-        self.assertRedirects(r, urlreverse("ietf.doc.views_doc.document_html", kwargs=dict(name=rfc.canonical_name())))
+        self.assertRedirects(r, urlreverse("ietf.doc.views_doc.document_html", kwargs=dict(name=rfc.name)))
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_html", kwargs=dict(name=f'RFC {rfc.rfc_number}')))
-        self.assertRedirects(r, urlreverse("ietf.doc.views_doc.document_html", kwargs=dict(name=rfc.canonical_name())))
+        self.assertRedirects(r, urlreverse("ietf.doc.views_doc.document_html", kwargs=dict(name=rfc.name)))
 
         # expired draft
         draft.set_state(State.objects.get(type="draft", slug="expired"))
@@ -771,7 +757,7 @@ Man                    Expires September 22, 2015               [Page 3]
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)))
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, "Replaced Internet-Draft")
-        self.assertContains(r, replacement.canonical_name())
+        self.assertContains(r, replacement.name)
         self.assertContains(r, replacement.title)
         rel.delete()
 
@@ -801,13 +787,13 @@ Man                    Expires September 22, 2015               [Page 3]
         self.assertContains(r, "RFC 123456")
         self.assertContains(r, draft.name)
         # obs/updates included with RFC
-        self.assertContains(r, obsoleted.canonical_name())
+        self.assertContains(r, obsoleted.name)
         self.assertContains(r, obsoleted.title)
-        self.assertContains(r, obsoleted_by.canonical_name())
+        self.assertContains(r, obsoleted_by.name)
         self.assertContains(r, obsoleted_by.title)
-        self.assertContains(r, updated.canonical_name())
+        self.assertContains(r, updated.name)
         self.assertContains(r, updated.title)
-        self.assertContains(r, updated_by.canonical_name())
+        self.assertContains(r, updated_by.name)
         self.assertContains(r, updated_by.title)
 
         # naked RFC - also weird that we test a PS from the ISE
@@ -859,7 +845,7 @@ Man                    Expires September 22, 2015               [Page 3]
         r = self.client.get(
             urlreverse(
                 'ietf.doc.views_doc.document_main',
-                kwargs={'name': draft.canonical_name()},
+                kwargs={'name': draft.name},
             )
         )
         self.assertEqual(r.status_code, 200)
@@ -2712,20 +2698,20 @@ class Idnits2SupportTests(TestCase):
         rfc = WgRfcFactory()
         draft = WgDraftFactory()
         draft.relateddocument_set.create(relationship_id="became_rfc", target=rfc)
-        url = urlreverse('ietf.doc.views_doc.idnits2_state', kwargs=dict(name=rfc.canonical_name()))
+        url = urlreverse('ietf.doc.views_doc.idnits2_state', kwargs=dict(name=rfc.name))
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         self.assertContains(r,'rfcnum')
 
         draft = WgDraftFactory()
-        url = urlreverse('ietf.doc.views_doc.idnits2_state', kwargs=dict(name=draft.canonical_name()))
+        url = urlreverse('ietf.doc.views_doc.idnits2_state', kwargs=dict(name=draft.name))
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         self.assertNotContains(r,'rfcnum')
         self.assertContains(r,'Unknown')
 
         draft = WgDraftFactory(intended_std_level_id='ps')
-        url = urlreverse('ietf.doc.views_doc.idnits2_state', kwargs=dict(name=draft.canonical_name()))
+        url = urlreverse('ietf.doc.views_doc.idnits2_state', kwargs=dict(name=draft.name))
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         self.assertContains(r,'Proposed')

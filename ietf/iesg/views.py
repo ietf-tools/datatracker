@@ -122,7 +122,7 @@ def agenda_json(request, date=None):
 
             for doc in docs:
                 wginfo = {
-                    'docname': doc.canonical_name(),
+                    'docname': doc.name,
                     'rev': doc.rev,
                     'wgname': doc.group.name,
                     'acronym': doc.group.acronym,
@@ -137,7 +137,7 @@ def agenda_json(request, date=None):
 
             for doc in docs:
                 docinfo = {
-                    'docname':doc.canonical_name(),
+                    'docname':doc.name,
                     'title':doc.title,
                     'ad':doc.ad.name if doc.ad else None,
                     }
@@ -173,7 +173,7 @@ def agenda_json(request, date=None):
                 elif doc.type_id == 'conflrev':
                     docinfo['rev'] = doc.rev
                     td = doc.relateddocument_set.get(relationship__slug='conflrev').target
-                    docinfo['target-docname'] = td.canonical_name()
+                    docinfo['target-docname'] = td.name
                     docinfo['target-title'] = td.title
                     docinfo['target-rev'] = td.rev
                     docinfo['intended-std-level'] = str(td.intended_std_level)

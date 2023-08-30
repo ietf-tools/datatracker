@@ -34,7 +34,7 @@ from ietf.submit.utils import (expirable_submissions, expire_submission, find_su
                                process_and_validate_submission)
 from ietf.doc.factories import (DocumentFactory, WgDraftFactory, IndividualDraftFactory,
                                 ReviewFactory, WgRfcFactory)
-from ietf.doc.models import ( Document, DocAlias, DocEvent, State,
+from ietf.doc.models import ( Document, DocEvent, State,
     BallotPositionDocEvent, DocumentAuthor, SubmissionDocEvent )
 from ietf.doc.utils import create_ballot_if_not_open, can_edit_docextresources, update_action_holders
 from ietf.group.factories import GroupFactory, RoleFactory
@@ -358,8 +358,6 @@ class SubmitTests(BaseSubmitTestCase):
             note="",
         )
         sug_replaced_draft.set_state(State.objects.get(used=True, type="draft", slug="active"))
-        sug_replaced_alias = DocAlias.objects.create(name=sug_replaced_draft.name)
-        sug_replaced_alias.docs.add(sug_replaced_draft)
 
         name = "draft-ietf-mars-testing-tests"
         rev = "00"
@@ -400,7 +398,7 @@ class SubmitTests(BaseSubmitTestCase):
         r = self.client.post(status_url, dict(action=action))
         self.assertEqual(r.status_code, 302)
 
-        draft = Document.objects.get(docalias__name=name)
+        draft = Document.objects.get(name=name)
         self.assertEqual(draft.rev, rev)
         new_revision = draft.latest_event(type="new_revision")
         self.assertEqual(draft.group.acronym, "mars")
@@ -420,7 +418,7 @@ class SubmitTests(BaseSubmitTestCase):
         self.assertEqual(draft.relations_that_doc("replaces").count(), 1)
         self.assertTrue(draft.relations_that_doc("replaces").first().target, draft)
         self.assertEqual(draft.relations_that_doc("possibly-replaces").count(), 1)
-        self.assertTrue(draft.relations_that_doc("possibly-replaces").first().target, sug_replaced_alias)
+        self.assertTrue(draft.relations_that_doc("possibly-replaces").first().target, sug_replaced_draft)
         self.assertEqual(len(outbox), mailbox_before + 5)
         self.assertIn(("I-D Action: %s" % name), outbox[-4]["Subject"])
         self.assertIn(author.ascii, get_payload_text(outbox[-4]))
@@ -433,7 +431,7 @@ class SubmitTests(BaseSubmitTestCase):
         # Check "Review of suggested possible replacements for..." mail
         self.assertIn("review", outbox[-1]["Subject"].lower())
         self.assertIn(name, get_payload_text(outbox[-1]))
-        self.assertIn(sug_replaced_alias.name, get_payload_text(outbox[-1]))
+        self.assertIn(sug_replaced_draft.name, get_payload_text(outbox[-1]))
         self.assertIn("ames-chairs@", outbox[-1]["To"].lower())
         self.assertIn("mars-chairs@", outbox[-1]["To"].lower())
         # Check submission settings
@@ -684,7 +682,7 @@ class SubmitTests(BaseSubmitTestCase):
         self.assertTrue('New version approved' in edescs)
         self.assertTrue('Uploaded new revision' in edescs)
 
-        draft = Document.objects.get(docalias__name=name)
+        draft = Document.objects.get(name=name)
         self.assertEqual(draft.rev, rev)
         self.assertEqual(draft.group.acronym, name.split("-")[2])
         #
@@ -911,7 +909,7 @@ class SubmitTests(BaseSubmitTestCase):
         r = self.client.post(confirmation_url, {'action':'confirm'})
         self.assertEqual(r.status_code, 302)
 
-        draft = Document.objects.get(docalias__name=name)
+        draft = Document.objects.get(name=name)
         self.assertEqual(draft.rev, rev)
         new_revision = draft.latest_event()
         self.assertEqual(new_revision.type, "new_revision")
@@ -951,7 +949,7 @@ class SubmitTests(BaseSubmitTestCase):
         action = force_post_button.parents("form").find('input[type=hidden][name="action"]').val()
         r = self.client.post(status_url, dict(action=action))
 
-        doc = Document.objects.get(docalias__name=name)
+        doc = Document.objects.get(name=name)
         self.assertEqual(doc.documentauthor_set.count(), 1)
         docauth = doc.documentauthor_set.first()
         self.assertEqual(docauth.person, author)
@@ -1084,7 +1082,7 @@ class SubmitTests(BaseSubmitTestCase):
         self.assertIn("New Version Notification", notification_email["Subject"])
         self.assertIn(author.email().address.lower(), notification_email["To"])
 
-        draft = Document.objects.get(docalias__name=name)
+        draft = Document.objects.get(name=name)
         self.assertEqual(draft.rev, rev)
         self.assertEqual(draft.docextresource_set.count(), 0)
         new_revision = draft.latest_event()
@@ -1132,7 +1130,7 @@ class SubmitTests(BaseSubmitTestCase):
         self._assert_extresources_form_not_present(r)
 
         # Check that the draft itself got the resources        
-        draft = Document.objects.get(docalias__name=name)
+        draft = Document.objects.get(name=name)
         self.assertCountEqual(
             [str(r) for r in draft.docextresource_set.all()],
             [str(r) for r in resources],
@@ -1178,7 +1176,7 @@ class SubmitTests(BaseSubmitTestCase):
         r = self.client.post(confirmation_url, {'action':'confirm'})
         self.assertEqual(r.status_code, 302)
         self.assertEqual(len(outbox), mailbox_before+3)
-        draft = Document.objects.get(docalias__name=name)
+        draft = Document.objects.get(name=name)
         self.assertEqual(draft.rev, rev)
         self.assertEqual(draft.relateddocument_set.filter(relationship_id='replaces').count(), replaces_count)
         self.assertEqual(draft.docextresource_set.count(), 0)
@@ -1296,7 +1294,7 @@ class SubmitTests(BaseSubmitTestCase):
         r = self.client.post(confirmation_url, {'action':'cancel'})
         self.assertEqual(r.status_code, 302)
         self.assertEqual(len(outbox), mailbox_before)
-        draft = Document.objects.get(docalias__name=name)
+        draft = Document.objects.get(name=name)
         self.assertEqual(draft.rev, old_rev)
 
     def test_submit_new_wg_with_dash(self):
@@ -1453,7 +1451,7 @@ class SubmitTests(BaseSubmitTestCase):
         r = self.client.post(status_url, dict(action=action))
         self.assertEqual(r.status_code, 302)
 
-        draft = Document.objects.get(docalias__name=name)
+        draft = Document.objects.get(name=name)
         self.assertEqual(draft.rev, rev)
         self.assertEqual(draft.docextresource_set.count(), 0)
         self.verify_bibxml_ids_creation(draft)

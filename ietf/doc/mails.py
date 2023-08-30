@@ -19,7 +19,7 @@ from ietf.doc.templatetags.mail_filters import std_level_prompt
 from ietf.utils import log
 from ietf.utils.mail import send_mail, send_mail_text
 from ietf.ipr.utils import iprs_from_docs, related_docs
-from ietf.doc.models import WriteupDocEvent, LastCallDocEvent, DocAlias, ConsensusDocEvent
+from ietf.doc.models import WriteupDocEvent, LastCallDocEvent, ConsensusDocEvent
 from ietf.doc.utils import needed_ballot_positions
 from ietf.doc.utils_bofreq import bofreq_editors, bofreq_responsible
 from ietf.group.models import Role
@@ -202,7 +202,7 @@ def generate_last_call_announcement(request, doc):
 
     doc.filled_title = textwrap.fill(doc.title, width=70, subsequent_indent=" " * 3)
     
-    iprs = iprs_from_docs(related_docs(DocAlias.objects.get(name=doc.canonical_name())))
+    iprs = iprs_from_docs(related_docs(Document.objects.get(name=doc.name)))
     if iprs:
         ipr_links = [ urlreverse("ietf.ipr.views.show", kwargs=dict(id=i.id)) for i in iprs]
         ipr_links = [ settings.IDTRACKER_BASE_URL+url if not url.startswith("http") else url for url in ipr_links ]
@@ -670,7 +670,7 @@ def send_review_possibly_replaces_request(request, doc, submitter_info):
     to = set(addrs.to)
     cc = set(addrs.cc)
 
-    possibly_replaces = Document.objects.filter(name__in=[alias.name for alias in doc.related_that_doc("possibly-replaces")])
+    possibly_replaces = Document.objects.filter(name__in=[related.name for related in doc.related_that_doc("possibly-replaces")])
     for other_doc in possibly_replaces:
         (other_to, other_cc) = gather_address_lists('doc_replacement_suggested',doc=other_doc)
         to.update(other_to)

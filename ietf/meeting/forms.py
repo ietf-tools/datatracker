@@ -19,7 +19,7 @@ from django.utils.functional import cached_property
 
 import debug                            # pyflakes:ignore
 
-from ietf.doc.models import Document, DocAlias, State, NewRevisionDocEvent
+from ietf.doc.models import Document, State, NewRevisionDocEvent
 from ietf.group.models import Group
 from ietf.group.utils import groups_managed_by
 from ietf.meeting.models import Session, Meeting, Schedule, countries, timezones, TimeSlot, Room
@@ -341,7 +341,6 @@ class InterimSessionModelForm(forms.ModelForm):
                 # FIXME: What about agendas in html or markdown format?
                 uploaded_filename='{}-00.txt'.format(filename))
             doc.set_state(State.objects.get(type__slug=doc.type.slug, slug='active'))
-            DocAlias.objects.create(name=doc.name).docs.add(doc)
             self.instance.sessionpresentation_set.create(document=doc, rev=doc.rev)
             NewRevisionDocEvent.objects.create(
                 type='new_revision',

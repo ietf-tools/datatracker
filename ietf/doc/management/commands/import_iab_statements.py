@@ -16,7 +16,7 @@ from pathlib import Path
 from django.conf import settings
 from django.core.management.base import BaseCommand
 
-from ietf.doc.models import Document, DocAlias, DocEvent, State
+from ietf.doc.models import Document, DocEvent, State
 from ietf.utils.text import xslugify
 
 
@@ -95,7 +95,6 @@ class Command(BaseCommand):
                     uploaded_filename=filename,
                 )
                 doc.set_state(State.objects.get(type_id="statement", slug="active"))
-                DocAlias.objects.create(name=doc.name).docs.add(doc)
                 year, month, day = [int(part) for part in date_string.split("-")]
                 e1 = DocEvent.objects.create(
                     time=datetime.datetime(

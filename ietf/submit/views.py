@@ -22,7 +22,7 @@ from django.views.decorators.csrf import csrf_exempt
 
 import debug                            # pyflakes:ignore
 
-from ietf.doc.models import Document, DocAlias, AddedMessageEvent
+from ietf.doc.models import Document, AddedMessageEvent
 from ietf.doc.forms import ExtResourceForm
 from ietf.group.models import Group
 from ietf.group.utils import group_features_group_filter
@@ -410,7 +410,7 @@ def submission_status(request, submission_id, access_token=None):
         )
 
     submitter_form = SubmitterForm(initial=submission.submitter_parsed(), prefix="submitter")
-    replaces_form = ReplacesForm(name=submission.name,initial=DocAlias.objects.filter(name__in=submission.replaces.split(",")))
+    replaces_form = ReplacesForm(name=submission.name,initial=Document.objects.filter(name__in=submission.replaces.split(",")))
     extresources_form = ExtResourceForm(
         initial=dict(resources=[er['res'] for er in external_resources]),
         extresource_model=SubmissionExtResource,
@@ -626,7 +626,7 @@ def edit_submission(request, submission_id, access_token=None):
     else:
         edit_form = EditSubmissionForm(instance=submission, prefix="edit")
         submitter_form = SubmitterForm(initial=submission.submitter_parsed(), prefix="submitter")
-        replaces_form = ReplacesForm(name=submission.name,initial=DocAlias.objects.filter(name__in=submission.replaces.split(",")))
+        replaces_form = ReplacesForm(name=submission.name, initial=Document.objects.filter(name__in=submission.replaces.split(",")))
         author_forms = [ AuthorForm(initial=author, prefix="authors-%s" % i)
                          for i, author in enumerate(submission.authors) ]
 

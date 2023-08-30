@@ -993,7 +993,7 @@ class RfcdiffSupportTests(TestCase):
         )
 
         num_received = received
-        received = self.getJson(dict(name=rfc.canonical_name()))
+        received = self.getJson(dict(name=rfc.name))
         self.assertEqual(num_received, received, 'RFC by canonical name gives same result as by number')
 
         received = self.getJson(dict(name=f'RfC {number}'))
@@ -1032,7 +1032,7 @@ class RfcdiffSupportTests(TestCase):
         draft = reload_db_objects(draft)
 
         # Some old rfcs had tombstones that shouldn't be used for comparisons
-        received = self.getJson(dict(name=rfc.canonical_name()))
+        received = self.getJson(dict(name=rfc.name))
         self.assertTrue(received['previous'].endswith('00'))
 
     def do_rfc_with_broken_history_test(self, draft_name):
@@ -1048,7 +1048,7 @@ class RfcdiffSupportTests(TestCase):
             received,
             dict(
                 content_url=rfc.get_href(),
-                name=rfc.canonical_name(),
+                name=rfc.name,
                 previous=f'{draft.name}-10',
                 previous_url= f'{settings.IETF_ID_ARCHIVE_URL}{draft.name}-10.txt',
             ),

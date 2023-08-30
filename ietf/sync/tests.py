@@ -16,7 +16,7 @@ from django.utils import timezone
 import debug                            # pyflakes:ignore
 
 from ietf.doc.factories import WgDraftFactory, RfcFactory
-from ietf.doc.models import Document, DocAlias, DocEvent, DeletedEvent, DocTagName, RelatedDocument, State, StateDocEvent
+from ietf.doc.models import Document, DocEvent, DeletedEvent, DocTagName, RelatedDocument, State, StateDocEvent
 from ietf.doc.utils import add_state_change_event
 from ietf.group.factories import GroupFactory
 from ietf.person.models import Person
@@ -30,19 +30,20 @@ from ietf.utils.timezone import date_today, RPC_TZINFO
 class IANASyncTests(TestCase):
     def test_protocol_page_sync(self):
         draft = WgDraftFactory()
-        DocAlias.objects.create(name="rfc1234").docs.add(draft)
-        DocEvent.objects.create(doc=draft, rev=draft.rev, type="published_rfc", by=Person.objects.get(name="(System)"))
+        rfc = RfcFactory(rfc_number=1234)
+        draft.relateddocument_set.create(relationship_id="became_rfc", target = rfc)
+        DocEvent.objects.create(doc=rfc, rev="", type="published_rfc", by=Person.objects.get(name="(System)"))
 
         rfc_names = iana.parse_protocol_page('<html><a href="/go/rfc1234/">RFC 1234</a></html>')
         self.assertEqual(len(rfc_names), 1)
         self.assertEqual(rfc_names[0], "rfc1234")
 
         iana.update_rfc_log_from_protocol_page(rfc_names, timezone.now() - datetime.timedelta(days=1))
-        self.assertEqual(DocEvent.objects.filter(doc=draft, type="rfc_in_iana_registry").count(), 1)
+        self.assertEqual(DocEvent.objects.filter(doc=rfc, type="rfc_in_iana_registry").count(), 1)
 
         # make sure it doesn't create duplicates
         iana.update_rfc_log_from_protocol_page(rfc_names, timezone.now() - datetime.timedelta(days=1))
-        self.assertEqual(DocEvent.objects.filter(doc=draft, type="rfc_in_iana_registry").count(), 1)
+        self.assertEqual(DocEvent.objects.filter(doc=rfc, type="rfc_in_iana_registry").count(), 1)
 
     def test_changes_sync(self):
         draft = WgDraftFactory(ad=Person.objects.get(user__username='ad'))
@@ -380,10 +381,11 @@ class RFCSyncTests(TestCase):
         tag_slugs = rfc_doc.tags.values_list("slug", flat=True)
         self.assertTrue("errata" in tag_slugs)
         self.assertFalse("verified-errata" in tag_slugs)
-        self.assertTrue(DocAlias.objects.filter(name="rfc1234", docs=rfc_doc))
-        self.assertTrue(DocAlias.objects.filter(name="bcp1", docs=rfc_doc))
-        self.assertTrue(DocAlias.objects.filter(name="fyi1", docs=rfc_doc))
-        self.assertTrue(DocAlias.objects.filter(name="std1", docs=rfc_doc))
+        # TODO: adjust these when we have subseries document types
+        # self.assertTrue(DocAlias.objects.filter(name="rfc1234", docs=rfc_doc))
+        # self.assertTrue(DocAlias.objects.filter(name="bcp1", docs=rfc_doc))
+        # self.assertTrue(DocAlias.objects.filter(name="fyi1", docs=rfc_doc))
+        # self.assertTrue(DocAlias.objects.filter(name="std1", docs=rfc_doc))
         self.assertTrue(RelatedDocument.objects.filter(source=rfc_doc, target__name="rfc123", relationship="updates").exists())
         self.assertTrue(RelatedDocument.objects.filter(source=draft_doc, target=rfc_doc, relationship="became_rfc").exists())
         self.assertEqual(rfc_doc.title, "A Testing RFC")

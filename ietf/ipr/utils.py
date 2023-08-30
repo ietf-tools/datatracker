@@ -32,26 +32,31 @@ def get_ipr_summary(disclosure):
     return summary if len(summary) <= 128 else summary[:125]+'...'
 
 
-def iprs_from_docs(aliases,**kwargs):
-    """Returns a list of IPRs related to doc aliases"""
+def iprs_from_docs(docs,**kwargs):
+    """Returns a list of IPRs related to docs"""
     iprdocrels = []
-    for alias in aliases:
-        for document in alias.docs.all():
-            if document.ipr(**kwargs):
-                iprdocrels += document.ipr(**kwargs)
+    for document in docs:
+        if document.ipr(**kwargs):
+            iprdocrels += document.ipr(**kwargs)
     return list(set([i.disclosure for i in iprdocrels]))
     
-def related_docs(doc, relationship=('replaces', 'obs')):
+def related_docs(doc, relationship=('replaces', 'obs'), reverse_relationship=("became_rfc",)):
     """Returns list of related documents"""
 
     results = [doc]
 
-    rels = list(doc.document.all_relations_that_doc(relationship))
+    rels = doc.all_relations_that_doc(relationship)
 
     for rel in rels:
         rel.target.related = rel
         rel.target.relation = rel.relationship.revname
     results += [x.target for x in rels]
+
+    rev_rels = doc.all_relations_that(reverse_relationship)
+    for rel in rev_rels:
+        rel.source.related = rel
+        rel.source.relation = rel.relationship.name
+    results += [x.source for x in rev_rels]
 
     return list(set(results))
 
@@ -60,17 +65,16 @@ def generate_draft_recursive_txt():
     docipr = {}
 
     for o in IprDocRel.objects.filter(disclosure__state='posted').select_related('document'):
-        alias = o.document
-        name = alias.name
-        for document in alias.docs.all():
-            related = set(document.docalias.all()) | set(document.all_related_that_doc(('obs', 'replaces')))
-            for alias in related:
-                name = alias.name
-                if name.startswith("rfc"):
-                    name = name.upper()
-                if not name in docipr:
-                    docipr[name] = []
-                docipr[name].append(o.disclosure_id)
+        doc = o.document
+        name = doc.name
+        related_set = set(doc) | set(doc.all_related_that_doc(('obs', 'replaces')))
+        for related in related_set:
+            name = related.name
+            if name.startswith("rfc"):
+                name = name.upper()
+            if not name in docipr:
+                docipr[name] = []
+            docipr[name].append(o.disclosure_id)
 
     lines = [ "# Machine-readable list of IPR disclosures by Internet-Draft name" ]
     for name, iprs in docipr.items():

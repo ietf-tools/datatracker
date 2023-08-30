@@ -12,7 +12,7 @@ from typing import Optional         # pyflakes:ignore
 from django.conf import settings
 from django.utils import timezone
 
-from ietf.doc.models import ( Document, DocEvent, NewRevisionDocEvent, DocAlias, State, DocumentAuthor,
+from ietf.doc.models import ( Document, DocEvent, NewRevisionDocEvent, State, DocumentAuthor,
     StateDocEvent, BallotPositionDocEvent, BallotDocEvent, BallotType, IRSGBallotDocEvent, TelechatDocEvent,
     DocumentActionHolder, BofreqEditorDocEvent, BofreqResponsibleDocEvent, DocExtResource )
 from ietf.group.models import Group
@@ -51,15 +51,6 @@ class BaseDocumentFactory(factory.django.DjangoModelFactory):
         return draft_name_generator(self.type_id,self.group,n)
 
     newrevisiondocevent = factory.RelatedFactory('ietf.doc.factories.NewRevisionDocEventFactory','doc')
-
-    @factory.post_generation
-    def other_aliases(obj, create, extracted, **kwargs): # pylint: disable=no-self-argument
-        alias = DocAliasFactory(name=obj.name)
-        alias.docs.add(obj)
-        if create and extracted:
-            for name in extracted:
-                alias = DocAliasFactory(name=name)
-                alias.docs.add(obj)
 
     @factory.post_generation
     def states(obj, create, extracted, **kwargs): # pylint: disable=no-self-argument
@@ -127,12 +118,6 @@ class RfcFactory(BaseDocumentFactory):
                 obj.set_state(State.objects.get(type_id=state_type_id,slug=state_slug))
         else:
             obj.set_state(State.objects.get(type_id='rfc',slug='published'))
-
-    @factory.post_generation
-    def reset_canonical_name(obj, create, extracted, **kwargs): 
-        if hasattr(obj, '_canonical_name'):
-            del obj._canonical_name
-        return None
 
 
 class IndividualDraftFactory(BaseDocumentFactory):
@@ -284,23 +269,6 @@ class ReviewFactory(BaseDocumentFactory):
     type_id = 'review'
     name = factory.LazyAttribute(lambda o: 'review-doesnotexist-00-%s-%s'%(o.group.acronym,date_today().isoformat()))
     group = factory.SubFactory('ietf.group.factories.GroupFactory',type_id='review')
-
-class DocAliasFactory(factory.django.DjangoModelFactory):
-    class Meta:
-        model = DocAlias
-
-    @factory.post_generation
-    def document(self, create, extracted, **kwargs):
-        if create and extracted:
-            self.docs.add(extracted)
-
-    @factory.post_generation
-    def docs(self, create, extracted, **kwargs):
-        if create and extracted:
-            for doc in extracted:
-                if not doc in self.docs.all():
-                    self.docs.add(doc)
-
 
 class DocEventFactory(factory.django.DjangoModelFactory):
     class Meta:

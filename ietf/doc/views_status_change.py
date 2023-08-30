@@ -21,7 +21,7 @@ from django.utils.html import escape
 import debug                            # pyflakes:ignore
 from ietf.doc.mails import email_ad_approved_status_change
 
-from ietf.doc.models import ( Document, DocAlias, State, DocEvent, BallotDocEvent,
+from ietf.doc.models import ( Document, State, DocEvent, BallotDocEvent,
     BallotPositionDocEvent, NewRevisionDocEvent, WriteupDocEvent, STATUSCHANGE_RELATIONS )
 from ietf.doc.forms import AdForm
 from ietf.doc.lastcall import request_last_call
@@ -99,7 +99,7 @@ def change_state(request, name, option=None):
                     )
                     related_doc_info = [
                         dict(title=rel_doc.target.title,
-                             canonical_name=rel_doc.target.canonical_name(),
+                             name=rel_doc.target.name,
                              newstatus=newstatus(rel_doc))
                         for rel_doc in related_docs
                     ]
@@ -148,7 +148,7 @@ class UploadForm(forms.Form):
         return get_cleaned_text_file_content(self.cleaned_data["txt"])
 
     def save(self, doc):
-       filename = os.path.join(settings.STATUS_CHANGE_PATH, '%s-%s.txt' % (doc.canonical_name(), doc.rev))
+       filename = os.path.join(settings.STATUS_CHANGE_PATH, '%s-%s.txt' % (doc.name, doc.rev))
        with io.open(filename, 'w', encoding='utf-8') as destination:
            if self.cleaned_data['txt']:
                destination.write(self.cleaned_data['txt'])
@@ -162,7 +162,7 @@ def submit(request, name):
 
     login = request.user.person
 
-    path = os.path.join(settings.STATUS_CHANGE_PATH, '%s-%s.txt' % (doc.canonical_name(), doc.rev))
+    path = os.path.join(settings.STATUS_CHANGE_PATH, '%s-%s.txt' % (doc.name, doc.rev))
     not_uploaded_yet = doc.rev == "00" and not os.path.exists(path)
 
     if not_uploaded_yet:
@@ -179,7 +179,7 @@ def submit(request, name):
 
                 events = []
                 e = NewRevisionDocEvent(doc=doc, by=login, type="new_revision")
-                e.desc = "New version available: <b>%s-%s.txt</b>" % (doc.canonical_name(), doc.rev)
+                e.desc = "New version available: <b>%s-%s.txt</b>" % (doc.name, doc.rev)
                 e.rev = doc.rev
                 e.save()
                 events.append(e)
@@ -211,7 +211,7 @@ def submit(request, name):
                                                 dict(),
                                               )
         else:
-            filename = os.path.join(settings.STATUS_CHANGE_PATH, '%s-%s.txt' % (doc.canonical_name(), doc.rev))
+            filename = os.path.join(settings.STATUS_CHANGE_PATH, '%s-%s.txt' % (doc.name, doc.rev))
             try:
                 with io.open(filename, 'r') as f:
                     init["content"] = f.read()
@@ -253,7 +253,7 @@ def edit_title(request, name):
         init = { "title" : status_change.title }
         form = ChangeTitleForm(initial=init)
 
-    titletext = '%s-%s.txt' % (status_change.canonical_name(),status_change.rev)
+    titletext = '%s-%s.txt' % (status_change.name,status_change.rev)
     return render(request, 'doc/change_title.html',
                               {'form': form,
                                'doc': status_change,
@@ -284,7 +284,7 @@ def edit_ad(request, name):
         init = { "ad" : status_change.ad_id }
         form = AdForm(initial=init)
 
-    titletext = '%s-%s.txt' % (status_change.canonical_name(),status_change.rev)
+    titletext = '%s-%s.txt' % (status_change.name,status_change.rev)
     return render(request, 'doc/change_ad.html',
                               {'form': form,
                                'doc': status_change,
@@ -399,7 +399,7 @@ def approve(request, name):
         init = []
         for rel in status_change.relateddocument_set.filter(relationship__slug__in=STATUSCHANGE_RELATIONS):
             init.append({"announcement_text" : escape(default_approval_text(status_change,rel)),
-                         "label": "Announcement text for %s to %s"%(rel.target.canonical_name(),newstatus(rel)),
+                         "label": "Announcement text for %s to %s"%(rel.target.name,newstatus(rel)),
                        })
         formset = AnnouncementFormSet(initial=init)
         for form in formset.forms:
@@ -537,7 +537,7 @@ def start_rfc_status_change(request, name=None):
     if name:
        if not re.match("(?i)rfc[0-9]{1,4}",name):
            raise Http404
-       seed_rfc = get_object_or_404(Document, type="draft", docalias__name=name)
+       seed_rfc = get_object_or_404(Document, type="rfc", name=name)
 
     login = request.user.person
 
@@ -560,8 +560,6 @@ def start_rfc_status_change(request, name=None):
                 group=iesg_group,
             )
             status_change.set_state(form.cleaned_data['create_in_state'])
-
-            DocAlias.objects.create( name= 'status-change-'+form.cleaned_data['document_name']).docs.add(status_change)
             
             for key in form.cleaned_data['relations']:
                 status_change.relateddocument_set.create(target=Document.objects.get(name=key),
@@ -576,9 +574,9 @@ def start_rfc_status_change(request, name=None):
         init = {}
         if name:
            init['title'] = "%s to CHANGETHIS" % seed_rfc.title
-           init['document_name'] = "%s-to-CHANGETHIS" % seed_rfc.canonical_name()
+           init['document_name'] = "%s-to-CHANGETHIS" % seed_rfc.name
            relations={}
-           relations[seed_rfc.canonical_name()]=None
+           relations[seed_rfc.name]=None
            init['relations'] = relations
         form = StartStatusChangeForm(initial=init)
 
@@ -604,7 +602,7 @@ def edit_relations(request, name):
     
             old_relations={}
             for rel in status_change.relateddocument_set.filter(relationship__slug__in=STATUSCHANGE_RELATIONS):
-                old_relations[rel.target.canonical_name()]=rel.relationship.slug
+                old_relations[rel.target.name]=rel.relationship.slug
             new_relations=form.cleaned_data['relations']
             status_change.relateddocument_set.filter(relationship__slug__in=STATUSCHANGE_RELATIONS).delete()
             for key in new_relations:
@@ -625,7 +623,7 @@ def edit_relations(request, name):
     else: 
         relations={}
         for rel in status_change.relateddocument_set.filter(relationship__slug__in=STATUSCHANGE_RELATIONS):
-            relations[rel.target.canonical_name()]=rel.relationship.slug
+            relations[rel.target.name]=rel.relationship.slug
         init = { "relations":relations, 
                }
         form = EditStatusChangeForm(initial=init)

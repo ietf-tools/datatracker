@@ -61,7 +61,7 @@
                 {% endif %}
             {% else %}
                 {% if snapshot and doc.doc.get_state_slug == 'rfc' %}
-                   <div{% if document_html %} class="alert alert-warning small"{% endif %}>This is an older version of an Internet-Draft that was ultimately published as <a href="{% url 'ietf.doc.views_doc.document_html' name=doc.doc.canonical_name %}">{{doc.doc.canonical_name|prettystdname}}</a>.</div>
+                   <div{% if document_html %} class="alert alert-warning small"{% endif %}>This is an older version of an Internet-Draft that was ultimately published as <a href="{% url 'ietf.doc.views_doc.document_html' name=doc.doc.name %}">{{doc.doc.name|prettystdname}}</a>.</div>
                 {% elif snapshot and doc.rev != latest_rev  %}
                     <div{% if document_html %} class="alert alert-warning small"{% endif %}>This is an older version of an Internet-Draft whose latest revision state is "{{ doc.doc.get_state }}".</div>
                  {% else %}

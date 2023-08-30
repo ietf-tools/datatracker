@@ -22,7 +22,7 @@ import debug                            # pyflakes:ignore
 from ietf.dbtemplate.models import DBTemplate
 from ietf.meeting.models import (Session, SchedulingEvent, TimeSlot,
     Constraint, SchedTimeSessAssignment, SessionPresentation)
-from ietf.doc.models import Document, DocAlias, State, NewRevisionDocEvent
+from ietf.doc.models import Document, State, NewRevisionDocEvent
 from ietf.doc.models import DocEvent
 from ietf.group.models import Group
 from ietf.group.utils import can_manage_materials
@@ -622,7 +622,6 @@ def save_session_minutes_revision(session, file, ext, request, encoding=None, ap
                 group = session.group,
                 rev = '00',
             )
-            DocAlias.objects.create(name=doc.name).docs.add(doc)
         doc.states.add(State.objects.get(type_id='minutes',slug='active'))
         if session.sessionpresentation_set.filter(document=doc).exists():
             sp = session.sessionpresentation_set.get(document=doc)
@@ -746,7 +745,6 @@ def new_doc_for_session(type_id, session):
                 rev = '00',
             )
     doc.states.add(State.objects.get(type_id=type_id, slug='active'))
-    DocAlias.objects.create(name=doc.name).docs.add(doc)
     session.sessionpresentation_set.create(document=doc,rev='00')
     return doc
 
@@ -779,8 +777,6 @@ def create_recording(session, url, title=None, user=None):
                                   rev='00',
                                   type_id='recording')
     doc.set_state(State.objects.get(type='recording', slug='active'))
-
-    DocAlias.objects.create(name=doc.name).docs.add(doc)
     
     # create DocEvent
     NewRevisionDocEvent.objects.create(type='new_revision',
@@ -799,11 +795,11 @@ def get_next_sequence(group, meeting, type):
     Returns the next sequence number to use for a document of type = type.
     Takes a group=Group object, meeting=Meeting object, type = string
     '''
-    aliases = DocAlias.objects.filter(name__startswith='{}-{}-{}-'.format(type, meeting.number, group.acronym))
-    if not aliases:
+    docs = Document.objects.filter(name__startswith='{}-{}-{}-'.format(type, meeting.number, group.acronym))
+    if not docs:
         return 1
-    aliases = aliases.order_by('name')
-    sequence = int(aliases.last().name.split('-')[-1]) + 1
+    docs = docs.order_by('name')
+    sequence = int(docs.last().name.split('-')[-1]) + 1
     return sequence
 
 def get_activity_stats(sdate, edate):

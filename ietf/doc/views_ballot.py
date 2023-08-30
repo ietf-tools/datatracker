@@ -179,7 +179,7 @@ def save_position(form, doc, ballot, balloter, login=None, send_email=False):
 @role_required("Area Director", "Secretariat", "IRSG Member", "RSAB Member")
 def edit_position(request, name, ballot_id):
     """Vote and edit discuss and comment on document"""
-    doc = get_object_or_404(Document, docalias__name=name)
+    doc = get_object_or_404(Document, name=name)
     ballot = get_object_or_404(BallotDocEvent, type="created_ballot", pk=ballot_id, doc=doc)
 
     balloter = login = request.user.person
@@ -256,7 +256,7 @@ def api_set_position(request):
         if not name:
             return err(400, "Missing document name")
         try:
-            doc = Document.objects.get(docalias__name=name)
+            doc = Document.objects.get(name=name)
         except Document.DoesNotExist:
             return err(400, "Document not found")
         position_names = BallotPositionName.objects.values_list('slug', flat=True)
@@ -323,7 +323,7 @@ def build_position_email(balloter, doc, pos):
 @role_required('Area Director','Secretariat','IRSG Member', 'RSAB Member')
 def send_ballot_comment(request, name, ballot_id):
     """Email document ballot position discuss/comment for Area Director."""
-    doc = get_object_or_404(Document, docalias__name=name)
+    doc = get_object_or_404(Document, name=name)
     ballot = get_object_or_404(BallotDocEvent, type="created_ballot", pk=ballot_id, doc=doc)
 
     if not has_role(request.user, 'Secretariat'):
@@ -413,7 +413,7 @@ def clear_ballot(request, name, ballot_type_slug):
 @role_required('Area Director','Secretariat')
 def defer_ballot(request, name):
     """Signal post-pone of ballot, notifying relevant parties."""
-    doc = get_object_or_404(Document, docalias__name=name)
+    doc = get_object_or_404(Document, name=name)
     if doc.type_id not in ('draft','conflrev','statchg'):
         raise Http404
     interesting_state = dict(draft='draft-iesg',conflrev='conflrev',statchg='statchg')
@@ -467,7 +467,7 @@ def defer_ballot(request, name):
 @role_required('Area Director','Secretariat')
 def undefer_ballot(request, name):
     """undo deferral of ballot ballot."""
-    doc = get_object_or_404(Document, docalias__name=name)
+    doc = get_object_or_404(Document, name=name)
     if doc.type_id not in ('draft','conflrev','statchg'):
         raise Http404
     if doc.type_id == 'draft' and not doc.get_state("draft-iesg"):
@@ -503,7 +503,7 @@ class LastCallTextForm(forms.Form):
 @role_required('Area Director','Secretariat')
 def lastcalltext(request, name):
     """Editing of the last call text"""
-    doc = get_object_or_404(Document, docalias__name=name)
+    doc = get_object_or_404(Document, name=name)
     if not doc.get_state("draft-iesg"):
         raise Http404
 
@@ -589,7 +589,7 @@ class BallotWriteupForm(forms.Form):
 @role_required('Area Director','Secretariat')
 def ballot_writeupnotes(request, name):
     """Editing of ballot write-up and notes"""
-    doc = get_object_or_404(Document, docalias__name=name)
+    doc = get_object_or_404(Document, name=name)
     prev_state = doc.get_state("draft-iesg")
 
     login = request.user.person
@@ -700,7 +700,7 @@ class BallotRfcEditorNoteForm(forms.Form):
 @role_required('Area Director','Secretariat','IAB Chair','IRTF Chair','ISE')
 def ballot_rfceditornote(request, name):
     """Editing of RFC Editor Note"""
-    doc = get_object_or_404(Document, docalias__name=name)
+    doc = get_object_or_404(Document, name=name)
 
     if not is_authorized_in_doc_stream(request.user, doc):
         permission_denied(request, "You do not have the necessary permissions to change the RFC Editor Note for this document")
@@ -765,7 +765,7 @@ class ApprovalTextForm(forms.Form):
 @role_required('Area Director','Secretariat')
 def ballot_approvaltext(request, name):
     """Editing of approval text"""
-    doc = get_object_or_404(Document, docalias__name=name)
+    doc = get_object_or_404(Document, name=name)
     if not doc.get_state("draft-iesg"):
         raise Http404
 
@@ -816,7 +816,7 @@ def ballot_approvaltext(request, name):
 @role_required('Secretariat')
 def approve_ballot(request, name):
     """Approve ballot, sending out announcement, changing state."""
-    doc = get_object_or_404(Document, docalias__name=name)
+    doc = get_object_or_404(Document, name=name)
     if not doc.get_state("draft-iesg"):
         raise Http404
 
@@ -947,7 +947,7 @@ class ApproveDownrefsForm(forms.Form):
 @role_required('Secretariat')
 def approve_downrefs(request, name):
     """Document ballot was just approved; add the checked downwared references to the downref registry."""
-    doc = get_object_or_404(Document, docalias__name=name)
+    doc = get_object_or_404(Document, name=name)
     if not doc.get_state("draft-iesg"):
         raise Http404
 
@@ -1001,7 +1001,7 @@ class MakeLastCallForm(forms.Form):
 @role_required('Secretariat')
 def make_last_call(request, name):
     """Make last call for Internet-Draft, sending out announcement."""
-    doc = get_object_or_404(Document, docalias__name=name)
+    doc = get_object_or_404(Document, name=name)
     if not (doc.get_state("draft-iesg") or doc.get_state("statchg")):
         raise Http404
 
@@ -1109,7 +1109,7 @@ def make_last_call(request, name):
 
 @role_required('Secretariat', 'IRTF Chair')
 def issue_irsg_ballot(request, name):
-    doc = get_object_or_404(Document, docalias__name=name)
+    doc = get_object_or_404(Document, name=name)
     if doc.stream.slug != "irtf" or doc.type != DocTypeName.objects.get(slug="draft"):
         raise Http404
 
@@ -1164,7 +1164,7 @@ def issue_irsg_ballot(request, name):
 
 @role_required('Secretariat', 'IRTF Chair')
 def close_irsg_ballot(request, name):
-    doc = get_object_or_404(Document, docalias__name=name)
+    doc = get_object_or_404(Document, name=name)
     if doc.stream.slug != "irtf" or doc.type != DocTypeName.objects.get(slug="draft"):
         raise Http404
 
@@ -1205,7 +1205,7 @@ def irsg_ballot_status(request):
 
 @role_required('Secretariat', 'RSAB Chair')
 def issue_rsab_ballot(request, name):
-    doc = get_object_or_404(Document, docalias__name=name)
+    doc = get_object_or_404(Document, name=name)
     if doc.stream.slug != "editorial" or doc.type != DocTypeName.objects.get(slug="draft"):
         raise Http404
 
@@ -1254,7 +1254,7 @@ def issue_rsab_ballot(request, name):
 
 @role_required('Secretariat', 'RSAB Chair')
 def close_rsab_ballot(request, name):
-    doc = get_object_or_404(Document, docalias__name=name)
+    doc = get_object_or_404(Document, name=name)
     if doc.stream.slug != "editorial" or doc.type_id != "draft":
         raise Http404
 

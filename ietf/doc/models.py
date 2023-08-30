@@ -37,7 +37,6 @@ from ietf.name.models import ( DocTypeName, DocTagName, StreamName, IntendedStdL
 from ietf.person.models import Email, Person
 from ietf.person.utils import get_active_balloters
 from ietf.utils import log
-from ietf.utils.admin import admin_link
 from ietf.utils.decorators import memoize
 from ietf.utils.validators import validate_no_control_chars
 from ietf.utils.mail import formataddr
@@ -173,7 +172,7 @@ class DocumentInfo(models.Model):
             if self.uploaded_filename:
                 self._cached_base_name = self.uploaded_filename
             elif self.type_id == 'rfc':
-                self._cached_base_name = "%s.txt" % self.canonical_name()  
+                self._cached_base_name = "%s.txt" % self.name  
             elif self.type_id == 'draft':
                 if self.is_dochistory():
                     self._cached_base_name = "%s-%s.txt" % (self.doc.name, self.rev)
@@ -181,7 +180,7 @@ class DocumentInfo(models.Model):
                     self._cached_base_name = "%s-%s.txt" % (self.name, self.rev)
             elif self.type_id in ["slides", "agenda", "minutes", "bluesheets", "procmaterials", ] and self.meeting_related():
                 ext = 'pdf' if self.type_id == 'procmaterials' else 'txt'
-                self._cached_base_name = f'{self.canonical_name()}-{self.rev}.{ext}'
+                self._cached_base_name = f'{self.name}-{self.rev}.{ext}'
             elif self.type_id == 'review':
                 # TODO: This will be wrong if a review is updated on the same day it was created (or updated more than once on the same day)
                 self._cached_base_name = "%s.txt" % self.name
@@ -189,9 +188,9 @@ class DocumentInfo(models.Model):
                 self._cached_base_name = "%s-%s.md" % (self.name, self.rev)
             else:
                 if self.rev:
-                    self._cached_base_name = "%s-%s.txt" % (self.canonical_name(), self.rev)
+                    self._cached_base_name = "%s-%s.txt" % (self.name, self.rev)
                 else:
-                    self._cached_base_name = "%s.txt" % (self.canonical_name(), )
+                    self._cached_base_name = "%s.txt" % (self.name, )
         return self._cached_base_name
 
     def get_file_name(self):
@@ -355,7 +354,7 @@ class DocumentInfo(models.Model):
             elif state.slug == "repl":
                 rs = self.related_that("replaces")
                 if rs:
-                    return mark_safe("Replaced by " + ", ".join("<a href=\"%s\">%s</a>" % (urlreverse('ietf.doc.views_doc.document_main', kwargs=dict(name=alias.document.name)), alias.document) for alias in rs))
+                    return mark_safe("Replaced by " + ", ".join("<a href=\"%s\">%s</a>" % (urlreverse('ietf.doc.views_doc.document_main', kwargs=dict(name=related.name)), related) for related in rs))
                 else:
                     return "Replaced"
             elif state.slug == "active":
@@ -493,10 +492,10 @@ class DocumentInfo(models.Model):
         return related
 
     def related_that(self, relationship):
-        return list(set([x.source.docalias.get(name=x.source.name) for x in self.relations_that(relationship)]))
+        return list(set([x.source for x in self.relations_that(relationship)]))
 
     def all_related_that(self, relationship, related=None):
-        return list(set([x.source.docalias.get(name=x.source.name) for x in self.all_relations_that(relationship)]))
+        return list(set([x.source for x in self.all_relations_that(relationship)]))
 
     def related_that_doc(self, relationship):
         return list(set([x.target for x in self.relations_that_doc(relationship)]))
@@ -507,7 +506,7 @@ class DocumentInfo(models.Model):
     def replaces(self):
         return set([ d for r in self.related_that_doc("replaces") for d in r.docs.all() ])
 
-    def replaces_canonical_name(self):
+    def replaces_name(self):
         s = set([ r.document for r in self.related_that_doc("replaces")])
         first = list(s)[0] if s else None
         return None if first is None else first.filename_with_rev()
@@ -540,7 +539,7 @@ class DocumentInfo(models.Model):
         if self.get_state_slug() == "rfc":
             try:
                 html = Path(
-                    os.path.join(settings.RFC_PATH, self.canonical_name() + ".html")
+                    os.path.join(settings.RFC_PATH, self.name + ".html")
                 ).read_text()
             except (IOError, UnicodeDecodeError):
                 return None
@@ -805,7 +804,7 @@ class Document(DocumentInfo):
             name = self.name
             url = None
             if self.type_id == "draft" and self.get_state_slug() == "rfc":
-                name = self.canonical_name()
+                name = self.name
                 url = urlreverse('ietf.doc.views_doc.document_main', kwargs={ 'name': name }, urlconf="ietf.urls")
             elif self.type_id in ('slides','bluesheets','recording'):
                 session = self.session_set.first()
@@ -843,22 +842,8 @@ class Document(DocumentInfo):
         e = model.objects.filter(doc=self).filter(**filter_args).order_by('-time', '-id').first()
         return e
 
-    def canonical_name(self):
-        if not hasattr(self, '_canonical_name'):
-            name = self.name
-            if self.type_id == "draft" and self.get_state_slug() == "rfc":
-                a = self.docalias.filter(name__startswith="rfc").order_by('-name').first()
-                if a:
-                    name = a.name
-            self._canonical_name = name
-        return self._canonical_name
-
-
-    def canonical_docalias(self):
-        return self.docalias.get(name=self.name)
-
     def display_name(self):
-        name = self.canonical_name()
+        name = self.name
         if name.startswith('rfc'):
             name = name.upper()
         return name
@@ -953,8 +938,9 @@ class Document(DocumentInfo):
 
     def ipr(self,states=('posted','removed')):
         """Returns the IPR disclosures against this document (as a queryset over IprDocRel)."""
-        from ietf.ipr.models import IprDocRel
-        return IprDocRel.objects.filter(document__docs=self, disclosure__state__in=states)
+        # from ietf.ipr.models import IprDocRel
+        # return IprDocRel.objects.filter(document__docs=self, disclosure__state__in=states) # TODO - clear these comments away
+        return self.iprdocrel_set.filter(disclosure__state__in=states)
 
     def related_ipr(self):
         """Returns the IPR disclosures against this document and those documents this
@@ -963,8 +949,8 @@ class Document(DocumentInfo):
         from ietf.ipr.models import IprDocRel
         iprs = (
             IprDocRel.objects.filter(
-                document__in=list(self.docalias.all())
-                + [x.docalias.first() for x in self.all_related_that_doc(("obs", "replaces"))] # this really is docalias until IprDocRel changes
+                document__in=[self]
+                + self.all_related_that_doc(("obs", "replaces"))
             )
             .filter(disclosure__state__in=("posted", "removed"))
             .values_list("disclosure", flat=True)
@@ -1123,10 +1109,7 @@ class DocHistoryAuthor(DocumentAuthorInfo):
 
 class DocHistory(DocumentInfo):
     doc = ForeignKey(Document, related_name="history_set")
-    # the name here is used to capture the canonical name at the time
-    # - it would perhaps be more elegant to simply call the attribute
-    # canonical_name and replace the function on Document with a
-    # property
+
     name = models.CharField(max_length=255)
 
     def __str__(self):
@@ -1137,11 +1120,6 @@ class DocHistory(DocumentInfo):
 
     def get_related_proceedings_material(self):
         return self.doc.get_related_proceedings_material()
-
-    def canonical_name(self):
-        if hasattr(self, '_canonical_name'):
-            return self._canonical_name
-        return self.name
 
     def latest_event(self, *args, **kwargs):
         kwargs["time__lte"] = self.time
@@ -1156,10 +1134,6 @@ class DocHistory(DocumentInfo):
     @property
     def groupmilestone_set(self):
         return self.doc.groupmilestone_set
-
-    @property
-    def docalias(self):
-        return self.doc.docalias
 
     def is_dochistory(self):
         return True
@@ -1178,25 +1152,6 @@ class DocHistory(DocumentInfo):
         verbose_name = "document history"
         verbose_name_plural = "document histories"
 
-class DocAlias(models.Model):
-    """This is used for documents that may appear under multiple names,
-    and in particular for RFCs, which for continuity still keep the
-    same immutable Document.name, in the tables, but will be referred
-    to by RFC number, primarily, after achieving RFC status.
-    """
-    name = models.CharField(max_length=255, unique=True)
-    docs = models.ManyToManyField(Document, related_name='docalias')
-
-    @property
-    def document(self):
-        return self.docs.first()
-
-    def __str__(self):
-        return u"%s-->%s" % (self.name, ','.join([force_str(d.name) for d in self.docs.all() if isinstance(d, Document) ]))
-    document_link = admin_link("document")
-    class Meta:
-        verbose_name = "document alias"
-        verbose_name_plural = "document aliases"
 
 class DocReminder(models.Model):
     event = ForeignKey('DocEvent')
