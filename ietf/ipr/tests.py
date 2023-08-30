@@ -821,7 +821,7 @@ Subject: test
         )
 
         # Disclosure has more than one revision, none called out, disclosure after submissions
-        iprdocrel = IprDocRelFactory(document=draft.docalias.first(), revisions="")
+        iprdocrel = IprDocRelFactory(document=draft, revisions="")
         IprEventFactory(type_id="posted",time=now,disclosure=iprdocrel.disclosure)
         self.assertEqual(
             no_revisions_message(iprdocrel),
@@ -829,7 +829,7 @@ Subject: test
         )
 
         # Disclosure has more than one revision, none called out, disclosure after 01
-        iprdocrel = IprDocRelFactory(document=draft.docalias.first(), revisions="")
+        iprdocrel = IprDocRelFactory(document=draft, revisions="")
         e = IprEventFactory(type_id="posted",disclosure=iprdocrel.disclosure)
         e.time = now-datetime.timedelta(days=15)
         e.save()
@@ -839,7 +839,7 @@ Subject: test
         )
 
         # Disclosure has more than one revision, none called out, disclosure was before the 00
-        iprdocrel = IprDocRelFactory(document=draft.docalias.first(), revisions="")
+        iprdocrel = IprDocRelFactory(document=draft, revisions="")
         e = IprEventFactory(type_id="posted",disclosure=iprdocrel.disclosure)
         e.time = now-datetime.timedelta(days=180)
         e.save()
@@ -851,7 +851,7 @@ Subject: test
         # disclosed draft has no NewRevisionDocEvents
         draft = WgDraftFactory(rev="20")
         draft.docevent_set.all().delete()
-        iprdocrel = IprDocRelFactory(document=draft.docalias.first(), revisions="")
+        iprdocrel = IprDocRelFactory(document=draft, revisions="")
         IprEventFactory(type_id="posted",disclosure=iprdocrel.disclosure)
         self.assertEqual(
             no_revisions_message(iprdocrel),
@@ -860,7 +860,7 @@ Subject: test
 
         # disclosed draft has only one revision
         draft = WgDraftFactory(rev="00")
-        iprdocrel = IprDocRelFactory(document=draft.docalias.first(), revisions="")
+        iprdocrel = IprDocRelFactory(document=draft, revisions="")
         IprEventFactory(type_id="posted",disclosure=iprdocrel.disclosure)
         self.assertEqual(
             no_revisions_message(iprdocrel),

@@ -32,7 +32,7 @@ def to_class_name(value):
     return value.__class__.__name__
 
 def draft_rev_at_time(iprdocrel):
-    draft = iprdocrel.document.document
+    draft = iprdocrel.document
     event = iprdocrel.disclosure.get_latest_event_posted()
     if event is None:
         return ("","The Internet-Draft's revision at the time this disclosure was posted could not be determined.")
