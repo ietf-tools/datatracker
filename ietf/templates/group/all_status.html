@@ -17,7 +17,7 @@
                 <div class="card-header">
                     {{ rpt.group.acronym }}
                     {% if rpt.group.state.slug != "active" %}
-                        <span class="badge rounded-pill bg-success">{{ rpt.group.state.slug|upper }}</span>
+                        <span class="badge rounded-pill text-bg-success">{{ rpt.group.state.slug|upper }}</span>
                     {% endif %}
                     {{ rpt.time|date:"Y-m-d" }}
                 </div>
@@ -33,7 +33,7 @@
             <div class="card-header">
                 {{ rpt.group.acronym }}
                 {% if rpt.group.state.slug != "active" %}
-                    <span class="badge rounded-pill bg-success">{{ rpt.group.state.slug|upper }}</span>
+                    <span class="badge rounded-pill text-bg-success">{{ rpt.group.state.slug|upper }}</span>
                 {% endif %}
                 {{ rpt.time|date:"Y-m-d" }}
             </div>

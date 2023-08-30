@@ -21,7 +21,7 @@
                     {% if time.tzinfo.zone != "UTC" %}<span class="small">({{ time|utc|dateformat:"H:i T" }})</span>{% endif %}
                 {% endfor %}
                 {% if session.cancelled %}
-                    <small class="badge rounded-pill bg-warning">Cancelled</small>
+                    <small class="badge rounded-pill text-bg-warning">Cancelled</small>
                 {% else %}
                     {{ session.status }}
                 {% endif %}
@@ -344,7 +344,7 @@
                 {% if session.video_stream_url %}
                     <tr>
                         <td>
-                            <a href="https://www.meetecho.com/ietf{{ meeting.number }}/recordings#{{ acronym.upper }}">
+                            <a href="https://www.meetecho.com/ietf{{ meeting.number }}/recordings#{{ group.acronym.upper }}">
                                 <i class="bi bi-file-slides"></i> Session recording
                             </a>
                         </td>

@@ -2,10 +2,8 @@
 {% load origin %}
 {% origin %}
 {% load ietf_filters ballot_icon person_filters %}
-<td class="status">
-    {% if doc.ballot %}
-        <div class="float-end ms-1 mb-1" id="ballot-icon-{{ doc.name }}">{% ballot_icon doc %}</div>
-    {% endif %}
+<td class="status bg-transparent">
+    <div class="float-end ms-1 mb-1" id="ballot-icon-{{ doc.name }}">{% ballot_icon doc %}</div>
     {% if not doc.get_state_slug == "rfc" %}
         {% if '::' in doc.friendly_state %}
             {{ doc.friendly_state|safe }}
@@ -52,9 +50,9 @@
             {% for review_assignment in doc.review_assignments %}
                 {% if review_assignment.state_id == "completed" or review_assignment.state_id == "part-completed" %}
                     <span title="{{ review_assignment.review_request.team.acronym|upper }} {{ review_assignment.review_request.type.name }} review {% if review_assignment.reviewed_rev and review_assignment.reviewed_rev != current_rev or review_assignment.review_request.doc.name != current_doc_name %}of {% if review_assignment.review_request.doc.name != current_doc_name %}{{ review_assignment.review_request.doc.name }}{% endif %}-{{ review_assignment.reviewed_rev }}{% endif %}: {{review_assignment.result}}"
-                    class="badge rounded-pill {% if review_assignment.result.name|slice:5|slugify == 'ready' %}bg-success{% elif review_assignment.result.name|slice:9|slugify == 'not-ready' %}bg-danger{% elif review_assignment.result.name|slice:10|slugify == 'has-issues' %}bg-warning{% else %}bg-info{% endif %}">
+                    class="badge rounded-pill {% if review_assignment.result.name|slice:5|slugify == 'ready' %}text-bg-success{% elif review_assignment.result.name|slice:9|slugify == 'not-ready' %}text-bg-danger{% elif review_assignment.result.name|slice:10|slugify == 'has-issues' %}text-bg-warning{% else %}text-bg-info{% endif %}">
                     {% else %}
-                        <span title="Incomplete, due {{ review_assignment.review_request.deadline|date:"Y-m-d" }}" class="badge rounded-pill bg-secondary">
+                        <span title="Incomplete, due {{ review_assignment.review_request.deadline|date:"Y-m-d" }}" class="badge rounded-pill text-bg-secondary">
                     {% endif %}
                     <a class="text-reset text-decoration-none" href="{% if review_assignment.review %}{% url 'ietf.doc.views_doc.document_main' review_assignment.review.name %}{% else %}{% url 'ietf.doc.views_review.review_request' review_assignment.review_request.doc.name review_assignment.review_request.pk %}{% endif %}">
                         {{ review_assignment.review_request.team.acronym }}

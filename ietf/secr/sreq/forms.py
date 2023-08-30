@@ -28,7 +28,7 @@ JOINT_FOR_SESSION_CHOICES = (('1', 'First session'), ('2', 'Second session'), ('
 # Helper Functions
 # -------------------------------------------------
 def allowed_conflicting_groups():
-    return Group.objects.filter(type__in=['wg', 'ag', 'rg', 'rag', 'program'], state__in=['bof', 'proposed', 'active'])
+    return Group.objects.filter(type__in=['wg', 'ag', 'rg', 'rag', 'program', 'edwg'], state__in=['bof', 'proposed', 'active'])
 
 def check_conflict(groups, source_group):
     '''

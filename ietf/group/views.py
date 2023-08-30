@@ -72,7 +72,7 @@ from ietf.group.forms import (GroupForm, StatusUpdateForm, ConcludeGroupForm, St
                               AddUnavailablePeriodForm, EndUnavailablePeriodForm, ReviewSecretarySettingsForm, )
 from ietf.group.mails import email_admin_re_charter, email_personnel_change, email_comment
 from ietf.group.models import ( Group, Role, GroupEvent, GroupStateTransitions,
-                              ChangeStateGroupEvent, GroupFeatures )
+                              ChangeStateGroupEvent, GroupFeatures, AppealArtifact )
 from ietf.group.utils import (get_charter_text, can_manage_all_groups_of_type, 
                               milestone_reviewer_for_group_type, can_provide_status_update,
                               can_manage_materials, group_attribute_change_desc,
@@ -111,7 +111,7 @@ from ietf.doc.models import LastCallDocEvent
 from ietf.name.models import ReviewAssignmentStateName
 from ietf.utils.mail import send_mail_text, parse_preformatted
 
-from ietf.ietfauth.utils import user_is_person
+from ietf.ietfauth.utils import user_is_person, role_required
 from ietf.dbtemplate.models import DBTemplate
 from ietf.mailtrigger.utils import gather_address_lists
 from ietf.mailtrigger.models import Recipient
@@ -1332,6 +1332,16 @@ def group_menu_data(request):
 #        groups_by_parent[g.parent_id].append({ 'acronym': g.acronym, 'name': escape(g.name), 'url': url })
         groups_by_parent[g.parent_id].append({ 'acronym': g.acronym, 'name': escape(g.name), 'type': escape(g.type.verbose_name or g.type.name), 'url': url })
 
+    iab = Group.objects.get(acronym="iab")
+    groups_by_parent[iab.pk].insert(
+        0,
+        {
+            "acronym": iab.acronym,
+            "name": iab.name,
+            "type": "Top Level Group",
+            "url": urlreverse("ietf.group.views.group_home", kwargs={"acronym": iab.acronym})
+        }
+    )
     return JsonResponse(groups_by_parent)
 
 
@@ -2103,5 +2113,48 @@ def statements(request, acronym, group_type=None):
         ),
     )
 
+def appeals(request, acronym, group_type=None):
+    if not acronym in ["iab", "iesg"]:
+        raise Http404
+    group = get_group_or_404(acronym, group_type)
+    appeals = group.appeal_set.all()
+    return render(
+        request,
+        "group/appeals.html",
+        construct_group_menu_context(
+            request,
+            group,
+            "appeals",
+            group_type,
+            {
+                "group": group,
+                "appeals": appeals,
+            },
+        ),
+    )
 
-
+def appeal_artifact(request, acronym, artifact_id, group_type=None):
+    artifact = get_object_or_404(AppealArtifact, pk=artifact_id)
+    if artifact.is_markdown():
+        artifact_html = markdown.markdown(artifact.bits.tobytes().decode("utf-8"))
+        return render(
+            request,
+            "group/appeal_artifact.html",
+            dict(artifact=artifact, artifact_html=artifact_html)
+        )
+    else:
+        return HttpResponse(
+            artifact.bits, 
+            headers = {
+                "Content-Type": artifact.content_type,
+                "Content-Disposition": f'attachment; filename="{artifact.download_name()}"'
+            }
+        )
+    
+@role_required("Secretariat")
+def appeal_artifact_markdown(request, acronym, artifact_id, group_type=None):
+    artifact = get_object_or_404(AppealArtifact, pk=artifact_id)
+    if artifact.is_markdown():
+        return HttpResponse(artifact.bits, content_type=artifact.content_type)
+    else:
+        raise Http404

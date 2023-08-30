@@ -684,6 +684,10 @@ onBeforeUnmount(() => {
     border-radius: 5px;
     border-collapse: separate;
     border-spacing: 0;
+
+    @at-root .theme-dark & {
+      border-color: #000;
+    }
   }
 
   // -> Table HEADER
@@ -702,6 +706,11 @@ onBeforeUnmount(() => {
     padding: 0 12px;
     font-weight: 600;
     border-right: 1px solid #FFF;
+
+    @at-root .theme-dark & {
+      border-bottom-color: #000;
+      border-right-color: #000;
+    }
 
     @media screen and (max-width: $bs5-break-md) {
       font-size: .8em;
@@ -757,6 +766,10 @@ onBeforeUnmount(() => {
 
   tr:nth-child(odd) td {
     background-color: #F9F9F9;
+
+    @at-root .theme-dark & {
+      background-color: darken($gray-900, 5%);
+    }
   }
 
   &-display-noresult > td {
@@ -766,6 +779,12 @@ onBeforeUnmount(() => {
     color: $gray-800;
     text-shadow: 1px 1px 0 #FFF;
     font-weight: 600;
+
+    @at-root .theme-dark & {
+      background: linear-gradient(to bottom, $gray-900, $gray-800);
+      color: #FFF;
+      text-shadow: 1px 1px 0 $gray-900;
+    }
   }
 
   &-display-day > td {
@@ -776,6 +795,10 @@ onBeforeUnmount(() => {
     padding: 0 12px;
     font-weight: 600;
     scroll-margin-top: 25px;
+
+    @at-root .theme-dark & {
+      border-bottom-color: #000;
+    }
 
     @media screen and (max-width: $bs5-break-md) {
       font-size: .9em;
@@ -789,6 +812,11 @@ onBeforeUnmount(() => {
     padding: 0 12px;
     color: #333;
 
+    @at-root .theme-dark & {
+      background: linear-gradient(to top, lighten($blue-900, 8%), lighten($blue-900, 4%)) !important;
+      color: $blue-100;
+    }
+
     @media screen and (max-width: $bs5-break-md) {
       padding: 0 6px;
     }
@@ -796,11 +824,20 @@ onBeforeUnmount(() => {
     &.agenda-table-cell-ts {
       border-right: 1px solid $blue-200 !important;
       color: $blue-700;
+
+      @at-root .theme-dark & {
+        border-right-color: $blue-700 !important;
+        color: $blue-200;
+      }
     }
 
     &.agenda-table-cell-name {
       color: $blue-700;
       font-weight: 600;
+
+      @at-root .theme-dark & {
+        color: $blue-200;
+      }
 
       @media screen and (max-width: $bs5-break-md) {
         font-size: .9em;
@@ -813,6 +850,10 @@ onBeforeUnmount(() => {
     padding: 0 12px;
     color: #333;
 
+    @at-root .theme-dark & {
+      color: #FFF;
+    }
+
     @media screen and (max-width: $bs5-break-md) {
       padding: 2px 6px;
     }
@@ -821,6 +862,11 @@ onBeforeUnmount(() => {
       background-color: desaturate($blue-700, 50%) !important;
       border-bottom: 1px solid #FFF;
       padding-bottom: 2px;
+
+      @at-root .theme-dark & {
+        background-color: $gray-800 !important;
+        border-bottom-color: #000;
+      }
     }
 
     &.agenda-table-cell-ts {
@@ -829,6 +875,13 @@ onBeforeUnmount(() => {
         border-right: 1px solid $blue-200 !important;
         color: $blue-200;
         border-bottom: 1px solid #FFF;
+
+        @at-root .theme-dark & {
+          background: linear-gradient(to right, rgba(lighten($blue-900, 8%), .1), lighten($blue-900, 5%));
+          border-right-color: $blue-700 !important;
+          border-bottom-color: $blue-700;
+          color: $blue-700;
+        }
       }
     }
 
@@ -836,6 +889,11 @@ onBeforeUnmount(() => {
       color: $gray-700;
       border-right: 1px solid $gray-300 !important;
       white-space: nowrap;
+
+      @at-root .theme-dark & {
+        color: $yellow-100;
+        border-right-color: $gray-700 !important;
+      }
 
       @media screen and (max-width: 1300px) {
         font-size: .85rem;
@@ -880,6 +938,11 @@ onBeforeUnmount(() => {
       border-right: 1px solid $gray-300 !important;
       white-space: nowrap;
 
+      @at-root .theme-dark & {
+        color: $gray-400;
+        border-right-color: $gray-700 !important;
+      }
+
       @media screen and (max-width: $bs5-break-md) {
         font-size: .7rem;
         word-break: break-all;
@@ -906,6 +969,14 @@ onBeforeUnmount(() => {
         border-top-left-radius: 0;
         border-bottom-left-radius: 0;
         margin-right: 6px;
+
+        @at-root .theme-dark & {
+          background-color: $gray-700;
+          border-bottom-color: $gray-600;
+          border-right-color: $gray-600;
+          color: $gray-200;
+          text-shadow: 1px 1px $gray-800;
+        }
       }
     }
 
@@ -937,6 +1008,10 @@ onBeforeUnmount(() => {
         }
         &.bi-green {
           color: $green-500;
+
+          @at-root .theme-dark & {
+            color: $green-300;
+          }
         }
         &.bi-pink {
           color: $pink-500;
@@ -986,6 +1061,11 @@ onBeforeUnmount(() => {
           padding: 2px 3px;
           transition: background-color .6s ease;
 
+          @at-root .theme-dark & {
+            background-color: rgba(0, 0, 0, .2);
+            color: $gray-200;
+          }
+
           &:hover, &:focus {
             color: $blue;
           }
@@ -993,6 +1073,10 @@ onBeforeUnmount(() => {
           &.text-red {
             color: $red-500;
             background-color: rgba($red-500, .1);
+
+            @at-root .theme-dark & {
+              color: $red-400;
+            }
 
             &:hover, &:focus {
               background-color: rgba($red-500, .3);
@@ -1002,6 +1086,10 @@ onBeforeUnmount(() => {
             color: $orange-700;
             background-color: rgba($orange-500, .1);
 
+            @at-root .theme-dark & {
+              color: $orange-400;
+            }
+
             &:hover, &:focus {
               background-color: rgba($orange-500, .3);
             }
@@ -1009,6 +1097,10 @@ onBeforeUnmount(() => {
           &.text-blue {
             color: $blue-600;
             background-color: rgba($blue-300, .1);
+
+            @at-root .theme-dark & {
+              color: $blue-300;
+            }
 
             &:hover, &:focus {
               background-color: rgba($blue-300, .3);
@@ -1018,6 +1110,10 @@ onBeforeUnmount(() => {
             color: $green-500;
             background-color: rgba($green-300, .1);
 
+            @at-root .theme-dark & {
+              color: $green-300;
+            }
+
             &:hover, &:focus {
               background-color: rgba($green-300, .3);
             }
@@ -1025,6 +1121,10 @@ onBeforeUnmount(() => {
           &.text-purple {
             color: $purple-500;
             background-color: rgba($purple-400, .1);
+
+            @at-root .theme-dark & {
+              color: $purple-300;
+            }
 
             &:hover, &:focus {
               background-color: rgba($purple-400, .3);
@@ -1034,6 +1134,10 @@ onBeforeUnmount(() => {
             color: $pink-500;
             background-color: rgba($pink-400, .1);
 
+            @at-root .theme-dark & {
+              color: $pink-400;
+            }
+
             &:hover, &:focus {
               background-color: rgba($pink-400, .3);
             }
@@ -1041,6 +1145,10 @@ onBeforeUnmount(() => {
           &.text-teal {
             color: $teal-600;
             background-color: rgba($teal-400, .1);
+
+            @at-root .theme-dark & {
+              color: $teal-300;
+            }
 
             &:hover, &:focus {
               background-color: rgba($teal-400, .3);
@@ -1068,6 +1176,10 @@ onBeforeUnmount(() => {
     text-align: right;
     white-space: nowrap;
 
+    @at-root .theme-dark & {
+      border-right-color: $gray-700 !important;
+    }
+
     @media screen and (max-width: 1300px) {
       font-size: .9rem;
     }
@@ -1093,6 +1205,15 @@ onBeforeUnmount(() => {
       border-bottom: none;
     }
 
+    &.agenda-table-cell-ts.is-session-event {
+      @at-root .theme-dark & {
+        background: transparent;
+        color: $red-300;
+        border-top: 1px solid darken($red-100, 5%);
+        border-bottom-color: darken($red-100, 5%);
+      }
+    }
+
     &.agenda-table-cell-room {
       border-right: 1px solid darken($red-100, 5%) !important;
     }
@@ -1111,6 +1232,15 @@ onBeforeUnmount(() => {
       border-bottom: none;
     }
 
+    &.agenda-table-cell-ts.is-session-event {
+      @at-root .theme-dark & {
+        background: transparent;
+        color: $orange-300;
+        border-top: 1px solid darken($orange-100, 5%);
+        border-bottom-color: darken($orange-100, 5%);
+      }
+    }
+
     &.agenda-table-cell-room {
       border-right: 1px solid darken($orange-100, 5%) !important;
     }
@@ -1124,10 +1254,21 @@ onBeforeUnmount(() => {
     border-top: 1px solid darken($indigo-100, 5%);
     border-bottom: 1px solid darken($indigo-100, 5%);
 
+    @at-root .theme-dark & {
+      color: $indigo-100;
+      // border-bottom-color: #000;
+    }
+
     &.agenda-table-cell-ts {
       background: linear-gradient(to right, lighten($indigo-100, 8%), lighten($indigo-100, 5%));
       color: $indigo-700;
       border-right: 1px solid $indigo-100 !important;
+
+      @at-root .theme-dark & {
+        background: rgba($indigo, .1) !important;
+        color: $indigo-100;
+        border-right-color: $indigo-500 !important;
+      }
     }
 
     &.agenda-table-cell-room {
@@ -1137,10 +1278,18 @@ onBeforeUnmount(() => {
     &.agenda-table-cell-name {
       color: $indigo-700;
       font-style: italic;
+
+      @at-root .theme-dark & {
+        color: $indigo-200;
+      }
     }
 
     &.agenda-table-cell-links {
       background: linear-gradient(to right, lighten($indigo-100, 5%), lighten($indigo-100, 8%));
+
+      @at-root .theme-dark & {
+        background: rgba($indigo, .1) !important;
+      }
     }
   }
   &-type-plenary td {
@@ -1149,9 +1298,19 @@ onBeforeUnmount(() => {
     border-top: 1px solid darken($teal-100, 5%);
     border-bottom: 1px solid darken($teal-100, 5%);
 
+    @at-root .theme-dark & {
+      background: rgba($teal, .15) !important;
+      color: $teal-100;
+      border-bottom: 1px solid darken($teal-600, 5%);
+    }
+
     &.agenda-table-cell-ts {
       background: linear-gradient(to right, lighten($teal-100, 8%), lighten($teal-100, 2%));
       border-right: 1px solid $teal-200 !important;
+
+      @at-root .theme-dark & {
+        border-right-color: $teal-700 !important;
+      }
     }
 
     &.agenda-table-cell-room {
@@ -1161,10 +1320,18 @@ onBeforeUnmount(() => {
     &.agenda-table-cell-name {
       font-weight: 600;
       color: $teal-700;
+
+      @at-root .theme-dark & {
+        color: $teal-200;
+      }
     }
 
     &.agenda-table-cell-links {
       background: linear-gradient(to right, rgba(lighten($teal, 54%), 0), lighten($teal, 54%));
+
+      @at-root .theme-dark & {
+        background: rgba($teal, .15) !important;
+      }
     }
   }
 

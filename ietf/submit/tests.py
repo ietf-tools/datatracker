@@ -3782,3 +3782,54 @@ class TestOldNamesAreProtected(BaseSubmitTestCase):
         files["xml"], _ = submission_file("draft-something-hascapitalletters-00", "draft-something-hascapitalletters-00.xml", None, "test_submission.xml")
         r = self.post_to_upload_submission(url, files)
         self.assertContains(r,"Case-conflicting draft name found",status_code=200)
+
+
+class SubmissionStatusTests(BaseSubmitTestCase):
+    """Tests of the submission_status view
+
+    Many tests are interspersed in the monolithic tests above. We can aspire to break these
+    out more modularly, though.
+    """
+
+    def test_submission_checks(self):
+        for state_slug in ("uploaded", "cancel", "posted"):
+            submission = SubmissionFactory(state_id=state_slug)
+            url = urlreverse(
+                "ietf.submit.views.submission_status",
+                kwargs={"submission_id": submission.pk},
+            )
+            # No checks
+            r = self.client.get(url)
+            self.assertContains(
+                r,
+                "No submission checks were applied to your Internet-Draft.",
+                status_code=200,
+            )
+            # Inapplicable check
+            submission.checks.create(
+                checker="yang validation", passed=None, message="Yang message"
+            )
+            r = self.client.get(url)
+            self.assertContains(
+                r,
+                "No submission checks were applied to your Internet-Draft.",
+                status_code=200,
+            )
+            # Passed check
+            submission.checks.create(
+                checker="idnits check", passed=True, message="idnits ok"
+            )
+            r = self.client.get(url)
+            self.assertContains(
+                r,
+                "Your Internet-Draft has been verified to pass the submission checks.",
+                status_code=200,
+            )
+            # Failed check + passed check
+            submission.checks.filter(checker="yang validation").update(passed=False)
+            r = self.client.get(url)
+            self.assertContains(
+                r,
+                "Your Internet-Draft failed at least one submission check.",
+                status_code=200,
+            )

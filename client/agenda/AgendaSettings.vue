@@ -457,6 +457,14 @@ onMounted(() => {
     font-size: .8rem;
     color: $gray-700;
     text-shadow: 1px 1px 0 #FFF;
+
+    @at-root .theme-dark & {
+      background-color: $gray-900;
+      text-shadow: none;
+      border-bottom-color: $gray-700;
+      border-right-color: $gray-700;
+      color: #FFF;
+    }
   }
 
   &-calcoffset {

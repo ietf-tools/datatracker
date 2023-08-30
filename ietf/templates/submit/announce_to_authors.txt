@@ -1,24 +1,23 @@
-{% autoescape off %}
-A new version of I-D, {{ submission.name }}-{{ submission.rev }}.txt
-has been successfully submitted by {{ submission.submitter_parsed.name }} and posted to the
-IETF repository.
+{% autoescape off %}{% filter wordwrap:78 %}A new version of Internet-Draft {{ submission.name }}-{{ submission.rev }}.txt has been successfully submitted by {{ submission.submitter_parsed.name }} and posted to the
+IETF repository.{% endfilter %}
 
-Name:		{{ submission.name }}
-Revision:	{{ submission.rev }}
-Title:		{{ submission.title }}
-Document date:	{{ submission.document_date|date:"Y-m-d" }}
-Group:		{{ group }}
-Pages:		{{ submission.pages }}
-URL:            {{ settings.IETF_ID_ARCHIVE_URL }}{{ submission.name }}-{{ submission.rev }}.txt
-Status:         {{ settings.IDTRACKER_BASE_URL }}{% url 'ietf.doc.views_doc.document_main' name=submission.name %}{% if submission.xml_version == "3" %}
-Html:           {{ settings.IETF_ID_ARCHIVE_URL }}{{ submission.name }}-{{ submission.rev }}.html{% endif %}
-Htmlized:       {{ settings.IDTRACKER_BASE_URL }}{% url 'ietf.doc.views_doc.document_html' name=submission.name %}
-{% if submission.rev != "00" %}Diff:           {{rfcdiff_base_url}}?url2={{ submission.name }}-{{ submission.rev }}{% endif %}
+Name:     {{ submission.name }}
+Revision: {{ submission.rev }}
+Title:    {{ submission.title }}
+Date:     {{ submission.document_date|date:"Y-m-d" }}
+Group:    {{ group }}
+Pages:    {{ submission.pages }}
+URL:      {{ settings.IETF_ID_ARCHIVE_URL }}{{ submission.name }}-{{ submission.rev }}.txt
+Status:   {{ settings.IDTRACKER_BASE_URL }}{% url 'ietf.doc.views_doc.document_main' name=submission.name %}{% if submission.xml_version == "3" %}
+HTML:     {{ settings.IETF_ID_ARCHIVE_URL }}{{ submission.name }}-{{ submission.rev }}.html{% endif %}
+HTMLized: {{ settings.IDTRACKER_BASE_URL }}{% url 'ietf.doc.views_doc.document_html' name=submission.name %}
+{% if submission.rev != "00" %}Diff:     {{rfcdiff_base_url}}?url2={{ submission.name }}-{{ submission.rev }}{% endif %}
 
 Abstract:
-{{ submission.abstract }}
-                                                                                  
-{{ submission.note|default:"" }}
+
+{{ submission.abstract.rstrip }}
+
+{{ submission.note.rstrip|default:"" }}
 
 The IETF Secretariat
 {% endautoescape %}

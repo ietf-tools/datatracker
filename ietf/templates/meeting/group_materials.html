@@ -12,13 +12,13 @@
                 <a href="{% url 'ietf.group.views.group_home' acronym=entry.group.acronym %}">{{ entry.group.acronym }}</a>
             </div>
             {% if entry.group.state.slug == "bof" %}
-                <span class="badge rounded-pill bg-success">{{ entry.group.state.slug|upper }}</span>
+                <span class="badge rounded-pill text-bg-success">{{ entry.group.state.slug|upper }}</span>
             {% endif %}
         {% endif %}
     </td>
     {% if entry.canceled %}
         <td colspan="{% if user|has_role:'Secretariat' or user_groups %}6{% else %}5{% endif %}">
-            <span class="badge rounded-pill bg-danger">Session cancelled</span>
+            <span class="badge rounded-pill text-bg-danger">Session cancelled</span>
         </td>
     {% else %}
         <td>
@@ -32,7 +32,7 @@
                 </a>
                 <br>
             {% empty %}
-                {% if show_agenda == "True" %}<span class="badge rounded-pill bg-warning">No agenda</span>{% endif %}
+                {% if show_agenda == "True" %}<span class="badge rounded-pill text-bg-warning">No agenda</span>{% endif %}
             {% endfor %}
         </td>
         <td>
@@ -42,7 +42,7 @@
                 </a>
                 <br>
             {% empty %}
-                {% if show_agenda == "True" %}<span class="badge rounded-pill bg-warning">No minutes</span>{% endif %}
+                {% if show_agenda == "True" %}<span class="badge rounded-pill text-bg-warning">No minutes</span>{% endif %}
             {% endfor %}
             {% if entry.session.type_id == 'regular' and show_agenda == "True" %}
                 {% for bluesheet in entry.bluesheets %}
@@ -54,7 +54,7 @@
                     </a>
                     <br>
                 {% empty %}
-                    <span class="badge rounded-pill bg-warning">No bluesheets</span>
+                    <span class="badge rounded-pill text-bg-warning">No bluesheets</span>
                 {% endfor %}
             {% endif %}
         </td>
@@ -67,7 +67,7 @@
                     <a href="{{ slide.material|meeting_href:meeting }}">{{ slide.material.title|clean_whitespace }}</a>
                     <br>
                 {% empty %}
-                    <span class="badge rounded-pill bg-warning">No slides</span>
+                    <span class="badge rounded-pill text-bg-warning">No slides</span>
                 {% endfor %}
         </td>
         <td>
@@ -81,7 +81,7 @@
                     </a>
                     <br>
                 {% empty %}
-                    <span class="badge rounded-pill bg-warning">No Internet-Drafts</span>
+                    <span class="badge rounded-pill text-bg-warning">No Internet-Drafts</span>
                 {% endfor %}
         </td>
         <td>

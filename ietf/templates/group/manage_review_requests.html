@@ -36,7 +36,7 @@
                                 {{ r.type.name }}
                             {% endif %}
                             deadline {{ r.deadline|date:"Y-m-d" }}
-                            {% if r.due %}<span class="badge rounded-pill bg-warning">{{ r.due }} day{{ r.due|pluralize }}</span>{% endif %}
+                            {% if r.due %}<span class="badge rounded-pill text-bg-warning">{{ r.due }} day{{ r.due|pluralize }}</span>{% endif %}
                         </span>
                         <a href="{% if r.requested_rev %}{% url "ietf.doc.views_doc.document_main" name=r.doc.name rev=r.requested_rev %}{% else %}{% url "ietf.doc.views_doc.document_main" name=r.doc.name %}{% endif %}?include_text=1">
                             {{ r.doc.name }}-
@@ -63,7 +63,7 @@
                                     {% endif %}
                                     <br>
                                 {% else %}
-                                    <span class="badge rounded-pill bg-info">Auto-suggested</span>
+                                    <span class="badge rounded-pill text-bg-info">Auto-suggested</span>
                                     <br>
                                 {% endif %}
                                 {% if r.doc.authors %}
@@ -135,10 +135,10 @@
                                     {% endfor %}
                                 {% endif %}
                                 <div>
-                                    <span class="badge rounded-pill bg-secondary">{{ r.doc.pages }} page{{ r.doc.pages|pluralize }}</span>
-                                    <span class="badge rounded-pill bg-info">{{ r.doc.friendly_state }}</span>
+                                    <span class="badge rounded-pill text-bg-secondary">{{ r.doc.pages }} page{{ r.doc.pages|pluralize }}</span>
+                                    <span class="badge rounded-pill text-bg-info">{{ r.doc.friendly_state }}</span>
                                 </div>
-                                {% if r.doc.telechat_date %}<span class="badge rounded-pill bg-warning">IESG telechat {{ r.doc.telechat_date }}</span>{% endif %}
+                                {% if r.doc.telechat_date %}<span class="badge rounded-pill text-bg-warning">IESG telechat {{ r.doc.telechat_date }}</span>{% endif %}
                                 {% if r.comment %}<pre class="border p-3 pasted">{{ r.comment }}</pre>{% endif %}
                             </div>
                             <div class="col-sm-6">
@@ -169,8 +169,8 @@
                                             title="Click to reassign reviewer">
                                         {% person_link r.reviewer.person %}
                                     </button>
-                                    {% if r.state_id == "accepted" %}<span class="badge rounded-pill bg-secondary">Accepted</span>{% endif %}
-                                    {% if r.reviewer_unavailable %}<span class="badge rounded-pill bg-danger">Unavailable</span>{% endif %}
+                                    {% if r.state_id == "accepted" %}<span class="badge rounded-pill text-bg-secondary">Accepted</span>{% endif %}
+                                    {% if r.reviewer_unavailable %}<span class="badge rounded-pill text-bg-danger">Unavailable</span>{% endif %}
                                 {% else %}
                                     <button type="button"
                                             class="btn btn-sm btn-primary btn-success"

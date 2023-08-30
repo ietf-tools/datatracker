@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2009-2020, All Rights Reserved
+# Copyright The IETF Trust 2009-2023, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -15,13 +15,25 @@ from django.utils import timezone
 
 import debug                            # pyflakes:ignore
 
-from ietf.doc.factories import DocumentFactory, WgDraftFactory, WgRfcFactory, RfcFactory
+from ietf.doc.factories import (
+    DocumentFactory,
+    WgDraftFactory,
+    WgRfcFactory,
+    RfcFactory,
+    NewRevisionDocEventFactory
+)
 from ietf.group.factories import RoleFactory
-from ietf.ipr.factories import HolderIprDisclosureFactory, GenericIprDisclosureFactory, IprEventFactory
+from ietf.ipr.factories import (
+    HolderIprDisclosureFactory,
+    GenericIprDisclosureFactory,
+    IprDocRelFactory,
+    IprEventFactory
+)
 from ietf.ipr.mail import (process_response_email, get_reply_to, get_update_submitter_emails,
     get_pseudo_submitter, get_holders, get_update_cc_addrs)
 from ietf.ipr.models import (IprDisclosureBase,GenericIprDisclosure,HolderIprDisclosure,
     ThirdPartyIprDisclosure)
+from ietf.ipr.templatetags.ipr_filters import no_revisions_message
 from ietf.ipr.utils import get_genitive, get_ipr_summary
 from ietf.mailtrigger.utils import gather_address_lists
 from ietf.message.models import Message
@@ -304,6 +316,38 @@ class IprTests(TestCase):
             data['patent_number'] = patent_number
             r = self.client.post(url, data)
             self.assertContains(r, "Your IPR disclosure has been submitted", msg_prefix="Checked patent number: %s" % patent_number)
+
+    def test_new_specific_no_revision(self):
+        draft = WgDraftFactory()
+        WgRfcFactory()
+        url = urlreverse("ietf.ipr.views.new", kwargs={ "type": "specific" })
+
+        # successful post
+        empty_outbox()
+        data = {
+            "holder_legal_name": "Test Legal",
+            "holder_contact_name": "Test Holder",
+            "holder_contact_email": "test@holder.com",
+            "holder_contact_info": "555-555-0100",
+            "ietfer_name": "Test Participant",
+            "ietfer_contact_info": "555-555-0101",
+            "iprdocrel_set-TOTAL_FORMS": 2,
+            "iprdocrel_set-INITIAL_FORMS": 0,
+            "iprdocrel_set-0-document": draft.docalias.first().pk,
+            "iprdocrel_set-1-document": DocAlias.objects.filter(name__startswith="rfc").first().pk,
+            "patent_number": "SE12345678901",
+            "patent_inventor": "A. Nonymous",
+            "patent_title": "A method of transferring bits",
+            "patent_date": "2000-01-01",
+            "has_patent_pending": False,
+            "licensing": "royalty-free",
+            "submitter_name": "Test Holder",
+            "submitter_email": "test@holder.com",
+        }
+        r = self.client.post(url, data)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertTrue(q("#id_iprdocrel_set-0-revisions").hasClass("is-invalid"))
 
     def test_new_thirdparty(self):
         """Add a new third-party disclosure.  Note: submitter does not need to be logged in.
@@ -761,4 +805,64 @@ Subject: test
         removed_docevent = doc.docevent_set.filter(type='removed_related_ipr').first()
         self.assertIn(ipr.title, removed_docevent.desc,
                       'IprDisclosure title does not appear in DocEvent desc when removed')
+
+    def test_no_revisions_message(self):
+        draft = WgDraftFactory(rev="02")
+        now = timezone.now()
+        for rev in range(0,3):
+            NewRevisionDocEventFactory(doc=draft, rev=f"{rev:02d}", time=now-datetime.timedelta(days=30*(2-rev)))
         
+        # Disclosure has non-empty revisions field on its related draft
+        iprdocrel = IprDocRelFactory(document=draft.docalias.first())
+        IprEventFactory(type_id="posted",time=now,disclosure=iprdocrel.disclosure)
+        self.assertEqual(
+            no_revisions_message(iprdocrel),
+            ""
+        )
+
+        # Disclosure has more than one revision, none called out, disclosure after submissions
+        iprdocrel = IprDocRelFactory(document=draft.docalias.first(), revisions="")
+        IprEventFactory(type_id="posted",time=now,disclosure=iprdocrel.disclosure)
+        self.assertEqual(
+            no_revisions_message(iprdocrel),
+            "No revisions for this Internet-Draft were specified in this disclosure. The Internet-Draft's revision was 02 at the time this disclosure was posted. Contact the discloser or patent holder if there are questions about which revisions this disclosure pertains to."
+        )
+
+        # Disclosure has more than one revision, none called out, disclosure after 01
+        iprdocrel = IprDocRelFactory(document=draft.docalias.first(), revisions="")
+        e = IprEventFactory(type_id="posted",disclosure=iprdocrel.disclosure)
+        e.time = now-datetime.timedelta(days=15)
+        e.save()
+        self.assertEqual(
+            no_revisions_message(iprdocrel),
+            "No revisions for this Internet-Draft were specified in this disclosure. The Internet-Draft's revision was 01 at the time this disclosure was posted. Contact the discloser or patent holder if there are questions about which revisions this disclosure pertains to."
+        )
+
+        # Disclosure has more than one revision, none called out, disclosure was before the 00
+        iprdocrel = IprDocRelFactory(document=draft.docalias.first(), revisions="")
+        e = IprEventFactory(type_id="posted",disclosure=iprdocrel.disclosure)
+        e.time = now-datetime.timedelta(days=180)
+        e.save()
+        self.assertEqual(
+            no_revisions_message(iprdocrel),
+            "No revisions for this Internet-Draft were specified in this disclosure. The Internet-Draft's initial submission was after this disclosure was posted. Contact the discloser or patent holder if there are questions about which revisions this disclosure pertains to."
+        )
+
+        # disclosed draft has no NewRevisionDocEvents
+        draft = WgDraftFactory(rev="20")
+        draft.docevent_set.all().delete()
+        iprdocrel = IprDocRelFactory(document=draft.docalias.first(), revisions="")
+        IprEventFactory(type_id="posted",disclosure=iprdocrel.disclosure)
+        self.assertEqual(
+            no_revisions_message(iprdocrel),
+            "No revisions for this Internet-Draft were specified in this disclosure. The Internet-Draft's revision at the time this disclosure was posted could not be determined. Contact the discloser or patent holder if there are questions about which revisions this disclosure pertains to."
+        )
+
+        # disclosed draft has only one revision
+        draft = WgDraftFactory(rev="00")
+        iprdocrel = IprDocRelFactory(document=draft.docalias.first(), revisions="")
+        IprEventFactory(type_id="posted",disclosure=iprdocrel.disclosure)
+        self.assertEqual(
+            no_revisions_message(iprdocrel),
+            "No revisions for this Internet-Draft were specified in this disclosure. However, there is only one revision of this Internet-Draft."
+        )

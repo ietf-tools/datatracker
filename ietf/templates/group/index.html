@@ -27,7 +27,7 @@
                     <td>
                         {% with stream.get_chair as role %}
                             {% person_link role.person %}
-                            {% if role %}<span class="badge rounded-pill bg-info">{{ role.name }}</span>{% endif %}
+                            {% if role %}<span class="badge rounded-pill text-bg-info">{{ role.name }}</span>{% endif %}
                         {% endwith %}
                     </td>
                 </tr>

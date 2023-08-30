@@ -94,6 +94,7 @@ class NomineePositionStateName(NameModel):
     """Status of a candidate for a position: None, Accepted, Declined"""
 class FeedbackTypeName(NameModel):
     """Type of feedback: questionnaires, nominations, comments"""
+    legend = models.CharField(max_length=1, default="", help_text="One-character legend for feedback classification form")
 class DBTemplateTypeName(NameModel):
     """reStructuredText, Plain, Django"""
 class DraftSubmissionStateName(NameModel):
@@ -149,4 +150,7 @@ class ExtResourceName(NameModel):
 class SlideSubmissionStatusName(NameModel):
     "Pending, Accepted, Rejected"
 class TelechatAgendaSectionName(NameModel):
-    "roll_call", "minutes", "action_items"
+    """roll_call, minutes, action_items"""
+
+class AppealArtifactTypeName(NameModel):
+    pass

@@ -6637,6 +6637,56 @@
   },
   {
     "fields": {
+      "desc": "The content of an appeal",
+      "name": "Appeal",
+      "order": 1,
+      "used": true
+    },
+    "model": "name.appealartifacttypename",
+    "pk": "appeal"
+  },
+  {
+    "fields": {
+      "desc": "The content of an appeal combined with the content of a response",
+      "name": "Response (with appeal included)",
+      "order": 2,
+      "used": true
+    },
+    "model": "name.appealartifacttypename",
+    "pk": "appeal_with_response"
+  },
+  {
+    "fields": {
+      "desc": "Other content related to an appeal",
+      "name": "Other content",
+      "order": 5,
+      "used": true
+    },
+    "model": "name.appealartifacttypename",
+    "pk": "other_content"
+  },
+  {
+    "fields": {
+      "desc": "The content of a reply to an appeal response",
+      "name": "Reply to response",
+      "order": 4,
+      "used": true
+    },
+    "model": "name.appealartifacttypename",
+    "pk": "reply_to_response"
+  },
+  {
+    "fields": {
+      "desc": "The content of a response to an appeal",
+      "name": "Response",
+      "order": 3,
+      "used": true
+    },
+    "model": "name.appealartifacttypename",
+    "pk": "response"
+  },
+  {
+    "fields": {
       "blocking": false,
       "desc": "",
       "name": "Abstain",
@@ -11155,6 +11205,7 @@
   {
     "fields": {
       "desc": "",
+      "legend": "C",
       "name": "Comment",
       "order": 1,
       "used": true
@@ -11165,6 +11216,7 @@
   {
     "fields": {
       "desc": "",
+      "legend": "J",
       "name": "Junk",
       "order": 5,
       "used": true
@@ -11175,6 +11227,7 @@
   {
     "fields": {
       "desc": "",
+      "legend": "N",
       "name": "Nomination",
       "order": 2,
       "used": true
@@ -11185,6 +11238,7 @@
   {
     "fields": {
       "desc": "",
+      "legend": "O",
       "name": "Overcome by events",
       "order": 4,
       "used": true
@@ -11195,6 +11249,7 @@
   {
     "fields": {
       "desc": "",
+      "legend": "Q",
       "name": "Questionnaire response",
       "order": 3,
       "used": true
@@ -11205,6 +11260,7 @@
   {
     "fields": {
       "desc": "",
+      "legend": "R",
       "name": "Read",
       "order": 6,
       "used": true
@@ -16513,7 +16569,7 @@
     "fields": {
       "command": "xym",
       "switch": "--version",
-      "time": "2023-08-13T07:09:38.976Z",
+      "time": "2023-08-22T07:09:39.542Z",
       "used": true,
       "version": "xym 0.7.0"
     },
@@ -16524,7 +16580,7 @@
     "fields": {
       "command": "pyang",
       "switch": "--version",
-      "time": "2023-08-13T07:09:39.314Z",
+      "time": "2023-08-22T07:09:39.881Z",
       "used": true,
       "version": "pyang 2.5.3"
     },
@@ -16535,7 +16591,7 @@
     "fields": {
       "command": "yanglint",
       "switch": "--version",
-      "time": "2023-08-13T07:09:39.334Z",
+      "time": "2023-08-22T07:09:39.899Z",
       "used": true,
       "version": "yanglint SO 1.9.2"
     },
@@ -16546,7 +16602,7 @@
     "fields": {
       "command": "xml2rfc",
       "switch": "--version",
-      "time": "2023-08-13T07:09:40.245Z",
+      "time": "2023-08-22T07:09:40.791Z",
       "used": true,
       "version": "xml2rfc 3.18.0"
     },
