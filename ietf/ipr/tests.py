@@ -15,6 +15,8 @@ from django.utils import timezone
 
 import debug                            # pyflakes:ignore
 
+from ietf.doc.models import Document
+
 from ietf.doc.factories import (
     DocumentFactory,
     WgDraftFactory,
@@ -319,7 +321,7 @@ class IprTests(TestCase):
 
     def test_new_specific_no_revision(self):
         draft = WgDraftFactory()
-        WgRfcFactory()
+        rfc = WgRfcFactory()
         url = urlreverse("ietf.ipr.views.new", kwargs={ "type": "specific" })
 
         # successful post
@@ -333,8 +335,8 @@ class IprTests(TestCase):
             "ietfer_contact_info": "555-555-0101",
             "iprdocrel_set-TOTAL_FORMS": 2,
             "iprdocrel_set-INITIAL_FORMS": 0,
-            "iprdocrel_set-0-document": draft.docalias.first().pk,
-            "iprdocrel_set-1-document": DocAlias.objects.filter(name__startswith="rfc").first().pk,
+            "iprdocrel_set-0-document": draft.pk,
+            "iprdocrel_set-1-document": rfc.pk,
             "patent_number": "SE12345678901",
             "patent_inventor": "A. Nonymous",
             "patent_title": "A method of transferring bits",
@@ -813,7 +815,7 @@ Subject: test
             NewRevisionDocEventFactory(doc=draft, rev=f"{rev:02d}", time=now-datetime.timedelta(days=30*(2-rev)))
         
         # Disclosure has non-empty revisions field on its related draft
-        iprdocrel = IprDocRelFactory(document=draft.docalias.first())
+        iprdocrel = IprDocRelFactory(document=draft)
         IprEventFactory(type_id="posted",time=now,disclosure=iprdocrel.disclosure)
         self.assertEqual(
             no_revisions_message(iprdocrel),

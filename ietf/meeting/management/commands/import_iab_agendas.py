@@ -11,7 +11,7 @@ from pathlib import Path
 from django.core.management.base import BaseCommand
 from django.conf import settings
 
-from ietf.doc.models import Document, DocAlias, DocEvent
+from ietf.doc.models import Document, DocEvent
 from ietf.meeting.models import Meeting, Session
 
 
@@ -212,7 +212,6 @@ class Command(BaseCommand):
                 rev="00",
                 uploaded_filename=agenda_filename,
             )
-            DocAlias.objects.create(name=doc.name).docs.add(doc)
             e = DocEvent.objects.create(
                 type="comment",
                 doc=doc,
