@@ -45,14 +45,14 @@ def related_docs(doc, relationship=('replaces', 'obs'), reverse_relationship=("b
 
     results = [doc]
 
-    rels = list(doc.all_relations_that_doc(relationship))
+    rels = doc.all_relations_that_doc(relationship)
 
     for rel in rels:
         rel.target.related = rel
         rel.target.relation = rel.relationship.revname
     results += [x.target for x in rels]
 
-    rev_rels = list(doc.all_relations_that(reverse_relationship))
+    rev_rels = doc.all_relations_that(reverse_relationship)
     for rel in rev_rels:
         rel.source.related = rel
         rel.source.relation = rel.relationship.name
