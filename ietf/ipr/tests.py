@@ -15,8 +15,6 @@ from django.utils import timezone
 
 import debug                            # pyflakes:ignore
 
-from ietf.doc.models import Document
-
 from ietf.doc.factories import (
     DocumentFactory,
     WgDraftFactory,
