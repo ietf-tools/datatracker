@@ -98,7 +98,7 @@
                                             <a href="{% url 'ietf.doc.views_review.review_request' name=doc_name request_id=req_pk %}">{{ deadline|date|split:"-"|join:"-<wbr>" }}</a>
                                         </div>
                                         <div class="col-md-2 me-1">
-                                            <span class="badge rounded-pill bg-{% if state.slug == 'completed' or state.slug == 'part-completed' %}success{% elif state.slug == 'no-response' %}danger{% elif state.slug == 'overtaken' %}warning{% elif state.slug == 'requested' or state.slug == 'accepted' %}primary{% else %}secondary{% endif %} text-wrap">{{ state.name }}</span>
+                                            {{ state.name|badgeify }}
                                         </div>
                                         <div class="col-md-1 me-1 text-end d-none d-lg-block">
                                             {% if assignment_to_closure_days != None %}

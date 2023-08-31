@@ -26,7 +26,7 @@
                 {% for ad in area.ads_and_pre_ads %}
                     <li>
                         {% person_link ad.person %}
-                        {% if ad.name == "pre-ad" %}<span class="badge rounded-pill bg-info">Incoming AD</span>{% endif %}
+                        {% if ad.name == "pre-ad" %}<span class="badge rounded-pill text-bg-info">Incoming AD</span>{% endif %}
                     </li>
                 {% endfor %}
             </ul>

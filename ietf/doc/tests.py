@@ -431,8 +431,8 @@ class SearchTests(TestCase):
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertEqual(len(q('td.doc')),3)
-        self.assertTrue(q('td.status span.bg-warning[title*="%s"]' % "for 15 days"))
-        self.assertTrue(q('td.status span.bg-danger[title*="%s"]' % "for 29 days"))
+        self.assertTrue(q('td.status span.text-bg-warning[title*="%s"]' % "for 15 days"))
+        self.assertTrue(q('td.status span.text-bg-danger[title*="%s"]' % "for 29 days"))
         for ah in [draft.action_holders.first() for draft in drafts]:
             self.assertContains(r, escape(ah.name))
 
@@ -2773,7 +2773,7 @@ class PdfizedTests(TestCase):
         url = urlreverse(self.view, kwargs=argdict)
         r = self.client.get(url)
         self.assertEqual(r.status_code,200)
-        self.assertEqual(r.get('Content-Type'),'application/pdf;charset=utf-8')
+        self.assertEqual(r.get('Content-Type'),'application/pdf')
 
     def should_404(self, argdict):
         url = urlreverse(self.view, kwargs=argdict)

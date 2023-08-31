@@ -40,8 +40,10 @@
         <p class="alert {% if passes_checks %}alert-success{% else %}alert-warning{% endif %} my-3">
             {% if passes_checks %}
                 Your Internet-Draft has been verified to pass the submission checks.
+            {% elif applied_any_checks %}
+                Your Internet-Draft failed at least one submission check.
             {% else %}
-                Your Internet-Draft has <b>NOT</b> been verified to pass the submission checks.
+                No submission checks were applied to your Internet-Draft.
             {% endif %}
         </p>
         {% if submission.authors|length > 5 %}
@@ -70,41 +72,39 @@
             {% endif %}
         {% endfor %}
         {% for check in submission.latest_checks %}
-            {% if check.passed != None %}
-                <button class="btn btn-{% if check.passed %}{% if check.warnings %}warning{% elif check.errors %}danger{% else %}success{% endif %}{% else %}danger{% endif %}"
-                        type="button"
-                        data-bs-toggle="modal"
-                        data-bs-target="#check-{{ check.pk }}">
-                    View {{ check.checker }}
-                </button>
-                <div class="modal fade"
-                     id="check-{{ check.pk }}"
-                     tabindex="-1"
-                     role="dialog"
-                     aria-labelledby="check-{{ check.pk }}"
-                     aria-hidden="true">
-                    <div class="modal-dialog modal-dialog-scrollable modal-xl">
-                        <div class="modal-content">
-                            <div class="modal-header">
-                                <p class="h5 modal-title" id="{{ check.checker|slugify }}-label">
-                                    {{ check.checker|title }} for {{ submission.name }}-{{ submission.rev }}
-                                </p>
-                                <button type="button"
-                                        class="btn-close"
-                                        data-bs-dismiss="modal"
-                                        aria-label="Close"></button>
-                            </div>
-                            <div class="modal-body" id="{{ check.checker|slugify }}-message">
-                            <pre>{{ check.message|urlize_ietf_docs|linkify }}</pre>
-                            </div>
-                            <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                            </div>
+            <button class="btn btn-{% if check.passed %}{% if check.warnings %}warning{% elif check.errors %}danger{% else %}success{% endif %}{% else %}danger{% endif %}"
+                    type="button"
+                    data-bs-toggle="modal"
+                    data-bs-target="#check-{{ check.pk }}">
+                View {{ check.checker }}
+            </button>
+            <div class="modal fade"
+                 id="check-{{ check.pk }}"
+                 tabindex="-1"
+                 role="dialog"
+                 aria-labelledby="check-{{ check.pk }}"
+                 aria-hidden="true">
+                <div class="modal-dialog modal-dialog-scrollable modal-xl">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <p class="h5 modal-title" id="{{ check.checker|slugify }}-label">
+                                {{ check.checker|title }} for {{ submission.name }}-{{ submission.rev }}
+                            </p>
+                            <button type="button"
+                                    class="btn-close"
+                                    data-bs-dismiss="modal"
+                                    aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body" id="{{ check.checker|slugify }}-message">
+                        <pre>{{ check.message|urlize_ietf_docs|linkify }}</pre>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                         </div>
                     </div>
                 </div>
-            {% endif %}
-        {% endfor %}
+            </div>
+    {% endfor %}
     {% endif %}
     <div class="modal fade"
          id="twopages"
@@ -152,9 +152,13 @@
             {% endwith %}
             Please contact the secretariat for assistance if it has been more than an hour.
         </div>
-        {% else %}
+    {% else %}
         <h2 class="mt-5">Meta-data from the submission</h2>
-        {% if errors %}
+        {% if submission.state.slug == "cancel" %}
+            <div class="alert alert-warning my-3">
+                <b>Note:</b> The meta-data shown for a cancelled draft may be incorrect or incomplete.
+            </div>
+        {% elif errors %}
             <div class="alert alert-danger my-3">
                 <p>
                     <b>Meta-Data errors found!</b>
@@ -373,7 +377,7 @@
                             <div>
                                 {{ res.name.name }}: {{ res.value }}
                                 {% if res.display_name %}(as &quot;{{ res.display_name }}&quot;){% endif %}
-                            {% if external_resources.show_changes and added %}<span class="badge rounded-pill bg-success">New</span>{% endif %}
+                            {% if external_resources.show_changes and added %}<span class="badge rounded-pill text-bg-success">New</span>{% endif %}
                             </div>
                         {% endwith %}
                     {% empty %}
@@ -392,7 +396,7 @@
                                 <div>
                                     {{ res.name.name }}: {{ res.value }}
                                     {% if res.display_name %}(as &quot;{{ res.display_name }}&quot;){% endif %}
-                                {% if removed %}<span class="badge rounded-pill bg-warning">Removed</span>{% endif %}
+                                {% if removed %}<span class="badge rounded-pill text-bg-warning">Removed</span>{% endif %}
                                 </div>
                             {% endwith %}
                         {% empty %}

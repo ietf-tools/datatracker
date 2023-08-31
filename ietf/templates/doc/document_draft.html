@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{# Copyright The IETF Trust 2016-2020, All Rights Reserved #}
+{# Copyright The IETF Trust 2016-2023, All Rights Reserved #}
 {% load origin %}
 {% load static %}
 {% load ietf_filters %}
@@ -47,7 +47,7 @@
                 {% if doc.stream %}
                     <th scope="row">
                         {% if doc.stream.slug != "legacy" %}
-                            <a href="{% url "ietf.help.views.state" doc=doc.type.slug type=doc.stream.slug %}">
+                            <a href="{% url "ietf.doc.views_help.state_help" type=stream %}">
                                 {% if doc.stream_id == 'ietf' %}
                                     WG
                                 {% else %}
@@ -224,7 +224,7 @@
                                    href="{% url 'ietf.doc.views_doc.document_shepherd_writeup' name=doc.name %}">
                                     Show
                                 </a>
-                                <span class="badge rounded-pill bg-secondary">Last changed {{ shepherd_writeup.time|date:"Y-m-d" }}</span>
+                                <span class="badge rounded-pill text-bg-secondary">Last changed {{ shepherd_writeup.time|date:"Y-m-d" }}</span>
                             {% else %}
                                 <span class="text-body-secondary">
                                     (None)
@@ -274,12 +274,12 @@
                         IESG
                     </th>
                     <th scope="row">
-                        <a href="{% url "ietf.help.views.state" doc=doc.type.slug type="iesg" %}">
+                        <a href="{% url "ietf.doc.views_help.state_help" type="draft-iesg" %}">
                             IESG state
                         </a>
                     </th>
                     <td class="edit">
-                        {% if iesg_state.slug != 'idexists' and can_edit %}
+                        {% if iesg_state.slug != 'idexists' and iesg_state.slug != 'dead' and can_edit %}
                             <a class="btn btn-primary btn-sm"
                                href="{% url 'ietf.doc.views_draft.change_state' name=doc.name %}">
                                 Edit
@@ -468,7 +468,7 @@
                                 IANA
                             </th>
                             <th scope="row">
-                                <a href="{% url "ietf.help.views.state" doc=doc.type.slug type="iana-review" %}">
+                                <a href="{% url "ietf.doc.views_help.state_help" type="draft-iana-review" %}">
                                     IANA review state
                                 </a>
                             </th>
@@ -497,7 +497,7 @@
                                 {% if not can_edit_iana_state and not iana_review_state %}IANA{% endif %}
                             </th>
                             <th scope="row">
-                                <a href="{% url "ietf.help.views.state" doc=doc.type.slug type="iana-action" %}">
+                                <a href="{% url "ietf.doc.views_help.state_help" type="draft-iana-action" %}">
                                     IANA action state
                                 </a>
                             </th>
@@ -526,7 +526,7 @@
                                 {% if not can_edit_iana_state and not iana_review_state and not iana_action_state %}IANA{% endif %}
                             </th>
                             <th scope="row">
-                                <a href="{% url "ietf.help.views.state" doc=doc.type.slug type="iana-experts" %}">
+                                <a href="{% url "ietf.doc.views_help.state_help" type="draft-iana-experts" %}">
                                     IANA expert review state
                                 </a>
                             </th>
@@ -587,7 +587,7 @@
                             RFC Editor
                         </th>
                         <th scope="row">
-                            <a href="{% url "ietf.help.views.state" doc=doc.type.slug type="rfceditor" %}">
+                            <a href="{% url "ietf.doc.views_help.state_help" type="draft-rfceditor" %}">
                                 RFC Editor state
                             </a>
                         </th>
@@ -644,7 +644,7 @@
                 </i>
                 IPR
                 {% if doc.related_ipr %}
-                    <span class="badge rounded-pill">
+                    <span class="badge rounded-pill text-bg-secondary">
                         {{ doc.related_ipr|length }}
                     </span>
                 {% endif %}
@@ -786,7 +786,7 @@
             {% endif %}
         {% else %}
             <div class="card border-warning mt-5">
-                <div class="card-header bg-warning">
+                <div class="card-header text-bg-warning">
                     <p><b>This Internet-Draft is no longer active. A copy of
                     the expired Internet-Draft is available in these formats:</b></p>
 

@@ -52,8 +52,35 @@
                 {% endfor %}
             </tbody>
         </table>
-        <h2 class="mt-4">Documents for {{ ad_name }}</h2>
     {% endif %}
+    {% if not_balloted_docs %}
+        <h2 class="mt-4">Missing ballot positions for {{ ad_name }}</h2>
+        <table class="table table-sm table-striped tablesorter">
+            <thead>
+                <tr>
+                    <th scope="col" data-sort="document">Document</th>
+                    <th scope="col" data-sort="status">Status</th>
+                    <th scope="col" class="d-none d-sm-table-cell" data-sort="responsible">Responsible AD</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for doc in not_balloted_docs %}
+                    <tr>
+                        <td>{{ doc.displayname_with_link }}</td>
+                        {% include "doc/search/status_columns.html" %}
+                        <td class="d-none d-sm-table-cell">
+                            {% if doc.ad %}
+                                {% person_link doc.ad %}
+                            {% else %}
+                                <span class="text-body-secondary">(None)</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+    <h2 class="mt-4">Documents for {{ ad_name }}</h2>
     {% include "doc/search/search_results.html" with start_table=True end_table=True %}
 {% endblock %}
 {% block js %}

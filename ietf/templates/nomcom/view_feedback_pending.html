@@ -42,7 +42,7 @@
                             Type
                         </dt>
                         <dd class="col-sm-10">
-                            <span class="badge rounded-pill bg-info">{{ form.feedback_type }}</span>
+                            <span class="badge rounded-pill text-bg-info">{{ form.feedback_type }}</span>
                         </dd>
                         <dt class="col-sm-2">
                             Feedback
@@ -73,9 +73,9 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for legend, t in type_dict.items %}
+                        {% for t in types %}
                             <tr>
-                                <th scope="row">{{ legend }}</th>
+                                <th scope="row">{{ t.legend }}</th>
                                 <td>{{ t.name }}</td>
                             </tr>
                         {% endfor %}
@@ -85,7 +85,7 @@
                     <thead>
                         <tr>
                             <th scope="col">Date</th>
-                            {% for legend, t in type_dict.items %}<th scope="col" class="text-center" title="{{ t.name }}">{{ legend }}</th>{% endfor %}
+                            {% for t in types %}<th scope="col" class="text-center" title="{{ t.name }}">{{ t.legend }}</th>{% endfor %}
                             <th scope="col">Author</th>
                             <th scope="col">Subject</th>
                             <th scope="col"></th>

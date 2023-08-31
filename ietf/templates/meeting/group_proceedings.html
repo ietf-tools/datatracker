@@ -11,14 +11,14 @@
             <div id="{{ entry.group.acronym }}">
                 <a href="{% url 'ietf.group.views.group_home' acronym=entry.group.acronym %}">{{ entry.group.acronym }}</a>
             </div>
-            {% if entry.group.state_id == "bof" %}<span class="badge rounded-pill bg-success">BOF</span>{% endif %}
+            {% if entry.group.state_id == "bof" %}<span class="badge rounded-pill text-bg-success">BOF</span>{% endif %}
         {% else %}
             <h1>{{ entry.group }}</h1>
         {% endif %}
     </td>
     {% if entry.canceled %}
         <td colspan="4">
-            <span class="badge rounded-pill bg-danger">Session cancelled</span>
+            <span class="badge rounded-pill text-bg-danger">Session cancelled</span>
         </td>
     {% else %}
         {# artifacts #}
@@ -31,7 +31,7 @@
                 <br>
             {% empty %}
                 {% if show_agenda and not meeting.proceedings_final %}
-                    <span class="badge rounded-pill bg-warning">No agenda</span>
+                    <span class="badge rounded-pill text-bg-warning">No agenda</span>
                     <br>
                 {% endif %}
             {% endfor %}
@@ -43,7 +43,7 @@
                 <br>
             {% empty %}
                 {% if show_agenda and not meeting.proceedings_final %}
-                    <span class="badge rounded-pill bg-warning">No minutes</span>
+                    <span class="badge rounded-pill text-bg-warning">No minutes</span>
                     <br>
                 {% endif %}
             {% endfor %}
@@ -71,7 +71,7 @@
                 <a href="{{ slide.material|meeting_href:meeting }}">{{ slide.material.title|clean_whitespace }}</a>
                 <br>
             {% empty %}
-                {% if not meeting.proceedings_final %}<span class="badge rounded-pill bg-warning">No slides</span>{% endif %}
+                {% if not meeting.proceedings_final %}<span class="badge rounded-pill text-bg-warning">No slides</span>{% endif %}
             {% endfor %}
         </td>
         {# drafts #}
@@ -82,7 +82,7 @@
                 </a>
                 <br>
             {% empty %}
-                {% if not meeting.proceedings_final %}<span class="badge rounded-pill bg-warning">No Internet-Drafts</span>{% endif %}
+                {% if not meeting.proceedings_final %}<span class="badge rounded-pill text-bg-warning">No Internet-Drafts</span>{% endif %}
             {% endfor %}
         </td>
     {% endif %}

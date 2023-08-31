@@ -39,7 +39,7 @@
                                 {% for p in past_pres_list %}
                                     {{ p.grouper }}
                                     {% if p.list|length > 1 %}
-                                        <span class="badge rounded-pill bg-info">{{ p.list|length }} sessions</span>
+                                        <span class="badge rounded-pill text-bg-info">{{ p.list|length }} sessions</span>
                                     {% else %}
                                         {% for pr in p.list %}
                                             {% if pr.rev != d.rev %}(-{{ pr.rev }}){% endif %}
@@ -52,7 +52,7 @@
                                 {% for p in meeting_pres_list %}
                                     {{ p.grouper }}
                                     {% if p.list|length > 1 %}
-                                        <span class="badge rounded-pill bg-info">{{ p.list|length }} sessions</span>
+                                        <span class="badge rounded-pill text-bg-info">{{ p.list|length }} sessions</span>
                                     {% else %}
                                         {% for pr in p.list %}
                                             {% if pr.rev != d.rev %}(-{{ pr.rev }}){% endif %}

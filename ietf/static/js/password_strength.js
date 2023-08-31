@@ -30,7 +30,7 @@
 
             widget
                 .find(".label-danger")
-                .addClass("bg-danger")
+                .addClass("text-bg-danger")
                 .removeClass("label-danger");
 
             widget
@@ -64,13 +64,13 @@
                             .val());
 
                         if (result.score < 3) {
-                            password_strength_bar.removeClass('bg-success')
-                                .addClass('bg-warning');
+                            password_strength_bar.removeClass('text-bg-success')
+                                .addClass('text-bg-warning');
                             password_strength_info.find('.badge')
                                 .removeClass('d-none');
                         } else {
-                            password_strength_bar.removeClass('bg-warning')
-                                .addClass('bg-success');
+                            password_strength_bar.removeClass('text-bg-warning')
+                                .addClass('text-bg-success');
                             password_strength_info.find('.badge')
                                 .addClass('d-none');
                         }
@@ -86,8 +86,8 @@
                             .html(result.crack_times_display.offline_slow_hashing_1e4_per_second);
                         password_strength_offline_info.removeClass('d-none');
                     } else {
-                        password_strength_bar.removeClass('bg-success')
-                            .addClass('bg-warning');
+                        password_strength_bar.removeClass('text-bg-success')
+                            .addClass('text-bg-warning');
                         password_strength_bar.width('0%')
                             .attr('aria-valuenow', 0);
                         password_strength_info.addClass('d-none');

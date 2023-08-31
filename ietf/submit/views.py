@@ -317,8 +317,13 @@ def submission_status(request, submission_id, access_token=None):
     if access_token and not key_matched:
         raise Http404
 
-    errors = validate_submission(submission)
-    passes_checks = all([ c.passed!=False for c in submission.checks.all() ])
+    if submission.state.slug == "cancel":
+        errors = {}
+    else:
+        errors = validate_submission(submission)
+    latest_checks = submission.latest_checks()
+    applied_any_checks = len(latest_checks) > 0
+    passes_checks = applied_any_checks and all(c.passed for c in latest_checks)
 
     is_secretariat = has_role(request.user, "Secretariat")
     is_chair = submission.group and submission.group.has_role(request.user, "chair")
@@ -353,7 +358,21 @@ def submission_status(request, submission_id, access_token=None):
     message = None
 
     if submission.state_id == "cancel":
-        message = ('error', 'This submission has been cancelled, modification is no longer possible.')
+        # would be nice to have a less heuristic mechansim for reporting async processing failure
+        async_processing_error = submission.submissionevent_set.filter(
+            desc__startswith="Submission rejected: A system error occurred"
+        ).exists()
+        if async_processing_error:
+            message = (
+                "error",
+                "This submission has been cancelled due to a system error during processing. "
+                "Modification is no longer possible.",
+            )
+        else:
+            message = (
+                "error",
+                "This submission has been cancelled, modification is no longer possible.",
+            )
     elif submission.state_id == "auth":
         message = ('success', 'The submission is pending email authentication. An email has been sent to: %s' % ", ".join(confirmation_list))
     elif submission.state_id == "grp-appr":
@@ -530,6 +549,7 @@ def submission_status(request, submission_id, access_token=None):
         'selected': 'status',
         'submission': submission,
         'errors': errors,
+        'applied_any_checks': applied_any_checks,
         'passes_checks': passes_checks,
         'submitter_form': submitter_form,
         'replaces_form': replaces_form,

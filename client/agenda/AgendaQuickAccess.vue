@@ -219,6 +219,9 @@ function scrollToNow (ev) {
 </script>
 
 <style lang="scss">
+@import "bootstrap/scss/functions";
+@import "bootstrap/scss/variables";
+
 .agenda-quickaccess {
   width: 300px;
 
@@ -252,6 +255,10 @@ function scrollToNow (ev) {
     text-align: center;
     margin-top: 12px;
 
+    @at-root .theme-dark & {
+      border-color: $secondary;
+    }
+
     @media screen and (max-width: 1350px) {
       flex-direction: column;
     }
@@ -267,6 +274,11 @@ function scrollToNow (ev) {
       background-color: #FFF;
       transform: translate(-50%, 0);
       text-transform: uppercase;
+
+      @at-root .theme-dark & {
+        background-color: $gray-900;
+        color: #FFF;
+      }
     }
 
     button {

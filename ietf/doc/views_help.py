@@ -7,12 +7,13 @@ from ietf.doc.models import State, StateType, IESG_SUBSTATE_TAGS
 from ietf.name.models import DocRelationshipName,  DocTagName
 from ietf.doc.utils import get_tags_for_stream_id
 
-# TODO: This is haphazardly implemented. Either flesh it out or reconsider the utility of showing these in these this way.
-def state_help(request, type):
+def state_help(request, type=None):
     slug, title = {
         "draft-iesg": ("draft-iesg", "IESG States for Internet-Drafts"),
         "draft-rfceditor": ("draft-rfceditor", "RFC Editor States for Internet-Drafts"),
         "draft-iana-action": ("draft-iana-action", "IANA Action States for Internet-Drafts"),
+        "draft-iana-review": ("draft-iana-review", "IANA Review States for Internet-Drafts"),
+        "draft-iana-experts": ("draft-iana-experts", "IANA Expert Review States for Internet-Drafts"),
         "draft-stream-ietf": ("draft-stream-ietf", "IETF Stream States for Internet-Drafts"),
         "draft-stream-irtf": ("draft-stream-irtf", "IRTF Stream States for Internet-Drafts"),
         "draft-stream-ise": ("draft-stream-ise", "ISE Stream States for Internet-Drafts"),
@@ -26,7 +27,7 @@ def state_help(request, type):
         }.get(type, (None, None))
     state_type = get_object_or_404(StateType, slug=slug)
 
-    states = State.objects.filter(type=state_type).order_by("order")
+    states = State.objects.filter(used=True, type=state_type).order_by("order")
 
     has_next_states = False
     for state in states:

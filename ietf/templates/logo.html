@@ -1,0 +1,35 @@
+{% load origin %}
+{% load static %}
+{% origin %}
+
+<img alt="{{ org|upper }} Logo"
+     class="d-lm-none{% if classes %} {{ classes }}{% endif %}"
+     {% if title %}title="{{ title }}"{% endif %}
+     {% if org == "iab" %}
+         src="{% static 'ietf/images/iab-logo-white.svg' %}"
+     {% elif org == "ietf" %}
+        {% if nor %}
+             src="{% static 'ietf/images/ietf-logo-nor-white.svg' %}"
+        {% else %}
+             src="{% static 'ietf/images/ietf-logo-white.svg' %}"
+        {% endif %}
+     {% elif org == "irtf" %}
+        src="{% static 'ietf/images/irtf-logo-white.svg' %}"
+     {% endif %}
+     >
+
+<img alt="{{ org|upper }} Logo"
+     class="d-dm-none{% if classes %} {{ classes }}{% endif %}"
+     {% if title %}title="{{ title }}"{% endif %}
+     {% if org == "iab" %}
+         src="{% static 'ietf/images/iab-logo.svg' %}"
+     {% elif org == "ietf" %}
+        {% if nor %}
+             src="{% static 'ietf/images/ietf-logo-nor.svg' %}"
+        {% else %}
+             src="{% static 'ietf/images/ietf-logo.svg' %}"
+        {% endif %}
+     {% elif org == "irtf" %}
+         src="{% static 'ietf/images/irtf-logo.svg' %}"
+     {% endif %}
+     >

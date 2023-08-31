@@ -27,6 +27,9 @@ if [ -n "$PGHOST" ]; then
     psql -U django -h $PGHOST -d datatracker -v ON_ERROR_STOP=1 -c '\x' -c 'ALTER USER django set search_path=datatracker,public;'
 fi
 
+echo "Starting memcached..."
+/usr/bin/memcached -d -u root
+
 echo "Running Datatracker checks..."
 ./ietf/manage.py check
 
