@@ -5,6 +5,8 @@ import re
 
 from functools import update_wrapper
 
+from base64 import b64encode
+
 import debug # pyflakes:ignore
 
 from django import forms
@@ -12,6 +14,7 @@ from django import forms
 from django.contrib import admin
 from django.contrib.admin.utils import unquote
 from django.core.management import load_command_class
+from django.db.models import BinaryField
 from django.http import Http404
 from django.shortcuts import render
 from django.utils.encoding import force_str
@@ -20,7 +23,7 @@ from django.utils.translation import gettext as _
 
 from ietf.group.models import (Group, GroupFeatures, GroupHistory, GroupEvent, GroupURL, GroupMilestone,
     GroupMilestoneHistory, GroupStateTransitions, Role, RoleHistory, ChangeStateGroupEvent,
-    MilestoneGroupEvent, GroupExtResource, )
+    MilestoneGroupEvent, GroupExtResource, Appeal, AppealArtifact )
 from ietf.name.models import GroupTypeName
 
 from ietf.utils.validators import validate_external_resource_value
@@ -291,3 +294,52 @@ class GroupExtResourceAdmin(admin.ModelAdmin):
     search_fields = ['group__acronym', 'value', 'display_name', 'name__slug',]
     raw_id_fields = ['group', ]
 admin.site.register(GroupExtResource, GroupExtResourceAdmin)
+
+class AppealAdmin(admin.ModelAdmin):
+    list_display = ["group", "date", "name"]
+    search_fields = ["group__acronym", "date", "name"]
+    raw_id_fields = ["group"]
+admin.site.register(Appeal, AppealAdmin)
+
+# From https://stackoverflow.com/questions/58529099/adding-file-upload-widget-for-binaryfield-to-django-admin
+class BinaryFileInput(forms.ClearableFileInput):
+
+    def is_initial(self, value):
+        """
+        Return whether value is considered to be initial value.
+        """
+        return bool(value)
+
+    def format_value(self, value):
+        """Format the size of the value in the db.
+
+        We can't render it's name or url, but we'd like to give some information
+        as to wether this file is not empty/corrupt.
+        """
+        if self.is_initial(value):
+            return f'{len(value)} bytes'
+
+
+    def value_from_datadict(self, data, files, name):
+        """Return the file contents so they can be put in the db."""
+        upload = super().value_from_datadict(data, files, name)
+        if upload:
+            bits = upload.read()
+            return b64encode(bits).decode("ascii") # Who made this so hard?
+            
+class RestrictContentTypeChoicesForm(forms.ModelForm):
+    content_type = forms.ChoiceField(
+        choices=(
+            ( "text/markdown;charset=utf-8", "Markdown"),
+            ( "application/pdf", "PDF")
+        )
+    )
+class AppealArtifactAdmin(admin.ModelAdmin):
+    list_display = ["display_title", "appeal","date"]
+    ordering = ["-appeal__date", "date"]
+    formfield_overrides = {
+        BinaryField: { "widget": BinaryFileInput() },
+    }
+    form = RestrictContentTypeChoicesForm
+
+admin.site.register(AppealArtifact, AppealArtifactAdmin)

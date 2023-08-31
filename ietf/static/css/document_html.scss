@@ -1,7 +1,27 @@
 @use "sass:map";
 
-$font-family-sans-serif: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", "Liberation Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
-$font-family-monospace: "Noto Sans Mono", SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+$font-family-sans-serif: "Inter",
+system-ui,
+-apple-system,
+"Segoe UI",
+Roboto,
+"Helvetica Neue",
+"Noto Sans",
+"Liberation Sans",
+Arial,
+sans-serif,
+"Apple Color Emoji",
+"Segoe UI Emoji",
+"Segoe UI Symbol",
+"Noto Color Emoji";
+$font-family-monospace: "Noto Sans Mono",
+SFMono-Regular,
+Menlo,
+Monaco,
+Consolas,
+"Liberation Mono",
+"Courier New",
+monospace;
 
 @import "bootstrap/scss/functions";
 
@@ -25,7 +45,7 @@ $color-mode-type: data;
 @import "bootstrap/scss/forms";
 @import "bootstrap/scss/buttons";
 @import "bootstrap/scss/transitions";
-// @import "bootstrap/scss/dropdown";
+@import "bootstrap/scss/dropdown";
 @import "bootstrap/scss/button-group";
 @import "bootstrap/scss/nav";
 @import "bootstrap/scss/navbar";
@@ -65,12 +85,16 @@ $color-mode-type: data;
     scrollbar-width: none;
 }
 
-.sidebar-toggle[aria-expanded="true"] {
+.sidebar-toggle[aria-expanded="true"] .sidebar-shown {
     display: none;
 }
 
-.sidebar-toggle[aria-expanded="false"] {
-    display: inherit;
+.sidebar-toggle[aria-expanded="false"] .sidebar-collapsed {
+    display: none;
+}
+
+.sidebar-toolbar {
+    z-index: 1;
 }
 
 // Toggle classes for dark/light modes
@@ -92,6 +116,11 @@ $color-mode-type: data;
     .d-lm-none {
         display: none;
     }
+}
+
+// Show theme toggler checkbox
+.dropdown-menu .active .bi {
+    display: block !important;
 }
 
 @media screen {
@@ -354,7 +383,7 @@ tbody.meta tr {
         page-break-inside: avoid;
     }
 
-/*
+    /*
     a:link,
     a:visited {
         // color: inherit;
