@@ -2,63 +2,141 @@
 from django.contrib import admin
 
 from ietf.name.models import (
-    AgendaTypeName, BallotPositionName, ConstraintName, ContinentName, CountryName, DBTemplateTypeName,
-    DocRelationshipName, DocReminderTypeName, DocTagName, DocTypeName, DraftSubmissionStateName,
-    FeedbackTypeName, FormalLanguageName, GroupMilestoneStateName, GroupStateName, GroupTypeName,
-    ImportantDateName, IntendedStdLevelName, IprDisclosureStateName, IprEventTypeName,
-    IprLicenseTypeName, LiaisonStatementEventTypeName, LiaisonStatementPurposeName,
-    LiaisonStatementState, LiaisonStatementTagName, MeetingTypeName, NomineePositionStateName,
-    ReviewRequestStateName, ReviewResultName, ReviewTypeName, RoleName, RoomResourceName,
-    SessionStatusName, StdLevelName, StreamName, TimeSlotTypeName, TopicAudienceName,
-    DocUrlTagName, ReviewAssignmentStateName, ReviewerQueuePolicyName, TimerangeName,
-    ExtResourceName, ExtResourceTypeName, SlideSubmissionStatusName, ProceedingsMaterialTypeName,
-    AgendaFilterTypeName, SessionPurposeName, TelechatAgendaSectionName )
+    AgendaTypeName,
+    BallotPositionName,
+    ConstraintName,
+    ContinentName,
+    CountryName,
+    DBTemplateTypeName,
+    DocRelationshipName,
+    DocReminderTypeName,
+    DocTagName,
+    DocTypeName,
+    DraftSubmissionStateName,
+    FeedbackTypeName,
+    FormalLanguageName,
+    GroupMilestoneStateName,
+    GroupStateName,
+    GroupTypeName,
+    ImportantDateName,
+    IntendedStdLevelName,
+    IprDisclosureStateName,
+    IprEventTypeName,
+    IprLicenseTypeName,
+    LiaisonStatementEventTypeName,
+    LiaisonStatementPurposeName,
+    LiaisonStatementState,
+    LiaisonStatementTagName,
+    MeetingTypeName,
+    NomineePositionStateName,
+    ReviewRequestStateName,
+    ReviewResultName,
+    ReviewTypeName,
+    RoleName,
+    RoomResourceName,
+    SessionStatusName,
+    StdLevelName,
+    StreamName,
+    TimeSlotTypeName,
+    TopicAudienceName,
+    DocUrlTagName,
+    ReviewAssignmentStateName,
+    ReviewerQueuePolicyName,
+    TimerangeName,
+    ExtResourceName,
+    ExtResourceTypeName,
+    SlideSubmissionStatusName,
+    ProceedingsMaterialTypeName,
+    AgendaFilterTypeName,
+    SessionPurposeName,
+    TelechatAgendaSectionName,
+    AppealArtifactTypeName,
+)
 
 
 from ietf.stats.models import CountryAlias
 
+
 class NameAdmin(admin.ModelAdmin):
     list_display = ["slug", "name", "desc", "used", "order"]
     search_fields = ["slug", "name"]
-    prepopulate_from = { "slug": ("name",) }
+    prepopulate_from = {"slug": ("name",)}
+
 
 class DocRelationshipNameAdmin(NameAdmin):
     list_display = ["slug", "name", "revname", "desc", "used"]
+
+
 admin.site.register(DocRelationshipName, DocRelationshipNameAdmin)
-    
+
+
 class DocTypeNameAdmin(NameAdmin):
     list_display = ["slug", "name", "prefix", "desc", "used"]
+
+
 admin.site.register(DocTypeName, DocTypeNameAdmin)
+
 
 class GroupTypeNameAdmin(NameAdmin):
     list_display = ["slug", "name", "verbose_name", "desc", "used"]
+
+
 admin.site.register(GroupTypeName, GroupTypeNameAdmin)
+
 
 class CountryAliasInline(admin.TabularInline):
     model = CountryAlias
     extra = 1
 
+
 class CountryNameAdmin(NameAdmin):
     list_display = ["slug", "name", "continent", "in_eu"]
     list_filter = ["continent", "in_eu"]
     inlines = [CountryAliasInline]
+
+
 admin.site.register(CountryName, CountryNameAdmin)
+
 
 class ImportantDateNameAdmin(NameAdmin):
     list_display = ["slug", "name", "desc", "used", "default_offset_days"]
-    ordering = ('-used','default_offset_days',)
-admin.site.register(ImportantDateName,ImportantDateNameAdmin)
+    ordering = (
+        "-used",
+        "default_offset_days",
+    )
+
+
+admin.site.register(ImportantDateName, ImportantDateNameAdmin)
+
 
 class ExtResourceNameAdmin(NameAdmin):
-    list_display = ["slug", "name", "type", "desc", "used",]
-admin.site.register(ExtResourceName,ExtResourceNameAdmin)
+    list_display = [
+        "slug",
+        "name",
+        "type",
+        "desc",
+        "used",
+    ]
+
+
+admin.site.register(ExtResourceName, ExtResourceNameAdmin)
+
 
 class ProceedingsMaterialTypeNameAdmin(NameAdmin):
-    list_display = ["slug", "name", "desc", "used", "order",]
+    list_display = [
+        "slug",
+        "name",
+        "desc",
+        "used",
+        "order",
+    ]
+
+
 admin.site.register(ProceedingsMaterialTypeName, ProceedingsMaterialTypeNameAdmin)
 
 admin.site.register(AgendaFilterTypeName, NameAdmin)
 admin.site.register(AgendaTypeName, NameAdmin)
+admin.site.register(AppealArtifactTypeName, NameAdmin)
 admin.site.register(BallotPositionName, NameAdmin)
 admin.site.register(ConstraintName, NameAdmin)
 admin.site.register(ContinentName, NameAdmin)

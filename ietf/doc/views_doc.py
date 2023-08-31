@@ -976,7 +976,7 @@ def document_pdfized(request, name, rev=None, ext=None):
 
     pdf = doc.pdfized()
     if pdf:
-        return HttpResponse(pdf,content_type='application/pdf;charset=utf-8')
+        return HttpResponse(pdf,content_type='application/pdf')
     else:
         raise Http404
 

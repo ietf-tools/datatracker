@@ -2799,7 +2799,7 @@ class PdfizedTests(TestCase):
         url = urlreverse(self.view, kwargs=argdict)
         r = self.client.get(url)
         self.assertEqual(r.status_code,200)
-        self.assertEqual(r.get('Content-Type'),'application/pdf;charset=utf-8')
+        self.assertEqual(r.get('Content-Type'),'application/pdf')
 
     def should_404(self, argdict):
         url = urlreverse(self.view, kwargs=argdict)
