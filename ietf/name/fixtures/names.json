@@ -5079,6 +5079,21 @@
         "review_doc_all_parties",
         "review_doc_group_mail_list"
       ],
+      "desc": "Recipients when a httpdir Last Call review is completed",
+      "to": [
+        "review_team_mail_list"
+      ]
+    },
+    "model": "mailtrigger.mailtrigger",
+    "pk": "review_completed_httpdir_lc"
+  },
+  {
+    "fields": {
+      "cc": [
+        "ietf_last_call",
+        "review_doc_all_parties",
+        "review_doc_group_mail_list"
+      ],
       "desc": "Recipients when a httpdir Telechat review is completed",
       "to": [
         "review_team_mail_list"
@@ -16569,7 +16584,7 @@
     "fields": {
       "command": "xym",
       "switch": "--version",
-      "time": "2023-08-22T07:09:39.542Z",
+      "time": "2023-08-30T07:09:44.025Z",
       "used": true,
       "version": "xym 0.7.0"
     },
@@ -16580,7 +16595,7 @@
     "fields": {
       "command": "pyang",
       "switch": "--version",
-      "time": "2023-08-22T07:09:39.881Z",
+      "time": "2023-08-30T07:09:44.374Z",
       "used": true,
       "version": "pyang 2.5.3"
     },
@@ -16591,7 +16606,7 @@
     "fields": {
       "command": "yanglint",
       "switch": "--version",
-      "time": "2023-08-22T07:09:39.899Z",
+      "time": "2023-08-30T07:09:44.394Z",
       "used": true,
       "version": "yanglint SO 1.9.2"
     },
@@ -16602,7 +16617,7 @@
     "fields": {
       "command": "xml2rfc",
       "switch": "--version",
-      "time": "2023-08-22T07:09:40.791Z",
+      "time": "2023-08-30T07:09:45.312Z",
       "used": true,
       "version": "xml2rfc 3.18.0"
     },
