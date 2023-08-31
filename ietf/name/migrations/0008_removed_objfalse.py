@@ -16,7 +16,7 @@ def reverse(apps, schema_editor):
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("name", "0006_feedbacktypename_data"),
+        ("name", "0007_appeal_artifact_typename"),
     ]
 
     operations = [
