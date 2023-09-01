@@ -261,7 +261,7 @@ def document_main(request, name, rev=None, document_html=False):
         iesg_state_summary = doc.friendly_state()
         irsg_state = doc.get_state("draft-stream-irtf")
 
-        can_edit = has_role(request.user,("Area Director", "Secretariat"))
+        can_edit = has_role(request.user, ("Area Director", "Secretariat"))
         can_edit_authors = has_role(request.user, ("Secretariat"))
 
         stream_slugs = StreamName.objects.values_list("slug", flat=True)
