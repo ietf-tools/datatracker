@@ -106,7 +106,7 @@ jobs:
     if: ${{ github.event.inputs.skiptests == 'false' || github.ref_name == 'release' }}
     needs: [prepare]
     with:
-      ignoreLowerCoverage: ${{ github.event.inputs.ignoreLowerCoverage }}
+      ignoreLowerCoverage: ${{ github.event.inputs.ignoreLowerCoverage == 'true' }}
 
   # -----------------------------------------------------------------
   # RELEASE
