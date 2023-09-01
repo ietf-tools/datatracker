@@ -11,7 +11,7 @@ on:
 
 jobs:
   tests-python:
-    name: Run Tests (Python)
+    name: Python Tests
     runs-on: ubuntu-latest
     container: ghcr.io/ietf-tools/datatracker-app-base:latest
     
@@ -69,7 +69,7 @@ jobs:
         path: coverage.json
 
   tests-playwright:
-    name: Run Tests (Playwright)
+    name: Playwright Tests
     runs-on: macos-latest
     strategy:
       fail-fast: false
@@ -105,7 +105,7 @@ jobs:
         if-no-files-found: ignore
 
   tests-playwright-legacy:
-    name: Run Tests (Playwright Legacy)
+    name: Playwright Legacy Tests
     runs-on: ubuntu-latest
     container: ghcr.io/ietf-tools/datatracker-app-base:latest
     strategy:

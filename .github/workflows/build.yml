@@ -102,6 +102,7 @@ jobs:
   # -----------------------------------------------------------------
   
   tests:
+    name: Run Tests
     uses: ./.github/workflows/tests.yml
     if: ${{ github.event.inputs.skiptests == 'false' || github.ref_name == 'release' }}
     needs: [prepare]
