@@ -1,7 +1,7 @@
 #!/bin/sh
 
 echo "This is only here as documentation. Please read the file"
-exit(0)
+exit
 
 # #!/usr/bin/env python
 
