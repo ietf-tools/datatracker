@@ -46,6 +46,7 @@ class UserFactory(factory.django.DjangoModelFactory):
         model = User
         django_get_or_create = ('username',)
         exclude = ['faker', ]
+        skip_postgeneration_save = True
 
     faker = factory.LazyFunction(random_faker)
     # normalize these i18n Unicode strings in the same way the database does
@@ -55,13 +56,16 @@ class UserFactory(factory.django.DjangoModelFactory):
                                                 slugify(unidecode(u.last_name)), n, fake.domain_name())) # type: ignore
     username = factory.LazyAttribute(lambda u: u.email)
 
+    # Consider using PostGenerationMethodCall instead
     @factory.post_generation
     def set_password(obj, create, extracted, **kwargs): # pylint: disable=no-self-argument
         obj.set_password( '%s+password' % obj.username ) # pylint: disable=no-value-for-parameter
+        obj.save()
 
 class PersonFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Person
+        skip_postgeneration_save = True
 
     user = factory.SubFactory(UserFactory)
     name = factory.LazyAttribute(lambda p: normalize_name('%s %s'%(p.user.first_name, p.user.last_name)))
@@ -106,6 +110,7 @@ class PersonFactory(factory.django.DjangoModelFactory):
             def delete_file(file):
                 os.unlink(file)
             atexit.register(delete_file, photodst)
+            obj.save()
 
 class AliasFactory(factory.django.DjangoModelFactory):
     class Meta:
