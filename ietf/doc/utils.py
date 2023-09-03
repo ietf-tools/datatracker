@@ -12,6 +12,7 @@ import re
 import textwrap
 
 from collections import defaultdict, namedtuple, Counter
+from dataclasses import dataclass
 from typing import Union
 from zoneinfo import ZoneInfo
 
@@ -460,6 +461,21 @@ def add_action_holder_change_event(doc, by, prev_set, reason=None):
     )
 
 
+@dataclass
+class TagSetComparer:
+    before: set[str]
+    after: set[str]
+
+    def changed(self):
+        return self.before != self.after
+
+    def added(self, tag):
+        return tag in self.after and tag not in self.before
+
+    def removed(self, tag):
+        return tag in self.before and tag not in self.after
+
+
 def update_action_holders(doc, prev_state=None, new_state=None, prev_tags=None, new_tags=None):
     """Update the action holders for doc based on state transition
     
@@ -473,12 +489,14 @@ def update_action_holders(doc, prev_state=None, new_state=None, prev_tags=None, 
     if prev_state and new_state:
         assert prev_state.type_id == new_state.type_id
 
-    # Convert tags to sets of slugs    
-    prev_tag_slugs = {t.slug for t in (prev_tags or [])}
-    new_tag_slugs = {t.slug for t in (new_tags or [])}
+    # Convert tags to sets of slugs
+    tags = TagSetComparer(
+        before={t.slug for t in (prev_tags or [])},
+        after={t.slug for t in (new_tags or [])},
+    )
 
     # Do nothing if state / tag have not changed
-    if (prev_state == new_state) and (prev_tag_slugs == new_tag_slugs):
+    if (prev_state == new_state) and not tags.changed():
         return None
     
     # Remember original list of action holders to later check if it changed
@@ -491,12 +509,12 @@ def update_action_holders(doc, prev_state=None, new_state=None, prev_tags=None, 
             # Default to responsible AD for states other than these
             doc.action_holders.add(doc.ad)
     
-    if prev_tag_slugs != new_tag_slugs:
+    if tags.changed():
         # If we have added or removed the need-rev tag, add or remove authors as action holders
-        if ('need-rev' in prev_tag_slugs) and ('need-rev' not in new_tag_slugs):
+        if tags.removed("need-rev"):
             # Removed the 'need-rev' tag - drop authors from the action holders list
             DocumentActionHolder.objects.filter(document=doc, person__in=doc.authors()).delete()
-        elif ('need-rev' not in prev_tag_slugs) and ('need-rev' in new_tag_slugs):
+        elif tags.added("need-rev"):
             # Added the 'need-rev' tag - add authors to the action holders list
             for auth in doc.authors():
                 if not doc.action_holders.filter(pk=auth.pk).exists():
