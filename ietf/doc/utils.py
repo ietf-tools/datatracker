@@ -509,20 +509,19 @@ def update_action_holders(doc, prev_state=None, new_state=None, prev_tags=None, 
             # Default to responsible AD for states other than these
             doc.action_holders.add(doc.ad)
     
-    if tags.changed():
-        # If we have added or removed the need-rev tag, add or remove authors as action holders
-        if tags.removed("need-rev"):
-            # Removed the 'need-rev' tag - drop authors from the action holders list
-            DocumentActionHolder.objects.filter(document=doc, person__in=doc.authors()).delete()
-        elif tags.added("need-rev"):
-            # Added the 'need-rev' tag - add authors to the action holders list
-            for auth in doc.authors():
-                if not doc.action_holders.filter(pk=auth.pk).exists():
-                    doc.action_holders.add(auth)
-        
-        # If AD follow-up is needed, make sure they are an action holder
-        if tags.added("ad-f-up") and doc.ad:
-            doc.action_holders.add(doc.ad)
+    # If we have added or removed the need-rev tag, add or remove authors as action holders
+    if tags.removed("need-rev"):
+        # Removed the 'need-rev' tag - drop authors from the action holders list
+        DocumentActionHolder.objects.filter(document=doc, person__in=doc.authors()).delete()
+    elif tags.added("need-rev"):
+        # Added the 'need-rev' tag - add authors to the action holders list
+        for auth in doc.authors():
+            if not doc.action_holders.filter(pk=auth.pk).exists():
+                doc.action_holders.add(auth)
+    
+    # If AD follow-up is needed, make sure they are an action holder
+    if tags.added("ad-f-up") and doc.ad:
+        doc.action_holders.add(doc.ad)
 
     # Now create an event if we changed the set
     return add_action_holder_change_event(
