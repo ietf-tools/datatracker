@@ -519,6 +519,10 @@ def update_action_holders(doc, prev_state=None, new_state=None, prev_tags=None, 
             for auth in doc.authors():
                 if not doc.action_holders.filter(pk=auth.pk).exists():
                     doc.action_holders.add(auth)
+        
+        # If AD follow-up is needed, make sure they are an action holder
+        if tags.added("ad-f-up") and doc.ad:
+            doc.action_holders.add(doc.ad)
 
     # Now create an event if we changed the set
     return add_action_holder_change_event(
