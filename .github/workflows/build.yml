@@ -52,7 +52,7 @@ jobs:
       to_tag: ${{ steps.semver.outputs.current }}
 
     steps:   
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         fetch-depth: 0
 
@@ -124,7 +124,7 @@ jobs:
       TO_TAG: ${{needs.prepare.outputs.to_tag}}
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         fetch-depth: 0
         
@@ -307,7 +307,7 @@ jobs:
       PKG_VERSION: ${{needs.prepare.outputs.pkg_version}}
       
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
         
     - name: Download a Release Artifact
       uses: actions/download-artifact@v3.0.2
