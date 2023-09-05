@@ -25,6 +25,7 @@ class GroupFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Group
         django_get_or_create = ('acronym',)
+        skip_postgeneration_save = True
 
     name = factory.Faker('sentence',nb_words=6)
     acronym = factory.Sequence(lambda n: 'acronym%d' %n)
@@ -87,6 +88,7 @@ class DatelessGroupMilestoneFactory(BaseGroupMilestoneFactory):
 class GroupHistoryFactory(factory.django.DjangoModelFactory):
     class Meta:
         model=GroupHistory
+        skip_postgeneration_save = True
 
     time = lambda: timezone.now()
     group = factory.SubFactory(GroupFactory, state_id='active')
@@ -138,6 +140,7 @@ class AppealFactory(factory.django.DjangoModelFactory):
 class AppealArtifactFactory(factory.django.DjangoModelFactory):
     class Meta:
         model=AppealArtifact
+        skip_postgeneration_save = True
     
     appeal = factory.SubFactory(AppealFactory)
     artifact_type = factory.SubFactory("ietf.name.factories.AppealArtifactTypeNameFactory", slug="appeal")
@@ -158,4 +161,5 @@ class AppealArtifactFactory(factory.django.DjangoModelFactory):
         if isinstance(using, str):
             using = using.encode("utf-8")
         obj.bits = memoryview(using)
+        obj.save()
 
