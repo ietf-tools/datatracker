@@ -279,7 +279,7 @@
                         </a>
                     </th>
                     <td class="edit">
-                        {% if iesg_state.slug != 'idexists' and iesg_state.slug != 'dead' and can_edit %}
+                        {% if iesg_state.slug != 'idexists' and iesg_state.slug != 'dead' and can_edit or user|has_role:"Secretariat" %}
                             <a class="btn btn-primary btn-sm"
                                href="{% url 'ietf.doc.views_draft.change_state' name=doc.name %}">
                                 Edit
