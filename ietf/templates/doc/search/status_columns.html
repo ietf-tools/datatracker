@@ -4,7 +4,7 @@
 {% load ietf_filters ballot_icon person_filters %}
 <td class="status bg-transparent">
     <div class="float-end ms-1 mb-1" id="ballot-icon-{{ doc.name }}">{% ballot_icon doc %}</div>
-    {% if not doc.get_state_slug == "rfc" %}
+    {% if not doc.type_id == "rfc" %}
         {% if '::' in doc.friendly_state %}
             {{ doc.friendly_state|safe }}
         {% else %}

@@ -31,7 +31,7 @@
                         {% if document_html %}View errata{% else %}Errata{% endif %}
                     </a>
                 {% endif %}
-                {% if document_html and doc.get_state_slug == "rfc" and not snapshot %}
+                {% if document_html and doc.type_id == "rfc" and not snapshot %}
                     <a class="btn btn-sm btn-warning"
                        title="Click to report an error in the document."
                        href="https://www.rfc-editor.org/errata.php#reportnew"
@@ -60,7 +60,7 @@
                     </div>
                 {% endif %}
             {% else %}
-                {% if snapshot and doc.doc.get_state_slug == 'rfc' %}
+                {% if snapshot and doc.doc.type_id == 'rfc' %}
                    <div{% if document_html %} class="alert alert-warning small"{% endif %}>This is an older version of an Internet-Draft that was ultimately published as <a href="{% url 'ietf.doc.views_doc.document_html' name=doc.doc.name %}">{{doc.doc.name|prettystdname}}</a>.</div>
                 {% elif snapshot and doc.rev != latest_rev  %}
                     <div{% if document_html %} class="alert alert-warning small"{% endif %}>This is an older version of an Internet-Draft whose latest revision state is "{{ doc.doc.get_state }}".</div>

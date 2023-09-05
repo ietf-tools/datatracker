@@ -17,14 +17,14 @@
                 </li>
             {% endif %}
         {% endfor %}
-        {% if doc.get_state_slug == 'rfc' %}
+        {% if doc.type_id == 'rfc' %}
             <li class="page-item rfc{% if not snapshot %} active{% endif %}">
                 <a class="page-link"
                    href="{% if doc.doc %}{% if document_html %}{% url 'ietf.doc.views_doc.document_html' name=doc.doc.name %}{% else %}{% url 'ietf.doc.views_doc.document_main' name=doc.doc.name %}{% endif %}{% else %}{% if document_html %}{% url 'ietf.doc.views_doc.document_html' name=doc.name %}{% else %}{% url 'ietf.doc.views_doc.document_main' name=doc.name %}{% endif %}{% endif %}">
                     RFC {{ doc.rfc_number }}
                 </a>
             </li>
-        {% elif doc.doc.get_state_slug == 'rfc' %}
+        {% elif doc.doc.type_id == 'rfc' %}
             <li class="page-item rfc">
                 <a class="page-link"
                    href="{% if document_html %}{% url 'ietf.doc.views_doc.document_html' name=doc.doc.name %}{% else %}{% url 'ietf.doc.views_doc.document_main' name=doc.doc.name %}{% endif %}">
