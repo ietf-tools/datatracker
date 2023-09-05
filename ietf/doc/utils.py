@@ -501,27 +501,30 @@ def update_action_holders(doc, prev_state=None, new_state=None, prev_tags=None, 
     
     # Remember original list of action holders to later check if it changed
     prev_set = list(doc.action_holders.all())
-    # Only draft-iesg states are of interest (for now)
-    if (prev_state != new_state) and (getattr(new_state, 'type_id') == 'draft-iesg'):
+    
+    # Update the action holders. To get this right for people with more
+    # than one relationship to the document, do removals first, then adds.
+    # Remove outdated action holders
+    iesg_state_changed = (prev_state != new_state) and (getattr(new_state, "type_id", None) == "draft-iesg") 
+    if iesg_state_changed:
         # Clear the action_holders list on a state change. This will reset the age of any that get added back.
         doc.action_holders.clear()
-        if doc.ad and new_state.slug not in DocumentActionHolder.CLEAR_ACTION_HOLDERS_STATES:
-            # Default to responsible AD for states other than these
-            doc.action_holders.add(doc.ad)
-    
-    # If we have added or removed the need-rev tag, add or remove authors as action holders
     if tags.removed("need-rev"):
         # Removed the 'need-rev' tag - drop authors from the action holders list
         DocumentActionHolder.objects.filter(document=doc, person__in=doc.authors()).delete()
-    elif tags.added("need-rev"):
-        # Added the 'need-rev' tag - add authors to the action holders list
+
+    # Add new action holders
+    if doc.ad:
+        # AD is an action holder unless specified otherwise for the new state
+        if iesg_state_changed and new_state.slug not in DocumentActionHolder.CLEAR_ACTION_HOLDERS_STATES:
+            doc.action_holders.add(doc.ad)
+        # If AD follow-up is needed, make sure they are an action holder 
+        if tags.added("ad-f-up"):
+            doc.action_holders.add(doc.ad)
+    # Authors get the action if a revision is needed
+    if tags.added("need-rev"):
         for auth in doc.authors():
-            if not doc.action_holders.filter(pk=auth.pk).exists():
-                doc.action_holders.add(auth)
-    
-    # If AD follow-up is needed, make sure they are an action holder
-    if tags.added("ad-f-up") and doc.ad:
-        doc.action_holders.add(doc.ad)
+            doc.action_holders.add(auth)
 
     # Now create an event if we changed the set
     return add_action_holder_change_event(
