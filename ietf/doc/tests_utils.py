@@ -203,13 +203,14 @@ class ActionHoldersTests(TestCase):
     def test_update_action_holders_add_tag_need_rev_ignores_non_authors(self):
         """Adding need-rev tag does not affect existing action holders"""
         doc = self.doc_in_iesg_state('pub-req')
-        doc.action_holders.add(self.ad)
-        self.assertCountEqual(doc.action_holders.all(),[self.ad])
+        other_person = PersonFactory()
+        doc.action_holders.add(other_person)
+        self.assertCountEqual(doc.action_holders.all(),[other_person])
         self.update_doc_state(doc,
                               doc.get_state('draft-iesg'),
                               add_tags=['need-rev'],
                               remove_tags=None)
-        self.assertCountEqual(doc.action_holders.all(), [self.ad] + self.authors)
+        self.assertCountEqual(doc.action_holders.all(), [other_person] + self.authors)
 
     def test_update_action_holders_remove_tag_need_rev_ignores_non_authors(self):
         """Removing need-rev tag does not affect non-author action holders"""
