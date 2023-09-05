@@ -35,6 +35,7 @@ def draft_name_generator(type_id,group,n):
 class BaseDocumentFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Document
+        skip_postgeneration_save = True
 
     title = factory.Faker('sentence',nb_words=5)
     abstract = factory.Faker('paragraph', nb_sentences=5)
@@ -305,6 +306,7 @@ class NewRevisionDocEventFactory(DocEventFactory):
 class StateDocEventFactory(DocEventFactory):
     class Meta:
         model = StateDocEvent
+        skip_postgeneration_save = True
 
     type = 'changed_state'
     state_type_id = 'draft-iesg'
@@ -378,6 +380,7 @@ class WgDocumentAuthorFactory(DocumentAuthorFactory):
 class BofreqEditorDocEventFactory(DocEventFactory):
     class Meta:
         model = BofreqEditorDocEvent
+        skip_postgeneration_save = True
 
     type = "changed_editors"
     doc = factory.SubFactory('ietf.doc.factories.BofreqFactory')
@@ -392,10 +395,12 @@ class BofreqEditorDocEventFactory(DocEventFactory):
         else:
             obj.editors.set(PersonFactory.create_batch(3))
         obj.desc = f'Changed editors to {", ".join(obj.editors.values_list("name",flat=True)) or "(None)"}'
+        obj.save()
 
 class BofreqResponsibleDocEventFactory(DocEventFactory):
     class Meta:
         model = BofreqResponsibleDocEvent
+        skip_postgeneration_save = True
 
     type = "changed_responsible"
     doc = factory.SubFactory('ietf.doc.factories.BofreqFactory')
@@ -410,7 +415,8 @@ class BofreqResponsibleDocEventFactory(DocEventFactory):
         else:
             ad = RoleFactory(group__type_id='area',name_id='ad').person
             obj.responsible.set([ad])
-        obj.desc = f'Changed responsible leadership to {", ".join(obj.responsible.values_list("name",flat=True)) or "(None)"}'        
+        obj.desc = f'Changed responsible leadership to {", ".join(obj.responsible.values_list("name",flat=True)) or "(None)"}'
+        obj.save()        
 
 class BofreqFactory(BaseDocumentFactory):
     type_id = 'bofreq'
