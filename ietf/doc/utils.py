@@ -512,6 +512,9 @@ def update_action_holders(doc, prev_state=None, new_state=None, prev_tags=None, 
     if tags.removed("need-rev"):
         # Removed the 'need-rev' tag - drop authors from the action holders list
         DocumentActionHolder.objects.filter(document=doc, person__in=doc.authors()).delete()
+    elif tags.added("need-rev"):
+        # Remove the AD if we're asking for a new revision
+        DocumentActionHolder.objects.filter(document=doc, person=doc.ad).delete()
 
     # Add new action holders
     if doc.ad:
