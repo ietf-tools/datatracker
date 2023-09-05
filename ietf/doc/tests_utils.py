@@ -154,9 +154,23 @@ class ActionHoldersTests(TestCase):
         self.assertGreaterEqual(doc.documentactionholder_set.get(person=self.ad).time_added, right_now)
 
     def test_update_action_holders_add_tag_need_rev(self):
-        """Adding need-rev tag adds authors as action holders"""
+        """Adding need-rev tag drops AD and adds authors as action holders"""
         doc = self.doc_in_iesg_state('pub-req')
         first_author = self.authors[0]
+        doc.action_holders.add(first_author)
+        doc.action_holders.add(doc.ad)
+        self.assertCountEqual(doc.action_holders.all(), [first_author, doc.ad])
+        self.update_doc_state(doc,
+                              doc.get_state('draft-iesg'),
+                              add_tags=['need-rev'],
+                              remove_tags=None)
+        self.assertCountEqual(doc.action_holders.all(), self.authors)
+        self.assertNotIn(self.ad, doc.action_holders.all())
+        
+        # Check case where an author is ad
+        doc = self.doc_in_iesg_state('pub-req')
+        doc.ad = first_author
+        doc.save()
         doc.action_holders.add(first_author)
         self.assertCountEqual(doc.action_holders.all(), [first_author])
         self.update_doc_state(doc,
