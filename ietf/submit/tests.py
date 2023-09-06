@@ -574,7 +574,8 @@ class SubmitTests(BaseSubmitTestCase):
                 area = GroupFactory(type_id='area')
                 RoleFactory(name_id='ad',group=area,person=ad)
                 group = GroupFactory(type_id=group_type, parent=area, acronym='mars')
-            draft = DocumentFactory(type_id='draft', group=group, stream_id=stream_type, ad=ad, authors=PersonFactory.create_batch(1))
+            authors = [author] if author else PersonFactory.create_batch(1)
+            draft = DocumentFactory(type_id='draft', group=group, stream_id=stream_type, ad=ad, authors=authors)
             wg_doc_state = State.objects.get(type_id='draft-stream-ietf',slug='wg-doc')
             draft.set_state(wg_doc_state)
             update_action_holders(draft, new_state=wg_doc_state)
@@ -639,7 +640,7 @@ class SubmitTests(BaseSubmitTestCase):
         old_docevents = list(draft.docevent_set.all())
         _assert_authors_are_action_holders(draft, True)  # authors should be action holders prior to the test
 
-        status_url, author = self.do_submission(name, rev, group, formats, author=prev_author.person)
+        status_url, author = self.do_submission(name, rev, group, formats, author=prev_author.person, email=email)
 
         _assert_authors_are_action_holders(draft, True)  # still waiting for author confirmation
 
@@ -3581,6 +3582,7 @@ class AsyncSubmissionTests(BaseSubmitTestCase):
         xml_data = xml.read()
         xml.close()
 
+        self.assertNotEqual(author.formatted_email().upper(), author.formatted_email())
         submission = SubmissionFactory(
             name='draft-somebody-test',
             rev='00',
