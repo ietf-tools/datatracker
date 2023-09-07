@@ -277,13 +277,6 @@ def document_main(request, name, rev=None, document_html=False):
             content = "This RFC is not available in plain text format."
             split_content = False
 
-        # mailing list search archive
-        search_archive = "www.ietf.org/mail-archive/web/"
-        if doc.stream_id == "ietf" and group.type_id == "wg" and group.list_archive:
-            search_archive = group.list_archive
-
-        search_archive = quote(search_archive, safe="~")
-
         # status changes
         status_changes = []
         proposed_status_changes = []
@@ -303,9 +296,6 @@ def document_main(request, name, rev=None, document_html=False):
         exp_comment = doc.latest_event(IanaExpertDocEvent,type="comment")
         iana_experts_comment = exp_comment and exp_comment.desc
 
-        # Do not show the Auth48 URL in the "Additional URLs" section
-        additional_urls = doc.documenturl_set.exclude(tag_id='auth48')
-
         html = None
         js = None
         css = None
@@ -315,18 +305,12 @@ def document_main(request, name, rev=None, document_html=False):
             diff_revisions=get_diff_revisions(request, name, doc if isinstance(doc,Document) else doc.doc)
             simple_diff_revisions = [t[1] for t in diff_revisions if t[0] == doc.name]
             simple_diff_revisions.reverse()
-            if rev and rev != doc.rev: 
-                # No DocHistory was found matching rev - snapshot will be false
-                # and doc will be a Document object, not a DocHistory
-                snapshot = True
-                doc = doc.fake_history_obj(rev)
-            else:
-                html = doc.html_body()
-                if request.COOKIES.get("pagedeps") == "inline":
-                    js = Path(finders.find("ietf/js/document_html.js")).read_text()
-                    css = Path(finders.find("ietf/css/document_html_inline.css")).read_text()
-                    if html:
-                        css += Path(finders.find("ietf/css/document_html_txt.css")).read_text()
+            html = doc.html_body()
+            if request.COOKIES.get("pagedeps") == "inline":
+                js = Path(finders.find("ietf/js/document_html.js")).read_text()
+                css = Path(finders.find("ietf/css/document_html_inline.css")).read_text()
+                if html:
+                    css += Path(finders.find("ietf/css/document_html_txt.css")).read_text()
         draft_that_became_rfc = None
         became_rfc = next(iter(doc.related_that("became_rfc")), None)
         if became_rfc:
@@ -370,7 +354,6 @@ def document_main(request, name, rev=None, document_html=False):
                                        content=content,
                                        split_content=split_content,
                                        revisions=simple_diff_revisions if document_html else revisions,
-                                       snapshot=snapshot,
                                        latest_rev=latest_rev,
                                        can_edit=can_edit,
                                        can_edit_authors=can_edit_authors,
@@ -385,13 +368,11 @@ def document_main(request, name, rev=None, document_html=False):
                                        proposed_status_changes=proposed_status_changes,
                                        has_errata=doc.pk and doc.tags.filter(slug="errata"), # doc.pk == None if using a fake_history_obj
                                        file_urls=file_urls,
-                                       additional_urls=additional_urls,
                                        rfc_editor_state=doc.get_state("draft-rfceditor"),
                                        iana_review_state=doc.get_state("draft-iana-review"),
                                        iana_action_state=doc.get_state("draft-iana-action"),
                                        iana_experts_state=doc.get_state("draft-iana-experts"),
                                        iana_experts_comment=iana_experts_comment,
-                                       search_archive=search_archive,
                                        presentations=presentations,
                                        diff_revisions=diff_revisions,
                                        submission=submission
