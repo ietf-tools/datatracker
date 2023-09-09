@@ -189,6 +189,12 @@ class ActionHoldersTests(TestCase):
                               remove_tags=None)
         self.assertCountEqual(doc.action_holders.all(), self.authors)
 
+    def test_update_action_holders_add_tag_ad_f_up(self):
+        doc = self.doc_in_iesg_state('pub-req')
+        self.assertEqual(doc.action_holders.count(), 0)
+        self.update_doc_state(doc, doc.get_state('draft-iesg'), add_tags=['ad-f-up'])
+        self.assertCountEqual(doc.action_holders.all(), [self.ad])
+
     def test_update_action_holders_remove_tag_need_rev(self):
         """Removing need-rev tag drops authors as action holders"""
         doc = self.doc_in_iesg_state('pub-req')
