@@ -629,7 +629,7 @@ def post(request, id):
     
 def search(request):
     search_type = request.GET.get("submit")
-    if "\x00" in search_type:
+    if search_type and "\x00" in search_type:
         return HttpResponseNotAllowed("Null characters are not allowed")
 
     # query field
@@ -637,7 +637,7 @@ def search(request):
     # legacy support
     if not search_type and request.GET.get("option", None) == "document_search":
         docname = request.GET.get("document_search", "")
-        if "\x00" in docname:
+        if docname > 0 and "\x00" in docname:
             return HttpResponseNotAllowed("Null characters are not allowed")
         if docname.startswith("draft-"):
             search_type = "draft"
@@ -648,7 +648,7 @@ def search(request):
     if search_type:
         form = SearchForm(request.GET)
         docid = request.GET.get("id") or request.GET.get("id_document_tag") or ""
-        if "\x00" in docid:
+        if docid and "\x00" in docid:
             return HttpResponseNotAllowed("Null characters are not allowed")
         docs = doc = None
         iprs = []
@@ -656,7 +656,7 @@ def search(request):
 
         # set states
         states = request.GET.getlist('state',settings.PUBLISH_IPR_STATES)
-        if any("\x00" in state for state in states):
+        if any("\x00" in state for state in states if state):
             return HttpResponseNotAllowed("Null characters are not allowed")
         if states == ['all']:
             states = IprDisclosureStateName.objects.values_list('slug',flat=True)
@@ -664,7 +664,7 @@ def search(request):
         # get query field
         if request.GET.get(search_type):
             q = request.GET.get(search_type)
-            if "\x00" in q:
+            if q and "\x00" in q:
                 return HttpResponseNotAllowed("Null characters are not allowed")
 
         if q or docid:
