@@ -749,6 +749,7 @@ def docs_for_ad(request, name):
             if (
                 not ballot
                 or doc.get_state_slug("draft") == "repl"
+                or doc.get_state_slug("draft-iesg") == "defer"
                 or (doc.telechat_date() and doc.telechat_date() > timezone.now().date())
             ):
                 continue
@@ -801,7 +802,7 @@ def drafts_in_iesg_process(request):
 
 def recent_drafts(request, days=7):
     slowcache = caches['slowpages']
-    cache_key = f'recentdraftsview{days}' 
+    cache_key = f'recentdraftsview{days}'
     cached_val = slowcache.get(cache_key)
     if not cached_val:
         since = timezone.now()-datetime.timedelta(days=days)
