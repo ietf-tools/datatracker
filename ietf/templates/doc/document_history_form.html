@@ -60,7 +60,7 @@
                 {% for name, rev, time, url in diff_revisions %}
                     <option value="{{ url }}"
                         {% if document_html %}
-                            {% if not snapshot and doc.get_state_slug == "rfc" and name == "rfc"|add:doc.rfc_number or snapshot and name == doc.name and rev == doc.rev %} selected{% endif %}
+                            {% if not snapshot and doc.type_id == "rfc" and name == "rfc"|add:doc.rfc_number or snapshot and name == doc.name and rev == doc.rev %} selected{% endif %}
                         {% else %}
                             {% if forloop.counter == 1 %} selected{% endif %}
                         {% endif %}>
