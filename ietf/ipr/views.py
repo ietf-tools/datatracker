@@ -637,7 +637,7 @@ def search(request):
     # legacy support
     if not search_type and request.GET.get("option", None) == "document_search":
         docname = request.GET.get("document_search", "")
-        if docname > 0 and "\x00" in docname:
+        if docname and "\x00" in docname:
             return HttpResponseNotAllowed("Null characters are not allowed")
         if docname.startswith("draft-"):
             search_type = "draft"
