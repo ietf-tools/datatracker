@@ -5,6 +5,8 @@
 import io
 import os
 
+from collections import defaultdict, namedtuple
+
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from django.utils.html import format_html
@@ -355,3 +357,36 @@ def update_role_set(group, role_name, new_value, by):
                 e.save()
 
     return added, removed
+
+def role_change_history(acronym, role_id):
+    times = defaultdict(lambda:set())
+    for t in [(h.person.plain_name(), h.group.time) for h in RoleHistory.objects.filter(group__acronym=acronym, name_id=role_id)]:
+        times[t[1]].add(t[0])
+    group = Group.objects.get(acronym=acronym)
+    times[group.time] = set([r.person.plain_name() for r in group.role_set.filter(name_id=role_id)])
+    changes = {}
+    seen = set()
+    for i in sorted(times):
+        if times[i] != seen:
+            seen = times[i]
+            changes[i] = times[i]
+    return changes
+
+def role_since(acronym, role_id):
+    RoleSince = namedtuple("RoleSince", ["name", "time"])
+    roles = Role.objects.filter(group__acronym=acronym, name_id=role_id)
+    assert roles.exists()
+    change_history = role_change_history(acronym, role_id)
+    assert len(change_history)>0
+    change_history_times = sorted(change_history, reverse=True)
+    result = []
+    for role in roles:
+        if not role.person.plain_name() in change_history[change_history_times[0]]:
+            raise AssertionError(f"{role.person.plain_name()} not in {role.group.acronym} chairs at {change_history_times[0]:%Y-%m-%d} : {change_history[change_history_times[0]]}")
+        since = RoleSince(name = role.person.plain_name(), time = change_history_times[0])
+        for t in change_history_times:
+            if role.person.plain_name() not in change_history[t]:
+                break
+            since = since._replace(time=t)
+        result.append(since)
+    return result
