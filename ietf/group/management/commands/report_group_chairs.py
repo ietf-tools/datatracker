@@ -11,10 +11,12 @@ class Command(BaseCommand):
 
         interesting_types = ["wg","ag","rg","rag","edwg"]
         for type in interesting_types:
-            groups = Group.objects.filter(type_id=type,state="active").order_by('acronym')
-            parent = groups.first().parent
-            print(f"{parent.name} {groups.first().type.verbose_name}")
+            seen_parent = None
+            groups = Group.objects.filter(type_id=type,state="active").order_by('parent__acronym','acronym')
             for group in groups:
+                if group.parent != seen_parent:
+                    print(f"{group.parent.name} {group.type.verbose_name}")
+                    seen_parent = group.parent
                 print(f"    {group.acronym} - {group.name}")
                 history = role_change_history(group.acronym, "chair")
                 for time in sorted(history, reverse=True):
