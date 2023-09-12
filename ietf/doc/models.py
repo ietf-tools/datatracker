@@ -198,17 +198,28 @@ class DocumentInfo(models.Model):
             self._cached_file_name = os.path.join(self.get_file_path(), self.get_base_name())
         return self._cached_file_name
 
-    def revisions(self):
+
+    def revisions_by_dochistory(self):
         revisions = []
-        doc = self.doc if isinstance(self, DocHistory) else self
-        for e in doc.docevent_set.filter(type='new_revision').distinct():
-            if e.rev and not e.rev in revisions:
-                revisions.append(e.rev)
-        if not doc.rev in revisions:
-            revisions.append(doc.rev)
-        revisions.sort()
+        if self.type_id != "rfc":
+            for h in self.history_set.order_by("time", "id"):
+                if h.rev and not h.rev in revisions:
+                    revisions.append(h.rev)
+            if not self.rev in revisions:
+                revisions.append(self.rev)
         return revisions
 
+    def revisions_by_newrevisionevent(self):
+        revisions = []
+        if self.type_id != "rfc":
+            doc = self.doc if isinstance(self, DocHistory) else self
+            for e in doc.docevent_set.filter(type='new_revision').distinct():
+                if e.rev and not e.rev in revisions:
+                    revisions.append(e.rev)
+            if not doc.rev in revisions:
+                revisions.append(doc.rev)
+            revisions.sort()
+        return revisions
 
     def get_href(self, meeting=None):
         return self._get_ref(meeting=meeting,meeting_doc_refs=settings.MEETING_DOC_HREFS)
@@ -653,6 +664,15 @@ class DocumentInfo(models.Model):
         return self.relations_that(("refnorm", "refinfo", "refunk", "refold")).filter(
             source__type__slug="rfc"
         )
+
+    def became_rfc(self):
+        doc = self if isinstance(self, Document) else self.doc
+        return next(iter(doc.related_that_doc("became_rfc")), None)
+
+    def came_from_draft(self):
+        doc = self if isinstance(self, Document) else self.doc
+        return next(iter(doc.related_that("became_rfc")), None)
+
 
     class Meta:
         abstract = True

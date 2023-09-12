@@ -33,8 +33,8 @@
         {% endif %}
         <link rel="alternate" type="application/atom+xml" title="Document changes" href="/feed/document-changes/{{ doc.name }}/">
         <meta name="description"
-            {% if not snapshot and doc.get_state_slug == 'rfc' %}
-                content="{{ doc.title }} (RFC {{ doc.rfc_number }}{% if published %}, {{ published.time|date:'F Y' }}{% endif %}{% if obsoleted_by %}; obsoleted by {% for rel in obsoleted_by %}{{ rel.source.name|prettystdname}}{% if not forloop.last%}, {% endif %}{% endfor %}{% endif %})"
+            {% if doc.type_id == "rfc" %}
+                content="{{ doc.title }} (RFC {{ doc.rfc_number }}, {{ published.time|date:'F Y' }}{% if obsoleted_by %}; obsoleted by {% for rel in obsoleted_by %}{{ rel.source.name|prettystdname}}{% if not forloop.last%}, {% endif %}{% endfor %}{% endif %})"
             {% else %}
                 content="{{ doc.title }} (Internet-Draft, {{ doc.time|date:'Y' }})"
             {% endif %}>
@@ -98,9 +98,9 @@
         <nav class="navbar bg-light-subtle px-1 fixed-top d-print-none d-md-none">
             <a class="nav-link ps-1"
                href="{% url 'ietf.doc.views_doc.document_main' name=doc.name %}">
-                {% if not snapshot and doc.get_state_slug == "rfc" %}
+                {% if doc.type_id == "rfc" %}
                     RFC {{ doc.rfc_number }}
-                {% else %}
+                {% else %} 
                     {{ doc.name }}-{{ doc.rev }}
                 {% endif %}
                 <br class="d-sm-none">
@@ -175,7 +175,7 @@
                     <div class="pt-2 pt-lg-3 px-md-2 px-lg-3">
                         <a class="btn btn-primary btn-sm" href="{% url 'ietf.doc.views_doc.document_main' name=doc.name %}">Datatracker</a>
                         <p class="fw-bold pt-2">
-                                {% if not snapshot and doc.get_state_slug == "rfc" %}
+                                {% if doc.type_id == "rfc" %}
                                     RFC {{ doc.rfc_number }}
                                 {% else %}
                                     {{ doc.name }}-{{ doc.rev }}

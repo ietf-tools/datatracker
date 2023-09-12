@@ -235,7 +235,7 @@ def _get_materials_doc(meeting, name):
         docname, rev = name.rsplit("-", 1)
         if len(rev) == 2 and rev.isdigit():
             doc = Document.objects.get(name=docname)  # may raise Document.DoesNotExist
-            if doc.get_related_meeting() == meeting and rev in doc.revisions():
+            if doc.get_related_meeting() == meeting and rev in doc.revisions_by_newrevisionevent():
                 return doc, rev
     # give up
     raise Document.DoesNotExist

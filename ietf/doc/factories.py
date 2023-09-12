@@ -51,7 +51,11 @@ class BaseDocumentFactory(factory.django.DjangoModelFactory):
     def name(self, n):
         return draft_name_generator(self.type_id,self.group,n)
 
-    newrevisiondocevent = factory.RelatedFactory('ietf.doc.factories.NewRevisionDocEventFactory','doc')
+    @factory.post_generation
+    def newrevisiondocevent(obj, create, extracted, **kwargs): # pylint: disable=no-self-argument
+        if create:
+            if obj.type_id != "rfc":
+                NewRevisionDocEventFactory(doc=obj)
 
     @factory.post_generation
     def states(obj, create, extracted, **kwargs): # pylint: disable=no-self-argument
@@ -106,6 +110,7 @@ class DocumentFactory(BaseDocumentFactory):
 
 class RfcFactory(BaseDocumentFactory):
     type_id = "rfc"
+    rev = ""
     rfc_number = factory.Sequence(lambda n: n + 1000)
     name = factory.LazyAttribute(lambda o: f"rfc{o.rfc_number:d}")
     expires = None
