@@ -17,7 +17,8 @@ from django.utils import timezone
 from ietf.doc.models import (Document, State, DocEvent,
                              BallotPositionDocEvent, LastCallDocEvent, WriteupDocEvent, TelechatDocEvent)
 from ietf.doc.factories import (DocumentFactory, IndividualDraftFactory, IndividualRfcFactory, WgDraftFactory,
-                                BallotPositionDocEventFactory, BallotDocEventFactory)
+                                BallotPositionDocEventFactory, BallotDocEventFactory, IRSGBallotDocEventFactory)
+from ietf.doc.templatetags.ietf_filters import can_defer
 from ietf.doc.utils import create_ballot_if_not_open
 from ietf.doc.views_doc import document_ballot_content
 from ietf.group.models import Group, Role
@@ -1069,6 +1070,35 @@ class DeferUndeferTestCase(TestCase):
         DocumentFactory(type_id='statchg',name='status-change-imaginary-mid-review',states=[('statchg','iesgeval')])
         DocumentFactory(type_id='conflrev',name='conflict-review-imaginary-irtf-submission',states=[('conflrev','iesgeval')])
 
+class IetfFiltersTests(TestCase):
+    def test_can_defer(self):
+        secretariat = Person.objects.get(user__username="secretary").user
+        ad = Person.objects.get(user__username="ad").user
+        irtf_chair = Person.objects.get(user__username="irtf-chair").user
+        rsab_chair = Person.objects.get(user__username="rsab-chair").user
+        irsg_member = RoleFactory(group__type_id="rg", name_id="chair").person.user
+        rsab_member = RoleFactory(group=Group.objects.get(acronym="rsab"), name_id="member").person.user
+        nobody = PersonFactory().user
+
+        users = set([secretariat, ad, irtf_chair, rsab_chair, irsg_member, rsab_member, nobody])
+
+        iesg_ballot = BallotDocEventFactory(doc__stream_id='ietf')
+        self.assertTrue(can_defer(secretariat, iesg_ballot.doc))
+        self.assertTrue(can_defer(ad, iesg_ballot.doc))
+        for user in users - set([secretariat, ad]):
+            self.assertFalse(can_defer(user, iesg_ballot.doc))
+
+        irsg_ballot = IRSGBallotDocEventFactory(doc__stream_id='irtf')
+        for user in users:
+            self.assertFalse(can_defer(user, irsg_ballot.doc))
+
+        rsab_ballot = BallotDocEventFactory(ballot_type__slug='rsab-approve', doc__stream_id='editorial')
+        for user in users:
+            self.assertFalse(can_defer(user, rsab_ballot.doc))        
+
+    def test_can_clear_ballot(self):
+        pass # Right now, can_clear_ballot is implemented by can_defer
+
 class RegenerateLastCallTestCase(TestCase):
 
     def test_regenerate_last_call(self):
@@ -1201,8 +1231,9 @@ class BallotContentTests(TestCase):
         heading = q(f'div.h5[id$="_{slugify(balloter.plain_name())}"]')
         self.assertEqual(len(heading), 1)
         # <div.h5> is followed by a panel with the message of interest, so use next()
+        next = heading.next()
         self.assertEqual(
-            len(heading.next().find(
+            len(next.find(
                 f'*[title="{expected}"]'
             )),
             1,
@@ -1379,6 +1410,6 @@ class BallotContentTests(TestCase):
             ballot_id=ballot.pk,
         )
         q = PyQuery(content)
-        self._assertBallotMessage(q, balloters[0], 'No email send requests for this discuss')
-        self._assertBallotMessage(q, balloters[1], 'No ballot position send log available')
+        self._assertBallotMessage(q, balloters[0], 'No discuss send log available')
+        self._assertBallotMessage(q, balloters[1], 'No comment send log available')
         self._assertBallotMessage(q, old_balloter, 'No ballot position send log available')

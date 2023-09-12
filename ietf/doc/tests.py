@@ -40,7 +40,7 @@ from ietf.doc.factories import ( DocumentFactory, DocEventFactory, CharterFactor
     ConflictReviewFactory, WgDraftFactory, IndividualDraftFactory, WgRfcFactory, 
     IndividualRfcFactory, StateDocEventFactory, BallotPositionDocEventFactory, 
     BallotDocEventFactory, DocumentAuthorFactory, NewRevisionDocEventFactory,
-    StatusChangeFactory, BofreqFactory)
+    StatusChangeFactory, BofreqFactory, DocExtResourceFactory, RgDraftFactory)
 from ietf.doc.forms import NotifyForm
 from ietf.doc.fields import SearchableDocumentsField
 from ietf.doc.utils import create_ballot_if_not_open, uppercase_std_abbreviated_name
@@ -56,7 +56,7 @@ from ietf.name.models import SessionStatusName, BallotPositionName, DocTypeName
 from ietf.person.models import Person
 from ietf.person.factories import PersonFactory, EmailFactory
 from ietf.utils.mail import outbox, empty_outbox
-from ietf.utils.test_utils import login_testing_unauthorized, unicontent, reload_db_objects
+from ietf.utils.test_utils import login_testing_unauthorized, unicontent
 from ietf.utils.test_utils import TestCase
 from ietf.utils.text import normalize_text
 from ietf.utils.timezone import date_today, datetime_today, DEADLINE_TZINFO, RPC_TZINFO
@@ -93,6 +93,10 @@ class SearchTests(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, "draft-foo-mars-test")
 
+        r = self.client.get(base_url + "?olddrafts=on&name=FoO")  # mixed case
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "draft-foo-mars-test")
+
         # find by rfc/active/inactive
         draft.set_state(State.objects.get(type="draft", slug="rfc"))
         r = self.client.get(base_url + "?rfcs=on&name=%s" % draft.name)
@@ -123,6 +127,10 @@ class SearchTests(TestCase):
 
         # find by group
         r = self.client.get(base_url + "?activedrafts=on&by=group&group=%s" % draft.group.acronym)
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, draft.title)
+
+        r = self.client.get(base_url + "?activedrafts=on&by=group&group=%s" % draft.group.acronym.swapcase())
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, draft.title)
 
@@ -167,13 +175,36 @@ class SearchTests(TestCase):
         self.assertEqual(r.status_code, 302)
         self.assertEqual(urlparse(r["Location"]).path, urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)))
 
+        # mixed-up case exact match
+        r = self.client.get(urlreverse('ietf.doc.views_search.search_for_name', kwargs=dict(name=draft.name.swapcase())))
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(urlparse(r["Location"]).path, urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)))
+
         # prefix match
         r = self.client.get(urlreverse('ietf.doc.views_search.search_for_name', kwargs=dict(name="-".join(draft.name.split("-")[:-1]))))
         self.assertEqual(r.status_code, 302)
         self.assertEqual(urlparse(r["Location"]).path, urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)))
 
+        # mixed-up case prefix match
+        r = self.client.get(
+            urlreverse(
+                'ietf.doc.views_search.search_for_name',
+                kwargs=dict(name="-".join(draft.name.swapcase().split("-")[:-1])),
+            ))
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(urlparse(r["Location"]).path, urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)))
+
         # non-prefix match
         r = self.client.get(urlreverse('ietf.doc.views_search.search_for_name', kwargs=dict(name="-".join(draft.name.split("-")[1:]))))
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(urlparse(r["Location"]).path, urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)))
+
+        # mixed-up case non-prefix match
+        r = self.client.get(
+            urlreverse(
+                'ietf.doc.views_search.search_for_name',
+                kwargs=dict(name="-".join(draft.name.swapcase().split("-")[1:])),
+            ))
         self.assertEqual(r.status_code, 302)
         self.assertEqual(urlparse(r["Location"]).path, urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)))
 
@@ -230,6 +261,17 @@ class SearchTests(TestCase):
         parsed = urlparse(r["Location"])
         self.assertEqual(parsed.path, urlreverse('ietf.doc.views_search.search'))
         self.assertEqual(parse_qs(parsed.query)["name"][0], "draft-ietf-doesnotexist-42")
+    
+    def test_search_rfc(self):
+        rfc = WgRfcFactory(name="rfc0000")
+        
+        # search for existing RFC should redirect directly to the RFC page
+        r = self.client.get(urlreverse('ietf.doc.views_search.search_for_name', kwargs=dict(name=rfc.name)))
+        self.assertRedirects(r, f'/doc/{rfc.name}/', status_code=302, target_status_code=200)
+
+        # search for existing RFC with revision number should redirect to the RFC page
+        r = self.client.get(urlreverse('ietf.doc.views_search.search_for_name', kwargs=dict(name=rfc.name + "-99")), follow=True)
+        self.assertRedirects(r, f'/doc/{rfc.name}/', status_code=302, target_status_code=200)
 
     def test_frontpage(self):
         r = self.client.get("/")
@@ -403,8 +445,8 @@ class SearchTests(TestCase):
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertEqual(len(q('td.doc')),3)
-        self.assertTrue(q('td.status span.bg-warning[title*="%s"]' % "for 15 days"))
-        self.assertTrue(q('td.status span.bg-danger[title*="%s"]' % "for 29 days"))
+        self.assertTrue(q('td.status span.text-bg-warning[title*="%s"]' % "for 15 days"))
+        self.assertTrue(q('td.status span.text-bg-danger[title*="%s"]' % "for 29 days"))
         for ah in [draft.action_holders.first() for draft in drafts]:
             self.assertContains(r, escape(ah.name))
 
@@ -586,7 +628,9 @@ Man                    Expires September 22, 2015               [Page 3]
                 f.write(self.draft_text)
 
     def test_document_draft(self):
-        draft = WgDraftFactory(name='draft-ietf-mars-test',rev='01')
+        draft = WgDraftFactory(name='draft-ietf-mars-test',rev='01', create_revisions=range(0,2))
+
+
         HolderIprDisclosureFactory(docs=[draft])
         
         # Docs for testing relationships. Does not test 'possibly-replaces'. The 'replaced_by' direction
@@ -601,6 +645,8 @@ Man                    Expires September 22, 2015               [Page 3]
         draft.relateddocument_set.create(relationship_id='updates',source=draft,target=updated.docalias.first())
         updated_by = IndividualDraftFactory()
         updated_by.relateddocument_set.create(relationship_id='updates',source=obsoleted_by,target=draft.docalias.first())
+
+        external_resource = DocExtResourceFactory(doc=draft)
 
         # these tests aren't testing all attributes yet, feel free to
         # expand them
@@ -622,6 +668,7 @@ Man                    Expires September 22, 2015               [Page 3]
         self.assertNotContains(r, updated.title)
         self.assertNotContains(r, updated_by.canonical_name())
         self.assertNotContains(r, updated_by.title)
+        self.assertContains(r, external_resource.value)
 
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)) + "?include_text=0")
         self.assertEqual(r.status_code, 200)
@@ -737,7 +784,7 @@ Man                    Expires September 22, 2015               [Page 3]
         self.assertEqual(q('title').text(), 'draft-ietf-mars-test-01')
         self.assertEqual(len(q('.rfcmarkup pre')), 3)
         self.assertEqual(len(q('.rfcmarkup span.h1, .rfcmarkup h1')), 2)
-        self.assertEqual(len(q('.rfcmarkup a[href]')), 28)
+        self.assertEqual(len(q('.rfcmarkup a[href]')), 27)
 
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_html", kwargs=dict(name=draft.name, rev=draft.rev)))
         self.assertEqual(r.status_code, 200)
@@ -751,6 +798,7 @@ Man                    Expires September 22, 2015               [Page 3]
         self.assertEqual(len(q('#sidebar option[value="draft-ietf-mars-test-00"][selected="selected"]')), 1)
 
         rfc = WgRfcFactory()
+        rfc.save_with_history([DocEventFactory(doc=rfc)])
         (Path(settings.RFC_PATH) / rfc.get_base_name()).touch()
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_html", kwargs=dict(name=rfc.canonical_name())))
         self.assertEqual(r.status_code, 200)
@@ -1580,6 +1628,10 @@ class DocTestCase(TestCase):
         CharterFactory(name='charter-ietf-mars')
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name="charter-ietf-mars")))
         self.assertEqual(r.status_code, 200)
+    
+    def test_incorrect_rfc_url(self):
+        r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name="rfc8989", rev="00")))
+        self.assertEqual(r.status_code, 404)
 
     def test_document_conflict_review(self):
         ConflictReviewFactory(name='conflict-review-imaginary-irtf-submission')
@@ -1742,7 +1794,7 @@ class DocTestCase(TestCase):
         self.client.login(username='ad', password='ad+password')
         r = self.client.post(urlreverse('ietf.doc.views_status_change.change_state',kwargs=dict(name=doc.name)),dict(new_state=iesgeval_pk))
         self.assertEqual(r.status_code, 302)
-        r = self.client.get(r._headers["location"][1])
+        r = self.client.get(r.headers["location"])
         self.assertContains(r, ">IESG Evaluation<")
         self.assertEqual(len(outbox), 2)
         self.assertIn('iesg-secretary',outbox[0]['To'])
@@ -1874,11 +1926,31 @@ class DocTestCase(TestCase):
         self.assertContains(r, doc.name)
 
     def test_rfc_feed(self):
-        WgRfcFactory()
+        rfc = WgRfcFactory(alias2__name="rfc9000")
+        DocEventFactory(doc=rfc, type="published_rfc")
         r = self.client.get("/feed/rfc/")
         self.assertTrue(r.status_code, 200)
+        q = PyQuery(r.content[39:]) # Strip off the xml declaration
+        self.assertEqual(len(q("item")), 1)
+        item = q("item")[0]
+        media_content = item.findall("{http://search.yahoo.com/mrss/}content")
+        self.assertEqual(len(media_content),4)
+        types = set([m.attrib["type"] for m in media_content])
+        self.assertEqual(types, set(["application/rfc+xml", "text/plain", "text/html", "application/pdf"]))
+        rfcs_2016 = WgRfcFactory.create_batch(3) # rfc numbers will be well below v3
+        for rfc in rfcs_2016:
+            e = DocEventFactory(doc=rfc, type="published_rfc")
+            e.time = e.time.replace(year=2016)
+            e.save()
         r = self.client.get("/feed/rfc/2016")
         self.assertTrue(r.status_code, 200)
+        q = PyQuery(r.content[39:])
+        self.assertEqual(len(q("item")), 3)
+        item = q("item")[0]
+        media_content = item.findall("{http://search.yahoo.com/mrss/}content")
+        self.assertEqual(len(media_content), 3)
+        types = set([m.attrib["type"] for m in media_content])
+        self.assertEqual(types, set(["text/plain", "text/html", "application/pdf"]))
 
     def test_state_help(self):
         url = urlreverse('ietf.doc.views_help.state_help', kwargs=dict(type="draft-iesg"))
@@ -1935,6 +2007,12 @@ class DocTestCase(TestCase):
         self.assertEqual(entry['url'],      f'https://www.rfc-editor.ietf.org/info/rfc{num}')
         #
         self.assertNotIn('day', entry)
+
+        # test for incorrect case - revision for RFC
+        rfc = WgRfcFactory(name="rfc0000")
+        url = urlreverse('ietf.doc.views_doc.document_bibtex', kwargs=dict(name=rfc.name, rev='00'))
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 404)
 
         april1 = IndividualRfcFactory.create(
                   stream_id =       'ise',
@@ -2519,7 +2597,7 @@ class ChartTests(ResourceTestCaseMixin, TestCase):
         self.assertValidJSONResponse(r)
         d = r.json()
         self.assertEqual(d['chart']['type'], settings.CHART_TYPE_COLUMN_OPTIONS['chart']['type'])
-        self.assertEqual("New draft revisions over time for %s" % person.name, d['title']['text'])
+        self.assertEqual("New Internet-Draft revisions over time for %s" % person.name, d['title']['text'])
 
         data_url = urlreverse('ietf.doc.views_stats.chart_data_person_drafts', kwargs=dict(id=person.id))
 
@@ -2528,6 +2606,7 @@ class ChartTests(ResourceTestCaseMixin, TestCase):
         d = r.json()
         self.assertEqual(len(d), 1)
         self.assertEqual(len(d[0]), 2)
+        self.assertEqual(d[0][1], 1) 
 
         page_url = urlreverse('ietf.person.views.profile', kwargs=dict(email_or_name=person.name))
         r = self.client.get(page_url)
@@ -2659,200 +2738,6 @@ class Idnits2SupportTests(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertContains(r,'Proposed')
 
-class RfcdiffSupportTests(TestCase):
-
-    def setUp(self):
-        super().setUp()
-        self.target_view = 'ietf.doc.views_doc.rfcdiff_latest_json'
-        self._last_rfc_num = 8000
-
-    def getJson(self, view_args):
-        url = urlreverse(self.target_view, kwargs=view_args)
-        r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
-        return r.json()
-
-    def next_rfc_number(self):
-        self._last_rfc_num += 1
-        return self._last_rfc_num
-
-    def do_draft_test(self, name):
-        draft = IndividualDraftFactory(name=name, rev='00', create_revisions=range(0,13))
-        draft = reload_db_objects(draft)
-
-        received = self.getJson(dict(name=draft.name))
-        self.assertEqual(
-            received,
-            dict(
-                name=draft.name,
-                rev=draft.rev,
-                content_url=draft.get_href(),
-                previous=f'{draft.name}-{(int(draft.rev)-1):02d}'
-            ),
-            'Incorrect JSON when draft revision not specified',
-        )
-
-        received = self.getJson(dict(name=draft.name, rev=draft.rev))
-        self.assertEqual(
-            received,
-            dict(
-                name=draft.name,
-                rev=draft.rev,
-                content_url=draft.get_href(),
-                previous=f'{draft.name}-{(int(draft.rev)-1):02d}'
-            ),
-            'Incorrect JSON when latest revision specified',
-        )
-
-        received = self.getJson(dict(name=draft.name, rev='10'))
-        self.assertEqual(
-            received,
-            dict(
-                name=draft.name,
-                rev='10',
-                content_url=draft.history_set.get(rev='10').get_href(),
-                previous=f'{draft.name}-09'
-            ),
-            'Incorrect JSON when historical revision specified',
-        )
-
-        received = self.getJson(dict(name=draft.name, rev='00'))
-        self.assertNotIn('previous', received, 'Rev 00 has no previous name when not replacing a draft')
-
-        replaced = IndividualDraftFactory()
-        RelatedDocument.objects.create(relationship_id='replaces',source=draft,target=replaced.docalias.first())
-        received = self.getJson(dict(name=draft.name, rev='00'))
-        self.assertEqual(received['previous'], f'{replaced.name}-{replaced.rev}',
-                         'Rev 00 has a previous name when replacing a draft')
-
-    def test_draft(self):
-        # test with typical, straightforward names
-        self.do_draft_test(name='draft-somebody-did-a-thing')
-        # try with different potentially problematic names
-        self.do_draft_test(name='draft-someone-did-something-01-02')
-        self.do_draft_test(name='draft-someone-did-something-else-02')
-        self.do_draft_test(name='draft-someone-did-something-02-weird-01')
-
-    def do_draft_with_broken_history_test(self, name):
-        draft = IndividualDraftFactory(name=name, rev='10')
-        received = self.getJson(dict(name=draft.name,rev='09'))
-        self.assertEqual(received['rev'],'09')
-        self.assertEqual(received['previous'], f'{draft.name}-08')
-        self.assertTrue('warning' in received)
-
-    def test_draft_with_broken_history(self):
-        # test with typical, straightforward names
-        self.do_draft_with_broken_history_test(name='draft-somebody-did-something')
-        # try with different potentially problematic names
-        self.do_draft_with_broken_history_test(name='draft-someone-did-something-01-02')
-        self.do_draft_with_broken_history_test(name='draft-someone-did-something-else-02')
-        self.do_draft_with_broken_history_test(name='draft-someone-did-something-02-weird-03')
-
-    def do_rfc_test(self, draft_name):
-        draft = WgDraftFactory(name=draft_name, create_revisions=range(0,2))
-        draft.docalias.create(name=f'rfc{self.next_rfc_number():04}')
-        draft.set_state(State.objects.get(type_id='draft',slug='rfc'))
-        draft.set_state(State.objects.get(type_id='draft-iesg', slug='pub'))
-        draft = reload_db_objects(draft)
-        rfc = draft
-        
-        number = rfc.rfc_number()
-        received = self.getJson(dict(name=number))
-        self.assertEqual(
-            received,
-            dict(
-                content_url=rfc.get_href(),
-                name=rfc.canonical_name(),
-                previous=f'{draft.name}-{draft.rev}',
-            ),
-            'Can look up an RFC by number',
-        )
-
-        num_received = received
-        received = self.getJson(dict(name=rfc.canonical_name()))
-        self.assertEqual(num_received, received, 'RFC by canonical name gives same result as by number')
-
-        received = self.getJson(dict(name=f'RfC {number}'))
-        self.assertEqual(num_received, received, 'RFC with unusual spacing/caps gives same result as by number')
-
-        received = self.getJson(dict(name=draft.name))
-        self.assertEqual(num_received, received, 'RFC by draft name and no rev gives same result as by number')
-
-        received = self.getJson(dict(name=draft.name, rev='01'))
-        self.assertEqual(
-            received,
-            dict(
-                content_url=draft.history_set.get(rev='01').get_href(),
-                name=draft.name,
-                rev='01',
-                previous=f'{draft.name}-00',
-            ),
-            'RFC by draft name with rev should give draft name, not canonical name'
-        )
-
-    def test_rfc(self):
-        # simple draft name
-        self.do_rfc_test(draft_name='draft-test-ar-ef-see')
-        # tricky draft names
-        self.do_rfc_test(draft_name='draft-whatever-02')
-        self.do_rfc_test(draft_name='draft-test-me-03-04')
-
-    def test_rfc_with_tombstone(self):
-        draft = WgDraftFactory(create_revisions=range(0,2))
-        draft.docalias.create(name='rfc3261') # See views_doc.HAS_TOMBSTONE
-        draft.set_state(State.objects.get(type_id='draft',slug='rfc'))
-        draft.set_state(State.objects.get(type_id='draft-iesg', slug='pub'))
-        draft = reload_db_objects(draft)
-        rfc = draft
-
-        # Some old rfcs had tombstones that shouldn't be used for comparisons
-        received = self.getJson(dict(name=rfc.canonical_name()))
-        self.assertTrue(received['previous'].endswith('00'))
-
-    def do_rfc_with_broken_history_test(self, draft_name):
-        draft = WgDraftFactory(rev='10', name=draft_name)
-        draft.docalias.create(name=f'rfc{self.next_rfc_number():04}')
-        draft.set_state(State.objects.get(type_id='draft',slug='rfc'))
-        draft.set_state(State.objects.get(type_id='draft-iesg', slug='pub'))
-        draft = reload_db_objects(draft)
-        rfc = draft
-
-        received = self.getJson(dict(name=draft.name))
-        self.assertEqual(
-            received,
-            dict(
-                content_url=rfc.get_href(),
-                name=rfc.canonical_name(),
-                previous=f'{draft.name}-10',
-            ),
-            'RFC by draft name without rev should return canonical RFC name and no rev',
-        )
-
-        received = self.getJson(dict(name=draft.name, rev='10'))
-        self.assertEqual(received['name'], draft.name, 'RFC by draft name with rev should return draft name')
-        self.assertEqual(received['rev'], '10', 'Requested rev should be returned')
-        self.assertEqual(received['previous'], f'{draft.name}-09', 'Previous rev is one less than requested')
-        self.assertIn(f'{draft.name}-10', received['content_url'], 'Returned URL should include requested rev')
-        self.assertNotIn('warning', received, 'No warning when we have the rev requested')
-
-        received = self.getJson(dict(name=f'{draft.name}-09'))
-        self.assertEqual(received['name'], draft.name, 'RFC by draft name with rev should return draft name')
-        self.assertEqual(received['rev'], '09', 'Requested rev should be returned')
-        self.assertEqual(received['previous'], f'{draft.name}-08', 'Previous rev is one less than requested')
-        self.assertIn(f'{draft.name}-09', received['content_url'], 'Returned URL should include requested rev')
-        self.assertEqual(
-            received['warning'],
-            'History for this version not found - these results are speculation',
-            'Warning should be issued when requested rev is not found'
-        )
-
-    def test_rfc_with_broken_history(self):
-        # simple draft name
-        self.do_rfc_with_broken_history_test(draft_name='draft-some-draft')
-        # tricky draft names
-        self.do_rfc_with_broken_history_test(draft_name='draft-gizmo-01')
-        self.do_rfc_with_broken_history_test(draft_name='draft-oh-boy-what-a-draft-02-03')
-
 
 class RawIdTests(TestCase):
 
@@ -2914,7 +2799,7 @@ class PdfizedTests(TestCase):
         url = urlreverse(self.view, kwargs=argdict)
         r = self.client.get(url)
         self.assertEqual(r.status_code,200)
-        self.assertEqual(r.get('Content-Type'),'application/pdf;charset=utf-8')
+        self.assertEqual(r.get('Content-Type'),'application/pdf')
 
     def should_404(self, argdict):
         url = urlreverse(self.view, kwargs=argdict)
@@ -2979,3 +2864,45 @@ class NotifyValidationTests(TestCase):
             self.assertFalse(f.is_valid())
             self.assertTrue("Invalid addresses" in f.errors["notify"][0])
             self.assertTrue("Duplicate addresses" in f.errors["notify"][0])
+
+class CanRequestConflictReviewTests(TestCase):
+    def test_gets_request_conflict_review_action_button(self):
+        ise_draft = IndividualDraftFactory(stream_id="ise")
+        irtf_draft = RgDraftFactory()
+
+        # This is blunt, trading off precision for time. A more thorough test would ensure
+        # that the text is in a button and that the correct link is absent/present as well.
+
+        target_string = "Begin IETF conflict review"
+
+        url = urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=irtf_draft.name))
+        r = self.client.get(url)
+        self.assertNotContains(r, target_string)
+        self.client.login(username="secretary", password="secretary+password")
+        r = self.client.get(url)
+        self.assertContains(r, target_string)
+        self.client.logout()
+        self.client.login(username="irtf-chair", password="irtf-chair+password")
+        r = self.client.get(url)
+        self.assertContains(r, target_string)
+        self.client.logout()
+        self.client.login(username="ise-chair", password="ise-chair+password")
+        r = self.client.get(url)
+        self.assertNotContains(r, target_string)
+        self.client.logout()
+
+        url = urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=ise_draft.name))
+        r = self.client.get(url)
+        self.assertNotContains(r, target_string)
+        self.client.login(username="secretary", password="secretary+password")
+        r = self.client.get(url)
+        self.assertContains(r, target_string)
+        self.client.logout()
+        self.client.login(username="irtf-chair", password="irtf-chair+password")
+        r = self.client.get(url)
+        self.assertNotContains(r, target_string)
+        self.client.logout()
+        self.client.login(username="ise-chair", password="ise-chair+password")
+        r = self.client.get(url)
+        self.assertContains(r, target_string)
+

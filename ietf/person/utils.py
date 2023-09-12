@@ -47,7 +47,6 @@ def merge_persons(request, source, target, file=sys.stdout, verbose=False):
 
     # check for any remaining relationships and exit if more found
     objs = [source]
-#    request.user = User.objects.filter(is_superuser=True).first()
     deletable_objects = admin.utils.get_deleted_objects(objs, request, admin.site)
     deletable_objects_summary = deletable_objects[1]
     if len(deletable_objects_summary) > 1:    # should only include one object (Person)
@@ -199,11 +198,13 @@ def determine_merge_order(source,target):
     return source,target
 
 def get_active_balloters(ballot_type):
-    if (ballot_type.slug != "irsg-approve"):
-        active_balloters = get_active_ads()
+    if ballot_type.slug == 'irsg-approve':
+        return get_active_irsg()
+    elif ballot_type.slug == 'rsab-approve':
+        return get_active_rsab()
     else:
-        active_balloters = get_active_irsg()
-    return active_balloters
+        return get_active_ads()
+
 
 def get_active_ads():
     cache_key = "doc:active_ads"
@@ -219,7 +220,15 @@ def get_active_irsg():
     if not active_irsg_balloters:
         active_irsg_balloters = list(Person.objects.filter(role__group__acronym='irsg',role__name__in=['chair','member','atlarge']).distinct())
         cache.set(cache_key, active_irsg_balloters)
-    return active_irsg_balloters        
+    return active_irsg_balloters
+
+def get_active_rsab():
+    cache_key = "doc:active_rsab_balloters"
+    active_rsab_balloters = cache.get(cache_key)
+    if not active_rsab_balloters:
+        active_rsab_balloters = list(Person.objects.filter(role__group__acronym='rsab', role__name="member").distinct())
+        cache.set(cache_key, active_rsab_balloters)
+    return active_rsab_balloters
 
 def get_dots(person):
         roles = person.role_set.filter(group__state_id__in=('active','bof','proposed'))

@@ -13,8 +13,7 @@ from django.utils.html import escape
 from django.template.defaultfilters import truncatewords_html, linebreaksbr, stringfilter, striptags
 from django.utils.safestring import mark_safe, SafeData
 from django.utils.html import strip_tags
-from django.utils.encoding import force_text
-from django.utils.encoding import force_str # pyflakes:ignore force_str is used in the doctests
+from django.utils.encoding import force_str
 from django.urls import reverse as urlreverse
 from django.core.cache import cache
 from django.core.exceptions import ValidationError
@@ -25,6 +24,7 @@ import debug                            # pyflakes:ignore
 
 from ietf.doc.models import BallotDocEvent, DocAlias
 from ietf.doc.models import ConsensusDocEvent
+from ietf.ietfauth.utils import can_request_rfc_publication as utils_can_request_rfc_publication
 from ietf.utils.html import sanitize_fragment
 from ietf.utils import log
 from ietf.doc.utils import prettify_std_name
@@ -131,7 +131,7 @@ register.filter('fill', fill)
 @register.filter
 def prettystdname(string, space=" "):
     from ietf.doc.utils import prettify_std_name
-    return prettify_std_name(force_text(string or ""), space)
+    return prettify_std_name(force_str(string or ""), space)
 
 @register.filter
 def rfceditor_info_url(rfcnum : str):
@@ -577,6 +577,8 @@ def pos_to_label_format(text):
         'Recuse':       'bg-recuse text-light',
         'Not Ready':    'bg-discuss text-light',
         'Need More Time': 'bg-discuss text-light',
+        'Concern': 'bg-discuss text-light',
+
     }.get(str(text), 'bg-norecord text-dark')
 
 @register.filter
@@ -591,6 +593,7 @@ def pos_to_border_format(text):
         'Recuse':       'border-recuse',
         'Not Ready':    'border-discuss',
         'Need More Time': 'border-discuss',
+        'Concern': 'border-discuss',
     }.get(str(text), 'border-norecord')
 
 @register.filter
@@ -664,17 +667,25 @@ def charter_minor_rev(rev):
 @register.filter()
 def can_defer(user,doc):
     ballot = doc.latest_event(BallotDocEvent, type="created_ballot")
-    if ballot and (doc.type_id == "draft" or doc.type_id == "conflrev") and doc.stream_id == 'ietf' and has_role(user, 'Area Director,Secretariat'):
+    if ballot and (doc.type_id == "draft" or doc.type_id == "conflrev" or doc.type_id=="statchg") and doc.stream_id == 'ietf' and has_role(user, 'Area Director,Secretariat'):
         return True
     else:
         return False
 
 @register.filter()
+def can_clear_ballot(user, doc):
+    return can_defer(user, doc)
+
+@register.filter()
+def can_request_rfc_publication(user, doc):
+    return utils_can_request_rfc_publication(user, doc)
+
+@register.filter()
 def can_ballot(user,doc):
-    # Only IRSG members (and the secretariat, handled by code separately) can take positions on IRTF documents
-    # Otherwise, an AD can take a position on anything that has a ballot open
-    if doc.type_id == 'draft' and doc.stream_id == 'irtf':
-        return has_role(user,'IRSG Member')
+    if doc.stream_id == "irtf" and doc.type_id == "draft":
+        return has_role(user,"IRSG Member")
+    elif doc.stream_id == "editorial" and doc.type_id == "draft":
+        return has_role(user,"RSAB Member")
     else:
         return user.person.role_set.filter(name="ad", group__type="area", group__state="active")
 
@@ -693,10 +704,10 @@ def action_holder_badge(action_holder):
     ''
 
     >>> action_holder_badge(DocumentActionHolderFactory(time_added=timezone.now() - datetime.timedelta(days=16)))
-    '<span class="badge rounded-pill bg-danger" title="In state for 16 days; goal is &lt;15 days."><i class="bi bi-clock-fill"></i> 16</span>'
+    '<span class="badge rounded-pill text-bg-danger" title="In state for 16 days; goal is &lt;15 days."><i class="bi bi-clock-fill"></i> 16</span>'
 
     >>> action_holder_badge(DocumentActionHolderFactory(time_added=timezone.now() - datetime.timedelta(days=30)))
-    '<span class="badge rounded-pill bg-danger" title="In state for 30 days; goal is &lt;15 days."><i class="bi bi-clock-fill"></i> 30</span>'
+    '<span class="badge rounded-pill text-bg-danger" title="In state for 30 days; goal is &lt;15 days."><i class="bi bi-clock-fill"></i> 30</span>'
 
     >>> settings.DOC_ACTION_HOLDER_AGE_LIMIT_DAYS = old_limit
     """
@@ -704,7 +715,7 @@ def action_holder_badge(action_holder):
     age = (timezone.now() - action_holder.time_added).days
     if age > age_limit:
         return mark_safe(
-            '<span class="badge rounded-pill bg-danger" title="In state for %d day%s; goal is &lt;%d days."><i class="bi bi-clock-fill"></i> %d</span>'
+            '<span class="badge rounded-pill text-bg-danger" title="In state for %d day%s; goal is &lt;%d days."><i class="bi bi-clock-fill"></i> %d</span>'
             % (age, "s" if age != 1 else "", age_limit, age)
         )
     else:
@@ -831,3 +842,37 @@ def is_valid_url(url):
     except ValidationError:
         return False
     return True
+
+
+@register.filter
+def badgeify(blob):
+    """
+    Add an appropriate bootstrap badge around "text", based on its contents.
+    """
+    config = [
+        (r"rejected|not ready", "danger", "x-lg"),
+        (r"complete|accepted|ready", "success", ""),
+        (r"has nits|almost ready", "info", "info-lg"),
+        (r"has issues", "warning", "exclamation-lg"),
+        (r"assigned", "info", "person-plus-fill"),
+        (r"will not review|overtaken by events|withdrawn", "secondary", "dash-lg"),
+        (r"no response", "warning", "question-lg"),
+    ]
+    text = str(blob)
+
+    for pattern, color, icon in config:
+        if re.search(pattern, text, flags=re.IGNORECASE):
+            # Shorten the badge text
+            text = re.sub(r"with ", "w/", text, flags=re.IGNORECASE)
+            text = re.sub(r"document", "doc", text, flags=re.IGNORECASE)
+            text = re.sub(r"will not", "won't", text, flags=re.IGNORECASE)
+
+            return mark_safe(
+                f"""
+                <span class="badge rounded-pill text-bg-{color} text-wrap">
+                    <i class="bi bi-{icon}"></i> {text.capitalize()}
+                </span>
+                """
+            )
+
+    return text

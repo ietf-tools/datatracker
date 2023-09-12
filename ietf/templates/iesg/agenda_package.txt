@@ -3,13 +3,13 @@
 Contents:
 
 1. Roll Call and Dial-In Instructions
-   {{ roll_call_url }}
+   {% url "ietf.iesg.views.telechat_agenda_content_view" section="roll_call" %}
 2. Agenda
    {{ settings.IDTRACKER_BASE_URL }}{% url 'ietf.iesg.views.agenda' %}
 3. Management Item Details
    {{ settings.IDTRACKER_BASE_URL }}{% url 'ietf.iesg.views.agenda' %}#6
 4. Previous minutes
-   {{ minutes_url }}
+   {% url "ietf.iesg.views.telechat_agenda_content_view" section="minutes" %}
 
 ------------------------------------------------------------------------
 1. ROLL CALL AND DIAL-IN INSTRUCTIONS

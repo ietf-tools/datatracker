@@ -118,7 +118,7 @@ def assert_ical_response_is_valid(test_inst, response, expected_event_summaries=
                                   expected_event_uids=None, expected_event_count=None):
     """Validate an HTTP response containing iCal data
 
-    Based on RFC2445, but not exhaustive by any means. Assumes a single iCalendar object. Checks that
+    Based on RFC5545, but not exhaustive by any means. Assumes a single iCalendar object. Checks that
     expected_event_summaries/_uids are found, but other events are allowed to be present. Specify the
     expected_event_count if you want to reject additional events. If any of these are None,
     the check for that property is skipped.
@@ -132,18 +132,43 @@ def assert_ical_response_is_valid(test_inst, response, expected_event_summaries=
     test_inst.assertContains(response, 'VERSION', count=1)
 
     # Validate event objects
+    event_count = 0
+    uids_found = set()
+    summaries_found = set()
+    got_begin = False
+    cur_event_props = set()
+    for line_num, line in enumerate(response.content.decode().split("\n")):
+        line = line.rstrip()
+        if line == 'BEGIN:VEVENT':
+            test_inst.assertFalse(got_begin, f"Nested BEGIN:VEVENT found on line {line_num + 1}")
+            got_begin = True
+        elif line == 'END:VEVENT':
+            test_inst.assertTrue(got_begin, f"Unexpected END:VEVENT on line {line_num + 1}")
+            test_inst.assertIn("uid", cur_event_props, f"Found END:VEVENT without UID on line {line_num + 1}")
+            got_begin = False
+            cur_event_props.clear()
+            event_count += 1
+        elif got_begin:
+            # properties in an event
+            if line.startswith("UID:"):
+                # mandatory, not more than once
+                test_inst.assertNotIn("uid", cur_event_props, f"Two UID properties in single event on line {line_num + 1}")
+                cur_event_props.add("uid")
+                uids_found.add(line.split(":", 1)[1])
+            elif line.startswith("SUMMARY:"):
+                # optional, not more than once
+                test_inst.assertNotIn("summary", cur_event_props, f"Two SUMMARY properties in single event on line {line_num + 1}")
+                cur_event_props.add("summary")
+                summaries_found.add(line.split(":", 1)[1])
+
     if expected_event_summaries is not None:
-        for summary in expected_event_summaries:
-            test_inst.assertContains(response, 'SUMMARY:' + summary)
+        test_inst.assertCountEqual(summaries_found, set(expected_event_summaries))
 
     if expected_event_uids is not None:
-        for uid in expected_event_uids:
-            test_inst.assertContains(response, 'UID:' + uid)
+        test_inst.assertCountEqual(uids_found, set(expected_event_uids))
 
     if expected_event_count is not None:
-        test_inst.assertContains(response, 'BEGIN:VEVENT', count=expected_event_count)
-        test_inst.assertContains(response, 'END:VEVENT', count=expected_event_count)
-        test_inst.assertContains(response, 'UID', count=expected_event_count)
+        test_inst.assertEqual(event_count, expected_event_count)
 
     # make sure no doubled colons after timestamp properties
     test_inst.assertNotContains(response, 'DTSTART::')
@@ -185,6 +210,7 @@ class TestCase(django.test.TestCase):
         'INTERNET_ALL_DRAFTS_ARCHIVE_DIR',
         'INTERNET_DRAFT_ARCHIVE_DIR',
         'INTERNET_DRAFT_PATH',
+        'BIBXML_BASE_PATH',
     ]
 
     parser = html5lib.HTMLParser(strict=True)
@@ -258,7 +284,7 @@ class TestCase(django.test.TestCase):
             assert isinstance(text, str)
             mlist = [ m for m in mlist if text in get_payload_text(m) ]
         if count and len(mlist) != count:
-            sys.stderr.write("Wrong count in assertMailboxContains().  The complete mailbox contains %s emails:\n\n" % len(mailbox))
+            sys.stderr.write("Wrong count in assertMailboxContains().  The complete mailbox contains %s messages, only %s of them contain the searched-for text:\n\n" % (len(mailbox), len(mlist)))
             for m in mailbox:
                 sys.stderr.write(m.as_string())
                 sys.stderr.write('\n\n')

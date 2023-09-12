@@ -115,7 +115,7 @@ class _Wrapper(TestCase):
             return (ReviewerSettings.objects.filter(team=self.team, person=person).first()
                     or ReviewerSettings(team=self.team, person=person))
 
-        def test_return_reviewer_to_rotation_top(self):
+        def test_set_wants_to_be_next(self):
             # Subclass must implement this
             raise NotImplementedError
 
@@ -507,10 +507,10 @@ class RotateAlphabeticallyReviewerQueuePolicyTest(_Wrapper.ReviewerQueuePolicyTe
         rotation = self.policy.default_reviewer_rotation_list()
         self.assertEqual(rotation, available_reviewers[2:] + available_reviewers[:1])
 
-    def test_return_reviewer_to_rotation_top(self):
+    def test_set_wants_to_be_next(self):
         reviewer = self.append_reviewer()
-        self.policy.return_reviewer_to_rotation_top(reviewer)
-        self.assertTrue(ReviewerSettings.objects.get(person=reviewer).request_assignment_next)
+        self.policy.set_wants_to_be_next(reviewer)
+        self.assertTrue(self.reviewer_settings_for(reviewer).request_assignment_next)
 
     def test_update_policy_state_for_assignment(self):
         # make a bunch of reviewers
@@ -723,9 +723,10 @@ class LeastRecentlyUsedReviewerQueuePolicyTest(_Wrapper.ReviewerQueuePolicyTestC
         self.assertEqual(self.policy.default_reviewer_rotation_list(),
                          available_reviewers[2:] + [first_reviewer, second_reviewer])
 
-    def test_return_reviewer_to_rotation_top(self):
-        # Should do nothing, this is implicit in this policy, no state change is needed.
-        self.policy.return_reviewer_to_rotation_top(self.append_reviewer())
+    def test_set_wants_to_be_next(self):
+        reviewer = self.append_reviewer()
+        self.policy.set_wants_to_be_next(reviewer)
+        self.assertTrue(self.reviewer_settings_for(reviewer).request_assignment_next)
 
     def test_assign_reviewer_updates_skip_next_without_add_skip(self):
         """Skipping reviewers with add_skip=False should update skip_counts properly"""
@@ -835,7 +836,7 @@ class AssignmentOrderResolverTests(TestCase):
         self.assertEqual(len(ranking), 2)
         self.assertEqual(ranking[0]['email'], reviewer_high.email())
         self.assertEqual(ranking[1]['email'], reviewer_low.email())
-        # These scores follow the ordering of https://trac.ietf.org/trac/ietfdb/wiki/ReviewerQueuePolicy,
+        # These scores follow the ordering of https://github.com/ietf-tools/datatracker/wiki/ReviewerQueuePolicy,
         self.assertEqual(ranking[0]['scores'], [ 1,  1,  1,  1,  1,  1,   0,  0, -1])
         self.assertEqual(ranking[1]['scores'], [-1, -1, -1, -1, -1, -1, -91, -2,  0])
         self.assertEqual(ranking[0]['label'], 'Test Reviewer-high: unavailable indefinitely (Can do follow-ups); requested to be selected next for assignment; reviewed document before; wishes to review document; #2; 1 no response, 1 partially complete, 1 fully completed')

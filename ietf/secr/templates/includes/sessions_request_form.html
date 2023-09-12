@@ -9,8 +9,8 @@
         <tr class="bg1"><td>Working Group Name:</td><td>{{ group.name }} ({{ group.acronym }})</td></tr>
         <tr class="bg2"><td>Area Name:</td><td>{% if group.parent %}{{ group.parent.name }} ({{ group.parent.acronym }}){% endif %}</td></tr>
         <tr class="bg1"><td>Number of Sessions:<span class="required">*</span></td><td>{{ form.num_session.errors }}{{ form.num_session }}</td></tr>
-        {% if group.features.acts_like_wg %}<tr class="bg2" id="session_row_0"><td>Session 1:<span class="required">*</span></td><td>{% include 'meeting/session_details_form.html' with form=form.session_forms.0 only %}</td></tr>
-            <tr class="bg2" id="session_row_1"><td>Session 2:<span class="required">*</span></td><td>{% include 'meeting/session_details_form.html' with form=form.session_forms.1 only %}</td></tr>
+        {% if group.features.acts_like_wg %}<tr class="bg2" id="session_row_0"><td>Session 1:<span class="required">*</span></td><td>{% include 'meeting/session_details_form.html' with form=form.session_forms.0 hide_onsite_tool_prompt=True only %}</td></tr>
+            <tr class="bg2" id="session_row_1"><td>Session 2:<span class="required">*</span></td><td>{% include 'meeting/session_details_form.html' with form=form.session_forms.1 hide_onsite_tool_prompt=True only %}</td></tr>
             {% if not is_virtual %}
                 <tr class="bg2"><td>Time between two sessions:</td><td>{{ form.session_time_relation.errors }}{{ form.session_time_relation }}</td></tr>
             {% endif %}
@@ -18,7 +18,7 @@
                 Additional slot may be available after agenda scheduling has closed and with the approval of an Area Director.<br>
                 <div id="session_row_2">
                     Third Session:
-                    {% include 'meeting/session_details_form.html' with form=form.session_forms.2 only %}
+                    {% include 'meeting/session_details_form.html' with form=form.session_forms.2 hide_onsite_tool_prompt=True only %}
                 </div>
             </td></tr>
         {% else %}{# else not group.features.acts_like_wg #}
@@ -28,12 +28,12 @@
         {% endif %}
         <tr class="bg1"><td>Number of Attendees:{% if not is_virtual %}<span class="required">*</span>{% endif %}</td><td>{{ form.attendees.errors }}{{ form.attendees }}</td></tr>
         <tr class="bg2">
-            <td>People who must be present:</td>
+            <td>Participants who must be present:</td>
             <td>
                 {{ form.bethere.errors }}
                 {{ form.bethere }}
                 <p class="fw-bold text-danger">
-                    You should not include the Area Directors; they will be added automatically.
+                    Do not include Area Directors and WG Chairs; the system already tracks their availability.
                 </p>
             </td>
         </tr>
@@ -121,6 +121,12 @@
             <td>Special Requests:<br>&nbsp;<br>i.e. restrictions on meeting times / days, etc.<br>  (limit 200 characters)</td>
             <td>{{ form.comments.errors }}{{ form.comments }}</td>
         </tr>
+        {% if form.notifications_optional %}
+            <tr class="bg1">
+                <td>{{ form.send_notifications.label }}</td>
+                <td>{{ form.send_notifications.errors }}{{ form.send_notifications }}</td>
+            </tr>
+        {% endif %}
         </tbody>
     </table>
 

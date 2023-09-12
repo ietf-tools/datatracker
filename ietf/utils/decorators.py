@@ -5,6 +5,7 @@
 import datetime
 
 from decorator import decorator, decorate
+from functools import wraps
 
 from django.conf import settings
 from django.contrib.auth import login
@@ -39,56 +40,58 @@ def person_required(f, request, *args, **kwargs):
         return render(request, 'registration/missing_person.html')
     return  f(request, *args, **kwargs)
 
-@decorator
-def require_api_key(f, request, *args, **kwargs):
-    
-    def err(code, text):
-        return HttpResponse(text, status=code, content_type='text/plain')
-    # Check method and get hash
-    if request.method == 'POST':
-        hash = request.POST.get('apikey')
-    elif request.method == 'GET':
-        hash = request.GET.get('apikey')
-    else:
-        return err(405, "Method not allowed")
-    if not hash:
-        return err(400, "Missing apikey parameter")
-    # Check hash
-    key = PersonalApiKey.validate_key(force_bytes(hash))
-    if not key:
-        return err(403, "Invalid apikey")
-    # Check endpoint
-    urlpath = request.META.get('PATH_INFO')
-    if not (urlpath and urlpath == key.endpoint):
-        return err(400, "Apikey endpoint mismatch") 
-    # Check time since regular login
-    person = key.person
-    last_login = person.user.last_login
-    if not person.user.is_staff:
-        time_limit = (timezone.now() - datetime.timedelta(days=settings.UTILS_APIKEY_GUI_LOGIN_LIMIT_DAYS))
-        if last_login == None or last_login < time_limit:
-            return err(400, "Too long since last regular login")
-    # Log in
-    login(request, person.user)
-    # restore the user.last_login field, so it reflects only gui logins
-    person.user.last_login = last_login
-    person.user.save()
-    # Update stats
-    key.count += 1
-    key.latest = timezone.now()
-    key.save()
-    PersonApiKeyEvent.objects.create(person=person, type='apikey_login', key=key, desc="Logged in with key ID %s, endpoint %s" % (key.id, key.endpoint))
-    # Execute decorated function
-    try:
-        ret = f(request, *args, **kwargs)
-    except AttributeError as e:
-        log.log("Bad API call: args: %s, kwargs: %s, exception: %s" % (args, kwargs, e))
-        return err(400, "Bad or missing parameters")
-    return ret
+
+def require_api_key(f):
+    @wraps(f)
+    def _wrapper(request, *args, **kwargs):
+        def err(code, text):
+            return HttpResponse(text, status=code, content_type='text/plain')
+        # Check method and get hash
+        if request.method == 'POST':
+            hash = request.POST.get('apikey')
+        elif request.method == 'GET':
+            hash = request.GET.get('apikey')
+        else:
+            return err(405, "Method not allowed")
+        if not hash:
+            return err(400, "Missing apikey parameter")
+        # Check hash
+        key = PersonalApiKey.validate_key(force_bytes(hash))
+        if not key:
+            return err(403, "Invalid apikey")
+        # Check endpoint
+        urlpath = request.META.get('PATH_INFO')
+        if not (urlpath and urlpath == key.endpoint):
+            return err(400, "Apikey endpoint mismatch") 
+        # Check time since regular login
+        person = key.person
+        last_login = person.user.last_login
+        if not person.user.is_staff:
+            time_limit = (timezone.now() - datetime.timedelta(days=settings.UTILS_APIKEY_GUI_LOGIN_LIMIT_DAYS))
+            if last_login == None or last_login < time_limit:
+                return err(400, "Too long since last regular login")
+        # Log in
+        login(request, person.user)
+        # restore the user.last_login field, so it reflects only gui logins
+        person.user.last_login = last_login
+        person.user.save()
+        # Update stats
+        key.count += 1
+        key.latest = timezone.now()
+        key.save()
+        PersonApiKeyEvent.objects.create(person=person, type='apikey_login', key=key, desc="Logged in with key ID %s, endpoint %s" % (key.id, key.endpoint))
+        # Execute decorated function
+        try:
+            ret = f(request, *args, **kwargs)
+        except AttributeError as e:
+            log.log("Bad API call: args: %s, kwargs: %s, exception: %s" % (args, kwargs, e))
+            return err(400, "Bad or missing parameters")
+        return ret
+    return _wrapper
 
 
 def _memoize(func, self, *args, **kwargs):
-    ''''Memoize wrapper for instance methouds.  Use @lru_cache for functions.'''
+    '''Memoize wrapper for instance methods.  Use @lru_cache for functions.'''
     if kwargs:  # frozenset is used to ensure hashability
         key = args, frozenset(list(kwargs.items()))
     else:

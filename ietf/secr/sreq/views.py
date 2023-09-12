@@ -3,6 +3,7 @@
 
 
 import datetime
+import inflect
 from collections import defaultdict, OrderedDict
 
 from django.conf import settings
@@ -24,14 +25,13 @@ from ietf.secr.sreq.forms import (SessionForm, ToolStatusForm, allowed_conflicti
 from ietf.secr.utils.decorators import check_permissions
 from ietf.secr.utils.group import get_my_groups
 from ietf.utils.mail import send_mail
-from ietf.person.models import Person
 from ietf.mailtrigger.utils import gather_address_lists
 
 # -------------------------------------------------
 # Globals
 # -------------------------------------------------
 # TODO: This needs to be replaced with something that pays attention to groupfeatures
-AUTHORIZED_ROLES=('WG Chair','WG Secretary','RG Chair','IAB Group Chair','Area Director','Secretariat','Team Chair','IRTF Chair','Program Chair','Program Lead','Program Secretary')
+AUTHORIZED_ROLES=('WG Chair','WG Secretary','RG Chair','IAB Group Chair','Area Director','Secretariat','Team Chair','IRTF Chair','Program Chair','Program Lead','Program Secretary', 'EDWG Chair')
 
 # -------------------------------------------------
 # Helper Functions
@@ -105,18 +105,29 @@ def get_lock_message(meeting=None):
         meeting = get_meeting(days=14)
     return meeting.session_request_lock_message
 
-def get_requester_text(person,group):
-    '''
-    This function takes a Person object and a Group object and returns the text to use in the
-    session request notification email, ie. Joe Smith, a Chair of the ancp working group
-    '''
-    roles = group.role_set.filter(name__in=('chair','secr'),person=person)
+
+def get_requester_text(person, group):
+    """
+    This function takes a Person object and a Group object and returns the text to use
+    in the session request notification email, ie. Joe Smith, a Chair of the ancp
+    working group
+    """
+    roles = group.role_set.filter(name__in=("chair", "secr", "ad"), person=person)
     if roles:
-        return '%s, a %s of the %s working group' % (person.ascii, roles[0].name, group.acronym)
-    if group.parent and group.parent.role_set.filter(name='ad',person=person):
-        return '%s, a %s Area Director' % (person.ascii, group.parent.acronym.upper())
-    if person.role_set.filter(name='secr',group__acronym='secretariat'):
-        return '%s, on behalf of the %s working group' % (person.ascii, group.acronym)
+        rolename = str(roles[0].name)
+        return "%s, %s of the %s %s" % (
+            person.name,
+            inflect.engine().a(rolename),
+            group.acronym.upper(),
+            group.type.verbose_name,
+        )
+    if person.role_set.filter(name="secr", group__acronym="secretariat"):
+        return "%s, on behalf of the %s %s" % (
+            person.name,
+            group.acronym.upper(),
+            group.type.verbose_name,
+        )
+
 
 def save_conflicts(group, meeting, conflicts, name):
     '''
@@ -288,7 +299,7 @@ def confirm(request, acronym):
     if len(group.features.session_purposes) == 0:
         raise Http404(f'Cannot request sessions for group "{acronym}"')
     meeting = get_meeting(days=14)
-    form = SessionForm(group, meeting, request.POST, hidden=True)
+    form = SessionForm(group, meeting, request.POST, hidden=True, notifications_optional=has_role(request.user, "Secretariat"))
     form.is_valid()
 
     login = request.user.person
@@ -366,15 +377,16 @@ def confirm(request, acronym):
         add_event_info_to_session_qs(Session.objects.filter(group=group, meeting=meeting)).filter(current_status='notmeet').delete()
 
         # send notification
-        session_data['outbound_conflicts'] = [f"{d['name']}: {d['groups']}" for d in outbound_conflicts]
-        send_notification(
-            group,
-            meeting,
-            login,
-            session_data,
-            [sf.cleaned_data for sf in form.session_forms[:num_sessions]],
-            'new',
-        )
+        if form.cleaned_data.get("send_notifications"):
+            session_data['outbound_conflicts'] = [f"{d['name']}: {d['groups']}" for d in outbound_conflicts]
+            send_notification(
+                group,
+                meeting,
+                login,
+                session_data,
+                [sf.cleaned_data for sf in form.session_forms[:num_sessions]],
+                'new',
+            )
 
         status_text = 'IETF Agenda to be scheduled'
         messages.success(request, 'Your request has been sent to %s' % status_text)
@@ -385,22 +397,12 @@ def confirm(request, acronym):
         outbound=outbound_conflicts,  # each is a dict with name and groups as keys
         inbound=inbound_session_conflicts_as_string(group, meeting),
     )
-
     return render(request, 'sreq/confirm.html', {
         'form': form,
         'session': session_data,
         'group': group,
         'session_conflicts': session_conflicts},
     )
-
-#Move this into make_initial
-def add_essential_people(group,initial):
-    # This will be easier when the form uses Person instead of Email
-    people = set()
-    if 'bethere' in initial:
-        people.update(initial['bethere'])
-    people.update(Person.objects.filter(role__group=group, role__name__in=['chair','ad']))
-    initial['bethere'] = list(people)
     
 
 def session_changed(session):
@@ -449,7 +451,7 @@ def edit(request, acronym, num=None):
         if button_text == 'Cancel':
             return redirect('ietf.secr.sreq.views.view', acronym=acronym)
 
-        form = SessionForm(group, meeting, request.POST, initial=initial)
+        form = SessionForm(group, meeting, request.POST, initial=initial, notifications_optional=has_role(request.user, "Secretariat"))
         if form.is_valid():
             if form.has_changed():
                 changed_session_forms = [sf for sf in form.session_forms.forms_to_keep if sf.has_changed()]
@@ -540,17 +542,18 @@ def edit(request, acronym, num=None):
                 #add_session_activity(group,'Session Request was updated',meeting,user)
 
                 # send notification
-                outbound_conflicts = get_outbound_conflicts(form)
-                session_data = form.cleaned_data.copy()  # do not add things to the original cleaned_data
-                session_data['outbound_conflicts'] = [f"{d['name']}: {d['groups']}" for d in outbound_conflicts]
-                send_notification(
-                    group,
-                    meeting,
-                    login,
-                    session_data,
-                    [sf.cleaned_data for sf in form.session_forms.forms_to_keep],
-                    'update',
-                )
+                if form.cleaned_data.get("send_notifications"):
+                    outbound_conflicts = get_outbound_conflicts(form)
+                    session_data = form.cleaned_data.copy()  # do not add things to the original cleaned_data
+                    session_data['outbound_conflicts'] = [f"{d['name']}: {d['groups']}" for d in outbound_conflicts]
+                    send_notification(
+                        group,
+                        meeting,
+                        login,
+                        session_data,
+                        [sf.cleaned_data for sf in form.session_forms.forms_to_keep],
+                        'update',
+                    )
 
             messages.success(request, 'Session Request updated')
             return redirect('ietf.secr.sreq.views.view', acronym=acronym)
@@ -565,7 +568,7 @@ def edit(request, acronym, num=None):
 
         if not sessions:
             return redirect('ietf.secr.sreq.views.new', acronym=acronym)
-        form = SessionForm(group, meeting, initial=initial)
+        form = SessionForm(group, meeting, initial=initial, notifications_optional=has_role(request.user, "Secretariat"))
 
     return render(request, 'sreq/edit.html', {
         'is_locked': is_locked and not has_role(request.user,'Secretariat'),
@@ -665,7 +668,7 @@ def new(request, acronym):
         if button_text == 'Cancel':
             return redirect('ietf.secr.sreq.views.main')
 
-        form = SessionForm(group, meeting, request.POST)
+        form = SessionForm(group, meeting, request.POST, notifications_optional=has_role(request.user, "Secretariat"))
         if form.is_valid():
             return confirm(request, acronym)
 
@@ -686,15 +689,13 @@ def new(request, acronym):
             return redirect('ietf.secr.sreq.views.new', acronym=acronym)
 
         initial = get_initial_session(previous_sessions, prune_conflicts=True)
-        add_essential_people(group,initial)
         if 'resources' in initial:
             initial['resources'] = [x.pk for x in initial['resources']]
-        form = SessionForm(group, meeting, initial=initial)
+        form = SessionForm(group, meeting, initial=initial, notifications_optional=has_role(request.user, "Secretariat"))
 
     else:
         initial={}
-        add_essential_people(group,initial)
-        form = SessionForm(group, meeting, initial=initial)
+        form = SessionForm(group, meeting, initial=initial, notifications_optional=has_role(request.user, "Secretariat"))
 
     return render(request, 'sreq/new.html', {
         'meeting': meeting,
@@ -729,6 +730,7 @@ def no_session(request, acronym):
         requested_duration=datetime.timedelta(0),
         type_id='regular',
         purpose_id='regular',
+        has_onsite_tool=group.features.acts_like_wg,
     )
     SchedulingEvent.objects.create(
         session=session,

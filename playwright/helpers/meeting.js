@@ -22,7 +22,7 @@ const sessionsWithWebex = [3, 4]
 // Use constant randomness seed
 seedrandom(TEST_SEED.toString(), { global: true })
 faker.seed(TEST_SEED)
-const { sample, sampleSize } = _.runInContext()
+const { random, sample, sampleSize } = _.runInContext()
 
 /**
  * Generate area response from label + children
@@ -60,7 +60,7 @@ function createGroup ({ label, mayBeBof = false, toggledBy = [] }) {
   }
 
   // 10% chance of BoF, if enabled
-  const isBof = mayBeBof && faker.mersenne.rand(100, 0) < 10
+  const isBof = mayBeBof && random(0, 100) < 10
   if (isBof) {
     toggledBy.push('bof')
   }
@@ -121,6 +121,7 @@ let lastSessionId = 25000
 let lastRecordingId = 150000
 function createEvent ({
   name = '',
+  slotName = '',
   startDateTime,
   duration = '1h',
   area,
@@ -138,7 +139,7 @@ function createEvent ({
 }, floors) {
   const floor = sample(floors)
   const room = hasLocation ? sample(floor.rooms) : { name: 'Somewhere' }
-  const eventName = name ?? faker.lorem.sentence(faker.mersenne.rand(5, 2))
+  const eventName = name ?? faker.lorem.sentence(random(2, 5))
   return {
     id: ++lastEventId,
     sessionId: ++lastSessionId,
@@ -152,6 +153,7 @@ function createEvent ({
     acronym: group.keyword,
     duration: typeof duration === 'string' ? ms(duration) / 1000 : duration,
     name: eventName,
+    slotName: slotName,
     startDateTime: startDateTime.toISO({ includeOffset: false, suppressMilliseconds: true }),
     status,
     type,
@@ -162,7 +164,7 @@ function createEvent ({
       'hackathon-sessc'
     ],
     groupAcronym: group.keyword,
-    groupName: faker.lorem.sentence(faker.mersenne.rand(5, 2)),
+    groupName: faker.lorem.sentence(random(2, 5)),
     groupParent: {
       acronym: area.keyword
     },
@@ -213,11 +215,11 @@ module.exports = {
         break
       }
       case 'future': {
-        startDate = DateTime.fromISO(faker.date.future(1).toISOString(), { zone: 'Asia/Tokyo' }).startOf('week').minus({ days: 2 })
+        startDate = DateTime.fromISO(faker.date.future({ years: 1 }).toISOString(), { zone: 'Asia/Tokyo' }).startOf('week').minus({ days: 2 })
         break
       }
       default: {
-        startDate = DateTime.fromISO(faker.date.past(5, DateTime.utc().minus({ months: 3 }), { zone: 'Asia/Tokyo' }).toISOString()).startOf('week').minus({ days: 2 })
+        startDate = DateTime.fromISO(faker.date.past({ years: 5, refDate: DateTime.utc().minus({ months: 3 }) }).toISOString(), { zone: 'Asia/Tokyo' }).startOf('week').minus({ days: 2 })
         break
       }
     }
@@ -234,13 +236,13 @@ module.exports = {
         short: `L${floorIdx}`,
         width: floor.width,
         height: floor.height,
-        rooms: _.times(faker.mersenne.rand(10, 5), (ridx) => {
+        rooms: _.times(random(5, 10), (ridx) => {
           const roomName = `${faker.science.chemicalElement().name} ${floorIdx}-${ridx + 1}`
           // Keep 10% margin on each side
           const roomXUnit = Math.round(floor.width / 10)
           const roomYUnit = Math.round(floor.height / 10)
-          const roomX = faker.mersenne.rand(roomXUnit * 8, roomXUnit)
-          const roomY = faker.mersenne.rand(roomYUnit * 8, roomYUnit)
+          const roomX = random(roomXUnit, roomXUnit * 8)
+          const roomY = random(roomYUnit, roomYUnit * 8)
           return {
             id: floorIdx * 100 + ridx,
             name: roomName,
@@ -267,7 +269,7 @@ module.exports = {
       for (const area of firstAreasNames) {
         firstAreas.push(createArea({
           label: area,
-          children: _.times(faker.mersenne.rand(25, 2), (idx) => {
+          children: _.times(random(2, 25), (idx) => {
             return createGroup({ mayBeBof: true })
           })
         }))
@@ -280,7 +282,7 @@ module.exports = {
       for (const area of ['UVW', 'XYZ0']) {
         secondAreas.push(createArea({
           label: area,
-          children: _.times(faker.mersenne.rand(25, 2), (idx) => {
+          children: _.times(random(2, 25), (idx) => {
             return createGroup({ mayBeBof: true })
           })
         }))
@@ -514,7 +516,7 @@ module.exports = {
         _.times(8, () => { // 8 lanes per session time
           const { area, ...group } = daySessions.pop()
           schedule.push(createEvent({
-            name: 'Session I',
+            slotName: 'Session I',
             startDateTime: curDay.set({ hour: 10 }),
             duration: '2h',
             type: 'regular',
@@ -543,7 +545,7 @@ module.exports = {
         _.times(8, () => { // 8 lanes per session time
           const { area, ...group } = daySessions.pop()
           schedule.push(createEvent({
-            name: 'Session II',
+            slotName: 'Session II',
             startDateTime: curDay.set({ hour: 13, minute: 30 }),
             duration: '1h',
             type: 'regular',
@@ -574,7 +576,7 @@ module.exports = {
           _.times(8, () => { // 8 lanes per session time
             const { area, ...group } = daySessions.pop()
             schedule.push(createEvent({
-              name: 'Session III',
+              slotName: 'Session III',
               startDateTime: curDay.set({ hour: 15 }),
               duration: '2h',
               type: 'regular',
@@ -618,10 +620,10 @@ module.exports = {
     return {
       meeting: {
         number: '123',
-        city: faker.address.cityName(),
+        city: faker.location.city(),
         startDate: startDate.toISODate(),
         endDate: endDate.toISODate(),
-        updated: faker.date.between(startDate.toISO(), endDate.toISO()).toISOString(),
+        updated: faker.date.between({ from: startDate.toISO(), to: endDate.toISO() }).toISOString(),
         timezone: 'Asia/Tokyo',
         infoNote: faker.lorem.paragraph(4),
         warningNote: ''

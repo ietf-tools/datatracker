@@ -5,31 +5,10 @@ from ietf.settings import *                                          # pyflakes:
 
 ALLOWED_HOSTS = ['*']
 
-DATABASES = {
-    'default': {
-        'HOST': 'db',
-        'PORT': 3306,
-        'NAME': 'ietf_utf8',
-        'ENGINE': 'django.db.backends.mysql',
-        'USER': 'django',
-        'PASSWORD': 'RkTkDPFnKpko',
-        'OPTIONS': {
-            'sql_mode': 'STRICT_TRANS_TABLES',
-            'init_command': 'SET storage_engine=InnoDB; SET names "utf8"',
-        },
-    },
-}
-
-DATABASE_TEST_OPTIONS = {
-    'init_command': 'SET storage_engine=InnoDB',
-}
+from ietf.settings_postgresqldb import DATABASES   # pyflakes:ignore
 
 IDSUBMIT_IDNITS_BINARY = "/usr/local/bin/idnits"
-IDSUBMIT_REPOSITORY_PATH = "test/id/"
 IDSUBMIT_STAGING_PATH = "test/staging/"
-INTERNET_DRAFT_ARCHIVE_DIR = "test/archive/"
-INTERNET_ALL_DRAFTS_ARCHIVE_DIR = "test/archive/"
-RFC_PATH = "test/rfc/"
 
 AGENDA_PATH = '/assets/www6s/proceedings/'
 MEETINGHOST_LOGO_PATH = AGENDA_PATH
@@ -60,17 +39,22 @@ INTERNAL_IPS = [".".join(ip.split(".")[:-1] + ["1"]) for ip in ips] + ['127.0.0.
 #    'ietf.context_processors.sql_debug',
 # ]
 
-DOCUMENT_PATH_PATTERN = '/assets/ietf-ftp/{doc.type_id}/'
+DOCUMENT_PATH_PATTERN = '/assets/ietfdata/doc/{doc.type_id}/'
 INTERNET_DRAFT_PATH = '/assets/ietf-ftp/internet-drafts/'
 RFC_PATH = '/assets/ietf-ftp/rfc/'
 CHARTER_PATH = '/assets/ietf-ftp/charter/'
 BOFREQ_PATH = '/assets/ietf-ftp/bofreq/'
 CONFLICT_REVIEW_PATH = '/assets/ietf-ftp/conflict-reviews/'
 STATUS_CHANGE_PATH = '/assets/ietf-ftp/status-changes/'
-INTERNET_DRAFT_ARCHIVE_DIR = '/assets/ietf-ftp/internet-drafts/'
-INTERNET_ALL_DRAFTS_ARCHIVE_DIR = '/assets/ietf-ftp/internet-drafts/'
+INTERNET_DRAFT_ARCHIVE_DIR = '/assets/archive/id'
+INTERNET_ALL_DRAFTS_ARCHIVE_DIR = '/assets/archive/id'
+BIBXML_BASE_PATH = '/assets/ietfdata/derived/bibxml'
+IDSUBMIT_REPOSITORY_PATH = INTERNET_DRAFT_PATH
 
 NOMCOM_PUBLIC_KEYS_DIR = 'data/nomcom_keys/public_keys/'
 SLIDE_STAGING_PATH = 'test/staging/'
 
 DE_GFM_BINARY = '/usr/local/bin/de-gfm'
+
+STATIC_IETF_ORG = "/_static"
+STATIC_IETF_ORG_INTERNAL = "http://static"

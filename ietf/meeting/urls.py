@@ -1,8 +1,8 @@
 # Copyright The IETF Trust 2007-2020, All Rights Reserved
 
-from django.conf.urls import include
-from django.views.generic import RedirectView
 from django.conf import settings
+from django.urls import include
+from django.views.generic import RedirectView
 
 from ietf.meeting import views, views_proceedings
 from ietf.utils.urls import url
@@ -10,8 +10,7 @@ from ietf.utils.urls import url
 class AgendaRedirectView(RedirectView):
     ignore_kwargs = ('owner', 'name')
     def get_redirect_url(self, *args, **kwargs):
-        for kwarg in self.ignore_kwargs:
-            kwargs.pop(kwarg, None)
+        kwargs = {k: v for k, v in kwargs.items() if v is not None and k not in self.ignore_kwargs}
         return super().get_redirect_url(*args, **kwargs)
 
 safe_for_all_meeting_types = [
@@ -69,8 +68,7 @@ type_interim_patterns = [
 
 type_ietf_only_patterns_id_optional = [
     url(r'^agenda(?P<utc>-utc)?(?P<ext>\.html)?/?$', views.agenda, name='agenda'),
-    url(r'^agenda(?P<ext>\.txt)$', views.agenda_plain),
-    url(r'^agenda(?P<ext>\.csv)$', views.agenda_plain),
+    url(r'^agenda(?P<utc>-utc)?(?P<ext>\.txt|\.csv)$', views.agenda_plain),
     url(r'^agenda/edit$',
         RedirectView.as_view(pattern_name='ietf.meeting.views.edit_meeting_schedule', permanent=True),
         name='ietf.meeting.views.edit_meeting_schedule'),
@@ -79,10 +77,10 @@ type_ietf_only_patterns_id_optional = [
     url(r'^agenda/agenda\.ics$', views.agenda_ical),
     url(r'^agenda\.ics$', views.agenda_ical),
     url(r'^agenda.json$', views.agenda_json),
-    url(r'^agenda/week-view(?:.html)?/?$', RedirectView.as_view(pattern_name='agenda', permanent=True)),
+    url(r'^agenda/week-view(?:.html)?/?$', AgendaRedirectView.as_view(pattern_name='agenda', permanent=True)),
     url(r'^floor-plan/?$', views.agenda, name='floor-plan'),
     url(r'^floor-plan/(?P<floor>[-a-z0-9_]+)/?$', RedirectView.as_view(pattern_name='floor-plan', permanent=True)),
-    url(r'^week-view(?:.html)?/?$', RedirectView.as_view(pattern_name='agenda', permanent=True)),
+    url(r'^week-view(?:.html)?/?$', AgendaRedirectView.as_view(pattern_name='agenda', permanent=True)),
     url(r'^materials(?:.html)?/?$', views.materials),
     url(r'^request_minutes/?$', views.request_minutes),
     url(r'^materials/%(document)s((?P<ext>\.[a-z0-9]+)|/)?$' % settings.URL_REGEXPS, views.materials_document),
@@ -92,7 +90,7 @@ type_ietf_only_patterns_id_optional = [
     url(r'^proceedings/acknowledgements/$', views.proceedings_acknowledgements),
     url(r'^proceedings/attendees/$', views.proceedings_attendees),
     url(r'^proceedings/overview/$', views.proceedings_overview),
-    url(r'^proceedings/progress-report/$', views.proceedings_progress_report),
+    url(r'^proceedings/activity-report/$', views.proceedings_activity_report),
     url(r'^proceedings/materials/$', views_proceedings.material_details),
     url(r'^proceedings/materials/(?P<material_type>[a-z_]+)/$', views_proceedings.edit_material),
     url(r'^proceedings/materials/(?P<material_type>[a-z_]+)/new/$', views_proceedings.upload_material),
@@ -113,7 +111,6 @@ type_ietf_only_patterns_id_optional = [
 urlpatterns = [
     # First patterns which start with unique strings
     url(r'^$', views.current_materials),
-    url(r'^ajax/get-utc/?$', views.ajax_get_utc),
     url(r'^interim/announce/?$', views.interim_announce),
     url(r'^interim/announce/(?P<number>[A-Za-z0-9._+-]+)/?$', views.interim_send_announcement),
     url(r'^interim/skip_announce/(?P<number>[A-Za-z0-9._+-]+)/?$', views.interim_skip_announcement),

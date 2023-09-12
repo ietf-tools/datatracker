@@ -1,6 +1,6 @@
 # Copyright The IETF Trust 2021, All Rights Reserved
 # For an overview of this process and context, see:
-# https://trac.ietf.org/trac/ietfdb/wiki/MeetingConstraints
+# https://github.com/ietf-tools/datatracker/wiki/MeetingConstraints
 from __future__ import absolute_import, print_function, unicode_literals
 
 import calendar
@@ -14,6 +14,7 @@ import time
 from collections import defaultdict
 from functools import lru_cache
 from typing import NamedTuple, Optional
+from warnings import warn
 
 from django.contrib.humanize.templatetags.humanize import intcomma
 from django.core.management.base import BaseCommand, CommandError
@@ -24,6 +25,8 @@ import debug                            # pyflakes:ignore
 from ietf.person.models import Person
 from ietf.meeting import models
 from ietf.meeting.helpers import get_person_by_email
+from ietf.name.models import SessionPurposeName
+
 
 # 40 runs of the optimiser for IETF 106 with cycles=160 resulted in 16
 # zero-violation invocations, with a mean number of runs of 91 and 
@@ -71,18 +74,31 @@ class Command(BaseCommand):
                                 'Base schedule for generated schedule, specified as "[owner/]name"'
                                 ' (default is no base schedule; owner not required if name is unique)'
                             ))
+        parser.add_argument('-p', '--purpose',
+                            dest='purposes',
+                            action='append',
+                            choices=[
+                                spn.slug for spn in SessionPurposeName.objects.all()
+                                if 'regular' in spn.timeslot_types  # scheduler only works with "regular" timeslots
+                            ],
+                            default=None,
+                            help=(
+                                'Limit scheduling to specified purpose '
+                                '(use option multiple times to specify more than one purpose; default is all purposes)'
+                            ))
 
-    def handle(self, meeting, name, max_cycles, verbosity, base_id, *args, **kwargs):
-        ScheduleHandler(self.stdout, meeting, name, max_cycles, verbosity, base_id).run()
+    def handle(self, meeting, name, max_cycles, verbosity, base_id, purposes, *args, **kwargs):
+        ScheduleHandler(self.stdout, meeting, name, max_cycles, verbosity, base_id, purposes).run()
 
 
 class ScheduleHandler(object):
     def __init__(self, stdout, meeting_number, name=None, max_cycles=OPTIMISER_MAX_CYCLES,
-                 verbosity=1, base_id=None):
+                 verbosity=1, base_id=None, session_purposes=None):
         self.stdout = stdout
         self.verbosity = verbosity
         self.name = name
         self.max_cycles = max_cycles
+        self.session_purposes = session_purposes
         if meeting_number:
             try:
                 self.meeting = models.Meeting.objects.get(type="ietf", number=meeting_number)
@@ -113,6 +129,10 @@ class ScheduleHandler(object):
                 msgs.append('Applying schedule {} as base schedule'.format(ScheduleId.from_schedule(self.base_schedule)))
             self.stdout.write('\n{}\n\n'.format('\n'.join(msgs)))
         self._load_meeting()
+        if len(self.schedule.sessions) == 0:
+            raise CommandError('No sessions found to schedule')
+        if len(self.schedule.timeslots) == 0:
+            raise CommandError('No timeslots found for schedule')
 
     def run(self):
         """Schedule all sessions"""
@@ -170,9 +190,7 @@ class ScheduleHandler(object):
           * sunday timeslots
           *  timeslots used by the base schedule, if any
         """
-        # n.b., models.TimeSlot is not the same as TimeSlot!
-        timeslots_db = models.TimeSlot.objects.filter(
-            meeting=self.meeting,
+        timeslots_db = self.meeting.timeslot_set.that_can_be_scheduled().filter(
             type_id='regular',
         ).exclude(
             location__capacity=None,
@@ -183,10 +201,9 @@ class ScheduleHandler(object):
         else:
             fixed_timeslots = timeslots_db.filter(pk__in=self.base_schedule.qs_timeslots_in_use())
         free_timeslots = timeslots_db.exclude(pk__in=fixed_timeslots)
-
-        timeslots = {TimeSlot(t, self.verbosity) for t in free_timeslots.select_related('location')}
+        timeslots = {DatatrackerTimeSlot(t, verbosity=self.verbosity) for t in free_timeslots.select_related('location')}
         timeslots.update(
-            TimeSlot(t, self.verbosity, is_fixed=True) for t in fixed_timeslots.select_related('location')
+            DatatrackerTimeSlot(t, verbosity=self.verbosity, is_fixed=True) for t in fixed_timeslots.select_related('location')
         )
         return {t for t in timeslots if t.day != 'sunday'}
 
@@ -195,12 +212,9 @@ class ScheduleHandler(object):
 
         Extra arguments are passed to the Session constructor.
         """
-        sessions_db = models.Session.objects.filter(
-            meeting=self.meeting,
-            type_id='regular',
-            schedulingevent__status_id='schedw',
-        )
-
+        sessions_db = self.meeting.session_set.that_can_be_scheduled().filter(type_id='regular')
+        if self.session_purposes is not None:
+            sessions_db = sessions_db.filter(purpose__slug__in=self.session_purposes)
         if self.base_schedule is None:
             fixed_sessions = models.Session.objects.none()
         else:
@@ -225,15 +239,17 @@ class ScheduleHandler(object):
             for bc in models.BusinessConstraint.objects.all()
         }
 
-        timeslots = self._available_timeslots()
-        for timeslot in timeslots:
-            timeslot.store_relations(timeslots)
-
         sessions = self._sessions_to_schedule(business_constraint_costs, self.verbosity)
         for session in sessions:
             # The complexity of a session also depends on how many
             # sessions have declared a conflict towards this session.
             session.update_complexity(sessions)
+
+        timeslots = self._available_timeslots()
+        for _ in range(len(sessions) - len(timeslots)):
+            timeslots.add(GeneratorTimeSlot(verbosity=self.verbosity))
+        for timeslot in timeslots:
+            timeslot.store_relations(timeslots)
 
         self.schedule = Schedule(
             self.stdout,
@@ -270,9 +286,9 @@ class Schedule(object):
 
     def __str__(self):
         return 'Schedule ({} timeslots, {} sessions, {} scheduled, {} in base schedule)'.format(
-            len(self.timeslots),
+            sum(1 for ts in self.timeslots if ts.is_scheduled),
             len(self.sessions),
-            len(self.schedule),
+            sum(1 for ts in self.schedule if ts.is_scheduled),
             len(self.base_schedule) if self.base_schedule else 0,
         )
 
@@ -280,9 +296,13 @@ class Schedule(object):
         """Pretty print the schedule"""
         last_day = None
         sched = dict(self.schedule)
-        if include_base:
+        if include_base and self.base_schedule is not None:
             sched.update(self.base_schedule)
-        for slot in sorted(sched, key=lambda ts: ts.start):
+        timeslots = {'scheduled': [], 'unscheduled': []}
+        for ts in self.timeslots:
+            timeslots['scheduled' if ts.is_scheduled else 'unscheduled'].append(ts)
+
+        for slot in sorted(timeslots['scheduled'], key=lambda ts: ts.start):
             if last_day != slot.start.date():
                 last_day = slot.start.date()
                 print("""
@@ -293,8 +313,15 @@ class Schedule(object):
             print('{}: {}{}'.format(
                 models.TimeSlot.objects.get(pk=slot.timeslot_pk),
                 models.Session.objects.get(pk=sched[slot].session_pk),
-                ' [BASE]' if slot in self.base_schedule else '',
+                ' [BASE]' if self.base_schedule and slot in self.base_schedule else '',
             ))
+
+        print("""
+-----------------
+ Unscheduled
+-----------------""")
+        for slot in timeslots['unscheduled']:
+            print(' * {}'.format(models.Session.objects.get(pk=sched[slot].session_pk)))
 
     @property
     def fixed_cost(self):
@@ -328,12 +355,13 @@ class Schedule(object):
 
     def save_assignments(self, schedule_db):
         for timeslot, session in self.schedule.items():
-            models.SchedTimeSessAssignment.objects.create(
-                timeslot_id=timeslot.timeslot_pk,
-                session_id=session.session_pk,
-                schedule=schedule_db,
-                badness=session.last_cost,
-            )
+            if timeslot.is_scheduled:
+                models.SchedTimeSessAssignment.objects.create(
+                    timeslot_id=timeslot.timeslot_pk,
+                    session_id=session.session_pk,
+                    schedule=schedule_db,
+                    badness=session.last_cost,
+                )
     
     def adjust_for_timeslot_availability(self):
         """
@@ -352,9 +380,15 @@ class Schedule(object):
                                .format(num_to_schedule, num_free_timeslots))
     
         def make_capacity_adjustments(t_attr, s_attr):
-            availables = [getattr(timeslot, t_attr) for timeslot in self.free_timeslots]
+            availables = [getattr(timeslot, t_attr) for timeslot in self.free_timeslots if timeslot.is_scheduled]
             availables.sort()
             sessions = sorted(self.free_sessions, key=lambda s: getattr(s, s_attr), reverse=True)
+            # If we have timeslots with is_scheduled == False, len(availables) may be < len(sessions).
+            # Add duplicates of the largest capacity timeslot to make up the difference. This will
+            # still report violations where there is *no* timeslot available that accommodates a session
+            # but will not check that there are *enough* timeslots for the number of long sessions.
+            n_unscheduled = len(sessions) - len(availables)
+            availables.extend([availables[-1]] * n_unscheduled)  # availables is sorted, so [-1] is max
             violations, cost = [], 0
             for session in sessions:
                 found_fit = False
@@ -446,9 +480,16 @@ class Schedule(object):
         For initial scheduling, it is not a hard requirement that the timeslot is long
         or large enough, though that will be preferred due to the lower cost.
         """
+        n_free_sessions = len(list(self.free_sessions))
+        n_free_scheduled_slots = sum(1 for sl in self.free_timeslots if sl.is_scheduled)
         if self.verbosity >= 2:
-            self.stdout.write('== Initial scheduler starting, scheduling {} sessions in {} timeslots =='
-                              .format(len(list(self.free_sessions)), len(list(self.free_timeslots))))
+            self.stdout.write(
+                f'== Initial scheduler starting, scheduling {n_free_sessions} sessions in {n_free_scheduled_slots} timeslots =='
+            )
+        if self.verbosity >= 1 and n_free_sessions > n_free_scheduled_slots:
+            self.stdout.write(
+                f'WARNING: fewer timeslots ({n_free_scheduled_slots}) than sessions ({n_free_sessions}). Some sessions will not be scheduled.'
+            )
         sessions = sorted(self.free_sessions, key=lambda s: s.complexity, reverse=True)
 
         for session in sessions:
@@ -458,14 +499,20 @@ class Schedule(object):
             def timeslot_preference(t):
                 proposed_schedule = self.schedule.copy()
                 proposed_schedule[t] = session
-                return self.calculate_dynamic_cost(proposed_schedule)[1], t.duration, t.capacity
-
+                return (
+                    self.calculate_dynamic_cost(proposed_schedule)[1],
+                    t.duration if t.is_scheduled else datetime.timedelta(hours=1000),  # unscheduled slots sort to the end
+                    t.capacity if t.is_scheduled else math.inf,  # unscheduled slots sort to the end
+                )
             possible_slots.sort(key=timeslot_preference)
             self._schedule_session(session, possible_slots[0])
             if self.verbosity >= 3:
-                self.stdout.write('Scheduled {} at {} in location {}'
-                                  .format(session.group, possible_slots[0].start,
-                                          possible_slots[0].location_pk))
+                if possible_slots[0].is_scheduled:
+                    self.stdout.write('Scheduled {} at {} in location {}'
+                                      .format(session.group, possible_slots[0].start,
+                                              possible_slots[0].location_pk))
+                else:
+                    self.stdout.write('Scheduled {} in unscheduled slot')
 
     def optimise_schedule(self):
         """
@@ -487,9 +534,10 @@ class Schedule(object):
         best_cost = math.inf
         shuffle_next_run = False
         last_run_cost = None
-        switched_with = None
-        
-        for run_count in range(1, self.max_cycles+1):
+        run_count = 0
+
+        for _ in range(self.max_cycles):
+            run_count += 1
             items = list(self.schedule.items())
             random.shuffle(items)
 
@@ -585,7 +633,7 @@ class Schedule(object):
         """
         optimised_timeslots = set()
         for timeslot in list(self.schedule.keys()):
-            if timeslot in optimised_timeslots or timeslot.is_fixed:
+            if timeslot in optimised_timeslots or timeslot.is_fixed or not timeslot.is_scheduled:
                 continue
             timeslot_overlaps = sorted(timeslot.full_overlaps, key=lambda t: t.capacity, reverse=True)
             sessions_overlaps = [self.schedule.get(t) for t in timeslot_overlaps]
@@ -629,7 +677,7 @@ class Schedule(object):
             del proposed_schedule[timeslot1]
         return self.calculate_dynamic_cost(proposed_schedule)[1]
 
-    def _switch_sessions(self, timeslot1, timeslot2):
+    def _switch_sessions(self, timeslot1, timeslot2) -> Optional['Session']:
         """
         Switch the sessions currently in timeslot1 and timeslot2.
         If timeslot2 had a session scheduled, returns that Session instance.
@@ -637,11 +685,11 @@ class Schedule(object):
         session1 = self.schedule.get(timeslot1)
         session2 = self.schedule.get(timeslot2)
         if timeslot1 == timeslot2:
-            return False
+            return None
         if session1 and not session1.fits_in_timeslot(timeslot2):
-            return False
+            return None
         if session2 and not session2.fits_in_timeslot(timeslot1):
-            return False
+            return None
         if session1:
             self.schedule[timeslot2] = session1
         elif session2:
@@ -658,15 +706,43 @@ class Schedule(object):
             self.best_schedule = self.schedule.copy()
 
 
-class TimeSlot(object):
-    """
-    This TimeSlot class is analogous to the TimeSlot class in the models,
-    i.e. it represents a timeframe in a particular location.
-    """
-    def __init__(self, timeslot_db, verbosity, is_fixed=False):
+class GeneratorTimeSlot:
+    """Representation of a timeslot for the schedule generator"""
+    def __init__(self, *, verbosity=0, is_fixed=False):
         """Initialise this object from a TimeSlot model instance."""
         self.verbosity = verbosity
         self.is_fixed = is_fixed
+        self.overlaps = set()
+        self.full_overlaps = set()
+        self.adjacent = set()
+        self.start = None
+        self.day = None
+        self.time_group = 'Unscheduled'
+
+    @property
+    def is_scheduled(self):
+        """Will this timeslot appear on a schedule?"""
+        return self.start is not None
+
+    def store_relations(self, other_timeslots):
+        pass  # no relations
+
+    def has_space_for(self, attendees):
+        return True  # unscheduled time slots can support any number of attendees
+
+    def has_time_for(self, duration):
+        return True  # unscheduled time slots are long enough for any session
+
+
+class DatatrackerTimeSlot(GeneratorTimeSlot):
+    """TimeSlot on the schedule
+
+    This DatatrackerTimeSlot class is analogous to the TimeSlot class in the models,
+    i.e. it represents a timeframe in a particular location.
+    """
+    def __init__(self, timeslot_db, **kwargs):
+        """Initialise this object from a TimeSlot model instance."""
+        super().__init__(**kwargs)
         self.timeslot_pk = timeslot_db.pk
         self.location_pk = timeslot_db.location.pk
         self.capacity = timeslot_db.location.capacity
@@ -675,33 +751,38 @@ class TimeSlot(object):
         self.end = self.start + self.duration
         self.day = calendar.day_name[self.start.weekday()].lower()
         if self.start.time() < datetime.time(12, 30):
-            self.time_of_day = 'morning'
+            time_of_day = 'morning'
         elif self.start.time() < datetime.time(15, 30):
-            self.time_of_day = 'afternoon-early'
+            time_of_day = 'afternoon-early'
         else:
-            self.time_of_day = 'afternoon-late'
-        self.time_group = self.day + '-' + self.time_of_day
-        self.overlaps = set()
-        self.full_overlaps = set()
-        self.adjacent = set()
+            time_of_day = 'afternoon-late'
+        self.time_group = f'{self.day}-{time_of_day}'
+
+    def has_space_for(self, attendees):
+        return self.capacity >= attendees
+
+    def has_time_for(self, duration):
+        return self.duration >= duration
 
     def store_relations(self, other_timeslots):
         """
         Store relations to all other timeslots. This should be called
-        after all TimeSlot objects have been created. This allows fast
-        lookups of which TimeSlot objects overlap or are adjacent.
+        after all DatatrackerTimeSlot objects have been created. This allows fast
+        lookups of which DatatrackerTimeSlot objects overlap or are adjacent.
         Note that there is a distinction between an overlap, meaning
         at least part of the timeslots occur during the same time,
         and a full overlap, meaning the start and end time are identical.
         """
         for other in other_timeslots:
+            if other == self or not other.is_scheduled:
+                continue  # no relations with self or unscheduled sessions
             if any([
                 self.start < other.start < self.end,
                 self.start < other.end < self.end,
                 self.start >= other.start and self.end <= other.end,
-            ]) and other != self:
+            ]):
                 self.overlaps.add(other)
-            if self.start == other.start and self.end == other.end and other != self:
+            if self.start == other.start and self.end == other.end:
                 self.full_overlaps.add(other)
             if (
                 abs(self.start - other.end) <= datetime.timedelta(minutes=30) or
@@ -712,7 +793,7 @@ class TimeSlot(object):
 
 class Session(object):
     """
-    This TimeSlot class is analogous to the Session class in the models,
+    This Session class is analogous to the Session class in the models,
     i.e. it represents a single session to be scheduled. It also pulls
     in data about constraints, group parents, etc.
     """
@@ -810,7 +891,7 @@ class Session(object):
             ])
 
     def fits_in_timeslot(self, timeslot):
-        return self.attendees <= timeslot.capacity and self.requested_duration <= timeslot.duration
+        return timeslot.has_space_for(self.attendees) and timeslot.has_time_for(self.requested_duration)
 
     def calculate_cost(self, schedule, my_timeslot, overlapping_sessions, my_sessions, include_fixed=False):
         """
@@ -820,7 +901,7 @@ class Session(object):
         The functionality is split into a few methods, to optimise caching.
         
         overlapping_sessions is a list of Session objects
-        my_sessions is an iterable of tuples, each tuple containing a TimeSlot and a Session
+        my_sessions is an iterable of tuples, each tuple containing a GeneratorTimeSlot and a Session
 
         The return value is a tuple of violations (list of strings) and a cost (integer).        
         """
@@ -832,11 +913,11 @@ class Session(object):
         )
 
         if include_fixed or (not self.is_fixed):
-            if self.attendees > my_timeslot.capacity:
+            if not my_timeslot.has_space_for(self.attendees):
                 violations.append('{}: scheduled in too small room'.format(self.group))
                 cost += self.business_constraint_costs['session_requires_trim']
 
-            if self.requested_duration > my_timeslot.duration:
+            if not my_timeslot.has_time_for(self.requested_duration):
                 violations.append('{}: scheduled in too short timeslot'.format(self.group))
                 cost += self.business_constraint_costs['session_requires_trim']
 
@@ -937,7 +1018,7 @@ class Session(object):
     def _calculate_cost_my_other_sessions(self, my_sessions):
         """Calculate cost due to other sessions for same group
 
-        my_sessions is a set of (TimeSlot, Session) tuples.
+        my_sessions is a set of (GeneratorTimeSlot, Session) tuples.
         """
         def sort_sessions(timeslot_session_pairs):
             return sorted(timeslot_session_pairs, key=lambda item: item[1].session_pk)
@@ -953,9 +1034,18 @@ class Session(object):
                 cost += self.business_constraint_costs['sessions_out_of_order']
                 
             if self.time_relation:
-                group_days = [t.start.date() for t, s in my_sessions]
-                # ignore conflict between two fixed sessions
-                if not (my_sessions[0][1].is_fixed and my_sessions[1][1].is_fixed):
+                if len(my_sessions) != 2:
+                    # This is not expected to happen. Alert the user if it comes up but proceed -
+                    # the violation scoring may be incorrect but the scheduler won't fail because of this.
+                    warn('"time relation" constraint only makes sense for 2 sessions but {} has {}'
+                         .format(self.group, len(my_sessions)))
+
+                if all(session.is_fixed for _, session in my_sessions):
+                    pass  # ignore conflict between fixed sessions
+                elif not all(timeslot.is_scheduled for timeslot, _ in my_sessions):
+                    pass  # ignore constraint if one or both sessions is unscheduled
+                else:
+                    group_days = [timeslot.start.date() for timeslot, _ in my_sessions]
                     difference_days = abs((group_days[1] - group_days[0]).days)
                     if self.time_relation == 'subsequent-days' and difference_days != 1:
                         violations.append('{}: has time relation subsequent-days but difference is {}'

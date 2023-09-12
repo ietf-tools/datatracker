@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2016-2020, All Rights Reserved
+# Copyright The IETF Trust 2016-2023, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -14,10 +14,11 @@ from django.utils import timezone
 
 from ietf.doc.models import ( Document, DocEvent, NewRevisionDocEvent, DocAlias, State, DocumentAuthor,
     StateDocEvent, BallotPositionDocEvent, BallotDocEvent, BallotType, IRSGBallotDocEvent, TelechatDocEvent,
-    DocumentActionHolder, BofreqEditorDocEvent, BofreqResponsibleDocEvent )
+    DocumentActionHolder, BofreqEditorDocEvent, BofreqResponsibleDocEvent, DocExtResource )
 from ietf.group.models import Group
 from ietf.person.factories import PersonFactory
 from ietf.group.factories import RoleFactory
+from ietf.name.models import ExtResourceName
 from ietf.utils.text import xslugify
 from ietf.utils.timezone import date_today
 
@@ -34,6 +35,7 @@ def draft_name_generator(type_id,group,n):
 class BaseDocumentFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Document
+        skip_postgeneration_save = True
 
     title = factory.Faker('sentence',nb_words=5)
     abstract = factory.Faker('paragraph', nb_sentences=5)
@@ -328,6 +330,7 @@ class ReviewFactory(BaseDocumentFactory):
 class DocAliasFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = DocAlias
+        skip_postgeneration_save = True
 
     @factory.post_generation
     def document(self, create, extracted, **kwargs):
@@ -377,6 +380,7 @@ class NewRevisionDocEventFactory(DocEventFactory):
 class StateDocEventFactory(DocEventFactory):
     class Meta:
         model = StateDocEvent
+        skip_postgeneration_save = True
 
     type = 'changed_state'
     state_type_id = 'draft-iesg'
@@ -450,6 +454,7 @@ class WgDocumentAuthorFactory(DocumentAuthorFactory):
 class BofreqEditorDocEventFactory(DocEventFactory):
     class Meta:
         model = BofreqEditorDocEvent
+        skip_postgeneration_save = True
 
     type = "changed_editors"
     doc = factory.SubFactory('ietf.doc.factories.BofreqFactory')
@@ -464,10 +469,12 @@ class BofreqEditorDocEventFactory(DocEventFactory):
         else:
             obj.editors.set(PersonFactory.create_batch(3))
         obj.desc = f'Changed editors to {", ".join(obj.editors.values_list("name",flat=True)) or "(None)"}'
+        obj.save()
 
 class BofreqResponsibleDocEventFactory(DocEventFactory):
     class Meta:
         model = BofreqResponsibleDocEvent
+        skip_postgeneration_save = True
 
     type = "changed_responsible"
     doc = factory.SubFactory('ietf.doc.factories.BofreqFactory')
@@ -482,7 +489,8 @@ class BofreqResponsibleDocEventFactory(DocEventFactory):
         else:
             ad = RoleFactory(group__type_id='area',name_id='ad').person
             obj.responsible.set([ad])
-        obj.desc = f'Changed responsible leadership to {", ".join(obj.responsible.values_list("name",flat=True)) or "(None)"}'        
+        obj.desc = f'Changed responsible leadership to {", ".join(obj.responsible.values_list("name",flat=True)) or "(None)"}'
+        obj.save()        
 
 class BofreqFactory(BaseDocumentFactory):
     type_id = 'bofreq'
@@ -520,3 +528,86 @@ class ProceedingsMaterialDocFactory(BaseDocumentFactory):
                 obj.set_state(State.objects.get(type_id=state_type_id,slug=state_slug))
         else:
             obj.set_state(State.objects.get(type_id='procmaterials', slug='active'))
+
+class DocExtResourceFactory(factory.django.DjangoModelFactory):
+
+    name = factory.Iterator(ExtResourceName.objects.filter(type_id='url'))
+    value = factory.Faker('url')
+    doc = factory.SubFactory('ietf.doc.factories.BaseDocumentFactory')
+    class Meta:
+        model = DocExtResource
+
+class EditorialDraftFactory(BaseDocumentFactory):
+
+    type_id = 'draft'
+    group = factory.SubFactory('ietf.group.factories.GroupFactory',acronym='rswg', type_id='edwg')
+    stream_id = 'editorial'
+
+    @factory.post_generation
+    def states(obj, create, extracted, **kwargs):
+        if not create:
+            return
+        if extracted:
+            for (state_type_id,state_slug) in extracted:
+                obj.set_state(State.objects.get(type_id=state_type_id,slug=state_slug))
+            if not obj.get_state('draft-iesg'):
+                obj.set_state(State.objects.get(type_id='draft-iesg',slug='idexists'))
+        else:
+            obj.set_state(State.objects.get(type_id='draft',slug='active'))
+            obj.set_state(State.objects.get(type_id='draft-stream-editorial',slug='active'))
+            obj.set_state(State.objects.get(type_id='draft-iesg',slug='idexists'))
+
+class EditorialRfcFactory(RgDraftFactory):
+
+    alias2 = factory.RelatedFactory('ietf.doc.factories.DocAliasFactory','document',name=factory.Sequence(lambda n: 'rfc%04d'%(n+1000)))
+
+    std_level_id = 'inf'
+
+    @factory.post_generation
+    def states(obj, create, extracted, **kwargs):
+        if not create:
+            return
+        if extracted:
+            for (state_type_id,state_slug) in extracted:
+                obj.set_state(State.objects.get(type_id=state_type_id,slug=state_slug))
+            if not obj.get_state('draft-stream-editorial'):
+                obj.set_state(State.objects.get(type_id='draft-stream-editorial', slug='pub'))
+            if not obj.get_state('draft-iesg'):
+                obj.set_state(State.objects.get(type_id='draft-iesg',slug='idexists'))
+        else:
+            obj.set_state(State.objects.get(type_id='draft',slug='rfc'))
+            obj.set_state(State.objects.get(type_id='draft-stream-editorial', slug='pub'))
+            obj.set_state(State.objects.get(type_id='draft-iesg',slug='idexists'))
+
+    @factory.post_generation
+    def reset_canonical_name(obj, create, extracted, **kwargs): 
+        if hasattr(obj, '_canonical_name'):
+            del obj._canonical_name
+        return None
+    
+class StatementFactory(BaseDocumentFactory):
+    type_id = "statement"
+    title = factory.Faker("sentence")
+    group = factory.SubFactory("ietf.group.factories.GroupFactory", acronym="iab")
+
+    name = factory.LazyAttribute(
+        lambda o: "statement-%s-%s" % (xslugify(o.group.acronym), xslugify(o.title))
+    )
+    uploaded_filename = factory.LazyAttribute(lambda o: f"{o.name}-{o.rev}.md")
+
+    published_statement_event = factory.RelatedFactory(
+        "ietf.doc.factories.DocEventFactory",
+        "doc",
+        type="published_statement",
+        time=timezone.now() - datetime.timedelta(days=1),
+    )
+
+    @factory.post_generation
+    def states(obj, create, extracted, **kwargs):
+        if not create:
+            return
+        if extracted:
+            for state_type_id, state_slug in extracted:
+                obj.set_state(State.objects.get(type_id=state_type_id, slug=state_slug))
+        else:
+            obj.set_state(State.objects.get(type_id="statement", slug="active"))

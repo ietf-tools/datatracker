@@ -94,7 +94,8 @@ def check_comments(encryped, plain, privatekey_file):
 
     decrypted_file.close()
     encrypted_file.close()
-    decrypted_comments = io.open(decrypted_file.name, 'rb').read().decode('utf-8')
+    with io.open(decrypted_file.name, 'rb') as fd:
+        decrypted_comments = fd.read().decode('utf-8')
     os.unlink(encrypted_file.name)
     os.unlink(decrypted_file.name)
 
@@ -116,7 +117,8 @@ def nomcom_test_data():
         nomcom_test_cert_file, privatekey_file = generate_cert()
 
     nomcom.public_key.storage = FileSystemStorage(location=settings.NOMCOM_PUBLIC_KEYS_DIR)
-    nomcom.public_key.save('cert', File(io.open(nomcom_test_cert_file.name, 'r')))
+    with io.open(nomcom_test_cert_file.name, 'r') as fd:
+        nomcom.public_key.save('cert', File(fd))
 
     # chair and member
     create_person(group, "chair", username=CHAIR_USER, email_address='%s%s'%(CHAIR_USER,EMAIL_DOMAIN))

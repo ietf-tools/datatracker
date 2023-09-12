@@ -12,6 +12,7 @@ import tempfile
 
 from collections import defaultdict
 from email import message_from_string, message_from_bytes
+from email.errors import HeaderParseError
 from email.header import decode_header
 from email.iterators import typed_subpart_iterator
 from email.utils import parseaddr
@@ -95,7 +96,7 @@ def get_user_email(user):
             if emails:
                 user._email_cache = emails[0]
                 for email in emails:
-                    if email.address == user.username:
+                    if email.address.lower() == user.username.lower():
                         user._email_cache = email
         else:
             try: 
@@ -172,6 +173,12 @@ def command_line_safe_secret(secret):
     return base64.encodebytes(secret).decode('utf-8').rstrip()
 
 def retrieve_nomcom_private_key(request, year):
+    """Retrieve decrypted nomcom private key from the session store
+
+    Retrieves encrypted, ascii-armored private key from the session store, encodes 
+    as utf8 bytes, then decrypts. Raises UnicodeError if the value in the session
+    store cannot be encoded as utf8.
+    """
     private_key = request.session.get('NOMCOM_PRIVATE_KEY_%s' % year, None)
 
     if not private_key:
@@ -183,7 +190,8 @@ def retrieve_nomcom_private_key(request, year):
             settings.OPENSSL_COMMAND,
             command_line_safe_secret(settings.NOMCOM_APP_SECRET)
         ),
-        private_key
+        # The openssl command expects ascii-armored input, so utf8 encoding should be valid
+        private_key.encode("utf8")
     )
     if code != 0:
         log("openssl error: %s:\n  Error %s: %s" %(command, code, error))        
@@ -191,6 +199,12 @@ def retrieve_nomcom_private_key(request, year):
 
 
 def store_nomcom_private_key(request, year, private_key):
+    """Put encrypted nomcom private key in the session store
+    
+    Encrypts the private key using openssl, then decodes the ascii-armored output
+    as utf8 and adds to the session store. Raises UnicodeError if the openssl's
+    output cannot be decoded as utf8.
+    """
     if not private_key:
         request.session['NOMCOM_PRIVATE_KEY_%s' % year] = ''
     else:
@@ -205,8 +219,9 @@ def store_nomcom_private_key(request, year, private_key):
         if code != 0:
             log("openssl error: %s:\n  Error %s: %s" %(command, code, error))        
         if error and error!=b"*** WARNING : deprecated key derivation used.\nUsing -iter or -pbkdf2 would be better.\n":
-            out = ''
-        request.session['NOMCOM_PRIVATE_KEY_%s' % year] = out
+            out = b''
+        # The openssl command output in 'out' is an ascii-armored value, so should be utf8-decodable
+        request.session['NOMCOM_PRIVATE_KEY_%s' % year] = out.decode("utf8")
 
 
 def validate_private_key(key):
@@ -428,7 +443,11 @@ def make_nomineeposition_for_newperson(nomcom, candidate_name, candidate_email, 
 def getheader(header_text, default="utf-8"):
     """Decode the specified header"""
 
-    tuples = decode_header(header_text)
+    try:
+        tuples = decode_header(header_text)
+    except TypeError:
+        return ""
+
     header_sections = [ text.decode(charset or default) if isinstance(text, bytes) else text for text, charset in tuples]
     return "".join(header_sections)
 
@@ -477,6 +496,9 @@ def parse_email(text):
     body = get_body(msg)
     subject = getheader(msg['Subject'])
     __, addr = parseaddr(msg['From'])
+    if not addr:
+        raise HeaderParseError
+
     return addr.lower(), subject, body
 
 
@@ -513,7 +535,7 @@ def list_eligible(nomcom=None, date=None, base_qs=None):
     elif eligibility_date.year in (2021,2022):
         return list_eligible_8989(date=eligibility_date, base_qs=base_qs)
     elif eligibility_date.year > 2022:
-        return list_eligible_8989bis(date=eligibility_date, base_qs=base_qs)
+        return list_eligible_9389(date=eligibility_date, base_qs=base_qs)
     else:
         return Person.objects.none()
 
@@ -531,7 +553,7 @@ def decorate_volunteers_with_qualifications(volunteers, nomcom=None, date=None, 
                 qualifications.append('path_2')
             if v.person in author_qs:
                 qualifications.append('path_3')
-            v.qualifications = ", ".join(qualifications)
+            v.qualifications = "+".join(qualifications)
     else:
         for v in volunteers:
             v.qualifications = ''
@@ -551,8 +573,8 @@ def list_eligible_8788(date, base_qs=None):
 def get_8989_eligibility_querysets(date, base_qs):
     return get_threerule_eligibility_querysets(date, base_qs, three_of_five_callable=three_of_five_eligible_8713)
 
-def get_8989bis_eligibility_querysets(date, base_qs):
-    return get_threerule_eligibility_querysets(date, base_qs, three_of_five_callable=three_of_five_eligible_8989bis)
+def get_9389_eligibility_querysets(date, base_qs):
+    return get_threerule_eligibility_querysets(date, base_qs, three_of_five_callable=three_of_five_eligible_9389)
 
 def get_threerule_eligibility_querysets(date, base_qs, three_of_five_callable):
     if not base_qs:
@@ -605,10 +627,10 @@ def list_eligible_8989(date, base_qs=None):
     author_pks = author_qs.values_list('pk',flat=True)
     return remove_disqualified(Person.objects.filter(pk__in=set(three_of_five_pks).union(set(officer_pks)).union(set(author_pks))))
 
-def list_eligible_8989bis(date, base_qs=None):
+def list_eligible_9389(date, base_qs=None):
     if not base_qs:
         base_qs = Person.objects.all()
-    three_of_five_qs, officer_qs, author_qs = get_8989bis_eligibility_querysets(date, base_qs)
+    three_of_five_qs, officer_qs, author_qs = get_9389_eligibility_querysets(date, base_qs)
     three_of_five_pks = three_of_five_qs.values_list('pk',flat=True)
     officer_pks = officer_qs.values_list('pk',flat=True)
     author_pks = author_qs.values_list('pk',flat=True)
@@ -653,12 +675,11 @@ def three_of_five_eligible_8713(previous_five, queryset=None):
         queryset = Person.objects.all()
     return queryset.filter(meetingregistration__meeting__in=list(previous_five),meetingregistration__attended=True).annotate(mtg_count=Count('meetingregistration')).filter(mtg_count__gte=3)
 
-def three_of_five_eligible_8989bis(previous_five, queryset=None):
+def three_of_five_eligible_9389(previous_five, queryset=None):
     """ Return a list of Person records who attended at least
         3 of the 5 type_id='ietf' meetings before the given
         date. Does not disqualify anyone based on held roles.
         This variant bases the calculation on Meeting.Session and MeetingRegistration.checked_in
-        Leadership will have to create a new RFC specifying eligibility (RFC8989 is timing out) before it can be used.
     """
     if queryset is None:
         queryset = Person.objects.all()

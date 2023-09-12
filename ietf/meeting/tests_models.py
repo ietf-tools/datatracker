@@ -5,8 +5,11 @@ import datetime
 
 from mock import patch
 
+from django.conf import settings
+from django.test import override_settings
+
 from ietf.group.factories import GroupFactory, GroupHistoryFactory
-from ietf.meeting.factories import MeetingFactory, SessionFactory, AttendedFactory
+from ietf.meeting.factories import MeetingFactory, SessionFactory, AttendedFactory, SessionPresentationFactory
 from ietf.stats.factories import MeetingRegistrationFactory
 from ietf.utils.test_utils import TestCase
 from ietf.utils.timezone import date_today, datetime_today
@@ -116,7 +119,30 @@ class MeetingTests(TestCase):
 
 
 class SessionTests(TestCase):
-    def test_chat_archive_url_with_jabber(self):
+    def test_chat_archive_url(self):
+        session = SessionFactory(
+            meeting__date=datetime.date.today(),
+            meeting__number=120,  # needs to use proceedings_format_version > 1
+        )
+        with override_settings():
+            if hasattr(settings, 'CHAT_ARCHIVE_URL_PATTERN'):
+                del settings.CHAT_ARCHIVE_URL_PATTERN
+            self.assertEqual(session.chat_archive_url(), session.chat_room_url())
+            settings.CHAT_ARCHIVE_URL_PATTERN = 'http://chat.example.com'
+            self.assertEqual(session.chat_archive_url(), 'http://chat.example.com')
+            chatlog = SessionPresentationFactory(session=session, document__type_id='chatlog').document
+            self.assertEqual(session.chat_archive_url(), chatlog.get_href())
+
         # datatracker 8.8.0 rolled out on 2022-07-15. Before that, chat logs were jabber logs hosted at www.ietf.org.
         session_with_jabber = SessionFactory(group__acronym='fakeacronym', meeting__date=datetime.date(2022,7,14))
         self.assertEqual(session_with_jabber.chat_archive_url(), 'https://www.ietf.org/jabber/logs/fakeacronym?C=M;O=D')
+        chatlog = SessionPresentationFactory(session=session_with_jabber, document__type_id='chatlog').document
+        self.assertEqual(session_with_jabber.chat_archive_url(), chatlog.get_href())
+
+    def test_chat_room_name(self):
+        session = SessionFactory(group__acronym='xyzzy')
+        self.assertEqual(session.chat_room_name(), 'xyzzy')
+        session.type_id = 'plenary'
+        self.assertEqual(session.chat_room_name(), 'plenary')
+        session.chat_room = 'fnord'
+        self.assertEqual(session.chat_room_name(), 'fnord')

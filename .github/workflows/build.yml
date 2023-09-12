@@ -1,11 +1,10 @@
 name: Build and Release
-run-name: ${{ github.event.inputs.publish == 'true' && '[Prod]' || '[Dev]' }} Build ${{ github.run_number }} of branch ${{ github.ref_name }} by @${{ github.actor }}
+run-name: ${{ github.ref_name == 'release' && '[Prod]' || '[Dev]' }} Build ${{ github.run_number }} of branch ${{ github.ref_name }} by @${{ github.actor }}
 
 on:
   push:
-    tags:
-      - '*'
-
+    branches: [release]
+    
   workflow_dispatch:
     inputs:
       summary:
@@ -13,15 +12,15 @@ on:
         required: false
         type: string
         default: ''
-      publish:
-        description: 'Create Production Release'
-        default: false
-        required: true
-        type: boolean
       sandbox:
         description: 'Deploy to Sandbox'
         default: true
         required: true
+        type: boolean
+      legacySandbox:
+        description: 'Deploy to Legacy Sandbox'
+        default: false
+        required: false
         type: boolean
       skiptests:
         description: 'Skip Tests'
@@ -35,11 +34,6 @@ on:
         type: boolean
       updateCoverage:
         description: 'Update Baseline Coverage'
-        default: false
-        required: true
-        type: boolean
-      dryrun:
-        description: 'Dry Run'
         default: false
         required: true
         type: boolean
@@ -57,33 +51,28 @@ jobs:
       from_tag: ${{ steps.semver.outputs.nextStrict }}
       to_tag: ${{ steps.semver.outputs.current }}
 
-    steps:
+    steps:   
     - uses: actions/checkout@v3
       with:
         fetch-depth: 0
-        
-    - name: Dry Run Notify
-      if: ${{ github.event.inputs.dryrun == 'true' }}
-      run: |
-        echo "::notice::This is a DRY RUN of a production release. No release will be created."
 
     - name: Get Next Version
-      if: ${{ github.event.inputs.publish == 'true' || github.event.inputs.dryrun == 'true' }}
+      if: ${{ github.ref_name == 'release' }}
       id: semver
       uses: ietf-tools/semver-action@v1
       with:
         token: ${{ github.token }}
-        branch: main
+        branch: release
         skipInvalidTags: true
         
     - name: Set Next Version Env Var
-      if: ${{ github.event.inputs.publish == 'true' || github.event.inputs.dryrun == 'true' }}
+      if: ${{ github.ref_name == 'release' }}
       run: |
         echo "NEXT_VERSION=$nextStrict" >> $GITHUB_ENV
         
     - name: Create Draft Release
-      uses: ncipollo/release-action@v1.11.1
-      if: ${{ github.event.inputs.publish == 'true' && github.event.inputs.dryrun == 'false' }}
+      uses: ncipollo/release-action@v1.13.0
+      if: ${{ github.ref_name == 'release' }}
       with:
         prerelease: true
         draft: false
@@ -101,200 +90,32 @@ jobs:
           echo "should_deploy=true" >> $GITHUB_OUTPUT
           echo "pkg_version=$NEXT_VERSION" >> $GITHUB_OUTPUT
           echo "::notice::Release $NEXT_VERSION created using branch $GITHUB_REF_NAME"
-        elif [[ "$GITHUB_REF" =~ ^refs/tags/* ]]; then
-          echo "Using TAG mode: $GITHUB_REF_NAME"
-          echo "should_deploy=true" >> $GITHUB_OUTPUT
-          echo "pkg_version=$GITHUB_REF_NAME" >> $GITHUB_OUTPUT
-          echo "::notice::Release $GITHUB_REF_NAME created using tag $GITHUB_REF_NAME"
         else
-          echo "Using TEST mode: 9.0.0-dev.$GITHUB_RUN_NUMBER"
+          echo "Using TEST mode: 11.0.0-dev.$GITHUB_RUN_NUMBER"
           echo "should_deploy=false" >> $GITHUB_OUTPUT
-          echo "pkg_version=9.0.0-dev.$GITHUB_RUN_NUMBER" >> $GITHUB_OUTPUT
-          echo "::notice::Non-production build 9.0.0-dev.$GITHUB_RUN_NUMBER created using branch $GITHUB_REF_NAME"
+          echo "pkg_version=11.0.0-dev.$GITHUB_RUN_NUMBER" >> $GITHUB_OUTPUT
+          echo "::notice::Non-production build 11.0.0-dev.$GITHUB_RUN_NUMBER created using branch $GITHUB_REF_NAME"
         fi
 
   # -----------------------------------------------------------------
   # TESTS
   # -----------------------------------------------------------------
-  tests-python:
-    name: Run Tests (Python)
-    if: ${{ github.event.inputs.skiptests == 'false' }}
+  
+  tests:
+    name: Run Tests
+    uses: ./.github/workflows/tests.yml
+    if: ${{ github.event.inputs.skiptests == 'false' || github.ref_name == 'release' }}
     needs: [prepare]
-    runs-on: ubuntu-latest
-    container: ghcr.io/ietf-tools/datatracker-app-base:latest
-    
-    services:
-      db:
-        image: ghcr.io/ietf-tools/datatracker-db:latest
-        volumes:
-            - mariadb-data:/var/lib/mysql
-        env:
-            MYSQL_ROOT_PASSWORD: ietf
-            MYSQL_DATABASE: ietf_utf8
-            MYSQL_USER: django
-            MYSQL_PASSWORD: RkTkDPFnKpko
-    
-    steps:
-    - uses: actions/checkout@v3
-    
-    - name: Prepare for tests
-      run: |
-        chmod +x ./dev/tests/prepare.sh
-        sh ./dev/tests/prepare.sh
-        
-    - name: Ensure DB is ready
-      run: |
-        /usr/local/bin/wait-for db:3306 -- echo "DB ready"
-        
-    - name: Run all tests
-      shell: bash
-      run: |
-        echo "Running checks..."
-        ./ietf/manage.py check
-        ./ietf/manage.py migrate
-        echo "Validating migrations..."
-        if ! ( ietf/manage.py makemigrations --dry-run --check --verbosity 3 ) ; then
-          echo "Model changes without migrations found."
-          exit 1
-        fi
-        echo "Running tests..."
-        if [[ "x${{ github.event.inputs.ignoreLowerCoverage }}" == "xtrue" ]]; then
-          echo "Lower coverage failures will be ignored."
-          ./ietf/manage.py test --settings=settings_sqlitetest --ignore-lower-coverage
-        else
-          ./ietf/manage.py test --settings=settings_sqlitetest
-        fi
-        coverage xml
+    with:
+      ignoreLowerCoverage: ${{ github.event.inputs.ignoreLowerCoverage == 'true' }}
 
-    - name: Upload Coverage Results to Codecov
-      uses: codecov/codecov-action@v2.1.0
-      with:
-        files: coverage.xml
-        
-    - name: Convert Coverage Results
-      if: ${{ always() }}
-      run: |
-        mv latest-coverage.json coverage.json
-        
-    - name: Upload Coverage Results as Build Artifact
-      uses: actions/upload-artifact@v3
-      if: ${{ always() }}
-      with:
-        name: coverage
-        path: coverage.json
-
-  tests-playwright:
-    name: Run Tests (Playwright)
-    if: ${{ github.event.inputs.skiptests == 'false' }}
-    needs: [prepare]
-    runs-on: macos-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        project: [chromium, firefox]
-    
-    steps:
-    - uses: actions/checkout@v3
-
-    - uses: actions/setup-node@v3
-      with:
-        node-version: '18'
-
-    - name: Run all tests
-      run: |
-        echo "Installing dependencies..."
-        yarn
-        echo "Installing Playwright..."
-        cd playwright
-        mkdir test-results
-        npm ci
-        npx playwright install --with-deps ${{ matrix.project }}
-        echo "Running tests..."
-        npx playwright test --project=${{ matrix.project }}
-        
-    - name: Upload Report
-      uses: actions/upload-artifact@v3
-      if: ${{ always() }}
-      continue-on-error: true
-      with:
-        name: playwright-results-${{ matrix.project }}
-        path: playwright/test-results/
-        if-no-files-found: ignore
-
-  tests-playwright-legacy:
-    name: Run Tests (Playwright Legacy)
-    if: ${{ github.event.inputs.skiptests == 'false' }}
-    needs: [prepare]
-    runs-on: ubuntu-latest
-    container: ghcr.io/ietf-tools/datatracker-app-base:latest
-    strategy:
-      fail-fast: false
-      matrix:
-        project: [chromium, firefox]
-    
-    services:
-      db:
-        image: ghcr.io/ietf-tools/datatracker-db:latest
-        volumes:
-            - mariadb-data:/var/lib/mysql
-        env:
-            MYSQL_ROOT_PASSWORD: ietf
-            MYSQL_DATABASE: ietf_utf8
-            MYSQL_USER: django
-            MYSQL_PASSWORD: RkTkDPFnKpko
-    
-    steps:
-    - uses: actions/checkout@v3
-    
-    - name: Prepare for tests
-      run: |
-        chmod +x ./dev/tests/prepare.sh
-        sh ./dev/tests/prepare.sh
-        
-    - name: Ensure DB is ready
-      run: |
-        /usr/local/bin/wait-for db:3306 -- echo "DB ready"
-        
-    - name: Start Datatracker
-      run: |
-        echo "Running checks..."
-        ./ietf/manage.py check
-        echo "Starting datatracker..."
-        ./ietf/manage.py runserver 0.0.0.0:8000 --settings=settings_local &
-        echo "Waiting for datatracker to be ready..."
-        /usr/local/bin/wait-for localhost:8000 -- echo "Datatracker ready"
-
-    - name: Run all tests
-      env:
-        # Required to get firefox to run as root:
-        HOME: ""
-      run: |
-        echo "Installing dependencies..."
-        yarn
-        echo "Installing Playwright..."
-        cd playwright
-        mkdir test-results
-        npm ci
-        npx playwright install --with-deps ${{ matrix.project }}
-        echo "Running tests..."
-        npx playwright test --project=${{ matrix.project }} -c playwright-legacy.config.js
-        
-    - name: Upload Report
-      uses: actions/upload-artifact@v3
-      if: ${{ always() }}
-      continue-on-error: true
-      with:
-        name: playwright-legacy-results-${{ matrix.project }}
-        path: playwright/test-results/
-        if-no-files-found: ignore
-        
   # -----------------------------------------------------------------
   # RELEASE
   # -----------------------------------------------------------------
   release:
     name: Make Release
-    if: ${{ always() }}
-    needs: [tests-python, tests-playwright, tests-playwright-legacy, prepare]
+    if: ${{ !failure() && !cancelled() }}
+    needs: [tests, prepare]
     runs-on: ubuntu-latest
     env:
       SHOULD_DEPLOY: ${{needs.prepare.outputs.should_deploy}}
@@ -318,8 +139,8 @@ jobs:
         python-version: '3.x'
         
     - name: Download a Coverage Results
-      if: ${{ github.event.inputs.skiptests == 'false' }}
-      uses: actions/download-artifact@v3.0.0
+      if: ${{ github.event.inputs.skiptests == 'false' || github.ref_name == 'release' }}
+      uses: actions/download-artifact@v3.0.2
       with:
         name: coverage
 
@@ -355,7 +176,7 @@ jobs:
     - name: Update CHANGELOG
       id: changelog
       uses: Requarks/changelog-action@v1
-      if: ${{ env.SHOULD_DEPLOY == 'true' && github.event.inputs.dryrun == 'false' }}
+      if: ${{ env.SHOULD_DEPLOY == 'true' }}
       with:
         token: ${{ github.token }}
         fromTag: ${{ env.FROM_TAG }}
@@ -363,14 +184,14 @@ jobs:
         writeToFile: false
 
     - name: Prepare Coverage Action
-      if: ${{ github.event.inputs.skiptests == 'false' }}
+      if: ${{ github.event.inputs.skiptests == 'false' || github.ref_name == 'release' }}
       working-directory: ./dev/coverage-action
       run: npm install
         
     - name: Process Coverage Stats + Chart
       id: covprocess
       uses: ./dev/coverage-action/
-      if: ${{ github.event.inputs.skiptests == 'false' }}
+      if: ${{ github.event.inputs.skiptests == 'false' || github.ref_name == 'release' }}
       with:
         token: ${{ github.token }}
         tokenCommon: ${{ secrets.GH_COMMON_TOKEN }}
@@ -382,10 +203,11 @@ jobs:
         histCoveragePath: historical-coverage.json
         
     - name: Create Release
-      uses: ncipollo/release-action@v1.11.1
-      if: ${{ env.SHOULD_DEPLOY == 'true' && github.event.inputs.dryrun == 'false' }}
+      uses: ncipollo/release-action@v1.13.0
+      if: ${{ env.SHOULD_DEPLOY == 'true' }}
       with:
         allowUpdates: true
+        makeLatest: true
         draft: false
         tag: ${{ env.PKG_VERSION }}
         name: ${{ env.PKG_VERSION }}
@@ -394,11 +216,10 @@ jobs:
         token: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Update Baseline Coverage
-      uses: ncipollo/release-action@v1.12.0
-      if: ${{ github.event.inputs.updateCoverage == 'true' && github.event.inputs.dryrun == 'false' }}
+      uses: ncipollo/release-action@v1.13.0
+      if: ${{ github.event.inputs.updateCoverage == 'true' }}
       with:
         allowUpdates: true
-        makeLatest: true
         tag: baseline
         omitBodyDuringUpdate: true
         omitNameDuringUpdate: true
@@ -413,14 +234,61 @@ jobs:
         name: release-${{ env.PKG_VERSION }}
         path: /home/runner/work/release/release.tar.gz
         
-    - name: Notify on Slack
-      if: ${{ always() }}
-      uses: slackapi/slack-github-action@v1.23.0
+  # -----------------------------------------------------------------
+  # NOTIFY
+  # -----------------------------------------------------------------
+  notify:
+    name: Notify
+    if: ${{ always() }}
+    needs: [prepare, tests, release]
+    runs-on: ubuntu-latest
+    env:
+      PKG_VERSION: ${{needs.prepare.outputs.pkg_version}}
+        
+    steps:      
+    - name: Notify on Slack (Success)
+      if: ${{ !contains(join(needs.*.result, ','), 'failure') }}
+      uses: slackapi/slack-github-action@v1.24.0
       with:
         channel-id: ${{ secrets.SLACK_GH_BUILDS_CHANNEL_ID }}
         payload: |
           {
-            "text": "Datatracker - Build <https://github.com/ietf-tools/datatracker/actions/runs/${{ github.run_id }}|${{ env.PKG_VERSION }}> by ${{ github.triggering_actor }} completed - <@${{ secrets.SLACK_UID_RJSPARKS }}>"
+            "text": "Datatracker Build <https://github.com/ietf-tools/datatracker/actions/runs/${{ github.run_id }}|${{ env.PKG_VERSION }}> by ${{ github.triggering_actor }} - <@${{ secrets.SLACK_UID_RJSPARKS }}>",
+            "attachments": [
+              {
+                "color": "28a745",
+                "fields": [
+                  {
+                    "title": "Status",
+                    "short": true,
+                    "value": "Completed"
+                  }
+                ]
+              }
+            ]
+          }
+      env:
+        SLACK_BOT_TOKEN: ${{ secrets.SLACK_GH_BOT }}
+    - name: Notify on Slack (Failure)
+      if: ${{ contains(join(needs.*.result, ','), 'failure') }}
+      uses: slackapi/slack-github-action@v1.24.0
+      with:
+        channel-id: ${{ secrets.SLACK_GH_BUILDS_CHANNEL_ID }}
+        payload: |
+          {
+            "text": "Datatracker Build <https://github.com/ietf-tools/datatracker/actions/runs/${{ github.run_id }}|${{ env.PKG_VERSION }}> by ${{ github.triggering_actor }} - <@${{ secrets.SLACK_UID_RJSPARKS }}>",
+            "attachments": [
+              {
+                "color": "a82929",
+                "fields": [
+                  {
+                    "title": "Status",
+                    "short": true,
+                    "value": "Failed"
+                  }
+                ]
+              }
+            ]
           }
       env:
         SLACK_BOT_TOKEN: ${{ secrets.SLACK_GH_BOT }}
@@ -430,9 +298,11 @@ jobs:
   # -----------------------------------------------------------------
   sandbox:
     name: Deploy to Sandbox
-    if: ${{ always() && github.event.inputs.sandbox == 'true' }}
+    if: ${{ !failure() && !cancelled() && github.event.inputs.sandbox == 'true' }}
     needs: [prepare, release]
     runs-on: [self-hosted, dev-server]
+    environment:
+      name: sandbox
     env:
       PKG_VERSION: ${{needs.prepare.outputs.pkg_version}}
       
@@ -440,7 +310,7 @@ jobs:
     - uses: actions/checkout@v3
         
     - name: Download a Release Artifact
-      uses: actions/download-artifact@v3.0.0
+      uses: actions/download-artifact@v3.0.2
       with:
         name: release-${{ env.PKG_VERSION }}
         
@@ -462,3 +332,62 @@ jobs:
         DEBIAN_FRONTEND: noninteractive
       run: |
         docker image prune -a -f
+        
+  legacySandbox:
+    name: Deploy to Legacy Sandbox
+    if: ${{ !failure() && !cancelled() && github.event.inputs.legacySandbox == 'true' }}
+    needs: [prepare, release]
+    runs-on: [self-hosted, legacy-sandbox-server]
+    environment:
+      name: legacy-sandbox
+      url: "https://sandbox.ietf.org"
+    env:
+      PKG_VERSION: ${{needs.prepare.outputs.pkg_version}}
+      
+    steps:
+    - name: Download a Release Artifact
+      uses: actions/download-artifact@v3.0.2
+      with:
+        name: release-${{ env.PKG_VERSION }}
+        path: /a/www/ietf-datatracker/main.dev.${{ github.run_number }}
+
+    - name: Extract Release
+      env:
+        DEBIAN_FRONTEND: noninteractive
+      working-directory: /a/www/ietf-datatracker/main.dev.${{ github.run_number }}
+      run: |
+        echo "Extracting release tarball..."
+        tar xzf release.tar.gz
+        echo "Deleting release tarball..."
+        rm -rf release.tar.gz
+        
+    - name: Setup Environment
+      env:
+        DEBIAN_FRONTEND: noninteractive
+      working-directory: /a/www/ietf-datatracker/main.dev.${{ github.run_number }}
+      run: |
+        echo "Copying settings from previous deploy..."
+        cp ../web/ietf/settings_local.py ietf/
+        rsync -a ../web/test/ test/
+        echo "Installing Python dependencies..."
+        python3.9 -mvenv env
+        source env/bin/activate
+        pip install -r requirements.txt
+        pip freeze > frozen-requirements.txt
+        echo "Collecting static..."
+        ietf/manage.py collectstatic
+        echo "Running checks..."
+        ietf/manage.py check
+        
+    - name: Update Docker Containers
+      env:
+        DEBIAN_FRONTEND: noninteractive
+      working-directory: /a/docker/datatracker
+      run: |
+        echo "Pulling latest docker images..."
+        docker image tag ghcr.io/ietf-tools/datatracker-celery:latest datatracker-celery-fallback
+        docker image tag ghcr.io/ietf-tools/datatracker-mq:latest datatracker-mq-fallback
+        docker-compose pull
+        # echo "Shutting down containers..."
+        # docker-compose down -t 300
+        

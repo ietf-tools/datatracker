@@ -7,7 +7,8 @@
 import oidc_provider.lib.claims
 
 
-from functools import wraps
+from functools import wraps, WRAPPER_ASSIGNMENTS
+from urllib.parse import quote as urlquote
 
 from django.conf import settings
 from django.contrib.auth import REDIRECT_FIELD_NAME
@@ -15,8 +16,6 @@ from django.core.exceptions import PermissionDenied
 from django.db.models import Q
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404
-from django.utils.decorators import available_attrs
-from django.utils.http import urlquote
 
 import debug                            # pyflakes:ignore
 
@@ -67,6 +66,7 @@ def has_role(user, role_names, *args, **kwargs):
             "IETF Chair": Q(person=person, name="chair", group__acronym="ietf"),
             "IETF Trust Chair": Q(person=person, name="chair", group__acronym="ietf-trust"),
             "IRTF Chair": Q(person=person, name="chair", group__acronym="irtf"),
+            "RSAB Chair": Q(person=person, name="chair", group__acronym="rsab"),
             "IAB Chair": Q(person=person, name="chair", group__acronym="iab"),
             "IAB Executive Director": Q(person=person, name="execdir", group__acronym="iab"),
             "IAB Group Chair": Q(person=person, name="chair", group__type="iab", group__state="active"),
@@ -81,6 +81,7 @@ def has_role(user, role_names, *args, **kwargs):
             "Program Lead": Q(person=person,name="lead", group__type="program", group__state="active"),
             "Program Secretary": Q(person=person,name="secr", group__type="program", group__state="active"),
             "Program Chair": Q(person=person,name="chair", group__type="program", group__state="active"),
+            "EDWG Chair": Q(person=person, name="chair", group__type="edwg", group__state="active"),
             "Nomcom Chair": Q(person=person, name="chair", group__type="nomcom", group__acronym__icontains=kwargs.get('year', '0000')),
             "Nomcom Advisor": Q(person=person, name="advisor", group__type="nomcom", group__acronym__icontains=kwargs.get('year', '0000')),
             "Nomcom": Q(person=person, group__type="nomcom", group__acronym__icontains=kwargs.get('year', '0000')),
@@ -90,6 +91,7 @@ def has_role(user, role_names, *args, **kwargs):
             "Reviewer": Q(person=person, name="reviewer", group__state="active"),
             "Review Team Secretary": Q(person=person, name="secr", group__reviewteamsettings__isnull=False,group__state="active", ),
             "IRSG Member": (Q(person=person, name="member", group__acronym="irsg") | Q(person=person, name="chair", group__acronym="irtf") | Q(person=person, name="atlarge", group__acronym="irsg")),
+            "RSAB Member": Q(person=person, name="member", group__acronym="rsab"), 
             "Robot": Q(person=person, name="robot", group__acronym="secretariat"),
             }
 
@@ -110,7 +112,7 @@ def passes_test_decorator(test_func, message):
     error. The test function should be on the form fn(user) ->
     true/false."""
     def decorate(view_func):
-        @wraps(view_func, assigned=available_attrs(view_func))
+        @wraps(view_func, assigned=WRAPPER_ASSIGNMENTS)
         def inner(request, *args, **kwargs):
             if not request.user.is_authenticated:
                 return HttpResponseRedirect('%s?%s=%s' % (settings.LOGIN_URL, REDIRECT_FIELD_NAME, urlquote(request.get_full_path())))
@@ -163,6 +165,10 @@ def is_authorized_in_doc_stream(user, doc):
         if doc.group.type.slug == 'individ':
             docman_roles = GroupFeatures.objects.get(type_id="ietf").docman_roles
         group_req = Q(group__acronym=doc.stream.slug)
+    elif doc.stream.slug == "editorial":
+        group_req = Q(group=doc.group) | Q(group__acronym='rsab')
+        if doc.group.type.slug in ("individ", "edappr"):
+            docman_roles = GroupFeatures.objects.get(type_id="edappr").docman_roles
     else:
         group_req = Q()  # no group constraint for other cases
 
@@ -217,7 +223,7 @@ def is_bofreq_editor(user, doc):
 def openid_userinfo(claims, user):
     # Populate claims dict.
     person = get_object_or_404(Person, user=user)
-    email = person.email()
+    email = person.email_allowing_inactive()
     if person.photo:
         photo_url = person.cdn_photo_url()
     else:
@@ -295,3 +301,24 @@ class OidcExtraScopeClaims(oidc_provider.lib.claims.ScopeClaims):
 
         return info
             
+def can_request_rfc_publication(user, doc):
+    """Answers whether this user has an appropriate role to send this document to the RFC Editor for publication as an RFC.
+
+    This not take anything but the stream of the document into account.
+
+    NOTE: This intentionally always returns False for IETF stream documents.
+    The publication request process for the IETF stream is handled by the 
+    secretariat at ietf.doc.views_ballot.approve_ballot"""
+
+    if doc.stream_id == "irtf":
+        return has_role(user, ("Secretariat", "IRTF Chair"))
+    elif doc.stream_id == "editorial":
+        return has_role(user, ("Secretariat", "RSAB Chair"))
+    elif doc.stream_id == "ise":
+        return has_role(user, ("Secretariat", "ISE"))
+    elif doc.stream_id == "iab":
+        return has_role(user, ("Secretariat", "IAB Chair"))
+    elif doc.stream_id == "ietf":
+        return False # See the docstring
+    else:
+        return False

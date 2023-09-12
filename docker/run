@@ -37,12 +37,22 @@ while getopts "hp:r" opt; do
     esac
 done
 
+# Ensure the run script is in our directory.
+dirname=$(dirname $0)
+if [ "$dirname" = "." -o "$dirname" = "" ] ; then
+    :
+else
+    echo "Changing to directory $dirname"
+    cd $dirname || exit 1
+fi
+
 # Remove mounted temp directories
 rm -rf .parcel-cache __pycache__
 
 # Create extended docker-compose definition
-cp docker-compose.extend.yml docker-compose.extend-custom.yml
-sed -i -r -e "s/CUSTOM_PORT/$CUSTOM_PORT/" docker-compose.extend-custom.yml
+sed -e "s/CUSTOM_PORT/$CUSTOM_PORT/" \
+	<docker-compose.extend.yml \
+	>docker-compose.extend-custom.yml
 cd ..
 
 # Set UID/GID mappings

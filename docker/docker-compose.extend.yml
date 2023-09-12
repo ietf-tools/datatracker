@@ -14,7 +14,10 @@ services:
             - app-assets:/assets
     db:
         ports:
-            - '3306'
+            - '5432'
+    pgadmin:
+        ports:
+            - '5433'
     celery:
         volumes:
             - .:/workspace

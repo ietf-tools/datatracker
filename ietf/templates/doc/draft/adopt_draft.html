@@ -8,14 +8,11 @@
     <h1>
         Manage Document Adoption
         <br>
-        <small class="text-muted">{{ doc }}</small>
+        <small class="text-body-secondary">{{ doc }}</small>
     </h1>
     <p class="my-3 alert alert-info">
-        You can begin managing the group state of this draft.
-    </p>
-    <p class="alert alert-info my-3">
-        For a WG, the draft enters the IETF stream.
-        For an RG, the draft enters the IRTF stream.
+        You can begin managing the group state of this Internet-Draft.
+        The document will be moved into the stream of the adopting group.
     </p>
     <form method="post">
         {% csrf_token %}

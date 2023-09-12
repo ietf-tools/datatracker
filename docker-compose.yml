@@ -26,7 +26,7 @@ services:
             # UID: 1001
             # GID: 1001
             # DATADIR: data
-            # DJANGO_SETTINGS_MODULE: settings_sqlitetest
+            # DJANGO_SETTINGS_MODULE: settings_test
         
         # Uncomment the next line to use a non-root user for all processes.
         # user: dev
@@ -41,24 +41,27 @@ services:
         #      dockerfile: docker/db.Dockerfile
         restart: unless-stopped
         volumes:
-            - mariadb-data:/var/lib/mysql
-        environment:
-            MYSQL_ROOT_PASSWORD: RkTkDPFnKpko
-            MYSQL_DATABASE: ietf_utf8
-            MYSQL_USER: django
-            MYSQL_PASSWORD: RkTkDPFnKpko
-        command:
-            - '--character-set-server=utf8'
-            - '--collation-server=utf8_unicode_ci'
-            - '--innodb-buffer-pool-size=1G'
-            - '--innodb-log-buffer-size=128M'
-            - '--innodb-log-file-size=256M'
-            - '--innodb-write-io-threads=8'
-            - '--innodb-flush-log-at-trx-commit=0'
-            - '--performance-schema=1'
+            - postgresdb-data:/var/lib/postgresql/data
             
     # Add "forwardPorts": ["5432"] to **devcontainer.json** to forward PostgreSQL locally.
     # (Adding the "ports" property to this file will not forward from a Codespace.)
+
+    pgadmin:
+        image: dpage/pgadmin4:latest
+        restart: unless-stopped
+        environment:
+            - PGADMIN_DEFAULT_EMAIL=dev@ietf.org
+            - PGADMIN_DEFAULT_PASSWORD=dev
+            - PGADMIN_CONFIG_LOGIN_BANNER="Login with dev@ietf.org / dev"
+            - PGADMIN_DISABLE_POSTFIX=True
+            - PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED=False
+            - SCRIPT_NAME=/pgadmin
+        volumes:
+            - ./docker/configs/pgadmin-servers.json:/pgadmin4/servers.json
+
+    static:
+        image: ghcr.io/ietf-tools/static:latest
+        restart: unless-stopped
 
     mq:
         image: rabbitmq:3-alpine
@@ -71,6 +74,7 @@ services:
             CELERY_APP: ietf
             CELERY_ROLE: worker
             UPDATE_REQUIREMENTS_FROM: requirements.txt
+            DEV_MODE: "yes"
         command:
             - '--loglevel=INFO'
         depends_on:
@@ -101,5 +105,5 @@ services:
 #            - .:/workspace
 
 volumes:
-    mariadb-data:
+    postgresdb-data:
     app-assets:

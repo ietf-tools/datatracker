@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2007-2019, All Rights Reserved
+# Copyright The IETF Trust 2007-2023, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 import datetime
@@ -129,7 +129,7 @@ def is_combined(session,meeting,schedule=None):
 def send_notifications(meeting, groups, person):
     '''
     Send session scheduled email notifications for each group in groups.  Person is the
-    user who initiated this action, request.uesr.get_profile().
+    user who initiated this action, request.user.get_profile().
     '''
     now = timezone.now()
     for group in groups:
@@ -150,7 +150,7 @@ def send_notifications(meeting, groups, person):
             t = d['timeslot']
             dur = s.requested_duration.seconds/60
             items[i]['duration'] = "%d:%02d" % (dur//60, dur%60)
-            items[i]['period'] = '%s-%s' % (t.time.strftime('%H%M'),(t.time + t.duration).strftime('%H%M'))
+            items[i]['period'] = f"{t.local_start_time().strftime('%H%M')}-{t.local_end_time().strftime('%H%M')} {t.tz()}"
 
         # send email
         first_event = SchedulingEvent.objects.filter(session=sessions[0]).select_related('by').order_by('time', 'id').first()

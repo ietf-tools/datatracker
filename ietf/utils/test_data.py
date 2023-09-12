@@ -7,7 +7,7 @@ import datetime
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.utils import timezone
-from django.utils.encoding import smart_text
+from django.utils.encoding import smart_str
 
 import debug                            # pyflakes:ignore
 
@@ -38,7 +38,7 @@ def create_person(group, role_name, name=None, username=None, email_address=None
     user = User.objects.create(username=username,is_staff=is_staff,is_superuser=is_superuser)
     user.set_password(password)
     user.save()
-    person = Person.objects.create(name=name, ascii=unidecode_name(smart_text(name)), user=user)
+    person = Person.objects.create(name=name, ascii=unidecode_name(smart_str(name)), user=user)
     email = Email.objects.create(address=email_address, person=person, origin=user.username)
     Role.objects.create(group=group, name_id=role_name, person=person, email=email)
     return person
@@ -71,6 +71,10 @@ def make_immutable_base_data():
 
     irtf = create_group(name="IRTF", acronym="irtf", type_id="irtf")
     create_person(irtf, "chair")
+
+    rsab = create_group(name="RSAB", acronym="rsab", type_id="edappr")
+    p = create_person(rsab, "chair")
+    p.role_set.create(group=rsab, name_id="member", email=p.email())
 
     secretariat = create_group(name="IETF Secretariat", acronym="secretariat", type_id="ietf")
     create_person(secretariat, "secr", name="Sec Retary", username="secretary", is_staff=True, is_superuser=True)

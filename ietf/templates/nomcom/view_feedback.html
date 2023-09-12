@@ -1,5 +1,5 @@
 {% extends "nomcom/nomcom_private_base.html" %}
-{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{# Copyright The IETF Trust 2015-2023, All Rights Reserved #}
 {% load origin static %}
 {% load nomcom_tags %}
 {% block subtitle %}- View feedback{% endblock %}
@@ -47,13 +47,25 @@
                         </td>
                         {% for fbtype_name, fbtype_count, fbtype_newflag in fb_dict.feedback %}
                             <td>
-                                {% if fbtype_newflag %}<span class="badge rounded-pill bg-success">New</span>{% endif %}
+                                {% if fbtype_newflag %}<span class="badge rounded-pill text-bg-success">New</span>{% endif %}
                                 {{ fbtype_count }}
                             </td>
                         {% endfor %}
                     </tr>
                 {% endfor %}
             </tbody>
+            <tfoot>
+                <tr>
+                    <th scope="row">Totals</th>
+                    <td></td>
+                    <td></td>
+                    {% for fbtype_count in staterank.list|feedback_totals %}
+                    <td>
+                        {{ fbtype_count }}
+                    </td>
+                    {% endfor %}
+                </tr>
+            </tfoot>
         </table>
     {% endfor %}
     <h2 class="mt-5" id="topics">Feedback related to topics</h2>
@@ -74,7 +86,7 @@
                     </td>
                     {% for fbtype_name, fbtype_count, fbtype_newflag in fb_dict.feedback %}
                         <td>
-                            {% if fbtype_newflag %}<span class="badge rounded-pill bg-success">New</span>{% endif %}
+                            {% if fbtype_newflag %}<span class="badge rounded-pill text-bg-success">New</span>{% endif %}
                             {{ fbtype_count }}
                         </td>
                     {% endfor %}

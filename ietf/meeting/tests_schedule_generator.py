@@ -3,6 +3,8 @@ import calendar
 import datetime
 import pytz
 from io import StringIO
+from warnings import filterwarnings
+
 
 from django.core.management.base import CommandError
 
@@ -76,12 +78,13 @@ class ScheduleGeneratorTest(TestCase):
 
         self.stdout.seek(0)
         output = self.stdout.read()
-        self.assertIn('WARNING: session wg2 (pk 13) has no attendees set', output)
+        wg2_no_attendees_session_pk = [s.session_pk for s in generator.schedule.sessions if s.group == "wg2" and not s.attendees][0]
+        self.assertIn(f'WARNING: session wg2 (pk {wg2_no_attendees_session_pk}) has no attendees set', output)
         self.assertIn('scheduling 13 sessions in 20 timeslots', output)
         self.assertIn('Optimiser starting run 1', output)
         self.assertIn('Optimiser found an optimal schedule', output)
         
-        schedule = self.meeting.schedule_set.get(name__startswith='Auto-')
+        schedule = self.meeting.schedule_set.get(name__startswith='auto-')
         self.assertEqual(schedule.assignments.count(), 13)
 
     def test_unresolvable_schedule(self):
@@ -107,9 +110,11 @@ class ScheduleGeneratorTest(TestCase):
     def test_too_many_sessions(self):
         self._create_basic_sessions()
         self._create_basic_sessions()
-        with self.assertRaises(CommandError):
-            generator = generate_schedule.ScheduleHandler(self.stdout, self.meeting.number, verbosity=0)
-            generator.run()
+        filterwarnings('ignore', '"time relation" constraint only makes sense for 2 sessions')
+        generator = generate_schedule.ScheduleHandler(self.stdout, self.meeting.number, verbosity=1)
+        generator.run()
+        self.stdout.seek(0)
+        self.assertIn('Some sessions will not be scheduled', self.stdout.read())
 
     def test_invalid_meeting_number(self):
         with self.assertRaises(CommandError):
@@ -156,7 +161,8 @@ class ScheduleGeneratorTest(TestCase):
         self.assertIn('Applying schedule {} as base schedule'.format(
             generate_schedule.ScheduleId.from_schedule(base_schedule)
         ), output)
-        self.assertIn('WARNING: session wg2 (pk 13) has no attendees set', output)
+        wg2_no_attendees_session_pk = [s.session_pk for s in generator.schedule.sessions if s.group == "wg2" and not s.attendees][0]
+        self.assertIn(f'WARNING: session wg2 (pk {wg2_no_attendees_session_pk}) has no attendees set', output)
         self.assertIn('scheduling 13 sessions in 19 timeslots', output)  # 19 because base is using one
         self.assertIn('Optimiser starting run 1', output)
         self.assertIn('Optimiser found an optimal schedule', output)

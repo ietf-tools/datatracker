@@ -20,7 +20,7 @@ n-modal(v-model:show='modalShown')
         i.bi.bi-share
         span Share this view
     .agenda-share-content
-      .text-muted.pb-2 Use the following URL for sharing the current view #[em (including any active filters)] with other users:
+      .text-body-secondary.pb-2 Use the following URL for sharing the current view #[em (including any active filters)] with other users:
       n-input-group
         n-input(
           ref='filteredUrlIpt'

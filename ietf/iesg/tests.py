@@ -22,12 +22,12 @@ from ietf.doc.factories import WgDraftFactory, IndividualDraftFactory, ConflictR
 from ietf.doc.utils import create_ballot_if_not_open
 from ietf.group.factories import RoleFactory, GroupFactory
 from ietf.group.models import Group, GroupMilestone, Role
-from ietf.iesg.agenda import get_agenda_date, agenda_data
-from ietf.iesg.models import TelechatDate
-from ietf.name.models import StreamName
+from ietf.iesg.agenda import get_agenda_date, agenda_data, fill_in_agenda_administrivia, agenda_sections
+from ietf.iesg.models import TelechatDate, TelechatAgendaContent
+from ietf.name.models import StreamName, TelechatAgendaSectionName
 from ietf.person.models import Person
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized, unicontent
-from ietf.iesg.factories import IESGMgmtItemFactory
+from ietf.iesg.factories import IESGMgmtItemFactory, TelechatAgendaContentFactory
 from ietf.utils.timezone import date_today, DEADLINE_TZINFO
 
 
@@ -96,6 +96,12 @@ class IESGTests(TestCase):
         ads = Role.objects.filter(group__type='area', group__state='active', name_id='ad')
         self.assertEqual(len(q('.photo')), ads.count())
         
+    def test_ietf_activity(self):
+        url = urlreverse("ietf.iesg.views.ietf_activity")
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+
+
 class IESGAgendaTests(TestCase):
     def setUp(self):
         super().setUp()
@@ -134,6 +140,16 @@ class IESGAgendaTests(TestCase):
         self.mgmt_items = [ ]
         for i in range(0, 10):
             self.mgmt_items.append(IESGMgmtItemFactory())
+
+    def test_fill_in_agenda_administrivia(self):
+        roll_call = TelechatAgendaContentFactory(section_id='roll_call')
+        minutes = TelechatAgendaContentFactory(section_id='minutes')
+        action_items = TelechatAgendaContentFactory(section_id='action_items')
+        sections = agenda_sections()
+        fill_in_agenda_administrivia(None, sections)  # n.b., date parameter is unused at present
+        self.assertIn(roll_call.text, sections["1.1"]["text"])
+        self.assertIn(minutes.text, sections["1.3"]["text"])
+        self.assertIn(action_items.text, sections["1.4"]["text"])
 
     def test_fill_in_agenda_docs(self):
         draft = self.telechat_docs["ietf_draft"]
@@ -331,8 +347,11 @@ class IESGAgendaTests(TestCase):
         self.assertTrue(r.json())
 
     def test_agenda(self):
+        action_items = TelechatAgendaContentFactory(section_id='action_items')
         r = self.client.get(urlreverse("ietf.iesg.views.agenda"))
         self.assertEqual(r.status_code, 200)
+
+        self.assertContains(r, action_items.text)
 
         for k, d in self.telechat_docs.items():
             if d.type_id == "charter":
@@ -349,6 +368,29 @@ class IESGAgendaTests(TestCase):
 
         # Make sure the sort places 6.9 before 6.10
         self.assertLess(r.content.find(b"6.9"), r.content.find(b"6.10"))
+
+    def test_agenda_restricted_sections(self):
+        r = self.client.get(urlreverse("ietf.iesg.views.agenda"))
+        # not logged in
+        for section_id in ("roll_call", "minutes"):
+            self.assertNotContains(
+                r, urlreverse("ietf.iesg.views.telechat_agenda_content_view", kwargs={"section": section_id})
+            )
+
+        self.client.login(username="plain", password="plain+password")
+        for section_id in ("roll_call", "minutes"):
+            self.assertNotContains(
+                r, urlreverse("ietf.iesg.views.telechat_agenda_content_view", kwargs={"section": section_id})
+            )
+
+        for username in ("ad", "secretary", "iab chair"):
+            self.client.login(username=username, password=f"{username}+password")
+            r = self.client.get(urlreverse("ietf.iesg.views.agenda"))
+            self.assertEqual(r.status_code, 200)
+            for section_id in ("roll_call", "minutes"):
+                self.assertContains(
+                    r, urlreverse("ietf.iesg.views.telechat_agenda_content_view", kwargs={"section": section_id})
+                )
 
     def test_agenda_txt(self):
         r = self.client.get(urlreverse("ietf.iesg.views.agenda_txt"))
@@ -543,3 +585,104 @@ class RescheduleOnAgendaTests(TestCase):
         self.assertEqual(draft.latest_event(TelechatDocEvent, "scheduled_for_telechat").telechat_date, d)
         self.assertTrue(not draft.latest_event(TelechatDocEvent, "scheduled_for_telechat").returning_item)
         self.assertEqual(draft.docevent_set.count(), events_before + 1)
+
+
+class TelechatAgendaContentTests(TestCase):
+    def test_telechat_agenda_content_view(self):
+        self.client.login(username="ad", password="ad+password")
+        r = self.client.get(urlreverse("ietf.iesg.views.telechat_agenda_content_view", kwargs={"section": "fake"}))
+        self.assertEqual(r.status_code, 404, "Nonexistent section should 404")
+        for section in TelechatAgendaSectionName.objects.filter(used=True).values_list("slug", flat=True):
+            r = self.client.get(
+                urlreverse("ietf.iesg.views.telechat_agenda_content_view", kwargs={"section": section})
+            )
+            self.assertEqual(r.status_code, 404, "Section with no content should 404")
+        for section in TelechatAgendaSectionName.objects.filter(used=True).values_list("slug", flat=True):
+            content = TelechatAgendaContentFactory(section_id=section).text
+            r = self.client.get(
+                urlreverse("ietf.iesg.views.telechat_agenda_content_view", kwargs={"section": section})
+            )
+            self.assertContains(r, content, status_code=200)
+            self.assertEqual(r.get("Content-Type", None), "text/plain")
+
+    def test_telechat_agenda_content_view_permissions(self):
+        for section in TelechatAgendaSectionName.objects.filter(used=True).values_list("slug", flat=True):
+            TelechatAgendaContentFactory(section_id=section)
+            url = urlreverse("ietf.iesg.views.telechat_agenda_content_view", kwargs={"section": section})
+            self.client.logout()
+            login_testing_unauthorized(self, "plain", url)
+            login_testing_unauthorized(self, "ad", url)
+            self.assertEqual(self.client.get(url).status_code, 200)
+            self.client.login(username="iab chair", password="iab chair+password")
+            self.assertEqual(self.client.get(url).status_code, 200)
+            self.client.login(username="secretary", password="secretary+password")
+            self.assertEqual(self.client.get(url).status_code, 200)
+
+    def test_telechat_agenda_content_edit(self):
+        for section in TelechatAgendaSectionName.objects.filter(used=True):
+            self.assertFalse(TelechatAgendaContent.objects.filter(section=section).exists())
+            url = urlreverse("ietf.iesg.views.telechat_agenda_content_edit", kwargs={"section": section.slug})
+            self.client.logout()
+            login_testing_unauthorized(self, "plain", url, method="get")
+            login_testing_unauthorized(self, "ad", url, method="get")
+            login_testing_unauthorized(self, "iab chair", url, method="get")
+            login_testing_unauthorized(self, "secretary", url, method="get")
+            r = self.client.get(url)
+            self.assertContains(r, str(section), status_code=200)
+
+            self.client.logout()
+            login_testing_unauthorized(self, "plain", url, method="post")
+            login_testing_unauthorized(self, "ad", url, method="post")
+            login_testing_unauthorized(self, "iab chair", url, method="post")
+            login_testing_unauthorized(self, "secretary", url, method="post")
+            r = self.client.post(url, {"text": "This is some content"})
+            self.assertRedirects(r, urlreverse("ietf.iesg.views.telechat_agenda_content_manage"))
+            contents = TelechatAgendaContent.objects.filter(section=section)
+            self.assertEqual(contents.count(), 1)
+            self.assertEqual(contents.first().text, "This is some content")
+
+            self.client.logout()
+            login_testing_unauthorized(self, "plain", url, method="post")
+            login_testing_unauthorized(self, "ad", url, method="post")
+            login_testing_unauthorized(self, "iab chair", url, method="post")
+            login_testing_unauthorized(self, "secretary", url, method="post")
+            r = self.client.post(url, {"text": "This is some different content"})
+            self.assertRedirects(r, urlreverse("ietf.iesg.views.telechat_agenda_content_manage"))
+            contents = TelechatAgendaContent.objects.filter(section=section)
+            self.assertEqual(contents.count(), 1)
+            self.assertEqual(contents.first().text, "This is some different content")
+
+    def test_telechat_agenda_content_manage(self):
+        url = urlreverse("ietf.iesg.views.telechat_agenda_content_manage")
+        login_testing_unauthorized(self, "plain", url)
+        login_testing_unauthorized(self, "ad", url)
+        login_testing_unauthorized(self, "iab chair", url)
+        login_testing_unauthorized(self, "secretary", url)
+        self.assertEqual(TelechatAgendaContent.objects.count(), 0)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        pq = PyQuery(r.content)
+        for section in TelechatAgendaSectionName.objects.filter(used=True):
+            # check that there's a tab even when section is empty
+            nav_button = pq(f"button.nav-link#{section.slug}-tab")
+            self.assertEqual(nav_button.text(), str(section))
+            edit_url = urlreverse("ietf.iesg.views.telechat_agenda_content_edit", kwargs={"section": section.pk})
+            edit_button = pq(f'div#{section.slug} a[href="{edit_url}"]')
+            self.assertEqual(len(edit_button), 1)
+            self.assertIn(f"No {section}", pq(f"div#{section.slug}").text())
+            # and create a section for the next test
+            TelechatAgendaContentFactory(section_id=section.slug)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        pq = PyQuery(r.content)
+        for section in TelechatAgendaSectionName.objects.filter(used=True):
+            # check that there's a tab with the content
+            nav_button = pq(f"button.nav-link#{section.slug}-tab")
+            self.assertEqual(nav_button.text(), str(section))
+            edit_url = urlreverse("ietf.iesg.views.telechat_agenda_content_edit", kwargs={"section": section.pk})
+            edit_button = pq(f'div#{section.slug} a[href="{edit_url}"]')
+            self.assertEqual(len(edit_button), 1)
+            self.assertIn(
+                TelechatAgendaContent.objects.get(section=section).text, pq(f"div#{section.slug}").text()
+            )
+

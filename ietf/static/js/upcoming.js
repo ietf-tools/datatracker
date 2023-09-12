@@ -3,6 +3,12 @@ var display_events = []; // filtered events, processed for calendar display
 var event_calendar; // handle on the calendar object
 var current_tz = 'UTC';
 
+const primary = getComputedStyle(document.body)
+    .getPropertyValue('--bs-primary');
+const secondary = getComputedStyle(document.body)
+    .getPropertyValue('--bs-secondary');
+
+
 // Test whether an event should be visible given a set of filter parameters
 function calendar_event_visible(filter_params, event) {
     // Visible if filtering is disabled or event has no keywords
@@ -49,10 +55,14 @@ function make_display_events(event_data, tz) {
                 glue + (src_event.group || 'Invalid event'));
         }
         return {
-            title: title,
+            title: src_event.current_status != "canceled" ? title : `<del>${title}</del>`,
+            extendedProps: {
+                desc: src_event.current_status != "canceled" ? title : `CANCELLED: ${title}`
+            },
             start: format_moment(src_event.start_moment, tz, 'datetime'),
             end: format_moment(src_event.end_moment, tz, 'datetime'),
-            url: src_event.url
+            url: src_event.url,
+            backgroundColor: src_event.current_status != "canceled" ? primary: secondary
         }; // all events have the URL
     });
 }
@@ -74,13 +84,17 @@ function update_calendar(tz, filter_params) {
          */
         var calendarEl = document.getElementById('calendar');
         event_calendar = new FullCalendar(calendarEl, {
-            plugins: [dayGridPlugin],
+            plugins: [dayGridPlugin, bootstrap5Plugin],
             initialView: 'dayGridMonth',
+            themeSystem: 'bootstrap5',
             displayEventTime: false,
             events: function (fInfo, success) { success(display_events); },
+            eventContent: function(info) {
+                return {html: info.event.title};
+            },
             eventDidMount: function (info) {
                 $(info.el)
-                    .tooltip({ title: info.event.title });
+                    .tooltip({ title: info.event.extendedProps.desc });
             },
             eventDisplay: 'block'
         });

@@ -154,9 +154,23 @@ class ActionHoldersTests(TestCase):
         self.assertGreaterEqual(doc.documentactionholder_set.get(person=self.ad).time_added, right_now)
 
     def test_update_action_holders_add_tag_need_rev(self):
-        """Adding need-rev tag adds authors as action holders"""
+        """Adding need-rev tag drops AD and adds authors as action holders"""
         doc = self.doc_in_iesg_state('pub-req')
         first_author = self.authors[0]
+        doc.action_holders.add(first_author)
+        doc.action_holders.add(doc.ad)
+        self.assertCountEqual(doc.action_holders.all(), [first_author, doc.ad])
+        self.update_doc_state(doc,
+                              doc.get_state('draft-iesg'),
+                              add_tags=['need-rev'],
+                              remove_tags=None)
+        self.assertCountEqual(doc.action_holders.all(), self.authors)
+        self.assertNotIn(self.ad, doc.action_holders.all())
+        
+        # Check case where an author is ad
+        doc = self.doc_in_iesg_state('pub-req')
+        doc.ad = first_author
+        doc.save()
         doc.action_holders.add(first_author)
         self.assertCountEqual(doc.action_holders.all(), [first_author])
         self.update_doc_state(doc,
@@ -175,6 +189,12 @@ class ActionHoldersTests(TestCase):
                               remove_tags=None)
         self.assertCountEqual(doc.action_holders.all(), self.authors)
 
+    def test_update_action_holders_add_tag_ad_f_up(self):
+        doc = self.doc_in_iesg_state('pub-req')
+        self.assertEqual(doc.action_holders.count(), 0)
+        self.update_doc_state(doc, doc.get_state('draft-iesg'), add_tags=['ad-f-up'])
+        self.assertCountEqual(doc.action_holders.all(), [self.ad])
+
     def test_update_action_holders_remove_tag_need_rev(self):
         """Removing need-rev tag drops authors as action holders"""
         doc = self.doc_in_iesg_state('pub-req')
@@ -189,13 +209,14 @@ class ActionHoldersTests(TestCase):
     def test_update_action_holders_add_tag_need_rev_ignores_non_authors(self):
         """Adding need-rev tag does not affect existing action holders"""
         doc = self.doc_in_iesg_state('pub-req')
-        doc.action_holders.add(self.ad)
-        self.assertCountEqual(doc.action_holders.all(),[self.ad])
+        other_person = PersonFactory()
+        doc.action_holders.add(other_person)
+        self.assertCountEqual(doc.action_holders.all(),[other_person])
         self.update_doc_state(doc,
                               doc.get_state('draft-iesg'),
                               add_tags=['need-rev'],
                               remove_tags=None)
-        self.assertCountEqual(doc.action_holders.all(), [self.ad] + self.authors)
+        self.assertCountEqual(doc.action_holders.all(), [other_person] + self.authors)
 
     def test_update_action_holders_remove_tag_need_rev_ignores_non_authors(self):
         """Removing need-rev tag does not affect non-author action holders"""
@@ -308,7 +329,7 @@ class MiscTests(TestCase):
             build_file_urls(WgDraftFactory(rev=''))
 
         urls, types = build_file_urls(WgDraftFactory(rev='23'))
-        self.assertEqual(['xml', 'bibtex'], [t for t, _ in urls])
+        self.assertEqual(['xml', 'bibtex', 'bibxml'], [t for t, _ in urls])
         self.assertEqual(types, ['xml'])
 
         urls, types = build_file_urls(WgRfcFactory(rev=''))
@@ -355,13 +376,13 @@ class RebuildReferenceRelationsTests(TestCase):
         result = rebuild_reference_relations(self.doc, {})
         self.assertCountEqual(result.keys(), ['errors'])
         self.assertEqual(len(result['errors']), 1)
-        self.assertIn('No draft text available', result['errors'][0],
-                      'Error should be reported if no draft file is given')
+        self.assertIn('No Internet-Draft text available', result['errors'][0],
+                      'Error should be reported if no Internet-Draft file is given')
 
         result = rebuild_reference_relations(self.doc, {'md': 'cant-do-this.md'})
         self.assertCountEqual(result.keys(), ['errors'])
         self.assertEqual(len(result['errors']), 1)
-        self.assertIn('No draft text available', result['errors'][0],
+        self.assertIn('No Internet-Draft text available', result['errors'][0],
                       'Error should be reported if no XML or plaintext file is given')
 
     @patch.object(XMLDraft, 'get_refs')

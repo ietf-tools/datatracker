@@ -35,27 +35,27 @@
             <h1>
                 Agenda name: {{ schedule.name }}
                 <br>
-                <small class="text-muted">Owner: {{ schedule.owner }}</small>
+                <small class="text-body-secondary">Owner: {{ schedule.owner }}</small>
             </h1>
             <div class="my-3">
                 {% if can_edit_properties %}
                     <a class="btn btn-primary"
-                       href="{% url "ietf.meeting.views.edit_schedule_properties" schedule.meeting.number schedule.owner_email schedule.name %}">
+                       href="{% url 'ietf.meeting.views.edit_schedule_properties' schedule.meeting.number schedule.owner_email schedule.name %}">
                         Edit properties
                     </a>
                 {% endif %}
                 {% if user|has_role:"Secretariat" %}
                     <a class="btn btn-primary"
-                       href="{% url "ietf.meeting.views.edit_timeslots" num=meeting.number %}">
+                       href="{% url 'ietf.meeting.views.edit_timeslots' num=meeting.number %}?sched={{ schedule.pk }}">
                         Edit timeslots
                     </a>
                 {% endif %}
                 <a class="btn btn-primary"
-                   href="{% url "ietf.meeting.views.new_meeting_schedule" num=meeting.number owner=schedule.owner_email name=schedule.name %}">
+                   href="{% url 'ietf.meeting.views.new_meeting_schedule' num=meeting.number owner=schedule.owner_email name=schedule.name %}">
                     Copy agenda
                 </a>
                 <a class="btn btn-primary"
-                   href="{% url "ietf.meeting.views.list_schedules" num=meeting.number %}">
+                   href="{% url 'ietf.meeting.views.list_schedules' num=meeting.number %}">
                   Other agendas
                 </a>
             </div>
@@ -64,7 +64,7 @@
                     You can't edit this schedule.
                     {% if schedule.is_official_record %}This is the official schedule for a meeting in the past.{% endif %}
                     Make a
-                    <a href="{% url "ietf.meeting.views.new_meeting_schedule" num=meeting.number owner=schedule.owner_email name=schedule.name %}">
+                    <a href="{% url 'ietf.meeting.views.new_meeting_schedule' num=meeting.number owner=schedule.owner_email name=schedule.name %}">
                         new agenda from this</a>.
                 </div>
             {% endif %}
@@ -74,7 +74,8 @@
                   No timeslots exist for this meeting yet.
                 </p>
                 <p>
-                  <a class="btn btn-primary" href="{% url "ietf.meeting.views.edit_timeslots" num=meeting.number %}">
+                  <a class="btn btn-primary"
+                     href="{% url 'ietf.meeting.views.edit_timeslots' num=meeting.number %}?sched={{ schedule.pk }}">
                     Edit timeslots
                   </a>
                 </p>

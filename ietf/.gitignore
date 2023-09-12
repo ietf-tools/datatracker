@@ -1,7 +1,8 @@
 /*.pyc
 /settings_local.py
-/settings_local.py.bak
 /settings_local_debug.py
-/settings_local_sqlitetest.py
 /settings_local_vite.py
+/settings_mysqldb.py
+/settings_postgresqldb.py
+/settings_*.py.bak
 /ietfdb.sql.gz

@@ -8,7 +8,7 @@
     <h1>
         Change position for {{ balloter.plain_name }}
         <br>
-        <small class="text-muted">{{ doc }}</small>
+        <small class="text-body-secondary">{{ doc }}</small>
     </h1>
     {% if ballot.ballot_type.question %}
         <div class="alert alert-warning my-3">
@@ -43,11 +43,13 @@
                     {% if ballot_deferred %}
                         <button type="submit"
                                class="btn btn-warning"
-                               name="Undefer">Undefer ballot</button>
+                               name="Undefer"
+                               value="Undefer">Undefer ballot</button>
                     {% else %}
                         <button type="submit"
                                class="btn btn-danger"
-                               name="Defer">Defer ballot</button>
+                               name="Defer"
+                               value="Defer">Defer ballot</button>
                     {% endif %}
                 {% endif %}
             {% endif %}

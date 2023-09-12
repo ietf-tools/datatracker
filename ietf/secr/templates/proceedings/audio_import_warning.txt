@@ -1,9 +1,0 @@
-
-WARNING:
-
-After the last meeting session audio file import there are {{ unmatched_files|length }}
-file(s) that were not matched to a timeslot.
-
-{% for file in unmatched_files %}{{ file }}
-{% endfor %}
-

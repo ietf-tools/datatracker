@@ -7,14 +7,25 @@ from typing import List    # pyflakes:ignore
 
 from django.utils import timezone
 
-from ietf.group.models import Group, Role, GroupEvent, GroupMilestone, \
-                              GroupHistory, RoleHistory
+from ietf.group.models import (
+    Appeal,
+    AppealArtifact,
+    Group,
+    GroupEvent,
+    GroupMilestone,
+    GroupHistory,
+    Role,
+    RoleHistory
+)   
 from ietf.review.factories import ReviewTeamSettingsFactory
+from ietf.utils.timezone import date_today
+
 
 class GroupFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Group
         django_get_or_create = ('acronym',)
+        skip_postgeneration_save = True
 
     name = factory.Faker('sentence',nb_words=6)
     acronym = factory.Sequence(lambda n: 'acronym%d' %n)
@@ -68,7 +79,7 @@ class BaseGroupMilestoneFactory(factory.django.DjangoModelFactory):
 
 class DatedGroupMilestoneFactory(BaseGroupMilestoneFactory):
     group = factory.SubFactory(GroupFactory, uses_milestone_dates=True)
-    due = timezone.now()+datetime.timedelta(days=180)
+    due = date_today() + datetime.timedelta(days=180)
 
 class DatelessGroupMilestoneFactory(BaseGroupMilestoneFactory):
     group = factory.SubFactory(GroupFactory, uses_milestone_dates=False)
@@ -77,6 +88,7 @@ class DatelessGroupMilestoneFactory(BaseGroupMilestoneFactory):
 class GroupHistoryFactory(factory.django.DjangoModelFactory):
     class Meta:
         model=GroupHistory
+        skip_postgeneration_save = True
 
     time = lambda: timezone.now()
     group = factory.SubFactory(GroupFactory, state_id='active')
@@ -117,4 +129,37 @@ class RoleHistoryFactory(factory.django.DjangoModelFactory):
     group = factory.SubFactory(GroupHistoryFactory)
     person = factory.SubFactory('ietf.person.factories.PersonFactory')
     email = factory.LazyAttribute(lambda obj: obj.person.email())
+
+class AppealFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model=Appeal
+    
+    name=factory.Faker("sentence")
+    group=factory.SubFactory(GroupFactory, acronym="iab")
+
+class AppealArtifactFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model=AppealArtifact
+        skip_postgeneration_save = True
+    
+    appeal = factory.SubFactory(AppealFactory)
+    artifact_type = factory.SubFactory("ietf.name.factories.AppealArtifactTypeNameFactory", slug="appeal")
+    content_type = "text/markdown;charset=utf-8"
+    # Needs newer factory_boy
+    # bits = factory.Transformer(
+    #     "Some example **Markdown**",
+    #     lambda o: memoryview(o.encode("utf-8") if isinstance(o,str) else o)
+    # )
+    #
+    # Usage: a = AppealArtifactFactory(set_bits__using="foo bar") or
+    #        a = AppealArtifactFactory(set_bits__using=b"foo bar")
+    @factory.post_generation
+    def set_bits(obj, create, extracted, **kwargs):
+        if not create:
+            return
+        using = kwargs.pop("using","Some example **Markdown**")
+        if isinstance(using, str):
+            using = using.encode("utf-8")
+        obj.bits = memoryview(using)
+        obj.save()
 

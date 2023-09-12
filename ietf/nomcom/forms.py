@@ -343,7 +343,7 @@ class NominateForm(forms.ModelForm):
                           'year': self.nomcom.year(),
                       }
                 path = nomcom_template_path + NOMINATION_RECEIPT_TEMPLATE
-                send_mail(None, to_email, from_email, subject, path, context, cc=cc)
+                send_mail(None, to_email, from_email, subject, path, context, cc=cc, copy=False, save=False)
 
         return nomination
 
@@ -458,7 +458,7 @@ class NominateNewPersonForm(forms.ModelForm):
                           'year': self.nomcom.year(),
                       }
                 path = nomcom_template_path + NOMINATION_RECEIPT_TEMPLATE
-                send_mail(None, to_email, from_email, subject, path, context, cc=cc)
+                send_mail(None, to_email, from_email, subject, path, context, cc=cc, copy=False, save=False)
 
         return nomination
 
@@ -551,7 +551,7 @@ class FeedbackForm(forms.ModelForm):
                        }
                 path = nomcom_template_path + FEEDBACK_RECEIPT_TEMPLATE
                 # TODO - make the thing above more generic
-                send_mail(None, to_email, from_email, subject, path, context, cc=cc, copy=False)
+                send_mail(None, to_email, from_email, subject, path, context, cc=cc, copy=False, save=False)
 
     class Meta:
         model = Feedback
@@ -653,7 +653,7 @@ class PrivateKeyForm(forms.Form):
 
 class PendingFeedbackForm(forms.ModelForm):
 
-    type = forms.ModelChoiceField(queryset=FeedbackTypeName.objects.all().order_by('pk'), widget=forms.RadioSelect, empty_label='Unclassified', required=False)
+    type = forms.ModelChoiceField(queryset=FeedbackTypeName.objects.all(), widget=forms.RadioSelect, empty_label='Unclassified', required=False)
 
     class Meta:
         model = Feedback

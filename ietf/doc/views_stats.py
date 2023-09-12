@@ -7,6 +7,7 @@ from django.conf import settings
 from django.core.cache import cache
 from django.urls import reverse as urlreverse
 from django.db.models.aggregates import Count
+from django.db.models.functions import TruncDate
 from django.http import JsonResponse, HttpResponseBadRequest
 from django.shortcuts import render
 from django.views.decorators.cache import cache_page
@@ -24,7 +25,6 @@ from ietf.utils.timezone import date_today
 
 epochday = datetime.datetime.utcfromtimestamp(0).date().toordinal()
 
-column_chart_conf = settings.CHART_TYPE_COLUMN_OPTIONS
 
 def dt(s):
     "Convert the date string returned by sqlite's date() to a datetime.date"
@@ -40,15 +40,12 @@ def model_to_timeline_data(model, field='time', **kwargs):
     assert field in [ f.name for f in model._meta.get_fields() ]
 
     objects = ( model.objects.filter(**kwargs)
+                                .annotate(date=TruncDate(field, tzinfo=datetime.timezone.utc))
                                 .order_by('date')
-                                .extra(select={'date': 'date(%s.%s)'% (model._meta.db_table, field) })
                                 .values('date')
                                 .annotate(count=Count('id')))
     if objects.exists():
         obj_list = list(objects)
-        # This is needed for sqlite, when we're running tests:
-        if type(obj_list[0]['date']) != datetime.date:
-            obj_list = [ {'date': dt(e['date']), 'count': e['count']} for e in obj_list ]
         today = date_today(datetime.timezone.utc)
         if not obj_list[-1]['date'] == today:
             obj_list += [ {'date': today, 'count': 0} ]
@@ -66,9 +63,9 @@ def get_doctypes(queryargs, pluralize=False):
         or queryargs.get('activedrafts') == 'on'
         or queryargs.get('olddrafts') == 'on'):
             if pluralize:
-                doctypes.append('Drafts')
+                doctypes.append('Internet-Drafts')
             else:
-                doctypes.append('Draft')
+                doctypes.append('Internet-Draft')
     alltypes = DocTypeName.objects.exclude(slug__in='draft').order_by('name');
     for doctype in alltypes:
         if 'include-' + doctype.slug in queryargs:
@@ -166,8 +163,8 @@ def chart_conf_person_drafts(request, id):
         conf = {}
     else:
         conf = copy.deepcopy(settings.CHART_TYPE_COLUMN_OPTIONS)
-        conf['title']['text'] = "New draft revisions over time for %s" % person.name
-        conf['series'][0]['name'] = "Submitted drafts" 
+        conf['title']['text'] = "New Internet-Draft revisions over time for %s" % person.name
+        conf['series'][0]['name'] = "Submitted Internet-Drafts"
     return JsonResponse(conf)
 
 @cache_page(60*15)

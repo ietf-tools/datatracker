@@ -11,8 +11,9 @@
     <h1>
         Liaison statement
         <br>
-        <small class="text-muted">{% include 'liaisons/liaison_title.html' %}</small>
+        <small class="text-body-secondary">{% include 'liaisons/liaison_title.html' %}</small>
     </h1>
+    {% include "liaisons/liaison_desc.html" only %}
     {% include "liaisons/detail_tabs.html" %}
     <table class="table table-sm table-striped">
         <tbody>
@@ -87,6 +88,7 @@
                             {% csrf_token %}
                             <button class="btn btn-warning btn-sm"
                                    type="submit"
+                                   value="Mark as action taken"
                                    name="do_action_taken">
                                 Mark as action taken
                             </button>

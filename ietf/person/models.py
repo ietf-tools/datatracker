@@ -12,6 +12,7 @@ from urllib.parse import urljoin
 
 from django.conf import settings
 from django.contrib.auth.models import User
+from django.contrib.postgres.fields import CICharField
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
 from django.db import models
@@ -57,7 +58,7 @@ class Person(models.Model):
     biography = models.TextField(blank=True, help_text="Short biography for use on leadership pages. Use plain text or reStructuredText markup.")
     photo = models.ImageField(storage=NoLocationMigrationFileSystemStorage(), upload_to=settings.PHOTOS_DIRNAME, blank=True, default=None)
     photo_thumb = models.ImageField(storage=NoLocationMigrationFileSystemStorage(), upload_to=settings.PHOTOS_DIRNAME, blank=True, default=None)
-    name_from_draft = models.CharField("Full Name (from submission)", null=True, max_length=255, editable=False, help_text="Name as found in a draft submission.")
+    name_from_draft = models.CharField("Full Name (from submission)", null=True, max_length=255, editable=False, help_text="Name as found in an Internet-Draft submission.")
 
     def __str__(self):
         return self.plain_name()
@@ -144,6 +145,14 @@ class Person(models.Model):
                 e = self.email_set.filter(active=True).order_by("-time").first()
             self._cached_email = e
         return self._cached_email
+    def email_allowing_inactive(self):
+        if not hasattr(self, "_cached_email_allowing_inactive"):
+            e = self.email()
+            if not e:
+                e = self.email_set.order_by("-time").first()
+            log.assertion(statement="e is not None", note=f"Person {self.pk} has no Email objects")
+            self._cached_email_allowing_inactive = e
+        return self._cached_email_allowing_inactive
     def email_address(self):
         e = self.email()
         if e:
@@ -187,12 +196,31 @@ class Person(models.Model):
 
     def active_drafts(self):
         from ietf.doc.models import Document
-        return Document.objects.filter(documentauthor__person=self, type='draft', states__slug='active').distinct().order_by('-time')
+
+        return (
+            Document.objects.filter(
+                documentauthor__person=self,
+                type="draft",
+                states__type="draft",
+                states__slug="active",
+            )
+            .distinct()
+            .order_by("-time")
+        )
 
     def expired_drafts(self):
         from ietf.doc.models import Document
-        return Document.objects.filter(documentauthor__person=self, type='draft', states__slug__in=['repl', 'expired', 'auth-rm', 'ietf-rm']).distinct().order_by('-time')
 
+        return (
+            Document.objects.filter(
+                documentauthor__person=self,
+                type="draft",
+                states__type="draft",
+                states__slug__in=["repl", "expired", "auth-rm", "ietf-rm"],
+            )
+            .distinct()
+            .order_by("-time")
+        )
 
     def save(self, *args, **kwargs):
         created = not self.pk
@@ -277,11 +305,11 @@ class Alias(models.Model):
 
 class Email(models.Model):
     history = HistoricalRecords()
-    address = models.CharField(max_length=64, primary_key=True, validators=[validate_email])
+    address = CICharField(max_length=64, primary_key=True, validators=[validate_email])
     person = ForeignKey(Person, null=True)
     time = models.DateTimeField(auto_now_add=True)
     primary = models.BooleanField(default=False)
-    origin = models.CharField(max_length=150, blank=False, help_text="The origin of the address: the user's email address, or 'author: DRAFTNAME' if a draft, or 'role: GROUP/ROLE' if a role.")       # User.username or Document.name
+    origin = models.CharField(max_length=150, blank=False, help_text="The origin of the address: the user's email address, or 'author: DRAFTNAME' if an Internet-Draft, or 'role: GROUP/ROLE' if a role.")       # User.username or Document.name
     active = models.BooleanField(default=True)      # Old email addresses are *not* purged, as history
                                                     # information points to persons through these
 

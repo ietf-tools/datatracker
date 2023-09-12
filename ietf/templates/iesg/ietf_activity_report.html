@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% load ams_filters ietf_filters django_bootstrap5 %}
+{% block title %}IETF Activity Report{% endblock %}
+{% block content %}
+    <h1 class="mt-3">IETF Activity Report</h1>
+    <h2 class="mt-3"><small class="text-body-secondary">{{ sdate|date:"F Y" }}</small></h2>
+    
+    <form action="." method="GET">
+        <div class="row">
+            <div class="col-2">
+                {% bootstrap_field form.month show_label=True layout="inline" %}
+            </div>
+            <div class="col-2">
+                {% bootstrap_field form.year layout="inline" %}
+            </div>
+            <div class="col-2">
+                <button type="submit" class="btn btn-primary">Submit</button>
+            </div>
+        </div>
+    </form>
+
+    <h3 class="mt-3">Draft Activity</h3>
+    {% include "meeting/activity_report.html" %}
+
+{% endblock %}

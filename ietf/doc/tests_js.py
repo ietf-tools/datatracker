@@ -118,7 +118,7 @@ class EditAuthorsTests(IetfSeleniumTestCase):
         # Must provide a "basis" (change reason)
         self.driver.find_element(By.ID, 'id_basis').send_keys('change testing')
         # Now click the 'submit' button and check that the update was accepted.
-        submit_button = self.driver.find_element(By.CSS_SELECTOR, 'button[type="submit"]')
+        submit_button = self.driver.find_element(By.CSS_SELECTOR, '#content button[type="submit"]')
         self.driver.execute_script("arguments[0].click();", submit_button)  # FIXME: no idea why this fails:
         # self.scroll_to_element(submit_button)
         # submit_button.click()

@@ -8,7 +8,7 @@
     {% origin %}
     {{ top|safe }}
     {% include "doc/revisions_list.html" %}
-    <div id="timeline"></div>
+    <div id="doc-timeline"></div>
     {% if doc.rev != latest_rev %}
         <div class="alert alert-warning my-3">The information below is for an old version of the document.</div>
     {% endif %}
@@ -26,7 +26,7 @@
                         <a href="{{ doc.group.about_url }}">({{ doc.group.acronym }})</a>
                         {{ doc.group.type.name }}
                     {% endif %}
-                    {% if snapshot %}<span class="badge rounded-pill bg-warning">Snapshot</span>{% endif %}
+                    {% if snapshot %}<span class="badge rounded-pill text-bg-warning">Snapshot</span>{% endif %}
                 </td>
             </tr>
             <tr>
@@ -36,7 +36,7 @@
                         {% doc_edit_button 'ietf.doc.views_material.edit_material' name=doc.name action="title" %}
                     {% endif %}
                 </td>
-                <th scope="row">{{ doc.title|default:'<span class="text-muted">(None)</span>' }}</th>
+                <th scope="row">{{ doc.title|default:'<span class="text-body-secondary">(None)</span>' }}</th>
             </tr>
             {% if doc.abstract or doc.type_id == 'slides' and can_manage_material and not snapshot %}
                 <tr>
@@ -60,7 +60,7 @@
                     {% if doc.get_state.name %}
                         {{ doc.get_state.name }}
                     {% else %}
-                        <span class="text-muted">(None)</span>
+                        <span class="text-body-secondary">(None)</span>
                     {% endif %}
                 </td>
             </tr>
@@ -100,7 +100,7 @@
                                     {% if pres.rev != doc.rev %}(version -{{ pres.rev }}){% endif %}{% if not forloop.last %},{% endif %}
                                 {% endfor %}
                             {% else %}
-                                <span class="text-muted">(None)</span>
+                                <span class="text-body-secondary">(None)</span>
                             {% endif %}
                         </td>
                     </tr>
@@ -123,7 +123,7 @@
     </p>
     <div id="materials-content" class="card mt-5">
         <div class="card-header">{{ doc.name }}-{{ doc.rev }}</div>
-        <div class="card-body">
+        <div class="card-body{% if content_is_html %} text-break{% endif %}">
             {% if doc.rev and content != None %}
                 {% if content_is_html %}
                     {{ content|sanitize|safe }}

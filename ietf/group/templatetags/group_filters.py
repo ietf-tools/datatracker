@@ -2,7 +2,7 @@ from django import template
 
 import debug                            # pyflakes:ignore
 
-from ietf.group.models import Group
+from ietf.nomcom.models import NomCom
 
 register = template.Library()
 
@@ -19,14 +19,15 @@ def active_nomcoms(user):
     if not (user and hasattr(user, "is_authenticated") and user.is_authenticated):
         return []
 
-    groups = []
-
-    groups.extend(Group.objects.filter(
-        role__person__user=user,
-        type_id='nomcom',
-        state__slug='active').distinct().select_related("type"))
-
-    return groups
+    return list(
+        NomCom.objects.filter(
+            group__role__person__user=user,
+            group__type_id='nomcom',  # just in case...
+            group__state__slug='active',
+        )
+        .distinct()
+        .order_by("group__acronym")
+    )
 
 @register.inclusion_tag('person/person_link.html')
 def role_person_link(role, **kwargs):

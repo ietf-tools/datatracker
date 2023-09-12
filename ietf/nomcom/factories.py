@@ -66,7 +66,7 @@ Tdb0MiLc+r/zvx8oXtgDjDUa
 
 def provide_private_key_to_test_client(testcase):
     session = testcase.client.session
-    session['NOMCOM_PRIVATE_KEY_%s'%testcase.nc.year()] = key
+    session['NOMCOM_PRIVATE_KEY_%s'%testcase.nc.year()] = key.decode("utf8")
     session.save()
 
 def nomcom_kwargs_for_year(year=None, *args, **kwargs):
@@ -84,6 +84,7 @@ def nomcom_kwargs_for_year(year=None, *args, **kwargs):
 class NomComFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = NomCom
+        skip_postgeneration_save = True
 
     group = factory.SubFactory(GroupFactory,type_id='nomcom')
 
@@ -167,6 +168,7 @@ class NomineePositionFactory(factory.django.DjangoModelFactory):
 class FeedbackFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Feedback
+        skip_postgeneration_save = True
 
     nomcom = factory.SubFactory(NomComFactory)
     subject = factory.Faker('sentence')
@@ -176,6 +178,7 @@ class FeedbackFactory(factory.django.DjangoModelFactory):
     def comments(obj, create, extracted, **kwargs):
         comment_text = Faker().paragraph()
         obj.comments = obj.nomcom.encrypt(comment_text)
+        obj.save()
 
 class TopicFactory(factory.django.DjangoModelFactory):
     class Meta:

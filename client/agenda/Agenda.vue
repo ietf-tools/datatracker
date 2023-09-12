@@ -9,7 +9,7 @@
       span.meeting-warning(v-if='agendaStore.meeting.warningNote') {{agendaStore.meeting.warningNote}}
   h4
     span {{agendaStore.meeting.city}}, {{ meetingDate }}
-    h6.float-end.d-none.d-lg-inline(v-if='meetingUpdated') #[span.text-muted Updated:] {{ meetingUpdated }}
+    h6.float-end.d-none.d-lg-inline(v-if='meetingUpdated') #[span.text-body-secondary Updated:] {{ meetingUpdated }}
 
   .agenda-topnav.my-3
     meeting-navigation
@@ -49,7 +49,7 @@
           n-popover(v-if='!agendaStore.infoNoteShown')
             template(#trigger)
               n-button.ms-2(text, @click='toggleInfoNote')
-                i.bi.bi-info-circle.text-muted
+                i.bi.bi-info-circle.text-body-secondary
             span Show Info Note
         .col-12.col-sm-auto.d-flex.align-items-center
           i.bi.bi-globe.me-2
@@ -532,6 +532,13 @@ onMounted(() => {
     font-size: .9rem;
     color: $blue-700;
     position: relative;
+
+    @at-root .theme-dark & {
+      border: 1px solid $blue-800;
+      background: linear-gradient(to top, lighten($blue-900, 2%), lighten($blue-900, 5%));
+      color: $blue-100;
+      box-shadow: inset 0 0 0 1px #000;
+    }
 
     > button {
       position: absolute;

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright The IETF Trust 2009-2022, All Rights Reserved
+# Copyright The IETF Trust 2009-2023, All Rights Reserved
 #
 # Portion Copyright (C) 2010 Nokia Corporation and/or its subsidiary(-ies).
 # All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com>
@@ -48,7 +48,7 @@ from simple_history.utils import update_change_reason
 from django import forms
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
-from django.db.models import Q, Count
+from django.db.models import Q, Count, OuterRef, Subquery
 from django.http import HttpResponse, HttpResponseRedirect, Http404, JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.template.loader import render_to_string
@@ -61,7 +61,7 @@ import debug                            # pyflakes:ignore
 
 from ietf.community.models import CommunityList, EmailSubscription
 from ietf.community.utils import docs_tracked_by_community_list
-from ietf.doc.models import DocTagName, State, DocAlias, RelatedDocument, Document
+from ietf.doc.models import DocTagName, State, DocAlias, RelatedDocument, Document, DocEvent
 from ietf.doc.templatetags.ietf_filters import clean_whitespace
 from ietf.doc.utils import get_chartering_type, get_tags_for_stream_id
 from ietf.doc.utils_charter import charter_name_for_group, replace_charter_of_replaced_group
@@ -72,7 +72,7 @@ from ietf.group.forms import (GroupForm, StatusUpdateForm, ConcludeGroupForm, St
                               AddUnavailablePeriodForm, EndUnavailablePeriodForm, ReviewSecretarySettingsForm, )
 from ietf.group.mails import email_admin_re_charter, email_personnel_change, email_comment
 from ietf.group.models import ( Group, Role, GroupEvent, GroupStateTransitions,
-                              ChangeStateGroupEvent, GroupFeatures )
+                              ChangeStateGroupEvent, GroupFeatures, AppealArtifact )
 from ietf.group.utils import (get_charter_text, can_manage_all_groups_of_type, 
                               milestone_reviewer_for_group_type, can_provide_status_update,
                               can_manage_materials, group_attribute_change_desc,
@@ -83,7 +83,7 @@ from ietf.group.utils import (get_charter_text, can_manage_all_groups_of_type,
 from ietf.ietfauth.utils import has_role, is_authorized_in_group
 from ietf.mailtrigger.utils import gather_relevant_expansions
 from ietf.meeting.helpers import get_meeting
-from ietf.meeting.utils import group_sessions, add_event_info_to_session_qs
+from ietf.meeting.utils import group_sessions
 from ietf.name.models import GroupTypeName, StreamName
 from ietf.person.models import Email, Person
 from ietf.review.models import (ReviewRequest, ReviewAssignment, ReviewerSettings, 
@@ -111,7 +111,7 @@ from ietf.doc.models import LastCallDocEvent
 from ietf.name.models import ReviewAssignmentStateName
 from ietf.utils.mail import send_mail_text, parse_preformatted
 
-from ietf.ietfauth.utils import user_is_person
+from ietf.ietfauth.utils import user_is_person, role_required
 from ietf.dbtemplate.models import DBTemplate
 from ietf.mailtrigger.utils import gather_address_lists
 from ietf.mailtrigger.models import Recipient
@@ -166,6 +166,7 @@ def fill_in_charter_info(group, include_drafts=False):
         group.charter_text = get_charter_text(group)
     else:
         group.charter_text = "Not chartered yet."
+    group.charter_html = markdown.markdown(group.charter_text)
 
 def extract_last_name(role):
     return role.person.name_parts()[3]
@@ -300,8 +301,27 @@ def active_groups(request, group_type=None):
         raise Http404
 
 def active_group_types(request):
-    grouptypes = GroupTypeName.objects.filter(slug__in=['wg','rg','ag','rag','team','dir','review','area','program','iabasg','adm']).filter(group__state='active').annotate(group_count=Count('group'))
-    return render(request, 'group/active_groups.html', {'grouptypes':grouptypes})
+    grouptypes = (
+        GroupTypeName.objects.filter(
+            slug__in=[
+                "wg",
+                "rg",
+                "ag",
+                "rag",
+                "team",
+                "dir",
+                "review",
+                "area",
+                "program",
+                "iabasg",
+                "adm",
+            ]
+        )
+        .filter(group__state="active")
+        .order_by('order', 'name')  # default ordering ignored for "GROUP BY" queries, make it explicit
+        .annotate(group_count=Count("group"))
+    )
+    return render(request, "group/active_groups.html", {"grouptypes": grouptypes})
 
 def active_dirs(request):
     dirs = Group.objects.filter(type__in=['dir', 'review'], state="active").order_by("name")
@@ -334,7 +354,7 @@ def active_adm(request):
     return render(request, 'group/active_adm.html', {'adm' : adm })
 
 def active_rfced(request):
-    rfced = Group.objects.filter(type="rfcedtyp", state="active").order_by("parent", "name")
+    rfced = Group.objects.filter(type__in=["rfcedtyp", "edwg", "edappr"], state="active").order_by("parent", "name")
     return render(request, 'group/active_rfced.html', {'rfced' : rfced})
 
 
@@ -544,6 +564,7 @@ def group_about(request, acronym, group_type=None):
     can_provide_update = can_provide_status_update(request.user, group)
     status_update = group.latest_event(type="status_update")
 
+    subgroups = Group.objects.filter(parent=group, state="active").exclude(type__slug__in=["sdo", "individ", "nomcom"]).order_by("type", "acronym")
 
     return render(request, 'group/group_about.html',
                   construct_group_menu_context(request, group, "about", group_type, {
@@ -556,6 +577,7 @@ def group_about(request, acronym, group_type=None):
                       "charter_submit_url": charter_submit_url,
                       "editable_roles": group.used_roles or group.features.default_used_roles,
                       "closing_note": e,
+                      "subgroups": subgroups,
                   }))
 
 def all_status(request):
@@ -581,17 +603,6 @@ def all_status(request):
                     'rg_reports': rg_reports,
                   }
                  )
-
-def group_about_rendertest(request, acronym, group_type=None):
-    group = get_group_or_404(acronym, group_type)
-    charter = None
-    if group.charter:
-        charter = get_charter_text(group)
-    try:
-        rendered = markdown.markdown(charter)
-    except Exception as e:
-        rendered = f'Markdown rendering failed: {e}'
-    return render(request, 'group/group_about_rendertest.html', {'group':group, 'charter':charter, 'rendered':rendered})
 
 def group_about_status(request, acronym, group_type=None):
     group = get_group_or_404(acronym, group_type)
@@ -807,35 +818,63 @@ def email_aliases(request, acronym=None, group_type=None):
 
     return render(request,'group/email_aliases.html',{'aliases':aliases,'ietf_domain':settings.IETF_DOMAIN,'group':group})
 
-def meetings(request, acronym=None, group_type=None):
-    group = get_group_or_404(acronym,group_type) if acronym else None
+def meetings(request, acronym, group_type=None):
+    group = get_group_or_404(acronym, group_type)
 
-    four_years_ago = timezone.now()-datetime.timedelta(days=4*365)
+    four_years_ago = timezone.now() - datetime.timedelta(days=4 * 365)
 
-    sessions = add_event_info_to_session_qs(
-        group.session_set.filter(
-            meeting__date__gt=four_years_ago,
-            type__in=['regular','plenary','other']
+    sessions = (
+        group.session_set.with_current_status()
+        .filter(
+            meeting__date__gt=four_years_ago
+            if group.acronym != "iab"
+            else datetime.date(1970, 1, 1),
+            type__in=["regular", "plenary", "other"],
         )
-    ).filter(
-        current_status__in=['sched','schedw','appr','canceled'],
+        .filter(
+            current_status__in=["sched", "schedw", "appr", "canceled"],
+        )
     )
+    sessions = list(sessions)
+    for s in sessions:
+        s.order_number = s.order_in_meeting()
 
     future, in_progress, recent, past = group_sessions(sessions)
 
-    can_edit = group.has_role(request.user,group.features.groupman_roles)
-    can_always_edit = has_role(request.user,["Secretariat","Area Director"])
+    can_edit = group.has_role(request.user, group.features.groupman_roles)
+    can_always_edit = has_role(request.user, ["Secretariat", "Area Director"])
 
-    return render(request,'group/meetings.html',
-                  construct_group_menu_context(request, group, "meetings", group_type, {
-                     'group':group,
-                     'future':future,
-                     'in_progress':in_progress,
-                     'recent':recent,
-                     'past':past,
-                     'can_edit':can_edit,
-                     'can_always_edit':can_always_edit,
-                  }))
+    far_past = []
+    if group.acronym == "iab":
+        recent_past = []
+        for s in past:
+            if s.time >= four_years_ago:
+                recent_past.append(s)
+            else:
+                far_past.append(s)
+        past = recent_past
+
+    return render(
+        request,
+        "group/meetings.html",
+        construct_group_menu_context(
+            request,
+            group,
+            "meetings",
+            group_type,
+            {
+                "group": group,
+                "future": future,
+                "in_progress": in_progress,
+                "recent": recent,
+                "past": past,
+                "far_past": far_past,
+                "can_edit": can_edit,
+                "can_always_edit": can_always_edit,
+            },
+        ),
+    )
+
 
 def chair_photos(request, group_type=None):
     roles = sorted(Role.objects.filter(group__type=group_type, group__state='active', name_id='chair'),key=lambda x: x.person.last_name()+x.person.name+x.group.acronym)
@@ -863,60 +902,6 @@ def group_photos(request, group_type=None, acronym=None):
                       'roles': roles,
                       'group':group }))
 
-
-
-## XXX Remove after testing
-# def get_or_create_initial_charter(group, group_type):
-#     charter_name = charter_name_for_group(group)
-# 
-#     try:
-#         charter = Document.objects.get(docalias__name=charter_name)
-#     except Document.DoesNotExist:
-#         charter = Document(
-#             name=charter_name,
-#             type_id="charter",
-#             title=group.name,
-#             group=group,
-#             abstract=group.name,
-#             rev="00-00",
-#         )
-#         charter.save()
-#         charter.set_state(State.objects.get(used=True, type="charter", slug="notrev"))
-# 
-#         # Create an alias as well
-#         DocAlias.objects.create(name=charter.name).docs.add(charter)
-# 
-#     return charter
-# 
-# @login_required
-# def submit_initial_charter(request, group_type=None, acronym=None):
-# 
-#     # This needs refactoring.
-#     # The signature assumed you could have groups with the same name, but with different types, which we do not allow.
-#     # Consequently, this can be called with an existing group acronym and a type 
-#     # that doesn't match the existing group type. The code below essentially ignores the group_type argument.
-#     #
-#     # If possible, the use of get_or_create_initial_charter should be moved
-#     # directly into charter_submit, and this function should go away.
-# 
-#     if acronym==None:
-#         raise Http404
-# 
-#     group = get_object_or_404(Group, acronym=acronym)
-#     if not group.features.has_chartering_process:
-#         raise Http404
-# 
-#     # This is where we start ignoring the passed in group_type
-#     group_type = group.type_id
-# 
-#     if not can_manage_group(request.user, group):
-#         permission_denied(request, "You don't have permission to access this view")
-# 
-#     if not group.charter:
-#         group.charter = get_or_create_initial_charter(group, group_type)
-#         group.save()
-# 
-#     return redirect('ietf.doc.views_charter.submit', name=group.charter.name, option="initcharter")
 
 @login_required
 def edit(request, group_type=None, acronym=None, action="edit", field=None):
@@ -1283,6 +1268,8 @@ def streams(request):
     return render(request, 'group/index.html', {'streams':streams})
 
 def stream_documents(request, acronym):
+    if acronym == "editorial":
+        return HttpResponseRedirect(urlreverse(group_documents, kwargs=dict(acronym="rswg")))
     streams = [ s.slug for s in StreamName.objects.all().exclude(slug__in=['ietf', 'legacy']) ]
     if not acronym in streams:
         raise Http404("No such stream: %s" % acronym)
@@ -1351,7 +1338,96 @@ def group_menu_data(request):
 #        groups_by_parent[g.parent_id].append({ 'acronym': g.acronym, 'name': escape(g.name), 'url': url })
         groups_by_parent[g.parent_id].append({ 'acronym': g.acronym, 'name': escape(g.name), 'type': escape(g.type.verbose_name or g.type.name), 'url': url })
 
+    iab = Group.objects.get(acronym="iab")
+    groups_by_parent[iab.pk].insert(
+        0,
+        {
+            "acronym": iab.acronym,
+            "name": iab.name,
+            "type": "Top Level Group",
+            "url": urlreverse("ietf.group.views.group_home", kwargs={"acronym": iab.acronym})
+        }
+    )
     return JsonResponse(groups_by_parent)
+
+
+@cache_control(public=True, max_age=30 * 60)
+@cache_page(30 * 60)
+def group_stats_data(request, years="3", only_active=True):
+    when = timezone.now() - datetime.timedelta(days=int(years) * 365)
+    docs = (
+        Document.objects.filter(type="draft", stream="ietf")
+        .filter(
+            Q(docevent__newrevisiondocevent__time__gte=when)
+            | Q(docevent__type="published_rfc", docevent__time__gte=when)
+        )
+        .exclude(states__type="draft", states__slug="repl")
+        .distinct()
+    )
+
+    data = []
+    for a in Group.objects.filter(type="area"):
+        if only_active and not a.is_active:
+            continue
+
+        area_docs = docs.filter(group__parent=a).exclude(group__acronym="none")
+        if not area_docs:
+            continue
+
+        area_page_cnt = 0
+        area_doc_cnt = 0
+        for wg in Group.objects.filter(type="wg", parent=a):
+            if only_active and not wg.is_active:
+                continue
+
+            wg_docs = area_docs.filter(group=wg)
+            if not wg_docs:
+                continue
+
+            wg_page_cnt = 0
+            for doc in wg_docs:
+                # add doc data
+                data.append(
+                    {
+                        "id": doc.name,
+                        "active": True,
+                        "parent": wg.acronym,
+                        "grandparent": a.acronym,
+                        "pages": doc.pages,
+                        "docs": 1,
+                    }
+                )
+                wg_page_cnt += doc.pages
+
+            area_doc_cnt += len(wg_docs)
+            area_docs = area_docs.exclude(group=wg)
+
+            # add WG data
+            data.append(
+                {
+                    "id": wg.acronym,
+                    "active": wg.is_active,
+                    "parent": a.acronym,
+                    "grandparent": "ietf",
+                    "pages": wg_page_cnt,
+                    "docs": len(wg_docs),
+                }
+            )
+            area_page_cnt += wg_page_cnt
+
+        # add area data
+        data.append(
+            {
+                "id": a.acronym,
+                "active": a.is_active,
+                "parent": "ietf",
+                "pages": area_page_cnt,
+                "docs": area_doc_cnt,
+            }
+        )
+
+    data.append({"id": "ietf", "active": True})
+    return JsonResponse(data, safe=False)
 
 
 # --- Review views -----------------------------------------------------
@@ -2016,7 +2092,75 @@ def reset_next_reviewer(request, acronym, group_type=None):
 
     return render(request, 'group/reset_next_reviewer.html', { 'group':group, 'form': form,})
 
+def statements(request, acronym, group_type=None):
+    if not acronym in ["iab", "iesg"]:
+        raise Http404
+    group = get_group_or_404(acronym, group_type)
+    statements = group.document_set.filter(type_id="statement").annotate(
+        published=Subquery(
+            DocEvent.objects.filter(
+                doc=OuterRef("pk"),
+                type="published_statement"
+            ).order_by("-time").values("time")[:1]
+        )
+    ).order_by("-published")
+    return render(
+        request,
+        "group/statements.html",
+        construct_group_menu_context(
+            request,
+            group,
+            "statements",
+            group_type,
+            {
+                "group": group,
+                "statements": statements,
+            },
+        ),
+    )
 
+def appeals(request, acronym, group_type=None):
+    if not acronym in ["iab", "iesg"]:
+        raise Http404
+    group = get_group_or_404(acronym, group_type)
+    appeals = group.appeal_set.all()
+    return render(
+        request,
+        "group/appeals.html",
+        construct_group_menu_context(
+            request,
+            group,
+            "appeals",
+            group_type,
+            {
+                "group": group,
+                "appeals": appeals,
+            },
+        ),
+    )
 
-
-
+def appeal_artifact(request, acronym, artifact_id, group_type=None):
+    artifact = get_object_or_404(AppealArtifact, pk=artifact_id)
+    if artifact.is_markdown():
+        artifact_html = markdown.markdown(artifact.bits.tobytes().decode("utf-8"))
+        return render(
+            request,
+            "group/appeal_artifact.html",
+            dict(artifact=artifact, artifact_html=artifact_html)
+        )
+    else:
+        return HttpResponse(
+            artifact.bits, 
+            headers = {
+                "Content-Type": artifact.content_type,
+                "Content-Disposition": f'attachment; filename="{artifact.download_name()}"'
+            }
+        )
+    
+@role_required("Secretariat")
+def appeal_artifact_markdown(request, acronym, artifact_id, group_type=None):
+    artifact = get_object_or_404(AppealArtifact, pk=artifact_id)
+    if artifact.is_markdown():
+        return HttpResponse(artifact.bits, content_type=artifact.content_type)
+    else:
+        raise Http404

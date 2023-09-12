@@ -2,19 +2,29 @@
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
 {% load django_bootstrap5 %}
+{% load ietf_filters %}
 {% block title %}Change responsible AD for {{ doc.name }}-{{ doc.rev }}{% endblock %}
 {% block content %}
     {% origin %}
     <h1>
         Change responsible AD
         <br>
-        <small class="text-muted">{{ doc.name }}-{{ doc.rev }}</small>
+        <small class="text-body-secondary">{{ doc.name }}-{{ doc.rev }}</small>
     </h1>
+    {% with approved=doc|state:"draft-rfceditor" %}
+    {% if approved %}
+        <div class="alert alert-warning my-3">
+            It is unusual to change the responsible AD for a document that has
+            been sent to the RFC Editor. Please make sure this is really what
+            you want to do.
+        </div>
+    {% endif %}
     <form class="mt-3" enctype="multipart/form-data" method="post">
         {% csrf_token %}
         {% bootstrap_form form %}
-        <button type="submit" class="btn btn-primary">Submit</button>
+        <button type="submit" class="btn {{ approved|yesno:'btn-warning,btn-primary' }}">Submit</button>
         <a class="btn btn-secondary float-end"
            href="{% url "ietf.doc.views_doc.document_main" name=doc.name %}">Back</a>
     </form>
+    {% endwith %}
 {% endblock %}

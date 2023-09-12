@@ -298,26 +298,6 @@ class Meeting(models.Model):
             self._proceedings_format_version = version  # save this for later
         return self._proceedings_format_version
 
-    @property
-    def session_constraintnames(self):
-        """Gets a list of the constraint names that should be used for this meeting
-
-        Anticipated that this will soon become a many-to-many relationship with ConstraintName
-        (see issue #2770). Making this a @property allows use of the .all(), .filter(), etc,
-        so that other code should not need changes when this is replaced.
-        """
-        try:
-            mtg_num = int(self.number)
-        except ValueError:
-            mtg_num = None  # should not come up, but this method should not fail
-        if mtg_num is None or mtg_num >= 106:
-            # These meetings used the old 'conflic?' constraint types labeled as though
-            # they were the new types.
-            slugs = ('chair_conflict', 'tech_overlap', 'key_participant')
-        else:
-            slugs = ('conflict', 'conflic2', 'conflic3')
-        return ConstraintName.objects.filter(slug__in=slugs)
-
     def base_url(self):
         return "/meeting/%s" % (self.number, )
 
@@ -567,7 +547,13 @@ class FloorPlan(models.Model):
     def __str__(self):
         return u'floorplan-%s-%s' % (self.meeting.number, xslugify(self.name))
 
+
 # === Schedules, Sessions, Timeslots and Assignments ===========================
+
+class TimeSlotQuerySet(models.QuerySet):
+    def that_can_be_scheduled(self):
+        return self.exclude(type__in=TimeSlot.TYPES_NOT_SCHEDULABLE)
+
 
 class TimeSlot(models.Model):
     """
@@ -575,6 +561,8 @@ class TimeSlot(models.Model):
     mapped to a timeslot, including breaks. Sessions are connected to
     TimeSlots during scheduling.
     """
+    objects = TimeSlotQuerySet.as_manager()
+
     meeting = ForeignKey(Meeting)
     type = ForeignKey(TimeSlotTypeName)
     name = models.CharField(max_length=255)
@@ -586,15 +574,13 @@ class TimeSlot(models.Model):
     modified = models.DateTimeField(auto_now=True)
     #
 
+    TYPES_NOT_SCHEDULABLE = ('offagenda', 'reserved', 'unavail')
+
     @property
     def session(self):
         if not hasattr(self, "_session_cache"):
             self._session_cache = self.sessions.filter(timeslotassignments__schedule__in=[self.meeting.schedule, self.meeting.schedule.base if self.meeting else None]).first()
         return self._session_cache
-
-    @property
-    def time_desc(self):
-        return "%s-%s" % (self.time.strftime("%H%M"), (self.time + self.duration).strftime("%H%M"))
 
     def meeting_date(self):
         return self.time.date()
@@ -1032,11 +1018,16 @@ class SessionQuerySet(models.QuerySet):
             type__slug='regular'
         )
 
+    def that_can_be_scheduled(self):
+        """Queryset containing sessions that should be scheduled for a meeting"""
+        return self.requests().with_current_status().filter(
+            current_status__in=['appr', 'schedw', 'scheda', 'sched']
+        )
+
     def requests(self):
         """Queryset containing sessions that may be handled as requests"""
-        return self.exclude(
-            type__in=('offagenda', 'reserved', 'unavail')
-        )
+        return self.exclude(type__in=TimeSlot.TYPES_NOT_SCHEDULABLE)
+
 
 class Session(models.Model):
     """Session records that a group should have a session on the
@@ -1060,6 +1051,8 @@ class Session(models.Model):
     modified = models.DateTimeField(auto_now=True)
     remote_instructions = models.CharField(blank=True,max_length=1024)
     on_agenda = models.BooleanField(default=True, help_text='Is this session visible on the meeting agenda?')
+    has_onsite_tool = models.BooleanField(default=False, help_text="Does this session use the officially supported onsite and remote tooling?")
+    chat_room = models.CharField(blank=True, max_length=32, help_text='Name of Zulip stream, if different from group acronym')
 
     tombstone_for = models.ForeignKey('Session', blank=True, null=True, help_text="This session is the tombstone for a session that was rescheduled", on_delete=models.CASCADE)
 
@@ -1261,7 +1254,10 @@ class Session(models.Model):
         return Constraint.objects.filter(target=self.group, meeting=self.meeting).order_by('name__name')
 
     def official_timeslotassignment(self):
-        return self.timeslotassignments.filter(schedule__in=[self.meeting.schedule, self.meeting.schedule.base if self.meeting.schedule else None]).first()
+        # cache only non-None values
+        if getattr(self, "_cache_official_timeslotassignment", None) is None:
+            self._cache_official_timeslotassignment = self.timeslotassignments.filter(schedule__in=[self.meeting.schedule, self.meeting.schedule.base if self.meeting.schedule else None]).first()
+        return self._cache_official_timeslotassignment
 
     @property
     def people_constraints(self):
@@ -1293,7 +1289,10 @@ class Session(models.Model):
         return self._agenda_file
 
     def chat_room_name(self):
-        if self.type_id=='plenary':
+        if self.chat_room:
+            return self.chat_room
+        # At some point, add a migration to add "plenary" chat room name to existing sessions in the database.
+        elif self.type_id=='plenary':
             return 'plenary'
         else:
             return self.group_at_the_time().acronym
@@ -1302,8 +1301,11 @@ class Session(models.Model):
         return settings.CHAT_URL_PATTERN.format(chat_room_name=self.chat_room_name())
 
     def chat_archive_url(self):
-        # datatracker 8.8.0 released on 2022 July 15; before that, fall back to old log URL
-        if self.meeting.date <= datetime.date(2022, 7, 15):
+        chatlog = self.sessionpresentation_set.filter(document__type__slug='chatlog').first()
+        if chatlog is not None:
+            return chatlog.document.get_href()
+        elif self.meeting.date <= datetime.date(2022, 7, 15):
+            # datatracker 8.8.0 released on 2022 July 15; before that, fall back to old log URL
             return f'https://www.ietf.org/jabber/logs/{ self.chat_room_name() }?C=M;O=D'
         elif hasattr(settings,'CHAT_ARCHIVE_URL_PATTERN'):
             return settings.CHAT_ARCHIVE_URL_PATTERN.format(chat_room_name=self.chat_room_name())
@@ -1318,12 +1320,42 @@ class Session(models.Model):
     def notes_url(self):
         return urljoin(settings.IETF_NOTES_URL, self.notes_id())
 
+
     def group_at_the_time(self):
-        return self.meeting.group_at_the_time(self.group)
+        if not hasattr(self,"_cached_group_at_the_time"):
+            self._cached_group_at_the_time = self.meeting.group_at_the_time(self.group)
+        return self._cached_group_at_the_time
 
     def group_parent_at_the_time(self):
         if self.group_at_the_time().parent:
             return self.meeting.group_at_the_time(self.group_at_the_time().parent)
+
+    def audio_stream_url(self):
+        if (
+            self.meeting.type.slug == "ietf"
+            and self.has_onsite_tool
+            and (url := getattr(settings, "MEETECHO_AUDIO_STREAM_URL", ""))
+        ):
+            return url.format(session=self)
+        return None
+
+    def video_stream_url(self):
+        if (
+            self.meeting.type.slug == "ietf"
+            and self.has_onsite_tool
+            and (url := getattr(settings, "MEETECHO_VIDEO_STREAM_URL", ""))
+        ):
+            return url.format(session=self)
+        return None
+
+    def onsite_tool_url(self):
+        if (
+            self.meeting.type.slug == "ietf"
+            and self.has_onsite_tool
+            and (url := getattr(settings, "MEETECHO_ONSITE_TOOL_URL", ""))
+        ):
+            return url.format(session=self)
+        return None
 
 
 class SchedulingEvent(models.Model):

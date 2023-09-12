@@ -35,7 +35,7 @@
         </tr>
     {% endif %}
     <tr class="row1">
-        <td>People who must be present:</td>
+        <td>Participants who must be present:</td>
         <td>{% if session.bethere %}<ul>{% for person in session.bethere %}<li>{{ person }}</li>{% endfor %}</ul>{% else %}<i>None</i>{% endif %}</td>
     </tr>
     <tr class="row2">
@@ -59,5 +59,15 @@
         </tr>
     {% endif %}
     <tr class="row1"><td>Special Requests:</td><td>{{ session.comments }}</td></tr>
+    {% if form and form.notifications_optional %}
+        <tr class="row2">
+            <td>
+                {{ form.send_notifications.label}}
+            </td>
+            <td>
+                {% if form.cleaned_data.send_notifications %}Yes{% else %}No{% endif %}
+            </td>
+        </tr>
+    {% endif %}
     </tbody>
 </table>

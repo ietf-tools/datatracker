@@ -12,7 +12,7 @@
     <h1>
         API keys
         <br>
-        <small class="text-muted">{{ user.username }}</small>
+        <small class="text-body-secondary">{{ user.username }}</small>
     </h1>
     {% csrf_token %}
     {% if person.apikeys.all %}
@@ -37,9 +37,9 @@
                 <td>{{ key.created }}</td>
                 <td>{{ key.latest }}</td>
                 <td>{{ key.count }}</td>
-                <td>{{ key.valid }}</td>
+                <td class="{{ key.valid|yesno:'text-success,text-danger'}}">{{ key.valid }}</td>
                 <td>
-                    <code>{{ key.hash }}</code>
+                    <code {% if not key.valid %}class="text-decoration-line-through"{% endif %}>{{ key.hash }}</code>
                 </td>
                 <td >
                     {% if key.valid %}

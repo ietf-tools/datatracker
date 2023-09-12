@@ -10,7 +10,6 @@
         <a href="#"
            class="nav-link dropdown-toggle"
            role="button"
-           data-bs-auto-close="false"
            data-bs-toggle="dropdown"
            aria-expanded="false">
             Groups
@@ -90,13 +89,13 @@
     <li>
         <a class="dropdown-item {% if flavor != 'top' %}text-wrap link-primary{% endif %}"
            href="{% url "ietf.doc.views_search.recent_drafts" %}">
-            Recent drafts
+            Recent I-Ds
         </a>
     </li>
     <li>
         <a class="dropdown-item {% if flavor != 'top' %}text-wrap link-primary{% endif %}"
            href="{% url "ietf.submit.views.upload_submission" %}">
-            Draft submission
+            I-D submission
         </a>
     </li>
     <li>
@@ -134,7 +133,7 @@
             <li>
                 <a class="dropdown-item {% if flavor != 'top' %}text-wrap link-primary{% endif %}"
                    href="{% url "ietf.submit.views.approvals" %}">
-                    Approve a draft
+                    Approve an I-D
                 </a>
             </li>
             {% for g in user|docman_groups %}
@@ -171,7 +170,7 @@
                 </li>
             {% endfor %}
         {% endif %}
-        {% if user|active_nomcoms %}
+        {% with user|active_nomcoms as nomcoms %}{% if nomcoms %}
             {% if flavor == 'top' %}
                 <li><hr class="dropdown-divider">
                 </li>
@@ -179,15 +178,15 @@
             <li {% if flavor == 'top' %}class="dropdown-header"{% else %}class="nav-item fw-bolder"{% endif %}>
             	NomComs
             </li>
-            {% for g in user|active_nomcoms %}
+            {% for nomcom in nomcoms %}
                 <li>
                     <a class="dropdown-item {% if flavor != 'top' %}text-wrap link-primary{% endif %}"
-                       href="{% url "ietf.nomcom.views.private_index" g.nomcom_set.first.year %}">
-                        {{ g.acronym|capfirst }}
+                       href="{% url "ietf.nomcom.views.private_index" nomcom.year %}">
+                        {{ nomcom|capfirst }}
                     </a>
                 </li>
             {% endfor %}
-        {% endif %}
+        {% endif %}{% endwith %}
     {% endif %}
     {% if flavor == 'top' %}
         <li><hr class="dropdown-divider">
@@ -377,7 +376,7 @@
             <li>
                 <a class="dropdown-item {% if flavor != 'top' %}text-wrap link-primary{% endif %}"
                    href="{% url 'ietf.stats.views.document_stats' %}">
-                    Drafts/RFCs
+                    I-Ds/RFCs
                 </a>
             </li>
             <li>

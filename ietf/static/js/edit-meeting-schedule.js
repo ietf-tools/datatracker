@@ -487,13 +487,13 @@ $(function () {
 
         // Disable a particular swap modal radio input
         let updateSwapRadios = function (labels, radios, disableValue, datePrecision) {
-            labels.removeClass('text-muted');
+            labels.removeClass('text-body-secondary');
             radios.prop('disabled', false);
             radios.prop('checked', false);
             // disable the input requested by value
             let disableInput = radios.filter('[value="' + disableValue + '"]');
             if (disableInput) {
-                disableInput.parent().addClass('text-muted');
+                disableInput.parent().addClass('text-body-secondary');
                 disableInput.prop('disabled', true);
             }
             if (officialSchedule) {
@@ -502,7 +502,7 @@ $(function () {
                 const past_radios = radios.filter(
                     (_, radio) => parseISOTimestamp(radio.closest('*[data-start]').dataset.start).isSameOrBefore(now, datePrecision)
                 );
-                past_radios.parent().addClass('text-muted');
+                past_radios.parent().addClass('text-body-secondary');
                 past_radios.prop('disabled', true);
             }
             return disableInput; // return the input that was specifically disabled, if any
@@ -647,12 +647,9 @@ $(function () {
 
     function updateTimeSlotDurationViolations() {
         timeslots.each(function () {
-            let total = 0;
-            jQuery(this).find(".session").each(function () {
-                total += +jQuery(this).data("duration");
-            });
-
-            jQuery(this).toggleClass("overfull", total > +jQuery(this).data("duration"));
+            const sessionsInSlot = Array.from(this.getElementsByClassName('session'));
+            const requiredDuration = Math.max(sessionsInSlot.map(elt => Number(elt.dataset.duration)));
+            this.classList.toggle('overfull', requiredDuration > Number(this.dataset.duration));
         });
     }
 
@@ -862,10 +859,10 @@ $(function () {
                 .not('.hidden')
                 .length === 0) {
                 purpose_input.setAttribute('disabled', 'disabled');
-                purpose_input.closest('.session-purpose-toggle').classList.add('text-muted');
+                purpose_input.closest('.session-purpose-toggle').classList.add('text-body-secondary');
             } else {
                 purpose_input.removeAttribute('disabled');
-                purpose_input.closest('.session-purpose-toggle').classList.remove('text-muted');
+                purpose_input.closest('.session-purpose-toggle').classList.remove('text-body-secondary');
             }
         });
     }

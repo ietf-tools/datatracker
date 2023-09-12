@@ -11,15 +11,112 @@
     <h1 class="title">
         IETF {{ meeting.number }} timeslot requests
         <br>
-        <small class="text-muted">{{ meeting.city }}, {{ meeting.country }}
+        <small class="text-body-secondary">{{ meeting.city }}, {{ meeting.country }}
             {% if meeting.venue_name %}– {{ meeting.venue_name }}{% endif %}
         </small>
     </h1>
+
+    <h2 class="mt-3">Requests Summary</h2>
+    <p class="mt-2"><em>This summary section focuses on sessions that have conflict lists to manage. It excludes requests from groups of type "team", such as those for the hackathon or for tutorials.</em></p>
+    <div class="mt-3">
+        <table class="table table-sm table-striped">
+            {% for row in summary_by_area %}
+                {% if forloop.first %}
+                    <thead>
+                        <tr class="table-info">
+                            {% for col in row %}
+                                <th scope="col"{% if not forloop.first %} class="text-end"{% endif %}>{{ col }}</th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                {% elif forloop.last %}
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            {% for col in row %}
+                                <th scope="col"{% if not forloop.first %} class="text-end"{% endif %}>{{ col }}</th>
+                            {% endfor %}
+                            {# last line is missing two columns? #}
+                            <td></td><td></td>
+                        </tr>
+                    </tfoot>
+                {% else %}
+                    <tr>
+                    {% for col in row %}
+                        {% if forloop.first %}
+                            <th scope="row">{{ col }}</th>
+                        {% else %}
+                            <td class="text-end">{{ col }}</td>
+                        {% endif %}
+                    {% endfor %}
+                    </tr>
+                {% endif %}
+            {% endfor %}
+        </table>
+    </div>
+    <div class="row mt-3">
+        <div class="col">
+            <table class="table table-sm table-striped">
+                {% for row in summary_by_group_type %}
+                    {% if forloop.first %}
+                        <thead>
+                            <tr class="table-info">
+                                {% for col in row %}
+                                    <th scope="col"{% if not forloop.first %} class="text-end"{% endif %}>{{ col }}</th>
+                                {% endfor %}
+                            </tr>
+                        </thead>
+                        <tbody>
+                    {% else %}
+                        <tr>
+                            {% for col in row %}
+                                {% if forloop.first %}
+                                    <th scope="row">{{ col }}</th>
+                                {% else %}
+                                    <td class="text-end">{{ col }}</td>
+                                {% endif %}
+                            {% endfor %}
+                        </tr>
+                    {% endif %}
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="col">
+            <table class="table table-sm table-striped">
+                {% for row in summary_by_purpose %}
+                    {% if forloop.first %}
+                        <thead>
+                            <tr class="table-info">
+                                {% for col in row %}
+                                    <th scope="col"{% if not forloop.first %} class="text-end"{% endif %}>{{ col }}</th>
+                                {% endfor %}
+                            </tr>
+                        </thead>
+                        <tbody>
+                    {% else %}
+                        <tr>
+                            {% for col in row %}
+                                {% if forloop.first %}
+                                    <th scope="row">{{ col }}</th>
+                                {% else %}
+                                    <td class="text-end">{{ col }}</td>
+                                {% endif %}
+                            {% endfor %}
+                        </tr>
+                    {% endif %}
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
     {% regroup sessions by display_area as area_sessions %}
     {% for area in area_sessions %}
         <h2 class="mt-5" id="{% firstof area.grouper.acronym "other-groups" %}">
             {% if area.grouper is not None %}
-                {{ area.grouper.acronym|upper }} <small class="text-muted">{{ area.grouper.name }}</small>
+                {{ area.grouper.acronym|upper }} <small class="text-body-secondary">{{ area.grouper.name }}</small>
             {% else %}
                 Other Groups
             {% endif %}
@@ -57,6 +154,9 @@
                             <a href="{% url "ietf.secr.sreq.views.edit" num=meeting.number acronym=session.group.acronym %}">
                                 {{ session.group.acronym }}
                             </a>
+                            {% if session.purpose_id != "regular" %}
+                                <br><span class="badge rounded-pill text-bg-info">{{session.purpose}}</span>
+                            {% endif %}
                             {% if session.joint_with_groups.count %}joint with {{ session.joint_with_groups_acronyms|join:' ' }}{% endif %}
                             {% if session.requested_duration %}
                                 <div class="d-lg-none">
@@ -69,7 +169,7 @@
                                 </div>
                             {% endif %}
                             {% if session.group.state.slug != "active" %}
-                                <br><span class="badge rounded-pill bg-success">{{ session.group.state.name }}</span>
+                                <br><span class="badge rounded-pill text-bg-success">{{ session.group.state.name }}</span>
                             {% endif %}
                         </td>
                         <td class="d-none d-lg-table-cell">

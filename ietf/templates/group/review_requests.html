@@ -2,7 +2,7 @@
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
 {% origin %}
-{% load ietf_filters static person_filters %}
+{% load ietf_filters static person_filters ietf_filters %}
 {% block group_subtitle %}Review requests{% endblock %}
 {% block pagehead %}
     <link rel="stylesheet" href="{% static "ietf/css/list.css" %}">
@@ -48,13 +48,13 @@
                                 {% if r.pk %}
                                     {{ r.time|date:"Y-m-d" }} by {% person_link r.requested_by %}
                                 {% else %}
-                                    <span class="badge rounded-pill bg-info">Auto-suggested</span>
+                                    <span class="badge rounded-pill text-bg-info">Auto-suggested</span>
                                 {% endif %}
                             </td>
                             <td>
                                 {{ r.deadline|date:"Y-m-d" }}
                                 {% if r.due %}
-                                    <span class="badge rounded-pill bg-warning"
+                                    <span class="badge rounded-pill text-bg-warning"
                                           title="{{ r.due }} day{{ r.due|pluralize }} past deadline">{{ r.due }} day{{ r.due|pluralize }}</span>
                                 {% endif %}
                             </td>
@@ -96,14 +96,13 @@
                             <td>
                                 {{ a.review_request.deadline|date:"Y-m-d" }}
                                 {% if a.due %}
-                                    <span class="badge rounded-pill bg-warning"
+                                    <span class="badge rounded-pill text-bg-warning"
                                           title="{{ a.due }} day{{ a.due|pluralize }} past deadline">{{ a.due }} day{{ a.due|pluralize }}</span>
                                 {% endif %}
                             </td>
                             <td>
                                 {% person_link a.reviewer.person %}
-                                {% if a.state_id == "accepted" %}<span class="badge rounded-pill bg-success">Accepted</span>{% endif %}
-                                {% if a.reviewer_unavailable %}<span class="badge rounded-pill bg-danger">Unavailable</span>{% endif %}
+                                {{ a.state_id|badgeify }}
                             </td>
                             <td>{{ a.review_request.doc.friendly_state }}</td>
                             <td>
@@ -178,7 +177,7 @@
                                 {{ r.request_closed_time|date:"Y-m-d" }}
                             </td>
                             <td>
-                                {{ r.state.name }}
+                                {{ r.state.name|badgeify }}
                             </td>
                         </tr>
                     {% endfor %}
@@ -242,10 +241,10 @@
                                 {% person_link a.reviewer.person %}
                             </td>
                             <td>
-                                {{ a.state }}
+                                {{ a.state|badgeify }}
                             </td>
                             <td>
-                                {% if a.result %}{{ a.result }}{% endif %}
+                                {% if a.result %}{{ a.result|badgeify }}{% endif %}
                             </td>
                         </tr>
                     {% endfor %}

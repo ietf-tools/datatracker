@@ -39,9 +39,11 @@
         <h2 class="mt-5">Submission checks</h2>
         <p class="alert {% if passes_checks %}alert-success{% else %}alert-warning{% endif %} my-3">
             {% if passes_checks %}
-                Your draft has been verified to pass the submission checks.
+                Your Internet-Draft has been verified to pass the submission checks.
+            {% elif applied_any_checks %}
+                Your Internet-Draft failed at least one submission check.
             {% else %}
-                Your draft has <b>NOT</b> been verified to pass the submission checks.
+                No submission checks were applied to your Internet-Draft.
             {% endif %}
         </p>
         {% if submission.authors|length > 5 %}
@@ -70,41 +72,39 @@
             {% endif %}
         {% endfor %}
         {% for check in submission.latest_checks %}
-            {% if check.passed != None %}
-                <button class="btn btn-{% if check.passed %}{% if check.warnings %}warning{% elif check.errors %}danger{% else %}success{% endif %}{% else %}danger{% endif %}"
-                        type="button"
-                        data-bs-toggle="modal"
-                        data-bs-target="#check-{{ check.pk }}">
-                    View {{ check.checker }}
-                </button>
-                <div class="modal fade"
-                     id="check-{{ check.pk }}"
-                     tabindex="-1"
-                     role="dialog"
-                     aria-labelledby="check-{{ check.pk }}"
-                     aria-hidden="true">
-                    <div class="modal-dialog modal-dialog-scrollable modal-xl">
-                        <div class="modal-content">
-                            <div class="modal-header">
-                                <p class="h5 modal-title" id="{{ check.checker|slugify }}-label">
-                                    {{ check.checker|title }} for {{ submission.name }}-{{ submission.rev }}
-                                </p>
-                                <button type="button"
-                                        class="btn-close"
-                                        data-bs-dismiss="modal"
-                                        aria-label="Close"></button>
-                            </div>
-                            <div class="modal-body" id="{{ check.checker|slugify }}-message">
-                            <pre>{{ check.message|urlize_ietf_docs|linkify }}</pre>
-                            </div>
-                            <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                            </div>
+            <button class="btn btn-{% if check.passed %}{% if check.warnings %}warning{% elif check.errors %}danger{% else %}success{% endif %}{% else %}danger{% endif %}"
+                    type="button"
+                    data-bs-toggle="modal"
+                    data-bs-target="#check-{{ check.pk }}">
+                View {{ check.checker }}
+            </button>
+            <div class="modal fade"
+                 id="check-{{ check.pk }}"
+                 tabindex="-1"
+                 role="dialog"
+                 aria-labelledby="check-{{ check.pk }}"
+                 aria-hidden="true">
+                <div class="modal-dialog modal-dialog-scrollable modal-xl">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <p class="h5 modal-title" id="{{ check.checker|slugify }}-label">
+                                {{ check.checker|title }} for {{ submission.name }}-{{ submission.rev }}
+                            </p>
+                            <button type="button"
+                                    class="btn-close"
+                                    data-bs-dismiss="modal"
+                                    aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body" id="{{ check.checker|slugify }}-message">
+                        <pre>{{ check.message|urlize_ietf_docs|linkify }}</pre>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                         </div>
                     </div>
                 </div>
-            {% endif %}
-        {% endfor %}
+            </div>
+    {% endfor %}
     {% endif %}
     <div class="modal fade"
          id="twopages"
@@ -130,22 +130,35 @@
     </div>
     {% if submission.state_id == "waiting-for-draft" %}
         <p class="alert alert-warning my-3">
-            This submission is awaiting the first draft upload.
+            This submission is awaiting the first Internet-Draft upload.
         </p>
     {% elif submission.state_id == 'validating' %}
-        <p class="alert alert-warning my-3">
-            This submission is still being processed and validated. This normally takes a few minutes after
-            submission.
+        <div class="alert alert-danger my-3">
+            Notice: The Internet-Draft submission process has changed as of Datatracker version 10.3.0.
+            Your Internet-Draft is currently being processed and validated asynchronously. Results will be
+            displayed at this URL when they are available. If JavaScript is enabled in your
+            browser, this page will refreshed automatically. If JavaScript is not enabled, 
+            please reload this page in a few minutes to see the results.
+        </div>
+        <div id="submission-validating-alert"
+             class="alert alert-warning my-3"
+             data-submission-status-url="{% url 'ietf.submit.views.api_submission_status' submission_id=submission.pk %}">
+            This submission is being processed and validated. This usually takes a few seconds but may
+            take a few minutes for complex drafts or during periods of heavy load.
             {% with earliest_event=submission.submissionevent_set.last %}
-                {% if earliest_event %}
-                    It has been {{ earliest_event.time|timesince }} since submission.
-                {% endif %}
+            {% if earliest_event %}
+            Your draft was uploaded at {{ earliest_event.time }}.
+            {% endif %}
             {% endwith %}
             Please contact the secretariat for assistance if it has been more than an hour.
-        </p>
+        </div>
     {% else %}
         <h2 class="mt-5">Meta-data from the submission</h2>
-        {% if errors %}
+        {% if submission.state.slug == "cancel" %}
+            <div class="alert alert-warning my-3">
+                <b>Note:</b> The meta-data shown for a cancelled draft may be incorrect or incomplete.
+            </div>
+        {% elif errors %}
             <div class="alert alert-danger my-3">
                 <p>
                     <b>Meta-Data errors found!</b>
@@ -284,7 +297,7 @@
                         {% if author.country %}
                             {{ author.country }}
                             {% if author.cleaned_country and author.country != author.cleaned_country %}
-                                <span class="text-muted">(understood to be {{ author.cleaned_country }})</span>
+                                <span class="text-body-secondary">(understood to be {{ author.cleaned_country }})</span>
                             {% endif %}
                         {% else %}
                             <i>unknown country</i>
@@ -364,7 +377,7 @@
                             <div>
                                 {{ res.name.name }}: {{ res.value }}
                                 {% if res.display_name %}(as &quot;{{ res.display_name }}&quot;){% endif %}
-                            {% if external_resources.show_changes and added %}<span class="badge rounded-pill bg-success">New</span>{% endif %}
+                            {% if external_resources.show_changes and added %}<span class="badge rounded-pill text-bg-success">New</span>{% endif %}
                             </div>
                         {% endwith %}
                     {% empty %}
@@ -383,7 +396,7 @@
                                 <div>
                                     {{ res.name.name }}: {{ res.value }}
                                     {% if res.display_name %}(as &quot;{{ res.display_name }}&quot;){% endif %}
-                                {% if removed %}<span class="badge rounded-pill bg-warning">Removed</span>{% endif %}
+                                {% if removed %}<span class="badge rounded-pill text-bg-warning">Removed</span>{% endif %}
                                 </div>
                             {% endwith %}
                         {% empty %}
@@ -427,7 +440,7 @@
                 {% if requires_group_approval %}
                     Notifies group chairs to get approval.
                 {% elif requires_prev_authors_approval %}
-                    Notifies authors of previous revision of draft to get approval.
+                    Notifies authors of previous revision of Internet-Draft to get approval.
                 {% else %}
                     Notifies submitter and authors for confirmation.
                 {% endif %}
@@ -516,7 +529,7 @@
         </a>
     {% endif %}
     {% if show_send_full_url %}
-        <div class="alert alert-danger my-3">
+        <div class="alert alert-info my-3">
             <p>
                 You are not allowed to modify or cancel this submission. You can
                 only modify or cancel this submission from the same URL you were
@@ -535,7 +548,7 @@
             <form class="mt-3" method="post">
                 {% csrf_token %}
                 <input type="hidden" name="action" value="sendfullurl">
-                <button class="btn btn-danger" type="submit">
+                <button class="btn btn-primary" type="submit">
                     Request full access URL
                 </button>
             </form>

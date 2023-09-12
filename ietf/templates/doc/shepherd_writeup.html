@@ -3,13 +3,13 @@
 {% load origin %}
 {% load ietf_filters %}
 {% load textfilters %}
-{% block title %}Shepherd writeup for {{ doc.canonical_name }}-{{ doc.rev }}{% endblock %}
+{% block title %}Shepherd writeup for {{ doc.canonical_name }}{% endblock %}
 {% block content %}
     {% origin %}
     <h1>
         Shepherd writeup
         <br>
-        <small class="text-muted">{{ doc.canonical_name }}-{{ doc.rev }}</small>
+        <small class="text-body-secondary">{{ doc.canonical_name }}</small>
     </h1>
     <pre class="border p-3 my-3">{{writeup|maybewordwrap|urlize_ietf_docs|linkify}}</pre>
     {% if can_edit %}

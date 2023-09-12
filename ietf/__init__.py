@@ -6,7 +6,7 @@ from . import checks                           # pyflakes:ignore
 
 # Version must stay in single quotes for automatic CI replace
 # Don't add patch number here:
-__version__ = '8.0.0-dev'
+__version__ = '11.0.0-dev'
 
 # Release hash must stay in single quotes for automatic CI replace
 __release_hash__ = ''

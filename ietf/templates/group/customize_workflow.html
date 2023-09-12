@@ -12,10 +12,10 @@
     <h1>
         Customize Workflow
         <br>
-        <small class="text-muted">{{ group.acronym }} {{ group.type.name }}</small>
+        <small class="text-body-secondary">{{ group.acronym }} {{ group.type.name }}</small>
     </h1>
     <p class="my-3">
-        Below you can customize the draft states and tags used in the
+        Below you can customize the Internet-Draft states and tags used in the
         <a href="{{ group.about_url }}">{{ group.acronym }} {{ group.type.name }}</a>.
         Note that some states are
         mandatory for group operation and cannot be deactivated.
@@ -48,8 +48,8 @@
                               title="{{ state.desc|striptags|truncatewords:40 }}">
                             {{ state.name }}
                         </span>
-                        {% if not state.used %}<span class="text-muted">(not used in {{ group.acronym }})</span>{% endif %}
-                        {% if state.mandatory %}<span class="badge rounded-pill bg-success">Mandatory</span>{% endif %}
+                        {% if not state.used %}<span class="text-body-secondary">(not used in {{ group.acronym }})</span>{% endif %}
+                        {% if state.mandatory %}<span class="badge rounded-pill text-bg-success">Mandatory</span>{% endif %}
                     </td>
                     <td class="next-states">
                         {% if state.used_next_states %}
@@ -79,7 +79,7 @@
                                     <input class="form-check-input" type="checkbox" name="next_states" value="{{ s.pk }}" id="id-{{ s.pk }}-{{ state.pk }}" {% if checked %} checked{% endif %}>
                                     <label class="form-check-label" for="id-{{ s.pk }}-{{ state.pk }}">
                                         {{ s.name }}
-                                        {% if default %}<span class="badge rounded-pill bg-secondary">Default</span>{% endif %}
+                                        {% if default %}<span class="badge rounded-pill text-bg-secondary">Default</span>{% endif %}
                                     </label>
                                 </div>
                             {% endfor %}
@@ -124,7 +124,7 @@
                 <tr>
                     <td class="name">
                         <span {% if not tag.used %}class="text-decoration-line-through"{% endif %}>{{ tag.name }}</span>
-                        {% if not tag.used %}<span class="text-muted">(not used in {{ group.acronym }})</span>{% endif %}
+                        {% if not tag.used %}<span class="text-body-secondary">(not used in {{ group.acronym }})</span>{% endif %}
                     </td>
                     <td>
                         <form class="set-tag text-end" method="post">

@@ -69,11 +69,11 @@ def ajax_select2_search(request, model_name):
 
 
 def profile(request, email_or_name):
-    aliases = Alias.objects.filter(name=email_or_name)
+    aliases = Alias.objects.filter(name__iexact=email_or_name)
     persons = set(a.person for a in aliases)
 
     if '@' in email_or_name:
-        emails = Email.objects.filter(address=email_or_name)
+        emails = Email.objects.filter(address__iexact=email_or_name)
         persons.update(e.person for e in emails)
 
     persons = [p for p in persons if p and p.id]
@@ -100,14 +100,14 @@ def photo(request, email_or_name):
     if not size.isdigit():
         return HttpResponse("Size must be integer", status=400)
     size = int(size)
-    img = Image.open(person.photo)
-    img = img.resize((size, img.height*size//img.width))
-    bytes = BytesIO()
-    try:
-        img.save(bytes, format='JPEG')
-        return HttpResponse(bytes.getvalue(), content_type='image/jpg')
-    except OSError:
-        raise Http404
+    with Image.open(person.photo) as img:
+        img = img.resize((size, img.height*size//img.width))
+        bytes = BytesIO()
+        try:
+            img.save(bytes, format='JPEG')
+            return HttpResponse(bytes.getvalue(), content_type='image/jpg')
+        except OSError:
+            raise Http404
 
 
 @role_required("Secretariat")

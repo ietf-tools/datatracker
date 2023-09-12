@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2012-2021, All Rights Reserved
+# Copyright The IETF Trust 2012-2023, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -233,6 +233,9 @@ def construct_group_menu_context(request, group, selected, group_type, others):
 
     if group.features.has_meetings:
         entries.append(("Meetings", urlreverse("ietf.group.views.meetings", kwargs=kwargs)))
+    if group.acronym in ["iab", "iesg"]:
+        entries.append(("Statements", urlreverse("ietf.group.views.statements", kwargs=kwargs)))
+        entries.append(("Appeals", urlreverse("ietf.group.views.appeals", kwargs=kwargs)))
     entries.append(("History", urlreverse("ietf.group.views.history", kwargs=kwargs)))
     entries.append(("Photos", urlreverse("ietf.group.views.group_photos", kwargs=kwargs)))
     entries.append(("Email expansions", urlreverse("ietf.group.views.email", kwargs=kwargs)))

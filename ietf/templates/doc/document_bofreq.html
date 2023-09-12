@@ -9,7 +9,7 @@
     {% origin %}
     {{ top|safe }}
     {% include "doc/revisions_list.html" %}
-    <div id="timeline"></div>
+    <div id="doc-timeline"></div>
     {% if doc.rev != latest_rev %}
         <div class="alert alert-warning my-3">The information below is for an older version of this BOF request.</div>
     {% endif %}
@@ -21,7 +21,7 @@
                 <td class="edit"></td>
                 <td>
                     {{ doc.get_state.slug|capfirst }} BOF request
-                    {% if snapshot %}<span class="badge rounded-pill bg-warning">Snapshot</span>{% endif %}
+                    {% if snapshot %}<span class="badge rounded-pill text-bg-warning">Snapshot</span>{% endif %}
                 </td>
             </tr>
             <tr>
@@ -135,7 +135,7 @@
                     {% endif %}
                 </td>
                 <td>
-                    {{ doc.notify|default:'<span class="text-muted">(None)</span>' }}
+                    {{ doc.notify|default:'<span class="text-body-secondary">(None)</span>' }}
                 </td>
             </tr>
         </tbody>
@@ -154,7 +154,7 @@
         <div class="card-header">
             {{ doc.name }}-{{ doc.rev }}
         </div>
-        <div class="card-body">
+        <div class="card-body text-break">
             {{ content }}
         </div>
     </div>

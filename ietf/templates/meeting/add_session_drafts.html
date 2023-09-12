@@ -1,15 +1,15 @@
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin static django_bootstrap5 %}
-{% block title %}Add drafts to {{ session.meeting }} : {{ session.group.acronym }}{% endblock %}
+{% block title %}Add I-Ds to {{ session.meeting }} : {{ session.group.acronym }}{% endblock %}
 {% block pagehead %}{{ form.media.css }}{% endblock %}
 {% block content %}
     {% origin %}
     <h1>
-        Add drafts to  {{ session.meeting }}
+        Add Internet-Drafts to  {{ session.meeting }}
         {% if session_number %}: Session {{ session_number }}{% endif %}
         <br>
-        <small class="text-muted">{{ session.group.acronym }}
+        <small class="text-body-secondary">{{ session.group.acronym }}
             {% if session.name %}: {{ session.name }}{% endif %}
         </small>
     </h1>
@@ -20,9 +20,9 @@
         </div>
     {% endif %}
     <div class="alert alert-info my-3">
-        This form will link additional drafts to this session with a revision of "Current at time of presentation". For more fine grained control of versions, or to remove a draft from a session, adjust the sessions associated with a draft from the draft's main page.
+        This form will link additional Internet-Drafts to this session with a revision of "Current at time of presentation". For more fine grained control of versions, or to remove an Internet-Draft from a session, adjust the sessions associated with an Internet-Draft from the Internet-Draft's main page.
     </div>
-    <h2 class="mt-5">Drafts already linked to this session</h2>
+    <h2 class="mt-5">Internet-Drafts already linked to this session</h2>
     <table class="table table-sm table-striped tablesorter">
         <thead>
             <tr>
@@ -47,7 +47,7 @@
             </tbody>
         {% endif %}
     </table>
-    <h2 class="mt-5">Additional drafts to link to this session</h2>
+    <h2 class="mt-5">Additional Internet-Drafts to link to this session</h2>
     <form method="post">
         {% csrf_token %}
         {% bootstrap_form form %}

@@ -23,7 +23,7 @@ import ietf.review.mailarch
 
 from ietf.doc.factories import ( NewRevisionDocEventFactory, IndividualDraftFactory, WgDraftFactory,
                             WgRfcFactory, ReviewFactory, DocumentFactory)
-from ietf.doc.models import ( Document, DocumentAuthor, RelatedDocument, DocEvent, ReviewRequestDocEvent,
+from ietf.doc.models import ( DocumentAuthor, RelatedDocument, DocEvent, ReviewRequestDocEvent,
                             ReviewAssignmentDocEvent, )
 from ietf.group.factories import RoleFactory, ReviewTeamFactory
 from ietf.group.models import Group
@@ -499,6 +499,8 @@ class ReviewTests(TestCase):
 
                 tar.add(os.path.relpath(tmp.name))
 
+                mbox.close()
+
         return mbox_path
 
     def test_search_mail_archive(self):
@@ -603,7 +605,7 @@ class ReviewTests(TestCase):
         for r in ReviewResultName.objects.filter(slug__in=("issues", "ready")):
             review_req.team.reviewteamsettings.review_results.add(r)
 
-        url = urlreverse('ietf.doc.views_review.complete_review', kwargs={ "name": doc.name, "assignment_id": review_req.pk })
+        url = urlreverse('ietf.doc.views_review.complete_review', kwargs={ "name": doc.name, "assignment_id": assignment.pk })
 
         return assignment, url
 
@@ -912,7 +914,8 @@ class ReviewTests(TestCase):
             date_today().isoformat(),
         ]
         review_name = "-".join(c for c in name_components if c).lower()
-        Document.objects.create(name=review_name,type_id='review',group=assignment.review_request.team)
+
+        ReviewFactory(name=review_name,type_id='review',group=assignment.review_request.team)
 
         r = self.client.post(url, data={
             "result": ReviewResultName.objects.get(reviewteamsettings_review_results_set__group=assignment.review_request.team, slug="ready").pk,
@@ -928,10 +931,9 @@ class ReviewTests(TestCase):
         })
         self.assertEqual(r.status_code, 302)
         r2 = self.client.get(r.url)
-        # FIXME-LARS: this fails when the tests are run with --debug-mode, i.e., DEBUG is set:
-        if not settings.DEBUG:
-            self.assertEqual(len(r2.context['messages']),1)
-            self.assertIn('Attempt to save review failed', list(r2.context['messages'])[0].message)
+        self.assertEqual(r2.status_code, 200)
+        self.assertEqual(len(r2.context['messages']),1)
+        self.assertIn('Attempt to save review failed', list(r2.context['messages'])[0].message)
 
     def test_partially_complete_review(self):
         assignment, url = self.setup_complete_review_test()

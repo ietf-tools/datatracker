@@ -18,7 +18,8 @@ from ietf.name.models import ( AgendaFilterTypeName, AgendaTypeName, BallotPosit
     ReviewAssignmentStateName, ReviewRequestStateName, ReviewResultName, ReviewTypeName,
     RoleName, RoomResourceName, SessionStatusName, StdLevelName, StreamName, TimeSlotTypeName,
     TopicAudienceName, ReviewerQueuePolicyName, TimerangeName, ExtResourceTypeName, ExtResourceName,
-    SlideSubmissionStatusName, ProceedingsMaterialTypeName, SessionPurposeName )
+    SlideSubmissionStatusName, ProceedingsMaterialTypeName, SessionPurposeName, TelechatAgendaSectionName,
+    AppealArtifactTypeName )
 
 class TimeSlotTypeNameResource(ModelResource):
     class Meta:
@@ -720,3 +721,34 @@ class SessionPurposeNameResource(ModelResource):
             "on_agenda": ALL,
         }
 api.name.register(SessionPurposeNameResource())
+
+
+class TelechatAgendaSectionNameResource(ModelResource):
+    class Meta:
+        queryset = TelechatAgendaSectionName.objects.all()
+        serializer = api.Serializer()
+        cache = SimpleCache()
+        #resource_name = 'telechatagendasectionname'
+        ordering = ['slug', ]
+        filtering = { 
+            "slug": ALL,
+            "name": ALL,
+            "desc": ALL,
+            "used": ALL,
+            "order": ALL,
+        }
+api.name.register(TelechatAgendaSectionNameResource())
+
+class AppealArtifactTypeNameResource(ModelResource):
+    class Meta:
+        cache = SimpleCache()
+        queryset = AppealArtifactTypeName.objects.all()
+        serializer = api.Serializer()
+        filtering = { 
+            "slug": ALL,
+            "name": ALL,
+            "desc": ALL,
+            "used": ALL,
+            "order": ALL,
+        }
+api.name.register(AppealArtifactTypeNameResource())

@@ -1,6 +1,7 @@
 # Copyright The IETF Trust 2017, All Rights Reserved
 
-from django.conf.urls import include
+from django.conf import settings
+from django.urls import include
 from django.views.generic import TemplateView
 
 from ietf import api
@@ -31,8 +32,6 @@ urlpatterns = [
     url(r'^meeting/(?P<num>[A-Za-z0-9._+-]+)/agenda-data$', meeting_views.api_get_agenda_data),
     # Meeting session materials
     url(r'^meeting/session/(?P<session_id>[A-Za-z0-9._+-]+)/materials$', meeting_views.api_get_session_materials),
-    # Let Meetecho trigger recording imports
-    url(r'^notify/meeting/import_recordings/(?P<number>[a-z0-9-]+)/?$', meeting_views.api_import_recordings),
     # Let MeetEcho upload bluesheets
     url(r'^notify/meeting/bluesheet/?$', meeting_views.api_upload_bluesheet),
     # Let MeetEcho tell us about session attendees
@@ -56,6 +55,11 @@ urlpatterns = [
     url(r'^version/?$', api_views.version),
     # Application authentication API key
     url(r'^appauth/[authortools|bibxml]', api_views.app_auth),
+    # latest versions
+    url(r'^rfcdiff-latest-json/%(name)s(?:-%(rev)s)?(\.txt|\.html)?/?$' % settings.URL_REGEXPS, api_views.rfcdiff_latest_json),
+    url(r'^rfcdiff-latest-json/(?P<name>[Rr][Ff][Cc] [0-9]+?)(\.txt|\.html)?/?$', api_views.rfcdiff_latest_json),
+    # direct authentication
+    url(r'^directauth/?$', api_views.directauth),
 ]
 
 # Additional (standard) Tastypie endpoints

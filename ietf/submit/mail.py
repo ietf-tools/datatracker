@@ -13,7 +13,7 @@ from django.urls import reverse as urlreverse
 from django.core.exceptions import ValidationError
 from django.contrib.sites.models import Site
 from django.template.loader import render_to_string
-from django.utils.encoding import force_text, force_str
+from django.utils.encoding import force_str
 
 import debug                            # pyflakes:ignore
 
@@ -52,7 +52,7 @@ def send_submission_confirmation(request, submission, chair_notice=False):
     return all_addrs
 
 def send_full_url(request, submission):
-    subject = 'Full URL for managing submission of draft %s' % submission.name
+    subject = 'Full URL for managing submission of Internet-Draft %s' % submission.name
     from_email = settings.IDSUBMIT_FROM_EMAIL
     (to_email, cc) = gather_address_lists('sub_management_url_requested',submission=submission)
     url = settings.IDTRACKER_BASE_URL + urlreverse('ietf.submit.views.submission_status', kwargs=dict(submission_id=submission.pk, access_token=submission.access_token()))
@@ -75,7 +75,7 @@ def send_approval_request(request, submission, replaced_doc=None):
     If replaced_doc is not None, requests will be sent to the wg chairs or ADs
     responsible for that doc's group instead of the submission. 
     """
-    subject = 'New draft waiting for approval: %s' % submission.name
+    subject = 'New Internet-Draft waiting for approval: %s' % submission.name
     from_email = settings.IDSUBMIT_FROM_EMAIL
 
     # Sort out which MailTrigger to use
@@ -202,7 +202,7 @@ def get_reply_to():
     address with "plus addressing" using a random string.  Guaranteed to be unique"""
     local,domain = get_base_submission_message_address().split('@')
     while True:
-        rand = force_text(base64.urlsafe_b64encode(os.urandom(12)))
+        rand = force_str(base64.urlsafe_b64encode(os.urandom(12)))
         address = "{}+{}@{}".format(local,rand,domain)
         q = Message.objects.filter(reply_to=address)
         if not q:

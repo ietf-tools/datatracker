@@ -1,12 +1,12 @@
 {% extends "base.html" %}
 {% load origin %}
 {% load django_bootstrap5 %}
-{% block title %}Release draft {{ doc.name }}-{{ doc.rev }}{% endblock %}
+{% block title %}Release I-D {{ doc.name }}-{{ doc.rev }}{% endblock %}
 {% block content %}
     <h1>
-        Release draft
+        Release Internet-Draft
         <br>
-        <small class="text-muted">{{ doc.name }}-{{ doc.rev }}</small>
+        <small class="text-body-secondary">{{ doc.name }}-{{ doc.rev }}</small>
     </h1>
     <div class="my-3 alert alert-warning">
         <b>Warning:</b>

@@ -1,6 +1,6 @@
 <?xml version='1.0'?>
 <?xml-stylesheet type='text/xsl' href='rfc2629.xslt' ?>
-<rfc category="exp" submissionType="independent" ipr="trust200902" docName="draft-test-references-00" version="3">
+<rfc xmlns:xi="http://www.w3.org/2001/XInclude" category="exp" submissionType="independent" ipr="trust200902" docName="draft-test-references-00" version="3">
     <front>
         <title>Test Draft with References</title>
         <author fullname="Alfred Person" initials="A." surname="Person" role="editor">
@@ -37,9 +37,25 @@
                 <seriesInfo name="RFC" value="1"/>
                 <seriesInfo name="DOI" value="10.17487/RFC0001"/>
             </reference>
+            <reference anchor="MNEMONIC" target="https://www.rfc-editor.org/info/rfc2">
+                <front>
+                    <title>Cloud Software</title>
+                    <author initials="D." surname="Crocker" fullname="D. Crocker">
+                        <organization/>
+                    </author>
+                    <date year="1969" month="April"/>
+                </front>
+                <seriesInfo name="RFC" value="2"/>
+                <seriesInfo name="DOI" value="10.17487/RFC0002"/>
+            </reference>
         </references>
         <references>
             <name>Informative References</name>
+            <xi:include href='https://xml.resource.org/public/rfc/bibxml3/reference.I-D.ietf-teas-pcecc-use-cases-00.xml'/>
+            <xi:include href='https://xml.resource.org/public/rfc/bibxml3/reference.I-D.ietf-teas-pcecc-use-cases.xml'/>
+            <xi:include href="https://bib.ietf.org/public/rfc/bibxml3/reference.I-D.draft-ietf-sipcore-multiple-reasons-00.xml" />
+            <xi:include href="https://bib.ietf.org/public/rfc/bibxml3/reference.I-D.draft-ietf-sipcore-multiple-reasons.xml" />
+            <xi:include href="https://xml2rfc.ietf.org/public/rfc/bibxml9/reference.BCP.0014.xml" />
             <reference anchor='RFC0255' target='https://www.rfc-editor.org/info/rfc255'>
                 <front>
                     <title>Status of network hosts</title>
@@ -50,6 +66,34 @@
                 </front>
                 <seriesInfo name='RFC' value='255'/>
                 <seriesInfo name='DOI' value='10.17487/RFC0255'/>
+            </reference>
+            <reference anchor="CONSISTENCY">
+              <front>
+                <title>Key Consistency and Discovery</title>
+                <author fullname="Alex Davidson" initials="A." surname="Davidson">
+                  <organization>Brave Software</organization>
+                </author>
+                <author fullname="Matthew Finkel" initials="M." surname="Finkel">
+                  <organization>The Tor Project</organization>
+                </author>
+                <author fullname="Martin Thomson" initials="M." surname="Thomson">
+                  <organization>Mozilla</organization>
+                </author>
+                <author fullname="Christopher A. Wood" initials="C. A." surname="Wood">
+                  <organization>Cloudflare</organization>
+                </author>
+                <date day="17" month="August" year="2022"/>
+                <abstract>
+                  <t>   This document describes the key consistency and correctness
+       requirements of protocols such as Privacy Pass, Oblivious DoH, and
+       Oblivious HTTP for user privacy.  It discusses several mechanisms and
+       proposals for enabling user privacy in varying threat models.  In
+       concludes with discussion of open problems in this area.
+
+                  </t>
+                </abstract>
+              </front>
+              <seriesInfo name="Internet-Draft" value="draft-wood-key-consistency-03"/>
             </reference>
             <referencegroup anchor="bcp6">
                 <reference anchor='RFC1930' target='https://www.rfc-editor.org/info/rfc1930'>

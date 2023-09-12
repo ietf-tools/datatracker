@@ -58,13 +58,14 @@ from ietf.doc.models import ( Document, DocHistory, DocAlias, State,
     IESG_BALLOT_ACTIVE_STATES, IESG_STATCHG_CONFLREV_ACTIVE_STATES,
     IESG_CHARTER_ACTIVE_STATES )
 from ietf.doc.fields import select2_id_doc_name_json
-from ietf.doc.utils import get_search_cache_key, augment_events_with_revision
+from ietf.doc.utils import get_search_cache_key, augment_events_with_revision, needed_ballot_positions
 from ietf.group.models import Group
 from ietf.idindex.index import active_drafts_index_by_group
 from ietf.name.models import DocTagName, DocTypeName, StreamName
 from ietf.person.models import Person
 from ietf.person.utils import get_active_ads
 from ietf.utils.draft_search import normalize_draftname
+from ietf.utils.log import log
 from ietf.doc.utils_search import prepare_document_table
 
 
@@ -188,7 +189,7 @@ def retrieve_search_results(form, all_types=False):
             Q(documentauthor__person__email__address__icontains=query["author"])
         )
     elif by == "group":
-        docs = docs.filter(group__acronym=query["group"])
+        docs = docs.filter(group__acronym__iexact=query["group"])
     elif by == "area":
         docs = docs.filter(Q(group__type="wg", group__parent=query["area"]) |
                            Q(group=query["area"])).distinct()
@@ -222,12 +223,14 @@ def search(request):
             return HttpResponseBadRequest("form not valid: %s" % form.errors)
 
         cache_key = get_search_cache_key(get_params)
-        results = cache.get(cache_key)
-        if not results:
+        cached_val = cache.get(cache_key)
+        if cached_val:
+            [results, meta] = cached_val
+        else:
             results = retrieve_search_results(form)
-            cache.set(cache_key, results)
-
-        results, meta = prepare_document_table(request, results, get_params)
+            results, meta = prepare_document_table(request, results, get_params)
+            cache.set(cache_key, [results, meta]) # for settings.CACHE_MIDDLEWARE_SECONDS
+            log(f"Search results computed for {get_params}")
         meta['searching'] = True
     else:
         form = SearchForm()
@@ -245,15 +248,15 @@ def frontpage(request):
 
 def search_for_name(request, name):
     def find_unique(n):
-        exact = DocAlias.objects.filter(name=n).first()
+        exact = DocAlias.objects.filter(name__iexact=n).first()
         if exact:
             return exact.name
 
-        aliases = DocAlias.objects.filter(name__startswith=n)[:2]
+        aliases = DocAlias.objects.filter(name__istartswith=n)[:2]
         if len(aliases) == 1:
             return aliases[0].name
 
-        aliases = DocAlias.objects.filter(name__contains=n)[:2]
+        aliases = DocAlias.objects.filter(name__icontains=n)[:2]
         if len(aliases) == 1:
             return aliases[0].name
 
@@ -287,8 +290,8 @@ def search_for_name(request, name):
             redirect_to = find_unique(rev_split.group(1))
             if redirect_to:
                 rev = rev_split.group(2)
-                # check if we can redirect directly to the rev
-                if DocHistory.objects.filter(doc__docalias__name=redirect_to, rev=rev).exists():
+                # check if we can redirect directly to the rev if it's draft, if rfc - always redirect to main page
+                if not redirect_to.startswith('rfc') and DocHistory.objects.filter(doc__docalias__name=redirect_to, rev=rev).exists():
                     return cached_redirect(cache_key, urlreverse("ietf.doc.views_doc.document_main", kwargs={ "name": redirect_to, "rev": rev }))
                 else:
                     return cached_redirect(cache_key, urlreverse("ietf.doc.views_doc.document_main", kwargs={ "name": redirect_to }))
@@ -461,7 +464,7 @@ def ad_dashboard_sort_key(doc):
 
 
 def ad_workload(request):
-    delta = datetime.timedelta(days=30)
+    delta = datetime.timedelta(days=120)
     right_now = timezone.now()
 
     ads = []
@@ -494,6 +497,7 @@ def ad_workload(request):
         [
             ("Publication Requested Internet-Draft", False),
             ("AD Evaluation Internet-Draft", False),
+            ("Last Call Requested Internet-Draft", True),
             ("In Last Call Internet-Draft", True),
             ("Waiting for Writeup Internet-Draft", False),
             ("IESG Evaluation - Defer Internet-Draft", False),
@@ -529,6 +533,7 @@ def ad_workload(request):
         [
             ("Publication Requested Status Change", False),
             ("AD Evaluation Status Change", False),
+            ("Last Call Requested Status Change", True),
             ("In Last Call Status Change", True),
             ("Waiting for Writeup Status Change", False),
             ("IESG Evaluation Status Change", True),
@@ -679,21 +684,43 @@ def docs_for_ad(request, name):
     results, meta = prepare_document_table(request, retrieve_search_results(form), form.data, max_results=500)
     results.sort(key=ad_dashboard_sort_key)
     del meta["headers"][-1]
-    #
+
+    # filter out some results
+    results = [
+        r
+        for r in results
+        if not (
+            r.type_id == "charter"
+            and (
+                r.group.state_id == "abandon"
+                or r.get_state_slug("charter") == "replaced"
+            )
+        )
+        and not (
+            r.type_id == "draft"
+            and (
+                r.get_state_slug("draft-iesg") == "dead"
+                or r.get_state_slug("draft") == "repl"
+            )
+        )
+    ]
+
     for d in results:
         d.search_heading = ad_dashboard_group(d)
-    #
-    # Additional content showing docs with blocking positions by this ad
+
+    # Additional content showing docs with blocking positions by this AD,
+    # and docs that the AD hasn't balloted on that are lacking ballot positions to progress
     blocked_docs = []
+    not_balloted_docs = []
     if ad in get_active_ads():
-        possible_docs = Document.objects.filter(Q(states__type="draft-iesg",
-                                                  states__slug__in=IESG_BALLOT_ACTIVE_STATES) |
-                                                Q(states__type="charter",
-                                                  states__slug__in=IESG_CHARTER_ACTIVE_STATES) |
-                                                Q(states__type__in=("statchg", "conflrev"),
-                                                  states__slug__in=IESG_STATCHG_CONFLREV_ACTIVE_STATES),
-                                                docevent__ballotpositiondocevent__pos__blocking=True,
-                                                docevent__ballotpositiondocevent__balloter=ad).distinct()
+        iesg_docs = Document.objects.filter(Q(states__type="draft-iesg",
+                                              states__slug__in=IESG_BALLOT_ACTIVE_STATES) |
+                                            Q(states__type="charter",
+                                              states__slug__in=IESG_CHARTER_ACTIVE_STATES) |
+                                            Q(states__type__in=("statchg", "conflrev"),
+                                              states__slug__in=IESG_STATCHG_CONFLREV_ACTIVE_STATES)).distinct()
+        possible_docs = iesg_docs.filter(docevent__ballotpositiondocevent__pos__blocking=True,
+                                         docevent__ballotpositiondocevent__balloter=ad)
         for doc in possible_docs:
             ballot = doc.active_ballot()
             if not ballot:
@@ -714,12 +741,27 @@ def docs_for_ad(request, name):
         if blocked_docs:
             blocked_docs.sort(key=lambda d: min(p.time for p in d.blocking_positions if p.balloter==ad), reverse=True)
 
-        for d in blocked_docs:
-           if d.get_base_name() == 'charter-ietf-shmoo-01-04.txt':
-              print('Is in list')
+        possible_docs = iesg_docs.exclude(
+            Q(docevent__ballotpositiondocevent__balloter=ad)
+        )
+        for doc in possible_docs:
+            ballot = doc.active_ballot()
+            if (
+                not ballot
+                or doc.get_state_slug("draft") == "repl"
+                or doc.get_state_slug("draft-iesg") == "defer"
+                or (doc.telechat_date() and doc.telechat_date() > timezone.now().date())
+            ):
+                continue
+
+            iesg_ballot_summary = needed_ballot_positions(
+                doc, list(ballot.active_balloter_positions().values())
+            )
+            if re.search(r"\bNeeds\s+\d+", iesg_ballot_summary):
+                not_balloted_docs.append(doc)
 
     return render(request, 'doc/drafts_for_ad.html', {
-        'form':form, 'docs':results, 'meta':meta, 'ad_name': ad.plain_name(), 'blocked_docs': blocked_docs
+        'form':form, 'docs':results, 'meta':meta, 'ad_name': ad.plain_name(), 'blocked_docs': blocked_docs, 'not_balloted_docs': not_balloted_docs
     })
 def drafts_in_last_call(request):
     lc_state = State.objects.get(type="draft-iesg", slug="lc").pk
@@ -745,7 +787,9 @@ def drafts_in_iesg_process(request):
             if s.slug == "lc":
                 for d in docs:
                     e = d.latest_event(LastCallDocEvent, type="sent_last_call")
-                    d.lc_expires = e.expires if e else datetime.datetime.min
+                    # If we don't have an event, use an arbitrary date in the past (but not datetime.datetime.min,
+                    # which causes problems with timezone conversions)
+                    d.lc_expires = e.expires if e else datetime.datetime(1950, 1, 1)
                 docs = list(docs)
                 docs.sort(key=lambda d: d.lc_expires)
 
@@ -758,7 +802,7 @@ def drafts_in_iesg_process(request):
 
 def recent_drafts(request, days=7):
     slowcache = caches['slowpages']
-    cache_key = f'recentdraftsview{days}' 
+    cache_key = f'recentdraftsview{days}'
     cached_val = slowcache.get(cache_key)
     if not cached_val:
         since = timezone.now()-datetime.timedelta(days=days)
@@ -824,11 +868,12 @@ def index_all_drafts(request):
     return render(request, 'doc/index_all_drafts.html', { "categories": categories })
 
 def index_active_drafts(request):
+    slowcache = caches['slowpages']
     cache_key = 'doc:index_active_drafts'
-    groups = cache.get(cache_key)
+    groups = slowcache.get(cache_key)
     if not groups:
         groups = active_drafts_index_by_group()
-        cache.set(cache_key, groups, 15*60)
+        slowcache.set(cache_key, groups, 15*60)
     return render(request, "doc/index_active_drafts.html", { 'groups': groups })
 
 def ajax_select2_search_docs(request, model_name, doc_type):

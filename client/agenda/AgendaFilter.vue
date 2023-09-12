@@ -217,30 +217,58 @@ function toggleFilterGroup (key) {
     padding: 5px;
     border-radius: 10px;
 
+    @at-root .theme-dark & {
+      background-color: $gray-800;
+    }
+
     &:nth-child(2) {
       background-color: $blue-100;
+
+      @at-root .theme-dark & {
+        background-color: $gray-800;
+      }
 
       .agenda-personalize-areamain {
         button {
           color: $blue-600;
+
+          @at-root .theme-dark & {
+            color: $blue-100;
+          }
         }
       }
 
       .agenda-personalize-groups {
         background-color: lighten($blue-100, 7%);
+
+        @at-root .theme-dark & {
+          background-color: $gray-700;
+        }
       }
     }
     &:nth-child(3) {
       background-color: $orange-100;
 
+      @at-root .theme-dark & {
+        background-color: $gray-800;
+      }
+
       .agenda-personalize-areamain {
         button {
           color: $orange-600;
+
+          @at-root .theme-dark & {
+            color: $orange-100;
+          }
         }
       }
 
       .agenda-personalize-groups {
         background-color: lighten($orange-100, 7%);
+
+        @at-root .theme-dark & {
+          background-color: $gray-700;
+        }
       }
     }
 
@@ -276,6 +304,12 @@ function toggleFilterGroup (key) {
       transition: background-color .5s ease;
       position: relative;
 
+      @at-root .theme-dark & {
+        background-color: $gray-600;
+        border-color: $gray-700;
+        color: #FFF;
+      }
+
       > .bi {
         margin-right: .5rem;
       }
@@ -310,6 +344,10 @@ function toggleFilterGroup (key) {
     flex: 1;
     display: flex;
     flex-wrap: wrap;
+
+    @at-root .theme-dark & {
+      background-color: $gray-700;
+    }
   }
 
   &-group {
@@ -323,6 +361,12 @@ function toggleFilterGroup (key) {
     background-color: rgba(255,255,255,.7);
     color: $gray-600;
     margin-right: 0px;
+
+    @at-root .theme-dark & {
+      background-color: $gray-600;
+      border-color: $gray-700;
+      color: #FFF;
+    }
 
     @media screen and (max-width: $bs5-break-sm) {
       font-size: .9em;

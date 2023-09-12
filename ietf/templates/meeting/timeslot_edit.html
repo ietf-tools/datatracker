@@ -31,11 +31,11 @@ a.new-timeslot-link { color: lightgray; font-size: large;}
     <h1>
         IETF {{ meeting.number }} Meeting Agenda
         <br>
-        <small class="text-muted">Timeslots and Room Availability</small>
+        <small class="text-body-secondary">Timeslots and Room Availability</small>
     </h1>
     <div class="my-3">
         <a class="btn btn-primary"
-           href="{% url "ietf.meeting.views.create_timeslot" num=meeting.number %}">
+           href="{% url "ietf.meeting.views.create_timeslot" num=meeting.number %}{% if "sched" in request.GET %}?sched={{ request.GET.sched }}{% endif %}">
             New timeslot
         </a>
         {% if meeting.schedule %}
@@ -51,6 +51,9 @@ a.new-timeslot-link { color: lightgray; font-size: large;}
            href="{% url "ietf.meeting.views.list_schedules" num=meeting.number %}">
             Agenda list
         </a>
+        {% if schedule_edit_url %}
+            <a class="btn btn-secondary" href="{{ schedule_edit_url }}">Back to agenda</a>
+        {% endif %}
     </div>
    <div class="timeslot-edit">
         {% if rooms|length == 0 %}
@@ -126,7 +129,9 @@ a.new-timeslot-link { color: lightgray; font-size: large;}
                                         <p>
                                             No timeslots exist for this meeting yet.
                                         </p>
-                                        <a href="{% url "ietf.meeting.views.create_timeslot" num=meeting.number %}">Create a timeslot.</a>
+                                        <a href="{% url "ietf.meeting.views.create_timeslot" num=meeting.number %}{% if "sched" in request.GET %}?sched={{ request.GET.sched }}{% endif %}">
+                                            Create a timeslot.
+                                        </a>
                                     </td>
                                 {% else %}
                                     {% for day in time_slices %}
@@ -137,11 +142,11 @@ a.new-timeslot-link { color: lightgray; font-size: large;}
                                                     <td class="tscell {% if cell_ts|length > 1 %}timeslot-collision{% endif %}{% for ts in cell_ts %} tstype_{{ ts.type.slug }}{% endfor %}">
                                                         {% if cell_ts %}
                                                             {% for ts in cell_ts %}
-                                                                {% include 'meeting/timeslot_edit_timeslot.html' with ts=ts in_use=ts_with_any_assignments in_official_use=ts_with_official_assignments only %}
+                                                                {% include 'meeting/timeslot_edit_timeslot.html' with ts=ts in_use=ts_with_any_assignments in_official_use=ts_with_official_assignments request=request only %}
                                                             {% endfor %}
                                                         {% endif %}
                                                         <a class="new-timeslot-link text-reset text-decoration-none {% if cell_ts %}hidden{% endif %}" aria-label="+"
-                                                           href="{% url 'ietf.meeting.views.create_timeslot' num=meeting.number %}?day={{ day.toordinal }}&amp;date={{ day|date:'Y-m-d' }}&amp;location={{ room.pk }}&amp;time={{ slot.time|date:'H:i' }}&amp;duration={{ slot.duration }}">
+                                                           href="{% url 'ietf.meeting.views.create_timeslot' num=meeting.number %}?day={{ day.toordinal }}&amp;date={{ day|date:'Y-m-d' }}&amp;location={{ room.pk }}&amp;time={{ slot.time|date:'H:i' }}&amp;duration={{ slot.duration }}{% if "sched" in request.GET %}&amp;sched={{ request.GET.sched }}{% endif %}">
                                                             <i class="bi bi-plus-square"></i>
                                                         </a>
                                                     </td>

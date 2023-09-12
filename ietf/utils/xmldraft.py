@@ -1,5 +1,6 @@
 # Copyright The IETF Trust 2022, All Rights Reserved
 # -*- coding: utf-8 -*-
+import datetime
 import io
 import re
 import xml2rfc
@@ -7,6 +8,8 @@ import xml2rfc
 import debug  # pyflakes: ignore
 
 from contextlib import ExitStack
+from xml2rfc.util.date import augment_date, extract_date
+from ietf.utils.timezone import date_today
 
 from .draft import Draft
 
@@ -60,17 +63,47 @@ class XMLDraft(Draft):
                 tree.tree = v2v3.convert2to3()
         return tree, xml_version
 
-    def _document_name(self, anchor):
-        """Guess document name from reference anchor
+    def _document_name(self, ref):
+        """Get document name from reference."""
+        series = ["rfc", "bcp", "fyi", "std"]
+        # handle xinclude first
+        # FIXME: this assumes the xinclude is a bibxml href; if it isn't, there can
+        # still be false negatives. it would be better to expand the xinclude and parse
+        # its seriesInfo.
+        if ref.tag.endswith("}include"):
+            name = re.search(
+                rf"reference\.({'|'.join(series).upper()})\.(\d{{4}})\.xml",
+                ref.attrib["href"],
+            )
+            if name:
+                return f"{name.group(1)}{int(name.group(2))}".lower()
+            name = re.search(
+                r"reference\.I-D\.(?:draft-)?(.*)\.xml", ref.attrib["href"]
+            )
+            if name:
+                return f"draft-{name.group(1)}"
+            # can't extract the name, give up
+            return ""
 
-        Looks for series numbers and removes leading 0s from the number.
-        """
-        anchor = anchor.lower()  # always give back lowercase
-        label = anchor.rstrip('0123456789')  # remove trailing digits
-        if label in ['rfc', 'bcp', 'fyi', 'std']:
-            number = int(anchor[len(label):])
-            return f'{label}{number}'
-        return anchor
+        # check the anchor next
+        anchor = ref.get("anchor").lower()  # always give back lowercase
+        label = anchor.rstrip("0123456789")  # remove trailing digits
+        if label in series:
+            number = int(anchor[len(label) :])
+            return f"{label}{number}"
+
+        # if we couldn't find a match so far, try the seriesInfo
+        series_query = " or ".join(f"@name='{x.upper()}'" for x in series)
+        for info in ref.xpath(
+            f"./seriesInfo[{series_query} or @name='Internet-Draft']"
+        ):
+            if not info.attrib["value"]:
+                continue
+            if info.attrib["name"] == "Internet-Draft":
+                return info.attrib["value"]
+            else:
+                return f'{info.attrib["name"].lower()}{info.attrib["value"]}'
+        return ""
 
     def _reference_section_type(self, section_name):
         """Determine reference type from name of references section"""
@@ -102,6 +135,27 @@ class XMLDraft(Draft):
 
     def get_title(self):
         return self.xmlroot.findtext('front/title').strip()
+
+    @staticmethod
+    def parse_creation_date(date_elt):
+        if date_elt is None:
+            return None
+        today = date_today()
+        # ths mimics handling of date elements in the xml2rfc text/html writers
+        year, month, day = extract_date(date_elt, today)
+        year, month, day = augment_date(year, month, day, today)
+        if not day:
+            # Must choose a day for a datetime.date. Per RFC 7991 sect 2.17, we use
+            # today's date if it is consistent with the rest of the date. Otherwise,
+            # arbitrariy (and consistent with the text parser) assume the 15th.
+            if year == today.year and month == today.month:
+                day = today.day
+            else:
+                day = 15
+        return datetime.date(year, month, day)
+
+    def get_creation_date(self):
+        return self.parse_creation_date(self.xmlroot.find("front/date"))
 
     # todo fix the implementation of XMLDraft.get_abstract()
     #
@@ -154,10 +208,20 @@ class XMLDraft(Draft):
         """Extract references from the draft"""
         refs = {}
         # accept nested <references> sections
-        for section in self.xmlroot.findall('back//references'):
-            ref_type = self._reference_section_type(self._reference_section_name(section))
-            for ref in (section.findall('./reference') + section.findall('./referencegroup')):
-                refs[self._document_name(ref.get('anchor'))] = ref_type
+        for section in self.xmlroot.findall("back//references"):
+            ref_type = self._reference_section_type(
+                self._reference_section_name(section)
+            )
+            for ref in (
+                section.findall("./reference")
+                + section.findall("./referencegroup")
+                + section.findall(
+                    "./xi:include", {"xi": "http://www.w3.org/2001/XInclude"}
+                )
+            ):
+                name = self._document_name(ref)
+                if name:
+                    refs[name] = ref_type
         return refs
 
 

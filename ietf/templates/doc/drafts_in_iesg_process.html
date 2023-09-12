@@ -55,7 +55,7 @@
                                 <br>
                                 Action holder{{ doc.documentactionholder_set.all|pluralize }}:
                                 {% for action_holder in doc.documentactionholder_set.all %}
-                                    {% person_link action_holder.person title=action_holder.role_for_doc %} {{ action_holder|action_holder_badge }}{% if not forloop.last %},{% endif %}
+                                    {% person_link action_holder.person title=action_holder.role_for_doc %}{% if action_holder|action_holder_badge %} {{ action_holder|action_holder_badge }}{% endif %}{% if not forloop.last %},{% endif %}
                                 {% endfor %}
                             {% endif %}
                             {% if doc.note %}
@@ -67,7 +67,7 @@
                             {% if doc.intended_std_level %}
                                 {{ doc.intended_std_level.name }}
                             {% else %}
-                                <span class="text-muted">(None)</span>
+                                <span class="text-body-secondary">(None)</span>
                             {% endif %}
                         </td>
                         <td>{% person_link doc.ad %}</td>

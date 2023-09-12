@@ -23,8 +23,6 @@
                    href="{% url 'ietf.meeting.views_proceedings.edit_meetinghosts' num=meeting.number %}">
                     Edit meeting hosts
                 </a>
-                <a class="btn btn-primary"
-                   href="{% url 'ietf.secr.proceedings.views.main' %}">Secretariat proceedings functions</a>
                 {% if meeting.end_date.today > meeting.end_date %}
                     <a class="btn btn-primary"
                        href="{% url 'ietf.meeting.views.request_minutes' num=meeting.number %}">
@@ -46,7 +44,7 @@
                             <th scope="col" data-sort="agenda">Agenda</th>
                             <th scope="col" data-sort="minutes">Minutes</th>
                             <th scope="col" data-sort="slides">Slides</th>
-                            <th scope="col" data-sort="drafts">Drafts</th>
+                            <th scope="col" data-sort="drafts">Internet-Drafts</th>
                             <th scope="col" data-sort="updated">Updated</th>
                             {% if user|has_role:"Secretariat" or user_groups %}
                                 <th scope="col"></th>
@@ -54,17 +52,16 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for session in plenaries %}
+                        {% for entry in plenaries %}
                             {% include "meeting/group_materials.html" %}
                         {% endfor %}
                     </tbody>
                 </table>
             {% endif %}
             <!-- Working groups -->
-            {% regroup ietf|dictsort:"group.parent.acronym" by group.parent.name as areas %}
-            {% for sessions in areas %}
-                <h2 class="mt-4" id="{{ sessions.list.0.group.parent.acronym }}">
-                    {{ sessions.list.0.group.parent.acronym|upper }} <small>{{ sessions.grouper }}</small>
+            {% for area, meeting_groups, not_meeting_groups in ietf_areas %}
+                <h2 class="mt-4" id="{{ area.acronym }}">
+                    {{ area.acronym|upper }} <small>{{ area.name }}</small>
                 </h2>
                 <table class="table table-sm table-striped tablesorter">
                     <thead>
@@ -73,7 +70,7 @@
                             <th scope="col" data-sort="agenda">Agenda</th>
                             <th scope="col" data-sort="minutes">Minutes</th>
                             <th scope="col" data-sort="slides">Slides</th>
-                            <th scope="col" data-sort="drafts">Drafts</th>
+                            <th scope="col" data-sort="drafts">Internet-Drafts</th>
                             <th scope="col" data-sort="updated">Updated</th>
                             {% if user|has_role:"Secretariat" or user_groups %}
                                 <th scope="col"></th>
@@ -81,10 +78,8 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for session in sessions.list|dictsort:"group.acronym" %}
-                            {% ifchanged session.group.acronym %}
-                                {% include "meeting/group_materials.html" %}
-                            {% endifchanged %}
+                        {% for entry in meeting_groups %}
+                            {% include "meeting/group_materials.html" %}
                         {% endfor %}
                     </tbody>
                 </table>
@@ -101,7 +96,7 @@
                                 <th scope="col" data-sort="minutes">Minutes</th>
                                 <th scope="col" data-sort="slides">Slides</th>
                                 <th scope="col" data-sort="drafts">
-                                    Drafts
+                                    Internet-Drafts
                                 </th>
                                 <th scope="col" data-sort="updated">
                                     Updated
@@ -112,11 +107,8 @@
                             </tr>
                         </thead>
                         <tbody>
-                            {% for session in training %}
-                                {% ifchanged %}
-                                    {# TODO: Find a better way to represent purposed sessions in both materials and proceedings #}
-                                    {% include "meeting/group_materials.html" %}
-                                {% endifchanged %}
+                            {% for entry in training %}
+                                {% include "meeting/group_materials.html" %}
                             {% endfor %}
                         </tbody>
                     </table>
@@ -143,7 +135,7 @@
                                 Slides
                             </th>
                             <th scope="col" data-sort="drafts">
-                                Drafts
+                                Internet-Drafts
                             </th>
                             <th scope="col" data-sort="updated">
                                 Updated
@@ -154,10 +146,8 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for session in iab %}
-                            {% ifchanged session.group.acronym %}
-                                {% include "meeting/group_materials.html" %}
-                            {% endifchanged %}
+                        {% for entry in iab %}
+                            {% include "meeting/group_materials.html" %}
                         {% endfor %}
                     </tbody>
                 </table>
@@ -183,7 +173,7 @@
                                 Slides
                             </th>
                             <th scope="col" data-sort="drafts">
-                                Drafts
+                                Internet-Drafts
                             </th>
                             <th scope="col" data-sort="updated">
                                 Updated
@@ -194,10 +184,44 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for session in irtf|dictsort:"group.acronym" %}
-                            {% ifchanged session.group.acronym %}
-                                {% include "meeting/group_materials.html" %}
-                            {% endifchanged %}
+                        {% for entry in irtf %}
+                            {% include "meeting/group_materials.html" %}
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% endif %}
+            <!-- Editorial Sessions -->
+            {% if editorial %}
+                <h2 class="mt-4" id="editorial">Editorial Stream</h2>
+                <table class="table table-sm table-striped tablesorter">
+                    <thead>
+                        <tr>
+                            <th scope="col" data-sort="group">
+                                Group
+                            </th>
+                            <th scope="col" data-sort="agenda">
+                                Agenda
+                            </th>
+                            <th scope="col" data-sort="minutes">
+                                Minutes
+                            </th>
+                            <th scope="col" data-sort="slides">
+                                Slides
+                            </th>
+                            <th scope="col" data-sort="drafts">
+                                Internet-Drafts
+                            </th>
+                            <th scope="col" data-sort="updated">
+                                Updated
+                            </th>
+                            {% if user|has_role:"Secretariat" or user_groups %}
+                                <th scope="col"></th>
+                            {% endif %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for entry in editorial %}
+                            {% include "meeting/group_materials.html" %}
                         {% endfor %}
                     </tbody>
                 </table>
@@ -222,7 +246,7 @@
                                 Slides
                             </th>
                             <th scope="col" data-sort="drafts">
-                                Drafts
+                                Internet-Drafts
                             </th>
                             <th scope="col" data-sort="updated">
                                 Updated
@@ -233,10 +257,8 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for session in other|dictsort:"group.acronym" %}
-                            {% ifchanged session.group.acronym %}
-                                {% include "meeting/group_materials.html" %}
-                            {% endifchanged %}
+                        {% for entry in other %}
+                            {% include "meeting/group_materials.html" %}
                         {% endfor %}
                     </tbody>
                 </table>

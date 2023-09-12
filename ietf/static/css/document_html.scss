@@ -1,13 +1,35 @@
 @use "sass:map";
 
-// FIXME: It's not clear why these three variables remain unset by bs5, but just
-// set them to placeholder values so the CSS embedded in the HTML validates.
-$btn-font-family: inherit !default;
-$nav-link-font-weight: inherit !default;
-$tooltip-margin: inherit !default;
+$font-family-sans-serif: "Inter",
+system-ui,
+-apple-system,
+"Segoe UI",
+Roboto,
+"Helvetica Neue",
+"Noto Sans",
+"Liberation Sans",
+Arial,
+sans-serif,
+"Apple Color Emoji",
+"Segoe UI Emoji",
+"Segoe UI Symbol",
+"Noto Color Emoji";
+$font-family-monospace: "Noto Sans Mono",
+SFMono-Regular,
+Menlo,
+Monaco,
+Consolas,
+"Liberation Mono",
+"Courier New",
+monospace;
 
 @import "bootstrap/scss/functions";
+
+// Enable color modes
+$color-mode-type: data;
+
 @import "bootstrap/scss/variables";
+@import "bootstrap/scss/variables-dark";
 @import "bootstrap/scss/maps";
 @import "bootstrap/scss/mixins";
 @import "bootstrap/scss/utilities";
@@ -23,7 +45,7 @@ $tooltip-margin: inherit !default;
 @import "bootstrap/scss/forms";
 @import "bootstrap/scss/buttons";
 @import "bootstrap/scss/transitions";
-// @import "bootstrap/scss/dropdown";
+@import "bootstrap/scss/dropdown";
 @import "bootstrap/scss/button-group";
 @import "bootstrap/scss/nav";
 @import "bootstrap/scss/navbar";
@@ -63,12 +85,42 @@ $tooltip-margin: inherit !default;
     scrollbar-width: none;
 }
 
-.sidebar-toggle[aria-expanded="true"] {
+.sidebar-toggle[aria-expanded="true"] .sidebar-shown {
     display: none;
 }
 
-.sidebar-toggle[aria-expanded="false"] {
-    display: inherit;
+.sidebar-toggle[aria-expanded="false"] .sidebar-collapsed {
+    display: none;
+}
+
+.sidebar-toolbar {
+    z-index: 1;
+}
+
+// Toggle classes for dark/light modes
+[data-bs-theme="dark"] {
+    .d-dm-none {
+        display: none;
+    }
+
+    .d-lm-none {
+        display: initial;
+    }
+}
+
+[data-bs-theme="light"] {
+    .d-dm-none {
+        display: initial;
+    }
+
+    .d-lm-none {
+        display: none;
+    }
+}
+
+// Show theme toggler checkbox
+.dropdown-menu .active .bi {
+    display: block !important;
 }
 
 @media screen {
@@ -108,28 +160,15 @@ $tooltip-margin: inherit !default;
     }
 
     @media screen {
-        @include media-breakpoint-only(xs) {
-            font-size: min(7pt, var(--doc-ptsize-max));
-        }
 
-        @include media-breakpoint-up(sm) {
-            font-size: min(9.5pt, var(--doc-ptsize-max));
+        // the viewport-width ("vw") constants are magic; they seem to work for
+        // many monospace fonts, but may need tweaking
+        @include media-breakpoint-up(xs) {
+            font-size: min(2.2vw, var(--doc-ptsize-max));
         }
 
         @include media-breakpoint-up(md) {
-            font-size: min(9.5pt, var(--doc-ptsize-max));
-        }
-
-        @include media-breakpoint-up(lg) {
-            font-size: min(11pt, var(--doc-ptsize-max));
-        }
-
-        @include media-breakpoint-up(xl) {
-            font-size: min(13pt, var(--doc-ptsize-max));
-        }
-
-        @include media-breakpoint-up(xxl) {
-            font-size: min(16pt, var(--doc-ptsize-max));
+            font-size: min(1.6vw, var(--doc-ptsize-max));
         }
 
         .grey,
@@ -151,6 +190,7 @@ $tooltip-margin: inherit !default;
     pre,
     code {
         font-size: 1em;
+        overflow: visible;
     }
 
     pre {
@@ -165,6 +205,27 @@ $tooltip-margin: inherit !default;
 }
 
 .rfcmarkup {
+
+    // A lot of plaintext documents seem to have line lengths >72ch.
+    // To handle that, we calculate with 80ch here and adjust some of the
+    // font sizes down accordingly.
+    pre {
+        width: 80ch;
+        white-space: pre-wrap;
+    }
+
+    @media screen {
+
+        // the viewport-width ("vw") constants are magic; they seem to work for
+        // many monospace fonts, but may need tweaking
+        @include media-breakpoint-up(xs) {
+            font-size: min(2vw, var(--doc-ptsize-max));
+        }
+
+        @include media-breakpoint-up(md) {
+            font-size: min(1.5vw, var(--doc-ptsize-max));
+        }
+    }
 
     h1,
     h2,
@@ -322,11 +383,13 @@ tbody.meta tr {
         page-break-inside: avoid;
     }
 
+    /*
     a:link,
     a:visited {
         // color: inherit;
         // text-decoration: none;
     }
+*/
 
     .newpage {
         page-break-before: always !important;

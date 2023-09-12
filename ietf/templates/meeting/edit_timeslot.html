@@ -9,7 +9,7 @@
     <h1>
         Edit {{ timeslot.meeting }} timeslot
         <br>
-        <small class="text-muted">{{ timeslot.name }}</small>
+        <small class="text-body-secondary">{{ timeslot.name }}</small>
     </h1>
     {% if sessions %}
         <div class="alert alert-warning my-3">
@@ -25,7 +25,7 @@
         {% bootstrap_form form %}
         <button type="submit" class="btn btn-primary">Save</button>
         <a class="btn btn-secondary float-end"
-           href="{% url 'ietf.meeting.views.edit_timeslots' num=timeslot.meeting.number %}">
+           href="{% url 'ietf.meeting.views.edit_timeslots' num=timeslot.meeting.number %}{% if "sched" in request.GET %}?sched={{ request.GET.sched }}{% endif %}">
             Back
         </a>
     </form>

@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{# Copyright The IETF Trust 2016-2020, All Rights Reserved #}
+{# Copyright The IETF Trust 2016-2023, All Rights Reserved #}
 {% load origin %}
 {% load static %}
 {% load ietf_filters %}
@@ -13,7 +13,7 @@
           title="Document changes"
           href="/feed/document-changes/{{ name }}/">
     <meta name="description"
-          content="{{ doc.title }} {% if doc.get_state_slug == 'rfc' and not snapshot %}(RFC {{ rfc_number }}{% if published %}, {{ doc.pub_date|date:'F Y' }}{% endif %}{% if obsoleted_by %}; obsoleted by {{ obsoleted_by|join:', ' }}{% endif %}){% else %}(Internet-Draft, {{ doc.time|date:'Y' }}){% endif %}">
+          content="{{ doc.title }} {% if doc.get_state_slug == 'rfc' and not snapshot %}(RFC {{ rfc_number }}{% if published %}, {{ doc.pub_date|date:'F Y' }}{% endif %}{% if obsoleted_by %}; obsoleted by {% for rel in obsoleted_by %}{{ rel.source.canonical_name|prettystdname}}{% if not forloop.last%}, {% endif %}{% endfor %}{% endif %}){% endif %}">
 {% endblock %}
 {% block morecss %}.inline { display: inline; }{% endblock %}
 {% block title %}
@@ -27,7 +27,7 @@
     {% origin %}
     {{ top|safe }}
     {% include "doc/revisions_list.html"  with document_html=document_html %}
-    <div id="timeline"></div>
+    <div id="doc-timeline"></div>
     {% if doc.rev != latest_rev %}
         <div class="alert alert-warning my-3">The information below is for an old version of the document.</div>
     {% else %}
@@ -47,7 +47,7 @@
                 {% if doc.stream %}
                     <th scope="row">
                         {% if doc.stream.slug != "legacy" %}
-                            <a href="{% url "ietf.help.views.state" doc=doc.type.slug type=doc.stream.slug %}">
+                            <a href="{% url "ietf.doc.views_help.state_help" type=stream %}">
                                 {% if doc.stream_id == 'ietf' %}
                                     WG
                                 {% else %}
@@ -73,7 +73,7 @@
                                 {{ stream_state }}
                             </span>
                         {% else %}
-                            <span class="text-muted">
+                            <span class="text-body-secondary">
                                 (None)
                             </span>
                         {% endif %}
@@ -85,7 +85,7 @@
                             </div>
                         {% endif %}
                         {% if due_date %}
-                            <span class="text-muted">(Due date {{ due_date }})</span>
+                            <span class="text-body-secondary">(Due date {{ due_date }})</span>
                         {% endif %}
                     </td>
                 {% else %}
@@ -95,7 +95,7 @@
                     <td class="edit">
                     </td>
                     <td>
-                        <span class="text-muted">(No stream defined)</span>
+                        <span class="text-body-secondary">(No stream defined)</span>
                     </td>
                 {% endif %}
             </tr>
@@ -166,7 +166,7 @@
                                 {% if pres.rev and pres.rev != doc.rev %}(version -{{ pres.rev }}){% endif %}{% if not forloop.last %},{% endif %}
                             {% endfor %}
                         {% else %}
-                            <span class="text-muted">
+                            <span class="text-body-secondary">
                                 (None)
                             </span>
                         {% endif %}
@@ -196,7 +196,7 @@
                         {% if doc.shepherd %}
                             {% person_link doc.shepherd.person %}
                         {% else %}
-                            <span class="text-muted">
+                            <span class="text-body-secondary">
                                     (None)
                                 </span>
                         {% endif %}
@@ -224,9 +224,9 @@
                                    href="{% url 'ietf.doc.views_doc.document_shepherd_writeup' name=doc.name %}">
                                     Show
                                 </a>
-                                <span class="badge rounded-pill bg-secondary">Last changed {{ shepherd_writeup.time|date:"Y-m-d" }}</span>
+                                <span class="badge rounded-pill text-bg-secondary">Last changed {{ shepherd_writeup.time|date:"Y-m-d" }}</span>
                             {% else %}
-                                <span class="text-muted">
+                                <span class="text-body-secondary">
                                     (None)
                                 </span>
                             {% endif %}
@@ -251,7 +251,7 @@
                         {% if doc.has_rfc_editor_note %}
                             (last changed {{ doc.has_rfc_editor_note|date:"Y-m-d" }})
                         {% else %}
-                            <span class="text-muted">
+                            <span class="text-body-secondary">
                                 (None)
                             </span>
                         {% endif %}
@@ -274,12 +274,12 @@
                         IESG
                     </th>
                     <th scope="row">
-                        <a href="{% url "ietf.help.views.state" doc=doc.type.slug type="iesg" %}">
+                        <a href="{% url "ietf.doc.views_help.state_help" type="draft-iesg" %}">
                             IESG state
                         </a>
                     </th>
                     <td class="edit">
-                        {% if iesg_state.slug != 'idexists' and can_edit %}
+                        {% if iesg_state.slug != 'idexists' and iesg_state.slug != 'dead' and can_edit or user|has_role:"Secretariat" %}
                             <a class="btn btn-primary btn-sm"
                                href="{% url 'ietf.doc.views_draft.change_state' name=doc.name %}">
                                 Edit
@@ -327,7 +327,7 @@
                                         </a>
                                     {% endif %}
                                 {% else %}
-                                    <span class="text-muted">
+                                    <span class="text-body-secondary">
                                         (None)
                                     </span>
                                 {% endif %}
@@ -375,7 +375,7 @@
                                 On agenda of {{ telechat.telechat_date }} IESG telechat
                                 {% if telechat.returning_item %}(returning item){% endif %}
                             {% else %}
-                                <span class="text-muted">
+                                <span class="text-body-secondary">
                                     (None)
                                 </span>
                             {% endif %}
@@ -402,7 +402,7 @@
                             {% if doc.ad %}
                                 {% person_link doc.ad %}
                             {% else %}
-                                <span class="text-muted">
+                                <span class="text-body-secondary">
                                     (None)
                                 </span>
                             {% endif %}
@@ -427,7 +427,7 @@
                                     {% if doc.note %}
                                         {{ doc.note|linebreaksbr }}
                                     {% else %}
-                                        <span class="text-muted">
+                                        <span class="text-body-secondary">
                                             (None)
                                         </span>
                                     {% endif %}
@@ -452,7 +452,7 @@
                             {% if doc.notify %}
                                 {{ doc.notify|linkify }}
                             {% else %}
-                                <span class="text-muted">
+                                <span class="text-body-secondary">
                                     (None)
                                 </span>
                             {% endif %}
@@ -468,7 +468,7 @@
                                 IANA
                             </th>
                             <th scope="row">
-                                <a href="{% url "ietf.help.views.state" doc=doc.type.slug type="iana-review" %}">
+                                <a href="{% url "ietf.doc.views_help.state_help" type="draft-iana-review" %}">
                                     IANA review state
                                 </a>
                             </th>
@@ -482,7 +482,7 @@
                             </td>
                             <td class="{% if iana_review_state|slugify|slice:7 != "iana-ok" %}text-danger{% else %}text-success{% endif %}">
                                 {% if not iana_review_state %}
-                                    <span class="text-muted">
+                                    <span class="text-body-secondary">
                                         (None)
                                     </span>
                                 {% else %}
@@ -497,7 +497,7 @@
                                 {% if not can_edit_iana_state and not iana_review_state %}IANA{% endif %}
                             </th>
                             <th scope="row">
-                                <a href="{% url "ietf.help.views.state" doc=doc.type.slug type="iana-action" %}">
+                                <a href="{% url "ietf.doc.views_help.state_help" type="draft-iana-action" %}">
                                     IANA action state
                                 </a>
                             </th>
@@ -511,7 +511,7 @@
                             </td>
                             <td>
                                 {% if not iana_action_state %}
-                                    <span class="text-muted">
+                                    <span class="text-body-secondary">
                                         (None)
                                     </span>
                                 {% else %}
@@ -526,7 +526,7 @@
                                 {% if not can_edit_iana_state and not iana_review_state and not iana_action_state %}IANA{% endif %}
                             </th>
                             <th scope="row">
-                                <a href="{% url "ietf.help.views.state" doc=doc.type.slug type="iana-experts" %}">
+                                <a href="{% url "ietf.doc.views_help.state_help" type="draft-iana-experts" %}">
                                     IANA expert review state
                                 </a>
                             </th>
@@ -540,7 +540,7 @@
                             </td>
                             <td class="{% if iana_experts_state|slugify|slice:"-2:" != "ok" %}text-danger{% else %}text-success{% endif %}">
                                 {% if not iana_experts_state %}
-                                    <span class="text-muted">
+                                    <span class="text-body-secondary">
                                         (None)
                                     </span>
                                 {% else %}
@@ -569,7 +569,7 @@
                             </td>
                             <td>
                                 {% if not iana_experts_comment %}
-                                    <span class="text-muted">
+                                    <span class="text-body-secondary">
                                         (None)
                                     </span>
                                 {% else %}
@@ -587,7 +587,7 @@
                             RFC Editor
                         </th>
                         <th scope="row">
-                            <a href="{% url "ietf.help.views.state" doc=doc.type.slug type="rfceditor" %}">
+                            <a href="{% url "ietf.doc.views_help.state_help" type="draft-rfceditor" %}">
                                 RFC Editor state
                             </a>
                         </th>
@@ -644,7 +644,7 @@
                 </i>
                 IPR
                 {% if doc.related_ipr %}
-                    <span class="badge rounded-pill">
+                    <span class="badge rounded-pill text-bg-secondary">
                         {{ doc.related_ipr|length }}
                     </span>
                 {% endif %}
@@ -684,7 +684,7 @@
                 <ul class="dropdown-menu" role="menu">
                     <li role="presentation">
                         <a class="dropdown-item"
-                           href="https://mailarchive.ietf.org/arch/search?q=%22{{ doc.name }}%22"
+                           href="https://mailarchive.ietf.org/arch/search/?q=%22{{ doc.name }}%22"
                            rel="nofollow"
                            target="_blank">
                             IETF Mail Archive
@@ -713,14 +713,14 @@
             {% if user.is_authenticated %}
                 <a class="btn btn-primary btn-sm track-untrack-doc {% if not doc.tracked_in_personal_community_list %}hide{% endif %}"
                    href="{% url "ietf.community.views.untrack_document" username=user.username name=doc.name %}"
-                   title="Remove from your personal ID list">
+                   title="Remove from your personal I-D list">
                     <i class="bi bi-bookmark-check-fill">
                     </i>
                     Untrack
                 </a>
                 <a class="btn btn-primary btn-sm track-untrack-doc {% if doc.tracked_in_personal_community_list %}hide{% endif %}"
                    href="{% url "ietf.community.views.track_document" username=user.username name=doc.name %}"
-                   title="Add to your personal ID list">
+                   title="Add to your personal I-D list">
                     <i class="bi bi-bookmark">
                     </i>
                     Track
@@ -786,7 +786,7 @@
             {% endif %}
         {% else %}
             <div class="card border-warning mt-5">
-                <div class="card-header bg-warning">
+                <div class="card-header text-bg-warning">
                     <p><b>This Internet-Draft is no longer active. A copy of
                     the expired Internet-Draft is available in these formats:</b></p>
 
@@ -808,7 +808,7 @@
                             {% if not forloop.last %}<br>{% endif %}
                         {% endfor %}
                     </p>
-                    <p class="text-muted card-text">
+                    <p class="text-body-secondary card-text">
                         (Note: The e-mail addresses provided for the authors of this Internet-Draft may no longer be valid.)
                     </p>
                 </div>

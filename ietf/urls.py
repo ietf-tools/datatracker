@@ -1,15 +1,14 @@
 # Copyright The IETF Trust 2007-2022, All Rights Reserved
 
 from django.conf import settings
-from django.conf.urls import include
 from django.conf.urls.static import static as static_url
 from django.contrib import admin
 from django.contrib.sitemaps import views as sitemap_views
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
+from django.urls import include, path
 from django.views import static as static_view
 from django.views.generic import TemplateView
 from django.views.defaults import server_error
-from django.urls import path
 
 import debug                            # pyflakes:ignore
 
@@ -67,7 +66,7 @@ urlpatterns = [
     url(r'^submit/', include('ietf.submit.urls')),
     url(r'^sync/', include('ietf.sync.urls')),
     url(r'^templates/', include('ietf.dbtemplate.urls')),
-    url(r'^(?P<group_type>(wg|rg|ag|rag|team|dir|review|area|program|iabasg|adhoc|ise|adm|rfcedtyp))/', include(grouptype_urls)),
+    url(r'^(?P<group_type>(wg|rg|ag|rag|team|dir|review|area|program|iabasg|adhoc|ise|adm|rfcedtyp|edwg|edappr))/', include(grouptype_urls)),
 
     # Redirects
     url(r'^(?P<path>public)/', include('ietf.redirects.urls')),

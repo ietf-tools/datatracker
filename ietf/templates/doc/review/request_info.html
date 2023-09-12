@@ -1,7 +1,7 @@
 {# Copyright The IETF Trust 2017, All Rights Reserved #}
 {% load origin django_bootstrap5 %}
 {% origin %}
-{% load person_filters %}
+{% load person_filters ietf_filters %}
 <table class="my-3 table table-sm table-borderless">
     <tbody class="meta border-top">
         <tr>
@@ -27,7 +27,7 @@
                     No specific revision
                 {% endif %}
                 {% if review_req.reviewed_rev != review_req.doc.rev %}
-                    <span class="text-muted">(document currently at {{ review_req.doc.rev }})</span>
+                    <span class="text-body-secondary">(document currently at {{ review_req.doc.rev }})</span>
                 {% endif %}
             </td>
         </tr>
@@ -101,7 +101,7 @@
                 <th scope="row">
                 </th>
                 <th scope="row">
-                    Draft last updated
+                    I-D last updated
                 </th>
                 <td>
                     {{ doc.time|date:"Y-m-d" }}
@@ -217,11 +217,9 @@
                     State
                 </th>
                 <td>
-                    <span class="{% if assignment.state.name|slugify == 'accepted' %}text-success{% endif %}">
-                        {{ assignment.state.name }}
-                    </span>
+                    {{ assignment.state.name|badgeify }}
                     {% if snapshot %}
-                        <span class="badge rounded-pill bg-warning">
+                        <span class="badge rounded-pill text-bg-warning">
                             Snapshot
                         </span>
                     {% endif %}
@@ -312,8 +310,8 @@
                     <th scope="row">
                         Result
                     </th>
-                    <td class="{% if assignment.result.name|slice:5 == 'Ready' %}text-success{% else %}text-danger{% endif %}">
-                        {{ assignment.result.name }}
+                    <td>
+                        {{ assignment.result.name|badgeify }}
                     </td>
                 </tr>
             {% endif %}

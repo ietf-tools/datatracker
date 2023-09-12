@@ -1,10 +1,10 @@
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin ietf_filters static %}
-{% block title %}{{ meeting }} : {{ acronym }}{% endblock %}
+{% block title %}{{ meeting }} : {{ group.acronym }}{% endblock %}
 {% block morecss %}
-    .draggable {
-        cursor: pointer;
+    .drag-handle {
+        cursor: move;
     }
 {% endblock %}
 {% block content %}
@@ -12,13 +12,13 @@
     <h1>
         {{ meeting }}
         <br>
-        <small class="text-muted">{{ acronym }}</small>
+        <small class="text-body-secondary"><a href="{% url 'ietf.group.views.group_about' acronym=group.acronym %}">{{ group.acronym }}</a>: {{ group.name }}</small>
     </h1>
     {% if meeting.start_datetime >= thisweek %}
         <a class="regular float-end"
-           title="icalendar entry for {{ acronym }}@{{ meeting.number }}"
-           aria-label="icalendar entry for {{ acronym }}@{{ meeting.number }}"
-           href="{% url 'ietf.meeting.views.agenda_ical' num=meeting.number acronym=acronym %}">
+           title="icalendar entry for {{ group.acronym }}@{{ meeting.number }}"
+           aria-label="icalendar entry for {{ group.acronym }}@{{ meeting.number }}"
+           href="{% url 'ietf.meeting.views.agenda_ical' num=meeting.number acronym=group.acronym %}">
             <i class="bi bi-calendar"></i>
         </a>
     {% endif %}
@@ -64,6 +64,7 @@
             var options = {
                 group: "slides",
                 animation: 150,
+                handle: ".drag-handle",
                 onAdd: function(event) {onAdd(event)},
                 onRemove: function(event) {onRemove(event)},
                 onEnd: function(event) {onEnd(event)}

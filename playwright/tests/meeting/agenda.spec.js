@@ -138,6 +138,7 @@ test.describe('past - desktop', () => {
         .setLocale(BROWSER_LOCALE)
         .toFormat('DD \'at\' T ZZZZ')
       await expect(page.locator('.agenda h6').first()).toContainText(localDateTime)
+      await expect(page.locator('.agenda .agenda-table-display-session-head .agenda-table-cell-name').first()).toContainText('Monday Session I')
       // Switch to UTC
       await tzUtcBtnLocator.click()
       await expect(tzUtcBtnLocator).toHaveClass(/n-button--primary-type/)
@@ -148,10 +149,12 @@ test.describe('past - desktop', () => {
         .toFormat('DD \'at\' T ZZZZ')
       await expect(page.locator('.agenda h6').first()).toContainText(utcDateTime)
       await expect(page.locator('.agenda .agenda-timezone-ddn')).toContainText('UTC')
+      await expect(page.locator('.agenda .agenda-table-display-session-head .agenda-table-cell-name').first()).toContainText('Monday Session I')
       // Switch back to meeting timezone
       await tzMeetingBtnLocator.click()
       await expect(tzMeetingBtnLocator).toHaveClass(/n-button--primary-type/)
       await expect(page.locator('.agenda .agenda-timezone-ddn')).toContainText('Tokyo')
+      await expect(page.locator('.agenda .agenda-table-display-session-head .agenda-table-cell-name').first()).toContainText('Monday Session I')
     })
   })
 
@@ -213,7 +216,7 @@ test.describe('past - desktop', () => {
           const headerRow = page.locator(`#agenda-rowid-sesshd-${event.id}`)
           await expect(headerRow).toBeVisible()
           await expect(headerRow.locator('.agenda-table-cell-ts')).toContainText(eventTimeSlot)
-          await expect(headerRow.locator('.agenda-table-cell-name')).toContainText(`${DateTime.fromISO(event.startDateTime).toFormat('cccc')} ${event.name}`)
+          await expect(headerRow.locator('.agenda-table-cell-name')).toContainText(`${DateTime.fromISO(event.startDateTime).toFormat('cccc')} ${event.slotName}`)
         }
         // Timeslot
         await expect(row.locator('.agenda-table-cell-ts')).toContainText('—')
@@ -268,7 +271,7 @@ test.describe('past - desktop', () => {
         }
         // Scheduled
         case 'sched': {
-          if (event.flags.showAgenda || ['regular', 'plenary'].includes(event.type)) {
+          if (event.flags.showAgenda || (['regular', 'plenary', 'other'].includes(event.type) && !['admin', 'closed_meeting', 'officehours', 'social'].includes(event.purpose))) {
             const eventButtons = row.locator('.agenda-table-cell-links > .agenda-table-cell-links-buttons')
             if (event.flags.agenda) {
               // Show meeting materials button
@@ -925,7 +928,7 @@ test.describe('past - desktop', () => {
   test('agenda add to calendar', async ({ page }) => {
     await expect(page.locator('#agenda-quickaccess-addtocal-btn')).toContainText('Add to your calendar')
     await page.locator('#agenda-quickaccess-addtocal-btn').click()
-    const ddnLocator = page.locator('.n-dropdown-menu > .n-dropdown-option')
+    const ddnLocator = page.locator('.n-dropdown-menu > div > a.agenda-quickaccess-callinks')
     await expect(ddnLocator).toHaveCount(2)
     await expect(ddnLocator.first()).toContainText('Subscribe')
     await expect(ddnLocator.last()).toContainText('Download')
@@ -1145,7 +1148,7 @@ test.describe('future - desktop', () => {
       // -----------------------
       if (event.status === 'sched') {
         const eventButtons = row.locator('.agenda-table-cell-links > .agenda-table-cell-links-buttons')
-        if (event.flags.showAgenda || ['regular', 'plenary'].includes(event.type)) {
+        if (event.flags.showAgenda || (['regular', 'plenary', 'other'].includes(event.type) && !['admin', 'closed_meeting', 'officehours', 'social'].includes(event.purpose))) {
           if (event.flags.agenda) {
             // Show meeting materials button
             await expect(eventButtons.locator('i.bi.bi-collection')).toBeVisible()

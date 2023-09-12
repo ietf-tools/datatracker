@@ -52,9 +52,13 @@ urlpatterns = [
 
     url(r'^agenda/documents.txt$', views.agenda_documents_txt),
     url(r'^agenda/documents/$', views.agenda_documents),
+    url(r'^agenda/sections$', views.telechat_agenda_content_manage),
+    url(r'^agenda/section/(?P<section>[a-z_]+)$', views.telechat_agenda_content_view),
+    url(r'^agenda/section/(?P<section>[a-z_]+)/edit$', views.telechat_agenda_content_edit),
     url(r'^past/documents/$', views.past_documents),
     url(r'^agenda/telechat-(?:%(date)s-)?docs.tgz' % settings.URL_REGEXPS, views.telechat_docs_tarfile),
     url(r'^discusses/$', views.discusses),
+    url(r'^ietf-activity/$', views.ietf_activity),
     url(r'^milestones/$', views.milestones_needing_review),
     url(r'^photos/$', views.photos),
 ]

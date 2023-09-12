@@ -3,6 +3,7 @@
 import sys
 import django
 from django.conf import settings
+from django.utils import timezone
 from ietf import __version__, __patch__, __release_branch__, __release_hash__
 
 def server_mode(request):
@@ -44,4 +45,9 @@ def sql_debug(request):
 def settings_info(request):
     return {
         'settings': settings,
+    }
+
+def timezone_now(request):
+    return {
+        'timezone_now': timezone.now(),
     }

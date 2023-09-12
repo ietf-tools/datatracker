@@ -36,7 +36,7 @@
                 <tr>
                     <td>
                         {% if milestone.resolved %}
-                            <span class="badge rounded-pill bg-success">{{ milestone.resolved }}</span>
+                            <span class="badge rounded-pill text-bg-success">{{ milestone.resolved }}</span>
                         {% else %}
                             {% if group.uses_milestone_dates %}
                                 {{ milestone.due|date:"M Y" }}

@@ -104,7 +104,7 @@
         {% endfor %}
         {% if secretariat %}
             <a class="btn btn-primary btn-sm mt-2"
-               href="{% url 'ietf.meeting.views.edit_session' session_id=session.pk %}">
+               href="{% url 'ietf.meeting.views.edit_session' session_id=session.pk %}?sched={{ schedule.pk }}">
                 Edit session
             </a>
             <a class="btn btn-danger btn-sm mt-2"

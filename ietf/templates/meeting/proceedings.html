@@ -23,10 +23,32 @@
     {% load cache %}
     {% cache 900 ietf_meeting_proceedings meeting.number cache_version %}
     {% include 'meeting/proceedings/introduction.html' with meeting=meeting only %}
-    {% with "True" as show_agenda %}
-        <!-- Plenaries -->
-        {% if plenaries %}
-            <h2 class="mt-5" id="plenaries">Plenaries</h2>
+    <!-- Plenaries -->
+    {% if plenaries %}
+        <h2 class="mt-5" id="plenaries">Plenaries</h2>
+        <table class="table table-sm table-striped tablesorter">
+            <thead>
+                <tr>
+                    <th scope="col" data-sort="group">Group</th>
+                    <th scope="col" data-sort="artifacts">Artifacts</th>
+                    <th scope="col" data-sort="recordings">Recordings</th>
+                    <th scope="col" data-sort="slides">Slides</th>
+                    <th scope="col" data-sort="drafts">Internet-Drafts</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for entry in plenaries %}
+                    {% include "meeting/group_proceedings.html" with entry=entry meeting=meeting show_agenda=True only %}
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+    <!-- Working groups -->
+    {% for area, meeting_groups, not_meeting_groups in ietf_areas %}
+        <h2 class="mt-5" id="{{ area.acronym }}">
+            {{ area.acronym|upper }} <small class="text-body-secondary">{{ area.name }}</small>
+        </h2>
+        {% if meeting_groups %}
             <table class="table table-sm table-striped tablesorter">
                 <thead>
                     <tr>
@@ -34,165 +56,187 @@
                         <th scope="col" data-sort="artifacts">Artifacts</th>
                         <th scope="col" data-sort="recordings">Recordings</th>
                         <th scope="col" data-sort="slides">Slides</th>
-                        <th scope="col" data-sort="drafts">Drafts</th>
+                        <th scope="col" data-sort="drafts">Internet-Drafts</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for session in plenaries %}
-                        {% include "meeting/group_proceedings.html" %}
+                    {% for entry in meeting_groups %}
+                        {% include "meeting/group_proceedings.html" with entry=entry meeting=meeting show_agenda=True only %}
                     {% endfor %}
                 </tbody>
             </table>
         {% endif %}
-        <!-- Working groups -->
-        {% for area, meeting_sessions, not_meeting_sessions in ietf_areas %}
-            <h2 class="mt-5" id="{{ area.acronym }}">
-                {{ area.acronym|upper }} <small class="text-muted">{{ area.name }}</small>
-            </h2>
-            {% if meeting_sessions %}
-                <table class="table table-sm table-striped tablesorter">
-                    <thead>
-                        <tr>
-                            <th scope="col" data-sort="group">Group</th>
-                            <th scope="col" data-sort="artifacts">Artifacts</th>
-                            <th scope="col" data-sort="recordings">Recordings</th>
-                            <th scope="col" data-sort="slides">Slides</th>
-                            <th scope="col" data-sort="drafts">Drafts</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for session in meeting_sessions %}
-                            {% ifchanged session.group.acronym %}
-                                {% include "meeting/group_proceedings.html" %}
-                            {% endifchanged %}
-                        {% endfor %}
-                    </tbody>
-                </table>
-            {% endif %}
-            {% if not_meeting_sessions %}
-                <p>
-                    {{ area.name }} groups not meeting:
-                    {% for session in not_meeting_sessions %}
-                        {% ifchanged session.group.acronym %}
-                            <a href="{% url 'ietf.group.views.group_home' acronym=session.group.acronym %}">{{ session.group.acronym }}</a>{% if not forloop.last %},{% endif %}
-                        {% endifchanged %}
-                    {% endfor %}
-                </p>
-                <table class="table table-sm table-striped">
-                    <thead>
-                        <tr>
-                            <th scope="col"></th>
-                            <th scope="col"></th>
-                            <th scope="col"></th>
-                            <th scope="col"></th>
-                            <th scope="col"></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for session in not_meeting_sessions %}
-                            {% ifchanged session.group.acronym %}
-                                {% if session.sessionpresentation_set.exists %}
-                                    {% include "meeting/group_proceedings.html" %}
-                                {% endif %}
-                            {% endifchanged %}
-                        {% endfor %}
-                    </tbody>
-                </table>
-            {% endif %}
-        {% endfor %}
-        <!-- Training Sessions -->
-        {% if training %}
-            {% with "False" as show_agenda %}
-                <h2 class="mt-5" id="training">Training</h2>
-                <table class="table table-sm table-striped tablesorter">
-                    <thead>
-                        <tr>
-                            <th scope="col" data-sort="group">Group</th>
-                            <th scope="col" data-sort="artifacts">Artifacts</th>
-                            <th scope="col" data-sort="recordings">Recordings</th>
-                            <th scope="col" data-sort="slides">Slides</th>
-                            <th scope="col" data-sort="drafts">Drafts</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for session in training %}
-                            {% ifchanged %}
-                                {% include "meeting/group_proceedings.html" %}
-                            {% endifchanged %}
-                        {% endfor %}
-                    </tbody>
-                </table>
-            {% endwith %}
-        {% endif %}
-        <!-- IAB Sessions -->
-        {% if iab %}
-            <h2 class="mt-5" id="iab">
-                IAB <small class="text-muted">Internet Architecture Board</small>
-            </h2>
-            <table class="table table-sm table-striped tablesorter">
+        {% if not_meeting_groups %}
+            <p>
+                {{ area.name }} groups not meeting:
+                {% for entry in not_meeting_groups %}
+                    {% if entry.name == "" %}{# do not show named sessions in this list #}
+                        <a href="{% url 'ietf.group.views.group_home' acronym=entry.group.acronym %}">
+                            {{ entry.group.acronym }}
+                        </a>{% if not forloop.last %},{% endif %}
+                    {% endif %}
+                {% endfor %}
+            </p>
+            <table class="table table-sm table-striped">
                 <thead>
                     <tr>
-                        <th scope="col" data-sort="group">
-                            Group
-                        </th>
-                        <th scope="col" data-sort="artifacts">
-                            Artifacts
-                        </th>
-                        <th scope="col" data-sort="recordings">
-                            Recordings
-                        </th>
-                        <th scope="col" data-sort="slides">
-                            Slides
-                        </th>
-                        <th scope="col" data-sort="drafts">
-                            Drafts
-                        </th>
+                        <th scope="col"></th>
+                        <th scope="col"></th>
+                        <th scope="col"></th>
+                        <th scope="col"></th>
+                        <th scope="col"></th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for session in iab %}
-                        {% ifchanged %}
-                            {% include "meeting/group_proceedings.html" %}
-                        {% endifchanged %}
-                    {% endfor %}
+                    {% for entry in not_meeting_groups %}{% if entry.has_materials %}
+                        {% include "meeting/group_proceedings.html" with entry=entry meeting=meeting show_agenda=True only %}
+                    {% endif %}{% endfor %}
                 </tbody>
             </table>
         {% endif %}
-        <!-- IRTF Sessions -->
-        {% if irtf %}
-            <h2 class="mt-5" id="irtf">
-                IRTF <small class="text-muted">Internet Research Task Force</small>
-            </h2>
-            <table class="table table-sm table-striped tablesorter">
-                <thead>
-                    <tr>
-                        <th scope="col" data-sort="group">
-                            Group
-                        </th>
-                        <th scope="col" data-sort="artifacts">
-                            Artifacts
-                        </th>
-                        <th scope="col" data-sort="recordings">
-                            Recordings
-                        </th>
-                        <th scope="col" data-sort="slides">
-                            Slides
-                        </th>
-                        <th scope="col" data-sort="drafts">
-                            Drafts
-                        </th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for session in irtf|dictsort:"group.acronym" %}
-                        {% ifchanged %}
-                            {% include "meeting/group_proceedings.html" %}
-                        {% endifchanged %}
-                    {% endfor %}
-                </tbody>
-            </table>
-        {% endif %}
-    {% endwith %}
+    {% endfor %}
+    <!-- Training Sessions -->
+    {% if training %}
+        <h2 class="mt-5" id="training">Training</h2>
+        <table class="table table-sm table-striped tablesorter">
+            <thead>
+                <tr>
+                    <th scope="col" data-sort="group">Group</th>
+                    <th scope="col" data-sort="artifacts">Artifacts</th>
+                    <th scope="col" data-sort="recordings">Recordings</th>
+                    <th scope="col" data-sort="slides">Slides</th>
+                    <th scope="col" data-sort="drafts">Internet-Drafts</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for entry in training %}
+                        {% include "meeting/group_proceedings.html" with entry=entry meeting=meeting show_agenda=False only %}
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+    <!-- IAB Sessions -->
+    {% if iab %}
+        <h2 class="mt-5" id="iab">
+            IAB <small class="text-body-secondary">Internet Architecture Board</small>
+        </h2>
+        <table class="table table-sm table-striped tablesorter">
+            <thead>
+                <tr>
+                    <th scope="col" data-sort="group">
+                        Group
+                    </th>
+                    <th scope="col" data-sort="artifacts">
+                        Artifacts
+                    </th>
+                    <th scope="col" data-sort="recordings">
+                        Recordings
+                    </th>
+                    <th scope="col" data-sort="slides">
+                        Slides
+                    </th>
+                    <th scope="col" data-sort="drafts">
+                        Internet-Drafts
+                    </th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for entry in iab %}
+                    {% include "meeting/group_proceedings.html" with entry=entry meeting=meeting show_agenda=True only %}
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+    <!-- IRTF Sessions -->
+    {% if irtf.meeting_groups  %}
+        <h2 class="mt-5" id="irtf">
+            IRTF <small class="text-body-secondary">Internet Research Task Force</small>
+        </h2>
+        <table class="table table-sm table-striped tablesorter">
+            <thead>
+                <tr>
+                    <th scope="col" data-sort="group">
+                        Group
+                    </th>
+                    <th scope="col" data-sort="artifacts">
+                        Artifacts
+                    </th>
+                    <th scope="col" data-sort="recordings">
+                        Recordings
+                    </th>
+                    <th scope="col" data-sort="slides">
+                        Slides
+                    </th>
+                    <th scope="col" data-sort="drafts">
+                        Internet-Drafts
+                    </th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for entry in irtf.meeting_groups %}
+                    {% include "meeting/group_proceedings.html" with entry=entry meeting=meeting show_agenda=True only %}
+                {% endfor %}
+            </tbody>
+        </table>
+        {% if irtf.not_meeting_groups %}
+        <p>
+            IRTF groups not meeting:
+            {% for entry in irtf.not_meeting_groups %}
+                {% if entry.name == "" %}{# do not show named sessions in this list #}
+                    <a href="{% url 'ietf.group.views.group_home' acronym=entry.group.acronym %}">
+                        {{ entry.group.acronym }}
+                    </a>{% if not forloop.last %},{% endif %}
+                {% endif %}
+            {% endfor %}
+        </p>
+        <table class="table table-sm table-striped">
+            <thead>
+                <tr>
+                    <th scope="col"></th>
+                    <th scope="col"></th>
+                    <th scope="col"></th>
+                    <th scope="col"></th>
+                    <th scope="col"></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for entry in irtf.not_meeting %}{% if entry.has_materials %}
+                    {% include "meeting/group_proceedings.html" with entry=entry meeting=meeting show_agenda=True only %}
+                {% endif %}{% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+    <!-- Editorial Sessions -->
+    {% if editorial %}
+        <h2 class="mt-5" id="editorial">Editorial Stream</h2>
+        <table class="table table-sm table-striped tablesorter">
+            <thead>
+                <tr>
+                    <th scope="col" data-sort="group">
+                        Group
+                    </th>
+                    <th scope="col" data-sort="artifacts">
+                        Artifacts
+                    </th>
+                    <th scope="col" data-sort="recordings">
+                        Recordings
+                    </th>
+                    <th scope="col" data-sort="slides">
+                        Slides
+                    </th>
+                    <th scope="col" data-sort="drafts">
+                        Internet-Drafts
+                    </th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for entry in editorial %}
+                    {% include "meeting/group_proceedings.html" with entry=entry meeting=meeting show_agenda=True only %}
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+    {% endif %}
 {% endcache %}
 {% endblock %}
 {% block js %}

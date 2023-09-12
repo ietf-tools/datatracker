@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2022, All Rights Reserved #}
+{% load origin %}
+{% load django_bootstrap5 %}
+{% block title %}Close ballot for {{ doc }}{% endblock %}
+{% block content %}
+    {% origin %}
+    <h1>
+        Close ballot
+        <br>
+        <small class="text-body-secondary">{{ doc }}</small>
+    </h1>
+    <p>
+        {{ question }}
+    </p>
+    <form method="post">
+        {% csrf_token %}
+        {# curly percent bootstrap_form approval_text_form curly percent #}
+        <button type="submit" class="btn btn-primary" name="rsab_button" value="Yes">Yes</button>
+        <button type="submit" class="btn btn-primary" name="rsab_button" value="No">No</button>
+    </form>
+{% endblock %}

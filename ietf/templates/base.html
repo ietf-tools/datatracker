@@ -6,7 +6,7 @@
 {% origin %}
 {% load django_bootstrap5 %}
 {% load django_vite %}
-<html lang="en" {% block html_attrs %}{% endblock %}>
+<html data-bs-theme="auto" lang="en" {% block html_attrs %}{% endblock %}>
     <head>
         {% analytical_head_top %}
         <meta charset="utf-8">
@@ -15,14 +15,12 @@
             {% block title %}No title{% endblock %}
         </title>
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        {% comment Halloween %}
-        <link href='https://fonts.googleapis.com/css?family=IM+Fell+English+SC|IM+Fell+DW+Pica:400,400italic|Nova+Mono|IM+Fell+English:400,400italic&subset=latin-ext,latin' rel='stylesheet'>
-        {% endcomment %}
-        <link rel="preconnect" href="https://fonts.googleapis.com">
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300..700&display=swap" rel="stylesheet">
+        <link href="{{ settings.STATIC_IETF_ORG }}/fonts/inter/import.css" rel="stylesheet">
+        <link href="{{ settings.STATIC_IETF_ORG }}/fonts/noto-sans-mono/import.css" rel="stylesheet">
         <link rel="stylesheet" href="{% static 'ietf/css/ietf.css' %}">
         <link rel="stylesheet" href="{% static 'ietf/css/select2.css' %}">
+        {# load this in the head, to prevent flickering #}
+        <script src="{% static 'ietf/js/theme.js' %}"></script>
         <style>
             {% block morecss %}{% endblock %}
         </style>
@@ -37,11 +35,10 @@
           data-group-menu-data-url="{% url 'ietf.group.views.group_menu_data' %}">
         {% analytical_body_top %}
         <a class="visually-hidden visually-hidden-focusable" href="#content">Skip to main content</a>
-        <nav class="navbar navbar-expand-lg {% if server_mode and server_mode != "production" %} navbar-light bg-warning {% else %} navbar-dark bg-secondary {% endif %}  {% if navbar_mode %} {{ navbar_mode }} {% else %} fixed-top {% endif %}">
+        <nav class="navbar navbar-expand-lg fixed-top {% if server_mode and server_mode != "production" %}bg-danger-subtle{% else %}bg-secondary-subtle{% endif %}">
             <div class="container-fluid">
                 <a class="navbar-brand" href="/">
-                    <img alt="IETF Logo" class="me-2"
-                        src="{% static 'ietf/images/ietf-logo-nor-white.svg' %}">
+                    {% include "logo.html" with org="ietf" classes="me-2" nor=True only %}
                     Datatracker
                     {% if server_mode and server_mode != "production" %}
                         <span class="text-danger">&delta;</span>
@@ -53,7 +50,7 @@
                     </ul>
                 </div>
                 <div class="d-flex align-items-center">
-                    <a class="nav-link {% if server_mode and server_mode != "production" %}text-danger{% else %}text-warning{% endif %} d-none d-xl-inline me-xl-4"
+                    <a class="nav-link text-danger d-none d-xl-inline me-xl-4"
                        target="_blank"
                        href="https://github.com/ietf-tools/datatracker/issues/new/choose">
                         Report a bug
@@ -91,7 +88,7 @@
         <div class="pt-3 container-fluid">
             <div class="row">
                 {% if request.COOKIES.left_menu == "on" and not hide_menu %}
-                    <div class="d-none d-md-block bg-light py-3 leftmenu small">
+                    <div class="d-none d-md-block bg-light-subtle py-3 leftmenu small">
                         <ul class="nav nav-pills flex-column">
                             {% include "base/menu.html" with flavor="left" %}
                         </ul>
@@ -105,12 +102,12 @@
                         </div>
                     </noscript>
                     {% for message in messages %}
-                        <div class="alert {% if message.level_tag %} alert-{% if message.level_tag == 'error' %}danger{% else %}{{ message.level_tag }}{% endif %} {% endif %} {% if message.extra_tags %} {{ message.extra_tags }}{% endif %} alert-dismissable fade show">
+                        <div class="alert {% if message.level_tag %} alert-{% if message.level_tag == 'error' %}danger{% else %}{{ message.level_tag }}{% endif %} {% endif %} alert-dismissable fade show">
                             <button type="button"
                                     class="btn-close float-end"
                                     data-bs-dismiss="alert"
                                     aria-label="Close"></button>
-                            {{ message.message }}
+                            <div{% if message.extra_tags %} class="{{ message.extra_tags }}"{% endif %}>{{ message.message }}</div>
                         </div>
                     {% endfor %}
                     {% block content %}{{ content|safe }}{% endblock %}
@@ -119,8 +116,7 @@
             </div>
         </div>
         {% block footer %}
-            <footer class="col-md-12 col-sm-12 bg-white text-center position-sticky">
-                <hr class="mx-3">
+            <footer class="col-md-12 col-sm-12 border-top mt-5 py-5 bg-light-subtle text-center position-sticky">
                 <a href="https://www.ietf.org/" class="p-3">IETF</a>
                 <a href="https://www.ietf.org/iesg/" class="p-3">IESG</a>
                 <a href="https://www.iab.org/" class="p-3">IAB</a>
@@ -130,7 +126,7 @@
                 <a href="https://www.rfc-editor.org/" class="p-3 text-nowrap">RFC Editor</a>
                 <a href="https://www.iana.org/" class="p-3">IANA</a>
                 <a href="https://www.ietf.org/privacy-statement/" class="p-3 text-nowrap">Privacy Statement</a>
-                <div class="small text-muted py-3">
+                <div class="small text-body-secondary py-3">
                     {% if version_num %}
                         <a class="mx-2" href="/release/about">About IETF Datatracker</a>
                         <span class="mx-2">

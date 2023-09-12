@@ -16,7 +16,7 @@ from unicodedata import normalize
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.utils.text import slugify
-from django.utils.encoding import force_text
+from django.utils.encoding import force_str
 
 import debug                            # pyflakes:ignore
 
@@ -46,6 +46,7 @@ class UserFactory(factory.django.DjangoModelFactory):
         model = User
         django_get_or_create = ('username',)
         exclude = ['faker', ]
+        skip_postgeneration_save = True
 
     faker = factory.LazyFunction(random_faker)
     # normalize these i18n Unicode strings in the same way the database does
@@ -55,20 +56,23 @@ class UserFactory(factory.django.DjangoModelFactory):
                                                 slugify(unidecode(u.last_name)), n, fake.domain_name())) # type: ignore
     username = factory.LazyAttribute(lambda u: u.email)
 
+    # Consider using PostGenerationMethodCall instead
     @factory.post_generation
     def set_password(obj, create, extracted, **kwargs): # pylint: disable=no-self-argument
         obj.set_password( '%s+password' % obj.username ) # pylint: disable=no-value-for-parameter
+        obj.save()
 
 class PersonFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Person
+        skip_postgeneration_save = True
 
     user = factory.SubFactory(UserFactory)
     name = factory.LazyAttribute(lambda p: normalize_name('%s %s'%(p.user.first_name, p.user.last_name)))
     # Some i18n names, e.g., "शिला के.सी." have a dot at the end that is also part of the ASCII, e.g., "Shilaa Kesii."
     # That trailing dot breaks extract_authors(). Avoid this issue by stripping the dot from the ASCII.
     # Some others have a trailing semicolon (e.g., "உயிரோவியம் தங்கராஐ;") - strip those, too.
-    ascii = factory.LazyAttribute(lambda p: force_text(unidecode_name(p.name)).rstrip(".;"))
+    ascii = factory.LazyAttribute(lambda p: force_str(unidecode_name(p.name)).rstrip(".;"))
 
     class Params:
         with_bio = factory.Trait(biography = "\n\n".join(fake.paragraphs())) # type: ignore
@@ -106,6 +110,7 @@ class PersonFactory(factory.django.DjangoModelFactory):
             def delete_file(file):
                 os.unlink(file)
             atexit.register(delete_file, photodst)
+            obj.save()
 
 class AliasFactory(factory.django.DjangoModelFactory):
     class Meta:

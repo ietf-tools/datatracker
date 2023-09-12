@@ -9,7 +9,7 @@ from email.utils import parseaddr
 
 from ietf.doc.utils_bofreq import bofreq_editors, bofreq_responsible
 from ietf.utils.mail import formataddr, get_email_addresses_from_text
-from ietf.group.models import Group
+from ietf.group.models import Group, Role
 from ietf.person.models import Email, Alias
 from ietf.review.models import ReviewTeamSettings
 
@@ -137,10 +137,13 @@ class Recipient(models.Model):
 
     def gather_stream_managers(self, **kwargs):
         addrs = []
-        manager_map = dict(ise  = '<rfc-ise@rfc-editor.org>',
-                           irtf = '<irtf-chair@irtf.org>',
-                           ietf = '<iesg@ietf.org>',
-                           iab  = '<iab-chair@iab.org>')
+        manager_map = dict(
+            ise  = '<rfc-ise@rfc-editor.org>',
+            irtf = '<irtf-chair@irtf.org>',
+            ietf = '<iesg@ietf.org>',
+            iab  = '<iab-chair@iab.org>',
+            editorial = Role.objects.filter(group__acronym="rsab",name_id="chair").values_list("email__address", flat=True),
+        )
         if 'streams' in kwargs:
             for stream in kwargs['streams']:
                 if stream in manager_map:

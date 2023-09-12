@@ -34,7 +34,7 @@ $DTDIR/ietf/manage.py update_external_command_info
 rsync -avzq --delete /a/www/ietf-ftp/iana/yang-parameters/ /a/www/ietf-ftp/yang/ianamod/
 
 # Get Yang models from Yangcatalog.
-rsync -avzq rsync://yangcatalog.org:10873/yangdeps /a/www/ietf-ftp/yang/catalogmod/
+rsync -avzq rsync://rsync.yangcatalog.org:10873/yangdeps /a/www/ietf-ftp/yang/catalogmod/
 
 # Populate the yang repositories
 $DTDIR/ietf/manage.py populate_yang_model_dirs -v0
@@ -42,7 +42,7 @@ $DTDIR/ietf/manage.py populate_yang_model_dirs -v0
 # Re-run yang checks on active documents
 $DTDIR/ietf/manage.py run_yang_model_checks -v0
 
-# Expire internet drafts
+# Expire Internet-Drafts
 # Enable when removed from /a/www/ietf-datatracker/scripts/Cron-runner:
 $DTDIR/ietf/bin/expire-ids
 

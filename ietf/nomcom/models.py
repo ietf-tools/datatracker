@@ -48,7 +48,7 @@ class NomCom(models.Model):
 
     group = ForeignKey(Group)
     send_questionnaire = models.BooleanField(verbose_name='Send questionnaires automatically', default=False,
-                                             help_text='If you check this box, questionnaires are sent automatically after nominations.')
+                                             help_text='If you check this box, questionnaires are sent automatically after nominations. DO NOT CHECK if they are not ready yet.')
     reminder_interval = models.PositiveIntegerField(help_text='If the nomcom user sets the interval field then a cron command will '
                                                               'send reminders to the nominees who have not responded using '
                                                               'the following formula: (today - nomination_date) % interval == 0.',
@@ -130,7 +130,7 @@ class Nomination(models.Model):
     nominator_email = models.EmailField(verbose_name='Nominator Email', blank=True)
     user = ForeignKey(User, editable=False, null=True, on_delete=models.SET_NULL)
     time = models.DateTimeField(auto_now_add=True)
-    share_nominator = models.BooleanField(verbose_name='Share nominator name with candidate', default=False,
+    share_nominator = models.BooleanField(verbose_name='OK to share nominator\'s name with candidate', default=False,
                                           help_text='Check this box to allow the NomCom to let the '
                                                     'person you are nominating know that you were '
                                                     'one of the people who nominated them. If you '
@@ -188,8 +188,9 @@ class NomineePosition(models.Model):
 
     def save(self, **kwargs):
         if not self.pk and not self.state_id:
+            # Don't need to set update_fields because the self.pk test means this is a new instance
             self.state = NomineePositionStateName.objects.get(slug='pending')
-        super(NomineePosition, self).save(**kwargs)
+        super().save(**kwargs)
 
     def __str__(self):
         return "%s - %s - %s" % (self.nominee, self.state, self.position)

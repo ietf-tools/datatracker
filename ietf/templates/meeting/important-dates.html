@@ -2,6 +2,9 @@
 {# Copyright The IETF Trust 2017, All Rights Reserved #}
 {% load origin %}
 {% load ietf_filters static textfilters ietf_filters %}
+{% block pagehead %}
+    <link rel="stylesheet" href="{% static "ietf/css/list.css" %}">
+{% endblock %}
 {% block title %}IETF {{ meetings.0.number }}: Important Dates{% endblock %}
 {% block content %}
     {% origin %}
@@ -19,12 +22,12 @@
             <h2 class="mt-5">
                 IETF {{ meeting.number }}
                 <br>
-                <small class="text-muted">{{ meeting.date }}, {{ meeting.city }}, {{ meeting.country }}</small>
+                <small class="text-body-secondary">{{ meeting.date }}, {{ meeting.city }}, {{ meeting.country }}</small>
             </h2>
-            <table class="table table-striped">
+            <table class="table table-striped tablesorter">
                 <thead>
                     <tr>
-                        <th scope="col">Date</th>
+                        <th scope="col" data-sort="date">Date</th>
                         <th scope="col">Weekday</th>
                         <th scope="col">Description</th>
                     </tr>
@@ -42,7 +45,7 @@
                                     {% endif %}
                                 </td>
                                 <td>
-                                    {{ d.name.desc|urlize_ietf_docs|linkify }}
+                                    {{ d.name.desc|urlize_ietf_docs|linkify }}{% if d.name.desc|slice:"-1:" != "." %}.{% endif %}
                                     {% if first and d.name.slug == 'openreg' or first and d.name.slug == 'earlybird' %}
                                         <a href="https://www.ietf.org/how/meetings/register/">Register here</a>.
                                     {% endif %}
@@ -64,7 +67,7 @@
                                     {% endif %}
                                     {% if d.name.slug == 'idcutoff' %}
                                         Upload using the
-                                        <a href="{% url 'ietf.submit.views.upload_submission' %}">ID Submission Tool</a>.
+                                        <a href="{% url 'ietf.submit.views.upload_submission' %}">I-D Submission Tool</a>.
                                     {% endif %}
                                     {% if d.name.slug == 'draftwgagenda' or d.name.slug == 'revwgagenda' or d.name.slug == 'procsub' or d.name.slug == 'revslug' %}
                                         Upload using the
@@ -78,4 +81,30 @@
             </table>
         {% endif %}
     {% endfor %}
+    <div id="cal" class="navskip mt-5"></div>
+{% endblock %}
+{% block js %}
+    <script src="{% static "ietf/js/list.js" %}"></script>
+    <script src="{% static 'ietf/js/fullcalendar.js' %}"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function (event) {
+            const el = document.getElementById("cal");
+            var calendar = new FullCalendar(el, {
+                plugins: [dayGridPlugin, bootstrap5Plugin, iCalendarPlugin],
+                themeSystem: 'bootstrap5',
+                displayEventTime: false,
+                eventDidMount: function (info) {
+                    $(info.el)
+                        .tooltip({
+                            title: info.event.title + ": " + info.event.extendedProps.description
+                        });
+                },
+                events: {
+                    url: "{% url 'ietf.meeting.views.important_dates' output_format='ics' %}",
+                    format: "ics"
+                }
+            });
+            calendar.render();
+        });
+    </script>
 {% endblock %}

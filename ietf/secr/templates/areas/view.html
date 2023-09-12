@@ -1,5 +1,5 @@
 {% extends "base_site.html" %}
-{% load staticfiles %}
+{% load static %}
 {% block title %}Areas - View{% endblock %}
 
 {% block extrahead %}{{ block.super }}
@@ -43,7 +43,6 @@
                 <!-- <li><button type="button" onclick="window.location='../../'">Back</button></li> -->
                 <li><button type="button" onclick="window.location='edit/'">Edit</button></li>
                 <li><button type="button" onclick="window.location='people/'">People</button></li>
-                <li><button type="button" onclick="window.location='{% url 'ietf.secr.groups.views.search' %}?primary_area={{ area.id }}'">Groups</button></li>
             </ul>
         </div> <!-- button-group -->
     </div> <!-- module -->

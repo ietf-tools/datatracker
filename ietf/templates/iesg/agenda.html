@@ -9,9 +9,15 @@
     <h1>
         IESG agenda
         <br>
-        <small class="text-muted">{{ date }}</small>
+        <small class="text-body-secondary">{{ date }}</small>
     </h1>
     {% include "iesg/nav.html" with active="agenda" %}
+    {% if user|has_role:"Secretariat" %}
+        <a class="btn btn-outline-primary float-end"
+           href="{% url 'ietf.iesg.views.telechat_agenda_content_manage' %}">
+          Manage administrivia
+        </a>
+    {% endif %}
     {% for num, section in sections %}
         {% if num|sectionlevel == 1 %}
             <h2 class="mt-3" id="sec-{{ num|slugify }}">{{ num }}. {{ section.title|safe }}</h2>
@@ -45,48 +51,48 @@
                 </p>
             {% endif %}
             {% if num == "3.4" %}
-                <p class="alert alert-info my-3">
-                    The IESG will use RFC 5742 responses:
-                </p>
-                <ol>
-                    <li>
-                        The IESG has concluded
-                        that there is no conflict between this document and IETF work;
-                    </li>
-                    <li>
-                        The IESG has concluded that this work is related to IETF work done
-                        in WG &lt;X&gt;, but this relationship does not prevent
-                        publishing;
-                    </li>
-                    <li>
-                        The IESG has concluded that publication could
-                        potentially disrupt the IETF work done in WG &lt;X&gt; and
-                        recommends not publishing the document at this time;
-                    </li>
-                    <li>
-                        The IESG
-                        has concluded that this document violates IETF procedures for
-                        &lt;Y&gt; and should therefore not be published without IETF
-                        review and IESG approval; or
-                    </li>
-                    <li>
-                        The IESG has concluded that this
-                        document extends an IETF protocol in a way that requires IETF
-                        review and should therefore not be published without IETF review
-                        and IESG approval.
-                    </li>
-                </ol>
-                <p>
-                    The document shepherd must propose one of these responses in the
-                    conflict-review document, and the document shepherd may supply text
-                    for an IESG Note in that document. The Area Director ballot positions
-                    indicate consensus with the response proposed by the document shepherd
-                    and agreement that the IESG should request inclusion of the IESG Note.
-                </p>
-                <p>
-                    Other matters may be recorded in comments, and the comments will
-                    be passed on to the RFC Editor as community review of the document.
-                </p>
+                <div class="alert alert-info my-3">
+                    <p>The IESG will use RFC 5742 responses:</p>
+                    <ol>
+                        <li>
+                            The IESG has concluded
+                            that there is no conflict between this document and IETF work;
+                        </li>
+                        <li>
+                            The IESG has concluded that this work is related to IETF work done
+                            in WG &lt;X&gt;, but this relationship does not prevent
+                            publishing;
+                        </li>
+                        <li>
+                            The IESG has concluded that publication could
+                            potentially disrupt the IETF work done in WG &lt;X&gt; and
+                            recommends not publishing the document at this time;
+                        </li>
+                        <li>
+                            The IESG
+                            has concluded that this document violates IETF procedures for
+                            &lt;Y&gt; and should therefore not be published without IETF
+                            review and IESG approval; or
+                        </li>
+                        <li>
+                            The IESG has concluded that this
+                            document extends an IETF protocol in a way that requires IETF
+                            review and should therefore not be published without IETF review
+                            and IESG approval.
+                        </li>
+                    </ol>
+                    <p>
+                        The document shepherd must propose one of these responses in the
+                        conflict-review document, and the document shepherd may supply text
+                        for an IESG Note in that document. The Area Director ballot positions
+                        indicate consensus with the response proposed by the document shepherd
+                        and agreement that the IESG should request inclusion of the IESG Note.
+                    </p>
+                    <p class="mb-0">
+                        Other matters may be recorded in comments, and the comments will
+                        be passed on to the RFC Editor as community review of the document.
+                    </p>
+                </div>
             {% endif %}
             {% if "docs" in section %}
                 {% for doc in section.docs %}
@@ -100,7 +106,7 @@
                         {% include "iesg/agenda_charter.html" %}
                     {% endif %}
                 {% empty %}
-                    <p class="text-muted">
+                    <p class="text-body-secondary">
                         (None)
                     </p>
                 {% endfor %}

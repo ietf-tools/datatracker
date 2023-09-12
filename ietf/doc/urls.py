@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2009-2020, All Rights Reserved
+# Copyright The IETF Trust 2009-2023, All Rights Reserved
 # -*- coding: utf-8 -*-
 # Copyright (C) 2009 Nokia Corporation and/or its subsidiary(-ies).
 # All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com>
@@ -33,11 +33,11 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-from django.conf.urls import include
-from django.views.generic import RedirectView
 from django.conf import settings
+from django.urls import include
+from django.views.generic import RedirectView
 
-from ietf.doc import views_search, views_draft, views_ballot, views_status_change, views_doc, views_downref, views_stats, views_help, views_bofreq
+from ietf.doc import views_search, views_draft, views_ballot, views_status_change, views_doc, views_downref, views_stats, views_help, views_bofreq, views_statement
 from ietf.utils.urls import url
 
 session_patterns = [
@@ -57,6 +57,7 @@ urlpatterns = [
     url(r'^start-rfc-status-change/(?:%(name)s/)?$' % settings.URL_REGEXPS, views_status_change.start_rfc_status_change),
     url(r'^bof-requests/?$', views_bofreq.bof_requests),
     url(r'^bof-requests/new/$', views_bofreq.new_bof_request),
+    url(r'^statement/new/$', views_statement.new_statement),
     url(r'^iesg/?$', views_search.drafts_in_iesg_process),
     url(r'^email-aliases/?$', views_doc.email_aliases),
     url(r'^downref/?$', views_downref.downref_registry),
@@ -85,17 +86,13 @@ urlpatterns = [
     url(r'^html/(?P<name>[Rr][Ff][Cc] [0-9]+?)(\.txt|\.html)?/?$', views_doc.document_html),
     url(r'^idnits2-rfcs-obsoleted/?$', views_doc.idnits2_rfcs_obsoleted),
     url(r'^idnits2-rfc-status/?$', views_doc.idnits2_rfc_status),
-# These two are proof-of-concept of a service that would redirect to the latest version
-#    url(r'^rfcdiff-latest/%(name)s(?:-%(rev)s)?(\.txt|\.html)?/?$' % settings.URL_REGEXPS, views_doc.rfcdiff_latest),
-#    url(r'^rfcdiff-latest/(?P<name>[Rr][Ff][Cc] [0-9]+?)(\.txt|\.html)?/?$', views_doc.rfcdiff_latest),
-    url(r'^rfcdiff-latest-json/%(name)s(?:-%(rev)s)?(\.txt|\.html)?/?$' % settings.URL_REGEXPS, views_doc.rfcdiff_latest_json),
-    url(r'^rfcdiff-latest-json/(?P<name>[Rr][Ff][Cc] [0-9]+?)(\.txt|\.html)?/?$', views_doc.rfcdiff_latest_json),
 
     url(r'^all/?$', views_search.index_all_drafts),
     url(r'^active/?$', views_search.index_active_drafts),
     url(r'^recent/?$', views_search.recent_drafts),
     url(r'^select2search/(?P<model_name>(document|docalias))/(?P<doc_type>draft)/$', views_search.ajax_select2_search_docs),
     url(r'^ballots/irsg/$', views_ballot.irsg_ballot_status),
+    url(r'^ballots/rsab/$', views_ballot.rsab_ballot_status),
 
     url(r'^%(name)s(?:/%(rev)s)?/$' % settings.URL_REGEXPS, views_doc.document_main),
     url(r'^%(name)s(?:/%(rev)s)?/bibtex/$' % settings.URL_REGEXPS, views_doc.document_bibtex),
@@ -110,6 +107,7 @@ urlpatterns = [
     url(r'^%(name)s/referencedby/$' % settings.URL_REGEXPS, views_doc.document_referenced_by),
     url(r'^%(name)s/ballot/(iesg/)?$' % settings.URL_REGEXPS, views_doc.document_ballot),
     url(r'^%(name)s/ballot/irsg/$' % settings.URL_REGEXPS, views_doc.document_irsg_ballot),
+    url(r'^%(name)s/ballot/rsab/$' % settings.URL_REGEXPS, views_doc.document_rsab_ballot),
     url(r'^%(name)s/ballot/(?P<ballot_id>[0-9]+)/$' % settings.URL_REGEXPS, views_doc.document_ballot),
     url(r'^%(name)s/ballot/(?P<ballot_id>[0-9]+)/position/$' % settings.URL_REGEXPS, views_ballot.edit_position),
     url(r'^%(name)s/ballot/(?P<ballot_id>[0-9]+)/emailposition/$' % settings.URL_REGEXPS, views_ballot.send_ballot_comment),
@@ -161,6 +159,8 @@ urlpatterns = [
     url(r'^%(name)s/edit/resources/$' % settings.URL_REGEXPS, views_draft.edit_doc_extresources),
     url(r'^%(name)s/edit/issueballot/irsg/$' % settings.URL_REGEXPS, views_ballot.issue_irsg_ballot),
     url(r'^%(name)s/edit/closeballot/irsg/$' % settings.URL_REGEXPS, views_ballot.close_irsg_ballot),
+    url(r'^%(name)s/edit/issueballot/rsab/$' % settings.URL_REGEXPS, views_ballot.issue_rsab_ballot),
+    url(r'^%(name)s/edit/closeballot/rsab/$' % settings.URL_REGEXPS, views_ballot.close_rsab_ballot),
 
     url(r'^help/state/(?P<type>[\w-]+)/$', views_help.state_help),
     url(r'^help/relationships/$', views_help.relationship_help),
@@ -170,10 +170,14 @@ urlpatterns = [
 
     url(r'^%(charter)s/' % settings.URL_REGEXPS, include('ietf.doc.urls_charter')),
     url(r'^%(bofreq)s/' % settings.URL_REGEXPS, include('ietf.doc.urls_bofreq')),
+    url(r'^%(statement)s/' % settings.URL_REGEXPS, include('ietf.doc.urls_statement')),
     url(r'^%(name)s/conflict-review/' % settings.URL_REGEXPS, include('ietf.doc.urls_conflict_review')),
     url(r'^%(name)s/status-change/' % settings.URL_REGEXPS, include('ietf.doc.urls_status_change')),
     url(r'^%(name)s/material/' % settings.URL_REGEXPS, include('ietf.doc.urls_material')),
     url(r'^%(name)s/session/' % settings.URL_REGEXPS, include('ietf.doc.urls_material')),
     url(r'^(?P<name>[A-Za-z0-9._+-]+)/session/', include(session_patterns)),
     url(r'^(?P<name>[A-Za-z0-9\._\+\-]+)$', views_search.search_for_name),
+    # latest versions - keep old URLs alive during migration period
+    url(r'^rfcdiff-latest-json/%(name)s(?:-%(rev)s)?(\.txt|\.html)?/?$' % settings.URL_REGEXPS, RedirectView.as_view(pattern_name='ietf.api.views.rfcdiff_latest_json', permanent=True)),
+    url(r'^rfcdiff-latest-json/(?P<name>[Rr][Ff][Cc] [0-9]+?)(\.txt|\.html)?/?$', RedirectView.as_view(pattern_name='ietf.api.views.rfcdiff_latest_json', permanent=True)),
 ]

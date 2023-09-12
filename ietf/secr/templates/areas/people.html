@@ -1,10 +1,8 @@
 {% extends "base_site.html" %}
-{% load staticfiles %}
+{% load static %}
 {% block title %}Areas - People{% endblock %}
 
 {% block extrahead %}{{ block.super }}
-    <link rel="stylesheet" href="{% static 'ietf/css/jquery-ui.css' %}">
-    <script src="{% static 'ietf/js/jquery-ui.js' %}"></script>
     <script src="{% static 'secr/js/utils.js' %}"></script>
 {% endblock %}
 
@@ -27,9 +25,9 @@
                         <td>{% if director.name.slug == "ad" %}
                             Voting Enabled
                         {% else %}
-                            <button type="submit" name="submit">Enable Voting</button></td>
+                            <button type="submit" name="submit" value="Enable Voting">Enable Voting</button></td>
                         {% endif %}
-                            <td><button type="submit" name="submit">Retire</button></td>
+                            <td><button type="submit" name="submit" value="Retire">Retire</button></td>
                         </tr>
                     </form>
             {% endfor %}
@@ -45,7 +43,7 @@
                         {{ form.as_table }}
                         <tr>
                             <td></td>
-                            <td><button type="submit" name="submit">Add</button></td>
+                            <td><button type="submit" name="submit" value="Add">Add</button></td>
                         </tr>
                         </tbody>
                     </table>
