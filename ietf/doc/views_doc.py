@@ -1649,8 +1649,6 @@ def document_json(request, name, rev=None):
     data["expires"] = doc.expires.strftime("%Y-%m-%d %H:%M:%S") if doc.expires else None
     data["title"] = doc.title
     data["abstract"] = doc.abstract
-    # Preserve aliases in this api? What about showing rfc_number directly?
-    data["aliases"] = list(doc.name)
     data["state"] = extract_name(doc.get_state())
     data["intended_std_level"] = extract_name(doc.intended_std_level)
     data["std_level"] = extract_name(doc.std_level)
@@ -1666,7 +1664,7 @@ def document_json(request, name, rev=None):
     latest_revision = doc.latest_event(NewRevisionDocEvent, type="new_revision")
     data["rev_history"] = make_rev_history(latest_revision.doc if latest_revision else doc)
 
-    if doc.type_id == "draft":
+    if doc.type_id == "draft": # These live only on drafts
         data["iesg_state"] = extract_name(doc.get_state("draft-iesg"))
         data["rfceditor_state"] = extract_name(doc.get_state("draft-rfceditor"))
         data["iana_review_state"] = extract_name(doc.get_state("draft-iana-review"))
@@ -1675,6 +1673,8 @@ def document_json(request, name, rev=None):
         if doc.stream_id in ("ietf", "irtf", "iab"):
             e = doc.latest_event(ConsensusDocEvent, type="changed_consensus")
             data["consensus"] = e.consensus if e else None
+
+    if doc.type_id in ["draft", "rfc"]:
         data["stream"] = extract_name(doc.stream)
 
     return HttpResponse(json.dumps(data, indent=2), content_type='application/json')
