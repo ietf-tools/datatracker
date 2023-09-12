@@ -3,7 +3,7 @@
 {% load static %}
 {% load ietf_filters %}
 {% origin %}
-<meta property="og:title" content="{% if doc.get_state_slug == 'rfc' and not snapshot %}RFC {{ rfc_number }}: {% endif %}{{ doc.title }}">
+<meta property="og:title" content="{% if doc.type_id == 'rfc' and not snapshot %}RFC {{ rfc_number }}: {% endif %}{{ doc.title }}">
 <meta property="og:url" content="{{ settings.IDTRACKER_BASE_URL }}{{ request.path }}">
 <link rel="canonical" href="{{ settings.IDTRACKER_BASE_URL }}{{ request.path }}">
 <meta property="og:site_name" content="IETF Datatracker">
