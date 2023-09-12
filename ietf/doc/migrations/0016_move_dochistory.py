@@ -18,10 +18,11 @@ def forward(apps, schema_editor):
             ).values_list("target_id", flat=True)[:1]
         )
     ).update(
-        doc_id = F("rfc_id"),
-        type_id = "rfc"
+        doc_id=F("rfc_id"), type_id="rfc"
     )
-    assert not DocHistory.objects.filter(name__startswith="rfc", type_id="draft").exists()
+    assert not DocHistory.objects.filter(
+        name__startswith="rfc", type_id="draft"
+    ).exists()
 
 
 def reverse(apps, schema_editor):
