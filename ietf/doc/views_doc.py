@@ -209,15 +209,11 @@ def document_main(request, name, rev=None, document_html=False):
     gh = None
     if rev:
         # find the entry in the history
-        debug.show('doc.name')
         for h in doc.history_set.order_by("-time"):
             if rev == h.rev:
                 snapshot = True
                 doc = h
                 break
-
-        debug.show('doc.name')
-
 
         if not snapshot and document_html is False:
             return redirect('ietf.doc.views_doc.document_main', name=name)
@@ -647,7 +643,6 @@ def document_main(request, name, rev=None, document_html=False):
                     css = Path(finders.find("ietf/css/document_html_inline.css")).read_text()
                     if html:
                         css += Path(finders.find("ietf/css/document_html_txt.css")).read_text()
-        debug.show("doc.name")
 
         return render(request, "doc/document_draft.html" if document_html is False else "doc/document_html.html",
                                   dict(doc=doc,
