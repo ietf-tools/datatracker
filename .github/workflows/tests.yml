@@ -20,7 +20,7 @@ jobs:
         image: ghcr.io/ietf-tools/datatracker-db:latest
     
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     
     - name: Prepare for tests
       run: |
@@ -77,7 +77,7 @@ jobs:
         project: [chromium, firefox]
     
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - uses: actions/setup-node@v3
       with:
@@ -118,7 +118,7 @@ jobs:
         image: ghcr.io/ietf-tools/datatracker-db:latest
     
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     
     - name: Prepare for tests
       run: |
