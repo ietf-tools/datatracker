@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{# Copyright The IETF Trust 2016-2020, All Rights Reserved #}
+{# Copyright The IETF Trust 2016-2023, All Rights Reserved #}
 {% load origin %}
 {% load static %}
 {% load ietf_filters %}
@@ -13,43 +13,19 @@
           title="Document changes"
           href="/feed/document-changes/{{ name }}/">
     <meta name="description"
-          content="{{ doc.title }} {% if doc.type_id == 'rfc' and not snapshot %}(RFC {{ rfc_number }}{% if published %}, {{ doc.pub_date|date:'F Y' }}{% endif %}{% if obsoleted_by %}; obsoleted by {% for rel in obsoleted_by %}{{ rel.source.name|prettystdname}}{% if not forloop.last%}, {% endif %}{% endfor %}{% endif %}){% endif %}">
+          content="{{ doc.title }} (RFC {{ doc.rfc_number }}, {{ doc.pub_date|date:'F Y' }}{% if obsoleted_by %}; obsoleted by {% for rel in obsoleted_by %}{{ rel.source.name|prettystdname}}{% if not forloop.last%}, {% endif %}{% endfor %}{% endif %})">
 {% endblock %}
 {% block morecss %}.inline { display: inline; }{% endblock %}
 {% block title %}
-        RFC {{ rfc_number }} - {{ doc.title }}
+        RFC {{ doc.rfc_number }} - {{ doc.title }}
 {% endblock %}
 {% block content %}
     {% origin %}
     {{ top|safe }}
-    <div id="timeline"></div>
-    {% if doc.rev != latest_rev %}
-        <div class="alert alert-warning my-3">The information below is for an old version of the document.</div>
-    {% endif %}
+    <div id="doc-timeline"></div>
     <table class="table table-sm table-borderless">
         {% include "doc/document_info.html" %}
         <tbody class="meta border-top">
-            {% if milestones %}
-            <tr>
-                <td></td>
-                <th scope="row">
-                    Associated
-                        {% if doc.stream_id == 'ietf' %}
-                            WG
-                        {% else %}
-                            {{ doc.stream }}
-                        {% endif %} milestone{{ milestones|pluralize }}</th>
-                <td class="edit"></td>
-                <td>
-                    <dl class="row">
-                        {% for m in milestones %}
-                            <dt class="col-sm-2 my-0">{{ m.due|date:"M Y" }}</dt>
-                            <dd class="col-sm-10 my-0">{{ m.desc }}</dd>
-                        {% endfor %}
-                    </dl>
-                </td>
-            </tr>
-            {% endif %}
         </tbody>
         {% if doc.stream_id != 'iab' %}
             <tbody class="meta border-top">
@@ -84,7 +60,7 @@
                             Send notices to
                         </th>
                         <td class="edit">
-                            {% if can_edit_notify and not snapshot %}
+                            {% if can_edit_notify %}
                                 <a class="btn btn-primary btn-sm"
                                    href="{% url 'ietf.doc.views_doc.edit_notify' name=doc.name %}">
                                     Edit
@@ -103,47 +79,6 @@
                     </tr>
                 </tbody>
             {% endif %}
-            {% if rfc_editor_state %}
-                <tbody class="meta border-top">
-                    <tr>
-                        <th scope="row">
-                            RFC Editor
-                        </th>
-                        <th scope="row">
-                            <a href="{% url "ietf.help.views.state" doc=doc.type.slug type="rfceditor" %}">
-                                RFC Editor state
-                            </a>
-                        </th>
-                        <td class="edit">
-                        </td>
-                        <td>
-                            {{ rfc_editor_state }}
-                        </td>
-                    </tr>
-                    <tr>
-                        <td></td>
-                        <th scope="row">
-                            Details
-                        </th>
-                        <td class="edit">
-                        </td>
-                        <td>
-                            <div>
-                                <a href="https://www.rfc-editor.org/queue2.html#{{ doc.name }}">
-                                    Publication queue entry
-                                </a>
-                            </div>
-                            {% if rfc_editor_auth48_url %}
-                                <div>
-                                    <a href="{{ rfc_editor_auth48_url }}">
-                                        Auth48 status
-                                    </a>
-                                </div>
-                            {% endif %}
-                        </td>
-                    </tr>
-                </tbody>
-            {% endif %}
         </table>
         <div class="buttonlist">
             <a class="btn btn-primary btn-sm"
@@ -152,7 +87,7 @@
                 </i>
                 Email authors
             </a>
-            {% if doc.group.type.slug == 'wg' or doc.group.type.slug == 'rg' %}
+            {% if doc.group.type_id == "wg" or doc.group.type_id == "rg" %}
                 <a class="btn btn-primary btn-sm"
                    href="mailto:{{ doc.group.list_email }}?subject=Mail%20regarding%20{{ doc.name }}">
                     <i class="bi bi-envelope">
@@ -186,46 +121,12 @@
                 </i>
                 Referenced by
             </a>
-            {# document_draft shows Nits here, excluded for RFCs #}
-            <div class="dropdown inline">
-                <button class="btn btn-primary btn-sm dropdown-toggle"
-                        type="button"
-                        id="ddSearchMenu"
-                        data-bs-toggle="dropdown"
-                        aria-expanded="true">
-                    <i class="bi bi-search">
-                    </i>
-                    Search lists
-                </button>
-                <ul class="dropdown-menu" role="menu">
-                    <li role="presentation">
-                        <a class="dropdown-item"
-                           href="https://mailarchive.ietf.org/arch/search?q=%22{{ doc.name }}%22"
-                           rel="nofollow"
-                           target="_blank">
-                            IETF Mail Archive
-                        </a>
-                    </li>
-                    <li role="presentation">
-                        <a class="dropdown-item"
-                           href="https://www.google.com/search?as_q={{ doc.name }}&amp;as_sitesearch={{ search_archive }}"
-                           rel="nofollow"
-                           target="_blank">
-                            Google
-                        </a>
-                    </li>
-                    {% if user|has_role:"Area Director" %}
-                        <li role="presentation">
-                            <a class="dropdown-item"
-                               href="https://www.iesg.org/bin/c5i?mid=6&amp;rid=77&amp;target={{ doc.name }}"
-                               rel="nofollow"
-                               target="_blank">
-                                ARO
-                            </a>
-                        </li>
-                    {% endif %}
-                </ul>
-            </div>
+            <a class="btn btn-primary btn-sm"
+                href="https://mailarchive.ietf.org/arch/search?q=%22{{ doc.name }}%22"
+                rel="nofollow"
+                target="_blank">
+                Search Lists
+            </a>
             {% if user.is_authenticated %}
                 <a class="btn btn-primary btn-sm track-untrack-doc {% if not doc.tracked_in_personal_community_list %}hide{% endif %}"
                    href="{% url "ietf.community.views.untrack_document" username=user.username name=doc.name %}"
@@ -242,36 +143,6 @@
                     Track
                 </a>
             {% endif %}
-            {% if user.review_teams %}
-                <a class="btn btn-primary btn-sm review-wish-add-remove-doc ajax {% if not doc.has_review_wish %}hide{% endif %}"
-                   href="{% url "ietf.doc.views_review.review_wishes_remove" name=doc.name %}?next={{ request.get_full_path|urlencode }}"
-                   title="Remove from your review wishes for all teams">
-                    <i class="bi bi-chat-left-heart-fill">
-                    </i>
-                    Remove review wishes
-                </a>
-                <a class="btn btn-primary btn-sm review-wish-add-remove-doc {% if user.review_teams|length_is:"1" %}ajax {% endif %}{% if doc.has_review_wish %}hide{% endif %}"
-                   href="{% url "ietf.doc.views_review.review_wish_add" name=doc.name %}?next={{ request.get_full_path|urlencode }}"
-                   title="Add to your review wishes">
-                    <i class="bi bi-chat-left-heart">
-                    </i>
-                    Add review wish
-                </a>
-            {% endif %}
-            {% if can_edit and iesg_state.slug != 'idexists' %}
-                <a class="btn btn-primary btn-sm"
-                   href="{% url 'ietf.doc.views_ballot.lastcalltext' name=doc.name %}">
-                    Last call text
-                </a>
-                <a class="btn btn-primary btn-sm"
-                   href="{% url 'ietf.doc.views_ballot.ballot_writeupnotes' name=doc.name %}">
-                    Ballot text
-                </a>
-                <a class="btn btn-primary btn-sm"
-                   href="{% url 'ietf.doc.views_ballot.ballot_approvaltext' name=doc.name %}">
-                    Announcement text
-                </a>
-            {% endif %}
             {% if actions %}
                 {% for label, url in actions %}
                     <a class="btn btn-primary btn-sm" href="{{ url }}">
@@ -280,56 +151,22 @@
                 {% endfor %}
             {% endif %}
         </div>
-        {% if doc.get_state_slug == "active" or doc.type_id == "rfc" %}
-            <div class="card mt-5">
-                <div class="card-header">
-                    {% if doc.type_id == "rfc" and not snapshot %}
-                        RFC {{ rfc_number }}
-                    {% else %}
-                        {{ name }}-{{ doc.rev }}
-                    {% endif %}
-                </div>
-                <div class="card-body">
-                    <pre>{{ content|sanitize|safe|default:"(Unavailable)" }}</pre>
-                </div>
+        <div class="card mt-5">
+            <div class="card-header">
+                    RFC {{ doc.rfc_number }}
             </div>
-            {% if split_content %}
-                <a class="btn btn-primary my-3" href="?include_text=1">
-                    <i class="bi bi-caret-down">
-                    </i>
-                    Show full document
-                </a>
-            {% endif %}
-        {% else %}
-            <div class="card border-warning mt-5">
-                <div class="card-header bg-warning">
-                    <p><b>This Internet-Draft is no longer active. A copy of
-                    the expired Internet-Draft is available in these formats:</b></p>
-
-                    {% include "doc/document_format_buttons.html" %}
-                </div>
-                <div class="card-body">
-                    <p class="h5 card-title">
-                        Abstract
-                    </p>
-                    <p class="card-text">
-                        {{ doc.abstract }}
-                    </p>
-                    <p class="h5 card-title">
-                        Authors
-                    </p>
-                    <p class="card-text">
-                        {% for author in doc.documentauthor_set.all %}
-                            {% person_link author.person %}
-                            {% if not forloop.last %}<br>{% endif %}
-                        {% endfor %}
-                    </p>
-                    <p class="text-body-secondary card-text">
-                        (Note: The e-mail addresses provided for the authors of this Internet-Draft may no longer be valid.)
-                    </p>
-                </div>
+            <div class="card-body">
+                <pre>{{ content|sanitize|safe|default:"(Unavailable)" }}</pre>
             </div>
+        </div>
+        {% if split_content %}
+            <a class="btn btn-primary my-3" href="?include_text=1">
+                <i class="bi bi-caret-down">
+                </i>
+                Show full document
+            </a>
         {% endif %}
+
     {% endblock %}
     {% block js %}
         <script src="{% static 'ietf/js/d3.js' %}">
