@@ -674,7 +674,7 @@ class DocumentInfo(models.Model):
     def came_from_draft(self):
         if not hasattr(self, "_cached_came_from_draft"):
             doc = self if isinstance(self, Document) else self.doc
-            self.cached_came_from_draft = next(iter(doc.related_that("became_rfc")), None)
+            self._cached_came_from_draft = next(iter(doc.related_that("became_rfc")), None)
         return self._cached_came_from_draft
 
     class Meta:
