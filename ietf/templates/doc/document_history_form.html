@@ -25,8 +25,7 @@
                     </option>
                 {% endfor %}
                 {% if doc.name|rfcbis %} {# TODO - move this into the diffable versions logic #}
-                    <option value="{{ doc.name|rfcbis }}"
-                                {% if diff_revisions and diff_revisions|length == 1 %} selected{% endif %}
+                    <option value="{{ doc.name|rfcbis }}"{% if diff_revisions and diff_revisions|length == 1 %} selected{% endif %}>
                         {{ doc.name|rfcbis|prettystdname }}
                     </option>
                 {% endif %}
