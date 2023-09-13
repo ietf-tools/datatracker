@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2007-2020, All Rights Reserved
+# Copyright The IETF Trust 2007-2023, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -231,6 +231,7 @@ class IprEvent(models.Model):
         event_type_map = {
             'posted': 'posted_related_ipr',
             'removed': 'removed_related_ipr',
+            'removed_objfalse': 'removed_objfalse_related_ipr',
         }
         if self.type_id in event_type_map:
             related_docs = set()  # related docs, no duplicates

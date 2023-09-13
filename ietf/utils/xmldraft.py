@@ -88,8 +88,9 @@ class XMLDraft(Draft):
         # check the anchor next
         anchor = ref.get("anchor").lower()  # always give back lowercase
         label = anchor.rstrip("0123456789")  # remove trailing digits
-        if label in series:
-            number = int(anchor[len(label) :])
+        maybe_number = anchor[len(label) :]
+        if label in series and maybe_number.isdigit():
+            number = int(maybe_number)
             return f"{label}{number}"
 
         # if we couldn't find a match so far, try the seriesInfo

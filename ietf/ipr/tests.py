@@ -126,6 +126,11 @@ class IprTests(TestCase):
         r = self.client.get(urlreverse("ietf.ipr.views.show", kwargs=dict(id=ipr.pk)))
         self.assertContains(r, 'This IPR disclosure was removed')
         
+    def test_show_removed_objfalse(self):
+        ipr = HolderIprDisclosureFactory(state_id='removed_objfalse')
+        r = self.client.get(urlreverse("ietf.ipr.views.show", kwargs=dict(id=ipr.pk)))
+        self.assertContains(r, 'This IPR disclosure was removed as objectively false')
+        
     def test_ipr_history(self):
         ipr = HolderIprDisclosureFactory()
         r = self.client.get(urlreverse("ietf.ipr.views.history", kwargs=dict(id=ipr.pk)))
@@ -204,6 +209,24 @@ class IprTests(TestCase):
         r = self.client.get(url + "?submit=iprtitle&iprtitle=%s" % quote(ipr.title))
         self.assertContains(r, ipr.title)
 
+    def test_search_null_characters(self):
+        """IPR search gracefully rejects null characters in parameters"""
+        # Not a combinatorially exhaustive set, but tries to exercise all the parameters
+        bad_params = [
+            "option=document_search&document_search=draft-\x00stuff"
+            "submit=dra\x00ft",
+            "submit=draft&id=some\x00id",
+            "submit=draft&id_document_tag=some\x00id",
+            "submit=draft&id=someid&state=re\x00moved",
+            "submit=draft&id=someid&state=posted&state=re\x00moved",
+            "submit=draft&id=someid&state=removed&draft=draft-no\x00tvalid",
+            "submit=rfc&rfc=rfc\x00123",
+        ]
+        url = urlreverse("ietf.ipr.views.search")
+        for query_params in bad_params:
+            r = self.client.get(f"{url}?{query_params}")
+            self.assertEqual(r.status_code, 400, f"querystring '{query_params}' should be rejected")
+        
     def test_feed(self):
         ipr = HolderIprDisclosureFactory()
         r = self.client.get("/feed/ipr/")
@@ -576,7 +599,7 @@ I would like to revoke this declaration.
         self.client.login(username="secretary", password="secretary+password")
         
         # test for presence of pending ipr
-        num = IprDisclosureBase.objects.filter(state__in=('removed','rejected')).count()
+        num = IprDisclosureBase.objects.filter(state__in=('removed','removed_objfalse','rejected')).count()
         
         r = self.client.get(url)
         self.assertEqual(r.status_code,200)
@@ -785,18 +808,28 @@ Subject: test
                          'New Document already has a "posted_related_ipr" DocEvent')
         self.assertEqual(0, doc.docevent_set.filter(type='removed_related_ipr').count(),
                          'New Document already has a "removed_related_ipr" DocEvent')
+        self.assertEqual(0, doc.docevent_set.filter(type='removed_objfalse_related_ipr').count(),
+                         'New Document already has a "removed_objfalse_related_ipr" DocEvent')
         # A 'posted' IprEvent must create a corresponding DocEvent  
         IprEventFactory(type_id='posted', disclosure=ipr)
         self.assertEqual(1, doc.docevent_set.filter(type='posted_related_ipr').count(),
                          'Creating "posted" IprEvent did not create a "posted_related_ipr" DocEvent')
         self.assertEqual(0, doc.docevent_set.filter(type='removed_related_ipr').count(),
                          'Creating "posted" IprEvent created a "removed_related_ipr" DocEvent')
+        self.assertEqual(0, doc.docevent_set.filter(type='removed_objfalse_related_ipr').count(),
+                         'Creating "posted" IprEvent created a "removed_objfalse_related_ipr" DocEvent')
         # A 'removed' IprEvent must create a corresponding DocEvent
         IprEventFactory(type_id='removed', disclosure=ipr)
         self.assertEqual(1, doc.docevent_set.filter(type='posted_related_ipr').count(),
                          'Creating "removed" IprEvent created a "posted_related_ipr" DocEvent')
         self.assertEqual(1, doc.docevent_set.filter(type='removed_related_ipr').count(),
                          'Creating "removed" IprEvent did not create a "removed_related_ipr" DocEvent')
+        # A 'removed_objfalse' IprEvent must create a corresponding DocEvent
+        IprEventFactory(type_id='removed_objfalse', disclosure=ipr)
+        self.assertEqual(1, doc.docevent_set.filter(type='posted_related_ipr').count(),
+                         'Creating "removed_objfalse" IprEvent created a "posted_related_ipr" DocEvent')
+        self.assertEqual(1, doc.docevent_set.filter(type='removed_objfalse_related_ipr').count(),
+                         'Creating "removed_objfalse" IprEvent did not create a "removed_objfalse_related_ipr" DocEvent')
         # The DocEvent descriptions must refer to the IprEvents
         posted_docevent = doc.docevent_set.filter(type='posted_related_ipr').first()
         self.assertIn(ipr.title, posted_docevent.desc, 
@@ -804,6 +837,9 @@ Subject: test
         removed_docevent = doc.docevent_set.filter(type='removed_related_ipr').first()
         self.assertIn(ipr.title, removed_docevent.desc,
                       'IprDisclosure title does not appear in DocEvent desc when removed')
+        removed_objfalse_docevent = doc.docevent_set.filter(type='removed_objfalse_related_ipr').first()
+        self.assertIn(ipr.title, removed_objfalse_docevent.desc,
+                      'IprDisclosure title does not appear in DocEvent desc when removed as objectively false')
 
     def test_no_revisions_message(self):
         draft = WgDraftFactory(rev="02")

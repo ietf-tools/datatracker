@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2007-2022, All Rights Reserved
+# Copyright The IETF Trust 2007-2023, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -10,7 +10,7 @@ from django.contrib import messages
 from django.db.models import Q
 from django.forms.models import inlineformset_factory, model_to_dict
 from django.forms.formsets import formset_factory
-from django.http import HttpResponse, Http404, HttpResponseRedirect
+from django.http import HttpResponse, Http404, HttpResponseRedirect, HttpResponseBadRequest
 from django.shortcuts import render, get_object_or_404, redirect
 from django.template.loader import render_to_string
 from django.urls import reverse as urlreverse
@@ -269,7 +269,7 @@ def add_email(request, id):
 @role_required('Secretariat',)
 def admin(request, state):
     """Administrative disclosure listing.  For non-posted disclosures"""
-    states = IprDisclosureStateName.objects.filter(slug__in=[state, "rejected"] if state == "removed" else [state])
+    states = IprDisclosureStateName.objects.filter(slug__in=[state, "rejected", "removed_objfalse"] if state == "removed" else [state])
     if not states:
         raise Http404
 
@@ -629,11 +629,16 @@ def post(request, id):
     
 def search(request):
     search_type = request.GET.get("submit")
+    if search_type and "\x00" in search_type:
+        return HttpResponseBadRequest("Null characters are not allowed")
+
     # query field
     q = ''
     # legacy support
     if not search_type and request.GET.get("option", None) == "document_search":
         docname = request.GET.get("document_search", "")
+        if docname and "\x00" in docname:
+            return HttpResponseBadRequest("Null characters are not allowed")
         if docname.startswith("draft-"):
             search_type = "draft"
             q = docname
@@ -643,18 +648,24 @@ def search(request):
     if search_type:
         form = SearchForm(request.GET)
         docid = request.GET.get("id") or request.GET.get("id_document_tag") or ""
+        if docid and "\x00" in docid:
+            return HttpResponseBadRequest("Null characters are not allowed")
         docs = doc = None
         iprs = []
         related_iprs = []
 
         # set states
-        states = request.GET.getlist('state',('posted','removed'))
+        states = request.GET.getlist('state',settings.PUBLISH_IPR_STATES)
+        if any("\x00" in state for state in states if state):
+            return HttpResponseBadRequest("Null characters are not allowed")
         if states == ['all']:
             states = IprDisclosureStateName.objects.values_list('slug',flat=True)
         
         # get query field
         if request.GET.get(search_type):
             q = request.GET.get(search_type)
+            if q and "\x00" in q:
+                return HttpResponseBadRequest("Null characters are not allowed")
 
         if q or docid:
             # Search by RFC number or draft-identifier
@@ -664,13 +675,12 @@ def search(request):
 
                 if docid:
                     start = DocAlias.objects.filter(name__iexact=docid)
-                else:
-                    if search_type == "draft":
-                        q = normalize_draftname(q)
-                        start = DocAlias.objects.filter(name__icontains=q, name__startswith="draft")
-                    elif search_type == "rfc":
-                        start = DocAlias.objects.filter(name="rfc%s" % q.lstrip("0"))
-                
+                elif search_type == "draft":
+                    q = normalize_draftname(q)
+                    start = DocAlias.objects.filter(name__icontains=q, name__startswith="draft")
+                else:  # search_type == "rfc"
+                    start = DocAlias.objects.filter(name="rfc%s" % q.lstrip("0"))
+            
                 # one match
                 if len(start) == 1:
                     first = start[0]
@@ -778,7 +788,7 @@ def show(request, id):
     """View of individual declaration"""
     ipr = get_object_or_404(IprDisclosureBase, id=id).get_child()
     if not has_role(request.user, 'Secretariat'):
-        if ipr.state.slug == 'removed':
+        if ipr.state.slug in ['removed', 'removed_objfalse']:
             return render(request, "ipr/removed.html", {
                 'ipr': ipr
             })
@@ -801,10 +811,10 @@ def show(request, id):
 
 def showlist(request):
     """List all disclosures by type, posted only"""
-    generic = GenericIprDisclosure.objects.filter(state__in=('posted','removed')).prefetch_related('relatedipr_source_set__target','relatedipr_target_set__source').order_by('-time')
-    specific = HolderIprDisclosure.objects.filter(state__in=('posted','removed')).prefetch_related('relatedipr_source_set__target','relatedipr_target_set__source').order_by('-time')
-    thirdpty = ThirdPartyIprDisclosure.objects.filter(state__in=('posted','removed')).prefetch_related('relatedipr_source_set__target','relatedipr_target_set__source').order_by('-time')
-    nondocspecific = NonDocSpecificIprDisclosure.objects.filter(state__in=('posted','removed')).prefetch_related('relatedipr_source_set__target','relatedipr_target_set__source').order_by('-time')
+    generic = GenericIprDisclosure.objects.filter(state__in=settings.PUBLISH_IPR_STATES).prefetch_related('relatedipr_source_set__target','relatedipr_target_set__source').order_by('-time')
+    specific = HolderIprDisclosure.objects.filter(state__in=settings.PUBLISH_IPR_STATES).prefetch_related('relatedipr_source_set__target','relatedipr_target_set__source').order_by('-time')
+    thirdpty = ThirdPartyIprDisclosure.objects.filter(state__in=settings.PUBLISH_IPR_STATES).prefetch_related('relatedipr_source_set__target','relatedipr_target_set__source').order_by('-time')
+    nondocspecific = NonDocSpecificIprDisclosure.objects.filter(state__in=settings.PUBLISH_IPR_STATES).prefetch_related('relatedipr_source_set__target','relatedipr_target_set__source').order_by('-time')
     
     # combine nondocspecific with generic and re-sort
     generic = itertools.chain(generic,nondocspecific)

@@ -295,26 +295,36 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@eslint/js@npm:^8.47.0":
+"@eslint/js@npm:8.48.0":
   version: 8.48.0
   resolution: "@eslint/js@npm:8.48.0"
   checksum: b2755f9c0ee810c886eba3c50dcacb184ba5a5cd1cbc01988ee506ad7340653cae0bd55f1d95c64b56dfc6d25c2caa7825335ffd2c50165bae9996fe0f396851
   languageName: node
   linkType: hard
 
-"@floating-ui/core@npm:^1.2.6":
-  version: 1.2.6
-  resolution: "@floating-ui/core@npm:1.2.6"
-  checksum: e4aa96c435277f1720d4bc939e17a79b1e1eebd589c20b622d3c646a5273590ff889b8c6e126f7be61873cf8c4d7db7d418895986ea19b8b0d0530de32504c3a
+"@floating-ui/core@npm:^1.4.1":
+  version: 1.4.1
+  resolution: "@floating-ui/core@npm:1.4.1"
+  dependencies:
+    "@floating-ui/utils": ^0.1.1
+  checksum: be4ab864fe17eeba5e205bd554c264b9a4895a57c573661bbf638357fa3108677fed7ba3269ec15b4da90e29274c9b626d5a15414e8d1fe691e210d02a03695c
   languageName: node
   linkType: hard
 
-"@floating-ui/dom@npm:^1.2.5":
-  version: 1.2.6
-  resolution: "@floating-ui/dom@npm:1.2.6"
+"@floating-ui/dom@npm:^1.5.1":
+  version: 1.5.2
+  resolution: "@floating-ui/dom@npm:1.5.2"
   dependencies:
-    "@floating-ui/core": ^1.2.6
-  checksum: 2226c6c244b96ae75ab14cc35bb119c8d7b83a85e2ff04e9d9800cffdb17faf4a7cf82db741dd045242ced56e31c8a08e33c8c512c972309a934d83b1f410441
+    "@floating-ui/core": ^1.4.1
+    "@floating-ui/utils": ^0.1.1
+  checksum: 3c71eed50bb22cec8f1f31750ad3d42b3b7b4b29dc6e4351100ff05a62445a5404abb71c733320f8376a8c5e78852e1cfba1b81e22bfc4ca0728f50ca8998dc5
+  languageName: node
+  linkType: hard
+
+"@floating-ui/utils@npm:^0.1.1":
+  version: 0.1.2
+  resolution: "@floating-ui/utils@npm:0.1.2"
+  checksum: 3e29fd3c69be2d27bb95ebe54129a6a29ea2d8112b2cbb568168cf2f1e787e6ed6305d743598469476bec28122b7ea3ea4b54a1a2d59d30dc4b4307391472299
   languageName: node
   linkType: hard
 
@@ -1730,9 +1740,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@rollup/pluginutils@npm:5.0.3":
-  version: 5.0.3
-  resolution: "@rollup/pluginutils@npm:5.0.3"
+"@rollup/pluginutils@npm:5.0.4":
+  version: 5.0.4
+  resolution: "@rollup/pluginutils@npm:5.0.4"
   dependencies:
     "@types/estree": ^1.0.0
     estree-walker: ^2.0.2
@@ -1742,7 +1752,7 @@ __metadata:
   peerDependenciesMeta:
     rollup:
       optional: true
-  checksum: 8efbdeac53c58ba7b26c353a0a95acb0286cb6afec9816e0c52c3537404be80af11d897f78416a3339a8a76cbce8600269bdf4853edfdebcc89b2e90c56bf3d9
+  checksum: 893d5805ac4121fc704926963a0ae4e79e9e2bc8d736c3b28499ab69a404cce5119ca3a4e0c3d3a81d62f1beb3966f35285c36935d94b061794f26e94fed4cd1
   languageName: node
   linkType: hard
 
@@ -2414,12 +2424,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"bootstrap@npm:5.3.0":
-  version: 5.3.0
-  resolution: "bootstrap@npm:5.3.0"
+"bootstrap@npm:5.3.1":
+  version: 5.3.1
+  resolution: "bootstrap@npm:5.3.1"
   peerDependencies:
-    "@popperjs/core": ^2.11.7
-  checksum: 29a83cc8cac96d70051e265a5da342cc488df8fc76dff6746ef7d155698286cd5bdfa3e52c6ebf09f8e5a97f25929ee97aee36237117732e52b0d3276a72c45c
+    "@popperjs/core": ^2.11.8
+  checksum: f8176376aa6c6d8947d58a67f0c57fa0b6b7dcd087ff83454e0d727c07cf33e8107e56aa298045d652f84b53b24ac72457af73e41c5631c9ebdc1909039c5dac
   languageName: node
   linkType: hard
 
@@ -3832,9 +3842,9 @@ browserlist@latest:
   languageName: node
   linkType: hard
 
-"eslint-plugin-n@npm:16.0.1":
-  version: 16.0.1
-  resolution: "eslint-plugin-n@npm:16.0.1"
+"eslint-plugin-n@npm:16.0.2":
+  version: 16.0.2
+  resolution: "eslint-plugin-n@npm:16.0.2"
   dependencies:
     "@eslint-community/eslint-utils": ^4.4.0
     builtins: ^5.0.1
@@ -3846,7 +3856,7 @@ browserlist@latest:
     semver: ^7.5.3
   peerDependencies:
     eslint: ">=7.0.0"
-  checksum: 407002bb06c2e4cefd5b1fb582a5e000ed190a47144edc7d7910afc32b4b0e76e4a72773207837ab73b0797f4a84f9ea83f8979d0bcab0225bfe672cd7e0e295
+  checksum: 44cffe32a3a3cd2a706e82f45fedf79e0af7cae20e7c5f3185707233d941de1058373a27b90e86a8f0e5f9830b02c90116deaa05f139a67556954de72bc4935d
   languageName: node
   linkType: hard
 
@@ -3967,14 +3977,14 @@ browserlist@latest:
   languageName: node
   linkType: hard
 
-"eslint@npm:8.47.0":
-  version: 8.47.0
-  resolution: "eslint@npm:8.47.0"
+"eslint@npm:8.48.0":
+  version: 8.48.0
+  resolution: "eslint@npm:8.48.0"
   dependencies:
     "@eslint-community/eslint-utils": ^4.2.0
     "@eslint-community/regexpp": ^4.6.1
     "@eslint/eslintrc": ^2.1.2
-    "@eslint/js": ^8.47.0
+    "@eslint/js": 8.48.0
     "@humanwhocodes/config-array": ^0.11.10
     "@humanwhocodes/module-importer": ^1.0.1
     "@nodelib/fs.walk": ^1.2.8
@@ -4010,7 +4020,7 @@ browserlist@latest:
     text-table: ^0.2.0
   bin:
     eslint: bin/eslint.js
-  checksum: 1988617f703eadc5c7540468d54dc8e5171cf2bb9483f6172799cd1ff54a9a5e4470f003784e8cef92687eaa14de37172732787040e67817581a20bcb9c15970
+  checksum: f20b359a4f8123fec5c033577368cc020d42978b1b45303974acd8da7a27063168ee3fe297ab5b35327162f6a93154063e3ce6577102f70f9809aff793db9bd0
   languageName: node
   linkType: hard
 
@@ -4567,9 +4577,9 @@ browserlist@latest:
   languageName: node
   linkType: hard
 
-"html-validate@npm:8.2.0":
-  version: 8.2.0
-  resolution: "html-validate@npm:8.2.0"
+"html-validate@npm:8.3.0":
+  version: 8.3.0
+  resolution: "html-validate@npm:8.3.0"
   dependencies:
     "@babel/code-frame": ^7.10.0
     "@html-validate/stylish": ^4.1.0
@@ -4595,7 +4605,7 @@ browserlist@latest:
       optional: true
   bin:
     html-validate: bin/html-validate.js
-  checksum: 793287a4549d9c12692a19b8e5e8de64f745c99300c698488c97ec46cee12261fa27e7ea4e3aa951d42a13642fe74aa63b21b2c5ec3faeee41e0aad92857b255
+  checksum: fd96a96fa7165976c1adf0bc1b54b53285ff7a355f78e54ad4d77de07d9c6e732e77a8079e5ce5a2a331f35fb9cd6b39f0182c7816f82948008882e9992d38df
   languageName: node
   linkType: hard
 
@@ -5169,10 +5179,10 @@ browserlist@latest:
   languageName: node
   linkType: hard
 
-"jquery@npm:3.7.0":
-  version: 3.7.0
-  resolution: "jquery@npm:3.7.0"
-  checksum: 907785e133afc427650a131af5fccef66a404885037513b3d4d7d63aee6409bcc32a39836868c60e59b05aa0fb8ace8961c18b2ee3ffdf6ffdb571d6d7cd88ff
+"jquery@npm:3.7.1":
+  version: 3.7.1
+  resolution: "jquery@npm:3.7.1"
+  checksum: 4370b8139d6ae82867eb6f7f21d1edccf1d1bdf41c0840920ea80d366c2cd5dbe1ceebb110ee9772aa839b04400faa1572c5c560b507c688ed7b61cea26c0e27
   languageName: node
   linkType: hard
 
@@ -6846,29 +6856,29 @@ browserlist@latest:
     "@parcel/transformer-inline-string": 2.9.3
     "@parcel/transformer-sass": 2.9.3
     "@popperjs/core": 2.11.8
-    "@rollup/pluginutils": 5.0.3
+    "@rollup/pluginutils": 5.0.4
     "@twuni/emojify": 1.0.2
     "@vitejs/plugin-vue": 4.3.3
-    bootstrap: 5.3.0
+    bootstrap: 5.3.1
     bootstrap-icons: 1.10.5
     browser-fs-access: 0.34.1
     browserlist: latest
     c8: 8.0.1
     caniuse-lite: 1.0.30001519
     d3: 7.8.5
-    eslint: 8.47.0
+    eslint: 8.48.0
     eslint-config-standard: 17.1.0
     eslint-plugin-cypress: 2.14.0
     eslint-plugin-import: 2.28.1
-    eslint-plugin-n: 16.0.1
+    eslint-plugin-n: 16.0.2
     eslint-plugin-node: 11.1.0
     eslint-plugin-promise: 6.1.1
     eslint-plugin-vue: 9.17.0
     file-saver: 2.0.5
     highcharts: 11.1.0
-    html-validate: 8.2.0
+    html-validate: 8.3.0
     ical.js: 1.5.0
-    jquery: 3.7.0
+    jquery: 3.7.1
     jquery-migrate: 3.4.1
     js-cookie: 3.0.5
     list.js: 2.3.1
@@ -6889,7 +6899,7 @@ browserlist@latest:
     select2: 4.1.0-rc.0
     select2-bootstrap-5-theme: 1.3.0
     send: 0.18.0
-    shepherd.js: 11.1.1
+    shepherd.js: 11.2.0
     slugify: 1.6.6
     sortablejs: 1.15.0
     vanillajs-datepicker: 1.3.4
@@ -7127,13 +7137,13 @@ browserlist@latest:
   languageName: node
   linkType: hard
 
-"shepherd.js@npm:11.1.1":
-  version: 11.1.1
-  resolution: "shepherd.js@npm:11.1.1"
+"shepherd.js@npm:11.2.0":
+  version: 11.2.0
+  resolution: "shepherd.js@npm:11.2.0"
   dependencies:
-    "@floating-ui/dom": ^1.2.5
+    "@floating-ui/dom": ^1.5.1
     deepmerge: ^4.3.1
-  checksum: 1d2a0563b642a71d545e7e7fbca3b0ee7b41a9793833af1eb326bdaace7061c71753415a4480130ce3686496a193572bbbaaf4a08a28d0b37ec003791780ed31
+  checksum: 0e71e63e51b25aaec83c835ecbe33227e6e583a204b347357ce70092e0024b6eb546f3d0cfd9ee4ac704f2baa81a37ab1a3c449312f495c73f2eadc1310f6f42
   languageName: node
   linkType: hard
 

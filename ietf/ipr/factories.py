@@ -26,6 +26,7 @@ def _fake_patent_info():
 class IprDisclosureBaseFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = IprDisclosureBase
+        skip_postgeneration_save = True
 
     by = factory.SubFactory('ietf.person.factories.PersonFactory')
     compliant = True

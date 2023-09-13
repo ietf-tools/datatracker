@@ -12100,6 +12100,16 @@
   {
     "fields": {
       "desc": "",
+      "name": "Removed Objectively False",
+      "order": 5,
+      "used": true
+    },
+    "model": "name.iprdisclosurestatename",
+    "pk": "removed_objfalse"
+  },
+  {
+    "fields": {
+      "desc": "",
       "name": "Changed disclosure metadata",
       "order": 0,
       "used": true
@@ -12206,6 +12216,16 @@
     },
     "model": "name.ipreventtypename",
     "pk": "removed"
+  },
+  {
+    "fields": {
+      "desc": "",
+      "name": "Removed Objectively False",
+      "order": 0,
+      "used": true
+    },
+    "model": "name.ipreventtypename",
+    "pk": "removed_objfalse"
   },
   {
     "fields": {
