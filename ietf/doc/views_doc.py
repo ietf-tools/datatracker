@@ -190,10 +190,11 @@ def interesting_doc_relations(doc):
     return interesting_relations_that, interesting_relations_that_doc
 
 def document_main(request, name, rev=None, document_html=False):
-    if name.startswith("rfc") and rev is not None:
-        raise Http404()
 
     doc = get_object_or_404(Document.objects.select_related(), name=name)
+
+    if doc.type_id == "rfc" and rev is not None:
+        raise Http404()
 
     log.assertion('doc.type_id!="rfc" or doc.name.startswith("rfc")')
 
@@ -1129,7 +1130,7 @@ def document_email(request,name):
 
 def get_diff_revisions(request, name, doc):
     """ Calculate what to offer for diff comparisons
-    
+
     returns list of (name, rev, time, url, is_this_doc, is_previous_doc)
     ordered by -time for use by forms used to get to the diff tools.
     """
