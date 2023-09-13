@@ -25,14 +25,10 @@ def forward(apps, schema_editor):
     ).exists()
 
 
-def reverse(apps, schema_editor):
-    # there is no going back
-    raise NotImplementedError
-
-
 class Migration(migrations.Migration):
     dependencies = [
         ("doc", "0015_delete_docalias"),
     ]
 
-    operations = [migrations.RunPython(forward, reverse)]
+    # There is no going back
+    operations = [migrations.RunPython(forward)]

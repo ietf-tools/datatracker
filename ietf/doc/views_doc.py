@@ -195,6 +195,8 @@ def document_main(request, name, rev=None, document_html=False):
 
     doc = get_object_or_404(Document.objects.select_related(), name=name)
 
+    log.assertion('doc.type_id!="rfc" or doc.name.startswith("rfc")')
+
     # take care of possible redirections
     if document_html is False and rev is None:
         became_rfc = doc.became_rfc()
@@ -1126,8 +1128,10 @@ def document_email(request,name):
 
 
 def get_diff_revisions(request, name, doc):
-    """ returns list of (name, rev, time, url, is_this_doc, is_previous_doc)
-        ordered by -time for use by forms used to get to the diff tools.
+    """ Calculate what to offer for diff comparisons
+    
+    returns list of (name, rev, time, url, is_this_doc, is_previous_doc)
+    ordered by -time for use by forms used to get to the diff tools.
     """
     diffable = any(
         [
