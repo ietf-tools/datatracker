@@ -354,14 +354,11 @@ class DocumentInfo(models.Model):
                 iesg_state_summary = iesg_state.name
                 if iesg_substate:
                      iesg_state_summary = iesg_state_summary + "::"+"::".join(tag.name for tag in iesg_substate)
-             
-            if state.slug == "rfc":
-                rfcs = self.related_that_doc("became_rfc")  # should be only one
-                if len(rfcs) > 0:
-                    rfc = rfcs[0].document
-                    return f"Became RFC {rfc.rfc_number} ({rfc.std_level})"
-                else:
-                    return "Became RFC"
+
+            rfc = self.became_rfc()
+            if rfc:
+                return f"Became RFC {rfc.rfc_number} ({rfc.std_level})"
+
             elif state.slug == "repl":
                 rs = self.related_that("replaces")
                 if rs:
