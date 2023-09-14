@@ -28,7 +28,7 @@
                     <tr>
                         <td>{{ ipr.time|date:"Y-m-d" }}</td>
                         <td>{{ ipr.id }}</td>
-                        <td><a href="{% url "ietf.ipr.views.show" id=ipr.id %}">{{ ipr.title }}</a>{% if ipr.state_id == 'removed' %}<span class="badge rounded-pill bg-info">Removed</span>{% endif %}
+                        <td><a href="{% url "ietf.ipr.views.show" id=ipr.id %}">{{ ipr.title }}</a>{% if ipr.state_id == 'removed' or ipr.state_id == 'removed_objfalse' %}<span class="badge rounded-pill text-bg-info">Removed</span>{% endif %}
                             {% if ipr.updates %} <br>(Updates ID#: {% for upd in ipr.updates %}{{upd.target_id}}{% if not forloop.last %}, {% endif %}{% endfor %}){% endif %}
                         </td>
                     </tr>
@@ -70,7 +70,7 @@
                                 <tr>
                                     <td>{{ ipr.disclosure.time|date:"Y-m-d" }}</td>
                                     <td>{{ ipr.disclosure.id }}</td>
-                                    <td><a href="{% url "ietf.ipr.views.show" id=ipr.disclosure.id %}">{{ ipr.disclosure.title }}</a>{% if ipr.disclosure.state_id == 'removed' %} (Removed) {% endif %}
+                                    <td><a href="{% url "ietf.ipr.views.show" id=ipr.disclosure.id %}">{{ ipr.disclosure.title }}</a>{% if ipr.disclosure.state_id == 'removed' or ipr.disclosure.state_id == 'removed_objfalse' %} (Removed) {% endif %}
                                         {% if ipr.disclosure.updates %} <br>(Updates ID#: {% for upd in ipr.disclosure.updates %}{{upd.target_id}}{% if not forloop.last %}, {% endif %}{% endfor %}){% endif %}
                                     </td>
                                 </tr>

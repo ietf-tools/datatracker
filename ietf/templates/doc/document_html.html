@@ -5,7 +5,7 @@
 {% load static %}
 {% load ietf_filters textfilters %}
 {% origin %}
-<html lang="en">
+<html data-bs-theme="auto" lang="en">
     <head>
         {% analytical_head_top %}
         <meta charset="utf-8">
@@ -29,6 +29,7 @@
                 <link rel="stylesheet" href="{% static 'ietf/css/document_html_txt.css' %}">
             {% endif %}
             <script src="{% static 'ietf/js/document_html.js' %}"></script>
+            <script src="{% static 'ietf/js/theme.js' %}"></script>
         {% endif %}
         <link rel="alternate" type="application/atom+xml" title="Document changes" href="/feed/document-changes/{{ doc.name }}/">
         <meta name="description"
@@ -50,18 +51,51 @@
     </head>
     <body>
         {% analytical_body_top %}
-        <button class="btn btn-outline-secondary position-fixed top-0 end-0 m-2 sidebar-toggle"
-                type="button"
-                id="sidebar-on"
-                data-bs-toggle="collapse"
-                data-bs-target="#sidebar"
-                aria-expanded="{% if request.COOKIES.sidebar != 'off'%}true{% else %}false{% endif %}"
-                aria-controls="sidebar"
-                aria-label="Show metadata sidebar"
-                title="Show metadata sidebar">
-        <i class="bi bi-layout-sidebar-reverse"></i>
-        </button>
-        <nav class="navbar bg-light px-1 fixed-top d-print-none d-md-none">
+        <div class="btn-toolbar sidebar-toolbar position-fixed top-0 end-0 m-2 m-lg-3">
+            <div class="dropdown">
+                <button class="btn btn-outline-secondary btn-sm me-1 dropdown-toggle d-flex align-items-center"
+                    id="bd-theme" type="button" aria-expanded="false" data-bs-toggle="dropdown"
+                    aria-label="Toggle theme">
+                        <i class="theme-icon-active bi bi-circle-half"></i>
+                </button>
+
+                <ul class="dropdown-menu" aria-labelledby="bd-theme">
+                    <li>
+                        <button type="button" class="dropdown-item d-flex align-items-center"
+                            data-bs-theme-value="light" aria-pressed="false">
+                            <i class="me-2 opacity-50 theme-icon bi bi-sun-fill"></i>
+                            Light<i class="bi bi-check2 ms-auto d-none"></i>
+                        </button>
+                    </li>
+                    <li>
+                        <button type="button" class="dropdown-item d-flex align-items-center"
+                            data-bs-theme-value="dark" aria-pressed="false">
+                            <i class="me-2 opacity-50 theme-icon bi bi-moon-stars-fill"></i>
+                            Dark<i class="bi bi-check2 ms-auto d-none"></i>
+                        </button>
+                    </li>
+                    <li>
+                        <button type="button" class="dropdown-item d-flex align-items-center active"
+                            data-bs-theme-value="auto" aria-pressed="true">
+                            <i class="me-2 opacity-50 theme-icon bi bi-circle-half"></i>
+                            Auto<i class="bi bi-check2 ms-auto d-none"></i>
+                        </button>
+                    </li>
+                </ul>
+            </div>
+            <button class="btn btn-outline-secondary btn-sm sidebar-toggle"
+                    type="button"
+                    data-bs-toggle="collapse"
+                    data-bs-target="#sidebar"
+                    aria-expanded="{% if request.COOKIES.sidebar != 'off'%}true{% else %}false{% endif %}"
+                    aria-controls="sidebar"
+                    aria-label="Toggle metadata sidebar"
+                    title="Toggle metadata sidebar">
+            <i class="bi bi-layout-sidebar-reverse sidebar-shown"></i>
+            <i class="bi bi-arrow-bar-up sidebar-collapsed"></i>
+            </button>
+        </div>
+        <nav class="navbar bg-light-subtle px-1 fixed-top d-print-none d-md-none">
             <a class="nav-link ps-1"
                href="{% url 'ietf.doc.views_doc.document_main' name=doc.canonical_name %}">
                 {% if not snapshot and doc.get_state_slug == "rfc" %}
@@ -88,7 +122,7 @@
                 <span class="navbar-toggler-icon small"></span>
             </button>
             <div class="navbar-nav navbar-nav-scroll overscroll-none collapse pt-1" id="docinfo-collapse">
-                <div class="bg-light p-0">
+                <div class="bg-light-subtle p-0">
                     <table class="table table-sm table-borderless small">
                         <tbody class="meta align-top">
                             <tr>
@@ -136,19 +170,8 @@
                     </div>
                 {% endif %}
             </div>
-            <div class="d-print-none col-md-3 bg-light collapse{% if request.COOKIES.sidebar != 'off'%} show{% endif %}" id="sidebar">
+            <div class="d-print-none col-md-3 bg-light-subtle collapse{% if request.COOKIES.sidebar != 'off'%} show{% endif %}" id="sidebar">
                 <div class="position-fixed border-start sidebar overflow-scroll overscroll-none no-scrollbar">
-                    <button class="btn btn-outline-secondary float-end m-2"
-                            type="button"
-                            id="sidebar-off"
-                            data-bs-toggle="collapse"
-                            data-bs-target="#sidebar"
-                            aria-expanded="{% if request.COOKIES.sidebar != 'off'%}true{% else %}false{% endif %}"
-                            aria-controls="sidebar"
-                            aria-label="Hide metadata sidebar"
-                            title="Hide metadata sidebar">
-                            <i class="bi bi-arrow-bar-up"></i>
-                    </button>
                     <div class="pt-2 pt-lg-3 px-md-2 px-lg-3">
                         <a class="btn btn-primary btn-sm" href="{% url 'ietf.doc.views_doc.document_main' name=doc.canonical_name %}">Datatracker</a>
                         <p class="fw-bold pt-2">

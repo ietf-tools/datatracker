@@ -190,6 +190,42 @@
                     </tbody>
                 </table>
             {% endif %}
+            <!-- Editorial Sessions -->
+            {% if editorial %}
+                <h2 class="mt-4" id="editorial">Editorial Stream</h2>
+                <table class="table table-sm table-striped tablesorter">
+                    <thead>
+                        <tr>
+                            <th scope="col" data-sort="group">
+                                Group
+                            </th>
+                            <th scope="col" data-sort="agenda">
+                                Agenda
+                            </th>
+                            <th scope="col" data-sort="minutes">
+                                Minutes
+                            </th>
+                            <th scope="col" data-sort="slides">
+                                Slides
+                            </th>
+                            <th scope="col" data-sort="drafts">
+                                Internet-Drafts
+                            </th>
+                            <th scope="col" data-sort="updated">
+                                Updated
+                            </th>
+                            {% if user|has_role:"Secretariat" or user_groups %}
+                                <th scope="col"></th>
+                            {% endif %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for entry in editorial %}
+                            {% include "meeting/group_materials.html" %}
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% endif %}
             {% if other %}
                 <h2 class="mt-4" id="other">
                     Other <small>Miscellaneous other sessions</small>

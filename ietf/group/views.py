@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright The IETF Trust 2009-2022, All Rights Reserved
+# Copyright The IETF Trust 2009-2023, All Rights Reserved
 #
 # Portion Copyright (C) 2010 Nokia Corporation and/or its subsidiary(-ies).
 # All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com>
@@ -48,7 +48,7 @@ from simple_history.utils import update_change_reason
 from django import forms
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
-from django.db.models import Q, Count
+from django.db.models import Q, Count, OuterRef, Subquery
 from django.http import HttpResponse, HttpResponseRedirect, Http404, JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.template.loader import render_to_string
@@ -61,7 +61,7 @@ import debug                            # pyflakes:ignore
 
 from ietf.community.models import CommunityList, EmailSubscription
 from ietf.community.utils import docs_tracked_by_community_list
-from ietf.doc.models import DocTagName, State, DocAlias, RelatedDocument, Document
+from ietf.doc.models import DocTagName, State, DocAlias, RelatedDocument, Document, DocEvent
 from ietf.doc.templatetags.ietf_filters import clean_whitespace
 from ietf.doc.utils import get_chartering_type, get_tags_for_stream_id
 from ietf.doc.utils_charter import charter_name_for_group, replace_charter_of_replaced_group
@@ -72,7 +72,7 @@ from ietf.group.forms import (GroupForm, StatusUpdateForm, ConcludeGroupForm, St
                               AddUnavailablePeriodForm, EndUnavailablePeriodForm, ReviewSecretarySettingsForm, )
 from ietf.group.mails import email_admin_re_charter, email_personnel_change, email_comment
 from ietf.group.models import ( Group, Role, GroupEvent, GroupStateTransitions,
-                              ChangeStateGroupEvent, GroupFeatures )
+                              ChangeStateGroupEvent, GroupFeatures, AppealArtifact )
 from ietf.group.utils import (get_charter_text, can_manage_all_groups_of_type, 
                               milestone_reviewer_for_group_type, can_provide_status_update,
                               can_manage_materials, group_attribute_change_desc,
@@ -111,7 +111,7 @@ from ietf.doc.models import LastCallDocEvent
 from ietf.name.models import ReviewAssignmentStateName
 from ietf.utils.mail import send_mail_text, parse_preformatted
 
-from ietf.ietfauth.utils import user_is_person
+from ietf.ietfauth.utils import user_is_person, role_required
 from ietf.dbtemplate.models import DBTemplate
 from ietf.mailtrigger.utils import gather_address_lists
 from ietf.mailtrigger.models import Recipient
@@ -603,17 +603,6 @@ def all_status(request):
                     'rg_reports': rg_reports,
                   }
                  )
-
-def group_about_rendertest(request, acronym, group_type=None):
-    group = get_group_or_404(acronym, group_type)
-    charter = None
-    if group.charter:
-        charter = get_charter_text(group)
-    try:
-        rendered = markdown.markdown(charter)
-    except Exception as e:
-        rendered = f'Markdown rendering failed: {e}'
-    return render(request, 'group/group_about_rendertest.html', {'group':group, 'charter':charter, 'rendered':rendered})
 
 def group_about_status(request, acronym, group_type=None):
     group = get_group_or_404(acronym, group_type)
@@ -1349,6 +1338,16 @@ def group_menu_data(request):
 #        groups_by_parent[g.parent_id].append({ 'acronym': g.acronym, 'name': escape(g.name), 'url': url })
         groups_by_parent[g.parent_id].append({ 'acronym': g.acronym, 'name': escape(g.name), 'type': escape(g.type.verbose_name or g.type.name), 'url': url })
 
+    iab = Group.objects.get(acronym="iab")
+    groups_by_parent[iab.pk].insert(
+        0,
+        {
+            "acronym": iab.acronym,
+            "name": iab.name,
+            "type": "Top Level Group",
+            "url": urlreverse("ietf.group.views.group_home", kwargs={"acronym": iab.acronym})
+        }
+    )
     return JsonResponse(groups_by_parent)
 
 
@@ -2093,7 +2092,75 @@ def reset_next_reviewer(request, acronym, group_type=None):
 
     return render(request, 'group/reset_next_reviewer.html', { 'group':group, 'form': form,})
 
+def statements(request, acronym, group_type=None):
+    if not acronym in ["iab", "iesg"]:
+        raise Http404
+    group = get_group_or_404(acronym, group_type)
+    statements = group.document_set.filter(type_id="statement").annotate(
+        published=Subquery(
+            DocEvent.objects.filter(
+                doc=OuterRef("pk"),
+                type="published_statement"
+            ).order_by("-time").values("time")[:1]
+        )
+    ).order_by("-published")
+    return render(
+        request,
+        "group/statements.html",
+        construct_group_menu_context(
+            request,
+            group,
+            "statements",
+            group_type,
+            {
+                "group": group,
+                "statements": statements,
+            },
+        ),
+    )
 
+def appeals(request, acronym, group_type=None):
+    if not acronym in ["iab", "iesg"]:
+        raise Http404
+    group = get_group_or_404(acronym, group_type)
+    appeals = group.appeal_set.all()
+    return render(
+        request,
+        "group/appeals.html",
+        construct_group_menu_context(
+            request,
+            group,
+            "appeals",
+            group_type,
+            {
+                "group": group,
+                "appeals": appeals,
+            },
+        ),
+    )
 
-
-
+def appeal_artifact(request, acronym, artifact_id, group_type=None):
+    artifact = get_object_or_404(AppealArtifact, pk=artifact_id)
+    if artifact.is_markdown():
+        artifact_html = markdown.markdown(artifact.bits.tobytes().decode("utf-8"))
+        return render(
+            request,
+            "group/appeal_artifact.html",
+            dict(artifact=artifact, artifact_html=artifact_html)
+        )
+    else:
+        return HttpResponse(
+            artifact.bits, 
+            headers = {
+                "Content-Type": artifact.content_type,
+                "Content-Disposition": f'attachment; filename="{artifact.download_name()}"'
+            }
+        )
+    
+@role_required("Secretariat")
+def appeal_artifact_markdown(request, acronym, artifact_id, group_type=None):
+    artifact = get_object_or_404(AppealArtifact, pk=artifact_id)
+    if artifact.is_markdown():
+        return HttpResponse(artifact.bits, content_type=artifact.content_type)
+    else:
+        raise Http404

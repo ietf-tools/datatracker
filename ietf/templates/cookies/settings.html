@@ -12,7 +12,7 @@
         cookies disabled then you will not be able to change the settings
         (everything still continues to work by using default settings).
     </p>
-    <h2>How many days is considered "new"?</h2>
+    <h2 class="mt-4">How many days is considered "new"?</h2>
     <p>
         This setting affects how many days are considered "new enough" to get the special highlighting in the documents table. The default setting is {{ defaults.new_enough }} days.
     </p>
@@ -60,7 +60,7 @@
             90 days
         </a>
     </p>
-    <h2>How many days is considered "soon"?</h2>
+    <h2 class="mt-4">How many days is considered "soon"?</h2>
     <p>
         This setting tells what is considered "soon" when showing documents that are going to be expire soon. The Default setting is {{ defaults.expires_soon }} days.
     </p>
@@ -108,7 +108,7 @@
             90 days
         </a>
     </p>
-    <h2>Show full document text by default?</h2>
+    <h2 class="mt-4">Show full document text by default?</h2>
     <p>
         Show the full text immediately on the document page instead of only showing beginning of it. This defaults to {{ defaults.full_draft }}.
     </p>
@@ -128,7 +128,7 @@
             On
         </a>
     </p>
-    <h2>Show the left-hand menu?</h2>
+    <h2 class="mt-4">Show the left-hand menu?</h2>
     <p>
         Show the left-hand menu on all regular pages? This defaults to {{ defaults.left_menu }}.
     </p>
@@ -146,6 +146,26 @@
                   {% endif %}"
            href="{% url 'ietf.cookies.views.left_menu' enabled='on' %}">
             On
+        </a>
+    </p>
+
+
+    <h2 class="mt-4">Which color mode should be used?</h2>
+    <p>
+        Use a light, dark or automatic (as indicated by OS) color mode.
+    </p>
+    <p class="btn-group d-flex" id="bd-theme">
+
+        <a class="btn btn-outline-primary" data-bs-theme-value="light">
+          <i class="theme-icon bi bi-brightness-high-fill"></i> Light
+        </a>
+
+        <a class="btn btn-outline-primary" data-bs-theme-value="dark">
+          <i class="theme-icon bi bi-moon-stars-fill"></i> Dark
+        </a>
+
+        <a class="btn btn-outline-primary" data-bs-theme-value="auto">
+          <i class="theme-icon bi bi-circle-half"></i> Auto
         </a>
     </p>
 {% endblock %}

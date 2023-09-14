@@ -12,12 +12,36 @@ $popover-max-width: 100%;
 
 // Override default fonts
 
-$font-family-sans-serif: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", "Liberation Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
-$font-family-monospace: "Noto Sans Mono", SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+$font-family-sans-serif: "Inter",
+system-ui,
+-apple-system,
+"Segoe UI",
+Roboto,
+"Helvetica Neue",
+"Noto Sans",
+"Liberation Sans",
+Arial,
+sans-serif,
+"Apple Color Emoji",
+"Segoe UI Emoji",
+"Segoe UI Symbol",
+"Noto Color Emoji";
+$font-family-monospace: "Noto Sans Mono",
+SFMono-Regular,
+Menlo,
+Monaco,
+Consolas,
+"Liberation Mono",
+"Courier New",
+monospace;
+
+// Enable color modes
+$color-mode-type: data;
 
 // Only import what we need:
 
 @import "bootstrap/scss/variables";
+@import "bootstrap/scss/variables-dark";
 
 $h1-font-size: $font-size-base * 2.2;
 $h2-font-size: $font-size-base * 1.8;
@@ -82,6 +106,55 @@ body {
 // ...and make sure it doesn't overlap when we scroll to anchors.
 html {
     scroll-padding-top: 60px;
+}
+
+// Toggle classes for dark/light modes
+[data-bs-theme="dark"] {
+    .d-dm-none {
+        display: none;
+    }
+
+    .d-lm-none {
+        display: initial;
+    }
+}
+
+[data-bs-theme="light"] {
+    .d-dm-none {
+        display: initial;
+    }
+
+    .d-lm-none {
+        display: none;
+    }
+}
+
+// Make submenus open on hover.
+@include media-breakpoint-up(lg) {
+    .dropdown-menu>li>ul {
+        display: none;
+    }
+
+    .dropdown-menu>li:hover>ul {
+        display: block;
+    }
+
+}
+
+@include media-breakpoint-up(md) {
+    .leftmenu .nav>li>ul {
+        display: none;
+    }
+
+    .leftmenu .nav>li:hover>ul {
+        display: block;
+    }
+}
+
+:is(.dropdown-menu, .leftmenu .nav) .dropdown-menu {
+    top: 0;
+    left: 100%;
+    right: auto;
 }
 
 // Make textareas in forms use a monospace font
@@ -334,7 +407,7 @@ th,
 }
 
 .ballot-icon table .my {
-    border: 2 * $table-border-width solid #000;
+    border: calc(2 * $table-border-width) solid #000;
 }
 
 // See https://getbootstrap.com/docs/5.1/customize/color/#all-colors
@@ -446,36 +519,64 @@ td.position-recuse {
 }
 
 td.position-norecord {
-    background-color: $white; // $color-norecord;
+    background-color: transparent;
 }
 
 td.position-empty {
     border: none !important;
 }
 
-tr.position-moretime-row,
-tr.position-notready-row,
-tr.position-discuss-row,
-tr.position-block-row {
-    background-color: tint-color($color-discuss, 85%);
+[data-bs-theme="light"] {
+
+    tr.position-moretime-row,
+    tr.position-notready-row,
+    tr.position-discuss-row,
+    tr.position-block-row {
+        background-color: tint-color($color-discuss, 85%);
+    }
+
+    tr.position-yes-row {
+        background-color: tint-color($color-yes, 75%);
+    }
+
+    tr.position-noobj-row {
+        background-color: tint-color($color-noobj, 50%);
+    }
+
+    tr.position-abstain-row {
+        background-color: tint-color($color-abstain, 85%);
+    }
+
+    tr.position-recuse-row {
+        background-color: tint-color($color-recuse, 85%);
+    }
 }
 
-tr.position-yes-row {
-    background-color: tint-color($color-yes, 75%);
-}
+[data-bs-theme="dark"] {
 
-tr.position-noobj-row {
-    background-color: tint-color($color-noobj, 50%);
-}
+    tr.position-moretime-row,
+    tr.position-notready-row,
+    tr.position-discuss-row,
+    tr.position-block-row {
+        background-color: shade-color($color-discuss, 85%);
+    }
 
-tr.position-abstain-row {
-    background-color: tint-color($color-abstain, 85%);
-}
+    tr.position-yes-row {
+        background-color: shade-color($color-yes, 75%);
+    }
 
-tr.position-recuse-row {
-    background-color: tint-color($color-recuse, 85%);
-}
+    tr.position-noobj-row {
+        background-color: shade-color($color-noobj, 75%);
+    }
 
+    tr.position-abstain-row {
+        background-color: shade-color($color-abstain, 85%);
+    }
+
+    tr.position-recuse-row {
+        background-color: shade-color($color-recuse, 85%);
+    }
+}
 
 /* === Edit Meeting Schedule ====================================== */
 

@@ -1,10 +1,13 @@
 {% extends "nomcom/nomcom_private_base.html" %}
-{# Copyright The IETF Trust 2017, All Rights Reserved #}
+{# Copyright The IETF Trust 2017-2023, All Rights Reserved #}
 {% load origin %}
 {% load nomcom_tags textfilters %}
 {% block subtitle %}- View feedback about {{ topic.subject }}{% endblock %}
 {% block nomcom_content %}
-    {% origin %}
+{% origin %}
+{% if reclassify_feedback %}
+    {% include "nomcom/reclassify_feedback_item.html" %}
+{% else %}
     <h2>Feedback about {{ topic.subject }}</h2>
     <ul class="nav nav-tabs my-3" role="tablist">
         {% for ft in feedback_types %}
@@ -26,7 +29,7 @@
                     {% if feedback.type.slug == ft.slug %}
                         <dl class="row">
                             <dt class="col-sm-2">
-                                {% if feedback.time > last_seen_time %}<span class="badge rounded-pill bg-success">New</span>{% endif %}
+                                {% if feedback.time > last_seen_time %}<span class="badge rounded-pill text-bg-success">New</span>{% endif %}
                                 From
                             </dt>
                             <dd class="col-sm-10">
@@ -44,6 +47,19 @@
                             <dd class="col-sm-10 pasted">
                                 <pre>{% decrypt feedback.comments request year 1 %}</pre>
                             </dd>
+                            {% if user|is_chair_or_advisor:year %}
+                            <dt class="col-sm-2">
+                                <form id="reclassify-{{ feedback.id }}" method="post">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="feedback_id" value="{{ feedback.id }}">
+                                    <button class="btn btn-warning btn-sm" type="submit">
+                                        Reclassify
+                                    </button>
+                                </form>
+                            </dt>
+                            <dd>
+                            </dd>
+                            {% endif %}
                         </dl>
                         {% if not forloop.last %}<hr>{% endif %}
                     {% endif %}
@@ -53,6 +69,7 @@
     </div>
     <a class="btn btn-secondary"
        href="{% url 'ietf.nomcom.views.view_feedback' year %}">Back</a>
+{% endif %}
 {% endblock %}
 {% block js %}
     <script>

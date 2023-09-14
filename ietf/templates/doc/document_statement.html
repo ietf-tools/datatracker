@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2023, All Rights Reserved #}
+{% load origin %}
+{% load static %}
+{% load ietf_filters %}
+{% load person_filters textfilters %}
+{% block title %}{{ doc.title }}{% endblock %}
+{% block content %}
+    {% origin %}
+    {{ top|safe }}
+    {% include "doc/revisions_list.html" %}
+    <div id="timeline"></div>
+    {% if doc.rev != latest_rev %}
+        <div class="alert alert-warning my-3">The information below is for an older version of this statement.</div>
+    {% endif %}
+    <table class="table table-sm table-borderless">
+        <tbody class="meta border-top">
+            <tr>
+                <th scope="row">Document</th>
+                <th scope="row">Type</th>
+                <td class="edit"></td>
+                <td>
+                    <span id="statement-type">{% if doc.get_state.slug != "active" %}{{doc.get_state.name}} {% endif %}{% if doc.group %}{{doc.group.acronym|upper}} {%endif%}Statement</span>
+                    {% if snapshot %}<span class="badge rounded-pill text-bg-warning">Snapshot</span>{% endif %}
+                    {% if replaced_by %}<div>Replaced by {{ replaced_by|urlize_related_source_list:False|join:", " }}</div>{% endif %}
+                    {% if replaces %}<div>Replaces {{ replaces|urlize_related_target_list:False|join:", " }}</div>{% endif %}
+                </td>
+            </tr>
+            <tr>
+                <td></td>
+                <th scope="row">Title</th>
+                <td class="edit"></td>
+                <th scope="row" >{{ doc.title }}</th>
+            </tr>
+            <tr>
+                <td></td>
+                <th scope="row">Published</th>
+                <td class="edit"></td>
+                <td id="published">{{ published|date:"Y-m-d" }}</td>
+            </tr>
+            <tr>
+                <td></td>
+                <th scope="row">Metadata last updated</th>
+                <td class="edit"></td>
+                <td>{{ doc.time|date:"Y-m-d" }}</td>
+            </tr>
+            <tr>
+                <td></td>
+                <th scope="row">
+                    <a href="{% url 'ietf.doc.views_help.state_help' type='statement' %}">State</a>
+                </th>
+                <td class="edit"></td>
+                <td id="statement-state">
+                    {% if doc.get_state %}
+                        <span title="{{ doc.get_state.desc }}" class="{% if doc.get_state.name|slugify == 'active' %}text-success{% else %}text-danger{% endif %}">{{ doc.get_state.name }}</span>
+                    {% else %}
+                        No document state
+                    {% endif %}
+                </td>
+            </tr>
+            {% with doc.docextresource_set.all as resources %}
+                {% if resources or can_manage %}
+                    <tr>
+                        <td></td>
+                        <th scope="row">Additional resources</th>
+                        <td class="edit">
+                            {% if can_manage %}
+                                <a class="btn btn-primary btn-sm"
+                                   href="{% url 'ietf.doc.views_draft.edit_doc_extresources' name=doc.name %}">Edit</a>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if resources %}
+                                {% for resource in resources|dictsort:"display_name" %}
+                                    {% if resource.name.type.slug == 'url' or resource.name.type.slug == 'email' %}
+                                        <a href="{{ resource.value }}" title="{{ resource.name.name }}">
+                                            {% firstof resource.display_name resource.name.name %}
+                                        </a>
+                                        <br>
+                                        {# Maybe make how a resource displays itself a method on the class so templates aren't doing this switching #}
+                                    {% else %}
+                                        <span title="{{ resource.name.name }}">{% firstof resource.display_name resource.name.name %}: {{ resource.value|escape }}</span>
+                                        <br>
+                                    {% endif %}
+                                {% endfor %}
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endif %}
+            {% endwith %}
+            <tr>
+                <td></td>
+                <th scope="row">
+                    Send notices to
+                </th>
+                <td class="edit">
+                    {% if not snapshot %}
+                        {% if can_manage %}
+                            {% doc_edit_button 'ietf.doc.views_doc.edit_notify' name=doc.name %}
+                        {% endif %}
+                    {% endif %}
+                </td>
+                <td>
+                    {{ doc.notify|default:'<span class="text-muted">(None)</span>' }}
+                </td>
+            </tr>
+        </tbody>
+    </table>
+    {% if not snapshot %}
+    {% if request.user|has_role:"Secretariat" %}
+        <p id="change-statement">
+            <a class="btn btn-primary"
+               href="{% url 'ietf.doc.views_statement.submit' name=doc.name %}">
+                Edit or upload revised statement text
+            </a>
+        </p>
+    {% endif %}
+{% endif %}
+
+    <div class="card mt-5">
+        <div class="card-header">
+            {{ doc.name }}-{{ doc.rev }}
+        </div>
+        <div class="card-body text-break">
+            {{ content }}
+        </div>
+    </div>
+{% endblock %}
+{% block js %}
+    <script src="{% static 'ietf/js/d3.js' %}">
+    </script>
+    <script src="{% static 'ietf/js/document_timeline.js' %}">
+    </script>
+{% endblock %}

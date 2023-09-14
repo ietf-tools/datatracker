@@ -11,7 +11,7 @@
     </dt>
     <dd class="col-md-9">
         {% if person.user %}
-            {{ person.user }} <span class="badge rounded-pill bg-info"> Last login
+            {{ person.user }} <span class="badge rounded-pill text-bg-info"> Last login
             {% if person.user.last_login %}
                 {{ person.user.last_login|date:"Y-m-d" }}
             {% else %}

@@ -581,6 +581,7 @@ class CustomApiTests(TestCase):
         url = urlreverse('ietf.api.views.PersonalInformationExportView')
         login_testing_unauthorized(self, person.user.username, url)
         r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
         jsondata = r.json()
         data = jsondata['person.person'][str(person.id)]
         self.assertEqual(data['name'], person.name)
@@ -725,6 +726,15 @@ class CustomApiTests(TestCase):
         self.assertEqual(r.status_code, 200)
         jsondata = r.json()
         self.assertEqual(jsondata['success'], True)
+    
+    def test_api_get_session_matherials_no_agenda_meeting_url(self):
+        meeting = MeetingFactory(type_id='ietf')
+        session = SessionFactory(meeting=meeting)
+        url = urlreverse('ietf.meeting.views.api_get_session_materials', kwargs={'session_id': session.pk})
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+
+
 
 class DirectAuthApiTests(TestCase):
 

@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2018-2020, All Rights Reserved
+# Copyright The IETF Trust 2018-2023, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -26,6 +26,7 @@ def _fake_patent_info():
 class IprDisclosureBaseFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = IprDisclosureBase
+        skip_postgeneration_save = True
 
     by = factory.SubFactory('ietf.person.factories.PersonFactory')
     compliant = True
@@ -95,3 +96,11 @@ class IprEventFactory(factory.django.DjangoModelFactory):
     disclosure = factory.SubFactory(IprDisclosureBaseFactory)
     desc = factory.Faker('sentence')
 
+class IprDocRelFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = IprDocRel
+
+    disclosure = factory.SubFactory(HolderIprDisclosureFactory)
+    document = factory.SubFactory("ietf.doc.factories.IndividualDraftFactory")
+    revisions = "00"
+    sections = ""

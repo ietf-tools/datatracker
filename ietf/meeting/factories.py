@@ -23,6 +23,7 @@ from ietf.utils.text import xslugify
 class MeetingFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Meeting
+        skip_postgeneration_save = True
 
     type_id = factory.Iterator(['ietf','interim'])
 
@@ -103,6 +104,7 @@ class MeetingFactory(factory.django.DjangoModelFactory):
 class SessionFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Session
+        skip_postgeneration_save = True
 
     meeting = factory.SubFactory(MeetingFactory)
     purpose_id = 'regular'
@@ -156,6 +158,7 @@ class ScheduleFactory(factory.django.DjangoModelFactory):
 class RoomFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Room
+        skip_postgeneration_save = True
 
     meeting = factory.SubFactory(MeetingFactory)
     name = factory.Faker('name')
@@ -172,6 +175,7 @@ class RoomFactory(factory.django.DjangoModelFactory):
 class TimeSlotFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = TimeSlot
+        skip_postgeneration_save = True
 
     meeting = factory.SubFactory(MeetingFactory)
     type_id = 'regular'
@@ -225,6 +229,7 @@ class FloorPlanFactory(factory.django.DjangoModelFactory):
 class SlideSubmissionFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = SlideSubmission
+        skip_postgeneration_save = True
 
     session = factory.SubFactory(SessionFactory)
     title = factory.Faker('sentence')
@@ -238,6 +243,7 @@ class SlideSubmissionFactory(factory.django.DjangoModelFactory):
 class ConstraintFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Constraint
+        skip_postgeneration_save = True
 
     meeting = factory.SubFactory(MeetingFactory)
     source = factory.SubFactory(GroupFactory)

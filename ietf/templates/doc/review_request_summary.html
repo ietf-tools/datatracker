@@ -1,0 +1,9 @@
+<div class="review-request-summary">
+   <a class="text-body-secondary"
+      href="{% url 'ietf.doc.views_review.review_request' review_request.doc.name review_request.pk %}">
+      {{ review_request.team.acronym|upper }} {{ review_request.type.name }} Review due {{ review_request.deadline|date:"Y-m-d" }}
+      </a>
+   <span class="badge rounded-pill text-bg-secondary ms-1">
+      Requested
+   </span>
+</div>

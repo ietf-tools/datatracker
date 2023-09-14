@@ -283,12 +283,6 @@ class GroupPagesTests(TestCase):
             self.assertContains(r, milestone.desc)
             self.assertContains(r, milestone.docs.all()[0].name)
 
-    def test_about_rendertest(self):
-        group = CharterFactory().group
-        url = urlreverse('ietf.group.views.group_about_rendertest', kwargs=dict(acronym=group.acronym))
-        r = self.client.get(url)
-        self.assertEqual(r.status_code,200)
-
 
     def test_group_about(self):
 
@@ -478,13 +472,13 @@ class GroupPagesTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code,200)
         q = PyQuery(r.content)
-        self.assertEqual(q('.badge.bg-warning').text(),"Concluded WG")
+        self.assertEqual(q('.badge.text-bg-warning').text(),"Concluded WG")
         replaced_group = GroupFactory(state_id='replaced')
         url = urlreverse("ietf.group.views.history",kwargs={'acronym':replaced_group.acronym})
         r = self.client.get(url)
         self.assertEqual(r.status_code,200)
         q = PyQuery(r.content)
-        self.assertEqual(q('.badge.bg-warning').text(),"Replaced WG")
+        self.assertEqual(q('.badge.text-bg-warning').text(),"Replaced WG")
 
 
 class GroupEditTests(TestCase):

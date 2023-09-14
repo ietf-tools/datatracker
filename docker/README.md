@@ -45,7 +45,7 @@ You can also open the datatracker project folder and click the **Reopen in conta
 
 ### Usage
 
-- Under the **Run and Debug** tab, you can run the server with the debugger attached using **Run Server** (F5). Once the server is ready to accept connections, you'll be prompted to open in a browser. You can also open [http://localhost:8000](http://localhost:8000) in a browser.
+- Under the **Run and Debug** tab, you can run the server with the debugger attached using **Run Server** (F5). Once the server is ready to accept connections, you'll be prompted to open in a browser. Navigate to [http://localhost:8000](http://localhost:8000) in your preferred browser.
 
     > An alternate profile **Run Server with Debug Toolbar** is also available from the dropdown menu, which displays various tools
     on top of the webpage. However, note that this configuration has a significant performance impact.
@@ -64,11 +64,7 @@ You can also open the datatracker project folder and click the **Reopen in conta
 
     ![](assets/vscode-terminal-new.png)
 
-- Under the **SQL Tools** tab, a connection **Local Dev** is preconfigured to connect to the DB container. Using this tool, you can list tables, view records and execute SQL queries directly from VS Code.
-
-    > The port `3306` is also exposed to the host automatically, should you prefer to use your own SQL tool.
-
-    ![](assets/vscode-sqltools.png)
+- The pgAdmin web interface, a PostgreSQL DB browser / management UI, is available at [http://localhost:8000/pgadmin/](http://localhost:8000/pgadmin/).
 
 - Under the **Task Explorer** tab, a list of available preconfigured tasks is displayed. *(You may need to expand the tree to `src > vscode` to see it.)* These are common scritps you can run *(e.g. run tests, fetch assets, etc.)*.
 
@@ -103,7 +99,7 @@ You can also open the datatracker project folder and click the **Reopen in conta
 2. Wait for the containers to initialize. Upon completion, you will be dropped into a shell from which you can start the datatracker and execute related commands as usual, for example
 
     ```
-    ietf/manage.py runserver 0.0.0.0:8000
+    ietf/manage.py runserver 8001
     ```
 
     to start the datatracker.
@@ -161,11 +157,11 @@ docker compose down -v --rmi all
 docker image prune
 ```
 
-### Accessing MariaDB Port
+### Accessing PostgreSQL Port
 
-The port is exposed but not mapped to `3306` to avoid potential conflicts with the host. To get the mapped port, run the command *(from the project `/docker` directory)*:
+The port is exposed but not automatically mapped to `5432` to avoid potential conflicts with the host. To get the mapped port, run the command *(from the project `/docker` directory)*:
 ```sh
-docker compose port db 3306
+docker compose port db 5432
 ```
 
 ## Notes / Troubleshooting

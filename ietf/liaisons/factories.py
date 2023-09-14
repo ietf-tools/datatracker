@@ -6,6 +6,7 @@ from ietf.liaisons.models import LiaisonStatement, LiaisonStatementEvent, Liaiso
 class LiaisonStatementFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = LiaisonStatement
+        skip_postgeneration_save = True
 
     title = factory.Faker('sentence')
     from_contact = factory.SubFactory('ietf.person.factories.EmailFactory')

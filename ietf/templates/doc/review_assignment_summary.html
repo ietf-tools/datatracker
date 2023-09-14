@@ -1,3 +1,4 @@
+{% load ietf_filters %}
 <div class="review-assignment-summary">
     {% if review_assignment.state_id == "completed" or review_assignment.state_id == "part-completed" %}
         <a href="{% if review_assignment.review %}{% url 'ietf.doc.views_doc.document_main' review_assignment.review.name %}{% else %}{% url 'ietf.doc.views_review.review_request' review_assignment.review_request.doc.name review_assignment.review_request.pk %}{% endif %}">
@@ -10,19 +11,17 @@
                 -{{ review_assignment.reviewed_rev }}){% endif %}
             by {{ review_assignment.reviewer.person.plain_name }}</a>
         {% if review_assignment.state_id == "part-completed" %}
-            <span class="badge rounded-pill ms-1 bg-secondary">Partially completed</span>
+            <span class="badge rounded-pill text-bg-secondary ms-1">Partially completed</span>
         {% endif %}
         {% if review_assignment.result %}
-            <span class="badge rounded-pill ms-1 {% if review_assignment.result.name|slice:5|slugify == 'ready' %}bg-success{% else %}bg-info{% endif %}">
-                {{ review_assignment.result.name }}
-            </span>
+            {{ review_assignment.result.name|badgeify }}
         {% endif %}
     {% else %}
         <a class="text-body-secondary"
            href="{% url 'ietf.doc.views_review.review_request' review_assignment.review_request.doc.name review_assignment.review_request.pk %}">
-            {{ review_assignment.review_request.team.acronym|upper }} {{ review_assignment.review_request.type.name }} Review</a>
-        <span class="badge rounded-pill ms-1 bg-secondary">
-            Incomplete, due {{ review_assignment.review_request.deadline|date:"Y-m-d" }}
+            {{ review_assignment.review_request.team.acronym|upper }} {{ review_assignment.review_request.type.name }} Review due {{ review_assignment.review_request.deadline|date:"Y-m-d" }}</a>
+        <span class="badge rounded-pill text-bg-secondary ms-1">
+            Incomplete
         </span>
     {% endif %}
 </div>

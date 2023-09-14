@@ -8,7 +8,6 @@ ALLOWED_HOSTS = ['*']
 from ietf.settings_postgresqldb import DATABASES   # pyflakes:ignore
 
 IDSUBMIT_IDNITS_BINARY = "/usr/local/bin/idnits"
-IDSUBMIT_REPOSITORY_PATH = "test/id/"
 IDSUBMIT_STAGING_PATH = "test/staging/"
 
 AGENDA_PATH = '/assets/www6s/proceedings/'
@@ -40,7 +39,7 @@ INTERNAL_IPS = [".".join(ip.split(".")[:-1] + ["1"]) for ip in ips] + ['127.0.0.
 #    'ietf.context_processors.sql_debug',
 # ]
 
-DOCUMENT_PATH_PATTERN = '/assets/ietf-ftp/{doc.type_id}/'
+DOCUMENT_PATH_PATTERN = '/assets/ietfdata/doc/{doc.type_id}/'
 INTERNET_DRAFT_PATH = '/assets/ietf-ftp/internet-drafts/'
 RFC_PATH = '/assets/ietf-ftp/rfc/'
 CHARTER_PATH = '/assets/ietf-ftp/charter/'
@@ -50,6 +49,7 @@ STATUS_CHANGE_PATH = '/assets/ietf-ftp/status-changes/'
 INTERNET_DRAFT_ARCHIVE_DIR = '/assets/archive/id'
 INTERNET_ALL_DRAFTS_ARCHIVE_DIR = '/assets/archive/id'
 BIBXML_BASE_PATH = '/assets/ietfdata/derived/bibxml'
+IDSUBMIT_REPOSITORY_PATH = INTERNET_DRAFT_PATH
 
 NOMCOM_PUBLIC_KEYS_DIR = 'data/nomcom_keys/public_keys/'
 SLIDE_STAGING_PATH = 'test/staging/'

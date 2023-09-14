@@ -2,6 +2,8 @@
 Hi,
 
 Manual posting has been requested for the following Internet-Draft.
+The IETF Secretariat will handle this request; no further action is
+required at this time.
 
 {% if errors %}The problems found during automated submission were: {% for err in errors.values %}
   - {{ err }}{% endfor %}

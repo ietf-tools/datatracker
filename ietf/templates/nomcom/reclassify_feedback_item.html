@@ -1,0 +1,103 @@
+{# Copyright The IETF Trust 2023, All Rights Reserved #}
+{% load nomcom_tags textfilters %}
+    <h2 class="mt-3">Reclassify feedback item</h2>
+    <form method="post">
+        {% csrf_token %}
+        <table class="table table-sm">
+            <thead>
+                <tr>
+                    <th scope="col">Code</th>
+                    <th scope="col">Explanation</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <th scope="row">U</th>
+                    <td>Unclassified</td>
+                </tr>
+                {% for ft in feedback_types %}
+                    <tr>
+                        <th scope="row">{{ ft.legend }}</th>
+                        <td>{{ ft.name }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <table class="table table-sm table-striped">
+            <thead>
+                <tr>
+                    <th scope="col">Date</th>
+                    <th scope="col" class="text-center" title="Unclassified">U</th>
+                    {% for ft in feedback_types %}
+                        <th scope="col" class="text-center" title="{{ ft.name }}">{{ ft.legend }}</th>
+                    {% endfor %}
+                    <th scope="col">Author</th>
+                    <th scope="col">Subject</th>
+                    <th scope="col"></th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <!-- [html-validate-disable-block input-missing-label -- labelled via aria-label] -->
+                    <td>{{ reclassify_feedback.time|date:"r" }}</td>
+                    <td class="text-center">
+                        <input type="radio"
+                               class="form-check-input"
+                               name="type"
+                               value="unclassified"
+                               id="unclassified"
+                               aria-label="Unclassified"
+                               title="Unclassified">
+                    </td>
+                    {% for ft in feedback_types %}
+                        <td class="text-center">
+                            <input type="radio"
+                                   class="form-check-input"
+                                   name="type"
+                                   value="{{ ft.slug }}"
+                                   id="{{ ft.name|slugify }}"
+                                   aria-label="{{ ft.name }}"
+                                   {% if reclassify_feedback.type == t %}checked{% endif %}
+                                   title="{{ ft.name }}">
+                        </td>
+                    {% endfor %}
+                    <td>{{ reclassify_feedback.author }}</td>
+                    <td>{{ reclassify_feedback.subject }}</td>
+                    <td>
+                        <button type="button"
+                                class="btn btn-primary btn-sm"
+                                data-bs-toggle="modal"
+                                data-bs-target="#modal{{ reclassify_feedback.id }}">
+                            View
+                        </button>
+                        <div class="modal fade"
+                             id="modal{{ reclassify_feedback.id }}"
+                             tabindex="-1"
+                             role="dialog"
+                             aria-labelledby="label{{ reclassify_feedback.id }}"
+                             aria-hidden="true">
+                            <div class="modal-dialog modal-dialog-scrollable modal-xl">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <p class="h5 modal-title" id="label{{ reclassify_feedback.id }}">{{ reclassify_feedback.subject }}</p>
+                                        <button type="button"
+                                                class="btn-close"
+                                                data-bs-dismiss="modal"
+                                                aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <pre>{% decrypt reclassify_feedback.comments request year 1 %}</pre>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <input type="hidden" name="feedback_id" value="{{ reclassify_feedback.id }}">
+        <button class="btn btn-primary" type="submit" name="submit" value="reclassify">Classify</button>
+    </form>

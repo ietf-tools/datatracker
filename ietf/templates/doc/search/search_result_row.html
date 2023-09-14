@@ -7,7 +7,7 @@
 {% load person_filters %}
 {% load django_bootstrap5 %}
 <tr {% if color_ad_position %}{% with doc|ballotposition:user as pos %}{% if pos %}class="position-{{ pos.slug }}-row"{% endif %}{% endwith %}{% endif %}>
-    <td>
+    <td class="bg-transparent">
         {% if user.is_authenticated %}
             <a href="{% url "ietf.community.views.untrack_document" username=request.user.username name=doc.name %}"
                class="track-untrack-doc {% if not doc.tracked_in_personal_community_list %}d-none{% endif %}"
@@ -45,7 +45,7 @@
             </a>
         {% endfor %}
     </td>
-    <td class="doc">
+    <td class="doc bg-transparent">
         {% if doc.pages %}<small class="float-end text-body-secondary d-none d-sm-block">{{ doc.pages }} page{{ doc.pages|pluralize }}</small>{% endif %}
         <div>
             <a href="{{ doc.get_absolute_url }}">
@@ -85,12 +85,12 @@
             {% endcomment %}
             <b>{{ doc.title }}</b>
             {% if doc.has_verified_errata %}
-                <a class="badge rounded-pill bg-danger text-decoration-none text-light float-end"
+                <a class="badge rounded-pill text-bg-danger text-decoration-none float-end"
                    href="https://www.rfc-editor.org/errata_search.php?rfc={{ doc.rfc_number }}">
                     Errata
                 </a>
             {% elif doc.has_errata %}
-                <a class="badge rounded-pill bg-warning text-decoration-none text-light float-end"
+                <a class="badge rounded-pill text-bg-warning text-decoration-none float-end"
                    href="https://www.rfc-editor.org/errata_search.php?rfc={{ doc.rfc_number }}">
                     Errata
                 </a>
@@ -105,50 +105,50 @@
             </div>
         {% endif %}
     </td>
-    <td>
-            {% if doc.latest_revision_date|timesince_days|new_enough:request and doc.get_state_slug != "rfc" %}
-                {% if doc.rev != "00" %}
-                    <a href="{{ rfcdiff_base_url }}?url2={{ doc.name }}-{{ doc.rev }}">
-                    {% elif doc.replaces %}
-                        <a href="{{ rfcdiff_base_url }}?url1={{ doc.replaces_canonical_name }}&amp;url2={{ doc.name }}-{{ doc.rev }}">
-                        {% endif %}
-                    {% endif %}
-                    {% if doc.get_state_slug == "rfc" %}
-                        {{ doc.latest_revision_date|date:"Y-m" }}
-                    {% else %}
-                        {{ doc.latest_revision_date|date:"Y-m-d" }}
-                    {% endif %}
-                    {% if doc.latest_revision_date|timesince_days|new_enough:request and doc.get_state_slug != "rfc" %}
-                        {% if doc.rev != "00" or doc.replaces %}</a>{% endif %}
-                    {% endif %}
-                {% if doc.latest_revision_date|timesince_days|new_enough:request %}
-                    <br>
-                    <div class="float-end">
-                        <span class="badge rounded-pill bg-success">New</span>
-                    </div>
-                {% endif %}
-                {% if doc.get_state_slug == "active" and doc.expirable and doc.expires|timesince_days|expires_soon:request %}
-                    <br>
-                    <span class="badge rounded-pill bg-warning">Expires soon</span>
-                {% endif %}
-            </td>
-            {% include "doc/search/status_columns.html" %}
-            <td class="text-center d-none d-sm-table-cell">
-                {% if doc.related_ipr %}
-                    <a href="{% url "ietf.ipr.views.search" %}?submit=draft&amp;id={{ doc.name }}">
-                        <span class="badge rounded-pill bg-info">{{ doc.related_ipr|length }}</span>
-                    </a>
-                {% endif %}
-            </td>
-            {% if ad_name == None or ad_name != doc.ad.plain_name %}
-                <td class="d-none d-sm-table-cell">
-                    {% if doc.ad %}
-                        {% person_link doc.ad title="Area Director" %}
-                    {% endif %}
-                    <br>
-                    {% if doc.shepherd %}
-                        {% email_person_link doc.shepherd title="Shepherd" class="small text-body-secondary" %}
-                    {% endif %}
-                </td>
+    <td class="bg-transparent">
+        {% if doc.latest_revision_date|timesince_days|new_enough:request and doc.get_state_slug != "rfc" %}
+            {% if doc.rev != "00" %}
+                <a href="{{ rfcdiff_base_url }}?url2={{ doc.name }}-{{ doc.rev }}">
+            {% elif doc.replaces %}
+                <a href="{{ rfcdiff_base_url }}?url1={{ doc.replaces_canonical_name }}&amp;url2={{ doc.name }}-{{ doc.rev }}">
             {% endif %}
-        </tr>
+        {% endif %}
+        {% if doc.get_state_slug == "rfc" %}
+            {{ doc.latest_revision_date|date:"Y-m" }}
+        {% else %}
+            {{ doc.latest_revision_date|date:"Y-m-d" }}
+        {% endif %}
+        {% if doc.latest_revision_date|timesince_days|new_enough:request and doc.get_state_slug != "rfc" %}
+            {% if doc.rev != "00" or doc.replaces %}</a>{% endif %}
+        {% endif %}
+        {% if doc.latest_revision_date|timesince_days|new_enough:request %}
+            <br>
+            <div class="float-end">
+                <span class="badge rounded-pill text-bg-success">New</span>
+            </div>
+        {% endif %}
+        {% if doc.get_state_slug == "active" and doc.expirable and doc.expires|timesince_days|expires_soon:request %}
+            <br>
+            <span class="badge rounded-pill text-bg-warning">Expires soon</span>
+        {% endif %}
+    </td>
+    {% include "doc/search/status_columns.html" %}
+    <td class="text-center d-none d-sm-table-cell bg-transparent">
+        {% if doc.related_ipr %}
+            <a href="{% url "ietf.ipr.views.search" %}?submit=draft&amp;id={{ doc.name }}">
+                <span class="badge rounded-pill text-bg-info">{{ doc.related_ipr|length }}</span>
+            </a>
+        {% endif %}
+    </td>
+    {% if ad_name == None or ad_name != doc.ad.plain_name %}
+        <td class="d-none d-sm-table-cell bg-transparent">
+            {% if doc.ad %}
+                {% person_link doc.ad title="Area Director" %}
+            {% endif %}
+            <br>
+            {% if doc.shepherd %}
+                {% email_person_link doc.shepherd title="Shepherd" class="small text-body-secondary" %}
+            {% endif %}
+        </td>
+    {% endif %}
+</tr>

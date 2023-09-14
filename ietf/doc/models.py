@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2010-2020, All Rights Reserved
+# Copyright The IETF Trust 2010-2023, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -162,7 +162,7 @@ class DocumentInfo(models.Model):
                 self._cached_file_path = settings.CONFLICT_REVIEW_PATH
             elif self.type_id == "statchg":
                 self._cached_file_path = settings.STATUS_CHANGE_PATH
-            elif self.type_id == "bofreq":
+            elif self.type_id == "bofreq": # TODO: This is probably unneeded, as is the separate path setting
                 self._cached_file_path = settings.BOFREQ_PATH
             else:
                 self._cached_file_path = settings.DOCUMENT_PATH_PATTERN.format(doc=self)
@@ -186,7 +186,7 @@ class DocumentInfo(models.Model):
             elif self.type_id == 'review':
                 # TODO: This will be wrong if a review is updated on the same day it was created (or updated more than once on the same day)
                 self._cached_base_name = "%s.txt" % self.name
-            elif self.type_id == 'bofreq':
+            elif self.type_id in ['bofreq', 'statement']:
                 self._cached_base_name = "%s-%s.md" % (self.name, self.rev)
             else:
                 if self.rev:
@@ -963,7 +963,7 @@ class Document(DocumentInfo):
     def displayname_with_link(self):
         return mark_safe('<a href="%s">%s-%s</a>' % (self.get_absolute_url(), self.name , self.rev))
 
-    def ipr(self,states=('posted','removed')):
+    def ipr(self,states=settings.PUBLISH_IPR_STATES):
         """Returns the IPR disclosures against this document (as a queryset over IprDocRel)."""
         from ietf.ipr.models import IprDocRel
         return IprDocRel.objects.filter(document__docs=self, disclosure__state__in=states)
@@ -973,7 +973,7 @@ class Document(DocumentInfo):
         document directly or indirectly obsoletes or replaces
         """
         from ietf.ipr.models import IprDocRel
-        iprs = IprDocRel.objects.filter(document__in=list(self.docalias.all())+self.all_related_that_doc(('obs','replaces'))).filter(disclosure__state__in=('posted','removed')).values_list('disclosure', flat=True).distinct()
+        iprs = IprDocRel.objects.filter(document__in=list(self.docalias.all())+self.all_related_that_doc(('obs','replaces'))).filter(disclosure__state__in=settings.PUBLISH_IPR_STATES).values_list('disclosure', flat=True).distinct()
         return iprs
 
     def future_presentations(self):
@@ -1288,9 +1288,14 @@ EVENT_TYPES = [
     # IPR events
     ("posted_related_ipr", "Posted related IPR"),
     ("removed_related_ipr", "Removed related IPR"),
+    ("removed_objfalse_related_ipr", "Removed Objectively False related IPR"),
 
     # Bofreq Editor events
-    ("changed_editors", "Changed BOF Request editors")
+    ("changed_editors", "Changed BOF Request editors"),
+
+    # Statement events
+    ("published_statement", "Published statement"),
+    
     ]
 
 class DocEvent(models.Model):

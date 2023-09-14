@@ -26,7 +26,7 @@
                 {% endif %}
                 {% if document_html %}<br>{% endif %}
                 {% if has_verified_errata or has_errata %}
-                    <a class="{% if document_html %}btn btn-primary btn-sm my-1{% else %}badge rounded-pill bg-danger text-decoration-none text-light{% endif %}"
+                    <a class="{% if document_html %}btn btn-primary btn-sm my-1{% else %}badge rounded-pill text-bg-danger text-decoration-none{% endif %}"
                        href="https://www.rfc-editor.org/errata_search.php?rfc={{ doc.rfc_number }}" title="Click to view errata." rel="nofollow">
                         {% if document_html %}View errata{% else %}Errata{% endif %}
                     </a>
@@ -40,7 +40,7 @@
                     </a>
                 {% endif %}
                 {% if doc.related_ipr %}
-                    <a title="Click to view IPR declarations." class="{% if document_html %}btn btn-warning btn-sm my-1{% else %}badge rounded-pill bg-warning text-decoration-none text-light{% endif %}" href="{% url 'ietf.ipr.views.search' %}?submit=draft&amp;id={{ doc.name }}">IPR</a>
+                    <a title="Click to view IPR declarations." class="{% if document_html %}btn btn-warning btn-sm my-1{% else %}badge rounded-pill text-bg-warning text-decoration-none{% endif %}" href="{% url 'ietf.ipr.views.search' %}?submit=draft&amp;id={{ doc.name }}">IPR</a>
                 {% endif %}
                 {% if obsoleted_by %}<div>Obsoleted by {{ obsoleted_by|urlize_related_source_list:document_html|join:", " }}</div>{% endif %}
                 {% if updated_by %}<div>Updated by {{ updated_by|urlize_related_source_list:document_html|join:", " }}</div>{% endif %}
@@ -72,7 +72,7 @@
                 {% endif %}
             {% endif %}
             {% if doc.get_state_slug != "active" and doc.get_state_slug != "rfc" %}
-                <div class="badge rounded-pill bg-warning{% if not document_html %} float-end{% endif %}">
+                <div class="badge rounded-pill text-bg-warning{% if not document_html %} float-end{% endif %}">
                     Expired &amp; archived
                 </div>
             {% endif %}
@@ -238,17 +238,7 @@ href="{% url 'ietf.doc.views_draft.review_possibly_replaces' name=doc.name %}">E
                 {% endif %}
                 {% if document_html %}
                     {% if doc.stream.name|lower in 'iab,ietf,irtf' %}
-                        <img alt="{{ doc.stream.name|upper }} Logo"
-                             title="{{ stream_desc }}"
-                             class="w-25 mt-1"
-                             {% if doc.stream.name|lower == 'iab' %}
-                                 src="{% static 'ietf/images/iab-logo.svg' %}"
-                             {% elif doc.stream.name|lower == 'ietf' %}
-                                 src="{% static 'ietf/images/ietf-logo.svg' %}"
-                             {% elif doc.stream.name|lower == 'irtf' %}
-                                 src="{% static 'ietf/images/irtf-logo.svg' %}"
-                             {% endif %}
-                             >
+                        {% include "logo.html" with org=doc.stream.name|lower classes="w-25 mt-1" title=stream_desc nor=True only %}
                     {% else %}
                         {{ stream_desc }}
                     {% endif %}
@@ -349,7 +339,10 @@ href="{% url 'ietf.doc.views_draft.review_possibly_replaces' name=doc.name %}">E
             </td>
             <td>
                 {% for review_assignment in review_assignments %}
-                    {% include "doc/review_assignment_summary.html" with current_doc_name=doc.name current_rev=doc.rev %}
+                    {% include "doc/review_assignment_summary.html" with current_doc_name=doc.name current_rev=doc.rev review_assignment=review_assignment only %}
+                {% endfor %}
+                {% for review_request in review_requests %}
+                    {% include "doc/review_request_summary.html" with review_request=review_request only %}
                 {% endfor %}
                 {% if no_review_from_teams %}
                     {% for team in no_review_from_teams %}

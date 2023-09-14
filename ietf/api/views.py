@@ -423,8 +423,14 @@ def directauth(request):
 
         # Note well that we are using user.username, not what was passed to the API.
         if user_query.count() == 1 and authenticate(username = user_query.first().username, password = password):
+            user = user_query.get()
+            if user_query.filter(person__isnull=True).count() == 1: # Can't inspect user.person direclty here
+                log.log(f"Direct auth of personless user {user.pk}:{user.username}")
+            else:
+                log.log(f"Direct auth: {user.pk}:{user.person.plain_name()}")
             return HttpResponse(json.dumps(dict(result="success")), content_type='application/json')
 
+        log.log(f"Direct auth failure: {username}")
         return HttpResponse(json.dumps(dict(result="failure", reason="authentication failed")), content_type='application/json') 
 
     else:
