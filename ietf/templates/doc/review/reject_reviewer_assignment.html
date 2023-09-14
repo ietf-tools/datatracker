@@ -10,7 +10,7 @@
         <small class="text-body-secondary">{{ review_req.doc.name }}</small>
     </h1>
     {% include "doc/review/request_info.html" %}
-    {% if not review_request_past_deadline %}
+    {% if allow_reject_request %}
         <p class="alert alert-danger my-3">
             Do you want to reject this assignment?
         </p>
