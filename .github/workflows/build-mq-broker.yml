@@ -10,6 +10,9 @@ on:
 
   workflow_dispatch: 
 
+env:
+  RABBITMQ_VERSION: 3.11-alpine
+
 jobs:
   publish:
     runs-on: ubuntu-latest
@@ -40,5 +43,7 @@ jobs:
         file: dev/mq/Dockerfile
         platforms: linux/amd64,linux/arm64
         push: true
-        tags: ghcr.io/ietf-tools/datatracker-mq:latest
-
+        build-args: RABBITMQ_VERSION=${RABBITMQ_VERSION}
+        tags: |
+          ghcr.io/ietf-tools/datatracker-mq:${RABBITMQ_VERSION}
+          ghcr.io/ietf-tools/datatracker-mq:latest
