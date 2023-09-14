@@ -209,6 +209,24 @@ class IprTests(TestCase):
         r = self.client.get(url + "?submit=iprtitle&iprtitle=%s" % quote(ipr.title))
         self.assertContains(r, ipr.title)
 
+    def test_search_null_characters(self):
+        """IPR search gracefully rejects null characters in parameters"""
+        # Not a combinatorially exhaustive set, but tries to exercise all the parameters
+        bad_params = [
+            "option=document_search&document_search=draft-\x00stuff"
+            "submit=dra\x00ft",
+            "submit=draft&id=some\x00id",
+            "submit=draft&id_document_tag=some\x00id",
+            "submit=draft&id=someid&state=re\x00moved",
+            "submit=draft&id=someid&state=posted&state=re\x00moved",
+            "submit=draft&id=someid&state=removed&draft=draft-no\x00tvalid",
+            "submit=rfc&rfc=rfc\x00123",
+        ]
+        url = urlreverse("ietf.ipr.views.search")
+        for query_params in bad_params:
+            r = self.client.get(f"{url}?{query_params}")
+            self.assertEqual(r.status_code, 400, f"querystring '{query_params}' should be rejected")
+        
     def test_feed(self):
         ipr = HolderIprDisclosureFactory()
         r = self.client.get("/feed/ipr/")
