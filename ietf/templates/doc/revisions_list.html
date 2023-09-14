@@ -6,31 +6,46 @@
     <nav class="mb-3">
 {% endif %}
     <ul class="revision-list{%if doc.type.slug == 'charter' %} charter{% endif %} pagination pagination-sm text-center flex-wrap{% if document_html %} my-0{% endif %}">
-        {% for rev in revisions %}
-            {% if rev %}
-                <li class="page-item {%if doc.type.slug == 'charter' and rev == rev|charter_major_rev %}fw-bold {% endif %}{% if rev == doc.rev %}{% if snapshot or doc.get_state_slug != 'rfc' %}active{% endif %}{% endif %}">
-                    <a class="page-link"
-                       href="{% if document_html %}{% url 'ietf.doc.views_doc.document_html' name=doc.name rev=rev %}{% else %}{% url 'ietf.doc.views_doc.document_main' name=doc.name rev=rev %}{% endif %}"
-                       {% if rev != '00' and rev != latest_rev %}rel="nofollow"{% endif %}>
-                        {{ rev }}
-                    </a>
-                </li>
+        {% if doc.type_id == "rfc" %}
+            {% with doc.came_from_draft as draft %}
+            {% if draft %}
+                {% for rev in draft.revisions_by_dochistory %}
+                    <li class="page-item">
+                        <a class="page-link"
+                        href="{% if document_html %}{% url 'ietf.doc.views_doc.document_html' name=draft.name rev=rev %}{% else %}{% url 'ietf.doc.views_doc.document_main' name=draft.name rev=rev %}{% endif %}"
+                        rel="nofollow">
+                            {{ rev }}
+                        </a>
+                    </li>
+                {% endfor %}
             {% endif %}
-        {% endfor %}
-        {% if doc.type_id == 'rfc' %}
-            <li class="page-item rfc{% if not snapshot %} active{% endif %}">
+            {% endwith %}
+            <li class="page-item rfc active">
                 <a class="page-link"
-                   href="{% if doc.doc %}{% if document_html %}{% url 'ietf.doc.views_doc.document_html' name=doc.doc.name %}{% else %}{% url 'ietf.doc.views_doc.document_main' name=doc.doc.name %}{% endif %}{% else %}{% if document_html %}{% url 'ietf.doc.views_doc.document_html' name=doc.name %}{% else %}{% url 'ietf.doc.views_doc.document_main' name=doc.name %}{% endif %}{% endif %}">
+                href="{% if document_html %}{% url 'ietf.doc.views_doc.document_html' name=doc.name %}{% else %}{% url 'ietf.doc.views_doc.document_main' name=doc.name %}{% endif %}">
                     RFC {{ doc.rfc_number }}
                 </a>
             </li>
-        {% elif doc.doc.type_id == 'rfc' %}
-            <li class="page-item rfc">
-                <a class="page-link"
-                   href="{% if document_html %}{% url 'ietf.doc.views_doc.document_html' name=doc.doc.name %}{% else %}{% url 'ietf.doc.views_doc.document_main' name=doc.doc.name %}{% endif %}">
-                    RFC {{ doc.doc.rfc_number }}
-                </a>
-            </li>
+        {% else %}
+            {% for rev in revisions %}
+                {% if rev %} {# I think this guard is now unnecessary #}
+                    <li class="page-item {%if doc.type.slug == 'charter' and rev == rev|charter_major_rev %}fw-bold {% endif %}{% if rev == doc.rev %}{% if snapshot or doc.get_state_slug != 'rfc' %}active{% endif %}{% endif %}">
+                        <a class="page-link"
+                        href="{% if document_html %}{% url 'ietf.doc.views_doc.document_html' name=doc.name rev=rev %}{% else %}{% url 'ietf.doc.views_doc.document_main' name=doc.name rev=rev %}{% endif %}"
+                        {% if rev != '00' and rev != latest_rev %}rel="nofollow"{% endif %}>
+                            {{ rev }}
+                        </a>
+                    </li>
+                {% endif %}
+            {% endfor %}
+            {% if doc.became_rfc %}
+                <li class="page-item rfc">
+                    <a class="page-link"
+                    href="{% if document_html %}{% url 'ietf.doc.views_doc.document_html' name=doc.became_rfc.name %}{% else %}{% url 'ietf.doc.views_doc.document_main' name=doc.became_rfc.name %}{% endif %}">
+                        RFC {{ doc.became_rfc.rfc_number }}
+                    </a>
+                </li>
+            {% endif %}
         {% endif %}
     </ul>
 {% if not document_html %}

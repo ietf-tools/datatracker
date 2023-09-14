@@ -190,23 +190,21 @@ def interesting_doc_relations(doc):
     return interesting_relations_that, interesting_relations_that_doc
 
 def document_main(request, name, rev=None, document_html=False):
-    if name.startswith("rfc") and rev is not None:
-        raise Http404()
 
     doc = get_object_or_404(Document.objects.select_related(), name=name)
 
+    if doc.type_id == "rfc" and rev is not None:
+        raise Http404()
+
+    log.assertion('doc.type_id!="rfc" or doc.name.startswith("rfc")')
+
     # take care of possible redirections
     if document_html is False and rev is None:
-        became_rfc = next(iter(doc.related_that_doc("became_rfc")), None)
+        became_rfc = doc.became_rfc()
         if became_rfc:
             return redirect("ietf.doc.views_doc.document_main", name=became_rfc.name)
-    
-    revisions = []
-    for h in doc.history_set.order_by("time", "id"):
-        if h.rev and not h.rev in revisions:
-            revisions.append(h.rev)
-    if not doc.rev in revisions:
-        revisions.append(doc.rev)
+
+    revisions = doc.revisions_by_dochistory()
     latest_rev = doc.rev
 
     snapshot = False
@@ -238,7 +236,6 @@ def document_main(request, name, rev=None, document_html=False):
     telechat = doc.latest_event(TelechatDocEvent, type="scheduled_for_telechat")
     if telechat and (not telechat.telechat_date or telechat.telechat_date < date_today(settings.TIME_ZONE)):
        telechat = None
-
 
     # specific document types
     if doc.type_id == "rfc":
@@ -302,7 +299,7 @@ def document_main(request, name, rev=None, document_html=False):
         diff_revisions = None
         simple_diff_revisions = None
         if document_html:
-            diff_revisions=get_diff_revisions(request, name, doc if isinstance(doc,Document) else doc.doc)
+            diff_revisions=get_diff_revisions(request, name, doc)
             simple_diff_revisions = [t[1] for t in diff_revisions if t[0] == doc.name]
             simple_diff_revisions.reverse()
             html = doc.html_body()
@@ -311,10 +308,8 @@ def document_main(request, name, rev=None, document_html=False):
                 css = Path(finders.find("ietf/css/document_html_inline.css")).read_text()
                 if html:
                     css += Path(finders.find("ietf/css/document_html_txt.css")).read_text()
-        draft_that_became_rfc = None
-        became_rfc = next(iter(doc.related_that("became_rfc")), None)
-        if became_rfc:
-            draft_that_became_rfc = became_rfc
+        draft_that_became_rfc = doc.came_from_draft()
+
         # submission
         submission = ""
         if group is None:
@@ -1134,6 +1129,11 @@ def document_email(request,name):
 
 
 def get_diff_revisions(request, name, doc):
+    """ Calculate what to offer for diff comparisons
+
+    returns list of (name, rev, time, url, is_this_doc, is_previous_doc)
+    ordered by -time for use by forms used to get to the diff tools.
+    """
     diffable = any(
         [
             name.startswith(prefix)
@@ -1160,16 +1160,17 @@ def get_diff_revisions(request, name, doc):
             relateddocument__relationship="replaces",
         )
     )
-    diff_documents.extend(
-        Document.objects.filter(
-            relateddocument__target=doc,
-            relateddocument__relationship="became_rfc"
-        )
-    )
+    if doc.came_from_draft():
+        diff_documents.append(doc.came_from_draft())
+
+    if doc.became_rfc():
+        rfc = doc.became_rfc()
+        e = rfc.latest_event(type="published_rfc")
+        diff_revisions.append((rfc.name, "", e.time if e else rfc.time, rfc.name, False, False))
 
     if doc.type_id == "rfc":
         e = doc.latest_event(type="published_rfc")
-        diff_revisions.append((name, "", e.time if e else doc.time, name))
+        diff_revisions.append((name, "", e.time if e else doc.time, name, True, False))
 
     seen = set()
     for e in (
@@ -1198,7 +1199,16 @@ def get_diff_revisions(request, name, doc):
             # rfcdiff tool has special support for IDs
             url = e.doc.name + "-" + e.rev
 
-        diff_revisions.append((e.doc.name, e.rev, e.time, url))
+        diff_revisions.append((e.doc.name, e.rev, e.time, url, e.doc == doc and e.rev == doc.rev, False))
+    
+    diff_revisions.sort(key=lambda t: t[2], reverse=True)
+    for index, t in enumerate(diff_revisions):
+        if t[4]: # is_this_doc
+            n = index+1
+            if n < len(diff_revisions):
+                t_name, rev, time, url, _, _ = diff_revisions[n]
+                diff_revisions[n] = (t_name, rev, time, url, False, True)
+                break
 
     return diff_revisions
 
@@ -1280,7 +1290,7 @@ def document_bibtex(request, name, rev=None):
     if doc.type_id == "draft":
         latest_revision = doc.latest_event(NewRevisionDocEvent, type="new_revision")
         replaced_by = [d.name for d in doc.related_that("replaces")]
-        draft_became_rfc = next(iter(doc.related_that_doc("became_rfc")), None)
+        draft_became_rfc = doc.became_rfc()
 
         if rev != None and rev != doc.rev:
             # find the entry in the history
@@ -1639,8 +1649,6 @@ def document_json(request, name, rev=None):
     data["expires"] = doc.expires.strftime("%Y-%m-%d %H:%M:%S") if doc.expires else None
     data["title"] = doc.title
     data["abstract"] = doc.abstract
-    # Preserve aliases in this api? What about showing rfc_number directly?
-    data["aliases"] = list(doc.name)
     data["state"] = extract_name(doc.get_state())
     data["intended_std_level"] = extract_name(doc.intended_std_level)
     data["std_level"] = extract_name(doc.std_level)
@@ -1656,7 +1664,7 @@ def document_json(request, name, rev=None):
     latest_revision = doc.latest_event(NewRevisionDocEvent, type="new_revision")
     data["rev_history"] = make_rev_history(latest_revision.doc if latest_revision else doc)
 
-    if doc.type_id == "draft":
+    if doc.type_id == "draft": # These live only on drafts
         data["iesg_state"] = extract_name(doc.get_state("draft-iesg"))
         data["rfceditor_state"] = extract_name(doc.get_state("draft-rfceditor"))
         data["iana_review_state"] = extract_name(doc.get_state("draft-iana-review"))
@@ -1665,6 +1673,8 @@ def document_json(request, name, rev=None):
         if doc.stream_id in ("ietf", "irtf", "iab"):
             e = doc.latest_event(ConsensusDocEvent, type="changed_consensus")
             data["consensus"] = e.consensus if e else None
+
+    if doc.type_id in ["draft", "rfc"]:
         data["stream"] = extract_name(doc.stream)
 
     return HttpResponse(json.dumps(data, indent=2), content_type='application/json')
@@ -2170,7 +2180,7 @@ def idnits2_state(request, name, rev=None):
         raise Http404
     zero_revision = None
     if doc.type_id == "rfc":
-        draft = next(iter(doc.related_that('became_rfc')), None)
+        draft = doc.came_from_draft()
         if draft:
             zero_revision = NewRevisionDocEvent.objects.filter(doc=draft,rev='00').first()
     else:

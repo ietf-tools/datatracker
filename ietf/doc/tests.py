@@ -2883,3 +2883,30 @@ class CanRequestConflictReviewTests(TestCase):
         r = self.client.get(url)
         self.assertContains(r, target_string)
 
+class DocInfoMethodsTests(TestCase):
+
+    def test_became_rfc(self):
+        draft = WgDraftFactory()
+        rfc = WgRfcFactory()
+        draft.relateddocument_set.create(relationship_id="became_rfc",target=rfc)
+        self.assertEqual(draft.became_rfc(), rfc)
+        self.assertEqual(rfc.came_from_draft(), draft)
+
+        charter = CharterFactory()
+        self.assertIsNone(charter.became_rfc())
+        self.assertIsNone(charter.came_from_draft())
+
+    def test_revisions(self):
+        draft = WgDraftFactory(rev="09",create_revisions=range(0,10))
+        self.assertEqual(draft.revisions_by_dochistory(),[f"{i:02d}" for i in range(0,10)])
+        self.assertEqual(draft.revisions_by_newrevisionevent(),[f"{i:02d}" for i in range(0,10)])
+        rfc = WgRfcFactory()
+        self.assertEqual(rfc.revisions_by_newrevisionevent(),[])
+        self.assertEqual(rfc.revisions_by_dochistory(),[])
+
+        draft.history_set.filter(rev__lt="08").delete()
+        draft.docevent_set.filter(newrevisiondocevent__rev="05").delete()
+        self.assertEqual(draft.revisions_by_dochistory(),[f"{i:02d}" for i in range(8,10)])
+        self.assertEqual(draft.revisions_by_newrevisionevent(),[f"{i:02d}" for i in [*range(0,5), *range(6,10)]])      
+
+

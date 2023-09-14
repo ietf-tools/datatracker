@@ -33,7 +33,7 @@ def all_id_txt():
 
     rfcs = dict()
     for rfc in Document.objects.filter(type_id="rfc"):
-        draft = next(iter(rfc.related_that("became_rfc")), None)
+        draft = rfc.came_from_draft()
         if draft is not None:
             rfcs[draft.name] = rfc.name
 
@@ -117,7 +117,7 @@ def all_id2_txt():
 
     rfcs = dict()
     for rfc in Document.objects.filter(type_id="rfc"):
-        draft = next(iter(rfc.related_that("became_rfc")), None)
+        draft = rfc.came_from_draft()
         if draft is not None:
             rfcs[draft.name] = rfc.name
 

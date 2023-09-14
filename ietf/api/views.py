@@ -328,7 +328,7 @@ def rfcdiff_latest_json(request, name, rev=None):
     response = dict()
     condition, document, history, found_rev = find_doc_for_rfcdiff(name, rev)
     if document.type_id == "rfc":
-        draft = next(iter(document.related_that('became_rfc')), None)
+        draft = document.came_from_draft()
     if condition == 'no such document':
         raise Http404
     elif condition in ('historic version', 'current version'):

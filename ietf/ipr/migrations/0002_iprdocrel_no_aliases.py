@@ -2,7 +2,7 @@
 
 from django.db import migrations
 import django.db.models.deletion
-from django.db.models import F, Subquery, OuterRef
+from django.db.models import F, Subquery, OuterRef, ManyToManyField
 import ietf.utils.models
 
 def forward(apps, schema_editor):
@@ -66,6 +66,11 @@ class Migration(migrations.Migration):
                 to="doc.document",
                 db_index=True,
             ),
+        ),
+        migrations.AlterField(
+            model_name='iprdisclosurebase',
+            name='docs',
+            field=ManyToManyField(through='ipr.IprDocRel', to='doc.Document'),
         ),
         migrations.RemoveField(
             model_name="iprdocrel",

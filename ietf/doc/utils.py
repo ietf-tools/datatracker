@@ -936,6 +936,8 @@ def make_rev_history(doc):
                 if document not in predecessors:
                     predecessors.append(document)
                     predecessors.extend(get_predecessors(document, predecessors))
+        if doc.came_from_draft():
+            predecessors.append(doc.came_from_draft())
         return predecessors
 
     def get_ancestors(doc, ancestors = None):
@@ -946,6 +948,8 @@ def make_rev_history(doc):
                 if document not in ancestors:
                     ancestors.append(document)
                     ancestors.extend(get_ancestors(document, ancestors))
+        if doc.became_rfc():
+            ancestors.append(doc.became_rfc())
         return ancestors
 
     def get_replaces_tree(doc):
@@ -971,6 +975,9 @@ def make_rev_history(doc):
                         history[url]['pages'] = d.history_set.filter(rev=e.newrevisiondocevent.rev).first().pages
 
     if doc.type_id == "draft":
+        # Do nothing - all draft revisions are captured above already.
+        e = None 
+    elif doc.type_id == "rfc":
         # e.time.date() agrees with RPC publication date when shown in the RPC_TZINFO time zone
         e = doc.latest_event(type='published_rfc')
     else:
@@ -983,7 +990,7 @@ def make_rev_history(doc):
             'published': e.time.isoformat(),
             'url': url
         }
-        if hasattr(e, 'newrevisiondocevent') and doc.history_set.filter(rev=e.newrevisiondocevent.rev).exists():
+        if doc.type_id != "rfc" and hasattr(e, 'newrevisiondocevent') and doc.history_set.filter(rev=e.newrevisiondocevent.rev).exists():
             history[url]['pages'] = doc.history_set.filter(rev=e.newrevisiondocevent.rev).first().pages
     history = list(history.values())
     return sorted(history, key=lambda x: x['published'])
