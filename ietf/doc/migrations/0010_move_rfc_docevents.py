@@ -15,17 +15,7 @@ def forward(apps, schema_editor):
         Q(
             type__in=[
                 "published_rfc",  # do not remove this one!
-                "sync_from_rfc_editor",
-                "rfc_editor_received_announcement",  # problematic for new RFCs until RPC tools enhancements come in?
             ]
-        )
-        | Q(
-            type="changed_state",
-            desc__startswith="RFC Editor state",
-        )
-        | Q(
-            type="changed_state",
-            desc__startswith="IANA Action state",
         )
     )
 
