@@ -1,7 +1,5 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 
-import os
-
 from django.shortcuts import get_object_or_404, render
 
 import debug                            # pyflakes:ignore
