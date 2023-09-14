@@ -14,7 +14,6 @@ import debug                            # pyflakes:ignore
 
 from ietf.doc import views_search
 from ietf.group.urls import group_urls, grouptype_urls, stream_urls
-from ietf.help import views as help_views
 from ietf.ipr.sitemaps import IPRMap
 from ietf.liaisons.sitemaps import LiaisonMap
 from ietf.utils.urls import url
