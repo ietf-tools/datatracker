@@ -11,7 +11,7 @@ on:
   workflow_dispatch: 
 
 env:
-  RABBITMQ_VERSION: 3.11-alpine
+  RABBITMQ_VERSION: 3.12-alpine
 
 jobs:
   publish:
