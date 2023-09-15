@@ -976,6 +976,7 @@ class Document(DocumentInfo):
             .values_list("disclosure", flat=True)
             .distinct()
         )
+        return iprs
 
 
     def future_presentations(self):
