@@ -308,7 +308,6 @@ def document_main(request, name, rev=None, document_html=False):
                 css = Path(finders.find("ietf/css/document_html_inline.css")).read_text()
                 if html:
                     css += Path(finders.find("ietf/css/document_html_txt.css")).read_text()
-        draft_that_became_rfc = doc.came_from_draft()
 
         # submission
         submission = ""
@@ -324,19 +323,7 @@ def document_main(request, name, rev=None, document_html=False):
             else:
                 submission = group.acronym
             submission = '<a href="%s">%s</a>' % (group.about_url(), submission)
-            # Should be unreachable?
-            if (
-                draft_that_became_rfc
-                and draft_that_became_rfc.stream_id
-                and draft_that_became_rfc.get_state_slug(
-                    "draft-stream-%s" % draft_that_became_rfc.stream_id
-                )
-                == "c-adopt"
-            ):
-                submission = "candidate for %s" % submission
 
-
-        # todo replace document_html?
         return render(request, "doc/document_rfc.html" if document_html is False else "doc/document_html.html",
                                   dict(doc=doc,
                                        document_html=document_html,
@@ -354,7 +341,6 @@ def document_main(request, name, rev=None, document_html=False):
                                        can_edit_authors=can_edit_authors,
                                        can_change_stream=can_change_stream,
                                        rfc_number=doc.rfc_number,
-                                       draft_name=draft_that_became_rfc and draft_that_became_rfc.name,
                                        updates=interesting_relations_that_doc.filter(relationship="updates"),
                                        updated_by=interesting_relations_that.filter(relationship="updates"),
                                        obsoletes=interesting_relations_that_doc.filter(relationship="obs"),
@@ -679,7 +665,6 @@ def document_main(request, name, rev=None, document_html=False):
                                        can_request_review=can_request_review,
                                        can_submit_unsolicited_review_for_teams=can_submit_unsolicited_review_for_teams,
 
-                                       draft_name=doc.name,
                                        telechat=telechat,
                                        iesg_ballot_summary=iesg_ballot_summary,
                                        submission=submission,
