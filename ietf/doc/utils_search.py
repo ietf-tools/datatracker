@@ -148,8 +148,8 @@ def fill_in_document_table_attributes(docs, have_telechat_date=False):
     )
     # TODO - this likely reduces to something even simpler
     rel_rfcs = {
-        a.document.id: re.sub(r"rfc(\d+)", r"RFC \1", a.name, flags=re.IGNORECASE)
-        for a in Document.objects.filter(
+        d.id: re.sub(r"rfc(\d+)", r"RFC \1", d.name, flags=re.IGNORECASE)
+        for d in Document.objects.filter(
             type_id="rfc", id__in=[rel.source_id for rel in xed_by]
         )
     }
@@ -178,7 +178,7 @@ def augment_docs_with_related_docs_info(docs):
         if d.type_id == 'conflrev':
             if len(d.related_that_doc('conflrev')) != 1:
                 continue
-            originalDoc = d.related_that_doc('conflrev')[0].document
+            originalDoc = d.related_that_doc('conflrev')[0]
             d.pages = originalDoc.pages
             
 def prepare_document_table(request, docs, query=None, max_results=200):
