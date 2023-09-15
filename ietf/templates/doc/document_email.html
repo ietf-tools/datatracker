@@ -51,11 +51,11 @@
                     </td>
                     <td>
                         {% for addr in to %}
-                            {{addr|linkify}}{% if not forloop.last %}, {% endif %}
+                            {{ addr|linkify }}{% if not forloop.last %}, {% endif %}
                         {% endfor %}
                     <td>
                         {% for addr in cc %}
-                            {{addr|linkify}}{% if not forloop.last %}, {% endif %}
+                            {{ addr|linkify }}{% if not forloop.last %}, {% endif %}
                         {% endfor %}
                     </td>
                 </tr>
