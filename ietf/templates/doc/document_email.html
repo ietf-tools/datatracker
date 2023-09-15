@@ -53,6 +53,7 @@
                         {% for addr in to %}
                             {{ addr|linkify }}{% if not forloop.last %}, {% endif %}
                         {% endfor %}
+                    </td>
                     <td>
                         {% for addr in cc %}
                             {{ addr|linkify }}{% if not forloop.last %}, {% endif %}
