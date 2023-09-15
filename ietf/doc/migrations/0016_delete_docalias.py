@@ -6,7 +6,7 @@ from django.db import migrations
 class Migration(migrations.Migration):
     dependencies = [
         ("ipr", "0002_iprdocrel_no_aliases"),
-        ("doc", "0014_relate_hist_no_aliases"),
+        ("doc", "0015_relate_hist_no_aliases"),
     ]
 
     operations = [

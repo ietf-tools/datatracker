@@ -19,7 +19,7 @@ def reverse(apps, schema_editor):
 class Migration(migrations.Migration):
     dependencies = [
         ("ipr", "0001_initial"),
-        ("doc", "0014_relate_hist_no_aliases")
+        ("doc", "0015_relate_hist_no_aliases")
     ]
 
     operations = [
