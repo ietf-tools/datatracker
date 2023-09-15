@@ -70,11 +70,19 @@ def gather_relevant_expansions(**kwargs):
 
         relevant.add('doc_state_edited')
         
-        if not doc.type_id in ['bofreq', 'statement']:
+        if not doc.type_id in ['bofreq', 'statement', 'rfc']:
             relevant.update(['doc_telechat_details_changed','ballot_deferred','iesg_ballot_saved'])
 
         if doc.type_id in ['draft','statchg']:
             relevant.update(starts_with('last_call_'))
+
+        if doc.type_id == 'rfc':
+            relevant.update([
+                'doc_added_comment',
+                'doc_external_resource_change_requested',
+                'doc_state_edited',
+                'ipr_posted_on_doc'
+            ])
 
         if doc.type_id == 'draft':
             relevant.update(starts_with('doc_'))
