@@ -1,7 +1,5 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 
-import os
-
 from django.shortcuts import get_object_or_404, render
 
 import debug                            # pyflakes:ignore
@@ -30,11 +28,3 @@ def state(request, doc, type=None):
     statetype = get_object_or_404(StateType, slug=slug)
     states = State.objects.filter(used=True, type=statetype).order_by('order')
     return render(request, 'help/states.html', {"doc": doc, "type": statetype, "states":states} )
-
-def environment(request):
-    if request.is_secure():
-        os.environ['SCHEME'] = "https"
-    else:
-        os.environ['SCHEME'] = "http"
-    os.environ["URL"] = request.build_absolute_uri(".")
-    return render(request, 'help/environment.html', {"env": os.environ} )

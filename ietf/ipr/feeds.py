@@ -1,7 +1,8 @@
-# Copyright The IETF Trust 2007-2020, All Rights Reserved
+# Copyright The IETF Trust 2007-2023, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
+from django.conf import settings
 from django.contrib.syndication.views import Feed
 from django.utils.feedgenerator import Atom1Feed
 from django.urls import reverse_lazy
@@ -19,7 +20,7 @@ class LatestIprDisclosuresFeed(Feed):
     feed_url = "/feed/ipr/"
 
     def items(self):
-        return IprDisclosureBase.objects.filter(state__in=('posted','removed')).order_by('-time')[:30]
+        return IprDisclosureBase.objects.filter(state__in=settings.PUBLISH_IPR_STATES).order_by('-time')[:30]
 
     def item_title(self, item):
         return mark_safe(item.title)

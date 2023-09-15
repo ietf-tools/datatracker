@@ -956,7 +956,7 @@ class Document(DocumentInfo):
     def displayname_with_link(self):
         return mark_safe('<a href="%s">%s-%s</a>' % (self.get_absolute_url(), self.name , self.rev))
 
-    def ipr(self,states=('posted','removed')):
+    def ipr(self,states=settings.PUBLISH_IPR_STATES):
         """Returns the IPR disclosures against this document (as a queryset over IprDocRel)."""
         # from ietf.ipr.models import IprDocRel
         # return IprDocRel.objects.filter(document__docs=self, disclosure__state__in=states) # TODO - clear these comments away
@@ -972,11 +972,11 @@ class Document(DocumentInfo):
                 document__in=[self]
                 + self.all_related_that_doc(("obs", "replaces"))
             )
-            .filter(disclosure__state__in=("posted", "removed"))
+            .filter(disclosure__state__in=settings.PUBLISH_IPR_STATES)
             .values_list("disclosure", flat=True)
             .distinct()
         )
-        return iprs
+
 
     def future_presentations(self):
         """ returns related SessionPresentation objects for meetings that
@@ -1259,6 +1259,7 @@ EVENT_TYPES = [
     # IPR events
     ("posted_related_ipr", "Posted related IPR"),
     ("removed_related_ipr", "Removed related IPR"),
+    ("removed_objfalse_related_ipr", "Removed Objectively False related IPR"),
 
     # Bofreq Editor events
     ("changed_editors", "Changed BOF Request editors"),

@@ -20,7 +20,7 @@ function replace_with_internal(table, internal_table, i) {
         .replaceWith(internal_table[i]
             .children("table")
             .children("tbody")
-            .clone());
+            .clone(true));
 }
 
 function field_magic(i, e, fields) {
@@ -160,10 +160,10 @@ $(document)
                         // create the internal table and add list.js to them
                         var thead = $(this)
                             .siblings("thead:first")
-                            .clone();
+                            .clone(true);
 
                         var tbody = $(this)
-                            .clone();
+                            .clone(true);
 
                         var tbody_rows = $(tbody)
                             .find("tr")
@@ -178,7 +178,7 @@ $(document)
 
                         var parent = $(table)
                             .parent()
-                            .clone();
+                            .clone(true);
 
                         $(parent)
                             .children("table")
@@ -251,6 +251,7 @@ $(document)
                 $.each(list_instance, (i, e) => {
                     e.on("sortComplete", function () {
                         replace_with_internal(table, internal_table, i);
+                         $(table).find("[data-bs-original-title]").tooltip();
                         if (i == list_instance.length - 1) {
                             $(table)
                                 .find("thead:first tr")

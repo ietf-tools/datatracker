@@ -1,17 +1,14 @@
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% extends "base.html" %}
 {% load origin %}
 {% origin %}
-{% load django_bootstrap5 %}
 {% block title %}Remove tracking of document {{ name }}{% endblock %}
-{% bootstrap_messages %}
-<form method="post">
-    {% csrf_token %}
-    <p>
-        Remove {{ name }} from the list?
-    </p>
-    <button type="submit"
-           class="btn btn-primary"
-           value="Remove tracking of document">
-        Remove tracking of document
-    </button>
-</form>
+{% block content %}
+    <form method="post">
+        {% csrf_token %}
+        <p>
+            Remove {{ name }} from the list?
+        </p>
+        <button type="submit" class="btn btn-primary" value="Remove tracking of document">Remove tracking of document</button>
+    </form>
+{% endblock %}

@@ -103,6 +103,8 @@
                             IPR Disclosure ID #{{ item.source.id }},
                             {% if item.source.state.slug == "removed" %}
                                 "{{ item.source.title }}" (which was removed at the request of the submitter)
+                            {% elif item.source.state.slug == "removed_objfalse" %}
+                                "{{ item.source.title }}" (which was removed as objectively false)
                             {% else %}
                                 "<a href="{% url "ietf.ipr.views.show" id=item.source.id %}">{{ item.source.title }}</a>"
                             {% endif %}
@@ -122,6 +124,8 @@
                             IPR Disclosure ID #{{ item.target.id }},
                             {% if item.target.state.slug == "removed" %}
                                 "{{ item.target.title }}" (which was removed at the request of the submitter)
+                            {% elif item.source.state.slug == "removed_objfalse" %}
+                                "{{ item.source.title }}" (which was removed as objectively false)
                             {% elif item.target.state.slug == "rejected" %}
                                 "{{ item.target.title }}" (which was rejected)
                             {% elif item.target.state.slug == "parked" %}

@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{# Copyright The IETF Trust 2015-2023, All Rights Reserved #}
 {% load origin %}
 {% load django_bootstrap5 %}
 {% block title %}Change state for {{ doc }}{% endblock %}
@@ -10,6 +10,13 @@
         <br>
         <small class="text-body-secondary">{{ doc }}</small>
     </h1>
+    {% if state.slug == "dead" %}
+        <p class="alert alert-warning my-3">
+           This document is in IESG state "Dead". It is unusual to change
+           this to anything other than "AD is watching", and this should
+           never be used as a replacement for Begin IESG Processing.
+        </p>
+    {% endif %}
     <a class="btn btn-info my-3"
        href="{% url 'ietf.doc.views_help.state_help' type="draft-iesg" %}">Help on states</a>
     <form class="mt-3" method="post">
