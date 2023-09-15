@@ -178,7 +178,7 @@ def augment_docs_with_related_docs_info(docs):
         if d.type_id == 'conflrev':
             if len(d.related_that_doc('conflrev')) != 1:
                 continue
-            originalDoc = d.related_that_doc('conflrev')[0].document
+            originalDoc = d.related_that_doc('conflrev')[0]
             d.pages = originalDoc.pages
             
 def prepare_document_table(request, docs, query=None, max_results=200):
