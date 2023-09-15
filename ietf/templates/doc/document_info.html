@@ -52,10 +52,10 @@
                 {% if proposed_status_changes %}
                     <div>Proposed status changed by {{ proposed_status_changes|urlize_related_source_list|join:", " }}</div>
                 {% endif %}
-                {% if draft_name %}
+                {% if doc.came_from_draft %}
                     <div>
                         Was
-                        <a href="{% url 'ietf.doc.views_doc.document_main' name=draft_name %}">{{ draft_name }}</a>
+                        <a href="{% url 'ietf.doc.views_doc.document_main' name=doc.came_from_draft.name rev=doc.came_from_draft.rev%}">{{ doc.came_from_draft.name }}</a>
                         {% if submission %}({{ submission|safe }}){% endif %}
                     </div>
                 {% endif %}
