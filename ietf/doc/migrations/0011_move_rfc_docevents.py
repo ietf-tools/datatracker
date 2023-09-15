@@ -80,7 +80,7 @@ def forward(apps, schema_editor):
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("doc", "0009_create_rfc_documents"),
+        ("doc", "0010_create_rfc_documents"),
     ]
 
     operations = [

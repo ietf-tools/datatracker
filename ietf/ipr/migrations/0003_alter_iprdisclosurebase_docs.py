@@ -5,7 +5,7 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("doc", "0015_delete_docalias"),
+        ("doc", "0016_delete_docalias"),
         ("ipr", "0002_iprdocrel_no_aliases"),
     ]
 
