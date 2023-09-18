@@ -69,7 +69,7 @@ tblib>=1.7.0    # So that the django test runner provides tracebacks
 tlds>=2022042700    # Used to teach bleach about which TLDs currently exist
 tqdm>=4.64.0
 Unidecode>=1.3.4
-urllib3<2        # v2 causes selenium tests to fail with "Timeout value was <object..." error
+urllib3<3        # v2 causes selenium tests to fail with "Timeout value was <object..." error
 weasyprint>=59
 xml2rfc>=3.12.4
 xym>=0.6,<1.0
