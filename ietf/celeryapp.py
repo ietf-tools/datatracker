@@ -33,9 +33,7 @@ if scout_key and scout_name:
     # Scout documentation causes failure at startup, likely because Scout
     # ingests the config greedily before Django is ready. Have not found a
     # workaround for this other than explicitly configuring Scout.
-    scout_apm.celery.install()
-elif scout_key or scout_name:
-    raise RuntimeError("Must specify both SCOUT_KEY and SCOUT_NAME to enable Scout APM instrumentation")
+    scout_apm.celery.install() 
 
 # Load task modules from all registered Django apps.
 app.autodiscover_tasks()
