@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2019-2021, All Rights Reserved
+# Copyright The IETF Trust 2019-2023, All Rights Reserved
 
 
 import re
@@ -55,8 +55,6 @@ def persons_with_previous_review(team, review_req, possible_person_ids, state_id
         reviewassignment__state=state_id,
         team=team,
     ).distinct()
-    if review_req.pk is not None:
-        has_reviewed_previous = has_reviewed_previous.exclude(pk=review_req.pk)
     has_reviewed_previous = set(
         has_reviewed_previous.values_list("reviewassignment__reviewer__person", flat=True))
     return has_reviewed_previous
@@ -168,15 +166,15 @@ class AbstractReviewerQueuePolicy:
             PersonEmailChoiceField(label="Assign Reviewer", empty_label="(None)")
         """
 
-        # Collect a set of person IDs for people who have either not responded
-        # to or outright rejected reviewing this document in the past
+        # Collect a set of person IDs for people who have not responded
+        # to this document in the past
         rejecting_reviewer_ids = review_req.doc.reviewrequest_set.filter(
-            reviewassignment__state__slug__in=('rejected', 'no-response')
+            reviewassignment__state__slug='no-response'
         ).values_list(
             'reviewassignment__reviewer__person_id', flat=True
         )
 
-        # Query the Email objects for reviewers who haven't rejected or
+        # Query the Email objects for reviewers who haven't
         # not responded to this document in the past
         field.queryset = field.queryset.filter(
             role__name="reviewer",
@@ -187,7 +185,7 @@ class AbstractReviewerQueuePolicy:
         if review_req.pk is not None:
             # cannot use reviewassignment_set relation until review_req has been created
             one_assignment = (review_req.reviewassignment_set
-                              .exclude(state__slug__in=('rejected', 'no-response'))
+                              .exclude(state__slug__in='no-response')
                               .first())
         if one_assignment:
             field.initial = one_assignment.reviewer_id
