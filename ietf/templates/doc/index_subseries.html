@@ -11,7 +11,7 @@
     <div class="card-header"><a href="{% url 'ietf.doc.views_doc.document_main' name=doc.name %}">{{doc.name}}</a></div>
       <div class="card-body">
         {% for rfc in doc.contains %}
-          <p><a href="{% url 'ietf.doc.views_doc.document_main' name=rfc.name %}"">{{rfc.name}}</a> : {{rfc.title}}</p>
+          <p><a href="{% url 'ietf.doc.views_doc.document_main' name=rfc.name %}">{{rfc.name}}</a> : {{rfc.title}}</p>
         {% endfor %}
       </div>
     </div>
