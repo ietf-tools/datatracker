@@ -57,7 +57,7 @@ $(document)
                 var text = $(this)
                     .text();
                 // insert some <wbr> at strategic places
-                var newtext = text.replace(/([@._])/g, "$1<wbr>");
+                var newtext = text.replace(/([@._+])/g, "$1<wbr>");
                 if (newtext === text) {
                     return;
                 }
