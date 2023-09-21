@@ -302,13 +302,11 @@ def send_reminder_mail(request, year, type):
         interesting_state = 'pending'
         mail_path = nomcom_template_path + NOMINEE_ACCEPT_REMINDER_TEMPLATE
         reminder_description = 'accept (or decline) a nomination'
-        selected_tab = 'send_accept_reminder'
         state_description = NomineePositionStateName.objects.get(slug=interesting_state).name
     elif type=='questionnaire':
         interesting_state = 'accepted'
         mail_path = nomcom_template_path + NOMINEE_QUESTIONNAIRE_REMINDER_TEMPLATE
         reminder_description = 'complete the questionnaire for a nominated position'
-        selected_tab = 'send_questionnaire_reminder'
         state_description =  NomineePositionStateName.objects.get(slug=interesting_state).name+' but no questionnaire has been received'
     else:
         raise Http404
