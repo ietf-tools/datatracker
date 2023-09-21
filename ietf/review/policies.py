@@ -10,6 +10,7 @@ from simple_history.utils import bulk_update_with_history
 from ietf.doc.models import DocumentAuthor, DocAlias
 from ietf.doc.utils import extract_complete_replaces_ancestor_mapping_for_docs
 from ietf.group.models import Role
+from ietf.name.models import ReviewAssignmentStateName
 from ietf.person.models import Person
 import debug                            # pyflakes:ignore
 from ietf.review.models import NextReviewerInTeam, ReviewerSettings, ReviewWish, ReviewRequest, \
@@ -68,6 +69,12 @@ class AbstractReviewerQueuePolicy:
         """Assign a reviewer to a request and update policy state accordingly"""
         # Update policy state first - needed by LRU policy to correctly compute whether assignment was in-order
         self.update_policy_state_for_assignment(review_req, reviewer.person, add_skip)
+        assignment = review_req.reviewassignment_set.filter(reviewer=reviewer).first()
+        if assignment:
+            assignment.state = ReviewAssignmentStateName.objects.get(slug='assigned', used=True)
+            assignment.assigned_on = timezone.now()
+            assignment.save()
+            return assignment
         return review_req.reviewassignment_set.create(state_id='assigned', reviewer=reviewer, assigned_on=timezone.now())
 
     def default_reviewer_rotation_list(self, include_unavailable=False):
