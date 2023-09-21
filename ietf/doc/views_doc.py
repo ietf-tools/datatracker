@@ -154,8 +154,8 @@ def render_document_top(request, doc, tab, name):
                     None,
                 )
             )
-
-    tabs.append(("Email expansions","email",urlreverse('ietf.doc.views_doc.document_email', kwargs=dict(name=name)), True, None))
+    if not doc.type_id in ["bcp", "std", "fyi"]:
+        tabs.append(("Email expansions","email",urlreverse('ietf.doc.views_doc.document_email', kwargs=dict(name=name)), True, None))
     tabs.append(("History", "history", urlreverse('ietf.doc.views_doc.document_history', kwargs=dict(name=name)), True, None))
 
     if name.startswith("rfc"):
@@ -163,7 +163,7 @@ def render_document_top(request, doc, tab, name):
     else:
         name += "-" + doc.rev
 
-    return render_to_string("doc/document_top.html",
+    return render_to_string("doc/document_top.html" if not doc.type_id in ["bcp", "std", "fyi"] else "doc/document_subseries_top.html",
                             dict(doc=doc,
                                  tabs=tabs,
                                  selected=tab,
@@ -934,7 +934,7 @@ def document_main(request, name, rev=None, document_html=False):
             )
         )
 
-    if doc.type_id == "statement":
+    elif doc.type_id == "statement":
         if doc.uploaded_filename:
             basename = doc.uploaded_filename.split(".")[0] # strip extension
         else:
@@ -955,7 +955,6 @@ def document_main(request, name, rev=None, document_html=False):
         can_manage = has_role(request.user,["Secretariat"]) # Add IAB or IESG as appropriate
         interesting_relations_that, interesting_relations_that_doc = interesting_doc_relations(doc)
         published = doc.latest_event(type="published_statement").time
-
         return render(request, "doc/document_statement.html",
                                   dict(doc=doc,
                                        top=top,
@@ -968,6 +967,9 @@ def document_main(request, name, rev=None, document_html=False):
                                        replaced_by=interesting_relations_that.filter(relationship="replaces"),
                                        can_manage=can_manage,
                                        ))
+    elif doc.type_id in ["bcp", "std", "fyi"]:
+        return render(request, "doc/document_subseries.html", {"doc": doc, "top": top})
+
 
     raise Http404("Document not found: %s" % (name + ("-%s"%rev if rev else "")))
 
@@ -1230,13 +1232,6 @@ def document_history(request, name):
             request.user, ("Area Director", "Secretariat", "IRTF Chair")
         )
 
-    # Get related docs whose history should be linked
-    if doc.type_id == "draft":
-        related = doc.related_that_doc("became_rfc")
-    elif doc.type_id == "rfc":
-        related = doc.related_that("became_rfc")
-    else:
-        related = []
 
     return render(
         request,
@@ -1246,7 +1241,6 @@ def document_history(request, name):
             "top": top,
             "diff_revisions": diff_revisions,
             "events": events,
-            "related": related,
             "can_add_comment": can_add_comment,
         },
     )

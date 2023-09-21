@@ -673,6 +673,12 @@ class DocumentInfo(models.Model):
             doc = self if isinstance(self, Document) else self.doc
             self._cached_came_from_draft = next(iter(doc.related_that("became_rfc")), None)
         return self._cached_came_from_draft
+    
+    def contains(self):
+        return self.related_that_doc("contains")
+    
+    def part_of(self):
+        return self.related_that("contains")
 
     class Meta:
         abstract = True

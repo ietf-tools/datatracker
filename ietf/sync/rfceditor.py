@@ -380,6 +380,8 @@ def update_docs_from_rfc_index(
 
     system = Person.objects.get(name="(System)")
 
+    first_sync_creating_subseries = not Document.objects.filter(type_id__in=["bcp","std","fyi"]).exists()
+
     for (
         rfc_number,
         title,
@@ -511,8 +513,9 @@ def update_docs_from_rfc_index(
                 stream_slug = f"draft-stream-{draft.stream.slug}"
                 prev_state = draft.get_state(stream_slug)
                 if prev_state is None:
+                    # TODO: main returns warnings to the caller rather tha logging to the system - look to see if we should be using that instead
                     log(f"Warning while processing {doc.name}: draft {draft.name} stream state was not set")
-                if prev_state.slug != "pub":
+                elif prev_state.slug != "pub":
                     new_state = State.objects.select_related("type").get(used=True, type__slug=stream_slug, slug="pub")
                     draft.set_state(new_state)
                     draft_changes.append(
@@ -650,15 +653,47 @@ def update_docs_from_rfc_index(
                     )
                 )
 
-        # This block attempted to alias subseries names to RFCs. 
-        # Handle that differently when we add subseries as a document type.
-        #
-        # if also:
-        #     for a in also:
-        #         a = a.lower()
-        #         if not DocAlias.objects.filter(name=a):
-        #             DocAlias.objects.create(name=a).docs.add(doc)
-        #             rfc_changes.append(f"created alias {prettify_std_name(a)}")
+        if also:
+            # recondition also to have proper subseries document names:
+            conditioned_also = []
+            for a in also:
+                a = a.lower()
+                subseries_slug = a[:3]
+                if subseries_slug not in ["bcp", "std", "fyi"]:
+                    log(f"Unexpected 'also' relationship of {a} encountered for {doc}")
+                    next
+                maybe_number = a[3:].strip()
+                if not maybe_number.isdigit():
+                    log(f"Unexpected 'also' subseries element identifier {a} encountered for {doc}")
+                    next
+                else:
+                    subseries_number = int(maybe_number)
+                    conditioned_also.append(f"{subseries_slug}{subseries_number}") # Note the lack of leading zeros
+            also = conditioned_also
+
+            for a in also:
+                subseries_doc_name = a
+                subseries_slug=a[:3]
+                # Leaving most things to the default intentionally
+                # Of note, title and stream are left to the defaults of "" and none.
+                subseries_doc, created = Document.objects.get_or_create(type_id=subseries_slug, name=subseries_doc_name)
+                if created:
+                    if first_sync_creating_subseries:
+                        subseries_doc.docevent_set.create(type=f"{subseries_slug}_history_marker", by=system, desc=f"No history of this {subseries_slug.upper()} document is currently available in the datatracker before this point")
+                    subseries_doc.docevent_set.create(type="subseries_doc_created", by=system, desc=f"Created {subseries_doc_name} via sync to the rfc-index")
+                if not subseries_doc.relateddocument_set.filter(relationship_id="contains", target=doc).exists():
+                    subseries_doc.relateddocument_set.create(relationship_id="contains", target=doc)
+                    subseries_doc.docevent_set.create(type="sync_from_rfc_editor", by=system, desc=f"Added {doc.name} to {subseries_doc.name}")
+                    if first_sync_creating_subseries:
+                        rfc_events.append(doc.docevent_set.create(type=f"{subseries_slug}_history_marker", by=system, desc=f"No history of {subseries_doc.name.upper()} is currently available in the datatracker before this point"))
+                    rfc_events.append(doc.docevent_set.create(type="sync_from_rfc_editor", by=system, desc=f"Added {doc.name} to {subseries_doc.name}"))
+
+        for subdoc in doc.related_that("contains"):
+            if subdoc.name not in also:
+                assert(not first_sync_creating_subseries)
+                subseries_doc.relateddocument_set.filter(target=subdoc).delete()
+                rfc_events.append(doc.docevent_set.create(type="sync_from_rfc_editor", by=system, desc=f"Removed {doc.name} from {subseries_doc.name}"))
+                subseries_doc.docevent_set.create(type="sync_from_rfc_editor", by=system, desc=f"Removed {doc.name} from {subseries_doc.name}")
 
         doc_errata = errata.get(f"RFC{rfc_number}", [])
         all_rejected = doc_errata and all(

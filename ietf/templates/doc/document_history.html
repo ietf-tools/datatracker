@@ -20,17 +20,28 @@
         <h2 class="my-3">Revision differences</h2>
         {% include "doc/document_history_form.html" with doc=doc diff_revisions=diff_revisions action=rfcdiff_base_url snapshot=snapshot only %}
     {% endif %}
-    <h2 class="my-3">Document history
-    {% if related %}
-        <div class="float-end">
-        {% for related_document in related %}
-            <a class="btn btn-outline-primary btn-sm" 
-               href="{% url 'ietf.doc.views_doc.document_history' name=related_document.name %}">
-                Related history for {{ related_document.name }}
-            </a>
-        {% endfor %}
-        </div>
-    {% endif %}</h2>
+    <h2 class="my-3">Document history</h2>
+    {% if doc.came_from_draft %}
+        <ul class="nav nav-tabs my-3">
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'ietf.doc.views_doc.document_history' name=doc.came_from_draft.name %}">{{doc.came_from_draft.name}}</a>
+            <li>
+            <li class="nav-item">
+                <a class="nav-link active">RFC {{doc.name|slice:"3:"}}</a>
+            </li>
+        </ul>
+    {% endif %}
+    {% if doc.became_rfc %}
+        <ul class="nav nav-tabs my-3">
+            <li class="nav-item">
+                <a class="nav-link active">{{doc.name}}</a>
+            <li>
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'ietf.doc.views_doc.document_history' name=doc.became_rfc.name %}">RFC {{doc.became_rfc.name|slice:"3:"}}</a>
+            </li>
+        </ul>
+    {% endif %}
+
     {% if can_add_comment %}
         <div class="buttonlist">
             <a class="btn btn-primary"
@@ -44,7 +55,7 @@
         <thead>
             <tr>
                 <th scope="col" data-sort="date">Date</th>
-                {% if doc.type_id != "rfc" %}<th scope="col" data-sort="rev">Rev.</th>{% endif %}
+                {% if doc.type_id not in "rfc,bcp,std,fyi" %}<th scope="col" data-sort="rev">Rev.</th>{% endif %}
                 <th scope="col" data-sort="by">By</th>
                 <th scope="col" data-sort="action">Action</th>
             </tr>
@@ -55,7 +66,7 @@
                     <td>
                         <div title="{{ e.time|date:'Y-m-d H:i:s O' }}">{{ e.time|date:"Y-m-d" }}</div>
                     </td>
-                    {% if doc.type_id != "rfc" %}<td class="text-end">{{ e.rev }}</td>{% endif %}
+                    {% if doc.type_id not in "rfc,bcp,std,fyi" %}<td class="text-end">{{ e.rev }}</td>{% endif %}
                     <td>{{ e.by|escape }}</td>
                     <td>{{ e.desc|format_history_text }}</td>
                 </tr>
