@@ -895,3 +895,11 @@ def ajax_select2_search_docs(request, model_name, doc_type): # TODO - remove mod
         objs = qs.distinct().order_by("name")[:20]
 
     return HttpResponse(select2_id_doc_name_json(model, objs), content_type='application/json')
+
+def index_subseries(request, type_id):
+    docs = sorted(Document.objects.filter(type_id=type_id),key=lambda o: int(o.name[3:]))
+    if len(docs)>0:
+        type = docs[0].type
+    else:
+        type = DocTypeName.objects.get(slug=type_id)
+    return render(request, "doc/index_subseries.html", {"type": type, "docs": docs})

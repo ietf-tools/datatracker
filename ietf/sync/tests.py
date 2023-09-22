@@ -371,10 +371,26 @@ class RFCSyncTests(TestCase):
         rfc_doc = Document.objects.filter(rfc_number=1234, type_id="rfc").first()
         self.assertIsNotNone(rfc_doc, "RFC document should have been created")
         rfc_events = rfc_doc.docevent_set.all()
-        self.assertEqual(len(rfc_events), 2)
-        self.assertEqual(rfc_events[0].type, "sync_from_rfc_editor")
-        self.assertEqual(rfc_events[1].type, "published_rfc")
-        self.assertEqual(rfc_events[1].time.astimezone(RPC_TZINFO).date(), today)
+        self.assertEqual(len(rfc_events), 8)
+        expected_events = [
+            ["sync_from_rfc_editor", f"Received changes through RFC Editor sync (created document RFC 1234, created became rfc relationship between {rfc_doc.came_from_draft().name} and RFC 1234, set title to 'A Testing RFC', set abstract to 'This is some interesting text.', set pages to 42, set standardization level to Proposed Standard, added RFC published event at 2023-09-22, created updates relation between RFC 1234 and RFC 123, added Errata tag)"],
+            ["sync_from_rfc_editor", "Added rfc1234 to std1"],
+            ["std_history_marker", "No history of STD1 is currently available in the datatracker before this point"],
+            ["sync_from_rfc_editor", "Added rfc1234 to fyi1"],
+            ["fyi_history_marker", "No history of FYI1 is currently available in the datatracker before this point"],
+            ["sync_from_rfc_editor", "Added rfc1234 to bcp1"],
+            ["bcp_history_marker", "No history of BCP1 is currently available in the datatracker before this point"],
+            ["published_rfc", "RFC published"]
+        ]
+        for index, [event_type, desc] in enumerate(expected_events):
+            self.assertEqual(rfc_events[index].type, event_type)
+            self.assertEqual(rfc_events[index].desc, desc)
+        self.assertEqual(rfc_events[7].time.astimezone(RPC_TZINFO).date(), today)
+        for subseries_slug in ["bcp", "fyi", "std"]:
+            sub = Document.objects.filter(type_id=subseries_slug,name=f"{subseries_slug}1").first()
+            self.assertIsNotNone(sub, f"{subseries_slug}1 not created")
+            self.assertTrue(rfc_doc in sub.contains())
+            self.assertTrue(sub in rfc_doc.part_of())
         self.assertEqual(rfc_doc.get_state_slug(), "published")
         # Should have an "errata" tag because there is an errata-url in the index XML, but no "verified-errata" tag
         # because there is no verified item in the errata JSON with doc-id matching the RFC document.
