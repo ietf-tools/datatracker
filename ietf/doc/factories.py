@@ -517,3 +517,31 @@ class StatementFactory(BaseDocumentFactory):
                 obj.set_state(State.objects.get(type_id=state_type_id, slug=state_slug))
         else:
             obj.set_state(State.objects.get(type_id="statement", slug="active"))
+
+class SubseriesFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = Document
+        skip_postgeneration_save = True
+
+    @factory.lazy_attribute_sequence
+    def name(self, n):
+        return f"{self.type_id}{n}"
+    
+    @factory.post_generation
+    def contains(obj, create, extracted, **kwargs):
+        if not create:
+            return
+        if extracted:
+            for doc in extracted:
+                obj.relateddocument_set.create(relationship_id="contains",target=doc)
+        else:
+            obj.relateddocument_set.create(relationship_id="contains", target=RfcFactory())
+
+class BcpFactory(SubseriesFactory):
+    type_id="bcp"
+
+class StdFactory(SubseriesFactory):
+    type_id="std"
+
+class FyiFactory(SubseriesFactory):
+    type_id="fyi"

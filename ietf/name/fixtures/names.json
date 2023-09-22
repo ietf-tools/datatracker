@@ -2587,6 +2587,13 @@
   },
   {
     "fields": {
+      "label": "bcp state"
+    },
+    "model": "doc.statetype",
+    "pk": "bcp"
+  },
+  {
+    "fields": {
       "label": "State"
     },
     "model": "doc.statetype",
@@ -2706,6 +2713,13 @@
   },
   {
     "fields": {
+      "label": "fyi state"
+    },
+    "model": "doc.statetype",
+    "pk": "fyi"
+  },
+  {
+    "fields": {
       "label": "State"
     },
     "model": "doc.statetype",
@@ -2794,6 +2808,13 @@
     },
     "model": "doc.statetype",
     "pk": "statement"
+  },
+  {
+    "fields": {
+      "label": "std state"
+    },
+    "model": "doc.statetype",
+    "pk": "std"
   },
   {
     "fields": {
@@ -5869,7 +5890,7 @@
   {
     "fields": {
       "desc": "The document's authors",
-      "template": "{% if doc.type_id == \"draft\" %}<{{doc.name}}@ietf.org>{% endif %}"
+      "template": "{% if doc.type_id == \"draft\" or doc.type_id == \"rfc\" %}<{{doc.name}}@ietf.org>{% endif %}"
     },
     "model": "mailtrigger.recipient",
     "pk": "doc_authors"
@@ -10042,6 +10063,17 @@
   },
   {
     "fields": {
+      "desc": "This document contains other documents (e.g., STDs contain RFCs)",
+      "name": "Contains",
+      "order": 0,
+      "revname": "Is part of",
+      "used": true
+    },
+    "model": "name.docrelationshipname",
+    "pk": "contains"
+  },
+  {
+    "fields": {
       "desc": "Approval for downref",
       "name": "approves downref to",
       "order": 0,
@@ -10559,6 +10591,17 @@
   {
     "fields": {
       "desc": "",
+      "name": "Best Current Practice",
+      "order": 0,
+      "prefix": "bcp",
+      "used": true
+    },
+    "model": "name.doctypename",
+    "pk": "bcp"
+  },
+  {
+    "fields": {
+      "desc": "",
       "name": "Bluesheets",
       "order": 0,
       "prefix": "bluesheets",
@@ -10621,6 +10664,17 @@
     },
     "model": "name.doctypename",
     "pk": "draft"
+  },
+  {
+    "fields": {
+      "desc": "",
+      "name": "For Your Information",
+      "order": 0,
+      "prefix": "fyi",
+      "used": true
+    },
+    "model": "name.doctypename",
+    "pk": "fyi"
   },
   {
     "fields": {
@@ -10753,6 +10807,17 @@
     },
     "model": "name.doctypename",
     "pk": "statement"
+  },
+  {
+    "fields": {
+      "desc": "",
+      "name": "Standard",
+      "order": 0,
+      "prefix": "std",
+      "used": true
+    },
+    "model": "name.doctypename",
+    "pk": "std"
   },
   {
     "fields": {
@@ -16604,7 +16669,7 @@
     "fields": {
       "command": "xym",
       "switch": "--version",
-      "time": "2023-08-22T07:09:39.542Z",
+      "time": "2023-09-21T07:09:40.201Z",
       "used": true,
       "version": "xym 0.7.0"
     },
@@ -16615,7 +16680,7 @@
     "fields": {
       "command": "pyang",
       "switch": "--version",
-      "time": "2023-08-22T07:09:39.881Z",
+      "time": "2023-09-21T07:09:40.525Z",
       "used": true,
       "version": "pyang 2.5.3"
     },
@@ -16626,7 +16691,7 @@
     "fields": {
       "command": "yanglint",
       "switch": "--version",
-      "time": "2023-08-22T07:09:39.899Z",
+      "time": "2023-09-21T07:09:40.546Z",
       "used": true,
       "version": "yanglint SO 1.9.2"
     },
@@ -16637,7 +16702,7 @@
     "fields": {
       "command": "xml2rfc",
       "switch": "--version",
-      "time": "2023-08-22T07:09:40.791Z",
+      "time": "2023-09-21T07:09:41.465Z",
       "used": true,
       "version": "xml2rfc 3.18.0"
     },

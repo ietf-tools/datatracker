@@ -7,7 +7,7 @@
   {% origin %}
   <h1>{{type.name}}s</h1>
   {% for doc in docs %}
-    <div class="card mb-3" id={{doc.name}}>
+    <div class="card mb-3" id="{{doc.name}}">
     <div class="card-header"><a href="{% url 'ietf.doc.views_doc.document_main' name=doc.name %}">{{doc.name}}</a></div>
       <div class="card-body">
         {% for rfc in doc.contains %}

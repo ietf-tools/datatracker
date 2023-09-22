@@ -5,7 +5,9 @@
 <h1>
     {{ doc.title|default:"(Untitled)" }}
     <br>
-    <small class="text-body-secondary">{{ name }}</small>
+    <small class="text-body-secondary">{{ name }}{% if doc.part_of %}
+    {% for sub in doc.part_of %}{% if sub.contains|length_is:"1" %} also known as {% else %} part of {% endif %}<a href="{% url 'ietf.doc.views_doc.document_main' name=sub.name%}">{{sub.name|slice:":3"|upper}} {{sub.name|slice:"3:"}}</a>{% if not forloop.last %}, {%endif%}{% endfor %}
+    {% endif %}</small>
 </h1>
 <ul class="nav nav-tabs my-3">
     {% for name, t, url, active, tooltip in tabs %}
