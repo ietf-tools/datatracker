@@ -34,7 +34,7 @@
             </li>
         {% endif %}
         <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle {% if selected == 'feedback' or selected == 'view-feedback' %}active{% endif %}" data-bs-toggle="dropdown" href="#">Feedback</a>
+            <a class="nav-link dropdown-toggle {% if selected in 'feedback,view-feedback'|split:',' %}active{% endif %}" data-bs-toggle="dropdown" href="#">Feedback</a>
             <ul class="dropdown-menu mt-n1" role="menu">
             {% if nomcom|has_publickey %}
             <li>
@@ -67,7 +67,7 @@
                 </a>
             </li>
             <li class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle {% if selected == 'feedback-email' or selected == 'questionnaire-response' or selected == 'extract-email-lists' or selected == 'send-reminder-mail-accept' or selected == 'send-reminder-mail-questionnaire' or selected == 'merge-person' or selected == 'merge-nominee' or selected == 'edit-nomcom' or selected == 'chair-templates' or selected == 'chair-position' or selected == 'chair-topic' or selected == 'edit-members' or selected == 'help' %}active{% endif %}" data-bs-toggle="dropdown" href="#">Chair/advisor tasks</a>
+                <a class="nav-link dropdown-toggle {% if selected in 'feedback-email,questionnaire-response,extract-email-lists,send-reminder-mail-accept,send-reminder-mail-questionnaire,merge-person,merge-nominee,edit-nomcom,chair-templates,chair-position,chair-topic,edit-members,help'|split:',' %}active{% endif %}" data-bs-toggle="dropdown" href="#">Chair/advisor tasks</a>
                 <ul class="dropdown-menu mt-n1" role="menu">
                     {% if nomcom.group.state_id == 'active' %}
                         <li role="presentation" class="dropdown-header">Feedback Management</li>
@@ -125,7 +125,7 @@
         {% endif %}
         {% if user|is_chair_or_advisor:year or user|has_role:"Secretariat" %}
             <li class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle {% if selected == 'chair-eligible' or selected == 'chair-volunteers' %}active{% endif %}" data-bs-toggle="dropdown" href="#">
+                <a class="nav-link dropdown-toggle {% if selected in 'chair-eligible,chair-volunteers'|split:',' %}active{% endif %}" data-bs-toggle="dropdown" href="#">
                     Volunteers
                 </a>
                 <ul class="dropdown-menu mt-n1" role="menu">

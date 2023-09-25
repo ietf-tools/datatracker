@@ -49,7 +49,7 @@
         </li>
         {% if user|is_chair_or_advisor:year or user|has_role:"Secretariat" %}
             <li class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle {% if selected == 'eligible' or selected == 'volunteers' %}active{% endif %}" data-bs-toggle="dropdown" href="#">Volunteers</a>
+                <a class="nav-link dropdown-toggle {% if selected in 'eligibl,volunteers'|split:',' %}active{% endif %}" data-bs-toggle="dropdown" href="#">Volunteers</a>
                 <ul class="dropdown-menu mt-n1" role="menu">
                     <li class="nav-item">
                         <a class="dropdown-item {% if selected == 'eligible' %}active{% endif %}"
