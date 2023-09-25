@@ -9,9 +9,7 @@
 {% endblock %}
 {% block content %}
     {% origin %}
-    {% with parts=request.path|split:'/' %}
-    {% with l0=parts|slice:'1:'|last l1=parts|slice:'-2:-1'|last %}
-    {% with selected=l0|default:l1 %}
+    {% with selected=request.path|split:'/'|slice:'4:-1'|join:'-' %}
     <h1>
         NomCom {{ year }}
         {% if nomcom.group.state_id == 'conclude' %}<span class="badge rounded-pill text-bg-info">Concluded</span>{% endif %}
@@ -22,7 +20,7 @@
     </h1>
     <ul class="nav nav-tabs my-3">
         <li class="nav-item">
-            <a class="nav-link {% if selected == 'private' %}active{% endif %}"
+            <a class="nav-link {% if selected == '' %}active{% endif %}"
                href="{% url "ietf.nomcom.views.private_index" year %}">
                 Nominees
             </a>
@@ -36,7 +34,7 @@
             </li>
         {% endif %}
         <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle {% if selected in "feedback,view-feedback" %}active{% endif %}" data-bs-toggle="dropdown" href="#">Feedback</a>
+            <a class="nav-link dropdown-toggle {% if selected == 'feedback' or selected == 'view-feedback' %}active{% endif %}" data-bs-toggle="dropdown" href="#">Feedback</a>
             <ul class="dropdown-menu mt-n1" role="menu">
             {% if nomcom|has_publickey %}
             <li>
@@ -62,14 +60,14 @@
         </li>
         {% if user|is_chair_or_advisor:year %}
             <li class="nav-item">
-                <a class="nav-link {% if selected == 'pending' %}active{% endif %}"
+                <a class="nav-link {% if selected == 'view-feedback-pending' %}active{% endif %}"
                    href="{% url 'ietf.nomcom.views.view_feedback_pending' year %}">
                     Pending emails
                     {% if nomcom.pending_email_count %}<span class="badge rounded-pill text-bg-primary">{{ nomcom.pending_email_count }}</span>{% endif %}
                 </a>
             </li>
             <li class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle {% if selected in "feedback-email,questionnaire-response,extract-email-lists,accept,questionnaire,merge-person,merge-nominee,edit-nomcom,templates,position,topic,edit-members,help" %}active{% endif %}" data-bs-toggle="dropdown" href="#">Chair/advisor tasks</a>
+                <a class="nav-link dropdown-toggle {% if selected == 'feedback-email' or selected == 'questionnaire-response' or selected == 'extract-email-lists' or selected == 'send-reminder-mail-accept' or selected == 'send-reminder-mail-questionnaire' or selected == 'merge-person' or selected == 'merge-nominee' or selected == 'edit-nomcom' or selected == 'chair-templates' or selected == 'chair-position' or selected == 'chair-topic' or selected == 'edit-members' or selected == 'help' %}active{% endif %}" data-bs-toggle="dropdown" href="#">Chair/advisor tasks</a>
                 <ul class="dropdown-menu mt-n1" role="menu">
                     {% if nomcom.group.state_id == 'active' %}
                         <li role="presentation" class="dropdown-header">Feedback Management</li>
@@ -83,10 +81,10 @@
                             <a class="dropdown-item {% if selected == 'extract-email-lists' %}active{% endif %}" href="{% url 'ietf.nomcom.views.extract_email_lists' year %}">Extract email lists</a>
                         </li>
                         <li>
-                            <a class="dropdown-item {% if selected == 'accept' %}active{% endif %}" href="{% url 'ietf.nomcom.views.send_reminder_mail' year "accept" %}">Send accept reminder</a>
+                            <a class="dropdown-item {% if selected == 'send-reminder-mail-accept' %}active{% endif %}" href="{% url 'ietf.nomcom.views.send_reminder_mail' year "accept" %}">Send accept reminder</a>
                         </li>
                         <li>
-                            <a class="dropdown-item {% if selected == 'questionnaire' %}active{% endif %}" href="{% url 'ietf.nomcom.views.send_reminder_mail' year "questionnaire" %}">Send questionnaire reminder</a>
+                            <a class="dropdown-item {% if selected == 'send-reminder-mail-questionnaire' %}active{% endif %}" href="{% url 'ietf.nomcom.views.send_reminder_mail' year "questionnaire" %}">Send questionnaire reminder</a>
                         </li>
                         <li>
                             <a class="dropdown-item {% if selected == 'merge-person' %}active{% endif %}" href="{% url "ietf.nomcom.views.private_merge_person" year %}">Request person record merge</a>
@@ -101,13 +99,13 @@
                         <a class="dropdown-item {% if selected == 'edit-nomcom' %}active{% endif %}" href="{% url 'ietf.nomcom.views.edit_nomcom' year %}">Edit settings</a>
                     </li>
                     <li>
-                        <a class="dropdown-item {% if selected == 'templates' %}active{% endif %}" href="{% url 'ietf.nomcom.views.list_templates' year %}">Edit pages</a>
+                        <a class="dropdown-item {% if selected == 'chair-templates' %}active{% endif %}" href="{% url 'ietf.nomcom.views.list_templates' year %}">Edit pages</a>
                     </li>
                     <li>
-                        <a class="dropdown-item {% if selected == 'position' %}active{% endif %}" href="{% url 'ietf.nomcom.views.list_positions' year %}">Edit positions</a>
+                        <a class="dropdown-item {% if selected == 'chair-position' %}active{% endif %}" href="{% url 'ietf.nomcom.views.list_positions' year %}">Edit positions</a>
                     </li>
                     <li>
-                        <a class="dropdown-item {% if selected == 'topic' %}active{% endif %}" href="{% url 'ietf.nomcom.views.list_topics' year %}">Edit topics</a>
+                        <a class="dropdown-item {% if selected == 'chair-topic' %}active{% endif %}" href="{% url 'ietf.nomcom.views.list_topics' year %}">Edit topics</a>
                     </li>
                     {% if nomcom.group.state_id == 'active' %}
                         <li>
@@ -127,17 +125,17 @@
         {% endif %}
         {% if user|is_chair_or_advisor:year or user|has_role:"Secretariat" %}
             <li class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle {% if selected in 'eligible,volunteers' %}active{% endif %}" data-bs-toggle="dropdown" href="#">
+                <a class="nav-link dropdown-toggle {% if selected == 'chair-eligible' or selected == 'chair-volunteers' %}active{% endif %}" data-bs-toggle="dropdown" href="#">
                     Volunteers
                 </a>
                 <ul class="dropdown-menu mt-n1" role="menu">
                     <li>
-                        <a class="dropdown-item {% if selected == 'eligible' %}active{% endif %}" href="{% url 'ietf.nomcom.views.private_eligible' year %}">
+                        <a class="dropdown-item {% if selected == 'chair-eligible' %}active{% endif %}" href="{% url 'ietf.nomcom.views.private_eligible' year %}">
                             View eligible
                         </a>
                     </li>
                     <li>
-                        <a class="dropdown-item {% if selected == 'volunteers' %}active{% endif %}" href="{% url 'ietf.nomcom.views.private_volunteers' year %}">
+                        <a class="dropdown-item {% if selected == 'chair-volunteers' %}active{% endif %}" href="{% url 'ietf.nomcom.views.private_volunteers' year %}">
                             View volunteers
                         </a>
                     </li>
@@ -152,8 +150,6 @@
         </li>
     </ul>
     {% block nomcom_content %}{% endblock %}
-    {% endwith %}
-    {% endwith %}
     {% endwith %}
 {% endblock %}
 {% block js %}

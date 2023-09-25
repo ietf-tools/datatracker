@@ -9,16 +9,14 @@
 {% endblock %}
 {% block content %}
     {% origin %}
-    {% with parts=request.path|split:'/' %}
-    {% with l0=parts|slice:'1:'|last l1=parts|slice:'-2:-1'|last %}
-    {% with selected=l0|default:l1 %}
+    {% with selected=request.path|split:'/'|slice:'3:-1'|join:'-' %}
     <h1>
         NomCom {{ year }}
         {% if nomcom.group.state_id == 'conclude' %}<span class="badge rounded-pill text-bg-info">Concluded</span>{% endif %}
     </h1>
     <ul class="nav nav-tabs my-3">
         <li class="nav-item">
-            <a class="nav-link {% if selected == year %}active{% endif %}"
+            <a class="nav-link {% if selected == '' %}active{% endif %}"
                href="{% url 'ietf.nomcom.views.year_index' year %}">
                 Home
             </a>
@@ -51,7 +49,7 @@
         </li>
         {% if user|is_chair_or_advisor:year or user|has_role:"Secretariat" %}
             <li class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle {% if selected in 'eligible,volunteers' %}active{% endif %}" data-bs-toggle="dropdown" href="#">Volunteers</a>
+                <a class="nav-link dropdown-toggle {% if selected == 'eligible' or selected == 'volunteers' %}active{% endif %}" data-bs-toggle="dropdown" href="#">Volunteers</a>
                 <ul class="dropdown-menu mt-n1" role="menu">
                     <li class="nav-item">
                         <a class="dropdown-item {% if selected == 'eligible' %}active{% endif %}"
@@ -66,8 +64,6 @@
         {% endif %}
     </ul>
     {% block nomcom_content %}{% endblock %}
-    {% endwith %}
-    {% endwith %}
     {% endwith %}
 {% endblock %}
 {% block js %}
