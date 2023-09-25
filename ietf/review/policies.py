@@ -75,7 +75,8 @@ class AbstractReviewerQueuePolicy:
             assignment.assigned_on = timezone.now()
             assignment.save()
             return assignment
-        return review_req.reviewassignment_set.create(state_id='assigned', reviewer=reviewer, assigned_on=timezone.now())
+        else:
+            return review_req.reviewassignment_set.create(state_id='assigned', reviewer=reviewer, assigned_on=timezone.now())
 
     def default_reviewer_rotation_list(self, include_unavailable=False):
         """ Return a list of reviewers (Person objects) in the default reviewer rotation for a policy.
