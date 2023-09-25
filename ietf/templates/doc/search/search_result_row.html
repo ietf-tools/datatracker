@@ -110,7 +110,9 @@
             {% if doc.rev != "00" %}
                 <a href="{{ rfcdiff_base_url }}?url2={{ doc.name }}-{{ doc.rev }}">
             {% elif doc.replaces %}
-                <a href="{{ rfcdiff_base_url }}?url1={{ doc.replaces_name }}&amp;url2={{ doc.name }}-{{ doc.rev }}">
+                {% with first_replaces=doc.replaces|first %}
+                    <a href="{{ rfcdiff_base_url }}?url1={{ first_replaces.name }}&amp;url2={{ doc.name }}-{{ doc.rev }}">
+                {% endwith %}
             {% endif %}
         {% endif %}
         {% if doc.type_id == "rfc" %}

@@ -512,12 +512,7 @@ class DocumentInfo(models.Model):
         return list(set([x.target for x in self.all_relations_that_doc(relationship)]))
 
     def replaces(self):
-        return set([ d for r in self.related_that_doc("replaces") for d in r.docs.all() ])
-
-    def replaces_name(self):
-        s = set([ r.document for r in self.related_that_doc("replaces")])
-        first = list(s)[0] if s else None
-        return None if first is None else first.filename_with_rev()
+        return self.related_that_doc("replaces")
 
     def replaced_by(self):
         return set([ r.document for r in self.related_that("replaces") ])
