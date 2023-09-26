@@ -24,21 +24,21 @@
     {% if doc.came_from_draft %}
         <ul class="nav nav-tabs my-3">
             <li class="nav-item">
-                <a class="nav-link" href="{% url 'ietf.doc.views_doc.document_history' name=doc.came_from_draft.name %}">{{doc.came_from_draft.name}}</a>
-            <li>
-            <li class="nav-item">
                 <a class="nav-link active">RFC {{doc.name|slice:"3:"}}</a>
             </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'ietf.doc.views_doc.document_history' name=doc.came_from_draft.name %}">{{doc.came_from_draft.name}}</a>
+            <li>
         </ul>
     {% endif %}
     {% if doc.became_rfc %}
         <ul class="nav nav-tabs my-3">
             <li class="nav-item">
-                <a class="nav-link active">{{doc.name}}</a>
-            <li>
-            <li class="nav-item">
                 <a class="nav-link" href="{% url 'ietf.doc.views_doc.document_history' name=doc.became_rfc.name %}">RFC {{doc.became_rfc.name|slice:"3:"}}</a>
             </li>
+            <li class="nav-item">
+                <a class="nav-link active">{{doc.name}}</a>
+            <li>
         </ul>
     {% endif %}
 
