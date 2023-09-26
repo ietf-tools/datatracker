@@ -62,6 +62,8 @@ urlpatterns = [
     url(r'^directauth/?$', api_views.directauth),
     url(r'^rpc/person/(?P<person_id>[0-9]+)$', api_views.rpc_person),
     url(r'^rpc/doc/submitted_to_rpc/$', api_views.submitted_to_rpc),
+    url(r'^rpc/person/create_demo_person/$', api_views.create_demo_person),
+
 
 ]
 

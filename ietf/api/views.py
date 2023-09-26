@@ -31,6 +31,7 @@ from tastypie.serializers import Serializer
 import debug                            # pyflakes:ignore
 
 import ietf
+from ietf.person.factories import PersonFactory
 from ietf.person.models import Person, Email
 from ietf.api import _api_list
 from ietf.api.serializer import JsonExportMixin
@@ -467,3 +468,23 @@ def submitted_to_rpc(request):
         response["submitted_to_rpc"].append({"name":doc.name, "pk": doc.pk, "stream": doc.stream_id, "submitted": f"{doc.sent_to_rfc_editor_event().time:%Y-%m-%d}"}) #TODO reconcile timezone
 
     return JsonResponse(response)
+
+@csrf_exempt
+def create_demo_person(request):
+    """ Helper for creating rpc demo objects - SHOULD NOT MAKE IT INTO PRODUCTION
+
+    """
+    authtoken = request.META.get("HTTP_X_API_KEY", None)
+    if authtoken is None or not is_valid_token("ietf.api.views.submitted_to_rpc", authtoken):
+        return HttpResponseForbidden()
+    if request.method != "POST":
+        return HttpResponseForbidden()
+    
+    request_params = json.loads(request.body)
+    name = request_params["name"]
+    if Person.objects.filter(name=name).exists():
+        return HttpResponseForbidden()
+    person = PersonFactory(name=name)
+
+
+    return JsonResponse({"user_id":person.user.pk,"person_pk":person.pk}, status=201)

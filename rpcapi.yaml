@@ -26,6 +26,33 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/Person'
 
+    /person/create_demo_person/:
+        post:
+            operationId: create_demo_person
+            summary: Build a datatraker Person for RPC demo purposes
+            description: returns a datatracker User id for a person created with the given name
+            requestBody:
+                required: true
+                content:
+                  application/json:
+                    schema:
+                      type: object
+                      properties:
+                        name:
+                          type: string
+            responses:
+              '201':
+                  description: OK
+                  content:
+                      application/json:
+                        schema:
+                          type: object
+                          properties:
+                            user_id:
+                              type: integer
+                            person_pk:
+                              type: integer
+
     /doc/submitted_to_rpc:
         get:
             operationId: submitted_to_rpc
