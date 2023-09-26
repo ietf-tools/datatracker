@@ -1,0 +1,68 @@
+openapi: 3.0.3
+info:
+    title: Datatracker RPC API
+    description: Datatracker RPC API
+    version: 1.0.0
+servers:
+    -   url: 'http://localhost:8000/api/rpc/'
+paths:
+    /person/{personId}:
+        get:
+            operationId: get_person_by_id
+            summary: Find person by ID
+            description: Returns a single person
+            parameters:
+                - name: personId
+                  in: path
+                  description: ID of person to return
+                  required: true
+                  schema:
+                      type: integer
+            responses:
+                '200':
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Person'
+
+#    /subject/person{subjectId}:
+#        get:
+#            operationId: get_subject_person_by_id
+#            summary: Find person for a subject by ID
+#            description: Returns a single person
+#            parameters:
+#                -   name: subjectId
+#                    in: path
+#                    description: subject ID of person to return
+#                    required: true
+#                    schema:
+#                        type: string
+#            responses:
+#                '200':
+#                    description: OK
+#                    content:
+#                        application/json:
+#                            schema:
+#                                $ref: '#/components/schemas/Person'
+
+components: 
+    schemas: 
+        Person:
+            type: object
+            properties:
+                id:
+                    type: integer
+                    example: 1234
+                plain_name:
+                    type: string
+                    example: John Doe
+
+    securitySchemes: 
+        ApiKeyAuth:
+            type: apiKey
+            in: header
+            name: X-API-KEY
+
+security:
+    - ApiKeyAuth: []
