@@ -267,6 +267,9 @@ $(document)
                                 });
                         }
                     });
+                    e.on("searchComplete", function () {
+                        replace_with_internal(table, internal_table, i);
+                    });
                 });
 
                 $(table.addClass("tablesorter-done"));
