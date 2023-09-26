@@ -464,9 +464,6 @@ def submitted_to_rpc(request):
     docs = Document.objects.filter(type_id="draft").filter(ietf_docs|irtf_iab_ise_docs)
     response = {"submitted_to_rpc": []}
     for doc in docs:
-        if not doc.sent_to_rfc_editor_event():
-            debug.show("doc")
-            debug.show("doc.stream")
         response["submitted_to_rpc"].append({"name":doc.name, "pk": doc.pk, "stream": doc.stream_id, "submitted": f"{doc.sent_to_rfc_editor_event().time:%Y-%m-%d}"}) #TODO reconcile timezone
 
     return JsonResponse(response)
