@@ -26,6 +26,30 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/Person'
 
+    /persons/:
+        post:
+            operationId: get_persons
+            summary: Get a batch of persons
+            description: returns a dict of person pks to person names
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: array
+                            items:
+                                type: integer
+            responses:
+                '200':
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                additionalProperties:
+                                    type: string
+
+                
     /person/create_demo_person/:
         post:
             operationId: create_demo_person

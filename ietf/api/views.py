@@ -451,6 +451,24 @@ def rpc_person(request, person_id):
     })
 
 @csrf_exempt
+def rpc_persons(request):
+    """ Get a batch of rpc person names
+
+    """
+    authtoken = request.META.get("HTTP_X_API_KEY", None)
+    if authtoken is None or not is_valid_token("ietf.api.views.rpc_person", authtoken):
+        return HttpResponseForbidden()
+    if request.method != "POST":
+        return HttpResponseForbidden()
+    
+    pks = json.loads(request.body)
+    response = dict()
+    for p in Person.objects.filter(pk__in=pks):
+        response[str(p.pk)] = p.plain_name()
+    return JsonResponse(response)
+
+
+@csrf_exempt
 def submitted_to_rpc(request):
     """ Return documents in datatracker that have been submitted to the RPC but are not yet in the queue
     
