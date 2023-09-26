@@ -660,6 +660,15 @@ class DocumentInfo(models.Model):
 
     def referenced_by_rfcs(self):
         return self.relations_that(('refnorm','refinfo','refunk','refold')).filter(source__states__type__slug='draft',source__states__slug='rfc')
+    
+    def sent_to_rfc_editor_event(self):
+        if self.stream_id == "ietf":
+            return self.docevent_set.filter(type="iesg_approved").order_by("-time").first()
+        elif self.stream_id in ["iab", "irtf", "ise"]:
+            return self.docevent_set.filter(type="requested_publication").order_by("-time").first()
+        #elif self.stream_id == "editorial": #TODO
+        else:
+            return None
 
     class Meta:
         abstract = True

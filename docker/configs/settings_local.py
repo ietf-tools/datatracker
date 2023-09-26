@@ -58,3 +58,8 @@ DE_GFM_BINARY = '/usr/local/bin/de-gfm'
 
 STATIC_IETF_ORG = "/_static"
 STATIC_IETF_ORG_INTERNAL = "http://static"
+
+APP_API_TOKENS = {
+    "ietf.api.views.rpc_person" : ["devtoken"],
+    "ietf.api.views.submitted_to_rpc" : ["devtoken"]
+}
