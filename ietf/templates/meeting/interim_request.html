@@ -24,8 +24,8 @@
             </div>
         {% endif %}
         {% bootstrap_field form.meeting_type layout='horizontal' %}
-        {% bootstrap_field form.city layout='horizontal' %}
-        {% bootstrap_field form.country layout='horizontal' %}
+        {% bootstrap_field form.city layout='horizontal' wrapper_class='location mb-3' %}
+        {% bootstrap_field form.country layout='horizontal' wrapper_class='location mb-3' %}
         {% bootstrap_field form.time_zone layout='horizontal' %}
         {{ formset.management_form }}
         {% if formset.non_form_errors %}<div class="my-3 alert alert-danger">{{ formset.non_form_errors }}</div>{% endif %}
