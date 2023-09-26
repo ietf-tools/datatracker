@@ -373,7 +373,7 @@ class RFCSyncTests(TestCase):
         rfc_events = rfc_doc.docevent_set.all()
         self.assertEqual(len(rfc_events), 8)
         expected_events = [
-            ["sync_from_rfc_editor", f"Received changes through RFC Editor sync (created document RFC 1234, created became rfc relationship between {rfc_doc.came_from_draft().name} and RFC 1234, set title to 'A Testing RFC', set abstract to 'This is some interesting text.', set pages to 42, set standardization level to Proposed Standard, added RFC published event at 2023-09-22, created updates relation between RFC 1234 and RFC 123, added Errata tag)"],
+            ["sync_from_rfc_editor", ""], # Not looking for exact desc match here - see detailed tests below
             ["sync_from_rfc_editor", "Added rfc1234 to std1"],
             ["std_history_marker", "No history of STD1 is currently available in the datatracker before this point"],
             ["sync_from_rfc_editor", "Added rfc1234 to fyi1"],
@@ -384,7 +384,18 @@ class RFCSyncTests(TestCase):
         ]
         for index, [event_type, desc] in enumerate(expected_events):
             self.assertEqual(rfc_events[index].type, event_type)
-            self.assertEqual(rfc_events[index].desc, desc)
+            if index == 0:
+                self.assertIn("Received changes through RFC Editor sync (created document RFC 1234,", rfc_events[0].desc)
+                self.assertIn(f"created became rfc relationship between {rfc_doc.came_from_draft().name} and RFC 1234", rfc_events[0].desc)
+                self.assertIn("set title to 'A Testing RFC'", rfc_events[0].desc)
+                self.assertIn("set abstract to 'This is some interesting text.'", rfc_events[0].desc)
+                self.assertIn("set pages to 42", rfc_events[0].desc)
+                self.assertIn("set standardization level to Proposed Standard", rfc_events[0].desc)
+                self.assertIn(f"added RFC published event at {rfc_events[0].time:%Y-%m-%d}", rfc_events[0].desc)
+                self.assertIn("created updates relation between RFC 1234 and RFC 123", rfc_events[0].desc)
+                self.assertIn("added Errata tag", rfc_events[0].desc)
+            else:
+                self.assertEqual(rfc_events[index].desc, desc)
         self.assertEqual(rfc_events[7].time.astimezone(RPC_TZINFO).date(), today)
         for subseries_slug in ["bcp", "fyi", "std"]:
             sub = Document.objects.filter(type_id=subseries_slug,name=f"{subseries_slug}1").first()
