@@ -60,6 +60,7 @@ urlpatterns = [
     url(r'^rfcdiff-latest-json/(?P<name>[Rr][Ff][Cc] [0-9]+?)(\.txt|\.html)?/?$', api_views.rfcdiff_latest_json),
     # direct authentication
     url(r'^directauth/?$', api_views.directauth),
+    url(r'^rpc/person/(?P<person_id>[0-9]+)$', api_views.rpc_person),
 ]
 
 # Additional (standard) Tastypie endpoints

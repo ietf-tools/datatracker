@@ -14,7 +14,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
-from django.http import HttpResponse, Http404
+from django.http import HttpResponse, Http404, JsonResponse, HttpResponseForbidden
 from django.shortcuts import render, get_object_or_404
 from django.urls import reverse
 from django.utils.decorators import method_decorator
@@ -435,3 +435,14 @@ def directauth(request):
 
     else:
         return HttpResponse(status=405)
+
+@csrf_exempt
+def rpc_person(request, person_id):
+    authtoken = request.META.get("HTTP_X_API_KEY", None)
+    if authtoken is None or not is_valid_token("ietf.api.views.rpc_person", authtoken):
+        return HttpResponseForbidden()
+    person = get_object_or_404(Person, pk=person_id)
+    return JsonResponse({
+        "id": person.id,
+        "plain_name": person.plain_name(),
+    })
