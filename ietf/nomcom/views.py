@@ -220,7 +220,7 @@ def private_index(request, year):
     selected_state = request.GET.get('state')
     selected_position = request.GET.get('position')
 
-    if selected_state and not selected_state == questionnaire_state and not selected_state == not_declined_state:
+    if selected_state and selected_state not in [questionnaire_state, not_declined_state]:
         filters['state__slug'] = selected_state
 
     if selected_position:
