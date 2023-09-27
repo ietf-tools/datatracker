@@ -216,10 +216,11 @@ def private_index(request, year):
 
     filters = {}
     questionnaire_state = "questionnaire"
+    not_declined_state = "not-declined"
     selected_state = request.GET.get('state')
     selected_position = request.GET.get('position')
 
-    if selected_state and not selected_state == questionnaire_state:
+    if selected_state and selected_state not in [questionnaire_state, not_declined_state]:
         filters['state__slug'] = selected_state
 
     if selected_position:
@@ -231,13 +232,15 @@ def private_index(request, year):
 
     if selected_state == questionnaire_state:
         nominee_positions = [np for np in nominee_positions if np.questionnaires]
+    elif selected_state == not_declined_state:
+        nominee_positions = nominee_positions.exclude(state__slug='declined')
 
     positions = Position.objects.get_by_nomcom(nomcom=nomcom)
     stats = [ { 'position__name':p.name,
                 'position__id':p.pk,
                 'position': p,
               } for p in positions]
-    states = [{'slug': questionnaire_state, 'name': 'Accepted and sent Questionnaire'}] + list(NomineePositionStateName.objects.values('slug', 'name'))
+    states = [{'slug': questionnaire_state, 'name': 'Accepted and sent Questionnaire'}, {'slug': not_declined_state, 'name': 'Not declined'}] + list(NomineePositionStateName.objects.values('slug', 'name'))
     positions = set([ n.position for n in all_nominee_positions.order_by('position__name') ])
     for s in stats:
         for state in states:
