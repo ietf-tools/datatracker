@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2016-2020, All Rights Reserved
+# Copyright The IETF Trust 2016-2023, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -355,6 +355,23 @@ class ReviewTests(TestCase):
         request_events = review_req.reviewrequestdocevent_set.all()
         self.assertEqual(request_events.count(), 0)
 
+    def test_assign_reviewer_after_reject(self):
+        doc = WgDraftFactory()
+        review_team = ReviewTeamFactory()
+        rev_role = RoleFactory(group=review_team,person__user__username='reviewer',person__user__email='reviewer@example.com',name_id='reviewer')
+        reviewer_email = Email.objects.get(person__user__username="reviewer")
+        RoleFactory(group=review_team,person__user__username='reviewsecretary',name_id='secr')
+        review_req = ReviewRequestFactory(team=review_team,doc=doc)
+        ReviewAssignmentFactory(review_request=review_req, state_id='rejected', reviewer=rev_role.person.email_set.first())
+
+        url = urlreverse('ietf.doc.views_review.assign_reviewer', kwargs={ "name": doc.name, "request_id": review_req.pk })
+        login_testing_unauthorized(self, "reviewsecretary", url)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        reviewer_label = q("option[value=\"{}\"]".format(reviewer_email.address)).text().lower()
+        self.assertIn("rejected review of document before", reviewer_label)
+
     def test_previously_reviewed_replaced_doc(self):
         review_team = ReviewTeamFactory(acronym="reviewteam", name="Review Team", type_id="review", list_email="reviewteam@ietf.org", parent=Group.objects.get(acronym="farfut"))
         rev_role = RoleFactory(group=review_team,person__user__username='reviewer',person__user__email='reviewer@example.com',person__name='Some Reviewer',name_id='reviewer')
@@ -568,6 +585,29 @@ class ReviewTests(TestCase):
         self.assertNotContains(r, 'can not be rejected')
         self.assertContains(r, '<button type="submit"')
 
+
+    def test_accept_reviewer_assignment_after_reject(self):
+        doc = WgDraftFactory()
+        review_team = ReviewTeamFactory()
+        rev_role = RoleFactory(group=review_team,name_id='reviewer')
+        review_req = ReviewRequestFactory(doc=doc,team=review_team)
+        assignment = ReviewAssignmentFactory(review_request=review_req, state_id='rejected', reviewer=rev_role.person.email_set.first())
+
+        url = urlreverse('ietf.doc.views_review.review_request', kwargs={ "name": doc.name, "request_id": review_req.pk })
+        username = assignment.reviewer.person.user.username
+        self.client.login(username=username, password=username + "+password")
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        d = q('.reviewer-assignment-not-accepted')
+        self.assertTrue(d("[name=action][value=accept]"))
+
+        # accept
+        r = self.client.post(url, { "action": "accept" })
+        self.assertEqual(r.status_code, 302)
+
+        assignment = reload_db_objects(assignment)
+        self.assertEqual(assignment.state_id, "accepted")
 
     def make_test_mbox_tarball(self, review_req):
         mbox_path = os.path.join(self.review_dir, "testmbox.tar.gz")

@@ -223,7 +223,7 @@ def review_request(request, name, request_id):
     for assignment in assignments:
         assignment.is_reviewer = user_is_person(request.user, assignment.reviewer.person)
 
-        assignment.can_accept_reviewer_assignment = (assignment.state_id == "assigned"
+        assignment.can_accept_reviewer_assignment = (assignment.state_id in ["assigned", "rejected"]
                                                      and (assignment.is_reviewer or can_manage_request))
 
         assignment.can_reject_reviewer_assignment = (assignment.state_id in ["assigned", "accepted"]
