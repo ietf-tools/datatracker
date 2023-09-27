@@ -39,7 +39,7 @@ echo "Running Datatracker migrations..."
 /usr/local/bin/python ./ietf/manage.py migrate --settings=settings_local
 
 echo "Syncing with the rfc-index
-./ietf/bin/rfc-editor-updates -d 1969-01-01
+./ietf/bin/rfc-editor-index-updates -d 1969-01-01
 
 echo "Starting Datatracker..."
 ./ietf/manage.py runserver 0.0.0.0:8000 --settings=settings_local
