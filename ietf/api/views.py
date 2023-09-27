@@ -462,9 +462,12 @@ def rpc_persons(request):
         return HttpResponseForbidden()
     
     pks = json.loads(request.body)
-    response = dict()
-    for p in Person.objects.filter(pk__in=pks):
-        response[str(p.pk)] = p.plain_name()
+    response = {
+        "persons": [
+            {"id": p.id, "plain_name": p.plain_name()}
+            for p in Person.objects.filter(pk__in=pks)
+        ]
+    }
     return JsonResponse(response)
 
 

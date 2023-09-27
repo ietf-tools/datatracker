@@ -30,7 +30,7 @@ paths:
         post:
             operationId: get_persons
             summary: Get a batch of persons
-            description: returns a dict of person pks to person names
+            description: returns an array of persons 
             requestBody:
                 required: true
                 content:
@@ -46,8 +46,11 @@ paths:
                         application/json:
                             schema:
                                 type: object
-                                additionalProperties:
-                                    type: string
+                                properties:
+                                    persons:
+                                        type: array
+                                        items:
+                                            $ref: '#/components/schemas/Person'
 
                 
     /person/create_demo_person/:
