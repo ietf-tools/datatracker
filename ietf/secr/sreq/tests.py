@@ -81,9 +81,9 @@ class SessionRequestTestCase(TestCase):
     def test_edit(self):
         meeting = MeetingFactory(type_id='ietf', date=date_today())
         mars = RoleFactory(name_id='chair', person__user__username='marschairman', group__acronym='mars').group
-        group2 = GroupFactory()
-        group3 = GroupFactory()
-        group4 = GroupFactory()
+        group2 = GroupFactory(acronym='group2')
+        group3 = GroupFactory(acronym='group3')
+        group4 = GroupFactory(acronym='group4')
         iabprog = GroupFactory(type_id='program')
 
         SessionFactory(meeting=meeting,group=mars,status_id='sched')
@@ -144,6 +144,7 @@ class SessionRequestTestCase(TestCase):
         r = self.client.post(url, post_data, HTTP_HOST='example.com')
         redirect_url = reverse('ietf.secr.sreq.views.view', kwargs={'acronym': 'mars'})
         self.assertRedirects(r, redirect_url)
+        print(1, post_data)
 
         # Check whether updates were stored in the database
         sessions = Session.objects.filter(meeting=meeting, group=mars).order_by("id")  # order to match edit() view
@@ -162,6 +163,7 @@ class SessionRequestTestCase(TestCase):
 
         # Check whether the updated data is visible on the view page
         r = self.client.get(redirect_url)
+        print(2, r.content)
         self.assertContains(r, 'Schedule the sessions on subsequent days')
         self.assertContains(r, 'Thursday early afternoon, Thursday late afternoon')
         self.assertContains(r, group2.acronym)
