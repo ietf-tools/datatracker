@@ -31,11 +31,12 @@ from tastypie.serializers import Serializer
 import debug                            # pyflakes:ignore
 
 import ietf
-from ietf.person.factories import PersonFactory
+from ietf.person.factories import PersonFactory # DO NOT MERGE INTO MAIN
 from ietf.person.models import Person, Email
 from ietf.api import _api_list
 from ietf.api.serializer import JsonExportMixin
 from ietf.api.ietf_utils import is_valid_token
+from ietf.doc.factories import WgDraftFactory # DO NOT MERGE INTO MAIN
 from ietf.doc.models import Document
 from ietf.doc.utils import fuzzy_find_documents
 from ietf.ietfauth.views import send_account_creation_email
@@ -505,4 +506,34 @@ def create_demo_person(request):
     person = PersonFactory(name=name)
 
 
-    return JsonResponse({"user_id":person.user.pk,"person_pk":person.pk}, status=201)
+    return JsonResponse({"user_id":person.user.pk,"person_pk":person.pk})
+
+@csrf_exempt
+def create_demo_draft(request):
+    """ Helper for creating rpc demo objects - SHOULD NOT MAKE IT INTO PRODUCTION
+
+    """
+    authtoken = request.META.get("HTTP_X_API_KEY", None)
+    if authtoken is None or not is_valid_token("ietf.api.views.submitted_to_rpc", authtoken):
+        return HttpResponseForbidden()
+    if request.method != "POST":
+        return HttpResponseForbidden()
+    
+    request_params = json.loads(request.body)
+    name = request_params.get("name")
+    states = request_params.get("states")
+    exists = False
+    doc = None
+    if not name:
+        return HttpResponse(status=400, content="Name is required")
+    doc = Document.objects.filter(name=name).first()
+    if doc:
+        exists = True
+    else:
+        kwargs = {"name": name}
+        if states:
+            kwargs["states"] = states
+        doc = WgDraftFactory(**kwargs)
+    return JsonResponse({ "doc_id":doc.pk, "name":doc.name })
+
+
