@@ -520,11 +520,8 @@ def create_demo_draft(request):
         return HttpResponseForbidden()
     
     request_params = json.loads(request.body)
-    debug.show("request_params")
     name = request_params.get("name")
     states = request_params.get("states")
-    debug.show("name")
-    debug.show("states")
     exists = False
     doc = None
     if not name:
@@ -533,9 +530,7 @@ def create_demo_draft(request):
     if doc:
         exists = True
     else:
-        kwargs = {}
-        if name:
-            kwargs["name"] = name
+        kwargs = {"name": name}
         if states:
             kwargs["states"] = states
         doc = WgDraftFactory(**kwargs)
