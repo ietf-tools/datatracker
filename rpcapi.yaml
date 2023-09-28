@@ -65,7 +65,7 @@ paths:
                         name:
                           type: string
             responses:
-              '201':
+              '200':
                   description: OK
                   content:
                       application/json:
@@ -76,6 +76,40 @@ paths:
                               type: integer
                             person_pk:
                               type: integer
+
+    /doc/create_demo_draft/:
+        post:
+            operationId: create_demo_draft
+            summary: Build a datatraker WG draft for RPC demo purposes
+            description: returns a datatracker document id for a draft created with the provided name and states. The arguments, if present, are passed directly to the WgDraftFactory
+            requestBody:
+                required: true
+                content:
+                  application/json:
+                    schema:
+                      type: object
+                      properties:
+                        name:
+                          type: string
+                        states:
+                          type: array
+                          items:
+                            type: array
+                            items:
+                                type: string
+            responses:
+              '200':
+                  description: OK
+                  content:
+                      application/json:
+                        schema:
+                          type: object
+                          properties:
+                            doc_id:
+                              type: integer
+                            name:
+                              type: string
+s
 
     /doc/submitted_to_rpc:
         get:
