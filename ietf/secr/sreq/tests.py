@@ -81,9 +81,9 @@ class SessionRequestTestCase(TestCase):
     def test_edit(self):
         meeting = MeetingFactory(type_id='ietf', date=date_today())
         mars = RoleFactory(name_id='chair', person__user__username='marschairman', group__acronym='mars').group
-        group2 = GroupFactory(acronym='group2')
-        group3 = GroupFactory(acronym='group3')
-        group4 = GroupFactory(acronym='group4')
+        group2 = GroupFactory()
+        group3 = GroupFactory()
+        group4 = GroupFactory()
         iabprog = GroupFactory(type_id='program')
 
         SessionFactory(meeting=meeting,group=mars,status_id='sched')
@@ -165,7 +165,8 @@ class SessionRequestTestCase(TestCase):
         self.assertContains(r, 'Schedule the sessions on subsequent days')
         self.assertContains(r, 'Thursday early afternoon, Thursday late afternoon')
         self.assertContains(r, group2.acronym)
-        self.assertContains(r, 'Second session with: {} {}'.format(group3.acronym, group4.acronym))
+        # The sessions can be in any order in the HTML, deal with that
+        self.assertRegex(r.content.decode(), r'Second session with: ({} {}|{} {})'.format(group3.acronym, group4.acronym, group4.acronym, group3.acronym))
 
         # check that a notification was sent
         self.assertEqual(len(outbox), 1)
