@@ -91,6 +91,8 @@ paths:
                       properties:
                         name:
                           type: string
+                        stream_id:
+                          type: string
                         states:
                           type: array
                           items:
