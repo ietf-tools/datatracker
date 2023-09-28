@@ -109,7 +109,6 @@ paths:
                               type: integer
                             name:
                               type: string
-s
 
     /doc/submitted_to_rpc:
         get:
