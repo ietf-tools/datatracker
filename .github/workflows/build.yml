@@ -217,7 +217,7 @@ jobs:
 
     - name: Update Baseline Coverage
       uses: ncipollo/release-action@v1.13.0
-      if: ${{ github.event.inputs.updateCoverage == 'true' }}
+      if: ${{ github.event.inputs.updateCoverage == 'true' || github.ref_name == 'release' }}
       with:
         allowUpdates: true
         tag: baseline

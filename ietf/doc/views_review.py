@@ -223,7 +223,7 @@ def review_request(request, name, request_id):
     for assignment in assignments:
         assignment.is_reviewer = user_is_person(request.user, assignment.reviewer.person)
 
-        assignment.can_accept_reviewer_assignment = (assignment.state_id == "assigned"
+        assignment.can_accept_reviewer_assignment = (assignment.state_id in ["assigned", "rejected"]
                                                      and (assignment.is_reviewer or can_manage_request))
 
         assignment.can_reject_reviewer_assignment = (assignment.state_id in ["assigned", "accepted"]
@@ -354,8 +354,13 @@ class RejectReviewerAssignmentForm(forms.Form):
 def reject_reviewer_assignment(request, name, assignment_id):
     doc = get_object_or_404(Document, name=name)
     review_assignment = get_object_or_404(ReviewAssignment, pk=assignment_id, state__in=["assigned", "accepted"])
-    review_request_past_deadline = review_assignment.review_request.deadline < date_today(DEADLINE_TZINFO)
 
+    allow_reject_request = True
+    # Only check deadline if the group does not allow rejecting always
+    if not review_assignment.review_request.team.reviewteamsettings.allow_reviewer_to_reject_after_deadline:
+        if review_assignment.review_request.deadline < date_today(DEADLINE_TZINFO):
+            allow_reject_request = False
+    
     if not review_assignment.reviewer:
         return redirect(review_request, name=review_assignment.review_request.doc.name, request_id=review_assignment.review_request.pk)
 
@@ -365,7 +370,12 @@ def reject_reviewer_assignment(request, name, assignment_id):
     if not (is_reviewer or can_manage_request):
         permission_denied(request, "You do not have permission to perform this action")
 
-    if request.method == "POST" and request.POST.get("action") == "reject" and not review_request_past_deadline:
+    # Secretary or whoever can manage review request, has permission
+    # to reject requests even if the deadline is in the past
+    if can_manage_request:
+        allow_reject_request = True
+
+    if request.method == "POST" and request.POST.get("action") == "reject" and allow_reject_request:
         form = RejectReviewerAssignmentForm(request.POST)
         if form.is_valid():
             # reject the assignment
@@ -406,7 +416,7 @@ def reject_reviewer_assignment(request, name, assignment_id):
         'review_req': review_assignment.review_request,
         'assignments': review_assignment.review_request.reviewassignment_set.all(),
         'form': form,
-        'review_request_past_deadline': review_request_past_deadline,
+        'allow_reject_request': allow_reject_request,
     })
 
 @login_required

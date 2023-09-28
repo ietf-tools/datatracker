@@ -66,9 +66,7 @@
         </p>
         <p>
             If you enter the review below, the review will be sent
-            to {{ review_to|join:", "|linkify }}
-            {% if review_cc %}, with a CC to {{ review_cc|join:", "|linkify }}{% endif %}
-            .
+            to {% for addr in to %}{{ addr|linkify }}{% if not forloop.last %}, {% endif %}{% endfor %}{% if review_cc %}, with a CC to {% for addr in cc %}{{ addr|linkify }}{% if not forloop.last %}, {% endif %}{% endfor %}{% endif %}.
         </p>
     {% elif assignment %}
         <p>

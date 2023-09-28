@@ -1,6 +1,8 @@
 # Dockerfile for RabbitMQ worker
 #
-FROM rabbitmq:3-alpine
+ARG RABBITMQ_VERSION=3.11-alpine
+
+FROM rabbitmq:${RABBITMQ_VERSION}
 LABEL maintainer="IETF Tools Team <tools-discuss@ietf.org>"
 
 # Copy the startup file

@@ -1327,6 +1327,36 @@ class InactiveNomcomTests(TestCase):
         q = PyQuery(response.content)
         self.assertIn('not active', q('.alert-warning').text() )
 
+    def test_filter_nominees(self):
+        url = reverse(
+            "ietf.nomcom.views.private_index", kwargs={"year": self.nc.year()}
+        )
+        login_testing_unauthorized(self, self.chair.user.username, url)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+
+        states = list(NomineePositionStateName.objects.values_list("slug", flat=True))
+        states += ["not-declined", "questionnaire"]
+        for state in states:
+            response = self.client.get(url, {"state": state})
+            self.assertEqual(response.status_code, 200)
+            q = PyQuery(response.content)
+            nps = []
+            if state == "not-declined":
+                nps = NomineePosition.objects.exclude(state__slug="declined")
+            elif state == "questionnaire":
+                nps = [
+                    np
+                    for np in NomineePosition.objects.not_duplicated()
+                    if np.questionnaires
+                ]
+            else:
+                nps = NomineePosition.objects.filter(state__slug=state)
+            # nomination state is in third table column
+            self.assertEqual(
+                len(nps), len(q("#nominee-position-table td:nth-child(3)"))
+            )
+
     def test_email_pasting_closed(self):
         url = reverse('ietf.nomcom.views.private_feedback_email', kwargs={'year':self.nc.year()})
         login_testing_unauthorized(self, self.chair.user.username, url)

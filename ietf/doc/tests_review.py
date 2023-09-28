@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2016-2020, All Rights Reserved
+# Copyright The IETF Trust 2016-2023, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -355,6 +355,23 @@ class ReviewTests(TestCase):
         request_events = review_req.reviewrequestdocevent_set.all()
         self.assertEqual(request_events.count(), 0)
 
+    def test_assign_reviewer_after_reject(self):
+        doc = WgDraftFactory()
+        review_team = ReviewTeamFactory()
+        rev_role = RoleFactory(group=review_team,person__user__username='reviewer',person__user__email='reviewer@example.com',name_id='reviewer')
+        reviewer_email = Email.objects.get(person__user__username="reviewer")
+        RoleFactory(group=review_team,person__user__username='reviewsecretary',name_id='secr')
+        review_req = ReviewRequestFactory(team=review_team,doc=doc)
+        ReviewAssignmentFactory(review_request=review_req, state_id='rejected', reviewer=rev_role.person.email_set.first())
+
+        url = urlreverse('ietf.doc.views_review.assign_reviewer', kwargs={ "name": doc.name, "request_id": review_req.pk })
+        login_testing_unauthorized(self, "reviewsecretary", url)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        reviewer_label = q("option[value=\"{}\"]".format(reviewer_email.address)).text().lower()
+        self.assertIn("rejected review of document before", reviewer_label)
+
     def test_previously_reviewed_replaced_doc(self):
         review_team = ReviewTeamFactory(acronym="reviewteam", name="Review Team", type_id="review", list_email="reviewteam@ietf.org", parent=Group.objects.get(acronym="farfut"))
         rev_role = RoleFactory(group=review_team,person__user__username='reviewer',person__user__email='reviewer@example.com',person__name='Some Reviewer',name_id='reviewer')
@@ -418,9 +435,50 @@ class ReviewTests(TestCase):
         r = self.client.get(req_url)
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, reject_url)
+
+        # anonymous user should not be able to reject
+        self.client.logout()
+        r = self.client.post(reject_url, { "action": "reject", "message_to_secretary": "Test message" })
+        self.assertEqual(r.status_code, 302)  # forwards to login page
+        assignment = reload_db_objects(assignment)
+        self.assertEqual(assignment.state_id, "accepted")
+
+        # unrelated person should not be able to reject
+        other_person = PersonFactory()
+        login_testing_unauthorized(self, other_person.user.username, reject_url)
+        r = self.client.post(reject_url, { "action": "reject", "message_to_secretary": "Test message" })
+        self.assertEqual(r.status_code, 403)
+        assignment = reload_db_objects(assignment)
+        self.assertEqual(assignment.state_id, "accepted")
+
+        # Check that user can reject it
+        login_testing_unauthorized(self, assignment.reviewer.person.user.username, reject_url)
+        r = self.client.get(reject_url)
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, escape(assignment.reviewer.person.name))
+        self.assertNotContains(r, 'can not be rejected')
+        self.assertContains(r, '<button type="submit"')
+
+        # reject
+        empty_outbox()
+        r = self.client.post(reject_url, { "action": "reject", "message_to_secretary": "Test message" })
+        self.assertEqual(r.status_code, 302)
+
+        assignment = reload_db_objects(assignment)
+        self.assertEqual(assignment.state_id, "rejected")
+        self.assertNotEqual(assignment.completed_on,None)
+        e = doc.latest_event()
+        self.assertEqual(e.type, "closed_review_assignment")
+        self.assertTrue("rejected" in e.desc)
+        self.assertEqual(len(outbox), 1)
+        self.assertNotIn(assignment.reviewer.address, outbox[0]["To"])
+        self.assertIn("<reviewsecretary@example.com>", outbox[0]["To"])
+        self.assertTrue("Test message" in get_payload_text(outbox[0]))
         self.client.logout()
 
-        # get reject page
+        # Secretary can also reject it
+        assignment.state_id = 'assigned'
+        assignment.save()
         login_testing_unauthorized(self, "reviewsecretary", reject_url)
         r = self.client.get(reject_url)
         self.assertEqual(r.status_code, 200)
@@ -444,12 +502,17 @@ class ReviewTests(TestCase):
         self.assertNotIn("<reviewsecretary@example.com>", outbox[0]["To"])
         self.assertTrue("Test message" in get_payload_text(outbox[0]))
 
-        # try again, but now with an expired review request, which should not be allowed (#2277)
+        # try again, but now with an expired review request,
+        # which should not be allowed (#2277)
         assignment.state_id = 'assigned'
         assignment.save()
         review_req.deadline = datetime.date(2019, 1, 1)
         review_req.save()
+        self.client.logout()
         
+        # Login as reviewer to do this test, so it should fail, as the
+        # request is past deadline
+        login_testing_unauthorized(self, assignment.reviewer.person.user.username, reject_url)
         r = self.client.get(reject_url)
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, escape(assignment.reviewer.person.name))
@@ -461,10 +524,90 @@ class ReviewTests(TestCase):
         r = self.client.post(reject_url, { "action": "reject", "message_to_secretary": "Test message" })
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, 'can not be rejected')
+        self.client.logout()
+
+        # Change settings so that even the reviewer should
+        # be allowed to reject the request even after past deadline
+        m = apps.get_model('review', 'ReviewTeamSettings')
+        for row in m.objects.all():
+            if row.group.upcase_acronym == review_team.upcase_acronym:
+               row.allow_reviewer_to_reject_after_deadline = True
+               row.save(update_fields=['allow_reviewer_to_reject_after_deadline'])
+
+        # Test again as user
+        login_testing_unauthorized(self, assignment.reviewer.person.user.username, reject_url)
+        r = self.client.get(reject_url)
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, escape(assignment.reviewer.person.name))
+        self.assertNotContains(r, 'can not be rejected')
+        self.assertContains(r, '<button type="submit"')
+
+        # actually reject
+        r = self.client.post(reject_url, { "action": "reject", "message_to_secretary": "Test message" })
+        self.assertEqual(r.status_code, 302)
 
         assignment = reload_db_objects(assignment)
-        self.assertEqual(assignment.state_id, "assigned")
-        self.assertEqual(len(outbox), 0)
+        self.assertEqual(assignment.state_id, "rejected")
+        self.assertNotEqual(len(outbox), 0)
+        self.client.logout()
+
+        # Log in as secretary and that should still allow rejecting the review
+        assignment.state_id = 'assigned'
+        assignment.save()
+        login_testing_unauthorized(self, "reviewsecretary", reject_url)
+        r = self.client.get(reject_url)
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, escape(assignment.reviewer.person.name))
+        self.assertNotContains(r, 'can not be rejected')
+        self.assertContains(r, '<button type="submit"')
+
+        # actually reject
+        empty_outbox()
+        r = self.client.post(reject_url, { "action": "reject", "message_to_secretary": "Test message" })
+        self.assertEqual(r.status_code, 302)
+
+        assignment = reload_db_objects(assignment)
+        self.assertEqual(assignment.state_id, "rejected")
+        self.assertNotEqual(len(outbox), 0)
+
+        # Revert the setting of allow_reviewer_to_reject_after_deadline
+        # This should not affect the secretary's ability to reject.
+        m = apps.get_model('review', 'ReviewTeamSettings')
+        for row in m.objects.all():
+            if row.group.upcase_acronym == review_team.upcase_acronym:
+               row.allow_reviewer_to_reject_after_deadline = False
+               row.save(update_fields=['allow_reviewer_to_reject_after_deadline'])
+        assignment.state_id = 'assigned'
+        assignment.save()
+        r = self.client.get(reject_url)
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, escape(assignment.reviewer.person.name))
+        self.assertNotContains(r, 'can not be rejected')
+        self.assertContains(r, '<button type="submit"')
+
+
+    def test_accept_reviewer_assignment_after_reject(self):
+        doc = WgDraftFactory()
+        review_team = ReviewTeamFactory()
+        rev_role = RoleFactory(group=review_team,name_id='reviewer')
+        review_req = ReviewRequestFactory(doc=doc,team=review_team)
+        assignment = ReviewAssignmentFactory(review_request=review_req, state_id='rejected', reviewer=rev_role.person.email_set.first())
+
+        url = urlreverse('ietf.doc.views_review.review_request', kwargs={ "name": doc.name, "request_id": review_req.pk })
+        username = assignment.reviewer.person.user.username
+        self.client.login(username=username, password=username + "+password")
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        d = q('.reviewer-assignment-not-accepted')
+        self.assertTrue(d("[name=action][value=accept]"))
+
+        # accept
+        r = self.client.post(url, { "action": "accept" })
+        self.assertEqual(r.status_code, 302)
+
+        assignment = reload_db_objects(assignment)
+        self.assertEqual(assignment.state_id, "accepted")
 
     def make_test_mbox_tarball(self, review_req):
         mbox_path = os.path.join(self.review_dir, "testmbox.tar.gz")

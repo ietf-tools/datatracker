@@ -520,8 +520,7 @@ class EditLiaisonForm(LiaisonModelForm):
         super(EditLiaisonForm, self).__init__(*args, **kwargs)
         self.edit = True
         self.fields['attachments'].initial = self.instance.liaisonstatementattachment_set.exclude(removed=True)
-        related = [ str(x.pk) for x in self.instance.source_of_set.all() ]
-        self.fields['related_to'].initial = ','.join(related)
+        self.fields['related_to'].initial = [ x.target for x in self.instance.source_of_set.all() ]
         self.fields['submitted_date'].initial = self.instance.submitted
 
     def save(self, *args, **kwargs):

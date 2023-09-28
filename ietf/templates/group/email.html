@@ -47,8 +47,16 @@
                         <a href="{% url 'ietf.mailtrigger.views.show_triggers' trigger %}"
                            title="{{ desc }}">{{ trigger }}</a>
                     </td>
-                    <td>{{ to|join:', '|unescape|linkify }}</td>
-                    <td>{{ cc|join:', '|unescape|linkify }}</td>
+                    <td>
+                        {% for addr in to %}
+                            {{ addr|linkify }}{% if not forloop.last %}, {% endif %}
+                        {% endfor %}
+                    </td>
+                    <td>
+                        {% for addr in cc %}
+                            {{ addr|linkify }}{% if not forloop.last %}, {% endif %}
+                        {% endfor %}
+                    </td>
                 </tr>
             {% endfor %}
         </tbody>
