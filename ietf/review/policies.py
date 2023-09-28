@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2019-2021, All Rights Reserved
+# Copyright The IETF Trust 2019-2023, All Rights Reserved
 
 
 import re
@@ -10,6 +10,7 @@ from simple_history.utils import bulk_update_with_history
 from ietf.doc.models import DocumentAuthor, DocAlias
 from ietf.doc.utils import extract_complete_replaces_ancestor_mapping_for_docs
 from ietf.group.models import Role
+from ietf.name.models import ReviewAssignmentStateName
 from ietf.person.models import Person
 import debug                            # pyflakes:ignore
 from ietf.review.models import NextReviewerInTeam, ReviewerSettings, ReviewWish, ReviewRequest, \
@@ -55,8 +56,6 @@ def persons_with_previous_review(team, review_req, possible_person_ids, state_id
         reviewassignment__state=state_id,
         team=team,
     ).distinct()
-    if review_req.pk is not None:
-        has_reviewed_previous = has_reviewed_previous.exclude(pk=review_req.pk)
     has_reviewed_previous = set(
         has_reviewed_previous.values_list("reviewassignment__reviewer__person", flat=True))
     return has_reviewed_previous
@@ -70,7 +69,14 @@ class AbstractReviewerQueuePolicy:
         """Assign a reviewer to a request and update policy state accordingly"""
         # Update policy state first - needed by LRU policy to correctly compute whether assignment was in-order
         self.update_policy_state_for_assignment(review_req, reviewer.person, add_skip)
-        return review_req.reviewassignment_set.create(state_id='assigned', reviewer=reviewer, assigned_on=timezone.now())
+        assignment = review_req.reviewassignment_set.filter(reviewer=reviewer).first()
+        if assignment:
+            assignment.state = ReviewAssignmentStateName.objects.get(slug='assigned', used=True)
+            assignment.assigned_on = timezone.now()
+            assignment.save()
+            return assignment
+        else:
+            return review_req.reviewassignment_set.create(state_id='assigned', reviewer=reviewer, assigned_on=timezone.now())
 
     def default_reviewer_rotation_list(self, include_unavailable=False):
         """ Return a list of reviewers (Person objects) in the default reviewer rotation for a policy.
@@ -168,15 +174,15 @@ class AbstractReviewerQueuePolicy:
             PersonEmailChoiceField(label="Assign Reviewer", empty_label="(None)")
         """
 
-        # Collect a set of person IDs for people who have either not responded
-        # to or outright rejected reviewing this document in the past
+        # Collect a set of person IDs for people who have not responded
+        # to this document in the past
         rejecting_reviewer_ids = review_req.doc.reviewrequest_set.filter(
-            reviewassignment__state__slug__in=('rejected', 'no-response')
+            reviewassignment__state__slug='no-response'
         ).values_list(
             'reviewassignment__reviewer__person_id', flat=True
         )
 
-        # Query the Email objects for reviewers who haven't rejected or
+        # Query the Email objects for reviewers who haven't
         # not responded to this document in the past
         field.queryset = field.queryset.filter(
             role__name="reviewer",
