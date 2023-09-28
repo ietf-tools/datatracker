@@ -500,9 +500,5 @@ def create_demo_person(request):
     
     request_params = json.loads(request.body)
     name = request_params["name"]
-    if Person.objects.filter(name=name).exists():
-        return HttpResponseForbidden()
-    person = PersonFactory(name=name)
-
-
+    person = Person.objects.filter(name=name).first() or PersonFactory(name=name)
     return JsonResponse({"user_id":person.user.pk,"person_pk":person.pk}, status=201)
