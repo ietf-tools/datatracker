@@ -1,11 +1,14 @@
 # Copyright The IETF Trust 2023, All Rights Reserved
 
+import debug # pyflakes: ignore
+
 from django.db import migrations
 
 from django.db.models import Subquery, OuterRef, F
 
 
 def forward(apps, schema_editor):
+    import datetime; start=datetime.datetime.now()
     Document = apps.get_model("doc", "Document")
     RelatedDocument = apps.get_model("doc", "RelatedDocument")
     Document.tags.through.objects.filter(
@@ -19,6 +22,7 @@ def forward(apps, schema_editor):
     ).update(
         document_id=F("rfcdoc")
     )
+    end=datetime.datetime.now(); debug.show("end-start")
 
 
 class Migration(migrations.Migration):
