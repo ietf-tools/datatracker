@@ -1141,7 +1141,7 @@ class IetfTestRunner(DiscoverRunner):
 
         self.test_apps, self.test_paths = self.get_test_paths(test_labels)
 
-        self.test_labels = test_labels  # these are used in out run_suite() and not available to it otherwise
+        self.test_labels = test_labels  # these are used in our run_suite() and not available to it otherwise
         failures = super(IetfTestRunner, self).run_tests(test_labels, extra_tests=extra_tests, **kwargs)
 
         if self.check_coverage:
