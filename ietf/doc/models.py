@@ -122,7 +122,6 @@ class DocumentInfo(models.Model):
     notify = models.TextField(max_length=1023, blank=True)
     external_url = models.URLField(blank=True)
     uploaded_filename = models.TextField(blank=True)
-    note = models.TextField(blank=True)
     internal_comments = models.TextField(blank=True)
 
     def file_extension(self):

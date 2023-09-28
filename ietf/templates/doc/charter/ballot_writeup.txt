@@ -36,14 +36,6 @@ RFC Editor Note
 
   (Insert RFC Editor Note here or remove section)
 
-IRTF Note
-
-  (Insert IRTF Note here or remove section)
-
-IESG Note
-
-  (Insert IESG Note here or remove section)
-
 IANA Note
 
   (Insert IANA Note here or remove section)

@@ -58,10 +58,6 @@
                                     {% person_link action_holder.person title=action_holder.role_for_doc %}{% if action_holder|action_holder_badge %} {{ action_holder|action_holder_badge }}{% endif %}{% if not forloop.last %},{% endif %}
                                 {% endfor %}
                             {% endif %}
-                            {% if doc.note %}
-                                <br>
-                                <i>Note: {{ doc.note|urlize_ietf_docs|linkify|linebreaksbr }}</i>
-                            {% endif %}
                         </td>
                         <td>
                             {% if doc.intended_std_level %}
