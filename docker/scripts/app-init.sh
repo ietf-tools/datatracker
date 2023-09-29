@@ -94,7 +94,7 @@ echo "Running initial checks..."
 
 # Migrate, adjusting to what the current state of the underlying database might be:
 
-/usr/local/bin/python $WORKSPACEDIR/ietf/manage.py migrate --fake-initial --settings=settings_local
+time /usr/local/bin/python $WORKSPACEDIR/ietf/manage.py migrate --fake-initial --settings=settings_local
 
 if [ -z "$EDITOR_VSCODE" ]; then
     CODE=0
