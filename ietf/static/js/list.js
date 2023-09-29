@@ -1,4 +1,4 @@
-import * as List from "list.js";
+import List from "list.js";
 
 var dummy = new List();
 
@@ -21,6 +21,7 @@ function replace_with_internal(table, internal_table, i) {
             .children("table")
             .children("tbody")
             .clone(true));
+    hide_empty_cols(table);
 }
 
 function field_magic(i, e, fields) {
@@ -30,6 +31,24 @@ function field_magic(i, e, fields) {
         $(e)
             .addClass("text-end");
     }
+}
+
+function hide_empty_cols(table) {
+    // hide columns that are entirely empty to save horizontal space
+    $(table).find("th").each(function (i) {
+        var empty_cells = 0;
+        var tds = $(this).parents('table').find(`tr td:nth-child(${i + 1})`)
+        tds.each(function () {
+            if (this.innerHTML.trim() == "") {
+                empty_cells++;
+            }
+        });
+
+        if (empty_cells == $(table).find("tr").length - 1) {
+            $(this).hide();
+            tds.hide();
+        }
+    });
 }
 
 $(document)
@@ -204,12 +223,12 @@ $(document)
                         }
 
                         let newlist = new List(hook, pagination ? {
-                                valueNames: fields,
-                                pagination: pagination,
-                                page: items_per_page
-                            } : {
-                                valueNames: fields
-                            });
+                            valueNames: fields,
+                            pagination: pagination,
+                            page: items_per_page
+                        } : {
+                            valueNames: fields
+                        });
                         // override search module with a patched version
                         // see https://github.com/javve/list.js/issues/699
                         // TODO: check if this is still needed if list.js ever sees an update
@@ -220,7 +239,7 @@ $(document)
                 if (enable_search) {
                     reset_search.on("click", function () {
                         search_field.val("");
-                        $.each(list_instance, (i, e) => {
+                        $.each(list_instance, (_, e) => {
                             e.search();
                         });
                     });
@@ -229,7 +248,7 @@ $(document)
                         if (event.key == "Escape") {
                             reset_search.trigger("click");
                         } else {
-                            $.each(list_instance, (i, e) => {
+                            $.each(list_instance, (_, e) => {
                                 e.search($(this)
                                     .val());
                             });
@@ -242,16 +261,19 @@ $(document)
                     .on("click", function () {
                         var order = $(this)
                             .hasClass("asc") ? "desc" : "asc";
-                        $.each(list_instance, (i, e) => {
+                        $.each(list_instance, (_, e) => {
                             e.sort($(this)
-                                .attr("data-sort"), { order: order, sortFunction: text_sort });
+                                .attr("data-sort"), {
+                                    order: order,
+                                    sortFunction: text_sort
+                                });
                         });
                     });
 
                 $.each(list_instance, (i, e) => {
                     e.on("sortComplete", function () {
                         replace_with_internal(table, internal_table, i);
-                         $(table).find("[data-bs-original-title]").tooltip();
+                        $(table).find("[data-bs-original-title]").tooltip();
                         if (i == list_instance.length - 1) {
                             $(table)
                                 .find("thead:first tr")
@@ -287,12 +309,16 @@ $(document)
                     if (presort_col) {
                         const order = presort_col.attr("data-default-sort");
                         if (order === "asc" || order === "desc") {
-                            $.each(list_instance, (i, e) => {
-                                e.sort(presort_col.attr("data-sort"), { order: order, sortFunction: text_sort });
+                            $.each(list_instance, (_, e) => {
+                                e.sort(presort_col.attr("data-sort"), {
+                                    order: order,
+                                    sortFunction: text_sort
+                                });
                             });
                         }
                     }
                 }
+                hide_empty_cols(table);
             });
 
         // if the URL contains a #, scroll to it again, since we modified the DOM
