@@ -66,6 +66,8 @@ DEFAULT_NOMCOM_TEMPLATES = [HOME_TEMPLATE,
                         ]
 
 # See RFC8713 section 4.15
+# This potentially over-disqualifies past nomcom chairs if some 
+# nomcom 2+ nomcoms ago is still in the active state
 DISQUALIFYING_ROLE_QUERY_EXPRESSION = (   Q(group__acronym__in=['isocbot', 'ietf-trust', 'llc-board', 'iab'], name_id__in=['member', 'chair'])
                                         | Q(group__type_id='area', group__state='active',name_id='ad')
                                         | Q(group__type_id='nomcom', group__state='active', name_id='chair')
