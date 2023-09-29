@@ -70,6 +70,6 @@ tlds>=2022042700    # Used to teach bleach about which TLDs currently exist
 tqdm>=4.64.0
 Unidecode>=1.3.4
 urllib3<2        # v2 causes selenium tests to fail with "Timeout value was <object..." error
-weasyprint>=59
+weasyprint>=59,<60  # v60.0 bug affects datatracker: https://github.com/Kozea/WeasyPrint/issues/1973
 xml2rfc>=3.12.4
 xym>=0.6,<1.0
