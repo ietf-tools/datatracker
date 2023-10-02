@@ -255,6 +255,7 @@ This test section has some text.
                 statement.latest_event(NewRevisionDocEvent).rev, "00"
             )
             self.assertIsNotNone(statement.latest_event(type="published_statement"))
+            self.assertIsNotNone(statement.history_set.last().latest_event(type="published_statement"))
             if postdict["statement_submission"] == "enter":
                 self.assertEqual(statement.text_or_error(), "some stuff")
             else:
