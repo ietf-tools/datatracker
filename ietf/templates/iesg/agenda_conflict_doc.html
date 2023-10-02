@@ -24,6 +24,12 @@
                     <a href="{% url "ietf.doc.views_doc.document_main" name=conflictdoc.name %}">{{ conflictdoc.name }}</a>
                 </div>
             </div>
+            {% if conflictdoc.note %}
+                <div class="row">
+                    <div class="col-3 text-end fw-bold">Note</div>
+                    <div class="col">{{ conflictdoc.note|linebreaksbr }}</div>
+                </div>
+            {% endif %}
             <div class="row">
                 <div class="col-3 text-end fw-bold">Token</div>
                 <div class="col">{% person_link doc.ad %}</div>

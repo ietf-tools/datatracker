@@ -408,6 +408,20 @@
                             {% endif %}
                         </td>
                     </tr>
+                    {% if iesg_state.slug != 'idexists' and doc.note %}
+                        <tr>
+                            <td></td>
+                            <th scope="row">
+                                IESG note
+                            </th>
+                            <td class="edit">
+                                {# IESG Notes are historic and read-only now #}
+                            </td>
+                            <td>
+                                {{ doc.note|linebreaksbr }}
+                            </td>
+                        </tr>
+                    {% endif %}
                     <tr>
                         <td></td>
                         <th scope="row">
