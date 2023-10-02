@@ -2419,6 +2419,7 @@ class rfc8713EligibilityTests(TestCase):
         self.eligible_people = list()
         self.ineligible_people = list()
 
+        # Section 4.14 qualification criteria
         for combo_len in range(0,6):
             for combo in combinations(meetings,combo_len):
                 p = PersonFactory()
@@ -2428,6 +2429,18 @@ class rfc8713EligibilityTests(TestCase):
                     self.ineligible_people.append(p)
                 else:
                     self.eligible_people.append(p)
+
+        # Section 4.15 disqualification criteria
+        def ineligible_person_with_role(**kwargs):
+            p = RoleFactory(**kwargs).person
+            for m in meetings:
+                MeetingRegistrationFactory(person=p, meeting=m, attended=True)
+            self.ineligible_people.append(p)
+        for group in ['isocbot', 'ietf-trust', 'llc-board', 'iab']:
+            for role in ['member', 'chair']:
+                ineligible_person_with_role(group__acronym=group, name_id=role)
+        ineligible_person_with_role(group__type_id='area', group__state_id='active',name_id='ad')
+        ineligible_person_with_role(group=self.nomcom.group, name_id='chair')
 
         # No-one is eligible for the other_nomcom
         self.other_nomcom = NomComFactory(group__acronym='nomcom2018',first_call_for_volunteers=datetime.date(2018,5,1))
