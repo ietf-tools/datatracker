@@ -9,13 +9,14 @@
 {% endblock %}
 {% block content %}
     {% origin %}
+    {% with selected=request.path|split:'/'|slice:'3:-1'|join:'-' %}
     <h1>
         NomCom {{ year }}
         {% if nomcom.group.state_id == 'conclude' %}<span class="badge rounded-pill text-bg-info">Concluded</span>{% endif %}
     </h1>
     <ul class="nav nav-tabs my-3">
         <li class="nav-item">
-            <a class="nav-link {% if selected == "index" %}active{% endif %}"
+            <a class="nav-link {% if selected == '' %}active{% endif %}"
                href="{% url 'ietf.nomcom.views.year_index' year %}">
                 Home
             </a>
@@ -35,7 +36,7 @@
             </li>
         {% endif %}
         <li class="nav-item">
-            <a class="nav-link {% if selected == "requirements" %}active{% endif %}"
+            <a class="nav-link {% if selected == "expertise" %}active{% endif %}"
                href="{% url 'ietf.nomcom.views.requirements' year %}">
                 Desired expertise
             </a>
@@ -48,14 +49,14 @@
         </li>
         {% if user|is_chair_or_advisor:year or user|has_role:"Secretariat" %}
             <li class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#">Volunteers</a>
+                <a class="nav-link dropdown-toggle {% if selected in 'eligible,volunteers'|split:',' %}active{% endif %}" data-bs-toggle="dropdown" href="#">Volunteers</a>
                 <ul class="dropdown-menu mt-n1" role="menu">
                     <li class="nav-item">
-                        <a class="dropdown-item"
+                        <a class="dropdown-item {% if selected == 'eligible' %}active{% endif %}"
                            href="{% url 'ietf.nomcom.views.public_eligible' year %}">View eligible</a>
                     </li>
                     <li class="nav-item">
-                        <a class="dropdown-item"
+                        <a class="dropdown-item {% if selected == 'volunteers' %}active{% endif %}"
                            href="{% url 'ietf.nomcom.views.public_volunteers' year %}">View volunteers</a>
                     </li>
                 </ul>
@@ -63,6 +64,7 @@
         {% endif %}
     </ul>
     {% block nomcom_content %}{% endblock %}
+    {% endwith %}
 {% endblock %}
 {% block js %}
     <script>
