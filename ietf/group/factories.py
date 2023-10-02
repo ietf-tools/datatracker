@@ -35,6 +35,13 @@ class GroupFactory(factory.django.DjangoModelFactory):
     uses_milestone_dates = True
     used_roles = [] # type: List[str]
 
+    @classmethod
+    def _create(cls, model_class, *args, **kwargs):
+        obj = model_class(*args, **kwargs)
+        obj.name = obj.name[0:80]  # db only allows names of 80 characters max
+        obj.save()
+        return obj
+
     @factory.lazy_attribute
     def parent(self):
         if self.type_id in ['wg','ag']:
