@@ -418,7 +418,7 @@
                                 {# IESG Notes are historic and read-only now #}
                             </td>
                             <td>
-                                {{ doc.note|linebreaksbr }}
+                                {{ doc.notedoc.note|urlize_ietf_docs|linkify|linebreaksbr }}
                             </td>
                         </tr>
                     {% endif %}
