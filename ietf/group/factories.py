@@ -27,20 +27,13 @@ class GroupFactory(factory.django.DjangoModelFactory):
         django_get_or_create = ('acronym',)
         skip_postgeneration_save = True
 
-    name = factory.Faker('sentence',nb_words=6)
+    name = factory.Faker('text', max_nb_chars=80)
     acronym = factory.Sequence(lambda n: 'acronym%d' %n)
     state_id = 'active'
     type_id = 'wg'
     list_email = factory.LazyAttribute(lambda a: '%s@ietf.org'% a.acronym)
     uses_milestone_dates = True
     used_roles = [] # type: List[str]
-
-    @classmethod
-    def _create(cls, model_class, *args, **kwargs):
-        obj = model_class(*args, **kwargs)
-        obj.name = obj.name[0:80]  # db only allows names of 80 characters max
-        obj.save()
-        return obj
 
     @factory.lazy_attribute
     def parent(self):
