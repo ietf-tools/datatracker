@@ -95,6 +95,9 @@ paths:
                           type: string
                         stream_id:
                           type: string
+                        rev:
+                          type: string
+                          required: false
                         states:
                           type: array
                           items:

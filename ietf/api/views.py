@@ -519,6 +519,7 @@ def create_demo_draft(request):
     
     request_params = json.loads(request.body)
     name = request_params.get("name")
+    rev = request_params.get("rev")
     states = request_params.get("states")
     stream_id = request_params.get("stream_id", "ietf")
     exists = False
@@ -532,6 +533,8 @@ def create_demo_draft(request):
         kwargs = {"name": name, "stream_id": stream_id}
         if states:
             kwargs["states"] = states
+        if rev:
+            kwargs["rev"] = rev
         doc = WgDraftFactory(**kwargs) # Yes, things may be a little strange if the stream isn't IETF, but until we nned something different...
         event_type = "iesg_approved" if stream_id == "ietf" else "requested_publication"
         if not doc.docevent_set.filter(type=event_type).exists(): # Not using get_or_create here on purpose - these are wobbly facades we're creating
