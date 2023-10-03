@@ -97,7 +97,6 @@ paths:
                           type: string
                         rev:
                           type: string
-                          required: false
                         states:
                           type: array
                           items:
