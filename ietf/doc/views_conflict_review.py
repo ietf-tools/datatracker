@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2012-2020, All Rights Reserved
+# Copyright The IETF Trust 2012-2023, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -25,6 +25,7 @@ from ietf.doc.forms import AdForm
 from ietf.group.models import Role, Group
 from ietf.iesg.models import TelechatDate
 from ietf.ietfauth.utils import has_role, role_required, is_authorized_in_doc_stream
+from ietf.name.models import DocTagName
 from ietf.person.models import Person
 from ietf.utils import log
 from ietf.utils.mail import send_mail_preformatted
@@ -90,6 +91,20 @@ def change_state(request, name, option=None):
                                                       review,
                                                       ok_to_publish)
 
+                if new_state.slug in ["appr-reqnopub-sent", "appr-noprob-sent", "withdraw", "dead"]:
+                    doc = review.related_that_doc("conflrev")[0].document
+                    if doc.stream_id == "irtf":
+                        prev_state = doc.get_state("draft-stream-irtf")
+                        new_state = State.objects.get(type_id="draft-stream-irtf", slug="chair-w")
+                        prev_tags = set(doc.tags.all())
+                        new_tags = set(DocTagName.objects.filter(pk="iesg-com"))
+
+                        if new_state != prev_state:
+                            doc.set_state(new_state)
+                            doc.tags.clear()
+                            doc.tags.set(new_tags)
+                            events = [add_state_change_event(doc, login, prev_state, new_state, prev_tags, new_tags)]
+                            doc.save_with_history(events)
 
             return redirect('ietf.doc.views_doc.document_main', name=review.name)
     else:
@@ -488,6 +503,9 @@ def start_review_as_secretariat(request, name):
 
             send_conflict_review_started_email(request, conflict_review)
 
+            if doc_to_review.stream_id == 'irtf':
+                start_review_irtf_state(doc_to_review, login)
+
             return HttpResponseRedirect(conflict_review.get_absolute_url())
     else: 
         notify_addresses = build_notify_addresses(doc_to_review)
@@ -522,6 +540,9 @@ def start_review_as_stream_owner(request, name):
 
             send_conflict_review_started_email(request, conflict_review)
 
+            if doc_to_review.stream_id == 'irtf':
+                start_review_irtf_state(doc_to_review, login)
+
             return HttpResponseRedirect(conflict_review.get_absolute_url())
     else: 
         notify_addresses = build_notify_addresses(doc_to_review)
@@ -536,3 +557,11 @@ def start_review_as_stream_owner(request, name):
                                'doc_to_review': doc_to_review,
                               },
                           )
+
+def start_review_irtf_state(doc, by):
+    prev_state = doc.get_state('draft-stream-irtf')
+    new_state = State.objects.get(type_id='draft-stream-irtf', slug='iesg-rev')
+    doc.set_state(new_state)
+    events = []
+    events.append(add_state_change_event(doc, by, prev_state, new_state))
+    doc.save_with_history(events)

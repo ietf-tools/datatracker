@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2012-2020, All Rights Reserved
+# Copyright The IETF Trust 2012-2023, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -13,8 +13,8 @@ from django.urls import reverse as urlreverse
 
 import debug    # pyflakes:ignore
 
-from ietf.doc.factories import IndividualDraftFactory, ConflictReviewFactory
-from ietf.doc.models import Document, DocEvent, NewRevisionDocEvent, BallotPositionDocEvent, TelechatDocEvent, State
+from ietf.doc.factories import IndividualDraftFactory, ConflictReviewFactory, RgDraftFactory
+from ietf.doc.models import Document, DocEvent, NewRevisionDocEvent, BallotPositionDocEvent, TelechatDocEvent, State, DocTagName
 from ietf.doc.utils import create_ballot_if_not_open
 from ietf.doc.views_conflict_review import default_approval_text
 from ietf.group.models import Person
@@ -450,3 +450,52 @@ class ConflictReviewSubmitTests(TestCase):
     def setUp(self):
         super().setUp()
         ConflictReviewFactory(name='conflict-review-imaginary-irtf-submission',review_of=IndividualDraftFactory(name='draft-imaginary-irtf-submission',stream_id='irtf'),notify='notifyme@example.net')
+
+class ConflictReviewIrtfStateTests(TestCase):
+
+    def start_review(self, role, kwargs=None):
+        doc = RgDraftFactory()
+        url = urlreverse('ietf.doc.views_conflict_review.start_review', kwargs=dict(name=doc.name))
+        login_testing_unauthorized(self, role, url)
+
+        r = self.client.post(url, kwargs)
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(doc.get_state('draft-stream-irtf').slug, 'iesg-rev')
+
+    def test_start_review_as_secretary(self):
+        ad_strpk = str(Person.objects.get(name='Areað Irector').pk)
+        state_strpk = str(State.objects.get(used=True, slug='needshep', type__slug='conflrev').pk)
+        self.start_review('secretary', kwargs=dict(ad=ad_strpk, create_in_state=state_strpk))
+
+    def test_start_review_as_stream_owner(self):
+        self.start_review('irtf-chair')
+
+    def close_review(self, close_type, role):
+        doc = RgDraftFactory()
+        review = ConflictReviewFactory(review_of=doc)
+        url = urlreverse('ietf.doc.views_conflict_review.change_state', kwargs=dict(name=review.name))
+        login_testing_unauthorized(self, role, url)
+
+        strpk = str(State.objects.get(used=True, slug=close_type, type__slug='conflrev').pk)
+        r = self.client.post(url, dict(review_state=strpk))
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(doc.get_state('draft-stream-irtf').slug, 'chair-w')
+        self.assertIn(DocTagName.objects.get(pk='iesg-com'), doc.tags.all())
+
+    def test_close_review_reqnopub_as_secretary(self):
+        self.close_review('appr-reqnopub-sent', 'secretary')
+
+    def test_close_review_noprob_as_secretary(self):
+        self.close_review('appr-noprob-sent', 'secretary')
+
+    def test_close_review_withdraw_as_secretary(self):
+        self.close_review('withdraw', 'secretary')
+
+    def test_close_review_dead_as_secretary(self):
+        self.close_review('dead', 'secretary')
+
+    def test_close_review_withdraw_as_ad(self):
+        self.close_review('withdraw', 'ad')
+
+    def test_close_review_dead_as_ad(self):
+        self.close_review('dead', 'ad')
