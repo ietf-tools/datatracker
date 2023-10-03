@@ -499,3 +499,16 @@ class ConflictReviewIrtfStateTests(TestCase):
 
     def test_close_review_dead_as_ad(self):
         self.close_review('dead', 'ad')
+
+    def test_approve_review(self):
+        doc = RgDraftFactory()
+        review = ConflictReviewFactory(review_of=doc)
+        review.set_state(State.objects.get(used=True, slug='appr-noprob-pend', type='conflrev'))
+
+        url = urlreverse('ietf.doc.views_conflict_review.approve_conflict_review', kwargs=dict(name=review.name))
+        login_testing_unauthorized(self, 'secretary', url)
+
+        r = self.client.post(url, dict(announcement_text=default_approval_text(review)))
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(doc.get_state('draft-stream-irtf').slug, 'chair-w')
+        self.assertIn(DocTagName.objects.get(pk='iesg-com'), doc.tags.all())

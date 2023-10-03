@@ -94,17 +94,7 @@ def change_state(request, name, option=None):
                 if new_state.slug in ["appr-reqnopub-sent", "appr-noprob-sent", "withdraw", "dead"]:
                     doc = review.related_that_doc("conflrev")[0].document
                     if doc.stream_id == "irtf":
-                        prev_state = doc.get_state("draft-stream-irtf")
-                        new_state = State.objects.get(type_id="draft-stream-irtf", slug="chair-w")
-                        prev_tags = set(doc.tags.all())
-                        new_tags = set(DocTagName.objects.filter(pk="iesg-com"))
-
-                        if new_state != prev_state:
-                            doc.set_state(new_state)
-                            doc.tags.clear()
-                            doc.tags.set(new_tags)
-                            events = [add_state_change_event(doc, login, prev_state, new_state, prev_tags, new_tags)]
-                            doc.save_with_history(events)
+                        close_review_irtf_state(doc, login)
 
             return redirect('ietf.doc.views_doc.document_main', name=review.name)
     else:
@@ -370,6 +360,10 @@ def approve_conflict_review(request, name):
             c.desc = "The following approval message was sent\n"+form.cleaned_data['announcement_text']
             c.save()
 
+            doc = review.related_that_doc("conflrev")[0].document
+            if doc.stream_id == "irtf":
+                close_review_irtf_state(doc, login)
+
             return HttpResponseRedirect(review.get_absolute_url())
 
     else:
@@ -565,3 +559,16 @@ def start_review_irtf_state(doc, by):
     events = []
     events.append(add_state_change_event(doc, by, prev_state, new_state))
     doc.save_with_history(events)
+
+def close_review_irtf_state(doc, by):
+    prev_state = doc.get_state("draft-stream-irtf")
+    new_state = State.objects.get(type_id="draft-stream-irtf", slug="chair-w")
+    prev_tags = set(doc.tags.all())
+    new_tags = set(DocTagName.objects.filter(pk="iesg-com"))
+
+    if new_state != prev_state:
+        doc.set_state(new_state)
+        doc.tags.clear()
+        doc.tags.set(new_tags)
+        events = [add_state_change_event(doc, by, prev_state, new_state, prev_tags, new_tags)]
+        doc.save_with_history(events)
