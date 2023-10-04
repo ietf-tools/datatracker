@@ -497,7 +497,7 @@ def submitted_to_rpc(request):
 
 
 @csrf_exempt
-@requires_api_token("ietf.api.views.submitted_to_rpc")
+@requires_api_token("ietf.api.views.create_demo_resources")
 def create_demo_person(request):
     """ Helper for creating rpc demo objects - SHOULD NOT MAKE IT INTO PRODUCTION
 
@@ -512,7 +512,7 @@ def create_demo_person(request):
 
 
 @csrf_exempt
-@requires_api_token("ietf.api.views.submitted_to_rpc")
+@requires_api_token("ietf.api.views.create_demo_resources")
 def create_demo_draft(request):
     """ Helper for creating rpc demo objects - SHOULD NOT MAKE IT INTO PRODUCTION
 
