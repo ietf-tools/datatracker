@@ -89,5 +89,9 @@
             <br>
             <span class="text-body-secondary">Updated by {{ doc.updated_by_list|join:", "|urlize_ietf_docs }}</span>
         {% endif %}
+        {% if doc.part_of %}
+            <br>
+            <span class="text-body-secondary">{% for sub in doc.part_of %}{% if sub.contains|length_is:"1" %} Also known as {% else %} Part of {% endif %}<a href="{% url 'ietf.doc.views_doc.document_main' name=sub.name%}">{{sub.name|slice:":3"|upper}} {{sub.name|slice:"3:"}}</a>{% if not forloop.last %}, {%endif%}{% endfor %}</span>
+        {% endif %}
     {% endif %}
 </td>
