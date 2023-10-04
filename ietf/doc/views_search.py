@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2009-2022, All Rights Reserved
+# Copyright The IETF Trust 2009-2023, All Rights Reserved
 # -*- coding: utf-8 -*-
 #
 # Some parts Copyright (C) 2009-2010 Nokia Corporation and/or its subsidiary(-ies).
@@ -36,8 +36,10 @@
 
 import re
 import datetime
+import operator
 
 from collections import defaultdict
+from functools import reduce
 
 from django import forms
 from django.conf import settings
@@ -95,7 +97,7 @@ class SearchForm(forms.Form):
             ("ad", "AD"), ("-ad", "AD (desc)"), ),
         required=False, widget=forms.HiddenInput)
 
-    doctypes = forms.ModelMultipleChoiceField(queryset=DocTypeName.objects.filter(used=True).exclude(slug__in=('draft','liai-att')).order_by('name'), required=False)
+    doctypes = forms.ModelMultipleChoiceField(queryset=DocTypeName.objects.filter(used=True).exclude(slug__in=('draft', 'rfc', 'bcp', 'std', 'fyi', 'liai-att')).order_by('name'), required=False)
 
     def __init__(self, *args, **kwargs):
         super(SearchForm, self).__init__(*args, **kwargs)
@@ -154,8 +156,11 @@ def retrieve_search_results(form, all_types=False):
     else:
         types = []
 
-        if query['activedrafts'] or query['olddrafts'] or query['rfcs']:
+        if query['activedrafts'] or query['olddrafts']:
             types.append('draft')
+        
+        if query['rfcs']:
+            types.append('rfc')
 
         types.extend(query["doctypes"])
 
@@ -166,13 +171,50 @@ def retrieve_search_results(form, all_types=False):
 
     # name
     if query["name"]:
-        docs = docs.filter(Q(name__icontains=query["name"]) |
-                           Q(title__icontains=query["name"])).distinct()
+        look_for = query["name"]
+        queries = [
+            Q(name__icontains=look_for),
+            Q(title__icontains=look_for)
+        ]
+        # Check to see if this is just a search for an rfc look for a few variants
+        if look_for.lower()[:3] == "rfc" and look_for[3:].strip().isdigit():
+            spaceless = look_for.lower()[:3]+look_for[3:].strip()
+            if spaceless != look_for:
+                queries.extend([
+                    Q(name__icontains=spaceless),
+                    Q(title__icontains=spaceless)            
+                ])
+            singlespace = look_for.lower()[:3]+" "+look_for[3:].strip()
+            if singlespace != look_for:
+                queries.extend([
+                    Q(name__icontains=singlespace),
+                    Q(title__icontains=singlespace)            
+                ])        
+
+        # Do a similar thing if the search is just for a subseries doc, like a bcp.
+        if look_for.lower()[:3] in ["bcp", "fyi", "std"] and look_for[3:].strip().isdigit() and query["rfcs"]: # Also look for rfcs contained in the subseries.
+            queries.extend([
+                Q(targets_related__source__name__icontains=look_for, targets_related__relationship_id="contains"),
+                Q(targets_related__source__title__icontains=look_for, targets_related__relationship_id="contains"),
+            ])
+            spaceless = look_for.lower()[:3]+look_for[3:].strip()
+            if spaceless != look_for:
+                queries.extend([
+                    Q(targets_related__source__name__icontains=spaceless, targets_related__relationship_id="contains"),
+                    Q(targets_related__source__title__icontains=spaceless, targets_related__relationship_id="contains"),
+                ])
+            singlespace = look_for.lower()[:3]+" "+look_for[3:].strip()
+            if singlespace != look_for:
+                queries.extend([
+                    Q(targets_related__source__name__icontains=singlespace, targets_related__relationship_id="contains"),
+                    Q(targets_related__source__title__icontains=singlespace, targets_related__relationship_id="contains"),
+                ])
+
+        combined_query = reduce(operator.or_, queries)
+        docs = docs.filter(combined_query).distinct()
 
     # rfc/active/old check buttons
     allowed_draft_states = []
-    if query["rfcs"]:
-        allowed_draft_states.append("rfc")
     if query["activedrafts"]:
         allowed_draft_states.append("active")
     if query["olddrafts"]:
@@ -320,9 +362,7 @@ def ad_dashboard_group_type(doc):
     if not doc:
         return ('I-D', 'RFC', 'Conflict Review', 'Status Change', 'Charter')
     if doc.type.slug=='draft':
-        if doc.get_state_slug('draft') == 'rfc':
-            return 'RFC'
-        elif doc.get_state_slug('draft') == 'active' and doc.get_state_slug('draft-iesg') and doc.get_state('draft-iesg').name =='RFC Ed Queue':
+        if doc.get_state_slug('draft') == 'active' and doc.get_state_slug('draft-iesg') and doc.get_state('draft-iesg').name =='RFC Ed Queue':
             return 'RFC'
         elif doc.get_state_slug('draft') == 'active' and doc.get_state_slug('draft-iesg') and doc.get_state('draft-iesg').name in ('Dead', 'I-D Exists', 'AD is watching'):
              return None
@@ -330,6 +370,8 @@ def ad_dashboard_group_type(doc):
             return None
         else:
             return 'I-D'
+    if doc.type.slug=='rfc':
+        return 'RFC'
     elif doc.type.slug=='conflrev':
           return 'Conflict Review'
     elif doc.type.slug=='statchg':
@@ -341,10 +383,10 @@ def ad_dashboard_group_type(doc):
 
 def ad_dashboard_group(doc):
 
+    if doc.type.slug=='rfc':
+        return 'RFC'
     if doc.type.slug=='draft':
-        if doc.get_state_slug('draft') == 'rfc':
-            return 'RFC'
-        elif doc.get_state_slug('draft') == 'active' and doc.get_state_slug('draft-iesg'):
+        if doc.get_state_slug('draft') == 'active' and doc.get_state_slug('draft-iesg'):
             return '%s Internet-Draft' % doc.get_state('draft-iesg').name
         else:
             return '%s Internet-Draft' % doc.get_state('draft').name
@@ -482,7 +524,7 @@ def ad_workload(request):
 
     doctypes = list(
         DocTypeName.objects.filter(used=True)
-        .exclude(slug__in=("draft", "liai-att"))
+        .exclude(slug__in=("draft", "rfc", "std", "bcp", "fyi", "liai-att"))
         .values_list("pk", flat=True)
     )
 
@@ -680,7 +722,7 @@ def docs_for_ad(request, name):
     form = SearchForm({'by':'ad','ad': ad.id,
                        'rfcs':'on', 'activedrafts':'on', 'olddrafts':'on',
                        'sort': 'status',
-                       'doctypes': list(DocTypeName.objects.filter(used=True).exclude(slug__in=('draft','liai-att')).values_list("pk", flat=True))})
+                       'doctypes': list(DocTypeName.objects.filter(used=True).exclude(slug__in=('draft', 'rfc', 'bcp' ,'std', 'fyi', 'liai-att')).values_list("pk", flat=True))})
     results, meta = prepare_document_table(request, retrieve_search_results(form), form.data, max_results=500)
     results.sort(key=ad_dashboard_sort_key)
     del meta["headers"][-1]

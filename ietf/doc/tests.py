@@ -66,6 +66,7 @@ class SearchTests(TestCase):
     def test_search(self):
 
         draft = WgDraftFactory(name='draft-ietf-mars-test',group=GroupFactory(acronym='mars',parent=Group.objects.get(acronym='farfut')),authors=[PersonFactory()],ad=PersonFactory())
+        rfc = WgRfcFactory()
         draft.set_state(State.objects.get(used=True, type="draft-iesg", slug="pub-req"))
         old_draft = IndividualDraftFactory(name='draft-foo-mars-test',authors=[PersonFactory()],title="Optimizing Martian Network Topologies")
         old_draft.set_state(State.objects.get(used=True, type="draft", slug="expired"))
@@ -97,11 +98,12 @@ class SearchTests(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, "draft-foo-mars-test")
 
-        # find by rfc/active/inactive
-        draft.set_state(State.objects.get(type="draft", slug="rfc"))
-        r = self.client.get(base_url + "?rfcs=on&name=%s" % draft.name)
+        # find by RFC
+        r = self.client.get(base_url + "?rfcs=on&name=%s" % rfc.name)
         self.assertEqual(r.status_code, 200)
-        self.assertContains(r, draft.title)
+        self.assertContains(r, rfc.title)
+
+        # find by active/inactive
 
         draft.set_state(State.objects.get(type="draft", slug="active"))
         r = self.client.get(base_url + "?activedrafts=on&name=%s" % draft.name)
@@ -322,8 +324,7 @@ class SearchTests(TestCase):
         draft = IndividualDraftFactory(ad=ad)
         draft.action_holders.set([PersonFactory()])
         draft.set_state(State.objects.get(type='draft-iesg', slug='lc'))
-        rfc = IndividualDraftFactory(ad=ad)
-        rfc.set_state(State.objects.get(type='draft', slug='rfc'))
+        rfc = IndividualRfcFactory(ad=ad)
         conflrev = DocumentFactory(type_id='conflrev',ad=ad)
         conflrev.set_state(State.objects.get(type='conflrev', slug='iesgeval'))
         statchg = DocumentFactory(type_id='statchg',ad=ad)
