@@ -176,34 +176,39 @@ def retrieve_search_results(form, all_types=False):
             Q(name__icontains=look_for),
             Q(title__icontains=look_for)
         ]
-        also_look_for = None
-        # If we're given "rfc  3261  " also look for "rfc3261"
-        if look_for.lower()[:4] == "rfc " and look_for[4:].strip().isdigit():
-            also_look_for = look_for.lower()[:3]+look_for[4:].strip()
-        # if we're given "rfc3261   " also look for "rfc 3261"
-        elif look_for.lower()[:3] == "rfc" and look_for[3:].rstrip().isdigit():
-            also_look_for = look_for.lower()[:3]+" "+look_for[3:].rstrip()
-        if also_look_for:
-            queries.extend([
-                Q(name__icontains=also_look_for),
-                Q(title__icontains=also_look_for)
-            ])
+        # Check to see if this is just a search for an rfc look for a few variants
+        if look_for.lower()[:3] == "rfc" and look_for[3:].strip().isdigit():
+            spaceless = look_for.lower()[:3]+look_for[3:].strip()
+            if spaceless != look_for:
+                queries.extend([
+                    Q(name__icontains=spaceless),
+                    Q(title__icontains=spaceless)            
+                ])
+            singlespace = look_for.lower()[:3]+" "+look_for[3:].strip()
+            if singlespace != look_for:
+                queries.extend([
+                    Q(name__icontains=singlespace),
+                    Q(title__icontains=singlespace)            
+                ])        
 
-        also_look_for = None
+        # Do a similar thing if the search is just for a subseries doc, like a bcp.
         if look_for.lower()[:3] in ["bcp", "fyi", "std"] and query["rfcs"]: # Also look for rfcs contained in the subseries.
             queries.extend([
                 Q(targets_related__source__name__icontains=look_for, targets_related__relationship_id="contains"),
                 Q(targets_related__source__title__icontains=look_for, targets_related__relationship_id="contains"),
-            ])           
-            if look_for.lower()[:4] in  ["bcp ", "std ", "fyi "] and look_for[4:].strip().isdigit():
-                also_look_for = look_for.lower()[:3]+look_for[4:].strip()
-            elif look_for.lower()[:3] in ["bcp", "std", "fyi"] and look_for[3:].rstrip().isdigit():
-                also_look_for = look_for.lower()[:3]+" "+look_for[3:].rstrip()
-            if also_look_for:
+            ])
+            spaceless = look_for.lower()[:3]+look_for[3:].strip()
+            if spaceless != look_for:
                 queries.extend([
-                    Q(targets_related__source__name__icontains=also_look_for, targets_related__relationship_id="contains"),
-                    Q(targets_related__source__title__icontains=also_look_for, targets_related__relationship_id="contains"),
-                ])   
+                    Q(targets_related__source__name__icontains=spaceless, targets_related__relationship_id="contains"),
+                    Q(targets_related__source__title__icontains=spaceless, targets_related__relationship_id="contains"),
+                ])
+            singlespace = look_for.lower()[:3]+" "+look_for[3:].strip()
+            if singlespace != look_for:
+                queries.extend([
+                    Q(targets_related__source__name__icontains=singlespace, targets_related__relationship_id="contains"),
+                    Q(targets_related__source__title__icontains=singlespace, targets_related__relationship_id="contains"),
+                ])
 
         combined_query = reduce(operator.or_, queries)
         docs = docs.filter(combined_query).distinct()
