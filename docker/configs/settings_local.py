@@ -62,5 +62,5 @@ STATIC_IETF_ORG_INTERNAL = "http://static"
 APP_API_TOKENS = {
     "ietf.api.views.rpc_person" : ["devtoken"],
     "ietf.api.views.submitted_to_rpc" : ["devtoken"],
-    "ietf.api.views.create_demo_person" : ["devtoken"]
+    "ietf.api.views.create_demo_resources" : ["devtoken"],  # remove for production!
 }
