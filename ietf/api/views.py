@@ -35,7 +35,7 @@ from ietf.person.factories import PersonFactory # DO NOT MERGE INTO MAIN
 from ietf.person.models import Person, Email
 from ietf.api import _api_list
 from ietf.api.serializer import JsonExportMixin
-from ietf.api.ietf_utils import is_valid_token
+from ietf.api.ietf_utils import is_valid_token, requires_api_token
 from ietf.doc.factories import WgDraftFactory # DO NOT MERGE INTO MAIN
 from ietf.doc.models import Document
 from ietf.doc.utils import fuzzy_find_documents
@@ -450,6 +450,21 @@ def rpc_person(request, person_id):
         "id": person.id,
         "plain_name": person.plain_name(),
     })
+
+@csrf_exempt
+@requires_api_token("ietf.api.views.rpc_person")
+def rpc_subject_person(request, subject_id):
+    try:
+        user_id = int(subject_id)
+    except ValueError:
+        return JsonResponse({"error": "Invalid subject id"}, status=400)
+    try:   
+        user = User.objects.get(pk=user_id)
+    except User.DoesNotExist:
+        return JsonResponse({"error": "Unknown subject"}, status=404)
+    if hasattr(user, "person"):  # test this way to avoid exception on reverse OneToOneField        
+        return rpc_person(request, person_id=user.person.pk)
+    return JsonResponse({"error": "Subject has no person"}, status=404) 
 
 @csrf_exempt
 def rpc_persons(request):
