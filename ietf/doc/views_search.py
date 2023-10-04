@@ -192,7 +192,7 @@ def retrieve_search_results(form, all_types=False):
                 ])        
 
         # Do a similar thing if the search is just for a subseries doc, like a bcp.
-        if look_for.lower()[:3] in ["bcp", "fyi", "std"] and query["rfcs"]: # Also look for rfcs contained in the subseries.
+        if look_for.lower()[:3] in ["bcp", "fyi", "std"] and look_for[3:].strip().isdigit() and query["rfcs"]: # Also look for rfcs contained in the subseries.
             queries.extend([
                 Q(targets_related__source__name__icontains=look_for, targets_related__relationship_id="contains"),
                 Q(targets_related__source__title__icontains=look_for, targets_related__relationship_id="contains"),
