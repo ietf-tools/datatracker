@@ -441,10 +441,8 @@ def directauth(request):
         return HttpResponse(status=405)
 
 @csrf_exempt
+@requires_api_token("ietf.api.views.rpc_person")
 def rpc_person(request, person_id):
-    authtoken = request.META.get("HTTP_X_API_KEY", None)
-    if authtoken is None or not is_valid_token("ietf.api.views.rpc_person", authtoken):
-        return HttpResponseForbidden()
     person = get_object_or_404(Person, pk=person_id)
     return JsonResponse({
         "id": person.id,
@@ -467,13 +465,9 @@ def rpc_subject_person(request, subject_id):
     return JsonResponse({"error": "Subject has no person"}, status=404) 
 
 @csrf_exempt
+@requires_api_token("ietf.api.views.rpc_person")
 def rpc_persons(request):
-    """ Get a batch of rpc person names
-
-    """
-    authtoken = request.META.get("HTTP_X_API_KEY", None)
-    if authtoken is None or not is_valid_token("ietf.api.views.rpc_person", authtoken):
-        return HttpResponseForbidden()
+    """ Get a batch of rpc person names"""
     if request.method != "POST":
         return HttpResponseForbidden()
     
@@ -485,14 +479,12 @@ def rpc_persons(request):
 
 
 @csrf_exempt
+@requires_api_token("ietf.api.views.submitted_to_rpc")
 def submitted_to_rpc(request):
     """ Return documents in datatracker that have been submitted to the RPC but are not yet in the queue
     
     Those queries overreturn - there may be things, particularly not from the IETF stream that are already in the queue.
     """
-    authtoken = request.META.get("HTTP_X_API_KEY", None)
-    if authtoken is None or not is_valid_token("ietf.api.views.submitted_to_rpc", authtoken):
-        return HttpResponseForbidden()
     ietf_docs = Q(states__type_id="draft-iesg",states__slug__in=["ann"])
     irtf_iab_ise_docs = Q(states__type_id__in=["draft-stream-iab","draft-stream-irtf","draft-stream-ise"],states__slug__in=["rfc-edit"])
     #TODO: Need a way to talk about editorial stream docs
@@ -505,13 +497,11 @@ def submitted_to_rpc(request):
 
 
 @csrf_exempt
+@requires_api_token("ietf.api.views.submitted_to_rpc")
 def create_demo_person(request):
     """ Helper for creating rpc demo objects - SHOULD NOT MAKE IT INTO PRODUCTION
 
     """
-    authtoken = request.META.get("HTTP_X_API_KEY", None)
-    if authtoken is None or not is_valid_token("ietf.api.views.submitted_to_rpc", authtoken):
-        return HttpResponseForbidden()
     if request.method != "POST":
         return HttpResponseForbidden()
     
@@ -522,13 +512,11 @@ def create_demo_person(request):
 
 
 @csrf_exempt
+@requires_api_token("ietf.api.views.submitted_to_rpc")
 def create_demo_draft(request):
     """ Helper for creating rpc demo objects - SHOULD NOT MAKE IT INTO PRODUCTION
 
     """
-    authtoken = request.META.get("HTTP_X_API_KEY", None)
-    if authtoken is None or not is_valid_token("ietf.api.views.submitted_to_rpc", authtoken):
-        return HttpResponseForbidden()
     if request.method != "POST":
         return HttpResponseForbidden()
     
