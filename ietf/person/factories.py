@@ -8,7 +8,7 @@ import faker
 import faker.config
 import os
 import random
-import shutil
+from PIL import Image
 
 from unidecode import unidecode
 from unicodedata import normalize
@@ -103,10 +103,9 @@ class PersonFactory(factory.django.DjangoModelFactory):
             media_name = "%s/%s.jpg" % (settings.PHOTOS_DIRNAME, photo_name)
             obj.photo = media_name
             obj.photo_thumb = media_name
-            photosrc = os.path.join(settings.TEST_DATA_DIR, "profile-default.jpg")
             photodst = os.path.join(settings.PHOTOS_DIR,  photo_name + '.jpg')
-            if not os.path.exists(photodst):
-                shutil.copy(photosrc, photodst)
+            img = Image.new('RGB', (200, 200))
+            img.save(photodst)
             def delete_file(file):
                 os.unlink(file)
             atexit.register(delete_file, photodst)

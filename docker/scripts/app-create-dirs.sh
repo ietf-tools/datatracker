@@ -1,13 +1,6 @@
 #!/bin/bash
 
 for sub in \
-    test/id \
-    test/staging \
-    test/archive \
-    test/rfc \
-    test/media \
-    test/wiki/ietf \
-    data/nomcom_keys/public_keys \
     /assets/archive/id \
     /assets/ietf-ftp \
     /assets/ietf-ftp/bofreq \
