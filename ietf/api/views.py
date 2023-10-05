@@ -441,7 +441,7 @@ def directauth(request):
         return HttpResponse(status=405)
 
 @csrf_exempt
-@requires_api_token("ietf.api.views.rpc_person")
+@requires_api_token
 def rpc_person(request, person_id):
     person = get_object_or_404(Person, pk=person_id)
     return JsonResponse({
@@ -464,7 +464,7 @@ def rpc_persons(request):
 
 
 @csrf_exempt
-@requires_api_token("ietf.api.views.submitted_to_rpc")
+@requires_api_token
 def submitted_to_rpc(request):
     """ Return documents in datatracker that have been submitted to the RPC but are not yet in the queue
     
