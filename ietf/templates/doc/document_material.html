@@ -38,7 +38,9 @@
                     <td>
                         {% with session=doc.get_related_session %}
                         {% with timeslot=session.official_timeslotassignment.timeslot %}
-                            {{ timeslot.time|timezone:session.meeting.time_zone|date:"D Y-m-d H:i" }}–{{ timeslot.end_time|timezone:session.meeting.time_zone|date:"H:i" }} {{ session.meeting.time_zone }}
+                            {% if session.meeting %}
+                                {{ timeslot.time|timezone:session.meeting.time_zone|date:"D Y-m-d H:i" }}–{{ timeslot.end_time|timezone:session.meeting.time_zone|date:"H:i" }} {{ session.meeting.time_zone }}
+                            {% endif %}
                         {% endwith %}
                         {% endwith %}
                     </td>
