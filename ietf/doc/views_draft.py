@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2010-2020, All Rights Reserved
+# Copyright The IETF Trust 2010-2023, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -61,6 +61,12 @@ class ChangeStateForm(forms.Form):
     substate = forms.ModelChoiceField(DocTagName.objects.filter(slug__in=IESG_SUBSTATE_TAGS), required=False)
     comment = forms.CharField(widget=forms.Textarea, required=False, strip=False)
 
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop("user")
+        super(ChangeStateForm, self).__init__(*args, **kwargs)
+        if not has_role(user, "Secretariat"):
+            self.fields["state"].queryset = self.fields["state"].queryset.exclude(slug="ann")
+
     def clean(self):
         retclean = self.cleaned_data
         state = self.cleaned_data.get('state', '(None)')
@@ -94,7 +100,7 @@ def change_state(request, name):
     login = request.user.person
 
     if request.method == 'POST':
-        form = ChangeStateForm(request.POST)
+        form = ChangeStateForm(request.POST, user=request.user)
         form.docname=name
 
         if form.is_valid():
@@ -175,7 +181,8 @@ def change_state(request, name):
         state = doc.get_state("draft-iesg")
         t = doc.tags.filter(slug__in=IESG_SUBSTATE_TAGS)
         form = ChangeStateForm(initial=dict(state=state.pk if state else None,
-                                            substate=t[0].pk if t else None))
+                                            substate=t[0].pk if t else None),
+                               user=request.user)
         form.docname=name
 
     state = doc.get_state("draft-iesg")
