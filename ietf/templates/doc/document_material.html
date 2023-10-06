@@ -2,7 +2,7 @@
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
 {% load static %}
-{% load ietf_filters textfilters %}
+{% load ietf_filters textfilters tz %}
 {% block title %}{{ doc.title|default:"Untitled" }}{% endblock %}
 {% block content %}
     {% origin %}
@@ -28,7 +28,21 @@
                     {% endif %}
                     {% if snapshot %}<span class="badge rounded-pill text-bg-warning">Snapshot</span>{% endif %}
                 </td>
-            </tr>
+            {% if doc.meeting_related %}
+                </tr>
+                    <th scope="row">
+                        Date and time
+                    </th>
+                    <td></td>
+                    <td>
+                        {% with session=doc.get_related_session %}
+                        {% with timeslot=session.official_timeslotassignment.timeslot %}
+                            {{ timeslot.time|timezone:session.meeting.time_zone|date:"D Y-m-d H:i" }}–{{ timeslot.end_time|timezone:session.meeting.time_zone|date:"H:i" }} {{ session.meeting.time_zone }}
+                        {% endwith %}
+                        {% endwith %}
+                    </td>
+                </tr>
+            {% endif %}
             <tr>
                 <th scope="row">Title</th>
                 <td class="edit">
