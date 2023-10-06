@@ -97,7 +97,21 @@
                             {% if presentations %}
                                 {% for pres in presentations %}
                                     {{ pres.session.short_name }} at {{ pres.session.meeting }}
-                                    {% if pres.rev != doc.rev %}(version -{{ pres.rev }}){% endif %}{% if not forloop.last %},{% endif %}
+                                    {% if pres.rev != doc.rev %}(version -{{ pres.rev }}){% endif %}
+                                    <br>
+                                    <b>Remote instructions:</b>
+                                    {% if pres.session.agenda_note|first_url|conference_url %}
+                                        <a href="{{ pres.session.agenda_note|first_url }}" title="Online conference">
+                                            <i class="bi bi-beople"></i>
+                                        </a>
+                                    {% elif pres.session.remote_instructions|first_url|conference_url %}
+                                        <a href="{{ pres.session.remote_instructions|first_url }}"
+                                           title="Online conference">
+                                            <i class="bi bi-people"></i>
+                                        </a>
+                                    {% endif %}
+                                    {{ pres.session.remote_instructions|linkify }}
+                                    {% if not forloop.last %}<br>{% endif %}
                                 {% endfor %}
                             {% else %}
                                 <span class="text-body-secondary">(None)</span>
