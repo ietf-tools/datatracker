@@ -15,7 +15,13 @@ from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
 from django.db.models import Q
-from django.http import HttpResponse, Http404, JsonResponse, HttpResponseForbidden
+from django.http import (
+    HttpResponse,
+    Http404,
+    JsonResponse,
+    HttpResponseNotAllowed,
+    HttpResponseNotFound,
+)
 from django.shortcuts import render, get_object_or_404
 from django.urls import reverse
 from django.utils.decorators import method_decorator
@@ -454,7 +460,7 @@ def rpc_person(request, person_id):
 def rpc_persons(request):
     """ Get a batch of rpc person names"""
     if request.method != "POST":
-        return HttpResponseForbidden()
+        return HttpResponseNotAllowed(["POST"])
     
     pks = json.loads(request.body)
     response = dict()
@@ -462,6 +468,30 @@ def rpc_persons(request):
         response[str(p.pk)] = p.plain_name()
     return JsonResponse(response)
 
+@csrf_exempt
+@requires_api_token
+def rpc_draft(request, doc_id):
+    if request.method != "GET":
+        return HttpResponseNotAllowed(["GET"])
+    
+    try:
+        d = Document.objects.get(pk=doc_id, type_id="draft")
+    except Document.DoesNotExist:
+        return HttpResponseNotFound()
+    return JsonResponse({
+        "id": d.pk,
+        "name": d.name,
+        "rev": d.rev,
+        "stream": d.stream.slug,
+        "title": d.title,
+        "pages": d.pages,
+        "authors": [
+            {
+                "id": p.pk,
+                "plain_name": p.plain_name(),
+            } for p in d.documentauthor_set.all()
+        ]
+    })
 
 @csrf_exempt
 @requires_api_token
@@ -488,7 +518,7 @@ def create_demo_person(request):
 
     """
     if request.method != "POST":
-        return HttpResponseForbidden()
+        return HttpResponseNotAllowed(["POST"])
     
     request_params = json.loads(request.body)
     name = request_params["name"]
@@ -503,21 +533,18 @@ def create_demo_draft(request):
 
     """
     if request.method != "POST":
-        return HttpResponseForbidden()
-    
+        return HttpResponseNotAllowed(["POST"])
+
     request_params = json.loads(request.body)
     name = request_params.get("name")
     rev = request_params.get("rev")
     states = request_params.get("states")
     stream_id = request_params.get("stream_id", "ietf")
-    exists = False
     doc = None
     if not name:
         return HttpResponse(status=400, content="Name is required")
     doc = Document.objects.filter(name=name).first()
-    if doc:
-        exists = True
-    else:
+    if not doc:
         kwargs = {"name": name, "stream_id": stream_id}
         if states:
             kwargs["states"] = states

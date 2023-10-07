@@ -55,7 +55,7 @@ paths:
     /person/create_demo_person/:
         post:
             operationId: create_demo_person
-            summary: Build a datatraker Person for RPC demo purposes
+            summary: Build a datatracker Person for RPC demo purposes
             description: returns a datatracker User id for a person created with the given name
             requestBody:
                 required: true
@@ -129,25 +129,27 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/SubmittedToQueue'
 
-#    /subject/person{subjectId}:
-#        get:
-#            operationId: get_subject_person_by_id
-#            summary: Find person for a subject by ID
-#            description: Returns a single person
-#            parameters:
-#                -   name: subjectId
-#                    in: path
-#                    description: subject ID of person to return
-#                    required: true
-#                    schema:
-#                        type: string
-#            responses:
-#                '200':
-#                    description: OK
-#                    content:
-#                        application/json:
-#                            schema:
-#                                $ref: '#/components/schemas/Person'
+    /doc/drafts/{docId}:
+        get:
+            operationId: get_draft_by_id
+            summary: Get a draft
+            description: Returns the draft for the requested ID
+            parameters:
+                - name: docId
+                  in: path
+                  description: ID of draft to retrieve
+                  required: true
+                  schema:
+                      type: integer
+            responses:
+                '200':
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Draft'
+                '404':
+                    description: Not found
 
 components: 
     schemas: 
@@ -178,7 +180,25 @@ components:
                             submitted: 
                                 type: string
                                 format: date
-
+        Draft:
+            type: object
+            properties: 
+                id:
+                    type: integer
+                name:
+                    type: string
+                rev:
+                    type: string
+                stream:
+                    type: string
+                title:
+                    type: string
+                pages:
+                    type: integer
+                authors:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/Person'
 
     securitySchemes: 
         ApiKeyAuth:
