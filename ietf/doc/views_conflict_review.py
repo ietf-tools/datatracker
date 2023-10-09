@@ -555,10 +555,12 @@ def start_review_as_stream_owner(request, name):
 def start_review_irtf_state(doc, by):
     prev_state = doc.get_state('draft-stream-irtf')
     new_state = State.objects.get(type_id='draft-stream-irtf', slug='iesg-rev')
-    doc.set_state(new_state)
-    events = []
-    events.append(add_state_change_event(doc, by, prev_state, new_state))
-    doc.save_with_history(events)
+
+    if new_state != prev_state:
+        doc.set_state(new_state)
+        events = []
+        events.append(add_state_change_event(doc, by, prev_state, new_state))
+        doc.save_with_history(events)
 
 def close_review_irtf_state(doc, by):
     prev_state = doc.get_state("draft-stream-irtf")
