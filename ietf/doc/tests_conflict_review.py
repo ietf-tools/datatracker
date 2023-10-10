@@ -168,6 +168,21 @@ class ConflictReviewTests(TestCase):
         self.assertTrue(review_doc.active_ballot())
         self.assertEqual(review_doc.latest_event(BallotPositionDocEvent, type="changed_ballot_position").pos_id,'yes')
 
+        # try to change to an AD-forbidden state
+        appr_noprob_sent_pk = str(State.objects.get(used=True, slug='appr-noprob-sent',type__slug='conflrev').pk)
+        r = self.client.post(url,dict(review_state=appr_noprob_sent_pk,comment='xyzzy'))
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertTrue(q('form .invalid-feedback'))
+
+        # try again as secretariat
+        self.client.logout()
+        login_testing_unauthorized(self, 'secretary', url)
+        r = self.client.post(url,dict(review_state=appr_noprob_sent_pk,comment='xyzzy'))
+        self.assertEqual(r.status_code, 302)
+        review_doc = Document.objects.get(name='conflict-review-imaginary-irtf-submission')
+        self.assertEqual(review_doc.get_state('conflrev').slug, 'appr-noprob-sent')
+
 
     def test_edit_notices(self):
         doc = Document.objects.get(name='conflict-review-imaginary-irtf-submission')

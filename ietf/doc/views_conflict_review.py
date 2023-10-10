@@ -36,6 +36,12 @@ class ChangeStateForm(forms.Form):
     review_state = forms.ModelChoiceField(State.objects.filter(used=True, type="conflrev"), label="Conflict review state", empty_label=None, required=True)
     comment = forms.CharField(widget=forms.Textarea, help_text="Optional comment for the review history.", required=False, strip=False)
 
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop("user")
+        super(ChangeStateForm, self).__init__(*args, **kwargs)
+        if not has_role(user, "Secretariat"):
+            self.fields["review_state"].queryset = self.fields["review_state"].queryset.exclude(slug__in=("appr-reqnopub-sent","appr-noprob-sent"))
+
 @role_required("Area Director", "Secretariat")
 def change_state(request, name, option=None):
     """Change state of an IESG review for IETF conflicts in other stream's documents, notifying parties as necessary
@@ -45,7 +51,7 @@ def change_state(request, name, option=None):
     login = request.user.person
 
     if request.method == 'POST':
-        form = ChangeStateForm(request.POST)
+        form = ChangeStateForm(request.POST, user=request.user)
         if form.is_valid():
             clean = form.cleaned_data
             new_state = clean['review_state']
@@ -100,7 +106,7 @@ def change_state(request, name, option=None):
     else:
         s = review.get_state()
         init = dict(review_state=s.pk if s else None)
-        form = ChangeStateForm(initial=init)
+        form = ChangeStateForm(initial=init, user=request.user)
 
     return render(request, 'doc/change_state.html',
                               dict(form=form,
