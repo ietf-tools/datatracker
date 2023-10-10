@@ -491,7 +491,6 @@ class EditInfoForm(forms.Form):
         help_text="Separate email addresses with commas.",
         required=False,
     )
-    note = forms.CharField(widget=forms.Textarea, label="IESG note", required=False, strip=False)
     telechat_date = forms.TypedChoiceField(coerce=lambda x: datetime.datetime.strptime(x, '%Y-%m-%d').date(), empty_value=None, required=False, widget=forms.Select(attrs={'onchange':'make_bold()'}))
     returning_item = forms.BooleanField(required=False)
 
@@ -514,9 +513,6 @@ class EditInfoForm(forms.Form):
 
         # returning item is rendered non-standard
         self.standard_fields = [x for x in self.visible_fields() if x.name not in ('returning_item',)]
-
-    def clean_note(self):
-        return self.cleaned_data['note'].replace('\r', '').strip()
 
 def to_iesg(request,name):
     """ Submit an IETF stream document to the IESG for publication """ 
@@ -715,18 +711,6 @@ def edit_info(request, name):
             diff('ad', "Responsible AD")
             diff('notify', "State Change Notice email list")
 
-            if r['note'] != doc.note:
-                if not r['note']:
-                    if doc.note:
-                        changes.append("Note field has been cleared")
-                else:
-                    if doc.note:
-                        changes.append("Note changed to '%s'" % r['note'])
-                    else:
-                        changes.append("Note added '%s'" % r['note'])
-                    
-                doc.note = r['note']
-
             if doc.group.type_id in ("individ", "area"):
                 if not r["area"]:
                     r["area"] = Group.objects.get(type="individ")
@@ -769,7 +753,6 @@ def edit_info(request, name):
                     area=doc.group_id,
                     ad=doc.ad_id,
                     notify=doc.notify,
-                    note=doc.note,
                     telechat_date=initial_telechat_date,
                     returning_item=initial_returning_item,
                     )
@@ -861,52 +844,6 @@ def restore_draft_file(request, draft):
             messages.warning(request, 'There was an error restoring the Internet-Draft file: {} ({})'.format(file, ex))
             log.log("  Exception %s when attempting to move %s" % (ex, file))
 
-
-class IESGNoteForm(forms.Form):
-    note = forms.CharField(widget=forms.Textarea, label="IESG note", required=False, strip=False)
-
-    def clean_note(self):
-        # not munging the database content to use html line breaks --
-        # that has caused a lot of pain in the past.
-        return self.cleaned_data['note'].replace('\r', '').strip()
-
-@role_required("Area Director", "Secretariat")
-def edit_iesg_note(request, name):
-    doc = get_object_or_404(Document, type="draft", name=name)
-    login = request.user.person
-
-    initial = dict(note=doc.note)
-
-    if request.method == "POST":
-        form = IESGNoteForm(request.POST, initial=initial)
-
-        if form.is_valid():
-            new_note = form.cleaned_data['note']
-            if new_note != doc.note:
-                if not new_note:
-                    if doc.note:
-                        log_message = "Note field has been cleared"
-                else:
-                    if doc.note:
-                        log_message = "Note changed to '%s'" % new_note
-                    else:
-                        log_message = "Note added '%s'" % new_note
-
-                c = DocEvent(type="added_comment", doc=doc, rev=doc.rev, by=login)
-                c.desc = log_message
-                c.save()
-
-                doc.note = new_note
-                doc.save_with_history([c])
-
-            return redirect('ietf.doc.views_doc.document_main', name=doc.name)
-    else:
-        form = IESGNoteForm(initial=initial)
-
-    return render(request, 'doc/draft/edit_iesg_note.html',
-                              dict(doc=doc,
-                                   form=form,
-                                   ))
 
 class ShepherdWriteupUploadForm(forms.Form):
     content = forms.CharField(widget=forms.Textarea, label="Shepherd writeup", help_text="Edit the shepherd writeup.", required=False, strip=False)
