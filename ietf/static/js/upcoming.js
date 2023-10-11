@@ -43,6 +43,9 @@ function format_moment(t_moment, tz, fmt_type) {
 
 function make_display_events(event_data, tz) {
     var calendarEl = document.getElementById('calendar');
+    if (!calendarEl) {
+        return;
+    }
     var glue = calendarEl.clientWidth > 720 ? ' ' : '\n';
     return $.map(event_data, function (src_event) {
         var title;
@@ -83,6 +86,9 @@ function update_calendar(tz, filter_params) {
          * filtered events.
          */
         var calendarEl = document.getElementById('calendar');
+        if (!calendarEl) {
+            return;
+        }
         event_calendar = new FullCalendar(calendarEl, {
             plugins: [dayGridPlugin, bootstrap5Plugin],
             initialView: 'dayGridMonth',
