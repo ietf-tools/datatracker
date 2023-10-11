@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2017, All Rights Reserved
+# Copyright The IETF Trust 2017-2023, All Rights Reserved
 
 from django.conf import settings
 from django.urls import include
@@ -60,6 +60,7 @@ urlpatterns = [
     url(r'^rfcdiff-latest-json/(?P<name>[Rr][Ff][Cc] [0-9]+?)(\.txt|\.html)?/?$', api_views.rfcdiff_latest_json),
     # direct authentication
     url(r'^directauth/?$', api_views.directauth),
+    url(r'^dashboard/', include('ietf.api.urls_dashboard')),
 ]
 
 # Additional (standard) Tastypie endpoints

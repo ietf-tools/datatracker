@@ -1,0 +1,78 @@
+openapi: 3.0.3
+info:
+  title: Datatracker dashboard API
+  description: Datatracker dashboard API
+  version: 1.0.0
+servers:
+  -   url: 'https://datatracker.ietf.org/api/dashboard'
+  -   url: 'http://localhost:8000/api/dashboard'
+paths:
+  /groups_opened_closed/{groupType}/{startYear}/{endYear}/:
+    get:
+      operationId: get_groups_opened_closed_by_year
+      summary: Get groups opened or closed in a given range of years
+      parameters:
+        - name: groupType
+          in: path
+          description: group type slug ('wg', 'rg', etc) to report on
+          required: true
+          schema:
+            type: string
+            pattern: '^[a-z]+$'
+        - name: startYear
+          in: path
+          description: starting year YYYY
+          required: true
+          schema:
+            type: string
+            pattern: '^\d{4}$'
+        - name: endYear
+          in: path
+          description: end year YYYY
+          required: true
+          schema:
+            type: string
+            pattern: '^\d{4}$'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    year:
+                      type: integer
+                    opened:
+                        type: object
+                        properties:
+                          acronym:
+                              type: string
+                          parent_acronym:
+                              type: string
+                          date:
+                              type: string
+                              format: date
+                    closed:
+                        type: object
+                        properties:
+                          acronym:
+                              type: string
+                          parent_acronym:
+                              type: string
+                          date:
+                              type: string
+                              format: date
+
+components: 
+
+    securitySchemes: 
+        ApiKeyAuth:
+            type: apiKey
+            in: header
+            name: X-API-KEY
+
+security:
+    - ApiKeyAuth: []

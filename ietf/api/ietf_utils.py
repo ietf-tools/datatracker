@@ -3,6 +3,8 @@
 # This is not utils.py because Tastypie implicitly consumes ietf.api.utils.
 # See ietf.api.__init__.py for details.
 
+import debug # pyflakes: ignore
+
 from functools import wraps
 from typing import Callable, Optional, Union
 
@@ -13,6 +15,7 @@ from django.http import HttpResponseForbidden
 def is_valid_token(endpoint, token):
     # This is where we would consider integration with vault
     # Settings implementation for now.
+    debug.show('[endpoint, token]')
     if hasattr(settings, "APP_API_TOKENS"):
         token_store = settings.APP_API_TOKENS
         if endpoint in token_store and token in token_store[endpoint]:
