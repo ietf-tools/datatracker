@@ -14,7 +14,7 @@
         {% csrf_token %}
         {% bootstrap_form ballot_writeup_form %}
         <div class="form-text my-3">
-            Technical summary, Working Group summary, document quality, personnel, IRTF note, IESG note, IANA note. This text will be appended to all announcements and messages to the IRTF or RFC Editor.
+            Technical summary, Working Group summary, document quality, personnel, IANA note. This text will be appended to all announcements and messages to the IRTF or RFC Editor.
             {% if ballot_issue_danger %}
                 <p class="text-danger">
                     This document has not completed IETF Last Call.  Please do not issue the ballot early without good reason.

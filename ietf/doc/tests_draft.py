@@ -98,7 +98,7 @@ class ChangeStateTests(TestCase):
         draft.action_holders.add(ad)
 
         url = urlreverse('ietf.doc.views_draft.change_state', kwargs=dict(name=draft.name))
-        login_testing_unauthorized(self, "secretary", url)
+        login_testing_unauthorized(self, "ad", url)
 
         first_state = draft.get_state("draft-iesg")
         next_states = first_state.next_states.all()
@@ -153,6 +153,20 @@ class ChangeStateTests(TestCase):
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertEqual(len(q('form [type=submit]:contains("%s")' % first_state.name)), 1)
+
+        # try to change to an AD-forbidden state
+        r = self.client.post(url, dict(state=State.objects.get(used=True, type='draft-iesg', slug='ann').pk, comment='Test comment'))
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertTrue(q('form .invalid-feedback'))
+
+        # try again as secretariat
+        self.client.logout()
+        login_testing_unauthorized(self, 'secretary', url)
+        r = self.client.post(url, dict(state=State.objects.get(used=True, type='draft-iesg', slug='ann').pk, comment='Test comment'))
+        self.assertEqual(r.status_code, 302)
+        draft = Document.objects.get(name=draft.name)
+        self.assertEqual(draft.get_state_slug('draft-iesg'), 'ann')
 
     def test_pull_from_rfc_queue(self):
         ad = Person.objects.get(user__username="ad")
@@ -362,16 +376,14 @@ class EditInfoTests(TestCase):
                                   stream=draft.stream_id,
                                   ad=str(new_ad.pk),
                                   notify="test@example.com",
-                                  note="New note",
                                   telechat_date="",
                                   ))
         self.assertEqual(r.status_code, 302)
 
         draft = Document.objects.get(name=draft.name)
         self.assertEqual(draft.ad, new_ad)
-        self.assertEqual(draft.note, "New note")
         self.assertTrue(not draft.latest_event(TelechatDocEvent, type="scheduled_for_telechat"))
-        self.assertEqual(draft.docevent_set.count(), events_before + 3)
+        self.assertEqual(draft.docevent_set.count(), events_before + 2)
         self.assertEqual(len(outbox), mailbox_before + 1)
         self.assertTrue(draft.name in outbox[-1]['Subject'])
 
@@ -386,7 +398,6 @@ class EditInfoTests(TestCase):
                     stream=draft.stream_id,
                     ad=str(draft.ad_id),
                     notify=draft.notify,
-                    note="",
                     )
 
         # get
@@ -489,7 +500,6 @@ class EditInfoTests(TestCase):
                                   ad=ad.pk,
                                   create_in_state=State.objects.get(used=True, type="draft-iesg", slug="watching").pk,
                                   notify="test@example.com",
-                                  note="This is a note",
                                   telechat_date="",
                                   ))
         self.assertEqual(r.status_code, 302)
@@ -497,12 +507,11 @@ class EditInfoTests(TestCase):
         draft = Document.objects.get(name=draft.name)
         self.assertEqual(draft.get_state_slug("draft-iesg"), "watching")
         self.assertEqual(draft.ad, ad)
-        self.assertEqual(draft.note, "This is a note")
         self.assertTrue(not draft.latest_event(TelechatDocEvent, type="scheduled_for_telechat"))
-        self.assertEqual(draft.docevent_set.count(), events_before + 5)
+        self.assertEqual(draft.docevent_set.count(), events_before + 4)
         self.assertCountEqual(draft.action_holders.all(), [draft.ad])
         events = list(draft.docevent_set.order_by('time', 'id'))
-        self.assertEqual(events[-5].type, "started_iesg_process")
+        self.assertEqual(events[-4].type, "started_iesg_process")
         self.assertEqual(len(outbox), mailbox_before+1)
         self.assertTrue('IESG processing' in outbox[-1]['Subject'])
         self.assertTrue('draft-ietf-mars-test2@' in outbox[-1]['To']) 
@@ -518,7 +527,6 @@ class EditInfoTests(TestCase):
                                   ad=ad.pk,
                                   create_in_state=State.objects.get(used=True, type="draft-iesg", slug="pub-req").pk,
                                   notify="test@example.com",
-                                  note="This is a note",
                                   telechat_date="",
                                   ))
         self.assertEqual(r.status_code, 302)
@@ -1043,23 +1051,6 @@ class IndividualInfoFormsTests(TestCase):
         doc = Document.objects.get(name=self.docname)
         self.assertEqual(doc.latest_event(TelechatDocEvent, "scheduled_for_telechat").telechat_date,None)
         
-    def test_doc_change_iesg_note(self):
-        url = urlreverse('ietf.doc.views_draft.edit_iesg_note', kwargs=dict(name=self.docname))
-        login_testing_unauthorized(self, "secretary", url)
-
-        # get
-        r = self.client.get(url)
-        self.assertEqual(r.status_code,200)
-        q = PyQuery(r.content)
-        self.assertEqual(len(q('[type=submit]:contains("Save")')),1)
-
-        # post
-        r = self.client.post(url,dict(note='ZpyQFGmA\r\nZpyQFGmA'))
-        self.assertEqual(r.status_code,302)
-        doc = Document.objects.get(name=self.docname)
-        self.assertEqual(doc.note,'ZpyQFGmA\nZpyQFGmA')
-        self.assertTrue('ZpyQFGmA' in doc.latest_event(DocEvent,type='added_comment').desc)
-
     def test_doc_change_ad(self):
         url = urlreverse('ietf.doc.views_draft.edit_ad', kwargs=dict(name=self.docname))
         login_testing_unauthorized(self, "secretary", url)

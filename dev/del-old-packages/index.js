@@ -8,7 +8,7 @@ const octokit = new Octokit({
 
 const oldestDate = DateTime.utc().minus({ days: 7 })
 
-for (const pkgName of ['datatracker-db', 'datatracker-db-pg']) {
+for (const pkgName of ['datatracker-db']) {
   let hasMore = true
   let currentPage = 1
 
