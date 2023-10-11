@@ -17,7 +17,7 @@ DATABASES = {
 }
 
 IDSUBMIT_IDNITS_BINARY = "/usr/local/bin/idnits"
-IDSUBMIT_REPOSITORY_PATH = "/assets/ietf-ftp/internet-drafts/"
+IDSUBMIT_REPOSITORY_PATH = "/assets/ietfdata/doc/draft/repository"
 IDSUBMIT_STAGING_PATH = "/assets/www6s/staging/"
 
 AGENDA_PATH = '/assets/www6s/proceedings/'
