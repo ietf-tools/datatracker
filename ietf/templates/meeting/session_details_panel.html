@@ -17,8 +17,8 @@
                 {% if sessions|length > 1 %}Session {{ forloop.counter }} :{% endif %}
                 {% for time in session.times %}
                     {% if not forloop.first %},{% endif %}
-                    {{ time|timezone:session.meeting.time_zone|dateformat:"l Y-m-d H:i T" }}
-                    {% if time.tzinfo.zone != "UTC" %}<span class="small">({{ time|utc|dateformat:"H:i T" }})</span>{% endif %}
+                    <span class="session-time date me-3" data-start-utc="{{ timeslot.time|utc|date:'Y-m-d H:i' }}" data-end-utc="{{ timeslot.end_time|utc|date:'Y-m-d H:i' }}"></span>
+                    {% include "meeting/tz-display.html" with meeting_timezone=session.meeting.time_zone id_suffix="" minimal=True only %}
                 {% endfor %}
                 {% if session.cancelled %}
                     <small class="badge rounded-pill text-bg-warning">Cancelled</small>
