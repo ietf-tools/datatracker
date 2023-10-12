@@ -58,3 +58,7 @@ DE_GFM_BINARY = '/usr/local/bin/de-gfm'
 
 STATIC_IETF_ORG = "/_static"
 STATIC_IETF_ORG_INTERNAL = "http://static"
+
+APP_API_TOKENS = {
+    "ietf.api.views_dashboard": ["devtoken"]
+}
