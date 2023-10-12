@@ -23,7 +23,7 @@
     {% url 'django.contrib.auth.views.logout' as logout_url %}
     {% if request.get_full_path == logout_url %}
         <li>
-            <a class="dropdown-item {% if flavor != 'top' %} text-wrap link-primary{% endif %}"
+            <a class="dropdown-item {% if flavor != 'top' %} text-wrap{% endif %}"
                rel="nofollow"
                href="{% url 'ietf.ietfauth.views.login' %}">
                 Sign in
@@ -34,14 +34,14 @@
             <li>
                 <form id="logout-form" method="post" action="{% url 'django.contrib.auth.views.logout' %}">
                     {% csrf_token %}
-                    <button class="dropdown-item {% if flavor != 'top' %} text-wrap link-primary{% endif %}" 
+                    <button class="dropdown-item {% if flavor != 'top' %} text-wrap{% endif %}" 
                             type="submit">
                         Sign out
                     </button>
                 </form>
             </li>
             <li>
-                <a class="dropdown-item {% if flavor != 'top' %} text-wrap link-primary{% endif %}"
+                <a class="dropdown-item {% if flavor != 'top' %} text-wrap{% endif %}"
                    rel="nofollow"
                    href="{% url 'ietf.ietfauth.views.profile' %}">
                     Account info
@@ -49,35 +49,35 @@
             </li>
             {% if user and user.person %}
                 <li>
-                    <a class="dropdown-item {% if flavor != 'top' %} text-wrap link-primary{% endif %}"
+                    <a class="dropdown-item {% if flavor != 'top' %} text-wrap{% endif %}"
                        href="{% url 'ietf.person.views.profile' email_or_name=user.person.name %}">
                         Public profile page
                     </a>
                 </li>
             {% endif %}
             <li>
-                <a class="dropdown-item {% if flavor != 'top' %} text-wrap link-primary{% endif %}"
+                <a class="dropdown-item {% if flavor != 'top' %} text-wrap{% endif %}"
                    href="{% url 'ietf.cookies.views.preferences' %}"
                    rel="nofollow">
                     Preferences
                 </a>
             </li>
             <li>
-                <a class="dropdown-item {% if flavor != 'top' %} text-wrap link-primary{% endif %}"
+                <a class="dropdown-item {% if flavor != 'top' %} text-wrap{% endif %}"
                    href="{% url 'ietf.ietfauth.views.apikey_index' %}"
                    rel="nofollow">
                     API keys
                 </a>
             </li>
             <li>
-                <a class="dropdown-item {% if flavor != 'top' %} text-wrap link-primary{% endif %}"
+                <a class="dropdown-item {% if flavor != 'top' %} text-wrap{% endif %}"
                    rel="nofollow"
                    href="{% url 'ietf.ietfauth.views.change_password' %}">
                     Change password
                 </a>
             </li>
             <li>
-                <a class="dropdown-item {% if flavor != 'top' %} text-wrap link-primary{% endif %}"
+                <a class="dropdown-item {% if flavor != 'top' %} text-wrap{% endif %}"
                    rel="nofollow"
                    href="{% url 'ietf.ietfauth.views.change_username' %}">
                     Change username
@@ -85,21 +85,21 @@
             </li>
         {% else %}
             <li>
-                <a class="dropdown-item {% if flavor != 'top' %} text-wrap link-primary{% endif %}"
+                <a class="dropdown-item {% if flavor != 'top' %} text-wrap{% endif %}"
                    rel="nofollow"
                    href="{% url 'ietf.ietfauth.views.login' %}?next={{ request.get_full_path|urlencode }}">
                     Sign in
                 </a>
             </li>
             <li>
-                <a class="dropdown-item {% if flavor != 'top' %} text-wrap link-primary{% endif %}"
+                <a class="dropdown-item {% if flavor != 'top' %} text-wrap{% endif %}"
                    rel="nofollow"
                    href="{% url 'ietf.ietfauth.views.password_reset' %}">
                     Password reset
                 </a>
             </li>
             <li>
-                <a class="dropdown-item {% if flavor != 'top' %} text-wrap link-primary{% endif %}"
+                <a class="dropdown-item {% if flavor != 'top' %} text-wrap{% endif %}"
                    href="{% url 'ietf.cookies.views.preferences' %}"
                    rel="nofollow">
                     Preferences
@@ -109,7 +109,7 @@
     {% endif %}
     {% if not request.user.is_authenticated %}
         <li>
-            <a class="dropdown-item {% if flavor != 'top' %} text-wrap link-primary{% endif %}"
+            <a class="dropdown-item {% if flavor != 'top' %} text-wrap{% endif %}"
                href="{% url 'ietf.ietfauth.views.create_account' %}">
                 New account
             </a>
@@ -117,7 +117,7 @@
     {% endif %}
     {% if user|has_role:"Reviewer" %}
         <li>
-            <a class="dropdown-item {% if flavor != 'top' %} text-wrap link-primary{% endif %}"
+            <a class="dropdown-item {% if flavor != 'top' %} text-wrap{% endif %}"
                href="{% url 'ietf.ietfauth.views.review_overview' %}">
                 My reviews
             </a>
@@ -127,31 +127,31 @@
         {% if flavor == "top" %}<li><hr class="dropdown-divider"></li>{% endif %}
         <li {% if flavor == "top" %}class="dropdown-header"{% else %}class="nav-item fw-bolder"{% endif %}>AD dashboard</li>
         <li>
-            <a class="dropdown-item {% if flavor != 'top' %} text-wrap link-primary{% endif %}"
+            <a class="dropdown-item {% if flavor != 'top' %} text-wrap{% endif %}"
                href="{% url 'ietf.doc.views_search.docs_for_ad' name=user.person.full_name_as_key %}">
                 My docs
             </a>
         </li>
         <li>
-            <a class="dropdown-item {% if flavor != 'top' %} text-wrap link-primary{% endif %}"
+            <a class="dropdown-item {% if flavor != 'top' %} text-wrap{% endif %}"
                href="{% url 'ietf.iesg.views.agenda_documents' %}">
                 Next telechat
             </a>
         </li>
         <li>
-            <a class="dropdown-item {% if flavor != 'top' %} text-wrap link-primary{% endif %}"
+            <a class="dropdown-item {% if flavor != 'top' %} text-wrap{% endif %}"
                href="{% url 'ietf.iesg.views.discusses' %}">
                 Discusses
             </a>
         </li>
         <li>
-            <a class="dropdown-item {% if flavor != 'top' %} text-wrap link-primary{% endif %}"
+            <a class="dropdown-item {% if flavor != 'top' %} text-wrap{% endif %}"
                href="{% url 'ietf.iesg.views.milestones_needing_review' %}">
                 Milestone review
             </a>
         </li>
         <li>
-            <a class="dropdown-item {% if flavor != 'top' %} text-wrap link-primary{% endif %}"
+            <a class="dropdown-item {% if flavor != 'top' %} text-wrap{% endif %}"
                href="{% url 'ietf.doc.views_search.drafts_in_last_call' %}">
                 Last Call docs
             </a>
@@ -163,31 +163,31 @@
             IETF secretariat
         </li>
         <li>
-            <a class="dropdown-item {% if flavor != 'top' %} text-wrap link-primary{% endif %}"
+            <a class="dropdown-item {% if flavor != 'top' %} text-wrap{% endif %}"
                href="{% url 'admin:iesg_telechatdate_changelist' %}">
                 Telechat dates
             </a>
         </li>
         <li>
-            <a class="dropdown-item {% if flavor != 'top' %} text-wrap link-primary{% endif %}"
+            <a class="dropdown-item {% if flavor != 'top' %} text-wrap{% endif %}"
                href="{% url 'admin:iesg_telechatagendaitem_changelist' %}">
                 Management items
             </a>
         </li>
         <li>
-            <a class="dropdown-item {% if flavor != 'top' %} text-wrap link-primary{% endif %}"
+            <a class="dropdown-item {% if flavor != 'top' %} text-wrap{% endif %}"
                href="{% url 'ietf.iesg.views.milestones_needing_review' %}">
                 Milestones
             </a>
         </li>
         <li>
-            <a class="dropdown-item {% if flavor != 'top' %} text-wrap link-primary{% endif %}"
+            <a class="dropdown-item {% if flavor != 'top' %} text-wrap{% endif %}"
                href="{% url 'ietf.sync.views.discrepancies' %}">
                 Sync discrepancies
             </a>
         </li>
         <li>
-            <a class="dropdown-item {% if flavor != 'top' %} text-wrap link-primary{% endif %}"
+            <a class="dropdown-item {% if flavor != 'top' %} text-wrap{% endif %}"
                href="{% url 'ietf.ietfauth.views.add_account_allowlist' %}">
                 Account allowlist
             </a>
@@ -202,7 +202,7 @@
             IANA
         </li>
         <li>
-            <a class="dropdown-item {% if flavor != 'top' %} text-wrap link-primary{% endif %}"
+            <a class="dropdown-item {% if flavor != 'top' %} text-wrap{% endif %}"
                href="{% url 'ietf.sync.views.discrepancies' %}">
                 Sync discrepancies
             </a>
@@ -217,7 +217,7 @@
             RFC Editor
         </li>
         <li>
-            <a class="dropdown-item {% if flavor != 'top' %} text-wrap link-primary{% endif %}"
+            <a class="dropdown-item {% if flavor != 'top' %} text-wrap{% endif %}"
                href="{% url 'ietf.sync.views.discrepancies' %}">
                 Sync discrepancies
             </a>
