@@ -142,8 +142,6 @@ def agenda_json(request, date=None):
                     'ad':doc.ad.name if doc.ad else None,
                     }
 
-                if doc.note:
-                    docinfo['note'] = doc.note
                 defer = doc.active_defer_event()
                 if defer:
                     docinfo['defer-by'] = defer.by.name

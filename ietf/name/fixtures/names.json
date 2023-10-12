@@ -3811,7 +3811,7 @@
       ],
       "desc": "Recipients when a charter is approved",
       "to": [
-        "ietf_announce"
+        "group_stream_announce"
       ]
     },
     "model": "mailtrigger.mailtrigger",

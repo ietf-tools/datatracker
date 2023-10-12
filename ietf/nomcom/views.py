@@ -77,7 +77,6 @@ def year_index(request, year):
     return render(request, 'nomcom/year_index.html',
                               {'nomcom': nomcom,
                                'year': year,
-                               'selected': 'index',
                                'template': template})
 
 def announcements(request):
@@ -182,8 +181,7 @@ def private_key(request, year):
                               {'nomcom': nomcom,
                                'year': year,
                                'back_url': back_url,
-                               'form': form,
-                               'selected': 'private_key'})
+                               'form': form})
 
 
 @role_required("Nomcom")
@@ -216,10 +214,11 @@ def private_index(request, year):
 
     filters = {}
     questionnaire_state = "questionnaire"
+    not_declined_state = "not-declined"
     selected_state = request.GET.get('state')
     selected_position = request.GET.get('position')
 
-    if selected_state and not selected_state == questionnaire_state:
+    if selected_state and selected_state not in [questionnaire_state, not_declined_state]:
         filters['state__slug'] = selected_state
 
     if selected_position:
@@ -231,13 +230,15 @@ def private_index(request, year):
 
     if selected_state == questionnaire_state:
         nominee_positions = [np for np in nominee_positions if np.questionnaires]
+    elif selected_state == not_declined_state:
+        nominee_positions = nominee_positions.exclude(state__slug='declined')
 
     positions = Position.objects.get_by_nomcom(nomcom=nomcom)
     stats = [ { 'position__name':p.name,
                 'position__id':p.pk,
                 'position': p,
               } for p in positions]
-    states = [{'slug': questionnaire_state, 'name': 'Accepted and sent Questionnaire'}] + list(NomineePositionStateName.objects.values('slug', 'name'))
+    states = [{'slug': questionnaire_state, 'name': 'Accepted and sent Questionnaire'}, {'slug': not_declined_state, 'name': 'Not declined'}] + list(NomineePositionStateName.objects.values('slug', 'name'))
     positions = set([ n.position for n in all_nominee_positions.order_by('position__name') ])
     for s in stats:
         for state in states:
@@ -280,7 +281,6 @@ def private_index(request, year):
                                'positions': positions,
                                'selected_state': selected_state,
                                'selected_position': selected_position and int(selected_position) or None,
-                               'selected': 'index',
                                'is_chair': is_chair,
                                'mailto': mailto,
                               })
@@ -305,13 +305,11 @@ def send_reminder_mail(request, year, type):
         interesting_state = 'pending'
         mail_path = nomcom_template_path + NOMINEE_ACCEPT_REMINDER_TEMPLATE
         reminder_description = 'accept (or decline) a nomination'
-        selected_tab = 'send_accept_reminder'
         state_description = NomineePositionStateName.objects.get(slug=interesting_state).name
     elif type=='questionnaire':
         interesting_state = 'accepted'
         mail_path = nomcom_template_path + NOMINEE_QUESTIONNAIRE_REMINDER_TEMPLATE
         reminder_description = 'complete the questionnaire for a nominated position'
-        selected_tab = 'send_questionnaire_reminder'
         state_description =  NomineePositionStateName.objects.get(slug=interesting_state).name+' but no questionnaire has been received'
     else:
         raise Http404
@@ -346,7 +344,6 @@ def send_reminder_mail(request, year, type):
                                'year': year,
                                'nominees': annotated_nominees,
                                'mail_template': mail_template,
-                               'selected': selected_tab,
                                'reminder_description': reminder_description,
                                'state_description': state_description,
                                'is_chair_task' : True,
@@ -373,7 +370,6 @@ def private_merge_person(request, year):
                               {'nomcom': nomcom,
                                'year': year,
                                'form': form,
-                               'selected': 'merge_person',
                                'is_chair_task' : True,
                               })
 
@@ -398,7 +394,6 @@ def private_merge_nominee(request, year):
                               {'nomcom': nomcom,
                                'year': year,
                                'form': form,
-                               'selected': 'merge_nominee',
                                'is_chair_task' : True,
                               })
 
@@ -408,8 +403,7 @@ def requirements(request, year):
     return render(request, 'nomcom/requirements.html',
                               {'nomcom': nomcom,
                                'positions': positions,
-                               'year': year,
-                               'selected': 'requirements'})
+                               'year': year})
 
 
 def questionnaires(request, year):
@@ -418,8 +412,7 @@ def questionnaires(request, year):
     return render(request, 'nomcom/questionnaires.html',
                               {'nomcom': nomcom,
                                'positions': positions,
-                               'year': year,
-                               'selected': 'questionnaires'})
+                               'year': year})
 
 
 @login_required
@@ -453,15 +446,13 @@ def nominate(request, year, public, newperson):
         messages.warning(request, "This Nomcom is not yet accepting nominations")
         return render(request, template,
                               {'nomcom': nomcom,
-                               'year': year,
-                               'selected': 'nominate'})
+                               'year': year})
 
     if nomcom.group.state_id == 'conclude':
         messages.warning(request, "Nominations to this Nomcom are closed.")
         return render(request, template,
                               {'nomcom': nomcom,
-                               'year': year,
-                               'selected': 'nominate'})
+                               'year': year})
 
     if request.method == 'POST':
         if newperson:
@@ -485,8 +476,7 @@ def nominate(request, year, public, newperson):
                               {'form': form,
                                'nomcom': nomcom,
                                'year': year,
-                               'positions': nomcom.position_set.filter(is_open=True),
-                               'selected': 'nominate'})
+                               'positions': nomcom.position_set.filter(is_open=True)})
 
 @login_required
 def public_feedback(request, year):
@@ -550,7 +540,6 @@ def feedback(request, year, public):
             return render(request, 'nomcom/feedback.html', {
                 'nomcom': nomcom,
                 'year': year,
-                'selected': 'feedback',
                 'counts' : counts,
                 'base_template': base_template
             })
@@ -561,7 +550,6 @@ def feedback(request, year, public):
                 'form': None,
                 'nomcom': nomcom,
                 'year': year,
-                'selected': 'feedback',
                 'positions': positions,
                 'topics': topics,
                 'counts' : counts,
@@ -575,7 +563,6 @@ def feedback(request, year, public):
                 'form': None,
                 'nomcom': nomcom,
                 'year': year,
-                'selected': 'feedback',
                 'positions': positions,
                 'topics': topics,
                 'counts' : counts,
@@ -622,7 +609,6 @@ def feedback(request, year, public):
         'year': year,
         'positions': positions,
         'topics': topics,
-        'selected': 'feedback',
         'counts': counts,
         'topic_counts': topic_counts,
         'base_template': base_template
@@ -648,7 +634,6 @@ def private_feedback_email(request, year):
         return render(request, template,
                           {'nomcom': nomcom,
                            'year': year,
-                           'selected': 'feedback_email',
                            'is_chair_task' : True,
                           })
 
@@ -668,8 +653,7 @@ def private_feedback_email(request, year):
     return render(request, template,
                               {'form': form,
                                'nomcom': nomcom,
-                               'year': year,
-                               'selected': 'feedback_email'})
+                               'year': year})
 
 @role_required("Nomcom Chair", "Nomcom Advisor")
 def private_questionnaire(request, year):
@@ -691,7 +675,6 @@ def private_questionnaire(request, year):
         return render(request, template,
                           {'nomcom': nomcom,
                            'year': year,
-                           'selected': 'questionnaire',
                            'is_chair_task' : True,
                           })
 
@@ -710,8 +693,7 @@ def private_questionnaire(request, year):
                               {'form': form,
                                'questionnaire_response': questionnaire_response,
                                'nomcom': nomcom,
-                               'year': year,
-                               'selected': 'questionnaire'})
+                               'year': year})
 
 
 def process_nomination_status(request, year, nominee_position_id, state, date, hash):
@@ -765,7 +747,6 @@ def process_nomination_status(request, year, nominee_position_id, state, date, h
                                'nominee_position': nominee_position,
                                'state': state,
                                'need_confirmation': need_confirmation,
-                               'selected': 'feedback',
                                'form': form })
 
 @role_required("Nomcom")
@@ -830,7 +811,6 @@ def view_feedback(request, year):
 
     return render(request, 'nomcom/view_feedback.html',
                               {'year': year,
-                               'selected': 'view_feedback',
                                'nominees': nominees,
                                'nominee_feedback_types': nominee_feedback_types,
                                'independent_feedback_types': independent_feedback_types,
@@ -927,7 +907,6 @@ def view_feedback_pending(request, year):
             form.set_nomcom(nomcom, request.user)
     return render(request, 'nomcom/view_feedback_pending.html',
                               {'year': year,
-                               'selected': 'feedback_pending',
                                'formset': formset,
                                'extra_step': extra_step,
                                'extra_ids': extra_ids,
@@ -1090,7 +1069,6 @@ def edit_nominee(request, year, nominee_id):
 
     return render(request, 'nomcom/edit_nominee.html',
                               {'year': year,
-                               'selected': 'index',
                                'nominee': nominee,
                                'form': form,
                                'nomcom': nomcom,
@@ -1128,7 +1106,6 @@ def edit_nomcom(request, year):
                                'formset': formset,
                                'nomcom': nomcom,
                                'year': year,
-                               'selected': 'edit_nomcom',
                                'is_chair_task' : True,
                               })
 
@@ -1142,7 +1119,6 @@ def list_templates(request, year):
     return render(request, 'nomcom/list_templates.html',
                               {'template_list': template_list,
                                'year': year,
-                               'selected': 'edit_templates',
                                'nomcom': nomcom,
                                'is_chair_task' : True,
                               })
@@ -1215,7 +1191,6 @@ def list_positions(request, year):
     return render(request, 'nomcom/list_positions.html',
                               {'positions': positions,
                                'year': year,
-                               'selected': 'edit_positions',
                                'nomcom': nomcom,
                                'is_chair_task' : True,
                               })
@@ -1282,7 +1257,6 @@ def list_topics(request, year):
     return render(request, 'nomcom/list_topics.html',
                               {'topics': topics,
                                'year': year,
-                               'selected': 'edit_topics',
                                'nomcom': nomcom,
                                'is_chair_task' : True,
                               })
@@ -1364,8 +1338,7 @@ def edit_members(request, year):
     return render(request, 'nomcom/new_edit_members.html',
                               {'nomcom' : nomcom,
                                'year' : year,
-                               'form': form,
-                              })
+                               'form': form})
 
 @role_required("Nomcom Chair", "Nomcom Advisor")
 def extract_email_lists(request, year):
@@ -1385,8 +1358,7 @@ def extract_email_lists(request, year):
                               'pending': pending,
                               'accepted': accepted,
                               'noresp': noresp,
-                              'bypos': bypos,
-                             })
+                              'bypos': bypos})
 
 @login_required
 def volunteer(request):

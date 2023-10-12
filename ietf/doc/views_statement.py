@@ -239,6 +239,7 @@ def new_statement(request):
                 rev=statement.rev,
                 by=request.user.person,
                 desc="Statement published",
+                time=statement.time,
             )
             statement.save_with_history([e1, e2])
             markdown_content = ""

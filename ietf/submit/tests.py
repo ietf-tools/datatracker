@@ -355,7 +355,6 @@ class SubmitTests(BaseSubmitTestCase):
             ad=draft.ad,
             expires=timezone.now() + datetime.timedelta(days=settings.INTERNET_DRAFT_DAYS_TO_EXPIRE),
             notify="aliens@example.mars",
-            note="",
         )
         sug_replaced_draft.set_state(State.objects.get(used=True, type="draft", slug="active"))
 
@@ -1401,7 +1400,6 @@ class SubmitTests(BaseSubmitTestCase):
             "submitter-name": "Some Random Test Person",
             "submitter-email": "random@example.com",
             "replaces": [str(draft.pk)],
-            "edit-note": "no comments",
             "authors-0-name": "Person 1",
             "authors-0-email": "person1@example.com",
             "authors-1-name": "Person 2",
@@ -1417,7 +1415,6 @@ class SubmitTests(BaseSubmitTestCase):
         self.assertEqual(submission.document_date, document_date)
         self.assertEqual(submission.abstract, "some abstract")
         self.assertEqual(submission.pages, 123)
-        self.assertEqual(submission.note, "no comments")
         self.assertEqual(submission.submitter, "Some Random Test Person <random@example.com>")
         self.assertEqual(submission.replaces, draft.name)
         self.assertEqual(submission.state_id, "manual")

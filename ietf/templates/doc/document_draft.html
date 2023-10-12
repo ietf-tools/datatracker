@@ -408,32 +408,19 @@
                             {% endif %}
                         </td>
                     </tr>
-                    {% if iesg_state.slug != 'idexists' %}
-                        {% if doc.note or can_edit %}
-                            <tr>
-                                <td></td>
-                                <th scope="row">
-                                    IESG note
-                                </th>
-                                <td class="edit">
-                                    {% if can_edit and not snapshot %}
-                                        <a class="btn btn-primary btn-sm"
-                                           href="{% url 'ietf.doc.views_draft.edit_iesg_note' name=doc.name %}">
-                                            Edit
-                                        </a>
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    {% if doc.note %}
-                                        {{ doc.note|linebreaksbr }}
-                                    {% else %}
-                                        <span class="text-body-secondary">
-                                            (None)
-                                        </span>
-                                    {% endif %}
-                                </td>
-                            </tr>
-                        {% endif %}
+                    {% if iesg_state.slug != 'idexists' and doc.note %}
+                        <tr>
+                            <td></td>
+                            <th scope="row">
+                                IESG note
+                            </th>
+                            <td class="edit">
+                                {# IESG Notes are historic and read-only now #}
+                            </td>
+                            <td>
+                                {{ doc.notedoc.note|urlize_ietf_docs|linkify|linebreaksbr }}
+                            </td>
+                        </tr>
                     {% endif %}
                     <tr>
                         <td></td>

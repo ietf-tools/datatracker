@@ -750,7 +750,7 @@ Man                    Expires September 22, 2015               [Page 3]
             stream_id=draft.stream_id, group_id=draft.group_id, abstract=draft.abstract,stream=draft.stream, rev=draft.rev,
             pages=draft.pages, intended_std_level_id=draft.intended_std_level_id,
             shepherd_id=draft.shepherd_id, ad_id=draft.ad_id, expires=draft.expires,
-            notify=draft.notify, note=draft.note)
+            notify=draft.notify)
         rel = RelatedDocument.objects.create(source=replacement,
                                              target=draft,
                                              relationship_id="replaces")

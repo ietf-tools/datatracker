@@ -1,12 +1,9 @@
 {% extends public|yesno:"nomcom/nomcom_public_base.html,nomcom/nomcom_private_base.html" %}
 {# Copyright The IETF Trust 2021, All Rights Reserved #}
 {% load origin %}
-{% load django_bootstrap5 textfilters person_filters %}
+{% load django_bootstrap5 textfilters person_filters ietf_filters%}
 {% load static %}
 {% block subtitle %}- Volunteers{% endblock %}
-{% block pagehead %}
-    <link rel="stylesheet" href="{% static "ietf/css/list.css" %}">
-{% endblock %}
 {% block nomcom_content %}
     {% origin %}
     <h2>Volunteers for {{ nomcom.group }}</h2>
@@ -34,7 +31,7 @@
                 {% for v in eligibility_group.list %}
                     <tr>
                         <td>{{ forloop.counter }}</td>
-                        <td>{{ v.person.last_name }}</td>
+                        <td>{{ v.person.last_name|split:'+'|join:'+<wbr>' }}</td>
                         <td>{{ v.person.first_name }}</td>
                         <td>{{ v.person.ascii_name }}</td>
                         <td>{% person_link v.person %}</td>
@@ -46,7 +43,4 @@
             </tbody>
         </table>
     {% endfor %}
-{% endblock %}
-{% block js %}
-    <script src="{% static "ietf/js/list.js" %}"></script>
 {% endblock %}

@@ -1327,6 +1327,36 @@ class InactiveNomcomTests(TestCase):
         q = PyQuery(response.content)
         self.assertIn('not active', q('.alert-warning').text() )
 
+    def test_filter_nominees(self):
+        url = reverse(
+            "ietf.nomcom.views.private_index", kwargs={"year": self.nc.year()}
+        )
+        login_testing_unauthorized(self, self.chair.user.username, url)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+
+        states = list(NomineePositionStateName.objects.values_list("slug", flat=True))
+        states += ["not-declined", "questionnaire"]
+        for state in states:
+            response = self.client.get(url, {"state": state})
+            self.assertEqual(response.status_code, 200)
+            q = PyQuery(response.content)
+            nps = []
+            if state == "not-declined":
+                nps = NomineePosition.objects.exclude(state__slug="declined")
+            elif state == "questionnaire":
+                nps = [
+                    np
+                    for np in NomineePosition.objects.not_duplicated()
+                    if np.questionnaires
+                ]
+            else:
+                nps = NomineePosition.objects.filter(state__slug=state)
+            # nomination state is in third table column
+            self.assertEqual(
+                len(nps), len(q("#nominee-position-table td:nth-child(3)"))
+            )
+
     def test_email_pasting_closed(self):
         url = reverse('ietf.nomcom.views.private_feedback_email', kwargs={'year':self.nc.year()})
         login_testing_unauthorized(self, self.chair.user.username, url)
@@ -2389,6 +2419,7 @@ class rfc8713EligibilityTests(TestCase):
         self.eligible_people = list()
         self.ineligible_people = list()
 
+        # Section 4.14 qualification criteria
         for combo_len in range(0,6):
             for combo in combinations(meetings,combo_len):
                 p = PersonFactory()
@@ -2398,6 +2429,18 @@ class rfc8713EligibilityTests(TestCase):
                     self.ineligible_people.append(p)
                 else:
                     self.eligible_people.append(p)
+
+        # Section 4.15 disqualification criteria
+        def ineligible_person_with_role(**kwargs):
+            p = RoleFactory(**kwargs).person
+            for m in meetings:
+                MeetingRegistrationFactory(person=p, meeting=m, attended=True)
+            self.ineligible_people.append(p)
+        for group in ['isocbot', 'ietf-trust', 'llc-board', 'iab']:
+            for role in ['member', 'chair']:
+                ineligible_person_with_role(group__acronym=group, name_id=role)
+        ineligible_person_with_role(group__type_id='area', group__state_id='active',name_id='ad')
+        ineligible_person_with_role(group=self.nomcom.group, name_id='chair')
 
         # No-one is eligible for the other_nomcom
         self.other_nomcom = NomComFactory(group__acronym='nomcom2018',first_call_for_volunteers=datetime.date(2018,5,1))
