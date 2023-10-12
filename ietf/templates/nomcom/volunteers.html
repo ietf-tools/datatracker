@@ -4,9 +4,6 @@
 {% load django_bootstrap5 textfilters person_filters ietf_filters%}
 {% load static %}
 {% block subtitle %}- Volunteers{% endblock %}
-{% block pagehead %}
-    <link rel="stylesheet" href="{% static "ietf/css/list.css" %}">
-{% endblock %}
 {% block nomcom_content %}
     {% origin %}
     <h2>Volunteers for {{ nomcom.group }}</h2>
@@ -46,7 +43,4 @@
             </tbody>
         </table>
     {% endfor %}
-{% endblock %}
-{% block js %}
-    <script src="{% static "ietf/js/list.js" %}"></script>
 {% endblock %}
