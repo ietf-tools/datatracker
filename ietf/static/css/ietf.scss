@@ -407,7 +407,7 @@ th,
 }
 
 .ballot-icon table .my {
-    border: calc(2 * $table-border-width) solid #000;
+    border: calc(2 * $table-border-width) solid var(--bs-emphasis-color);
 }
 
 // See https://getbootstrap.com/docs/5.1/customize/color/#all-colors
