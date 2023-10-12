@@ -351,7 +351,7 @@ th,
     .axis path,
     .axis line {
         fill: none;
-        stroke: black;
+        stroke: var(--bs-body-color);
     }
 
     .axis.y path,
@@ -368,7 +368,7 @@ th,
     }
 
     .bar text {
-        fill: black;
+        fill: var(--bs-body-color);
         dominant-baseline: central;
         pointer-events: none;
     }
