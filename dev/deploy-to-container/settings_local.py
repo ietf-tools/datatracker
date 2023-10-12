@@ -68,3 +68,7 @@ NOMCOM_PUBLIC_KEYS_DIR = 'data/nomcom_keys/public_keys/'
 SLIDE_STAGING_PATH = '/test/staging/'
 
 DE_GFM_BINARY = '/usr/local/bin/de-gfm'
+
+APP_API_TOKENS = {
+    "ietf.api.views_dashboard": ["devtoken"]
+}
