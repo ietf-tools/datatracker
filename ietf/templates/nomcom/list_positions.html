@@ -24,23 +24,24 @@
             <thead>
                 <tr>
                     {% if nomcom.group.state_id == 'active' %}
-                        <th scope="colgroup" colspan="3">
-                            <i class="bi bi-check"></i>
+                        <th scope="col">
+                            ✓
                         </th>
+                        <th scope="col"></th>
                     {% endif %}
                     <th scope="col" data-sort="position">
                         Position
                     </th>
-                    <th scope="col" data-sort="iesg">
+                    <th class="text-center" scope="col" data-sort="iesg">
                         IESG
                     </th>
-                    <th scope="col" data-sort="open">
+                    <th class="text-center" scope="col" data-sort="open">
                         Open
                     </th>
-                    <th scope="col" data-sort="accept_nom">
+                    <th class="text-center" scope="col" data-sort="accept_nom">
                         Accepting Nominations
                     </th>
-                    <th scope="col" data-sort="accept_fb">
+                    <th class="text-center" scope="col" data-sort="accept_fb">
                         Accepting Feedback
                     </th>
                 </tr>
@@ -58,13 +59,11 @@
                                        aria-label="position.name"
                                        name="selected">
                             </td>
-                            <td class="edit">
+                            <td class="text-nowrap">
                                 <a class="btn btn-primary btn-sm"
                                    href="{% url 'ietf.nomcom.views.edit_position' year position.id %}">
                                     Edit
                                 </a>
-                            </td>
-                            <td class="remove">
                                 <a class="btn btn-danger btn-sm"
                                    href="{% url 'ietf.nomcom.views.remove_position' year position.id %}">
                                     Remove
@@ -74,16 +73,16 @@
                         <td>
                             {{ position.name }}
                         </td>
-                        <td>
+                        <td class="text-center">
                             {{ position.is_iesg_position|yesno:"✓," }}
                         </td>
-                        <td>
+                        <td class="text-center">
                             {{ position.is_open|yesno:"✓," }}
                         </td>
-                        <td>
+                        <td class="text-center">
                             {{ position.accepting_nominations|yesno:"✓," }}
                         </td>
-                        <td>
+                        <td class="text-center">
                             {{ position.accepting_feedback|yesno:"✓," }}
                         </td>
                     </tr>
@@ -117,7 +116,7 @@
                     <option value="unset_accept_nom">
                         Is Accepting Nominations: No
                     </option>
-                    <option value="set_accept_bf">
+                    <option value="set_accept_fb">
                         Is Accepting Feedback: Yes
                     </option>
                     <option value="unset_accept_fb">
@@ -135,7 +134,4 @@
             There are no positions defined.
         </p>
     {% endif %}
-{% endblock %}
-{% block js %}
-    <script src="{% static "ietf/js/list.js" %}"></script>
 {% endblock %}
