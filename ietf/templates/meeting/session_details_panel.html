@@ -18,7 +18,7 @@
                 {% for time in session.times %}
                     {% if not forloop.first %},{% endif %}
                     <span class="session-time date me-3" data-start-utc="{{ timeslot.time|utc|date:'Y-m-d H:i' }}" data-end-utc="{{ timeslot.end_time|utc|date:'Y-m-d H:i' }}"></span>
-                    {% include "meeting/tz-display.html" with meeting_timezone=session.meeting.time_zone id_suffix="" minimal=True only %}
+                    {% include "meeting/tz-display.html" with meeting_timezone=session.meeting.time_zone id_suffix=session.pk minimal=True only %}
                 {% endfor %}
                 {% if session.cancelled %}
                     <small class="badge rounded-pill text-bg-warning">Cancelled</small>
