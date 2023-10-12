@@ -46,25 +46,64 @@ paths:
                     year:
                       type: integer
                     opened:
-                        type: object
-                        properties:
-                          acronym:
-                              type: string
-                          parent_acronym:
-                              type: string
-                          date:
-                              type: string
-                              format: date
+                      type: object
+                      properties:
+                        acronym:
+                            type: string
+                        parent_acronym:
+                            type: string
+                        date:
+                            type: string
+                            format: date
                     closed:
-                        type: object
-                        properties:
-                          acronym:
-                              type: string
-                          parent_acronym:
-                              type: string
-                          date:
-                              type: string
-                              format: date
+                      type: object
+                      properties:
+                        acronym:
+                            type: string
+                        parent_acronym:
+                            type: string
+                        date:
+                            type: string
+                            format: date
+
+  /submissions/{start}/{end}/:
+    get:
+      operationId: submissions
+      summary: Get submission counts binned by month
+      parameters:
+        - name: start
+          in: path
+          description: starting year YYYY-MM
+          required: true
+          schema:
+            type: string
+            pattern: '^\d{4}-\d{1,2}$'
+        - name: end
+          in: path
+          description: end year YYYY-MM
+          required: true
+          schema:
+            type: string
+            pattern: '^\d{4}-\d{1,2}$'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    date:
+                      type: string
+                      format: date
+                    all:
+                      type: integer
+                    all-00:
+                      type: integer
+                    wg-00:
+                      type: integer
 
 components: 
 

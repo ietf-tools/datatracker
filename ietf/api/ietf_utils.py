@@ -15,7 +15,6 @@ from django.http import HttpResponseForbidden
 def is_valid_token(endpoint, token):
     # This is where we would consider integration with vault
     # Settings implementation for now.
-    debug.show('[endpoint, token]')
     if hasattr(settings, "APP_API_TOKENS"):
         token_store = settings.APP_API_TOKENS
         if endpoint in token_store and token in token_store[endpoint]:
