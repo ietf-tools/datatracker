@@ -6394,6 +6394,7 @@ class MaterialsTests(TestCase):
         self.assertIsNone(submission.doc)
         r = self.client.get(url)
         self.assertEqual(r.status_code,200)
+        empty_outbox()
         r = self.client.post(url,dict(title='different title',approve='approve'))
         self.assertEqual(r.status_code,302)
         self.assertEqual(SlideSubmission.objects.filter(status__slug = 'pending').count(), 0)
