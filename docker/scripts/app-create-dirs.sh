@@ -18,6 +18,7 @@ for sub in \
     /assets/ietfdata/derived \
     /assets/ietfdata/derived/bibxml \
     /assets/ietfdata/derived/bibxml/bibxml-ids \
+    /assets/ietfdata/doc/draft/repository \
     /assets/www6s \
     /assets/www6s/staging \
     /assets/www6s/wg-descriptions \
