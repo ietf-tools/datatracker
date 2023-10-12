@@ -34,7 +34,7 @@ function filter_calendar_events(filter_params, event_list) {
 }
 
 // format a moment in a tz
-var moment_formats = { time: 'HH:mm', date: 'YYYY-MM-DD', datetime: 'YYYY-MM-DD HH:mm' };
+var moment_formats = { time: 'HH:mm', date: 'YYYY-MM-DD', datetime: 'YYYY-MM-DD HH:mm' , timezone: 'z'};
 
 function format_moment(t_moment, tz, fmt_type) {
     return t_moment.tz(tz)
@@ -43,6 +43,9 @@ function format_moment(t_moment, tz, fmt_type) {
 
 function make_display_events(event_data, tz) {
     var calendarEl = document.getElementById('calendar');
+    if (!calendarEl) {
+        return;
+    }
     var glue = calendarEl.clientWidth > 720 ? ' ' : '\n';
     return $.map(event_data, function (src_event) {
         var title;
@@ -83,6 +86,9 @@ function update_calendar(tz, filter_params) {
          * filtered events.
          */
         var calendarEl = document.getElementById('calendar');
+        if (!calendarEl) {
+            return;
+        }
         event_calendar = new FullCalendar(calendarEl, {
             plugins: [dayGridPlugin, bootstrap5Plugin],
             initialView: 'dayGridMonth',
@@ -136,7 +142,7 @@ function format_session_time(session_elt, tz) {
         .attr('data-start-utc'));
     var end = moment.utc($(session_elt)
         .attr('data-end-utc'));
-    return format_moment(start, tz, 'datetime') + '-' + format_moment(end, tz, 'time');
+    return format_moment(start, tz, 'datetime') + '-' + format_moment(end, tz, 'time') + ' ' + format_moment(start, tz, 'timezone');
 }
 
 function format_meeting_time(meeting_elt, tz) {
