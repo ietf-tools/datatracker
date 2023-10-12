@@ -98,7 +98,7 @@ class ChangeStateTests(TestCase):
         draft.action_holders.add(ad)
 
         url = urlreverse('ietf.doc.views_draft.change_state', kwargs=dict(name=draft.name))
-        login_testing_unauthorized(self, "secretary", url)
+        login_testing_unauthorized(self, "ad", url)
 
         first_state = draft.get_state("draft-iesg")
         next_states = first_state.next_states.all()
@@ -153,6 +153,20 @@ class ChangeStateTests(TestCase):
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertEqual(len(q('form [type=submit]:contains("%s")' % first_state.name)), 1)
+
+        # try to change to an AD-forbidden state
+        r = self.client.post(url, dict(state=State.objects.get(used=True, type='draft-iesg', slug='ann').pk, comment='Test comment'))
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertTrue(q('form .invalid-feedback'))
+
+        # try again as secretariat
+        self.client.logout()
+        login_testing_unauthorized(self, 'secretary', url)
+        r = self.client.post(url, dict(state=State.objects.get(used=True, type='draft-iesg', slug='ann').pk, comment='Test comment'))
+        self.assertEqual(r.status_code, 302)
+        draft = Document.objects.get(name=draft.name)
+        self.assertEqual(draft.get_state_slug('draft-iesg'), 'ann')
 
     def test_pull_from_rfc_queue(self):
         ad = Person.objects.get(user__username="ad")
