@@ -4555,6 +4555,17 @@ def approve_proposed_slides(request, slidesubmission_id, num):
                 submission.status = SlideSubmissionStatusName.objects.get(slug='approved')
                 submission.doc = doc
                 submission.save()
+                (to, cc) = gather_address_lists('slides_approved', group=submission.session.group, proposer=submission.submitter).as_strings()
+                msg_txt = render_to_string("meeting/slides_approved.txt", {
+                    "to": to,
+                    "cc": cc,
+                    "submission": submission,
+                    "settings": settings,
+                })
+                msg = infer_message(msg_txt)
+                msg.by = request.user.person
+                msg.save()
+                send_mail_message(request, msg)
                 return redirect('ietf.meeting.views.session_details',num=num,acronym=acronym)
             elif request.POST.get('disapprove'):
                 # Errors in processing a submit request sometimes result

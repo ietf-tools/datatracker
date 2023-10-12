@@ -1,0 +1,10 @@
+{% load ietf_filters %}{% autoescape off %}From: {{settings.DEFAULT_FROM_EMAIL}}
+To: {{to}}{% if cc %}
+Cc: {{cc}}{% endif %}
+Subject: Slides approved for {{ submission.session.meeting }} : {{ submission.session.group.acronym }}{% if session.name %} : {{submission.session.name}}{% endif %}
+
+Your proposed slides have been approved for {{ submission.session.meeting }} : {{ submission.session.group.acronym }}{% if session.name %} : {{submission.session.name}}{% endif %}
+
+Title: {{submission.title}}
+
+{% endautoescape %}

@@ -5591,6 +5591,19 @@
   {
     "fields": {
       "cc": [
+        "group_chairs"
+      ],
+      "desc": "Recipients when slides are approved for a given session",
+      "to": [
+        "slides_proposer"
+      ]
+    },
+    "model": "mailtrigger.mailtrigger",
+    "pk": "slides_approved"
+  },
+  {
+    "fields": {
+      "cc": [
         "slides_proposer"
       ],
       "desc": "Recipients when slides are proposed for a given session",
