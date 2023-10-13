@@ -61,13 +61,15 @@ jobs:
           
           echo "Starting Containers..."
           sudo docker network create dtnet
-          sudo docker run -d --name db --network=dtnet ghcr.io/ietf-tools/datatracker-db:latest
-          sudo docker run -d --name app --network=dtnet ghcr.io/ietf-tools/datatracker-app-base:latest sleep infinity
+          sudo docker run -d --name db --network=dtnet ghcr.io/ietf-tools/datatracker-db:latest &
+          sudo docker run -d --name app --network=dtnet ghcr.io/ietf-tools/datatracker-app-base:latest sleep infinity &
+          wait
 
           echo "Cloning datatracker repo..."
           sudo docker exec app git clone --depth=1 https://github.com/ietf-tools/datatracker.git .
           echo "Prepare tests..."
-          sudo docker exec app chmod +x ./dev/tests/prepare.sh; sh ./dev/tests/prepare.sh
+          sudo docker exec app chmod +x ./dev/tests/prepare.sh
+          sudo docker exec app sh ./dev/tests/prepare.sh
           echo "Running checks..."
           sudo docker exec app ietf/manage.py check
           sudo docker exec app ietf/manage.py migrate --fake-initial
