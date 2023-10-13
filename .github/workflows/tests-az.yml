@@ -5,7 +5,7 @@ on:
 
 jobs:
   main:
-    name: Clean DB + Build Image
+    name: Run Tests on Azure temp VM
     runs-on: ubuntu-latest
     
     permissions:
@@ -27,7 +27,7 @@ jobs:
           --priority Spot \
           --size Standard_D4as_v5 \
           --max-price -1 \
-          --os-disk-size-gb 15 \
+          --os-disk-size-gb 30 \
           --eviction-policy Delete \
           --nic-delete-option Delete \
           --output tsv \
