@@ -66,7 +66,7 @@ jobs:
           sudo docker run -d --name app --network=dtnet ghcr.io/ietf-tools/datatracker-app-base:latest
 
           echo "Start tests..."
-          cat <<EOF | docker exec --interactive app sh
+          cat <<EOF | sudo docker exec --interactive app sh
             mkdir workspace
             git clone --depth=1 https://github.com/ietf-tools/datatracker.git workspace
             cd workspace
@@ -93,7 +93,7 @@ jobs:
       shell: pwsh
       run: |
         echo "Destroying VM..."        
-        az vm delete -g ghaInfraDB -n tmpGhaVM1 --yes --force-deletion true
+        az vm delete -g ghaDatatrackerTests -n tmpGhaVM2 --yes --force-deletion true
 
         $resourceOrderRemovalOrder = [ordered]@{
             "Microsoft.Compute/virtualMachines" = 0
@@ -104,7 +104,7 @@ jobs:
             "Microsoft.Network/virtualNetworks" = 5
         }
         echo "Fetching remaining resources..."
-        $resources = az resource list --resource-group ghaInfraDB | ConvertFrom-Json
+        $resources = az resource list --resource-group ghaDatatrackerTests | ConvertFrom-Json
 
         $orderedResources = $resources 
             | Sort-Object @{
@@ -114,7 +114,7 @@ jobs:
 
         echo "Deleting remaining resources..."
         $orderedResources | ForEach-Object {
-            az resource delete --resource-group ghaInfraDB --ids $_.id --verbose
+            az resource delete --resource-group ghaDatatrackerTests --ids $_.id --verbose
         }
 
         echo "Logout from Azure..."
