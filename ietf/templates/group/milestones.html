@@ -7,7 +7,7 @@
     {% if heading %}
         <h2 class="my-3">
             {% if milestoneset.grouper %}
-                {{ milestoneset.grouper }} milestones
+                {{ milestoneset.grouper|title }} milestones
             {% else %}
                 {% if group.state_id == "proposed" %}
                     Proposed milestones
@@ -20,15 +20,15 @@
     <table class="table table-sm table-striped tablesorter">
         <thead>
             <tr>
-                <th scope="col"{% if group.uses_milestone_dates %} data-sort="num"{% endif %}>
+                <th class="col-2" scope="col"{% if group.uses_milestone_dates %} data-sort="num"{% endif %}>
                     {% if group.uses_milestone_dates %}
                         Date
                     {% else %}
                         Order
                     {% endif %}
                 </th>
-                <th scope="col" data-sort="milestone">Milestone</th>
-                <th scope="col" data-sort="docs">Associated documents</th>
+                <th class="col-5" scope="col" data-sort="milestone">Milestone</th>
+                <th class="col-5" scope="col" data-sort="docs">Associated documents</th>
             </tr>
         </thead>
         <tbody>
@@ -36,7 +36,7 @@
                 <tr>
                     <td>
                         {% if milestone.resolved %}
-                            <span class="badge rounded-pill text-bg-success">{{ milestone.resolved }}</span>
+                            <span class="badge rounded-pill {% if milestone.resolved|slugify == 'done' %}text-bg-success{% else %}text-bg-warning{% endif %}">{{ milestone.resolved|title }}</span>
                         {% else %}
                             {% if group.uses_milestone_dates %}
                                 {{ milestone.due|date:"M Y" }}
