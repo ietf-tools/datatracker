@@ -98,7 +98,7 @@ def change_state(request, name, option=None):
                                                       ok_to_publish)
 
                 if new_state.slug in ["appr-reqnopub-sent", "appr-noprob-sent", "withdraw", "dead"]:
-                    doc = review.related_that_doc("conflrev")[0].document
+                    doc = review.related_that_doc("conflrev")[0]
                     if doc.stream_id == "irtf":
                         close_review_irtf_state(doc, login)
 
@@ -366,7 +366,7 @@ def approve_conflict_review(request, name):
             c.desc = "The following approval message was sent\n"+form.cleaned_data['announcement_text']
             c.save()
 
-            doc = review.related_that_doc("conflrev")[0].document
+            doc = review.related_that_doc("conflrev")[0]
             if doc.stream_id == "irtf":
                 close_review_irtf_state(doc, login)
 
