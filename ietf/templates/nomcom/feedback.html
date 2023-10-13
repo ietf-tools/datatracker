@@ -36,13 +36,13 @@
                         <h3 class="navskip mt-3">{{ p.name }}</h3>
                         <div class="d-grid gap-3">
                             {% for np in p.nomineeposition_set.accepted.not_duplicated %}
-                                <a class="btn btn-primary position-relative"
+                                <a class="btn btn-primary btn-sm position-relative"
                                    {% if nomcom.group.state_id != 'conclude' %}href="?nominee={{ np.nominee.id }}&amp;position={{ np.position.id }}"{% endif %}
-                                    {% with count=counts|lookup:np.position.id|lookup:np.nominee.id %}
+                                    {% with count=counts|lookup:np.position.id|lookup:np.nominee.id|default:0 %}
                                        title="{% if count %}{{ count }} earlier comment{{ count|pluralize }} from you {% else %}You have not yet provided feedback {% endif %} on {{ np.nominee.email.address }} as {{ np.position }}">
                                         {{ np.nominee.name }}
-                                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill text-bg-danger">
-                                            {{ count | default:"0" }}
+                                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill {% if count %}text-bg-success{% else %}text-bg-danger{% endif %}">
+                                            {{ count }}
                                         </span>
                                     {% endwith %}
                                 </a>
@@ -55,13 +55,13 @@
                 <h2 class="navskip mt-4">Topics</h2>
                 <div class="d-grid gap-3">
                     {% for t in topics %}
-                        <a class="btn btn-primary position-relative"
+                        <a class="btn btn-primary btn-sm position-relative"
                            {% if nomcom.group.state_id != 'conclude' %}href="?topic={{ t.id }}"{% endif %}
                            title="{% if count %}{{ count }} earlier comment{{ count|pluralize }} from you {% else %}You have not yet provided feedback {% endif %} on {{ t.subject }}">
                             {{ t.subject }}
-                            {% with count=topic_counts|lookup:t.id %}
-                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill text-bg-danger">
-                                    {{ count | default:"0" }}
+                            {% with count=topic_counts|lookup:t.id|default:0 %}
+                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill {% if count %}text-bg-success{% else %}text-bg-danger{% endif %}">
+                                    {{ count }}
                                 </span>
                             {% endwith %}
                         </a>
