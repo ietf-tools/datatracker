@@ -31,26 +31,23 @@ def groups_opened_closed(request, groupType, startYear, endYear):
         )
     )
     response = []
-    for year in range(startYear,endYear+1):
+
+    for group in qs.filter(opened__year__gte=startYear, opened_year__lte=endYear):
         response.append(
-            {
-                "year": year,
-                "opened": [
-                    { 
-                        "acronym": group.acronym,
-                        "parent_acronym": group.parent.acronym if group.parent else "",
-                        "date": group.opened
-                    }
-                    for group in qs.filter(opened__year=year)
-                ],
-                "closed": [
-                    { 
-                        "acronym": group.acronym,
-                        "parent_acronym": group.parent.acronym if group.parent else "",
-                        "date": group.closed
-                    }
-                    for group in qs.filter(closed__year=year)
-                ]
+            { 
+                "acronym": group.acronym,
+                "parent_acronym": group.parent.acronym if group.parent else "",
+                "date": group.opened,
+                "state": "opened"
+            }
+        )
+    for group in qs.filter(closed__year__gte==startYear, closed_year__lte=endYear);
+        response.append(
+            { 
+                "acronym": group.acronym,
+                "parent_acronym": group.parent.acronym if group.parent else "",
+                "date": group.closed,
+                "state": "closed"
             }
         )
     return JsonResponse(response, safe=False)
@@ -64,11 +61,6 @@ def submissions(request, start, end):
     dtend = datetime.datetime.strptime(end, "%Y-%m").astimezone(datetime.timezone.utc)
 
     qs = NewRevisionDocEvent.objects.filter(doc__type_id="draft")
-    # qs = Document.objects.filter(type_id="draft").annotate(
-    #     rev_date = NewRevisionDocEvent.objects.filter(doc_id=OuterRef('pk')).order_by("-time").values_list("time",flat=True)[:1]
-    # ).distinct().annotate(
-    #     rev_00_date = NewRevisionDocEvent.objects.filter(doc_id=OuterRef('pk'),rev="00").order_by("-time").values_list("time",flat=True)[:1]
-    # )
 
     response = []
     for interval_start in rrule.rrule(rrule.MONTHLY, dtstart=dtstart, until=dtend):
@@ -76,7 +68,8 @@ def submissions(request, start, end):
         response.append(
             {
                 "date": interval_start,
-                "all": qs.filter(time__gte=interval_start,time__lt=interval_end).values_list("doc_id",flat=True).distinct().count(),
+                "all-subs": qs.filter(time__gte=interval_start,time__lt=interval_end).count(),
+                "distinct-ids": qs.filter(time__gte=interval_start,time__lt=interval_end).values_list("doc_id",flat=True).distinct().count(),
                 "all-00": qs.filter(time__gte=interval_start,time__lt=interval_end, rev="00").values_list("doc_id",flat=True).distinct().count(),
                 "wg-00": qs.filter(time__gte=interval_start,time__lt=interval_end, rev="00", doc__group__type_id="wg").values_list("doc_id",flat=True).distinct().count()
             }

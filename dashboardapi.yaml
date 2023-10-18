@@ -98,7 +98,9 @@ paths:
                     date:
                       type: string
                       format: date
-                    all:
+                    all-subs:
+                      type: integer
+                    distinct-ids:
                       type: integer
                     all-00:
                       type: integer
