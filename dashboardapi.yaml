@@ -43,29 +43,16 @@ paths:
                 items:
                   type: object
                   properties:
-                    year:
-                      type: integer
-                    opened:
-                      type: object
-                      properties:
-                        acronym:
-                            type: string
-                        parent_acronym:
-                            type: string
-                        date:
-                            type: string
-                            format: date
-                    closed:
-                      type: object
-                      properties:
-                        acronym:
-                            type: string
-                        parent_acronym:
-                            type: string
-                        date:
-                            type: string
-                            format: date
-
+                    acronym:
+                        type: string
+                    parent_acronym:
+                        type: string
+                    date:
+                        type: string
+                        format: date
+                    state:
+                        type: string
+ 
   /submissions/{start}/{end}/:
     get:
       operationId: submissions
