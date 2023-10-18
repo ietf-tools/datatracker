@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2009-2022, All Rights Reserved
+# Copyright The IETF Trust 2009-2023, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -949,6 +949,31 @@ class GroupEditTests(TestCase):
         self.assertEqual(r.status_code, 302)
         group = Group.objects.get(pk=group.pk)  # refresh
         self.assertEqual(group.description, 'Updated description')
+
+    def test_edit_parent_field(self):
+        group = GroupFactory(acronym='mars', parent=Group.objects.get(acronym='farfut'))
+        RoleFactory(group=group, name_id='chair')
+        url = urlreverse('ietf.group.views.edit', kwargs={'acronym': group.acronym, 'action': 'edit', 'field': 'parent'})
+
+        # parent is not shown to group chair
+        login_testing_unauthorized(self, 'mars-chair', url)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(len(r.content), 0)
+
+        # parent is shown to AD and Secretariat
+        for priv_user in ('ad', 'secretary'):
+            self.client.logout()
+            login_testing_unauthorized(self, priv_user, url)
+            r = self.client.get(url)
+            self.assertEqual(r.status_code, 200)
+            q = PyQuery(r.content)
+            self.assertEqual(len(q('div#content > form input[name=parent], div#content > form select[name=parent]')), 1)
+            new_parent = GroupFactory(type_id='area', parent__type_id='ietf')
+            r = self.client.post(url, {'parent': new_parent.pk})
+            self.assertEqual(r.status_code, 302)
+            group.refresh_from_db()
+            self.assertEqual(group.parent, new_parent)
 
     def test_conclude(self):
         group = GroupFactory(acronym="mars")
