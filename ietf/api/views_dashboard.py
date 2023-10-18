@@ -2,7 +2,6 @@
 
 import datetime
 
-from collections import defaultdict
 from dateutil import rrule
 from django.db.models import Subquery, OuterRef
 from django.http import JsonResponse
@@ -32,7 +31,7 @@ def groups_opened_closed(request, groupType, startYear, endYear):
     )
     response = []
 
-    for group in qs.filter(opened__year__gte=startYear, opened_year__lte=endYear):
+    for group in qs.filter(opened__year__gte=startYear, opened__year__lte=endYear):
         response.append(
             { 
                 "acronym": group.acronym,
@@ -41,7 +40,7 @@ def groups_opened_closed(request, groupType, startYear, endYear):
                 "state": "opened"
             }
         )
-    for group in qs.filter(closed__year__gte==startYear, closed_year__lte=endYear);
+    for group in qs.filter(closed__year__gte=startYear, closed__year__lte=endYear):
         response.append(
             { 
                 "acronym": group.acronym,
