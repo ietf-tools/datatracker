@@ -3,9 +3,9 @@
 
 
 import re
-import debug                            # pyflakes:ignore
+import debug  # pyflakes:ignore
 
-from typing import List, Optional   # pyflakes:ignore
+from typing import List, Optional  # pyflakes:ignore
 
 from django.conf import settings
 from django.template.defaultfilters import filesizeformat
@@ -67,26 +67,38 @@ class FileParser:
 
     def parse_invalid_chars_in_filename(self):
         name = self.fd.name
-        regexp = re.compile(r'&|\|\/|;|\*|\s|\$')
+        regexp = re.compile(r"&|\|\/|;|\*|\s|\$")
         chars = regexp.findall(name)
         if chars:
-            self.parsed_info.add_error('Invalid characters were found in the name of the file which was just submitted: %s' % ', '.join(set(chars)))
+            self.parsed_info.add_error(
+                "Invalid characters were found in the name of the file which was just submitted: %s"
+                % ", ".join(set(chars))
+            )
 
     def parse_max_size(self):
         max_size = settings.IDSUBMIT_MAX_DRAFT_SIZE[self.ext]
         if self.fd.size > max_size:
-            self.parsed_info.add_error('File size is larger than the permitted maximum of %s' % filesizeformat(max_size))
+            self.parsed_info.add_error(
+                "File size is larger than the permitted maximum of %s"
+                % filesizeformat(max_size)
+            )
         self.parsed_info.metadata.file_size = self.fd.size
 
     def parse_filename_extension(self):
-        if not self.fd.name.lower().endswith('.'+self.ext):
-            self.parsed_info.add_error('Expected the %s file to have extension ".%s", found the name "%s"' % (self.ext.upper(), self.ext, self.fd.name))
+        if not self.fd.name.lower().endswith("." + self.ext):
+            self.parsed_info.add_error(
+                'Expected the %s file to have extension ".%s", found the name "%s"'
+                % (self.ext.upper(), self.ext, self.fd.name)
+            )
 
     def parse_file_type(self):
         self.fd.file.seek(0)
-        content = self.fd.file.read(64*1024)
+        content = self.fd.file.read(64 * 1024)
         mimetype, charset = get_mime_type(content)
         if not mimetype in self.mimetypes:
-            self.parsed_info.add_error('Expected an %s file of type "%s", found one of type "%s"' % (self.ext.upper(), '" or "'.join(self.mimetypes), mimetype))
+            self.parsed_info.add_error(
+                'Expected an %s file of type "%s", found one of type "%s"'
+                % (self.ext.upper(), '" or "'.join(self.mimetypes), mimetype)
+            )
         self.parsed_info.mimetype = mimetype
         self.parsed_info.charset = charset
