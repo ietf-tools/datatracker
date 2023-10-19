@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2011-2020, All Rights Reserved
+# Copyright The IETF Trust 2011-2023, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -14,7 +14,7 @@ from ietf.utils.mime import get_mime_type
 from ietf.utils.timezone import date_today
 
 
-class MetaData(object):
+class MetaData:
     rev = None
     name = None
     group = None
@@ -25,7 +25,8 @@ class MetaData(object):
     document_date = None
     authors = None
 
-class ParseInfo(object):
+
+class ParseInfo:
     """Collect errors from a parse"""
 
     def __init__(self):
@@ -46,9 +47,9 @@ class ParseInfo(object):
         self.warnings[warning_type] = warn_list + [warning_str]
 
 
-class FileParser(object):
-    ext = None                          # type: Optional[str]
-    mimetypes = []                      # type: List[str]
+class FileParser:
+    ext: Optional[str] = None
+    mimetypes: List[str] = []
 
     def __init__(self, fd):
         self.fd = fd
@@ -58,7 +59,7 @@ class FileParser(object):
     # no other file parsing is recommended
     def critical_parse(self):
         self.parse_invalid_chars_in_filename()
-        self.parse_max_size();
+        self.parse_max_size()
         self.parse_filename_extension()
         self.parse_file_type()
         self.parsed_info.metadata.submission_date = date_today()
@@ -89,4 +90,3 @@ class FileParser(object):
             self.parsed_info.add_error('Expected an %s file of type "%s", found one of type "%s"' % (self.ext.upper(), '" or "'.join(self.mimetypes), mimetype))
         self.parsed_info.mimetype = mimetype
         self.parsed_info.charset = charset
-        
