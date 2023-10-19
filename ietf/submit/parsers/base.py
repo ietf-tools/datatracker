@@ -10,7 +10,6 @@ from typing import List, Optional  # pyflakes:ignore
 from django.conf import settings
 from django.template.defaultfilters import filesizeformat
 
-from ietf.utils.mime import get_mime_type
 from ietf.utils.timezone import date_today
 
 
