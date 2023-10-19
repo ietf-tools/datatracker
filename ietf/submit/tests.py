@@ -1700,7 +1700,6 @@ class SubmitTests(BaseSubmitTestCase):
         r, q, m = self.submit_bad_file("some name", ["txt"])
         self.assertIn('Invalid characters were found in the name', m)
         self.assertIn('Expected the TXT file to have extension ".txt"', m)
-        self.assertIn('Expected an TXT file of type "text/plain"', m)
         self.assertIn('document does not contain a legitimate name', m)
 
     def test_submit_bad_doc_name(self):
@@ -1718,7 +1717,6 @@ class SubmitTests(BaseSubmitTestCase):
         r, q, m = self.submit_bad_file("some name", ["xml"])
         self.assertIn('Invalid characters were found in the name', m)
         self.assertIn('Expected the XML file to have extension ".xml"', m)
-        self.assertIn('Expected an XML file of type "application/xml"', m)
 
     def test_submit_file_in_archive(self):
         name = "draft-authorname-testing-file-exists"
