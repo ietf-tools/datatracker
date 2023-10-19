@@ -42,7 +42,7 @@ from ietf.utils import log
 from ietf.utils.draft import PlaintextDraft
 from ietf.utils.text import normalize_text
 from ietf.utils.timezone import date_today
-from ietf.utils.xmldraft import XMLDraft, XMLParseError
+from ietf.utils.xmldraft import InvalidXMLError, XMLDraft, XMLParseError
 
 
 class SubmissionBaseUploadForm(forms.Form):
@@ -168,6 +168,11 @@ class SubmissionBaseUploadForm(forms.Form):
 
                 try:
                     xml_draft = XMLDraft(tfn)
+                except InvalidXMLError:
+                    raise forms.ValidationError(
+                        "The uploaded file is not valid XML. Please make sure you are uploading the correct file.",
+                        code="invalid_xml_error",
+                    )
                 except XMLParseError as e:
                     msgs = format_messages('xml', e, e.parser_msgs())
                     raise forms.ValidationError(msgs, code="xml_parse_error")
