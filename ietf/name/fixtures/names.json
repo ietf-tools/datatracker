@@ -3034,7 +3034,9 @@
       "material_types": "[\n    \"slides\"\n]",
       "matman_roles": "[\n    \"chair\"\n]",
       "need_parent": false,
-      "parent_types": [],
+      "parent_types": [
+        "rfcedtyp"
+      ],
       "req_subm_approval": true,
       "role_order": "[\n    \"chair\"\n]",
       "session_purposes": "[\n    \"regular\"\n]",
