@@ -100,7 +100,7 @@ class FileParser:
             self.parsed_info.add_error(
                 "Invalid {} byte(s) starting at byte {}: [{}]".format(
                     err.encoding,
-                    err.start,
+                    err.start + 1,
                     ", ".join(f"0x{b:x}" for b in invalid_bytes)
                 )
             )
