@@ -49,7 +49,7 @@ class ParseInfo:
 
 class FileParser:
     ext: Optional[str] = None
-    mimetypes: List[str] = []
+    encoding = "utf8"
 
     def __init__(self, fd):
         self.fd = fd
@@ -61,6 +61,7 @@ class FileParser:
         self.parse_invalid_chars_in_filename()
         self.parse_max_size()
         self.parse_filename_extension()
+        self.validate_encoding()
         self.parsed_info.metadata.submission_date = date_today()
         return self.parsed_info
 
@@ -88,4 +89,19 @@ class FileParser:
             self.parsed_info.add_error(
                 'Expected the %s file to have extension ".%s", found the name "%s"'
                 % (self.ext.upper(), self.ext, self.fd.name)
+            )
+
+    def validate_encoding(self):
+        self.fd.seek(0)
+        bytes = self.fd.read()
+        try:
+            bytes.decode(self.encoding)
+        except UnicodeDecodeError as err:
+            invalid_bytes = bytes[err.start : err.end]
+            self.parsed_info.add_error(
+                "Invalid {} byte(s) starting at byte {}: [{}]".format(
+                    err.encoding,
+                    err.start,
+                    ", ".join(f"0x{b:x}" for b in invalid_bytes)
+                )
             )

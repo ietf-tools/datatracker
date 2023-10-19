@@ -537,8 +537,7 @@ class DeprecatedSubmissionBaseUploadForm(SubmissionBaseUploadForm):
             bytes = txt_file.read()
             txt_file.seek(0)
             try:
-                text = bytes.decode(self.file_info['txt'].charset)
-            #
+                text = bytes.decode(PlainParser.encoding)
                 self.parsed_draft = PlaintextDraft(text, txt_file.name)
                 if self.filename == None:
                     self.filename = self.parsed_draft.filename
@@ -649,7 +648,7 @@ class SubmissionManualUploadForm(SubmissionBaseUploadForm):
             txt_file.seek(0)
             bytes = txt_file.read()
             try:
-                text = bytes.decode(self.file_info["txt"].charset)
+                text = bytes.decode(PlainParser.encoding)
                 parsed_draft = PlaintextDraft(text, txt_file.name)
                 self._extracted_filenames_and_revisions["txt"] = (parsed_draft.filename, parsed_draft.revision)
             except (UnicodeDecodeError, LookupError) as e:
