@@ -61,7 +61,6 @@ class FileParser:
         self.parse_invalid_chars_in_filename()
         self.parse_max_size()
         self.parse_filename_extension()
-        self.parse_file_type()
         self.parsed_info.metadata.submission_date = date_today()
         return self.parsed_info
 
@@ -90,15 +89,3 @@ class FileParser:
                 'Expected the %s file to have extension ".%s", found the name "%s"'
                 % (self.ext.upper(), self.ext, self.fd.name)
             )
-
-    def parse_file_type(self):
-        self.fd.file.seek(0)
-        content = self.fd.file.read(64 * 1024)
-        mimetype, charset = get_mime_type(content)
-        if not mimetype in self.mimetypes:
-            self.parsed_info.add_error(
-                'Expected an %s file of type "%s", found one of type "%s"'
-                % (self.ext.upper(), '" or "'.join(self.mimetypes), mimetype)
-            )
-        self.parsed_info.mimetype = mimetype
-        self.parsed_info.charset = charset
