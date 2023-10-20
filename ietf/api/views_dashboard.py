@@ -106,6 +106,9 @@ def registration(request):
     onsite_counts += Counter(MeetingRegistration.objects.filter(reg_type="").exclude(meeting__number=107).values_list("meeting__number","country_code"))
     remote_counts = Counter(MeetingRegistration.objects.filter(reg_type="remote").values_list("meeting__number","country_code"))
     remote_counts += Counter(MeetingRegistration.objects.filter(reg_type="",meeting__number=107).values_list("meeting__number","country_code"))
+    # This is off by trivial for these meetings that have reg_type="" where they shouldn't
+    # '110': 3, '108': 1, '112': 1})
+    # Not fixing it here - that's data cleanup that needs to happen.
     keys = set(onsite_counts.keys())
     keys.update(set(remote_counts.keys()))
     response = [
