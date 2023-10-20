@@ -177,7 +177,7 @@
                 <tr>
                     <td></td>
                     <th scope="row">
-                        Document shepherd
+                        {% if doc.stream_id == 'iab' %}IAB shepherd{% else %}Document shepherd{% endif %}
                     </th>
                     <td class="edit">
                         {% if can_edit_stream_info and not snapshot %}
