@@ -59,6 +59,28 @@ paths:
                     wg-00:
                       type: integer
 
+  /adopted/:
+    get:
+      operationId: adopted
+      summary: Get submissions of wgs -00s binned by area and month
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    date:
+                      type: string
+                      format: date
+                    area:
+                      type: string
+                    count:
+                      type: integer
+
   /interims/:
     get:
       operationId: interims

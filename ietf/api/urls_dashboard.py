@@ -9,6 +9,8 @@ urlpatterns = [
     url(r'^submissions/$', views_dashboard.submissions),
     url(r'^interims/$', views_dashboard.interims),
     url(r'^registration/$', views_dashboard.registration),
+    url(r'^adopted/$', views_dashboard.adopted),
+
 ]
 
 

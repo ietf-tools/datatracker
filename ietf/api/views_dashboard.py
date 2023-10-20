@@ -1,5 +1,7 @@
 # Copyright The IETF Trust 2023, All Rights Reserved
 
+import debug # pyflakes: ignore
+
 import datetime
 
 from collections import Counter
@@ -60,7 +62,7 @@ def submissions(request):
 
     # dtstart = datetime.datetime.strptime(start, "%Y-%m").astimezone(datetime.timezone.utc)
     # dtend = datetime.datetime.strptime(end, "%Y-%m").astimezone(datetime.timezone.utc)
-    dtstart = NewRevisionDocEvent.objects.aggregate(Min("time"))["time__min"].replace(day=1,hour=0,minute=0,second=0)
+    dtstart = NewRevisionDocEvent.objects.filter(doc__type_id="draft").aggregate(Min("time"))["time__min"].replace(day=1,hour=0,minute=0,second=0)
     dtend = timezone.now().replace(day=1,hour=0,minute=0,second=0)
 
     qs = NewRevisionDocEvent.objects.filter(doc__type_id="draft")
@@ -113,5 +115,34 @@ def registration(request):
         }
         for key in keys
     ]
+
+    return JsonResponse(response, safe=False)
+
+@csrf_exempt
+@requires_api_token("ietf.api.views_dashboard")
+def adopted(request):
+
+    qs = NewRevisionDocEvent.objects.filter(
+        doc__type_id="draft",doc__group__type_id="wg", rev="00"
+    ).select_related("doc").annotate(
+        area=Subquery(
+            Group.objects.filter(pk=OuterRef("doc__group_id")).values_list('parent__acronym',flat=True)[:1]
+        )
+    )
+
+    dtstart = qs.aggregate(Min("time"))["time__min"].replace(day=1,hour=0,minute=0,second=0)
+    dtend = timezone.now().replace(day=1,hour=0,minute=0,second=0)
+
+    response = []
+    for interval_start in rrule.rrule(rrule.MONTHLY, dtstart=dtstart, until=dtend):
+        interval_end = (interval_start+datetime.timedelta(days=32)).replace(day=1)
+        for area in set(qs.filter(time__gte=interval_start,time__lt=interval_end).values_list("area", flat=True)):
+            response.append(
+                {
+                    "date": interval_start,
+                    "area": area,
+                    "count": qs.filter(time__gte=interval_start,time__lt=interval_end, area=area).values_list("doc_id",flat=True).distinct().count()
+                }
+            )
 
     return JsonResponse(response, safe=False)
