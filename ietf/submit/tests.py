@@ -3121,6 +3121,20 @@ class SubmissionUploadFormTests(BaseSubmitTestCase):
         )
         self.assertFalse(form.is_valid())
 
+    def test_invalid_xml(self):
+        """Test error message for invalid XML"""
+        not_xml = SimpleUploadedFile(
+            name="not-xml.xml",
+            content=b"this is not xml at all",
+            content_type="application/xml",
+        )
+        form = SubmissionBaseUploadForm(RequestFactory().post('/some/url'), files={"xml": not_xml})
+        self.assertFalse(form.is_valid())
+        self.assertFormError(
+            form,
+            "xml",
+            "The uploaded file is not valid XML. Please make sure you are uploading the correct file.",
+        )
 
 class AsyncSubmissionTests(BaseSubmitTestCase):
     """Tests of async submission-related tasks"""
