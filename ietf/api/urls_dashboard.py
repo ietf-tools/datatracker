@@ -7,6 +7,7 @@ from ietf.utils.urls import url
 urlpatterns = [
     url(r'^groups_opened_closed/$', views_dashboard.groups_opened_closed),
     url(r'^submissions/$', views_dashboard.submissions),
+    url(r'^interims/$', views_dashboard.interims),
 ]
 
 

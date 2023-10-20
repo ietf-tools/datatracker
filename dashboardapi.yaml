@@ -21,15 +21,17 @@ paths:
                 items:
                   type: object
                   properties:
+                    group_type:
+                      type: string
                     acronym:
-                        type: string
+                      type: string
                     parent_acronym:
-                        type: string
+                      type: string
                     date:
-                        type: string
-                        format: date
+                      type: string
+                      format: date-time
                     state:
-                        type: string
+                      type: string
  
   /submissions/:
     get:
@@ -56,6 +58,30 @@ paths:
                       type: integer
                     wg-00:
                       type: integer
+
+  /interims/:
+    get:
+      operationId: interims
+      summary: Get iterim meetings
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    group_type:
+                      type: string
+                    acronym:
+                      type: string
+                    parent_acronym:
+                      type: string
+                    time:
+                      type: string
+                      format: date-time
 
 components: 
 

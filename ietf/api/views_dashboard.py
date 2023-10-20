@@ -12,6 +12,7 @@ from ietf.api.ietf_utils import requires_api_token
 
 from ietf.group.models import Group, ChangeStateGroupEvent
 from ietf.doc.models import NewRevisionDocEvent
+from ietf.meeting.models import Session
 
 @csrf_exempt
 @requires_api_token("ietf.api.views_dashboard")
@@ -31,6 +32,7 @@ def groups_opened_closed(request):
     for group in qs.exclude(opened__isnull=True):
         response.append(
             { 
+                "group_type": group.type_id,
                 "acronym": group.acronym,
                 "parent_acronym": group.parent.acronym if group.parent else "",
                 "date": group.opened,
@@ -40,6 +42,7 @@ def groups_opened_closed(request):
     for group in qs.exclude(closed__isnull=True):
         response.append(
             { 
+                "group_type": group.type_id,
                 "acronym": group.acronym,
                 "parent_acronym": group.parent.acronym if group.parent else "",
                 "date": group.closed,
@@ -74,3 +77,18 @@ def submissions(request):
 
     return JsonResponse(response, safe=False)
 
+@csrf_exempt
+@requires_api_token("ietf.api.views_dashboard")
+def interims(request):
+
+    response = [
+        {
+            "group_type": s.group.type_id,
+            "acronym": s.group.acronym,
+            "parent_acronym": s.group.parent and s.group.parent.acronym,
+            "time": s.official_timeslotassignment().timeslot.time # TODO: Optimize this
+        }
+        for s in Session.objects.filter(meeting__type_id="interim", schedulingevent__status_id="sched")
+    ]
+
+    return JsonResponse(response, safe=False)
