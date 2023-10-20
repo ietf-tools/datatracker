@@ -83,6 +83,30 @@ paths:
                       type: string
                       format: date-time
 
+  /registration/:
+    get:
+      operationId: registration
+      summary: Get registration counts by country for each ietf meeting
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    meeting:
+                      type: string
+                    country:
+                      type: string
+                    remote:
+                      type: integer
+                    onsite:
+                      type: integer
+                    
+
 components: 
 
     securitySchemes: 

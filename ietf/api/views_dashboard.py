@@ -2,6 +2,8 @@
 
 import datetime
 
+from collections import Counter
+
 from dateutil import rrule
 from django.db.models import Subquery, OuterRef, Min
 from django.http import JsonResponse
@@ -13,6 +15,7 @@ from ietf.api.ietf_utils import requires_api_token
 from ietf.group.models import Group, ChangeStateGroupEvent
 from ietf.doc.models import NewRevisionDocEvent
 from ietf.meeting.models import Session
+from ietf.stats.models import MeetingRegistration
 
 @csrf_exempt
 @requires_api_token("ietf.api.views_dashboard")
@@ -89,6 +92,26 @@ def interims(request):
             "time": s.official_timeslotassignment().timeslot.time # TODO: Optimize this
         }
         for s in Session.objects.filter(meeting__type_id="interim", schedulingevent__status_id="sched")
+    ]
+
+    return JsonResponse(response, safe=False)
+
+@csrf_exempt
+@requires_api_token("ietf.api.views_dashboard")
+def registration(request):
+
+    onsite_counts = Counter(MeetingRegistration.objects.filter(reg_type="onsite").values_list("meeting__number","country_code"))
+    remote_counts = Counter(MeetingRegistration.objects.filter(reg_type="remote").values_list("meeting__number","country_code"))
+    keys = set(onsite_counts.keys())
+    keys.update(set(remote_counts.keys()))
+    response = [
+        {
+            "meeting": key[0],
+            "country": key[1],
+            "onsite": onsite_counts[key],
+            "remote": remote_counts[key],
+        }
+        for key in keys
     ]
 
     return JsonResponse(response, safe=False)
