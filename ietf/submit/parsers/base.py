@@ -66,7 +66,7 @@ class FileParser:
 
     def parse_invalid_chars_in_filename(self):
         name = self.fd.name
-        regexp = re.compile(r"&|\|\/|;|\*|\s|\$")
+        regexp = re.compile(r"&|\\|/|;|\*|\s|\$")
         chars = regexp.findall(name)
         if chars:
             self.parsed_info.add_error(
