@@ -3,8 +3,9 @@
 import datetime
 
 from dateutil import rrule
-from django.db.models import Subquery, OuterRef
+from django.db.models import Subquery, OuterRef, Min
 from django.http import JsonResponse
+from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 
 from ietf.api.ietf_utils import requires_api_token
@@ -14,13 +15,9 @@ from ietf.doc.models import NewRevisionDocEvent
 
 @csrf_exempt
 @requires_api_token("ietf.api.views_dashboard")
-def groups_opened_closed(request, groupType, startYear, endYear):
+def groups_opened_closed(request):
 
-    # TODO validate input
-    startYear = int(startYear)
-    endYear = int(endYear)
-
-    qs = Group.objects.filter(type_id=groupType).annotate(
+    qs = Group.objects.filter(type_id__in=["wg","rg","program"]).annotate(
         opened=Subquery(
             ChangeStateGroupEvent.objects.filter(state="active",group_id=OuterRef("pk")).values_list("time",flat=True).order_by("-time")[:1]
         )
@@ -31,7 +28,7 @@ def groups_opened_closed(request, groupType, startYear, endYear):
     )
     response = []
 
-    for group in qs.filter(opened__year__gte=startYear, opened__year__lte=endYear):
+    for group in qs.exclude(opened__isnull=True):
         response.append(
             { 
                 "acronym": group.acronym,
@@ -40,7 +37,7 @@ def groups_opened_closed(request, groupType, startYear, endYear):
                 "state": "opened"
             }
         )
-    for group in qs.filter(closed__year__gte=startYear, closed__year__lte=endYear):
+    for group in qs.exclude(closed__isnull=True):
         response.append(
             { 
                 "acronym": group.acronym,
@@ -53,11 +50,12 @@ def groups_opened_closed(request, groupType, startYear, endYear):
 
 @csrf_exempt
 @requires_api_token("ietf.api.views_dashboard")
-def submissions(request, start, end):
+def submissions(request):
 
-    # TODO: validate inputs
-    dtstart = datetime.datetime.strptime(start, "%Y-%m").astimezone(datetime.timezone.utc)
-    dtend = datetime.datetime.strptime(end, "%Y-%m").astimezone(datetime.timezone.utc)
+    # dtstart = datetime.datetime.strptime(start, "%Y-%m").astimezone(datetime.timezone.utc)
+    # dtend = datetime.datetime.strptime(end, "%Y-%m").astimezone(datetime.timezone.utc)
+    dtstart = NewRevisionDocEvent.objects.aggregate(Min("time"))["time__min"].replace(day=1,hour=0,minute=0,second=0)
+    dtend = timezone.now().replace(day=1,hour=0,minute=0,second=0)
 
     qs = NewRevisionDocEvent.objects.filter(doc__type_id="draft")
 
