@@ -19,7 +19,7 @@ from ietf.person.factories import PersonFactory # DO NOT MERGE INTO MAIN
 from ietf.person.models import Person
 
 @csrf_exempt
-@requires_api_token
+@requires_api_token("ietf.api.views_rpc")
 def rpc_person(request, person_id):
     person = get_object_or_404(Person, pk=person_id)
     return JsonResponse({
