@@ -488,7 +488,6 @@ INSTALLED_APPS = [
     'ietf.utils',
     # IETF Secretariat apps
     'ietf.secr.announcement',
-    'ietf.secr.areas',
     'ietf.secr.meetings',
     'ietf.secr.rolodex',
     'ietf.secr.sreq',
