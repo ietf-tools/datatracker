@@ -103,7 +103,9 @@ def interims(request):
 def registration(request):
 
     onsite_counts = Counter(MeetingRegistration.objects.filter(reg_type="onsite").values_list("meeting__number","country_code"))
+    onsite_counts += Counter(MeetingRegistration.objects.filter(reg_type="").exclude(meeting__number=107).values_list("meeting__number","country_code"))
     remote_counts = Counter(MeetingRegistration.objects.filter(reg_type="remote").values_list("meeting__number","country_code"))
+    remote_counts += Counter(MeetingRegistration.objects.filter(reg_type="",meeting__number=107).values_list("meeting__number","country_code"))
     keys = set(onsite_counts.keys())
     keys.update(set(remote_counts.keys()))
     response = [
