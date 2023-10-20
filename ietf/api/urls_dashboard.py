@@ -10,6 +10,8 @@ urlpatterns = [
     url(r'^interims/$', views_dashboard.interims),
     url(r'^registration/$', views_dashboard.registration),
     url(r'^adopted/$', views_dashboard.adopted),
+    url(r'^areas/$', views_dashboard.areas),
+
 
 ]
 

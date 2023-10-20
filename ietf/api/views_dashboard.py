@@ -146,3 +146,18 @@ def adopted(request):
             )
 
     return JsonResponse(response, safe=False)
+
+@csrf_exempt
+@requires_api_token("ietf.api.views_dashboard")
+def areas(request):
+
+    response=[
+        {
+            "acronym": group.acronym,
+            "status": group.state_id
+        }
+        for group in Group.objects.filter(type_id="area")
+    ]
+
+
+    return JsonResponse(response, safe=False)

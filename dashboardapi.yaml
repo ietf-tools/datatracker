@@ -129,6 +129,25 @@ paths:
                       type: integer
                     
 
+  /areas/:
+    get:
+      operationId: areas
+      summary: Get area acronyms and states
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    acronym:
+                      type: string
+                    state:
+                      type: string
+
 components: 
 
     securitySchemes: 
