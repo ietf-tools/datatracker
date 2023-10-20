@@ -4373,6 +4373,29 @@
   },
   {
     "fields": {
+      "cc": [
+        "iab"
+      ],
+      "desc": "Recipients when an IAB document's state is changed",
+      "to": [
+        "bofreq_editors",
+        "bofreq_responsible",
+        "doc_ad",
+        "doc_affecteddoc_authors",
+        "doc_affecteddoc_group_chairs",
+        "doc_affecteddoc_notify",
+        "doc_authors",
+        "doc_group_chairs",
+        "doc_group_responsible_directors",
+        "doc_notify",
+        "doc_shepherd"
+      ]
+    },
+    "model": "mailtrigger.mailtrigger",
+    "pk": "iab_doc_state_changed"
+  },
+  {
+    "fields": {
       "cc": [],
       "desc": "Recipients when the IANA expert review for a document changes",
       "to": [

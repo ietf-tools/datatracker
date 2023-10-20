@@ -152,7 +152,7 @@ def change_state(request, name):
 
                 doc.save_with_history(events)
 
-                email_state_changed(request, doc, msg,'doc_state_edited')
+                email_state_changed(request, doc, msg)
                 
                 if new_state.slug == "approved" and new_tags == [] and has_role(request.user, "Area Director"):
                                         email_ad_approved_doc(request, doc, comment)
