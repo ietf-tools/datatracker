@@ -1,61 +1,9 @@
 @use "sass:map";
 
-@import "bootstrap/scss/functions";
-
-// Enable negative margin classes.
-$enable-negative-margins: true;
-
-// Don't add carets to dropdowns by default.
-// $enable-caret: false;
-
-$popover-max-width: 100%;
-
-// Override default fonts
-
-$font-family-sans-serif: "Inter",
-system-ui,
--apple-system,
-"Segoe UI",
-Roboto,
-"Helvetica Neue",
-"Noto Sans",
-"Liberation Sans",
-Arial,
-sans-serif,
-"Apple Color Emoji",
-"Segoe UI Emoji",
-"Segoe UI Symbol",
-"Noto Color Emoji";
-$font-family-monospace: "Noto Sans Mono",
-SFMono-Regular,
-Menlo,
-Monaco,
-Consolas,
-"Liberation Mono",
-"Courier New",
-monospace;
-
-// Enable color modes
-$color-mode-type: data;
-
-// Only import what we need:
-
-@import "bootstrap/scss/variables";
-@import "bootstrap/scss/variables-dark";
-
-$h1-font-size: $font-size-base * 2.2;
-$h2-font-size: $font-size-base * 1.8;
-$h3-font-size: $font-size-base * 1.6;
-$h4-font-size: $font-size-base * 1.4;
-$h5-font-size: $font-size-base * 1.2;
-$h6-font-size: $font-size-base;
-
-@import "bootstrap/scss/maps";
-@import "bootstrap/scss/mixins";
-@import "bootstrap/scss/utilities";
-@import "bootstrap/scss/root";
+@import "custom-bs-import";
 
 // Layout & components
+// Only import what we need:
 @import "bootstrap/scss/reboot";
 @import "bootstrap/scss/type";
 @import "bootstrap/scss/images";
@@ -205,8 +153,8 @@ pre {
         --#{$prefix}dropdown-divider-bg: #{$dropdown-divider-bg};
         --#{$prefix}dropdown-divider-margin-y: #{$dropdown-divider-margin-y};
         --#{$prefix}dropdown-box-shadow: #{$dropdown-box-shadow};
-        --#{$prefix}dropdown-link-color: #{$dropdown-link-color};
-        --#{$prefix}dropdown-link-hover-color: #{$dropdown-link-hover-color};
+        --#{$prefix}dropdown-link-color: #{$nav-link-color};
+        --#{$prefix}dropdown-link-hover-color: #{$nav-link-hover-color};
         --#{$prefix}dropdown-link-hover-bg: #{$dropdown-link-hover-bg};
         --#{$prefix}dropdown-link-active-color: #{$dropdown-link-active-color};
         --#{$prefix}dropdown-link-active-bg: #{$dropdown-link-active-bg};
@@ -351,7 +299,7 @@ th,
     .axis path,
     .axis line {
         fill: none;
-        stroke: black;
+        stroke: var(--bs-body-color);
     }
 
     .axis.y path,
@@ -368,7 +316,7 @@ th,
     }
 
     .bar text {
-        fill: black;
+        fill: var(--bs-body-color);
         dominant-baseline: central;
         pointer-events: none;
     }
@@ -407,7 +355,7 @@ th,
 }
 
 .ballot-icon table .my {
-    border: calc(2 * $table-border-width) solid #000;
+    border: calc(2 * $table-border-width) solid var(--bs-emphasis-color);
 }
 
 // See https://getbootstrap.com/docs/5.1/customize/color/#all-colors
