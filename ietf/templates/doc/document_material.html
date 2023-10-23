@@ -2,7 +2,7 @@
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
 {% load static %}
-{% load ietf_filters textfilters %}
+{% load ietf_filters textfilters tz %}
 {% block title %}{{ doc.title|default:"Untitled" }}{% endblock %}
 {% block content %}
     {% origin %}
@@ -29,6 +29,24 @@
                     {% if snapshot %}<span class="badge rounded-pill text-bg-warning">Snapshot</span>{% endif %}
                 </td>
             </tr>
+            {% if doc.meeting_related %}
+                <tr>
+                    <th scope="row">
+                        Date and time
+                    </th>
+                    <td></td>
+                    <td>
+                        {% with session=doc.get_related_session %}
+                        {% with timeslot=session.official_timeslotassignment.timeslot %}
+                            {% if session.meeting %}
+                                <span class="session-time date me-3" data-start-utc="{{ timeslot.time|utc|date:'Y-m-d H:i' }}" data-end-utc="{{ timeslot.end_time|utc|date:'Y-m-d H:i' }}"></span>
+                                {% include "meeting/tz-display.html" with meeting_timezone=session.meeting.time_zone id_suffix="" minimal=True only %}
+                            {% endif %}
+                        {% endwith %}
+                        {% endwith %}
+                    </td>
+                </tr>
+            {% endif %}
             <tr>
                 <th scope="row">Title</th>
                 <td class="edit">
@@ -97,7 +115,21 @@
                             {% if presentations %}
                                 {% for pres in presentations %}
                                     {{ pres.session.short_name }} at {{ pres.session.meeting }}
-                                    {% if pres.rev != doc.rev %}(version -{{ pres.rev }}){% endif %}{% if not forloop.last %},{% endif %}
+                                    {% if pres.rev != doc.rev %}(version -{{ pres.rev }}){% endif %}
+                                    <br>
+                                    <b>Remote instructions:</b>
+                                    {% if pres.session.agenda_note|first_url|conference_url %}
+                                        <a href="{{ pres.session.agenda_note|first_url }}" title="Online conference">
+                                            <i class="bi bi-beople"></i>
+                                        </a>
+                                    {% elif pres.session.remote_instructions|first_url|conference_url %}
+                                        <a href="{{ pres.session.remote_instructions|first_url }}"
+                                           title="Online conference">
+                                            <i class="bi bi-people"></i>
+                                        </a>
+                                    {% endif %}
+                                    {{ pres.session.remote_instructions|linkify }}
+                                    {% if not forloop.last %}<br>{% endif %}
                                 {% endfor %}
                             {% else %}
                                 <span class="text-body-secondary">(None)</span>
@@ -142,4 +174,16 @@
 {% block js %}
     <script src="{% static 'ietf/js/d3.js' %}"></script>
     <script src="{% static 'ietf/js/document_timeline.js' %}"></script>
+    {% if doc.meeting_related %}
+        <script src="{% static 'ietf/js/moment.js' %}"></script>
+        <script src="{% static 'ietf/js/upcoming.js' %}"></script>
+        <script src="{% static 'ietf/js/timezone.js' %}"></script>
+        <script>
+        $(function () {
+                // Init with best guess at local timezone.
+                ietf_timezone.set_tz_change_callback(timezone_changed);
+                ietf_timezone.initialize('local');
+        });
+        </script>
+    {% endif %}
 {% endblock %}

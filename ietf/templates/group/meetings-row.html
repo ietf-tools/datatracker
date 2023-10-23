@@ -1,7 +1,6 @@
 {% load origin tz %}
 {% origin %}
 {% for s in sessions %}
-    {% timezone s.meeting.time_zone %}
     <tr>
         <td>
             {% if s.meeting.type.slug == 'ietf' %}
@@ -12,9 +11,11 @@
         </td>
         <td>
             {% if s.current_status == "sched" %}
-                {{ s.time|date:"Y-m-d" }}
+                {% with timeslot=s.official_timeslotassignment.timeslot %}
+                <span class="session-time date me-3" data-start-utc="{{ timeslot.time|utc|date:'Y-m-d H:i' }}" data-end-utc="{{ timeslot.end_time|utc|date:'Y-m-d H:i' }}"></span>
+                {% endwith %}
             {% else %}
-                <i>{{ s.current_status_name }}</i>
+                <div class="badge rounded-pill text-bg-secondary">{{ s.current_status_name }}</div>
             {% endif %}
             {% if show_request and s.meeting.type_id == 'ietf' %}
                 {% if can_edit %}
@@ -27,9 +28,6 @@
         </td>
         <td>
             {% if s.name %}{{ s.name }}{% endif %}
-        </td>
-        <td>
-            {% if s.current_status == "sched" %}{{ s.time|date:"D" }}{% endif %}
         </td>
         <td>
             {% if show_ical and s.current_status == "sched" %}
@@ -78,5 +76,4 @@
             {% endif %}
         </td>
     </tr>
-    {% endtimezone %}
 {% endfor %}
