@@ -562,7 +562,7 @@ td.position-empty {
 }
 
 .edit-meeting-schedule .edit-grid .day-label .swap-days:hover {
-    color: #666;
+    color: var(--bs-secondary-color);
 }
 
 .edit-meeting-schedule #swap-days-modal .modal-body label {
@@ -594,15 +594,15 @@ td.position-empty {
 }
 
 .edit-meeting-schedule .edit-grid .time-header .time-label.would-violate-hint {
-    background-color: #ffe0e0;
-    outline: #ffe0e0 solid 0.4em;
+    background-color: var(--bs-danger-bg-subtle);
+    outline: var(--bs-danger-bg-subtle) solid 0.4em;
 }
 
 .edit-meeting-schedule .edit-grid .time-header .time-label span {
     display: inline-block;
     width: 100%;
     text-align: center;
-    color: #444444;
+    color: var(--bs-secondary-color);
 }
 
 .edit-meeting-schedule .edit-grid .timeslots {
@@ -614,7 +614,7 @@ td.position-empty {
 .edit-meeting-schedule .edit-grid .timeslot {
     position: relative;
     display: inline-block;
-    background-color: #f4f4f4;
+    background-color: var(--bs-secondary-bg);
     height: 100%;
     overflow: hidden;
 }
@@ -627,7 +627,7 @@ td.position-empty {
     width: 100%;
     align-items: center;
     justify-content: center;
-    color: #999;
+    color: var(--bs-tertiary-color);
 }
 
 .edit-meeting-schedule .edit-grid .timeslot .drop-target {
@@ -644,22 +644,22 @@ td.position-empty {
 }
 
 .edit-meeting-schedule .edit-grid .timeslot.overfull {
-    border-right: 0.3em dashed #f55000;
+    border-right: 0.3em dashed var(--bs-danger);
     /* cut-off illusion */
 }
 
 .edit-meeting-schedule .edit-grid .timeslot.would-violate-hint {
-    background-color: #ffe0e0;
-    outline: #ffe0e0 solid 0.4em;
+    background-color: var(--bs-danger-bg-subtle);
+    outline: var(--bs-danger-bg-subtle) solid 0.4em;
 }
 
 .edit-meeting-schedule .edit-grid .timeslot.would-violate-hint.dropping {
-    background-color: #ccb3b3;
+    background-color: var(--bs-danger);
 }
 
 .edit-meeting-schedule .constraints .encircled,
 .edit-meeting-schedule .formatted-constraints .encircled {
-    border: 1px solid #000;
+    border: 1px solid var( --bs-body-color);
     border-radius: 1em;
     padding: 0 0.3em;
     text-align: center;
@@ -672,7 +672,7 @@ td.position-empty {
 
 /* sessions */
 .edit-meeting-schedule .session {
-    background-color: #fff;
+    background-color: var(--bs-body-bg);
     margin: 0.2em;
     padding-right: 0.2em;
     padding-left: 0.5em;
@@ -684,15 +684,15 @@ td.position-empty {
 
 .edit-meeting-schedule .session.selected {
     cursor: grabbing;
-    outline: #0000ff solid 0.2em;
-    /* blue, width matches margin on .session */
+    outline: var(--bs-primary) solid 0.2em;
+    /* width matches margin on .session */
     z-index: 2;
     /* render above timeslot outlines */
 }
 
 .edit-meeting-schedule .session.other-session-selected {
-    outline: #00008b solid 0.2em;
-    /* darkblue, width matches margin on .session */
+    outline: var(--bs-info) solid 0.2em;
+    /* width matches margin on .session */
     z-index: 2;
     /* render above timeslot outlines */
 }
@@ -703,7 +703,7 @@ td.position-empty {
 
 .edit-meeting-schedule .session.readonly {
     cursor: default;
-    background-color: #ddd;
+    background-color: var(--bs-dark-bg-subtle);
 }
 
 .edit-meeting-schedule .session.hidden-parent * {
@@ -717,13 +717,12 @@ td.position-empty {
 }
 
 .edit-meeting-schedule .session.highlight {
-    outline-color: #ff8c00;
-    /* darkorange */
-    background-color: #f3f3f3;
+    outline-color: var(--bs-warning);
+    background-color: var(--bs-light);
 }
 
 .edit-meeting-schedule .session.would-violate-hint {
-    outline: 0.3em solid #F55000;
+    outline: 0.3em solid var(--bs-danger);
     z-index: 1;
     /* raise up so the outline is not overdrawn */
 }
@@ -745,7 +744,7 @@ td.position-empty {
 
 .edit-meeting-schedule .edit-grid,
 .edit-meeting-schedule .session {
-    font-family: arial, helvetica, sans-serif;
+    // font-family: arial, helvetica, sans-serif;
     font-size: 11px;
 }
 
@@ -816,9 +815,9 @@ td.position-empty {
     bottom: 0;
     left: 0;
     width: 100%;
-    border-top: 0.2em solid #ccc;
+    border-top: 0.2em solid var(--bs-border-color);
     margin-bottom: 2em;
-    background-color: #fff;
+    background-color: var(--bs-body-bg);
     opacity: 0.95;
     z-index: 5;
     /* raise above edit-grid items */
@@ -833,7 +832,7 @@ td.position-empty {
     min-height: 4em;
     max-height: 13em;
     overflow-y: auto;
-    background-color: #f4f4f4;
+    background-color: var(--bs-secondary-bg);
 }
 
 .edit-meeting-schedule .unassigned-sessions.dropping {
@@ -890,7 +889,7 @@ td.position-empty {
     font-weight: normal;
     margin-right: 1em;
     padding: 0 1em;
-    border: 0.1em solid #eee;
+    border: 0.1em solid var(--bs-border-color);
     cursor: pointer;
 }
 
@@ -956,7 +955,7 @@ td.position-empty {
 }
 
 .edit-meeting-timeslots-and-misc-sessions .room-row {
-    border-bottom: 1px solid #ccc;
+    border-bottom: 1px solid var(--bs-border-color);
     // height: 20px;
     display: flex;
     cursor: pointer;
@@ -976,13 +975,13 @@ td.position-empty {
 }
 
 .edit-meeting-timeslots-and-misc-sessions .timeline.hover {
-    background: radial-gradient(#999 1px, transparent 1px);
+    background: radial-gradient(var(--bs-tertiary-color) 1px, transparent 1px);
     background-size: 20px 20px;
 }
 
 .edit-meeting-timeslots-and-misc-sessions .timeline.selected.hover,
 .edit-meeting-timeslots-and-misc-sessions .timeline.selected {
-    background: radial-gradient(#999 2px, transparent 2px);
+    background: radial-gradient(var(--bs-tertiary-color) 2px, transparent 2px);
     background-size: 20px 20px;
 }
 
@@ -998,8 +997,8 @@ td.position-empty {
     white-space: nowrap;
     cursor: pointer;
     padding-left: 0.2em;
-    border-left: 1px solid #999;
-    border-right: 1px solid #999;
+    border-left: 1px solid var(--bs-border-color);
+    border-right: 1px solid var(--bs-border-color);
 }
 
 .edit-meeting-timeslots-and-misc-sessions .timeslot:hover {
@@ -1019,10 +1018,10 @@ td.position-empty {
     bottom: 0;
     left: 0;
     width: 100%;
-    border-top: 0.2em solid #ccc;
+    border-top: 0.2em solid var(--bs-border-color);
     padding-top: 0.2em;
     margin-bottom: 2em;
-    background-color: #fff;
+    background-color: var(--bs-body-bg);
     opacity: 0.95;
 }
 
@@ -1070,7 +1069,7 @@ td.position-empty {
 }
 
 .timeslot-edit .tstable div.timeslot {
-    border: #000000 solid 1px;
+    border: var(--bs-body-color) solid 1px;
     border-radius: 0.5em;
     padding: 0.5em;
 }
@@ -1100,7 +1099,7 @@ td.position-empty {
 }
 
 .timeslot-edit .tstable .tstype_unavail {
-    background-color: #666;
+    background-color: var(--bs-secondary-color);
 }
 
 .timeslot-edit .official-use-warning {
