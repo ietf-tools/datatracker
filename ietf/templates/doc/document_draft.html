@@ -173,11 +173,11 @@
                     </td>
                 </tr>
             {% endif %}
-            {% if doc.stream_id == 'ietf' or doc.stream_id == 'ise' or doc.stream_id == 'irtf' or doc.stream_id == 'editorial' %}
+            {% if doc.stream_id == 'ietf' or doc.stream_id == 'ise' or doc.stream_id == 'irtf' or doc.stream_id == 'editorial' or doc.stream_id == 'iab' %}
                 <tr>
                     <td></td>
                     <th scope="row">
-                        Document shepherd
+                        {% if doc.stream_id == 'iab' %}IAB shepherd{% else %}Document shepherd{% endif %}
                     </th>
                     <td class="edit">
                         {% if can_edit_stream_info and not snapshot %}
