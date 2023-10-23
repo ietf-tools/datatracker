@@ -69,7 +69,7 @@ figure {
 blockquote {
   @include margin-paragraph; // margin: var(--paragraph);
   padding-left: calc(2ch - 2px);
-  border-left: 2px solid darkgrey;
+  border-left: 2px solid var(--bs-border-color);
 }
 
 /* Header junk */
