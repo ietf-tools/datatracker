@@ -238,17 +238,8 @@ class MiscSessionForm(TimeSlotForm):
             raise forms.ValidationError("ERROR: can't change group after materials have been uploaded")
         return group
 
-class UploadBlueSheetForm(forms.Form):
-    file = forms.FileField(help_text='example: bluesheets-84-ancp-01.pdf')
-    
-    def clean_file(self):
-        file = self.cleaned_data['file']
-        if not re.match(r'bluesheets-\d+',file.name):
-            raise forms.ValidationError('Incorrect filename format')
-        return file
 
 class RegularSessionEditForm(forms.ModelForm):
     class Meta:
         model = Session
         fields = ['agenda_note']
-
