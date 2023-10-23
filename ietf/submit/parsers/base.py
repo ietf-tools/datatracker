@@ -1,20 +1,19 @@
-# Copyright The IETF Trust 2011-2020, All Rights Reserved
+# Copyright The IETF Trust 2011-2023, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
 import re
-import debug                            # pyflakes:ignore
+import debug  # pyflakes:ignore
 
-from typing import List, Optional   # pyflakes:ignore
+from typing import List, Optional  # pyflakes:ignore
 
 from django.conf import settings
 from django.template.defaultfilters import filesizeformat
 
-from ietf.utils.mime import get_mime_type
 from ietf.utils.timezone import date_today
 
 
-class MetaData(object):
+class MetaData:
     rev = None
     name = None
     group = None
@@ -25,7 +24,8 @@ class MetaData(object):
     document_date = None
     authors = None
 
-class ParseInfo(object):
+
+class ParseInfo:
     """Collect errors from a parse"""
 
     def __init__(self):
@@ -46,9 +46,9 @@ class ParseInfo(object):
         self.warnings[warning_type] = warn_list + [warning_str]
 
 
-class FileParser(object):
-    ext = None                          # type: Optional[str]
-    mimetypes = []                      # type: List[str]
+class FileParser:
+    ext: Optional[str] = None
+    encoding = "utf8"
 
     def __init__(self, fd):
         self.fd = fd
@@ -58,35 +58,49 @@ class FileParser(object):
     # no other file parsing is recommended
     def critical_parse(self):
         self.parse_invalid_chars_in_filename()
-        self.parse_max_size();
+        self.parse_max_size()
         self.parse_filename_extension()
-        self.parse_file_type()
+        self.validate_encoding()
         self.parsed_info.metadata.submission_date = date_today()
         return self.parsed_info
 
     def parse_invalid_chars_in_filename(self):
         name = self.fd.name
-        regexp = re.compile(r'&|\|\/|;|\*|\s|\$')
+        regexp = re.compile(r"&|\\|/|;|\*|\s|\$")
         chars = regexp.findall(name)
         if chars:
-            self.parsed_info.add_error('Invalid characters were found in the name of the file which was just submitted: %s' % ', '.join(set(chars)))
+            self.parsed_info.add_error(
+                "Invalid characters were found in the name of the file which was just submitted: %s"
+                % ", ".join(set(chars))
+            )
 
     def parse_max_size(self):
         max_size = settings.IDSUBMIT_MAX_DRAFT_SIZE[self.ext]
         if self.fd.size > max_size:
-            self.parsed_info.add_error('File size is larger than the permitted maximum of %s' % filesizeformat(max_size))
+            self.parsed_info.add_error(
+                "File size is larger than the permitted maximum of %s"
+                % filesizeformat(max_size)
+            )
         self.parsed_info.metadata.file_size = self.fd.size
 
     def parse_filename_extension(self):
-        if not self.fd.name.lower().endswith('.'+self.ext):
-            self.parsed_info.add_error('Expected the %s file to have extension ".%s", found the name "%s"' % (self.ext.upper(), self.ext, self.fd.name))
+        if not self.fd.name.lower().endswith("." + self.ext):
+            self.parsed_info.add_error(
+                'Expected the %s file to have extension ".%s", found the name "%s"'
+                % (self.ext.upper(), self.ext, self.fd.name)
+            )
 
-    def parse_file_type(self):
-        self.fd.file.seek(0)
-        content = self.fd.file.read(64*1024)
-        mimetype, charset = get_mime_type(content)
-        if not mimetype in self.mimetypes:
-            self.parsed_info.add_error('Expected an %s file of type "%s", found one of type "%s"' % (self.ext.upper(), '" or "'.join(self.mimetypes), mimetype))
-        self.parsed_info.mimetype = mimetype
-        self.parsed_info.charset = charset
-        
+    def validate_encoding(self):
+        self.fd.seek(0)
+        bytes = self.fd.read()
+        try:
+            bytes.decode(self.encoding)
+        except UnicodeDecodeError as err:
+            invalid_bytes = bytes[err.start : err.end]
+            self.parsed_info.add_error(
+                "Invalid {} byte(s) starting at byte {}: [{}]".format(
+                    err.encoding,
+                    err.start + 1,
+                    ", ".join(f"0x{b:x}" for b in invalid_bytes)
+                )
+            )
