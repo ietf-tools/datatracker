@@ -2,8 +2,6 @@
 # -*- coding: utf-8 -*-
 
 import datetime
-import os
-import time
 
 from django.conf import settings
 from django.contrib import messages
@@ -21,17 +19,16 @@ from ietf.utils.mail import send_mail
 from ietf.meeting.forms import duration_string
 from ietf.meeting.helpers import get_meeting, make_materials_directories, populate_important_dates
 from ietf.meeting.models import Meeting, Session, Room, TimeSlot, SchedTimeSessAssignment, Schedule, SchedulingEvent
-from ietf.meeting.utils import add_event_info_to_session_qs, handle_upload_file
+from ietf.meeting.utils import add_event_info_to_session_qs
 from ietf.name.models import SessionStatusName
 from ietf.group.models import Group, GroupEvent
-from ietf.secr.meetings.blue_sheets import create_blue_sheets
 from ietf.secr.meetings.forms import ( BaseMeetingRoomFormSet, MeetingModelForm, MeetingSelectForm,
     MeetingRoomForm, MiscSessionForm, TimeSlotForm, RegularSessionEditForm,
-    UploadBlueSheetForm, MeetingRoomOptionsForm )
+    MeetingRoomOptionsForm )
 from ietf.secr.sreq.views import get_initial_session
 from ietf.secr.utils.meeting import get_session, get_timeslot
 from ietf.mailtrigger.utils import gather_address_lists
-from ietf.utils.timezone import date_today, make_aware
+from ietf.utils.timezone import make_aware
 
 
 # prep for agenda changes
@@ -255,72 +252,6 @@ def add(request):
     return render(request, 'meetings/add.html', {
         'form': form},
     )
-
-@role_required('Secretariat')
-def blue_sheet(request, meeting_id):
-    '''
-    Blue Sheet view.  The user can generate blue sheets or upload scanned bluesheets
-    '''
-    meeting = get_object_or_404(Meeting, number=meeting_id)
-    url = settings.SECR_BLUE_SHEET_URL
-    blank_sheets_path = settings.SECR_BLUE_SHEET_PATH
-    try:
-        last_run = time.ctime(os.stat(blank_sheets_path).st_ctime)
-    except OSError:
-        last_run = None
-    uploaded_sheets_path = os.path.join(settings.SECR_PROCEEDINGS_DIR,meeting.number,'bluesheets')
-    uploaded_files = sorted(os.listdir(uploaded_sheets_path))
-    
-    if request.method == 'POST':
-        form = UploadBlueSheetForm(request.POST,request.FILES)
-        if form.is_valid():
-            file = request.FILES['file']
-            save_error = handle_upload_file(file,file.name,meeting,'bluesheets')
-            if save_error:
-                form.add_error(None, save_error)
-            else:
-                messages.success(request, 'File Uploaded')
-                return redirect('ietf.secr.meetings.views.blue_sheet', meeting_id=meeting.number)
-    else:
-        form = UploadBlueSheetForm()
-
-    return render(request, 'meetings/blue_sheet.html', {
-        'meeting': meeting,
-        'url': url,
-        'form': form,
-        'last_run': last_run,
-        'uploaded_files': uploaded_files},
-    )
-
-@role_required('Secretariat')
-def blue_sheet_generate(request, meeting_id):
-    '''
-    Generate bluesheets
-    '''
-    meeting = get_object_or_404(Meeting, number=meeting_id)
-
-    if request.method == "POST":
-        groups = Group.objects.filter(
-            type__in=['wg','rg','ag','rag','program'],
-            session__timeslotassignments__schedule__in=[meeting.schedule, meeting.schedule.base if meeting.schedule else None]).order_by('acronym')
-        create_blue_sheets(meeting, groups)
-
-        messages.success(request, 'Blue Sheets generated')
-    return redirect('ietf.secr.meetings.views.blue_sheet', meeting_id=meeting.number)
-
-@role_required('Secretariat')
-def blue_sheet_redirect(request):
-    '''
-    This is the generic blue sheet URL.  It gets the next IETF meeting and redirects
-    to the meeting specific URL.
-    '''
-    today = date_today()
-    qs = Meeting.objects.filter(date__gt=today,type='ietf').order_by('date')
-    if qs:
-        meeting = qs[0]
-    else:
-        meeting = Meeting.objects.filter(type='ietf').order_by('-date')[0]
-    return redirect('ietf.secr.meetings.views.blue_sheet', meeting_id=meeting.number)
 
 @role_required('Secretariat')
 def edit_meeting(request, meeting_id):
