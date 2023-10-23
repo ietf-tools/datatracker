@@ -374,7 +374,7 @@ thead, tfoot {
   border-bottom-style: double;
 }
 td, th {
-  border: 1px solid inherit;
+  border: 1px solid var(--bs-border-color);
   // padding: var(--half-line) 1ch;
   padding-top: var(--half-line);
   padding-right: 1ch;
