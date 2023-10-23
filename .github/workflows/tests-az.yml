@@ -1,0 +1,109 @@
+name: Tests (Azure Test)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  main:
+    name: Run Tests on Azure temp VM
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: read
+      
+    steps:
+    - name: Launch VM on Azure
+      id: azlaunch
+      run: |
+        echo "Authenticating to Azure..."
+        az login --service-principal -u ${{ secrets.AZ_TESTS_APP_ID }} -p ${{ secrets.AZ_TESTS_PWD }} --tenant ${{ secrets.AZ_TESTS_TENANT_ID }}
+        echo "Creating VM..."
+        vminfo=$(az vm create \
+          --resource-group ghaDatatrackerTests \
+          --name tmpGhaVM2 \
+          --image Ubuntu2204 \
+          --admin-username azureuser \
+          --generate-ssh-keys \
+          --priority Spot \
+          --size Standard_D4as_v5 \
+          --max-price -1 \
+          --os-disk-size-gb 30 \
+          --eviction-policy Delete \
+          --nic-delete-option Delete \
+          --output tsv \
+          --query "publicIpAddress")
+        echo "ipaddr=$vminfo" >> "$GITHUB_OUTPUT"
+        echo "VM Public IP: $vminfo"
+        cat ~/.ssh/id_rsa > ${{ github.workspace }}/prvkey.key
+        ssh-keyscan -t rsa $vminfo >> ~/.ssh/known_hosts
+
+    - name: Remote SSH into VM
+      uses: appleboy/ssh-action@55dabf81b49d4120609345970c91507e2d734799
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        host: ${{ steps.azlaunch.outputs.ipaddr }}
+        port: 22
+        username: azureuser
+        command_timeout: 60m
+        key_path: ${{ github.workspace }}/prvkey.key
+        envs: GITHUB_TOKEN
+        script_stop: true
+        script: |
+          export DEBIAN_FRONTEND=noninteractive
+          lsb_release -a
+          sudo apt-get update
+          sudo apt-get upgrade -y
+          
+          echo "Installing Docker..."
+          curl -fsSL https://get.docker.com -o get-docker.sh
+          sudo sh get-docker.sh
+          
+          echo "Starting Containers..."
+          sudo docker network create dtnet
+          sudo docker run -d --name db --network=dtnet ghcr.io/ietf-tools/datatracker-db:latest &
+          sudo docker run -d --name app --network=dtnet ghcr.io/ietf-tools/datatracker-app-base:latest sleep infinity &
+          wait
+
+          echo "Cloning datatracker repo..."
+          sudo docker exec app git clone --depth=1 https://github.com/ietf-tools/datatracker.git .
+          echo "Prepare tests..."
+          sudo docker exec app chmod +x ./dev/tests/prepare.sh
+          sudo docker exec app sh ./dev/tests/prepare.sh
+          echo "Running checks..."
+          sudo docker exec app ietf/manage.py check
+          sudo docker exec app ietf/manage.py migrate --fake-initial
+          echo "Running tests..."
+          sudo docker exec app ietf/manage.py test -v2 --validate-html-harder --settings=settings_test
+
+    - name: Destroy VM + resources
+      if: always()
+      shell: pwsh
+      run: |
+        echo "Destroying VM..."        
+        az vm delete -g ghaDatatrackerTests -n tmpGhaVM2 --yes --force-deletion true
+
+        $resourceOrderRemovalOrder = [ordered]@{
+            "Microsoft.Compute/virtualMachines" = 0
+            "Microsoft.Compute/disks" = 1
+            "Microsoft.Network/networkInterfaces" = 2
+            "Microsoft.Network/publicIpAddresses" = 3
+            "Microsoft.Network/networkSecurityGroups" = 4
+            "Microsoft.Network/virtualNetworks" = 5
+        }
+        echo "Fetching remaining resources..."
+        $resources = az resource list --resource-group ghaDatatrackerTests | ConvertFrom-Json
+
+        $orderedResources = $resources 
+            | Sort-Object @{
+                Expression = {$resourceOrderRemovalOrder[$_.type]}
+                Descending = $False
+            }
+
+        echo "Deleting remaining resources..."
+        $orderedResources | ForEach-Object {
+            az resource delete --resource-group ghaDatatrackerTests --ids $_.id --verbose
+        }
+
+        echo "Logout from Azure..."
+        az logout

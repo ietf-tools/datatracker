@@ -4,9 +4,6 @@
 {% load django_bootstrap5 textfilters person_filters %}
 {% load static %}
 {% block subtitle %}- Eligible People{% endblock %}
-{% block pagehead %}
-    <link rel="stylesheet" href="{% static "ietf/css/list.css" %}">
-{% endblock %}
 {% block nomcom_content %}
     {% origin %}
     <h2>Eligible People for {{ nomcom.group }}</h2>
@@ -41,7 +38,4 @@
         {% endif %}
     </table>
 }
-{% endblock %}
-{% block js %}
-    <script src="{% static "ietf/js/list.js" %}"></script>
 {% endblock %}

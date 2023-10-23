@@ -33,15 +33,15 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
         [null, {\
           "packageLocation": "./",\
           "packageDependencies": [\
-            ["@fullcalendar/bootstrap5", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.8"],\
-            ["@fullcalendar/core", "npm:6.1.8"],\
+            ["@fullcalendar/bootstrap5", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.9"],\
+            ["@fullcalendar/core", "npm:6.1.9"],\
             ["@fullcalendar/daygrid", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.8"],\
-            ["@fullcalendar/icalendar", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.8"],\
-            ["@fullcalendar/interaction", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.8"],\
-            ["@fullcalendar/list", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.8"],\
+            ["@fullcalendar/icalendar", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.9"],\
+            ["@fullcalendar/interaction", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.9"],\
+            ["@fullcalendar/list", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.9"],\
             ["@fullcalendar/luxon3", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.9"],\
-            ["@fullcalendar/timegrid", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.8"],\
-            ["@fullcalendar/vue3", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.8"],\
+            ["@fullcalendar/timegrid", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.9"],\
+            ["@fullcalendar/vue3", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.9"],\
             ["@parcel/optimizer-data-url", "npm:2.9.3"],\
             ["@parcel/transformer-inline-string", "npm:2.9.3"],\
             ["@parcel/transformer-sass", "npm:2.9.3"],\
@@ -58,7 +58,7 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["d3", "npm:7.8.5"],\
             ["eslint", "npm:8.49.0"],\
             ["eslint-config-standard", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:17.1.0"],\
-            ["eslint-plugin-cypress", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:2.14.0"],\
+            ["eslint-plugin-cypress", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:2.15.1"],\
             ["eslint-plugin-import", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:2.28.1"],\
             ["eslint-plugin-n", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:16.1.0"],\
             ["eslint-plugin-node", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:11.1.0"],\
@@ -66,7 +66,7 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["eslint-plugin-vue", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:9.17.0"],\
             ["file-saver", "npm:2.0.5"],\
             ["highcharts", "npm:11.1.0"],\
-            ["html-validate", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:8.4.0"],\
+            ["html-validate", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:8.5.0"],\
             ["ical.js", "npm:1.5.0"],\
             ["jquery", "npm:3.7.1"],\
             ["jquery-migrate", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:3.4.1"],\
@@ -95,7 +95,7 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["vanillajs-datepicker", "npm:1.3.4"],\
             ["vite", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:4.4.9"],\
             ["vue", "npm:3.3.4"],\
-            ["vue-router", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:4.2.4"],\
+            ["vue-router", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:4.2.5"],\
             ["zxcvbn", "npm:4.4.2"]\
           ],\
           "linkType": "SOFT"\
@@ -527,18 +527,18 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
         }]\
       ]],\
       ["@fullcalendar/bootstrap5", [\
-        ["npm:6.1.8", {\
-          "packageLocation": "./.yarn/cache/@fullcalendar-bootstrap5-npm-6.1.8-bbeae5dafc-c78ef0d62e.zip/node_modules/@fullcalendar/bootstrap5/",\
+        ["npm:6.1.9", {\
+          "packageLocation": "./.yarn/cache/@fullcalendar-bootstrap5-npm-6.1.9-ef68c3c094-1d6168fafc.zip/node_modules/@fullcalendar/bootstrap5/",\
           "packageDependencies": [\
-            ["@fullcalendar/bootstrap5", "npm:6.1.8"]\
+            ["@fullcalendar/bootstrap5", "npm:6.1.9"]\
           ],\
           "linkType": "SOFT"\
         }],\
-        ["virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.8", {\
-          "packageLocation": "./.yarn/__virtual__/@fullcalendar-bootstrap5-virtual-d0fea3107b/0/cache/@fullcalendar-bootstrap5-npm-6.1.8-bbeae5dafc-c78ef0d62e.zip/node_modules/@fullcalendar/bootstrap5/",\
+        ["virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.9", {\
+          "packageLocation": "./.yarn/__virtual__/@fullcalendar-bootstrap5-virtual-32a9d3c1d6/0/cache/@fullcalendar-bootstrap5-npm-6.1.9-ef68c3c094-1d6168fafc.zip/node_modules/@fullcalendar/bootstrap5/",\
           "packageDependencies": [\
-            ["@fullcalendar/bootstrap5", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.8"],\
-            ["@fullcalendar/core", "npm:6.1.8"],\
+            ["@fullcalendar/bootstrap5", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.9"],\
+            ["@fullcalendar/core", "npm:6.1.9"],\
             ["@types/fullcalendar__core", null]\
           ],\
           "packagePeers": [\
@@ -549,10 +549,10 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
         }]\
       ]],\
       ["@fullcalendar/core", [\
-        ["npm:6.1.8", {\
-          "packageLocation": "./.yarn/cache/@fullcalendar-core-npm-6.1.8-da04efa804-66c13078c9.zip/node_modules/@fullcalendar/core/",\
+        ["npm:6.1.9", {\
+          "packageLocation": "./.yarn/cache/@fullcalendar-core-npm-6.1.9-b4da84d4b8-836db3e40c.zip/node_modules/@fullcalendar/core/",\
           "packageDependencies": [\
-            ["@fullcalendar/core", "npm:6.1.8"],\
+            ["@fullcalendar/core", "npm:6.1.9"],\
             ["preact", "npm:10.12.1"]\
           ],\
           "linkType": "HARD"\
@@ -566,11 +566,31 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
           ],\
           "linkType": "SOFT"\
         }],\
+        ["npm:6.1.9", {\
+          "packageLocation": "./.yarn/cache/@fullcalendar-daygrid-npm-6.1.9-4c0da59f84-3db55247c4.zip/node_modules/@fullcalendar/daygrid/",\
+          "packageDependencies": [\
+            ["@fullcalendar/daygrid", "npm:6.1.9"]\
+          ],\
+          "linkType": "SOFT"\
+        }],\
+        ["virtual:6658ed79863b56048b9d81b851f4f493485bb882471f05c47c2c33a2e7e3f8ec30c138c180dc8a9668bf4bd2dfc9ea2b03b85f2cde2e74896ca6aff2f0d7e9a1#npm:6.1.9", {\
+          "packageLocation": "./.yarn/__virtual__/@fullcalendar-daygrid-virtual-b617b17e29/0/cache/@fullcalendar-daygrid-npm-6.1.9-4c0da59f84-3db55247c4.zip/node_modules/@fullcalendar/daygrid/",\
+          "packageDependencies": [\
+            ["@fullcalendar/daygrid", "virtual:6658ed79863b56048b9d81b851f4f493485bb882471f05c47c2c33a2e7e3f8ec30c138c180dc8a9668bf4bd2dfc9ea2b03b85f2cde2e74896ca6aff2f0d7e9a1#npm:6.1.9"],\
+            ["@fullcalendar/core", "npm:6.1.9"],\
+            ["@types/fullcalendar__core", null]\
+          ],\
+          "packagePeers": [\
+            "@fullcalendar/core",\
+            "@types/fullcalendar__core"\
+          ],\
+          "linkType": "HARD"\
+        }],\
         ["virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.8", {\
           "packageLocation": "./.yarn/__virtual__/@fullcalendar-daygrid-virtual-77be6a5058/0/cache/@fullcalendar-daygrid-npm-6.1.8-3f45184389-a99441c81d.zip/node_modules/@fullcalendar/daygrid/",\
           "packageDependencies": [\
             ["@fullcalendar/daygrid", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.8"],\
-            ["@fullcalendar/core", "npm:6.1.8"],\
+            ["@fullcalendar/core", "npm:6.1.9"],\
             ["@types/fullcalendar__core", null]\
           ],\
           "packagePeers": [\
@@ -581,18 +601,18 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
         }]\
       ]],\
       ["@fullcalendar/icalendar", [\
-        ["npm:6.1.8", {\
-          "packageLocation": "./.yarn/cache/@fullcalendar-icalendar-npm-6.1.8-bee329d052-f322ce54bb.zip/node_modules/@fullcalendar/icalendar/",\
+        ["npm:6.1.9", {\
+          "packageLocation": "./.yarn/cache/@fullcalendar-icalendar-npm-6.1.9-92e390eda8-d47daf4ae0.zip/node_modules/@fullcalendar/icalendar/",\
           "packageDependencies": [\
-            ["@fullcalendar/icalendar", "npm:6.1.8"]\
+            ["@fullcalendar/icalendar", "npm:6.1.9"]\
           ],\
           "linkType": "SOFT"\
         }],\
-        ["virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.8", {\
-          "packageLocation": "./.yarn/__virtual__/@fullcalendar-icalendar-virtual-0660ccc07e/0/cache/@fullcalendar-icalendar-npm-6.1.8-bee329d052-f322ce54bb.zip/node_modules/@fullcalendar/icalendar/",\
+        ["virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.9", {\
+          "packageLocation": "./.yarn/__virtual__/@fullcalendar-icalendar-virtual-2edf12646d/0/cache/@fullcalendar-icalendar-npm-6.1.9-92e390eda8-d47daf4ae0.zip/node_modules/@fullcalendar/icalendar/",\
           "packageDependencies": [\
-            ["@fullcalendar/icalendar", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.8"],\
-            ["@fullcalendar/core", "npm:6.1.8"],\
+            ["@fullcalendar/icalendar", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.9"],\
+            ["@fullcalendar/core", "npm:6.1.9"],\
             ["@types/fullcalendar__core", null],\
             ["@types/ical.js", null],\
             ["ical.js", "npm:1.5.0"]\
@@ -607,18 +627,18 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
         }]\
       ]],\
       ["@fullcalendar/interaction", [\
-        ["npm:6.1.8", {\
-          "packageLocation": "./.yarn/cache/@fullcalendar-interaction-npm-6.1.8-6c6b6987db-3ef0da6dca.zip/node_modules/@fullcalendar/interaction/",\
+        ["npm:6.1.9", {\
+          "packageLocation": "./.yarn/cache/@fullcalendar-interaction-npm-6.1.9-f729b81a3d-787111ea6f.zip/node_modules/@fullcalendar/interaction/",\
           "packageDependencies": [\
-            ["@fullcalendar/interaction", "npm:6.1.8"]\
+            ["@fullcalendar/interaction", "npm:6.1.9"]\
           ],\
           "linkType": "SOFT"\
         }],\
-        ["virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.8", {\
-          "packageLocation": "./.yarn/__virtual__/@fullcalendar-interaction-virtual-39f9dba62d/0/cache/@fullcalendar-interaction-npm-6.1.8-6c6b6987db-3ef0da6dca.zip/node_modules/@fullcalendar/interaction/",\
+        ["virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.9", {\
+          "packageLocation": "./.yarn/__virtual__/@fullcalendar-interaction-virtual-45406e4d3a/0/cache/@fullcalendar-interaction-npm-6.1.9-f729b81a3d-787111ea6f.zip/node_modules/@fullcalendar/interaction/",\
           "packageDependencies": [\
-            ["@fullcalendar/interaction", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.8"],\
-            ["@fullcalendar/core", "npm:6.1.8"],\
+            ["@fullcalendar/interaction", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.9"],\
+            ["@fullcalendar/core", "npm:6.1.9"],\
             ["@types/fullcalendar__core", null]\
           ],\
           "packagePeers": [\
@@ -629,18 +649,18 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
         }]\
       ]],\
       ["@fullcalendar/list", [\
-        ["npm:6.1.8", {\
-          "packageLocation": "./.yarn/cache/@fullcalendar-list-npm-6.1.8-39b471f8da-b5c397040e.zip/node_modules/@fullcalendar/list/",\
+        ["npm:6.1.9", {\
+          "packageLocation": "./.yarn/cache/@fullcalendar-list-npm-6.1.9-f76695c5ab-978dd54b71.zip/node_modules/@fullcalendar/list/",\
           "packageDependencies": [\
-            ["@fullcalendar/list", "npm:6.1.8"]\
+            ["@fullcalendar/list", "npm:6.1.9"]\
           ],\
           "linkType": "SOFT"\
         }],\
-        ["virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.8", {\
-          "packageLocation": "./.yarn/__virtual__/@fullcalendar-list-virtual-a4f877cc68/0/cache/@fullcalendar-list-npm-6.1.8-39b471f8da-b5c397040e.zip/node_modules/@fullcalendar/list/",\
+        ["virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.9", {\
+          "packageLocation": "./.yarn/__virtual__/@fullcalendar-list-virtual-95391a7d25/0/cache/@fullcalendar-list-npm-6.1.9-f76695c5ab-978dd54b71.zip/node_modules/@fullcalendar/list/",\
           "packageDependencies": [\
-            ["@fullcalendar/list", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.8"],\
-            ["@fullcalendar/core", "npm:6.1.8"],\
+            ["@fullcalendar/list", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.9"],\
+            ["@fullcalendar/core", "npm:6.1.9"],\
             ["@types/fullcalendar__core", null]\
           ],\
           "packagePeers": [\
@@ -662,7 +682,7 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
           "packageLocation": "./.yarn/__virtual__/@fullcalendar-luxon3-virtual-2026214153/0/cache/@fullcalendar-luxon3-npm-6.1.9-d79fc8f961-25122126e2.zip/node_modules/@fullcalendar/luxon3/",\
           "packageDependencies": [\
             ["@fullcalendar/luxon3", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.9"],\
-            ["@fullcalendar/core", "npm:6.1.8"],\
+            ["@fullcalendar/core", "npm:6.1.9"],\
             ["@types/fullcalendar__core", null],\
             ["@types/luxon", null],\
             ["luxon", "npm:3.4.3"]\
@@ -677,19 +697,19 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
         }]\
       ]],\
       ["@fullcalendar/timegrid", [\
-        ["npm:6.1.8", {\
-          "packageLocation": "./.yarn/cache/@fullcalendar-timegrid-npm-6.1.8-22d8c05e30-122786fd40.zip/node_modules/@fullcalendar/timegrid/",\
+        ["npm:6.1.9", {\
+          "packageLocation": "./.yarn/cache/@fullcalendar-timegrid-npm-6.1.9-b227fefa80-8c12a508f7.zip/node_modules/@fullcalendar/timegrid/",\
           "packageDependencies": [\
-            ["@fullcalendar/timegrid", "npm:6.1.8"]\
+            ["@fullcalendar/timegrid", "npm:6.1.9"]\
           ],\
           "linkType": "SOFT"\
         }],\
-        ["virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.8", {\
-          "packageLocation": "./.yarn/__virtual__/@fullcalendar-timegrid-virtual-768bdb99c1/0/cache/@fullcalendar-timegrid-npm-6.1.8-22d8c05e30-122786fd40.zip/node_modules/@fullcalendar/timegrid/",\
+        ["virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.9", {\
+          "packageLocation": "./.yarn/__virtual__/@fullcalendar-timegrid-virtual-6658ed7986/0/cache/@fullcalendar-timegrid-npm-6.1.9-b227fefa80-8c12a508f7.zip/node_modules/@fullcalendar/timegrid/",\
           "packageDependencies": [\
-            ["@fullcalendar/timegrid", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.8"],\
-            ["@fullcalendar/core", "npm:6.1.8"],\
-            ["@fullcalendar/daygrid", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.8"],\
+            ["@fullcalendar/timegrid", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.9"],\
+            ["@fullcalendar/core", "npm:6.1.9"],\
+            ["@fullcalendar/daygrid", "virtual:6658ed79863b56048b9d81b851f4f493485bb882471f05c47c2c33a2e7e3f8ec30c138c180dc8a9668bf4bd2dfc9ea2b03b85f2cde2e74896ca6aff2f0d7e9a1#npm:6.1.9"],\
             ["@types/fullcalendar__core", null]\
           ],\
           "packagePeers": [\
@@ -700,18 +720,18 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
         }]\
       ]],\
       ["@fullcalendar/vue3", [\
-        ["npm:6.1.8", {\
-          "packageLocation": "./.yarn/cache/@fullcalendar-vue3-npm-6.1.8-a4963d0029-cff81d98ae.zip/node_modules/@fullcalendar/vue3/",\
+        ["npm:6.1.9", {\
+          "packageLocation": "./.yarn/cache/@fullcalendar-vue3-npm-6.1.9-3c150e259d-2c1c0fbe72.zip/node_modules/@fullcalendar/vue3/",\
           "packageDependencies": [\
-            ["@fullcalendar/vue3", "npm:6.1.8"]\
+            ["@fullcalendar/vue3", "npm:6.1.9"]\
           ],\
           "linkType": "SOFT"\
         }],\
-        ["virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.8", {\
-          "packageLocation": "./.yarn/__virtual__/@fullcalendar-vue3-virtual-f86317f38e/0/cache/@fullcalendar-vue3-npm-6.1.8-a4963d0029-cff81d98ae.zip/node_modules/@fullcalendar/vue3/",\
+        ["virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.9", {\
+          "packageLocation": "./.yarn/__virtual__/@fullcalendar-vue3-virtual-00c58bdbde/0/cache/@fullcalendar-vue3-npm-6.1.9-3c150e259d-2c1c0fbe72.zip/node_modules/@fullcalendar/vue3/",\
           "packageDependencies": [\
-            ["@fullcalendar/vue3", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.8"],\
-            ["@fullcalendar/core", "npm:6.1.8"],\
+            ["@fullcalendar/vue3", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.9"],\
+            ["@fullcalendar/core", "npm:6.1.9"],\
             ["@types/fullcalendar__core", null],\
             ["@types/vue", null],\
             ["vue", "npm:3.3.4"]\
@@ -2389,10 +2409,10 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
           ],\
           "linkType": "SOFT"\
         }],\
-        ["virtual:baa02fb51e75f1f03e1ff0c1be104192da948332a9fd904d571b0b912d6ac16a98b4b63cb9465421728b6af4a1bb50f995b9b5018f7f90329de80b4a8ff40be4#npm:2.0.0", {\
-          "packageLocation": "./.yarn/__virtual__/@sidvind-better-ajv-errors-virtual-0c74a59d49/0/cache/@sidvind-better-ajv-errors-npm-2.0.0-3531bddef9-12b0d87855.zip/node_modules/@sidvind/better-ajv-errors/",\
+        ["virtual:c902a8d1d11dd34ee7f7648077b48b959e6723fe684e99968d7e8c7b195a007900ac0290074641f9d2ed5797dad844cdb897c4c6de1b44897449ec92f70b817f#npm:2.0.0", {\
+          "packageLocation": "./.yarn/__virtual__/@sidvind-better-ajv-errors-virtual-b3857f99f1/0/cache/@sidvind-better-ajv-errors-npm-2.0.0-3531bddef9-12b0d87855.zip/node_modules/@sidvind/better-ajv-errors/",\
           "packageDependencies": [\
-            ["@sidvind/better-ajv-errors", "virtual:baa02fb51e75f1f03e1ff0c1be104192da948332a9fd904d571b0b912d6ac16a98b4b63cb9465421728b6af4a1bb50f995b9b5018f7f90329de80b4a8ff40be4#npm:2.0.0"],\
+            ["@sidvind/better-ajv-errors", "virtual:c902a8d1d11dd34ee7f7648077b48b959e6723fe684e99968d7e8c7b195a007900ac0290074641f9d2ed5797dad844cdb897c4c6de1b44897449ec92f70b817f#npm:2.0.0"],\
             ["@babel/code-frame", "npm:7.16.7"],\
             ["@types/ajv", null],\
             ["ajv", "npm:8.11.0"],\
@@ -4761,17 +4781,17 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
         }]\
       ]],\
       ["eslint-plugin-cypress", [\
-        ["npm:2.14.0", {\
-          "packageLocation": "./.yarn/cache/eslint-plugin-cypress-npm-2.14.0-4d90862e1d-3fa118a757.zip/node_modules/eslint-plugin-cypress/",\
+        ["npm:2.15.1", {\
+          "packageLocation": "./.yarn/cache/eslint-plugin-cypress-npm-2.15.1-90f777d9bd-3e66fa9a94.zip/node_modules/eslint-plugin-cypress/",\
           "packageDependencies": [\
-            ["eslint-plugin-cypress", "npm:2.14.0"]\
+            ["eslint-plugin-cypress", "npm:2.15.1"]\
           ],\
           "linkType": "SOFT"\
         }],\
-        ["virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:2.14.0", {\
-          "packageLocation": "./.yarn/__virtual__/eslint-plugin-cypress-virtual-57ccfb2b3e/0/cache/eslint-plugin-cypress-npm-2.14.0-4d90862e1d-3fa118a757.zip/node_modules/eslint-plugin-cypress/",\
+        ["virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:2.15.1", {\
+          "packageLocation": "./.yarn/__virtual__/eslint-plugin-cypress-virtual-33ce75aabf/0/cache/eslint-plugin-cypress-npm-2.15.1-90f777d9bd-3e66fa9a94.zip/node_modules/eslint-plugin-cypress/",\
           "packageDependencies": [\
-            ["eslint-plugin-cypress", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:2.14.0"],\
+            ["eslint-plugin-cypress", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:2.15.1"],\
             ["@types/eslint", null],\
             ["eslint", "npm:8.49.0"],\
             ["globals", "npm:13.21.0"]\
@@ -5662,23 +5682,24 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
         }]\
       ]],\
       ["html-validate", [\
-        ["npm:8.4.0", {\
-          "packageLocation": "./.yarn/cache/html-validate-npm-8.4.0-4d1a9d1021-5a063e3bb0.zip/node_modules/html-validate/",\
+        ["npm:8.5.0", {\
+          "packageLocation": "./.yarn/cache/html-validate-npm-8.5.0-a5c06a51e6-38ef4c832e.zip/node_modules/html-validate/",\
           "packageDependencies": [\
-            ["html-validate", "npm:8.4.0"]\
+            ["html-validate", "npm:8.5.0"]\
           ],\
           "linkType": "SOFT"\
         }],\
-        ["virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:8.4.0", {\
-          "packageLocation": "./.yarn/__virtual__/html-validate-virtual-baa02fb51e/0/cache/html-validate-npm-8.4.0-4d1a9d1021-5a063e3bb0.zip/node_modules/html-validate/",\
+        ["virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:8.5.0", {\
+          "packageLocation": "./.yarn/__virtual__/html-validate-virtual-c902a8d1d1/0/cache/html-validate-npm-8.5.0-a5c06a51e6-38ef4c832e.zip/node_modules/html-validate/",\
           "packageDependencies": [\
-            ["html-validate", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:8.4.0"],\
+            ["html-validate", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:8.5.0"],\
             ["@babel/code-frame", "npm:7.16.7"],\
             ["@html-validate/stylish", "npm:4.1.0"],\
-            ["@sidvind/better-ajv-errors", "virtual:baa02fb51e75f1f03e1ff0c1be104192da948332a9fd904d571b0b912d6ac16a98b4b63cb9465421728b6af4a1bb50f995b9b5018f7f90329de80b4a8ff40be4#npm:2.0.0"],\
+            ["@sidvind/better-ajv-errors", "virtual:c902a8d1d11dd34ee7f7648077b48b959e6723fe684e99968d7e8c7b195a007900ac0290074641f9d2ed5797dad844cdb897c4c6de1b44897449ec92f70b817f#npm:2.0.0"],\
             ["@types/jest", null],\
             ["@types/jest-diff", null],\
             ["@types/jest-snapshot", null],\
+            ["@types/vitest", null],\
             ["ajv", "npm:8.11.0"],\
             ["deepmerge", "npm:4.2.2"],\
             ["glob", "npm:10.2.4"],\
@@ -5689,15 +5710,18 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["kleur", "npm:4.1.4"],\
             ["minimist", "npm:1.2.6"],\
             ["prompts", "npm:2.4.2"],\
-            ["semver", "npm:7.3.7"]\
+            ["semver", "npm:7.3.7"],\
+            ["vitest", null]\
           ],\
           "packagePeers": [\
             "@types/jest-diff",\
             "@types/jest-snapshot",\
             "@types/jest",\
+            "@types/vitest",\
             "jest-diff",\
             "jest-snapshot",\
-            "jest"\
+            "jest",\
+            "vitest"\
           ],\
           "linkType": "HARD"\
         }]\
@@ -8115,15 +8139,15 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
           "packageLocation": "./",\
           "packageDependencies": [\
             ["root-workspace-0b6124", "workspace:."],\
-            ["@fullcalendar/bootstrap5", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.8"],\
-            ["@fullcalendar/core", "npm:6.1.8"],\
+            ["@fullcalendar/bootstrap5", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.9"],\
+            ["@fullcalendar/core", "npm:6.1.9"],\
             ["@fullcalendar/daygrid", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.8"],\
-            ["@fullcalendar/icalendar", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.8"],\
-            ["@fullcalendar/interaction", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.8"],\
-            ["@fullcalendar/list", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.8"],\
+            ["@fullcalendar/icalendar", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.9"],\
+            ["@fullcalendar/interaction", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.9"],\
+            ["@fullcalendar/list", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.9"],\
             ["@fullcalendar/luxon3", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.9"],\
-            ["@fullcalendar/timegrid", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.8"],\
-            ["@fullcalendar/vue3", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.8"],\
+            ["@fullcalendar/timegrid", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.9"],\
+            ["@fullcalendar/vue3", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.9"],\
             ["@parcel/optimizer-data-url", "npm:2.9.3"],\
             ["@parcel/transformer-inline-string", "npm:2.9.3"],\
             ["@parcel/transformer-sass", "npm:2.9.3"],\
@@ -8140,7 +8164,7 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["d3", "npm:7.8.5"],\
             ["eslint", "npm:8.49.0"],\
             ["eslint-config-standard", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:17.1.0"],\
-            ["eslint-plugin-cypress", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:2.14.0"],\
+            ["eslint-plugin-cypress", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:2.15.1"],\
             ["eslint-plugin-import", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:2.28.1"],\
             ["eslint-plugin-n", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:16.1.0"],\
             ["eslint-plugin-node", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:11.1.0"],\
@@ -8148,7 +8172,7 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["eslint-plugin-vue", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:9.17.0"],\
             ["file-saver", "npm:2.0.5"],\
             ["highcharts", "npm:11.1.0"],\
-            ["html-validate", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:8.4.0"],\
+            ["html-validate", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:8.5.0"],\
             ["ical.js", "npm:1.5.0"],\
             ["jquery", "npm:3.7.1"],\
             ["jquery-migrate", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:3.4.1"],\
@@ -8177,7 +8201,7 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["vanillajs-datepicker", "npm:1.3.4"],\
             ["vite", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:4.4.9"],\
             ["vue", "npm:3.3.4"],\
-            ["vue-router", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:4.2.4"],\
+            ["vue-router", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:4.2.5"],\
             ["zxcvbn", "npm:4.4.2"]\
           ],\
           "linkType": "SOFT"\
@@ -9198,17 +9222,17 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
         }]\
       ]],\
       ["vue-router", [\
-        ["npm:4.2.4", {\
-          "packageLocation": "./.yarn/cache/vue-router-npm-4.2.4-59b21f5c05-9fe1fc11b6.zip/node_modules/vue-router/",\
+        ["npm:4.2.5", {\
+          "packageLocation": "./.yarn/cache/vue-router-npm-4.2.5-3479f41e41-2449db4f3a.zip/node_modules/vue-router/",\
           "packageDependencies": [\
-            ["vue-router", "npm:4.2.4"]\
+            ["vue-router", "npm:4.2.5"]\
           ],\
           "linkType": "SOFT"\
         }],\
-        ["virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:4.2.4", {\
-          "packageLocation": "./.yarn/__virtual__/vue-router-virtual-0b2b7d54bc/0/cache/vue-router-npm-4.2.4-59b21f5c05-9fe1fc11b6.zip/node_modules/vue-router/",\
+        ["virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:4.2.5", {\
+          "packageLocation": "./.yarn/__virtual__/vue-router-virtual-2017aa030a/0/cache/vue-router-npm-4.2.5-3479f41e41-2449db4f3a.zip/node_modules/vue-router/",\
           "packageDependencies": [\
-            ["vue-router", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:4.2.4"],\
+            ["vue-router", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:4.2.5"],\
             ["@types/vue", null],\
             ["@vue/devtools-api", "npm:6.5.0"],\
             ["vue", "npm:3.3.4"]\
