@@ -99,7 +99,7 @@ url("npm:bootstrap-icons/font/fonts/bootstrap-icons.woff") format("woff");
 @import "bootstrap-icons/font/bootstrap-icons";
 
 // Leave room for fixed-top navbar...
-body {
+body.navbar-offset {
     padding-top: 60px;
 }
 
