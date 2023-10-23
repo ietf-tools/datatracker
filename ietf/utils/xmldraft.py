@@ -8,6 +8,7 @@ import xml2rfc
 import debug  # pyflakes: ignore
 
 from contextlib import ExitStack
+from lxml.etree import XMLSyntaxError
 from xml2rfc.util.date import augment_date, extract_date
 from ietf.utils.timezone import date_today
 
@@ -54,6 +55,8 @@ class XMLDraft(Draft):
             parser = xml2rfc.XmlRfcParser(filename, quiet=True)
             try:
                 tree = parser.parse()
+            except XMLSyntaxError:
+                raise InvalidXMLError()
             except Exception as e:
                 raise XMLParseError(parser_out.getvalue(), parser_err.getvalue()) from e
 
@@ -235,3 +238,8 @@ class XMLParseError(Exception):
 
     def parser_msgs(self):
         return self._out.splitlines() + self._err.splitlines()
+
+
+class InvalidXMLError(Exception):
+    """File is not valid XML"""
+    pass
