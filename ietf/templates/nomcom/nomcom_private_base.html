@@ -1,8 +1,11 @@
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
-{% load origin %}
+{% load origin static %}
 {% load nomcom_tags %}
 {% load ietf_filters %}
+{% block pagehead %}
+    <link rel="stylesheet" href="{% static "ietf/css/list.css" %}">
+{% endblock %}
 {% block title %}
     NomCom {{ year }} Private
     {% block subtitle %}{% endblock %}
@@ -153,6 +156,7 @@
     {% endwith %}
 {% endblock %}
 {% block js %}
+    <script src="{% static "ietf/js/list.js" %}"></script>
     <script>
         // Javascript to enable link to tab
         var url=document.location.toString();
