@@ -10,4 +10,13 @@ Highcharts_Offline_Exporting(Highcharts);
 Highcharts_Export_Data(Highcharts);
 Highcharts_Accessibility(Highcharts);
 
+Highcharts.setOptions({
+    chart: {
+        styledMode: true,
+    },
+    credits: {
+        enabled: false
+    },
+});
+
 window.Highcharts = Highcharts;
