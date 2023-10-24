@@ -31,7 +31,7 @@
         <script src="{% static 'ietf/js/ietf.js' %}"></script>
         {% analytical_head_bottom %}
     </head>
-    <body {% block bodyAttrs %}{% endblock %} class="navbar-of position-relative"
+    <body {% block bodyAttrs %}{% endblock %} class="navbar-offset position-relative"
           data-group-menu-data-url="{% url 'ietf.group.views.group_menu_data' %}">
         {% analytical_body_top %}
         <a class="visually-hidden visually-hidden-focusable" href="#content">Skip to main content</a>
