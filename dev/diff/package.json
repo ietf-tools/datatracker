@@ -3,7 +3,7 @@
   "type": "module",
   "dependencies": {
     "chalk": "^5.3.0",
-    "dockerode": "^3.3.5",
+    "dockerode": "^4.0.0",
     "enquirer": "^2.4.1",
     "extract-zip": "^2.0.1",
     "fs-extra": "^11.1.1",
