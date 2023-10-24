@@ -702,7 +702,7 @@ class RelatedDocument(models.Model):
             else:
                 target_lvl = self.target.document.intended_std_level.slug
 
-        rank = { 'ps':1, 'ds':2, 'std':3, 'bcp':3 }
+        rank = { 'ps':1, 'ds':2, 'std':3, 'bcp':1 }
 
         if ( target_lvl not in rank ) or ( rank[target_lvl] < rank[source_lvl] ):
             if self.relationship.slug == 'refnorm' and target_lvl!='unkn':
