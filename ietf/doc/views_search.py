@@ -345,44 +345,35 @@ def ad_dashboard_group(doc):
         if doc.get_state_slug('draft') == 'rfc':
             return 'RFC'
         elif doc.get_state_slug('draft') == 'active' and doc.get_state_slug('draft-iesg'):
-            return '%s Internet-Draft' % doc.get_state('draft-iesg').name
+            return str(doc.get_state('draft-iesg').name)
         else:
-            return '%s Internet-Draft' % doc.get_state('draft').name
+            return str(doc.get_state('draft').name)
     elif doc.type.slug=='conflrev':
         if doc.get_state_slug('conflrev') in ('appr-reqnopub-sent','appr-noprob-sent'):
-            return 'Approved Conflict Review'
+            return 'Approved'
         elif doc.get_state_slug('conflrev') in ('appr-reqnopub-pend','appr-noprob-pend','appr-reqnopub-pr','appr-noprob-pr'):
-            return "%s Conflict Review" % State.objects.get(type__slug='draft-iesg',slug='approved')
+            return str(State.objects.get(type__slug='draft-iesg',slug='approved'))
         else:
-          return '%s Conflict Review' % doc.get_state('conflrev')
+          return str(doc.get_state('conflrev'))
     elif doc.type.slug=='statchg':
         if doc.get_state_slug('statchg') in ('appr-sent',):
-            return 'Approved Status Change'
+            return 'Approved'
         if doc.get_state_slug('statchg') in ('appr-pend','appr-pr'):
-            return '%s Status Change' % State.objects.get(type__slug='draft-iesg',slug='approved')
+            return str(State.objects.get(type__slug='draft-iesg',slug='approved'))
         else:
-            return '%s Status Change' % doc.get_state('statchg')
+            return str(doc.get_state('statchg'))
     elif doc.type.slug=='charter':
         if doc.get_state_slug('charter') == 'approved':
-            return "Approved Charter"
+            return "Approved"
         else:
-            return '%s Charter' % doc.get_state('charter')
+            return str(doc.get_state('charter'))
     else:
         return "Document"
 
 
 def shorten_group_name(name):
-    for s in [
-        " Internet-Draft",
-        " Conflict Review",
-        " Status Change",
-        " (Internal Steering Group/IAB Review) Charter",
-        "Charter",
-    ]:
-        if name.endswith(s):
-            name = name[: -len(s)]
-
     for pat, sub in [
+        (r" \(Internal Steering Group/IAB Review\)", ""),
         ("Writeup", "Write-up"),
         ("Requested", "Req"),
         ("Evaluation", "Eval"),
@@ -443,14 +434,6 @@ def ad_dashboard_sort_key(doc):
 
     if seed.startswith('Needs Shepherd'):
         return "100%s" % seed
-    if seed.endswith(' Document'):
-        seed = seed[:-9]
-    elif seed.endswith(' Internet-Draft'):
-        seed = seed[:-15]
-    elif seed.endswith(' Conflict Review'):
-        seed = seed[:-16]
-    elif seed.endswith(' Status Change'):
-        seed = seed[:-14]
     state = State.objects.filter(type__slug='draft-iesg',name=seed)
     if state:
         ageseconds = 0
@@ -495,34 +478,34 @@ def ad_workload(request):
     # FIXME: This should really use the database states instead of replicating the logic
     for id, (g, uig) in enumerate(
         [
-            ("Publication Requested Internet-Draft", False),
-            ("AD Evaluation Internet-Draft", False),
-            ("Last Call Requested Internet-Draft", True),
-            ("In Last Call Internet-Draft", True),
-            ("Waiting for Writeup Internet-Draft", False),
-            ("IESG Evaluation - Defer Internet-Draft", False),
-            ("IESG Evaluation Internet-Draft", True),
-            ("Waiting for AD Go-Ahead Internet-Draft", False),
-            ("Approved-announcement to be sent Internet-Draft", True),
-            ("Approved-announcement sent Internet-Draft", True),
+            ("Publication Requested", False),
+            ("AD Evaluation", False),
+            ("Last Call Requested", True),
+            ("In Last Call", True),
+            ("Waiting for Writeup", False),
+            ("IESG Evaluation - Defer", False),
+            ("IESG Evaluation", True),
+            ("Waiting for AD Go-Ahead", False),
+            ("Approved-announcement to be sent", True),
+            ("Approved-announcement sent", True),
         ]
     ):
         groups["I-D"][g] = id
         group_names["I-D"].append(g)
         up_is_good[g] = uig
 
-    for id, g in enumerate(["RFC Ed Queue Internet-Draft", "RFC"]):
+    for id, g in enumerate(["RFC Ed Queue", "RFC"]):
         groups["RFC"][g] = id
         group_names["RFC"].append(g)
         up_is_good[g] = True
 
     for id, (g, uig) in enumerate(
         [
-            ("Needs Shepherd Conflict Review", False),
-            ("AD Review Conflict Review", False),
-            ("IESG Evaluation Conflict Review", True),
-            ("Approved Conflict Review", True),
-            ("Withdrawn Conflict Review", None),
+            ("Needs Shepherd", False),
+            ("AD Review", False),
+            ("IESG Evaluation", True),
+            ("Approved", True),
+            ("Withdrawn", None),
         ]
     ):
         groups["Conflict Review"][g] = id
@@ -531,13 +514,13 @@ def ad_workload(request):
 
     for id, (g, uig) in enumerate(
         [
-            ("Publication Requested Status Change", False),
-            ("AD Evaluation Status Change", False),
-            ("Last Call Requested Status Change", True),
-            ("In Last Call Status Change", True),
-            ("Waiting for Writeup Status Change", False),
-            ("IESG Evaluation Status Change", True),
-            ("Waiting for AD Go-Ahead Status Change", False),
+            ("Publication Requested", False),
+            ("AD Evaluation", False),
+            ("Last Call Requested", True),
+            ("In Last Call", True),
+            ("Waiting for Writeup", False),
+            ("IESG Evaluation", True),
+            ("Waiting for AD Go-Ahead", False),
         ]
     ):
         groups["Status Change"][g] = id
@@ -546,13 +529,13 @@ def ad_workload(request):
 
     for id, (g, uig) in enumerate(
         [
-            ("Not currently under review Charter", None),
-            ("Draft Charter Charter", None),
-            ("Start Chartering/Rechartering (Internal Steering Group/IAB Review) Charter", False),
-            ("External Review (Message to Community, Selected by Secretariat) Charter", True),
-            ("IESG Review (Charter for Approval, Selected by Secretariat) Charter", True),
-            ("Approved Charter", True),
-            ("Replaced Charter", None),
+            ("Not currently under review", None),
+            ("Draft Charter", None),
+            ("Start Chartering/Rechartering (Internal Steering Group/IAB Review)", False),
+            ("External Review (Message to Community, Selected by Secretariat)", True),
+            ("IESG Review (Charter for Approval, Selected by Secretariat)", True),
+            ("Approved", True),
+            ("Replaced", None),
         ]
     ):
         groups["Charter"][g] = id
