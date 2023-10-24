@@ -518,8 +518,8 @@ def ad_workload(request):
 
     for id, (g, uig) in enumerate(
         [
-            ("AD Review Conflict Review", False),
             ("Needs Shepherd Conflict Review", False),
+            ("AD Review Conflict Review", False),
             ("IESG Evaluation Conflict Review", True),
             ("Approved Conflict Review", True),
             ("Withdrawn Conflict Review", None),
@@ -574,8 +574,6 @@ def ad_workload(request):
         ad.dashboard = urlreverse(
             "ietf.doc.views_search.docs_for_ad", kwargs=dict(name=ad.full_name_as_key())
         )
-        ad.counts = defaultdict(list)
-        ad.prev = defaultdict(list)
         ad.doc_now = defaultdict(list)
         ad.doc_prev = defaultdict(list)
 
@@ -588,14 +586,11 @@ def ad_workload(request):
                     groups[group_type][group] = len(groups[group_type])
                     group_names[group_type].append(group)
 
-                inc = len(groups[group_type]) - len(ad.counts[group_type])
+                inc = len(groups[group_type]) - len(ad.doc_now[group_type])
                 if inc > 0:
-                    ad.counts[group_type].extend([0] * inc)
-                    ad.prev[group_type].extend([0] * inc)
                     ad.doc_now[group_type].extend(set() for _ in range(inc))
                     ad.doc_prev[group_type].extend(set() for _ in range(inc))
 
-                ad.counts[group_type][groups[group_type][group]] += 1
                 ad.doc_now[group_type][groups[group_type][group]].add(doc)
 
                 last_state_event = (
@@ -606,16 +601,13 @@ def ad_workload(request):
                     .first()
                 )
                 if (last_state_event is not None) and (right_now - last_state_event.time) > delta:
-                    ad.prev[group_type][groups[group_type][group]] += 1
                     ad.doc_prev[group_type][groups[group_type][group]].add(doc)
 
     for ad in ads:
         ad.doc_diff = defaultdict(list)
         for gt in group_types:
-            inc = len(groups[gt]) - len(ad.counts[gt])
+            inc = len(groups[gt]) - len(ad.doc_now[gt])
             if inc > 0:
-                ad.counts[gt].extend([0] * inc)
-                ad.prev[gt].extend([0] * inc)
                 ad.doc_now[gt].extend([set()] * inc)
                 ad.doc_prev[gt].extend([set()] * inc)
 
@@ -642,8 +634,8 @@ def ad_workload(request):
                     [
                         (
                             group_names[gt][index],
-                            ad.counts[gt][index],
-                            ad.prev[gt][index],
+                            len(ad.doc_now[gt][index]),
+                            len(ad.doc_prev[gt][index]),
                             ad.doc_diff[gt][index],
                         )
                         for index in range(len(group_names[gt]))
@@ -654,8 +646,8 @@ def ad_workload(request):
             sums=[
                 (
                     group_names[gt][index],
-                    sum([ad.counts[gt][index] for ad in ads]),
-                    sum([ad.prev[gt][index] for ad in ads]),
+                    sum([len(ad.doc_now[gt][index]) for ad in ads]),
+                    sum([len(ad.doc_prev[gt][index]) for ad in ads]),
                 )
                 for index in range(len(group_names[gt]))
             ],
