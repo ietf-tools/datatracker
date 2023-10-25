@@ -499,7 +499,7 @@ class EditMeetingScheduleTests(IetfSeleniumTestCase):
         clicked_index = 1
         # scroll so the button we want to click is just below the navbar, otherwise it may
         # fall beneath the sessions panel
-        navbar = self.driver.find_element_by_class_name('navbar')
+        navbar = self.driver.find_element(By.CSS_SELECTOR, '.navbar')
         self.driver.execute_script(
             'window.scrollBy({top: %s, behavior: "instant"})' % (
                     future_swap_days_buttons[1].location['y'] - navbar.size['height']

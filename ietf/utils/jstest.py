@@ -1,7 +1,8 @@
 # Copyright The IETF Trust 2014-2021, All Rights Reserved
 # -*- coding: utf-8 -*-
 
-from django.conf import settings
+import os
+
 from django.urls import reverse as urlreverse
 from unittest import skipIf
 
@@ -29,9 +30,10 @@ if skip_selenium:
     print("     "+skip_message)
 
 def start_web_driver():
-    service = Service(service_args=['--log-no-truncate'])
+    service = Service(log_output=f"{executable_name}.log", service_args=['--log-no-truncate'])
     options = Options()
     options.add_argument("--headless")
+    os.environ["MOZ_REMOTE_SETTINGS_DEVTOOLS"] = "1"
     return webdriver.Firefox(service=service, options=options)
 
 
