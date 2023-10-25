@@ -97,9 +97,6 @@ RUN GK_VERSION=$(if [ ${GECKODRIVER_VERSION:-latest} = "latest" ]; then echo "0.
   && chmod 755 /opt/geckodriver-$GK_VERSION \
   && ln -fs /opt/geckodriver-$GK_VERSION /usr/bin/geckodriver
 
-# # Fix /dev/shm permissions for chromedriver
-# RUN chmod 1777 /dev/shm
-
 # Activate Yarn
 RUN corepack enable
 
