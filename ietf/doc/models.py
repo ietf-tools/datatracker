@@ -724,7 +724,7 @@ class RelatedDocument(models.Model):
         if source_lvl == "std" and target_lvl in ["ps", "ds"]:
             return pos_downref
 
-        if source_lvl in ["ps", "ds", "unkn"] and target_lvl == "unkn":
+        if source_lvl not in ["inf", "exp"] and target_lvl == "unkn":
             return "Possible Downref"
 
         if source_lvl == "unkn" and target_lvl in ["ps", "ds"]:

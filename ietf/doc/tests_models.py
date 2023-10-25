@@ -44,7 +44,7 @@ class RelatedDocumentTests(TestCase):
                 "ps": None,  # target
                 "ds": None,  # target
                 "std": None,  # target
-                "unkn": None,  # target
+                "unkn": "Possible Downref",  # target
             },
             # source
             "ps": {
@@ -74,7 +74,7 @@ class RelatedDocumentTests(TestCase):
                 "ps": "Downref",  # target
                 "ds": "Downref",  # target
                 "std": None,  # target
-                "unkn": None,  # target
+                "unkn": "Possible Downref",  # target
             },
             # source
             "unkn": {
