@@ -744,7 +744,8 @@ td.position-empty {
 
 .edit-meeting-schedule .edit-grid,
 .edit-meeting-schedule .session {
-    // font-family: arial, helvetica, sans-serif;
+    // Removing this font-family style causes selenium tests to fail :-(
+    font-family: arial, helvetica, sans-serif;
     font-size: 11px;
 }
 
