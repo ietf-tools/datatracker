@@ -68,7 +68,7 @@ def gather_relevant_expansions(**kwargs):
 
         doc = kwargs['doc']
 
-        relevant.add('iab_doc_state_changed' if doc.stream_id=='iab' else 'doc_state_edited')
+        relevant.add('doc_state_edited')
         
         if not doc.type_id in ['bofreq', 'statement']:
             relevant.update(['doc_telechat_details_changed','ballot_deferred','iesg_ballot_saved'])

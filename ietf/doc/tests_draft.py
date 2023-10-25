@@ -168,6 +168,47 @@ class ChangeStateTests(TestCase):
         draft = Document.objects.get(name=draft.name)
         self.assertEqual(draft.get_state_slug('draft-iesg'), 'ann')
 
+    def test_change_state_iab(self):
+        ad = Person.objects.get(user__username="ad")
+        draft = IndividualDraftFactory(
+            stream_id='iab',
+            group__acronym='iab',
+            ad=ad,
+            authors=PersonFactory.create_batch(3),
+            states=[('draft-stream-iab','active'),('draft','active'),('draft-iesg','ad-eval')]
+        )
+        DocEventFactory(type='started_iesg_process',by=ad,doc=draft,rev=draft.rev,desc="Started IESG Process")
+        draft.action_holders.add(ad)
+
+        url = urlreverse('ietf.doc.views_draft.change_state', kwargs=dict(name=draft.name))
+        login_testing_unauthorized(self, "secretary", url)
+
+        # change state
+        events_before = draft.docevent_set.count()
+        mailbox_before = len(outbox)
+        draft.tags.add("ad-f-up")
+        
+        r = self.client.post(url,
+                             dict(state=State.objects.get(used=True, type="draft-iesg", slug="review-e").pk,
+                                  substate="need-rev",
+                                  comment="Test comment"))
+        self.assertEqual(r.status_code, 302)
+
+        draft = Document.objects.get(name=draft.name)
+        self.assertEqual(draft.get_state_slug("draft-iesg"), "review-e")
+        self.assertTrue(not draft.tags.filter(slug="ad-f-up"))
+        self.assertTrue(draft.tags.filter(slug="need-rev"))
+        self.assertCountEqual(draft.action_holders.all(), [ad] + draft.authors())
+        self.assertEqual(draft.docevent_set.count(), events_before + 3)
+        self.assertTrue("Test comment" in draft.docevent_set.all()[0].desc)
+        self.assertTrue("Changed action holders" in draft.docevent_set.all()[1].desc)
+        self.assertTrue("IESG state changed" in draft.docevent_set.all()[2].desc)
+        self.assertEqual(len(outbox), mailbox_before + 1)
+        self.assertTrue("State Update Notice" in outbox[-1]['Subject'])
+        self.assertTrue(f'{draft.name}@' in outbox[-1]['To'])
+        self.assertTrue('aread@' in outbox[-1]['To'])
+        self.assertTrue('iab@iab.org' in outbox[-1]['Cc'])
+        
     def test_pull_from_rfc_queue(self):
         ad = Person.objects.get(user__username="ad")
         draft = WgDraftFactory(

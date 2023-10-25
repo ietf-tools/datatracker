@@ -29,7 +29,7 @@ from ietf.utils.timezone import date_today, DEADLINE_TZINFO
 
 
 def email_state_changed(request, doc, text, mailtrigger_id=None):
-    (to,cc) = gather_address_lists(mailtrigger_id or (doc.stream_id=='iab' and 'iab_doc_state_changed') or 'doc_state_edited',doc=doc)
+    (to,cc) = gather_address_lists(mailtrigger_id or 'doc_state_edited',doc=doc)
     if not to:
         return
     

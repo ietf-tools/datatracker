@@ -4242,7 +4242,9 @@
   },
   {
     "fields": {
-      "cc": [],
+      "cc": [
+        "doc_iab"
+      ],
       "desc": "Recipients when a document's state is manually edited",
       "to": [
         "bofreq_editors",
@@ -4370,29 +4372,6 @@
     },
     "model": "mailtrigger.mailtrigger",
     "pk": "group_personnel_change"
-  },
-  {
-    "fields": {
-      "cc": [
-        "iab"
-      ],
-      "desc": "Recipients when an IAB document's state is changed",
-      "to": [
-        "bofreq_editors",
-        "bofreq_responsible",
-        "doc_ad",
-        "doc_affecteddoc_authors",
-        "doc_affecteddoc_group_chairs",
-        "doc_affecteddoc_notify",
-        "doc_authors",
-        "doc_group_chairs",
-        "doc_group_responsible_directors",
-        "doc_notify",
-        "doc_shepherd"
-      ]
-    },
-    "model": "mailtrigger.mailtrigger",
-    "pk": "iab_doc_state_changed"
   },
   {
     "fields": {
@@ -5930,6 +5909,14 @@
     },
     "model": "mailtrigger.recipient",
     "pk": "doc_group_responsible_directors"
+  },
+  {
+    "fields": {
+      "desc": "The IAB if the document is in the iab stream",
+      "template": "{% if doc.stream_id == 'iab' %}iab@iab.org{% endif %}"
+    },
+    "model": "mailtrigger.recipient",
+    "pk": "doc_iab"
   },
   {
     "fields": {

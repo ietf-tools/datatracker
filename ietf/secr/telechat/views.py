@@ -300,7 +300,7 @@ def doc_detail(request, date, name):
                     if events:
                         doc.save_with_history(events)
 
-                    email_state_changed(request, doc, sce.desc)
+                    email_state_changed(request, doc, sce.desc, 'doc_state_edited')
     
                     if new_state.slug == "lc-req":
                         request_last_call(request, doc)

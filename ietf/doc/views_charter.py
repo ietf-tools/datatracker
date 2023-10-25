@@ -164,7 +164,7 @@ def change_state(request, name, option=None):
                     email_admin_re_charter(request, group, "Charter state changed to \"%s\"" % charter_state.name, message,'charter_state_edit_admin_needed')
 
                 # TODO - do we need a separate set of recipients for state changes to charters vrs other kind of documents
-                email_state_changed(request, charter, "State changed to %s." % charter_state)
+                email_state_changed(request, charter, "State changed to %s." % charter_state, 'doc_state_edited')
 
                 if charter_state.slug == "intrev" and group.type_id == "wg":
                     if request.POST.get("ballot_wo_extern"):
@@ -291,7 +291,7 @@ def change_title(request, name, option=None):
 
                 if message:
                     email_admin_re_charter(request, group, "Charter title changed to %s" % new_title, message,'charter_state_edit_admin_needed')
-                email_state_changed(request, charter, "Title changed to %s." % new_title)
+                email_state_changed(request, charter, "Title changed to %s." % new_title,'doc_state_edited')
             return redirect('ietf.doc.views_doc.document_main', name=charter.name)
     else:
         form = ChangeTitleForm(charter=charter)

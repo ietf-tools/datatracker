@@ -5,14 +5,17 @@ from django.db import migrations
 def forward(apps, schema_editor):
     MailTrigger = apps.get_model("mailtrigger", "MailTrigger")
     Recipient = apps.get_model("mailtrigger", "Recipient")
-    mt = MailTrigger.objects.create(pk="iab_doc_state_changed", desc="Recipients when an IAB document's state is changed")
-    mt.to.set(MailTrigger.objects.get(pk="doc_state_edited").to.all())
-    mt.cc.add(Recipient.objects.get(slug="iab"))
+    mt = MailTrigger.objects.get(pk="doc_state_edited")
+    r = Recipient.objects.create(slug="doc_iab", desc="The IAB if the document is in the iab stream", template="{% if doc.stream_id == 'iab' %}iab@iab.org{% endif %}")
+    mt.cc.add(r)
 
 def reverse(apps, schema_editor):
     MailTrigger = apps.get_model("mailtrigger", "MailTrigger")
-    mt = MailTrigger.objects.get(pk="iab_doc_state_changed")
-    mt.delete()
+    Recipient = apps.get_model("mailtrigger", "Recipient")
+    mt = MailTrigger.objects.get(pk="doc_state_edited")
+    r = Recipient.objects.get(slug="doc_iab")
+    mt.cc.remove(r)
+    r.delete()
 
 class Migration(migrations.Migration):
     dependencies = [
