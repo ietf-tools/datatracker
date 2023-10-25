@@ -572,8 +572,6 @@ GLOBAL_TEST_FIXTURES = [ 'names','ietf.utils.test_data.make_immutable_base_data'
 
 TEST_DIFF_FAILURE_DIR = "/tmp/test/failure/"
 
-TEST_GHOSTDRIVER_LOG_PATH = "ghostdriver.log"
-
 # These are regexes
 TEST_URL_COVERAGE_EXCLUDE = [
     r"^\^admin/",

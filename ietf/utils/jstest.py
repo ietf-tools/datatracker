@@ -9,8 +9,8 @@ skip_selenium = False
 skip_message  = ""
 try:
     from selenium import webdriver
-    from selenium.webdriver.chrome.service import Service
-    from selenium.webdriver.chrome.options import Options
+    from selenium.webdriver.firefox.service import Service
+    from selenium.webdriver.firefox.options import Options
     from selenium.webdriver.common.by import By
     from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 except ImportError as e:
@@ -21,7 +21,7 @@ except ImportError as e:
 from ietf.utils.pipe import pipe
 from ietf.utils.test_runner import IetfLiveServerTestCase
 
-executable_name = 'chromedriver'
+executable_name = 'geckodriver'
 code, out, err = pipe('{} --version'.format(executable_name))
 if code != 0:
     skip_selenium = True
@@ -30,20 +30,17 @@ if skip_selenium:
     print("     "+skip_message)
 
 def start_web_driver():
-    service = Service(executable_path="chromedriver",
-                      log_path=settings.TEST_GHOSTDRIVER_LOG_PATH)
+    service = Service(executable_path=executable_name)
     service.start()
     options = Options()
-    options.add_argument("headless")
-    options.add_argument("disable-extensions")
-    options.add_argument("disable-gpu") # headless needs this
-    options.add_argument("no-sandbox") # docker needs this
-    dc = DesiredCapabilities.CHROME
-    dc["goog:loggingPrefs"] = {"browser": "ALL"}
+    # options.log.level = "TRACE"
+    options.add_argument("--headless")
+    options.add_argument("--window-size=2048,1536")
+    dc = DesiredCapabilities.FIREFOX
     # For selenium 3:
-    return webdriver.Chrome("chromedriver", options=options, desired_capabilities=dc)
+    return webdriver.Firefox(options=options, desired_capabilities=dc)
     # For selenium 4:
-    # return webdriver.Chrome(service=service, options=options, desired_capabilities=dc)
+    # return webdriver.Firefox(service=service, options=options, desired_capabilities=dc)
 
 
 def selenium_enabled():
