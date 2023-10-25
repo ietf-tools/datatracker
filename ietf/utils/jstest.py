@@ -31,7 +31,6 @@ if skip_selenium:
 def start_web_driver():
     service = Service(service_args=['--log-no-truncate'])
     options = Options()
-    # options.log.level = "TRACE"
     options.add_argument("--headless")
     return webdriver.Firefox(service=service, options=options)
 
