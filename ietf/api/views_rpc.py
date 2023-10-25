@@ -60,7 +60,7 @@ def rpc_draft(request, doc_id):
         "authors": [
             {
                 "id": p.pk,
-                "plain_name": p.plain_name(),
+                "plain_name": p.person.plain_name(),
             } for p in d.documentauthor_set.all()
         ]
     })
