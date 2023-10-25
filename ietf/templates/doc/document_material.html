@@ -39,7 +39,7 @@
                         {% with session=doc.get_related_session %}
                         {% with timeslot=session.official_timeslotassignment.timeslot %}
                             {% if session.meeting %}
-                                <a href="{% url 'ietf.meeting.views.session_details' num=session.meeting.number acronym=session.group.acronym %}" class="session-time date me-3" data-start-utc="{{ timeslot.time|utc|date:'Y-m-d H:i' }}" data-end-utc="{{ timeslot.end_time|utc|date:'Y-m-d H:i' }}"></a>
+                                <a href="{% url 'ietf.meeting.views.session_details' num=session.meeting.number acronym=session.group.acronym %}" class="session-time date me-3" data-start-utc="{{ timeslot.time|utc|date:'Y-m-d H:i' }}" data-end-utc="{{ timeslot.end_time|utc|date:'Y-m-d H:i' }}">{{ timeslot.time|utc|date:'Y-m-d H:i' }}</a>
                                 {% include "meeting/tz-display.html" with meeting_timezone=session.meeting.time_zone id_suffix="" minimal=True only %}
                             {% endif %}
                         {% endwith %}
