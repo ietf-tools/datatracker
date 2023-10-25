@@ -12,7 +12,6 @@ try:
     from selenium.webdriver.firefox.service import Service
     from selenium.webdriver.firefox.options import Options
     from selenium.webdriver.common.by import By
-    from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 except ImportError as e:
     skip_selenium = True
     skip_message = "Skipping selenium tests: %s" % e
@@ -30,17 +29,11 @@ if skip_selenium:
     print("     "+skip_message)
 
 def start_web_driver():
-    service = Service(executable_path=executable_name)
-    service.start()
+    service = Service(service_args=['--log-no-truncate'])
     options = Options()
     # options.log.level = "TRACE"
     options.add_argument("--headless")
-    options.add_argument("--window-size=2048,1536")
-    dc = DesiredCapabilities.FIREFOX
-    # For selenium 3:
-    return webdriver.Firefox(options=options, desired_capabilities=dc)
-    # For selenium 4:
-    # return webdriver.Firefox(service=service, options=options, desired_capabilities=dc)
+    return webdriver.Firefox(service=service, options=options)
 
 
 def selenium_enabled():

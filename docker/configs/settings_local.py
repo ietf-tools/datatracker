@@ -7,6 +7,8 @@ ALLOWED_HOSTS = ['*']
 
 from ietf.settings_postgresqldb import DATABASES   # pyflakes:ignore
 
+IDTRACKER_BASE_URL="http://localhost:8000"
+
 IDSUBMIT_IDNITS_BINARY = "/usr/local/bin/idnits"
 IDSUBMIT_STAGING_PATH = "test/staging/"
 
