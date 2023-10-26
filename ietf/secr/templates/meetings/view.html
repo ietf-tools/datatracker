@@ -37,7 +37,6 @@
             <ul>
                 <li><button type="button" onclick="window.location='{% url "ietf.secr.meetings.views.edit_meeting" meeting_id=meeting.number %}'">Edit</button></li>
                 <li><button type="button" onclick="window.location='{% url "ietf.secr.meetings.views.notifications" meeting_id=meeting.number %}'">Notifications</button></li>
-                <li><button type="button" onclick="window.location='{% url "ietf.secr.meetings.views.blue_sheet" meeting_id=meeting.number %}'">Blue Sheets</button></li>
                 <li><button type="button" onclick="window.location='{% url "ietf.meeting.views.list_schedules" num=meeting.number %}'">Agenda List</button></li>
                 <li>
                     <!-- [html-validate-disable-block wcag/h32 -- FIXME: no submit button] -->
