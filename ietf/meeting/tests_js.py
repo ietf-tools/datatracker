@@ -1314,6 +1314,7 @@ class InterimTests(IetfSeleniumTestCase):
 
         # Now repeat those tests using the widgets at the bottom of the page
         # click 'utc' button
+        self.scroll_to_element(utc_tz_bottom_link)
         utc_tz_bottom_link.click()
         self.wait.until(expected_conditions.element_to_be_selected(utc_tz_opt))
         self.assertFalse(local_tz_opt.is_selected())
@@ -1326,6 +1327,7 @@ class InterimTests(IetfSeleniumTestCase):
         _assert_ietf_tz_correct(ietf_meetings, 'UTC')
 
         # click back to 'local'
+        self.scroll_to_element(local_tz_bottom_link)
         local_tz_bottom_link.click()
         self.wait.until(expected_conditions.element_to_be_selected(local_tz_opt))
         self.assertTrue(local_tz_opt.is_selected())
@@ -1395,6 +1397,7 @@ class InterimTests(IetfSeleniumTestCase):
             ),
             'Modal close button not found or not clickable',
         )
+        time.sleep(0.3)  # gross, but the button is clickable while still fading in
         close_modal_button.click()
         self.wait.until(
             expected_conditions.invisibility_of_element(modal_div),
