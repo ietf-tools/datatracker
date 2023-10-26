@@ -676,39 +676,59 @@ class RelatedDocument(models.Model):
         return u"%s %s %s" % (self.source.name, self.relationship.name.lower(), self.target.name)
 
     def is_downref(self):
-
-        if self.source.type.slug!='draft' or self.relationship.slug not in ['refnorm','refold','refunk']:
+        if self.source.type.slug != "draft" or self.relationship.slug not in [
+            "refnorm",
+            "refold",
+            "refunk",
+        ]:
             return None
 
         state = self.source.get_state()
-        if state and state.slug == 'rfc':
+        if state and state.slug == "rfc":
             source_lvl = self.source.std_level.slug if self.source.std_level else None
         elif self.source.intended_std_level:
             source_lvl = self.source.intended_std_level.slug
         else:
             source_lvl = None
 
-        if source_lvl not in ['bcp','ps','ds','std']:
+        if source_lvl not in ["bcp", "ps", "ds", "std", "unkn"]:
             return None
 
-        if self.target.document.get_state().slug == 'rfc':
+        if self.target.document.get_state().slug == "rfc":
             if not self.target.document.std_level:
-                target_lvl = 'unkn'
+                target_lvl = "unkn"
             else:
                 target_lvl = self.target.document.std_level.slug
         else:
             if not self.target.document.intended_std_level:
-                target_lvl = 'unkn'
+                target_lvl = "unkn"
             else:
                 target_lvl = self.target.document.intended_std_level.slug
 
-        rank = { 'ps':1, 'ds':2, 'std':3, 'bcp':3 }
+        if self.relationship.slug not in ["refnorm", "refunk"]:
+            return None
 
-        if ( target_lvl not in rank ) or ( rank[target_lvl] < rank[source_lvl] ):
-            if self.relationship.slug == 'refnorm' and target_lvl!='unkn':
-                return "Downref"
-            else:
-                return "Possible Downref"
+        if source_lvl in ["inf", "exp"]:
+            return None
+
+        pos_downref = (
+            "Downref" if self.relationship.slug != "refunk" else "Possible Downref"
+        )
+
+        if source_lvl in ["bcp", "ps", "ds", "std"] and target_lvl in ["inf", "exp"]:
+            return pos_downref
+
+        if source_lvl == "ds" and target_lvl == "ps":
+            return pos_downref
+
+        if source_lvl == "std" and target_lvl in ["ps", "ds"]:
+            return pos_downref
+
+        if source_lvl not in ["inf", "exp"] and target_lvl == "unkn":
+            return "Possible Downref"
+
+        if source_lvl == "unkn" and target_lvl in ["ps", "ds"]:
+            return "Possible Downref"
 
         return None
 
