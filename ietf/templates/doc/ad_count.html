@@ -11,7 +11,7 @@
                         {{ delta.days }} days ago, the count was {{ prev }}.
                     </div>
                     {% if docs_delta %}
-                       {{ group.group_type }}s in the delta are:
+                       {{ type.doc_type }}s in the delta are:
                        <ul>
                             {% for d in docs_delta %}
                                 <li><a href='{% url "ietf.doc.views_doc.document_main" d.name %}'>{{ d.name }}</a></li>

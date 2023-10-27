@@ -36,6 +36,7 @@
 
 import re
 import datetime
+import copy
 
 from collections import defaultdict
 
@@ -313,65 +314,29 @@ def search_for_name(request, name):
 
     return cached_redirect(cache_key, urlreverse('ietf.doc.views_search.search') + search_args)
 
-def ad_dashboard_group_type(doc):
-    # Return group type for document for dashboard.
-    # If doc is not defined return list of all possible
-    # group types
-    if not doc:
-        return ('I-D', 'RFC', 'Conflict Review', 'Status Change', 'Charter')
-    if doc.type.slug=='draft':
-        if doc.get_state_slug('draft') == 'rfc':
-            return 'RFC'
-        elif doc.get_state_slug('draft') == 'active' and doc.get_state_slug('draft-iesg') and doc.get_state('draft-iesg').name =='RFC Ed Queue':
-            return 'RFC'
-        elif doc.get_state_slug('draft') == 'active' and doc.get_state_slug('draft-iesg') and doc.get_state('draft-iesg').name in ('Dead', 'I-D Exists', 'AD is watching'):
-             return None
-        elif doc.get_state('draft').name in ('Expired', 'Replaced'):
-            return None
-        else:
-            return 'I-D'
-    elif doc.type.slug=='conflrev':
-          return 'Conflict Review'
-    elif doc.type.slug=='statchg':
-        return 'Status Change'
-    elif doc.type.slug=='charter':
-        return "Charter"
+
+def doc_state(doc):
+    dt = doc.type.slug
+    ds = doc.get_state(dt)
+    if dt == "draft":
+        dis = doc.get_state("draft-iesg")
+        if ds.slug == "active" and dis:
+            return dis.slug
+    return ds.slug
+
+
+def state_name(doc_type, state, shorten=True):
+    name = ""
+    if doc_type in ["draft", "rfc"] and state != "rfc":
+        name = State.objects.get(type="draft-iesg", slug=state).name
+    elif state == "rfc":
+        name = "RFC"
     else:
-        return "Document"
+        name = State.objects.get(type=doc_type, slug=state).name
 
-def ad_dashboard_group(doc):
+    if not shorten:
+        return name
 
-    if doc.type.slug=='draft':
-        if doc.get_state_slug('draft') == 'rfc':
-            return 'RFC'
-        elif doc.get_state_slug('draft') == 'active' and doc.get_state_slug('draft-iesg'):
-            return str(doc.get_state('draft-iesg').name)
-        else:
-            return str(doc.get_state('draft').name)
-    elif doc.type.slug=='conflrev':
-        if doc.get_state_slug('conflrev') in ('appr-reqnopub-sent','appr-noprob-sent'):
-            return 'Approved'
-        elif doc.get_state_slug('conflrev') in ('appr-reqnopub-pend','appr-noprob-pend','appr-reqnopub-pr','appr-noprob-pr'):
-            return str(State.objects.get(type__slug='draft-iesg',slug='approved'))
-        else:
-          return str(doc.get_state('conflrev'))
-    elif doc.type.slug=='statchg':
-        if doc.get_state_slug('statchg') in ('appr-sent',):
-            return 'Approved'
-        if doc.get_state_slug('statchg') in ('appr-pend','appr-pr'):
-            return str(State.objects.get(type__slug='draft-iesg',slug='approved'))
-        else:
-            return str(doc.get_state('statchg'))
-    elif doc.type.slug=='charter':
-        if doc.get_state_slug('charter') == 'approved':
-            return "Approved"
-        else:
-            return str(doc.get_state('charter'))
-    else:
-        return "Document"
-
-
-def shorten_group_name(name):
     for pat, sub in [
         (r" \(Internal Steering Group/IAB Review\)", ""),
         ("Writeup", "Write-up"),
@@ -381,69 +346,93 @@ def shorten_group_name(name):
         ("Waiting", "Wait"),
         ("Go-Ahead", "OK"),
         ("Approved-", "App, "),
+        ("Approved No Problem", "App."),
         ("announcement", "ann."),
         ("IESG Eval - ", ""),
         ("Not currently under review", "Not under review"),
         ("External Review", "Ext. Review"),
-        (r"IESG Review \(Charter for Approval, Selected by Secretariat\)", "IESG Review"),
+        (
+            r"IESG Review \(Charter for Approval, Selected by Secretariat\)",
+            "IESG Review",
+        ),
         ("Needs Shepherd", "Needs Shep."),
         ("Approved", "App."),
         ("Replaced", "Repl."),
         ("Withdrawn", "Withd."),
         ("Chartering/Rechartering", "Charter"),
-        (r"\(Message to Community, Selected by Secretariat\)", "")
+        (r"\(Message to Community, Selected by Secretariat\)", ""),
     ]:
         name = re.sub(pat, sub, name)
 
     return name.strip()
 
 
-def ad_dashboard_sort_key(doc):
+def doc_type_name(doc_type):
+    if doc_type == "rfc":
+        return "RFC"
+    if doc_type == "draft":
+        return "Internet-Draft"
+    return DocTypeName.objects.get(slug=doc_type).name
 
-    if doc.type.slug=='draft' and doc.get_state_slug('draft') == 'rfc':
-        return "21%04d" % int(doc.rfc_number())
-    if doc.type.slug=='statchg' and doc.get_state_slug('statchg') == 'appr-sent':
-        return "22%d" % 0 # TODO - get the date of the transition into this state here
-    if doc.type.slug=='conflrev' and doc.get_state_slug('conflrev') in ('appr-reqnopub-sent','appr-noprob-sent'):
-        return "23%d" % 0 # TODO - get the date of the transition into this state here
-    if doc.type.slug=='charter' and doc.get_state_slug('charter') == 'approved':
-        return "24%d" % 0 # TODO - get the date of the transition into this state here
 
-    seed = ad_dashboard_group(doc)
+STATE_SLUGS = {
+    "draft": [
+        "pub-req",
+        "ad-eval",
+        "lc-req",
+        "lc",
+        "writeupw",
+        "defer",
+        "iesg-eva",
+        "goaheadw",
+        "approved",
+        "ann",
+    ],
+    "rfc": ["rfcqueue", "rfc"],
+    "conflrev": [
+        "needshep",
+        "adrev",
+        "iesgeval",
+        # "appr-reqnopub-pend",
+        # "appr-noprob-pend",
+        # "appr-reqnopub-sent",
+        "appr-noprob-sent",
+        # "appr-reqnopub-pr",
+        # "appr-noprob-pr",
+        "withdraw",
+    ],
+    "statchg": [
+        "needshep",
+        "adrev",
+        "lc-req",
+        "in-lc",
+        "iesgeval",
+        "goahead",
+        # "appr-pr",
+        # "appr-pend",
+        "appr-sent",
+        "dead",
+    ],
+    "charter": [
+        "notrev",
+        "infrev",
+        "intrev",
+        "extrev",
+        "iesgrev",
+        "approved",
+        "replaced",
+    ],
+}
 
-    if doc.type.slug=='conflrev' and doc.get_state_slug('conflrev') == 'adrev':
-        state = State.objects.get(type__slug='draft-iesg',slug='ad-eval')
-        return "1%d%s" % (state.order,seed)
 
-    if doc.type.slug=='charter' and doc.get_state_slug('charter') != 'replaced':
-        if doc.get_state_slug('charter') in ('notrev','infrev'):
-            return "100%s" % seed
-        elif  doc.get_state_slug('charter') == 'intrev':
-            state = State.objects.get(type__slug='draft-iesg',slug='ad-eval')
-            return "1%d%s" % (state.order,seed)
-        elif  doc.get_state_slug('charter') == 'extrev':
-            state = State.objects.get(type__slug='draft-iesg',slug='lc')
-            return "1%d%s" % (state.order,seed)
-        elif  doc.get_state_slug('charter') == 'iesgrev':
-            state = State.objects.get(type__slug='draft-iesg',slug='iesg-eva')
-            return "1%d%s" % (state.order,seed)
-
-    if doc.type.slug=='statchg' and  doc.get_state_slug('statchg') == 'adrev':
-        state = State.objects.get(type__slug='draft-iesg',slug='ad-eval')
-        return "1%d%s" % (state.order,seed)
-
-    if seed.startswith('Needs Shepherd'):
-        return "100%s" % seed
-    state = State.objects.filter(type__slug='draft-iesg',name=seed)
-    if state:
-        ageseconds = 0
-        changetime= doc.latest_event(type='changed_document')
-        if changetime:
-            ad = (timezone.now()-doc.latest_event(type='changed_document').time)
-            ageseconds = (ad.microseconds + (ad.seconds + ad.days * 24 * 3600) * 10**6) / 10**6
-        return "1%d%s%s%010d" % (state[0].order,seed,doc.type.slug,ageseconds)
-
-    return "3%s" % seed
+def doc_type(doc):
+    dt = doc.type.slug
+    if (
+        doc.get_state_slug("draft") == "rfc"
+        or doc.get_state_slug("draft-iesg") == "rfcqueue"
+    ):
+        dt = "rfc"
+    return dt
 
 
 def ad_workload(request):
@@ -463,201 +452,97 @@ def ad_workload(request):
         if p in get_active_ads():
             ads.append(p)
 
-    doctypes = list(
-        DocTypeName.objects.filter(used=True)
-        .exclude(slug__in=("draft", "liai-att"))
-        .values_list("pk", flat=True)
-    )
-
-    up_is_good = {}
-    group_types = ad_dashboard_group_type(None)
-    groups = {g: {} for g in group_types}
-    group_names = {g: [] for g in group_types}
-
-    # Prefill groups in preferred sort order
-    # FIXME: This should really use the database states instead of replicating the logic
-    for id, (g, uig) in enumerate(
-        [
-            ("Publication Requested", False),
-            ("AD Evaluation", False),
-            ("Last Call Requested", True),
-            ("In Last Call", True),
-            ("Waiting for Writeup", False),
-            ("IESG Evaluation - Defer", False),
-            ("IESG Evaluation", True),
-            ("Waiting for AD Go-Ahead", False),
-            ("Approved-announcement to be sent", True),
-            ("Approved-announcement sent", True),
-        ]
-    ):
-        groups["I-D"][g] = id
-        group_names["I-D"].append(g)
-        up_is_good[g] = uig
-
-    for id, g in enumerate(["RFC Ed Queue", "RFC"]):
-        groups["RFC"][g] = id
-        group_names["RFC"].append(g)
-        up_is_good[g] = True
-
-    for id, (g, uig) in enumerate(
-        [
-            ("Needs Shepherd", False),
-            ("AD Review", False),
-            ("IESG Evaluation", True),
-            ("Approved", True),
-            ("Withdrawn", None),
-        ]
-    ):
-        groups["Conflict Review"][g] = id
-        group_names["Conflict Review"].append(g)
-        up_is_good[g] = uig
-
-    for id, (g, uig) in enumerate(
-        [
-            ("Publication Requested", False),
-            ("AD Evaluation", False),
-            ("Last Call Requested", True),
-            ("In Last Call", True),
-            ("Waiting for Writeup", False),
-            ("IESG Evaluation", True),
-            ("Waiting for AD Go-Ahead", False),
-        ]
-    ):
-        groups["Status Change"][g] = id
-        group_names["Status Change"].append(g)
-        up_is_good[g] = uig
-
-    for id, (g, uig) in enumerate(
-        [
-            ("Not currently under review", None),
-            ("Draft Charter", None),
-            ("Start Chartering/Rechartering (Internal Steering Group/IAB Review)", False),
-            ("External Review (Message to Community, Selected by Secretariat)", True),
-            ("IESG Review (Charter for Approval, Selected by Secretariat)", True),
-            ("Approved", True),
-            ("Replaced", None),
-        ]
-    ):
-        groups["Charter"][g] = id
-        group_names["Charter"].append(g)
-        up_is_good[g] = uig
-
     for ad in ads:
-        form = SearchForm(
-            {
-                "by": "ad",
-                "ad": ad.id,
-                "rfcs": "on",
-                "activedrafts": "on",
-                "olddrafts": "on",
-                "doctypes": doctypes,
-            }
-        )
-
         ad.dashboard = urlreverse(
             "ietf.doc.views_search.docs_for_ad", kwargs=dict(name=ad.full_name_as_key())
         )
-        ad.doc_now = defaultdict(list)
-        ad.doc_prev = defaultdict(list)
+        ad.doc_now = {
+            dt: {state: set() for state in STATE_SLUGS[dt]} for dt in STATE_SLUGS
+        }
+        ad.doc_prev = copy.deepcopy(ad.doc_now)
+        ad.doc_diff = copy.deepcopy(ad.doc_now)
 
-        for doc in retrieve_search_results(form):
-            group_type = ad_dashboard_group_type(doc)
-            if group_type and group_type in groups:
-                # Right now, anything with group_type "Document", such as a bofreq is not handled.
-                group = ad_dashboard_group(doc)
-                if group not in groups[group_type]:
-                    groups[group_type][group] = len(groups[group_type])
-                    group_names[group_type].append(group)
+        for doc in Document.objects.filter(ad=ad):
+            dt = doc_type(doc)
+            state = doc_state(doc)
 
-                inc = len(groups[group_type]) - len(ad.doc_now[group_type])
-                if inc > 0:
-                    ad.doc_now[group_type].extend(set() for _ in range(inc))
-                    ad.doc_prev[group_type].extend(set() for _ in range(inc))
+            if state in ad.doc_now[dt]:
+                ad.doc_now[dt][state].add(doc)
 
-                ad.doc_now[group_type][groups[group_type][group]].add(doc)
-
-                last_state_event = (
-                    doc.docevent_set.filter(
-                        Q(type="started_iesg_process") | Q(type="changed_state")
-                    )
-                    .order_by("-time")
-                    .first()
+            last_state_event = (
+                doc.docevent_set.filter(
+                    Q(type="started_iesg_process") | Q(type="changed_state")
                 )
-                if (last_state_event is not None) and (right_now - last_state_event.time) > delta:
-                    ad.doc_prev[group_type][groups[group_type][group]].add(doc)
-
-    for ad in ads:
-        ad.doc_diff = defaultdict(list)
-        for gt in group_types:
-            inc = len(groups[gt]) - len(ad.doc_now[gt])
-            if inc > 0:
-                ad.doc_now[gt].extend([set()] * inc)
-                ad.doc_prev[gt].extend([set()] * inc)
-
-            ad.doc_diff[gt].extend([set()] * len(groups[gt]))
-            for idx, g in enumerate(group_names[gt]):
-                ad.doc_diff[gt][idx] = ad.doc_prev[gt][idx] ^ ad.doc_now[gt][idx]
-
-    # Shorten the names of groups
-    for gt in group_types:
-        for idx, g in enumerate(group_names[gt]):
-            group_names[gt][idx] = (
-                shorten_group_name(g),
-                g,
-                up_is_good[g] if g in up_is_good else None,
+                .order_by("-time")
+                .first()
             )
+            if (last_state_event is not None) and (
+                right_now - last_state_event.time
+            ) > delta:
+                if state in ad.doc_now[dt]:
+                    ad.doc_prev[dt][state].add(doc)
+
+        for dt in STATE_SLUGS:
+            for state in ad.doc_now[dt]:
+                ad.doc_diff[dt][state] = ad.doc_prev[dt][state] ^ ad.doc_now[dt][state]
 
     workload = [
         dict(
-            group_type=gt,
-            group_names=group_names[gt],
+            doc_type=doc_type_name(dt),
+            state_names=[state_name(dt, state) for state in ad.doc_now[dt]],
             counts=[
                 (
                     ad,
                     [
                         (
-                            group_names[gt][index],
-                            len(ad.doc_now[gt][index]),
-                            len(ad.doc_prev[gt][index]),
-                            ad.doc_diff[gt][index],
+                            state,
+                            len(ad.doc_now[dt][state]),
+                            len(ad.doc_prev[dt][state]),
+                            ad.doc_diff[dt][state],
                         )
-                        for index in range(len(group_names[gt]))
+                        for state in ad.doc_now[dt]
                     ],
                 )
                 for ad in ads
             ],
             sums=[
                 (
-                    group_names[gt][index],
-                    sum([len(ad.doc_now[gt][index]) for ad in ads]),
-                    sum([len(ad.doc_prev[gt][index]) for ad in ads]),
+                    state,
+                    sum([len(ad.doc_now[dt][state]) for ad in ads]),
+                    sum([len(ad.doc_prev[dt][state]) for ad in ads]),
                 )
-                for index in range(len(group_names[gt]))
+                for state in ad.doc_now[dt]
             ],
         )
-        for gt in group_types
+        for dt in STATE_SLUGS
     ]
 
     return render(request, "doc/ad_list.html", {"workload": workload, "delta": delta})
 
+
 def docs_for_ad(request, name):
+    def sort_key(doc):
+        key = list(STATE_SLUGS.keys()).index(doc_type(doc))
+        return key
+
     ad = None
-    responsible = Document.objects.values_list('ad', flat=True).distinct()
-    for p in Person.objects.filter(Q(role__name__in=("pre-ad", "ad"),
-                                     role__group__type="area",
-                                     role__group__state="active")
-                                   | Q(pk__in=responsible)).distinct():
+    responsible = Document.objects.values_list("ad", flat=True).distinct()
+    for p in Person.objects.filter(
+        Q(
+            role__name__in=("pre-ad", "ad"),
+            role__group__type="area",
+            role__group__state="active",
+        )
+        | Q(pk__in=responsible)
+    ).distinct():
         if name == p.full_name_as_key():
             ad = p
             break
     if not ad:
         raise Http404
-    form = SearchForm({'by':'ad','ad': ad.id,
-                       'rfcs':'on', 'activedrafts':'on', 'olddrafts':'on',
-                       'sort': 'status',
-                       'doctypes': list(DocTypeName.objects.filter(used=True).exclude(slug__in=('draft','liai-att')).values_list("pk", flat=True))})
-    results, meta = prepare_document_table(request, retrieve_search_results(form), form.data, max_results=500)
-    results.sort(key=ad_dashboard_sort_key)
+
+    results, meta = prepare_document_table(request, Document.objects.filter(ad=ad))
+    results.sort(key=lambda d: sort_key(d))
     del meta["headers"][-1]
 
     # filter out some results
@@ -681,28 +566,37 @@ def docs_for_ad(request, name):
     ]
 
     for d in results:
-        d.search_heading = ad_dashboard_group(d)
+        dt = d.type.slug
+        d.search_heading = state_name(dt, doc_state(d), shorten=False)
+        if d.search_heading != "RFC":
+            d.search_heading += f" {doc_type_name(dt)}"
 
     # Additional content showing docs with blocking positions by this AD,
     # and docs that the AD hasn't balloted on that are lacking ballot positions to progress
     blocked_docs = []
     not_balloted_docs = []
     if ad in get_active_ads():
-        iesg_docs = Document.objects.filter(Q(states__type="draft-iesg",
-                                              states__slug__in=IESG_BALLOT_ACTIVE_STATES) |
-                                            Q(states__type="charter",
-                                              states__slug__in=IESG_CHARTER_ACTIVE_STATES) |
-                                            Q(states__type__in=("statchg", "conflrev"),
-                                              states__slug__in=IESG_STATCHG_CONFLREV_ACTIVE_STATES)).distinct()
-        possible_docs = iesg_docs.filter(docevent__ballotpositiondocevent__pos__blocking=True,
-                                         docevent__ballotpositiondocevent__balloter=ad)
+        iesg_docs = Document.objects.filter(
+            Q(states__type="draft-iesg", states__slug__in=IESG_BALLOT_ACTIVE_STATES)
+            | Q(states__type="charter", states__slug__in=IESG_CHARTER_ACTIVE_STATES)
+            | Q(
+                states__type__in=("statchg", "conflrev"),
+                states__slug__in=IESG_STATCHG_CONFLREV_ACTIVE_STATES,
+            )
+        ).distinct()
+        possible_docs = iesg_docs.filter(
+            docevent__ballotpositiondocevent__pos__blocking=True,
+            docevent__ballotpositiondocevent__balloter=ad,
+        )
         for doc in possible_docs:
             ballot = doc.active_ballot()
             if not ballot:
                 continue
 
             blocking_positions = [p for p in ballot.all_positions() if p.pos.blocking]
-            if not blocking_positions or not any( p.balloter==ad for p in blocking_positions ):
+            if not blocking_positions or not any(
+                p.balloter == ad for p in blocking_positions
+            ):
                 continue
 
             augment_events_with_revision(doc, blocking_positions)
@@ -714,7 +608,12 @@ def docs_for_ad(request, name):
 
         # latest first
         if blocked_docs:
-            blocked_docs.sort(key=lambda d: min(p.time for p in d.blocking_positions if p.balloter==ad), reverse=True)
+            blocked_docs.sort(
+                key=lambda d: min(
+                    p.time for p in d.blocking_positions if p.balloter == ad
+                ),
+                reverse=True,
+            )
 
         possible_docs = iesg_docs.exclude(
             Q(docevent__ballotpositiondocevent__balloter=ad)
@@ -735,9 +634,19 @@ def docs_for_ad(request, name):
             if re.search(r"\bNeeds\s+\d+", iesg_ballot_summary):
                 not_balloted_docs.append(doc)
 
-    return render(request, 'doc/drafts_for_ad.html', {
-        'form':form, 'docs':results, 'meta':meta, 'ad_name': ad.plain_name(), 'blocked_docs': blocked_docs, 'not_balloted_docs': not_balloted_docs
-    })
+    return render(
+        request,
+        "doc/drafts_for_ad.html",
+        {
+            "docs": results,
+            "meta": meta,
+            "ad_name": ad.name,
+            "blocked_docs": blocked_docs,
+            "not_balloted_docs": not_balloted_docs,
+        },
+    )
+
+
 def drafts_in_last_call(request):
     lc_state = State.objects.get(type="draft-iesg", slug="lc").pk
     form = SearchForm({'by':'state','state': lc_state, 'rfcs':'on', 'activedrafts':'on'})
@@ -801,7 +710,7 @@ def recent_drafts(request, days=7):
 
 def index_all_drafts(request):
     # try to be efficient since this view returns a lot of data
-    categories = []
+    states = []
 
     for s in ("active", "rfc", "expired", "repl", "auth-rm", "ietf-rm"):
         state = State.objects.get(type="draft", slug=s)
@@ -835,12 +744,12 @@ def index_all_drafts(request):
         names = [f'<a href=\"{urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=n))}\">{n}</a>'
                  for n, __ in names if n not in names_to_skip]
 
-        categories.append((state,
+        states.append((state,
                       heading,
                       len(names),
                       "<br>".join(names)
                       ))
-    return render(request, 'doc/index_all_drafts.html', { "categories": categories })
+    return render(request, 'doc/index_all_drafts.html', { "states": states })
 
 def index_active_drafts(request):
     slowcache = caches['slowpages']

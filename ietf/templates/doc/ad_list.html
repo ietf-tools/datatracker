@@ -15,29 +15,29 @@
         are only shown to logged-in Area Directors.
     </div>
     {% endif %}
-    {% for group in workload %}
-        <h2 class="mt-5" id="{{ group.group_type|slugify }}">{{ group.group_type }} State Counts</h2>
+    {% for type in workload %}
+        <h2 class="mt-5" id="{{ type.doc_type|slugify }}">{{ type.doc_type }} State Counts</h2>
         <table class="table table-sm table-striped table-bordered tablesorter">
             <thead class="wrap-anywhere">
                 <tr>
                     <th scope="col" data-sort="name">Area Director</th>
-                    {% for g, desc, up_is_good in group.group_names %}
-                        <th scope="col" class="col-1" title="{{ desc }}"
-                            data-sort="{{ g|slugify }}-num">
-                            {{ g|split:'/'|join:'/<wbr>' }}
+                    {% for state in type.state_names %}
+                        <th scope="col" class="col-1" title=""
+                            data-sort="{{ state|slugify }}-num">
+                            {{ state|split:'/'|join:'/<wbr>' }}
                         </th>
                     {% endfor %}
                 </tr>
             </thead>
             <tbody class="table-group-divider">
-                {% for ad, ad_data in group.counts %}
+                {% for ad, ad_data in type.counts %}
                     <tr>
                         <td>
                             <a href="{{ ad.dashboard }}">{{ ad.name }}</a>
                         </td>
                         {% for label, count, prev, docs_delta in ad_data %}
                         <td class="col-1"
-                            id="{{ group.group_type|slugify }}-{{ ad.full_name_as_key|slugify }}-{{ label.0|slugify }}">
+                            id="{{ type.doc_type|slugify }}-{{ ad.full_name_as_key|slugify }}-{{ label.0|slugify }}">
                             {% include 'doc/ad_count.html' %}
                         </td>
                         {% endfor %}
@@ -47,7 +47,7 @@
             <tfoot class="table-group-divider">
                 <tr>
                     <th scope="row">Sum</th>
-                    {% for label, count, prev in group.sums %}
+                    {% for label, count, prev in type.sums %}
                         <td>
                             {% include 'doc/ad_count.html' %}
                         </td>
