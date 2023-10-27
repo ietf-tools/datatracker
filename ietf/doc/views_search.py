@@ -327,7 +327,7 @@ def doc_state(doc):
 
 def state_name(doc_type, state, shorten=True):
     name = ""
-    if doc_type in ["draft", "rfc"] and state != "rfc":
+    if doc_type in ["draft", "rfc"] and state not in ["rfc", "expired"]:
         name = State.objects.get(type="draft-iesg", slug=state).name
     elif state == "rfc":
         name = "RFC"
