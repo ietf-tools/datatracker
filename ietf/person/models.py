@@ -253,11 +253,16 @@ class Person(models.Model):
     def cdn_photo_url(self, size=80):
         if self.photo:
             if settings.SERVE_CDN_PHOTOS:
+                if settings.SERVER_MODE != "production":
+                    original_media_dir = settings.MEDIA_URL
+                    settings.MEDIA_URL = "https://www.ietf.org/lib/dt/media/"
                 source_url = self.photo.url
                 if source_url.startswith(settings.IETF_HOST_URL):
                     source_url = source_url[len(settings.IETF_HOST_URL):]
                 elif source_url.startswith('/'):
                     source_url = source_url[1:]
+                if settings.SERVER_MODE != "production":
+                    settings.MEDIA_URL = original_media_dir
                 return f'{settings.IETF_HOST_URL}cdn-cgi/image/fit=scale-down,width={size},height={size}/{source_url}'
             else:
                 datatracker_photo_path = urlreverse('ietf.person.views.photo', kwargs={'email_or_name': self.email()})

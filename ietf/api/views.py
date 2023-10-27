@@ -14,7 +14,10 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
-from django.http import HttpResponse, Http404
+from django.http import (
+    HttpResponse,
+    Http404,
+)
 from django.shortcuts import render, get_object_or_404
 from django.urls import reverse
 from django.utils.decorators import method_decorator
@@ -435,3 +438,5 @@ def directauth(request):
 
     else:
         return HttpResponse(status=405)
+
+
