@@ -377,50 +377,50 @@ def doc_type_name(doc_type):
 
 STATE_SLUGS = {
     "draft": [
-        "pub-req",
-        "ad-eval",
-        "lc-req",
-        "lc",
-        "writeupw",
-        "defer",
-        "iesg-eva",
-        "goaheadw",
-        "approved",
-        "ann",
+        ("pub-req", False),
+        ("ad-eval", False),
+        ("lc-req", True),
+        ("lc", True),
+        ("writeupw", False),
+        ("defer", False),
+        ("iesg-eva", True),
+        ("goaheadw", False),
+        ("approved", True),
+        ("ann", True),
     ],
-    "rfc": ["rfcqueue", "rfc"],
+    "rfc": [("rfcqueue", True), ("rfc", None)],
     "conflrev": [
-        "needshep",
-        "adrev",
-        "iesgeval",
+        ("needshep", False),
+        ("adrev", False),
+        ("iesgeval", True),
         # "appr-reqnopub-pend",
         # "appr-noprob-pend",
         # "appr-reqnopub-sent",
-        "appr-noprob-sent",
+        ("appr-noprob-sent", True),
         # "appr-reqnopub-pr",
         # "appr-noprob-pr",
-        "withdraw",
+        ("withdraw", None),
     ],
     "statchg": [
-        "needshep",
-        "adrev",
-        "lc-req",
-        "in-lc",
-        "iesgeval",
-        "goahead",
+        ("needshep", False),
+        ("adrev", False),
+        ("lc-req", True),
+        ("in-lc", True),
+        ("iesgeval", True),
+        ("goahead", False),
         # "appr-pr",
         # "appr-pend",
-        "appr-sent",
-        "dead",
+        ("appr-sent", True),
+        ("dead", None),
     ],
     "charter": [
-        "notrev",
-        "infrev",
-        "intrev",
-        "extrev",
-        "iesgrev",
-        "approved",
-        "replaced",
+        ("notrev", None),
+        ("infrev", None),
+        ("intrev", False),
+        ("extrev", True),
+        ("iesgrev", True),
+        ("approved", True),
+        ("replaced", None),
     ],
 }
 
@@ -457,7 +457,7 @@ def ad_workload(request):
             "ietf.doc.views_search.docs_for_ad", kwargs=dict(name=ad.full_name_as_key())
         )
         ad.doc_now = {
-            dt: {state: set() for state in STATE_SLUGS[dt]} for dt in STATE_SLUGS
+            dt: {state: set() for state, _ in STATE_SLUGS[dt]} for dt in STATE_SLUGS
         }
         ad.doc_prev = copy.deepcopy(ad.doc_now)
         ad.doc_diff = copy.deepcopy(ad.doc_now)
@@ -496,6 +496,7 @@ def ad_workload(request):
                     [
                         (
                             state,
+                            {s: uig for s, uig in STATE_SLUGS[dt]}[state],
                             len(ad.doc_now[dt][state]),
                             len(ad.doc_prev[dt][state]),
                             ad.doc_diff[dt][state],
@@ -508,6 +509,7 @@ def ad_workload(request):
             sums=[
                 (
                     state,
+                    {s: uig for s, uig in STATE_SLUGS[dt]}[state],
                     sum([len(ad.doc_now[dt][state]) for ad in ads]),
                     sum([len(ad.doc_prev[dt][state]) for ad in ads]),
                 )

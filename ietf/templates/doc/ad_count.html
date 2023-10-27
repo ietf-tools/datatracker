@@ -19,15 +19,13 @@
                         </ul>
                     {% endif %}"
             {% endif %}
-        {% with label.2 as up_is_good %}
-            {% if prev < count %}
-                   class="bi bi-arrow-up-right-circle{% if count %}-fill{% endif %} {{ up_is_good|yesno:'text-success,text-danger,text-body-secondary' }}"
-            {% elif prev > count %}
-                   class="bi bi-arrow-down-right-circle{% if count %}-fill{% endif %} {{ up_is_good|yesno:'text-danger,text-success,text-body-secondary' }}"
-            {% else %}
-                   class="bi bi-arrow-right-circle text-body-secondary"
-            {% endif %}
-            ></i>
-        {% endwith %}
+        {% if prev < count %}
+               class="bi bi-arrow-up-right-circle{% if count %}-fill{% endif %} {{ up_is_good|yesno:'text-success,text-danger,text-body-secondary' }}"
+        {% elif prev > count %}
+               class="bi bi-arrow-down-right-circle{% if count %}-fill{% endif %} {{ up_is_good|yesno:'text-danger,text-success,text-body-secondary' }}"
+        {% else %}
+               class="bi bi-arrow-right-circle text-body-secondary"
+        {% endif %}
+        ></i>
     {% endif %}
 {% endif %}

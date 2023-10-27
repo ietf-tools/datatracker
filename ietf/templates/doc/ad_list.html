@@ -35,9 +35,9 @@
                         <td>
                             <a href="{{ ad.dashboard }}">{{ ad.name }}</a>
                         </td>
-                        {% for label, count, prev, docs_delta in ad_data %}
+                        {% for label, up_is_good, count, prev, docs_delta in ad_data %}
                         <td class="col-1"
-                            id="{{ type.doc_type|slugify }}-{{ ad.full_name_as_key|slugify }}-{{ label.0|slugify }}">
+                            id="{{ type.doc_type|slugify }}-{{ ad.full_name_as_key|slugify }}-{{ label|slugify }}">
                             {% include 'doc/ad_count.html' %}
                         </td>
                         {% endfor %}
@@ -47,7 +47,7 @@
             <tfoot class="table-group-divider">
                 <tr>
                     <th scope="row">Sum</th>
-                    {% for label, count, prev in type.sums %}
+                    {% for label, up_is_good, count, prev in type.sums %}
                         <td>
                             {% include 'doc/ad_count.html' %}
                         </td>
