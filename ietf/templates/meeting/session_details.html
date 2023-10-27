@@ -57,6 +57,17 @@
     {% endif %}
 {% endblock %}
 {% block js %}
+    <script src="{% static 'ietf/js/list.js' %}"></script>
+    <script src="{% static 'ietf/js/moment.js' %}"></script>
+    <script src="{% static 'ietf/js/upcoming.js' %}"></script>
+    <script src="{% static 'ietf/js/timezone.js' %}"></script>
+    <script>
+    $(function () {
+            // Init with best guess at local timezone.
+            ietf_timezone.set_tz_change_callback(timezone_changed);
+            ietf_timezone.initialize('local');
+    });
+    </script>
     {% if can_manage_materials %}
         <script src="{% static 'ietf/js/sortable.js' %}"></script>
         <script>

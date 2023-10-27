@@ -33,13 +33,6 @@ Personnel
    Who is the Document Shepherd for this document?  Who is the 
    Responsible Area Director?
 {% endif %}
-{% if doc.stream.slug == "irtf" %}IRTF Note
-
-  (Insert IRTF Note here or remove section)
-{% elif doc.stream.slug == "ietf" %}IESG Note
-
-  (Insert IESG Note here or remove section)
-{% endif %}
 IANA Note
 {% if iana %}
   {% filter wordwrap:"76"|indent:2 %}{{ iana }}{% endfilter %}

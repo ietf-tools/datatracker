@@ -165,7 +165,8 @@ class SessionRequestTestCase(TestCase):
         self.assertContains(r, 'Schedule the sessions on subsequent days')
         self.assertContains(r, 'Thursday early afternoon, Thursday late afternoon')
         self.assertContains(r, group2.acronym)
-        self.assertContains(r, 'Second session with: {} {}'.format(group3.acronym, group4.acronym))
+        # The sessions can be in any order in the HTML, deal with that
+        self.assertRegex(r.content.decode(), r'Second session with: ({} {}|{} {})'.format(group3.acronym, group4.acronym, group4.acronym, group3.acronym))
 
         # check that a notification was sent
         self.assertEqual(len(outbox), 1)

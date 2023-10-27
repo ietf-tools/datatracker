@@ -42,6 +42,12 @@ class ChangeStateForm(forms.Form):
     new_state = forms.ModelChoiceField(State.objects.filter(type="statchg", used=True), label="Status Change Evaluation State", empty_label=None, required=True)
     comment = forms.CharField(widget=forms.Textarea, help_text="Optional comment for the review history.", required=False, strip=False)
 
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop("user")
+        super(ChangeStateForm, self).__init__(*args, **kwargs)
+        if not has_role(user, "Secretariat"):
+            self.fields["new_state"].queryset = self.fields["new_state"].queryset.exclude(slug="appr-sent")
+
 
 @role_required("Area Director", "Secretariat")
 def change_state(request, name, option=None):
@@ -52,7 +58,7 @@ def change_state(request, name, option=None):
     login = request.user.person
 
     if request.method == 'POST':
-        form = ChangeStateForm(request.POST)
+        form = ChangeStateForm(request.POST, user=request.user)
         if form.is_valid():
             clean = form.cleaned_data
             new_state = clean['new_state']
@@ -116,7 +122,7 @@ def change_state(request, name, option=None):
                     type='statchg',
                     label='Status Change Evaluation State',
                    )
-        form = ChangeStateForm(initial=init)
+        form = ChangeStateForm(initial=init, user=request.user)
 
     return render(request, 'doc/change_state.html',
                               dict(form=form,

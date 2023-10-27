@@ -147,6 +147,21 @@ class StatusChangeTests(TestCase):
         self.assertTrue(doc.active_ballot())
         self.assertEqual(doc.latest_event(BallotPositionDocEvent, type="changed_ballot_position").pos_id,'yes')
 
+        # try to change to an AD-forbidden state
+        appr_sent_pk = str(State.objects.get(used=True, slug='appr-sent',type__slug='statchg').pk)
+        r = self.client.post(url, dict(new_state=appr_sent_pk, comment='xyzzy'))
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertTrue(q('form .invalid-feedback'))
+
+        # try again as secretariat
+        self.client.logout()
+        login_testing_unauthorized(self, 'secretary', url)
+        r = self.client.post(url, dict(new_state=appr_sent_pk, comment='xyzzy'))
+        self.assertEqual(r.status_code, 302)
+        doc = Document.objects.get(name='status-change-imaginary-mid-review')
+        self.assertEqual(doc.get_state('statchg').slug, 'appr-sent')
+
     def test_edit_notices(self):
         doc = Document.objects.get(name='status-change-imaginary-mid-review')
         url = urlreverse('ietf.doc.views_doc.edit_notify;status-change',kwargs=dict(name=doc.name))

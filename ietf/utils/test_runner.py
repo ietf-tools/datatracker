@@ -719,8 +719,11 @@ class IetfTestRunner(DiscoverRunner):
         parser.add_argument('--validate-html-harder',
             action='store_true', dest="validate_html_harder", default=False,
             help='Validate all generated HTML with additional validators (slow)')
+        parser.add_argument('--rerun-until-failure',
+            action='store_true', dest='rerun', default=False,
+            help='Run the indicated tests in a loop until a failure occurs. ' )
 
-    def __init__(self, ignore_lower_coverage=False, skip_coverage=False, save_version_coverage=None, html_report=None, permit_mixed_migrations=None, show_logging=None, validate_html=None, validate_html_harder=None, **kwargs):
+    def __init__(self, ignore_lower_coverage=False, skip_coverage=False, save_version_coverage=None, html_report=None, permit_mixed_migrations=None, show_logging=None, validate_html=None, validate_html_harder=None, rerun=None, **kwargs):
         #
         self.ignore_lower_coverage = ignore_lower_coverage
         self.check_coverage = not skip_coverage
@@ -728,6 +731,8 @@ class IetfTestRunner(DiscoverRunner):
         self.html_report = html_report
         self.permit_mixed_migrations = permit_mixed_migrations
         self.show_logging = show_logging
+        self.rerun = rerun
+        self.test_labels = None
         global validation_settings
         validation_settings["validate_html"] = self if validate_html else None
         validation_settings["validate_html_harder"] = self if validate_html and validate_html_harder else None
@@ -1108,6 +1113,13 @@ class IetfTestRunner(DiscoverRunner):
             ]
         return tests
 
+    def run_suite(self, suite, **kwargs):
+        failures = super(IetfTestRunner, self).run_suite(suite, **kwargs)
+        while self.rerun and not failures.errors and not failures.failures:
+            suite = self.build_suite(self.test_labels)
+            failures = super(IetfTestRunner, self).run_suite(suite, **kwargs)
+        return failures
+
     def run_tests(self, test_labels, extra_tests=None, **kwargs):
         # Tests that involve switching back and forth between the real
         # database and the test database are way too dangerous to run
@@ -1129,6 +1141,7 @@ class IetfTestRunner(DiscoverRunner):
 
         self.test_apps, self.test_paths = self.get_test_paths(test_labels)
 
+        self.test_labels = test_labels  # these are used in our run_suite() and not available to it otherwise
         failures = super(IetfTestRunner, self).run_tests(test_labels, extra_tests=extra_tests, **kwargs)
 
         if self.check_coverage:

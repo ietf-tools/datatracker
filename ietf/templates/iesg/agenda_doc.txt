@@ -1,8 +1,7 @@
 {% load ietf_filters %}{% with doc.rfc_number as rfc_number %}
   o {{doc.canonical_name}}{% if not rfc_number %}-{{doc.rev}}{% endif %}{% endwith %}{%if doc.has_rfc_editor_note %} (Has RFC Editor Note){% endif %}{% if doc.stream %}  - {{ doc.stream }} stream{% endif %}
     {% filter wordwrap:"68"|indent|indent %}{{ doc.title }} ({{ doc.intended_std_level }}){% endfilter %}
-{% if doc.note %}{# note: note is not escaped #}    {% filter wordwrap:"68"|indent|indent %}Note: {{ doc.note|striptags }}{% endfilter %}
-{% endif %}    Token: {{ doc.ad }}{% if doc.iana_review_state %}
+    Token: {{ doc.ad }}{% if doc.iana_review_state %}
     IANA Review: {{ doc.iana_review_state }}{% endif %}{% if doc.consensus %}
     Consensus: {{ doc.consensus }}{% endif %}{% if doc.lastcall_expires %}
     Last call expires: {{ doc.lastcall_expires|date:"Y-m-d" }}{% endif %}{% if doc.review_assignments %}

@@ -306,7 +306,6 @@ def make_test_data():
         ad=ad,
         expires=timezone.now() + datetime.timedelta(days=settings.INTERNET_DRAFT_DAYS_TO_EXPIRE),
         notify="aliens@example.mars",
-        note="",
         )
 
     draft.set_state(State.objects.get(used=True, type="draft", slug="active"))

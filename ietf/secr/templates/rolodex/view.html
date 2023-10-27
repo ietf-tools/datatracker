@@ -44,7 +44,7 @@
                                         <td>{{ role.name }} </td>
                                         <td>
                                             {% if role.group.type.slug == "area" %}
-                                                <a href="{% url "ietf.secr.areas.views.view" name=role.group.acronym %}">{{ role.group.acronym }}{% if role.group.state.slug == "conclude" %} (concluded){% endif %}</a>
+                                                {{ role.group.acronym }}{% if role.group.state.slug == "conclude" %} (concluded){% endif %}
                                             {% else %}
                                                 <a href="{% url 'ietf.group.views.group_home' acronym=role.group.acronym %}">{{ role.group.acronym }}{% if role.group.state.slug == "conclude" %} (concluded){% endif %}</a>
                                             {% endif %}

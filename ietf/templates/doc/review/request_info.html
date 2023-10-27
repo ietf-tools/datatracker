@@ -177,6 +177,8 @@
                         <div class="reviewer-assignment-not-accepted">
                             {% if assignment.state_id == "assigned" %}
                                 Assignment not accepted yet
+                            {% elif assignment.state_id == "rejected" %}
+                                <span class="text-danger">Assignment rejected</span>
                             {% else %}
                                 <span class="text-success">Assignment accepted</span>
                             {% endif %}

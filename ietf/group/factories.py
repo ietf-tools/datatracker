@@ -27,7 +27,7 @@ class GroupFactory(factory.django.DjangoModelFactory):
         django_get_or_create = ('acronym',)
         skip_postgeneration_save = True
 
-    name = factory.Faker('sentence',nb_words=6)
+    name = factory.Faker('text', max_nb_chars=80)
     acronym = factory.Sequence(lambda n: 'acronym%d' %n)
     state_id = 'active'
     type_id = 'wg'

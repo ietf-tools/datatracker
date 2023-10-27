@@ -13,7 +13,7 @@
     <form class="mt-3" method="post">
         {% csrf_token %}
         {% bootstrap_form ballot_writeup_form %}
-        <div class="form-text mb-3">Working group summary, personnel, IAB note, IESG note, IANA note.</div>
+        <div class="form-text mb-3">Working group summary, personnel, IANA note.</div>
         <button type="submit"
                 class="btn btn-primary"
                 name="save_ballot_writeup"

@@ -1,14 +1,18 @@
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
-{% load origin %}
+{% load origin static %}
 {% load nomcom_tags %}
 {% load ietf_filters %}
+{% block pagehead %}
+    <link rel="stylesheet" href="{% static "ietf/css/list.css" %}">
+{% endblock %}
 {% block title %}
     NomCom {{ year }} Private
     {% block subtitle %}{% endblock %}
 {% endblock %}
 {% block content %}
     {% origin %}
+    {% with selected=request.path|split:'/'|slice:'4:-1'|join:'-' %}
     <h1>
         NomCom {{ year }}
         {% if nomcom.group.state_id == 'conclude' %}<span class="badge rounded-pill text-bg-info">Concluded</span>{% endif %}
@@ -19,129 +23,140 @@
     </h1>
     <ul class="nav nav-tabs my-3">
         <li class="nav-item">
-            <a class="nav-link {% if selected == "index" %}active{% endif %}"
+            <a class="nav-link {% if selected == '' %}active{% endif %}"
                href="{% url "ietf.nomcom.views.private_index" year %}">
                 Nominees
             </a>
         </li>
         {% if nomcom|has_publickey %}
             <li class="nav-item">
-                <a class="nav-link {% if selected == "nominate" %}active{% endif %}"
+                <a class="nav-link {% if selected == 'nominate' %}active{% endif %}"
                    href="{% url 'ietf.nomcom.views.private_nominate' year %}">
                     Nominate
                 </a>
             </li>
-            <li class="nav-item">
-                <a class="nav-link {% if selected == "feedback" %}active{% endif %}"
+        {% endif %}
+        <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle {% if selected in 'feedback,view-feedback'|split:',' %}active{% endif %}" data-bs-toggle="dropdown" href="#">Feedback</a>
+            <ul class="dropdown-menu mt-n1" role="menu">
+            {% if nomcom|has_publickey %}
+            <li>
+                <a class="dropdown-item {% if selected == 'feedback' %}active{% endif %}"
                    href="{% url 'ietf.nomcom.views.private_feedback' year %}">
                     Enter feedback
                 </a>
             </li>
-        {% endif %}
-        <li class="nav-item">
-            <a class="nav-link {% if selected == "view_feedback" %}active{% endif %}"
-               href="{% url 'ietf.nomcom.views.view_feedback' year %}">
-                View feedback
-            </a>
+            {% endif %}
+            <li>
+                <a class="dropdown-item {% if selected == 'view-feedback' %}active{% endif %}"
+                   href="{% url 'ietf.nomcom.views.view_feedback' year %}">
+                    View feedback
+                </a>
+            </li>
+            </ul>
         </li>
         <li class="nav-item">
-            <a class="nav-link {% if selected == "private_key" %}active{% endif %}"
+            <a class="nav-link {% if selected == 'key' %}active{% endif %}"
                href="{% url 'ietf.nomcom.views.private_key' year %}">
                 Private key
             </a>
         </li>
         {% if user|is_chair_or_advisor:year %}
             <li class="nav-item">
-                <a class="nav-link {% if selected == "feedback_pending" %}active{% endif %}"
+                <a class="nav-link {% if selected == 'view-feedback-pending' %}active{% endif %}"
                    href="{% url 'ietf.nomcom.views.view_feedback_pending' year %}">
                     Pending emails
                     {% if nomcom.pending_email_count %}<span class="badge rounded-pill text-bg-primary">{{ nomcom.pending_email_count }}</span>{% endif %}
                 </a>
             </li>
             <li class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#">Chair/Advisor Tasks</a>
+                <a class="nav-link dropdown-toggle {% if selected in 'feedback-email,questionnaire-response,extract-email-lists,send-reminder-mail-accept,send-reminder-mail-questionnaire,merge-person,merge-nominee,edit-nomcom,chair-templates,chair-position,chair-topic,edit-members,help'|split:',' %}active{% endif %}" data-bs-toggle="dropdown" href="#">Chair/advisor tasks</a>
                 <ul class="dropdown-menu mt-n1" role="menu">
                     {% if nomcom.group.state_id == 'active' %}
                         <li role="presentation" class="dropdown-header">Feedback Management</li>
-                        <li class="dropdown-item">
-                            <a href="{% url 'ietf.nomcom.views.private_feedback_email' year %}">Enter email feedback</a>
+                        <li>
+                            <a class="dropdown-item {% if selected == 'feedback-email' %}active{% endif %}" href="{% url 'ietf.nomcom.views.private_feedback_email' year %}">Enter email feedback</a>
                         </li>
-                        <li class="dropdown-item">
-                            <a href="{% url 'ietf.nomcom.views.private_questionnaire' year %}">Enter questionnaire response</a>
+                        <li>
+                            <a class="dropdown-item {% if selected == 'questionnaire-response' %}active{% endif %}" href="{% url 'ietf.nomcom.views.private_questionnaire' year %}">Enter questionnaire response</a>
                         </li>
-                        <li class="dropdown-item">
-                            <a href="{% url 'ietf.nomcom.views.extract_email_lists' year %}">Extract email lists</a>
+                        <li>
+                            <a class="dropdown-item {% if selected == 'extract-email-lists' %}active{% endif %}" href="{% url 'ietf.nomcom.views.extract_email_lists' year %}">Extract email lists</a>
                         </li>
-                        <li class="dropdown-item">
-                            <a href="{% url 'ietf.nomcom.views.send_reminder_mail' year "accept" %}">Send accept reminder</a>
+                        <li>
+                            <a class="dropdown-item {% if selected == 'send-reminder-mail-accept' %}active{% endif %}" href="{% url 'ietf.nomcom.views.send_reminder_mail' year "accept" %}">Send accept reminder</a>
                         </li>
-                        <li class="dropdown-item">
-                            <a href="{% url 'ietf.nomcom.views.send_reminder_mail' year "questionnaire" %}">Send questionnaire reminder</a>
+                        <li>
+                            <a class="dropdown-item {% if selected == 'send-reminder-mail-questionnaire' %}active{% endif %}" href="{% url 'ietf.nomcom.views.send_reminder_mail' year "questionnaire" %}">Send questionnaire reminder</a>
                         </li>
-                        <li class="dropdown-item">
-                            <a href="{% url "ietf.nomcom.views.private_merge_person" year %}">Request person record merge</a>
+                        <li>
+                            <a class="dropdown-item {% if selected == 'merge-person' %}active{% endif %}" href="{% url "ietf.nomcom.views.private_merge_person" year %}">Request person record merge</a>
                         </li>
-                        <li class="dropdown-item">
-                            <a href="{% url "ietf.nomcom.views.private_merge_nominee" year %}">Merge nominee records</a>
+                        <li>
+                            <a class="dropdown-item {% if selected == 'merge-nominee' %}active{% endif %}" href="{% url "ietf.nomcom.views.private_merge_nominee" year %}">Merge nominee records</a>
                         </li>
+                        <li><hr class="dropdown-divider"></li>
                     {% endif %}
                     <li role="presentation" class="dropdown-header">NomCom configuration</li>
-                    <li class="dropdown-item">
-                        <a href="{% url 'ietf.nomcom.views.edit_nomcom' year %}">Edit settings</a>
+                    <li>
+                        <a class="dropdown-item {% if selected == 'edit-nomcom' %}active{% endif %}" href="{% url 'ietf.nomcom.views.edit_nomcom' year %}">Edit settings</a>
                     </li>
-                    <li class="dropdown-item">
-                        <a href="{% url 'ietf.nomcom.views.list_templates' year %}">Edit pages</a>
+                    <li>
+                        <a class="dropdown-item {% if selected == 'chair-templates' %}active{% endif %}" href="{% url 'ietf.nomcom.views.list_templates' year %}">Edit pages</a>
                     </li>
-                    <li class="dropdown-item">
-                        <a href="{% url 'ietf.nomcom.views.list_positions' year %}">Edit positions</a>
+                    <li>
+                        <a class="dropdown-item {% if selected == 'chair-position' %}active{% endif %}" href="{% url 'ietf.nomcom.views.list_positions' year %}">Edit positions</a>
                     </li>
-                    <li class="dropdown-item">
-                        <a href="{% url 'ietf.nomcom.views.list_topics' year %}">Edit topics</a>
+                    <li>
+                        <a class="dropdown-item {% if selected == 'chair-topic' %}active{% endif %}" href="{% url 'ietf.nomcom.views.list_topics' year %}">Edit topics</a>
                     </li>
                     {% if nomcom.group.state_id == 'active' %}
-                        <li class="dropdown-item">
-                            <a href="{% url 'ietf.nomcom.views.edit_members' year %}">Edit members</a>
+                        <li>
+                            <a class="dropdown-item {% if selected == 'edit-members' %}active{% endif %}" href="{% url 'ietf.nomcom.views.edit_members' year %}">Edit members</a>
                         </li>
                     {% endif %}
-                    <li class="dropdown-item">
-                        <a href="{% url 'ietf.nomcom.views.configuration_help' year %}">Configuration help</a>
+                    <li>
+                        <a class="dropdown-item {% if selected == 'help' %}active{% endif %}" href="{% url 'ietf.nomcom.views.configuration_help' year %}">Configuration help</a>
                     </li>
+                    <li><hr class="dropdown-divider"></li>
                     <li role="presentation" class="dropdown-header">Other tools</li>
-                    <li class="dropdown-item">
-                        <a href="{% url 'ietf.secr.announcement.views.main' %}">Announcement tool</a>
-                    </li>
-                    <li class="dropdown-item">
-                        <a href="https://www.ietf.org/registration/nomcom_chair/nomcomstaff.py">Secretariat private eligibility checker</a>
-                    </li>
-                    <li class="dropdown-item">
-                        <a href="https://www.ietf.org/registration/nomcom.py">Secretariat public eligibility checker</a>
+                    <li>
+                        <a class="dropdown-item" href="{% url 'ietf.secr.announcement.views.main' %}">Announcement tool</a>
                     </li>
                 </ul>
             </li>
         {% endif %}
         {% if user|is_chair_or_advisor:year or user|has_role:"Secretariat" %}
             <li class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#">
+                <a class="nav-link dropdown-toggle {% if selected in 'chair-eligible,chair-volunteers'|split:',' %}active{% endif %}" data-bs-toggle="dropdown" href="#">
                     Volunteers
                 </a>
                 <ul class="dropdown-menu mt-n1" role="menu">
-                    <li class="dropdown-item">
-                        <a href="{% url 'ietf.nomcom.views.private_eligible' year %}">
+                    <li>
+                        <a class="dropdown-item {% if selected == 'chair-eligible' %}active{% endif %}" href="{% url 'ietf.nomcom.views.private_eligible' year %}">
                             View eligible
                         </a>
                     </li>
-                    <li class="dropdown-item">
-                        <a href="{% url 'ietf.nomcom.views.private_volunteers' year %}">
+                    <li>
+                        <a class="dropdown-item {% if selected == 'chair-volunteers' %}active{% endif %}" href="{% url 'ietf.nomcom.views.private_volunteers' year %}">
                             View volunteers
                         </a>
                     </li>
                 </ul>
             </li>
         {% endif %}
+        <li class="nav-item">
+            <a class="nav-link"
+               href="/nomcom/{{ nomcom.year }}">
+                Public pages &raquo;
+            </a>
+        </li>
     </ul>
     {% block nomcom_content %}{% endblock %}
+    {% endwith %}
 {% endblock %}
 {% block js %}
+    <script src="{% static "ietf/js/list.js" %}"></script>
     <script>
         // Javascript to enable link to tab
         var url=document.location.toString();

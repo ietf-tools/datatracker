@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2016-2021, All Rights Reserved
+# Copyright The IETF Trust 2016-2023, All Rights Reserved
 
 import debug                            # pyflakes:ignore
 import datetime
@@ -471,9 +471,6 @@ class _Wrapper(TestCase):
             
             addresses = list( map( lambda choice: choice[0], field.choices ) )
             
-            self.assertNotIn(
-                str(rejected_reviewer.email()), addresses,
-                "Reviews should not suggest people who have rejected this request in the past")
             self.assertNotIn(
                 str(no_response_reviewer.email()), addresses,
                 "Reviews should not suggest people who have not responded to this request in the past.")

@@ -3770,7 +3770,7 @@
       ],
       "desc": "Recipients when a charter is approved",
       "to": [
-        "ietf_announce"
+        "group_stream_announce"
       ]
     },
     "model": "mailtrigger.mailtrigger",
@@ -5587,6 +5587,19 @@
     },
     "model": "mailtrigger.mailtrigger",
     "pk": "session_scheduled"
+  },
+  {
+    "fields": {
+      "cc": [
+        "group_chairs"
+      ],
+      "desc": "Recipients when slides are approved for a given session",
+      "to": [
+        "slides_proposer"
+      ]
+    },
+    "model": "mailtrigger.mailtrigger",
+    "pk": "slides_approved"
   },
   {
     "fields": {

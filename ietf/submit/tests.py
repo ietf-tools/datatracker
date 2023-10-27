@@ -355,7 +355,6 @@ class SubmitTests(BaseSubmitTestCase):
             ad=draft.ad,
             expires=timezone.now() + datetime.timedelta(days=settings.INTERNET_DRAFT_DAYS_TO_EXPIRE),
             notify="aliens@example.mars",
-            note="",
         )
         sug_replaced_draft.set_state(State.objects.get(used=True, type="draft", slug="active"))
         sug_replaced_alias = DocAlias.objects.create(name=sug_replaced_draft.name)
@@ -1413,7 +1412,6 @@ class SubmitTests(BaseSubmitTestCase):
             "submitter-name": "Some Random Test Person",
             "submitter-email": "random@example.com",
             "replaces": [str(draft.docalias.first().pk)],
-            "edit-note": "no comments",
             "authors-0-name": "Person 1",
             "authors-0-email": "person1@example.com",
             "authors-1-name": "Person 2",
@@ -1429,7 +1427,6 @@ class SubmitTests(BaseSubmitTestCase):
         self.assertEqual(submission.document_date, document_date)
         self.assertEqual(submission.abstract, "some abstract")
         self.assertEqual(submission.pages, 123)
-        self.assertEqual(submission.note, "no comments")
         self.assertEqual(submission.submitter, "Some Random Test Person <random@example.com>")
         self.assertEqual(submission.replaces, draft.docalias.first().name)
         self.assertEqual(submission.state_id, "manual")
@@ -1703,7 +1700,6 @@ class SubmitTests(BaseSubmitTestCase):
         r, q, m = self.submit_bad_file("some name", ["txt"])
         self.assertIn('Invalid characters were found in the name', m)
         self.assertIn('Expected the TXT file to have extension ".txt"', m)
-        self.assertIn('Expected an TXT file of type "text/plain"', m)
         self.assertIn('document does not contain a legitimate name', m)
 
     def test_submit_bad_doc_name(self):
@@ -1721,7 +1717,6 @@ class SubmitTests(BaseSubmitTestCase):
         r, q, m = self.submit_bad_file("some name", ["xml"])
         self.assertIn('Invalid characters were found in the name', m)
         self.assertIn('Expected the XML file to have extension ".xml"', m)
-        self.assertIn('Expected an XML file of type "application/xml"', m)
 
     def test_submit_file_in_archive(self):
         name = "draft-authorname-testing-file-exists"
@@ -3126,6 +3121,20 @@ class SubmissionUploadFormTests(BaseSubmitTestCase):
         )
         self.assertFalse(form.is_valid())
 
+    def test_invalid_xml(self):
+        """Test error message for invalid XML"""
+        not_xml = SimpleUploadedFile(
+            name="not-xml.xml",
+            content=b"this is not xml at all",
+            content_type="application/xml",
+        )
+        form = SubmissionBaseUploadForm(RequestFactory().post('/some/url'), files={"xml": not_xml})
+        self.assertFalse(form.is_valid())
+        self.assertFormError(
+            form,
+            "xml",
+            "The uploaded file is not valid XML. Please make sure you are uploading the correct file.",
+        )
 
 class AsyncSubmissionTests(BaseSubmitTestCase):
     """Tests of async submission-related tasks"""

@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2012-2020, All Rights Reserved
+# Copyright The IETF Trust 2012-2023, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -25,6 +25,7 @@ from ietf.doc.forms import AdForm
 from ietf.group.models import Role, Group
 from ietf.iesg.models import TelechatDate
 from ietf.ietfauth.utils import has_role, role_required, is_authorized_in_doc_stream
+from ietf.name.models import DocTagName
 from ietf.person.models import Person
 from ietf.utils import log
 from ietf.utils.mail import send_mail_preformatted
@@ -35,6 +36,12 @@ class ChangeStateForm(forms.Form):
     review_state = forms.ModelChoiceField(State.objects.filter(used=True, type="conflrev"), label="Conflict review state", empty_label=None, required=True)
     comment = forms.CharField(widget=forms.Textarea, help_text="Optional comment for the review history.", required=False, strip=False)
 
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop("user")
+        super(ChangeStateForm, self).__init__(*args, **kwargs)
+        if not has_role(user, "Secretariat"):
+            self.fields["review_state"].queryset = self.fields["review_state"].queryset.exclude(slug__in=("appr-reqnopub-sent","appr-noprob-sent"))
+
 @role_required("Area Director", "Secretariat")
 def change_state(request, name, option=None):
     """Change state of an IESG review for IETF conflicts in other stream's documents, notifying parties as necessary
@@ -44,7 +51,7 @@ def change_state(request, name, option=None):
     login = request.user.person
 
     if request.method == 'POST':
-        form = ChangeStateForm(request.POST)
+        form = ChangeStateForm(request.POST, user=request.user)
         if form.is_valid():
             clean = form.cleaned_data
             new_state = clean['review_state']
@@ -90,12 +97,15 @@ def change_state(request, name, option=None):
                                                       review,
                                                       ok_to_publish)
 
+                if new_state.slug in ["appr-reqnopub-sent", "appr-noprob-sent", "withdraw", "dead"]:
+                    doc = review.related_that_doc("conflrev")[0].document
+                    update_stream_state(doc, login, 'chair-w' if doc.stream_id=='irtf' else 'ise-rev', 'iesg-com')
 
             return redirect('ietf.doc.views_doc.document_main', name=review.name)
     else:
         s = review.get_state()
         init = dict(review_state=s.pk if s else None)
-        form = ChangeStateForm(initial=init)
+        form = ChangeStateForm(initial=init, user=request.user)
 
     return render(request, 'doc/change_state.html',
                               dict(form=form,
@@ -355,6 +365,9 @@ def approve_conflict_review(request, name):
             c.desc = "The following approval message was sent\n"+form.cleaned_data['announcement_text']
             c.save()
 
+            doc = review.related_that_doc("conflrev")[0].document
+            update_stream_state(doc, login, 'chair-w' if doc.stream_id=='irtf' else 'ise-rev', 'iesg-com')
+
             return HttpResponseRedirect(review.get_absolute_url())
 
     else:
@@ -488,6 +501,8 @@ def start_review_as_secretariat(request, name):
 
             send_conflict_review_started_email(request, conflict_review)
 
+            update_stream_state(doc_to_review, login, 'iesg-rev')
+
             return HttpResponseRedirect(conflict_review.get_absolute_url())
     else: 
         notify_addresses = build_notify_addresses(doc_to_review)
@@ -522,6 +537,8 @@ def start_review_as_stream_owner(request, name):
 
             send_conflict_review_started_email(request, conflict_review)
 
+            update_stream_state(doc_to_review, login, 'iesg-rev')
+
             return HttpResponseRedirect(conflict_review.get_absolute_url())
     else: 
         notify_addresses = build_notify_addresses(doc_to_review)
@@ -536,3 +553,22 @@ def start_review_as_stream_owner(request, name):
                                'doc_to_review': doc_to_review,
                               },
                           )
+
+def update_stream_state(doc, by, state, tag=None):
+    statetype = 'draft-stream-' + doc.stream_id
+    prev_state = doc.get_state(statetype)
+    new_state = State.objects.get(type_id=statetype, slug=state)
+    if tag:
+        prev_tags = set(doc.tags.all())
+        new_tags = set(DocTagName.objects.filter(pk=tag))
+
+    if new_state != prev_state:
+        doc.set_state(new_state)
+        events = []
+        if tag:
+            doc.tags.clear()
+            doc.tags.set(new_tags)
+            events.append(add_state_change_event(doc, by, prev_state, new_state, prev_tags, new_tags))
+        else:
+            events.append(add_state_change_event(doc, by, prev_state, new_state))
+        doc.save_with_history(events)

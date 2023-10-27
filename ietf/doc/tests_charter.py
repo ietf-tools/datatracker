@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright The IETF Trust 2011-2020, All Rights Reserved
+# Copyright The IETF Trust 2011-2023, All Rights Reserved
 
 
 import datetime
@@ -816,6 +816,19 @@ class EditCharterTests(TestCase):
         self.assertEqual(group.groupmilestone_set.filter(state="active").count(), 2)
         self.assertEqual(group.groupmilestone_set.filter(state="active", desc=m1.desc).count(), 1)
         self.assertEqual(group.groupmilestone_set.filter(state="active", desc=m4.desc).count(), 1)
+
+    def test_approve_irtf(self):
+        charter = CharterFactory(group__type_id='rg')
+        url = urlreverse('ietf.doc.views_charter.approve', kwargs=dict(name=charter.name))
+        login_testing_unauthorized(self, "secretary", url)
+        empty_outbox()
+        r = self.client.post(url, dict())
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(len(outbox), 2)
+        self.assertTrue("IRTF" in outbox[1]['From'])
+        self.assertTrue("irtf-announce" in outbox[1]['To'])
+        self.assertTrue(charter.group.acronym in outbox[1]['Cc'])
+        self.assertTrue("RG Action" in outbox[1]['Subject'])
 
     def test_charter_with_milestones(self):
         charter = CharterFactory()
