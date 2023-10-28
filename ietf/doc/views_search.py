@@ -67,7 +67,7 @@ from ietf.person.models import Person
 from ietf.person.utils import get_active_ads
 from ietf.utils.draft_search import normalize_draftname
 from ietf.utils.log import log
-from ietf.doc.utils_search import prepare_document_table
+from ietf.doc.utils_search import prepare_document_table, doc_type, doc_state, doc_type_name
 
 
 class SearchForm(forms.Form):
@@ -315,16 +315,6 @@ def search_for_name(request, name):
     return cached_redirect(cache_key, urlreverse('ietf.doc.views_search.search') + search_args)
 
 
-def doc_state(doc):
-    dt = doc.type.slug
-    ds = doc.get_state(dt)
-    if dt == "draft":
-        dis = doc.get_state("draft-iesg")
-        if ds.slug == "active" and dis:
-            return dis.slug
-    return ds.slug
-
-
 def state_name(doc_type, state, shorten=True):
     name = ""
     if doc_type in ["draft", "rfc"] and state not in ["rfc", "expired"]:
@@ -367,14 +357,6 @@ def state_name(doc_type, state, shorten=True):
     return name.strip()
 
 
-def doc_type_name(doc_type):
-    if doc_type == "rfc":
-        return "RFC"
-    if doc_type == "draft":
-        return "Internet-Draft"
-    return DocTypeName.objects.get(slug=doc_type).name
-
-
 # The document types and state slugs to include in the AD dashboard
 # and AD doc list, in the order they should be shown. The Boolean
 # indicates whether an upwards trend (compared to a past point in
@@ -384,9 +366,16 @@ def doc_type_name(doc_type):
 # to break out these docs into a separate table.
 #
 STATE_SLUGS = {
+    "bofreq": [
+        ("proposed", None),
+        ("declined", None),
+        ("approved", None),
+    ],
     "draft": [
+        ("idexists", None),
         ("pub-req", False),
         ("ad-eval", False),
+        ("review-e", True),
         ("lc-req", True),
         ("lc", True),
         ("writeupw", False),
@@ -403,9 +392,16 @@ STATE_SLUGS = {
     "conflrev": [
         ("needshep", False),
         ("adrev", False),
+        ("defer", False),
         ("iesgeval", True),
         ("appr-noprob-sent", True),
+        ("appr-reqnopub-pr", True),
+        ("appr-reqnopub-pend", True),
+        ("appr-reqnopub-sent", True),
+        ("appr-noprob-pr", True),
+        ("appr-noprob-pend", True),
         ("withdraw", None),
+        ("dead", None),
     ],
     "statchg": [
         ("needshep", False),
@@ -427,16 +423,6 @@ STATE_SLUGS = {
         ("replaced", None),
     ],
 }
-
-
-def doc_type(doc):
-    dt = doc.type.slug
-    if (
-        doc.get_state_slug("draft") == "rfc"
-        or doc.get_state_slug("draft-iesg") == "rfcqueue"
-    ):
-        dt = "rfc"
-    return dt
 
 
 def ad_workload(request):

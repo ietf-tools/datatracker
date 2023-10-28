@@ -9,7 +9,7 @@ from zoneinfo import ZoneInfo
 
 from django.conf import settings
 
-from ietf.doc.models import Document, DocAlias, RelatedDocument, DocEvent, TelechatDocEvent, BallotDocEvent
+from ietf.doc.models import Document, DocAlias, RelatedDocument, DocEvent, TelechatDocEvent, BallotDocEvent, DocTypeName
 from ietf.doc.expire import expirable_drafts
 from ietf.doc.utils import augment_docs_and_user_with_user_info
 from ietf.meeting.models import SessionPresentation, Meeting, Session
@@ -283,3 +283,31 @@ def prepare_document_table(request, docs, query=None, max_results=200):
             h["sort_url"] = "?" + d.urlencode()
 
     return (docs, meta)
+
+
+def doc_type(doc):
+    dt = doc.type.slug
+    if (
+        doc.get_state_slug("draft") == "rfc"
+        or doc.get_state_slug("draft-iesg") == "rfcqueue"
+    ):
+        dt = "rfc"
+    return dt
+
+
+def doc_state(doc):
+    dt = doc.type.slug
+    ds = doc.get_state(dt)
+    if dt == "draft":
+        dis = doc.get_state("draft-iesg")
+        if ds.slug == "active" and dis:
+            return dis.slug
+    return ds.slug
+
+
+def doc_type_name(doc_type):
+    if doc_type == "rfc":
+        return "RFC"
+    if doc_type == "draft":
+        return "Internet-Draft"
+    return DocTypeName.objects.get(slug=doc_type).name
