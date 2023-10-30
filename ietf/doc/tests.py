@@ -60,7 +60,6 @@ from ietf.utils.test_utils import TestCase
 from ietf.utils.text import normalize_text
 from ietf.utils.timezone import date_today, datetime_today, DEADLINE_TZINFO, RPC_TZINFO
 from ietf.doc.utils_search import doc_type, doc_state, AD_WORKLOAD_STATE_SLUGS
-from ietf.doc.utils_search import doc_type_name as get_doc_type_name
 
 
 class SearchTests(TestCase):
@@ -331,8 +330,6 @@ class SearchTests(TestCase):
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         for group_type, ad, group in expected:
-            print(group_type, ad, group)
-            print(q(f"#{group_type}-{ad}-{group}").text())
             self.assertEqual(
                 int(q(f"#{group_type}-{ad}-{group}").text()),
                 expected[(group_type, ad, group)],
@@ -343,8 +340,6 @@ class SearchTests(TestCase):
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         for group_type, ad, group in expected:
-            print(group_type, ad, group)
-            print(q(f'#{group_type}-{ad}-{group}').text())
             self.assertEqual(int(q(f'#{group_type}-{ad}-{group}').text()),expected[(group_type, ad, group)])
 
     def test_docs_for_ad(self):
@@ -424,7 +419,6 @@ class SearchTests(TestCase):
         rfc = WgRfcFactory()
 
         r = self.client.get(urlreverse('ietf.doc.views_search.index_all_drafts'))
-        print(r.content)
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, draft.name)
         self.assertContains(r, rfc.canonical_name().upper())
