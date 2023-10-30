@@ -319,6 +319,8 @@ def state_name(doc_type, state, shorten=True):
         name = State.objects.get(type="draft-iesg", slug=state).name
     elif state == "rfc":
         name = "RFC"
+    elif doc_type == "conflrev" and state.startswith("appr"):
+            name = "Approved"
     else:
         name = State.objects.get(type=doc_type, slug=state).name
 

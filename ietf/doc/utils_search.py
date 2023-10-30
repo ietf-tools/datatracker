@@ -308,18 +308,13 @@ AD_WORKLOAD_STATE_SLUGS = {
     ],
     "rfc": [
         ("rfcqueue", True),
-        ("rfc", None)
+        ("rfc", True)
     ],
     "conflrev": [
         ("needshep", False),
         ("adrev", False),
         ("iesgeval", True),
-        ("appr-noprob-sent", True),
-        ("appr-reqnopub-pr", True),
-        ("appr-reqnopub-pend", True),
-        ("appr-reqnopub-sent", True),
-        ("appr-noprob-pr", True),
-        ("appr-noprob-pend", True),
+        ("approved", True),  # synthesized state for all the "appr-" states
         ("withdraw", None),
     ],
     "statchg": [
@@ -361,6 +356,9 @@ def doc_state(doc):
         dis = doc.get_state("draft-iesg")
         if ds.slug == "active" and dis:
             return dis.slug
+    elif dt == "conflrev":
+        if ds.slug.startswith("appr"):
+            return "approved"
     return ds.slug
 
 
