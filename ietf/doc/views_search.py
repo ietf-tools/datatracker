@@ -67,7 +67,7 @@ from ietf.person.models import Person
 from ietf.person.utils import get_active_ads
 from ietf.utils.draft_search import normalize_draftname
 from ietf.utils.log import log
-from ietf.doc.utils_search import prepare_document_table, doc_type, doc_state, doc_type_name
+from ietf.doc.utils_search import prepare_document_table, doc_type, doc_state, doc_type_name, AD_WORKLOAD_STATE_SLUGS
 
 
 class SearchForm(forms.Form):
@@ -357,74 +357,6 @@ def state_name(doc_type, state, shorten=True):
     return name.strip()
 
 
-# The document types and state slugs to include in the AD dashboard
-# and AD doc list, in the order they should be shown. The Boolean
-# indicates whether an upwards trend (compared to a past point in
-# time) should be considered a positive development or not.
-#
-# "rfc" is a custom subset of "draft" that we special-case in the code
-# to break out these docs into a separate table.
-#
-STATE_SLUGS = {
-    "bofreq": [
-        ("proposed", None),
-        ("declined", None),
-        ("approved", None),
-    ],
-    "draft": [
-        ("idexists", None),
-        ("pub-req", False),
-        ("ad-eval", False),
-        ("review-e", True),
-        ("lc-req", True),
-        ("lc", True),
-        ("writeupw", False),
-        ("defer", False),
-        ("iesg-eva", True),
-        ("goaheadw", False),
-        ("approved", True),
-        ("ann", True),
-    ],
-    "rfc": [
-        ("rfcqueue", True),
-        ("rfc", None)
-    ],
-    "conflrev": [
-        ("needshep", False),
-        ("adrev", False),
-        ("defer", False),
-        ("iesgeval", True),
-        ("appr-noprob-sent", True),
-        ("appr-reqnopub-pr", True),
-        ("appr-reqnopub-pend", True),
-        ("appr-reqnopub-sent", True),
-        ("appr-noprob-pr", True),
-        ("appr-noprob-pend", True),
-        ("withdraw", None),
-        ("dead", None),
-    ],
-    "statchg": [
-        ("needshep", False),
-        ("adrev", False),
-        ("lc-req", True),
-        ("in-lc", True),
-        ("iesgeval", True),
-        ("goahead", False),
-        ("appr-sent", True),
-        ("dead", None),
-    ],
-    "charter": [
-        ("notrev", None),
-        ("infrev", None),
-        ("intrev", False),
-        ("extrev", True),
-        ("iesgrev", True),
-        ("approved", True),
-        ("replaced", None),
-    ],
-}
-
-
 def ad_workload(request):
     delta = datetime.timedelta(days=120)
     right_now = timezone.now()
@@ -447,7 +379,7 @@ def ad_workload(request):
             "ietf.doc.views_search.docs_for_ad", kwargs=dict(name=ad.full_name_as_key())
         )
         ad.doc_now = {
-            dt: {state: set() for state, _ in STATE_SLUGS[dt]} for dt in STATE_SLUGS
+            dt: {state: set() for state, _ in AD_WORKLOAD_STATE_SLUGS[dt]} for dt in AD_WORKLOAD_STATE_SLUGS
         }
         ad.doc_prev = copy.deepcopy(ad.doc_now)
         ad.doc_diff = copy.deepcopy(ad.doc_now)
@@ -472,7 +404,7 @@ def ad_workload(request):
                 if state in ad.doc_now[dt]:
                     ad.doc_prev[dt][state].add(doc)
 
-        for dt in STATE_SLUGS:
+        for dt in AD_WORKLOAD_STATE_SLUGS:
             for state in ad.doc_now[dt]:
                 ad.doc_diff[dt][state] = ad.doc_prev[dt][state] ^ ad.doc_now[dt][state]
 
@@ -486,7 +418,7 @@ def ad_workload(request):
                     [
                         (
                             state,
-                            {s: uig for s, uig in STATE_SLUGS[dt]}[state],
+                            {s: uig for s, uig in AD_WORKLOAD_STATE_SLUGS[dt]}[state],
                             len(ad.doc_now[dt][state]),
                             len(ad.doc_prev[dt][state]),
                             ad.doc_diff[dt][state],
@@ -499,14 +431,14 @@ def ad_workload(request):
             sums=[
                 (
                     state,
-                    {s: uig for s, uig in STATE_SLUGS[dt]}[state],
+                    {s: uig for s, uig in AD_WORKLOAD_STATE_SLUGS[dt]}[state],
                     sum([len(ad.doc_now[dt][state]) for ad in ads]),
                     sum([len(ad.doc_prev[dt][state]) for ad in ads]),
                 )
                 for state in ad.doc_now[dt]
             ],
         )
-        for dt in STATE_SLUGS
+        for dt in AD_WORKLOAD_STATE_SLUGS
     ]
 
     return render(request, "doc/ad_list.html", {"workload": workload, "delta": delta})
@@ -514,7 +446,7 @@ def ad_workload(request):
 
 def docs_for_ad(request, name):
     def sort_key(doc):
-        key = list(STATE_SLUGS.keys()).index(doc_type(doc))
+        key = list(AD_WORKLOAD_STATE_SLUGS.keys()).index(doc_type(doc))
         return key
 
     ad = None
@@ -702,7 +634,7 @@ def recent_drafts(request, days=7):
 
 def index_all_drafts(request):
     # try to be efficient since this view returns a lot of data
-    states = []
+    categories = []
 
     for s in ("active", "rfc", "expired", "repl", "auth-rm", "ietf-rm"):
         state = State.objects.get(type="draft", slug=s)
@@ -736,12 +668,12 @@ def index_all_drafts(request):
         names = [f'<a href=\"{urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=n))}\">{n}</a>'
                  for n, __ in names if n not in names_to_skip]
 
-        states.append((state,
+        categories.append((state,
                       heading,
                       len(names),
                       "<br>".join(names)
                       ))
-    return render(request, 'doc/index_all_drafts.html', { "states": states })
+    return render(request, 'doc/index_all_drafts.html', { "categories": categories })
 
 def index_active_drafts(request):
     slowcache = caches['slowpages']

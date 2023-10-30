@@ -285,6 +285,65 @@ def prepare_document_table(request, docs, query=None, max_results=200):
     return (docs, meta)
 
 
+# The document types and state slugs to include in the AD dashboard
+# and AD doc list, in the order they should be shown. The Boolean
+# indicates whether an upwards trend (compared to a past point in
+# time) should be considered a positive development or not.
+#
+# "rfc" is a custom subset of "draft" that we special-case in the code
+# to break out these docs into a separate table.
+#
+AD_WORKLOAD_STATE_SLUGS = {
+    "draft": [
+        ("pub-req", False),
+        ("ad-eval", False),
+        ("lc-req", True),
+        ("lc", True),
+        ("writeupw", False),
+        ("defer", False),
+        ("iesg-eva", True),
+        ("goaheadw", False),
+        ("approved", True),
+        ("ann", True),
+    ],
+    "rfc": [
+        ("rfcqueue", True),
+        ("rfc", None)
+    ],
+    "conflrev": [
+        ("needshep", False),
+        ("adrev", False),
+        ("iesgeval", True),
+        ("appr-noprob-sent", True),
+        ("appr-reqnopub-pr", True),
+        ("appr-reqnopub-pend", True),
+        ("appr-reqnopub-sent", True),
+        ("appr-noprob-pr", True),
+        ("appr-noprob-pend", True),
+        ("withdraw", None),
+    ],
+    "statchg": [
+        ("needshep", False),
+        ("adrev", False),
+        ("lc-req", True),
+        ("in-lc", True),
+        ("iesgeval", True),
+        ("goahead", False),
+        ("appr-sent", True),
+        ("dead", None),
+    ],
+    "charter": [
+        ("notrev", None),
+        ("infrev", None),
+        ("intrev", False),
+        ("extrev", True),
+        ("iesgrev", True),
+        ("approved", True),
+        ("replaced", None),
+    ],
+}
+
+
 def doc_type(doc):
     dt = doc.type.slug
     if (
