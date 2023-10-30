@@ -59,7 +59,7 @@ from ietf.utils.test_utils import login_testing_unauthorized, unicontent
 from ietf.utils.test_utils import TestCase
 from ietf.utils.text import normalize_text
 from ietf.utils.timezone import date_today, datetime_today, DEADLINE_TZINFO, RPC_TZINFO
-from ietf.doc.utils_search import doc_type, doc_state, AD_WORKLOAD_STATE_SLUGS
+from ietf.doc.utils_search import AD_WORKLOAD_STATE_SLUGS
 
 
 class SearchTests(TestCase):
@@ -296,7 +296,7 @@ class SearchTests(TestCase):
                         or doc_type_slug == "rfc"
                         and state == "rfcqueue"
                     ):
-                        doc = IndividualDraftFactory(
+                       IndividualDraftFactory(
                             ad=ad,
                             states=[
                                 ("draft-iesg", state),
@@ -304,21 +304,21 @@ class SearchTests(TestCase):
                             ],
                         )
                     elif doc_type_slug == "rfc":
-                        doc = WgRfcFactory.create(
+                       WgRfcFactory.create(
                             states=[("draft", "rfc"), ("draft-iesg", "pub")]
                         )
 
                     elif doc_type_slug == "charter":
-                        doc = CharterFactory(ad=ad, states=[(doc_type_slug, state)])
+                       CharterFactory(ad=ad, states=[(doc_type_slug, state)])
                     elif doc_type_slug == "conflrev":
-                        doc = ConflictReviewFactory(
+                       ConflictReviewFactory(
                             ad=ad,
                             states=State.objects.filter(
                                 type_id=doc_type_slug, slug=state
                             ),
                         )
                     elif doc_type_slug == "statchg":
-                        doc = StatusChangeFactory(
+                       StatusChangeFactory(
                             ad=ad,
                             states=State.objects.filter(
                                 type_id=doc_type_slug, slug=state

@@ -5,10 +5,10 @@
 {% block pagehead %}
     <link rel="stylesheet" href="{% static "ietf/css/list.css" %}">
 {% endblock %}
-{% block title %}Area directors{% endblock %}
+{% block title %}IESG Dashboard{% endblock %}
 {% block content %}
     {% origin %}
-    <h1>Area Director Workload</h1>
+    <h1>IESG Dashboard</h1>
     {% if user|has_role:"Area Director,Secretariat" %}
     <div class="alert alert-info my-3">
         {{ delta.days }}-day trend indicators

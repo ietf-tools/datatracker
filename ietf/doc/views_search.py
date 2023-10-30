@@ -38,8 +38,6 @@ import re
 import datetime
 import copy
 
-from collections import defaultdict
-
 from django import forms
 from django.conf import settings
 from django.core.cache import cache, caches
