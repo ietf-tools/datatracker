@@ -128,7 +128,7 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/SubmittedToQueue'
-
+                                
     /doc/drafts/{docId}:
         get:
             operationId: get_draft_by_id
@@ -150,6 +150,35 @@ paths:
                                 $ref: '#/components/schemas/Draft'
                 '404':
                     description: Not found
+
+    /subject/{subjectId}/person:
+        get:
+            operationId: get_subject_person_by_id
+            summary: Find person for OIDC subject by ID
+            description: Returns a single person
+            parameters:
+                -   name: subjectId
+                    in: path
+                    description: subject ID of person to return
+                    required: true
+                    schema:
+                        type: string
+            responses:
+                '200':
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Person'
+                '404':
+                    description: No such subject or no person for this subject
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    error:
+                                        type: string
 
 components: 
     schemas: 
