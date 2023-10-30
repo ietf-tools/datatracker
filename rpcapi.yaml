@@ -170,15 +170,18 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/Person'
+                '400':
+                    description: No such subject or no person for this subject
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
                 '404':
                     description: No such subject or no person for this subject
                     content:
                         application/json:
                             schema:
-                                type: object
-                                properties:
-                                    error:
-                                        type: string
+                                $ref: '#/components/schemas/ErrorResponse'
 
 components: 
     schemas: 
@@ -209,6 +212,13 @@ components:
                             submitted: 
                                 type: string
                                 format: date
+        
+        ErrorResponse:
+            type: object
+            properties:
+                error:
+                    type: string
+            
         Draft:
             type: object
             properties: 
