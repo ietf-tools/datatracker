@@ -58,10 +58,12 @@ from ietf.utils.timezone import date_today, time_now
 
 from ietf.person.factories import PersonFactory
 from ietf.group.factories import GroupFactory, GroupEventFactory, RoleFactory
-from ietf.meeting.factories import ( SessionFactory, ScheduleFactory,
+from ietf.meeting.factories import (SessionFactory, ScheduleFactory,
     SessionPresentationFactory, MeetingFactory, FloorPlanFactory,
     TimeSlotFactory, SlideSubmissionFactory, RoomFactory,
-    ConstraintFactory, MeetingHostFactory, ProceedingsMaterialFactory )
+    ConstraintFactory, MeetingHostFactory, ProceedingsMaterialFactory,
+    AttendedFactory)
+from ietf.stats.factories import MeetingRegistrationFactory
 from ietf.doc.factories import DocumentFactory, WgDraftFactory
 from ietf.submit.tests import submission_file
 from ietf.utils.test_utils import assert_ical_response_is_valid
@@ -5967,16 +5969,10 @@ class IphoneAppJsonTests(TestCase):
             self.assertTrue(msessions.filter(group__acronym=s['group']['acronym']).exists())
 
 class FinalizeProceedingsTests(TestCase):
-    @override_settings(STATS_REGISTRATION_ATTENDEES_JSON_URL='https://ietf.example.com/{number}')
-    @requests_mock.Mocker()
-    def test_finalize_proceedings(self, mock):
+    def test_finalize_proceedings(self):
         make_meeting_test_data()
         meeting = Meeting.objects.filter(type_id='ietf').order_by('id').last()
         meeting.session_set.filter(group__acronym='mars').first().sessionpresentation_set.create(document=Document.objects.filter(type='draft').first(),rev=None)
-        mock.get(
-            settings.STATS_REGISTRATION_ATTENDEES_JSON_URL.format(number=meeting.number),
-            text=json.dumps([{"LastName": "Smith", "FirstName": "John", "Company": "ABC", "Country": "US"}]),
-        )
 
         url = urlreverse('ietf.meeting.views.finalize_proceedings',kwargs={'num':meeting.number})
         login_testing_unauthorized(self,"secretary",url)
@@ -7852,34 +7848,40 @@ class ProceedingsTests(BaseMeetingTestCase):
             0,
         )
 
-    @override_settings(STATS_REGISTRATION_ATTENDEES_JSON_URL='https://ietf.example.com/{number}')
-    @requests_mock.Mocker()
-    def test_proceedings_attendees(self, mock):
+    def test_proceedings_attendees(self):
+        """Test proceedings attendee list. Check the following:
+           - assert onsite checkedin=True appears, not onsite checkedin=False
+           - assert remote attended appears, not remote not attended
+           - prefer onsite checkedin=True to remote attended when same person has both
+        """
+
         make_meeting_test_data()
-        meeting = MeetingFactory(type_id='ietf', date=datetime.date(2016,7,14), number="97")
-        mock.get(
-            settings.STATS_REGISTRATION_ATTENDEES_JSON_URL.format(number=meeting.number),
-            text=json.dumps([{"LastName": "Smith", "FirstName": "John", "Company": "ABC", "Country": "US"}]),
-        )
-        finalize(meeting)
-        url = urlreverse('ietf.meeting.views.proceedings_attendees',kwargs={'num':97})
+        meeting = MeetingFactory(type_id='ietf', date=datetime.date(2016, 7, 14), number="97")
+        person_a = PersonFactory(name='Person A')
+        person_b = PersonFactory(name='Person B')
+        person_c = PersonFactory(name='Person C')
+        person_d = PersonFactory(name='Person D')
+        MeetingRegistrationFactory(meeting=meeting, person=person_a, reg_type='onsite', checkedin=True)
+        MeetingRegistrationFactory(meeting=meeting, person=person_b, reg_type='onsite', checkedin=False)
+        MeetingRegistrationFactory(meeting=meeting, person=person_a, reg_type='remote')
+        AttendedFactory(session__meeting=meeting, session__type_id='plenary', person=person_a)
+        MeetingRegistrationFactory(meeting=meeting, person=person_c, reg_type='remote')
+        AttendedFactory(session__meeting=meeting, session__type_id='plenary', person=person_c)
+        MeetingRegistrationFactory(meeting=meeting, person=person_d, reg_type='remote')
+        url = urlreverse('ietf.meeting.views.proceedings_attendees',kwargs={'num': 97})
         response = self.client.get(url)
         self.assertContains(response, 'Attendee list')
         q = PyQuery(response.content)
-        self.assertEqual(1,len(q("#id_attendees tbody tr")))
+        self.assertEqual(2, len(q("#id_attendees tbody tr")))
+        text = q('#id_attendees tbody tr').text().replace('\n', ' ')
+        self.assertEqual(text, "A Person onsite C Person remote")
 
-    @override_settings(STATS_REGISTRATION_ATTENDEES_JSON_URL='https://ietf.example.com/{number}')
-    @requests_mock.Mocker()
-    def test_proceedings_overview(self, mock):
+    def test_proceedings_overview(self):
         '''Test proceedings IETF Overview page.
         Note: old meetings aren't supported so need to add a new meeting then test.
         '''
         make_meeting_test_data()
         meeting = MeetingFactory(type_id='ietf', date=datetime.date(2016,7,14), number="97")
-        mock.get(
-            settings.STATS_REGISTRATION_ATTENDEES_JSON_URL.format(number=meeting.number),
-            text=json.dumps([{"LastName": "Smith", "FirstName": "John", "Company": "ABC", "Country": "US"}]),
-        )
         finalize(meeting)
         url = urlreverse('ietf.meeting.views.proceedings_overview',kwargs={'num':97})
         response = self.client.get(url)

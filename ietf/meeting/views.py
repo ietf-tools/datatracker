@@ -85,6 +85,8 @@ from ietf.meeting.utils import new_doc_for_session, write_doc_for_session
 from ietf.meeting.utils import get_activity_stats, post_process, create_recording
 from ietf.message.utils import infer_message
 from ietf.name.models import SlideSubmissionStatusName, ProceedingsMaterialTypeName, SessionPurposeName
+from ietf.nomcom.utils import participants_for_meeting
+from ietf.stats.models import MeetingRegistration
 from ietf.utils import markdown
 from ietf.utils.decorators import require_api_key
 from ietf.utils.hedgedoc import Note, NoteError
@@ -3851,14 +3853,19 @@ def proceedings_attendees(request, num=None):
     meeting = get_meeting(num)
     if meeting.proceedings_format_version == 1:
         return HttpResponseRedirect(f'{settings.PROCEEDINGS_V1_BASE_URL.format(meeting=meeting)}/attendee.html')
-    overview_template = '/meeting/proceedings/%s/attendees.html' % meeting.number
-    try:
-        template = render_to_string(overview_template, {})
-    except TemplateDoesNotExist:
-        raise Http404
+
+    checked_in, attended = participants_for_meeting(meeting)
+    regs = list(MeetingRegistration.objects.filter(meeting__number=num, reg_type='onsite', checkedin=True))
+
+    for mr in MeetingRegistration.objects.filter(meeting__number=num, reg_type='remote').select_related('person'):
+        if mr.person.pk in attended and mr.person.pk not in checked_in:
+            regs.append(mr)
+
+    meeting_registrations = sorted(regs, key=lambda x: (x.last_name, x.first_name))
+
     return render(request, "meeting/proceedings_attendees.html", {
         'meeting': meeting,
-        'template': template,
+        'meeting_registrations': meeting_registrations,
     })
 
 def proceedings_overview(request, num=None):

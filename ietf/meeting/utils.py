@@ -4,16 +4,13 @@ import datetime
 import itertools
 import os
 import pytz
-import requests
 import subprocess
 
 from collections import defaultdict
 from pathlib import Path
-from urllib.error import HTTPError
 
 from django.conf import settings
 from django.contrib import messages
-from django.template.loader import render_to_string
 from django.utils import timezone
 from django.utils.encoding import smart_str
 
@@ -126,31 +123,7 @@ def sort_sessions(sessions):
     return sorted(sessions, key=lambda s: (s.meeting.number, s.group.acronym, session_time_for_sorting(s, use_meeting_date=False)))
 
 def create_proceedings_templates(meeting):
-    '''Create DBTemplates for meeting proceedings'''
-    # Get meeting attendees from registration system
-    url = settings.STATS_REGISTRATION_ATTENDEES_JSON_URL.format(number=meeting.number)
-    try:
-        attendees = requests.get(url, timeout=settings.DEFAULT_REQUESTS_TIMEOUT).json()
-    except (ValueError, HTTPError, requests.Timeout) as exc:
-        attendees = []
-        log(f'Failed to retrieve meeting attendees from [{url}]: {exc}')
-
-    if attendees:
-        attendees = sorted(attendees, key = lambda a: a['LastName'])
-        content = render_to_string('meeting/proceedings_attendees_table.html', {
-            'attendees':attendees})
-        try:
-            template = DBTemplate.objects.get(path='/meeting/proceedings/%s/attendees.html' % (meeting.number, ))
-            template.title='IETF %s Attendee List' % meeting.number
-            template.type_id='django'
-            template.content=content
-            template.save()
-        except DBTemplate.DoesNotExist:
-            DBTemplate.objects.create(
-                path='/meeting/proceedings/%s/attendees.html' % (meeting.number, ),
-                title='IETF %s Attendee List' % meeting.number,
-                type_id='django',
-                content=content)    
+    '''Create DBTemplates for meeting proceedings'''  
     # Make copy of default IETF Overview template
     if not meeting.overview:
         path = '/meeting/proceedings/%s/overview.rst' % (meeting.number, )
