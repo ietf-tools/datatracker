@@ -3,6 +3,7 @@
 # This script requires that the proper virtual python environment has been
 # invoked before start
 
+
 import datetime
 import io
 import os

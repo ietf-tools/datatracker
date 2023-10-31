@@ -2,14 +2,15 @@
 
 from django.db import migrations
 import django.db.models.deletion
-from django.db.models import F, Subquery, OuterRef
+from django.db.models import F, Subquery, OuterRef, CharField
 import ietf.utils.models
 
 def forward(apps, schema_editor):
     RelatedDocument = apps.get_model("doc", "RelatedDocument")
     DocAlias = apps.get_model("doc", "DocAlias")
-    subquery = Subquery(DocAlias.objects.filter(pk=OuterRef("deprecated_target")).values("docs")[:1])
-    RelatedDocument.objects.annotate(firstdoc=subquery).update(target=F("firstdoc"))
+    target_subquery = Subquery(DocAlias.objects.filter(pk=OuterRef("deprecated_target")).values("docs")[:1])
+    name_subquery = Subquery(DocAlias.objects.filter(pk=OuterRef("deprecated_target")).values("name")[:1])
+    RelatedDocument.objects.annotate(firstdoc=target_subquery).annotate(aliasname=name_subquery).update(target=F("firstdoc"),originaltargetaliasname=F("aliasname"))
 
 def reverse(apps, schema_editor):
     pass
@@ -54,6 +55,12 @@ class Migration(migrations.Migration):
                 db_index=False,
             ),
             preserve_default=False,
+        ),
+        migrations.AddField(
+            model_name="relateddocument",
+            name="originaltargetaliasname",
+            field=CharField(max_length=255,null=True),
+            preserve_default=True,
         ),
         migrations.RunPython(forward, reverse),
         migrations.AlterField(

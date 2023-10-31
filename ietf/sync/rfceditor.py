@@ -12,13 +12,14 @@ from urllib.parse import urlencode
 from xml.dom import pulldom, Node
 
 from django.conf import settings
+from django.db.models import Subquery, OuterRef, F, Q
 from django.utils import timezone
 from django.utils.encoding import smart_bytes, force_str
 
 import debug                            # pyflakes:ignore
 
 from ietf.doc.models import ( Document, State, StateType, DocEvent, DocRelationshipName,
-    DocTagName, RelatedDocument )
+    DocTagName, RelatedDocument, RelatedDocHistory )
 from ietf.doc.expire import move_draft_files_to_archive
 from ietf.doc.utils import add_state_change_event, prettify_std_name, update_action_holders
 from ietf.group.models import Group
@@ -327,7 +328,7 @@ def parse_index(response):
             log("node: %s" % node)
             raise
     for d in data:
-        k = "RFC%04d" % d[0]
+        k = "RFC%d" % d[0]
         if k in also_list:
             d[9].extend(also_list[k])
     return data
@@ -735,6 +736,40 @@ def update_docs_from_rfc_index(
             )
             doc.save_with_history(rfc_events)
             yield rfc_changes, doc, rfc_published  # yield changes to the RFC
+    
+    if first_sync_creating_subseries:
+        # First - create the known subseries documents that have ghosted. 
+        # The RFC editor (as of 31 Oct 2023) claims these subseries docs do not exist.
+        # The datatracker, on the other hand, will say that the series doc currently contains no RFCs.
+        for name in ["fyi17", "std1", "bcp12", "bcp113", "bcp66"]:
+            # Leaving most things to the default intentionally
+            # Of note, title and stream are left to the defaults of "" and none.
+            subseries_doc, created = Document.objects.get_or_create(type_id=name[:3], name=name)
+            if not created:
+                log(f"Warning: {name} unexpectedly already exists")
+            else:
+                subseries_slug = name[:3]
+                subseries_doc.docevent_set.create(type=f"{subseries_slug}_history_marker", by=system, desc=f"No history of this {subseries_slug.upper()} document is currently available in the datatracker before this point")
+
+
+        RelatedDocument.objects.filter(
+            Q(originaltargetaliasname__startswith="bcp") |
+            Q(originaltargetaliasname__startswith="std") |
+            Q(originaltargetaliasname__startswith="fyi")
+        ).annotate(
+            subseries_target=Subquery(
+                Document.objects.filter(name=OuterRef("originaltargetaliasname")).values_list("pk",flat=True)[:1]
+            )
+        ).update(target=F("subseries_target"))
+        RelatedDocHistory.objects.filter(
+            Q(originaltargetaliasname__startswith="bcp") |
+            Q(originaltargetaliasname__startswith="std") |
+            Q(originaltargetaliasname__startswith="fyi")
+        ).annotate(
+            subseries_target=Subquery(
+                Document.objects.filter(name=OuterRef("originaltargetaliasname")).values_list("pk",flat=True)[:1]
+            )
+        ).update(target=F("subseries_target"))
 
 
 def post_approved_draft(url, name):
