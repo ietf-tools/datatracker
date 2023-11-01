@@ -409,20 +409,16 @@ def startswith(x, y):
     return str(x).startswith(y)
 
 
-@register.filter(name='removesuffix', is_safe=False)
-def removesuffix(value, suffix):
-    """Remove an exact-match suffix
+@register.filter(name='removepath', is_safe=False)
+def removepath(value, suffix):
+    """Remove an exact-match path
     
     The is_safe flag is False because indiscriminate use of this could result in non-safe output.
     See https://docs.djangoproject.com/en/2.2/howto/custom-template-tags/#filters-and-auto-escaping
     which describes the possibility that removing characters from an escaped string may introduce
     HTML-unsafe output.
     """
-    base = str(value)
-    if base.endswith(suffix):
-        return base[:-len(suffix)]
-    else:
-        return base
+    return str(value).replace(suffix, '')
 
 
 @register.filter
