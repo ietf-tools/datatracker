@@ -686,11 +686,12 @@ def update_docs_from_rfc_index(
                         subseries_doc.docevent_set.create(type=f"{subseries_slug}_doc_created", by=system, desc=f"Created {subseries_doc_name} via sync to the rfc-index")
                 _, relationship_created = subseries_doc.relateddocument_set.get_or_create(relationship_id="contains", target=doc)
                 if relationship_created:
-                    subseries_doc.docevent_set.create(type="sync_from_rfc_editor", by=system, desc=f"Added {doc.name} to {subseries_doc.name}")
                     if first_sync_creating_subseries:
+                        subseries_doc.docevent_set.create(type="sync_from_rfc_editor", by=system, desc=f"Imported membership of {doc.name} in {subseries_doc.name} via sync to the rfc-index")
                         rfc_events.append(doc.docevent_set.create(type=f"{subseries_slug}_history_marker", by=system, desc=f"No history of {subseries_doc.name.upper()} is currently available in the datatracker before this point"))
                         rfc_events.append(doc.docevent_set.create(type="sync_from_rfc_editor", by=system, desc=f"Imported membership of {doc.name} in {subseries_doc.name} via sync to the rfc-index"))
                     else:
+                        subseries_doc.docevent_set.create(type="sync_from_rfc_editor", by=system, desc=f"Added {doc.name} to {subseries_doc.name}")
                         rfc_events.append(doc.docevent_set.create(type="sync_from_rfc_editor", by=system, desc=f"Added {doc.name} to {subseries_doc.name}"))
 
         for subdoc in doc.related_that("contains"):
