@@ -19,7 +19,7 @@ def reverse(apps, schema_editor):
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("mailtrigger", "0003_ballot_approved_charter"),
+        ("mailtrigger", "0004_slides_approved"),
     ]
 
     operations = [migrations.RunPython(forward, reverse)]
