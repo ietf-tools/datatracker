@@ -1431,11 +1431,17 @@ def document_shepherd_writeup_template(request, type):
 def document_references(request, name):
     doc = get_object_or_404(Document,name=name)
     refs = doc.references()
+    if doc.type_id in ["bcp","std","fyi"]:
+        for rfc in doc.contains():
+            refs |= rfc.references()    
     return render(request, "doc/document_references.html",dict(doc=doc,refs=sorted(refs,key=lambda x:x.target.name),))
 
 def document_referenced_by(request, name):
     doc = get_object_or_404(Document,name=name)
     refs = doc.referenced_by()
+    if doc.type_id in ["bcp","std","fyi"]:
+        for rfc in doc.contains():
+            refs |= rfc.referenced_by()
     full = ( request.GET.get('full') != None )
     numdocs = refs.count()
     if not full and numdocs>250:
