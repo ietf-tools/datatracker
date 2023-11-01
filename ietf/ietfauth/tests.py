@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2009-2022, All Rights Reserved
+# Copyright The IETF Trust 2009-2023, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -110,6 +110,26 @@ class IetfAuthTests(TestCase):
         r = self.client.post(urlreverse(ietf.ietfauth.views.login) + "?next=/foobar", {"username":"plain", "password":"plain+password"})
         self.assertEqual(r.status_code, 302)
         self.assertEqual(urlsplit(r["Location"])[2], "/foobar")
+
+    def test_login_button(self):
+        PersonFactory(user__username='plain')
+
+        # try mashing the sign-in button repeatedly
+        r = self.client.get("/")
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        login_url = q("a:Contains('Sign in')").attr("href")
+        self.assertTrue(login_url.endswith("accounts/login/?next=/"))
+        r = self.client.get(login_url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        login_url = q("a:Contains('Sign in')").attr("href")
+        self.assertTrue(login_url.endswith("accounts/login/?next=/"))
+
+        # try logging in with the provided next
+        r = self.client.post(login_url, {"username":"plain", "password":"plain+password"})
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(urlsplit(r["Location"])[2], "/")
 
     def test_login_with_different_email(self):
         person = PersonFactory(user__username='plain')
