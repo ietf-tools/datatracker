@@ -339,7 +339,7 @@ def search_for_name(request, name):
                     return cached_redirect(cache_key, urlreverse("ietf.doc.views_doc.document_main", kwargs={ "name": redirect_to }))
 
     # build appropriate flags based on string prefix
-    doctypenames = DocTypeName.objects.filter(used=True)
+    doctypenames = DocTypeName.objects.filter(used=True).exclude(slug__in=["bcp","std","fyi"])
     # This would have been more straightforward if document prefixes couldn't
     # contain a dash.  Probably, document prefixes shouldn't contain a dash ...
     search_args = "?name=%s" % n
