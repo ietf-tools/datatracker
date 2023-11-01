@@ -11,6 +11,7 @@ from django.http import (
 )
 from django.shortcuts import get_object_or_404
 from django.views.decorators.csrf import csrf_exempt
+from django.contrib.auth.models import User
 
 from ietf.api.ietf_utils import requires_api_token
 from ietf.doc.factories import WgDraftFactory # DO NOT MERGE INTO MAIN
@@ -26,6 +27,22 @@ def rpc_person(request, person_id):
         "id": person.id,
         "plain_name": person.plain_name(),
     })
+
+@csrf_exempt
+@requires_api_token("ietf.api.views_rpc")
+def rpc_subject_person(request, subject_id):
+    try:
+        user_id = int(subject_id)
+    except ValueError:
+        return JsonResponse({"error": "Invalid subject id"}, status=400)
+    try:   
+        user = User.objects.get(pk=user_id)
+    except User.DoesNotExist:
+        return JsonResponse({"error": "Unknown subject"}, status=404)
+    if hasattr(user, "person"):  # test this way to avoid exception on reverse OneToOneField        
+        return rpc_person(request, person_id=user.person.pk)
+    return JsonResponse({"error": "Subject has no person"}, status=404) 
+
 
 @csrf_exempt
 @requires_api_token("ietf.api.views_rpc")
