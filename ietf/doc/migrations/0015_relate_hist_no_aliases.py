@@ -2,14 +2,15 @@
 
 from django.db import migrations
 import django.db.models.deletion
-from django.db.models import F, Subquery, OuterRef
+from django.db.models import F, Subquery, OuterRef, CharField
 import ietf.utils.models
 
 def forward(apps, schema_editor):
     RelatedDocHistory = apps.get_model("doc", "RelatedDocHistory")
     DocAlias = apps.get_model("doc", "DocAlias")
-    subquery = Subquery(DocAlias.objects.filter(pk=OuterRef("deprecated_target")).values("docs")[:1])
-    RelatedDocHistory.objects.annotate(firstdoc=subquery).update(target=F("firstdoc"))
+    target_subquery = Subquery(DocAlias.objects.filter(pk=OuterRef("deprecated_target")).values("docs")[:1])
+    name_subquery = Subquery(DocAlias.objects.filter(pk=OuterRef("deprecated_target")).values("name")[:1])
+    RelatedDocHistory.objects.annotate(firstdoc=target_subquery).annotate(aliasname=name_subquery).update(target=F("firstdoc"),originaltargetaliasname=F("aliasname"))
 
 def reverse(apps, schema_editor):
     pass
@@ -56,6 +57,12 @@ class Migration(migrations.Migration):
                 related_name='reversely_related_document_history_set',
             ),
             preserve_default=False,
+        ),
+        migrations.AddField(
+            model_name="relateddochistory",
+            name="originaltargetaliasname",
+            field=CharField(max_length=255,null=True),
+            preserve_default=True,
         ),
         migrations.RunPython(forward, reverse),
         migrations.AlterField(
