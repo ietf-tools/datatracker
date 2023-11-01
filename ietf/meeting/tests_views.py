@@ -6394,6 +6394,7 @@ class MaterialsTests(TestCase):
         self.assertIsNone(submission.doc)
         r = self.client.get(url)
         self.assertEqual(r.status_code,200)
+        empty_outbox()
         r = self.client.post(url,dict(title='different title',approve='approve'))
         self.assertEqual(r.status_code,302)
         self.assertEqual(SlideSubmission.objects.filter(status__slug = 'pending').count(), 0)
@@ -6406,6 +6407,9 @@ class MaterialsTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         self.assertRegex(r.content.decode(), r"These\s+slides\s+have\s+already\s+been\s+approved")
+        self.assertEqual(len(outbox), 1)
+        self.assertIn(submission.submitter.email_address(), outbox[0]['To'])
+        self.assertIn('Slides approved', outbox[0]['Subject'])
 
     def test_approve_proposed_slides_multisession_apply_one(self):
         submission = SlideSubmissionFactory(session__meeting__type_id='ietf')

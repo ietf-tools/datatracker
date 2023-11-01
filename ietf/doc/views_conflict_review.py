@@ -99,8 +99,7 @@ def change_state(request, name, option=None):
 
                 if new_state.slug in ["appr-reqnopub-sent", "appr-noprob-sent", "withdraw", "dead"]:
                     doc = review.related_that_doc("conflrev")[0]
-                    if doc.stream_id == "irtf":
-                        close_review_irtf_state(doc, login)
+                    update_stream_state(doc, login, 'chair-w' if doc.stream_id=='irtf' else 'ise-rev', 'iesg-com')
 
             return redirect('ietf.doc.views_doc.document_main', name=review.name)
     else:
@@ -367,8 +366,7 @@ def approve_conflict_review(request, name):
             c.save()
 
             doc = review.related_that_doc("conflrev")[0]
-            if doc.stream_id == "irtf":
-                close_review_irtf_state(doc, login)
+            update_stream_state(doc, login, 'chair-w' if doc.stream_id=='irtf' else 'ise-rev', 'iesg-com')
 
             return HttpResponseRedirect(review.get_absolute_url())
 
@@ -500,8 +498,7 @@ def start_review_as_secretariat(request, name):
 
             send_conflict_review_started_email(request, conflict_review)
 
-            if doc_to_review.stream_id == 'irtf':
-                start_review_irtf_state(doc_to_review, login)
+            update_stream_state(doc_to_review, login, 'iesg-rev')
 
             return HttpResponseRedirect(conflict_review.get_absolute_url())
     else: 
@@ -537,8 +534,7 @@ def start_review_as_stream_owner(request, name):
 
             send_conflict_review_started_email(request, conflict_review)
 
-            if doc_to_review.stream_id == 'irtf':
-                start_review_irtf_state(doc_to_review, login)
+            update_stream_state(doc_to_review, login, 'iesg-rev')
 
             return HttpResponseRedirect(conflict_review.get_absolute_url())
     else: 
@@ -555,25 +551,21 @@ def start_review_as_stream_owner(request, name):
                               },
                           )
 
-def start_review_irtf_state(doc, by):
-    prev_state = doc.get_state('draft-stream-irtf')
-    new_state = State.objects.get(type_id='draft-stream-irtf', slug='iesg-rev')
+def update_stream_state(doc, by, state, tag=None):
+    statetype = 'draft-stream-' + doc.stream_id
+    prev_state = doc.get_state(statetype)
+    new_state = State.objects.get(type_id=statetype, slug=state)
+    if tag:
+        prev_tags = set(doc.tags.all())
+        new_tags = set(DocTagName.objects.filter(pk=tag))
 
     if new_state != prev_state:
         doc.set_state(new_state)
         events = []
-        events.append(add_state_change_event(doc, by, prev_state, new_state))
-        doc.save_with_history(events)
-
-def close_review_irtf_state(doc, by):
-    prev_state = doc.get_state("draft-stream-irtf")
-    new_state = State.objects.get(type_id="draft-stream-irtf", slug="chair-w")
-    prev_tags = set(doc.tags.all())
-    new_tags = set(DocTagName.objects.filter(pk="iesg-com"))
-
-    if new_state != prev_state:
-        doc.set_state(new_state)
-        doc.tags.clear()
-        doc.tags.set(new_tags)
-        events = [add_state_change_event(doc, by, prev_state, new_state, prev_tags, new_tags)]
+        if tag:
+            doc.tags.clear()
+            doc.tags.set(new_tags)
+            events.append(add_state_change_event(doc, by, prev_state, new_state, prev_tags, new_tags))
+        else:
+            events.append(add_state_change_event(doc, by, prev_state, new_state))
         doc.save_with_history(events)

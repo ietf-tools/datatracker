@@ -1688,7 +1688,6 @@ class SubmitTests(BaseSubmitTestCase):
         r, q, m = self.submit_bad_file("some name", ["txt"])
         self.assertIn('Invalid characters were found in the name', m)
         self.assertIn('Expected the TXT file to have extension ".txt"', m)
-        self.assertIn('Expected an TXT file of type "text/plain"', m)
         self.assertIn('document does not contain a legitimate name', m)
 
     def test_submit_bad_doc_name(self):
@@ -1706,7 +1705,6 @@ class SubmitTests(BaseSubmitTestCase):
         r, q, m = self.submit_bad_file("some name", ["xml"])
         self.assertIn('Invalid characters were found in the name', m)
         self.assertIn('Expected the XML file to have extension ".xml"', m)
-        self.assertIn('Expected an XML file of type "application/xml"', m)
 
     def test_submit_file_in_archive(self):
         name = "draft-authorname-testing-file-exists"
@@ -3113,6 +3111,20 @@ class SubmissionUploadFormTests(BaseSubmitTestCase):
         )
         self.assertFalse(form.is_valid())
 
+    def test_invalid_xml(self):
+        """Test error message for invalid XML"""
+        not_xml = SimpleUploadedFile(
+            name="not-xml.xml",
+            content=b"this is not xml at all",
+            content_type="application/xml",
+        )
+        form = SubmissionBaseUploadForm(RequestFactory().post('/some/url'), files={"xml": not_xml})
+        self.assertFalse(form.is_valid())
+        self.assertFormError(
+            form,
+            "xml",
+            "The uploaded file is not valid XML. Please make sure you are uploading the correct file.",
+        )
 
 class AsyncSubmissionTests(BaseSubmitTestCase):
     """Tests of async submission-related tasks"""

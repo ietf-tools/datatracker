@@ -14,7 +14,8 @@ function text_sort(a, b, options) {
     // sort by text content
     return prep(a, options).localeCompare(prep(b, options), "en", {
         sensitivity: "base",
-        ignorePunctuation: true
+        ignorePunctuation: true,
+        numeric: true
     });
 }
 

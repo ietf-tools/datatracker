@@ -278,15 +278,21 @@ def materials_document(request, document, num=None, ext=None):
         if len(file_ext) == 2 and file_ext[1] == '.md' and mtype == 'text/plain':
             sorted_accept = sort_accept_tuple(request.META.get('HTTP_ACCEPT'))
             for atype in sorted_accept:
-                if atype[0] == 'text/markdown':
-                    content_type = content_type.replace('plain', 'markdown', 1)
-                    break;
-                elif atype[0] == 'text/html':
-                    bytes = "<html>\n<head><base target=\"_blank\" /></head>\n<body>\n%s\n</body>\n</html>\n" % markdown.markdown(bytes.decode(encoding=chset))
-                    content_type = content_type.replace('plain', 'html', 1)
-                    break;
-                elif atype[0] == 'text/plain':
-                    break;
+                if atype[0] == "text/markdown":
+                    content_type = content_type.replace("plain", "markdown", 1)
+                    break
+                elif atype[0] == "text/html":
+                    bytes = render_to_string(
+                        "minimal.html",
+                        {
+                            "content": markdown.markdown(bytes.decode(encoding=chset)),
+                            "title": basename,
+                        },
+                    )
+                    content_type = content_type.replace("plain", "html", 1)
+                    break
+                elif atype[0] == "text/plain":
+                    break
 
         response = HttpResponse(bytes, content_type=content_type)
         response['Content-Disposition'] = 'inline; filename="%s"' % basename
@@ -4550,6 +4556,15 @@ def approve_proposed_slides(request, slidesubmission_id, num):
                 submission.status = SlideSubmissionStatusName.objects.get(slug='approved')
                 submission.doc = doc
                 submission.save()
+                (to, cc) = gather_address_lists('slides_approved', group=submission.session.group, proposer=submission.submitter).as_strings()
+                subject = f"Slides approved for {submission.session.meeting} : {submission.session.group.acronym}{' : '+submission.session.name if submission.session.name else ''}"
+                body = render_to_string("meeting/slides_approved.txt", {
+                    "to": to,
+                    "cc": cc,
+                    "submission": submission,
+                    "settings": settings,
+                })
+                send_mail_text(request, to, None, subject, body, cc=cc)
                 return redirect('ietf.meeting.views.session_details',num=num,acronym=acronym)
             elif request.POST.get('disapprove'):
                 # Errors in processing a submit request sometimes result

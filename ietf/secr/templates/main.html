@@ -14,13 +14,11 @@
                         <ul>
                         <li> <a href="{% url 'ietf.secr.announcement.views.main' %}"><b>Announcement</b></a></li>
                         <li> <a href="{% url 'ietf.secr.telechat.views.main' %}"><b>Telechat</b></a></li>
-                        <li> <a href="{% url 'ietf.secr.console.views.main' %}"><b>Console</b></a></li>
                         </ul>
                     </td>
                     <td>
                         <h2>IDs and WGs Process</h2>
                         <ul>
-                        <li> <a href="{% url "ietf.secr.areas.views.list_areas" %}"><b>Areas</b></a></li>
                         <li> <a href="{% url 'ietf.secr.rolodex.views.search' %}"><b>Rolodex</b></a></li>
                         </ul>
                     </td>
@@ -31,15 +29,9 @@
                         <ul>
                         <li> <a href="{% url "ietf.secr.sreq.views.main" %}"><b>Session Requests</b></a></li>
                         <li> <a href="{% url "ietf.secr.meetings.views.main" %}"><b>Meeting Manager</b></a></li>
-                        <li> <a href="{% url "ietf.secr.meetings.views.blue_sheet_redirect" %}"><b>Blue Sheets</b></a></li>
                         </ul>
                     </td>
-                    <td>
-                        <h2>IPR</h2>
-                        <ul>
-                        <li> <a href="{% url 'ietf.ipr.views.admin' state='pending' %}"><b>IPR Admin</b></a></li>
-                        </ul>
-                    </td>
+                    <td></td>
                 </tr>
                 </tbody>
             </table>
