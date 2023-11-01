@@ -419,7 +419,20 @@ def update_docs_from_rfc_index(
             try:
                 draft = Document.objects.get(name=draft_name, type_id="draft")
             except Document.DoesNotExist:
-                log(f"Warning: RFC index for {rfc_number} referred to unknown draft {draft_name}")
+                pass
+                # Logging below warning turns out to be unhelpful - there are many references
+                # to such things in the index:
+                # * all april-1 RFCs have an internal name that looks like a draft name, but there 
+                # was never such a draft. More of these will exist in the future
+                # * Several documents were created with out-of-band input to the RFC-editor, for a
+                # variety of reasons.
+                #
+                # What this exposes is that the rfc-index needs to stop talking about these things.
+                # If there is no draft to point to, don't point to one, even if there was an RPC
+                # internal name in use (and in the RPC database). This will be a requirement on the
+                # reimplementation of the creation of the rfc-index.
+                # 
+                # log(f"Warning: RFC index for {rfc_number} referred to unknown draft {draft_name}")
 
         # Find or create the RFC document
         creation_args: dict[str, Optional[Union[str, int]]] = {"name": f"rfc{rfc_number}"}
@@ -514,8 +527,12 @@ def update_docs_from_rfc_index(
                 stream_slug = f"draft-stream-{draft.stream.slug}"
                 prev_state = draft.get_state(stream_slug)
                 if prev_state is None:
-                    # TODO: main returns warnings to the caller rather tha logging to the system - look to see if we should be using that instead
-                    log(f"Warning while processing {doc.name}: draft {draft.name} stream state was not set")
+                    pass
+                    # It turns out that this is not an exception to log, but is rather more the norm.
+                    # That said, the behavior in the `elif` is still the right behavior if one of these streams
+                    # does set state.
+                    #
+                    # log(f"Warning while processing {doc.name}: draft {draft.name} stream state was not set")
                 elif prev_state.slug != "pub":
                     new_state = State.objects.select_related("type").get(used=True, type__slug=stream_slug, slug="pub")
                     draft.set_state(new_state)
