@@ -3,7 +3,16 @@
 {% load origin static %}
 {% load ietf_filters %}
 {% block pagehead %}
-    <link rel="stylesheet" href="{% static "ietf/css/list.css" %}">
+    <link rel="stylesheet" href="{% static 'ietf/css/list.css' %}">
+    <link rel="stylesheet" href="{% static 'ietf/css/highcharts.css' %}">
+{% endblock %}
+{% block morecss %}
+    .highcharts-container .highcharts-axis-labels { font-size: .7rem; }
+    .highcharts-container .highcharts-graph { stroke-width: 2.5; }
+    .highcharts-container .highcharts-data-label text {
+        font-size: 1rem;
+        {# font-weight: inherit; #}
+    }
 {% endblock %}
 {% block title %}IESG Dashboard{% endblock %}
 {% block content %}
@@ -11,19 +20,19 @@
     <h1>IESG Dashboard</h1>
     {% if user|has_role:"Area Director,Secretariat" %}
     <div class="alert alert-info my-3">
-        {{ delta.days }}-day trend indicators
+        {{ delta }}-week trend graphs
         are only shown to logged-in Area Directors.
     </div>
     {% endif %}
     {% for type in workload %}
-        <h2 class="mt-5" id="{{ type.doc_type|slugify }}">{{ type.doc_type }} State Counts</h2>
-        <table class="table table-sm table-striped table-bordered tablesorter">
+        <h2 class="mt-5" id="{{ type.doc_type }}">{{ type.doc_type_name }} State Counts</h2>
+        <table class="table table-sm table-striped table-bordered tablesorter navskip">
             <thead class="wrap-anywhere">
                 <tr>
                     <th scope="col" data-sort="name">Area Director</th>
                     {% for state in type.state_names %}
                         <th scope="col" class="col-1" title=""
-                            data-sort="{{ state|slugify }}-num">
+                            data-sort="{{ state }}-num">
                             {{ state|split:'/'|join:'/<wbr>' }}
                         </th>
                     {% endfor %}
@@ -35,10 +44,11 @@
                         <td>
                             <a href="{{ ad.dashboard }}">{{ ad.name }}</a>
                         </td>
-                        {% for label, up_is_good, count, prev, docs_delta in ad_data %}
+                        {% for state, up_is_good, count, prev, docs_delta in ad_data %}
                         <td class="col-1"
-                            id="{{ type.doc_type|slugify }}-{{ ad.full_name_as_key|slugify }}-{{ label|slugify }}">
+                            id="{{ type.doc_type }}-{{ ad|slugify }}-{{ state }}">
                             {% include 'doc/ad_count.html' %}
+                            <div id="chart-{{ type.doc_type }}-{{ ad|slugify }}-{{ state }}"></div>
                         </td>
                         {% endfor %}
                     </tr>
@@ -47,9 +57,10 @@
             <tfoot class="table-group-divider">
                 <tr>
                     <th scope="row">Sum</th>
-                    {% for label, up_is_good, count, prev in type.sums %}
+                    {% for state, up_is_good, count, prev in type.sums %}
                         <td>
                             {% include 'doc/ad_count.html' %}
+                            <div id="chart-{{ type.doc_type }}-sum-{{ state }}"></div>
                         </td>
                     {% endfor %}
                 </tr>
@@ -68,5 +79,108 @@
                         trigger: "hover focus click"
                     });
             });
+    </script>
+    <script src="{% static "ietf/js/highcharts.js" %}"></script>
+    {{ data|json_script:"data" }}
+    {{ bucket_cutoffs|json_script:"bucket-cutoffs" }}
+    <script>
+        function sumArrays(...arrays) {
+            const n = arrays.reduce((max, xs) => Math.max(max, xs.length), 0);
+            const result = Array.from({ length: n });
+            return result.map((_, i) => arrays.map(xs => xs[i] || 0).reduce((sum, x) => sum + x, 0));
+        }
+
+        const data = JSON.parse(document.getElementById("data").textContent);
+        // const cutoffs = JSON.parse(document.getElementById("bucket-cutoffs").textContent);
+
+        // console.log(data);
+
+        Object.entries(data).forEach(([dt, ads]) => {
+            sum = {};
+            max = {};
+            Object.entries(ads).forEach(([ad, states]) => {
+                Object.entries(states).forEach(([state, buckets]) => {
+                    buckets.series = buckets.map((x) => x.length);
+                    max[state] = Math.max(...buckets.series, max[state] ? max[state] : 0);
+                    // console.log(state,"bef", sum[state])
+                    // sum[state] = sumArrays(sum[state], buckets.series);
+                    // console.log(state,"aft", sum[state])
+                });
+            });
+            // console.log(sum)
+
+            Object.entries(ads).forEach(([ad, states]) => {
+                Object.entries(states).forEach(([state, buckets]) => {
+                    const cell = `chart-${dt}-${ad}-${state}`;
+
+                    // if (buckets.series.every((x) => x == 0)) {
+                    //     document.getElementById(cell).innerHTML = '<div class="fw-bold mt-1">0</div>';
+                    //     return;
+                    // }
+
+                    Highcharts.chart({
+                        title: { text: undefined },
+                        chart: {
+                            type: "line",
+                            animation: false,
+                            backgroundColor: "transparent",
+                            renderTo: cell,
+                            panning: { enabled: false },
+                            spacing: [4, 0, 5, 0],
+                            height: "45%",
+                        },
+                        scrollbar: { enabled: false },
+                        tooltip: { enabled: false },
+                        navigator: { enabled: false },
+                        exporting: { enabled: false },
+                        legend: { enabled: false },
+                        credits: { enabled: false },
+                        xAxis: {
+                            title: { text: undefined},
+                            labels: { enabled: false },
+                            zoomEnabled: false,
+                            tickLength: 0,
+                        },
+                        yAxis: {
+                            title: { text: undefined},
+                            zoomEnabled: false,
+                            tickLength: 0,
+                            labels: { x: -3 },
+                            min: 0,
+                            max: max[state],
+                            tickInterval: max[state],
+                        },
+                        plotOptions: {
+                            series: {
+                                animation: false,
+                                dataLabels: {
+                                    enabled: true,
+                                    inside: true,
+                                    padding: 0,
+                                    formatter: function() {
+                                        // only label the last (= current) point in the curve
+                                        if (this.point.index + 1 == this.series.points.length) {
+                                            return this.y;
+                                        }
+                                        return undefined;
+                                    }
+                                }
+                            }
+                        },
+                        series: [{
+                            name: undefined,
+                            data: buckets.series,
+                            enableMouseTracking: false,
+                            // marker: { enabled: true, radius: 2 },
+                        }],
+                    });
+                });
+            });
+        });
+
+        // $(window).resize(function(){
+        //     console.log(111);
+        //     Highcharts.charts.forEach(chart => chart.reflow());
+        // });
     </script>
 {% endblock %}

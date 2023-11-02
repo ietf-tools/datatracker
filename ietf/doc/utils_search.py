@@ -300,7 +300,7 @@ AD_WORKLOAD_STATE_SLUGS = {
         ("lc-req", True),
         ("lc", True),
         ("writeupw", False),
-        ("defer", False),
+        # ("defer", False),  # probably not a useful state to show, since it's rare
         ("iesg-eva", True),
         ("goaheadw", False),
         ("approved", True),

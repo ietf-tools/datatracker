@@ -1,6 +1,8 @@
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load ietf_filters %}
 
+{{ count }}
+{% comment %}
 {% if prev or count %}
     <span{% if count == 0 %} class="text-body-secondary"{% endif %}>{{ count }}</span>
     {% if user|has_role:"Area Director,Secretariat" %}
@@ -29,3 +31,4 @@
         ></i>
     {% endif %}
 {% endif %}
+{% endcomment %}

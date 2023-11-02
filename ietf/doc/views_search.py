@@ -37,6 +37,7 @@
 import re
 import datetime
 import copy
+import dateutil.rrule
 
 from django import forms
 from django.conf import settings
@@ -46,8 +47,9 @@ from django.db.models import Q
 from django.http import Http404, HttpResponseBadRequest, HttpResponse, HttpResponseRedirect, QueryDict
 from django.shortcuts import render
 from django.utils import timezone
+from django.utils.html import strip_tags
 from django.utils.cache import _generate_cache_key # type: ignore
-
+from django.utils.text import slugify
 
 
 import debug                            # pyflakes:ignore
@@ -358,8 +360,23 @@ def state_name(doc_type, state, shorten=True):
 
 
 def ad_workload(request):
-    delta = datetime.timedelta(days=120)
+    weeks = 17
+    delta = datetime.timedelta(weeks=weeks)
     right_now = timezone.now()
+
+    state_slugs = {}
+    for dt in AD_WORKLOAD_STATE_SLUGS:
+        state_slugs[dt] = {}
+        for ds, _ in AD_WORKLOAD_STATE_SLUGS[dt]:
+            if dt == "rfc" and ds == "rfc":
+                state_slugs[dt]["RFC"] = "rfc"
+            elif dt == "draft" or ds == "rfcqueue":
+                s = State.objects.get(slug=ds, type="draft-iesg")
+            elif dt == "conflrev" and ds == "approved":
+                state_slugs[dt]["Approved"] = ds
+            else:
+                s = State.objects.get(slug=ds, type=dt)
+            state_slugs[dt][s.name] = ds
 
     ads = []
     responsible = Document.objects.values_list("ad", flat=True).distinct()
@@ -372,17 +389,30 @@ def ad_workload(request):
         | Q(pk__in=responsible)
     ).distinct():
         if p in get_active_ads():
-            ads.append(p)
+            if p.name == "John Scudder":
+                ads.append(p)
+
+    dates = list(
+        dateutil.rrule.rrule(
+            freq=dateutil.rrule.WEEKLY, count=13, dtstart=right_now - delta
+        )
+    )
+    dates.reverse()
 
     for ad in ads:
         ad.dashboard = urlreverse(
             "ietf.doc.views_search.docs_for_ad", kwargs=dict(name=ad.full_name_as_key())
         )
         ad.doc_now = {
-            dt: {state: set() for state, _ in AD_WORKLOAD_STATE_SLUGS[dt]} for dt in AD_WORKLOAD_STATE_SLUGS
+            dt: {state: set() for state, _ in AD_WORKLOAD_STATE_SLUGS[dt]}
+            for dt in AD_WORKLOAD_STATE_SLUGS
         }
         ad.doc_prev = copy.deepcopy(ad.doc_now)
         ad.doc_diff = copy.deepcopy(ad.doc_now)
+        ad.buckets = {
+            dt: {state: [[] for _ in dates] for state, _ in AD_WORKLOAD_STATE_SLUGS[dt]}
+            for dt in AD_WORKLOAD_STATE_SLUGS
+        }
 
         for doc in Document.objects.filter(ad=ad):
             dt = doc_type(doc)
@@ -391,26 +421,79 @@ def ad_workload(request):
             if state in ad.doc_now[dt]:
                 ad.doc_now[dt][state].add(doc)
 
-            last_state_event = (
-                doc.docevent_set.filter(
-                    Q(type="started_iesg_process") | Q(type="changed_state")
-                )
-                .order_by("-time")
-                .first()
-            )
+            state_events = doc.docevent_set.filter(
+                Q(type="started_iesg_process") | Q(type="changed_state"),
+                # desc__contains="IESG state changed to",
+                # time__gte=dates[0]
+            ).order_by("-time")
+
+            last_state_event = state_events.last()
+
             if (last_state_event is not None) and (
                 right_now - last_state_event.time
             ) > delta:
                 if state in ad.doc_now[dt]:
                     ad.doc_prev[dt][state].add(doc)
 
+            # compute state history for drafts
+            print()
+            print(doc)
+            for e in state_events:
+                # get state name changed into
+                match = re.search(
+                    r"state changed to (.*?)(?:::.*)? from (.*?)(?=::|$)",
+                    strip_tags(e.desc),
+                    flags=re.MULTILINE,
+                )
+                if not match:
+                    # some other state change, ignore
+                    continue
+
+                to_state = match[1]
+                if to_state not in state_slugs[dt]:
+                    # change into a state we don't display, ignore
+                    continue
+
+                for idx, start_date in enumerate(dates):
+                    # print(idx, start_date.date())
+                    cutoff = right_now if idx == 0 else dates[idx - 1]
+                    if e.time <= cutoff:
+                        # skip if doc is already in the same bucket
+                        if any(
+                            [
+                                doc.name in ad.buckets[dt][state][idx]
+                                for state, _ in AD_WORKLOAD_STATE_SLUGS[dt]
+                            ]
+                        ):
+                            print(
+                                f"skip {e.time.date()} to bucket {idx} {to_state} (exists) "
+                            )
+                            continue
+                        print(
+                            f"ADD  {e.time.date()} to bucket {idx} {to_state} (<= {cutoff.date()}) "
+                        )
+                        ad.buckets[dt][state_slugs[dt][to_state]][idx].append(doc.name)
+                    else:
+                        # no need to check earlier buckets (based on date of event)
+                        print(
+                            f"skip {e.time.date()} to buckets >= {idx} {to_state} (> {cutoff.date()}) "
+                        )
+                        break
+
         for dt in AD_WORKLOAD_STATE_SLUGS:
             for state in ad.doc_now[dt]:
+                if dt == "draft" and state == "pub-req":
+                    addn = {n.name for n in ad.doc_now[dt][state]}
+                    print("old", dt, state, len(addn), addn)
+                    print("new", dt, state, len(ad.buckets[dt][state][0]), ad.buckets[dt][state][0])
+                    print("DIFF", set(ad.buckets[dt][state][0]) ^ addn)
                 ad.doc_diff[dt][state] = ad.doc_prev[dt][state] ^ ad.doc_now[dt][state]
+                ad.buckets[dt][state].reverse()
 
     workload = [
         dict(
-            doc_type=doc_type_name(dt),
+            doc_type=dt,
+            doc_type_name=doc_type_name(dt),
             state_names=[state_name(dt, state) for state in ad.doc_now[dt]],
             counts=[
                 (
@@ -441,7 +524,17 @@ def ad_workload(request):
         for dt in AD_WORKLOAD_STATE_SLUGS
     ]
 
-    return render(request, "doc/ad_list.html", {"workload": workload, "delta": delta})
+    return render(
+        request,
+        "doc/ad_list.html",
+        {
+            "workload": workload,
+            "delta": weeks,
+            "data": {dt: {slugify(ad): ad.buckets[dt] for ad in ads} for dt in AD_WORKLOAD_STATE_SLUGS},
+            "bucket_cutoffs": [date.date() for date in dates],
+        },
+    )
+
 
 
 def docs_for_ad(request, name):
@@ -467,7 +560,6 @@ def docs_for_ad(request, name):
 
     results, meta = prepare_document_table(request, Document.objects.filter(ad=ad))
     results.sort(key=lambda d: sort_key(d))
-    del meta["headers"][-1]
 
     # filter out some results
     results = [
