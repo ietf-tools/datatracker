@@ -114,22 +114,31 @@ class IetfAuthTests(TestCase):
     def test_login_button(self):
         PersonFactory(user__username='plain')
 
-        # try mashing the sign-in button repeatedly
-        r = self.client.get("/")
-        self.assertEqual(r.status_code, 200)
-        q = PyQuery(r.content)
-        login_url = q("a:Contains('Sign in')").attr("href")
-        self.assertTrue(login_url.endswith("accounts/login/?next=/"))
-        r = self.client.get(login_url)
-        self.assertEqual(r.status_code, 200)
-        q = PyQuery(r.content)
-        login_url = q("a:Contains('Sign in')").attr("href")
-        self.assertTrue(login_url.endswith("accounts/login/?next=/"))
+        def _test_login(url):
+            # try mashing the sign-in button repeatedly
+            r = self.client.get(url)
+            if r.status_code == 302:
+                r = self.client.get(r["Location"])
+            self.assertEqual(r.status_code, 200)
+            q = PyQuery(r.content)
+            login_url = q("a:Contains('Sign in')").attr("href")
+            self.assertEqual(login_url, "/accounts/login/?next=" + url)
+            r = self.client.get(login_url)
+            self.assertEqual(r.status_code, 200)
+            q = PyQuery(r.content)
+            login_url = q("a:Contains('Sign in')").attr("href")
+            self.assertEqual(login_url, "/accounts/login/?next=" + url)
 
-        # try logging in with the provided next
-        r = self.client.post(login_url, {"username":"plain", "password":"plain+password"})
-        self.assertEqual(r.status_code, 302)
-        self.assertEqual(urlsplit(r["Location"])[2], "/")
+            # try logging in with the provided next
+            r = self.client.post(login_url, {"username":"plain", "password":"plain+password"})
+            self.assertEqual(r.status_code, 302)
+            self.assertEqual(urlsplit(r["Location"])[2], url)
+            self.client.logout()
+
+        # try with a trivial next
+        _test_login("/")
+        # try with a next that requires login
+        _test_login(urlreverse(ietf.ietfauth.views.profile))
 
     def test_login_with_different_email(self):
         person = PersonFactory(user__username='plain')

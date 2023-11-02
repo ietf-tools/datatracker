@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2007-2020, All Rights Reserved
+# Copyright The IETF Trust 2007-2023, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -409,16 +409,20 @@ def startswith(x, y):
     return str(x).startswith(y)
 
 
-@register.filter(name='removepath', is_safe=False)
-def removepath(value, suffix):
-    """Remove an exact-match path
+@register.filter(name='removeprefix', is_safe=False)
+def removeprefix(value, prefix):
+    """Remove an exact-match prefix
     
     The is_safe flag is False because indiscriminate use of this could result in non-safe output.
     See https://docs.djangoproject.com/en/2.2/howto/custom-template-tags/#filters-and-auto-escaping
     which describes the possibility that removing characters from an escaped string may introduce
     HTML-unsafe output.
     """
-    return str(value).replace(suffix, '')
+    base = str(value)
+    if base.startswith(prefix):
+        return base[len(prefix):]
+    else:
+        return base
 
 
 @register.filter
