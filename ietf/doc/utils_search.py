@@ -315,7 +315,7 @@ AD_WORKLOAD = {
         ("adrev", False),
         ("iesgeval", True),
         ("approved", True),  # synthesized state for all the "appr-" states
-        ("withdraw", None),
+        # ("withdraw", None),  # probably not a useful state to show
     ],
     "statchg": [
         ("needshep", False),
@@ -325,7 +325,7 @@ AD_WORKLOAD = {
         ("iesgeval", True),
         ("goahead", False),
         ("appr-sent", True),
-        ("dead", None),
+        # ("dead", None),  # probably not a useful state to show
     ],
     "charter": [
         ("notrev", None),
@@ -334,7 +334,7 @@ AD_WORKLOAD = {
         ("extrev", True),
         ("iesgrev", True),
         ("approved", True),
-        ("replaced", None),
+        # ("replaced", None),  # probably not a useful state to show
     ],
 }
 

@@ -32,7 +32,7 @@
                     <th scope="col" data-sort="name">Area Director</th>
                     {% for state in type.state_names %}
                         <th scope="col" class="col-1" title=""
-                            data-sort="{{ state }}-num">
+                            data-sort="{{ state|slugify }}-num">
                             {{ state|split:'/'|join:'/<wbr>' }}
                         </th>
                     {% endfor %}
@@ -47,7 +47,7 @@
                         {% for state, up_is_good, count, prev, docs_delta in ad_data %}
                         <td class="col-1"
                             id="{{ type.doc_type }}-{{ ad|slugify }}-{{ state }}">
-                            {% include 'doc/ad_count.html' %}
+                            {# {{ count }} #}
                             <div id="chart-{{ type.doc_type }}-{{ ad|slugify }}-{{ state }}"></div>
                         </td>
                         {% endfor %}
@@ -59,7 +59,7 @@
                     <th scope="row">Sum</th>
                     {% for state, up_is_good, count, prev in type.sums %}
                         <td>
-                            {% include 'doc/ad_count.html' %}
+                            {# {{ count }} #}
                             <div id="chart-{{ type.doc_type }}-sum-{{ state }}"></div>
                         </td>
                     {% endfor %}
@@ -82,29 +82,17 @@
     </script>
     <script src="{% static "ietf/js/highcharts.js" %}"></script>
     {{ data|json_script:"data" }}
-    {{ bucket_cutoffs|json_script:"bucket-cutoffs" }}
     <script>
-        function sumArrays(...arrays) {
-            const n = arrays.reduce((max, xs) => Math.max(max, xs.length), 0);
-            const result = Array.from({ length: n });
-            return result.map((_, i) => arrays.map(xs => xs[i] || 0).reduce((sum, x) => sum + x, 0));
-        }
-
         const data = JSON.parse(document.getElementById("data").textContent);
-        // const cutoffs = JSON.parse(document.getElementById("bucket-cutoffs").textContent);
-
-        // console.log(data);
 
         Object.entries(data).forEach(([dt, ads]) => {
-            sum = {};
             max = {};
             Object.entries(ads).forEach(([ad, states]) => {
                 Object.entries(states).forEach(([state, buckets]) => {
                     buckets.series = buckets.map((x) => x.length);
-                    max[state] = Math.max(...buckets.series, max[state] ? max[state] : 0);
-                    // console.log(state,"bef", sum[state])
-                    // sum[state] = sumArrays(sum[state], buckets.series);
-                    // console.log(state,"aft", sum[state])
+                    if (ad != "sum") {
+                        max[state] = Math.max(...buckets.series, max[state] ? max[state] : 0);
+                    }
                 });
             });
 
@@ -112,20 +100,17 @@
                 Object.entries(states).forEach(([state, buckets]) => {
                     const cell = `chart-${dt}-${ad}-${state}`;
 
-                    if (state == "ignore")
-                        return;
-
                     // if (buckets.series.every((x) => x == 0)) {
                     //     document.getElementById(cell).innerHTML = '<div class="fw-bold mt-1">0</div>';
                     //     return;
                     // }
 
+                    const ymax = ad != "sum" ? max[state] : Math.max(...buckets.series);
                     Highcharts.chart({
                         title: { text: undefined },
                         chart: {
                             type: "line",
                             animation: false,
-                            backgroundColor: "transparent",
                             renderTo: cell,
                             panning: { enabled: false },
                             spacing: [4, 0, 5, 0],
@@ -149,8 +134,8 @@
                             tickLength: 0,
                             labels: { x: -3 },
                             min: 0,
-                            max: max[state],
-                            tickInterval: max[state],
+                            max: ymax,
+                            tickInterval: ymax,
                         },
                         plotOptions: {
                             series: {
