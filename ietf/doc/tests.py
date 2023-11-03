@@ -59,7 +59,7 @@ from ietf.utils.test_utils import login_testing_unauthorized, unicontent
 from ietf.utils.test_utils import TestCase
 from ietf.utils.text import normalize_text
 from ietf.utils.timezone import date_today, datetime_today, DEADLINE_TZINFO, RPC_TZINFO
-from ietf.doc.utils_search import AD_WORKLOAD_STATE_SLUGS
+from ietf.doc.utils_search import AD_WORKLOAD
 
 
 class SearchTests(TestCase):
@@ -287,8 +287,8 @@ class SearchTests(TestCase):
             person__name="Example Areadirector",
         ).person
         expected = defaultdict(lambda: 0)
-        for doc_type_slug in AD_WORKLOAD_STATE_SLUGS:
-            for state, _ in AD_WORKLOAD_STATE_SLUGS[doc_type_slug]:
+        for doc_type_slug in AD_WORKLOAD:
+            for state, _ in AD_WORKLOAD[doc_type_slug]:
                 target_num = random.randint(0, 2)
                 for _ in range(target_num):
                     if (

@@ -67,7 +67,7 @@ from ietf.person.models import Person
 from ietf.person.utils import get_active_ads
 from ietf.utils.draft_search import normalize_draftname
 from ietf.utils.log import log
-from ietf.doc.utils_search import prepare_document_table, doc_type, doc_state, doc_type_name, AD_WORKLOAD_STATE_SLUGS
+from ietf.doc.utils_search import prepare_document_table, doc_type, doc_state, doc_type_name, AD_WORKLOAD
 
 
 class SearchForm(forms.Form):
@@ -317,12 +317,14 @@ def search_for_name(request, name):
 
 def state_name(doc_type, state, shorten=True):
     name = ""
-    if doc_type in ["draft", "rfc"] and state not in ["rfc", "expired"]:
+    if state == "ignore":
+        name = state
+    elif doc_type in ["draft", "rfc"] and state not in ["rfc", "expired"]:
         name = State.objects.get(type="draft-iesg", slug=state).name
     elif state == "rfc":
         name = "RFC"
     elif doc_type == "conflrev" and state.startswith("appr"):
-            name = "Approved"
+        name = "Approved"
     else:
         name = State.objects.get(type=doc_type, slug=state).name
 
@@ -359,24 +361,37 @@ def state_name(doc_type, state, shorten=True):
     return name.strip()
 
 
-def ad_workload(request):
-    weeks = 17
-    delta = datetime.timedelta(weeks=weeks)
-    right_now = timezone.now()
+# def slug_to_name(dt, ds):
+#     if ds == "ignore":
+#         return ds
+#     if dt == "rfc" and ds == "rfc":
+#         return "RFC"
+#     if dt == "conflrev" and ds == "approved":
+#         return "Approved"
+#     if dt == "draft" or ds == "rfcqueue":
+#         s = State.objects.get(slug=ds, type="draft-iesg")
+#     else:
+#         s = State.objects.get(slug=ds, type=dt)
+#     return s.name
 
-    state_slugs = {}
-    for dt in AD_WORKLOAD_STATE_SLUGS:
-        state_slugs[dt] = {}
-        for ds, _ in AD_WORKLOAD_STATE_SLUGS[dt]:
-            if dt == "rfc" and ds == "rfc":
-                state_slugs[dt]["RFC"] = "rfc"
-            elif dt == "draft" or ds == "rfcqueue":
-                s = State.objects.get(slug=ds, type="draft-iesg")
-            elif dt == "conflrev" and ds == "approved":
-                state_slugs[dt]["Approved"] = ds
-            else:
-                s = State.objects.get(slug=ds, type=dt)
-            state_slugs[dt][s.name] = ds
+
+STATE_SLUGS = {
+    dt: {state_name(dt, ds, shorten=False): ds for ds, _ in AD_WORKLOAD[dt] + [("ignore", "ignore")]}
+    for dt in AD_WORKLOAD
+}
+
+IESG_STATES = State.objects.filter(type="draft-iesg").values_list("name", flat=True)
+
+
+def date_to_bucket(date, now):
+    # buckets go into the past with increasing index; now.date() is bucket 0
+    return int((now.date() - date.date()).total_seconds() / 60 / 60 / 24)
+
+
+def ad_workload(request):
+    buckets = 120
+    # delta = datetime.timedelta(weeks=weeks)
+    now = timezone.now()
 
     ads = []
     responsible = Document.objects.values_list("ad", flat=True).distinct()
@@ -389,29 +404,29 @@ def ad_workload(request):
         | Q(pk__in=responsible)
     ).distinct():
         if p in get_active_ads():
-            if p.name == "John Scudder":
+            if p.name == "Lars Eggert":
                 ads.append(p)
 
-    dates = list(
-        dateutil.rrule.rrule(
-            freq=dateutil.rrule.WEEKLY, count=13, dtstart=right_now - delta
-        )
-    )
-    dates.reverse()
+    # dates = list(
+    #     dateutil.rrule.rrule(
+    #         freq=dateutil.rrule.WEEKLY, count=13, dtstart=now - delta
+    #     )
+    # )
+    # dates.reverse()
 
     for ad in ads:
         ad.dashboard = urlreverse(
             "ietf.doc.views_search.docs_for_ad", kwargs=dict(name=ad.full_name_as_key())
         )
         ad.doc_now = {
-            dt: {state: set() for state, _ in AD_WORKLOAD_STATE_SLUGS[dt]}
-            for dt in AD_WORKLOAD_STATE_SLUGS
+            dt: {state: set() for state, _ in AD_WORKLOAD[dt]}
+            for dt in AD_WORKLOAD
         }
         ad.doc_prev = copy.deepcopy(ad.doc_now)
         ad.doc_diff = copy.deepcopy(ad.doc_now)
         ad.buckets = {
-            dt: {state: [[] for _ in dates] for state, _ in AD_WORKLOAD_STATE_SLUGS[dt]}
-            for dt in AD_WORKLOAD_STATE_SLUGS
+            dt: {state: [[] for _ in range(buckets)] for state in STATE_SLUGS[dt].values()}
+            for dt in STATE_SLUGS
         }
 
         for doc in Document.objects.filter(ad=ad):
@@ -422,71 +437,117 @@ def ad_workload(request):
                 ad.doc_now[dt][state].add(doc)
 
             state_events = doc.docevent_set.filter(
-                Q(type="started_iesg_process") | Q(type="changed_state"),
+                Q(type="started_iesg_process") | Q(type="changed_state") | Q(type="published_rfc"),
                 # desc__contains="IESG state changed to",
                 # time__gte=dates[0]
             ).order_by("-time")
 
             last_state_event = state_events.last()
 
-            if (last_state_event is not None) and (
-                right_now - last_state_event.time
-            ) > delta:
-                if state in ad.doc_now[dt]:
-                    ad.doc_prev[dt][state].add(doc)
+            # if (last_state_event is not None) and (
+            #     now - last_state_event.time
+            # ) > delta:
+            #     if state in ad.doc_now[dt]:
+            #         ad.doc_prev[dt][state].add(doc)
 
             # compute state history for drafts
             print()
             print(doc)
+            last = now
             for e in state_events:
-                # get state name changed into
+                print(e.time.date(), e.desc)
+                # get the state name this event changed the doc into
                 match = re.search(
-                    r"state changed to (.*?)(?:::.*)? from (.*?)(?=::|$)",
+                    r"(RFC) published|[Ss]tate changed to (.*?)(?:::.*)? from (.*?)(?=::|$)",
                     strip_tags(e.desc),
                     flags=re.MULTILINE,
                 )
                 if not match:
-                    # some other state change, ignore
+                    # some irrelevant state change for the AD dashboard, ignore it
                     continue
 
-                to_state = match[1]
-                if to_state not in state_slugs[dt]:
-                    # change into a state we don't display, ignore
-                    continue
-
-                for idx, start_date in enumerate(dates):
-                    # print(idx, start_date.date())
-                    cutoff = right_now if idx == 0 else dates[idx - 1]
-                    if e.time <= cutoff:
-                        # skip if doc is already in the same bucket
-                        if any(
-                            [
-                                doc.name in ad.buckets[dt][state][idx]
-                                for state, _ in AD_WORKLOAD_STATE_SLUGS[dt]
-                            ]
-                        ):
-                            print(
-                                f"skip {e.time.date()} to bucket {idx} {to_state} (exists) "
-                            )
-                            continue
-                        print(
-                            f"ADD  {e.time.date()} to bucket {idx} {to_state} (<= {cutoff.date()}) "
-                        )
-                        ad.buckets[dt][state_slugs[dt][to_state]][idx].append(doc.name)
-                    else:
-                        # no need to check earlier buckets (based on date of event)
-                        print(
-                            f"skip {e.time.date()} to buckets >= {idx} {to_state} (> {cutoff.date()}) "
-                        )
+                to_state = match.group(1) or match.group(2)
+                # fix up some things
+                if dt == "conflrev" and to_state.startswith("Approved"):
+                    to_state = "Approved"
+                elif to_state == "RFC Published":
+                    to_state = "RFC"
+                print(to_state, dt, STATE_SLUGS[dt].keys())
+                if to_state not in STATE_SLUGS[dt].keys():
+                    # change into a state the AD dashboard doesn't display
+                    if to_state in IESG_STATES:
+                        # if it's an IESG state we don't display, we're done with this doc
+                        print("iesg state, break")
                         break
+                    # if it's not an IESG state, keep going with next event
+                    # print(dt, state, to_state, STATE_SLUGS[dt].keys())
+                    print("not shown state, cont")
+                    continue
 
-        for dt in AD_WORKLOAD_STATE_SLUGS:
+                sn = STATE_SLUGS[dt][to_state]
+
+                buckets_start = date_to_bucket(last, now)
+                buckets_end = date_to_bucket(e.time, now)
+                if buckets_end >= buckets:
+                    # this event is older than we record in the history
+                    if last == now:
+                        # but since we didn't record any state yet,
+                        # this is the state the doc was in for the
+                        # entire history
+                        print(f"set initial: {dt} {sn}")
+                        for b in range(buckets_start, buckets):
+                            ad.buckets[dt][sn][b].append(doc.name)
+                    break
+
+                # print(last)
+                # print(e.time)
+                # print(buckets)
+                for b in range(buckets_start, buckets_end):
+                    ad.buckets[dt][sn][b].append(doc.name)
+
+                last = e.time
+
+                # for idx, start_date in enumerate(dates):
+                #     # print(idx, start_date.date())
+                #     cutoff = now if idx == 0 else dates[idx - 1]
+                #     if e.time <= cutoff:
+                #         # skip if doc is already in the same bucket
+                #         if any(
+                #             [
+                #                 doc.name in ad.buckets[dt][state][idx]
+                #                 for state in STATE_SLUGS[dt].values()
+                #             ]
+                #         ):
+                #             print(
+                #                 f"skip {e.time.date()} to bucket {idx} {to_state} (exists) "
+                #             )
+                #             continue
+                #         print(
+                #             f"ADD  {e.time.date()} to bucket {idx} {to_state} (<= {cutoff.date()}) "
+                #         )
+                #         ad.buckets[dt][sn][idx].append(doc.name)
+                #     else:
+                #         # no need to check earlier buckets (based on date of event)
+                #         print(
+                #             f"skip {e.time.date()} to buckets >= {idx} {to_state} (> {cutoff.date()}) "
+                #         )
+                #         break
+
+        for dt in AD_WORKLOAD:
             for state in ad.doc_now[dt]:
-                if dt == "draft" and state == "pub-req":
-                    addn = {n.name for n in ad.doc_now[dt][state]}
+                addn = {n.name for n in ad.doc_now[dt][state]}
+                new = set(ad.buckets[dt][state][0])
+                diff = new ^ addn
+                if diff:
                     print("old", dt, state, len(addn), addn)
-                    print("new", dt, state, len(ad.buckets[dt][state][0]), ad.buckets[dt][state][0])
-                    print("DIFF", set(ad.buckets[dt][state][0]) ^ addn)
+                    print(
+                        "new",
+                        dt,
+                        state,
+                        len(new),
+                        new,
+                    )
+                    print("DIFF", diff)
                 ad.doc_diff[dt][state] = ad.doc_prev[dt][state] ^ ad.doc_now[dt][state]
                 ad.buckets[dt][state].reverse()
 
@@ -501,7 +562,7 @@ def ad_workload(request):
                     [
                         (
                             state,
-                            {s: uig for s, uig in AD_WORKLOAD_STATE_SLUGS[dt]}[state],
+                            {s: uig for s, uig in AD_WORKLOAD[dt]}[state],
                             len(ad.doc_now[dt][state]),
                             len(ad.doc_prev[dt][state]),
                             ad.doc_diff[dt][state],
@@ -514,14 +575,14 @@ def ad_workload(request):
             sums=[
                 (
                     state,
-                    {s: uig for s, uig in AD_WORKLOAD_STATE_SLUGS[dt]}[state],
+                    {s: uig for s, uig in AD_WORKLOAD[dt]}[state],
                     sum([len(ad.doc_now[dt][state]) for ad in ads]),
                     sum([len(ad.doc_prev[dt][state]) for ad in ads]),
                 )
                 for state in ad.doc_now[dt]
             ],
         )
-        for dt in AD_WORKLOAD_STATE_SLUGS
+        for dt in AD_WORKLOAD
     ]
 
     return render(
@@ -529,17 +590,19 @@ def ad_workload(request):
         "doc/ad_list.html",
         {
             "workload": workload,
-            "delta": weeks,
-            "data": {dt: {slugify(ad): ad.buckets[dt] for ad in ads} for dt in AD_WORKLOAD_STATE_SLUGS},
-            "bucket_cutoffs": [date.date() for date in dates],
+            # "delta": weeks,
+            "data": {
+                dt: {slugify(ad): ad.buckets[dt] for ad in ads}
+                for dt in AD_WORKLOAD
+            },
+            # "bucket_cutoffs": [date.date() for date in dates],
         },
     )
 
 
-
 def docs_for_ad(request, name):
     def sort_key(doc):
-        key = list(AD_WORKLOAD_STATE_SLUGS.keys()).index(doc_type(doc))
+        key = list(AD_WORKLOAD.keys()).index(doc_type(doc))
         return key
 
     ad = None

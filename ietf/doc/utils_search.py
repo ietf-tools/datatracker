@@ -293,7 +293,7 @@ def prepare_document_table(request, docs, query=None, max_results=200):
 # "rfc" is a custom subset of "draft" that we special-case in the code
 # to break out these docs into a separate table.
 #
-AD_WORKLOAD_STATE_SLUGS = {
+AD_WORKLOAD = {
     "draft": [
         ("pub-req", False),
         ("ad-eval", False),
@@ -308,7 +308,7 @@ AD_WORKLOAD_STATE_SLUGS = {
     ],
     "rfc": [
         ("rfcqueue", True),
-        ("rfc", True)
+        ("rfc", True),
     ],
     "conflrev": [
         ("needshep", False),

@@ -107,11 +107,13 @@
                     // console.log(state,"aft", sum[state])
                 });
             });
-            // console.log(sum)
 
             Object.entries(ads).forEach(([ad, states]) => {
                 Object.entries(states).forEach(([state, buckets]) => {
                     const cell = `chart-${dt}-${ad}-${state}`;
+
+                    if (state == "ignore")
+                        return;
 
                     // if (buckets.series.every((x) => x == 0)) {
                     //     document.getElementById(cell).innerHTML = '<div class="fw-bold mt-1">0</div>';
