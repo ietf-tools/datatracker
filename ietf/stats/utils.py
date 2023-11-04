@@ -269,7 +269,7 @@ def get_meeting_registration_data(meeting):
             if (address, reg_type) in meeting_registrations:
                 object = meeting_registrations.pop((address, reg_type))
                 created = False
-            else:
+            elif not records.filter(email=address, reg_type=reg_type).exists():
                 object = MeetingRegistration.objects.create(
                     meeting_id=meeting.pk,
                     email=address,
