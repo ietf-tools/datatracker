@@ -14,6 +14,7 @@ import pytz
 import re
 import tarfile
 import tempfile
+import shutil
 
 from calendar import timegm
 from collections import OrderedDict, Counter, deque, defaultdict, namedtuple
@@ -4555,8 +4556,10 @@ def approve_proposed_slides(request, slidesubmission_id, num):
                 path = os.path.join(submission.session.meeting.get_materials_path(),'slides')
                 if not os.path.exists(path):
                     os.makedirs(path)
-                os.rename(submission.staged_filepath(), os.path.join(path, target_filename))
+                shutil.move(submission.staged_filepath(), os.path.join(path, target_filename))
                 post_process(doc)
+                DocEvent.objects.create(type="approved_slides", doc=doc, rev=doc.rev, by=request.user.person, desc="Slides approved")
+
                 acronym = submission.session.group.acronym
                 submission.status = SlideSubmissionStatusName.objects.get(slug='approved')
                 submission.doc = doc
