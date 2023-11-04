@@ -9,6 +9,7 @@ urlpatterns = [
     url(r'^(?P<request_id>[0-9]+)/$', views_review.review_request),
     url(r'^(?P<request_id>[0-9]+)/login/$', views_review.review_request_forced_login),
     url(r'^(?P<request_id>[0-9]+)/close/$', views_review.close_request),
+    url(r'^(?P<request_id>[0-9]+)/addrequestcomment/$', views_review.add_request_comment),
     url(r'^(?P<request_id>[0-9]+)/assignreviewer/$', views_review.assign_reviewer),
     url(r'^(?P<assignment_id>[0-9]+)/rejectreviewerassignment/$', views_review.reject_reviewer_assignment),
     url(r'^(?P<assignment_id>[0-9]+)/complete/$', views_review.complete_review),
