@@ -62,9 +62,9 @@
                 {% endif %}
             {% else %}
                 {% if snapshot and doc.doc.get_state_slug == 'rfc' %}
-                   <div{% if document_html %} class="alert alert-warning small"{% endif %}>This is an older version of an Internet-Draft that was ultimately published as <a href="{% url 'ietf.doc.views_doc.document_html' name=doc.doc.canonical_name %}">{{doc.doc.canonical_name|prettystdname}}</a>.</div>
+                   <div{% if document_html %} class="alert alert-warning small p-2 mt-2"{% endif %}>This is an older version of an Internet-Draft that was ultimately published as <a href="{% url 'ietf.doc.views_doc.document_html' name=doc.doc.canonical_name %}">{{doc.doc.canonical_name|prettystdname}}</a>.</div>
                 {% elif snapshot and doc.rev != latest_rev  %}
-                    <div{% if document_html %} class="alert alert-warning small"{% endif %}>This is an older version of an Internet-Draft whose latest revision state is "{{ doc.doc.get_state }}".</div>
+                    <div{% if document_html %} class="alert alert-warning small p-2 mt-2"{% endif %}>This is an older version of an Internet-Draft whose latest revision state is "{{ doc.doc.get_state }}".</div>
                  {% else %}
                     <span class="{% if doc.get_state_slug == 'active' %}text-success{% elif doc.get_state_slug == 'expired' or doc.get_state_slug == 'repl' %}text-danger{% endif %}">{% if snapshot and doc.rev == latest_rev %}{{ doc.doc.get_state }}{% else %}{{ doc.get_state }}{% endif %} Internet-Draft</span>
                     {% if submission %}({{ submission|safe }}){% endif %}
@@ -75,6 +75,9 @@
                 <div class="badge rounded-pill text-bg-warning{% if not document_html %} float-end{% endif %}">
                     Expired &amp; archived
                 </div>
+            {% endif %}
+            {% if document_html %}
+                {% include "doc/disclaimer.html" with document_html=document_html %}
             {% endif %}
         </td>
     </tr>
