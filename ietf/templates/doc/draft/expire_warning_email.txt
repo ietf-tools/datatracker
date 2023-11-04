@@ -1,7 +1,7 @@
-{% load ietf_filters %}{% autoescape off %}The following Internet-Draft will expire soon:
+{% load ietf_filters tz %}{% autoescape off %}The following Internet-Draft will expire soon:
 
 Name:     {{ doc.name|clean_whitespace }}
 Title:    {{ doc.title}}
 State:    {{ state }}
-Expires:  {{ expiration }} (in {{ expiration|timeuntil }})
+Expires:  {{ expiration|utc }} (in {{ expiration|timeuntil }})
 {% endautoescape %}
