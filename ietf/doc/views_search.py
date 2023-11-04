@@ -614,7 +614,7 @@ def docs_for_ad(request, name):
                 not ballot
                 or doc.get_state_slug("draft") == "repl"
                 or doc.get_state_slug("draft-iesg") == "defer"
-                or (doc.telechat_date() and doc.telechat_date() > timezone.now().date())
+                or not doc.previous_telechat_date()
             ):
                 continue
 
