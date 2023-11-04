@@ -7,11 +7,16 @@
     <link rel="stylesheet" href="{% static 'ietf/css/highcharts.css' %}">
 {% endblock %}
 {% block morecss %}
+    table .border-bottom { border-bottom-color: var(--highcharts-neutral-color-80) !important; }
     .highcharts-container .highcharts-axis-labels { font-size: .7rem; }
     .highcharts-container .highcharts-graph { stroke-width: 2.5; }
+    .highcharts-container .highcharts-color-0 {
+        fill: var(--bs-primary);
+        stroke: var(--bs-primary);
+    }
     .highcharts-container .highcharts-data-label text {
         font-size: 1rem;
-        {# font-weight: inherit; #}
+        font-weight: inherit;
     }
 {% endblock %}
 {% block title %}IESG Dashboard{% endblock %}
@@ -20,11 +25,11 @@
     <h1>IESG Dashboard</h1>
     {% if user|has_role:"Area Director,Secretariat" %}
     <div class="alert alert-info my-3">
-        {{ delta }}-week trend graphs
+        {{ delta }}-day trend graphs
         are only shown to logged-in Area Directors.
     </div>
     {% endif %}
-    {% for type in workload %}
+    {% for type in metadata %}
         <h2 class="mt-5" id="{{ type.doc_type }}">{{ type.doc_type_name }} State Counts</h2>
         <table class="table table-sm table-striped table-bordered tablesorter navskip">
             <thead class="wrap-anywhere">
@@ -39,15 +44,14 @@
                 </tr>
             </thead>
             <tbody class="table-group-divider">
-                {% for ad, ad_data in type.counts %}
+                {% for ad in type.ads %}
                     <tr>
                         <td>
                             <a href="{{ ad.dashboard }}">{{ ad.name }}</a>
                         </td>
-                        {% for state, up_is_good, count, prev, docs_delta in ad_data %}
-                        <td class="col-1"
+                        {% for state in type.states %}
+                        <td class="col-1 align-bottom"
                             id="{{ type.doc_type }}-{{ ad|slugify }}-{{ state }}">
-                            {# {{ count }} #}
                             <div id="chart-{{ type.doc_type }}-{{ ad|slugify }}-{{ state }}"></div>
                         </td>
                         {% endfor %}
@@ -57,9 +61,8 @@
             <tfoot class="table-group-divider">
                 <tr>
                     <th scope="row">Sum</th>
-                    {% for state, up_is_good, count, prev in type.sums %}
-                        <td>
-                            {# {{ count }} #}
+                    {% for state in type.states %}
+                        <td class="align-bottom">
                             <div id="chart-{{ type.doc_type }}-sum-{{ state }}"></div>
                         </td>
                     {% endfor %}
@@ -91,7 +94,8 @@
                 Object.entries(states).forEach(([state, buckets]) => {
                     buckets.series = buckets.map((x) => x.length);
                     if (ad != "sum") {
-                        max[state] = Math.max(...buckets.series, max[state] ? max[state] : 0);
+                        max[state] = Math.max(...buckets.series,
+                                              max[state] ? max[state] : 0);
                     }
                 });
             });
@@ -100,12 +104,33 @@
                 Object.entries(states).forEach(([state, buckets]) => {
                     const cell = `chart-${dt}-${ad}-${state}`;
 
-                    // if (buckets.series.every((x) => x == 0)) {
-                    //     document.getElementById(cell).innerHTML = '<div class="fw-bold mt-1">0</div>';
-                    //     return;
-                    // }
+                    // if there is only a single datapoint in the
+                    // bucket, display it without a graph
+                    if (buckets.series.length == 1) {
+                        document.getElementById(cell).innerHTML =
+                            buckets.series[0];
+                        return;
+                    }
 
-                    const ymax = ad != "sum" ? max[state] : Math.max(...buckets.series);
+                    // if a bucket has all zeroes, fake a Highcharts
+                    // plot with HTML, to reduce the number of plot
+                    // objects on the page
+                    if (buckets.series.every((x) => x == 0)) {
+                        // document.getElementById(cell).innerHTML = `
+                        //     <div class="position-relative">
+                        //         <div class="position-absolute bottom-0 start-0">
+                        //             <div style="font-size: .7rem;" class="ms-1">0</div>
+                        //         </div>
+                        //         <div class="position-absolute bottom-0 end-0 w-100 ps-1">
+                        //             <div class="border-bottom mb-1 ms-3">0</div>
+                        //         </div>
+                        //     </div>
+                        // `;
+                        return;
+                    }
+
+                    // else actually create a graph
+                    const ymax = Math.max(1, ad != "sum" ? max[state] : Math.max(...buckets.series));
                     Highcharts.chart({
                         title: { text: undefined },
                         chart: {
@@ -114,7 +139,7 @@
                             renderTo: cell,
                             panning: { enabled: false },
                             spacing: [4, 0, 5, 0],
-                            height: "45%",
+                            height: "70%",
                         },
                         scrollbar: { enabled: false },
                         tooltip: { enabled: false },
@@ -145,8 +170,12 @@
                                     inside: true,
                                     padding: 0,
                                     formatter: function() {
-                                        // only label the last (= current) point in the curve
-                                        if (this.point.index + 1 == this.series.points.length) {
+                                        // only label the last
+                                        // (= current-day) point in
+                                        // the curve with today's
+                                        // value
+                                        if (this.point.index + 1 ==
+                                            this.series.points.length) {
                                             return this.y;
                                         }
                                         return undefined;
@@ -158,16 +187,10 @@
                             name: undefined,
                             data: buckets.series,
                             enableMouseTracking: false,
-                            // marker: { enabled: true, radius: 2 },
                         }],
                     });
                 });
             });
         });
-
-        // $(window).resize(function(){
-        //     console.log(111);
-        //     Highcharts.charts.forEach(chart => chart.reflow());
-        // });
     </script>
 {% endblock %}

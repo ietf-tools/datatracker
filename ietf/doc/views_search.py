@@ -67,6 +67,7 @@ from ietf.person.utils import get_active_ads
 from ietf.utils.draft_search import normalize_draftname
 from ietf.utils.log import log
 from ietf.doc.utils_search import prepare_document_table, doc_type, doc_state, doc_type_name, AD_WORKLOAD
+from ietf.ietfauth.utils import has_role
 
 
 class SearchForm(forms.Form):
@@ -366,13 +367,15 @@ STATE_SLUGS = {
 IESG_STATES = State.objects.filter(type="draft-iesg").values_list("name", flat=True)
 
 
-def date_to_bucket(date, now):
-    # buckets go into the past with increasing index; now.date() is bucket 0
-    return int((now.date() - date.date()).total_seconds() / 60 / 60 / 24)
+def date_to_bucket(date, now, num_buckets):
+    return num_buckets - min(
+        num_buckets, int((now.date() - date.date()).total_seconds() / 60 / 60 / 24)
+    )
 
 
 def ad_workload(request):
-    days = 120
+    # number of days (= buckets) to show in the graphs
+    days = 120 if has_role(request.user, ["Area Director", "Secretariat"]) else 1
     now = timezone.now()
 
     ads = []
@@ -398,19 +401,11 @@ def ad_workload(request):
         ad.dashboard = urlreverse(
             "ietf.doc.views_search.docs_for_ad", kwargs=dict(name=ad.full_name_as_key())
         )
-        ad.doc_now = {
-            dt: {state: set() for state, _ in AD_WORKLOAD[dt]} for dt in AD_WORKLOAD
-        }
-        ad.doc_prev = copy.deepcopy(ad.doc_now)
-        ad.doc_diff = copy.deepcopy(ad.doc_now)
         ad.buckets = copy.deepcopy(bucket_template)
 
         for doc in Document.objects.filter(ad=ad):
             dt = doc_type(doc)
             state = doc_state(doc)
-
-            if state in ad.doc_now[dt]:
-                ad.doc_now[dt][state].add(doc)
 
             state_events = doc.docevent_set.filter(
                 Q(type="started_iesg_process")
@@ -420,12 +415,9 @@ def ad_workload(request):
             ).order_by("-time")
 
             # compute state history for drafts
-            # print()
-            # print(doc)
             last = now
             ballot_closed = False
             for e in state_events:
-                # print(e.time.date(), e.type, e.desc)
                 to_state = None
                 if dt == "charter":
                     if e.type == "closed_ballot":
@@ -455,31 +447,26 @@ def ad_workload(request):
                     to_state = "Start Chartering/Rechartering (Internal Steering Group/IAB Review)"
                 elif to_state == "RFC Published":
                     to_state = "RFC"
-                # print(to_state, dt, STATE_SLUGS[dt].keys())
 
                 if to_state not in STATE_SLUGS[dt].keys() or to_state == "Replaced":
                     # change into a state the AD dashboard doesn't display
                     if to_state in IESG_STATES or to_state == "Replaced":
                         # if it's an IESG state we don't display, we're done with this doc
-                        # print("iesg state, break")
                         last = e.time
                         break
                     # if it's not an IESG state, keep going with next event
-                    # print(dt, state, to_state, STATE_SLUGS[dt].keys())
-                    # print("not shown state, cont")
                     continue
 
                 sn = STATE_SLUGS[dt][to_state]
+                buckets_start = date_to_bucket(e.time, now, days)
+                buckets_end = date_to_bucket(last, now, days)
 
-                buckets_start = date_to_bucket(last, now)
-                buckets_end = date_to_bucket(e.time, now)
                 if buckets_end >= days:
                     # this event is older than we record in the history
                     if last == now:
                         # but since we didn't record any state yet,
                         # this is the state the doc was in for the
                         # entire history
-                        # print(f"set initial: {dt} {sn}")
                         for b in range(buckets_start, days):
                             ad.buckets[dt][sn][b].append(doc.name)
                             sums[dt][sn][b].append(doc.name)
@@ -494,85 +481,34 @@ def ad_workload(request):
 
             if last == now:
                 s = state_name(dt, state, shorten=False)
-                # print(dt, s, state)
                 if s in STATE_SLUGS[dt].keys():
                     # we didn't have a single event for this doc, assume
                     # the current state applied throughput the history
                     for b in range(days):
                         ad.buckets[dt][state][b].append(doc.name)
                         sums[dt][state][b].append(doc.name)
-                # else:
-                #     print(STATE_SLUGS[dt].keys())
 
-        for dt in AD_WORKLOAD:
-            for state in ad.doc_now[dt]:
-                addn = {n.name for n in ad.doc_now[dt][state]}
-                new = set(ad.buckets[dt][state][0])
-                diff = new ^ addn
-                if diff:
-                    print("old", dt, state, len(addn), addn)
-                    print(
-                        "new",
-                        dt,
-                        state,
-                        len(new),
-                        new,
-                    )
-                    print("DIFF", diff)
-                ad.doc_diff[dt][state] = ad.doc_prev[dt][state] ^ ad.doc_now[dt][state]
-
-    workload = [
-        dict(
-            doc_type=dt,
-            doc_type_name=doc_type_name(dt),
-            state_names=[state_name(dt, state) for state in ad.doc_now[dt]],
-            counts=[
-                (
-                    ad,
-                    [
-                        (
-                            state,
-                            {s: uig for s, uig in AD_WORKLOAD[dt]}[state],
-                            len(ad.doc_now[dt][state]),
-                            len(ad.doc_prev[dt][state]),
-                            ad.doc_diff[dt][state],
-                        )
-                        for state in ad.doc_now[dt]
-                    ],
-                )
-                for ad in ads
-            ],
-            sums=[
-                (
-                    state,
-                    {s: uig for s, uig in AD_WORKLOAD[dt]}[state],
-                    sum([len(ad.doc_now[dt][state]) for ad in ads]),
-                    sum([len(ad.doc_prev[dt][state]) for ad in ads]),
-                )
-                for state in ad.doc_now[dt]
-            ],
-        )
+    metadata = [
+        {
+            "doc_type": dt,
+            "doc_type_name": doc_type_name(dt),
+            "states": ad.buckets[dt].keys(),
+            "state_names": [state_name(dt, state) for state in ad.buckets[dt]],
+            "ads": ads,
+        }
         for dt in AD_WORKLOAD
     ]
 
-    data = {dt: {slugify(ad): ad.buckets[dt] for ad in ads} for dt in AD_WORKLOAD}
-
-    for ad in ads:
-        for dt in AD_WORKLOAD:
-            for state in sums[dt]:
-                ad.buckets[dt][state].reverse()
-
-    for dt in AD_WORKLOAD:
-        for state in sums[dt]:
-            sums[dt][state].reverse()
-        data[dt]["sum"] = sums[dt]
+    data = {
+        dt: {slugify(ad): ad.buckets[dt] for ad in ads} | {"sum": sums[dt]}
+        for dt in AD_WORKLOAD
+    }
 
     return render(
         request,
         "doc/ad_list.html",
-        {"workload": workload, "delta": days, "data": data},
+        {"metadata": metadata, "data": data, "delta": days},
     )
-
 
 
 def docs_for_ad(request, name):
@@ -598,6 +534,7 @@ def docs_for_ad(request, name):
 
     results, meta = prepare_document_table(request, Document.objects.filter(ad=ad))
     results.sort(key=lambda d: sort_key(d))
+    del meta["headers"][-1]
 
     # filter out some results
     results = [
