@@ -685,6 +685,22 @@
                             Google
                         </a>
                     </li>
+                    <li role="presentation">
+                        <a class="dropdown-item"
+                           href="https://www.bing.com/search?q={{ doc.name }}&amp;site={{ search_archive }}"
+                           rel="nofollow"
+                           target="_blank">
+                            Bing
+                        </a>
+                    </li>
+                    <li role="presentation">
+                        <a class="dropdown-item"
+                           href="https://duckduckgo.com/?q={{ doc.name }}&amp;site={{ search_archive }}"
+                           rel="nofollow"
+                           target="_blank">
+                            DuckDuckGo
+                        </a>
+                    </li>
                     {% if user|has_role:"Area Director" %}
                         <li role="presentation">
                             <a class="dropdown-item"
