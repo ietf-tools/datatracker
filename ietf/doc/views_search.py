@@ -416,7 +416,6 @@ def ad_workload(request):
 
             # compute state history for drafts
             last = now
-            ballot_closed = False
             for e in state_events:
                 to_state = None
                 if dt == "charter":
