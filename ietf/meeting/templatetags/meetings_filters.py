@@ -16,4 +16,6 @@ def can_request_interim(user):
         Returns Boolean. True means user can request an interim meeting.
     """
 
+    if not user:
+        return False
     return can_request_interim_meeting(user)
