@@ -21,6 +21,15 @@
         </a>
     {% endif %}
     <h2 class="mt-5">History</h2>
+    {% if can_add_comment %}
+        <div class="buttonlist">
+            <a class="btn btn-primary"
+               href="{% url 'ietf.doc.views_review.add_request_comment' name=doc.name request_id=review_req.pk %}">
+                <i class="bi bi-plus"></i>
+                Add comment
+            </a>
+        </div>
+    {% endif %}
     <div id="history">
         <table class="table table-sm table-striped tablesorter">
             <thead>
@@ -30,6 +39,7 @@
                     <th scope="col" data-sort="description">Description</th>
                 </tr>
             </thead>
+	    <tbody>
             {% for h in history %}
                 {% if h.history_change_reason %}
                     <tr>
@@ -39,6 +49,7 @@
                     </tr>
                 {% endif %}
             {% endfor %}
+	    </tbody>
         </table>
     </div>
 {% endblock %}

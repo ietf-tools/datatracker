@@ -165,6 +165,7 @@ blockquote {
   #identifiers dd.authors .author {
     display: inline-block;
     margin: 0 2ch 0 1ch;
+    min-height: calc(2 * var(--line));
   }
   #identifiers dd.authors .author:last-of-type {
     margin-right: 0;
