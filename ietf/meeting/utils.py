@@ -11,6 +11,7 @@ from pathlib import Path
 
 from django.conf import settings
 from django.contrib import messages
+from django.db.models import Q
 from django.utils import timezone
 from django.utils.encoding import smart_str
 
@@ -18,7 +19,7 @@ import debug                            # pyflakes:ignore
 
 from ietf.dbtemplate.models import DBTemplate
 from ietf.meeting.models import (Session, SchedulingEvent, TimeSlot,
-    Constraint, SchedTimeSessAssignment, SessionPresentation)
+    Constraint, SchedTimeSessAssignment, SessionPresentation, Attended)
 from ietf.doc.models import Document, DocAlias, State, NewRevisionDocEvent
 from ietf.doc.models import DocEvent
 from ietf.group.models import Group
@@ -883,3 +884,14 @@ def post_process(doc):
             desc='Converted document to PDF',
         )
         doc.save_with_history([e])
+
+
+def participants_for_meeting(meeting):
+    """ Return a tuple (checked_in, attended)
+        checked_in = queryset of onsite, checkedin participants values_list('person')
+        attended = queryset of remote participants who attended a session values_list('person')
+    """
+    checked_in = meeting.meetingregistration_set.filter(reg_type='onsite', checkedin=True).values_list('person', flat=True).distinct()
+    sessions = meeting.session_set.filter(Q(type='plenary') | Q(group__type__in=['wg', 'rg']))
+    attended = Attended.objects.filter(session__in=sessions).values_list('person', flat=True).distinct()
+    return (checked_in, attended)

@@ -30,7 +30,8 @@ from ietf.doc.models import DocEvent, NewRevisionDocEvent
 from ietf.group.models import Group, Role
 from ietf.person.models import Email, Person
 from ietf.mailtrigger.utils import gather_address_lists
-from ietf.meeting.models import Meeting, Attended
+from ietf.meeting.models import Meeting
+from ietf.meeting.utils import participants_for_meeting
 from ietf.utils.pipe import pipe
 from ietf.utils.mail import send_mail_text, send_mail, get_payload_text
 from ietf.utils.log import log
@@ -678,16 +679,6 @@ def three_of_five_eligible_8713(previous_five, queryset=None):
         queryset = Person.objects.all()
     return queryset.filter(meetingregistration__meeting__in=list(previous_five),meetingregistration__attended=True).annotate(mtg_count=Count('meetingregistration')).filter(mtg_count__gte=3)
 
-def participants_for_meeting(meeting):
-    """ Return a tuple (checked_in, attended)
-        checked_in = set of onsite, checkedin participants (Person.pk)
-        attended = set of remote participants who attended a session (Person.pk)
-    """
-    checked_in = meeting.meetingregistration_set.filter(reg_type='onsite', checkedin=True).values_list('person', flat=True)
-    sessions = meeting.session_set.filter(Q(type='plenary') | Q(group__type__in=['wg', 'rg']))
-    attended = Attended.objects.filter(session__in=sessions).values_list('person', flat=True)
-    return (set(checked_in), set(attended))
-
 def three_of_five_eligible_9389(previous_five, queryset=None):
     """ Return a list of Person records who attended at least
         3 of the 5 type_id='ietf' meetings before the given
@@ -700,7 +691,7 @@ def three_of_five_eligible_9389(previous_five, queryset=None):
     counts = defaultdict(lambda: 0)
     for meeting in previous_five:
         checked_in, attended = participants_for_meeting(meeting)
-        for id in checked_in | attended:
+        for id in set(checked_in) | set(attended):
             counts[id] += 1
     return queryset.filter(pk__in=[id for id, count in counts.items() if count >= 3])
 
