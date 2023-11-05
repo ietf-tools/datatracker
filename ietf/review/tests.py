@@ -1,10 +1,14 @@
 # Copyright The IETF Trust 2019-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 import datetime
+import debug # pyflakes:ignore
 
+from pyquery import PyQuery
 from ietf.group.factories import RoleFactory
+from ietf.doc.factories import WgDraftFactory
 from ietf.utils.mail import empty_outbox, get_payload_text, outbox
 from ietf.utils.test_utils import TestCase, reload_db_objects
+from ietf.utils.test_utils import login_testing_unauthorized, unicontent
 from ietf.utils.timezone import date_today, datetime_from_date
 from .factories import ReviewAssignmentFactory, ReviewRequestFactory, ReviewerSettingsFactory
 from .mailarch import hash_list_message_id
@@ -14,6 +18,7 @@ from .utils import (email_secretary_reminder, review_assignments_needing_secreta
                     send_reminder_unconfirmed_assignments, send_review_reminder_overdue_assignment,
                     send_reminder_all_open_reviews, send_unavailability_period_ending_reminder,
                     ORIGIN_DATE_PERIODIC_REMINDERS)
+from django.urls import reverse as urlreverse
 
 class HashTest(TestCase):
 
@@ -507,4 +512,41 @@ class ReviewAssignmentReminderTests(TestCase):
         self.assertEqual(len(log), 1)
         self.assertTrue(self.reviewer.email_address() in log[0])
         self.assertTrue('1 open review' in log[0])
+
+class AddReviewCommentTestCase(TestCase):
+    def test_review_add_comment(self):
+        draft = WgDraftFactory(name='draft-ietf-mars-test',group__acronym='mars')
+        review_req = ReviewRequestFactory(doc=draft, state_id='assigned')
+        ReviewAssignmentFactory(review_request=review_req, state_id='assigned')
+
+        url_post = urlreverse('ietf.doc.views_review.add_request_comment', kwargs=dict(name=draft.name, request_id=review_req.pk))
+        url_page = urlreverse('ietf.doc.views_review.review_request', kwargs=dict(name=draft.name, request_id=review_req.pk))
+
+        login_testing_unauthorized(self, "secretary", url_post)
+
+        # Check that we do not have entry on the page
+        r = self.client.get(url_page)
+        self.assertEqual(r.status_code, 200)
+        # Needs to have history
+        self.assertContains(r, 'History')
+        # But can't have the comment we are goint to add.
+        self.assertNotContains(r, 'This is a test.')
+
+        # Get the form
+        r = self.client.get(url_post)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(unicontent(r))
+        self.assertEqual(len(q('form textarea[name=comment]')), 1)
+
+        # Post the comment
+        r = self.client.post(url_post, dict(comment="This is a test."))
+        self.assertEqual(r.status_code, 302)
+
+        # Get the main page again
+        r = self.client.get(url_page)
+        self.assertEqual(r.status_code, 200)
+        # Needs to have history
+        self.assertContains(r, 'History')
+        # But can't have the comment we are goint to add.
+        self.assertContains(r, 'This is a test.')
 
