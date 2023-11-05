@@ -28,6 +28,8 @@ from ietf.doc.factories import IndividualDraftFactory, WgDraftFactory, WgRfcFact
 from ietf.group.factories import RoleFactory
 from ietf.meeting.factories import MeetingFactory, SessionFactory
 from ietf.meeting.models import Session
+from ietf.nomcom.models import Volunteer, NomCom
+from ietf.nomcom.factories import NomComFactory, nomcom_kwargs_for_year
 from ietf.person.factories import PersonFactory, random_faker
 from ietf.person.models import User
 from ietf.person.models import PersonalApiKey
@@ -630,6 +632,7 @@ class CustomApiTests(TestCase):
             'reg_type': 'hackathon',
             'ticket_type': '',
             'checkedin': 'False',
+            'is_nomcom_volunteer': 'False',
         }
         url = urlreverse('ietf.api.views.api_new_meeting_registration')
         r = self.client.post(url, reg)
@@ -690,6 +693,50 @@ class CustomApiTests(TestCase):
         err, fields = r.content.decode().split(':', 1)
         missing_fields = [f.strip() for f in fields.split(',')]
         self.assertEqual(set(missing_fields), set(drop_fields))
+
+    def test_api_new_meeting_registration_nomcom_volunteer(self):
+        '''Test that Volunteer is created if is_nomcom_volunteer=True
+           is submitted to API
+        '''
+        meeting = MeetingFactory(type_id='ietf')
+        reg = {
+            'apikey': 'invalid',
+            'affiliation': "Alguma Corporação",
+            'country_code': 'PT',
+            'meeting': meeting.number,
+            'reg_type': 'onsite',
+            'ticket_type': '',
+            'checkedin': 'False',
+            'is_nomcom_volunteer': 'True',
+        }
+        person = PersonFactory()
+        reg['email'] = person.email().address
+        reg['first_name'] = person.first_name()
+        reg['last_name'] = person.last_name()
+        now = datetime.datetime.now()
+        if now.month > 10:
+            year = now.year + 1
+        else:
+            year = now.year
+        # create appropriate group and nomcom objects
+        nomcom = NomComFactory.create(is_accepting_volunteers=True, **nomcom_kwargs_for_year(year))
+        url = urlreverse('ietf.api.views.api_new_meeting_registration')
+        r = self.client.post(url, reg)
+        self.assertContains(r, 'Invalid apikey', status_code=403)
+        oidcp = PersonFactory(user__is_staff=True)
+        # Make sure 'oidcp' has an acceptable role
+        RoleFactory(name_id='robot', person=oidcp, email=oidcp.email(), group__acronym='secretariat')
+        key = PersonalApiKey.objects.create(person=oidcp, endpoint=url)
+        reg['apikey'] = key.hash()
+        r = self.client.post(url, reg)
+        nomcom = NomCom.objects.last()
+        self.assertContains(r, "Accepted, New registration", status_code=202)
+        # assert Volunteer exists
+        self.assertEqual(Volunteer.objects.count(), 1)
+        volunteer = Volunteer.objects.last()
+        self.assertEqual(volunteer.person, person)
+        self.assertEqual(volunteer.nomcom, nomcom)
+        self.assertEqual(volunteer.origin, 'registration')
 
     def test_api_version(self):
         DumpInfo.objects.create(date=timezone.datetime(2022,8,31,7,10,1,tzinfo=datetime.timezone.utc), host='testapi.example.com',tz='UTC')
