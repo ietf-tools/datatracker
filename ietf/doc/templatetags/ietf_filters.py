@@ -6,7 +6,6 @@ import datetime
 import re
 from urllib.parse import urljoin
 from zoneinfo import ZoneInfo
-import markdown as python_markdown
 
 from django import template
 from django.conf import settings
@@ -227,27 +226,6 @@ def link_other_doc_match(match):
         return match[0]
     url = urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=doc + rev))
     return f'<a href="{url}">{match[1]}</a>'
-
-
-@register.filter(name="markdown", is_safe=True, needs_autoescape=True)
-def markdown(string, autoescape=None):
-    """
-    Render a markdown string into HTML
-    """
-    string = bleach_cleaner.clean(      
-        python_markdown.markdown(
-            string,
-            extensions=[
-                "extra",
-                "nl2br",
-                "sane_lists",
-                "toc",
-            ],
-        )
-    )
-    # One issue is that the string is enclosed in <p></p>... Let's remove the leading/trailing ones...
-    string = string[3:-4]
-    return mark_safe(string)
 
 @register.filter(name="urlize_ietf_docs", is_safe=True, needs_autoescape=True)
 def urlize_ietf_docs(string, autoescape=None):
