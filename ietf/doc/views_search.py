@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2009-2022, All Rights Reserved
+# Copyright The IETF Trust 2009-2023, All Rights Reserved
 # -*- coding: utf-8 -*-
 #
 # Some parts Copyright (C) 2009-2010 Nokia Corporation and/or its subsidiary(-ies).
@@ -36,8 +36,10 @@
 
 import re
 import datetime
+import operator
 
 from collections import defaultdict
+from functools import reduce
 
 from django import forms
 from django.conf import settings
@@ -53,7 +55,7 @@ from django.utils.cache import _generate_cache_key # type: ignore
 
 import debug                            # pyflakes:ignore
 
-from ietf.doc.models import ( Document, DocHistory, DocAlias, State,
+from ietf.doc.models import ( Document, DocHistory, State,
     LastCallDocEvent, NewRevisionDocEvent, IESG_SUBSTATE_TAGS,
     IESG_BALLOT_ACTIVE_STATES, IESG_STATCHG_CONFLREV_ACTIVE_STATES,
     IESG_CHARTER_ACTIVE_STATES )
@@ -95,7 +97,7 @@ class SearchForm(forms.Form):
             ("ad", "AD"), ("-ad", "AD (desc)"), ),
         required=False, widget=forms.HiddenInput)
 
-    doctypes = forms.ModelMultipleChoiceField(queryset=DocTypeName.objects.filter(used=True).exclude(slug__in=('draft','liai-att')).order_by('name'), required=False)
+    doctypes = forms.ModelMultipleChoiceField(queryset=DocTypeName.objects.filter(used=True).exclude(slug__in=('draft', 'rfc', 'bcp', 'std', 'fyi', 'liai-att')).order_by('name'), required=False)
 
     def __init__(self, *args, **kwargs):
         super(SearchForm, self).__init__(*args, **kwargs)
@@ -154,8 +156,11 @@ def retrieve_search_results(form, all_types=False):
     else:
         types = []
 
-        if query['activedrafts'] or query['olddrafts'] or query['rfcs']:
+        if query['activedrafts'] or query['olddrafts']:
             types.append('draft')
+        
+        if query['rfcs']:
+            types.append('rfc')
 
         types.extend(query["doctypes"])
 
@@ -166,13 +171,50 @@ def retrieve_search_results(form, all_types=False):
 
     # name
     if query["name"]:
-        docs = docs.filter(Q(docalias__name__icontains=query["name"]) |
-                           Q(title__icontains=query["name"])).distinct()
+        look_for = query["name"]
+        queries = [
+            Q(name__icontains=look_for),
+            Q(title__icontains=look_for)
+        ]
+        # Check to see if this is just a search for an rfc look for a few variants
+        if look_for.lower()[:3] == "rfc" and look_for[3:].strip().isdigit():
+            spaceless = look_for.lower()[:3]+look_for[3:].strip()
+            if spaceless != look_for:
+                queries.extend([
+                    Q(name__icontains=spaceless),
+                    Q(title__icontains=spaceless)            
+                ])
+            singlespace = look_for.lower()[:3]+" "+look_for[3:].strip()
+            if singlespace != look_for:
+                queries.extend([
+                    Q(name__icontains=singlespace),
+                    Q(title__icontains=singlespace)            
+                ])        
+
+        # Do a similar thing if the search is just for a subseries doc, like a bcp.
+        if look_for.lower()[:3] in ["bcp", "fyi", "std"] and look_for[3:].strip().isdigit() and query["rfcs"]: # Also look for rfcs contained in the subseries.
+            queries.extend([
+                Q(targets_related__source__name__icontains=look_for, targets_related__relationship_id="contains"),
+                Q(targets_related__source__title__icontains=look_for, targets_related__relationship_id="contains"),
+            ])
+            spaceless = look_for.lower()[:3]+look_for[3:].strip()
+            if spaceless != look_for:
+                queries.extend([
+                    Q(targets_related__source__name__icontains=spaceless, targets_related__relationship_id="contains"),
+                    Q(targets_related__source__title__icontains=spaceless, targets_related__relationship_id="contains"),
+                ])
+            singlespace = look_for.lower()[:3]+" "+look_for[3:].strip()
+            if singlespace != look_for:
+                queries.extend([
+                    Q(targets_related__source__name__icontains=singlespace, targets_related__relationship_id="contains"),
+                    Q(targets_related__source__title__icontains=singlespace, targets_related__relationship_id="contains"),
+                ])
+
+        combined_query = reduce(operator.or_, queries)
+        docs = docs.filter(combined_query).distinct()
 
     # rfc/active/old check buttons
     allowed_draft_states = []
-    if query["rfcs"]:
-        allowed_draft_states.append("rfc")
     if query["activedrafts"]:
         allowed_draft_states.append("active")
     if query["olddrafts"]:
@@ -248,17 +290,17 @@ def frontpage(request):
 
 def search_for_name(request, name):
     def find_unique(n):
-        exact = DocAlias.objects.filter(name__iexact=n).first()
+        exact = Document.objects.filter(name__iexact=n).first()
         if exact:
             return exact.name
 
-        aliases = DocAlias.objects.filter(name__istartswith=n)[:2]
-        if len(aliases) == 1:
-            return aliases[0].name
+        startswith = Document.objects.filter(name__istartswith=n)[:2]
+        if len(startswith) == 1:
+            return startswith[0].name
 
-        aliases = DocAlias.objects.filter(name__icontains=n)[:2]
-        if len(aliases) == 1:
-            return aliases[0].name
+        contains = Document.objects.filter(name__icontains=n)[:2]
+        if len(contains) == 1:
+            return contains[0].name
 
         return None
 
@@ -291,13 +333,13 @@ def search_for_name(request, name):
             if redirect_to:
                 rev = rev_split.group(2)
                 # check if we can redirect directly to the rev if it's draft, if rfc - always redirect to main page
-                if not redirect_to.startswith('rfc') and DocHistory.objects.filter(doc__docalias__name=redirect_to, rev=rev).exists():
+                if not redirect_to.startswith('rfc') and DocHistory.objects.filter(doc__name=redirect_to, rev=rev).exists():
                     return cached_redirect(cache_key, urlreverse("ietf.doc.views_doc.document_main", kwargs={ "name": redirect_to, "rev": rev }))
                 else:
                     return cached_redirect(cache_key, urlreverse("ietf.doc.views_doc.document_main", kwargs={ "name": redirect_to }))
 
     # build appropriate flags based on string prefix
-    doctypenames = DocTypeName.objects.filter(used=True)
+    doctypenames = DocTypeName.objects.filter(used=True).exclude(slug__in=["bcp","std","fyi"])
     # This would have been more straightforward if document prefixes couldn't
     # contain a dash.  Probably, document prefixes shouldn't contain a dash ...
     search_args = "?name=%s" % n
@@ -320,9 +362,7 @@ def ad_dashboard_group_type(doc):
     if not doc:
         return ('I-D', 'RFC', 'Conflict Review', 'Status Change', 'Charter')
     if doc.type.slug=='draft':
-        if doc.get_state_slug('draft') == 'rfc':
-            return 'RFC'
-        elif doc.get_state_slug('draft') == 'active' and doc.get_state_slug('draft-iesg') and doc.get_state('draft-iesg').name =='RFC Ed Queue':
+        if doc.get_state_slug('draft') == 'active' and doc.get_state_slug('draft-iesg') and doc.get_state('draft-iesg').name =='RFC Ed Queue':
             return 'RFC'
         elif doc.get_state_slug('draft') == 'active' and doc.get_state_slug('draft-iesg') and doc.get_state('draft-iesg').name in ('Dead', 'I-D Exists', 'AD is watching'):
              return None
@@ -330,6 +370,8 @@ def ad_dashboard_group_type(doc):
             return None
         else:
             return 'I-D'
+    if doc.type.slug=='rfc':
+        return 'RFC'
     elif doc.type.slug=='conflrev':
           return 'Conflict Review'
     elif doc.type.slug=='statchg':
@@ -341,10 +383,10 @@ def ad_dashboard_group_type(doc):
 
 def ad_dashboard_group(doc):
 
+    if doc.type.slug=='rfc':
+        return 'RFC'
     if doc.type.slug=='draft':
-        if doc.get_state_slug('draft') == 'rfc':
-            return 'RFC'
-        elif doc.get_state_slug('draft') == 'active' and doc.get_state_slug('draft-iesg'):
+        if doc.get_state_slug('draft') == 'active' and doc.get_state_slug('draft-iesg'):
             return '%s Internet-Draft' % doc.get_state('draft-iesg').name
         else:
             return '%s Internet-Draft' % doc.get_state('draft').name
@@ -409,8 +451,8 @@ def shorten_group_name(name):
 
 def ad_dashboard_sort_key(doc):
 
-    if doc.type.slug=='draft' and doc.get_state_slug('draft') == 'rfc':
-        return "21%04d" % int(doc.rfc_number())
+    if doc.type.slug=='rfc':
+        return "21%04d" % int(doc.rfc_number)
     if doc.type.slug=='statchg' and doc.get_state_slug('statchg') == 'appr-sent':
         return "22%d" % 0 # TODO - get the date of the transition into this state here
     if doc.type.slug=='conflrev' and doc.get_state_slug('conflrev') in ('appr-reqnopub-sent','appr-noprob-sent'):
@@ -482,7 +524,7 @@ def ad_workload(request):
 
     doctypes = list(
         DocTypeName.objects.filter(used=True)
-        .exclude(slug__in=("draft", "liai-att"))
+        .exclude(slug__in=("draft", "rfc", "std", "bcp", "fyi", "liai-att"))
         .values_list("pk", flat=True)
     )
 
@@ -680,7 +722,7 @@ def docs_for_ad(request, name):
     form = SearchForm({'by':'ad','ad': ad.id,
                        'rfcs':'on', 'activedrafts':'on', 'olddrafts':'on',
                        'sort': 'status',
-                       'doctypes': list(DocTypeName.objects.filter(used=True).exclude(slug__in=('draft','liai-att')).values_list("pk", flat=True))})
+                       'doctypes': list(DocTypeName.objects.filter(used=True).exclude(slug__in=('draft', 'rfc', 'bcp' ,'std', 'fyi', 'liai-att')).values_list("pk", flat=True))})
     results, meta = prepare_document_table(request, retrieve_search_results(form), form.data, max_results=500)
     results.sort(key=ad_dashboard_sort_key)
     del meta["headers"][-1]
@@ -824,47 +866,50 @@ def recent_drafts(request, days=7):
     })
 
 
-def index_all_drafts(request):
+def index_all_drafts(request): # Should we rename this
     # try to be efficient since this view returns a lot of data
     categories = []
 
-    for s in ("active", "rfc", "expired", "repl", "auth-rm", "ietf-rm"):
+    # Gather drafts
+    for s in ("active", "expired", "repl", "auth-rm", "ietf-rm"):
         state = State.objects.get(type="draft", slug=s)
 
-        if state.slug == "rfc":
-            heading = "RFCs"
-        elif state.slug in ("ietf-rm", "auth-rm"):
+        if state.slug in ("ietf-rm", "auth-rm"):
             heading = "Internet-Drafts %s" % state.name
         else:
             heading = "%s Internet-Drafts" % state.name
 
-        draft_names = DocAlias.objects.filter(docs__states=state).values_list("name", "docs__name")
+        drafts = Document.objects.filter(type_id="draft", states=state).order_by("name")
 
-        names = []
-        names_to_skip = set()
-        for name, doc in draft_names:
-            sort_key = name
-            if name != doc:
-                if not name.startswith("rfc"):
-                    name, doc = doc, name
-                names_to_skip.add(doc)
-
-            if name.startswith("rfc"):
-                name = name.upper()
-                sort_key = '%09d' % (100000000-int(name[3:]))
-
-            names.append((name, sort_key))
-
-        names.sort(key=lambda t: t[1])
-
-        names = [f'<a href=\"{urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=n))}\">{n}</a>'
-                 for n, __ in names if n not in names_to_skip]
+        names = [
+            f'<a href=\"{urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=doc.name))}\">{doc.name}</a>'
+            for doc in drafts
+        ]        
 
         categories.append((state,
                       heading,
                       len(names),
                       "<br>".join(names)
                       ))
+    
+    # gather RFCs
+    rfcs = Document.objects.filter(type_id="rfc").order_by('-rfc_number')
+    names = [
+        f'<a href=\"{urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=rfc.name))}\">{rfc.name.upper()}</a>'
+        for rfc in rfcs
+    ]
+    
+    state = State.objects.get(type_id="rfc", slug="published")
+
+    categories.append((state,
+                    "RFCs",
+                    len(names),
+                    "<br>".join(names)
+                    ))
+    
+    # Return to the previous section ordering
+    categories = categories[0:1]+categories[5:]+categories[1:5]
+
     return render(request, 'doc/index_all_drafts.html', { "categories": categories })
 
 def index_active_drafts(request):
@@ -876,23 +921,15 @@ def index_active_drafts(request):
         slowcache.set(cache_key, groups, 15*60)
     return render(request, "doc/index_active_drafts.html", { 'groups': groups })
 
-def ajax_select2_search_docs(request, model_name, doc_type):
-    if model_name == "docalias":
-        model = DocAlias
-    else:
-        model = Document
+def ajax_select2_search_docs(request, model_name, doc_type): # TODO - remove model_name argument...
+    model = Document # Earlier versions allowed searching over DocAlias which no longer exists
 
     q = [w.strip() for w in request.GET.get('q', '').split() if w.strip()]
 
     if not q:
         objs = model.objects.none()
     else:
-        qs = model.objects.all()
-
-        if model == Document:
-            qs = qs.filter(type=doc_type)
-        elif model == DocAlias:
-            qs = qs.filter(docs__type=doc_type)
+        qs = model.objects.filter(type=doc_type)
 
         for t in q:
             qs = qs.filter(name__icontains=t)
@@ -900,3 +937,11 @@ def ajax_select2_search_docs(request, model_name, doc_type):
         objs = qs.distinct().order_by("name")[:20]
 
     return HttpResponse(select2_id_doc_name_json(model, objs), content_type='application/json')
+
+def index_subseries(request, type_id):
+    docs = sorted(Document.objects.filter(type_id=type_id),key=lambda o: int(o.name[3:]))
+    if len(docs)>0:
+        type = docs[0].type
+    else:
+        type = DocTypeName.objects.get(slug=type_id)
+    return render(request, "doc/index_subseries.html", {"type": type, "docs": docs})

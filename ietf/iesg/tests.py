@@ -17,7 +17,7 @@ from django.utils.html import escape
 import debug                            # pyflakes:ignore
 
 from ietf.doc.models import DocEvent, BallotPositionDocEvent, TelechatDocEvent
-from ietf.doc.models import Document, DocAlias, State, RelatedDocument
+from ietf.doc.models import Document, State, RelatedDocument
 from ietf.doc.factories import WgDraftFactory, IndividualDraftFactory, ConflictReviewFactory, BaseDocumentFactory, CharterFactory, WgRfcFactory, IndividualRfcFactory
 from ietf.doc.utils import create_ballot_if_not_open
 from ietf.group.factories import RoleFactory, GroupFactory
@@ -107,8 +107,8 @@ class IESGAgendaTests(TestCase):
         super().setUp()
         mars = GroupFactory(acronym='mars',parent=Group.objects.get(acronym='farfut'))
         wgdraft = WgDraftFactory(name='draft-ietf-mars-test', group=mars, intended_std_level_id='ps')
-        rfc = IndividualRfcFactory.create(stream_id='irtf', other_aliases=['rfc6666',], states=[('draft','rfc'),('draft-iesg','pub')], std_level_id='inf', )
-        wgdraft.relateddocument_set.create(target=rfc.docalias.get(name='rfc6666'), relationship_id='refnorm')
+        rfc = IndividualRfcFactory.create(stream_id='irtf', rfc_number=6666, std_level_id='inf', )
+        wgdraft.relateddocument_set.create(target=rfc, relationship_id='refnorm')
         ise_draft = IndividualDraftFactory(name='draft-imaginary-independent-submission')
         ise_draft.stream = StreamName.objects.get(slug="ise")
         ise_draft.save_with_history([DocEvent(doc=ise_draft, rev=ise_draft.rev, type="changed_stream", by=Person.objects.get(user__username="secretary"), desc="Test")])
@@ -238,7 +238,7 @@ class IESGAgendaTests(TestCase):
 
         relation = RelatedDocument.objects.create(
             source=statchg,
-            target=DocAlias.objects.filter(name__startswith='rfc', docs__std_level="ps")[0],
+            target=Document.objects.filter(type_id="rfc", std_level="ps").first(),
             relationship_id="tohist")
 
         statchg.group = Group.objects.get(acronym="mars")
@@ -256,7 +256,7 @@ class IESGAgendaTests(TestCase):
         self.assertTrue(statchg in agenda_data(date_str)["sections"]["2.3.3"]["docs"])
         
         # 3.3 document status changes
-        relation.target = DocAlias.objects.filter(name__startswith='rfc', docs__std_level="inf")[0]
+        relation.target = Document.objects.filter(type_id="rfc", std_level="inf").first()
         relation.save()
 
         statchg.group = Group.objects.get(acronym="mars")

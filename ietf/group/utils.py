@@ -2,8 +2,7 @@
 # -*- coding: utf-8 -*-
 
 
-import io
-import os
+from pathlib import Path
 
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
@@ -55,15 +54,14 @@ def get_charter_text(group):
         if (h.rev > c.rev and not (c_appr and not h_appr)) or (h_appr and not c_appr):
             c = h
 
-    filename = os.path.join(c.get_file_path(), "%s-%s.txt" % (c.canonical_name(), c.rev))
+    filename = Path(c.get_file_path()) / f"{c.name}-{c.rev}.txt"
     try:
-        with io.open(filename, 'rb') as f:
-            text = f.read()
-            try:
-                text = text.decode('utf8')
-            except UnicodeDecodeError:
-                text = text.decode('latin1')
-            return text
+        text = filename.read_bytes()
+        try:
+            text = text.decode('utf8')
+        except UnicodeDecodeError:
+            text = text.decode('latin1')
+        return text
     except IOError:
         return 'Error Loading Group Charter'
 

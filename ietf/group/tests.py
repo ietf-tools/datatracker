@@ -69,7 +69,7 @@ class GroupStatsTests(TestCase):
         a = WgDraftFactory()
         b = WgDraftFactory()
         RelatedDocument.objects.create(
-            source=a, target=b.docalias.first(), relationship_id="refnorm"
+            source=a, target=b, relationship_id="refnorm"
         )
 
     def test_group_stats(self):
@@ -95,7 +95,7 @@ class GroupDocDependencyTests(TestCase):
         a = WgDraftFactory()
         b = WgDraftFactory()
         RelatedDocument.objects.create(
-            source=a, target=b.docalias.first(), relationship_id="refnorm"
+            source=a, target=b, relationship_id="refnorm"
         )
 
     def test_group_document_dependencies(self):

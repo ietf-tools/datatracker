@@ -90,9 +90,11 @@ urlpatterns = [
     url(r'^all/?$', views_search.index_all_drafts),
     url(r'^active/?$', views_search.index_active_drafts),
     url(r'^recent/?$', views_search.recent_drafts),
-    url(r'^select2search/(?P<model_name>(document|docalias))/(?P<doc_type>draft)/$', views_search.ajax_select2_search_docs),
+    url(r'^select2search/(?P<model_name>document)/(?P<doc_type>draft)/$', views_search.ajax_select2_search_docs),
     url(r'^ballots/irsg/$', views_ballot.irsg_ballot_status),
     url(r'^ballots/rsab/$', views_ballot.rsab_ballot_status),
+
+    url(r'^(?P<type_id>(bcp|std|fyi))/?$', views_search.index_subseries),
 
     url(r'^%(name)s(?:/%(rev)s)?/$' % settings.URL_REGEXPS, views_doc.document_main),
     url(r'^%(name)s(?:/%(rev)s)?/bibtex/$' % settings.URL_REGEXPS, views_doc.document_bibtex),

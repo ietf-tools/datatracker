@@ -227,7 +227,7 @@
     {% if doc.rev != "" %}
         <div class="card mt-5">
             <div class="card-header">
-                {{ doc.canonical_name }}-{{ doc.rev }}
+                {{ doc.name }}-{{ doc.rev }}
             </div>
             <div class="card-body">
                 <pre>{{ content|maybewordwrap|urlize_ietf_docs|linkify }}</pre>

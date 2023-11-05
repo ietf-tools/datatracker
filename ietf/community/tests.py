@@ -151,7 +151,7 @@ class CommunityListTests(WebTest):
             "action": "add_rule",
             "rule_type": "author_rfc",
             "author_rfc-person": Person.objects.filter(documentauthor__document=draft).first().pk,
-            "author_rfc-state": State.objects.get(type="draft", slug="rfc").pk,
+            "author_rfc-state": State.objects.get(type="rfc", slug="published").pk,
         })
         self.assertEqual(r.status_code, 302)
         clist = CommunityList.objects.get(user__username="plain")
