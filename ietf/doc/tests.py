@@ -324,18 +324,8 @@ class SearchTests(TestCase):
                                 type_id=doc_type_slug, slug=state
                             ),
                         )
-
+        self.login('secretary')
         url = urlreverse("ietf.doc.views_search.ad_workload")
-        r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
-        q = PyQuery(r.content)
-        for group_type, ad, group in expected:
-            self.assertEqual(
-                int(q(f"#{group_type}-{ad}-{group}").text()),
-                expected[(group_type, ad, group)],
-            )
-        
-        url = urlreverse('ietf.doc.views_search.ad_workload')
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
