@@ -360,7 +360,7 @@ def state_name(doc_type, state, shorten=True):
 
 
 STATE_SLUGS = {
-    dt: {state_name(dt, ds, shorten=False): ds for ds, _ in AD_WORKLOAD[dt]}  # type: ignore
+    dt: {state_name(dt, ds, shorten=False): ds for ds in AD_WORKLOAD[dt]}  # type: ignore
     for dt in AD_WORKLOAD
 }
 

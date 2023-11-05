@@ -288,7 +288,7 @@ class SearchTests(TestCase):
         ).person
         expected = defaultdict(lambda: 0)
         for doc_type_slug in AD_WORKLOAD:
-            for state, _ in AD_WORKLOAD[doc_type_slug]:
+            for state in AD_WORKLOAD[doc_type_slug]:
                 target_num = random.randint(0, 2)
                 for _ in range(target_num):
                     if (
@@ -296,7 +296,7 @@ class SearchTests(TestCase):
                         or doc_type_slug == "rfc"
                         and state == "rfcqueue"
                     ):
-                       IndividualDraftFactory(
+                        IndividualDraftFactory(
                             ad=ad,
                             states=[
                                 ("draft-iesg", state),
@@ -304,33 +304,36 @@ class SearchTests(TestCase):
                             ],
                         )
                     elif doc_type_slug == "rfc":
-                       WgRfcFactory.create(
+                        WgRfcFactory.create(
                             states=[("draft", "rfc"), ("draft-iesg", "pub")]
                         )
 
                     elif doc_type_slug == "charter":
-                       CharterFactory(ad=ad, states=[(doc_type_slug, state)])
+                        CharterFactory(ad=ad, states=[(doc_type_slug, state)])
                     elif doc_type_slug == "conflrev":
-                       ConflictReviewFactory(
+                        ConflictReviewFactory(
                             ad=ad,
                             states=State.objects.filter(
                                 type_id=doc_type_slug, slug=state
                             ),
                         )
                     elif doc_type_slug == "statchg":
-                       StatusChangeFactory(
+                        StatusChangeFactory(
                             ad=ad,
                             states=State.objects.filter(
                                 type_id=doc_type_slug, slug=state
                             ),
                         )
-        self.login('secretary')
+        self.client.login(username="ad", password="ad+password")
         url = urlreverse("ietf.doc.views_search.ad_workload")
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         for group_type, ad, group in expected:
-            self.assertEqual(int(q(f'#{group_type}-{ad}-{group}').text()),expected[(group_type, ad, group)])
+            self.assertEqual(
+                int(q(f"#{group_type}-{ad}-{group}").text()),
+                expected[(group_type, ad, group)],
+            )
 
     def test_docs_for_ad(self):
         ad = RoleFactory(name_id='ad',group__type_id='area',group__state_id='active').person

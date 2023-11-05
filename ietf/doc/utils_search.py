@@ -26,7 +26,7 @@ def fill_in_telechat_date(docs, doc_dict=None, doc_ids=None):
         doc_dict = dict((d.pk, d) for d in docs)
         doc_ids = list(doc_dict.keys())
     if doc_ids is None:
-        doc_ids = list(doc_dict.keys())        
+        doc_ids = list(doc_dict.keys())
 
     seen = set()
     for e in TelechatDocEvent.objects.filter(doc__id__in=doc_ids, type="scheduled_for_telechat").order_by('-time'):
@@ -181,7 +181,7 @@ def augment_docs_with_related_docs_info(docs):
                 continue
             originalDoc = d.related_that_doc('conflrev')[0].document
             d.pages = originalDoc.pages
-            
+
 def prepare_document_table(request, docs, query=None, max_results=200):
     """Take a queryset of documents and a QueryDict with sorting info
     and return list of documents with attributes filled in for
@@ -286,55 +286,53 @@ def prepare_document_table(request, docs, query=None, max_results=200):
 
 
 # The document types and state slugs to include in the AD dashboard
-# and AD doc list, in the order they should be shown. The Boolean
-# indicates whether an upwards trend (compared to a past point in
-# time) should be considered a positive development or not.
+# and AD doc list, in the order they should be shown.
 #
 # "rfc" is a custom subset of "draft" that we special-case in the code
 # to break out these docs into a separate table.
 #
 AD_WORKLOAD = {
     "draft": [
-        ("pub-req", False),
-        ("ad-eval", False),
-        ("lc-req", True),
-        ("lc", True),
-        ("writeupw", False),
-        # ("defer", False),  # probably not a useful state to show, since it's rare
-        ("iesg-eva", True),
-        ("goaheadw", False),
-        ("approved", True),
-        ("ann", True),
+        "pub-req",
+        "ad-eval",
+        "lc-req",
+        "lc",
+        "writeupw",
+        # "defer",  # probably not a useful state to show, since it's rare
+        "iesg-eva",
+        "goaheadw",
+        "approved",
+        "ann",
     ],
     "rfc": [
-        ("rfcqueue", True),
-        ("rfc", True),
+        "rfcqueue",
+        "rfc",
     ],
     "conflrev": [
-        ("needshep", False),
-        ("adrev", False),
-        ("iesgeval", True),
-        ("approved", True),  # synthesized state for all the "appr-" states
-        # ("withdraw", None),  # probably not a useful state to show
+        "needshep",
+        "adrev",
+        "iesgeval",
+        "approved",  # synthesized state for all the "appr-" states
+        # "withdraw",  # probably not a useful state to show
     ],
     "statchg": [
-        ("needshep", False),
-        ("adrev", False),
-        ("lc-req", True),
-        ("in-lc", True),
-        ("iesgeval", True),
-        ("goahead", False),
-        ("appr-sent", True),
-        # ("dead", None),  # probably not a useful state to show
+        "needshep",
+        "adrev",
+        "lc-req",
+        "in-lc",
+        "iesgeval",
+        "goahead",
+        "appr-sent",
+        # "dead",  # probably not a useful state to show
     ],
     "charter": [
-        ("notrev", None),
-        ("infrev", None),
-        ("intrev", False),
-        ("extrev", True),
-        ("iesgrev", True),
-        ("approved", True),
-        # ("replaced", None),  # probably not a useful state to show
+        "notrev",
+        "infrev",
+        "intrev",
+        "extrev",
+        "iesgrev",
+        "approved",
+        # "replaced",  # probably not a useful state to show
     ],
 }
 
