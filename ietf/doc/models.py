@@ -691,20 +691,17 @@ class RelatedDocument(models.Model):
         return u"%s %s %s" % (self.source.name, self.relationship.name.lower(), self.target.name)
 
     def is_downref(self):
-        if self.source.type.slug != "draft" or self.relationship.slug not in [
+        if self.source.type_id not in ["draft","rfc"] or self.relationship.slug not in [
             "refnorm",
             "refold",
             "refunk",
         ]:
             return None
 
-        state = self.source.get_state()
-        if state and state.slug == "rfc":
-            source_lvl = self.source.std_level.slug if self.source.std_level else None
-        elif self.source.intended_std_level:
-            source_lvl = self.source.intended_std_level.slug
+        if self.source.type_id == "rfc":
+            source_lvl = self.source.std_level_id
         else:
-            source_lvl = None
+            source_lvl = self.source.intended_std_level_id
 
         if source_lvl not in ["bcp", "ps", "ds", "std", "unkn"]:
             return None
@@ -713,12 +710,12 @@ class RelatedDocument(models.Model):
             if not self.target.std_level:
                 target_lvl = 'unkn'
             else:
-                target_lvl = self.target.std_level.slug
+                target_lvl = self.target.std_level_id
         else:
             if not self.target.intended_std_level:
                 target_lvl = 'unkn'
             else:
-                target_lvl = self.target.intended_std_level.slug
+                target_lvl = self.target.intended_std_level_id
 
         if self.relationship.slug not in ["refnorm", "refunk"]:
             return None
@@ -727,7 +724,7 @@ class RelatedDocument(models.Model):
             return None
 
         pos_downref = (
-            "Downref" if self.relationship.slug != "refunk" else "Possible Downref"
+            "Downref" if self.relationship_id != "refunk" else "Possible Downref"
         )
 
         if source_lvl in ["bcp", "ps", "ds", "std"] and target_lvl in ["inf", "exp"]:
