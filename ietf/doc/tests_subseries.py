@@ -25,7 +25,7 @@ class SubseriesTests(TestCase):
             self.assertEqual(r.status_code, 200)
             q = PyQuery(r.content)
             self.assertIsNotNone(q(f"#{doc.name}"))
-            self.assertIn(rfc.name,q(f"#{doc.name}").text())
+            self.assertIn(f"RFC {rfc.name[3:]}",q(f"#{doc.name}").text())
             # Subseries document view
             url = urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=doc.name))
             r = self.client.get(url)
