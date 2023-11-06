@@ -29,30 +29,32 @@
         are only shown to logged-in Area Directors.
     </div>
     {% endif %}
-    {% for type in metadata %}
-        <h2 class="mt-5" id="{{ type.doc_type }}">{{ type.doc_type_name }} State Counts</h2>
+    {% for dt in metadata %}
+        <h2 class="mt-5" id="{{ dt.type.0 }}">{{ dt.type.1 }} State Counts</h2>
         <table class="table table-sm table-striped table-bordered tablesorter navskip">
             <thead class="wrap-anywhere">
                 <tr>
                     <th scope="col" data-sort="name">Area Director</th>
-                    {% for state in type.state_names %}
+                    {% for state, state_name in dt.states %}
                         <th scope="col" class="col-1" title=""
-                            data-sort="{{ state|slugify }}-num">
-                            {{ state|split:'/'|join:'/<wbr>' }}
+                            data-sort="{{ state }}-num">
+                            <a href="{% url 'ietf.doc.views_help.state_help' type='draft-iesg' %}#{{ state }}">
+                                {{ state_name|split:'/'|join:'/<wbr>' }}
+                            </a>
                         </th>
                     {% endfor %}
                 </tr>
             </thead>
             <tbody class="table-group-divider">
-                {% for ad in type.ads %}
+                {% for ad in dt.ads %}
                     <tr>
                         <td>
                             <a href="{{ ad.dashboard }}">{{ ad.name }}</a>
                         </td>
-                        {% for state in type.states %}
+                        {% for state, state_name in dt.states %}
                         <td class="col-1 align-bottom"
-                            id="{{ type.doc_type }}-{{ ad|slugify }}-{{ state }}">
-                            <div id="chart-{{ type.doc_type }}-{{ ad|slugify }}-{{ state }}"></div>
+                            id="{{ dt.type.0 }}-{{ ad|slugify }}-{{ state }}">
+                            <div id="chart-{{ dt.type.0 }}-{{ ad|slugify }}-{{ state }}"></div>
                         </td>
                         {% endfor %}
                     </tr>
@@ -61,9 +63,9 @@
             <tfoot class="table-group-divider">
                 <tr>
                     <th scope="row">Sum</th>
-                    {% for state in type.states %}
+                    {% for state, state_name in dt.states %}
                         <td class="align-bottom">
-                            <div id="chart-{{ type.doc_type }}-sum-{{ state }}"></div>
+                            <div id="chart-{{ dt.type.0 }}-sum-{{ state }}"></div>
                         </td>
                     {% endfor %}
                 </tr>
@@ -139,7 +141,7 @@
                             renderTo: cell,
                             panning: { enabled: false },
                             spacing: [4, 0, 5, 0],
-                            height: "70%",
+                            height: "45%",
                         },
                         scrollbar: { enabled: false },
                         tooltip: { enabled: false },
