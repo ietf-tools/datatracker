@@ -489,10 +489,8 @@ def ad_workload(request):
 
     metadata = [
         {
-            "doc_type": dt,
-            "doc_type_name": doc_type_name(dt),
-            "states": ad.buckets[dt].keys(),
-            "state_names": [state_name(dt, state) for state in ad.buckets[dt]],
+            "type": (dt, doc_type_name(dt)),
+            "states": [(state, state_name(dt, state)) for state in ad.buckets[dt]],
             "ads": ads,
         }
         for dt in AD_WORKLOAD
