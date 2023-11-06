@@ -287,7 +287,7 @@ class SearchTests(TestCase):
         expected = defaultdict(lambda :0)
         for doc_type_name in doc_type_names:
             if doc_type_name=='draft':
-                states = State.objects.filter(type='draft-iesg', used=True).values_list('slug', flat=True)
+                states = State.objects.filter(type='draft-iesg', used=True).exclude(slug="rfc").values_list('slug', flat=True)
             else:
                 states = State.objects.filter(type=doc_type_name, used=True).values_list('slug', flat=True)
 

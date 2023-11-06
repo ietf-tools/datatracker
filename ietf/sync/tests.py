@@ -260,7 +260,7 @@ class RFCSyncTests(TestCase):
         </is-also>
     </fyi-entry>
     <std-entry>
-        <doc-id>STD0001</doc-id>
+        <doc-id>STD0002</doc-id>
         <title>Test</title>
         <is-also>
             <doc-id>RFC1234</doc-id>
@@ -323,7 +323,6 @@ class RFCSyncTests(TestCase):
 
         data = rfceditor.parse_index(io.StringIO(t))
         self.assertEqual(len(data), 1)
-        
         rfc_number, title, authors, rfc_published_date, current_status, updates, updated_by, obsoletes, obsoleted_by, also, draft, has_errata, stream, wg, file_formats, pages, abstract = data[0]
 
         # currently, we only check what we actually use
@@ -333,7 +332,7 @@ class RFCSyncTests(TestCase):
         self.assertEqual(rfc_published_date.month, today.month)
         self.assertEqual(current_status, "Proposed Standard")
         self.assertEqual(updates, ["RFC123"])
-        self.assertEqual(set(also), set(["BCP1", "FYI1", "STD1"]))
+        self.assertEqual(set(also), set(["BCP1", "FYI1", "STD2"]))
         self.assertEqual(draft, draft_doc.name)
         self.assertEqual(wg, draft_doc.group.acronym)
         self.assertEqual(has_errata, True)
@@ -348,12 +347,13 @@ class RFCSyncTests(TestCase):
         draft_title_before = draft_doc.title
         draft_abstract_before = draft_doc.abstract
         draft_pages_before = draft_doc.pages
+
         changes = []
         with mock.patch("ietf.sync.rfceditor.log") as mock_log:
             for _, d, rfc_published in rfceditor.update_docs_from_rfc_index(data, errata, today - datetime.timedelta(days=30)):
                 changes.append({"doc_pk": d.pk, "rfc_published": rfc_published})  # we ignore the actual change list
         self.assertFalse(mock_log.called, "No log messages expected")
-        
+
         draft_doc = Document.objects.get(name=draft_doc.name)
         draft_events = draft_doc.docevent_set.all()
         self.assertEqual(len(draft_events) - event_count_before, 2)
@@ -374,11 +374,11 @@ class RFCSyncTests(TestCase):
         self.assertEqual(len(rfc_events), 8)
         expected_events = [
             ["sync_from_rfc_editor", ""], # Not looking for exact desc match here - see detailed tests below
-            ["sync_from_rfc_editor", "Added rfc1234 to std1"],
-            ["std_history_marker", "No history of STD1 is currently available in the datatracker before this point"],
-            ["sync_from_rfc_editor", "Added rfc1234 to fyi1"],
+            ["sync_from_rfc_editor", "Imported membership of rfc1234 in std2 via sync to the rfc-index"],
+            ["std_history_marker", "No history of STD2 is currently available in the datatracker before this point"],
+            ["sync_from_rfc_editor", "Imported membership of rfc1234 in fyi1 via sync to the rfc-index"],
             ["fyi_history_marker", "No history of FYI1 is currently available in the datatracker before this point"],
-            ["sync_from_rfc_editor", "Added rfc1234 to bcp1"],
+            ["sync_from_rfc_editor", "Imported membership of rfc1234 in bcp1 via sync to the rfc-index"],
             ["bcp_history_marker", "No history of BCP1 is currently available in the datatracker before this point"],
             ["published_rfc", "RFC published"]
         ]
@@ -397,9 +397,9 @@ class RFCSyncTests(TestCase):
             else:
                 self.assertEqual(rfc_events[index].desc, desc)
         self.assertEqual(rfc_events[7].time.astimezone(RPC_TZINFO).date(), today)
-        for subseries_slug in ["bcp", "fyi", "std"]:
-            sub = Document.objects.filter(type_id=subseries_slug,name=f"{subseries_slug}1").first()
-            self.assertIsNotNone(sub, f"{subseries_slug}1 not created")
+        for subseries_name in ["bcp1", "fyi1", "std2"]:
+            sub = Document.objects.filter(type_id=subseries_name[:3],name=subseries_name).first()
+            self.assertIsNotNone(sub, f"{subseries_name} not created")
             self.assertTrue(rfc_doc in sub.contains())
             self.assertTrue(sub in rfc_doc.part_of())
         self.assertEqual(rfc_doc.get_state_slug(), "published")
