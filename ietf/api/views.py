@@ -206,6 +206,8 @@ def api_new_meeting_registration(request):
 
             # handle nomcom volunteer
             if data['is_nomcom_volunteer'] and object.person:
+                # registrants for the fall meeting will be volunteering for the
+                # following year's nomcom
                 now = datetime.datetime.now()
                 month = now.month
                 year = now.year
