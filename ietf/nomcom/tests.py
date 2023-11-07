@@ -45,8 +45,7 @@ from ietf.nomcom.factories import NomComFactory, FeedbackFactory, TopicFactory, 
 from ietf.nomcom.utils import get_nomcom_by_year, make_nomineeposition, \
                               get_hash_nominee_position, is_eligible, list_eligible, \
                               get_eligibility_date, suggest_affiliation, \
-                              decorate_volunteers_with_qualifications, \
-                              participants_for_meeting
+                              decorate_volunteers_with_qualifications
 from ietf.person.factories import PersonFactory, EmailFactory
 from ietf.person.models import Email, Person
 from ietf.stats.models import MeetingRegistration
@@ -2775,23 +2774,6 @@ class rfc9389EligibilityTests(TestCase):
 
         for person in ineligible_people:
             self.assertFalse(is_eligible(person,self.nomcom))
-
-    def test_participants_for_meeting(self):
-        person_a = PersonFactory()
-        person_b = PersonFactory()
-        person_c = PersonFactory()
-        person_d = PersonFactory()
-        m = MeetingFactory.create(type_id='ietf')
-        MeetingRegistrationFactory(meeting=m, person=person_a, reg_type='onsite', checkedin=True)
-        MeetingRegistrationFactory(meeting=m, person=person_b, reg_type='onsite', checkedin=False)
-        MeetingRegistrationFactory(meeting=m, person=person_c, reg_type='remote')
-        MeetingRegistrationFactory(meeting=m, person=person_d, reg_type='remote')
-        AttendedFactory(session__meeting=m, session__type_id='plenary', person=person_c)
-        checked_in, attended = participants_for_meeting(m)
-        self.assertTrue(person_a.pk in checked_in)
-        self.assertTrue(person_b.pk not in checked_in)
-        self.assertTrue(person_c.pk in attended)
-        self.assertTrue(person_d.pk not in attended)
 
 
 class VolunteerTests(TestCase):

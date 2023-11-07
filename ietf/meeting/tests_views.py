@@ -46,7 +46,7 @@ from ietf.meeting.helpers import send_interim_minutes_reminder, populate_importa
 from ietf.meeting.models import Session, TimeSlot, Meeting, SchedTimeSessAssignment, Schedule, SessionPresentation, SlideSubmission, SchedulingEvent, Room, Constraint, ConstraintName
 from ietf.meeting.test_data import make_meeting_test_data, make_interim_meeting, make_interim_test_data
 from ietf.meeting.utils import finalize, condition_slide_order
-from ietf.meeting.utils import add_event_info_to_session_qs
+from ietf.meeting.utils import add_event_info_to_session_qs, participants_for_meeting
 from ietf.meeting.utils import create_recording, get_next_sequence
 from ietf.meeting.views import session_draft_list, parse_agenda_filter_params, sessions_post_save, agenda_extract_schedule
 from ietf.meeting.views import get_summary_by_area, get_summary_by_type, get_summary_by_purpose
@@ -8268,3 +8268,20 @@ class ProceedingsTests(BaseMeetingTestCase):
         group = session.group
         sequence = get_next_sequence(group,meeting,'recording')
         self.assertEqual(sequence,1)
+
+    def test_participants_for_meeting(self):
+        person_a = PersonFactory()
+        person_b = PersonFactory()
+        person_c = PersonFactory()
+        person_d = PersonFactory()
+        m = MeetingFactory.create(type_id='ietf')
+        MeetingRegistrationFactory(meeting=m, person=person_a, reg_type='onsite', checkedin=True)
+        MeetingRegistrationFactory(meeting=m, person=person_b, reg_type='onsite', checkedin=False)
+        MeetingRegistrationFactory(meeting=m, person=person_c, reg_type='remote')
+        MeetingRegistrationFactory(meeting=m, person=person_d, reg_type='remote')
+        AttendedFactory(session__meeting=m, session__type_id='plenary', person=person_c)
+        checked_in, attended = participants_for_meeting(m)
+        self.assertTrue(person_a.pk in checked_in)
+        self.assertTrue(person_b.pk not in checked_in)
+        self.assertTrue(person_c.pk in attended)
+        self.assertTrue(person_d.pk not in attended)
