@@ -2,6 +2,7 @@ FROM python:3.9-bullseye
 LABEL maintainer="IETF Tools Team <tools-discuss@ietf.org>"
 
 ENV DEBIAN_FRONTEND=noninteractive
+ENV NODE_MAJOR=16
 
 # Update system packages
 RUN apt-get update \
@@ -12,7 +13,6 @@ RUN apt-get update \
 RUN apt-get install -y --no-install-recommends ca-certificates curl gnupg \
     && mkdir -p /etc/apt/keyrings\
     && curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg
-ENV NODE_MAJOR=16
 RUN echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_$NODE_MAJOR.x nodistro main" | tee /etc/apt/sources.list.d/nodesource.list
 
 # Add Docker Source
@@ -36,7 +36,7 @@ RUN apt-get update --fix-missing && apt-get install -qy --no-install-recommends 
 	default-jdk \
 	docker-ce-cli \
 	enscript \
-    firefox-esr \
+	firefox-esr \
 	gawk \
 	g++ \
 	gcc \
@@ -84,6 +84,18 @@ RUN apt-get update --fix-missing && apt-get install -qy --no-install-recommends 
 
 # Install kramdown-rfc2629 (ruby)
 RUN gem install kramdown-rfc2629
+
+# GeckoDriver
+ARG GECKODRIVER_VERSION=latest
+RUN GK_VERSION=$(if [ ${GECKODRIVER_VERSION:-latest} = "latest" ]; then echo "0.33.0"; else echo $GECKODRIVER_VERSION; fi) \
+  && echo "Using GeckoDriver version: "$GK_VERSION \
+  && wget --no-verbose -O /tmp/geckodriver.tar.gz https://github.com/mozilla/geckodriver/releases/download/v$GK_VERSION/geckodriver-v$GK_VERSION-linux64.tar.gz \
+  && rm -rf /opt/geckodriver \
+  && tar -C /opt -zxf /tmp/geckodriver.tar.gz \
+  && rm /tmp/geckodriver.tar.gz \
+  && mv /opt/geckodriver /opt/geckodriver-$GK_VERSION \
+  && chmod 755 /opt/geckodriver-$GK_VERSION \
+  && ln -fs /opt/geckodriver-$GK_VERSION /usr/bin/geckodriver
 
 # GeckoDriver
 ARG GECKODRIVER_VERSION=latest

@@ -2775,6 +2775,7 @@ class rfc9389EligibilityTests(TestCase):
         for person in ineligible_people:
             self.assertFalse(is_eligible(person,self.nomcom))
 
+
 class VolunteerTests(TestCase):
 
     def test_volunteer(self):
