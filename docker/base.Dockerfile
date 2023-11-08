@@ -21,7 +21,7 @@ RUN echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg ma
 RUN wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add -
 
 # Install the packages we need
-RUN apt-get update --fix-missing && apt-get install -qy \
+RUN apt-get update --fix-missing && apt-get install -qy --no-install-recommends \
 	apache2-utils \
 	apt-file \
 	bash \
@@ -30,6 +30,7 @@ RUN apt-get update --fix-missing && apt-get install -qy \
 	default-jdk \
 	docker-ce-cli \
 	enscript \
+	firefox-esr \
 	gawk \
 	g++ \
 	gcc \
@@ -58,7 +59,7 @@ RUN apt-get update --fix-missing && apt-get install -qy \
 	nano \
 	netcat \
 	nodejs \
-    	pgloader \
+	pgloader \
 	pigz \
 	postgresql-client-14 \
 	pv \
@@ -87,11 +88,23 @@ RUN /tmp/app-install-chromedriver.sh
 # Fix /dev/shm permissions for chromedriver
 RUN chmod 1777 /dev/shm
 
+# GeckoDriver
+ARG GECKODRIVER_VERSION=latest
+RUN GK_VERSION=$(if [ ${GECKODRIVER_VERSION:-latest} = "latest" ]; then echo "0.33.0"; else echo $GECKODRIVER_VERSION; fi) \
+  && echo "Using GeckoDriver version: "$GK_VERSION \
+  && wget --no-verbose -O /tmp/geckodriver.tar.gz https://github.com/mozilla/geckodriver/releases/download/v$GK_VERSION/geckodriver-v$GK_VERSION-linux64.tar.gz \
+  && rm -rf /opt/geckodriver \
+  && tar -C /opt -zxf /tmp/geckodriver.tar.gz \
+  && rm /tmp/geckodriver.tar.gz \
+  && mv /opt/geckodriver /opt/geckodriver-$GK_VERSION \
+  && chmod 755 /opt/geckodriver-$GK_VERSION \
+  && ln -fs /opt/geckodriver-$GK_VERSION /usr/bin/geckodriver
+
 # Activate Yarn
 RUN corepack enable
 
 # Get rid of installation files we don't need in the image, to reduce size
-RUN apt-get autoremove -y && apt-get clean -y && rm -rf /var/lib/apt/lists/*
+RUN apt-get autoremove -y && apt-get clean -y && rm -rf /var/lib/apt/lists/* /var/cache/apt/*
 
 # "fake" dbus address to prevent errors
 # https://github.com/SeleniumHQ/docker-selenium/issues/87
