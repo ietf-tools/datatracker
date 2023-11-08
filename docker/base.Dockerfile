@@ -24,8 +24,6 @@ RUN echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/d
 RUN echo "deb http://apt.postgresql.org/pub/repos/apt $(. /etc/os-release && echo "$VERSION_CODENAME")-pgdg main" | tee /etc/apt/sources.list.d/pgdg.list
 RUN wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add -
 
-RUN cat /etc/apt/sources.list.d/docker.list
-
 # Install the packages we need
 RUN apt-get update --fix-missing && apt-get install -qy --no-install-recommends \
 	apache2-utils \
@@ -84,18 +82,6 @@ RUN apt-get update --fix-missing && apt-get install -qy --no-install-recommends 
 
 # Install kramdown-rfc2629 (ruby)
 RUN gem install kramdown-rfc2629
-
-# GeckoDriver
-ARG GECKODRIVER_VERSION=latest
-RUN GK_VERSION=$(if [ ${GECKODRIVER_VERSION:-latest} = "latest" ]; then echo "0.33.0"; else echo $GECKODRIVER_VERSION; fi) \
-  && echo "Using GeckoDriver version: "$GK_VERSION \
-  && wget --no-verbose -O /tmp/geckodriver.tar.gz https://github.com/mozilla/geckodriver/releases/download/v$GK_VERSION/geckodriver-v$GK_VERSION-linux64.tar.gz \
-  && rm -rf /opt/geckodriver \
-  && tar -C /opt -zxf /tmp/geckodriver.tar.gz \
-  && rm /tmp/geckodriver.tar.gz \
-  && mv /opt/geckodriver /opt/geckodriver-$GK_VERSION \
-  && chmod 755 /opt/geckodriver-$GK_VERSION \
-  && ln -fs /opt/geckodriver-$GK_VERSION /usr/bin/geckodriver
 
 # GeckoDriver
 ARG GECKODRIVER_VERSION=latest
