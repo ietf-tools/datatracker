@@ -456,7 +456,6 @@ INSTALLED_APPS = [
     'django_bootstrap5',
     'django_celery_beat',
     'corsheaders',
-    'django_markup',
     'oidc_provider',
     'simple_history',
     'tastypie',
@@ -1082,19 +1081,6 @@ USER_PREFERENCE_DEFAULTS = {
 EXCLUDED_PERSONAL_EMAIL_REGEX_PATTERNS = [
     "@ietf.org$",
 ]
-
-MARKUP_SETTINGS = {
-    'restructuredtext': {
-        'settings_overrides': {
-            'initial_header_level': 3,
-            'doctitle_xform': False,
-            'footnote_references': 'superscript',
-            'trim_footnote_reference_space': True,
-            'default_reference_context': 'view',
-            'link_base': ''
-        }
-    }
-}
 
 MAILMAN_LIB_DIR = '/usr/lib/mailman'
 

@@ -876,3 +876,11 @@ def badgeify(blob):
             )
 
     return text
+
+
+from ietf.utils.markdown import markdown
+
+
+@register.filter
+def apply_markdown(text):
+    return markdown(text)

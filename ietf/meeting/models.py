@@ -108,7 +108,7 @@ class Meeting(models.Model):
     schedule   = ForeignKey('Schedule',null=True,blank=True, related_name='+')
     session_request_lock_message = models.CharField(blank=True,max_length=255) # locked if not empty
     proceedings_final = models.BooleanField(default=False, help_text="Are the proceedings for this meeting complete?")
-    acknowledgements = models.TextField(blank=True, help_text="Acknowledgements for use in meeting proceedings.  Use ReStructuredText markup.")
+    acknowledgements = models.TextField(blank=True, help_text="Acknowledgements for use in meeting proceedings.  Use Markdown.")
     overview = ForeignKey(DBTemplate, related_name='overview', null=True, editable=False)
     show_important_dates = models.BooleanField(default=False)
     attendees = models.IntegerField(blank=True, null=True, default=None,

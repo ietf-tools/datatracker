@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
-{% load origin markup_tags %}
+{% load origin ietf_filters %}
 {% block title %}IETF {{ meeting.number }} Proceedings{% endblock %}
 {% block content %}
     {% origin %}
@@ -11,5 +11,5 @@
         </a>
     </h1>
     <h2>Acknowledgements</h2>
-    {{ meeting.acknowledgements | apply_markup:"restructuredtext" }}
+    {{ meeting.acknowledgements | apply_markdown }}
 {% endblock %}
