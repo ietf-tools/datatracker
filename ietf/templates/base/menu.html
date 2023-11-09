@@ -1,7 +1,7 @@
 {# Copyright The IETF Trust 2015-2022, All Rights Reserved #}
 {% load origin %}
 {% origin %}
-{% load ietf_filters managed_groups wg_menu active_groups_menu group_filters cache %}
+{% load ietf_filters managed_groups wg_menu active_groups_menu group_filters cache meetings_filters %}
 {% if flavor != 'top' %}
     {% include "base/menu_user.html" %}
 {% endif %}
@@ -144,14 +144,6 @@
                     </a>
                 </li>
             {% endfor %}
-            {% for g in user|matman_groups %}
-                <li>
-                    <a class="dropdown-item {% if flavor != 'top' %}text-wrap{% endif %}"
-                       href="{% url "ietf.group.views.meetings" g.acronym %}">
-                        {{ g.acronym }} {{ g.type.slug }} meetings
-                    </a>
-                </li>
-            {% endfor %}
         {% endif %}
         {% if user|has_role:"Review Team Secretary" %}
             {% if flavor == 'top' %}
@@ -275,12 +267,32 @@
             Request a session
         </a>
     </li>
+    {% if user|can_request_interim %}
+        <li>
+            <a class="dropdown-item {% if flavor != 'top' %}text-wrap link-primary{% endif %}"
+                href="{% url 'ietf.meeting.views.interim_request' %}">
+                Request an interim meeting
+            </a>
+        </li>
+    {% endif %}
     <li>
         <a class="dropdown-item {% if flavor != 'top' %}text-wrap{% endif %}"
            href="{% url 'ietf.meeting.views.meeting_requests' %}">
             Session requests
         </a>
     </li>
+    {% if user|matman_groups %}
+        {% if flavor == 'top' %}<li><hr class="dropdown-divider"></li>{% endif %}
+        <li {% if flavor == 'top' %}class="dropdown-header"{% else %}class="nav-item fw-bolder"{% endif %}>Manage</li>
+        {% for g in user|matman_groups %}
+            <li>
+                <a class="dropdown-item {% if flavor != 'top' %}text-wrap link-primary{% endif %}"
+                    href="{% url "ietf.group.views.meetings" g.acronym %}">
+                    {{ g.acronym }} {{ g.type.slug }} meetings
+                </a>
+            </li>
+        {% endfor %}
+    {% endif %}
     {% if flavor == 'top' %}
         {% if flavor == 'top' %}
             <li><hr class="dropdown-divider">

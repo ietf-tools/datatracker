@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2009-2022, All Rights Reserved
+# Copyright The IETF Trust 2009-2023, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -946,9 +946,87 @@ class GroupEditTests(TestCase):
             r = self.client.post(url, {
                 'description': 'Ignored description',
             })
-        self.assertEqual(r.status_code, 302)
+        self.assertEqual(r.status_code, 403)
         group = Group.objects.get(pk=group.pk)  # refresh
         self.assertEqual(group.description, 'Updated description')
+
+    def test_edit_parent(self):
+        group = GroupFactory.create(type_id='wg', parent=GroupFactory.create(type_id='area'))
+        chair = RoleFactory(group=group, name_id='chair').person
+        url = urlreverse('ietf.group.views.edit', kwargs=dict(group_type=group.type_id, acronym=group.acronym, action='edit'))
+
+        # parent is not shown to group chair
+        login_testing_unauthorized(self, chair.user.username, url)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q('form select[name=parent]')), 0)
+
+        # view ignores attempt to change parent
+        old_parent = group.parent
+        new_parent = GroupFactory(type_id='area')
+        self.assertNotEqual(new_parent.acronym, group.parent.acronym)
+        r = self.client.post(url, dict(
+            name=group.name,
+            acronym=group.acronym,
+            state=group.state_id,
+            parent=new_parent.pk))
+        self.assertEqual(r.status_code, 302)
+        group = Group.objects.get(pk=group.pk)
+        self.assertNotEqual(group.parent, new_parent)
+        self.assertEqual(group.parent, old_parent)
+
+        # parent is shown to AD and Secretariat
+        for priv_user in ('ad', 'secretary'):
+            self.client.logout()
+            login_testing_unauthorized(self, priv_user, url)
+            r = self.client.get(url)
+            self.assertEqual(r.status_code, 200)
+            q = PyQuery(r.content)
+            self.assertEqual(len(q('form select[name=parent]')), 1)
+
+            new_parent = GroupFactory(type_id='area')
+            self.assertNotEqual(new_parent.acronym, group.parent.acronym)
+            r = self.client.post(url, dict(
+                name=group.name,
+                acronym=group.acronym,
+                state=group.state_id,
+                parent=new_parent.pk))
+            self.assertEqual(r.status_code, 302)
+            group = Group.objects.get(pk=group.pk)
+            self.assertEqual(group.parent, new_parent)
+
+    def test_edit_parent_field(self):
+        group = GroupFactory.create(type_id='wg', parent=GroupFactory.create(type_id='area'))
+        chair = RoleFactory(group=group, name_id='chair').person
+        url = urlreverse('ietf.group.views.edit', kwargs=dict(group_type=group.type_id, acronym=group.acronym, action='edit', field='parent'))
+
+        # parent is not shown to group chair
+        login_testing_unauthorized(self, chair.user.username, url)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 403)
+
+        # chair is not allowed to change parent
+        new_parent = GroupFactory(type_id='area')
+        self.assertNotEqual(new_parent.acronym, group.parent.acronym)
+        r = self.client.post(url, dict(parent=new_parent.pk))
+        self.assertEqual(r.status_code, 403)
+
+        # parent is shown to AD and Secretariat
+        for priv_user in ('ad', 'secretary'):
+            self.client.logout()
+            login_testing_unauthorized(self, priv_user, url)
+            r = self.client.get(url)
+            self.assertEqual(r.status_code, 200)
+            q = PyQuery(r.content)
+            self.assertEqual(len(q('form select[name=parent]')), 1)
+
+            new_parent = GroupFactory(type_id='area')
+            self.assertNotEqual(new_parent.acronym, group.parent.acronym)
+            r = self.client.post(url, dict(parent=new_parent.pk))
+            self.assertEqual(r.status_code, 302)
+            group = Group.objects.get(pk=group.pk)
+            self.assertEqual(group.parent, new_parent)
 
     def test_conclude(self):
         group = GroupFactory(acronym="mars")
