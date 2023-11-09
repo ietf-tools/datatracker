@@ -41,3 +41,4 @@ jobs:
         platforms: linux/amd64,linux/arm64
         push: true
         tags: ghcr.io/ietf-tools/datatracker-app-base:latest
+.github/workflows/build-base-app.yml.github/ISSUE_TEMPLATE.github/workflows
