@@ -1315,6 +1315,9 @@ EVENT_TYPES = [
 
     # Statement events
     ("published_statement", "Published statement"),
+
+    # Slide events
+    ("approved_slides", "Slides approved"),
     
     ]
 
