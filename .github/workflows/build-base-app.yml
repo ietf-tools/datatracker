@@ -1,6 +1,6 @@
 name: Build Base App Docker Image
 
-on:
+on:.github/workflows/build-base-app.yml
   push:
     branches:
       - 'main'
