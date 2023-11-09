@@ -91,8 +91,6 @@ def send_expire_warning_for_draft(doc):
         DEADLINE_TZINFO
     ).replace(
         hour=0, minute=0, second=0, microsecond=0
-    ).astimezone(
-        ZoneInfo('UTC')
     )
     now_plus_12hours = timezone.now() + datetime.timedelta(hours=12)
     if expiration <= now_plus_12hours:
