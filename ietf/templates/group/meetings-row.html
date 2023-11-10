@@ -32,7 +32,6 @@
         <td>
             {% if show_ical and s.current_status == "sched" %}
                 {% if s.meeting.type_id == 'ietf' %}
-                    {{ s.time|date:"H:i" }}
                     <a class="btn btn-primary btn-sm"
                        aria-label="icalendar entry for {{s.group.acronym}} at IETF {{s.meeting.number}}"
                        title="icalendar entry for {{s.group.acronym}} at IETF {{s.meeting.number}}"
