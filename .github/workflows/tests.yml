@@ -51,6 +51,13 @@ jobs:
         fi
         coverage xml
 
+    - name: Upload geckodriver.log
+      uses: actions/upload-artifact@v3
+      if: ${{ failure() }}
+      with:
+        name: geckodriverlog
+        path: geckodriver.log
+
     - name: Upload Coverage Results to Codecov
       uses: codecov/codecov-action@v3.1.4
       with:
