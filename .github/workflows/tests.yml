@@ -13,7 +13,9 @@ jobs:
   tests-python:
     name: Python Tests
     runs-on: ubuntu-latest
-    container: ghcr.io/ietf-tools/datatracker-app-base:latest
+    container:
+      image: ghcr.io/ietf-tools/datatracker-app-base:latest
+      options: --user 1001
     
     services:
       db:
