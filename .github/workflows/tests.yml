@@ -28,6 +28,7 @@ jobs:
       run: |
         chmod +x ./dev/tests/prepare.sh
         sh ./dev/tests/prepare.sh
+        sudo sh ./docker/scripts/app-create-dirs.sh
         
     - name: Ensure DB is ready
       run: |
