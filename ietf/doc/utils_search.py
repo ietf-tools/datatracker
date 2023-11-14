@@ -101,7 +101,7 @@ def fill_in_document_table_attributes(docs, have_telechat_date=False):
 
         if d.type_id == "draft":
             state_slug = d.get_state_slug()
-            if state_slug == "rfc":
+            if state_slug == "rfc": # Unreachable?
                 d.search_heading = "RFC"
                 d.expirable = False
             elif state_slug in ("ietf-rm", "auth-rm"):
@@ -117,7 +117,7 @@ def fill_in_document_table_attributes(docs, have_telechat_date=False):
             d.search_heading = "%s" % (d.type,)
             d.expirable = False
 
-        if d.get_state_slug() != "rfc":
+        if d.type_id == "draft" and d.get_state_slug() != "rfc":
             d.milestones = [ m for (t, s, v, m) in sorted(((m.time, m.state.slug, m.desc, m) for m in d.groupmilestone_set.all() if m.state_id == "active")) ]
             d.review_assignments = review_assignments_to_list_for_docs([d]).get(d.name, [])
 
