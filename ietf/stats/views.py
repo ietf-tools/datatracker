@@ -216,7 +216,7 @@ def document_stats(request, stats_type=None):
             # filter documents
             document_filters = Q(type__in=["draft","rfc"]) # TODO - review lots of "rfc is a draft" assumptions below
 
-            rfc_state = State.objects.get(type="draft", slug="rfc")
+            rfc_state = State.objects.get(type="rfc", slug="published")
             if document_type == "rfc":
                 document_filters &= Q(states=rfc_state)
             elif document_type == "draft":
@@ -370,7 +370,7 @@ def document_stats(request, stats_type=None):
             person_filters = Q(documentauthor__document__type="draft")
 
             # filter persons
-            rfc_state = State.objects.get(type="draft", slug="rfc")
+            rfc_state = State.objects.get(type="rfc", slug="published")
             if document_type == "rfc":
                 person_filters &= Q(documentauthor__document__states=rfc_state)
             elif document_type == "draft":
@@ -599,7 +599,7 @@ def document_stats(request, stats_type=None):
             person_filters = Q(documentauthor__document__type="draft")
 
             # filter persons
-            rfc_state = State.objects.get(type="draft", slug="rfc")
+            rfc_state = State.objects.get(type="rfc", slug="published")
             if document_type == "rfc":
                 person_filters &= Q(documentauthor__document__states=rfc_state)
             elif document_type == "draft":

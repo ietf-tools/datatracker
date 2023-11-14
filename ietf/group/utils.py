@@ -189,7 +189,7 @@ def setup_default_community_list_for_group(group):
         community_list=clist,
         rule_type="group_rfc",
         group=group,
-        state=State.objects.get(slug="rfc", type="draft"),
+        state=State.objects.get(slug="published", type="rfc"),
     )
     SearchRule.objects.create(
         community_list=clist,
