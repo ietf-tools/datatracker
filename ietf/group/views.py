@@ -740,7 +740,7 @@ def dependencies(request, acronym, group_type=None):
         relationship__slug__startswith="ref",
     )
 
-    both_rfcs = Q(source__states__slug="rfc", target__states__slug="rfc")
+    both_rfcs = Q(source__type_id="rfc", target__type_id="rfc")
     inactive = Q(source__states__slug__in=["expired", "repl"])
     attractor = Q(target__name__in=["rfc5000", "rfc5741"])
     removed = Q(source__states__slug__in=["auth-rm", "ietf-rm"])
