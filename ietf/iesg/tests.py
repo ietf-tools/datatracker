@@ -105,15 +105,15 @@ class IESGTests(TestCase):
         dated_tbody = pq(f'td:contains("{dated_milestones[0].desc}")').closest("tbody")
         next_td = dated_tbody.find('td:contains("Next")')
         self.assertEqual(next_td.siblings()[0].text.strip(), dated_milestones[0].desc)
-        next_td = dated_tbody.find('td:contains("Last")')
-        self.assertEqual(next_td.siblings()[0].text.strip(), dated_milestones[1].desc)
+        last_td = dated_tbody.find('td:contains("Last")')
+        self.assertEqual(last_td.siblings()[0].text.strip(), dated_milestones[1].desc)
 
         # check order-by-order
         dateless_tbody = pq(f'td:contains("{dateless_milestones[0].desc}")').closest("tbody")
         next_td = dateless_tbody.find('td:contains("Next")')
         self.assertEqual(next_td.siblings()[0].text.strip(), dateless_milestones[0].desc)
-        next_td = dateless_tbody.find('td:contains("Last")')
-        self.assertEqual(next_td.siblings()[0].text.strip(), dateless_milestones[1].desc)
+        last_td = dateless_tbody.find('td:contains("Last")')
+        self.assertEqual(last_td.siblings()[0].text.strip(), dateless_milestones[1].desc)
 
 
     def test_review_decisions(self):
