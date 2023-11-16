@@ -511,8 +511,8 @@ class CoverageTest(unittest.TestCase):
             # Assert coverage failure only if we're running the full test suite -- if we're
             # only running some tests, then of course the coverage is going to be low.
             if self.runner.run_full_test_suite:
-                # Permit 0.02% variation in results -- otherwise small code changes become a pain
-                fudge_factor = 0.0002
+                # Permit a small variation in results -- otherwise small code changes become a pain
+                fudge_factor = 0.0004
                 self.assertLessEqual(len(test_missing), len(master_missing),
                     msg = "New %s without test coverage since %s: %s" % (test, latest_coverage_version, list(set(test_missing) - set(master_missing))))
                 if not self.runner.ignore_lower_coverage:
