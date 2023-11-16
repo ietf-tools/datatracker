@@ -469,8 +469,8 @@ def prepare_group_documents(request, group, clist):
         # non-WG drafts and call for WG adoption are considered related
         if (d.group != group
             or (d.stream_id and d.get_state_slug("draft-stream-%s" % d.stream_id) in ("c-adopt", "wg-cand"))):
-            if d.get_state_slug() != "expired":
-                d.search_heading = "Related Internet-Draft"
+            if (d.type_id == "draft" and d.get_state_slug() not in ["expired","rfc"]) or d.type_id == "rfc":
+                d.search_heading = "Related Internet-Drafts and RFCs"
                 docs_related.append(d)
         else:
             if not (d.get_state_slug('draft-iesg') == "dead" or (d.stream_id and d.get_state_slug("draft-stream-%s" % d.stream_id) == "dead")):
