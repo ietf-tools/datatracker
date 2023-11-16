@@ -1,0 +1,21 @@
+{# Copyright The IETF Trust 2015-2023, All Rights Reserved #}
+<!DOCTYPE html>
+{% load static %}
+{% load origin %}
+{% origin %}
+<html data-bs-theme="auto" lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <title>{{ title }}</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link href="{{ settings.STATIC_IETF_ORG }}/fonts/inter/import.css" rel="stylesheet">
+        <link href="{{ settings.STATIC_IETF_ORG }}/fonts/noto-sans-mono/import.css" rel="stylesheet">
+        <link rel="stylesheet" href="{% static 'ietf/css/ietf.css' %}">
+        {# load this in the head, to prevent flickering #}
+        <script src="{% static 'ietf/js/theme.js' %}"></script>
+    </head>
+    <body class="m-2 bg-transparent">
+        {{ content }}
+    </body>
+</html>
