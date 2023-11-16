@@ -939,14 +939,17 @@ def edit(request, group_type=None, acronym=None, action="edit", field=None):
         if not (can_manage_group(request.user, group)
                 or group.has_role(request.user, group.features.groupman_roles)):
             permission_denied(request, "You don't have permission to access this view")
+        hide_parent = not has_role(request.user, ("Secretariat", "Area Director", "IRTF Chair"))
     else:
         # This allows ADs to create RG and the IRTF Chair to create WG, but we trust them not to
         if not has_role(request.user, ("Secretariat", "Area Director", "IRTF Chair")):
              permission_denied(request, "You don't have permission to access this view")
-                
+        hide_parent = False
 
     if request.method == 'POST':
-        form = GroupForm(request.POST, group=group, group_type=group_type, field=field)
+        form = GroupForm(request.POST, group=group, group_type=group_type, field=field, hide_parent=hide_parent)
+        if field and not form.fields:
+            permission_denied(request, "You don't have permission to edit this field")
         if form.is_valid():
             clean = form.cleaned_data
             if new_group:
@@ -1108,7 +1111,9 @@ def edit(request, group_type=None, acronym=None, action="edit", field=None):
 
         else:
             init = dict()
-        form = GroupForm(initial=init, group=group, group_type=group_type, field=field)
+        form = GroupForm(initial=init, group=group, group_type=group_type, field=field, hide_parent=hide_parent)
+        if field and not form.fields:
+            permission_denied(request, "You don't have permission to edit this field")
 
     return render(request, 'group/edit.html',
                   dict(group=group,

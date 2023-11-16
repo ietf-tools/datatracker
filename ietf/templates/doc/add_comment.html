@@ -2,13 +2,14 @@
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
 {% load django_bootstrap5 %}
-{% block title %}Add comment for {{ doc }}{% endblock %}
+{% block title %}Add comment for
+{% if review_req %} {{ review_req }} {% else %} {{ doc }} {% endif %} {% endblock %}
 {% block content %}
     {% origin %}
     <h1>
         Add comment
         <br>
-        <small class="text-body-secondary">{{ doc }}</small>
+        <small class="text-body-secondary">{% if review_req %} {{ review_req }} {% else %} {{ doc }} {% endif %}</small>
     </h1>
     <form method="post">
         {% csrf_token %}
@@ -17,7 +18,12 @@
             The comment will be added to the history trail.
         </p>
         {% bootstrap_button button_type="submit" content="Submit" %}
+	{% if review_req %}
+        <a class="btn btn-secondary float-end"
+           href="{% url "ietf.doc.views_review.review_request" name=doc.name request_id=review_req.pk %}">Back</a>
+	{% else %}
         <a class="btn btn-secondary float-end"
            href="{% url "ietf.doc.views_doc.document_main" name=doc.name %}">Back</a>
+        {% endif %}
     </form>
 {% endblock %}

@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2017-2020, All Rights Reserved
+# Copyright The IETF Trust 2017-2023, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -103,6 +103,8 @@ class GroupForm(forms.Form):
         else:
             field = None
 
+        self.hide_parent = kwargs.pop('hide_parent', False)
+
         super(self.__class__, self).__init__(*args, **kwargs)
 
         if not group_features or group_features.has_chartering_process:
@@ -138,18 +140,21 @@ class GroupForm(forms.Form):
             self.fields['acronym'].widget.attrs['readonly'] = ""
 
         # Sort out parent options
-        self.fields['parent'].queryset = self.fields['parent'].queryset.filter(type__in=parent_types)
-        if need_parent:
-            self.fields['parent'].required = True
-            self.fields['parent'].empty_label = None
-        # if this is a new group, fill in the default parent, if any
-        if self.group is None or (not hasattr(self.group, 'pk')):
-            self.fields['parent'].initial = self.fields['parent'].queryset.filter(
-                acronym=default_parent
-            ).first()
-        # label the parent field as 'IETF Area' if appropriate, for consistency with past behavior
-        if parent_types.count() == 1 and parent_types.first().pk == 'area':
-            self.fields['parent'].label = "IETF Area"
+        if self.hide_parent:
+            self.fields.pop('parent')
+        else:
+            self.fields['parent'].queryset = self.fields['parent'].queryset.filter(type__in=parent_types)
+            if need_parent:
+                self.fields['parent'].required = True
+                self.fields['parent'].empty_label = None
+            # if this is a new group, fill in the default parent, if any
+            if self.group is None or (not hasattr(self.group, 'pk')):
+                self.fields['parent'].initial = self.fields['parent'].queryset.filter(
+                    acronym=default_parent
+                ).first()
+            # label the parent field as 'IETF Area' if appropriate, for consistency with past behavior
+            if parent_types.count() == 1 and parent_types.first().pk == 'area':
+                self.fields['parent'].label = "IETF Area"
 
         if field:
             keys = list(self.fields.keys())
