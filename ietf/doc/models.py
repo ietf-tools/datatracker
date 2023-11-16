@@ -539,7 +539,7 @@ class DocumentInfo(models.Model):
         return self.text() or "Error; cannot read '%s'"%self.get_base_name()
 
     def html_body(self, classes=""):
-        if self.get_state_slug() == "rfc":
+        if self.type_id == "rfc":
             try:
                 html = Path(
                     os.path.join(settings.RFC_PATH, self.name + ".html")
