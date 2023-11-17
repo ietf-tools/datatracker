@@ -627,9 +627,7 @@ def update_docs_from_rfc_index(
         def parse_relation_list(l):
             res = []
             for x in l:
-                l = Document.objects.filter(name=x.lower(), type_id="rfc")
-
-                for a in l:
+                for a in Document.objects.filter(name=x.lower(), type_id="rfc"):
                     if a not in res:
                         res.append(a)
             return res
