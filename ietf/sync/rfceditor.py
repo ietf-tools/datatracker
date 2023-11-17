@@ -527,14 +527,7 @@ def update_docs_from_rfc_index(
             elif draft.stream.slug in ["iab", "irtf", "ise"]:
                 stream_slug = f"draft-stream-{draft.stream.slug}"
                 prev_state = draft.get_state(stream_slug)
-                if prev_state is None:
-                    pass
-                    # It turns out that this is not an exception to log, but is rather more the norm.
-                    # That said, the behavior in the `elif` is still the right behavior if one of these streams
-                    # does set state.
-                    #
-                    # log(f"Warning while processing {doc.name}: draft {draft.name} stream state was not set")
-                elif prev_state.slug != "pub":
+                if prev_state is not None and prev_state.slug != "pub":
                     new_state = State.objects.select_related("type").get(used=True, type__slug=stream_slug, slug="pub")
                     draft.set_state(new_state)
                     draft_changes.append(
@@ -627,17 +620,7 @@ def update_docs_from_rfc_index(
         def parse_relation_list(l):
             res = []
             for x in l:
-                # This lookup wasn't finding anything but maybe some STD and we know
-                # if the STD had more than one RFC the wrong thing happens
-                #
-                # if x[:3] in ("NIC", "IEN", "STD", "RTR"):
-                #    # try translating this to RFCs that we can handle
-                #    # sensibly; otherwise we'll have to ignore them
-                #   l = DocAlias.objects.filter(name__startswith="rfc", docs__docalias__name=x.lower())
-                # else:
-                l = Document.objects.filter(name=x.lower(), type_id="rfc")
-
-                for a in l:
+                for a in Document.objects.filter(name=x.lower(), type_id="rfc"):
                     if a not in res:
                         res.append(a)
             return res
