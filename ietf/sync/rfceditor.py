@@ -336,10 +336,11 @@ def parse_index(response):
 
 def update_docs_from_rfc_index(
     index_data, errata_data, skip_older_than_date=None
-) -> Iterator[tuple[list[str], Document, bool]]:
+) -> Iterator[tuple[int, list[str], Document, bool]]:
     """Given parsed data from the RFC Editor index, update the documents in the database
 
-    Yields a list of change descriptions for each document, if any.
+    Returns an iterator that yields (rfc_number, change_list, doc, rfc_published) for the
+    RFC document and, if applicable, the I-D that it came from.   
 
     The skip_older_than_date is a bare date, not a datetime.
     """
@@ -553,7 +554,7 @@ def update_docs_from_rfc_index(
                     )
                 )
                 draft.save_with_history(draft_events)
-                yield draft_changes, draft, False  # yield changes to the draft
+                yield rfc_number, draft_changes, draft, False  # yield changes to the draft
 
         # check attributes
         verbed = "set" if created_rfc else "changed"
@@ -757,7 +758,7 @@ def update_docs_from_rfc_index(
                 )
             )
             doc.save_with_history(rfc_events)
-            yield rfc_changes, doc, rfc_published  # yield changes to the RFC
+            yield rfc_number, rfc_changes, doc, rfc_published  # yield changes to the RFC
     
     if first_sync_creating_subseries:
         # First - create the known subseries documents that have ghosted. 
