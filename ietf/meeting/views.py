@@ -3861,18 +3861,29 @@ def proceedings_attendees(request, num=None):
     if meeting.proceedings_format_version == 1:
         return HttpResponseRedirect(f'{settings.PROCEEDINGS_V1_BASE_URL.format(meeting=meeting)}/attendee.html')
 
-    checked_in, attended = participants_for_meeting(meeting)
-    regs = list(MeetingRegistration.objects.filter(meeting__number=num, reg_type='onsite', checkedin=True))
+    template = None
+    meeting_registrations = None
 
-    for mr in MeetingRegistration.objects.filter(meeting__number=num, reg_type='remote').select_related('person'):
-        if mr.person.pk in attended and mr.person.pk not in checked_in:
-            regs.append(mr)
+    if int(meeting.number) >= 118:
+        checked_in, attended = participants_for_meeting(meeting)
+        regs = list(MeetingRegistration.objects.filter(meeting__number=num, reg_type='onsite', checkedin=True))
 
-    meeting_registrations = sorted(regs, key=lambda x: (x.last_name, x.first_name))
+        for mr in MeetingRegistration.objects.filter(meeting__number=num, reg_type='remote').select_related('person'):
+            if mr.person.pk in attended and mr.person.pk not in checked_in:
+                regs.append(mr)
+
+        meeting_registrations = sorted(regs, key=lambda x: (x.last_name, x.first_name))
+    else:
+        overview_template = "/meeting/proceedings/%s/attendees.html" % meeting.number
+        try:
+            template = render_to_string(overview_template, {})
+        except TemplateDoesNotExist:
+            raise Http404
 
     return render(request, "meeting/proceedings_attendees.html", {
         'meeting': meeting,
         'meeting_registrations': meeting_registrations,
+        'template': template,
     })
 
 def proceedings_overview(request, num=None):
