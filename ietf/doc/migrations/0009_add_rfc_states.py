@@ -15,7 +15,7 @@ def forward(apps, schema_editor):
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("doc", "0007_alter_docevent_type"),
+        ("doc", "0008_alter_docevent_type"),
     ]
 
     operations = [

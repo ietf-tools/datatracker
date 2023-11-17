@@ -23,7 +23,7 @@ def forward(apps, schema_editor):
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("doc", "0018_subseries"),
+        ("doc", "0019_subseries"),
     ]
 
     operations = [migrations.RunPython(forward)]

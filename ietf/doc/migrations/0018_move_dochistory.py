@@ -38,7 +38,7 @@ def forward(apps, schema_editor):
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("doc", "0016_delete_docalias"),
+        ("doc", "0017_delete_docalias"),
     ]
 
     # There is no going back

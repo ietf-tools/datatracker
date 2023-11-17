@@ -15,7 +15,7 @@ def reverse(apps, schema_editor):
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("doc", "0017_move_dochistory"),
+        ("doc", "0018_move_dochistory"),
     ]
 
     operations = [migrations.RunPython(forward, reverse)]
