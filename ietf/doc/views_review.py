@@ -219,6 +219,8 @@ def review_request(request, name, request_id):
     
     can_edit_deadline = can_edit_comment
 
+    can_add_comment = can_manage_request
+
     assignments = review_req.reviewassignment_set.all()
     for assignment in assignments:
         assignment.is_reviewer = user_is_person(request.user, assignment.reviewer.person)
@@ -260,6 +262,7 @@ def review_request(request, name, request_id):
         'can_assign_reviewer': can_assign_reviewer,
         'can_edit_comment': can_edit_comment,
         'can_edit_deadline': can_edit_deadline,
+        'can_add_comment': can_add_comment,
         'assignments': assignments,
         'wg_chairs': wg_chairs,
         'iesg_state_summary': iesg_state_summary,
@@ -310,6 +313,31 @@ def close_request(request, name, request_id):
         'form': form,
     })
 
+class AddCommentForm(forms.Form):
+    comment = forms.CharField(required=True, widget=forms.Textarea, strip=False)
+
+@login_required
+def add_request_comment(request, name, request_id):
+    doc = get_object_or_404(Document, name=name)
+    review_req = get_object_or_404(ReviewRequest, pk=request_id)
+
+    can_request = is_authorized_in_doc_stream(request.user, doc)
+    can_manage_request = can_manage_review_requests_for_team(request.user, review_req.team)
+    if not (can_request or can_manage_request):
+        permission_denied(request, "You do not have permission to perform this action")
+
+    if request.method == "POST":
+        form = AddCommentForm(request.POST)
+        if form.is_valid():
+            c = form.cleaned_data['comment']
+
+            review_req.add_history(c)
+            return redirect(review_request, name=review_req.doc.name, request_id=review_req.pk)
+    else:
+        form = AddCommentForm()
+
+    return render(request, 'doc/add_comment.html',
+                  dict(doc=doc, form=form, review_req=review_req))
 
 class AssignReviewerForm(forms.Form):
     reviewer = PersonEmailChoiceField(label="Assign Additional Reviewer", empty_label="(None)")
