@@ -527,14 +527,7 @@ def update_docs_from_rfc_index(
             elif draft.stream.slug in ["iab", "irtf", "ise"]:
                 stream_slug = f"draft-stream-{draft.stream.slug}"
                 prev_state = draft.get_state(stream_slug)
-                if prev_state is None:
-                    pass
-                    # It turns out that this is not an exception to log, but is rather more the norm.
-                    # That said, the behavior in the `elif` is still the right behavior if one of these streams
-                    # does set state.
-                    #
-                    # log(f"Warning while processing {doc.name}: draft {draft.name} stream state was not set")
-                elif prev_state.slug != "pub":
+                if prev_state is not None and prev_state.slug != "pub":
                     new_state = State.objects.select_related("type").get(used=True, type__slug=stream_slug, slug="pub")
                     draft.set_state(new_state)
                     draft_changes.append(
