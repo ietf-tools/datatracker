@@ -350,8 +350,16 @@ class RFCSyncTests(TestCase):
 
         changes = []
         with mock.patch("ietf.sync.rfceditor.log") as mock_log:
-            for _, d, rfc_published in rfceditor.update_docs_from_rfc_index(data, errata, today - datetime.timedelta(days=30)):
+            for rfc_number, _, d, rfc_published in rfceditor.update_docs_from_rfc_index(data, errata, today - datetime.timedelta(days=30)):
                 changes.append({"doc_pk": d.pk, "rfc_published": rfc_published})  # we ignore the actual change list
+                self.assertEqual(rfc_number, 1234)
+                if rfc_published:
+                    self.assertEqual(d.type_id, "rfc")
+                    self.assertEqual(d.rfc_number, rfc_number)
+                else:
+                    self.assertEqual(d.type_id, "draft")
+                    self.assertIsNone(d.rfc_number)
+                    
         self.assertFalse(mock_log.called, "No log messages expected")
 
         draft_doc = Document.objects.get(name=draft_doc.name)
