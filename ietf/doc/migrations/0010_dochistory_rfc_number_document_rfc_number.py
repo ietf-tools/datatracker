@@ -5,7 +5,7 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("doc", "0008_add_rfc_states"),
+        ("doc", "0009_add_rfc_states"),
     ]
 
     operations = [
