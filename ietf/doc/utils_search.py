@@ -103,7 +103,6 @@ def fill_in_document_table_attributes(docs, have_telechat_date=False):
         if d.type_id == "draft":
             state_slug = d.get_state_slug()
             if state_slug == "rfc":
-                log.unreachable("2023-11-15")
                 d.search_heading = "RFC"
                 d.expirable = False
             elif state_slug in ("ietf-rm", "auth-rm"):
