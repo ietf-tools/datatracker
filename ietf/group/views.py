@@ -1276,7 +1276,10 @@ def stream_documents(request, acronym):
     editable = has_role(request.user, "Secretariat") or group.has_role(request.user, "chair")
     stream = StreamName.objects.get(slug=acronym)
 
-    qs = Document.objects.filter(states__type="draft", states__slug__in=["active", "rfc"], stream=acronym)
+    qs = Document.objects.filter(stream=acronym).filter(
+        Q(states__type="draft", states__slug="active")
+        | Q(states__type="rfc")
+    )
     docs, meta = prepare_document_table(request, qs, max_results=1000)
     return render(request, 'group/stream_documents.html', {'stream':stream, 'docs':docs, 'meta':meta, 'editable':editable } )
 
