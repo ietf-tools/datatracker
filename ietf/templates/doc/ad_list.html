@@ -3,42 +3,58 @@
 {% load origin static %}
 {% load ietf_filters %}
 {% block pagehead %}
-    <link rel="stylesheet" href="{% static "ietf/css/list.css" %}">
+    <link rel="stylesheet" href="{% static 'ietf/css/list.css' %}">
+    <link rel="stylesheet" href="{% static 'ietf/css/highcharts.css' %}">
 {% endblock %}
-{% block title %}Area directors{% endblock %}
+{% block morecss %}
+    table .border-bottom { border-bottom-color: var(--highcharts-neutral-color-80) !important; }
+    .highcharts-container .highcharts-axis-labels { font-size: .7rem; }
+    .highcharts-container .highcharts-graph { stroke-width: 2.5; }
+    .highcharts-container .highcharts-color-0 {
+        fill: var(--bs-primary);
+        stroke: var(--bs-primary);
+    }
+    .highcharts-container .highcharts-data-label text {
+        font-size: 1rem;
+        font-weight: inherit;
+    }
+{% endblock %}
+{% block title %}IESG Dashboard{% endblock %}
 {% block content %}
     {% origin %}
-    <h1>Area Director Workload</h1>
+    <h1>IESG Dashboard</h1>
     {% if user|has_role:"Area Director,Secretariat" %}
     <div class="alert alert-info my-3">
-        {{ delta.days }}-day trend indicators
+        {{ delta }}-day trend graphs
         are only shown to logged-in Area Directors.
     </div>
     {% endif %}
-    {% for group in workload %}
-        <h2 class="mt-5" id="{{ group.group_type|slugify }}">{{ group.group_type }} State Counts</h2>
-        <table class="table table-sm table-striped table-bordered tablesorter">
+    {% for dt in metadata %}
+        <h2 class="mt-5" id="{{ dt.type.0 }}">{{ dt.type.1 }} State Counts</h2>
+        <table class="table table-sm table-striped table-bordered tablesorter navskip">
             <thead class="wrap-anywhere">
                 <tr>
                     <th scope="col" data-sort="name">Area Director</th>
-                    {% for g, desc, up_is_good in group.group_names %}
-                        <th scope="col" class="col-1" title="{{ desc }}"
-                            data-sort="{{ g|slugify }}-num">
-                            {{ g|split:'/'|join:'/<wbr>' }}
+                    {% for state, state_name in dt.states %}
+                        <th scope="col" class="col-1" title=""
+                            data-sort="{{ state }}-num">
+                            <a href="{% url 'ietf.doc.views_help.state_help' type='draft-iesg' %}#{{ state }}">
+                                {{ state_name|split:'/'|join:'/<wbr>' }}
+                            </a>
                         </th>
                     {% endfor %}
                 </tr>
             </thead>
             <tbody class="table-group-divider">
-                {% for ad, ad_data in group.counts %}
+                {% for ad in dt.ads %}
                     <tr>
                         <td>
                             <a href="{{ ad.dashboard }}">{{ ad.name }}</a>
                         </td>
-                        {% for label, count, prev, docs_delta in ad_data %}
-                        <td class="col-1"
-                            id="{{ group.group_type|slugify }}-{{ ad.full_name_as_key|slugify }}-{{ label.0|slugify }}">
-                            {% include 'doc/ad_count.html' %}
+                        {% for state, state_name in dt.states %}
+                        <td class="col-1 align-bottom"
+                            id="{{ dt.type.0 }}-{{ ad|slugify }}-{{ state }}">
+                            <div id="chart-{{ dt.type.0 }}-{{ ad|slugify }}-{{ state }}"></div>
                         </td>
                         {% endfor %}
                     </tr>
@@ -47,9 +63,9 @@
             <tfoot class="table-group-divider">
                 <tr>
                     <th scope="row">Sum</th>
-                    {% for label, count, prev in group.sums %}
-                        <td>
-                            {% include 'doc/ad_count.html' %}
+                    {% for state, state_name in dt.states %}
+                        <td class="align-bottom">
+                            <div id="chart-{{ dt.type.0 }}-sum-{{ state }}"></div>
                         </td>
                     {% endfor %}
                 </tr>
@@ -68,5 +84,115 @@
                         trigger: "hover focus click"
                     });
             });
+    </script>
+    <script src="{% static "ietf/js/highcharts.js" %}"></script>
+    {{ data|json_script:"data" }}
+    <script>
+        const data = JSON.parse(document.getElementById("data").textContent);
+
+        Object.entries(data).forEach(([dt, ads]) => {
+            max = {};
+            Object.entries(ads).forEach(([ad, states]) => {
+                Object.entries(states).forEach(([state, buckets]) => {
+                    buckets.series = buckets.map((x) => x.length);
+                    if (ad != "sum") {
+                        max[state] = Math.max(...buckets.series,
+                                              max[state] ? max[state] : 0);
+                    }
+                });
+            });
+
+            Object.entries(ads).forEach(([ad, states]) => {
+                Object.entries(states).forEach(([state, buckets]) => {
+                    const cell = `chart-${dt}-${ad}-${state}`;
+
+                    // if there is only a single datapoint in the
+                    // bucket, display it without a graph
+                    if (buckets.series.length == 1) {
+                        document.getElementById(cell).innerHTML =
+                            buckets.series[0];
+                        return;
+                    }
+
+                    // if a bucket has all zeroes, fake a Highcharts
+                    // plot with HTML, to reduce the number of plot
+                    // objects on the page
+                    if (buckets.series.every((x) => x == 0)) {
+                        // document.getElementById(cell).innerHTML = `
+                        //     <div class="position-relative">
+                        //         <div class="position-absolute bottom-0 start-0">
+                        //             <div style="font-size: .7rem;" class="ms-1">0</div>
+                        //         </div>
+                        //         <div class="position-absolute bottom-0 end-0 w-100 ps-1">
+                        //             <div class="border-bottom mb-1 ms-3">0</div>
+                        //         </div>
+                        //     </div>
+                        // `;
+                        return;
+                    }
+
+                    // else actually create a graph
+                    const ymax = Math.max(1, ad != "sum" ? max[state] : Math.max(...buckets.series));
+                    Highcharts.chart({
+                        title: { text: undefined },
+                        chart: {
+                            type: "line",
+                            animation: false,
+                            renderTo: cell,
+                            panning: { enabled: false },
+                            spacing: [4, 0, 5, 0],
+                            height: "45%",
+                        },
+                        scrollbar: { enabled: false },
+                        tooltip: { enabled: false },
+                        navigator: { enabled: false },
+                        exporting: { enabled: false },
+                        legend: { enabled: false },
+                        credits: { enabled: false },
+                        xAxis: {
+                            title: { text: undefined},
+                            labels: { enabled: false },
+                            zoomEnabled: false,
+                            tickLength: 0,
+                        },
+                        yAxis: {
+                            title: { text: undefined},
+                            zoomEnabled: false,
+                            tickLength: 0,
+                            labels: { x: -3 },
+                            min: 0,
+                            max: ymax,
+                            tickInterval: ymax,
+                        },
+                        plotOptions: {
+                            series: {
+                                animation: false,
+                                dataLabels: {
+                                    enabled: true,
+                                    inside: true,
+                                    padding: 0,
+                                    formatter: function() {
+                                        // only label the last
+                                        // (= current-day) point in
+                                        // the curve with today's
+                                        // value
+                                        if (this.point.index + 1 ==
+                                            this.series.points.length) {
+                                            return this.y;
+                                        }
+                                        return undefined;
+                                    }
+                                }
+                            }
+                        },
+                        series: [{
+                            name: undefined,
+                            data: buckets.series,
+                            enableMouseTracking: false,
+                        }],
+                    });
+                });
+            });
+        });
     </script>
 {% endblock %}

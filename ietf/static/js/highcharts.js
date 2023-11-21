@@ -6,6 +6,8 @@ import Highcharts_Export_Data from "highcharts/modules/export-data";
 import Highcharts_Accessibility from "highcharts/modules/accessibility";
 import Highcharts_Sunburst from "highcharts/modules/sunburst";
 
+document.documentElement.style.setProperty("--highcharts-background-color", "transparent");
+
 Highcharts_Exporting(Highcharts);
 Highcharts_Offline_Exporting(Highcharts);
 Highcharts_Export_Data(Highcharts);
@@ -27,7 +29,7 @@ window.Highcharts = Highcharts;
 window.group_stats = function (url, chart_selector) {
     $.getJSON(url, function (data) {
         $(chart_selector)
-            .each(function (i, e) {
+            .each(function (_, e) {
                 const dataset = e.dataset.dataset;
                 if (!dataset) {
                     console.log("dataset data attribute not set");
