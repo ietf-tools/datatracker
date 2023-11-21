@@ -14,7 +14,6 @@ from ietf.doc.expire import expirable_drafts
 from ietf.doc.utils import augment_docs_and_user_with_user_info
 from ietf.meeting.models import SessionPresentation, Meeting, Session
 from ietf.review.utils import review_assignments_to_list_for_docs
-from ietf.utils import log
 from ietf.utils.timezone import date_today
 
 
