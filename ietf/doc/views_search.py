@@ -813,7 +813,10 @@ def ajax_select2_search_docs(request, model_name, doc_type): # TODO - remove mod
     if not q:
         objs = model.objects.none()
     else:
-        qs = model.objects.filter(type=doc_type)
+        if "," in doc_type:
+            qs = model.objects.filter(type__in=[t.strip() for t in doc_type.split(',')])
+        else:
+            qs = model.objects.filter(type=doc_type)
 
         for t in q:
             qs = qs.filter(name__icontains=t)
