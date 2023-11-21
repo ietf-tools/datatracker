@@ -421,9 +421,9 @@ class SearchTests(TestCase):
         self.assertContains(r, draft.title)
 
     def test_ajax_search_docs(self):
-        draft = IndividualDraftFactory()
+        draft = IndividualDraftFactory(name="draft-ietf-rfc1234bis")
+        rfc = IndividualRfcFactory(rfc_number=1234)
 
-        # Document
         url = urlreverse('ietf.doc.views_search.ajax_select2_search_docs', kwargs={
             "model_name": "document",
             "doc_type": "draft",
@@ -432,6 +432,28 @@ class SearchTests(TestCase):
         self.assertEqual(r.status_code, 200)
         data = r.json()
         self.assertEqual(data[0]["id"], draft.pk)
+
+        url = urlreverse('ietf.doc.views_search.ajax_select2_search_docs', kwargs={
+            "model_name": "document",
+            "doc_type": "rfc",
+        })
+        r = self.client.get(url, dict(q=rfc.name))
+        self.assertEqual(r.status_code, 200)
+        data = r.json()
+        self.assertEqual(data[0]["id"], rfc.pk)
+
+        url = urlreverse('ietf.doc.views_search.ajax_select2_search_docs', kwargs={
+            "model_name": "document",
+            "doc_type": "draft,rfc",
+        })
+        r = self.client.get(url, dict(q="1234"))
+        self.assertEqual(r.status_code, 200)
+        data = r.json()
+        self.assertEqual(len(data), 2)
+        pks = set([data[i]["id"] for i in range(2)])
+        self.assertEqual(pks, set([rfc.pk, draft.pk]))
+
+
 
     def test_recent_drafts(self):
         # Three drafts to show with various warnings

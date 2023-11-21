@@ -95,7 +95,7 @@ class AddEmailForm(forms.Form):
         return self.cleaned_data
 
 class DraftForm(forms.ModelForm):
-    document = SearchableDocumentField(label="I-D name/RFC number", required=True, doc_type="draft") # TODO - this needs to be an or, or the form needs modification
+    document = SearchableDocumentField(label="I-D name/RFC number", required=True, doc_type="draft,rfc")
 
     class Meta:
         model = IprDocRel
