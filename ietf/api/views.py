@@ -206,19 +206,11 @@ def api_new_meeting_registration(request):
 
             # handle nomcom volunteer
             if data['is_nomcom_volunteer'] and object.person:
-                # registrants for the fall meeting will be volunteering for the
-                # following year's nomcom
-                now = datetime.datetime.now()
-                month = now.month
-                year = now.year
-                if month > 7:
-                    year = year + 1
                 try:
-                    nomcom = NomCom.objects.get(group__acronym__icontains=year)
-                except NomCom.DoesNotExist:
+                    nomcom = NomCom.objects.get(is_accepting_volunteers=True)
+                except (NomCom.DoesNotExist, NomCom.MultipleObjectsReturned):
                     nomcom = None
-                    # log warning
-                if nomcom and nomcom.is_accepting_volunteers:
+                if nomcom:
                     Volunteer.objects.create(
                         nomcom=nomcom,
                         person=object.person,
