@@ -1080,3 +1080,9 @@ class RfcdiffSupportTests(TestCase):
         # tricky draft names
         self.do_rfc_with_broken_history_test(draft_name='draft-gizmo-01')
         self.do_rfc_with_broken_history_test(draft_name='draft-oh-boy-what-a-draft-02-03')
+
+    def test_no_such_document(self):
+        for name in ['rfc0000', 'draft-ftei-oof-rab-00']:
+            url = urlreverse(self.target_view, kwargs={'name': name})
+            r = self.client.get(url)
+            self.assertEqual(r.status_code, 404)
