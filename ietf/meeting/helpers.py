@@ -318,28 +318,18 @@ class AgendaFilterOrganizer(AgendaKeywordTool):
                      if s
                      and self._get_group(s))
         # Verify that we're not using the same acronym for more than one distinct group, accounting for
-        # the possibility that some groups are GroupHistory instances. The left-hand side counts distinct tuples
-        # (acronym, id), which will not equal the right-hand side if the same acronym is used for more than
-        # one group id.
+        # the possibility that some groups are GroupHistory instances. This assertion will fail if a Group
+        # and GroupHistory for the same group have a different acronym - in that event, the filter will
+        # not match the meeting display, so we should be alerted that this has actually occurred.
         log.assertion(
-            "len("
-            "  set("
-            "    (g.acronym, getattr(g, 'group_id', g.id))"
-            "    for g in groups"
-            "  )"
-            ") "
+            "len(set(getattr(g, 'group_id', g.id) for g in groups)) "
             "== len(set(g.acronym for g in groups))"
         )
 
         group_parents = set(self._get_group_parent(g) for g in groups if self._get_group_parent(g))
         # See above for explanation of this assertion
         log.assertion(
-            "len("
-            "  set("
-            "    (gp.acronym, getattr(gp, 'group_id', gp.id))"
-            "    for gp in group_parents"
-            "  )"
-            ") "
+            "len(set(getattr(gp, 'group_id', gp.id) for gp in group_parents)) "
             "== len(set(gp.acronym for gp in group_parents))"
         )
 
