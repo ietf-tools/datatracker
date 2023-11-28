@@ -324,7 +324,7 @@ class AgendaFilterOrganizer(AgendaKeywordTool):
         log.assertion(
             "len("
             "  set("
-            "    (g.acronym, g.group_id if isinstance(g, GroupHistory) else g.id)"
+            "    (g.acronym, getattr(g, 'group_id', g.id))"
             "    for g in groups"
             "  )"
             ") "
@@ -336,8 +336,8 @@ class AgendaFilterOrganizer(AgendaKeywordTool):
         log.assertion(
             "len("
             "  set("
-            "    (gp.acronym, gp.group_id if isinstance(gp, GroupHistory) else gp.id)"
-            "    for gp in groups"
+            "    (gp.acronym, getattr(gp, 'group_id', gp.id))"
+            "    for gp in group_parents"
             "  )"
             ") "
             "== len(set(gp.acronym for gp in group_parents))"
