@@ -327,7 +327,7 @@ class Volunteer(models.Model):
     nomcom = ForeignKey('NomCom')
     person = ForeignKey(Person)
     affiliation = models.CharField(blank=True, max_length=255)
-    time = models.DateTimeField(auto_now=True)
+    time = models.DateTimeField(auto_now_add=True, null=True, blank=True)
     origin = models.CharField(max_length=32, default='datatracker')
     withdrawn = models.DateTimeField(blank=True, null=True)
     
