@@ -327,7 +327,7 @@ class AgendaFilterOrganizer(AgendaKeywordTool):
 
         group_parents = set(self._get_group_parent(g) for g in groups if self._get_group_parent(g))
         log.assertion(
-            "len(set(g.group_id if isinstance(g, GroupHistory) else g.id for g in group_parents)) "
+            "len(set(gp.group_id if isinstance(gp, GroupHistory) else gp.id for gp in group_parents)) "
             "== len(set(gp.acronym for gp in group_parents))"
         )
 
