@@ -317,10 +317,19 @@ class AgendaFilterOrganizer(AgendaKeywordTool):
         groups = set(self._get_group(s) for s in self.sessions
                      if s
                      and self._get_group(s))
-        log.assertion('len(groups) == len(set(g.acronym for g in groups))')  # no repeated acros
+        # Verify that we're not using the same acronym for more than one distinct groups. Count using
+        # id (for Group) or group_id (for GroupHistory) to avoid double-counting if a historical version
+        # of a Group got into the list.
+        log.assertion(
+            "len(set(g.group_id if isinstance(g, GroupHistory) else g.id for g in groups)) "
+            "== len(set(g.acronym for g in groups))"
+        )
 
         group_parents = set(self._get_group_parent(g) for g in groups if self._get_group_parent(g))
-        log.assertion('len(group_parents) == len(set(gp.acronym for gp in group_parents))')  # no repeated acros
+        log.assertion(
+            "len(set(g.group_id if isinstance(g, GroupHistory) else g.id for g in group_parents)) "
+            "== len(set(gp.acronym for gp in group_parents))"
+        )
 
         all_groups = groups.union(group_parents)
         all_groups.difference_update([g for g in all_groups if g.acronym in self.exclude_acronyms])
