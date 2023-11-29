@@ -3,7 +3,7 @@
 {% origin %}
 {% load ietf_filters %}
 <h1>
-    {{ doc.name|slice:":3"|upper }} {{ doc.name|slice:"3:"}}
+    {{ doc.name|prettystdname }}
 </h1>
 <ul class="nav nav-tabs my-3">
     {% for name, t, url, active, tooltip in tabs %}
