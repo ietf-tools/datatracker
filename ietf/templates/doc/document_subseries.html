@@ -7,7 +7,7 @@
   {% origin %}
   {{ top|safe }}
   <h2>{{ doc.name|slice:":3"|upper }} {{ doc.name|slice:"3:"}} {% if doc.contains %}consists of:{% else %}currently contains no RFCs{% endif %}</h2>
-  {% for rfc in doc.contains %}
+  {% for rfc in doc.contains|dictsort:"rfc_number" %}
     <p><a href="{% url 'ietf.doc.views_doc.document_main' name=rfc.name %}">RFC {{rfc.name|slice:"3:"}}</a> : {{rfc.title}}</p>
   {% endfor %}
   <div class="buttonlist">
