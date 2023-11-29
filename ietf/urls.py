@@ -65,7 +65,7 @@ urlpatterns = [
     url(r'^submit/', include('ietf.submit.urls')),
     url(r'^sync/', include('ietf.sync.urls')),
     url(r'^templates/', include('ietf.dbtemplate.urls')),
-    url(r'^(?P<group_type>(wg|rg|ag|rag|team|dir|review|area|program|iabasg|adhoc|ise|adm|rfcedtyp|edwg|edappr))/', include(grouptype_urls)),
+    url(r'^(?P<group_type>(wg|rg|ag|rag|team|dir|review|area|program|iabasg|iabworkshop|adhoc|ise|adm|rfcedtyp|edwg|edappr))/', include(grouptype_urls)),
 
     # Redirects
     url(r'^(?P<path>public)/', include('ietf.redirects.urls')),

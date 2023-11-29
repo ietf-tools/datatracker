@@ -1,5 +1,12 @@
 import { createApp } from 'vue'
+import { createPinia } from 'pinia'
+import piniaPersist from 'pinia-plugin-persist'
 import Embedded from './Embedded.vue'
+
+// Initialize store (Pinia)
+
+const pinia = createPinia()
+pinia.use(piniaPersist)
 
 // Mount App
 
@@ -9,5 +16,6 @@ for (const mnt of mountEls) {
     componentName: mnt.dataset.component,
     componentId: mnt.dataset.componentId
   })
+  app.use(pinia)
   app.mount(mnt)
 }
