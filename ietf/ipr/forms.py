@@ -95,7 +95,7 @@ class AddEmailForm(forms.Form):
         return self.cleaned_data
 
 class DraftForm(forms.ModelForm):
-    document = SearchableDocumentField(label="I-D name/RFC number", required=True, doc_type="draft,rfc")
+    document = SearchableDocumentField(label="I-D name/RFC number", required=True, doc_type="all")
 
     class Meta:
         model = IprDocRel

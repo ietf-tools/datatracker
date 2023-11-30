@@ -423,6 +423,7 @@ class SearchTests(TestCase):
     def test_ajax_search_docs(self):
         draft = IndividualDraftFactory(name="draft-ietf-rfc1234bis")
         rfc = IndividualRfcFactory(rfc_number=1234)
+        bcp = IndividualRfcFactory(name="bcp12345", type_id="bcp")
 
         url = urlreverse('ietf.doc.views_search.ajax_select2_search_docs', kwargs={
             "model_name": "document",
@@ -444,14 +445,14 @@ class SearchTests(TestCase):
 
         url = urlreverse('ietf.doc.views_search.ajax_select2_search_docs', kwargs={
             "model_name": "document",
-            "doc_type": "draft,rfc",
+            "doc_type": "all",
         })
         r = self.client.get(url, dict(q="1234"))
         self.assertEqual(r.status_code, 200)
         data = r.json()
-        self.assertEqual(len(data), 2)
-        pks = set([data[i]["id"] for i in range(2)])
-        self.assertEqual(pks, set([rfc.pk, draft.pk]))
+        self.assertEqual(len(data), 3)
+        pks = set([data[i]["id"] for i in range(3)])
+        self.assertEqual(pks, set([bcp.pk, rfc.pk, draft.pk]))
 
 
 

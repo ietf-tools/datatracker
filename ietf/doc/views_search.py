@@ -806,6 +806,14 @@ def index_active_drafts(request):
     return render(request, "doc/index_active_drafts.html", { 'groups': groups })
 
 def ajax_select2_search_docs(request, model_name, doc_type): # TODO - remove model_name argument...
+    """Get results for a select2 search field
+    
+    doc_type can be "draft", "rfc", or "all", to search for only docs of type "draft", only docs of
+    type "rfc", or docs of type "draft" or "rfc" or any of the subseries ("bcp", "std", ...).
+    
+    If a need arises for searching _only_ for draft or rfc, without including the subseries, then an
+    additional option or options will be needed.
+    """
     model = Document # Earlier versions allowed searching over DocAlias which no longer exists
 
     q = [w.strip() for w in request.GET.get('q', '').split() if w.strip()]
@@ -813,11 +821,15 @@ def ajax_select2_search_docs(request, model_name, doc_type): # TODO - remove mod
     if not q:
         objs = model.objects.none()
     else:
-        if "," in doc_type:
-            qs = model.objects.filter(type__in=[t.strip() for t in doc_type.split(',')])
+        if doc_type == "draft":
+            types = ["draft"]
+        elif doc_type == "rfc":
+            types = ["rfc"]
+        elif doc_type == "all":
+            types = ("draft", "rfc", "bcp", "fyi", "std")
         else:
-            qs = model.objects.filter(type=doc_type)
-
+            return HttpResponseBadRequest("Invalid document type")
+        qs = model.objects.filter(type__in=[t.strip() for t in types])
         for t in q:
             qs = qs.filter(name__icontains=t)
 
