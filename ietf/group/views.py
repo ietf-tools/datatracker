@@ -828,7 +828,7 @@ def meetings(request, acronym, group_type=None):
         group.session_set.with_current_status()
         .filter(
             meeting__date__gt=four_years_ago
-            if group.acronym != "iab"
+            if group.acronym not in ["iab", "iesg"]
             else datetime.date(1970, 1, 1),
             type__in=["regular", "plenary", "other"],
         )
@@ -846,7 +846,7 @@ def meetings(request, acronym, group_type=None):
     can_always_edit = has_role(request.user, ["Secretariat", "Area Director"])
 
     far_past = []
-    if group.acronym == "iab":
+    if group.acronym in ["iab", "iesg"]:
         recent_past = []
         for s in past:
             if s.time >= four_years_ago:

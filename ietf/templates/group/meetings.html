@@ -85,7 +85,7 @@
         </table>
     {% endif %}
     {# The following is a temporary performance workaround, not long term design #}
-    {% if group.acronym != "iab" %}
+    {% if group.acronym != "iab" and group.acronym != "iesg" %}
         <p class="alert alert-info my-3">
             This page shows meetings within the last four years. For earlier meetings, please see the
             <a href="https://www.ietf.org/how/meetings/past/">proceedings</a>.
