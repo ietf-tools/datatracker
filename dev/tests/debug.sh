@@ -12,7 +12,7 @@ echo "Fetching latest images..."
 docker pull ghcr.io/ietf-tools/datatracker-app-base:latest
 docker pull ghcr.io/ietf-tools/datatracker-db:latest
 echo "Starting containers..."
-docker compose -f docker-compose.debug.yml -p dtdebug up -d
+docker compose -f docker-compose.debug.yml -p dtdebug --compatibility up -d
 echo "Copying working directory into container..."
 docker compose -p dtdebug cp ../../. app:/__w/datatracker/datatracker/
 echo "Run prepare script..."

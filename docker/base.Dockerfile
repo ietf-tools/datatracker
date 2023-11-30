@@ -19,7 +19,7 @@ RUN echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesourc
 RUN curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
 RUN echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/debian \
     $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
-    
+
 # Add PostgreSQL Source 
 RUN echo "deb http://apt.postgresql.org/pub/repos/apt $(. /etc/os-release && echo "$VERSION_CODENAME")-pgdg main" | tee /etc/apt/sources.list.d/pgdg.list
 RUN wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add -
@@ -82,15 +82,6 @@ RUN apt-get update --fix-missing && apt-get install -qy --no-install-recommends 
 
 # Install kramdown-rfc2629 (ruby)
 RUN gem install kramdown-rfc2629
-
-# Install chromedriver
-COPY docker/scripts/app-install-chromedriver.sh /tmp/app-install-chromedriver.sh
-RUN sed -i 's/\r$//' /tmp/app-install-chromedriver.sh && \
-    chmod +x /tmp/app-install-chromedriver.sh
-RUN /tmp/app-install-chromedriver.sh
-
-# Fix /dev/shm permissions for chromedriver
-RUN chmod 1777 /dev/shm
 
 # GeckoDriver
 ARG GECKODRIVER_VERSION=latest

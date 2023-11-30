@@ -36,15 +36,14 @@ import debug                            # pyflakes:ignore
 from ietf.doc.models import ( Document, DocAlias, DocRelationshipName, RelatedDocument, State,
     DocEvent, BallotPositionDocEvent, LastCallDocEvent, WriteupDocEvent, NewRevisionDocEvent, BallotType,
     EditedAuthorsDocEvent )
-from ietf.doc.factories import ( DocumentFactory, DocEventFactory, CharterFactory, 
+from ietf.doc.factories import ( DocumentFactory, DocEventFactory, CharterFactory,
     ConflictReviewFactory, WgDraftFactory, IndividualDraftFactory, WgRfcFactory, 
     IndividualRfcFactory, StateDocEventFactory, BallotPositionDocEventFactory, 
     BallotDocEventFactory, DocumentAuthorFactory, NewRevisionDocEventFactory,
-    StatusChangeFactory, BofreqFactory, DocExtResourceFactory, RgDraftFactory)
+    StatusChangeFactory, DocExtResourceFactory, RgDraftFactory)
 from ietf.doc.forms import NotifyForm
 from ietf.doc.fields import SearchableDocumentsField
 from ietf.doc.utils import create_ballot_if_not_open, uppercase_std_abbreviated_name
-from ietf.doc.views_search import ad_dashboard_group, ad_dashboard_group_type, shorten_group_name # TODO: red flag that we're importing from views in tests. Move these to utils.
 from ietf.group.models import Group, Role
 from ietf.group.factories import GroupFactory, RoleFactory
 from ietf.ipr.factories import HolderIprDisclosureFactory
@@ -60,6 +59,7 @@ from ietf.utils.test_utils import login_testing_unauthorized, unicontent
 from ietf.utils.test_utils import TestCase
 from ietf.utils.text import normalize_text
 from ietf.utils.timezone import date_today, datetime_today, DEADLINE_TZINFO, RPC_TZINFO
+from ietf.doc.utils_search import AD_WORKLOAD
 
 
 class SearchTests(TestCase):
@@ -279,43 +279,61 @@ class SearchTests(TestCase):
         self.assertContains(r, "Document Search")
 
     def test_ad_workload(self):
-        Role.objects.filter(name_id='ad').delete()
-        ad = RoleFactory(name_id='ad',group__type_id='area',group__state_id='active',person__name='Example Areadirector').person
-        doc_type_names = ['bofreq', 'charter', 'conflrev', 'draft', 'statchg']
-        expected = defaultdict(lambda :0)
-        for doc_type_name in doc_type_names:
-            if doc_type_name=='draft':
-                states = State.objects.filter(type='draft-iesg', used=True).values_list('slug', flat=True)
-            else:
-                states = State.objects.filter(type=doc_type_name, used=True).values_list('slug', flat=True)
-
-            for state in states:
-                target_num = random.randint(0,2)
+        Role.objects.filter(name_id="ad").delete()
+        ad = RoleFactory(
+            name_id="ad",
+            group__type_id="area",
+            group__state_id="active",
+            person__name="Example Areadirector",
+        ).person
+        expected = defaultdict(lambda: 0)
+        for doc_type_slug in AD_WORKLOAD:
+            for state in AD_WORKLOAD[doc_type_slug]:
+                target_num = random.randint(0, 2)
                 for _ in range(target_num):
-                    if doc_type_name == 'draft':
-                        doc = IndividualDraftFactory(ad=ad,states=[('draft-iesg', state),('draft','rfc' if state=='pub' else 'active')])
-                    elif doc_type_name == 'charter':
-                        doc = CharterFactory(ad=ad, states=[(doc_type_name, state)])
-                    elif doc_type_name == 'bofreq':
-                        # Note that the view currently doesn't handle bofreqs
-                        doc = BofreqFactory(states=[(doc_type_name, state)], bofreqresponsibledocevent__responsible=[ad])
-                    elif doc_type_name == 'conflrev':
-                        doc = ConflictReviewFactory(ad=ad, states=State.objects.filter(type_id=doc_type_name, slug=state))
-                    elif doc_type_name == 'statchg':
-                        doc = StatusChangeFactory(ad=ad, states=State.objects.filter(type_id=doc_type_name, slug=state))
-                    else:
-                        # Currently unreachable
-                        doc = DocumentFactory(type_id=doc_type_name, ad=ad, states=[(doc_type_name, state)])
+                    if (
+                        doc_type_slug == "draft"
+                        or doc_type_slug == "rfc"
+                        and state == "rfcqueue"
+                    ):
+                        IndividualDraftFactory(
+                            ad=ad,
+                            states=[
+                                ("draft-iesg", state),
+                                ("draft", "rfc" if state == "pub" else "active"),
+                            ],
+                        )
+                    elif doc_type_slug == "rfc":
+                        WgRfcFactory.create(
+                            states=[("draft", "rfc"), ("draft-iesg", "pub")]
+                        )
 
-                    if not slugify(ad_dashboard_group_type(doc)) in ('document', 'none'):
-                        expected[(slugify(ad_dashboard_group_type(doc)), slugify(ad.full_name_as_key()), slugify(shorten_group_name(ad_dashboard_group(doc))))] += 1
-        
-        url = urlreverse('ietf.doc.views_search.ad_workload')
+                    elif doc_type_slug == "charter":
+                        CharterFactory(ad=ad, states=[(doc_type_slug, state)])
+                    elif doc_type_slug == "conflrev":
+                        ConflictReviewFactory(
+                            ad=ad,
+                            states=State.objects.filter(
+                                type_id=doc_type_slug, slug=state
+                            ),
+                        )
+                    elif doc_type_slug == "statchg":
+                        StatusChangeFactory(
+                            ad=ad,
+                            states=State.objects.filter(
+                                type_id=doc_type_slug, slug=state
+                            ),
+                        )
+        self.client.login(username="ad", password="ad+password")
+        url = urlreverse("ietf.doc.views_search.ad_workload")
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         for group_type, ad, group in expected:
-            self.assertEqual(int(q(f'#{group_type}-{ad}-{group}').text()),expected[(group_type, ad, group)])
+            self.assertEqual(
+                int(q(f"#{group_type}-{ad}-{group}").text()),
+                expected[(group_type, ad, group)],
+            )
 
     def test_docs_for_ad(self):
         ad = RoleFactory(name_id='ad',group__type_id='area',group__state_id='active').person

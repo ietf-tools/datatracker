@@ -9,7 +9,7 @@ from zoneinfo import ZoneInfo
 
 from django.conf import settings
 
-from ietf.doc.models import Document, DocAlias, RelatedDocument, DocEvent, TelechatDocEvent, BallotDocEvent
+from ietf.doc.models import Document, DocAlias, RelatedDocument, DocEvent, TelechatDocEvent, BallotDocEvent, DocTypeName
 from ietf.doc.expire import expirable_drafts
 from ietf.doc.utils import augment_docs_and_user_with_user_info
 from ietf.meeting.models import SessionPresentation, Meeting, Session
@@ -26,7 +26,7 @@ def fill_in_telechat_date(docs, doc_dict=None, doc_ids=None):
         doc_dict = dict((d.pk, d) for d in docs)
         doc_ids = list(doc_dict.keys())
     if doc_ids is None:
-        doc_ids = list(doc_dict.keys())        
+        doc_ids = list(doc_dict.keys())
 
     seen = set()
     for e in TelechatDocEvent.objects.filter(doc__id__in=doc_ids, type="scheduled_for_telechat").order_by('-time'):
@@ -181,7 +181,7 @@ def augment_docs_with_related_docs_info(docs):
                 continue
             originalDoc = d.related_that_doc('conflrev')[0].document
             d.pages = originalDoc.pages
-            
+
 def prepare_document_table(request, docs, query=None, max_results=200):
     """Take a queryset of documents and a QueryDict with sorting info
     and return list of documents with attributes filled in for
@@ -283,3 +283,86 @@ def prepare_document_table(request, docs, query=None, max_results=200):
             h["sort_url"] = "?" + d.urlencode()
 
     return (docs, meta)
+
+
+# The document types and state slugs to include in the AD dashboard
+# and AD doc list, in the order they should be shown.
+#
+# "rfc" is a custom subset of "draft" that we special-case in the code
+# to break out these docs into a separate table.
+#
+AD_WORKLOAD = {
+    "draft": [
+        "pub-req",
+        "ad-eval",
+        "lc-req",
+        "lc",
+        "writeupw",
+        # "defer",  # probably not a useful state to show, since it's rare
+        "iesg-eva",
+        "goaheadw",
+        "approved",
+        "ann",
+    ],
+    "rfc": [
+        "rfcqueue",
+        "rfc",
+    ],
+    "conflrev": [
+        "needshep",
+        "adrev",
+        "iesgeval",
+        "approved",  # synthesized state for all the "appr-" states
+        # "withdraw",  # probably not a useful state to show
+    ],
+    "statchg": [
+        "needshep",
+        "adrev",
+        "lc-req",
+        "in-lc",
+        "iesgeval",
+        "goahead",
+        "appr-sent",
+        # "dead",  # probably not a useful state to show
+    ],
+    "charter": [
+        "notrev",
+        "infrev",
+        "intrev",
+        "extrev",
+        "iesgrev",
+        "approved",
+        # "replaced",  # probably not a useful state to show
+    ],
+}
+
+
+def doc_type(doc):
+    dt = doc.type.slug
+    if (
+        doc.get_state_slug("draft") == "rfc"
+        or doc.get_state_slug("draft-iesg") == "rfcqueue"
+    ):
+        dt = "rfc"
+    return dt
+
+
+def doc_state(doc):
+    dt = doc.type.slug
+    ds = doc.get_state(dt)
+    if dt == "draft":
+        dis = doc.get_state("draft-iesg")
+        if ds.slug == "active" and dis:
+            return dis.slug
+    elif dt == "conflrev":
+        if ds.slug.startswith("appr"):
+            return "approved"
+    return ds.slug
+
+
+def doc_type_name(doc_type):
+    if doc_type == "rfc":
+        return "RFC"
+    if doc_type == "draft":
+        return "Internet-Draft"
+    return DocTypeName.objects.get(slug=doc_type).name
