@@ -241,7 +241,6 @@ def document_main(request, name, rev=None, document_html=False):
     if telechat and (not telechat.telechat_date or telechat.telechat_date < date_today(settings.TIME_ZONE)):
        telechat = None
 
-
     # specific document types
     if doc.type_id == "draft":
         split_content = request.COOKIES.get("full_draft", settings.USER_PREFERENCE_DEFAULTS["full_draft"]) == "off"
@@ -748,7 +747,7 @@ def document_main(request, name, rev=None, document_html=False):
                                        sorted_relations=sorted_relations,
                                        ))
 
-    if doc.type_id in ("slides", "agenda", "minutes", "bluesheets", "procmaterials",):
+    if doc.type_id in ("slides", "agenda", "minutes", "narrativeminutes", "bluesheets", "procmaterials",):
         can_manage_material = can_manage_materials(request.user, doc.group)
         presentations = doc.future_presentations()
         if doc.uploaded_filename:

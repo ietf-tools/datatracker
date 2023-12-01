@@ -890,7 +890,7 @@ def make_materials_directories(meeting):
     # was merged with the regular datatracker code; then in secr/proceedings/views.py
     # in make_directories())
     saved_umask = os.umask(0)   
-    for leaf in ('slides','agenda','minutes','id','rfc','bluesheets'):
+    for leaf in ('slides','agenda','minutes', 'narrativeminutes', 'id','rfc','bluesheets'):
         target = os.path.join(path,leaf)
         if not os.path.exists(target):
             os.makedirs(target)

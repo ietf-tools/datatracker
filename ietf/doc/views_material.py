@@ -110,6 +110,8 @@ def edit_material(request, name=None, acronym=None, action=None, doc_type=None):
     valid_doctypes = ['procmaterials']
     if group is not None:
         valid_doctypes.extend(['minutes','agenda','bluesheets'])
+        if group.acronym=="iesg":
+            valid_doctypes.append("narrativeminutes")
         valid_doctypes.extend(group.features.material_types)
 
     if document_type.slug not in valid_doctypes:

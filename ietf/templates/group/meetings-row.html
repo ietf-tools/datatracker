@@ -55,6 +55,12 @@
                {% if s.minutes %}href="{{ s.minutes.get_absolute_url }}"{% endif %}>
                 Minutes
             </a>
+            {% if group.acronym == "iesg" %}
+            <a class="btn btn-sm {% if not s.narrative_minutes %}btn-secondary disabled{% else %}btn-primary{% endif %}"
+               {% if s.narrative_minutes %}href="{{ s.narrative_minutes.get_absolute_url }}"{% endif %}>
+                Narrative Minutes
+            </a>
+            {% endif %}
             <a class="btn btn-primary btn-sm"
                 href="{% url 'ietf.meeting.views.session_details' num=s.meeting.number acronym=s.group.acronym %}">
                 {% if can_always_edit or can_edit_materials %}

@@ -2427,8 +2427,8 @@ def session_details(request, num, acronym):
             session.cancelled = session.current_status in Session.CANCELED_STATUSES
             session.status = status_names.get(session.current_status, session.current_status)
 
-        session.filtered_artifacts = list(session.sessionpresentation_set.filter(document__type__slug__in=['agenda','minutes','bluesheets']))
-        session.filtered_artifacts.sort(key=lambda d:['agenda','minutes','bluesheets'].index(d.document.type.slug))
+        session.filtered_artifacts = list(session.sessionpresentation_set.filter(document__type__slug__in=['agenda','minutes','narrativeminutes', 'bluesheets']))
+        session.filtered_artifacts.sort(key=lambda d:['agenda','minutes', 'narrativeminutes', 'bluesheets'].index(d.document.type.slug))
         session.filtered_slides    = session.sessionpresentation_set.filter(document__type__slug='slides').order_by('order')
         session.filtered_drafts    = session.sessionpresentation_set.filter(document__type__slug='draft')
         session.filtered_chatlog_and_polls = session.sessionpresentation_set.filter(document__type__slug__in=('chatlog', 'polls')).order_by('document__type__slug')

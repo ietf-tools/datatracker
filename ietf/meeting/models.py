@@ -1091,6 +1091,11 @@ class Session(models.Model):
             self._cached_minutes = self.get_material("minutes", only_one=True)
         return self._cached_minutes
 
+    def narrative_minutes(self):
+        if not hasattr(self, '_cached_narrative_minutes'):
+            self._cached_minutes = self.get_material("narrativeminutes", only_one=True)
+        return self._cached_minutes
+
     def recordings(self):
         return list(self.get_material("recording", only_one=False))
 

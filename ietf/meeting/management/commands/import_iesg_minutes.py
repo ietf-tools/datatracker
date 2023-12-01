@@ -20,6 +20,7 @@ from ietf.meeting.models import (
     Session,
     TimeSlot,
 )
+from ietf.name.models import DocTypeName
 
 
 def add_time_of_day(bare_datetime):
@@ -107,6 +108,7 @@ class Command(BaseCommand):
                 group_id=2,  # The IESG group
                 type_id="regular",
                 purpose_id="regular",
+                name="Formal Telechat",
             )
             SchedulingEvent.objects.create(
                 session=session,
@@ -123,7 +125,7 @@ class Command(BaseCommand):
                 timeslot=timeslot, session=session, schedule=schedule
             )
 
-            for type_id in ["minutes"]:  # ["minutes","narrativeminutes"]:
+            for type_id in ["minutes", "narrativeminutes"]:
                 source_file_prefix = (
                     "minutes" if type_id == "minutes" else "narrative-minutes"
                 )
@@ -133,7 +135,8 @@ class Command(BaseCommand):
                     / f"{source_file_prefix}-{dt:%Y-%m-%d}.txt"
                 )
                 if source.exists():
-                    doc_name = f"{type_id}-interim-{dt.year}-iesg-{counter:02d}-{dt:%Y%m%d%H%M}"  # Unlike iab minutes, follow the usual convention
+                    prefix = DocTypeName.objects.get(slug=type_id).prefix
+                    doc_name = f"{prefix}-interim-{dt.year}-iesg-{counter:02d}-{dt:%Y%m%d%H%M}"  # Unlike iab minutes, follow the usual convention
                     doc_filename = f"{doc_name}-00.txt"
                     verbose_type = (
                         "Minutes" if type_id == "minutes" else "Narrative Minutes"

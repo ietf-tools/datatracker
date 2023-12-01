@@ -149,7 +149,7 @@ class DocumentInfo(models.Model):
                         else:
                             self._cached_file_path = settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR
             elif self.meeting_related() and self.type_id in (
-                    "agenda", "minutes", "slides", "bluesheets", "procmaterials", "chatlog", "polls"
+                    "agenda", "minutes", "narrativeminutes", "slides", "bluesheets", "procmaterials", "chatlog", "polls"
             ):
                 meeting = self.get_related_meeting()
                 if meeting is not None:
@@ -180,7 +180,7 @@ class DocumentInfo(models.Model):
                         self._cached_base_name = "%s.txt" % self.canonical_name()
                     else:
                         self._cached_base_name = "%s-%s.txt" % (self.name, self.rev)
-            elif self.type_id in ["slides", "agenda", "minutes", "bluesheets", "procmaterials", ] and self.meeting_related():
+            elif self.type_id in ["slides", "agenda", "minutes", "narrativeminutes", "bluesheets", "procmaterials", ] and self.meeting_related():
                 ext = 'pdf' if self.type_id == 'procmaterials' else 'txt'
                 self._cached_base_name = f'{self.canonical_name()}-{self.rev}.{ext}'
             elif self.type_id == 'review':
@@ -433,7 +433,7 @@ class DocumentInfo(models.Model):
         return e != None and (e.text != "")
 
     def meeting_related(self):
-        if self.type_id in ("agenda","minutes","bluesheets","slides","recording","procmaterials","chatlog","polls"):
+        if self.type_id in ("agenda","minutes", "narrativeminutes", "bluesheets","slides","recording","procmaterials","chatlog","polls"):
              return self.type_id != "slides" or self.get_state_slug('reuse_policy')=='single'
         return False
 
