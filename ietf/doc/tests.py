@@ -2843,6 +2843,12 @@ class PdfizedTests(TestCase):
                 self.should_succeed(dict(name=rfc.name,rev=f'{r:02d}',ext=ext))
         self.should_404(dict(name=rfc.name,rev='02'))
 
+        import socket
+        socket.socket = lambda *args, **kwargs: None
+        url = urlreverse(self.view, kwargs=dict(name=rfc.name))
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 504)
+
 class NotifyValidationTests(TestCase):
     def test_notify_validation(self):
         valid_values = [

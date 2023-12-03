@@ -1,0 +1,17 @@
+{# Copyright The IETF Trust 2023, All Rights Reserved #}
+{% extends "base.html" %}
+{% load origin %}
+{% block title %}Network error while rendering PDF{% endblock %}
+{% block content %}
+    {% origin %}
+    <h1>Network error while rendering PDF</h1>
+    <p>
+        A network error was encountered while trying to render your document as PDF.
+    </p>
+    <p>
+        We have retried the operation, and it failed again. You may want to wait a bit, and try again.
+    </p>
+    <p>
+        The error was: <code>{{ error }}</code>
+    </p>
+{% endblock %}
