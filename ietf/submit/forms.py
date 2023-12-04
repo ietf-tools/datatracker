@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2011-2022, All Rights Reserved
+# Copyright The IETF Trust 2011-2023, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -757,6 +757,20 @@ class SubmitterForm(NameEmailForm):
         if email:
             line = formataddr((line, email))
         return line
+
+    def clean_name(self):
+        name = super(SubmitterForm, self).clean_name()
+        if name.startswith('=?'):
+            msg = f'"{name}" appears to be a MIME-encoded string.'
+            try:
+                import email.header
+                text, encoding = email.header.decode_header(name)[0]
+                decoded_name = text.decode(encoding)
+                msg += f' Did you mean "{decoded_name}"?'
+            except:
+                pass
+            raise forms.ValidationError(msg)
+        return name
 
 class ReplacesForm(forms.Form):
     replaces = SearchableDocAliasesField(required=False, help_text="Any Internet-Drafts that this document replaces (approval required for replacing an Internet-Draft you are not the author of)")
