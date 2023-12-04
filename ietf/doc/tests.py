@@ -2844,10 +2844,12 @@ class PdfizedTests(TestCase):
         self.should_404(dict(name=rfc.name,rev='02'))
 
         import socket
+        realsocket = socket.socket
         socket.socket = lambda *args, **kwargs: None
         url = urlreverse(self.view, kwargs=dict(name=rfc.name))
         r = self.client.get(url)
         self.assertEqual(r.status_code, 504)
+        socket.socket = realsocket
 
 class NotifyValidationTests(TestCase):
     def test_notify_validation(self):
