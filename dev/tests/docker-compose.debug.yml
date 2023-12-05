@@ -16,6 +16,12 @@ services:
             CI: 'true'
             GITHUB_ACTIONS: 'true'
             HOME: /github/home
+        deploy:    
+            resources:
+                limits:
+                    cpus: '2'
+                    memory: '7GB'
+
     db:
         image: ghcr.io/ietf-tools/datatracker-db:latest
         restart: unless-stopped

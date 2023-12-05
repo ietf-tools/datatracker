@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2011-2022, All Rights Reserved
+# Copyright The IETF Trust 2011-2023, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -491,6 +491,25 @@ class SubmitTests(BaseSubmitTestCase):
         r = self.client.get(status_url)
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, 'The submission is pending approval by the group chairs.')
+
+    def test_submit_new_wg_as_author_bad_submitter(self):
+        # submit new -> supply submitter info -> approve
+        mars = GroupFactory(type_id='wg', acronym='mars')
+        draft = WgDraftFactory(group=mars)
+        setup_default_community_list_for_group(draft.group)
+
+        name = "draft-ietf-mars-testing-tests"
+        rev = "00"
+        group = "mars"
+
+        status_url, author = self.do_submission(name, rev, group)
+        username = author.user.email
+
+        # supply submitter info with MIME-encoded name
+        self.client.login(username=username, password=username+'+password')  # log in as the author
+        r = self.supply_extra_metadata(name, status_url, '=?utf-8?q?Peter_Christen_Asbj=C3=B8rnsen?=', author.email().address.lower(), replaces=[])
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, 'appears to be a MIME-encoded string')
 
     def submit_new_concluded_wg_as_author(self, group_state_id='conclude'):
         """A new concluded WG submission by a logged-in author needs AD approval"""

@@ -3174,6 +3174,45 @@
       "create_wiki": false,
       "custom_group_roles": false,
       "customize_workflow": false,
+      "default_parent": "iab",
+      "default_tab": "ietf.group.views.group_about",
+      "default_used_roles": "[]",
+      "docman_roles": "[\n    \"ad\",\n    \"chair\",\n    \"delegate\",\n    \"secr\"\n]",
+      "groupman_authroles": "[\n    \"Secretariat\"\n]",
+      "groupman_roles": "[\n    \"ad\",\n    \"chair\"\n]",
+      "has_chartering_process": false,
+      "has_default_chat": true,
+      "has_documents": true,
+      "has_meetings": true,
+      "has_milestones": false,
+      "has_nonsession_materials": false,
+      "has_reviews": false,
+      "has_session_materials": true,
+      "is_schedulable": false,
+      "material_types": "[\n    \"slides\"\n]",
+      "matman_roles": "[\n    \"ad\",\n    \"chair\",\n    \"delegate\",\n    \"secr\"\n]",
+      "need_parent": true,
+      "parent_types": [
+        "ietf"
+      ],
+      "req_subm_approval": false,
+      "role_order": "[\n    \"chair\",\n    \"secr\",\n    \"member\"\n]",
+      "session_purposes": "\"[\\\"regular\\\"]\"",
+      "show_on_agenda": false
+    },
+    "model": "group.groupfeatures",
+    "pk": "iabworkshop"
+  },
+  {
+    "fields": {
+      "about_page": "ietf.group.views.group_about",
+      "acts_like_wg": false,
+      "admin_roles": "[\n    \"chair\"\n]",
+      "agenda_filter_type": "none",
+      "agenda_type": "ietf",
+      "create_wiki": false,
+      "custom_group_roles": false,
+      "customize_workflow": false,
       "default_parent": "",
       "default_tab": "ietf.group.views.group_about",
       "default_used_roles": "[\n    \"auth\"\n]",
@@ -11654,6 +11693,17 @@
   },
   {
     "fields": {
+      "desc": "IAB Workshop",
+      "name": "IAB Workshop",
+      "order": 0,
+      "used": true,
+      "verbose_name": "IAB Workshop"
+    },
+    "model": "name.grouptypename",
+    "pk": "iabworkshop"
+  },
+  {
+    "fields": {
       "desc": "",
       "name": "IANA",
       "order": 0,
@@ -16684,7 +16734,7 @@
     "fields": {
       "command": "xym",
       "switch": "--version",
-      "time": "2023-10-27T07:09:45.937Z",
+      "time": "2023-11-21T08:09:45.989Z",
       "used": true,
       "version": "xym 0.7.0"
     },
@@ -16695,9 +16745,9 @@
     "fields": {
       "command": "pyang",
       "switch": "--version",
-      "time": "2023-10-27T07:09:46.261Z",
+      "time": "2023-11-21T08:09:46.322Z",
       "used": true,
-      "version": "pyang 2.5.3"
+      "version": "pyang 2.6.0"
     },
     "model": "utils.versioninfo",
     "pk": 2
@@ -16706,7 +16756,7 @@
     "fields": {
       "command": "yanglint",
       "switch": "--version",
-      "time": "2023-10-27T07:09:46.282Z",
+      "time": "2023-11-21T08:09:46.338Z",
       "used": true,
       "version": "yanglint SO 1.9.2"
     },
@@ -16717,7 +16767,7 @@
     "fields": {
       "command": "xml2rfc",
       "switch": "--version",
-      "time": "2023-10-27T07:09:47.185Z",
+      "time": "2023-11-21T08:09:47.251Z",
       "used": true,
       "version": "xml2rfc 3.18.2"
     },

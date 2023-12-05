@@ -15,29 +15,32 @@
     </h1>
     <h2>Attendee list of IETF {{ meeting.number }} meeting</h2>
     
-    <table id="id_attendees" class="table table-sm table-striped tablesorter">
-    <thead>
-        <tr>
-            <th scope="col" data-sort="last">Last Name</th>
-            <th scope="col" data-sort="first">First Name</th>
-            <th scope="col" data-sort="organization">Organization</th>
-            <th scope="col" data-sort="country">Country</th>
-            <th scope="col" data-sort="type">Registration Type</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for reg in meeting_registrations %}
-          <tr>
-            <td>{{ reg.last_name }}</td>
-            <td>{{ reg.first_name }}</td>
-            <td>{{ reg.affiliation }}</td>
-            <td>{{ reg.country_code }}</td>
-            <td>{{ reg.reg_type }}</td>
-          </tr>
-        {% endfor %}
-    </tbody>
-    </table>
-
+    {% if template %}
+      {{template|safe}}
+    {% else %}
+        <table id="id_attendees" class="table table-sm table-striped tablesorter">
+        <thead>
+            <tr>
+                <th scope="col" data-sort="last">Last Name</th>
+                <th scope="col" data-sort="first">First Name</th>
+                <th scope="col" data-sort="organization">Organization</th>
+                <th scope="col" data-sort="country">Country</th>
+                <th scope="col" data-sort="type">Registration Type</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for reg in meeting_registrations %}
+            <tr>
+                <td>{{ reg.last_name }}</td>
+                <td>{{ reg.first_name }}</td>
+                <td>{{ reg.affiliation }}</td>
+                <td>{{ reg.country_code }}</td>
+                <td>{{ reg.reg_type }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+        </table>
+    {% endif %}
 {% endblock %}
 {% block js %}
     <script src="{% static "ietf/js/list.js" %}"></script>
