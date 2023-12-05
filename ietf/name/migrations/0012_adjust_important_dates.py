@@ -21,7 +21,7 @@ def markdown_names(apps, schema_editor):
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("name", "0010_subseries"),
+        ("name", "0011_subseries"),
     ]
 
     operations = [

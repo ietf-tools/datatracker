@@ -22,7 +22,7 @@ def forward(apps, schema_editor):
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("name", "0008_removed_objfalse"),
+        ("name", "0009_iabworkshops"),
     ]
 
     operations = [
