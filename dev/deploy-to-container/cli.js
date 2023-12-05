@@ -23,7 +23,7 @@ async function main () {
     throw new Error('Missing --branch argument!')
   }
   if (branch.indexOf('/') >= 0) {
-    branch = branch.split('/').shift().join('-')
+    branch = branch.split('/').slice(1).join('-')
   }
   branch = slugify(branch, { lower: true, strict: true })
   if (branch.length < 1) {
