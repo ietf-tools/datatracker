@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2012-2020, All Rights Reserved
+# Copyright The IETF Trust 2012-2023, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -30,6 +30,8 @@ from django.utils import timezone
 from django.utils.text import slugify
 
 from tastypie.test import ResourceTestCaseMixin
+
+from weasyprint.urls import URLFetchingError
 
 import debug                            # pyflakes:ignore
 
@@ -2843,13 +2845,10 @@ class PdfizedTests(TestCase):
                 self.should_succeed(dict(name=rfc.name,rev=f'{r:02d}',ext=ext))
         self.should_404(dict(name=rfc.name,rev='02'))
 
-        import socket
-        realsocket = socket.socket
-        socket.socket = lambda *args, **kwargs: None
-        url = urlreverse(self.view, kwargs=dict(name=rfc.name))
-        r = self.client.get(url)
-        self.assertEqual(r.status_code, 504)
-        socket.socket = realsocket
+        with mock.patch('ietf.doc.models.DocumentInfo.pdfized', side_effect=URLFetchingError):
+            url = urlreverse(self.view, kwargs=dict(name=rfc.name))
+            r = self.client.get(url)
+            self.assertEqual(r.status_code, 504)
 
 class NotifyValidationTests(TestCase):
     def test_notify_validation(self):
