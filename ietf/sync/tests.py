@@ -399,7 +399,7 @@ class RFCSyncTests(TestCase):
                 self.assertIn("set abstract to 'This is some interesting text.'", rfc_events[0].desc)
                 self.assertIn("set pages to 42", rfc_events[0].desc)
                 self.assertIn("set standardization level to Proposed Standard", rfc_events[0].desc)
-                self.assertIn(f"added RFC published event at {rfc_events[0].time:%Y-%m-%d}", rfc_events[0].desc)
+                self.assertIn(f"added RFC published event at {rfc_events[0].time.astimezone(RPC_TZINFO):%Y-%m-%d}", rfc_events[0].desc)
                 self.assertIn("created updates relation between RFC 1234 and RFC 123", rfc_events[0].desc)
                 self.assertIn("added Errata tag", rfc_events[0].desc)
             else:
