@@ -23,6 +23,7 @@ from ietf.doc.models import ( Document, State, StateType, DocEvent, DocRelations
 from ietf.doc.expire import move_draft_files_to_archive
 from ietf.doc.utils import add_state_change_event, prettify_std_name, update_action_holders
 from ietf.group.models import Group
+from ietf.ipr.models import IprDocRel
 from ietf.name.models import StdLevelName, StreamName
 from ietf.person.models import Person
 from ietf.utils.log import log
@@ -776,6 +777,15 @@ def update_docs_from_rfc_index(
                 Document.objects.filter(name=OuterRef("originaltargetaliasname")).values_list("pk",flat=True)[:1]
             )
         ).update(target=F("subseries_target"))
+        IprDocRel.objects.filter(
+            Q(originaldocumentaliasname__startswith="bcp") |
+            Q(originaldocumentaliasname__startswith="std") |
+            Q(originaldocumentaliasname__startswith="fyi")
+        ).annotate(
+            subseries_target=Subquery(
+                Document.objects.filter(name=OuterRef("originaldocumentaliasname")).values_list("pk",flat=True)[:1]
+            )
+        ).update(document=F("subseries_target"))
 
 
 def post_approved_draft(url, name):
