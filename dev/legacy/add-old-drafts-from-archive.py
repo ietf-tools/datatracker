@@ -1,9 +1,11 @@
 #!/usr/bin/env python
-# Copyright The IETF Trust 2017-2019, All Rights Reserved
+import sys
 
-## Holding on to this as documentation - it was originally in bin
-## If resuscitated, it will need to bemake python3, learn about the "rfc" document type 
-## and made into a management command
+print("This is only here as documention - please read the file")
+sys.exit(0)
+
+# #!/usr/bin/env python
+# # Copyright The IETF Trust 2017-2019, All Rights Reserved
 
 # import datetime
 # import os
