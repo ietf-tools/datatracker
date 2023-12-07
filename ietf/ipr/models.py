@@ -163,6 +163,7 @@ class IprDocRel(models.Model):
     document   = ForeignKey(Document)
     sections   = models.TextField(blank=True)
     revisions  = models.CharField(max_length=16,blank=True) # allows strings like 01-07
+    originaldocumentaliasname = models.CharField(max_length=255, null=True)
 
     def doc_type(self):
         name = self.document.name
