@@ -684,7 +684,7 @@ class RelatedDocument(models.Model):
     source = ForeignKey('Document')
     target = ForeignKey('Document', related_name='targets_related')
     relationship = ForeignKey(DocRelationshipName)
-    originaltargetaliasname = models.CharField(max_length=255,null=True)
+    originaltargetaliasname = models.CharField(max_length=255, null=True, blank=True)
     def action(self):
         return self.relationship.name
     def __str__(self):
@@ -1136,7 +1136,7 @@ class RelatedDocHistory(models.Model):
     source = ForeignKey('DocHistory')
     target = ForeignKey('Document', related_name="reversely_related_document_history_set")
     relationship = ForeignKey(DocRelationshipName)
-    originaltargetaliasname = models.CharField(max_length=255,null=True)
+    originaltargetaliasname = models.CharField(max_length=255, null=True, blank=True)
     def __str__(self):
         return u"%s %s %s" % (self.source.doc.name, self.relationship.name.lower(), self.target.name)
 
