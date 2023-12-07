@@ -75,7 +75,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name="iprdocrel",
             name="originaldocumentaliasname",
-            field=CharField(max_length=255,null=True),
+            field=CharField(max_length=255,null=True,blank=True),
             preserve_default=True,
         ),
         migrations.RunPython(forward, reverse),
