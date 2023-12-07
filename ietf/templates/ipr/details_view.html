@@ -383,7 +383,8 @@
                                         {{ iprdocrel.doc_type }}:
                                     </dt>
                                     <dd class="col-sm-8 my-0">
-                                        {{ iprdocrel.formatted_name|urlize_ietf_docs }} ("{{ iprdocrel.document.document.title }}")
+                                        {{ iprdocrel.formatted_name|urlize_ietf_docs }}
+                                        ("{% firstof iprdocrel.document.title iprdocrel.document.name|prettystdname %}")
                                     </dd>
                                     {% if iprdocrel.revisions %}
                                         <dt class="col-sm-4 my-0">
@@ -429,7 +430,8 @@
                                     {{ iprdocrel.doc_type }}:
                                 </dt>
                                 <dd class="{% if prev %}col-sm-8{% else %}col-sm-9{% endif %} my-0">
-                                    {{ iprdocrel.formatted_name|urlize_ietf_docs }} ("{{ iprdocrel.document.document.title }}")
+                                    {{ iprdocrel.formatted_name|urlize_ietf_docs }}
+                                    ("{% firstof iprdocrel.document.title iprdocrel.document.name|prettystdname%}")
                                 </dd>
                                 {% if iprdocrel.revisions %}
                                     <dt class="{% if prev %}col-sm-4{% else %}col-sm-3{% endif %} my-0">
