@@ -12,9 +12,6 @@ def forward(apps, schema_editor):
     draft_rfc_state = State.objects.get(type_id="draft", slug="rfc")
     rfc_published_state = State.objects.get(type_id="rfc", slug="published")
     
-    DocTypeName = apps.get_model("name", "DocTypeName")
-    rfc_doctype = DocTypeName(slug="rfc")
-    
     # Find draft Documents in the "rfc" state
     found_by_state = Document.objects.filter(states=draft_rfc_state).distinct()
     
@@ -31,13 +28,13 @@ def forward(apps, schema_editor):
         draft = rfc_alias.docs.first()
         if draft.name.startswith("rfc"):
             rfc = draft
-            rfc.type = rfc_doctype
+            rfc.type_id = "rfc"
             rfc.rfc_number = int(draft.name[3:])
             rfc.save()
             rfc.states.set([rfc_published_state])
         else:
             rfc = Document.objects.create(
-                type=rfc_doctype,
+                type_id="rfc",
                 name=rfc_alias.name,
                 rfc_number=int(rfc_alias.name[3:]),
                 time=draft.time,
