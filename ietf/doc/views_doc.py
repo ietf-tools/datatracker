@@ -629,7 +629,7 @@ def document_main(request, name, rev=None, document_html=False):
 
     if doc.type_id == "charter":
         content = doc.text_or_error()     # pyflakes:ignore
-        content = markup_txt.markup(content)
+        content = markdown.markdown(content)
 
         ballot_summary = None
         if doc.get_state_slug() in ("intrev", "iesgrev"):

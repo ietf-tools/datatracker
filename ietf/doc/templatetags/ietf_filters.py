@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2007-2020, All Rights Reserved
+# Copyright The IETF Trust 2007-2023, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -409,9 +409,9 @@ def startswith(x, y):
     return str(x).startswith(y)
 
 
-@register.filter(name='removesuffix', is_safe=False)
-def removesuffix(value, suffix):
-    """Remove an exact-match suffix
+@register.filter(name='removeprefix', is_safe=False)
+def removeprefix(value, prefix):
+    """Remove an exact-match prefix
     
     The is_safe flag is False because indiscriminate use of this could result in non-safe output.
     See https://docs.djangoproject.com/en/2.2/howto/custom-template-tags/#filters-and-auto-escaping
@@ -419,8 +419,8 @@ def removesuffix(value, suffix):
     HTML-unsafe output.
     """
     base = str(value)
-    if base.endswith(suffix):
-        return base[:-len(suffix)]
+    if base.startswith(prefix):
+        return base[len(prefix):]
     else:
         return base
 
