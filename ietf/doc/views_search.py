@@ -364,6 +364,14 @@ STATE_SLUGS = {
     for dt in AD_WORKLOAD
 }
 
+
+def state_to_doc_type(state):
+    for dt in STATE_SLUGS:
+        if state in STATE_SLUGS[dt]:
+            return dt
+    return None
+
+
 IESG_STATES = State.objects.filter(type="draft-iesg").values_list("name", flat=True)
 
 
@@ -445,13 +453,16 @@ def ad_workload(request):
                 elif to_state == "RFC Published":
                     to_state = "RFC"
 
+                new_dt = state_to_doc_type(to_state)
+                if new_dt is not None:
+                    dt = new_dt
+
                 if to_state not in STATE_SLUGS[dt].keys() or to_state == "Replaced":
                     # change into a state the AD dashboard doesn't display
                     if to_state in IESG_STATES or to_state == "Replaced":
-                        # if it's an IESG state we don't display, we're done with this doc
+                        # if it's an IESG state we don't display, record it's time
                         last = e.time
-                        break
-                    # if it's not an IESG state, keep going with next event
+                    # keep going with next event
                     continue
 
                 sn = STATE_SLUGS[dt][to_state]
@@ -464,7 +475,7 @@ def ad_workload(request):
                         # but since we didn't record any state yet,
                         # this is the state the doc was in for the
                         # entire history
-                        for b in range(0, days):
+                        for b in range(days):
                             ad.buckets[dt][sn][b].append(doc.name)
                             sums[dt][sn][b].append(doc.name)
                         last = e.time
