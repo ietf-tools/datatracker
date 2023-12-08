@@ -1427,27 +1427,34 @@ test.describe('past - small screens', () => {
 
         // has a bottom mobile bar
         await expect(page.locator('.agenda-mobile-bar')).toBeVisible()
-        await expect(barBtnLocator).toHaveCount(4)
-        await expect(barBtnLocator.first()).toContainText('Filters')
-        await expect(barBtnLocator.nth(1)).toContainText('Cal')
-        await expect(barBtnLocator.nth(2)).toContainText('.ics')
-        await expect(barBtnLocator.last().locator('> *')).toHaveCount(1)
-        await expect(barBtnLocator.last().locator('> *')).toHaveClass(/bi/)
+        await expect(barBtnLocator).toHaveCount(5)
+
+        // can open the jump to day dropdown
+        await barBtnLocator.first().click()
+        const jumpDayDdnLocator = page.locator('.n-dropdown-menu > .n-dropdown-option')
+        await expect(jumpDayDdnLocator).toHaveCount(7)
+        for (let idx = 0; idx < 7; idx++) {
+          const localDateTime = DateTime.fromISO(meetingData.meeting.startDate, { zone: meetingData.meeting.timezone })
+            .setLocale(BROWSER_LOCALE)
+            .plus({ days: idx })
+            .toFormat('ccc LLL d')
+          await expect(jumpDayDdnLocator.nth(idx)).toContainText(`Jump to ${localDateTime}`)
+        }
 
         // can open the filters overlay
-        await barBtnLocator.first().click()
+        await barBtnLocator.nth(1).click()
         await expect(page.locator('.agenda-personalize')).toBeVisible()
         await page.locator('.agenda-personalize .agenda-personalize-actions > button').nth(1).click()
         await expect(page.locator('.agenda-personalize')).toBeHidden()
 
         // can open the calendar view
-        await barBtnLocator.nth(1).click()
+        await barBtnLocator.nth(2).click()
         await expect(page.locator('.agenda-calendar')).toBeVisible()
         await page.locator('.agenda-calendar .agenda-calendar-actions > button').nth(1).click()
         await expect(page.locator('.agenda-calendar')).toBeHidden()
 
         // can open the ics dropdown
-        await barBtnLocator.nth(2).click()
+        await barBtnLocator.nth(3).click()
         const calDdnLocator = page.locator('.n-dropdown-menu > .n-dropdown-option')
         await expect(calDdnLocator).toHaveCount(2)
         await expect(calDdnLocator.first()).toContainText('Subscribe')

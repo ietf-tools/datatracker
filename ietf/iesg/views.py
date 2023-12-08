@@ -526,7 +526,9 @@ def milestones_needing_review(request):
         ad_list.append(ad)
         ad.groups_needing_review = sorted(groups, key=lambda g: g.acronym)
         for g, milestones in groups.items():
-            g.milestones_needing_review = sorted(milestones, key=lambda m: m.due)
+            g.milestones_needing_review = sorted(
+                milestones, key=lambda m: m.due if m.group.uses_milestone_dates else m.order
+            )
 
     return render(request, 'iesg/milestones_needing_review.html',
                   dict(ads=sorted(ad_list, key=lambda ad: ad.plain_name()),))

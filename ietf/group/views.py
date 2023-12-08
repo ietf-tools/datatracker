@@ -291,7 +291,7 @@ def active_groups(request, group_type=None):
         return active_dirs(request)
     elif group_type == "review":
         return active_review_dirs(request)
-    elif group_type in ("program", "iabasg"):
+    elif group_type in ("program", "iabasg","iabworkshop"):
         return active_iab(request)
     elif group_type == "adm":
         return active_adm(request)
@@ -314,6 +314,7 @@ def active_group_types(request):
                 "area",
                 "program",
                 "iabasg",
+                "iabworkshop"
                 "adm",
             ]
         )
@@ -344,7 +345,7 @@ def active_teams(request):
     return render(request, 'group/active_teams.html', {'teams' : teams })
 
 def active_iab(request):
-    iabgroups = Group.objects.filter(type__in=("program","iabasg"), state="active").order_by("-type_id","name")
+    iabgroups = Group.objects.filter(type__in=("program","iabasg","iabworkshop"), state="active").order_by("-type_id","name")
     for group in iabgroups:
         group.leads = sorted(roles(group, "lead"), key=extract_last_name)
     return render(request, 'group/active_iabgroups.html', {'iabgroups' : iabgroups })
@@ -1335,7 +1336,7 @@ def stream_edit(request, acronym):
 @cache_control(public=True, max_age=30*60)
 @cache_page(30 * 60)
 def group_menu_data(request):
-    groups = Group.objects.filter(state="active", parent__state="active").filter(Q(type__features__acts_like_wg=True)|Q(type_id__in=['program','iabasg'])|Q(parent__acronym='ietfadminllc')|Q(parent__acronym='rfceditor')).order_by("-type_id","acronym")
+    groups = Group.objects.filter(state="active", parent__state="active").filter(Q(type__features__acts_like_wg=True)|Q(type_id__in=['program','iabasg','iabworkshop'])|Q(parent__acronym='ietfadminllc')|Q(parent__acronym='rfceditor')).order_by("-type_id","acronym")
 
     groups_by_parent = defaultdict(list)
     for g in groups:
