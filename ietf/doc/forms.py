@@ -137,7 +137,8 @@ class AddDownrefForm(forms.Form):
     rfc = SearchableDocumentField(
                 label="Referenced RFC",
                 help_text="The RFC that is approved for downref",
-                required=True)
+                required=True,
+                doc_type="rfc")
     drafts = SearchableDocumentsField(
                 label="Internet-Drafts that makes the reference",
                 help_text="The Internet-Drafts that approve the downref in their Last Call",

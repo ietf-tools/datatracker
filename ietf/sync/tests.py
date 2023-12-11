@@ -350,8 +350,16 @@ class RFCSyncTests(TestCase):
 
         changes = []
         with mock.patch("ietf.sync.rfceditor.log") as mock_log:
-            for _, d, rfc_published in rfceditor.update_docs_from_rfc_index(data, errata, today - datetime.timedelta(days=30)):
+            for rfc_number, _, d, rfc_published in rfceditor.update_docs_from_rfc_index(data, errata, today - datetime.timedelta(days=30)):
                 changes.append({"doc_pk": d.pk, "rfc_published": rfc_published})  # we ignore the actual change list
+                self.assertEqual(rfc_number, 1234)
+                if rfc_published:
+                    self.assertEqual(d.type_id, "rfc")
+                    self.assertEqual(d.rfc_number, rfc_number)
+                else:
+                    self.assertEqual(d.type_id, "draft")
+                    self.assertIsNone(d.rfc_number)
+                    
         self.assertFalse(mock_log.called, "No log messages expected")
 
         draft_doc = Document.objects.get(name=draft_doc.name)
@@ -391,7 +399,7 @@ class RFCSyncTests(TestCase):
                 self.assertIn("set abstract to 'This is some interesting text.'", rfc_events[0].desc)
                 self.assertIn("set pages to 42", rfc_events[0].desc)
                 self.assertIn("set standardization level to Proposed Standard", rfc_events[0].desc)
-                self.assertIn(f"added RFC published event at {rfc_events[0].time:%Y-%m-%d}", rfc_events[0].desc)
+                self.assertIn(f"added RFC published event at {rfc_events[0].time.astimezone(RPC_TZINFO):%Y-%m-%d}", rfc_events[0].desc)
                 self.assertIn("created updates relation between RFC 1234 and RFC 123", rfc_events[0].desc)
                 self.assertIn("added Errata tag", rfc_events[0].desc)
             else:

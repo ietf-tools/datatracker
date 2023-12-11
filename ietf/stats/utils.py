@@ -270,11 +270,10 @@ def get_meeting_registration_data(meeting):
                 object = meeting_registrations.pop((address, reg_type))
                 created = False
             else:
-                object = MeetingRegistration.objects.create(
+                object, created = MeetingRegistration.objects.get_or_create(
                     meeting_id=meeting.pk,
                     email=address,
                     reg_type=reg_type)
-                created = True
             
             if (object.first_name != first_name[:200] or
                 object.last_name != last_name[:200] or

@@ -163,6 +163,7 @@ class IprDocRel(models.Model):
     document   = ForeignKey(Document)
     sections   = models.TextField(blank=True)
     revisions  = models.CharField(max_length=16,blank=True) # allows strings like 01-07
+    originaldocumentaliasname = models.CharField(max_length=255, null=True, blank=True)
 
     def doc_type(self):
         name = self.document.name
@@ -175,7 +176,7 @@ class IprDocRel(models.Model):
 
     def formatted_name(self):
         name = self.document.name
-        if name.startswith("rfc"):
+        if len(name) >= 3 and name[:3] in ("rfc", "bcp", "fyi", "std"):
             return name.upper()
         #elif self.revisions:
         #    return "%s-%s" % (name, self.revisions)

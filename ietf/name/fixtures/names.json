@@ -3075,7 +3075,9 @@
       "material_types": "[\n    \"slides\"\n]",
       "matman_roles": "[\n    \"chair\"\n]",
       "need_parent": false,
-      "parent_types": [],
+      "parent_types": [
+        "rfcedtyp"
+      ],
       "req_subm_approval": true,
       "role_order": "[\n    \"chair\"\n]",
       "session_purposes": "[\n    \"regular\"\n]",
@@ -3161,6 +3163,45 @@
     },
     "model": "group.groupfeatures",
     "pk": "iabasg"
+  },
+  {
+    "fields": {
+      "about_page": "ietf.group.views.group_about",
+      "acts_like_wg": false,
+      "admin_roles": "[\n    \"chair\"\n]",
+      "agenda_filter_type": "none",
+      "agenda_type": "ietf",
+      "create_wiki": false,
+      "custom_group_roles": false,
+      "customize_workflow": false,
+      "default_parent": "iab",
+      "default_tab": "ietf.group.views.group_about",
+      "default_used_roles": "[]",
+      "docman_roles": "[\n    \"ad\",\n    \"chair\",\n    \"delegate\",\n    \"secr\"\n]",
+      "groupman_authroles": "[\n    \"Secretariat\"\n]",
+      "groupman_roles": "[\n    \"ad\",\n    \"chair\"\n]",
+      "has_chartering_process": false,
+      "has_default_chat": true,
+      "has_documents": true,
+      "has_meetings": true,
+      "has_milestones": false,
+      "has_nonsession_materials": false,
+      "has_reviews": false,
+      "has_session_materials": true,
+      "is_schedulable": false,
+      "material_types": "[\n    \"slides\"\n]",
+      "matman_roles": "[\n    \"ad\",\n    \"chair\",\n    \"delegate\",\n    \"secr\"\n]",
+      "need_parent": true,
+      "parent_types": [
+        "ietf"
+      ],
+      "req_subm_approval": false,
+      "role_order": "[\n    \"chair\",\n    \"secr\",\n    \"member\"\n]",
+      "session_purposes": "\"[\\\"regular\\\"]\"",
+      "show_on_agenda": false
+    },
+    "model": "group.groupfeatures",
+    "pk": "iabworkshop"
   },
   {
     "fields": {
@@ -11652,6 +11693,17 @@
   },
   {
     "fields": {
+      "desc": "IAB Workshop",
+      "name": "IAB Workshop",
+      "order": 0,
+      "used": true,
+      "verbose_name": "IAB Workshop"
+    },
+    "model": "name.grouptypename",
+    "pk": "iabworkshop"
+  },
+  {
+    "fields": {
       "desc": "",
       "name": "IANA",
       "order": 0,
@@ -11851,7 +11903,7 @@
   {
     "fields": {
       "default_offset_days": -57,
-      "desc": "Cut-off date for BOF proposal requests. To request a BOF, please see instructions at https://www.ietf.org/how/bofs/bof-procedures on Requesting a BOF",
+      "desc": "Cut-off date for BOF proposal requests. To request a __BoF__ session use the [IETF BoF Request Tool](/doc/bof-requests).",
       "name": "Cut-off preliminary BOF requests",
       "order": 0,
       "used": true
@@ -11862,7 +11914,7 @@
   {
     "fields": {
       "default_offset_days": -57,
-      "desc": "Preliminary BOF proposals requested. To request a BOF, please see instructions on requesting a BOF at https://www.ietf.org/how/bofs/bof-procedures/",
+      "desc": "Preliminary BOF proposals requested. To request a __BoF__ session use the [IETF BoF Request Tool](/doc/bof-requests).",
       "name": "Preliminary BOF proposals requested",
       "order": 0,
       "used": false
@@ -11895,7 +11947,7 @@
   {
     "fields": {
       "default_offset_days": -43,
-      "desc": "Cut-off date for BOF proposal requests to Area Directors at UTC 23:59",
+      "desc": "Cut-off date for BOF proposal requests to Area Directors at UTC 23:59. To request a __BoF__ session use the [IETF BoF Request Tool](/doc/bof-requests).",
       "name": "Cut-off BOF scheduling Requests",
       "order": 0,
       "used": false
@@ -11939,7 +11991,7 @@
   {
     "fields": {
       "default_offset_days": -43,
-      "desc": "Cut-off date for requests to schedule Working Group Meetings at UTC 23:59",
+      "desc": "Cut-off date for requests to schedule Working Group Meetings at UTC 23:59. To request a __Working Group__ session, use the [IETF Meeting Session Request Tool](/secr/sreq/).",
       "name": "Cut-off WG scheduling Requests",
       "order": 0,
       "used": true
@@ -11994,7 +12046,7 @@
   {
     "fields": {
       "default_offset_days": -12,
-      "desc": "Internet-Draft submission cut-off (for all Internet-Drafts, including -00) by UTC 23:59",
+      "desc": "Internet-Draft submission cut-off (for all Internet-Drafts, including -00) by UTC 23:59. Upload using the [I-D Submission Tool](/submit/).",
       "name": "I-D Cutoff",
       "order": 0,
       "used": true
@@ -12027,7 +12079,7 @@
   {
     "fields": {
       "default_offset_days": -82,
-      "desc": "IETF Online Registration Opens",
+      "desc": "IETF Online Registration Opens [Register Here](https://www.ietf.org/how/meetings/register/).",
       "name": "Registration Opens",
       "order": 0,
       "used": true
@@ -12038,7 +12090,7 @@
   {
     "fields": {
       "default_offset_days": -89,
-      "desc": "Working Group and BOF scheduling begins",
+      "desc": "Working Group and BOF scheduling begins. To request a Working Group session, use the [IETF Meeting Session Request Tool](/secr/sreq/). If you are working on a BOF request, it is highly recommended to tell the IESG now by sending an [email to iesg@ietf.org](mailtp:iesg@ietf.org) to get advance help with the request.",
       "name": "Scheduling Opens",
       "order": 0,
       "used": true
@@ -16682,7 +16734,7 @@
     "fields": {
       "command": "xym",
       "switch": "--version",
-      "time": "2023-09-21T07:09:40.201Z",
+      "time": "2023-11-21T08:09:45.989Z",
       "used": true,
       "version": "xym 0.7.0"
     },
@@ -16693,9 +16745,9 @@
     "fields": {
       "command": "pyang",
       "switch": "--version",
-      "time": "2023-09-21T07:09:40.525Z",
+      "time": "2023-11-21T08:09:46.322Z",
       "used": true,
-      "version": "pyang 2.5.3"
+      "version": "pyang 2.6.0"
     },
     "model": "utils.versioninfo",
     "pk": 2
@@ -16704,7 +16756,7 @@
     "fields": {
       "command": "yanglint",
       "switch": "--version",
-      "time": "2023-09-21T07:09:40.546Z",
+      "time": "2023-11-21T08:09:46.338Z",
       "used": true,
       "version": "yanglint SO 1.9.2"
     },
@@ -16715,9 +16767,9 @@
     "fields": {
       "command": "xml2rfc",
       "switch": "--version",
-      "time": "2023-09-21T07:09:41.465Z",
+      "time": "2023-11-21T08:09:47.251Z",
       "used": true,
-      "version": "xml2rfc 3.18.0"
+      "version": "xml2rfc 3.18.2"
     },
     "model": "utils.versioninfo",
     "pk": 4

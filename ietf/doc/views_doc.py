@@ -210,8 +210,8 @@ def document_main(request, name, rev=None, document_html=False):
     snapshot = False
 
     gh = None
-    if rev:
-        # find the entry in the history
+    if rev and rev != doc.rev:
+        # find the entry in the history if the rev requested is not the current rev
         for h in doc.history_set.order_by("-time"):
             if rev == h.rev:
                 snapshot = True
@@ -712,7 +712,7 @@ def document_main(request, name, rev=None, document_html=False):
 
     elif doc.type_id == "charter":
         content = doc.text_or_error()     # pyflakes:ignore
-        content = markup_txt.markup(content)
+        content = markdown.markdown(content)
 
         ballot_summary = None
         if doc.get_state_slug() in ("intrev", "iesgrev"):

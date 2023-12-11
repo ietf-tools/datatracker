@@ -143,6 +143,10 @@ class ReviewRequest(models.Model):
     def request_closed_time(self):
         return self.doc.request_closed_time(self) or self.time
 
+    def add_history(self, description):
+        self._change_reason = description
+        self.save()
+
 class ReviewAssignment(models.Model):
     """ One of possibly many reviews assigned in response to a ReviewRequest """
     history        = HistoricalRecords(history_change_reason_field=models.TextField(null=True))

@@ -340,7 +340,7 @@ def get_previous_url(name, rev=None):
 def rfcdiff_latest_json(request, name, rev=None):
     response = dict()
     condition, document, history, found_rev = find_doc_for_rfcdiff(name, rev)
-    if document.type_id == "rfc":
+    if document and document.type_id == "rfc":
         draft = document.came_from_draft()
     if condition == 'no such document':
         raise Http404

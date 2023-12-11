@@ -352,16 +352,6 @@ def augment_events_with_revision(doc, events):
         qs = NewRevisionDocEvent.objects.filter(doc=doc)
     event_revisions = list(qs.order_by('time', 'id').values('id', 'rev', 'time'))
 
-    if doc.type_id == "draft" and doc.get_state_slug() == "rfc":
-        # add fake "RFC" revision
-        if isinstance(events, QuerySetAny):
-            e = events.filter(type="published_rfc").order_by('time').last()
-        else:
-            e = doc.latest_event(type="published_rfc")
-        if e:
-            event_revisions.append(dict(id=e.id, time=e.time, rev="RFC"))
-            event_revisions.sort(key=lambda x: (x["time"], x["id"]))
-
     for e in sorted(events, key=lambda e: (e.time, e.id), reverse=True):
         while event_revisions and (e.time, e.id) < (event_revisions[-1]["time"], event_revisions[-1]["id"]):
             event_revisions.pop()
@@ -957,49 +947,62 @@ def make_rev_history(doc):
 
     def get_predecessors(doc, predecessors=None):
         if predecessors is None:
-            predecessors = []
+            predecessors = set()
         if hasattr(doc, 'relateddocument_set'):
             for document in doc.related_that_doc('replaces'):
                 if document not in predecessors:
-                    predecessors.append(document)
-                    predecessors.extend(get_predecessors(document, predecessors))
+                    predecessors.add(document)
+                    predecessors.update(get_predecessors(document, predecessors))
         if doc.came_from_draft():
-            predecessors.append(doc.came_from_draft())
+            predecessors.add(doc.came_from_draft())
+            predecessors.update(get_predecessors(doc.came_from_draft(), predecessors))
         return predecessors
 
     def get_ancestors(doc, ancestors = None):
         if ancestors is None:
-            ancestors = []
+            ancestors = set()
         if hasattr(doc, 'relateddocument_set'):
             for document in doc.related_that('replaces'):
                 if document not in ancestors:
-                    ancestors.append(document)
-                    ancestors.extend(get_ancestors(document, ancestors))
+                    ancestors.add(document)
+                    ancestors.update(get_ancestors(document, ancestors))
         if doc.became_rfc():
-            ancestors.append(doc.became_rfc())
+            if doc.became_rfc() not in ancestors:
+                ancestors.add(doc.became_rfc())
+                ancestors.update(get_ancestors(doc.became_rfc(), ancestors))
         return ancestors
 
     def get_replaces_tree(doc):
         tree = get_predecessors(doc)
-        tree.extend(get_ancestors(doc))
+        tree.update(get_ancestors(doc))
         return tree
 
     history = {}
     docs = get_replaces_tree(doc)
     if docs is not None:
-        docs.append(doc)
+        docs.add(doc)
         for d in docs:
-            for e in d.docevent_set.filter(type='new_revision').distinct():
-                if hasattr(e, 'newrevisiondocevent'):
-                    url = urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=d)) + e.newrevisiondocevent.rev + "/"
-                    history[url] = {
-                        'name': d.name,
-                        'rev': e.newrevisiondocevent.rev,
-                        'published': e.time.isoformat(),
-                        'url': url,
-                    }
-                    if d.history_set.filter(rev=e.newrevisiondocevent.rev).exists():
-                        history[url]['pages'] = d.history_set.filter(rev=e.newrevisiondocevent.rev).first().pages
+            if d.type_id == "rfc":
+                url = urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=d))
+                e = d.docevent_set.filter(type="published_rfc").order_by("-time").first()
+                history[url] = {
+                    "name": d.name,
+                    "rev": d.name,
+                    "published": e and e.time.isoformat(),
+                    "url": url,
+                }
+            else:
+                for e in d.docevent_set.filter(type='new_revision').distinct():
+                    if hasattr(e, 'newrevisiondocevent'):
+                        url = urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=d)) + e.newrevisiondocevent.rev + "/"
+                        history[url] = {
+                            'name': d.name,
+                            'rev': e.newrevisiondocevent.rev,
+                            'published': e.time.isoformat(),
+                            'url': url,
+                        }
+                        if d.history_set.filter(rev=e.newrevisiondocevent.rev).exists():
+                            history[url]['pages'] = d.history_set.filter(rev=e.newrevisiondocevent.rev).first().pages
 
     if doc.type_id == "draft":
         # Do nothing - all draft revisions are captured above already.

@@ -2,12 +2,13 @@
 {# Copyright The IETF Trust 2023, All Rights Reserved #}
 {% load origin %}
 {% load static %}
-{% block title %}{{doc.type.name}}s{% endblock %}
+{% load ietf_filters %}
+{% block title %}{{ doc.name|prettystdname }}{% endblock %}
 {% block content %}
   {% origin %}
   {{ top|safe }}
-  <h2>{{ doc.name|slice:":3"|upper }} {{ doc.name|slice:"3:"}} {% if doc.contains %}consists of:{% else %}currently contains no RFCs{% endif %}</h2>
-  {% for rfc in doc.contains %}
+  <h2>{{ doc.name|prettystdname }} {% if doc.contains %}consists of:{% else %}currently contains no RFCs{% endif %}</h2>
+  {% for rfc in doc.contains|dictsort:"rfc_number" %}
     <p><a href="{% url 'ietf.doc.views_doc.document_main' name=rfc.name %}">RFC {{rfc.name|slice:"3:"}}</a> : {{rfc.title}}</p>
   {% endfor %}
   <div class="buttonlist">
