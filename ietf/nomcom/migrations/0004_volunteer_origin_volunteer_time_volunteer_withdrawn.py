@@ -17,7 +17,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name="volunteer",
             name="time",
-            field=models.DateTimeField(auto_now=True),
+            field=models.DateTimeField(auto_now_add=True, null=True, blank=True),
         ),
         migrations.AddField(
             model_name="volunteer",
