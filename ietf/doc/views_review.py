@@ -28,7 +28,7 @@ from django.core.exceptions import ValidationError
 from django.template.loader import render_to_string, TemplateDoesNotExist
 from django.urls import reverse as urlreverse
 
-from ietf.doc.models import (Document, NewRevisionDocEvent, State, DocAlias,
+from ietf.doc.models import (Document, NewRevisionDocEvent, State,
                              LastCallDocEvent, ReviewRequestDocEvent, ReviewAssignmentDocEvent, DocumentAuthor)
 from ietf.name.models import (ReviewRequestStateName, ReviewAssignmentStateName, ReviewResultName, 
                              ReviewTypeName)
@@ -117,7 +117,7 @@ class RequestReviewForm(forms.ModelForm):
 
 @login_required
 def request_review(request, name):
-    doc = get_object_or_404(Document, name=name)
+    doc = get_object_or_404(Document, type_id="draft", name=name)
 
     if not can_request_review_of_doc(request.user, doc):
         permission_denied(request, "You do not have permission to perform this action")
@@ -753,9 +753,7 @@ def complete_review(request, name, assignment_id=None, acronym=None):
                     name=review_name,
                     defaults={'type_id': 'review', 'group': team},
                 )
-                if created:
-                    DocAlias.objects.create(name=review_name).docs.add(review)
-                else:
+                if not created:
                     messages.warning(request, message='Attempt to save review failed: review document already exists. This most likely occurred because the review was submitted twice in quick succession. If you intended to submit a new review, rather than update an existing one, things are probably OK. Please verify that the shown review is what you expected.')
                     return redirect("ietf.doc.views_doc.document_main", name=review_name)
 
@@ -1093,7 +1091,7 @@ class ReviewWishAddForm(forms.Form):
 
 @login_required
 def review_wish_add(request, name):
-    doc = get_object_or_404(Document, docalias__name=name)
+    doc = get_object_or_404(Document, name=name)
 
     if request.method == "POST":
         form = ReviewWishAddForm(request.user, doc, request.POST)
@@ -1110,7 +1108,7 @@ def review_wish_add(request, name):
 
 @login_required
 def review_wishes_remove(request, name):
-    doc = get_object_or_404(Document, docalias__name=name)
+    doc = get_object_or_404(Document, name=name)
     person = get_object_or_404(Person, user=request.user)
 
     if request.method == "POST":

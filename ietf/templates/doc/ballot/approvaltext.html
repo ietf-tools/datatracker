@@ -29,7 +29,7 @@
                href="{% url 'ietf.doc.views_ballot.approve_ballot' name=doc.name %}">Approve ballot</a>
         {% endif %}
         <a class="btn btn-secondary float-end"
-           href="{% url "ietf.doc.views_doc.document_main" name=doc.canonical_name %}">
+           href="{% url "ietf.doc.views_doc.document_main" name=doc.name %}">
             Back
         </a>
     </form>
