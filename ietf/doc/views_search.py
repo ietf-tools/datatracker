@@ -429,6 +429,7 @@ def ad_workload(request):
                         to_state = state_name(dt, state, shorten=False)
                     elif e.desc.endswith("has been replaced"):
                         # stop tracking
+                        last = e.time
                         break
 
                 if not to_state:
@@ -453,9 +454,10 @@ def ad_workload(request):
                 elif to_state == "RFC Published":
                     to_state = "RFC"
 
-                new_dt = state_to_doc_type(to_state)
-                if new_dt is not None:
-                    dt = new_dt
+                if dt == "rfc":
+                    new_dt = state_to_doc_type(to_state)
+                    if new_dt is not None and new_dt != dt:
+                        dt = new_dt
 
                 if to_state not in STATE_SLUGS[dt].keys() or to_state == "Replaced":
                     # change into a state the AD dashboard doesn't display
@@ -469,13 +471,13 @@ def ad_workload(request):
                 buckets_start = date_to_bucket(e.time, now, days)
                 buckets_end = date_to_bucket(last, now, days)
 
+                if dt == "charter" and to_state == "Approved" and buckets_start < 0:
+                    # don't count old charter approvals
+                    break
+
                 if buckets_start <= 0:
-                    # this event is older than we record in the history
-                    if last == now:
-                        # but since we didn't record any state yet,
-                        # this is the state the doc was in for the
-                        # entire history
-                        for b in range(days):
+                    if buckets_end >= 0:
+                        for b in range(0, buckets_end):
                             ad.buckets[dt][sn][b].append(doc.name)
                             sums[dt][sn][b].append(doc.name)
                         last = e.time
@@ -486,15 +488,6 @@ def ad_workload(request):
                     ad.buckets[dt][sn][b].append(doc.name)
                     sums[dt][sn][b].append(doc.name)
                 last = e.time
-
-            if last == now:
-                s = state_name(dt, state, shorten=False)
-                if s in STATE_SLUGS[dt].keys():
-                    # we didn't have a single event for this doc, assume
-                    # the current state applied throughput the history
-                    for b in range(days):
-                        ad.buckets[dt][state][b].append(doc.name)
-                        sums[dt][state][b].append(doc.name)
 
     metadata = [
         {
