@@ -361,7 +361,7 @@ class InterimSessionModelForm(forms.ModelForm):
 class InterimAnnounceForm(forms.ModelForm):
     class Meta:
         model = Message
-        fields = ('to', 'frm', 'cc', 'bcc', 'reply_to', 'subject', 'body')
+        fields = ('to', 'cc', 'frm', 'subject', 'body')
 
     def __init__(self, *args, **kwargs):
         super(InterimAnnounceForm, self).__init__(*args, **kwargs)
