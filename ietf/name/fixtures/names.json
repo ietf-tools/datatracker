@@ -2567,10 +2567,30 @@
   },
   {
     "fields": {
+      "desc": "",
+      "name": "Published",
+      "next_states": [],
+      "order": 1,
+      "slug": "published",
+      "type": "rfc",
+      "used": true
+    },
+    "model": "doc.state",
+    "pk": 177
+  },
+  {
+    "fields": {
       "label": "State"
     },
     "model": "doc.statetype",
     "pk": "agenda"
+  },
+  {
+    "fields": {
+      "label": "bcp state"
+    },
+    "model": "doc.statetype",
+    "pk": "bcp"
   },
   {
     "fields": {
@@ -2693,6 +2713,13 @@
   },
   {
     "fields": {
+      "label": "fyi state"
+    },
+    "model": "doc.statetype",
+    "pk": "fyi"
+  },
+  {
+    "fields": {
       "label": "State"
     },
     "model": "doc.statetype",
@@ -2749,6 +2776,13 @@
   },
   {
     "fields": {
+      "label": "State"
+    },
+    "model": "doc.statetype",
+    "pk": "rfc"
+  },
+  {
+    "fields": {
       "label": "Shepherd's Writeup State"
     },
     "model": "doc.statetype",
@@ -2774,6 +2808,13 @@
     },
     "model": "doc.statetype",
     "pk": "statement"
+  },
+  {
+    "fields": {
+      "label": "std state"
+    },
+    "model": "doc.statetype",
+    "pk": "std"
   },
   {
     "fields": {
@@ -5903,7 +5944,7 @@
   {
     "fields": {
       "desc": "The document's authors",
-      "template": "{% if doc.type_id == \"draft\" %}<{{doc.name}}@ietf.org>{% endif %}"
+      "template": "{% if doc.type_id == \"draft\" or doc.type_id == \"rfc\" %}<{{doc.name}}@ietf.org>{% endif %}"
     },
     "model": "mailtrigger.recipient",
     "pk": "doc_authors"
@@ -10055,6 +10096,17 @@
   {
     "fields": {
       "desc": "",
+      "name": "became RFC",
+      "order": 0,
+      "revname": "came from draft",
+      "used": true
+    },
+    "model": "name.docrelationshipname",
+    "pk": "became_rfc"
+  },
+  {
+    "fields": {
+      "desc": "",
       "name": "conflict reviews",
       "order": 0,
       "revname": "Conflict reviewed by",
@@ -10062,6 +10114,17 @@
     },
     "model": "name.docrelationshipname",
     "pk": "conflrev"
+  },
+  {
+    "fields": {
+      "desc": "This document contains other documents (e.g., STDs contain RFCs)",
+      "name": "Contains",
+      "order": 0,
+      "revname": "Is part of",
+      "used": true
+    },
+    "model": "name.docrelationshipname",
+    "pk": "contains"
   },
   {
     "fields": {
@@ -10582,6 +10645,17 @@
   {
     "fields": {
       "desc": "",
+      "name": "Best Current Practice",
+      "order": 0,
+      "prefix": "bcp",
+      "used": true
+    },
+    "model": "name.doctypename",
+    "pk": "bcp"
+  },
+  {
+    "fields": {
+      "desc": "",
       "name": "Bluesheets",
       "order": 0,
       "prefix": "bluesheets",
@@ -10644,6 +10718,17 @@
     },
     "model": "name.doctypename",
     "pk": "draft"
+  },
+  {
+    "fields": {
+      "desc": "",
+      "name": "For Your Information",
+      "order": 0,
+      "prefix": "fyi",
+      "used": true
+    },
+    "model": "name.doctypename",
+    "pk": "fyi"
   },
   {
     "fields": {
@@ -10725,6 +10810,17 @@
   {
     "fields": {
       "desc": "",
+      "name": "RFC",
+      "order": 0,
+      "prefix": "rfc",
+      "used": true
+    },
+    "model": "name.doctypename",
+    "pk": "rfc"
+  },
+  {
+    "fields": {
+      "desc": "",
       "name": "Shepherd's writeup",
       "order": 0,
       "prefix": "shepherd",
@@ -10765,6 +10861,17 @@
     },
     "model": "name.doctypename",
     "pk": "statement"
+  },
+  {
+    "fields": {
+      "desc": "",
+      "name": "Standard",
+      "order": 0,
+      "prefix": "std",
+      "used": true
+    },
+    "model": "name.doctypename",
+    "pk": "std"
   },
   {
     "fields": {
@@ -11796,7 +11903,7 @@
   {
     "fields": {
       "default_offset_days": -57,
-      "desc": "Cut-off date for BOF proposal requests. To request a BOF, please see instructions at https://www.ietf.org/how/bofs/bof-procedures on Requesting a BOF",
+      "desc": "Cut-off date for BOF proposal requests. To request a __BoF__ session use the [IETF BoF Request Tool](/doc/bof-requests).",
       "name": "Cut-off preliminary BOF requests",
       "order": 0,
       "used": true
@@ -11807,7 +11914,7 @@
   {
     "fields": {
       "default_offset_days": -57,
-      "desc": "Preliminary BOF proposals requested. To request a BOF, please see instructions on requesting a BOF at https://www.ietf.org/how/bofs/bof-procedures/",
+      "desc": "Preliminary BOF proposals requested. To request a __BoF__ session use the [IETF BoF Request Tool](/doc/bof-requests).",
       "name": "Preliminary BOF proposals requested",
       "order": 0,
       "used": false
@@ -11840,7 +11947,7 @@
   {
     "fields": {
       "default_offset_days": -43,
-      "desc": "Cut-off date for BOF proposal requests to Area Directors at UTC 23:59",
+      "desc": "Cut-off date for BOF proposal requests to Area Directors at UTC 23:59. To request a __BoF__ session use the [IETF BoF Request Tool](/doc/bof-requests).",
       "name": "Cut-off BOF scheduling Requests",
       "order": 0,
       "used": false
@@ -11884,7 +11991,7 @@
   {
     "fields": {
       "default_offset_days": -43,
-      "desc": "Cut-off date for requests to schedule Working Group Meetings at UTC 23:59",
+      "desc": "Cut-off date for requests to schedule Working Group Meetings at UTC 23:59. To request a __Working Group__ session, use the [IETF Meeting Session Request Tool](/secr/sreq/).",
       "name": "Cut-off WG scheduling Requests",
       "order": 0,
       "used": true
@@ -11939,7 +12046,7 @@
   {
     "fields": {
       "default_offset_days": -12,
-      "desc": "Internet-Draft submission cut-off (for all Internet-Drafts, including -00) by UTC 23:59",
+      "desc": "Internet-Draft submission cut-off (for all Internet-Drafts, including -00) by UTC 23:59. Upload using the [I-D Submission Tool](/submit/).",
       "name": "I-D Cutoff",
       "order": 0,
       "used": true
@@ -11972,7 +12079,7 @@
   {
     "fields": {
       "default_offset_days": -82,
-      "desc": "IETF Online Registration Opens",
+      "desc": "IETF Online Registration Opens [Register Here](https://www.ietf.org/how/meetings/register/).",
       "name": "Registration Opens",
       "order": 0,
       "used": true
@@ -11983,7 +12090,7 @@
   {
     "fields": {
       "default_offset_days": -89,
-      "desc": "Working Group and BOF scheduling begins",
+      "desc": "Working Group and BOF scheduling begins. To request a Working Group session, use the [IETF Meeting Session Request Tool](/secr/sreq/). If you are working on a BOF request, it is highly recommended to tell the IESG now by sending an [email to iesg@ietf.org](mailtp:iesg@ietf.org) to get advance help with the request.",
       "name": "Scheduling Opens",
       "order": 0,
       "used": true
