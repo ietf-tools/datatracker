@@ -4,11 +4,11 @@
         {% if label != skip_format %}
         <a class="btn btn-primary btn-sm"
           {% if label == 'pdf' or label == 'pdfized' %}
-            download="{% if not snapshot and doc.get_state_slug == 'rfc' %}rfc{{ doc.rfc_number }}{% else %}{{ doc.name }}-{{ doc.rev }}{% endif %}.pdf"
+            download="{% if not snapshot and doc.type_id == 'rfc' %}rfc{{ doc.rfc_number }}{% else %}{{ doc.name }}-{{ doc.rev }}{% endif %}.pdf"
           {% comment %}
           TODO: determine if we want bibtex to jiust download
           {% elif label == 'bibtex' %}
-            download="{% if not snapshot and doc.get_state_slug == 'rfc' %}rfc{{ doc.rfc_number }}{% else %}{{ doc.name }}-{{ doc.rev }}{% endif %}.bib"
+            download="{% if not snapshot and doc.type_id == 'rfc' %}rfc{{ doc.rfc_number }}{% else %}{{ doc.name }}-{{ doc.rev }}{% endif %}.bib"
           {% endcomment %}
          {% endif %}
           {% if label != 'htmlized' %}target="_blank"{% endif %}

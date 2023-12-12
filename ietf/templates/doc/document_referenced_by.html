@@ -1,13 +1,13 @@
 {% extends "base.html" %}
-{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{# Copyright The IETF Trust 2015-2023, All Rights Reserved #}
 {% load origin static ietf_filters %}
 {% block pagehead %}
     <link rel="stylesheet" href="{% static "ietf/css/list.css" %}">
 {% endblock %}
-{% block title %}References to {{ alias_name }}{% endblock %}
+{% block title %}References to {{ name|prettystdname }}{% endblock %}
 {% block content %}
     {% origin %}
-    <h1>References to {{ alias_name }}</h1>
+    <h1>References to {{ name|prettystdname }}</h1>
     <p class="alert alert-info my-3">
         These dependencies are extracted using heuristics looking for strings with particular prefixes. Notably, this means that references to I-Ds by title only are not reflected here. If it's really important, please inspect the documents' references sections directly.
     </p>
@@ -38,11 +38,11 @@
         </thead>
         <tbody>
             {% for ref in refs %}
-                {% with ref.source.canonical_name as name %}
+                {% with ref.source.name as name %}
                     <tr>
                         <td>
                             <a href="{% url 'ietf.doc.views_doc.document_main' name=name %}">{{ name|prettystdname }}</a>
-                            {% if ref.target.name != alias_name %}
+                            {% if ref.target.name != name %}
                                 <br>
                                 <span class="badge rounded-pill text-bg-info">As {{ ref.target.name }}</span>
                             {% endif %}
@@ -64,7 +64,7 @@
                             </a>
                         </td>
                         <td>
-                            {% if ref.source.get_state.slug == 'rfc' %}
+                            {% if ref.source.type_id == "rfc" %}
                                 {% with ref.source.std_level as lvl %}
                                     {% if lvl %}{{ lvl }}{% endif %}
                                 {% endwith %}

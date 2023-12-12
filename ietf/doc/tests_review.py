@@ -137,9 +137,17 @@ class ReviewTests(TestCase):
         url = urlreverse('ietf.doc.views_review.request_review', kwargs={ "name": doc.name })
         login_testing_unauthorized(self, "ad", url)
 
-        # get should fail
+        # get should fail - all non draft types 404
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 404)
+
+        # Can only request reviews on active draft documents
+        doc = WgDraftFactory(states=[("draft","rfc")])
+        url = urlreverse('ietf.doc.views_review.request_review', kwargs={ "name": doc.name })
         r = self.client.get(url)
         self.assertEqual(r.status_code, 403)
+
+
 
     def test_doc_page(self):
 
@@ -153,8 +161,8 @@ class ReviewTests(TestCase):
         # check we can fish it out
         old_doc = WgDraftFactory(name="draft-foo-mars-test")
         older_doc = WgDraftFactory(name="draft-older")
-        RelatedDocument.objects.create(source=old_doc, target=older_doc.docalias.first(), relationship_id='replaces')
-        RelatedDocument.objects.create(source=doc, target=old_doc.docalias.first(), relationship_id='replaces')
+        RelatedDocument.objects.create(source=old_doc, target=older_doc, relationship_id='replaces')
+        RelatedDocument.objects.create(source=doc, target=old_doc, relationship_id='replaces')
         review_req.doc = older_doc
         review_req.save()
 

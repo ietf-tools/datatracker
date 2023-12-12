@@ -3,13 +3,13 @@
 {% load origin %}
 {% load django_bootstrap5 %}
 {% load ietf_filters %}
-{% block title %}Begin IETF conflict review for {{ doc_to_review.canonical_name }}-{{ doc_to_review.rev }}{% endblock %}
+{% block title %}Begin IETF conflict review for {{ doc_to_review.name }}-{{ doc_to_review.rev }}{% endblock %}
 {% block content %}
     {% origin %}
     <h1>
         Begin IETF conflict review
         <br>
-        <small class="text-body-secondary">{{ doc_to_review.canonical_name }}-{{ doc_to_review.rev }}</small>
+        <small class="text-body-secondary">{{ doc_to_review.name }}-{{ doc_to_review.rev }}</small>
     </h1>
     {% if user|has_role:"Secretariat" %}
         <p class="my-3">

@@ -13,7 +13,7 @@ from django.urls import reverse as urlreverse
 
 import debug                            # pyflakes:ignore
 
-from ietf.doc.models import Document, DocAlias
+from ietf.doc.models import Document
 from ietf.doc.utils import uppercase_std_abbreviated_name
 from ietf.utils.fields import SearchableField
 
@@ -68,20 +68,4 @@ class SearchableDocumentsField(SearchableField):
 
 class SearchableDocumentField(SearchableDocumentsField):
     """Specialized to only return one Document"""
-    max_entries = 1
-
-
-class SearchableDocAliasesField(SearchableDocumentsField):
-    """Search DocAliases instead of Documents"""
-    model = DocAlias # type: Type[models.Model]
-    
-    def doc_type_filter(self, queryset):
-        """Filter to include only desired doc type
-
-        For DocAlias, pass through to the docs to check type.
-        """
-        return queryset.filter(docs__type=self.doc_type)
-
-class SearchableDocAliasField(SearchableDocAliasesField):
-    """Specialized to only return one DocAlias"""
     max_entries = 1

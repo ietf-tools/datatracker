@@ -37,7 +37,6 @@ from ietf.name.models import ( DocTypeName, DocTagName, StreamName, IntendedStdL
 from ietf.person.models import Email, Person
 from ietf.person.utils import get_active_balloters
 from ietf.utils import log
-from ietf.utils.admin import admin_link
 from ietf.utils.decorators import memoize
 from ietf.utils.validators import validate_no_control_chars
 from ietf.utils.mail import formataddr
@@ -124,6 +123,7 @@ class DocumentInfo(models.Model):
     uploaded_filename = models.TextField(blank=True)
     note = models.TextField(blank=True)
     internal_comments = models.TextField(blank=True)
+    rfc_number = models.PositiveIntegerField(blank=True, null=True)  # only valid for type="rfc"
 
     def file_extension(self):
         if not hasattr(self, '_cached_extension'):
@@ -136,18 +136,17 @@ class DocumentInfo(models.Model):
 
     def get_file_path(self):
         if not hasattr(self, '_cached_file_path'):
-            if self.type_id == "draft":
+            if self.type_id == "rfc":
+                self._cached_file_path = settings.RFC_PATH
+            elif self.type_id == "draft":
                 if self.is_dochistory():
                     self._cached_file_path = settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR
                 else:
-                    if self.get_state_slug() == "rfc":
-                        self._cached_file_path = settings.RFC_PATH
+                    draft_state = self.get_state('draft')
+                    if draft_state and draft_state.slug == 'active':
+                        self._cached_file_path = settings.INTERNET_DRAFT_PATH
                     else:
-                        draft_state = self.get_state('draft')
-                        if draft_state and draft_state.slug == 'active':
-                            self._cached_file_path = settings.INTERNET_DRAFT_PATH
-                        else:
-                            self._cached_file_path = settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR
+                        self._cached_file_path = settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR
             elif self.meeting_related() and self.type_id in (
                     "agenda", "minutes", "slides", "bluesheets", "procmaterials", "chatlog", "polls"
             ):
@@ -172,17 +171,16 @@ class DocumentInfo(models.Model):
         if not hasattr(self, '_cached_base_name'):
             if self.uploaded_filename:
                 self._cached_base_name = self.uploaded_filename
+            elif self.type_id == 'rfc':
+                self._cached_base_name = "%s.txt" % self.name  
             elif self.type_id == 'draft':
                 if self.is_dochistory():
                     self._cached_base_name = "%s-%s.txt" % (self.doc.name, self.rev)
                 else:
-                    if self.get_state_slug() == 'rfc':
-                        self._cached_base_name = "%s.txt" % self.canonical_name()
-                    else:
-                        self._cached_base_name = "%s-%s.txt" % (self.name, self.rev)
+                    self._cached_base_name = "%s-%s.txt" % (self.name, self.rev)
             elif self.type_id in ["slides", "agenda", "minutes", "bluesheets", "procmaterials", ] and self.meeting_related():
                 ext = 'pdf' if self.type_id == 'procmaterials' else 'txt'
-                self._cached_base_name = f'{self.canonical_name()}-{self.rev}.{ext}'
+                self._cached_base_name = f'{self.name}-{self.rev}.{ext}'
             elif self.type_id == 'review':
                 # TODO: This will be wrong if a review is updated on the same day it was created (or updated more than once on the same day)
                 self._cached_base_name = "%s.txt" % self.name
@@ -190,9 +188,9 @@ class DocumentInfo(models.Model):
                 self._cached_base_name = "%s-%s.md" % (self.name, self.rev)
             else:
                 if self.rev:
-                    self._cached_base_name = "%s-%s.txt" % (self.canonical_name(), self.rev)
+                    self._cached_base_name = "%s-%s.txt" % (self.name, self.rev)
                 else:
-                    self._cached_base_name = "%s.txt" % (self.canonical_name(), )
+                    self._cached_base_name = "%s.txt" % (self.name, )
         return self._cached_base_name
 
     def get_file_name(self):
@@ -200,17 +198,28 @@ class DocumentInfo(models.Model):
             self._cached_file_name = os.path.join(self.get_file_path(), self.get_base_name())
         return self._cached_file_name
 
-    def revisions(self):
+
+    def revisions_by_dochistory(self):
         revisions = []
-        doc = self.doc if isinstance(self, DocHistory) else self
-        for e in doc.docevent_set.filter(type='new_revision').distinct():
-            if e.rev and not e.rev in revisions:
-                revisions.append(e.rev)
-        if not doc.rev in revisions:
-            revisions.append(doc.rev)
-        revisions.sort()
+        if self.type_id != "rfc":
+            for h in self.history_set.order_by("time", "id"):
+                if h.rev and not h.rev in revisions:
+                    revisions.append(h.rev)
+            if not self.rev in revisions:
+                revisions.append(self.rev)
         return revisions
 
+    def revisions_by_newrevisionevent(self):
+        revisions = []
+        if self.type_id != "rfc":
+            doc = self.doc if isinstance(self, DocHistory) else self
+            for e in doc.docevent_set.filter(type='new_revision').distinct():
+                if e.rev and not e.rev in revisions:
+                    revisions.append(e.rev)
+            if not doc.rev in revisions:
+                revisions.append(doc.rev)
+            revisions.sort()
+        return revisions
 
     def get_href(self, meeting=None):
         return self._get_ref(meeting=meeting,meeting_doc_refs=settings.MEETING_DOC_HREFS)
@@ -244,7 +253,7 @@ class DocumentInfo(models.Model):
                     format = settings.DOC_HREFS[self.type_id]
             elif self.type_id in settings.DOC_HREFS:
                 self.is_meeting_related = False
-                if self.is_rfc():
+                if self.type_id == "rfc":
                     format = settings.DOC_HREFS['rfc']
                 else:
                     format = settings.DOC_HREFS[self.type_id]
@@ -334,7 +343,9 @@ class DocumentInfo(models.Model):
         if not state:
             return "Unknown state"
     
-        if self.type_id == 'draft':
+        if self.type_id == "rfc":
+            return f"RFC {self.rfc_number} ({self.std_level})"
+        elif self.type_id == 'draft':
             iesg_state = self.get_state("draft-iesg")
             iesg_state_summary = None
             if iesg_state:
@@ -343,13 +354,15 @@ class DocumentInfo(models.Model):
                 iesg_state_summary = iesg_state.name
                 if iesg_substate:
                      iesg_state_summary = iesg_state_summary + "::"+"::".join(tag.name for tag in iesg_substate)
-             
-            if state.slug == "rfc":
-                return "RFC %s (%s)" % (self.rfc_number(), self.std_level)
+
+            rfc = self.became_rfc()
+            if rfc:
+                return f"Became RFC {rfc.rfc_number} ({rfc.std_level})"
+
             elif state.slug == "repl":
                 rs = self.related_that("replaces")
                 if rs:
-                    return mark_safe("Replaced by " + ", ".join("<a href=\"%s\">%s</a>" % (urlreverse('ietf.doc.views_doc.document_main', kwargs=dict(name=alias.document.name)), alias.document) for alias in rs))
+                    return mark_safe("Replaced by " + ", ".join("<a href=\"%s\">%s</a>" % (urlreverse('ietf.doc.views_doc.document_main', kwargs=dict(name=related.name)), related) for related in rs))
                 else:
                     return "Replaced"
             elif state.slug == "active":
@@ -374,27 +387,6 @@ class DocumentInfo(models.Model):
                 return state.name
         else:
             return state.name
-
-    def is_rfc(self):
-        if not hasattr(self, '_cached_is_rfc'):
-            self._cached_is_rfc = self.pk and self.type_id == 'draft' and self.states.filter(type='draft',slug='rfc').exists()
-        return self._cached_is_rfc
-
-    def rfc_number(self):
-        if not hasattr(self, '_cached_rfc_number'):
-            self._cached_rfc_number = None
-            if self.is_rfc():
-                n = self.canonical_name()
-                if n.startswith("rfc"):
-                    self._cached_rfc_number = n[3:]
-                else:
-                    if isinstance(self,Document):
-                        logger.error("Document self.is_rfc() is True but self.canonical_name() is %s" % n)
-        return self._cached_rfc_number
-
-    @property
-    def rfcnum(self):
-        return self.rfc_number()
 
     def author_list(self):
         best_addresses = []
@@ -468,9 +460,9 @@ class DocumentInfo(models.Model):
         if not isinstance(relationship, tuple):
             raise TypeError("Expected a string or tuple, received %s" % type(relationship))
         if isinstance(self, Document):
-            return RelatedDocument.objects.filter(target__docs=self, relationship__in=relationship).select_related('source')
+            return RelatedDocument.objects.filter(target=self, relationship__in=relationship).select_related('source')
         elif isinstance(self, DocHistory):
-            return RelatedDocHistory.objects.filter(target__docs=self.doc, relationship__in=relationship).select_related('source')
+            return RelatedDocHistory.objects.filter(target=self.doc, relationship__in=relationship).select_related('source')
         else:
             raise TypeError("Expected method called on Document or DocHistory")
 
@@ -504,15 +496,14 @@ class DocumentInfo(models.Model):
         for r in rels:
             if not r in related:
                 related += ( r, )
-                for doc in r.target.docs.all():
-                    related = doc.all_relations_that_doc(relationship, related)
+                related = r.target.all_relations_that_doc(relationship, related)
         return related
 
     def related_that(self, relationship):
-        return list(set([x.source.docalias.get(name=x.source.name) for x in self.relations_that(relationship)]))
+        return list(set([x.source for x in self.relations_that(relationship)]))
 
     def all_related_that(self, relationship, related=None):
-        return list(set([x.source.docalias.get(name=x.source.name) for x in self.all_relations_that(relationship)]))
+        return list(set([x.source for x in self.all_relations_that(relationship)]))
 
     def related_that_doc(self, relationship):
         return list(set([x.target for x in self.relations_that_doc(relationship)]))
@@ -521,12 +512,7 @@ class DocumentInfo(models.Model):
         return list(set([x.target for x in self.all_relations_that_doc(relationship)]))
 
     def replaces(self):
-        return set([ d for r in self.related_that_doc("replaces") for d in r.docs.all() ])
-
-    def replaces_canonical_name(self):
-        s = set([ r.document for r in self.related_that_doc("replaces")])
-        first = list(s)[0] if s else None
-        return None if first is None else first.filename_with_rev()
+        return self.related_that_doc("replaces")
 
     def replaced_by(self):
         return set([ r.document for r in self.related_that("replaces") ])
@@ -553,10 +539,10 @@ class DocumentInfo(models.Model):
         return self.text() or "Error; cannot read '%s'"%self.get_base_name()
 
     def html_body(self, classes=""):
-        if self.get_state_slug() == "rfc":
+        if self.type_id == "rfc":
             try:
                 html = Path(
-                    os.path.join(settings.RFC_PATH, self.canonical_name() + ".html")
+                    os.path.join(settings.RFC_PATH, self.name + ".html")
                 ).read_text()
             except (IOError, UnicodeDecodeError):
                 return None
@@ -656,10 +642,38 @@ class DocumentInfo(models.Model):
         return self.relations_that_doc(('refnorm','refinfo','refunk','refold'))
 
     def referenced_by(self):
-        return self.relations_that(('refnorm','refinfo','refunk','refold')).filter(source__states__type__slug='draft',source__states__slug__in=['rfc','active'])
+        return self.relations_that(("refnorm", "refinfo", "refunk", "refold")).filter(
+            models.Q(
+                source__type__slug="draft",
+                source__states__type__slug="draft",
+                source__states__slug="active",
+            )
+            | models.Q(source__type__slug="rfc")
+        )
+    
 
     def referenced_by_rfcs(self):
-        return self.relations_that(('refnorm','refinfo','refunk','refold')).filter(source__states__type__slug='draft',source__states__slug='rfc')
+        return self.relations_that(("refnorm", "refinfo", "refunk", "refold")).filter(
+            source__type__slug="rfc"
+        )
+
+    def became_rfc(self):
+        if not hasattr(self, "_cached_became_rfc"):
+            doc = self if isinstance(self, Document) else self.doc
+            self._cached_became_rfc = next(iter(doc.related_that_doc("became_rfc")), None)
+        return self._cached_became_rfc
+
+    def came_from_draft(self):
+        if not hasattr(self, "_cached_came_from_draft"):
+            doc = self if isinstance(self, Document) else self.doc
+            self._cached_came_from_draft = next(iter(doc.related_that("became_rfc")), None)
+        return self._cached_came_from_draft
+    
+    def contains(self):
+        return self.related_that_doc("contains")
+    
+    def part_of(self):
+        return self.related_that("contains")
     
     def sent_to_rfc_editor_event(self):
         if self.stream_id == "ietf":
@@ -677,42 +691,40 @@ STATUSCHANGE_RELATIONS = ('tops','tois','tohist','toinf','tobcp','toexp')
 
 class RelatedDocument(models.Model):
     source = ForeignKey('Document')
-    target = ForeignKey('DocAlias')
+    target = ForeignKey('Document', related_name='targets_related')
     relationship = ForeignKey(DocRelationshipName)
+    originaltargetaliasname = models.CharField(max_length=255, null=True, blank=True)
     def action(self):
         return self.relationship.name
     def __str__(self):
         return u"%s %s %s" % (self.source.name, self.relationship.name.lower(), self.target.name)
 
     def is_downref(self):
-        if self.source.type.slug != "draft" or self.relationship.slug not in [
+        if self.source.type_id not in ["draft","rfc"] or self.relationship.slug not in [
             "refnorm",
             "refold",
             "refunk",
         ]:
             return None
 
-        state = self.source.get_state()
-        if state and state.slug == "rfc":
-            source_lvl = self.source.std_level.slug if self.source.std_level else None
-        elif self.source.intended_std_level:
-            source_lvl = self.source.intended_std_level.slug
+        if self.source.type_id == "rfc":
+            source_lvl = self.source.std_level_id
         else:
-            source_lvl = None
+            source_lvl = self.source.intended_std_level_id
 
         if source_lvl not in ["bcp", "ps", "ds", "std", "unkn"]:
             return None
 
-        if self.target.document.get_state().slug == "rfc":
-            if not self.target.document.std_level:
-                target_lvl = "unkn"
+        if self.target.type_id == 'rfc':
+            if not self.target.std_level:
+                target_lvl = 'unkn'
             else:
-                target_lvl = self.target.document.std_level.slug
+                target_lvl = self.target.std_level_id
         else:
-            if not self.target.document.intended_std_level:
-                target_lvl = "unkn"
+            if not self.target.intended_std_level:
+                target_lvl = 'unkn'
             else:
-                target_lvl = self.target.document.intended_std_level.slug
+                target_lvl = self.target.intended_std_level_id
 
         if self.relationship.slug not in ["refnorm", "refunk"]:
             return None
@@ -721,7 +733,7 @@ class RelatedDocument(models.Model):
             return None
 
         pos_downref = (
-            "Downref" if self.relationship.slug != "refunk" else "Possible Downref"
+            "Downref" if self.relationship_id != "refunk" else "Possible Downref"
         )
 
         if source_lvl in ["bcp", "ps", "ds", "std"] and target_lvl in ["inf", "exp"]:
@@ -743,8 +755,8 @@ class RelatedDocument(models.Model):
 
     def is_approved_downref(self):
 
-        if self.target.document.get_state().slug == 'rfc':
-           if RelatedDocument.objects.filter(relationship_id='downref-approval', target=self.target):
+        if self.target.type_id == 'rfc':
+           if RelatedDocument.objects.filter(relationship_id='downref-approval', target=self.target).exists():
               return "Approved Downref"
 
         return False
@@ -840,7 +852,7 @@ class Document(DocumentInfo):
             name = self.name
             url = None
             if self.type_id == "draft" and self.get_state_slug() == "rfc":
-                name = self.canonical_name()
+                name = self.name
                 url = urlreverse('ietf.doc.views_doc.document_main', kwargs={ 'name': name }, urlconf="ietf.urls")
             elif self.type_id in ('slides','bluesheets','recording'):
                 session = self.session_set.first()
@@ -878,28 +890,8 @@ class Document(DocumentInfo):
         e = model.objects.filter(doc=self).filter(**filter_args).order_by('-time', '-id').first()
         return e
 
-    def canonical_name(self):
-        if not hasattr(self, '_canonical_name'):
-            name = self.name
-            if self.type_id == "draft" and self.get_state_slug() == "rfc":
-                a = self.docalias.filter(name__startswith="rfc").order_by('-name').first()
-                if a:
-                    name = a.name
-            elif self.type_id == "charter":
-                from ietf.doc.utils_charter import charter_name_for_group # Imported locally to avoid circular imports
-                try:
-                    name = charter_name_for_group(self.chartered_group)
-                except Group.DoesNotExist:
-                    pass
-            self._canonical_name = name
-        return self._canonical_name
-
-
-    def canonical_docalias(self):
-        return self.docalias.get(name=self.name)
-
     def display_name(self):
-        name = self.canonical_name()
+        name = self.name
         if name.startswith('rfc'):
             name = name.upper()
         return name
@@ -994,16 +986,26 @@ class Document(DocumentInfo):
 
     def ipr(self,states=settings.PUBLISH_IPR_STATES):
         """Returns the IPR disclosures against this document (as a queryset over IprDocRel)."""
-        from ietf.ipr.models import IprDocRel
-        return IprDocRel.objects.filter(document__docs=self, disclosure__state__in=states)
+        # from ietf.ipr.models import IprDocRel
+        # return IprDocRel.objects.filter(document__docs=self, disclosure__state__in=states) # TODO - clear these comments away
+        return self.iprdocrel_set.filter(disclosure__state__in=states)
 
     def related_ipr(self):
         """Returns the IPR disclosures against this document and those documents this
         document directly or indirectly obsoletes or replaces
         """
         from ietf.ipr.models import IprDocRel
-        iprs = IprDocRel.objects.filter(document__in=list(self.docalias.all())+self.all_related_that_doc(('obs','replaces'))).filter(disclosure__state__in=settings.PUBLISH_IPR_STATES).values_list('disclosure', flat=True).distinct()
+        iprs = (
+            IprDocRel.objects.filter(
+                document__in=[self]
+                + self.all_related_that_doc(("obs", "replaces"))
+            )
+            .filter(disclosure__state__in=settings.PUBLISH_IPR_STATES)
+            .values_list("disclosure", flat=True)
+            .distinct()
+        )
         return iprs
+
 
     def future_presentations(self):
         """ returns related SessionPresentation objects for meetings that
@@ -1039,7 +1041,7 @@ class Document(DocumentInfo):
 
         This is the rfc publication date for RFCs, and the new-revision date for other documents.
         """
-        if self.get_state_slug() == "rfc":
+        if self.type_id == "rfc":
             # As of Sept 2022, in ietf.sync.rfceditor.update_docs_from_rfc_index() `published_rfc` events are
             # created with a timestamp whose date *in the PST8PDT timezone* is the official publication date
             # assigned by the RFC editor.
@@ -1141,8 +1143,9 @@ class DocExtResource(ExtResource):
 
 class RelatedDocHistory(models.Model):
     source = ForeignKey('DocHistory')
-    target = ForeignKey('DocAlias', related_name="reversely_related_document_history_set")
+    target = ForeignKey('Document', related_name="reversely_related_document_history_set")
     relationship = ForeignKey(DocRelationshipName)
+    originaltargetaliasname = models.CharField(max_length=255, null=True, blank=True)
     def __str__(self):
         return u"%s %s %s" % (self.source.doc.name, self.relationship.name.lower(), self.target.name)
 
@@ -1156,10 +1159,7 @@ class DocHistoryAuthor(DocumentAuthorInfo):
 
 class DocHistory(DocumentInfo):
     doc = ForeignKey(Document, related_name="history_set")
-    # the name here is used to capture the canonical name at the time
-    # - it would perhaps be more elegant to simply call the attribute
-    # canonical_name and replace the function on Document with a
-    # property
+
     name = models.CharField(max_length=255)
 
     def __str__(self):
@@ -1170,11 +1170,6 @@ class DocHistory(DocumentInfo):
 
     def get_related_proceedings_material(self):
         return self.doc.get_related_proceedings_material()
-
-    def canonical_name(self):
-        if hasattr(self, '_canonical_name'):
-            return self._canonical_name
-        return self.name
 
     def latest_event(self, *args, **kwargs):
         kwargs["time__lte"] = self.time
@@ -1189,10 +1184,6 @@ class DocHistory(DocumentInfo):
     @property
     def groupmilestone_set(self):
         return self.doc.groupmilestone_set
-
-    @property
-    def docalias(self):
-        return self.doc.docalias
 
     def is_dochistory(self):
         return True
@@ -1211,25 +1202,6 @@ class DocHistory(DocumentInfo):
         verbose_name = "document history"
         verbose_name_plural = "document histories"
 
-class DocAlias(models.Model):
-    """This is used for documents that may appear under multiple names,
-    and in particular for RFCs, which for continuity still keep the
-    same immutable Document.name, in the tables, but will be referred
-    to by RFC number, primarily, after achieving RFC status.
-    """
-    name = models.CharField(max_length=255, unique=True)
-    docs = models.ManyToManyField(Document, related_name='docalias')
-
-    @property
-    def document(self):
-        return self.docs.first()
-
-    def __str__(self):
-        return u"%s-->%s" % (self.name, ','.join([force_str(d.name) for d in self.docs.all() if isinstance(d, Document) ]))
-    document_link = admin_link("document")
-    class Meta:
-        verbose_name = "document alias"
-        verbose_name_plural = "document aliases"
 
 class DocReminder(models.Model):
     event = ForeignKey('DocEvent')
