@@ -88,10 +88,7 @@ class EditCharterTests(TestCase):
     settings_temp_path_overrides = TestCase.settings_temp_path_overrides + ['CHARTER_PATH']
 
     def write_charter_file(self, charter):
-        with (Path(settings.CHARTER_PATH) /
-              ("%s-%s.txt" % (charter.canonical_name(), charter.rev))
-        ).open("w") as f:
-            f.write("This is a charter.")
+        (Path(settings.CHARTER_PATH) / f"{charter.name}-{charter.rev}.txt").write_text("This is a charter.")
 
     def test_startstop_process(self):
         CharterFactory(group__acronym='mars')
@@ -509,8 +506,13 @@ class EditCharterTests(TestCase):
         self.assertEqual(charter.rev, next_revision(prev_rev))
         self.assertTrue("new_revision" in charter.latest_event().type)
 
-        with (Path(settings.CHARTER_PATH) / (charter.canonical_name() + "-" + charter.rev + ".txt")).open(encoding='utf-8') as f:
-            self.assertEqual(f.read(), "Windows line\nMac line\nUnix line\n" + utf_8_snippet.decode('utf-8'))
+        file_contents = (
+            Path(settings.CHARTER_PATH) / (charter.name + "-" + charter.rev + ".txt")
+        ).read_text("utf-8")
+        self.assertEqual(
+            file_contents,
+            "Windows line\nMac line\nUnix line\n" + utf_8_snippet.decode("utf-8"),
+        )
 
     def test_submit_initial_charter(self):
         group = GroupFactory(type_id='wg',acronym='mars',list_email='mars-wg@ietf.org')
@@ -537,6 +539,24 @@ class EditCharterTests(TestCase):
 
         group = Group.objects.get(pk=group.pk)
         self.assertEqual(group.charter, charter)
+
+    def test_submit_charter_with_invalid_name(self):
+        self.client.login(username="secretary", password="secretary+password")
+        ietf_group = GroupFactory(type_id="wg")
+        for bad_name in ("charter-irtf-{}", "charter-randomjunk-{}", "charter-ietf-thisisnotagroup"):
+            url = urlreverse("ietf.doc.views_charter.submit", kwargs={"name": bad_name.format(ietf_group.acronym)})
+            r = self.client.get(url)
+            self.assertEqual(r.status_code, 404, f"GET of charter named {bad_name} should 404")
+            r = self.client.post(url, {})
+            self.assertEqual(r.status_code, 404, f"POST of charter named {bad_name} should 404")
+
+        irtf_group = GroupFactory(type_id="rg")
+        for bad_name in ("charter-ietf-{}", "charter-whatisthis-{}", "charter-irtf-thisisnotagroup"):
+            url = urlreverse("ietf.doc.views_charter.submit", kwargs={"name": bad_name.format(irtf_group.acronym)})
+            r = self.client.get(url)
+            self.assertEqual(r.status_code, 404, f"GET of charter named {bad_name} should 404")
+            r = self.client.post(url, {})
+            self.assertEqual(r.status_code, 404, f"POST of charter named {bad_name} should 404")
 
     def test_edit_review_announcement_text(self):
         area = GroupFactory(type_id='area')

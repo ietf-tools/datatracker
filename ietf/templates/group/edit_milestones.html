@@ -14,8 +14,8 @@
         <a class="btn btn-primary" href="{{ group.about_url }}">{{ group.acronym }} {{ group.type.name }}</a>
         {% if group.charter %}
             <a class="btn btn-primary"
-               href="{% url "ietf.doc.views_doc.document_main" name=group.charter.canonical_name %}">
-                {{ group.charter.canonical_name }}
+               href="{% url "ietf.doc.views_doc.document_main" name=group.charter.name %}">
+                {{ group.charter.name }}
             </a>
         {% endif %}
         {% if can_change_uses_milestone_dates %}
@@ -106,7 +106,7 @@
             </div>
         </div>
         <a class="btn btn-secondary float-end"
-           href="{% if milestone_set == "charter" %}{% url "ietf.doc.views_doc.document_main" name=group.charter.canonical_name %}{% else %}{{ group.about_url }}{% endif %}">
+           href="{% if milestone_set == "charter" %}{% url "ietf.doc.views_doc.document_main" name=group.charter.name %}{% else %}{{ group.about_url }}{% endif %}">
             Cancel
         </a>
         <button class="btn btn-primary hidden"

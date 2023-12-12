@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2016-2023, All Rights Reserved #}
+{% load origin %}
+{% load static %}
+{% load ietf_filters %}
+{% load person_filters %}
+{% load textfilters %}
+{% block html_attrs %}prefix="og: http://ogp.me/ns# article: http://ogp.me/ns/article#"{% endblock %}
+{% block pagehead %}
+    {% include "doc/opengraph.html" %}
+    <link rel="alternate"
+          type="application/atom+xml"
+          title="Document changes"
+          href="/feed/document-changes/{{ name }}/">
+    <meta name="description"
+          content="{{ doc.title }} (RFC {{ doc.rfc_number }}, {{ doc.pub_date|date:'F Y' }}{% if obsoleted_by %}; obsoleted by {% for rel in obsoleted_by %}{{ rel.source.name|prettystdname}}{% if not forloop.last%}, {% endif %}{% endfor %}{% endif %})">
+{% endblock %}
+{% block morecss %}.inline { display: inline; }{% endblock %}
+{% block title %}
+        RFC {{ doc.rfc_number }} - {{ doc.title }}
+{% endblock %}
+{% block content %}
+    {% origin %}
+    {{ top|safe }}
+    <div id="doc-timeline"></div>
+    <table class="table table-sm table-borderless">
+        {% include "doc/document_info.html" %}
+        <tbody class="meta border-top">
+        </tbody>
+        {% if doc.stream_id != 'iab' %}
+            <tbody class="meta border-top">
+                <tr>
+                    <th scope="row">
+                        IESG
+                    </th>
+                        <th scope="row">
+                            Responsible AD
+                        </th>
+                        <td class="edit">
+                            {% if can_edit %}
+                                <a class="btn btn-primary btn-sm"
+                                   href="{% url 'ietf.doc.views_draft.edit_ad' name=doc.name %}">
+                                    Edit
+                                </a>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if doc.ad %}
+                                {% person_link doc.ad %}
+                            {% else %}
+                                <span class="text-body-secondary">
+                                    (None)
+                                </span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td></td>
+                        <th scope="row">
+                            Send notices to
+                        </th>
+                        <td class="edit">
+                            {% if can_edit_notify %}
+                                <a class="btn btn-primary btn-sm"
+                                   href="{% url 'ietf.doc.views_doc.edit_notify' name=doc.name %}">
+                                    Edit
+                                </a>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if doc.notify %}
+                                {{ doc.notify|linkify }}
+                            {% else %}
+                                <span class="text-body-secondary">
+                                    (None)
+                                </span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                </tbody>
+            {% endif %}
+        </table>
+        <div class="buttonlist">
+            <a class="btn btn-primary btn-sm"
+               href="mailto:{{ doc.name }}@ietf.org?subject=Mail%20regarding%20{{ doc.name }}">
+                <i class="bi bi-envelope">
+                </i>
+                Email authors
+            </a>
+            {% if doc.group.type_id == "wg" or doc.group.type_id == "rg" %}
+                <a class="btn btn-primary btn-sm"
+                   href="mailto:{{ doc.group.list_email }}?subject=Mail%20regarding%20{{ doc.name }}">
+                    <i class="bi bi-envelope">
+                    </i>
+                    Email {{ doc.group.type }}
+                </a>
+            {% endif %}
+            <a class="btn btn-primary btn-sm"
+               href="{% url "ietf.ipr.views.search" %}?submit=draft&amp;id={{ doc.name }}"
+               rel="nofollow">
+                <i class="bi bi-lightning">
+                </i>
+                IPR
+                {% if doc.related_ipr %}
+                    <span class="badge rounded-pill">
+                        {{ doc.related_ipr|length }}
+                    </span>
+                {% endif %}
+            </a>
+            <a class="btn btn-primary btn-sm"
+               href="{% url 'ietf.doc.views_doc.document_references' doc.name %}"
+               rel="nofollow">
+                <i class="bi bi-arrow-left">
+                </i>
+                References
+            </a>
+            <a class="btn btn-primary btn-sm"
+               href="{% url 'ietf.doc.views_doc.document_referenced_by' doc.name %}"
+               rel="nofollow">
+                <i class="bi bi-arrow-right">
+                </i>
+                Referenced by
+            </a>
+            <a class="btn btn-primary btn-sm"
+                href="https://mailarchive.ietf.org/arch/search?q=%22{{ doc.name }}%22"
+                rel="nofollow"
+                target="_blank">
+                Search Lists
+            </a>
+            {% if user.is_authenticated %}
+                <a class="btn btn-primary btn-sm track-untrack-doc {% if not doc.tracked_in_personal_community_list %}hide{% endif %}"
+                   href="{% url "ietf.community.views.untrack_document" username=user.username name=doc.name %}"
+                   title="Remove from your personal I-D list">
+                    <i class="bi bi-bookmark-check-fill">
+                    </i>
+                    Untrack
+                </a>
+                <a class="btn btn-primary btn-sm track-untrack-doc {% if doc.tracked_in_personal_community_list %}hide{% endif %}"
+                   href="{% url "ietf.community.views.track_document" username=user.username name=doc.name %}"
+                   title="Add to your personal I-D list">
+                    <i class="bi bi-bookmark">
+                    </i>
+                    Track
+                </a>
+            {% endif %}
+            {% if actions %}
+                {% for label, url in actions %}
+                    <a class="btn btn-primary btn-sm" href="{{ url }}">
+                        {{ label|capfirst_allcaps }}
+                    </a>
+                {% endfor %}
+            {% endif %}
+        </div>
+        <div class="card mt-5">
+            <div class="card-header">
+                    RFC {{ doc.rfc_number }}
+            </div>
+            <div class="card-body">
+                <pre>{{ content|sanitize|safe|default:"(Unavailable)" }}</pre>
+            </div>
+        </div>
+        {% if split_content %}
+            <a class="btn btn-primary my-3" href="?include_text=1">
+                <i class="bi bi-caret-down">
+                </i>
+                Show full document
+            </a>
+        {% endif %}
+
+    {% endblock %}
+    {% block js %}
+        <script src="{% static 'ietf/js/d3.js' %}">
+        </script>
+        <script src="{% static 'ietf/js/document_timeline.js' %}">
+        </script>
+    {% endblock %}

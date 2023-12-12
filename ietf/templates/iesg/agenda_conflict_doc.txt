@@ -1,7 +1,7 @@
 {% load ietf_filters %}{% with doc.conflictdoc as conflictdoc %}
-  o {{ doc.canonical_name }}-{{ doc.rev }}
+  o {{ doc.name }}-{{ doc.rev }}
     {% filter wordwrap:"68"|indent|indent %}{{ doc.title }}{% endfilter %}
-      {{ conflictdoc.canonical_name }}-{{ conflictdoc.rev }}
+      {{ conflictdoc.name }}-{{ conflictdoc.rev }}
       {% filter wordwrap:"66"|indent:"4" %}{{ conflictdoc.title }} ({{ conflictdoc.stream }}: {{ conflictdoc.intended_std_level }}){% endfilter %}
     Token: {{ doc.ad }}
 {% with doc.active_defer_event as defer %}{% if defer %}    Was deferred by {{defer.by}} on {{defer.time|date:"Y-m-d"}}{% endif %}{% endwith %}{% endwith %}
