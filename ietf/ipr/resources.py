@@ -16,11 +16,11 @@ from ietf.ipr.models import ( IprDisclosureBase, IprDocRel, HolderIprDisclosure,
 
 from ietf.person.resources import PersonResource
 from ietf.name.resources import IprDisclosureStateNameResource
-from ietf.doc.resources import DocAliasResource
+from ietf.doc.resources import DocumentResource
 class IprDisclosureBaseResource(ModelResource):
     by               = ToOneField(PersonResource, 'by')
     state            = ToOneField(IprDisclosureStateNameResource, 'state')
-    docs             = ToManyField(DocAliasResource, 'docs', null=True)
+    docs             = ToManyField(DocumentResource, 'docs', null=True)
     rel              = ToManyField('ietf.ipr.resources.IprDisclosureBaseResource', 'rel', null=True)
     class Meta:
         queryset = IprDisclosureBase.objects.all()
@@ -45,10 +45,9 @@ class IprDisclosureBaseResource(ModelResource):
         }
 api.ipr.register(IprDisclosureBaseResource())
 
-from ietf.doc.resources import DocAliasResource
 class IprDocRelResource(ModelResource):
     disclosure       = ToOneField(IprDisclosureBaseResource, 'disclosure')
-    document         = ToOneField(DocAliasResource, 'document')
+    document         = ToOneField(DocumentResource, 'document')
     class Meta:
         cache = SimpleCache()
         queryset = IprDocRel.objects.all()
@@ -66,13 +65,12 @@ api.ipr.register(IprDocRelResource())
 
 from ietf.person.resources import PersonResource
 from ietf.name.resources import IprDisclosureStateNameResource, IprLicenseTypeNameResource
-from ietf.doc.resources import DocAliasResource
 class HolderIprDisclosureResource(ModelResource):
     by               = ToOneField(PersonResource, 'by')
     state            = ToOneField(IprDisclosureStateNameResource, 'state')
     iprdisclosurebase_ptr = ToOneField(IprDisclosureBaseResource, 'iprdisclosurebase_ptr')
     licensing        = ToOneField(IprLicenseTypeNameResource, 'licensing')
-    docs             = ToManyField(DocAliasResource, 'docs', null=True)
+    docs             = ToManyField(DocumentResource, 'docs', null=True)
     rel              = ToManyField(IprDisclosureBaseResource, 'rel', null=True)
     class Meta:
         cache = SimpleCache()
@@ -111,12 +109,11 @@ api.ipr.register(HolderIprDisclosureResource())
 
 from ietf.person.resources import PersonResource
 from ietf.name.resources import IprDisclosureStateNameResource
-from ietf.doc.resources import DocAliasResource
 class ThirdPartyIprDisclosureResource(ModelResource):
     by               = ToOneField(PersonResource, 'by')
     state            = ToOneField(IprDisclosureStateNameResource, 'state')
     iprdisclosurebase_ptr = ToOneField(IprDisclosureBaseResource, 'iprdisclosurebase_ptr')
-    docs             = ToManyField(DocAliasResource, 'docs', null=True)
+    docs             = ToManyField(DocumentResource, 'docs', null=True)
     rel              = ToManyField(IprDisclosureBaseResource, 'rel', null=True)
     class Meta:
         cache = SimpleCache()
@@ -168,12 +165,11 @@ api.ipr.register(RelatedIprResource())
 
 from ietf.person.resources import PersonResource
 from ietf.name.resources import IprDisclosureStateNameResource
-from ietf.doc.resources import DocAliasResource
 class NonDocSpecificIprDisclosureResource(ModelResource):
     by               = ToOneField(PersonResource, 'by')
     state            = ToOneField(IprDisclosureStateNameResource, 'state')
     iprdisclosurebase_ptr = ToOneField(IprDisclosureBaseResource, 'iprdisclosurebase_ptr')
-    docs             = ToManyField(DocAliasResource, 'docs', null=True)
+    docs             = ToManyField(DocumentResource, 'docs', null=True)
     rel              = ToManyField(IprDisclosureBaseResource, 'rel', null=True)
     class Meta:
         cache = SimpleCache()
@@ -207,12 +203,11 @@ api.ipr.register(NonDocSpecificIprDisclosureResource())
 
 from ietf.person.resources import PersonResource
 from ietf.name.resources import IprDisclosureStateNameResource
-from ietf.doc.resources import DocAliasResource
 class GenericIprDisclosureResource(ModelResource):
     by               = ToOneField(PersonResource, 'by')
     state            = ToOneField(IprDisclosureStateNameResource, 'state')
     iprdisclosurebase_ptr = ToOneField(IprDisclosureBaseResource, 'iprdisclosurebase_ptr')
-    docs             = ToManyField(DocAliasResource, 'docs', null=True)
+    docs             = ToManyField(DocumentResource, 'docs', null=True)
     rel              = ToManyField(IprDisclosureBaseResource, 'rel', null=True)
     class Meta:
         cache = SimpleCache()

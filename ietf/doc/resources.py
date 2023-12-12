@@ -12,7 +12,7 @@ from tastypie.cache import SimpleCache
 from ietf import api
 
 from ietf.doc.models import (BallotType, DeletedEvent, StateType, State, Document,
-    DocumentAuthor, DocEvent, StateDocEvent, DocHistory, ConsensusDocEvent, DocAlias,
+    DocumentAuthor, DocEvent, StateDocEvent, DocHistory, ConsensusDocEvent,
     TelechatDocEvent, DocReminder, LastCallDocEvent, NewRevisionDocEvent, WriteupDocEvent,
     InitialReviewDocEvent, DocHistoryAuthor, BallotDocEvent, RelatedDocument,
     RelatedDocHistory, BallotPositionDocEvent, AddedMessageEvent, SubmissionDocEvent,
@@ -286,21 +286,6 @@ class ConsensusDocEventResource(ModelResource):
         }
 api.doc.register(ConsensusDocEventResource())
 
-class DocAliasResource(ModelResource):
-    document         = ToOneField(DocumentResource, 'document')
-    class Meta:
-        cache = SimpleCache()
-        queryset = DocAlias.objects.all()
-        serializer = api.Serializer()
-        detail_uri_name = 'name'
-        #resource_name = 'docalias'
-        ordering = ['id', ]
-        filtering = { 
-            "name": ALL,
-            "document": ALL_WITH_RELATIONS,
-        }
-api.doc.register(DocAliasResource())
-
 from ietf.person.resources import PersonResource
 class TelechatDocEventResource(ModelResource):
     by               = ToOneField(PersonResource, 'by')
@@ -490,7 +475,7 @@ api.doc.register(BallotDocEventResource())
 from ietf.name.resources import DocRelationshipNameResource
 class RelatedDocumentResource(ModelResource):
     source           = ToOneField(DocumentResource, 'source')
-    target           = ToOneField(DocAliasResource, 'target')
+    target           = ToOneField(DocumentResource, 'target')
     relationship     = ToOneField(DocRelationshipNameResource, 'relationship')
     class Meta:
         cache = SimpleCache()
@@ -509,7 +494,7 @@ api.doc.register(RelatedDocumentResource())
 from ietf.name.resources import DocRelationshipNameResource
 class RelatedDocHistoryResource(ModelResource):
     source           = ToOneField(DocHistoryResource, 'source')
-    target           = ToOneField(DocAliasResource, 'target')
+    target           = ToOneField(DocumentResource, 'target')
     relationship     = ToOneField(DocRelationshipNameResource, 'relationship')
     class Meta:
         cache = SimpleCache()

@@ -20,7 +20,7 @@ import ietf.stats.views
 
 from ietf.submit.models import Submission
 from ietf.doc.factories import WgDraftFactory, WgRfcFactory
-from ietf.doc.models import Document, DocAlias, State, RelatedDocument, NewRevisionDocEvent, DocumentAuthor
+from ietf.doc.models import Document, State, RelatedDocument, NewRevisionDocEvent, DocumentAuthor
 from ietf.group.factories import RoleFactory
 from ietf.meeting.factories import MeetingFactory, AttendedFactory
 from ietf.person.factories import PersonFactory
@@ -79,10 +79,9 @@ class StatisticsTests(TestCase):
             words=100
             )
         referencing_draft.set_state(State.objects.get(used=True, type="draft", slug="active"))
-        DocAlias.objects.create(name=referencing_draft.name).docs.add(referencing_draft)
         RelatedDocument.objects.create(
             source=referencing_draft,
-            target=draft.docalias.first(),
+            target=draft,
             relationship=DocRelationshipName.objects.get(slug="refinfo")
         )
         NewRevisionDocEvent.objects.create(
@@ -273,3 +272,31 @@ class StatisticsTests(TestCase):
         self.assertEqual(query.count(), 1)
         self.assertEqual(query.filter(reg_type='onsite').count(), 1)
         self.assertEqual(query.filter(reg_type='hackathon').count(), 0)
+
+    @patch('requests.get')
+    def test_get_meeting_registration_data_duplicates(self, mock_get):
+        '''Test that get_meeting_registration_data does not create duplicate
+           MeetingRegistration records
+        '''
+        person = PersonFactory()
+        data = {
+            'LastName': person.last_name() + ' ',
+            'FirstName': person.first_name(),
+            'Company': 'ABC',
+            'Country': 'US',
+            'Email': person.email().address,
+            'RegType': 'onsite',
+            'TicketType': 'week_pass',
+            'CheckedIn': 'True',
+        }
+        data2 = data.copy()
+        data2['RegType'] = 'hackathon'
+        response = Response()
+        response.status_code = 200
+        response._content = json.dumps([data, data2, data]).encode('utf8')
+        mock_get.return_value = response
+        meeting = MeetingFactory(type_id='ietf', date=datetime.date(2016, 7, 14), number="96")
+        self.assertEqual(MeetingRegistration.objects.count(), 0)
+        get_meeting_registration_data(meeting)
+        query = MeetingRegistration.objects.all()
+        self.assertEqual(query.count(), 2)
