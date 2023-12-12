@@ -57,7 +57,7 @@ def index(request):
     for nomcom in nomcom_list:
         year = int(nomcom.acronym[6:])
         nomcom.year = year
-        nomcom.label = "%s/%s" % (year, year+1)
+        nomcom.label = str(year)
         if year > 2012:
             nomcom.url = "/nomcom/%04d" % year
         else:

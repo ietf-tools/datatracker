@@ -41,7 +41,7 @@ class CommunityListTests(WebTest):
         clist = CommunityList.objects.create(user=User.objects.get(username="plain"))
 
         rule_group = SearchRule.objects.create(rule_type="group", group=draft.group, state=State.objects.get(type="draft", slug="active"), community_list=clist)
-        rule_group_rfc = SearchRule.objects.create(rule_type="group_rfc", group=draft.group, state=State.objects.get(type="draft", slug="rfc"), community_list=clist)
+        rule_group_rfc = SearchRule.objects.create(rule_type="group_rfc", group=draft.group, state=State.objects.get(type="rfc", slug="published"), community_list=clist)
         rule_area = SearchRule.objects.create(rule_type="area", group=draft.group.parent, state=State.objects.get(type="draft", slug="active"), community_list=clist)
 
         rule_state_iesg = SearchRule.objects.create(rule_type="state_iesg", state=State.objects.get(type="draft-iesg", slug="lc"), community_list=clist)
@@ -151,7 +151,7 @@ class CommunityListTests(WebTest):
             "action": "add_rule",
             "rule_type": "author_rfc",
             "author_rfc-person": Person.objects.filter(documentauthor__document=draft).first().pk,
-            "author_rfc-state": State.objects.get(type="draft", slug="rfc").pk,
+            "author_rfc-state": State.objects.get(type="rfc", slug="published").pk,
         })
         self.assertEqual(r.status_code, 302)
         clist = CommunityList.objects.get(user__username="plain")

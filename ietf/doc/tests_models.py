@@ -92,7 +92,7 @@ class RelatedDocumentTests(TestCase):
             for source, target in itertools.product(rfcs, rfcs):
                 ref = RelatedDocument.objects.create(
                     source=source,
-                    target=target.docalias.first(),
+                    target=target,
                     relationship_id=rel,
                 )
 

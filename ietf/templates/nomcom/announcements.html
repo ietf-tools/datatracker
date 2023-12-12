@@ -15,7 +15,7 @@
     </p>
     {% for regime in regimes %}
         <h2 class="mt-5" id="nomcom-{{ regime.group.start_year }}">
-            Messages from {{ regime.group.start_year }}/{{ regime.group.end_year }}
+            Messages from {{ regime.group.start_year }} NomCom
         </h2>
         {# use person email address here rather than the generic nomcom-chair@ietf.org #}
         <p>
@@ -56,9 +56,14 @@
         </li>
         <li>
             <a href="{% url 'ietf.doc.views_doc.document_main' name='rfc8713' %}">
-                IAB, IESG, IETF Trust, and IETF LLC Selection, Confirmation, and Recall Process: Operation of the IETF Nominating and Recall Committees (RFC 8713) (Also BCP10)
+                IAB, IESG, IETF Trust, and IETF LLC Selection, Confirmation, and Recall Process: Operation of the IETF Nominating and Recall Committees (RFC 8713)
             </a>
         </li>
+	<li>
+            <a href="{% url 'ietf.doc.views_doc.document_main' name='rfc9389' %}">
+		Nominating Committee Eligibility (RFC 9389)
+	    </a>
+	</li>
         <li>
             <a href="{% url 'ietf.doc.views_doc.document_main' name='rfc3797' %}">
                 Publicly Verifiable Nominations Committee (NomCom) Random Selection (RFC 3797)

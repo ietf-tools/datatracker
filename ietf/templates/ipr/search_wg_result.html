@@ -20,22 +20,22 @@
                     <th scope="col" data-sort="statement">Statement</th>
                 </tr>
             </thead>
-            {% for alias in docs %}
+            {% for doc in docs %}
                 <tbody>
                     <tr class="table-info">
                         <th scope="col" colspan="3">
-                            IPR related to {{ alias.name|prettystdname|urlize_ietf_docs }} ("{{ alias.document.title }}")
-                            {% if alias.related %}
-                                that was {{ alias.relation|lower }} {{ alias.related.source|prettystdname|urlize_ietf_docs  }} ("{{ alias.related.source.title|escape }}")
+                            IPR related to {{ doc.name|prettystdname|urlize_ietf_docs }} ("{{ doc.title }}")
+                            {% if doc.related %}
+                                that was {{ doc.relation|lower }} {{ doc.related.source|prettystdname|urlize_ietf_docs  }} ("{{ doc.related.source.title|escape }}")
                             {% endif %}
-                            {% if alias.product_of_this_wg %}, a product of the {{ q }} WG{% endif %}
+                            {% if doc.product_of_this_wg %}, a product of the {{ q }} WG{% endif %}
                             :
                         </th>
                     </tr>
                 </tbody>
                 <tbody>
-                    {% if alias.document.ipr %}
-                        {% for ipr in alias.document.ipr %}
+                    {% if doc.ipr %}
+                        {% for ipr in doc.ipr %}
                             <tr>
                                 <td>{{ ipr.disclosure.time|date:"Y-m-d" }}</td>
                                 <td>{{ ipr.disclosure.id }}</td>
@@ -57,7 +57,7 @@
                             <td></td>
                             <td></td>
                             <td>
-                                No IPR disclosures related to <i>{{ alias.name|prettystdname|urlize_ietf_docs }}</i> have been submitted.
+                                No IPR disclosures related to <i>{{ doc.name|prettystdname|urlize_ietf_docs }}</i> have been submitted.
                             </td>
                         </tr>
                     {% endif %}

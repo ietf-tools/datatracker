@@ -79,12 +79,12 @@ if len(errata_data) < ietf.sync.rfceditor.MIN_ERRATA_RESULTS:
     sys.exit(1)
 
 new_rfcs = []
-for changes, doc, rfc_published in ietf.sync.rfceditor.update_docs_from_rfc_index(index_data, errata_data, skip_older_than_date=skip_date):
+for rfc_number, changes, doc, rfc_published in ietf.sync.rfceditor.update_docs_from_rfc_index(index_data, errata_data, skip_older_than_date=skip_date):
     if rfc_published:
         new_rfcs.append(doc)
 
     for c in changes:
-        log("RFC%s, %s: %s" % (doc.rfcnum, doc.name, c))
+        log("RFC%s, %s: %s" % (rfc_number, doc.name, c))
 
 sys.exit(0)
 
@@ -99,7 +99,7 @@ if newpid == 0:
         pipe("%s -a %s %s" % (settings.RSYNC_BINARY,settings.RFC_TEXT_RSYNC_SOURCE,settings.RFC_PATH))
         for rfc in new_rfcs:
             rebuild_reference_relations(rfc)
-            log("Updated references for %s"%rfc.canonical_name())
+            log("Updated references for %s"%rfc.name)
     except:
         subject = "Exception in updating references for new rfcs: %s : %s" % (sys.exc_info()[0],sys.exc_info()[1])
         msg = "%s\n%s\n----\n%s"%(sys.exc_info()[0],sys.exc_info()[1],traceback.format_tb(sys.exc_info()[2])) 
