@@ -17,10 +17,10 @@ from django.utils.html import escape
 import debug                            # pyflakes:ignore
 
 from ietf.doc.models import DocEvent, BallotPositionDocEvent, TelechatDocEvent
-from ietf.doc.models import Document, DocAlias, State, RelatedDocument
+from ietf.doc.models import Document, State, RelatedDocument
 from ietf.doc.factories import WgDraftFactory, IndividualDraftFactory, ConflictReviewFactory, BaseDocumentFactory, CharterFactory, WgRfcFactory, IndividualRfcFactory
 from ietf.doc.utils import create_ballot_if_not_open
-from ietf.group.factories import RoleFactory, GroupFactory
+from ietf.group.factories import RoleFactory, GroupFactory, DatedGroupMilestoneFactory, DatelessGroupMilestoneFactory
 from ietf.group.models import Group, GroupMilestone, Role
 from ietf.iesg.agenda import get_agenda_date, agenda_data, fill_in_agenda_administrivia, agenda_sections
 from ietf.iesg.models import TelechatDate, TelechatAgendaContent
@@ -71,7 +71,50 @@ class IESGTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         self.assertNotContains(r, m.desc)
+
+    def test_milestones_needing_review_ordering(self):
+        dated_group = GroupFactory(uses_milestone_dates=True)
+        RoleFactory(
+            name_id='ad',
+            group=dated_group,
+            person=Person.objects.get(user__username='ad'),
+        )
+        dated_milestones = DatedGroupMilestoneFactory.create_batch(
+            2, group=dated_group, state_id="review"
+        )
+        dated_milestones[0].due -= datetime.timedelta(days=1)  # make this one earlier
+        dated_milestones[0].save()
+
+        dateless_group = GroupFactory(uses_milestone_dates=False)
+        RoleFactory(
+            name_id='ad',
+            group=dateless_group,
+            person=Person.objects.get(user__username='ad'),
+        )
+        dateless_milestones = DatelessGroupMilestoneFactory.create_batch(
+            2, group=dateless_group, state_id="review"
+        )
+
+        url = urlreverse("ietf.iesg.views.milestones_needing_review")
+        self.client.login(username="ad", password="ad+password")
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        pq = PyQuery(r.content)
         
+        # check order-by-date
+        dated_tbody = pq(f'td:contains("{dated_milestones[0].desc}")').closest("tbody")
+        next_td = dated_tbody.find('td:contains("Next")')
+        self.assertEqual(next_td.siblings()[0].text.strip(), dated_milestones[0].desc)
+        last_td = dated_tbody.find('td:contains("Last")')
+        self.assertEqual(last_td.siblings()[0].text.strip(), dated_milestones[1].desc)
+
+        # check order-by-order
+        dateless_tbody = pq(f'td:contains("{dateless_milestones[0].desc}")').closest("tbody")
+        next_td = dateless_tbody.find('td:contains("Next")')
+        self.assertEqual(next_td.siblings()[0].text.strip(), dateless_milestones[0].desc)
+        last_td = dateless_tbody.find('td:contains("Last")')
+        self.assertEqual(last_td.siblings()[0].text.strip(), dateless_milestones[1].desc)
+
 
     def test_review_decisions(self):
         draft = WgDraftFactory()
@@ -107,8 +150,8 @@ class IESGAgendaTests(TestCase):
         super().setUp()
         mars = GroupFactory(acronym='mars',parent=Group.objects.get(acronym='farfut'))
         wgdraft = WgDraftFactory(name='draft-ietf-mars-test', group=mars, intended_std_level_id='ps')
-        rfc = IndividualRfcFactory.create(stream_id='irtf', other_aliases=['rfc6666',], states=[('draft','rfc'),('draft-iesg','pub')], std_level_id='inf', )
-        wgdraft.relateddocument_set.create(target=rfc.docalias.get(name='rfc6666'), relationship_id='refnorm')
+        rfc = IndividualRfcFactory.create(stream_id='irtf', rfc_number=6666, std_level_id='inf', )
+        wgdraft.relateddocument_set.create(target=rfc, relationship_id='refnorm')
         ise_draft = IndividualDraftFactory(name='draft-imaginary-independent-submission')
         ise_draft.stream = StreamName.objects.get(slug="ise")
         ise_draft.save_with_history([DocEvent(doc=ise_draft, rev=ise_draft.rev, type="changed_stream", by=Person.objects.get(user__username="secretary"), desc="Test")])
@@ -238,7 +281,7 @@ class IESGAgendaTests(TestCase):
 
         relation = RelatedDocument.objects.create(
             source=statchg,
-            target=DocAlias.objects.filter(name__startswith='rfc', docs__std_level="ps")[0],
+            target=Document.objects.filter(type_id="rfc", std_level="ps").first(),
             relationship_id="tohist")
 
         statchg.group = Group.objects.get(acronym="mars")
@@ -256,7 +299,7 @@ class IESGAgendaTests(TestCase):
         self.assertTrue(statchg in agenda_data(date_str)["sections"]["2.3.3"]["docs"])
         
         # 3.3 document status changes
-        relation.target = DocAlias.objects.filter(name__startswith='rfc', docs__std_level="inf")[0]
+        relation.target = Document.objects.filter(type_id="rfc", std_level="inf").first()
         relation.save()
 
         statchg.group = Group.objects.get(acronym="mars")

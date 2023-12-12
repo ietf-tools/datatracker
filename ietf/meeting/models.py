@@ -26,7 +26,6 @@ from django.conf import settings
 from django.urls import reverse as urlreverse
 from django.utils import timezone
 from django.utils.text import slugify
-from django.utils.safestring import mark_safe
 
 from ietf.dbtemplate.models import DBTemplate
 from ietf.doc.models import Document
@@ -582,19 +581,23 @@ class TimeSlot(models.Model):
             self._session_cache = self.sessions.filter(timeslotassignments__schedule__in=[self.meeting.schedule, self.meeting.schedule.base if self.meeting else None]).first()
         return self._session_cache
 
-    def meeting_date(self):
-        return self.time.date()
+    # Unused
+    #
+    # def meeting_date(self):
+    #     return self.time.date()
 
-    def registration(self):
-        # below implements a object local cache
-        # it tries to find a timeslot of type registration which starts at the same time as this slot
-        # so that it can be shown at the top of the agenda.
-        if not hasattr(self, '_reg_info'):
-            try:
-                self._reg_info = TimeSlot.objects.get(meeting=self.meeting, time__month=self.time.month, time__day=self.time.day, type="reg")
-            except TimeSlot.DoesNotExist:
-                self._reg_info = None
-        return self._reg_info
+    # Unused
+    #
+    # def registration(self):
+    #     # below implements a object local cache
+    #     # it tries to find a timeslot of type registration which starts at the same time as this slot
+    #     # so that it can be shown at the top of the agenda.
+    #     if not hasattr(self, '_reg_info'):
+    #         try:
+    #             self._reg_info = TimeSlot.objects.get(meeting=self.meeting, time__month=self.time.month, time__day=self.time.day, type="reg")
+    #         except TimeSlot.DoesNotExist:
+    #             self._reg_info = None
+    #     return self._reg_info
 
     def __str__(self):
         location = self.get_location()
@@ -621,30 +624,33 @@ class TimeSlot(models.Model):
     def get_location(self):
         return self.get_hidden_location() if self.show_location else ""
 
-    def get_functional_location(self):
-        name_parts = []
-        room = self.location
-        if room and room.functional_name:
-            name_parts.append(room.functional_name)
-        location = self.get_hidden_location()
-        if location:
-            name_parts.append(location)
-        return ' - '.join(name_parts)
+    # Unused
+    #
+    # def get_functional_location(self):
+    #     name_parts = []
+    #     room = self.location
+    #     if room and room.functional_name:
+    #         name_parts.append(room.functional_name)
+    #     location = self.get_hidden_location()
+    #     if location:
+    #         name_parts.append(location)
+    #     return ' - '.join(name_parts)
 
-    def get_html_location(self):
-        if not hasattr(self, '_cached_html_location'):
-            self._cached_html_location = self.get_location()
-            if len(self._cached_html_location) > 8:
-                self._cached_html_location = mark_safe(self._cached_html_location.replace('/', '/<wbr>'))
-            else:
-                self._cached_html_location = mark_safe(self._cached_html_location.replace(' ', '&nbsp;'))
-        return self._cached_html_location
+    # def get_html_location(self):
+    #     if not hasattr(self, '_cached_html_location'):
+    #         self._cached_html_location = self.get_location()
+    #         if len(self._cached_html_location) > 8:
+    #             self._cached_html_location = mark_safe(self._cached_html_location.replace('/', '/<wbr>'))
+    #         else:
+    #             self._cached_html_location = mark_safe(self._cached_html_location.replace(' ', '&nbsp;'))
+    #     return self._cached_html_location
 
     def tz(self):
         return self.meeting.tz()
 
-    def tzname(self):
-        return self.tz().tzname(self.time)
+    # Unused
+    # def tzname(self):
+    #     return self.tz().tzname(self.time)
 
     def utc_start_time(self):
         return self.time.astimezone(pytz.utc)  # USE_TZ is True, so time is aware
@@ -658,30 +664,32 @@ class TimeSlot(models.Model):
     def local_end_time(self):
         return (self.time.astimezone(pytz.utc) + self.duration).astimezone(self.tz())
 
-    @property
-    def js_identifier(self):
-        # this returns a unique identifier that is js happy.
-        #  {{s.timeslot.time|date:'Y-m-d'}}_{{ s.timeslot.time|date:'Hi' }}"
-        # also must match:
-        #  {{r|slugify}}_{{day}}_{{slot.0|date:'Hi'}}
-        dom_id="ts%u" % (self.pk)
-        if self.location is not None:
-            dom_id = self.location.dom_id()
-        return "%s_%s_%s" % (dom_id, self.time.strftime('%Y-%m-%d'), self.time.strftime('%H%M'))
+    # Unused
+    #
+    # @property
+    # def js_identifier(self):
+    #     # this returns a unique identifier that is js happy.
+    #     #  {{s.timeslot.time|date:'Y-m-d'}}_{{ s.timeslot.time|date:'Hi' }}"
+    #     # also must match:
+    #     #  {{r|slugify}}_{{day}}_{{slot.0|date:'Hi'}}
+    #     dom_id="ts%u" % (self.pk)
+    #     if self.location is not None:
+    #         dom_id = self.location.dom_id()
+    #     return "%s_%s_%s" % (dom_id, self.time.strftime('%Y-%m-%d'), self.time.strftime('%H%M'))
 
-    def delete_concurrent_timeslots(self):
-        """Delete all timeslots which are in the same time as this slot"""
-        # can not include duration in filter, because there is no support
-        # for having it a WHERE clause.
-        # below will delete self as well.
-        for ts in self.meeting.timeslot_set.filter(time=self.time).all():
-            if ts.duration!=self.duration:
-                continue
+    # def delete_concurrent_timeslots(self):
+    #     """Delete all timeslots which are in the same time as this slot"""
+    #     # can not include duration in filter, because there is no support
+    #     # for having it a WHERE clause.
+    #     # below will delete self as well.
+    #     for ts in self.meeting.timeslot_set.filter(time=self.time).all():
+    #         if ts.duration!=self.duration:
+    #             continue
 
-            # now remove any schedule that might have been made to this
-            # timeslot.
-            ts.sessionassignments.all().delete()
-            ts.delete()
+    #         # now remove any schedule that might have been made to this
+    #         # timeslot.
+    #         ts.sessionassignments.all().delete()
+    #         ts.delete()
 
     """
     Find a timeslot that comes next, in the same room.   It must be on the same day,

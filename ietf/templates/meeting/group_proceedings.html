@@ -77,8 +77,8 @@
         {# drafts #}
         <td>
             {% for draft in entry.drafts %}
-                <a href="{% url "ietf.doc.views_doc.document_main" name=draft.material.canonical_name %}">
-                    {{ draft.material.canonical_name }}
+                <a href="{% url "ietf.doc.views_doc.document_main" name=draft.material.name %}">
+                    {{ draft.material.name }}
                 </a>
                 <br>
             {% empty %}

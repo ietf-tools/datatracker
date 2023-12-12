@@ -362,7 +362,7 @@ const meetingEvents = computed(() => {
         if (item.links.calendar) {
           links.push({
             id: `lnk-${item.id}-calendar`,
-            label: isMobile.value ? `Calendar (.ics) entry for this session` : `Calendar (.ics) entry for ${item.acronym} session on ${item.adjustedStart.toFormat('fff')}`,
+            label: 'Calendar (.ics) entry for this session',
             icon: 'calendar-check',
             href: item.links.calendar,
             color: 'pink'

@@ -49,13 +49,13 @@
         {% if doc.pages %}<small class="float-end text-body-secondary d-none d-sm-block">{{ doc.pages }} page{{ doc.pages|pluralize }}</small>{% endif %}
         <div>
             <a href="{{ doc.get_absolute_url }}">
-                {% if doc.get_state_slug == "rfc" %}
+                {% if doc.type_id == "rfc" %}
                     RFC {{ doc.rfc_number }}
                 {% else %}
                     {{ doc.name }}-{{ doc.rev }}
                 {% endif %}
             </a>
-            {% if doc.get_state_slug == "rfc" and "draft" in doc.name %}<i class="text-body-secondary">(was {{ doc.name }})</i>{% endif %}
+{#            {% if doc.type_id == "rfc" and "draft" in doc.name %}<i class="text-body-secondary">(was {{ doc.name }})</i>{% endif %} TODO drop this or look up the corresponding draft name#}
             <br>
             {% comment %}
             <div class="float-end">
@@ -106,19 +106,21 @@
         {% endif %}
     </td>
     <td class="bg-transparent">
-        {% if doc.latest_revision_date|timesince_days|new_enough:request and doc.get_state_slug != "rfc" %}
+        {% if doc.latest_revision_date|timesince_days|new_enough:request and doc.type_id != "rfc" %}
             {% if doc.rev != "00" %}
                 <a href="{{ rfcdiff_base_url }}?url2={{ doc.name }}-{{ doc.rev }}">
             {% elif doc.replaces %}
-                <a href="{{ rfcdiff_base_url }}?url1={{ doc.replaces_canonical_name }}&amp;url2={{ doc.name }}-{{ doc.rev }}">
+                {% with first_replaces=doc.replaces|first %}
+                    <a href="{{ rfcdiff_base_url }}?url1={{ first_replaces.name }}&amp;url2={{ doc.name }}-{{ doc.rev }}">
+                {% endwith %}
             {% endif %}
         {% endif %}
-        {% if doc.get_state_slug == "rfc" %}
+        {% if doc.type_id == "rfc" %}
             {{ doc.latest_revision_date|date:"Y-m" }}
         {% else %}
             {{ doc.latest_revision_date|date:"Y-m-d" }}
         {% endif %}
-        {% if doc.latest_revision_date|timesince_days|new_enough:request and doc.get_state_slug != "rfc" %}
+        {% if doc.latest_revision_date|timesince_days|new_enough:request and doc.type_id != "rfc" %}
             {% if doc.rev != "00" or doc.replaces %}</a>{% endif %}
         {% endif %}
         {% if doc.latest_revision_date|timesince_days|new_enough:request %}

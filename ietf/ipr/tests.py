@@ -15,11 +15,11 @@ from django.utils import timezone
 
 import debug                            # pyflakes:ignore
 
-from ietf.doc.models import DocAlias
 from ietf.doc.factories import (
     DocumentFactory,
     WgDraftFactory,
     WgRfcFactory,
+    RfcFactory,
     NewRevisionDocEventFactory
 )
 from ietf.group.factories import RoleFactory
@@ -180,7 +180,8 @@ class IprTests(TestCase):
         self.assertContains(r, draft.name)
         self.assertNotContains(r, ipr.title)
 
-        DocAlias.objects.create(name="rfc321").docs.add(draft)
+        rfc = RfcFactory(rfc_number=321)
+        draft.relateddocument_set.create(relationship_id="became_rfc",target=rfc)
 
         # find RFC
         r = self.client.get(url + "?submit=rfc&rfc=321")
@@ -285,7 +286,7 @@ class IprTests(TestCase):
         """Add a new specific disclosure.  Note: submitter does not need to be logged in.
         """
         draft = WgDraftFactory()
-        WgRfcFactory()
+        rfc = WgRfcFactory()
         url = urlreverse("ietf.ipr.views.new", kwargs={ "type": "specific" })
 
         # successful post
@@ -299,9 +300,9 @@ class IprTests(TestCase):
             "ietfer_contact_info": "555-555-0101",
             "iprdocrel_set-TOTAL_FORMS": 2,
             "iprdocrel_set-INITIAL_FORMS": 0,
-            "iprdocrel_set-0-document": draft.docalias.first().pk,
+            "iprdocrel_set-0-document": draft.pk,
             "iprdocrel_set-0-revisions": '00',
-            "iprdocrel_set-1-document": DocAlias.objects.filter(name__startswith="rfc").first().pk,
+            "iprdocrel_set-1-document": rfc.pk,
             "patent_number": "SE12345678901",
             "patent_inventor": "A. Nonymous",
             "patent_title": "A method of transferring bits",
@@ -341,7 +342,7 @@ class IprTests(TestCase):
 
     def test_new_specific_no_revision(self):
         draft = WgDraftFactory()
-        WgRfcFactory()
+        rfc = WgRfcFactory()
         url = urlreverse("ietf.ipr.views.new", kwargs={ "type": "specific" })
 
         # successful post
@@ -355,8 +356,8 @@ class IprTests(TestCase):
             "ietfer_contact_info": "555-555-0101",
             "iprdocrel_set-TOTAL_FORMS": 2,
             "iprdocrel_set-INITIAL_FORMS": 0,
-            "iprdocrel_set-0-document": draft.docalias.first().pk,
-            "iprdocrel_set-1-document": DocAlias.objects.filter(name__startswith="rfc").first().pk,
+            "iprdocrel_set-0-document": draft.pk,
+            "iprdocrel_set-1-document": rfc.pk,
             "patent_number": "SE12345678901",
             "patent_inventor": "A. Nonymous",
             "patent_title": "A method of transferring bits",
@@ -375,7 +376,7 @@ class IprTests(TestCase):
         """Add a new third-party disclosure.  Note: submitter does not need to be logged in.
         """
         draft = WgDraftFactory()
-        WgRfcFactory()
+        rfc = WgRfcFactory()
         url = urlreverse("ietf.ipr.views.new", kwargs={ "type": "third-party" })
 
         # successful post
@@ -387,9 +388,9 @@ class IprTests(TestCase):
             "ietfer_contact_info": "555-555-0101",
             "iprdocrel_set-TOTAL_FORMS": 2,
             "iprdocrel_set-INITIAL_FORMS": 0,
-            "iprdocrel_set-0-document": draft.docalias.first().pk,
+            "iprdocrel_set-0-document": draft.pk,
             "iprdocrel_set-0-revisions": '00',
-            "iprdocrel_set-1-document": DocAlias.objects.filter(name__startswith="rfc").first().pk,
+            "iprdocrel_set-1-document": rfc.pk,
             "patent_number": "SE12345678901",
             "patent_inventor": "A. Nonymous",
             "patent_title": "A method of transferring bits",
@@ -434,7 +435,7 @@ class IprTests(TestCase):
             "holder_legal_name": "Test Legal",
             "ietfer_contact_info": "555-555-0101",
             "ietfer_name": "Test Participant",
-            "iprdocrel_set-0-document": draft.docalias.first().pk,
+            "iprdocrel_set-0-document": draft.pk,
             "iprdocrel_set-0-revisions": '00',
             "iprdocrel_set-INITIAL_FORMS": 0,
             "iprdocrel_set-TOTAL_FORMS": 1,
@@ -462,7 +463,7 @@ class IprTests(TestCase):
 
     def test_update(self):
         draft = WgDraftFactory()
-        WgRfcFactory()
+        rfc = WgRfcFactory()
         original_ipr = HolderIprDisclosureFactory(docs=[draft,])
 
         # get
@@ -483,9 +484,9 @@ class IprTests(TestCase):
             "ietfer_contact_info": "555-555-0101",
             "iprdocrel_set-TOTAL_FORMS": 2,
             "iprdocrel_set-INITIAL_FORMS": 0,
-            "iprdocrel_set-0-document": draft.docalias.first().pk,
+            "iprdocrel_set-0-document": draft.pk,
             "iprdocrel_set-0-revisions": '00',
-            "iprdocrel_set-1-document": DocAlias.objects.filter(name__startswith="rfc").first().pk,
+            "iprdocrel_set-1-document": rfc.pk,
             "patent_number": "SE12345678901",
             "patent_inventor": "A. Nonymous",
             "patent_title": "A method of transferring bits",
@@ -520,7 +521,7 @@ class IprTests(TestCase):
             "holder_contact_email": "test@holder.com",
             "iprdocrel_set-TOTAL_FORMS": 1,
             "iprdocrel_set-INITIAL_FORMS": 0,
-            "iprdocrel_set-0-document": draft.docalias.first().pk,
+            "iprdocrel_set-0-document": draft.pk,
             "iprdocrel_set-0-revisions": '00',
             "patent_number": "SE12345678901",
             "patent_inventor": "A. Nonymous",
@@ -786,7 +787,7 @@ Subject: test
             'iprdocrel_set-INITIAL_FORMS' : 0,
             'iprdocrel_set-0-id': '',
             "iprdocrel_set-0-document": disclosure.docs.first().pk,
-            "iprdocrel_set-0-revisions": disclosure.docs.first().document.rev,
+            "iprdocrel_set-0-revisions": disclosure.docs.first().rev,
             'holder_legal_name': disclosure.holder_legal_name,
             'patent_number': patent_dict['Number'],
             'patent_title': patent_dict['Title'],
@@ -848,7 +849,7 @@ Subject: test
             NewRevisionDocEventFactory(doc=draft, rev=f"{rev:02d}", time=now-datetime.timedelta(days=30*(2-rev)))
         
         # Disclosure has non-empty revisions field on its related draft
-        iprdocrel = IprDocRelFactory(document=draft.docalias.first())
+        iprdocrel = IprDocRelFactory(document=draft)
         IprEventFactory(type_id="posted",time=now,disclosure=iprdocrel.disclosure)
         self.assertEqual(
             no_revisions_message(iprdocrel),
@@ -856,7 +857,7 @@ Subject: test
         )
 
         # Disclosure has more than one revision, none called out, disclosure after submissions
-        iprdocrel = IprDocRelFactory(document=draft.docalias.first(), revisions="")
+        iprdocrel = IprDocRelFactory(document=draft, revisions="")
         IprEventFactory(type_id="posted",time=now,disclosure=iprdocrel.disclosure)
         self.assertEqual(
             no_revisions_message(iprdocrel),
@@ -864,7 +865,7 @@ Subject: test
         )
 
         # Disclosure has more than one revision, none called out, disclosure after 01
-        iprdocrel = IprDocRelFactory(document=draft.docalias.first(), revisions="")
+        iprdocrel = IprDocRelFactory(document=draft, revisions="")
         e = IprEventFactory(type_id="posted",disclosure=iprdocrel.disclosure)
         e.time = now-datetime.timedelta(days=15)
         e.save()
@@ -874,7 +875,7 @@ Subject: test
         )
 
         # Disclosure has more than one revision, none called out, disclosure was before the 00
-        iprdocrel = IprDocRelFactory(document=draft.docalias.first(), revisions="")
+        iprdocrel = IprDocRelFactory(document=draft, revisions="")
         e = IprEventFactory(type_id="posted",disclosure=iprdocrel.disclosure)
         e.time = now-datetime.timedelta(days=180)
         e.save()
@@ -886,7 +887,7 @@ Subject: test
         # disclosed draft has no NewRevisionDocEvents
         draft = WgDraftFactory(rev="20")
         draft.docevent_set.all().delete()
-        iprdocrel = IprDocRelFactory(document=draft.docalias.first(), revisions="")
+        iprdocrel = IprDocRelFactory(document=draft, revisions="")
         IprEventFactory(type_id="posted",disclosure=iprdocrel.disclosure)
         self.assertEqual(
             no_revisions_message(iprdocrel),
@@ -895,7 +896,7 @@ Subject: test
 
         # disclosed draft has only one revision
         draft = WgDraftFactory(rev="00")
-        iprdocrel = IprDocRelFactory(document=draft.docalias.first(), revisions="")
+        iprdocrel = IprDocRelFactory(document=draft, revisions="")
         IprEventFactory(type_id="posted",disclosure=iprdocrel.disclosure)
         self.assertEqual(
             no_revisions_message(iprdocrel),

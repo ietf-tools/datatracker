@@ -79,19 +79,18 @@ def manage_list(request, username=None, acronym=None, group_type=None):
         rule_type_form = SearchRuleTypeForm(request.POST)
         if rule_type_form.is_valid():
             rule_type = rule_type_form.cleaned_data['rule_type']
-
-        if rule_type:
-            rule_form = SearchRuleForm(clist, rule_type, request.POST)
-            if rule_form.is_valid():
-                if clist.pk is None:
-                    clist.save()
-
-                rule = rule_form.save(commit=False)
-                rule.community_list = clist
-                rule.rule_type = rule_type
-                rule.save()
-                if rule.rule_type == "name_contains":
-                    reset_name_contains_index_for_rule(rule)
+            if rule_type:
+                rule_form = SearchRuleForm(clist, rule_type, request.POST)
+                if rule_form.is_valid():
+                    if clist.pk is None:
+                        clist.save()
+    
+                    rule = rule_form.save(commit=False)
+                    rule.community_list = clist
+                    rule.rule_type = rule_type
+                    rule.save()
+                    if rule.rule_type == "name_contains":
+                        reset_name_contains_index_for_rule(rule)
 
                 return HttpResponseRedirect("")
     else:
@@ -130,7 +129,7 @@ def manage_list(request, username=None, acronym=None, group_type=None):
 
 @login_required
 def track_document(request, name, username=None, acronym=None):
-    doc = get_object_or_404(Document, docalias__name=name)
+    doc = get_object_or_404(Document, name=name)
 
     if request.method == "POST":
         clist = lookup_community_list(username, acronym)
@@ -154,7 +153,7 @@ def track_document(request, name, username=None, acronym=None):
 
 @login_required
 def untrack_document(request, name, username=None, acronym=None):
-    doc = get_object_or_404(Document, docalias__name=name)
+    doc = get_object_or_404(Document, name=name)
     clist = lookup_community_list(username, acronym)
     if not can_manage_community_list(request.user, clist):
         permission_denied(request, "You do not have permission to access this view")

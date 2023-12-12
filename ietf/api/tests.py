@@ -24,7 +24,7 @@ import debug                            # pyflakes:ignore
 import ietf
 from ietf.doc.utils import get_unicode_document_content
 from ietf.doc.models import RelatedDocument, State
-from ietf.doc.factories import IndividualDraftFactory, WgDraftFactory
+from ietf.doc.factories import IndividualDraftFactory, WgDraftFactory, WgRfcFactory
 from ietf.group.factories import RoleFactory
 from ietf.meeting.factories import MeetingFactory, SessionFactory
 from ietf.meeting.models import Session
@@ -944,7 +944,7 @@ class RfcdiffSupportTests(TestCase):
         self.assertNotIn('previous', received, 'Rev 00 has no previous name when not replacing a draft')
 
         replaced = IndividualDraftFactory()
-        RelatedDocument.objects.create(relationship_id='replaces',source=draft,target=replaced.docalias.first())
+        RelatedDocument.objects.create(relationship_id='replaces',source=draft,target=replaced)
         received = self.getJson(dict(name=draft.name, rev='00'))
         self.assertEqual(received['previous'], f'{replaced.name}-{replaced.rev}',
                          'Rev 00 has a previous name when replacing a draft')
@@ -974,19 +974,19 @@ class RfcdiffSupportTests(TestCase):
 
     def do_rfc_test(self, draft_name):
         draft = WgDraftFactory(name=draft_name, create_revisions=range(0,2))
-        draft.docalias.create(name=f'rfc{self.next_rfc_number():04}')
+        rfc = WgRfcFactory(group=draft.group, rfc_number=self.next_rfc_number())
+        draft.relateddocument_set.create(relationship_id="became_rfc", target=rfc)
         draft.set_state(State.objects.get(type_id='draft',slug='rfc'))
         draft.set_state(State.objects.get(type_id='draft-iesg', slug='pub'))
-        draft = reload_db_objects(draft)
-        rfc = draft
+        draft, rfc = reload_db_objects(draft, rfc)
 
-        number = rfc.rfc_number()
+        number = rfc.rfc_number
         received = self.getJson(dict(name=number))
         self.assertEqual(
             received,
             dict(
                 content_url=rfc.get_href(),
-                name=rfc.canonical_name(),
+                name=rfc.name,
                 previous=f'{draft.name}-{draft.rev}',
                 previous_url= draft.history_set.get(rev=draft.rev).get_href(),
             ),
@@ -994,7 +994,7 @@ class RfcdiffSupportTests(TestCase):
         )
 
         num_received = received
-        received = self.getJson(dict(name=rfc.canonical_name()))
+        received = self.getJson(dict(name=rfc.name))
         self.assertEqual(num_received, received, 'RFC by canonical name gives same result as by number')
 
         received = self.getJson(dict(name=f'RfC {number}'))
@@ -1026,30 +1026,30 @@ class RfcdiffSupportTests(TestCase):
 
     def test_rfc_with_tombstone(self):
         draft = WgDraftFactory(create_revisions=range(0,2))
-        draft.docalias.create(name='rfc3261') # See views_doc.HAS_TOMBSTONE
+        rfc = WgRfcFactory(rfc_number=3261,group=draft.group)# See views_doc.HAS_TOMBSTONE
+        draft.relateddocument_set.create(relationship_id="became_rfc", target=rfc)
         draft.set_state(State.objects.get(type_id='draft',slug='rfc'))
         draft.set_state(State.objects.get(type_id='draft-iesg', slug='pub'))
         draft = reload_db_objects(draft)
-        rfc = draft
 
         # Some old rfcs had tombstones that shouldn't be used for comparisons
-        received = self.getJson(dict(name=rfc.canonical_name()))
+        received = self.getJson(dict(name=rfc.name))
         self.assertTrue(received['previous'].endswith('00'))
 
     def do_rfc_with_broken_history_test(self, draft_name):
         draft = WgDraftFactory(rev='10', name=draft_name)
-        draft.docalias.create(name=f'rfc{self.next_rfc_number():04}')
+        rfc = WgRfcFactory(group=draft.group, rfc_number=self.next_rfc_number())
+        draft.relateddocument_set.create(relationship_id="became_rfc", target=rfc)
         draft.set_state(State.objects.get(type_id='draft',slug='rfc'))
         draft.set_state(State.objects.get(type_id='draft-iesg', slug='pub'))
         draft = reload_db_objects(draft)
-        rfc = draft
 
         received = self.getJson(dict(name=draft.name))
         self.assertEqual(
             received,
             dict(
                 content_url=rfc.get_href(),
-                name=rfc.canonical_name(),
+                name=rfc.name,
                 previous=f'{draft.name}-10',
                 previous_url= f'{settings.IETF_ID_ARCHIVE_URL}{draft.name}-10.txt',
             ),
@@ -1080,3 +1080,9 @@ class RfcdiffSupportTests(TestCase):
         # tricky draft names
         self.do_rfc_with_broken_history_test(draft_name='draft-gizmo-01')
         self.do_rfc_with_broken_history_test(draft_name='draft-oh-boy-what-a-draft-02-03')
+
+    def test_no_such_document(self):
+        for name in ['rfc0000', 'draft-ftei-oof-rab-00']:
+            url = urlreverse(self.target_view, kwargs={'name': name})
+            r = self.client.get(url)
+            self.assertEqual(r.status_code, 404)
