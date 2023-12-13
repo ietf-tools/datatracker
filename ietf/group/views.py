@@ -744,6 +744,10 @@ def dependencies(request, acronym, group_type=None):
     both_rfcs = Q(source__type_id="rfc", target__type_id__in=rfc_or_subseries)
     pre_rfc_draft_to_rfc = Q(source__type_id="draft", source__states__slug="rfc", target__type_id__in=rfc_or_subseries)
     rfc_to_pre_rfc_draft = Q(source__type_id__in=rfc_or_subseries, target__type_id="draft", target__states__slug="rfc")
+    both_pre_rfcs = Q(
+        source__type_id="draft", source__states__slug="rfc",
+        target__type_id="draft", target__states__slug="rfc",
+    )
     inactive = Q(source__states__slug__in=["expired", "repl"])
     attractor = Q(target__name__in=["rfc5000", "rfc5741"])
     removed = Q(source__states__slug__in=["auth-rm", "ietf-rm"])
@@ -752,10 +756,12 @@ def dependencies(request, acronym, group_type=None):
         .exclude(both_rfcs)
         .exclude(pre_rfc_draft_to_rfc)
         .exclude(rfc_to_pre_rfc_draft)
+        .exclude(both_pre_rfcs)
         .exclude(inactive)
         .exclude(attractor)
         .exclude(removed)
     )
+    import pdb; pdb.set_trace()
 
     links = set()
     for x in relations:
