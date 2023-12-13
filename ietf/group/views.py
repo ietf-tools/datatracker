@@ -761,7 +761,6 @@ def dependencies(request, acronym, group_type=None):
         .exclude(attractor)
         .exclude(removed)
     )
-    import pdb; pdb.set_trace()
 
     links = set()
     for x in relations:
