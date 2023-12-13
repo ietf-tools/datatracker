@@ -1209,14 +1209,15 @@ def fuzzy_find_documents(name, rev=None):
 
     if name.startswith("rfc"):
         sought_type = "rfc"
-        log.assertion("rev is None")
+        name = name.split("-")[0] # strip any noise (like a revision) at and after the first hyphen
+        rev = None # If someone is looking for an RFC and supplies a version, ignore it.
     else:
         sought_type = "draft"
 
     # see if we can find a document using this name
     docs = Document.objects.filter(name=name, type_id=sought_type)
-    if rev and not docs.exists():
-        # No document found, see if the name/rev split has been misidentified.
+    if sought_type == "draft" and rev and not docs.exists():
+        # No draft found, see if the name/rev split has been misidentified.
         # Handles some special cases, like draft-ietf-tsvwg-ieee-802-11.
         name = '%s-%s' % (name, rev)
         docs = Document.objects.filter(name=name, type_id='draft')
