@@ -737,17 +737,21 @@ def dependencies(request, acronym, group_type=None):
 
     references = Q(
         Q(source__group=group) | Q(source__in=cl_docs),
-        source__type="draft",
+        source__type="draft",  # does this need to be type__in=["draft", "rfc"]? Check for informative ref rfc->draft
         relationship__slug__startswith="ref",
     )
-
-    both_rfcs = Q(source__type_id="rfc", target__type_id="rfc")
+    rfc_or_subseries = {"rfc", "bcp", "fyi", "std"}
+    both_rfcs = Q(source__type_id="rfc", target__type_id__in=rfc_or_subseries)
+    pre_rfc_draft_to_rfc = Q(source__type_id="draft", source__states__slug="rfc", target__type_id__in=rfc_or_subseries)
+    rfc_to_pre_rfc_draft = Q(source__type_id__in=rfc_or_subseries, target__type_id="draft", target__states__slug="rfc")
     inactive = Q(source__states__slug__in=["expired", "repl"])
     attractor = Q(target__name__in=["rfc5000", "rfc5741"])
     removed = Q(source__states__slug__in=["auth-rm", "ietf-rm"])
     relations = (
         RelatedDocument.objects.filter(references)
         .exclude(both_rfcs)
+        .exclude(pre_rfc_draft_to_rfc)
+        .exclude(rfc_to_pre_rfc_draft)
         .exclude(inactive)
         .exclude(attractor)
         .exclude(removed)
@@ -776,7 +780,7 @@ def dependencies(request, acronym, group_type=None):
                 "post-wg": x.get_state_slug("draft-iesg") not in ["idexists", "watching", "dead"],
                 "expired": x.get_state_slug("draft") == "expired",
                 "replaced": x.get_state_slug("draft") == "repl",
-                "group": x.group.acronym if x.group.acronym != "none" else "",
+                "group": x.group.acronym if x.group and x.group.acronym != "none" else "",
                 "url": x.get_absolute_url(),
                 "level": x.intended_std_level.name
                 if x.intended_std_level
