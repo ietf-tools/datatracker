@@ -764,8 +764,8 @@ def dependencies(request, acronym, group_type=None):
 
     links = set()
     for x in relations:
-        target_state = x.target.get_state_slug("draft")
-        if target_state != "rfc" or x.is_downref():
+        always_include = x.target.type_id not in rfc_or_subseries and x.target.get_state_slug("draft") != "rfc" 
+        if always_include or x.is_downref():
             links.add(x)
 
     replacements = RelatedDocument.objects.filter(
