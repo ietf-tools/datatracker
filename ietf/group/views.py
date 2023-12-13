@@ -780,7 +780,7 @@ def dependencies(request, acronym, group_type=None):
     graph = {
         "nodes": [
             {
-                "id": x.name,
+                "id": x.became_rfc().name if x.became_rfc() else x.name,
                 "rfc": x.type_id == "rfc",
                 "post-wg": x.get_state_slug("draft-iesg") not in ["idexists", "watching", "dead"],
                 "expired": x.get_state_slug("draft") == "expired",
@@ -797,8 +797,8 @@ def dependencies(request, acronym, group_type=None):
         ],
         "links": [
             {
-                "source": x.source.name,
-                "target": x.target.name,
+                "source": x.source.became_rfc().name if x.source.became_rfc() else x.source.name,
+                "target": x.target.became_rfc().name if x.target.became_rfc() else x.target.name,
                 "rel": "downref" if x.is_downref() else x.relationship.slug,
             }
             for x in links
