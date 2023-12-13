@@ -737,7 +737,7 @@ def dependencies(request, acronym, group_type=None):
 
     references = Q(
         Q(source__group=group) | Q(source__in=cl_docs),
-        source__type="draft",  # does this need to be type__in=["draft", "rfc"]? Check for informative ref rfc->draft
+        source__type="draft",
         relationship__slug__startswith="ref",
     )
     rfc_or_subseries = {"rfc", "bcp", "fyi", "std"}
