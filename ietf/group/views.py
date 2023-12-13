@@ -772,11 +772,10 @@ def dependencies(request, acronym, group_type=None):
         "nodes": [
             {
                 "id": x.name,
-                "rfc": x.get_state("draft").slug == "rfc",
-                "post-wg": not x.get_state("draft-iesg").slug
-                in ["idexists", "watching", "dead"],
-                "expired": x.get_state("draft").slug == "expired",
-                "replaced": x.get_state("draft").slug == "repl",
+                "rfc": x.type_id == "rfc",
+                "post-wg": x.get_state_slug("draft-iesg") not in ["idexists", "watching", "dead"],
+                "expired": x.get_state_slug("draft") == "expired",
+                "replaced": x.get_state_slug("draft") == "repl",
                 "group": x.group.acronym if x.group.acronym != "none" else "",
                 "url": x.get_absolute_url(),
                 "level": x.intended_std_level.name
