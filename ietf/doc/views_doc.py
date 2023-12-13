@@ -51,8 +51,6 @@ from django.conf import settings
 from django import forms
 from django.contrib.staticfiles import finders
 
-from weasyprint.urls import URLFetchingError
-
 import debug                            # pyflakes:ignore
 
 from ietf.doc.models import ( Document, DocAlias, DocHistory, DocEvent, BallotDocEvent, BallotType,
@@ -977,14 +975,8 @@ def document_pdfized(request, name, rev=None, ext=None):
 
     try:
         pdf = doc.pdfized()
-    except URLFetchingError:
-        # retry once, then give up
-        try:
-            pdf = doc.pdfized()
-        except URLFetchingError as exception:
-            return render(request, "doc/weasyprint_failed.html",
-                          dict(error=f'{type(exception).__name__}: {exception}'),
-                          status=504)
+    except:
+        return render(request, "doc/weasyprint_failed.html")
     if pdf:
         return HttpResponse(pdf,content_type='application/pdf')
     else:

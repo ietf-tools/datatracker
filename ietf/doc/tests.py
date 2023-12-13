@@ -2848,7 +2848,8 @@ class PdfizedTests(TestCase):
         with mock.patch('ietf.doc.models.DocumentInfo.pdfized', side_effect=URLFetchingError):
             url = urlreverse(self.view, kwargs=dict(name=rfc.name))
             r = self.client.get(url)
-            self.assertEqual(r.status_code, 504)
+            self.assertEqual(r.status_code, 200)
+            self.assertContains(r, "Error while rendering PDF")
 
 class NotifyValidationTests(TestCase):
     def test_notify_validation(self):
