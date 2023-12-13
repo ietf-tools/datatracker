@@ -892,8 +892,7 @@ def is_in_stream(doc):
     stream = doc.stream.slug
     state = doc.get_state_slug(f"draft-stream-{doc.stream.slug}")
     if not state:
-        return False
-
+        return True
     if stream == "ietf":
         return state not in ["wg-cand", "c-adopt"]
     elif stream == "irtf":
