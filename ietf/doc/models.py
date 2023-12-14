@@ -651,11 +651,19 @@ class DocumentInfo(models.Model):
             | models.Q(source__type__slug="rfc")
         )
     
-    
     def referenced_by_rfcs(self):
-        return self.relations_that(("refnorm", "refinfo", "refunk", "refold")).filter(
+        refs_to = self.relations_that(("refnorm", "refinfo", "refunk", "refold")).filter(
             source__type__slug="rfc"
         )
+        if self.became_rfc():
+            refs_to |= self.became_rfc().relations_that(("refnorm", "refinfo", "refunk", "refold")).filter(
+                source__type__slug="rfc"
+            )
+        if self.came_from_draft():
+            refs_to |= self.came_from_draft().relations_that(("refnorm", "refinfo", "refunk", "refold")).filter(
+                source__type__slug="rfc"
+            )
+        return refs_to
 
     def became_rfc(self):
         if not hasattr(self, "_cached_became_rfc"):
