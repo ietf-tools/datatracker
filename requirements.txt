@@ -25,7 +25,7 @@ django-simple-history>=3.0.0
 #django-stubs>=4.2.0    # The django-stubs version used determines the the mypy version indicated below
 django-stubs==4.2.4    # Pin here until we fix test failures (and update mypy version, too)
 django-tastypie>=0.14.5    # Version must be locked in sync with version of Django
-django-vite>=2.0.2
+django-vite>=2.0.2,<3
 django-webtest>=1.9.10    # Only used in tests
 django-widget-tweaks>=1.4.12
 djlint>=1.0.0    # To auto-indent templates via "djlint --profile django --reformat"
@@ -65,12 +65,12 @@ types-requests>=2.27.1
 requests-mock>=1.9.3
 rfc2html>=2.0.3
 scout-apm>=2.24.2
-selenium>=3.141.0,<4.0
+selenium>=4.0
 tblib>=1.7.0    # So that the django test runner provides tracebacks
 tlds>=2022042700    # Used to teach bleach about which TLDs currently exist
 tqdm>=4.64.0
 Unidecode>=1.3.4
-urllib3<2        # v2 causes selenium tests to fail with "Timeout value was <object..." error
+urllib3>=2
 weasyprint>=59
 xml2rfc>=3.12.4
 xym>=0.6,<1.0

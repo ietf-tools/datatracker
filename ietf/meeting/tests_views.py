@@ -552,7 +552,7 @@ class MeetingTests(BaseMeetingTestCase):
             if material.type_id == 'draft':
                 expected_url = urlreverse(
                     'ietf.doc.views_doc.document_main',
-                    kwargs={'name': material.canonical_name()},
+                    kwargs={'name': material.name},
                 )
             else:
                 expected_url = material.get_href(meeting)
@@ -563,7 +563,7 @@ class MeetingTests(BaseMeetingTestCase):
             if material.type_id == 'draft':
                 expected_url = urlreverse(
                     'ietf.doc.views_doc.document_main',
-                    kwargs={'name': material.canonical_name()},
+                    kwargs={'name': material.name},
                 )
             else:
                 expected_url = material.get_href(meeting)
@@ -7773,7 +7773,7 @@ class ProceedingsTests(BaseMeetingTestCase):
             if material.type_id == 'draft':
                 expected_url = urlreverse(
                     'ietf.doc.views_doc.document_main',
-                    kwargs={'name': material.canonical_name()},
+                    kwargs={'name': material.name},
                 )
             else:
                 expected_url = material.get_href(meeting)
@@ -7784,7 +7784,7 @@ class ProceedingsTests(BaseMeetingTestCase):
             if material.type_id == 'draft':
                 expected_url = urlreverse(
                     'ietf.doc.views_doc.document_main',
-                    kwargs={'name': material.canonical_name()},
+                    kwargs={'name': material.name},
                 )
             else:
                 expected_url = material.get_href(meeting)
@@ -7856,7 +7856,7 @@ class ProceedingsTests(BaseMeetingTestCase):
         """
 
         make_meeting_test_data()
-        meeting = MeetingFactory(type_id='ietf', date=datetime.date(2016, 7, 14), number="97")
+        meeting = MeetingFactory(type_id='ietf', date=datetime.date(2023, 11, 4), number="118")
         person_a = PersonFactory(name='Person A')
         person_b = PersonFactory(name='Person B')
         person_c = PersonFactory(name='Person C')
@@ -7868,7 +7868,7 @@ class ProceedingsTests(BaseMeetingTestCase):
         MeetingRegistrationFactory(meeting=meeting, person=person_c, reg_type='remote')
         AttendedFactory(session__meeting=meeting, session__type_id='plenary', person=person_c)
         MeetingRegistrationFactory(meeting=meeting, person=person_d, reg_type='remote')
-        url = urlreverse('ietf.meeting.views.proceedings_attendees',kwargs={'num': 97})
+        url = urlreverse('ietf.meeting.views.proceedings_attendees',kwargs={'num': 118})
         response = self.client.get(url)
         self.assertContains(response, 'Attendee list')
         q = PyQuery(response.content)

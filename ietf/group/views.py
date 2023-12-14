@@ -61,7 +61,7 @@ import debug                            # pyflakes:ignore
 
 from ietf.community.models import CommunityList, EmailSubscription
 from ietf.community.utils import docs_tracked_by_community_list
-from ietf.doc.models import DocTagName, State, DocAlias, RelatedDocument, Document, DocEvent
+from ietf.doc.models import DocTagName, State, RelatedDocument, Document, DocEvent
 from ietf.doc.templatetags.ietf_filters import clean_whitespace
 from ietf.doc.utils import get_chartering_type, get_tags_for_stream_id
 from ietf.doc.utils_charter import charter_name_for_group, replace_charter_of_replaced_group
@@ -186,17 +186,12 @@ def fill_in_wg_roles(group):
     group.secretaries = get_roles("secr", [])
 
 def fill_in_wg_drafts(group):
-    aliases = DocAlias.objects.filter(docs__type="draft", docs__group=group).prefetch_related('docs').order_by("name")
-    group.drafts = []
-    group.rfcs = []
-    for a in aliases:
-        if a.name.startswith("draft"):
-            group.drafts.append(a)
-        else:
-            group.rfcs.append(a)
-            a.remote_field = RelatedDocument.objects.filter(source=a.document,relationship_id__in=['obs','updates']).distinct()
-            a.invrel = RelatedDocument.objects.filter(target=a,relationship_id__in=['obs','updates']).distinct()
-
+    group.drafts = Document.objects.filter(type_id="draft", group=group).order_by("name")
+    group.rfcs = Document.objects.filter(type_id="rfc", group=group).order_by("rfc_number")
+    for rfc in group.rfcs:
+        # TODO: remote_field?
+        rfc.remote_field = RelatedDocument.objects.filter(source=rfc,relationship_id__in=['obs','updates']).distinct()
+        rfc.invrel = RelatedDocument.objects.filter(target=rfc,relationship_id__in=['obs','updates']).distinct()
 
 def check_group_email_aliases():
     pattern = re.compile(r'expand-(.*?)(-\w+)@.*? +(.*)$')
@@ -291,7 +286,7 @@ def active_groups(request, group_type=None):
         return active_dirs(request)
     elif group_type == "review":
         return active_review_dirs(request)
-    elif group_type in ("program", "iabasg"):
+    elif group_type in ("program", "iabasg","iabworkshop"):
         return active_iab(request)
     elif group_type == "adm":
         return active_adm(request)
@@ -314,6 +309,7 @@ def active_group_types(request):
                 "area",
                 "program",
                 "iabasg",
+                "iabworkshop"
                 "adm",
             ]
         )
@@ -344,7 +340,7 @@ def active_teams(request):
     return render(request, 'group/active_teams.html', {'teams' : teams })
 
 def active_iab(request):
-    iabgroups = Group.objects.filter(type__in=("program","iabasg"), state="active").order_by("-type_id","name")
+    iabgroups = Group.objects.filter(type__in=("program","iabasg","iabworkshop"), state="active").order_by("-type_id","name")
     for group in iabgroups:
         group.leads = sorted(roles(group, "lead"), key=extract_last_name)
     return render(request, 'group/active_iabgroups.html', {'iabgroups' : iabgroups })
@@ -474,8 +470,8 @@ def prepare_group_documents(request, group, clist):
         # non-WG drafts and call for WG adoption are considered related
         if (d.group != group
             or (d.stream_id and d.get_state_slug("draft-stream-%s" % d.stream_id) in ("c-adopt", "wg-cand"))):
-            if d.get_state_slug() != "expired":
-                d.search_heading = "Related Internet-Draft"
+            if (d.type_id == "draft" and d.get_state_slug() not in ["expired","rfc"]) or d.type_id == "rfc":
+                d.search_heading = "Related Internet-Drafts and RFCs"
                 docs_related.append(d)
         else:
             if not (d.get_state_slug('draft-iesg') == "dead" or (d.stream_id and d.get_state_slug("draft-stream-%s" % d.stream_id) == "dead")):
@@ -534,9 +530,8 @@ def group_documents_txt(request, acronym, group_type=None):
 
     rows = []
     for d in itertools.chain(docs, docs_related):
-        rfc_number = d.rfc_number()
-        if rfc_number != None:
-            name = rfc_number
+        if d.type_id == "rfc":
+            name = str(d.rfc_number)
         else:
             name = "%s-%s" % (d.name, d.rev)
 
@@ -745,14 +740,31 @@ def dependencies(request, acronym, group_type=None):
         source__type="draft",
         relationship__slug__startswith="ref",
     )
-
-    both_rfcs = Q(source__states__slug="rfc", target__docs__states__slug="rfc")
-    inactive = Q(source__states__slug__in=["expired", "repl"])
+    rfc_or_subseries = {"rfc", "bcp", "fyi", "std"}
+    both_rfcs = Q(source__type_id="rfc", target__type_id__in=rfc_or_subseries)
+    pre_rfc_draft_to_rfc = Q(
+        source__states__type="draft",
+        source__states__slug="rfc",
+        target__type_id__in=rfc_or_subseries,
+    )
+    both_pre_rfcs = Q(
+        source__states__type="draft",
+        source__states__slug="rfc",
+        target__type_id="draft",
+        target__states__type="draft",
+        target__states__slug="rfc",
+    )
+    inactive = Q(
+        source__states__type="draft",
+        source__states__slug__in=["expired", "repl"],
+    )
     attractor = Q(target__name__in=["rfc5000", "rfc5741"])
-    removed = Q(source__states__slug__in=["auth-rm", "ietf-rm"])
+    removed = Q(source__states__type="draft", source__states__slug__in=["auth-rm", "ietf-rm"])
     relations = (
         RelatedDocument.objects.filter(references)
         .exclude(both_rfcs)
+        .exclude(pre_rfc_draft_to_rfc)
+        .exclude(both_pre_rfcs)
         .exclude(inactive)
         .exclude(attractor)
         .exclude(removed)
@@ -760,29 +772,28 @@ def dependencies(request, acronym, group_type=None):
 
     links = set()
     for x in relations:
-        target_state = x.target.document.get_state_slug("draft")
-        if target_state != "rfc" or x.is_downref():
+        always_include = x.target.type_id not in rfc_or_subseries and x.target.get_state_slug("draft") != "rfc" 
+        if always_include or x.is_downref():
             links.add(x)
 
     replacements = RelatedDocument.objects.filter(
         relationship__slug="replaces",
-        target__docs__in=[x.target.document for x in links],
+        target__in=[x.target for x in links],
     )
 
     for x in replacements:
         links.add(x)
 
-    nodes = set([x.source for x in links]).union([x.target.document for x in links])
+    nodes = set([x.source for x in links]).union([x.target for x in links])
     graph = {
         "nodes": [
             {
-                "id": x.canonical_name(),
-                "rfc": x.get_state("draft").slug == "rfc",
-                "post-wg": not x.get_state("draft-iesg").slug
-                in ["idexists", "watching", "dead"],
-                "expired": x.get_state("draft").slug == "expired",
-                "replaced": x.get_state("draft").slug == "repl",
-                "group": x.group.acronym if x.group.acronym != "none" else "",
+                "id": x.became_rfc().name if x.became_rfc() else x.name,
+                "rfc": x.type_id == "rfc" or x.became_rfc() is not None,
+                "post-wg": x.get_state_slug("draft-iesg") not in ["idexists", "watching", "dead"],
+                "expired": x.get_state_slug("draft") == "expired",
+                "replaced": x.get_state_slug("draft") == "repl",
+                "group": x.group.acronym if x.group and x.group.acronym != "none" else "",
                 "url": x.get_absolute_url(),
                 "level": x.intended_std_level.name
                 if x.intended_std_level
@@ -794,8 +805,8 @@ def dependencies(request, acronym, group_type=None):
         ],
         "links": [
             {
-                "source": x.source.canonical_name(),
-                "target": x.target.document.canonical_name(),
+                "source": x.source.became_rfc().name if x.source.became_rfc() else x.source.name,
+                "target": x.target.became_rfc().name if x.target.became_rfc() else x.target.name,
                 "rel": "downref" if x.is_downref() else x.relationship.slug,
             }
             for x in links
@@ -1282,7 +1293,10 @@ def stream_documents(request, acronym):
     editable = has_role(request.user, "Secretariat") or group.has_role(request.user, "chair")
     stream = StreamName.objects.get(slug=acronym)
 
-    qs = Document.objects.filter(states__type="draft", states__slug__in=["active", "rfc"], stream=acronym)
+    qs = Document.objects.filter(stream=acronym).filter(
+        Q(type_id="draft", states__type="draft", states__slug="active")
+        | Q(type_id="rfc")
+    )
     docs, meta = prepare_document_table(request, qs, max_results=1000)
     return render(request, 'group/stream_documents.html', {'stream':stream, 'docs':docs, 'meta':meta, 'editable':editable } )
 
@@ -1335,7 +1349,7 @@ def stream_edit(request, acronym):
 @cache_control(public=True, max_age=30*60)
 @cache_page(30 * 60)
 def group_menu_data(request):
-    groups = Group.objects.filter(state="active", parent__state="active").filter(Q(type__features__acts_like_wg=True)|Q(type_id__in=['program','iabasg'])|Q(parent__acronym='ietfadminllc')|Q(parent__acronym='rfceditor')).order_by("-type_id","acronym")
+    groups = Group.objects.filter(state="active", parent__state="active").filter(Q(type__features__acts_like_wg=True)|Q(type_id__in=['program','iabasg','iabworkshop'])|Q(parent__acronym='ietfadminllc')|Q(parent__acronym='rfceditor')).order_by("-type_id","acronym")
 
     groups_by_parent = defaultdict(list)
     for g in groups:

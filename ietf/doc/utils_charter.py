@@ -3,10 +3,11 @@
 
 
 import datetime
-import io
 import os
 import re
 import shutil
+
+from pathlib import Path
 
 from django.conf import settings
 from django.urls import reverse as urlreverse
@@ -62,10 +63,9 @@ def next_approved_revision(rev):
     return "%#02d" % (int(m.group('major')) + 1)
 
 def read_charter_text(doc):
-    filename = os.path.join(settings.CHARTER_PATH, '%s-%s.txt' % (doc.canonical_name(), doc.rev))
+    filename = Path(settings.CHARTER_PATH) / f"{doc.name}-{doc.rev}.txt"
     try:
-        with io.open(filename, 'r') as f:
-            return f.read()
+        return filename.read_text()
     except IOError:
         return "Error: couldn't read charter text"
 
@@ -92,8 +92,8 @@ def change_group_state_after_charter_approval(group, by):
 def fix_charter_revision_after_approval(charter, by):
     # according to spec, 00-02 becomes 01, so copy file and record new revision
     try:
-        old = os.path.join(charter.get_file_path(), '%s-%s.txt' % (charter.canonical_name(), charter.rev))
-        new = os.path.join(charter.get_file_path(), '%s-%s.txt' % (charter.canonical_name(), next_approved_revision(charter.rev)))
+        old = os.path.join(charter.get_file_path(), '%s-%s.txt' % (charter.name, charter.rev))
+        new = os.path.join(charter.get_file_path(), '%s-%s.txt' % (charter.name, next_approved_revision(charter.rev)))
         shutil.copy(old, new)
     except IOError:
         log("There was an error copying %s to %s" % (old, new))
@@ -101,7 +101,7 @@ def fix_charter_revision_after_approval(charter, by):
     events = []
     e = NewRevisionDocEvent(doc=charter, by=by, type="new_revision")
     e.rev = next_approved_revision(charter.rev)
-    e.desc = "New version available: <b>%s-%s.txt</b>" % (charter.canonical_name(), e.rev)
+    e.desc = "New version available: <b>%s-%s.txt</b>" % (charter.name, e.rev)
     e.save()
     events.append(e)
 

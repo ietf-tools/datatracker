@@ -11,10 +11,10 @@
     "chart.js": "3.5.1",
     "chartjs-node-canvas": "4.1.6",
     "lodash": "4.17.21",
-    "luxon": "3.4.3"
+    "luxon": "3.4.4"
   },
   "devDependencies": {
-    "eslint": "8.52.0",
+    "eslint": "8.53.0",
     "eslint-config-standard": "17.1.0",
     "eslint-plugin-import": "2.29.0",
     "eslint-plugin-node": "11.1.0",
