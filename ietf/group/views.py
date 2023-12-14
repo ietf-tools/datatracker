@@ -754,9 +754,12 @@ def dependencies(request, acronym, group_type=None):
         target__states__type="draft",
         target__states__slug="rfc",
     )
-    inactive = Q(source__states__slug__in=["expired", "repl"])
+    inactive = Q(
+        source__states__type="draft",
+        source__states__slug__in=["expired", "repl"],
+    )
     attractor = Q(target__name__in=["rfc5000", "rfc5741"])
-    removed = Q(source__states__slug__in=["auth-rm", "ietf-rm"])
+    removed = Q(source__states__type="draft", source__states__slug__in=["auth-rm", "ietf-rm"])
     relations = (
         RelatedDocument.objects.filter(references)
         .exclude(both_rfcs)
