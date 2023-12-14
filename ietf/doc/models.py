@@ -700,6 +700,8 @@ class RelatedDocument(models.Model):
 
         if self.source.type_id == "rfc":
             source_lvl = self.source.std_level_id
+        elif self.source.type_id in ["bcp","std"]:
+            source_lvl = self.source.type_id
         else:
             source_lvl = self.source.intended_std_level_id
 
@@ -711,6 +713,8 @@ class RelatedDocument(models.Model):
                 target_lvl = 'unkn'
             else:
                 target_lvl = self.target.std_level_id
+        elif self.target.type_id in ["bcp", "std"]:
+            target_lvl = self.target.type_id
         else:
             if not self.target.intended_std_level:
                 target_lvl = 'unkn'
