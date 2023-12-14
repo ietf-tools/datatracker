@@ -652,17 +652,18 @@ class DocumentInfo(models.Model):
         )
     
     def referenced_by_rfcs(self):
-        refs_to = self.relations_that(("refnorm", "refinfo", "refunk", "refold")).filter(
+        """Get refs to this doc from RFCs"""
+        return self.relations_that(("refnorm", "refinfo", "refunk", "refold")).filter(
             source__type__slug="rfc"
         )
+
+    def directly_or_indirectly_referenced_by_rfcs(self):
+        """Get refs to this doc, or a draft/rfc it came from/became, from an RFC"""
+        refs_to = self.referenced_by_rfcs()
         if self.became_rfc():
-            refs_to |= self.became_rfc().relations_that(("refnorm", "refinfo", "refunk", "refold")).filter(
-                source__type__slug="rfc"
-            )
+            refs_to |= self.became_rfc().referenced_by_rfcs()
         if self.came_from_draft():
-            refs_to |= self.came_from_draft().relations_that(("refnorm", "refinfo", "refunk", "refold")).filter(
-                source__type__slug="rfc"
-            )
+            refs_to |= self.came_from_draft().referenced_by_rfcs()
         return refs_to
 
     def became_rfc(self):
