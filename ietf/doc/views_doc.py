@@ -1439,6 +1439,8 @@ def document_references(request, name):
 def document_referenced_by(request, name):
     doc = get_object_or_404(Document,name=name)
     refs = doc.referenced_by()
+    if doc.came_from_draft():
+        refs |= doc.came_from_draft().referenced_by()
     if doc.type_id in ["bcp","std","fyi"]:
         for rfc in doc.contains():
             refs |= rfc.referenced_by()
