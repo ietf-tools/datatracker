@@ -740,14 +740,31 @@ def dependencies(request, acronym, group_type=None):
         source__type="draft",
         relationship__slug__startswith="ref",
     )
-
-    both_rfcs = Q(source__type_id="rfc", target__type_id="rfc")
-    inactive = Q(source__states__slug__in=["expired", "repl"])
+    rfc_or_subseries = {"rfc", "bcp", "fyi", "std"}
+    both_rfcs = Q(source__type_id="rfc", target__type_id__in=rfc_or_subseries)
+    pre_rfc_draft_to_rfc = Q(
+        source__states__type="draft",
+        source__states__slug="rfc",
+        target__type_id__in=rfc_or_subseries,
+    )
+    both_pre_rfcs = Q(
+        source__states__type="draft",
+        source__states__slug="rfc",
+        target__type_id="draft",
+        target__states__type="draft",
+        target__states__slug="rfc",
+    )
+    inactive = Q(
+        source__states__type="draft",
+        source__states__slug__in=["expired", "repl"],
+    )
     attractor = Q(target__name__in=["rfc5000", "rfc5741"])
-    removed = Q(source__states__slug__in=["auth-rm", "ietf-rm"])
+    removed = Q(source__states__type="draft", source__states__slug__in=["auth-rm", "ietf-rm"])
     relations = (
         RelatedDocument.objects.filter(references)
         .exclude(both_rfcs)
+        .exclude(pre_rfc_draft_to_rfc)
+        .exclude(both_pre_rfcs)
         .exclude(inactive)
         .exclude(attractor)
         .exclude(removed)
@@ -755,8 +772,8 @@ def dependencies(request, acronym, group_type=None):
 
     links = set()
     for x in relations:
-        target_state = x.target.get_state_slug("draft")
-        if target_state != "rfc" or x.is_downref():
+        always_include = x.target.type_id not in rfc_or_subseries and x.target.get_state_slug("draft") != "rfc" 
+        if always_include or x.is_downref():
             links.add(x)
 
     replacements = RelatedDocument.objects.filter(
@@ -771,13 +788,12 @@ def dependencies(request, acronym, group_type=None):
     graph = {
         "nodes": [
             {
-                "id": x.name,
-                "rfc": x.get_state("draft").slug == "rfc",
-                "post-wg": not x.get_state("draft-iesg").slug
-                in ["idexists", "watching", "dead"],
-                "expired": x.get_state("draft").slug == "expired",
-                "replaced": x.get_state("draft").slug == "repl",
-                "group": x.group.acronym if x.group.acronym != "none" else "",
+                "id": x.became_rfc().name if x.became_rfc() else x.name,
+                "rfc": x.type_id == "rfc" or x.became_rfc() is not None,
+                "post-wg": x.get_state_slug("draft-iesg") not in ["idexists", "watching", "dead"],
+                "expired": x.get_state_slug("draft") == "expired",
+                "replaced": x.get_state_slug("draft") == "repl",
+                "group": x.group.acronym if x.group and x.group.acronym != "none" else "",
                 "url": x.get_absolute_url(),
                 "level": x.intended_std_level.name
                 if x.intended_std_level
@@ -789,8 +805,8 @@ def dependencies(request, acronym, group_type=None):
         ],
         "links": [
             {
-                "source": x.source.name,
-                "target": x.target.name,
+                "source": x.source.became_rfc().name if x.source.became_rfc() else x.source.name,
+                "target": x.target.became_rfc().name if x.target.became_rfc() else x.target.name,
                 "rel": "downref" if x.is_downref() else x.relationship.slug,
             }
             for x in links

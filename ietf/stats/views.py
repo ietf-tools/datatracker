@@ -14,7 +14,7 @@ from collections import defaultdict
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.core.cache import cache
-from django.db.models import Count, Q
+from django.db.models import Count, Q, Subquery, OuterRef
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse as urlreverse
@@ -34,7 +34,7 @@ from ietf.group.models import Role, Group
 from ietf.person.models import Person
 from ietf.name.models import ReviewResultName, CountryName, DocRelationshipName, ReviewAssignmentStateName
 from ietf.person.name import plain_name
-from ietf.doc.models import Document, State, DocEvent
+from ietf.doc.models import Document, RelatedDocument, State, DocEvent
 from ietf.meeting.models import Meeting
 from ietf.stats.models import MeetingRegistration, CountryAlias
 from ietf.stats.utils import get_aliased_affiliations, get_aliased_countries, compute_hirsch_index
@@ -607,13 +607,29 @@ def document_stats(request, stats_type=None):
 
             doc_years = defaultdict(set)
 
-            docevent_qs = DocEvent.objects.filter(
+            draftevent_qs = DocEvent.objects.filter(
                 doc__type="draft",
-                type__in=["published_rfc", "new_revision"],
-            ).values_list("doc", "time").order_by("doc")
+                type = "new_revision",
+            ).values_list("doc","time").order_by("doc")
 
-            for doc_id, time in docevent_qs.iterator():
+            for doc_id, time in draftevent_qs.iterator():
                 # RPC_TZINFO is used to match the timezone handling in Document.pub_date()
+                doc_years[doc_id].add(time.astimezone(RPC_TZINFO).year)
+
+            rfcevent_qs = (
+                DocEvent.objects.filter(doc__type="rfc", type="published_rfc")
+                .annotate(
+                    draft=Subquery(
+                        RelatedDocument.objects.filter(
+                            target=OuterRef("doc__pk"), relationship_id="became_rfc"
+                        ).values_list("source", flat=True)[:1]
+                    )
+                )
+                .values_list("draft", "time")
+                .order_by("draft")
+            )
+
+            for doc_id, time in rfcevent_qs.iterator():
                 doc_years[doc_id].add(time.astimezone(RPC_TZINFO).year)
 
             person_qs = Person.objects.filter(person_filters)
