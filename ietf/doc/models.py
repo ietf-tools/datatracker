@@ -657,15 +657,6 @@ class DocumentInfo(models.Model):
             source__type__slug="rfc"
         )
 
-    def directly_or_indirectly_referenced_by_rfcs(self):
-        """Get refs to this doc, or a draft/rfc it came from/became, from an RFC"""
-        refs_to = self.referenced_by_rfcs()
-        if self.became_rfc():
-            refs_to |= self.became_rfc().referenced_by_rfcs()
-        if self.came_from_draft():
-            refs_to |= self.came_from_draft().referenced_by_rfcs()
-        return refs_to
-
     def became_rfc(self):
         if not hasattr(self, "_cached_became_rfc"):
             doc = self if isinstance(self, Document) else self.doc
@@ -683,6 +674,13 @@ class DocumentInfo(models.Model):
     
     def part_of(self):
         return self.related_that("contains")
+
+    def referenced_by_rfcs_as_rfc_or_draft(self):
+        """Get refs to this doc, or a draft/rfc it came from, from an RFC"""
+        refs_to = self.referenced_by_rfcs()
+        if self.type_id == "rfc" and self.came_from_draft():
+            refs_to |= self.came_from_draft().referenced_by_rfcs()
+        return refs_to
 
     class Meta:
         abstract = True
