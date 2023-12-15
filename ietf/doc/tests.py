@@ -2997,8 +2997,5 @@ class DocInfoMethodsTests(TestCase):
 
         self.assertCountEqual(
             rfc.referenced_by_rfcs_as_rfc_or_draft(),
-            (
-                draft.targets_related.filter(source__type="rfc").exclude(source__relateddocument__target=rfc)
-                | rfc.targets_related.filter(source__type="rfc")
-            ),
+            draft.targets_related.filter(source__type="rfc") | rfc.targets_related.filter(source__type="rfc"),
         )
