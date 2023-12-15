@@ -37,6 +37,7 @@ class IetfFiltersTests(TestCase):
             StatusChangeFactory(),
             ConflictReviewFactory(),
             StatementFactory(),
+            BofreqFactory(),
         ]:
             self.assertFalse(is_in_stream(draft))
         for draft in [RgDraftFactory(), WgDraftFactory(), EditorialDraftFactory()]:
