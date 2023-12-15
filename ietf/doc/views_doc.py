@@ -266,7 +266,7 @@ def document_main(request, name, rev=None, document_html=False):
 
         file_urls, found_types = build_file_urls(doc)
         content = doc.text_or_error() # pyflakes:ignore
-        content = markup_txt.markup(maybe_split(content, split=split_content))
+        content = markdown.markdown(maybe_split(content, split=split_content))
 
         if not found_types:
             content = "This RFC is not currently available online."
