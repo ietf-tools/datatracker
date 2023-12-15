@@ -20,7 +20,7 @@ jobs:
         image: ghcr.io/ietf-tools/datatracker-db:latest
     
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     
     - name: Prepare for tests
       run: |
@@ -45,11 +45,18 @@ jobs:
         echo "Running tests..."
         if [[ "x${{ github.event.inputs.ignoreLowerCoverage }}" == "xtrue" ]]; then
           echo "Lower coverage failures will be ignored."
-          ./ietf/manage.py test --validate-html-harder --settings=settings_test --ignore-lower-coverage
+          HOME=/root ./ietf/manage.py test -v2 --validate-html-harder --settings=settings_test --ignore-lower-coverage
         else
-          ./ietf/manage.py test --validate-html-harder --settings=settings_test
+          HOME=/root ./ietf/manage.py test -v2 --validate-html-harder --settings=settings_test
         fi
         coverage xml
+
+    - name: Upload geckodriver.log
+      uses: actions/upload-artifact@v3
+      if: ${{ failure() }}
+      with:
+        name: geckodriverlog
+        path: geckodriver.log
 
     - name: Upload Coverage Results to Codecov
       uses: codecov/codecov-action@v3.1.4
@@ -77,9 +84,9 @@ jobs:
         project: [chromium, firefox]
     
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
-    - uses: actions/setup-node@v3
+    - uses: actions/setup-node@v4
       with:
         node-version: '18'
 
@@ -118,7 +125,7 @@ jobs:
         image: ghcr.io/ietf-tools/datatracker-db:latest
     
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     
     - name: Prepare for tests
       run: |

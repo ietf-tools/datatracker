@@ -18,9 +18,6 @@ sudo chown -R dev:dev "$WORKSPACEDIR/.vite"
 sudo chown -R dev:dev "$WORKSPACEDIR/.yarn/unplugged"
 sudo chown dev:dev "/assets"
 
-echo "Fix chromedriver /dev/shm permissions..."
-sudo chmod 1777 /dev/shm
-
 # Run nginx
 echo "Starting nginx..."
 sudo nginx

@@ -14,6 +14,7 @@ import pytz
 import re
 import tarfile
 import tempfile
+import shutil
 
 from calendar import timegm
 from collections import OrderedDict, Counter, deque, defaultdict, namedtuple
@@ -47,7 +48,7 @@ from django.views.generic import RedirectView
 import debug                            # pyflakes:ignore
 
 from ietf.doc.fields import SearchableDocumentsField
-from ietf.doc.models import Document, State, DocEvent, NewRevisionDocEvent, DocAlias
+from ietf.doc.models import Document, State, DocEvent, NewRevisionDocEvent
 from ietf.group.models import Group
 from ietf.group.utils import can_manage_session_materials, can_manage_some_groups, can_manage_group
 from ietf.person.models import Person, User
@@ -83,8 +84,10 @@ from ietf.meeting.utils import swap_meeting_schedule_timeslot_assignments, bulk_
 from ietf.meeting.utils import preprocess_meeting_important_dates
 from ietf.meeting.utils import new_doc_for_session, write_doc_for_session
 from ietf.meeting.utils import get_activity_stats, post_process, create_recording
+from ietf.meeting.utils import participants_for_meeting
 from ietf.message.utils import infer_message
 from ietf.name.models import SlideSubmissionStatusName, ProceedingsMaterialTypeName, SessionPurposeName
+from ietf.stats.models import MeetingRegistration
 from ietf.utils import markdown
 from ietf.utils.decorators import require_api_key
 from ietf.utils.hedgedoc import Note, NoteError
@@ -235,7 +238,7 @@ def _get_materials_doc(meeting, name):
         docname, rev = name.rsplit("-", 1)
         if len(rev) == 2 and rev.isdigit():
             doc = Document.objects.get(name=docname)  # may raise Document.DoesNotExist
-            if doc.get_related_meeting() == meeting and rev in doc.revisions():
+            if doc.get_related_meeting() == meeting and rev in doc.revisions_by_newrevisionevent():
                 return doc, rev
     # give up
     raise Document.DoesNotExist
@@ -245,7 +248,6 @@ def _get_materials_doc(meeting, name):
 def materials_document(request, document, num=None, ext=None):
     meeting=get_meeting(num,type_in=['ietf','interim'])
     num = meeting.number
-    # This view does not allow the use of DocAliases. Right now we are probably only creating one (identity) alias, but that may not hold in the future.
     try:
         doc, rev = _get_materials_doc(meeting=meeting, name=document)
     except Document.DoesNotExist:
@@ -279,15 +281,21 @@ def materials_document(request, document, num=None, ext=None):
         if len(file_ext) == 2 and file_ext[1] == '.md' and mtype == 'text/plain':
             sorted_accept = sort_accept_tuple(request.META.get('HTTP_ACCEPT'))
             for atype in sorted_accept:
-                if atype[0] == 'text/markdown':
-                    content_type = content_type.replace('plain', 'markdown', 1)
-                    break;
-                elif atype[0] == 'text/html':
-                    bytes = "<html>\n<head><base target=\"_blank\" /></head>\n<body>\n%s\n</body>\n</html>\n" % markdown.markdown(bytes.decode(encoding=chset))
-                    content_type = content_type.replace('plain', 'html', 1)
-                    break;
-                elif atype[0] == 'text/plain':
-                    break;
+                if atype[0] == "text/markdown":
+                    content_type = content_type.replace("plain", "markdown", 1)
+                    break
+                elif atype[0] == "text/html":
+                    bytes = render_to_string(
+                        "minimal.html",
+                        {
+                            "content": markdown.markdown(bytes.decode(encoding=chset)),
+                            "title": basename,
+                        },
+                    )
+                    content_type = content_type.replace("plain", "html", 1)
+                    break
+                elif atype[0] == "text/plain":
+                    break
 
         response = HttpResponse(bytes, content_type=content_type)
         response['Content-Disposition'] = 'inline; filename="%s"' % basename
@@ -2586,7 +2594,6 @@ def save_bluesheet(request, session, file, encoding='utf-8'):
                   rev = '00',
               )
         doc.states.add(State.objects.get(type_id='bluesheets',slug='active'))
-        DocAlias.objects.create(name=doc.name).docs.add(doc)
         session.sessionpresentation_set.create(document=doc,rev='00')
     filename = '%s-%s%s'% ( doc.name, doc.rev, ext)
     doc.uploaded_filename = filename
@@ -2715,7 +2722,6 @@ def upload_session_agenda(request, session_id, num):
                               group = session.group,
                               rev = '00',
                           )
-                    DocAlias.objects.create(name=doc.name).docs.add(doc)
                 doc.states.add(State.objects.get(type_id='agenda',slug='active'))
             if session.sessionpresentation_set.filter(document=doc).exists():
                 sp = session.sessionpresentation_set.get(document=doc)
@@ -2808,7 +2814,6 @@ def upload_session_slides(request, session_id, num, name=None):
                               group = session.group,
                               rev = '00',
                           )
-                    DocAlias.objects.create(name=doc.name).docs.add(doc)
                 doc.states.add(State.objects.get(type_id='slides',slug='active'))
                 doc.states.add(State.objects.get(type_id='reuse_policy',slug='single'))
             if session.sessionpresentation_set.filter(document=doc).exists():
@@ -3851,13 +3856,29 @@ def proceedings_attendees(request, num=None):
     meeting = get_meeting(num)
     if meeting.proceedings_format_version == 1:
         return HttpResponseRedirect(f'{settings.PROCEEDINGS_V1_BASE_URL.format(meeting=meeting)}/attendee.html')
-    overview_template = '/meeting/proceedings/%s/attendees.html' % meeting.number
-    try:
-        template = render_to_string(overview_template, {})
-    except TemplateDoesNotExist:
-        raise Http404
+
+    template = None
+    meeting_registrations = None
+
+    if int(meeting.number) >= 118:
+        checked_in, attended = participants_for_meeting(meeting)
+        regs = list(MeetingRegistration.objects.filter(meeting__number=num, reg_type='onsite', checkedin=True))
+
+        for mr in MeetingRegistration.objects.filter(meeting__number=num, reg_type='remote').select_related('person'):
+            if mr.person.pk in attended and mr.person.pk not in checked_in:
+                regs.append(mr)
+
+        meeting_registrations = sorted(regs, key=lambda x: (x.last_name, x.first_name))
+    else:
+        overview_template = "/meeting/proceedings/%s/attendees.html" % meeting.number
+        try:
+            template = render_to_string(overview_template, {})
+        except TemplateDoesNotExist:
+            raise Http404
+
     return render(request, "meeting/proceedings_attendees.html", {
         'meeting': meeting,
+        'meeting_registrations': meeting_registrations,
         'template': template,
     })
 
@@ -4526,7 +4547,6 @@ def approve_proposed_slides(request, slidesubmission_id, num):
                               group = submission.session.group,
                               rev = '00',
                           )
-                    DocAlias.objects.create(name=doc.name).docs.add(doc)
                 doc.states.add(State.objects.get(type_id='slides',slug='active'))
                 doc.states.add(State.objects.get(type_id='reuse_policy',slug='single'))
                 if submission.session.sessionpresentation_set.filter(document=doc).exists():
@@ -4549,12 +4569,23 @@ def approve_proposed_slides(request, slidesubmission_id, num):
                 path = os.path.join(submission.session.meeting.get_materials_path(),'slides')
                 if not os.path.exists(path):
                     os.makedirs(path)
-                os.rename(submission.staged_filepath(), os.path.join(path, target_filename))
+                shutil.move(submission.staged_filepath(), os.path.join(path, target_filename))
                 post_process(doc)
+                DocEvent.objects.create(type="approved_slides", doc=doc, rev=doc.rev, by=request.user.person, desc="Slides approved")
+
                 acronym = submission.session.group.acronym
                 submission.status = SlideSubmissionStatusName.objects.get(slug='approved')
                 submission.doc = doc
                 submission.save()
+                (to, cc) = gather_address_lists('slides_approved', group=submission.session.group, proposer=submission.submitter).as_strings()
+                subject = f"Slides approved for {submission.session.meeting} : {submission.session.group.acronym}{' : '+submission.session.name if submission.session.name else ''}"
+                body = render_to_string("meeting/slides_approved.txt", {
+                    "to": to,
+                    "cc": cc,
+                    "submission": submission,
+                    "settings": settings,
+                })
+                send_mail_text(request, to, None, subject, body, cc=cc)
                 return redirect('ietf.meeting.views.session_details',num=num,acronym=acronym)
             elif request.POST.get('disapprove'):
                 # Errors in processing a submit request sometimes result

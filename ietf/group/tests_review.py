@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2016-2020, All Rights Reserved
+# Copyright The IETF Trust 2016-2023, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -710,6 +710,22 @@ class ReviewTests(TestCase):
         self.assertEqual(settings.remind_days_before_deadline, 6)
         self.assertEqual(settings.max_items_to_show_in_reviewer_list, 10)
         self.assertEqual(settings.days_to_show_in_reviewer_list, 365)
+
+    def test_assign_reviewer_after_reject(self):
+        team = ReviewTeamFactory()
+        reviewer = RoleFactory(name_id='reviewer', group=team).person
+        ReviewerSettingsFactory(person=reviewer, team=team)
+        review_req = ReviewRequestFactory(team=team)
+        ReviewAssignmentFactory(review_request=review_req, state_id='rejected', reviewer=reviewer.email())
+
+        unassigned_url = urlreverse(ietf.group.views.manage_review_requests, kwargs={ 'acronym': team.acronym, 'group_type': team.type_id, "assignment_status": "unassigned" })
+        login_testing_unauthorized(self, "secretary", unassigned_url)
+
+        r = self.client.get(unassigned_url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        reviewer_label = q("option[value=\"{}\"]".format(reviewer.email())).text().lower()
+        self.assertIn("rejected review of document before", reviewer_label)
 
 
 class BulkAssignmentTests(TestCase):

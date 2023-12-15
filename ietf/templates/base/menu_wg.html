@@ -3,7 +3,7 @@
 {% origin %}
 {% for p in parents %}
     <li class="dropend group-menu group-parent-{{ p.id }}">
-        <a class="dropdown-item dropdown-toggle {% if flavor != 'top' %}text-wrap link-primary{% endif %}"
+        <a class="dropdown-item dropdown-toggle {% if flavor != 'top' %}text-wrap{% endif %}"
            href="{{ p.menu_url }}">
             {{ p.short_name }}
         </a>

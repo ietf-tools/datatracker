@@ -4,16 +4,14 @@ import datetime
 import itertools
 import os
 import pytz
-import requests
 import subprocess
 
 from collections import defaultdict
 from pathlib import Path
-from urllib.error import HTTPError
 
 from django.conf import settings
 from django.contrib import messages
-from django.template.loader import render_to_string
+from django.db.models import Q
 from django.utils import timezone
 from django.utils.encoding import smart_str
 
@@ -21,8 +19,8 @@ import debug                            # pyflakes:ignore
 
 from ietf.dbtemplate.models import DBTemplate
 from ietf.meeting.models import (Session, SchedulingEvent, TimeSlot,
-    Constraint, SchedTimeSessAssignment, SessionPresentation)
-from ietf.doc.models import Document, DocAlias, State, NewRevisionDocEvent
+    Constraint, SchedTimeSessAssignment, SessionPresentation, Attended)
+from ietf.doc.models import Document, State, NewRevisionDocEvent
 from ietf.doc.models import DocEvent
 from ietf.group.models import Group
 from ietf.group.utils import can_manage_materials
@@ -126,31 +124,7 @@ def sort_sessions(sessions):
     return sorted(sessions, key=lambda s: (s.meeting.number, s.group.acronym, session_time_for_sorting(s, use_meeting_date=False)))
 
 def create_proceedings_templates(meeting):
-    '''Create DBTemplates for meeting proceedings'''
-    # Get meeting attendees from registration system
-    url = settings.STATS_REGISTRATION_ATTENDEES_JSON_URL.format(number=meeting.number)
-    try:
-        attendees = requests.get(url, timeout=settings.DEFAULT_REQUESTS_TIMEOUT).json()
-    except (ValueError, HTTPError, requests.Timeout) as exc:
-        attendees = []
-        log(f'Failed to retrieve meeting attendees from [{url}]: {exc}')
-
-    if attendees:
-        attendees = sorted(attendees, key = lambda a: a['LastName'])
-        content = render_to_string('meeting/proceedings_attendees_table.html', {
-            'attendees':attendees})
-        try:
-            template = DBTemplate.objects.get(path='/meeting/proceedings/%s/attendees.html' % (meeting.number, ))
-            template.title='IETF %s Attendee List' % meeting.number
-            template.type_id='django'
-            template.content=content
-            template.save()
-        except DBTemplate.DoesNotExist:
-            DBTemplate.objects.create(
-                path='/meeting/proceedings/%s/attendees.html' % (meeting.number, ),
-                title='IETF %s Attendee List' % meeting.number,
-                type_id='django',
-                content=content)    
+    '''Create DBTemplates for meeting proceedings'''  
     # Make copy of default IETF Overview template
     if not meeting.overview:
         path = '/meeting/proceedings/%s/overview.rst' % (meeting.number, )
@@ -622,7 +596,6 @@ def save_session_minutes_revision(session, file, ext, request, encoding=None, ap
                 group = session.group,
                 rev = '00',
             )
-            DocAlias.objects.create(name=doc.name).docs.add(doc)
         doc.states.add(State.objects.get(type_id='minutes',slug='active'))
         if session.sessionpresentation_set.filter(document=doc).exists():
             sp = session.sessionpresentation_set.get(document=doc)
@@ -746,7 +719,6 @@ def new_doc_for_session(type_id, session):
                 rev = '00',
             )
     doc.states.add(State.objects.get(type_id=type_id, slug='active'))
-    DocAlias.objects.create(name=doc.name).docs.add(doc)
     session.sessionpresentation_set.create(document=doc,rev='00')
     return doc
 
@@ -779,8 +751,6 @@ def create_recording(session, url, title=None, user=None):
                                   rev='00',
                                   type_id='recording')
     doc.set_state(State.objects.get(type='recording', slug='active'))
-
-    DocAlias.objects.create(name=doc.name).docs.add(doc)
     
     # create DocEvent
     NewRevisionDocEvent.objects.create(type='new_revision',
@@ -799,11 +769,11 @@ def get_next_sequence(group, meeting, type):
     Returns the next sequence number to use for a document of type = type.
     Takes a group=Group object, meeting=Meeting object, type = string
     '''
-    aliases = DocAlias.objects.filter(name__startswith='{}-{}-{}-'.format(type, meeting.number, group.acronym))
-    if not aliases:
+    docs = Document.objects.filter(name__startswith='{}-{}-{}-'.format(type, meeting.number, group.acronym))
+    if not docs:
         return 1
-    aliases = aliases.order_by('name')
-    sequence = int(aliases.last().name.split('-')[-1]) + 1
+    docs = docs.order_by('name')
+    sequence = int(docs.last().name.split('-')[-1]) + 1
     return sequence
 
 def get_activity_stats(sdate, edate):
@@ -910,3 +880,14 @@ def post_process(doc):
             desc='Converted document to PDF',
         )
         doc.save_with_history([e])
+
+
+def participants_for_meeting(meeting):
+    """ Return a tuple (checked_in, attended)
+        checked_in = queryset of onsite, checkedin participants values_list('person')
+        attended = queryset of remote participants who attended a session values_list('person')
+    """
+    checked_in = meeting.meetingregistration_set.filter(reg_type='onsite', checkedin=True).values_list('person', flat=True).distinct()
+    sessions = meeting.session_set.filter(Q(type='plenary') | Q(group__type__in=['wg', 'rg']))
+    attended = Attended.objects.filter(session__in=sessions).values_list('person', flat=True).distinct()
+    return (checked_in, attended)
