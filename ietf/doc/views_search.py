@@ -418,13 +418,19 @@ STATE_SLUGS = {
     for dt in AD_WORKLOAD
 }
 
+
+def state_to_doc_type(state):
+    for dt in STATE_SLUGS:
+        if state in STATE_SLUGS[dt]:
+            return dt
+    return None
+
+
 IESG_STATES = State.objects.filter(type="draft-iesg").values_list("name", flat=True)
 
 
 def date_to_bucket(date, now, num_buckets):
-    return num_buckets - min(
-        num_buckets, int((now.date() - date.date()).total_seconds() / 60 / 60 / 24)
-    )
+    return num_buckets - int((now.date() - date.date()).total_seconds() / 60 / 60 / 24)
 
 
 def ad_workload(request):
@@ -477,6 +483,7 @@ def ad_workload(request):
                         to_state = state_name(dt, state, shorten=False)
                     elif e.desc.endswith("has been replaced"):
                         # stop tracking
+                        last = e.time
                         break
 
                 if not to_state:
@@ -501,26 +508,30 @@ def ad_workload(request):
                 elif to_state == "RFC Published":
                     to_state = "RFC"
 
+                if dt == "rfc":
+                    new_dt = state_to_doc_type(to_state)
+                    if new_dt is not None and new_dt != dt:
+                        dt = new_dt
+
                 if to_state not in STATE_SLUGS[dt].keys() or to_state == "Replaced":
                     # change into a state the AD dashboard doesn't display
                     if to_state in IESG_STATES or to_state == "Replaced":
-                        # if it's an IESG state we don't display, we're done with this doc
+                        # if it's an IESG state we don't display, record it's time
                         last = e.time
-                        break
-                    # if it's not an IESG state, keep going with next event
+                    # keep going with next event
                     continue
 
                 sn = STATE_SLUGS[dt][to_state]
                 buckets_start = date_to_bucket(e.time, now, days)
                 buckets_end = date_to_bucket(last, now, days)
 
-                if buckets_end >= days:
-                    # this event is older than we record in the history
-                    if last == now:
-                        # but since we didn't record any state yet,
-                        # this is the state the doc was in for the
-                        # entire history
-                        for b in range(buckets_start, days):
+                if dt == "charter" and to_state == "Approved" and buckets_start < 0:
+                    # don't count old charter approvals
+                    break
+
+                if buckets_start <= 0:
+                    if buckets_end >= 0:
+                        for b in range(0, buckets_end):
                             ad.buckets[dt][sn][b].append(doc.name)
                             sums[dt][sn][b].append(doc.name)
                         last = e.time
@@ -531,15 +542,6 @@ def ad_workload(request):
                     ad.buckets[dt][sn][b].append(doc.name)
                     sums[dt][sn][b].append(doc.name)
                 last = e.time
-
-            if last == now:
-                s = state_name(dt, state, shorten=False)
-                if s in STATE_SLUGS[dt].keys():
-                    # we didn't have a single event for this doc, assume
-                    # the current state applied throughput the history
-                    for b in range(days):
-                        ad.buckets[dt][state][b].append(doc.name)
-                        sums[dt][state][b].append(doc.name)
 
     metadata = [
         {
@@ -564,8 +566,11 @@ def ad_workload(request):
 
 def docs_for_ad(request, name):
     def sort_key(doc):
-        key = list(AD_WORKLOAD.keys()).index(doc_type(doc))
-        return key
+        dt = doc_type(doc)
+        dt_key = list(AD_WORKLOAD.keys()).index(dt)
+        ds = doc_state(doc)
+        ds_key = AD_WORKLOAD[dt].index(ds) if ds in AD_WORKLOAD[dt] else 99
+        return dt_key * 100 + ds_key
 
     ad = None
     responsible = Document.objects.values_list("ad", flat=True).distinct()

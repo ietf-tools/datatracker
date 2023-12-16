@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2016-2020, All Rights Reserved
+# Copyright The IETF Trust 2016-2023, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -360,7 +360,13 @@ class InterimSessionModelForm(forms.ModelForm):
 class InterimAnnounceForm(forms.ModelForm):
     class Meta:
         model = Message
-        fields = ('to', 'frm', 'cc', 'bcc', 'reply_to', 'subject', 'body')
+        fields = ('to', 'cc', 'frm', 'subject', 'body')
+
+    def __init__(self, *args, **kwargs):
+        super(InterimAnnounceForm, self).__init__(*args, **kwargs)
+        self.fields['frm'].label='From'
+        self.fields['frm'].widget.attrs['readonly'] = True
+        self.fields['to'].widget.attrs['readonly'] = True
 
     def save(self, *args, **kwargs):
         user = kwargs.pop('user')
