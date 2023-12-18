@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2009-2020, All Rights Reserved
+# Copyright The IETF Trust 2009-2023, All Rights Reserved
 # -*- coding: utf-8 -*-
 import datetime
 import io
@@ -6222,6 +6222,45 @@ class MaterialsTests(TestCase):
             self.requests_mock.get(f'{session.notes_url()}/download', text='markdown notes')
             self.requests_mock.get(f'{session.notes_url()}/info', text=json.dumps({'title': 'title', 'updatetime': '2021-12-01T17:11:00z'}))
             self.crawl_materials(url=url, top=top)
+
+    def test_enter_agenda(self):
+        session = SessionFactory(meeting__type_id='ietf')
+        url = urlreverse('ietf.meeting.views.upload_session_agenda',kwargs={'num':session.meeting.number,'session_id':session.id})
+        login_testing_unauthorized(self,"secretary",url)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertIn('Upload', str(q("Title")))
+        self.assertFalse(session.sessionpresentation_set.exists())
+
+        test_text = 'Enter agenda from scratch'
+        r = self.client.post(url,dict(submission_method="enter",content=test_text))
+        self.assertEqual(r.status_code, 302)
+        doc = session.sessionpresentation_set.filter(document__type_id='agenda').first().document
+        self.assertEqual(doc.rev,'00')
+
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertIn('Revise', str(q("Title")))
+
+        test_file = BytesIO(b'Upload after enter')
+        test_file.name = "some.txt"
+        r = self.client.post(url,dict(submission_method="upload",file=test_file,apply_to_all=False))
+        self.assertEqual(r.status_code, 302)
+        doc = Document.objects.get(pk=doc.pk)
+        self.assertEqual(doc.rev,'01')
+
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertIn('Revise', str(q("Title")))
+
+        test_text = 'Enter after upload'
+        r = self.client.post(url,dict(submission_method="enter",content=test_text))
+        self.assertEqual(r.status_code, 302)
+        doc = Document.objects.get(pk=doc.pk)
+        self.assertEqual(doc.rev,'02')
 
     def test_upload_slides(self):
 
