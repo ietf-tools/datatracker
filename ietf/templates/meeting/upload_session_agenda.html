@@ -51,7 +51,7 @@
                 for (var v in shouldBeVisible) {
                     for (var i in shouldBeVisible[v]) {
                         var selector = shouldBeVisible[v][i];
-                        var row = form.find(selector);
+                        var row = form.find(selector).parent();
                         if ($.inArray(selector, shouldBeVisible[val]) != -1)
                             row.show();
                         else
