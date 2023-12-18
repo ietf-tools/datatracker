@@ -109,7 +109,7 @@
                             <td>{{ doc.pub_date|date:"b Y"|title }}</td>
                             <td>{{ doc.title|urlize_ietf_docs }}</td>
                             <td class="text-end">
-                                {% with doc.referenced_by_rfcs.count as refbycount %}
+                                {% with doc.referenced_by_rfcs_as_rfc_or_draft.count as refbycount %}
                                     {% if refbycount %}
                                         <a class="text-end"
                                            href="{% url 'ietf.doc.views_doc.document_referenced_by' doc.name %}"

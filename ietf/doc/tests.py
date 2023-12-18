@@ -2951,4 +2951,51 @@ class DocInfoMethodsTests(TestCase):
         self.assertEqual(draft.revisions_by_dochistory(),[f"{i:02d}" for i in range(8,10)])
         self.assertEqual(draft.revisions_by_newrevisionevent(),[f"{i:02d}" for i in [*range(0,5), *range(6,10)]])      
 
+    def test_referenced_by_rfcs(self):
+        # n.b., no significance to the ref* values in this test
+        referring_draft = WgDraftFactory()
+        (rfc, referring_rfc) = WgRfcFactory.create_batch(2)
+        rfc.targets_related.create(relationship_id="refnorm", source=referring_draft)
+        rfc.targets_related.create(relationship_id="refnorm", source=referring_rfc)
+        self.assertCountEqual(
+            rfc.referenced_by_rfcs(),
+            rfc.targets_related.filter(source=referring_rfc),
+        )
 
+    def test_referenced_by_rfcs_as_rfc_or_draft(self):
+        # n.b., no significance to the ref* values in this test
+        draft = WgDraftFactory()
+        rfc = WgRfcFactory()
+        draft.relateddocument_set.create(relationship_id="became_rfc", target=rfc)
+        
+        # Draft referring to the rfc and the draft - should not be reported at all
+        draft_referring_to_both = WgDraftFactory()
+        draft_referring_to_both.relateddocument_set.create(relationship_id="refnorm", target=draft)
+        draft_referring_to_both.relateddocument_set.create(relationship_id="refnorm", target=rfc)
+        
+        # RFC referring only to the draft - should be reported for either the draft or the rfc
+        rfc_referring_to_draft = WgRfcFactory()
+        rfc_referring_to_draft.relateddocument_set.create(relationship_id="refinfo", target=draft)
+
+        # RFC referring only to the rfc - should be reported only for the rfc
+        rfc_referring_to_rfc = WgRfcFactory()
+        rfc_referring_to_rfc.relateddocument_set.create(relationship_id="refinfo", target=rfc)
+
+        # RFC referring only to the rfc - should be reported only for the rfc
+        rfc_referring_to_rfc = WgRfcFactory()
+        rfc_referring_to_rfc.relateddocument_set.create(relationship_id="refinfo", target=rfc)
+
+        # RFC referring to the rfc and the draft - should be reported for both
+        rfc_referring_to_both = WgRfcFactory()
+        rfc_referring_to_both.relateddocument_set.create(relationship_id="refnorm", target=draft)
+        rfc_referring_to_both.relateddocument_set.create(relationship_id="refnorm", target=rfc)
+
+        self.assertCountEqual(
+            draft.referenced_by_rfcs_as_rfc_or_draft(),
+            draft.targets_related.filter(source__type="rfc"),
+        )
+
+        self.assertCountEqual(
+            rfc.referenced_by_rfcs_as_rfc_or_draft(),
+            draft.targets_related.filter(source__type="rfc") | rfc.targets_related.filter(source__type="rfc"),
+        )
