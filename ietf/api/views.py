@@ -209,7 +209,7 @@ def api_new_meeting_registration(request):
                     nomcom = NomCom.objects.get(is_accepting_volunteers=True)
                 except (NomCom.DoesNotExist, NomCom.MultipleObjectsReturned):
                     nomcom = None
-                if nomcom:
+                if nomcom and not Volunteer.objects.filter(nomcom=nomcom,person=object.person).exists():
                     Volunteer.objects.create(
                         nomcom=nomcom,
                         person=object.person,
