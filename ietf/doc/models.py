@@ -651,8 +651,8 @@ class DocumentInfo(models.Model):
             | models.Q(source__type__slug="rfc")
         )
     
-    
     def referenced_by_rfcs(self):
+        """Get refs to this doc from RFCs"""
         return self.relations_that(("refnorm", "refinfo", "refunk", "refold")).filter(
             source__type__slug="rfc"
         )
@@ -674,6 +674,13 @@ class DocumentInfo(models.Model):
     
     def part_of(self):
         return self.related_that("contains")
+
+    def referenced_by_rfcs_as_rfc_or_draft(self):
+        """Get refs to this doc, or a draft/rfc it came from, from an RFC"""
+        refs_to = self.referenced_by_rfcs()
+        if self.type_id == "rfc" and self.came_from_draft():
+            refs_to |= self.came_from_draft().referenced_by_rfcs()
+        return refs_to
 
     class Meta:
         abstract = True

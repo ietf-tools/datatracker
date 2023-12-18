@@ -1,7 +1,6 @@
 # Copyright The IETF Trust 2017-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
-
 import json
 import pytz
 import re
@@ -38,6 +37,7 @@ from ietf.doc.utils import fuzzy_find_documents
 from ietf.ietfauth.views import send_account_creation_email
 from ietf.ietfauth.utils import role_required
 from ietf.meeting.models import Meeting
+from ietf.nomcom.models import Volunteer, NomCom
 from ietf.stats.models import MeetingRegistration
 from ietf.utils import log
 from ietf.utils.decorators import require_api_key
@@ -140,7 +140,7 @@ def api_new_meeting_registration(request):
     def err(code, text):
         return HttpResponse(text, status=code, content_type='text/plain')
     required_fields = [ 'meeting', 'first_name', 'last_name', 'affiliation', 'country_code',
-                        'email', 'reg_type', 'ticket_type', 'checkedin']
+                        'email', 'reg_type', 'ticket_type', 'checkedin', 'is_nomcom_volunteer']
     fields = required_fields + []
     if request.method == 'POST':
         # parameters:
@@ -202,6 +202,19 @@ def api_new_meeting_registration(request):
             else:
                 send_account_creation_email(request, email)
                 response += ", Email sent"
+
+            # handle nomcom volunteer
+            if data['is_nomcom_volunteer'] and object.person:
+                try:
+                    nomcom = NomCom.objects.get(is_accepting_volunteers=True)
+                except (NomCom.DoesNotExist, NomCom.MultipleObjectsReturned):
+                    nomcom = None
+                if nomcom:
+                    Volunteer.objects.create(
+                        nomcom=nomcom,
+                        person=object.person,
+                        affiliation=data['affiliation'],
+                        origin='registration')
             return HttpResponse(response, status=202, content_type='text/plain')
     else:
         return HttpResponse(status=405)
