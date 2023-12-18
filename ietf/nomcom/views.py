@@ -1373,7 +1373,7 @@ def volunteer(request):
         form = VolunteerForm(person=person, data=request.POST)
         if form.is_valid():
             for nc in form.cleaned_data['nomcoms']:
-                nc.volunteer_set.create(person=person, affiliation=form.cleaned_data['affiliation'])
+                nc.volunteer_set.get_or_create(person=person, defaults={"affiliation": form.cleaned_data["affiliation"], "origin":"datatracker"})
             return redirect('ietf.ietfauth.views.profile')
     else:
         form = VolunteerForm(person=person,initial=dict(nomcoms=can_volunteer, affiliation=suggest_affiliation(person)))
