@@ -975,7 +975,7 @@ def document_pdfized(request, name, rev=None, ext=None):
 
     try:
         pdf = doc.pdfized()
-    except:
+    except Exception:
         return render(request, "doc/weasyprint_failed.html")
     if pdf:
         return HttpResponse(pdf,content_type='application/pdf')
