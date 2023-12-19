@@ -6226,6 +6226,7 @@ class MaterialsTests(TestCase):
     def test_enter_agenda(self):
         session = SessionFactory(meeting__type_id='ietf')
         url = urlreverse('ietf.meeting.views.upload_session_agenda',kwargs={'num':session.meeting.number,'session_id':session.id})
+        redirect_url = urlreverse('ietf.meeting.views.session_details', kwargs={'num':session.meeting.number,'acronym':session.group.acronym})
         login_testing_unauthorized(self,"secretary",url)
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
@@ -6235,7 +6236,7 @@ class MaterialsTests(TestCase):
 
         test_text = 'Enter agenda from scratch'
         r = self.client.post(url,dict(submission_method="enter",content=test_text))
-        self.assertEqual(r.status_code, 302)
+        self.assertRedirects(r, redirect_url)
         doc = session.sessionpresentation_set.filter(document__type_id='agenda').first().document
         self.assertEqual(doc.rev,'00')
 
@@ -6246,8 +6247,8 @@ class MaterialsTests(TestCase):
 
         test_file = BytesIO(b'Upload after enter')
         test_file.name = "some.txt"
-        r = self.client.post(url,dict(submission_method="upload",file=test_file,apply_to_all=False))
-        self.assertEqual(r.status_code, 302)
+        r = self.client.post(url,dict(submission_method="upload",file=test_file))
+        self.assertRedirects(r, redirect_url)
         doc = Document.objects.get(pk=doc.pk)
         self.assertEqual(doc.rev,'01')
 
@@ -6258,7 +6259,7 @@ class MaterialsTests(TestCase):
 
         test_text = 'Enter after upload'
         r = self.client.post(url,dict(submission_method="enter",content=test_text))
-        self.assertEqual(r.status_code, 302)
+        self.assertRedirects(r, redirect_url)
         doc = Document.objects.get(pk=doc.pk)
         self.assertEqual(doc.rev,'02')
 
