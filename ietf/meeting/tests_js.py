@@ -499,7 +499,7 @@ class EditMeetingScheduleTests(IetfSeleniumTestCase):
         clicked_index = 1
         # scroll so the button we want to click is just below the navbar, otherwise it may
         # fall beneath the sessions panel
-        navbar = self.driver.find_element_by_class_name('navbar')
+        navbar = self.driver.find_element(By.CSS_SELECTOR, '.navbar')
         self.driver.execute_script(
             'window.scrollBy({top: %s, behavior: "instant"})' % (
                     future_swap_days_buttons[1].location['y'] - navbar.size['height']
@@ -1045,6 +1045,7 @@ class InterimTests(IetfSeleniumTestCase):
     def do_upcoming_view_filter_test(self, querystring, visible_meetings=()):
         self.login()
         self.driver.get(self.absreverse('ietf.meeting.views.upcoming') + querystring)
+        time.sleep(0.2)  # gross, but give the filter JS time to do its thing 
         self.assert_upcoming_meeting_visibility(visible_meetings)
         self.assert_upcoming_meeting_calendar(visible_meetings)
         self.assert_upcoming_view_filter_matches_ics_filter(querystring)
@@ -1232,10 +1233,13 @@ class InterimTests(IetfSeleniumTestCase):
         self.driver.get(self.absreverse('ietf.meeting.views.upcoming'))
         tz_select_input = self.driver.find_element(By.ID, 'timezone-select')
         tz_select_bottom_input = self.driver.find_element(By.ID, 'timezone-select-bottom')
-        local_tz_link = self.driver.find_element(By.ID, 'local-timezone')
-        utc_tz_link = self.driver.find_element(By.ID, 'utc-timezone')
-        local_tz_bottom_link = self.driver.find_element(By.ID, 'local-timezone-bottom')
-        utc_tz_bottom_link = self.driver.find_element(By.ID, 'utc-timezone-bottom')
+        
+        # For things we click, need to click the labels / actually visible items. The actual inputs are hidden
+        # and managed by the JS.
+        local_tz_link = self.driver.find_element(By.CSS_SELECTOR, 'label[for="local-timezone"]')
+        utc_tz_link = self.driver.find_element(By.CSS_SELECTOR, 'label[for="utc-timezone"]')
+        local_tz_bottom_link = self.driver.find_element(By.CSS_SELECTOR, 'label[for="local-timezone-bottom"]')
+        utc_tz_bottom_link = self.driver.find_element(By.CSS_SELECTOR, 'label[for="utc-timezone-bottom"]')
         
         # wait for the select box to be updated - look for an arbitrary time zone to be in
         # its options list to detect this
@@ -1245,7 +1249,10 @@ class InterimTests(IetfSeleniumTestCase):
                 (By.CSS_SELECTOR, '#timezone-select > option[value="%s"]' % arbitrary_tz)
             )
         )
-
+        tz_selector_clickables = self.driver.find_elements(By.CSS_SELECTOR, ".tz-display .select2")
+        self.assertEqual(len(tz_selector_clickables), 2)
+        (tz_selector_top, tz_selector_bottom) = tz_selector_clickables
+        
         arbitrary_tz_bottom_opt = tz_select_bottom_input.find_element(By.CSS_SELECTOR,
             '#timezone-select-bottom > option[value="%s"]' % arbitrary_tz)
 
@@ -1266,8 +1273,7 @@ class InterimTests(IetfSeleniumTestCase):
         _assert_ietf_tz_correct(ietf_meetings, local_tz)
 
         # click 'utc' button
-        self.driver.execute_script("arguments[0].click();", utc_tz_link)  # FIXME-LARS: not working:
-        # utc_tz_link.click()
+        utc_tz_link.click()
         self.wait.until(expected_conditions.element_to_be_selected(utc_tz_opt))
         self.assertFalse(local_tz_opt.is_selected())
         self.assertFalse(local_tz_bottom_opt.is_selected())
@@ -1279,8 +1285,7 @@ class InterimTests(IetfSeleniumTestCase):
         _assert_ietf_tz_correct(ietf_meetings, 'UTC')
 
         # click back to 'local'
-        self.driver.execute_script("arguments[0].click();", local_tz_link)  # FIXME-LARS: not working:
-        # local_tz_link.click()
+        local_tz_link.click()
         self.wait.until(expected_conditions.element_to_be_selected(local_tz_opt))
         self.assertTrue(local_tz_opt.is_selected())
         self.assertTrue(local_tz_bottom_opt.is_selected())
@@ -1292,7 +1297,12 @@ class InterimTests(IetfSeleniumTestCase):
         _assert_ietf_tz_correct(ietf_meetings, local_tz)
 
         # Now select a different item from the select input
-        arbitrary_tz_opt.click()
+        tz_selector_top.click()
+        self.wait.until(
+            expected_conditions.presence_of_element_located(
+                (By.CSS_SELECTOR, 'span.select2-container .select2-results li[id$="America/Halifax"]')
+            )
+        ).click()
         self.wait.until(expected_conditions.element_to_be_selected(arbitrary_tz_opt))
         self.assertFalse(local_tz_opt.is_selected())
         self.assertFalse(local_tz_bottom_opt.is_selected())
@@ -1305,8 +1315,8 @@ class InterimTests(IetfSeleniumTestCase):
 
         # Now repeat those tests using the widgets at the bottom of the page
         # click 'utc' button
-        self.driver.execute_script("arguments[0].click();", utc_tz_bottom_link)  # FIXME-LARS: not working:
-        # utc_tz_bottom_link.click()
+        self.scroll_to_element(utc_tz_bottom_link)
+        utc_tz_bottom_link.click()
         self.wait.until(expected_conditions.element_to_be_selected(utc_tz_opt))
         self.assertFalse(local_tz_opt.is_selected())
         self.assertFalse(local_tz_bottom_opt.is_selected())
@@ -1318,8 +1328,8 @@ class InterimTests(IetfSeleniumTestCase):
         _assert_ietf_tz_correct(ietf_meetings, 'UTC')
 
         # click back to 'local'
-        self.driver.execute_script("arguments[0].click();", local_tz_bottom_link)  # FIXME-LARS: not working:
-        # local_tz_bottom_link.click()
+        self.scroll_to_element(local_tz_bottom_link)
+        local_tz_bottom_link.click()
         self.wait.until(expected_conditions.element_to_be_selected(local_tz_opt))
         self.assertTrue(local_tz_opt.is_selected())
         self.assertTrue(local_tz_bottom_opt.is_selected())
@@ -1331,7 +1341,13 @@ class InterimTests(IetfSeleniumTestCase):
         _assert_ietf_tz_correct(ietf_meetings, local_tz)
 
         # Now select a different item from the select input
-        arbitrary_tz_bottom_opt.click()
+        self.scroll_to_element(tz_selector_bottom)
+        tz_selector_bottom.click()
+        self.wait.until(
+            expected_conditions.presence_of_element_located(
+                (By.CSS_SELECTOR, 'span.select2-container .select2-results li[id$="America/Halifax"]')
+            )
+        ).click()
         self.wait.until(expected_conditions.element_to_be_selected(arbitrary_tz_opt))
         self.assertFalse(local_tz_opt.is_selected())
         self.assertFalse(local_tz_bottom_opt.is_selected())
@@ -1382,6 +1398,7 @@ class InterimTests(IetfSeleniumTestCase):
             ),
             'Modal close button not found or not clickable',
         )
+        time.sleep(0.3)  # gross, but the button is clickable while still fading in
         close_modal_button.click()
         self.wait.until(
             expected_conditions.invisibility_of_element(modal_div),

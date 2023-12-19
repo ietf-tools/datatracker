@@ -2,16 +2,16 @@
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
 {% load django_bootstrap5 %}
-{% block title %}Edit conflict review for {{ conflictdoc.canonical_name }}-{{ conflictdoc.rev }}{% endblock %}
+{% block title %}Edit conflict review for {{ conflictdoc.name }}-{{ conflictdoc.rev }}{% endblock %}
 {% block content %}
     {% origin %}
     <h1>
         Edit conflict review
         <br>
-        <small class="text-body-secondary">{{ conflictdoc.canonical_name }}-{{ conflictdoc.rev }}</small>
+        <small class="text-body-secondary">{{ conflictdoc.name }}-{{ conflictdoc.rev }}</small>
     </h1>
     <p class="my-3 alert alert-info">
-        The text will be submitted as <strong>{{ review.canonical_name }}-{{ next_rev }}</strong>
+        The text will be submitted as <strong>{{ review.name }}-{{ next_rev }}</strong>
     </p>
     <form class="my-3" enctype="multipart/form-data" method="post">
         {% csrf_token %}
@@ -27,7 +27,7 @@
             Reset to template text
         </button>
         <a class="btn btn-secondary float-end"
-           href="{% url "ietf.doc.views_doc.document_main" name=review.canonical_name %}">
+           href="{% url "ietf.doc.views_doc.document_main" name=review.name %}">
             Back
         </a>
     </form>

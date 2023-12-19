@@ -50,6 +50,8 @@ def can_request_review_of_doc(user, doc):
     if not user.is_authenticated:
         return False
 
+    # This is in a strange place as it has nothing to do with the user
+    # but this utility is used in too many places to move this quickly.
     if doc.type_id == 'draft' and doc.get_state_slug() != 'active':
         return False
 

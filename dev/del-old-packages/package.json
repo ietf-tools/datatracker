@@ -11,6 +11,6 @@
   "license": "ISC",
   "dependencies": {
     "@octokit/core": "^4.2.4",
-    "luxon": "^3.4.3"
+    "luxon": "^3.4.4"
   }
 }
