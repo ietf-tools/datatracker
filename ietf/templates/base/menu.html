@@ -212,6 +212,27 @@
         </a>
     </li>
     {% if flavor == 'top' %}
+        <li><hr class="dropdown-divider">
+        </li>
+    {% endif %}
+    <li {% if flavor == 'top' %}class="dropdown-header"{% else %}class="nav-item fw-bolder"{% endif %}>
+        Subseries
+    </li>
+    <li>
+        <a class="dropdown-item {% if flavor != 'top' %}text-wrap{% endif %}"
+           href="{% url "ietf.doc.views_search.index_subseries" type_id="std" %}">
+            STD
+        </a>
+        <a class="dropdown-item {% if flavor != 'top' %}text-wrap{% endif %}"
+           href="{% url "ietf.doc.views_search.index_subseries" type_id="bcp" %}">
+            BCP
+        </a>
+        <a class="dropdown-item {% if flavor != 'top' %}text-wrap{% endif %}"
+           href="{% url "ietf.doc.views_search.index_subseries" type_id="fyi" %}">
+            FYI
+        </a>
+    </li>
+    {% if flavor == 'top' %}
     </ul>
 </li>
 {% endif %}

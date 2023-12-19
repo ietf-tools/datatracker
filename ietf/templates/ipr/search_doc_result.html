@@ -58,7 +58,7 @@
             <tbody>
                 <tr>
                     <th scope="col" class="table-info" colspan="3">
-                        Results for {{ doc.name|prettystdname|urlize_ietf_docs }} ("{{ doc.document.title }}"){% if not forloop.first %}{% if doc.related %}, which was {{ doc.relation|lower }} {{ doc.related.source|prettystdname|urlize_ietf_docs  }} ("{{ doc.related.source.title }}"){% endif %}{% endif %}
+                        Results for {{ doc.name|prettystdname|urlize_ietf_docs }} ("{{ doc.title }}"){% if not forloop.first %}{% if doc.related %}, which was {{ doc.relation|lower }} {{ doc.related.source|prettystdname|urlize_ietf_docs  }} ("{{ doc.related.source.title }}"){% endif %}{% endif %}
                     </th>
                 </tr>
             </tbody>

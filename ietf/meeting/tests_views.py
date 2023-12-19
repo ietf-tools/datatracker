@@ -552,7 +552,7 @@ class MeetingTests(BaseMeetingTestCase):
             if material.type_id == 'draft':
                 expected_url = urlreverse(
                     'ietf.doc.views_doc.document_main',
-                    kwargs={'name': material.canonical_name()},
+                    kwargs={'name': material.name},
                 )
             else:
                 expected_url = material.get_href(meeting)
@@ -563,7 +563,7 @@ class MeetingTests(BaseMeetingTestCase):
             if material.type_id == 'draft':
                 expected_url = urlreverse(
                     'ietf.doc.views_doc.document_main',
-                    kwargs={'name': material.canonical_name()},
+                    kwargs={'name': material.name},
                 )
             else:
                 expected_url = material.get_href(meeting)
@@ -7813,7 +7813,7 @@ class ProceedingsTests(BaseMeetingTestCase):
             if material.type_id == 'draft':
                 expected_url = urlreverse(
                     'ietf.doc.views_doc.document_main',
-                    kwargs={'name': material.canonical_name()},
+                    kwargs={'name': material.name},
                 )
             else:
                 expected_url = material.get_href(meeting)
@@ -7824,7 +7824,7 @@ class ProceedingsTests(BaseMeetingTestCase):
             if material.type_id == 'draft':
                 expected_url = urlreverse(
                     'ietf.doc.views_doc.document_main',
-                    kwargs={'name': material.canonical_name()},
+                    kwargs={'name': material.name},
                 )
             else:
                 expected_url = material.get_href(meeting)

@@ -19,9 +19,9 @@
                 {% with doc.rfc_number as rfc_number %}
                     <a href="{% if rfc_number %} https://www.rfc-editor.org/rfc/rfc{{ rfc_number }}/ {% else %} {{ doc.get_href }} {% endif %}" aria-label="Content"><i class="bi bi-file-earmark-fill"></i></a>
                 {% endwith %}
-                <a href="{% url "ietf.doc.views_doc.document_main" name=doc.canonical_name %}">{{ doc.canonical_name }}</a>
+                <a href="{% url "ietf.doc.views_doc.document_main" name=doc.name %}">{{ doc.name }}</a>
                 {% if doc.has_rfc_editor_note %}
-                    <a href="{% url "ietf.doc.views_doc.document_main" name=doc.canonical_name %}writeup/">
+                    <a href="{% url "ietf.doc.views_doc.document_main" name=doc.name %}writeup/">
                         <em>(Has RFC Editor Note)</em>
                     </a>
                 {% endif %}

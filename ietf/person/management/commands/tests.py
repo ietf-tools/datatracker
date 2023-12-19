@@ -76,26 +76,26 @@ class CommandTests(TestCase):
         num_recent_events = len(recent_events)
 
         # call with dry run
-        output = self._call_command('purge_old_personal_api_key_events', str(keep_days), '--dry-run')
+        output = self._call_command('purge_old_personal_api_key_events', str(keep_days), '--dry-run', '-v2')
         self._assert_purge_dry_run_results(output, num_old_events, old_events + recent_events)
 
         # call for real
-        output = self._call_command('purge_old_personal_api_key_events', str(keep_days))
+        output = self._call_command('purge_old_personal_api_key_events', str(keep_days), '-v2')
         self._assert_purge_results(output, num_old_events, recent_events)
         self.assertEqual(PersonEvent.objects.count(), personevents_before + num_recent_events,
                          'PersonEvents were not cleaned up properly')
 
         # repeat - there should be nothing left to delete
-        output = self._call_command('purge_old_personal_api_key_events', '--dry-run', str(keep_days))
+        output = self._call_command('purge_old_personal_api_key_events', '--dry-run', str(keep_days), '-v2')
         self._assert_purge_dry_run_results(output, 0, recent_events)
 
-        output = self._call_command('purge_old_personal_api_key_events', str(keep_days))
+        output = self._call_command('purge_old_personal_api_key_events', str(keep_days), '-v2')
         self._assert_purge_results(output, 0, recent_events)
         self.assertEqual(PersonEvent.objects.count(), personevents_before + num_recent_events,
                          'PersonEvents were not cleaned up properly')
 
         # and now delete the remaining events
-        output = self._call_command('purge_old_personal_api_key_events', '0')
+        output = self._call_command('purge_old_personal_api_key_events', '0', '-v2')
         self._assert_purge_results(output, num_recent_events, [])
         self.assertEqual(PersonEvent.objects.count(), personevents_before,
                          'PersonEvents were not cleaned up properly')

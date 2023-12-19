@@ -9,7 +9,7 @@ from zoneinfo import ZoneInfo
 
 from django.conf import settings
 
-from ietf.doc.models import Document, DocAlias, RelatedDocument, DocEvent, TelechatDocEvent, BallotDocEvent, DocTypeName
+from ietf.doc.models import Document, RelatedDocument, DocEvent, TelechatDocEvent, BallotDocEvent, DocTypeName
 from ietf.doc.expire import expirable_drafts
 from ietf.doc.utils import augment_docs_and_user_with_user_info
 from ietf.meeting.models import SessionPresentation, Meeting, Session
@@ -54,12 +54,13 @@ def fill_in_document_sessions(docs, doc_dict, doc_ids):
 def fill_in_document_table_attributes(docs, have_telechat_date=False):
     # fill in some attributes for the document table results to save
     # some hairy template code and avoid repeated SQL queries
-    # TODO - this function evolved from something that assumed it was handling only drafts. It still has places where it assumes all docs are drafts where that is not a correct assumption
+    # TODO - this function evolved from something that assumed it was handling only drafts. 
+    #        It still has places where it assumes all docs are drafts where that is not a correct assumption
 
     doc_dict = dict((d.pk, d) for d in docs)
     doc_ids = list(doc_dict.keys())
 
-    rfc_aliases = dict([ (a.document.id, a.name) for a in DocAlias.objects.filter(name__startswith="rfc", docs__id__in=doc_ids) ])
+    rfcs = dict((d.pk, d.name) for d in docs if d.type_id == "rfc")
 
     # latest event cache
     event_types = ("published_rfc",
@@ -90,10 +91,8 @@ def fill_in_document_table_attributes(docs, have_telechat_date=False):
     # misc
     expirable_pks = expirable_drafts(Document.objects.filter(pk__in=doc_ids)).values_list('pk', flat=True)
     for d in docs:
-        # emulate canonical name which is used by a lot of the utils
-        # d.canonical_name = wrap_value(rfc_aliases[d.pk] if d.pk in rfc_aliases else d.name)
 
-        if d.rfc_number() != None and d.latest_event_cache["published_rfc"]:
+        if d.type_id == "rfc" and d.latest_event_cache["published_rfc"]:
             d.latest_revision_date = d.latest_event_cache["published_rfc"].time
         elif d.latest_event_cache["new_revision"]:
             d.latest_revision_date = d.latest_event_cache["new_revision"].time
@@ -118,7 +117,7 @@ def fill_in_document_table_attributes(docs, have_telechat_date=False):
             d.search_heading = "%s" % (d.type,)
             d.expirable = False
 
-        if d.get_state_slug() != "rfc":
+        if d.type_id == "draft" and d.get_state_slug() != "rfc":
             d.milestones = [ m for (t, s, v, m) in sorted(((m.time, m.state.slug, m.desc, m) for m in d.groupmilestone_set.all() if m.state_id == "active")) ]
             d.review_assignments = review_assignments_to_list_for_docs([d]).get(d.name, [])
 
@@ -128,29 +127,30 @@ def fill_in_document_table_attributes(docs, have_telechat_date=False):
     # RFCs
 
     # errata
-    erratas = set(Document.objects.filter(tags="errata", id__in=list(rfc_aliases.keys())).distinct().values_list("name", flat=True))
-    verified_erratas = set(Document.objects.filter(tags="verified-errata", id__in=list(rfc_aliases.keys())).distinct().values_list("name", flat=True))
+    erratas = set(Document.objects.filter(tags="errata", id__in=list(rfcs.keys())).distinct().values_list("name", flat=True))
+    verified_erratas = set(Document.objects.filter(tags="verified-errata", id__in=list(rfcs.keys())).distinct().values_list("name", flat=True))
     for d in docs:
         d.has_errata = d.name in erratas
         d.has_verified_errata = d.name in verified_erratas
 
     # obsoleted/updated by
-    for a in rfc_aliases:
-        d = doc_dict[a]
+    for rfc in rfcs:
+        d = doc_dict[rfc]
         d.obsoleted_by_list = []
         d.updated_by_list = []
 
     # Revisit this block after RFCs become first-class Document objects
     xed_by = list(
         RelatedDocument.objects.filter(
-            target__name__in=list(rfc_aliases.values()),
+            target__name__in=list(rfcs.values()),
             relationship__in=("obs", "updates"),
         ).select_related("target")
     )
-    rel_rfc_aliases = {
-        a.document.id: re.sub(r"rfc(\d+)", r"RFC \1", a.name, flags=re.IGNORECASE)
-        for a in DocAlias.objects.filter(
-            name__startswith="rfc", docs__id__in=[rel.source_id for rel in xed_by]
+    # TODO - this likely reduces to something even simpler
+    rel_rfcs = {
+        d.id: re.sub(r"rfc(\d+)", r"RFC \1", d.name, flags=re.IGNORECASE)
+        for d in Document.objects.filter(
+            type_id="rfc", id__in=[rel.source_id for rel in xed_by]
         )
     }
     xed_by.sort(
@@ -158,18 +158,17 @@ def fill_in_document_table_attributes(docs, have_telechat_date=False):
             re.sub(
                 r"rfc\s*(\d+)",
                 r"\1",
-                rel_rfc_aliases[rel.source_id],
+                rel_rfcs[rel.source_id],
                 flags=re.IGNORECASE,
             )
         )
     )
     for rel in xed_by:
-        d = doc_dict[rel.target.document.id]
-        s = rel_rfc_aliases[rel.source_id]
+        d = doc_dict[rel.target.id]
         if rel.relationship_id == "obs":
-            d.obsoleted_by_list.append(s)
+            d.obsoleted_by_list.append(rel.source)
         elif rel.relationship_id == "updates":
-            d.updated_by_list.append(s)
+            d.updated_by_list.append(rel.source)
 
 def augment_docs_with_related_docs_info(docs):
     """Augment all documents with related documents information.
@@ -179,7 +178,7 @@ def augment_docs_with_related_docs_info(docs):
         if d.type_id == 'conflrev':
             if len(d.related_that_doc('conflrev')) != 1:
                 continue
-            originalDoc = d.related_that_doc('conflrev')[0].document
+            originalDoc = d.related_that_doc('conflrev')[0]
             d.pages = originalDoc.pages
 
 def prepare_document_table(request, docs, query=None, max_results=200):
@@ -193,7 +192,7 @@ def prepare_document_table(request, docs, query=None, max_results=200):
         # the number of queries
         docs = docs.select_related("ad", "std_level", "intended_std_level", "group", "stream", "shepherd", )
         docs = docs.prefetch_related("states__type", "tags", "groupmilestone_set__group", "reviewrequest_set__team",
-                                     "ad__email_set", "docalias__iprdocrel_set")
+                                     "ad__email_set", "iprdocrel_set")
         docs = docs[:max_results] # <- that is still a queryset, but with a LIMIT now
         docs = list(docs)
     else:
@@ -217,7 +216,7 @@ def prepare_document_table(request, docs, query=None, max_results=200):
 
         res = []
 
-        rfc_num = d.rfc_number()
+        rfc_num = num(d.rfc_number) if d.rfc_number else None
 
         if d.type_id == "draft":
             res.append(num(["Active", "Expired", "Replaced", "Withdrawn", "RFC"].index(d.search_heading.split()[0])))
@@ -232,25 +231,25 @@ def prepare_document_table(request, docs, query=None, max_results=200):
         elif sort_key == "date":
             res.append(str(d.latest_revision_date.astimezone(ZoneInfo(settings.TIME_ZONE))))
         elif sort_key == "status":
-            if rfc_num != None:
-                res.append(num(rfc_num))
+            if rfc_num is not None:
+                res.append(rfc_num)
             else:
                 res.append(num(d.get_state().order) if d.get_state() else None)
         elif sort_key == "ipr":
             res.append(len(d.ipr()))
         elif sort_key == "ad":
-            if rfc_num != None:
-                res.append(num(rfc_num))
+            if rfc_num is not None:
+                res.append(rfc_num)
             elif d.get_state_slug() == "active":
                 if d.get_state("draft-iesg"):
                     res.append(d.get_state("draft-iesg").order)
                 else:
                     res.append(0)
         else:
-            if rfc_num != None:
-                res.append(num(rfc_num))
+            if rfc_num is not None:
+                res.append(rfc_num)
             else:
-                res.append(d.canonical_name())
+                res.append(d.name)
 
         return res
 
