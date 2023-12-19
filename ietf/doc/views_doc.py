@@ -1437,8 +1437,26 @@ def document_references(request, name):
     return render(request, "doc/document_references.html",dict(doc=doc,refs=sorted(refs,key=lambda x:x.target.name),))
 
 def document_referenced_by(request, name):
+    """View documents that reference the named document
+    
+    The view lists both direct references to a the named document, plus references to
+    related other documents. For a draft that became an RFC, this will include references
+    to the RFC. For an RFC, this will include references to the draft it came from, if any.
+    For a subseries document, this will include references to any of the RFC documents it
+    contains. 
+    
+    In the rendered output, a badge is applied to indicate the name of the document the
+    reference actually targeted. E.g., on the display for a draft that became RFC NNN,
+    references included because they point to that RFC would be shown with a tag "As RFC NNN".
+    The intention is to make the "Referenced By" page useful for finding related work while
+    accurately reflecting the actual reference relationships.     
+    """
     doc = get_object_or_404(Document,name=name)
     refs = doc.referenced_by()
+    if doc.came_from_draft():
+        refs |= doc.came_from_draft().referenced_by()
+    if doc.became_rfc():
+        refs |= doc.became_rfc().referenced_by()
     if doc.type_id in ["bcp","std","fyi"]:
         for rfc in doc.contains():
             refs |= rfc.referenced_by()
