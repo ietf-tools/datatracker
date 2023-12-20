@@ -649,7 +649,7 @@ class DocumentInfo(models.Model):
                 source__states__slug="active",
             )
             | models.Q(source__type__slug="rfc")
-        )
+        ).distinct()
     
     def referenced_by_rfcs(self):
         """Get refs to this doc from RFCs"""
