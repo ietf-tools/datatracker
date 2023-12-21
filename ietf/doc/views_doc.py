@@ -2185,19 +2185,30 @@ def idnits2_state(request, name, rev=None):
     if doc.type_id == "rfc":
         draft = doc.came_from_draft()
         if draft:
-            zero_revision = NewRevisionDocEvent.objects.filter(doc=draft,rev='00').first()
+            zero_revision = NewRevisionDocEvent.objects.filter(
+                doc=draft, rev="00"
+            ).first()
     else:
-        zero_revision = NewRevisionDocEvent.objects.filter(doc=doc,rev='00').first()
+        zero_revision = NewRevisionDocEvent.objects.filter(doc=doc, rev="00").first()
     if zero_revision:
         doc.created = zero_revision.time
     else:
         if doc.type_id == "draft":
             if doc.became_rfc():
-                interesting_event = doc.became_rfc().docevent_set.filter(type="published_rfc").order_by("-time").first()
+                interesting_event = (
+                    doc.became_rfc()
+                    .docevent_set.filter(type="published_rfc")
+                    .order_by("-time")
+                    .first()
+                )
             else:
-                interesting_event = doc.docevent_set.order_by('-time').first()    
-        else: # doc.type_id == "rfc"
-            interesting_event = doc.docevent_set.filter(type="published_rfc").order_by("-time").first()
+                interesting_event = doc.docevent_set.order_by(
+                    "-time"
+                ).first()  # Is taking the most _recent_ instead of the oldest event correct?
+        else:  # doc.type_id == "rfc"
+            interesting_event = (
+                doc.docevent_set.filter(type="published_rfc").order_by("-time").first()
+            )
         doc.created = interesting_event.time
     if doc.std_level:
         doc.deststatus = doc.std_level.name
@@ -2206,8 +2217,16 @@ def idnits2_state(request, name, rev=None):
     else:
         text = doc.text()
         if text:
-            parsed_draft = PlaintextDraft(text=doc.text(), source=name, name_from_source=False)
+            parsed_draft = PlaintextDraft(
+                text=doc.text(), source=name, name_from_source=False
+            )
             doc.deststatus = parsed_draft.get_status()
         else:
-            doc.deststatus="Unknown"
-    return render(request, 'doc/idnits2-state.txt', context={'doc':doc}, content_type='text/plain;charset=utf-8')    
+            doc.deststatus = "Unknown"
+    return render(
+        request,
+        "doc/idnits2-state.txt",
+        context={"doc": doc},
+        content_type="text/plain;charset=utf-8",
+    )
+
