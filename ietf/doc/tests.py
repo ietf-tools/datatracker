@@ -1949,12 +1949,11 @@ class DocTestCase(TestCase):
     @override_settings(RFC_EDITOR_INFO_BASE_URL='https://www.rfc-editor.ietf.org/info/')
     def test_document_bibtex(self):
 
-        for factory in [CharterFactory, BcpFactory]: # Should be extended to all other doc types
+        for factory in [CharterFactory, BcpFactory, StatusChangeFactory, ConflictReviewFactory]: # Should be extended to all other doc types
             doc = factory()
             url = urlreverse("ietf.doc.views_doc.document_bibtex", kwargs=dict(name=doc.name))
             r = self.client.get(url)
-            self.assertEqual(r.status_code, 404
-                             )          
+            self.assertEqual(r.status_code, 404)          
         rfc = WgRfcFactory.create(
             time=datetime.datetime(2010, 10, 10, tzinfo=ZoneInfo(settings.TIME_ZONE))
         )
