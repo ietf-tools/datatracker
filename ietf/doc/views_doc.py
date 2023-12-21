@@ -2191,7 +2191,14 @@ def idnits2_state(request, name, rev=None):
     if zero_revision:
         doc.created = zero_revision.time
     else:
-        doc.created = doc.docevent_set.order_by('-time').first().time
+        if doc.type_id == "draft":
+            if doc.became_rfc():
+                interesting_event = doc.became_rfc().docevent_set.filter(type="published_rfc").order_by("-time").first()
+            else:
+                interesting_event = doc.docevent_set.order_by('-time').first()    
+        else: # doc.type_id == "rfc"
+            interesting_event = doc.docevent_set.filter(type="published_rfc").order_by("-time").first()
+        doc.created = interesting_event.time
     if doc.std_level:
         doc.deststatus = doc.std_level.name
     elif doc.intended_std_level:
