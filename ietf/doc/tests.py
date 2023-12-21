@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2012-2020, All Rights Reserved
+# Copyright The IETF Trust 2012-2023, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -155,6 +155,23 @@ class SearchTests(TestCase):
         r = self.client.get(base_url + "?activedrafts=on&by=state&state=%s&substate=" % draft.get_state("draft-iesg").pk)
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, draft.title)
+
+    def test_search_became_rfc(self):
+        draft = WgDraftFactory()
+        rfc = WgRfcFactory()
+        draft.set_state(State.objects.get(type="draft", slug="rfc"))
+        draft.relateddocument_set.create(relationship_id="became_rfc", target=rfc)
+        base_url = urlreverse('ietf.doc.views_search.search')
+
+        # find by RFC
+        r = self.client.get(base_url + f"?rfcs=on&name={rfc.name}")
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, rfc.title)
+
+        # find by draft
+        r = self.client.get(base_url + f"?activedrafts=on&rfcs=on&name={draft.name}")
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, rfc.title)
 
     def test_search_for_name(self):
         draft = WgDraftFactory(name='draft-ietf-mars-test',group=GroupFactory(acronym='mars',parent=Group.objects.get(acronym='farfut')),authors=[PersonFactory()],ad=PersonFactory())
