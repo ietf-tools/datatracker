@@ -1262,6 +1262,9 @@ def document_bibtex(request, name, rev=None):
 
     doc = get_object_or_404(Document, name=name)
 
+    if doc.type_id not in ["rfc", "draft"]:
+        raise Http404()
+
     doi = None
     draft_became_rfc = None
     replaced_by = None
