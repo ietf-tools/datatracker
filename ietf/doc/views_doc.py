@@ -1262,6 +1262,9 @@ def document_bibtex(request, name, rev=None):
 
     doc = get_object_or_404(Document, name=name)
 
+    if doc.type_id not in ["rfc", "draft"]:
+        raise Http404()
+
     doi = None
     draft_became_rfc = None
     replaced_by = None
@@ -1437,8 +1440,26 @@ def document_references(request, name):
     return render(request, "doc/document_references.html",dict(doc=doc,refs=sorted(refs,key=lambda x:x.target.name),))
 
 def document_referenced_by(request, name):
+    """View documents that reference the named document
+    
+    The view lists both direct references to a the named document, plus references to
+    related other documents. For a draft that became an RFC, this will include references
+    to the RFC. For an RFC, this will include references to the draft it came from, if any.
+    For a subseries document, this will include references to any of the RFC documents it
+    contains. 
+    
+    In the rendered output, a badge is applied to indicate the name of the document the
+    reference actually targeted. E.g., on the display for a draft that became RFC NNN,
+    references included because they point to that RFC would be shown with a tag "As RFC NNN".
+    The intention is to make the "Referenced By" page useful for finding related work while
+    accurately reflecting the actual reference relationships.     
+    """
     doc = get_object_or_404(Document,name=name)
     refs = doc.referenced_by()
+    if doc.came_from_draft():
+        refs |= doc.came_from_draft().referenced_by()
+    if doc.became_rfc():
+        refs |= doc.became_rfc().referenced_by()
     if doc.type_id in ["bcp","std","fyi"]:
         for rfc in doc.contains():
             refs |= rfc.referenced_by()
@@ -2167,13 +2188,31 @@ def idnits2_state(request, name, rev=None):
     if doc.type_id == "rfc":
         draft = doc.came_from_draft()
         if draft:
-            zero_revision = NewRevisionDocEvent.objects.filter(doc=draft,rev='00').first()
+            zero_revision = NewRevisionDocEvent.objects.filter(
+                doc=draft, rev="00"
+            ).first()
     else:
-        zero_revision = NewRevisionDocEvent.objects.filter(doc=doc,rev='00').first()
+        zero_revision = NewRevisionDocEvent.objects.filter(doc=doc, rev="00").first()
     if zero_revision:
         doc.created = zero_revision.time
     else:
-        doc.created = doc.docevent_set.order_by('-time').first().time
+        if doc.type_id == "draft":
+            if doc.became_rfc():
+                interesting_event = (
+                    doc.became_rfc()
+                    .docevent_set.filter(type="published_rfc")
+                    .order_by("-time")
+                    .first()
+                )
+            else:
+                interesting_event = doc.docevent_set.order_by(
+                    "-time"
+                ).first()  # Is taking the most _recent_ instead of the oldest event correct?
+        else:  # doc.type_id == "rfc"
+            interesting_event = (
+                doc.docevent_set.filter(type="published_rfc").order_by("-time").first()
+            )
+        doc.created = interesting_event.time
     if doc.std_level:
         doc.deststatus = doc.std_level.name
     elif doc.intended_std_level:
@@ -2181,8 +2220,16 @@ def idnits2_state(request, name, rev=None):
     else:
         text = doc.text()
         if text:
-            parsed_draft = PlaintextDraft(text=doc.text(), source=name, name_from_source=False)
+            parsed_draft = PlaintextDraft(
+                text=doc.text(), source=name, name_from_source=False
+            )
             doc.deststatus = parsed_draft.get_status()
         else:
-            doc.deststatus="Unknown"
-    return render(request, 'doc/idnits2-state.txt', context={'doc':doc}, content_type='text/plain;charset=utf-8')    
+            doc.deststatus = "Unknown"
+    return render(
+        request,
+        "doc/idnits2-state.txt",
+        context={"doc": doc},
+        content_type="text/plain;charset=utf-8",
+    )
+
