@@ -32,8 +32,8 @@ def reverse(apps, schema_editor):
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("doc", "0008_alter_docevent_type"),
-        ("name", "0010_narrativeminutes"),
+        ("doc", "0020_move_errata_tags"),
+        ("name", "0013_narrativeminutes"),
     ]
 
     operations = [migrations.RunPython(forward, reverse)]

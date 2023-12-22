@@ -22,7 +22,7 @@ def reverse(apps, schema_editor):
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("name", "0009_iabworkshops"),
+        ("name", "0012_adjust_important_dates"),
     ]
 
     operations = [
