@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2007-2022, All Rights Reserved
+# Copyright The IETF Trust 2007-2023, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -48,7 +48,7 @@ from django.views.generic import RedirectView
 import debug                            # pyflakes:ignore
 
 from ietf.doc.fields import SearchableDocumentsField
-from ietf.doc.models import Document, State, DocEvent, NewRevisionDocEvent, DocAlias
+from ietf.doc.models import Document, State, DocEvent, NewRevisionDocEvent
 from ietf.group.models import Group
 from ietf.group.utils import can_manage_session_materials, can_manage_some_groups, can_manage_group
 from ietf.person.models import Person, User
@@ -238,7 +238,7 @@ def _get_materials_doc(meeting, name):
         docname, rev = name.rsplit("-", 1)
         if len(rev) == 2 and rev.isdigit():
             doc = Document.objects.get(name=docname)  # may raise Document.DoesNotExist
-            if doc.get_related_meeting() == meeting and rev in doc.revisions():
+            if doc.get_related_meeting() == meeting and rev in doc.revisions_by_newrevisionevent():
                 return doc, rev
     # give up
     raise Document.DoesNotExist
@@ -248,7 +248,6 @@ def _get_materials_doc(meeting, name):
 def materials_document(request, document, num=None, ext=None):
     meeting=get_meeting(num,type_in=['ietf','interim'])
     num = meeting.number
-    # This view does not allow the use of DocAliases. Right now we are probably only creating one (identity) alias, but that may not hold in the future.
     try:
         doc, rev = _get_materials_doc(meeting=meeting, name=document)
     except Document.DoesNotExist:
@@ -2595,7 +2594,6 @@ def save_bluesheet(request, session, file, encoding='utf-8'):
                   rev = '00',
               )
         doc.states.add(State.objects.get(type_id='bluesheets',slug='active'))
-        DocAlias.objects.create(name=doc.name).docs.add(doc)
         session.sessionpresentation_set.create(document=doc,rev='00')
     filename = '%s-%s%s'% ( doc.name, doc.rev, ext)
     doc.uploaded_filename = filename
@@ -2664,6 +2662,40 @@ def upload_session_minutes(request, session_id, num):
                   })
 
 
+class UploadOrEnterAgendaForm(UploadAgendaForm):
+    ACTIONS = [
+        ("upload", "Upload agenda"),
+        ("enter", "Enter agenda"),
+    ]
+    submission_method = forms.ChoiceField(choices=ACTIONS, widget=forms.RadioSelect)
+
+    content = forms.CharField(widget=forms.Textarea, required=False, strip=False, label="Agenda text")
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["file"].required=False
+        self.order_fields(["submission_method", "file", "content"])
+
+    def clean_content(self):
+        return self.cleaned_data["content"].replace("\r", "")
+
+    def clean_file(self):
+        submission_method = self.cleaned_data.get("submission_method")
+        if submission_method == "upload":
+            return super().clean_file()
+        return None
+
+    def clean(self):
+        def require_field(f):
+            if not self.cleaned_data.get(f):
+                self.add_error(f, ValidationError("You must fill in this field."))
+
+        submission_method = self.cleaned_data.get("submission_method")
+        if submission_method == "upload":
+            require_field("file")
+        elif submission_method == "enter":
+            require_field("content")
+
 def upload_session_agenda(request, session_id, num):
     # num is redundant, but we're dragging it along an artifact of where we are in the current URL structure
     session = get_object_or_404(Session,pk=session_id)
@@ -2682,10 +2714,23 @@ def upload_session_agenda(request, session_id, num):
     agenda_sp = session.sessionpresentation_set.filter(document__type='agenda').first()
     
     if request.method == 'POST':
-        form = UploadAgendaForm(show_apply_to_all_checkbox,request.POST,request.FILES)
+        form = UploadOrEnterAgendaForm(show_apply_to_all_checkbox,request.POST,request.FILES)
         if form.is_valid():
-            file = request.FILES['file']
-            _, ext = os.path.splitext(file.name)
+            submission_method = form.cleaned_data['submission_method']
+            if submission_method == "upload":
+                file = request.FILES['file']
+                _, ext = os.path.splitext(file.name)
+            else:
+                if agenda_sp:
+                    doc = agenda_sp.document
+                    _, ext = os.path.splitext(doc.uploaded_filename)
+                else:
+                    ext = ".md"
+                fd, name = tempfile.mkstemp(suffix=ext, text=True)
+                os.close(fd)
+                with open(name, "w") as file:
+                    file.write(form.cleaned_data['content'])
+                file = open(name, "rb")
             apply_to_all = session.type.slug == 'regular'
             if show_apply_to_all_checkbox:
                 apply_to_all = form.cleaned_data['apply_to_all']
@@ -2724,7 +2769,6 @@ def upload_session_agenda(request, session_id, num):
                               group = session.group,
                               rev = '00',
                           )
-                    DocAlias.objects.create(name=doc.name).docs.add(doc)
                 doc.states.add(State.objects.get(type_id='agenda',slug='active'))
             if session.sessionpresentation_set.filter(document=doc).exists():
                 sp = session.sessionpresentation_set.get(document=doc)
@@ -2741,7 +2785,11 @@ def upload_session_agenda(request, session_id, num):
             doc.uploaded_filename = filename
             e = NewRevisionDocEvent.objects.create(doc=doc,by=request.user.person,type='new_revision',desc='New revision available: %s'%doc.rev,rev=doc.rev)
             # The way this function builds the filename it will never trigger the file delete in handle_file_upload.
-            save_error = handle_upload_file(file, filename, session.meeting, 'agenda', request=request, encoding=form.file_encoding[file.name])
+            try:
+                encoding=form.file_encoding[file.name]
+            except AttributeError:
+                encoding=None
+            save_error = handle_upload_file(file, filename, session.meeting, 'agenda', request=request, encoding=encoding)
             if save_error:
                 form.add_error(None, save_error)
             else:
@@ -2749,7 +2797,11 @@ def upload_session_agenda(request, session_id, num):
                 messages.success(request, f'Successfully uploaded agenda as revision {doc.rev}.')
                 return redirect('ietf.meeting.views.session_details',num=num,acronym=session.group.acronym)
     else: 
-        form = UploadAgendaForm(show_apply_to_all_checkbox, initial={'apply_to_all':session.type_id=='regular'})
+        initial={'apply_to_all':session.type_id=='regular', 'submission_method':'upload'}
+        if agenda_sp:
+            doc = agenda_sp.document
+            initial['content'] = doc.text()
+        form = UploadOrEnterAgendaForm(show_apply_to_all_checkbox, initial=initial)
 
     return render(request, "meeting/upload_session_agenda.html", 
                   {'session': session,
@@ -2817,7 +2869,6 @@ def upload_session_slides(request, session_id, num, name=None):
                               group = session.group,
                               rev = '00',
                           )
-                    DocAlias.objects.create(name=doc.name).docs.add(doc)
                 doc.states.add(State.objects.get(type_id='slides',slug='active'))
                 doc.states.add(State.objects.get(type_id='reuse_policy',slug='single'))
             if session.sessionpresentation_set.filter(document=doc).exists():
@@ -4551,7 +4602,6 @@ def approve_proposed_slides(request, slidesubmission_id, num):
                               group = submission.session.group,
                               rev = '00',
                           )
-                    DocAlias.objects.create(name=doc.name).docs.add(doc)
                 doc.states.add(State.objects.get(type_id='slides',slug='active'))
                 doc.states.add(State.objects.get(type_id='reuse_policy',slug='single'))
                 if submission.session.sessionpresentation_set.filter(document=doc).exists():

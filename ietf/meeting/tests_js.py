@@ -1045,6 +1045,7 @@ class InterimTests(IetfSeleniumTestCase):
     def do_upcoming_view_filter_test(self, querystring, visible_meetings=()):
         self.login()
         self.driver.get(self.absreverse('ietf.meeting.views.upcoming') + querystring)
+        time.sleep(0.2)  # gross, but give the filter JS time to do its thing 
         self.assert_upcoming_meeting_visibility(visible_meetings)
         self.assert_upcoming_meeting_calendar(visible_meetings)
         self.assert_upcoming_view_filter_matches_ics_filter(querystring)

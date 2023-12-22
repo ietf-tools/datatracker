@@ -24,20 +24,20 @@
                     <th scope="col" data-sort="statement">Statement</th>
                 </tr>
             </thead>
-            {% for alias in docs %}
+            {% for doc in docs %}
                 <tbody>
                     <tr>
                         <th scope="col" class="table-info" colspan="3">
-                            IPR that is related to {{ alias.name|prettystdname:""|urlize_ietf_docs }} ("{{ alias.document.title }}")
-                            {% if alias.related %}
-                                that was {{ alias.relation|lower }} {{ alias.related.source.name|prettystdname:""|urlize_ietf_docs  }} ("{{ alias.related.source.title }}")
+                            IPR that is related to {{ doc.name|prettystdname:""|urlize_ietf_docs }} ("{{ doc.title }}")
+                            {% if doc.related %}
+                                that was {{ doc.relation|lower }} {{ doc.related.source.name|prettystdname:""|urlize_ietf_docs  }} ("{{ doc.related.source.title }}")
                             {% endif %}
                         </th>
                     </tr>
                 </tbody>
                 <tbody>
-                    {% if alias.document.ipr %}
-                        {% for ipr in alias.document.ipr %}
+                    {% if doc.ipr %}
+                        {% for ipr in doc.ipr %}
                             <tr>
                                 <td>{{ ipr.disclosure.time|date:"Y-m-d" }}</td>
                                 <td>{{ ipr.disclosure.id }}</td>
@@ -58,7 +58,7 @@
                         <tr>
                             <td></td>
                             <td></td>
-                            <td>No IPR disclosures related to {{ alias.name|prettystdname|urlize_ietf_docs }} have been submitted.</td>
+                            <td>No IPR disclosures related to {{ doc.name|prettystdname|urlize_ietf_docs }} have been submitted.</td>
                         </tr>
                     {% endif %}
                 </tbody>
