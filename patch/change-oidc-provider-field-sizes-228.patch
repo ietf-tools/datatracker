@@ -143,7 +143,7 @@ diff -ur oidc_provider.orig/migrations/0015_change_client_code.py oidc_provider/
 diff -ur oidc_provider.orig/migrations/0016_userconsent_and_verbosenames.py oidc_provider/migrations/0016_userconsent_and_verbosenames.py
 --- oidc_provider.orig/migrations/0016_userconsent_and_verbosenames.py	2018-04-13 21:43:28.000000000 +0200
 +++ oidc_provider/migrations/0016_userconsent_and_verbosenames.py	2020-06-07 13:34:26.826716519 +0200
-@@ -32,12 +32,12 @@
+@@ -31,12 +31,12 @@
          migrations.AlterField(
              model_name='client',
              name='client_id',
@@ -158,7 +158,7 @@ diff -ur oidc_provider.orig/migrations/0016_userconsent_and_verbosenames.py oidc
          ),
          migrations.AlterField(
              model_name='client',
-@@ -84,17 +84,17 @@
+@@ -83,17 +83,17 @@
          migrations.AlterField(
              model_name='code',
              name='code',
@@ -179,7 +179,7 @@ diff -ur oidc_provider.orig/migrations/0016_userconsent_and_verbosenames.py oidc
          ),
          migrations.AlterField(
              model_name='code',
-@@ -109,7 +109,7 @@
+@@ -108,7 +108,7 @@
          migrations.AlterField(
              model_name='code',
              name='nonce',
@@ -188,7 +188,7 @@ diff -ur oidc_provider.orig/migrations/0016_userconsent_and_verbosenames.py oidc
          ),
          migrations.AlterField(
              model_name='code',
-@@ -135,7 +135,7 @@
+@@ -134,7 +134,7 @@
          migrations.AlterField(
              model_name='token',
              name='access_token',
@@ -197,7 +197,7 @@ diff -ur oidc_provider.orig/migrations/0016_userconsent_and_verbosenames.py oidc
          ),
          migrations.AlterField(
              model_name='token',
-@@ -151,7 +151,7 @@
+@@ -150,7 +150,7 @@
          migrations.AlterField(
              model_name='token',
              name='refresh_token',

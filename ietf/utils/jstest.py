@@ -1,7 +1,8 @@
 # Copyright The IETF Trust 2014-2021, All Rights Reserved
 # -*- coding: utf-8 -*-
 
-from django.conf import settings
+import os
+
 from django.urls import reverse as urlreverse
 from unittest import skipIf
 
@@ -9,10 +10,9 @@ skip_selenium = False
 skip_message  = ""
 try:
     from selenium import webdriver
-    from selenium.webdriver.chrome.service import Service
-    from selenium.webdriver.chrome.options import Options
+    from selenium.webdriver.firefox.service import Service
+    from selenium.webdriver.firefox.options import Options
     from selenium.webdriver.common.by import By
-    from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 except ImportError as e:
     skip_selenium = True
     skip_message = "Skipping selenium tests: %s" % e
@@ -21,7 +21,7 @@ except ImportError as e:
 from ietf.utils.pipe import pipe
 from ietf.utils.test_runner import IetfLiveServerTestCase
 
-executable_name = 'chromedriver'
+executable_name = 'geckodriver'
 code, out, err = pipe('{} --version'.format(executable_name))
 if code != 0:
     skip_selenium = True
@@ -30,20 +30,11 @@ if skip_selenium:
     print("     "+skip_message)
 
 def start_web_driver():
-    service = Service(executable_path="chromedriver",
-                      log_path=settings.TEST_GHOSTDRIVER_LOG_PATH)
-    service.start()
+    service = Service(log_output=f"{executable_name}.log", service_args=['--log-no-truncate'])
     options = Options()
-    options.add_argument("headless")
-    options.add_argument("disable-extensions")
-    options.add_argument("disable-gpu") # headless needs this
-    options.add_argument("no-sandbox") # docker needs this
-    dc = DesiredCapabilities.CHROME
-    dc["goog:loggingPrefs"] = {"browser": "ALL"}
-    # For selenium 3:
-    return webdriver.Chrome("chromedriver", options=options, desired_capabilities=dc)
-    # For selenium 4:
-    # return webdriver.Chrome(service=service, options=options, desired_capabilities=dc)
+    options.add_argument("--headless")
+    os.environ["MOZ_REMOTE_SETTINGS_DEVTOOLS"] = "1"
+    return webdriver.Firefox(service=service, options=options)
 
 
 def selenium_enabled():

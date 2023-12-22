@@ -7,10 +7,7 @@ urlpatterns = [
     url(r'^$', views.main),
     url(r'^add/$', views.add),
     # url(r'^ajax/get-times/(?P<meeting_id>\d{1,6})/(?P<day>\d)/$', views.ajax_get_times), # Not in use
-    url(r'^blue_sheet/$', views.blue_sheet_redirect),
     url(r'^(?P<meeting_id>\d{1,6})/$', views.view),
-    url(r'^(?P<meeting_id>\d{1,6})/blue_sheet/$', views.blue_sheet),
-    url(r'^(?P<meeting_id>\d{1,6})/blue_sheet/generate/$', views.blue_sheet_generate),
     url(r'^(?P<meeting_id>\d{1,6})/edit/$', views.edit_meeting),
     url(r'^(?P<meeting_id>\d{1,6})/notifications/$', views.notifications),
     url(r'^(?P<meeting_id>\d{1,6})/(?P<schedule_name>[A-Za-z0-9_\-]+)/$', views.rooms),

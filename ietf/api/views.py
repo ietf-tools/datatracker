@@ -1,7 +1,6 @@
 # Copyright The IETF Trust 2017-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
-
 import json
 import pytz
 import re
@@ -38,6 +37,7 @@ from ietf.doc.utils import fuzzy_find_documents
 from ietf.ietfauth.views import send_account_creation_email
 from ietf.ietfauth.utils import role_required
 from ietf.meeting.models import Meeting
+from ietf.nomcom.models import Volunteer, NomCom
 from ietf.stats.models import MeetingRegistration
 from ietf.utils import log
 from ietf.utils.decorators import require_api_key
@@ -140,7 +140,7 @@ def api_new_meeting_registration(request):
     def err(code, text):
         return HttpResponse(text, status=code, content_type='text/plain')
     required_fields = [ 'meeting', 'first_name', 'last_name', 'affiliation', 'country_code',
-                        'email', 'reg_type', 'ticket_type', 'checkedin']
+                        'email', 'reg_type', 'ticket_type', 'checkedin', 'is_nomcom_volunteer']
     fields = required_fields + []
     if request.method == 'POST':
         # parameters:
@@ -202,6 +202,22 @@ def api_new_meeting_registration(request):
             else:
                 send_account_creation_email(request, email)
                 response += ", Email sent"
+
+            # handle nomcom volunteer
+            if data['is_nomcom_volunteer'] and object.person:
+                try:
+                    nomcom = NomCom.objects.get(is_accepting_volunteers=True)
+                except (NomCom.DoesNotExist, NomCom.MultipleObjectsReturned):
+                    nomcom = None
+                if nomcom:
+                    Volunteer.objects.get_or_create(
+                        nomcom=nomcom,
+                        person=object.person,
+                        defaults={
+                            "affiliation": data["affiliation"],
+                            "origin": "registration"
+                        }
+                    )
             return HttpResponse(response, status=202, content_type='text/plain')
     else:
         return HttpResponse(status=405)
@@ -317,12 +333,9 @@ def get_previous_url(name, rev=None):
     previous_url = ''
     if condition in ('historic version', 'current version'):
         doc = history if history else document
-        if found_rev:
-            doc.is_rfc = lambda: False
         previous_url = doc.get_href()
     elif condition == 'version dochistory not found':
         document.rev = found_rev
-        document.is_rfc = lambda: False
         previous_url = document.get_href()
     return previous_url
 
@@ -330,32 +343,38 @@ def get_previous_url(name, rev=None):
 def rfcdiff_latest_json(request, name, rev=None):
     response = dict()
     condition, document, history, found_rev = find_doc_for_rfcdiff(name, rev)
-
+    if document and document.type_id == "rfc":
+        draft = document.came_from_draft()
     if condition == 'no such document':
         raise Http404
     elif condition in ('historic version', 'current version'):
         doc = history if history else document
-        if not found_rev and doc.is_rfc():
-            response['content_url'] = doc.get_href()
-            response['name']=doc.canonical_name()
-            if doc.name != doc.canonical_name():
+        if doc.type_id == "rfc":
+                response['content_url'] = doc.get_href()
+                response['name']=doc.name
+                if draft:
+                    prev_rev = draft.rev
+                    if doc.rfc_number in HAS_TOMBSTONE and prev_rev != '00':
+                        prev_rev = f'{(int(draft.rev)-1):02d}'
+                    response['previous'] = f'{draft.name}-{prev_rev}'
+                    response['previous_url'] = get_previous_url(draft.name, prev_rev)            
+        elif doc.type_id == "draft" and not found_rev and doc.relateddocument_set.filter(relationship_id="became_rfc").exists():
+                rfc = doc.related_that_doc("became_rfc")[0]
+                response['content_url'] = rfc.get_href()
+                response['name']=rfc.name
                 prev_rev = doc.rev
-                # not sure what to do if non-numeric values come back, so at least log it
-                log.assertion('doc.rfc_number().isdigit()') # .rfc_number() is expensive...
-                log.assertion('doc.rev.isdigit()')
-                if int(doc.rfc_number()) in HAS_TOMBSTONE and prev_rev != '00':
+                if rfc.rfc_number in HAS_TOMBSTONE and prev_rev != '00':
                     prev_rev = f'{(int(doc.rev)-1):02d}'
                 response['previous'] = f'{doc.name}-{prev_rev}'
                 response['previous_url'] = get_previous_url(doc.name, prev_rev)
         else:
-            doc.is_rfc = lambda: False
             response['content_url'] = doc.get_href()
             response['rev'] = doc.rev
             response['name'] = doc.name
             if doc.rev == '00':
                 replaces_docs = (history.doc if condition=='historic version' else doc).related_that_doc('replaces')
                 if replaces_docs:
-                    replaces = replaces_docs[0].document
+                    replaces = replaces_docs[0]
                     response['previous'] = f'{replaces.name}-{replaces.rev}'
                     response['previous_url'] = get_previous_url(replaces.name, replaces.rev)
                 else:
@@ -374,7 +393,6 @@ def rfcdiff_latest_json(request, name, rev=None):
         response['name'] = document.name
         response['rev'] = found_rev
         document.rev = found_rev
-        document.is_rfc = lambda: False
         response['content_url'] = document.get_href()
         # not sure what to do if non-numeric values come back, so at least log it
         log.assertion('found_rev.isdigit()')

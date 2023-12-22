@@ -6,6 +6,8 @@ import Highcharts_Export_Data from "highcharts/modules/export-data";
 import Highcharts_Accessibility from "highcharts/modules/accessibility";
 import Highcharts_Sunburst from "highcharts/modules/sunburst";
 
+document.documentElement.style.setProperty("--highcharts-background-color", "transparent");
+
 Highcharts_Exporting(Highcharts);
 Highcharts_Offline_Exporting(Highcharts);
 Highcharts_Export_Data(Highcharts);
@@ -13,17 +15,9 @@ Highcharts_Accessibility(Highcharts);
 Highcharts_Sunburst(Highcharts);
 
 Highcharts.setOptions({
-    // use colors from https://colorbrewer2.org/#type=qualitative&scheme=Paired&n=12
-    colors: ['#a6cee3', '#1f78b4', '#b2df8a', '#33a02c', '#fb9a99',
-        '#e31a1c', '#fdbf6f', '#ff7f00', '#cab2d6', '#6a3d9a',
-        '#ffff99', '#b15928'
-    ],
     chart: {
         height: "100%",
-        style: {
-            fontFamily: getComputedStyle(document.body)
-                .getPropertyValue('--bs-body-font-family')
-        }
+        styledMode: true,
     },
     credits: {
         enabled: false
@@ -35,7 +29,7 @@ window.Highcharts = Highcharts;
 window.group_stats = function (url, chart_selector) {
     $.getJSON(url, function (data) {
         $(chart_selector)
-            .each(function (i, e) {
+            .each(function (_, e) {
                 const dataset = e.dataset.dataset;
                 if (!dataset) {
                     console.log("dataset data attribute not set");

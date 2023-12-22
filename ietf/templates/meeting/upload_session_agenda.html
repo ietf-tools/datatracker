@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{# Copyright The IETF Trust 2015-2023, All Rights Reserved #}
 {% load origin static django_bootstrap5 tz %}
 {% block title %}
     {% if agenda_sp %}
@@ -29,6 +29,9 @@
     <form enctype="multipart/form-data" method="post" class="my-3">
         {% csrf_token %}
         {% bootstrap_form form %}
-        <button type="submit" class="btn btn-primary">Upload</button>
+        <button type="submit" class="btn btn-primary">Save</button>
     </form>
+{% endblock %}
+{% block js %}
+    <script src="{% static 'ietf/js/upload-session-agenda.js' %}"></script>
 {% endblock %}

@@ -16,7 +16,7 @@ from django.utils.html import escape
 
 import debug                            # pyflakes:ignore
 
-from ietf.doc.models import ( BallotDocEvent, BallotPositionDocEvent, DocAlias, DocEvent,
+from ietf.doc.models import ( BallotDocEvent, BallotPositionDocEvent, DocEvent,
     Document, NewRevisionDocEvent, State )
 from ietf.doc.utils import ( add_state_change_event, close_open_ballots,
     create_ballot_if_not_open, update_telechat )
@@ -98,9 +98,8 @@ def change_state(request, name, option=None):
                                                       ok_to_publish)
 
                 if new_state.slug in ["appr-reqnopub-sent", "appr-noprob-sent", "withdraw", "dead"]:
-                    doc = review.related_that_doc("conflrev")[0].document
-                    if doc.stream_id == "irtf":
-                        close_review_irtf_state(doc, login)
+                    doc = review.related_that_doc("conflrev")[0]
+                    update_stream_state(doc, login, 'chair-w' if doc.stream_id=='irtf' else 'ise-rev', 'iesg-com')
 
             return redirect('ietf.doc.views_doc.document_main', name=review.name)
     else:
@@ -124,7 +123,7 @@ def send_conflict_review_ad_changed_email(request, review, event):
                                  by = request.user.person,
                                  event = event,
                                  review = review,
-                                 reviewed_doc = review.relateddocument_set.get(relationship__slug='conflrev').target.document,
+                                 reviewed_doc = review.relateddocument_set.get(relationship__slug='conflrev').target,
                                  review_url = settings.IDTRACKER_BASE_URL+review.get_absolute_url(),
                                )
                           )
@@ -139,7 +138,7 @@ def send_conflict_review_started_email(request, review):
                                  cc = addrs.cc,
                                  by = request.user.person,
                                  review = review,
-                                 reviewed_doc = review.relateddocument_set.get(relationship__slug='conflrev').target.document,
+                                 reviewed_doc = review.relateddocument_set.get(relationship__slug='conflrev').target,
                                  review_url = settings.IDTRACKER_BASE_URL+review.get_absolute_url(),
                                  )
                            )
@@ -148,7 +147,7 @@ def send_conflict_review_started_email(request, review):
 
     addrs = gather_address_lists('conflrev_requested_iana',doc=review).as_strings(compact=False)
     email_iana(request, 
-               review.relateddocument_set.get(relationship__slug='conflrev').target.document,
+               review.relateddocument_set.get(relationship__slug='conflrev').target,
                addrs.to,
                msg,
                cc=addrs.cc)
@@ -166,7 +165,7 @@ def send_conflict_eval_email(request,review):
     send_mail_preformatted(request,msg,override=override)
     addrs = gather_address_lists('ballot_issued_iana',doc=review).as_strings()
     email_iana(request, 
-               review.relateddocument_set.get(relationship__slug='conflrev').target.document,
+               review.relateddocument_set.get(relationship__slug='conflrev').target,
                addrs.to,
                msg,
                addrs.cc)
@@ -182,7 +181,7 @@ class UploadForm(forms.Form):
         return get_cleaned_text_file_content(self.cleaned_data["txt"])
 
     def save(self, review):
-        filename = os.path.join(settings.CONFLICT_REVIEW_PATH, '%s-%s.txt' % (review.canonical_name(), review.rev))
+        filename = os.path.join(settings.CONFLICT_REVIEW_PATH, '%s-%s.txt' % (review.name, review.rev))
         with io.open(filename, 'w', encoding='utf-8') as destination:
             if self.cleaned_data['txt']:
                 destination.write(self.cleaned_data['txt'])
@@ -196,7 +195,7 @@ def submit(request, name):
 
     login = request.user.person
 
-    path = os.path.join(settings.CONFLICT_REVIEW_PATH, '%s-%s.txt' % (review.canonical_name(), review.rev))
+    path = os.path.join(settings.CONFLICT_REVIEW_PATH, '%s-%s.txt' % (review.name, review.rev))
     not_uploaded_yet = review.rev == "00" and not os.path.exists(path)
 
     if not_uploaded_yet:
@@ -213,7 +212,7 @@ def submit(request, name):
 
                 events = []
                 e = NewRevisionDocEvent(doc=review, by=login, type="new_revision")
-                e.desc = "New version available: <b>%s-%s.txt</b>" % (review.canonical_name(), review.rev)
+                e.desc = "New version available: <b>%s-%s.txt</b>" % (review.name, review.rev)
                 e.rev = review.rev
                 e.save()
                 events.append(e)
@@ -245,7 +244,7 @@ def submit(request, name):
                                                 dict(),
                                               ))
         else:
-            filename = os.path.join(settings.CONFLICT_REVIEW_PATH, '%s-%s.txt' % (review.canonical_name(), review.rev))
+            filename = os.path.join(settings.CONFLICT_REVIEW_PATH, '%s-%s.txt' % (review.name, review.rev))
             try:
                 with io.open(filename, 'r') as f:
                     init["content"] = f.read()
@@ -258,7 +257,7 @@ def submit(request, name):
                               {'form': form,
                                'next_rev': next_rev,
                                'review' : review,
-                               'conflictdoc' : review.relateddocument_set.get(relationship__slug='conflrev').target.document,
+                               'conflictdoc' : review.relateddocument_set.get(relationship__slug='conflrev').target,
                               })
 
 @role_required("Area Director", "Secretariat")
@@ -286,8 +285,8 @@ def edit_ad(request, name):
         form = AdForm(initial=init)
 
     
-    conflictdoc = review.relateddocument_set.get(relationship__slug='conflrev').target.document
-    titletext = 'the conflict review of %s-%s' % (conflictdoc.canonical_name(),conflictdoc.rev)
+    conflictdoc = review.relateddocument_set.get(relationship__slug='conflrev').target
+    titletext = 'the conflict review of %s-%s' % (conflictdoc.name,conflictdoc.rev)
     return render(request, 'doc/change_ad.html',
                               {'form': form,
                                'doc': review,
@@ -298,7 +297,7 @@ def edit_ad(request, name):
 def default_approval_text(review):
 
     current_text = review.text_or_error()      # pyflakes:ignore
-    conflictdoc = review.relateddocument_set.get(relationship__slug='conflrev').target.document
+    conflictdoc = review.relateddocument_set.get(relationship__slug='conflrev').target
     if conflictdoc.stream_id=='ise':
          receiver = 'Independent Submissions Editor'
     elif conflictdoc.stream_id=='irtf':
@@ -366,9 +365,8 @@ def approve_conflict_review(request, name):
             c.desc = "The following approval message was sent\n"+form.cleaned_data['announcement_text']
             c.save()
 
-            doc = review.related_that_doc("conflrev")[0].document
-            if doc.stream_id == "irtf":
-                close_review_irtf_state(doc, login)
+            doc = review.related_that_doc("conflrev")[0]
+            update_stream_state(doc, login, 'chair-w' if doc.stream_id=='irtf' else 'ise-rev', 'iesg-com')
 
             return HttpResponseRedirect(review.get_absolute_url())
 
@@ -380,7 +378,7 @@ def approve_conflict_review(request, name):
     return render(request, 'doc/conflict_review/approve.html',
                               dict(
                                    review = review,
-                                   conflictdoc = review.relateddocument_set.get(relationship__slug='conflrev').target.document,   
+                                   conflictdoc = review.relateddocument_set.get(relationship__slug='conflrev').target,   
                                    form = form,
                                    ))
 
@@ -431,7 +429,7 @@ def start_review_sanity_check(request, name):
         raise Http404
 
     # sanity check that there's not already a conflict review document for this document
-    if [ rel.source for alias in doc_to_review.docalias.all() for rel in alias.relateddocument_set.filter(relationship='conflrev') ]:
+    if [ rel.source for rel in doc_to_review.targets_related.filter(relationship='conflrev') ]:
         raise Http404
 
     return doc_to_review
@@ -463,11 +461,8 @@ def build_conflict_review_document(login, doc_to_review, ad, notify, create_in_s
         group=iesg_group,
     )
     conflict_review.set_state(create_in_state)
-
-    DocAlias.objects.create( name=review_name).docs.add( conflict_review )
-
             
-    conflict_review.relateddocument_set.create(target=DocAlias.objects.get(name=doc_to_review.name),relationship_id='conflrev')
+    conflict_review.relateddocument_set.create(target=doc_to_review, relationship_id='conflrev')
 
     c = DocEvent(type="added_comment", doc=conflict_review, rev=conflict_review.rev, by=login)
     c.desc = "IETF conflict review requested"
@@ -503,8 +498,7 @@ def start_review_as_secretariat(request, name):
 
             send_conflict_review_started_email(request, conflict_review)
 
-            if doc_to_review.stream_id == 'irtf':
-                start_review_irtf_state(doc_to_review, login)
+            update_stream_state(doc_to_review, login, 'iesg-rev')
 
             return HttpResponseRedirect(conflict_review.get_absolute_url())
     else: 
@@ -540,8 +534,7 @@ def start_review_as_stream_owner(request, name):
 
             send_conflict_review_started_email(request, conflict_review)
 
-            if doc_to_review.stream_id == 'irtf':
-                start_review_irtf_state(doc_to_review, login)
+            update_stream_state(doc_to_review, login, 'iesg-rev')
 
             return HttpResponseRedirect(conflict_review.get_absolute_url())
     else: 
@@ -558,25 +551,21 @@ def start_review_as_stream_owner(request, name):
                               },
                           )
 
-def start_review_irtf_state(doc, by):
-    prev_state = doc.get_state('draft-stream-irtf')
-    new_state = State.objects.get(type_id='draft-stream-irtf', slug='iesg-rev')
+def update_stream_state(doc, by, state, tag=None):
+    statetype = 'draft-stream-' + doc.stream_id
+    prev_state = doc.get_state(statetype)
+    new_state = State.objects.get(type_id=statetype, slug=state)
+    if tag:
+        prev_tags = set(doc.tags.all())
+        new_tags = set(DocTagName.objects.filter(pk=tag))
 
     if new_state != prev_state:
         doc.set_state(new_state)
         events = []
-        events.append(add_state_change_event(doc, by, prev_state, new_state))
-        doc.save_with_history(events)
-
-def close_review_irtf_state(doc, by):
-    prev_state = doc.get_state("draft-stream-irtf")
-    new_state = State.objects.get(type_id="draft-stream-irtf", slug="chair-w")
-    prev_tags = set(doc.tags.all())
-    new_tags = set(DocTagName.objects.filter(pk="iesg-com"))
-
-    if new_state != prev_state:
-        doc.set_state(new_state)
-        doc.tags.clear()
-        doc.tags.set(new_tags)
-        events = [add_state_change_event(doc, by, prev_state, new_state, prev_tags, new_tags)]
+        if tag:
+            doc.tags.clear()
+            doc.tags.set(new_tags)
+            events.append(add_state_change_event(doc, by, prev_state, new_state, prev_tags, new_tags))
+        else:
+            events.append(add_state_change_event(doc, by, prev_state, new_state))
         doc.save_with_history(events)

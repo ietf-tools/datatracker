@@ -53,16 +53,17 @@ INTERNAL_IPS = [".".join(ip.split(".")[:-1] + ["1"]) for ip in ips]
 #    'ietf.context_processors.sql_debug',
 # ]
 
-DOCUMENT_PATH_PATTERN = '/assets/ietf-ftp/{doc.type_id}/'
+DOCUMENT_PATH_PATTERN = '/assets/ietfdata/doc/{doc.type_id}/'
 INTERNET_DRAFT_PATH = '/assets/ietf-ftp/internet-drafts/'
 RFC_PATH = '/assets/ietf-ftp/rfc/'
 CHARTER_PATH = '/assets/ietf-ftp/charter/'
 BOFREQ_PATH = '/assets/ietf-ftp/bofreq/'
 CONFLICT_REVIEW_PATH = '/assets/ietf-ftp/conflict-reviews/'
 STATUS_CHANGE_PATH = '/assets/ietf-ftp/status-changes/'
-INTERNET_DRAFT_ARCHIVE_DIR = '/assets/ietf-ftp/internet-drafts/'
-INTERNET_ALL_DRAFTS_ARCHIVE_DIR = '/assets/ietf-ftp/internet-drafts/'
+INTERNET_DRAFT_ARCHIVE_DIR = '/assets/archive/id'
+INTERNET_ALL_DRAFTS_ARCHIVE_DIR = '/assets/archive/id'
 BIBXML_BASE_PATH = '/assets/ietfdata/derived/bibxml'
+IDSUBMIT_REPOSITORY_PATH = INTERNET_DRAFT_PATH
 
 NOMCOM_PUBLIC_KEYS_DIR = 'data/nomcom_keys/public_keys/'
 SLIDE_STAGING_PATH = '/test/staging/'

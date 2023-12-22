@@ -11,6 +11,10 @@ from ietf.name.models import CountryName
 from ietf.person.models import Person
 from ietf.utils.models import ForeignKey
 
+### NOTE WELL: These models are expected to be removed and the stats app reimplemented.
+#   A bare python file that should have been a management command was used to populate
+#   these models when the app was first installed - it has been removed from main, but
+#   can be seen at https://github.com/ietf-tools/datatracker/blob/f2b716fc052a0152c32b86b428ba6ebfdcdf5cd2/ietf/stats/backfill_data.py
 
 class AffiliationAlias(models.Model):
     """Records that alias should be treated as name for statistical

@@ -23,7 +23,7 @@ async function main () {
     throw new Error('Missing --branch argument!')
   }
   if (branch.indexOf('/') >= 0) {
-    branch = branch.split('/')[1]
+    branch = branch.split('/').slice(1).join('-')
   }
   branch = slugify(branch, { lower: true, strict: true })
   if (branch.length < 1) {
@@ -245,7 +245,7 @@ async function main () {
     name: `dt-app-${branch}`,
     Hostname: `dt-app-${branch}`,
     Env: [
-      `LETSENCRYPT_HOST=${hostname}`,
+      // `LETSENCRYPT_HOST=${hostname}`,
       `VIRTUAL_HOST=${hostname}`,
       `VIRTUAL_PORT=8000`,
       `PGHOST=dt-db-${branch}`
