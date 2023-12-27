@@ -5,6 +5,7 @@ import json
 from django.db.models import Q
 from django.http import (
     HttpResponse,
+    HttpResponseBadRequest,
     JsonResponse,
     HttpResponseNotAllowed,
     HttpResponseNotFound,
@@ -81,6 +82,34 @@ def rpc_draft(request, doc_id):
             } for p in d.documentauthor_set.all()
         ]
     })
+
+@csrf_exempt
+@requires_api_token("ietf.api.views_rpc")
+def drafts_by_names(request):
+    if request.method != "POST":
+        return HttpResponseNotAllowed(["POST"])
+    try:
+        names = json.loads(request.body)
+    except json.JSONDecodeError:
+        return HttpResponseBadRequest()
+    docs = Document.objects.filter(type_id="draft",name__in=names)
+    response = dict()
+    for doc in docs:
+        response[doc.name] = {
+            "id": doc.pk,
+            "name": doc.name,
+            "rev": doc.rev,
+            "stream": doc.stream.slug,
+            "title": doc.title,
+            "pages": doc.pages,
+            "authors": [
+                {
+                    "id": p.pk,
+                    "plain_name": p.person.plain_name(),
+                } for p in doc.documentauthor_set.all()
+            ]
+        }
+    return JsonResponse(response)
 
 @csrf_exempt
 @requires_api_token("ietf.api.views_rpc")

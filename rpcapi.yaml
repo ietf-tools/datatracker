@@ -151,6 +151,29 @@ paths:
                 '404':
                     description: Not found
 
+    /doc/drafts_by_names/:
+        post:
+            operationId: get_drafts_by_names
+            summary: Get a batch of drafts by draft names
+            description: returns a dict of drafts with matching names
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: array
+                            items:
+                                type: string
+            responses:
+                '200':
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                additionalProperties:
+                                    $ref:'#/components/schemas/Draft'          
+
     /subject/{subjectId}/person:
         get:
             operationId: get_subject_person_by_id
