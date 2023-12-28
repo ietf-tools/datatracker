@@ -560,22 +560,21 @@ def to_iesg(request,name):
     if request.method == 'POST':
 
         if request.POST.get("confirm", ""): 
-
             by = request.user.person
 
             events = []
-
-            changes = []
-
-            if doc.get_state_slug("draft-iesg") == "idexists":
-                e = DocEvent()
-                e.type = "started_iesg_process"
-                e.by = by
-                e.doc = doc
-                e.rev = doc.rev
-                e.desc = "Document is now in IESG state <b>%s</b>" % target_state['iesg'].name
+            def append_event(type, desc):
+                e = DocEvent(type=type, by=by, doc=doc, rev=doc.rev, desc=desc)
                 e.save()
                 events.append(e)
+
+            if doc.get_state_slug("draft-iesg") == "idexists":
+                append_event("started_iesg_process", f"Document is now in IESG state <b>{target_state['iesg'].name}</b>")
+
+            # do this first, so AD becomes action holder
+            if not doc.ad == ad :
+                doc.ad = ad
+                append_event("changed_document", f"Responsible AD changed to {doc.ad}")
 
             for state_type in ['draft-iesg','draft-stream-ietf']:
                 prev_state=doc.get_state(state_type)
@@ -587,25 +586,14 @@ def to_iesg(request,name):
                         events.append(e)
                     events.append(add_state_change_event(doc=doc,by=by,prev_state=prev_state,new_state=new_state))
 
-            if not doc.ad == ad :
-                doc.ad = ad
-                changes.append("Responsible AD changed to %s" % doc.ad)
-
             if not doc.notify == notify :
                 doc.notify = notify
-                changes.append("State Change Notice email list changed to %s" % doc.notify)
+                append_event("changed_document", f"State Change Notice email list changed to {doc.notify}")
 
             # Get the last available writeup
             previous_writeup = doc.latest_event(WriteupDocEvent,type="changed_protocol_writeup")
             if previous_writeup != None:
-                changes.append(previous_writeup.text)
-
-            for c in changes:
-                e = DocEvent(doc=doc, rev=doc.rev, by=by)
-                e.desc = c
-                e.type = "changed_document"
-                e.save()
-                events.append(e)
+                append_event("changed_document", previous_writeup.text)
 
             doc.save_with_history(events)
 
