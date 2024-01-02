@@ -309,6 +309,12 @@ class MiscTests(TestCase):
         found = fuzzy_find_documents(draft.name, '22')
         self.assertCountEqual(found.documents, [draft],
                               'Should find document even if rev does not exist')
+        
+        # by rfc name mistakenly trying to provide a revision
+        found = fuzzy_find_documents(rfc.name+"-22")
+        self.assertCountEqual(found.documents, [rfc], "Should ignore versions when fuzzyfinding RFCs" )
+        found = fuzzy_find_documents(rfc.name,"22")
+        self.assertCountEqual(found.documents, [rfc], "Should ignore versions when fuzzyfinding RFCs" )
 
 
     def test_fuzzy_find_documents(self):

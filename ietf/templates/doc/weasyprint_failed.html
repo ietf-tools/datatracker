@@ -1,0 +1,17 @@
+{# Copyright The IETF Trust 2023, All Rights Reserved #}
+{% extends "base.html" %}
+{% load origin %}
+{% block title %}Error while rendering PDF{% endblock %}
+{% block content %}
+    {% origin %}
+    <h1>Error while rendering PDF</h1>
+    <p>
+        An error was encountered while trying to render your document as PDF.
+	In case this was a temporary error, you may want to try again in a
+        little while.
+    </p>
+    <p>
+        A failure report with details about what happened has been sent to the
+        server administrators.
+    </p>
+{% endblock %}
