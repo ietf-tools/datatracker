@@ -1,5 +1,7 @@
 # Copyright The IETF Trust 2013-2023, All Rights Reserved
 
+import debug # pyflakes: ignore
+
 from django.shortcuts import render, get_object_or_404
 from django.http import Http404
 
@@ -18,6 +20,7 @@ def state_help(request, type=None):
         "draft-stream-irtf": ("draft-stream-irtf", "IRTF Stream States for Internet-Drafts"),
         "draft-stream-ise": ("draft-stream-ise", "ISE Stream States for Internet-Drafts"),
         "draft-stream-iab": ("draft-stream-iab", "IAB Stream States for Internet-Drafts"),
+        "draft-stream-editorial": ("draft-stream-editorial", "Editorial Stream States for Internet-Drafts"),
         "charter": ("charter", "Charter States"),
         "conflict-review": ("conflrev", "Conflict Review States"),
         "status-change": ("statchg", "RFC Status Change States"),

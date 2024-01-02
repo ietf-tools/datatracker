@@ -1296,7 +1296,7 @@ def stream_documents(request, acronym):
     qs = Document.objects.filter(stream=acronym).filter(
         Q(type_id="draft", states__type="draft", states__slug="active")
         | Q(type_id="rfc")
-    )
+    ).distinct()
     docs, meta = prepare_document_table(request, qs, max_results=1000)
     return render(request, 'group/stream_documents.html', {'stream':stream, 'docs':docs, 'meta':meta, 'editable':editable } )
 

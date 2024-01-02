@@ -210,11 +210,14 @@ def api_new_meeting_registration(request):
                 except (NomCom.DoesNotExist, NomCom.MultipleObjectsReturned):
                     nomcom = None
                 if nomcom:
-                    Volunteer.objects.create(
+                    Volunteer.objects.get_or_create(
                         nomcom=nomcom,
                         person=object.person,
-                        affiliation=data['affiliation'],
-                        origin='registration')
+                        defaults={
+                            "affiliation": data["affiliation"],
+                            "origin": "registration"
+                        }
+                    )
             return HttpResponse(response, status=202, content_type='text/plain')
     else:
         return HttpResponse(status=405)
