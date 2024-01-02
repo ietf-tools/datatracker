@@ -211,6 +211,9 @@ def retrieve_search_results(form, all_types=False):
                     Q(targets_related__source__title__icontains=singlespace, targets_related__relationship_id="contains"),
                 ])
 
+        if query["rfcs"]:
+            queries.extend([Q(targets_related__source__name__icontains=look_for, targets_related__relationship_id="became_rfc")])
+
         combined_query = reduce(operator.or_, queries)
         docs = docs.filter(combined_query).distinct()
 

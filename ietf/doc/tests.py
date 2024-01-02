@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2012-2020, All Rights Reserved
+# Copyright The IETF Trust 2012-2023, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -31,6 +31,8 @@ from django.utils.text import slugify
 
 from tastypie.test import ResourceTestCaseMixin
 
+from weasyprint.urls import URLFetchingError
+
 import debug                            # pyflakes:ignore
 
 from ietf.doc.models import ( Document, DocRelationshipName, RelatedDocument, State,
@@ -40,7 +42,7 @@ from ietf.doc.factories import ( DocumentFactory, DocEventFactory, CharterFactor
     ConflictReviewFactory, WgDraftFactory, IndividualDraftFactory, WgRfcFactory, 
     IndividualRfcFactory, StateDocEventFactory, BallotPositionDocEventFactory, 
     BallotDocEventFactory, DocumentAuthorFactory, NewRevisionDocEventFactory,
-    StatusChangeFactory, DocExtResourceFactory, RgDraftFactory)
+    StatusChangeFactory, DocExtResourceFactory, RgDraftFactory, BcpFactory)
 from ietf.doc.forms import NotifyForm
 from ietf.doc.fields import SearchableDocumentsField
 from ietf.doc.utils import create_ballot_if_not_open, uppercase_std_abbreviated_name
@@ -155,6 +157,23 @@ class SearchTests(TestCase):
         r = self.client.get(base_url + "?activedrafts=on&by=state&state=%s&substate=" % draft.get_state("draft-iesg").pk)
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, draft.title)
+
+    def test_search_became_rfc(self):
+        draft = WgDraftFactory()
+        rfc = WgRfcFactory()
+        draft.set_state(State.objects.get(type="draft", slug="rfc"))
+        draft.relateddocument_set.create(relationship_id="became_rfc", target=rfc)
+        base_url = urlreverse('ietf.doc.views_search.search')
+
+        # find by RFC
+        r = self.client.get(base_url + f"?rfcs=on&name={rfc.name}")
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, rfc.title)
+
+        # find by draft
+        r = self.client.get(base_url + f"?activedrafts=on&rfcs=on&name={draft.name}")
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, rfc.title)
 
     def test_search_for_name(self):
         draft = WgDraftFactory(name='draft-ietf-mars-test',group=GroupFactory(acronym='mars',parent=Group.objects.get(acronym='farfut')),authors=[PersonFactory()],ad=PersonFactory())
@@ -1948,6 +1967,12 @@ class DocTestCase(TestCase):
 
     @override_settings(RFC_EDITOR_INFO_BASE_URL='https://www.rfc-editor.ietf.org/info/')
     def test_document_bibtex(self):
+
+        for factory in [CharterFactory, BcpFactory, StatusChangeFactory, ConflictReviewFactory]: # Should be extended to all other doc types
+            doc = factory()
+            url = urlreverse("ietf.doc.views_doc.document_bibtex", kwargs=dict(name=doc.name))
+            r = self.client.get(url)
+            self.assertEqual(r.status_code, 404)          
         rfc = WgRfcFactory.create(
             time=datetime.datetime(2010, 10, 10, tzinfo=ZoneInfo(settings.TIME_ZONE))
         )
@@ -2843,6 +2868,12 @@ class PdfizedTests(TestCase):
             for ext in ('pdf','txt','html','anythingatall'):
                 self.should_succeed(dict(name=draft.name,rev=f'{r:02d}',ext=ext))
         self.should_404(dict(name=draft.name,rev='02'))
+
+        with mock.patch('ietf.doc.models.DocumentInfo.pdfized', side_effect=URLFetchingError):
+            url = urlreverse(self.view, kwargs=dict(name=rfc.name))
+            r = self.client.get(url)
+            self.assertEqual(r.status_code, 200)
+            self.assertContains(r, "Error while rendering PDF")
 
 class NotifyValidationTests(TestCase):
     def test_notify_validation(self):

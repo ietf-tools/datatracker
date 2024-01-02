@@ -634,6 +634,9 @@ class DocumentInfo(models.Model):
                 )
             except AssertionError:
                 pdf = None
+            except Exception as e:
+                log.log('weasyprint failed:'+str(e))
+                raise
             if pdf:
                 cache.set(cache_key, pdf, settings.PDFIZER_CACHE_TIME)
         return pdf
@@ -649,7 +652,7 @@ class DocumentInfo(models.Model):
                 source__states__slug="active",
             )
             | models.Q(source__type__slug="rfc")
-        )
+        ).distinct()
     
     def referenced_by_rfcs(self):
         """Get refs to this doc from RFCs"""
