@@ -30,7 +30,7 @@ updates:
     reviewers:
       - "ngpixel"
     groups:
-      all:
+      yarn:
         patterns:
           - "*"
   - package-ecosystem: "npm"
@@ -40,7 +40,7 @@ updates:
     reviewers:
       - "ngpixel"
     groups:
-      all:
+      npm:
         patterns:
           - "*"
   - package-ecosystem: "npm"
@@ -50,7 +50,7 @@ updates:
     reviewers:
       - "ngpixel"
     groups:
-      all:
+      npm:
         patterns:
           - "*"
   - package-ecosystem: "npm"
@@ -60,7 +60,7 @@ updates:
     reviewers:
       - "ngpixel"
     groups:
-      all:
+      npm:
         patterns:
           - "*"
   - package-ecosystem: "npm"
@@ -70,6 +70,6 @@ updates:
     reviewers:
       - "ngpixel"
     groups:
-      all:
+      npm:
         patterns:
           - "*"
