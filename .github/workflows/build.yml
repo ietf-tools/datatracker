@@ -229,7 +229,7 @@ jobs:
         token: ${{ secrets.GITHUB_TOKEN }}
         
     - name: Upload Build Artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: release-${{ env.PKG_VERSION }}
         path: /home/runner/work/release/release.tar.gz
