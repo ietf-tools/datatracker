@@ -13,15 +13,6 @@ def get_full_path(doc):
         return None
     return os.path.join(doc.get_file_path(), doc.uploaded_filename)
     
-def get_rfc_num(doc):
-    qs = doc.docalias.filter(name__startswith='rfc')
-    return qs[0].name[3:] if qs else None
-
-def is_draft(doc):
-    if doc.docalias.filter(name__startswith='rfc'):
-        return False
-    else:
-        return True
 
 def get_start_date(doc):
     '''

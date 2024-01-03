@@ -13,9 +13,9 @@
         Please select one of following I-Ds:
     </p>
     <ul>
-        {% for docalias in docs %}
+        {% for doc in docs %}
             <li>
-                <a href="?submit=draft&amp;id={{ docalias.name }}">{{ docalias.name }}</a>
+                <a href="?submit=draft&amp;id={{ doc.name }}">{{ doc.name }}</a>
             </li>
         {% endfor %}
     </ul>

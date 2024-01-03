@@ -13,7 +13,7 @@ from django.template.loader import render_to_string
 from django.urls import reverse as urlreverse
 
 from ietf.doc.factories import StatementFactory, DocEventFactory
-from ietf.doc.models import Document, DocAlias, State, NewRevisionDocEvent
+from ietf.doc.models import Document, State, NewRevisionDocEvent
 from ietf.group.models import Group
 from ietf.person.factories import PersonFactory
 from ietf.utils.mail import outbox, empty_outbox
@@ -76,9 +76,7 @@ This test section has some text.
 
         doc.set_state(State.objects.get(type_id="statement", slug="replaced"))
         doc2 = StatementFactory()
-        doc2.relateddocument_set.create(
-            relationship_id="replaces", target=doc.docalias.first()
-        )
+        doc2.relateddocument_set.create(relationship_id="replaces", target=doc)
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
         q = PyQuery(response.content)
@@ -247,7 +245,6 @@ This test section has some text.
                 name=name, type_id="statement"
             ).first()
             self.assertIsNotNone(statement)
-            self.assertIsNotNone(DocAlias.objects.filter(name=name).first())
             self.assertEqual(statement.title, postdict["title"])
             self.assertEqual(statement.rev, "00")
             self.assertEqual(statement.get_state_slug(), "active")

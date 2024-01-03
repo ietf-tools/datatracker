@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2009-2020, All Rights Reserved
+# Copyright The IETF Trust 2009-2023, All Rights Reserved
 # -*- coding: utf-8 -*-
 import datetime
 import io
@@ -552,7 +552,7 @@ class MeetingTests(BaseMeetingTestCase):
             if material.type_id == 'draft':
                 expected_url = urlreverse(
                     'ietf.doc.views_doc.document_main',
-                    kwargs={'name': material.canonical_name()},
+                    kwargs={'name': material.name},
                 )
             else:
                 expected_url = material.get_href(meeting)
@@ -563,7 +563,7 @@ class MeetingTests(BaseMeetingTestCase):
             if material.type_id == 'draft':
                 expected_url = urlreverse(
                     'ietf.doc.views_doc.document_main',
-                    kwargs={'name': material.canonical_name()},
+                    kwargs={'name': material.name},
                 )
             else:
                 expected_url = material.get_href(meeting)
@@ -6106,21 +6106,21 @@ class MaterialsTests(TestCase):
     
             test_file = BytesIO(b'this is some text for a test')
             test_file.name = "not_really.json"
-            r = self.client.post(url,dict(file=test_file))
+            r = self.client.post(url,dict(submission_method="upload",file=test_file))
             self.assertEqual(r.status_code, 200)
             q = PyQuery(r.content)
             self.assertTrue(q('form .is-invalid'))
     
             test_file = BytesIO(b'this is some text for a test'*1510000)
             test_file.name = "not_really.pdf"
-            r = self.client.post(url,dict(file=test_file))
+            r = self.client.post(url,dict(submission_method="upload",file=test_file))
             self.assertEqual(r.status_code, 200)
             q = PyQuery(r.content)
             self.assertTrue(q('form .is-invalid'))
     
             test_file = BytesIO(b'<html><frameset><frame src="foo.html"></frame><frame src="bar.html"></frame></frameset></html>')
             test_file.name = "not_really.html"
-            r = self.client.post(url,dict(file=test_file))
+            r = self.client.post(url,dict(submission_method="upload",file=test_file))
             self.assertEqual(r.status_code, 200)
             q = PyQuery(r.content)
             self.assertTrue(q('form .is-invalid'))
@@ -6128,7 +6128,7 @@ class MaterialsTests(TestCase):
             # Test html sanitization
             test_file = BytesIO(b'<html><head><title>Title</title></head><body><h1>Title</h1><section>Some text</section></body></html>')
             test_file.name = "some.html"
-            r = self.client.post(url,dict(file=test_file))
+            r = self.client.post(url,dict(submission_method="upload",file=test_file))
             self.assertEqual(r.status_code, 302)
             doc = session.sessionpresentation_set.filter(document__type_id=doctype).first().document
             self.assertEqual(doc.rev,'00')
@@ -6140,7 +6140,7 @@ class MaterialsTests(TestCase):
             # txt upload
             test_file = BytesIO(b'This is some text for a test, with the word\nvirtual at the beginning of a line.')
             test_file.name = "some.txt"
-            r = self.client.post(url,dict(file=test_file,apply_to_all=False))
+            r = self.client.post(url,dict(submission_method="upload",file=test_file,apply_to_all=False))
             self.assertEqual(r.status_code, 302)
             doc = session.sessionpresentation_set.filter(document__type_id=doctype).first().document
             self.assertEqual(doc.rev,'01')
@@ -6152,7 +6152,7 @@ class MaterialsTests(TestCase):
             self.assertIn('Revise', str(q("Title")))
             test_file = BytesIO(b'this is some different text for a test')
             test_file.name = "also_some.txt"
-            r = self.client.post(url,dict(file=test_file,apply_to_all=True))
+            r = self.client.post(url,dict(submission_method="upload",file=test_file,apply_to_all=True))
             self.assertEqual(r.status_code, 302)
             doc = Document.objects.get(pk=doc.pk)
             self.assertEqual(doc.rev,'02')
@@ -6161,7 +6161,7 @@ class MaterialsTests(TestCase):
             # Test bad encoding
             test_file = BytesIO('<html><h1>Title</h1><section>Some\x93text</section></html>'.encode('latin1'))
             test_file.name = "some.html"
-            r = self.client.post(url,dict(file=test_file))
+            r = self.client.post(url,dict(submission_method="upload",file=test_file))
             self.assertContains(r, 'Could not identify the file encoding')
             doc = Document.objects.get(pk=doc.pk)
             self.assertEqual(doc.rev,'02')
@@ -6191,7 +6191,7 @@ class MaterialsTests(TestCase):
 
             test_file = BytesIO(b'this is some text for a test')
             test_file.name = "not_really.txt"
-            r = self.client.post(url,dict(file=test_file,apply_to_all=False))
+            r = self.client.post(url,dict(submission_method="upload",file=test_file,apply_to_all=False))
             self.assertEqual(r.status_code, 410)
 
     @override_settings(MEETING_MATERIALS_SERVE_LOCALLY=True)
@@ -6211,7 +6211,7 @@ class MaterialsTests(TestCase):
             self.assertFalse(session.sessionpresentation_set.filter(document__type_id=doctype))
             test_file = BytesIO(b'this is some text for a test')
             test_file.name = "not_really.txt"
-            r = self.client.post(url,dict(file=test_file))
+            r = self.client.post(url,dict(submission_method="upload",file=test_file))
             self.assertEqual(r.status_code, 302)
             doc = session.sessionpresentation_set.filter(document__type_id=doctype).first().document
             self.assertEqual(doc.rev,'00')
@@ -6222,6 +6222,46 @@ class MaterialsTests(TestCase):
             self.requests_mock.get(f'{session.notes_url()}/download', text='markdown notes')
             self.requests_mock.get(f'{session.notes_url()}/info', text=json.dumps({'title': 'title', 'updatetime': '2021-12-01T17:11:00z'}))
             self.crawl_materials(url=url, top=top)
+
+    def test_enter_agenda(self):
+        session = SessionFactory(meeting__type_id='ietf')
+        url = urlreverse('ietf.meeting.views.upload_session_agenda',kwargs={'num':session.meeting.number,'session_id':session.id})
+        redirect_url = urlreverse('ietf.meeting.views.session_details', kwargs={'num':session.meeting.number,'acronym':session.group.acronym})
+        login_testing_unauthorized(self,"secretary",url)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertIn('Upload', str(q("Title")))
+        self.assertFalse(session.sessionpresentation_set.exists())
+
+        test_text = 'Enter agenda from scratch'
+        r = self.client.post(url,dict(submission_method="enter",content=test_text))
+        self.assertRedirects(r, redirect_url)
+        doc = session.sessionpresentation_set.filter(document__type_id='agenda').first().document
+        self.assertEqual(doc.rev,'00')
+
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertIn('Revise', str(q("Title")))
+
+        test_file = BytesIO(b'Upload after enter')
+        test_file.name = "some.txt"
+        r = self.client.post(url,dict(submission_method="upload",file=test_file))
+        self.assertRedirects(r, redirect_url)
+        doc = Document.objects.get(pk=doc.pk)
+        self.assertEqual(doc.rev,'01')
+
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertIn('Revise', str(q("Title")))
+
+        test_text = 'Enter after upload'
+        r = self.client.post(url,dict(submission_method="enter",content=test_text))
+        self.assertRedirects(r, redirect_url)
+        doc = Document.objects.get(pk=doc.pk)
+        self.assertEqual(doc.rev,'02')
 
     def test_upload_slides(self):
 
@@ -7773,7 +7813,7 @@ class ProceedingsTests(BaseMeetingTestCase):
             if material.type_id == 'draft':
                 expected_url = urlreverse(
                     'ietf.doc.views_doc.document_main',
-                    kwargs={'name': material.canonical_name()},
+                    kwargs={'name': material.name},
                 )
             else:
                 expected_url = material.get_href(meeting)
@@ -7784,7 +7824,7 @@ class ProceedingsTests(BaseMeetingTestCase):
             if material.type_id == 'draft':
                 expected_url = urlreverse(
                     'ietf.doc.views_doc.document_main',
-                    kwargs={'name': material.canonical_name()},
+                    kwargs={'name': material.name},
                 )
             else:
                 expected_url = material.get_href(meeting)
