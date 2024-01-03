@@ -471,11 +471,11 @@ def ad_workload(request):
             state = doc_state(doc)
 
             state_events = doc.docevent_set.filter(
-                Q(type="started_iesg_process")
-                | Q(type="changed_state")
-                | Q(type="published_rfc")
-                | Q(type="closed_ballot"),
-            ).order_by("-time")
+                type__in=["started_iesg_process", "changed_state", "closed_ballot"]
+            )
+            if doc.became_rfc():
+                state_events = state_events | doc.became_rfc().docevent_set.filter(type="published_rfc")
+            state_events = state_events.order_by("-time")
 
             # compute state history for drafts
             last = now
