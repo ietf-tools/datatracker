@@ -564,9 +564,7 @@ def to_iesg(request,name):
 
             events = []
             def doc_event(type, by, doc, desc):
-                e = DocEvent(type=type, by=by, doc=doc, rev=doc.rev, desc=desc)
-                e.save()
-                return e
+                return DocEvent.objects.create(type=type, by=by, doc=doc, rev=doc.rev, desc=desc)
 
             if doc.get_state_slug("draft-iesg") == "idexists":
                 events.append(doc_event("started_iesg_process", by, doc, f"Document is now in IESG state <b>{target_state['iesg'].name}</b>"))
