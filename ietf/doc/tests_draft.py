@@ -1483,6 +1483,42 @@ class SubmitToIesgTests(TestCase):
         self.assertTrue("aread@" in outbox[-1]['To'])
         self.assertTrue("iesg-secretary@" in outbox[-1]['Cc'])
 
+    def test_confirm_submission_no_doc_ad(self):
+        url = urlreverse('ietf.doc.views_draft.to_iesg', kwargs=dict(name=self.docname))
+        self.client.login(username="marschairman", password="marschairman+password")
+
+        doc = Document.objects.get(name=self.docname)
+        RoleFactory(name_id='ad', group=doc.group, person=doc.ad)
+        e = DocEvent(type="changed_document", by=doc.ad, doc=doc, rev=doc.rev, desc="Remove doc AD")
+        e.save()
+        doc.ad = None
+        doc.save_with_history([e])
+
+        docevents_pre = set(doc.docevent_set.all())
+        mailbox_before = len(outbox)
+
+        r = self.client.post(url, dict(confirm="1"))
+        self.assertEqual(r.status_code, 302)
+
+        doc = Document.objects.get(name=self.docname)
+        self.assertTrue(doc.get_state('draft-iesg').slug=='pub-req')
+        self.assertTrue(doc.get_state('draft-stream-ietf').slug=='sub-pub')
+
+        self.assertCountEqual(doc.action_holders.all(), [doc.ad])
+
+        new_docevents = set(doc.docevent_set.all()) - docevents_pre
+        self.assertEqual(len(new_docevents), 5)
+        new_docevent_type_count = Counter([e.type for e in new_docevents])
+        self.assertEqual(new_docevent_type_count['changed_state'],2)
+        self.assertEqual(new_docevent_type_count['started_iesg_process'],1)
+        self.assertEqual(new_docevent_type_count['changed_action_holders'], 1)
+        self.assertEqual(new_docevent_type_count['changed_document'], 1)
+
+        self.assertEqual(len(outbox), mailbox_before + 1)
+        self.assertTrue("Publication has been requested" in outbox[-1]['Subject'])
+        self.assertTrue("aread@" in outbox[-1]['To'])
+        self.assertTrue("iesg-secretary@" in outbox[-1]['Cc'])
+
 
 
 class RequestPublicationTests(TestCase):

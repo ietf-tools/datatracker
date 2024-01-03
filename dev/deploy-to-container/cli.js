@@ -245,7 +245,7 @@ async function main () {
     name: `dt-app-${branch}`,
     Hostname: `dt-app-${branch}`,
     Env: [
-      `LETSENCRYPT_HOST=${hostname}`,
+      // `LETSENCRYPT_HOST=${hostname}`,
       `VIRTUAL_HOST=${hostname}`,
       `VIRTUAL_PORT=8000`,
       `PGHOST=dt-db-${branch}`

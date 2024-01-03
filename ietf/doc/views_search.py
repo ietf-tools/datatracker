@@ -211,6 +211,9 @@ def retrieve_search_results(form, all_types=False):
                     Q(targets_related__source__title__icontains=singlespace, targets_related__relationship_id="contains"),
                 ])
 
+        if query["rfcs"]:
+            queries.extend([Q(targets_related__source__name__icontains=look_for, targets_related__relationship_id="became_rfc")])
+
         combined_query = reduce(operator.or_, queries)
         docs = docs.filter(combined_query).distinct()
 
@@ -468,11 +471,11 @@ def ad_workload(request):
             state = doc_state(doc)
 
             state_events = doc.docevent_set.filter(
-                Q(type="started_iesg_process")
-                | Q(type="changed_state")
-                | Q(type="published_rfc")
-                | Q(type="closed_ballot"),
-            ).order_by("-time")
+                type__in=["started_iesg_process", "changed_state", "closed_ballot"]
+            )
+            if doc.became_rfc():
+                state_events = state_events | doc.became_rfc().docevent_set.filter(type="published_rfc")
+            state_events = state_events.order_by("-time")
 
             # compute state history for drafts
             last = now

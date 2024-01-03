@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2016-2020, All Rights Reserved
+# Copyright The IETF Trust 2016-2023, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -392,7 +392,9 @@ def assign_review_request_to_reviewer(request, review_req, reviewer, add_skip=Fa
     # cannot reference reviewassignment_set relation until pk exists
     if review_req.pk is not None:
         reviewassignment_set = review_req.reviewassignment_set.filter(reviewer=reviewer)
-        if reviewassignment_set.exists() and not reviewassignment_set.filter(state_id='rejected').exists():
+        if (reviewassignment_set.exists() and not
+            (reviewassignment_set.filter(state_id='rejected').exists() or
+             reviewassignment_set.filter(state_id='withdrawn').exists())):
             return
 
     # Note that assigning a review no longer unassigns other reviews
