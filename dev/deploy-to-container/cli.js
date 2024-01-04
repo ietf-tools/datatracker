@@ -175,6 +175,9 @@ async function main () {
     Image: 'ghcr.io/ietf-tools/datatracker-db:latest',
     name: `dt-db-${branch}`,
     Hostname: `dt-db-${branch}`,
+    Labels: {
+      ...argv.nodbrefresh ?? { nodbrefresh: '1' }
+    },
     HostConfig: {
       NetworkMode: 'shared',
       RestartPolicy: {
@@ -194,6 +197,9 @@ async function main () {
     Env: [
       `CELERY_PASSWORD=${mqKey}`
     ],
+    Labels: {
+      ...argv.nodbrefresh ?? { nodbrefresh: '1' }
+    },
     HostConfig: {
       Memory: 4 * (1024 ** 3), // in bytes
       NetworkMode: 'shared',
@@ -222,6 +228,9 @@ async function main () {
         `CELERY_ROLE=${conConf.role}`,
         'UPDATE_REQUIREMENTS_FROM=requirements.txt'
       ],
+      Labels: {
+        ...argv.nodbrefresh ?? { nodbrefresh: '1' }
+      },
       HostConfig: {
         Binds: [
           'dt-assets:/assets',
@@ -254,7 +263,8 @@ async function main () {
       appversion: `${argv.appversion}` ?? '0.0.0',
       commit: `${argv.commit}` ?? 'unknown',
       ghrunid: `${argv.ghrunid}` ?? '0',
-      hostname
+      hostname,
+      ...argv.nodbrefresh ?? { nodbrefresh: '1' }
     },
     HostConfig: {
       Binds: [

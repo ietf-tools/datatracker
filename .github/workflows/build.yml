@@ -17,6 +17,11 @@ on:
         default: true
         required: true
         type: boolean
+      sandboxNoDbRefresh:
+        description: 'Sandbox Disable Daily DB Refresh'
+        default: false
+        required: true
+        type: boolean
       legacySandbox:
         description: 'Deploy to Legacy Sandbox'
         default: false
@@ -325,7 +330,7 @@ jobs:
         npm ci
         cd ../..
         echo "Start Deploy..."
-        node ./dev/deploy-to-container/cli.js --branch ${{ github.ref_name }} --domain dev.ietf.org --appversion ${{ env.PKG_VERSION }} --commit ${{ github.sha }} --ghrunid ${{ github.run_id }}
+        node ./dev/deploy-to-container/cli.js --branch ${{ github.ref_name }} --domain dev.ietf.org --appversion ${{ env.PKG_VERSION }} --commit ${{ github.sha }} --ghrunid ${{ github.run_id }} --nodbrefresh ${{ github.event.inputs.sandboxNoDbRefresh }}
         
     - name: Cleanup old docker resources
       env:
