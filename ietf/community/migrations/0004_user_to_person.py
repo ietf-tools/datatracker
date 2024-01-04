@@ -26,7 +26,7 @@ def reverse(apps, schema_editor):
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("community", "0002_auto_20230320_1222"),
+        ("community", "0003_track_rfcs"),
         ("person", "0001_initial"),
     ]
 

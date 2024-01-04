@@ -42,7 +42,7 @@ def reverse(apps, schema_editor):
 class Migration(migrations.Migration):
     dependencies = [
         ("person", "0001_initial"),
-        ("nomcom", "0003_alter_nomination_share_nominator"),
+        ("nomcom", "0004_volunteer_origin_volunteer_time_volunteer_withdrawn"),
     ]
 
     operations = [
