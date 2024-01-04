@@ -176,7 +176,7 @@ async function main () {
     name: `dt-db-${branch}`,
     Hostname: `dt-db-${branch}`,
     Labels: {
-      ...argv.nodbrefresh ?? { nodbrefresh: '1' }
+      ...argv.nodbrefresh === 'true' && { nodbrefresh: '1' }
     },
     HostConfig: {
       NetworkMode: 'shared',
@@ -198,7 +198,7 @@ async function main () {
       `CELERY_PASSWORD=${mqKey}`
     ],
     Labels: {
-      ...argv.nodbrefresh ?? { nodbrefresh: '1' }
+      ...argv.nodbrefresh === 'true' && { nodbrefresh: '1' }
     },
     HostConfig: {
       Memory: 4 * (1024 ** 3), // in bytes
@@ -229,7 +229,7 @@ async function main () {
         'UPDATE_REQUIREMENTS_FROM=requirements.txt'
       ],
       Labels: {
-        ...argv.nodbrefresh ?? { nodbrefresh: '1' }
+        ...argv.nodbrefresh === 'true' && { nodbrefresh: '1' }
       },
       HostConfig: {
         Binds: [
@@ -264,7 +264,7 @@ async function main () {
       commit: `${argv.commit}` ?? 'unknown',
       ghrunid: `${argv.ghrunid}` ?? '0',
       hostname,
-      ...argv.nodbrefresh ?? { nodbrefresh: '1' }
+      ...argv.nodbrefresh === 'true' && { nodbrefresh: '1' }
     },
     HostConfig: {
       Binds: [
