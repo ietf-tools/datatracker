@@ -115,11 +115,11 @@ class NomineePositionResource(ModelResource):
 api.nomcom.register(NomineePositionResource())
 
 from ietf.name.resources import FeedbackTypeNameResource
-from ietf.utils.resources import UserResource
+from ietf.person.resources import PersonResource
 class FeedbackResource(ModelResource):
     nomcom           = ToOneField(NomComResource, 'nomcom')
     type             = ToOneField(FeedbackTypeNameResource, 'type', null=True)
-    user             = ToOneField(UserResource, 'user', null=True)
+    person           = ToOneField(PersonResource, 'person', null=True)
     positions        = ToManyField(PositionResource, 'positions', null=True)
     nominees         = ToManyField(NomineeResource, 'nominees', null=True)
     class Meta:
@@ -136,18 +136,18 @@ class FeedbackResource(ModelResource):
             "time": ALL,
             "nomcom": ALL_WITH_RELATIONS,
             "type": ALL_WITH_RELATIONS,
-            "user": ALL_WITH_RELATIONS,
+            "person": ALL_WITH_RELATIONS,
             "positions": ALL_WITH_RELATIONS,
             "nominees": ALL_WITH_RELATIONS,
         }
 api.nomcom.register(FeedbackResource())
 
-from ietf.utils.resources import UserResource
+from ietf.person.resources import PersonResource
 class NominationResource(ModelResource):
     position         = ToOneField(PositionResource, 'position')
     nominee          = ToOneField(NomineeResource, 'nominee')
     comments         = ToOneField(FeedbackResource, 'comments')
-    user             = ToOneField(UserResource, 'user', null=True)
+    person           = ToOneField(PersonResource, 'person', null=True)
     class Meta:
         cache = SimpleCache()
         queryset = Nomination.objects.all()
@@ -164,7 +164,7 @@ class NominationResource(ModelResource):
             "position": ALL_WITH_RELATIONS,
             "nominee": ALL_WITH_RELATIONS,
             "comments": ALL_WITH_RELATIONS,
-            "user": ALL_WITH_RELATIONS,
+            "person": ALL_WITH_RELATIONS,
         }
 api.nomcom.register(NominationResource())
 

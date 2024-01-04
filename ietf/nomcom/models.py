@@ -7,7 +7,6 @@ import os
 from django.db import models
 from django.db.models.signals import post_delete
 from django.conf import settings
-from django.contrib.auth.models import User
 from django.template.loader import render_to_string
 from django.template.defaultfilters import linebreaks # type: ignore
 
@@ -128,7 +127,7 @@ class Nomination(models.Model):
     nominee = ForeignKey('Nominee')
     comments = ForeignKey('Feedback')
     nominator_email = models.EmailField(verbose_name='Nominator Email', blank=True)
-    user = ForeignKey(User, editable=False, null=True, on_delete=models.SET_NULL)
+    person = ForeignKey(Person, editable=False, null=True, on_delete=models.SET_NULL)
     time = models.DateTimeField(auto_now_add=True)
     share_nominator = models.BooleanField(verbose_name='OK to share nominator\'s name with candidate', default=False,
                                           help_text='Check this box to allow the NomCom to let the '
@@ -299,7 +298,7 @@ class Feedback(models.Model):
     subject = models.TextField(verbose_name='Subject', blank=True)
     comments = models.BinaryField(verbose_name='Comments')
     type = ForeignKey(FeedbackTypeName, blank=True, null=True)
-    user = ForeignKey(User, editable=False, blank=True, null=True, on_delete=models.SET_NULL)
+    person = ForeignKey(Person, editable=False, blank=True, null=True, on_delete=models.SET_NULL)
     time = models.DateTimeField(auto_now_add=True)
 
     objects = FeedbackManager()
