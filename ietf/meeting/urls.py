@@ -79,7 +79,6 @@ type_ietf_only_patterns_id_optional = [
     url(r'^agenda.json$', views.agenda_json),
     url(r'^agenda/week-view(?:.html)?/?$', AgendaRedirectView.as_view(pattern_name='agenda', permanent=True)),
     url(r'^floor-plan/?$', views.agenda, name='floor-plan'),
-    url(r'^floor-plan/(?P<floor>[-a-z0-9_]+)/?$', RedirectView.as_view(pattern_name='floor-plan', permanent=True)),
     url(r'^week-view(?:.html)?/?$', AgendaRedirectView.as_view(pattern_name='agenda', permanent=True)),
     url(r'^materials(?:.html)?/?$', views.materials),
     url(r'^request_minutes/?$', views.request_minutes),

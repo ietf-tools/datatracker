@@ -39,7 +39,7 @@
     {% if doc.rev != latest_rev %}
         <div class="alert alert-warning my-3">The information below is for an old version of the document.</div>
     {% else %}
-        {% if doc.type_id == "rfc" and snapshot %}
+        {% if doc.became_rfc %}
             <div class="alert alert-warning my-3">
                 The information below is for an old version of the document that is already published as an RFC.
             </div>
@@ -759,7 +759,7 @@
                 {% endfor %}
             {% endif %}
         </div>
-        {% if doc.get_state_slug == "active" or doc.type_id == "rfc" %}
+        {% if doc.get_state_slug == "active" or doc.type_id == "rfc" or doc.became_rfc %}
             <div class="card mt-5">
                 <div class="card-header">
                     {% if doc.type_id == "rfc" and not snapshot %}
