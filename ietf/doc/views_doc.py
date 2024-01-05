@@ -287,7 +287,7 @@ def document_main(request, name, rev=None, document_html=False):
 
         presentations = doc.future_presentations()
 
-        if request.user.is_authenticated:
+        if request.user.is_authenticated and hasattr(request.user, "person"):
             augment_docs_and_person_with_person_info([doc], request.user.person)
 
         exp_comment = doc.latest_event(IanaExpertDocEvent,type="comment")
@@ -581,7 +581,7 @@ def document_main(request, name, rev=None, document_html=False):
             elif can_edit_stream_info and (iesg_state_slug in ('idexists','watching')):
                 actions.append(("Submit to IESG for Publication", urlreverse('ietf.doc.views_draft.to_iesg', kwargs=dict(name=doc.name))))
 
-        if request.user.is_authenticated:
+        if request.user.is_authenticated and hasattr(request.user, "person"):
             augment_docs_and_person_with_person_info([doc], request.user.person)
 
         published = doc.latest_event(type="published_rfc")  # todo rethink this now that published_rfc is on rfc
