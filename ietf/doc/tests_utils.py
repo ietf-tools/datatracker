@@ -11,10 +11,10 @@ from django.utils import timezone
 from ietf.group.factories import GroupFactory, RoleFactory
 from ietf.name.models import DocTagName
 from ietf.person.factories import PersonFactory
-from ietf.utils.test_utils import TestCase, name_of_file_containing
+from ietf.utils.test_utils import TestCase, name_of_file_containing, reload_db_objects
 from ietf.person.models import Person
 from ietf.doc.factories import DocumentFactory, WgRfcFactory, WgDraftFactory
-from ietf.doc.models import State, DocumentActionHolder, DocumentAuthor, Document
+from ietf.doc.models import State, DocumentActionHolder, DocumentAuthor
 from ietf.doc.utils import (update_action_holders, add_state_change_event, update_documentauthors,
                             fuzzy_find_documents, rebuild_reference_relations, build_file_urls)
 from ietf.utils.draft import Draft, PlaintextDraft
@@ -154,9 +154,23 @@ class ActionHoldersTests(TestCase):
         self.assertGreaterEqual(doc.documentactionholder_set.get(person=self.ad).time_added, right_now)
 
     def test_update_action_holders_add_tag_need_rev(self):
-        """Adding need-rev tag adds authors as action holders"""
+        """Adding need-rev tag drops AD and adds authors as action holders"""
         doc = self.doc_in_iesg_state('pub-req')
         first_author = self.authors[0]
+        doc.action_holders.add(first_author)
+        doc.action_holders.add(doc.ad)
+        self.assertCountEqual(doc.action_holders.all(), [first_author, doc.ad])
+        self.update_doc_state(doc,
+                              doc.get_state('draft-iesg'),
+                              add_tags=['need-rev'],
+                              remove_tags=None)
+        self.assertCountEqual(doc.action_holders.all(), self.authors)
+        self.assertNotIn(self.ad, doc.action_holders.all())
+        
+        # Check case where an author is ad
+        doc = self.doc_in_iesg_state('pub-req')
+        doc.ad = first_author
+        doc.save()
         doc.action_holders.add(first_author)
         self.assertCountEqual(doc.action_holders.all(), [first_author])
         self.update_doc_state(doc,
@@ -175,6 +189,12 @@ class ActionHoldersTests(TestCase):
                               remove_tags=None)
         self.assertCountEqual(doc.action_holders.all(), self.authors)
 
+    def test_update_action_holders_add_tag_ad_f_up(self):
+        doc = self.doc_in_iesg_state('pub-req')
+        self.assertEqual(doc.action_holders.count(), 0)
+        self.update_doc_state(doc, doc.get_state('draft-iesg'), add_tags=['ad-f-up'])
+        self.assertCountEqual(doc.action_holders.all(), [self.ad])
+
     def test_update_action_holders_remove_tag_need_rev(self):
         """Removing need-rev tag drops authors as action holders"""
         doc = self.doc_in_iesg_state('pub-req')
@@ -189,13 +209,14 @@ class ActionHoldersTests(TestCase):
     def test_update_action_holders_add_tag_need_rev_ignores_non_authors(self):
         """Adding need-rev tag does not affect existing action holders"""
         doc = self.doc_in_iesg_state('pub-req')
-        doc.action_holders.add(self.ad)
-        self.assertCountEqual(doc.action_holders.all(),[self.ad])
+        other_person = PersonFactory()
+        doc.action_holders.add(other_person)
+        self.assertCountEqual(doc.action_holders.all(),[other_person])
         self.update_doc_state(doc,
                               doc.get_state('draft-iesg'),
                               add_tags=['need-rev'],
                               remove_tags=None)
-        self.assertCountEqual(doc.action_holders.all(), [self.ad] + self.authors)
+        self.assertCountEqual(doc.action_holders.all(), [other_person] + self.authors)
 
     def test_update_action_holders_remove_tag_need_rev_ignores_non_authors(self):
         """Removing need-rev tag does not affect non-author action holders"""
@@ -251,41 +272,49 @@ class MiscTests(TestCase):
         self.assertEqual(docauth.country, '')
 
     def do_fuzzy_find_documents_rfc_test(self, name):
-        rfc = WgRfcFactory(name=name, create_revisions=(0, 1, 2))
-        rfc = Document.objects.get(pk=rfc.pk)  # clear out any cached values
+        draft = WgDraftFactory(name=name, create_revisions=(0, 1, 2))
+        rfc = WgRfcFactory()
+        draft.relateddocument_set.create(relationship_id="became_rfc", target=rfc)
+        draft, rfc = reload_db_objects(draft, rfc)
 
         # by canonical name
-        found = fuzzy_find_documents(rfc.canonical_name(), None)
-        self.assertCountEqual(found.documents, [rfc])
-        self.assertEqual(found.matched_rev, None)
-        self.assertEqual(found.matched_name, rfc.canonical_name())
-
-        # by draft name, no rev
         found = fuzzy_find_documents(rfc.name, None)
         self.assertCountEqual(found.documents, [rfc])
         self.assertEqual(found.matched_rev, None)
         self.assertEqual(found.matched_name, rfc.name)
 
+        # by draft name, no rev
+        found = fuzzy_find_documents(draft.name, None)
+        self.assertCountEqual(found.documents, [draft])
+        self.assertEqual(found.matched_rev, None)
+        self.assertEqual(found.matched_name, draft.name)
+
         # by draft name, latest rev
-        found = fuzzy_find_documents(rfc.name, '02')
-        self.assertCountEqual(found.documents, [rfc])
+        found = fuzzy_find_documents(draft.name, '02')
+        self.assertCountEqual(found.documents, [draft])
         self.assertEqual(found.matched_rev, '02')
-        self.assertEqual(found.matched_name, rfc.name)
+        self.assertEqual(found.matched_name, draft.name)
 
         # by draft name, earlier rev
-        found = fuzzy_find_documents(rfc.name, '01')
-        self.assertCountEqual(found.documents, [rfc])
+        found = fuzzy_find_documents(draft.name, '01')
+        self.assertCountEqual(found.documents, [draft])
         self.assertEqual(found.matched_rev, '01')
-        self.assertEqual(found.matched_name, rfc.name)
+        self.assertEqual(found.matched_name, draft.name)
 
         # wrong name or revision
-        found = fuzzy_find_documents(rfc.name + '-incorrect')
+        found = fuzzy_find_documents(draft.name + '-incorrect')
         self.assertCountEqual(found.documents, [], 'Should not find document that does not match')
-        found = fuzzy_find_documents(rfc.name + '-incorrect', '02')
+        found = fuzzy_find_documents(draft.name + '-incorrect', '02')
         self.assertCountEqual(found.documents, [], 'Still should not find document, even with a version')
-        found = fuzzy_find_documents(rfc.name, '22')
-        self.assertCountEqual(found.documents, [rfc],
+        found = fuzzy_find_documents(draft.name, '22')
+        self.assertCountEqual(found.documents, [draft],
                               'Should find document even if rev does not exist')
+        
+        # by rfc name mistakenly trying to provide a revision
+        found = fuzzy_find_documents(rfc.name+"-22")
+        self.assertCountEqual(found.documents, [rfc], "Should ignore versions when fuzzyfinding RFCs" )
+        found = fuzzy_find_documents(rfc.name,"22")
+        self.assertCountEqual(found.documents, [rfc], "Should ignore versions when fuzzyfinding RFCs" )
 
 
     def test_fuzzy_find_documents(self):
@@ -325,29 +354,29 @@ class RebuildReferenceRelationsTests(TestCase):
         super().setUp()
         self.doc = WgDraftFactory()  # document under test
         # Other documents that should be found by rebuild_reference_relations
-        self.normative, self.informative, self.unknown = WgRfcFactory.create_batch(3)
+        self.normative, self.informative, self.unknown = WgRfcFactory.create_batch(3) # AMHERE - these need to have rfc names.
         for relationship in ['refnorm', 'refinfo', 'refunk', 'refold']:
             self.doc.relateddocument_set.create(
-                target=WgRfcFactory().docalias.first(),
+                target=WgRfcFactory(),
                 relationship_id=relationship,
             )
         self.updated = WgRfcFactory()  # related document that should be left alone
-        self.doc.relateddocument_set.create(target=self.updated.docalias.first(), relationship_id='updates')
+        self.doc.relateddocument_set.create(target=self.updated, relationship_id='updates')
         self.assertCountEqual(self.doc.relateddocument_set.values_list('relationship__slug', flat=True),
                               ['refnorm', 'refinfo', 'refold', 'refunk', 'updates'],
                               'Test conditions set up incorrectly: wrong prior document relationships')
         for other_doc in [self.normative, self.informative, self.unknown]:
             self.assertEqual(
-                self.doc.relateddocument_set.filter(target__name=other_doc.canonical_name()).count(),
+                self.doc.relateddocument_set.filter(target__name=other_doc.name).count(),
                 0,
                 'Test conditions set up incorrectly: new documents already related',
             )
 
     def _get_refs_return_value(self):
         return {
-            self.normative.canonical_name(): Draft.REF_TYPE_NORMATIVE,
-            self.informative.canonical_name(): Draft.REF_TYPE_INFORMATIVE,
-            self.unknown.canonical_name(): Draft.REF_TYPE_UNKNOWN,
+            self.normative.name: Draft.REF_TYPE_NORMATIVE,
+            self.informative.name: Draft.REF_TYPE_INFORMATIVE,
+            self.unknown.name: Draft.REF_TYPE_UNKNOWN,
             'draft-not-found': Draft.REF_TYPE_NORMATIVE,
         }
 
@@ -378,7 +407,7 @@ class RebuildReferenceRelationsTests(TestCase):
         self.assertEqual(
             result,
             {
-                'warnings': ['There were 1 references with no matching DocAlias'],
+                'warnings': ['There were 1 references with no matching Document'],
                 'unfound': ['draft-not-found'],
             }
         )
@@ -386,10 +415,10 @@ class RebuildReferenceRelationsTests(TestCase):
         self.assertCountEqual(
             self.doc.relateddocument_set.values_list('target__name', 'relationship__slug'),
             [
-                (self.normative.canonical_name(), 'refnorm'),
-                (self.informative.canonical_name(), 'refinfo'),
-                (self.unknown.canonical_name(), 'refunk'),
-                (self.updated.docalias.first().name, 'updates'),
+                (self.normative.name, 'refnorm'),
+                (self.informative.name, 'refinfo'),
+                (self.unknown.name, 'refunk'),
+                (self.updated.name, 'updates'),
             ]
         )
 
@@ -409,7 +438,7 @@ class RebuildReferenceRelationsTests(TestCase):
         self.assertEqual(
             result,
             {
-                'warnings': ['There were 1 references with no matching DocAlias'],
+                'warnings': ['There were 1 references with no matching Document'],
                 'unfound': ['draft-not-found'],
             }
         )
@@ -417,10 +446,10 @@ class RebuildReferenceRelationsTests(TestCase):
         self.assertCountEqual(
             self.doc.relateddocument_set.values_list('target__name', 'relationship__slug'),
             [
-                (self.normative.canonical_name(), 'refnorm'),
-                (self.informative.canonical_name(), 'refinfo'),
-                (self.unknown.canonical_name(), 'refunk'),
-                (self.updated.docalias.first().name, 'updates'),
+                (self.normative.name, 'refnorm'),
+                (self.informative.name, 'refinfo'),
+                (self.unknown.name, 'refunk'),
+                (self.updated.name, 'updates'),
             ]
         )
 
@@ -441,7 +470,7 @@ class RebuildReferenceRelationsTests(TestCase):
         self.assertEqual(
             result,
             {
-                'warnings': ['There were 1 references with no matching DocAlias'],
+                'warnings': ['There were 1 references with no matching Document'],
                 'unfound': ['draft-not-found'],
             }
         )
@@ -449,9 +478,9 @@ class RebuildReferenceRelationsTests(TestCase):
         self.assertCountEqual(
             self.doc.relateddocument_set.values_list('target__name', 'relationship__slug'),
             [
-                (self.normative.canonical_name(), 'refnorm'),
-                (self.informative.canonical_name(), 'refinfo'),
-                (self.unknown.canonical_name(), 'refunk'),
-                (self.updated.docalias.first().name, 'updates'),
+                (self.normative.name, 'refnorm'),
+                (self.informative.name, 'refinfo'),
+                (self.unknown.name, 'refunk'),
+                (self.updated.name, 'updates'),
             ]
         )

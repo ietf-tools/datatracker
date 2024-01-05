@@ -84,6 +84,7 @@ def nomcom_kwargs_for_year(year=None, *args, **kwargs):
 class NomComFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = NomCom
+        skip_postgeneration_save = True
 
     group = factory.SubFactory(GroupFactory,type_id='nomcom')
 
@@ -167,6 +168,7 @@ class NomineePositionFactory(factory.django.DjangoModelFactory):
 class FeedbackFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Feedback
+        skip_postgeneration_save = True
 
     nomcom = factory.SubFactory(NomComFactory)
     subject = factory.Faker('sentence')
@@ -176,6 +178,7 @@ class FeedbackFactory(factory.django.DjangoModelFactory):
     def comments(obj, create, extracted, **kwargs):
         comment_text = Faker().paragraph()
         obj.comments = obj.nomcom.encrypt(comment_text)
+        obj.save()
 
 class TopicFactory(factory.django.DjangoModelFactory):
     class Meta:

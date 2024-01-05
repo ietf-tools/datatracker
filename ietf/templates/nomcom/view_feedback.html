@@ -3,9 +3,6 @@
 {% load origin static %}
 {% load nomcom_tags %}
 {% block subtitle %}- View feedback{% endblock %}
-{% block pagehead %}
-    <link rel="stylesheet" href="{% static "ietf/css/list.css" %}">
-{% endblock %}
 {% block nomcom_content %}
     {% origin %}
     <h2 class="mt-3">Feedback related to nominees</h2>
@@ -113,7 +110,4 @@
             </tbody>
         </table>
     {% endif %}
-{% endblock %}
-{% block js %}
-    <script src="{% static "ietf/js/list.js" %}"></script>
 {% endblock %}

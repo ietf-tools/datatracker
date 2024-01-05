@@ -2567,10 +2567,30 @@
   },
   {
     "fields": {
+      "desc": "",
+      "name": "Published",
+      "next_states": [],
+      "order": 1,
+      "slug": "published",
+      "type": "rfc",
+      "used": true
+    },
+    "model": "doc.state",
+    "pk": 177
+  },
+  {
+    "fields": {
       "label": "State"
     },
     "model": "doc.statetype",
     "pk": "agenda"
+  },
+  {
+    "fields": {
+      "label": "bcp state"
+    },
+    "model": "doc.statetype",
+    "pk": "bcp"
   },
   {
     "fields": {
@@ -2693,6 +2713,13 @@
   },
   {
     "fields": {
+      "label": "fyi state"
+    },
+    "model": "doc.statetype",
+    "pk": "fyi"
+  },
+  {
+    "fields": {
       "label": "State"
     },
     "model": "doc.statetype",
@@ -2749,6 +2776,13 @@
   },
   {
     "fields": {
+      "label": "State"
+    },
+    "model": "doc.statetype",
+    "pk": "rfc"
+  },
+  {
+    "fields": {
       "label": "Shepherd's Writeup State"
     },
     "model": "doc.statetype",
@@ -2774,6 +2808,13 @@
     },
     "model": "doc.statetype",
     "pk": "statement"
+  },
+  {
+    "fields": {
+      "label": "std state"
+    },
+    "model": "doc.statetype",
+    "pk": "std"
   },
   {
     "fields": {
@@ -3034,7 +3075,9 @@
       "material_types": "[\n    \"slides\"\n]",
       "matman_roles": "[\n    \"chair\"\n]",
       "need_parent": false,
-      "parent_types": [],
+      "parent_types": [
+        "rfcedtyp"
+      ],
       "req_subm_approval": true,
       "role_order": "[\n    \"chair\"\n]",
       "session_purposes": "[\n    \"regular\"\n]",
@@ -3120,6 +3163,45 @@
     },
     "model": "group.groupfeatures",
     "pk": "iabasg"
+  },
+  {
+    "fields": {
+      "about_page": "ietf.group.views.group_about",
+      "acts_like_wg": false,
+      "admin_roles": "[\n    \"chair\"\n]",
+      "agenda_filter_type": "none",
+      "agenda_type": "ietf",
+      "create_wiki": false,
+      "custom_group_roles": false,
+      "customize_workflow": false,
+      "default_parent": "iab",
+      "default_tab": "ietf.group.views.group_about",
+      "default_used_roles": "[]",
+      "docman_roles": "[\n    \"ad\",\n    \"chair\",\n    \"delegate\",\n    \"secr\"\n]",
+      "groupman_authroles": "[\n    \"Secretariat\"\n]",
+      "groupman_roles": "[\n    \"ad\",\n    \"chair\"\n]",
+      "has_chartering_process": false,
+      "has_default_chat": true,
+      "has_documents": true,
+      "has_meetings": true,
+      "has_milestones": false,
+      "has_nonsession_materials": false,
+      "has_reviews": false,
+      "has_session_materials": true,
+      "is_schedulable": false,
+      "material_types": "[\n    \"slides\"\n]",
+      "matman_roles": "[\n    \"ad\",\n    \"chair\",\n    \"delegate\",\n    \"secr\"\n]",
+      "need_parent": true,
+      "parent_types": [
+        "ietf"
+      ],
+      "req_subm_approval": false,
+      "role_order": "[\n    \"chair\",\n    \"secr\",\n    \"member\"\n]",
+      "session_purposes": "\"[\\\"regular\\\"]\"",
+      "show_on_agenda": false
+    },
+    "model": "group.groupfeatures",
+    "pk": "iabworkshop"
   },
   {
     "fields": {
@@ -3770,7 +3852,7 @@
       ],
       "desc": "Recipients when a charter is approved",
       "to": [
-        "ietf_announce"
+        "group_stream_announce"
       ]
     },
     "model": "mailtrigger.mailtrigger",
@@ -5059,6 +5141,21 @@
         "review_doc_all_parties",
         "review_doc_group_mail_list"
       ],
+      "desc": "Recipients when a httpdir Last Call review is completed",
+      "to": [
+        "review_team_mail_list"
+      ]
+    },
+    "model": "mailtrigger.mailtrigger",
+    "pk": "review_completed_httpdir_lc"
+  },
+  {
+    "fields": {
+      "cc": [
+        "ietf_last_call",
+        "review_doc_all_parties",
+        "review_doc_group_mail_list"
+      ],
       "desc": "Recipients when a httpdir Telechat review is completed",
       "to": [
         "review_team_mail_list"
@@ -5591,6 +5688,19 @@
   {
     "fields": {
       "cc": [
+        "group_chairs"
+      ],
+      "desc": "Recipients when slides are approved for a given session",
+      "to": [
+        "slides_proposer"
+      ]
+    },
+    "model": "mailtrigger.mailtrigger",
+    "pk": "slides_approved"
+  },
+  {
+    "fields": {
+      "cc": [
         "slides_proposer"
       ],
       "desc": "Recipients when slides are proposed for a given session",
@@ -5834,7 +5944,7 @@
   {
     "fields": {
       "desc": "The document's authors",
-      "template": "{% if doc.type_id == \"draft\" %}<{{doc.name}}@ietf.org>{% endif %}"
+      "template": "{% if doc.type_id == \"draft\" or doc.type_id == \"rfc\" %}<{{doc.name}}@ietf.org>{% endif %}"
     },
     "model": "mailtrigger.recipient",
     "pk": "doc_authors"
@@ -6614,6 +6724,56 @@
     },
     "model": "name.agendatypename",
     "pk": "workshop"
+  },
+  {
+    "fields": {
+      "desc": "The content of an appeal",
+      "name": "Appeal",
+      "order": 1,
+      "used": true
+    },
+    "model": "name.appealartifacttypename",
+    "pk": "appeal"
+  },
+  {
+    "fields": {
+      "desc": "The content of an appeal combined with the content of a response",
+      "name": "Response (with appeal included)",
+      "order": 2,
+      "used": true
+    },
+    "model": "name.appealartifacttypename",
+    "pk": "appeal_with_response"
+  },
+  {
+    "fields": {
+      "desc": "Other content related to an appeal",
+      "name": "Other content",
+      "order": 5,
+      "used": true
+    },
+    "model": "name.appealartifacttypename",
+    "pk": "other_content"
+  },
+  {
+    "fields": {
+      "desc": "The content of a reply to an appeal response",
+      "name": "Reply to response",
+      "order": 4,
+      "used": true
+    },
+    "model": "name.appealartifacttypename",
+    "pk": "reply_to_response"
+  },
+  {
+    "fields": {
+      "desc": "The content of a response to an appeal",
+      "name": "Response",
+      "order": 3,
+      "used": true
+    },
+    "model": "name.appealartifacttypename",
+    "pk": "response"
   },
   {
     "fields": {
@@ -9936,6 +10096,17 @@
   {
     "fields": {
       "desc": "",
+      "name": "became RFC",
+      "order": 0,
+      "revname": "came from draft",
+      "used": true
+    },
+    "model": "name.docrelationshipname",
+    "pk": "became_rfc"
+  },
+  {
+    "fields": {
+      "desc": "",
       "name": "conflict reviews",
       "order": 0,
       "revname": "Conflict reviewed by",
@@ -9943,6 +10114,17 @@
     },
     "model": "name.docrelationshipname",
     "pk": "conflrev"
+  },
+  {
+    "fields": {
+      "desc": "This document contains other documents (e.g., STDs contain RFCs)",
+      "name": "Contains",
+      "order": 0,
+      "revname": "Is part of",
+      "used": true
+    },
+    "model": "name.docrelationshipname",
+    "pk": "contains"
   },
   {
     "fields": {
@@ -10463,6 +10645,17 @@
   {
     "fields": {
       "desc": "",
+      "name": "Best Current Practice",
+      "order": 0,
+      "prefix": "bcp",
+      "used": true
+    },
+    "model": "name.doctypename",
+    "pk": "bcp"
+  },
+  {
+    "fields": {
+      "desc": "",
       "name": "Bluesheets",
       "order": 0,
       "prefix": "bluesheets",
@@ -10525,6 +10718,17 @@
     },
     "model": "name.doctypename",
     "pk": "draft"
+  },
+  {
+    "fields": {
+      "desc": "",
+      "name": "For Your Information",
+      "order": 0,
+      "prefix": "fyi",
+      "used": true
+    },
+    "model": "name.doctypename",
+    "pk": "fyi"
   },
   {
     "fields": {
@@ -10606,6 +10810,17 @@
   {
     "fields": {
       "desc": "",
+      "name": "RFC",
+      "order": 0,
+      "prefix": "rfc",
+      "used": true
+    },
+    "model": "name.doctypename",
+    "pk": "rfc"
+  },
+  {
+    "fields": {
+      "desc": "",
       "name": "Shepherd's writeup",
       "order": 0,
       "prefix": "shepherd",
@@ -10646,6 +10861,17 @@
     },
     "model": "name.doctypename",
     "pk": "statement"
+  },
+  {
+    "fields": {
+      "desc": "",
+      "name": "Standard",
+      "order": 0,
+      "prefix": "std",
+      "used": true
+    },
+    "model": "name.doctypename",
+    "pk": "std"
   },
   {
     "fields": {
@@ -11467,6 +11693,17 @@
   },
   {
     "fields": {
+      "desc": "IAB Workshop",
+      "name": "IAB Workshop",
+      "order": 0,
+      "used": true,
+      "verbose_name": "IAB Workshop"
+    },
+    "model": "name.grouptypename",
+    "pk": "iabworkshop"
+  },
+  {
+    "fields": {
       "desc": "",
       "name": "IANA",
       "order": 0,
@@ -11666,7 +11903,7 @@
   {
     "fields": {
       "default_offset_days": -57,
-      "desc": "Cut-off date for BOF proposal requests. To request a BOF, please see instructions at https://www.ietf.org/how/bofs/bof-procedures on Requesting a BOF",
+      "desc": "Cut-off date for BOF proposal requests. To request a __BoF__ session use the [IETF BoF Request Tool](/doc/bof-requests).",
       "name": "Cut-off preliminary BOF requests",
       "order": 0,
       "used": true
@@ -11677,7 +11914,7 @@
   {
     "fields": {
       "default_offset_days": -57,
-      "desc": "Preliminary BOF proposals requested. To request a BOF, please see instructions on requesting a BOF at https://www.ietf.org/how/bofs/bof-procedures/",
+      "desc": "Preliminary BOF proposals requested. To request a __BoF__ session use the [IETF BoF Request Tool](/doc/bof-requests).",
       "name": "Preliminary BOF proposals requested",
       "order": 0,
       "used": false
@@ -11710,7 +11947,7 @@
   {
     "fields": {
       "default_offset_days": -43,
-      "desc": "Cut-off date for BOF proposal requests to Area Directors at UTC 23:59",
+      "desc": "Cut-off date for BOF proposal requests to Area Directors at UTC 23:59. To request a __BoF__ session use the [IETF BoF Request Tool](/doc/bof-requests).",
       "name": "Cut-off BOF scheduling Requests",
       "order": 0,
       "used": false
@@ -11754,7 +11991,7 @@
   {
     "fields": {
       "default_offset_days": -43,
-      "desc": "Cut-off date for requests to schedule Working Group Meetings at UTC 23:59",
+      "desc": "Cut-off date for requests to schedule Working Group Meetings at UTC 23:59. To request a __Working Group__ session, use the [IETF Meeting Session Request Tool](/secr/sreq/).",
       "name": "Cut-off WG scheduling Requests",
       "order": 0,
       "used": true
@@ -11775,11 +12012,22 @@
   },
   {
     "fields": {
+      "default_offset_days": -12,
+      "desc": "Early registration and payment cut-off at UTC 23:59",
+      "name": "Early cutoff",
+      "order": 0,
+      "used": true
+    },
+    "model": "name.importantdatename",
+    "pk": "early"
+  },
+  {
+    "fields": {
       "default_offset_days": -47,
       "desc": "Early Bird registration and payment cut-off at UTC 23:59",
       "name": "Earlybird cutoff",
       "order": 0,
-      "used": true
+      "used": false
     },
     "model": "name.importantdatename",
     "pk": "earlybird"
@@ -11798,7 +12046,7 @@
   {
     "fields": {
       "default_offset_days": -12,
-      "desc": "Internet-Draft submission cut-off (for all Internet-Drafts, including -00) by UTC 23:59",
+      "desc": "Internet-Draft submission cut-off (for all Internet-Drafts, including -00) by UTC 23:59. Upload using the [I-D Submission Tool](/submit/).",
       "name": "I-D Cutoff",
       "order": 0,
       "used": true
@@ -11831,7 +12079,7 @@
   {
     "fields": {
       "default_offset_days": -82,
-      "desc": "IETF Online Registration Opens",
+      "desc": "IETF Online Registration Opens [Register Here](https://www.ietf.org/how/meetings/register/).",
       "name": "Registration Opens",
       "order": 0,
       "used": true
@@ -11842,7 +12090,7 @@
   {
     "fields": {
       "default_offset_days": -89,
-      "desc": "Working Group and BOF scheduling begins",
+      "desc": "Working Group and BOF scheduling begins. To request a Working Group session, use the [IETF Meeting Session Request Tool](/secr/sreq/). If you are working on a BOF request, it is highly recommended to tell the IESG now by sending an [email to iesg@ietf.org](mailtp:iesg@ietf.org) to get advance help with the request.",
       "name": "Scheduling Opens",
       "order": 0,
       "used": true
@@ -11900,10 +12148,21 @@
       "desc": "Standard rate registration and payment cut-off at UTC 23:59.",
       "name": "Standard rate registration ends",
       "order": 18,
-      "used": true
+      "used": false
     },
     "model": "name.importantdatename",
     "pk": "stdratecutoff"
+  },
+  {
+    "fields": {
+      "default_offset_days": -47,
+      "desc": "Super Early registration cutoff at UTC 23:59",
+      "name": "Super Early cutoff",
+      "order": 0,
+      "used": true
+    },
+    "model": "name.importantdatename",
+    "pk": "superearly"
   },
   {
     "fields": {
@@ -12028,6 +12287,16 @@
   {
     "fields": {
       "desc": "",
+      "name": "Removed Objectively False",
+      "order": 5,
+      "used": true
+    },
+    "model": "name.iprdisclosurestatename",
+    "pk": "removed_objfalse"
+  },
+  {
+    "fields": {
+      "desc": "",
       "name": "Changed disclosure metadata",
       "order": 0,
       "used": true
@@ -12134,6 +12403,16 @@
     },
     "model": "name.ipreventtypename",
     "pk": "removed"
+  },
+  {
+    "fields": {
+      "desc": "",
+      "name": "Removed Objectively False",
+      "order": 0,
+      "used": true
+    },
+    "model": "name.ipreventtypename",
+    "pk": "removed_objfalse"
   },
   {
     "fields": {
@@ -16455,7 +16734,7 @@
     "fields": {
       "command": "xym",
       "switch": "--version",
-      "time": "2023-07-17T07:09:47.664Z",
+      "time": "2023-11-21T08:09:45.989Z",
       "used": true,
       "version": "xym 0.7.0"
     },
@@ -16466,9 +16745,9 @@
     "fields": {
       "command": "pyang",
       "switch": "--version",
-      "time": "2023-07-17T07:09:48.075Z",
+      "time": "2023-11-21T08:09:46.322Z",
       "used": true,
-      "version": "pyang 2.5.3"
+      "version": "pyang 2.6.0"
     },
     "model": "utils.versioninfo",
     "pk": 2
@@ -16477,7 +16756,7 @@
     "fields": {
       "command": "yanglint",
       "switch": "--version",
-      "time": "2023-07-17T07:09:48.104Z",
+      "time": "2023-11-21T08:09:46.338Z",
       "used": true,
       "version": "yanglint SO 1.9.2"
     },
@@ -16488,9 +16767,9 @@
     "fields": {
       "command": "xml2rfc",
       "switch": "--version",
-      "time": "2023-07-17T07:09:49.075Z",
+      "time": "2023-11-21T08:09:47.251Z",
       "used": true,
-      "version": "xml2rfc 3.17.4"
+      "version": "xml2rfc 3.18.2"
     },
     "model": "utils.versioninfo",
     "pk": 4

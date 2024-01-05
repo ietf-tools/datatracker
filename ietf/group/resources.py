@@ -13,7 +13,7 @@ from ietf import api
 
 from ietf.group.models import (Group, GroupStateTransitions, GroupMilestone, GroupHistory, # type: ignore
     GroupURL, Role, GroupEvent, RoleHistory, GroupMilestoneHistory, MilestoneGroupEvent,
-    ChangeStateGroupEvent, GroupFeatures, GroupExtResource)
+    ChangeStateGroupEvent, GroupFeatures, GroupExtResource, Appeal, AppealArtifact)
 
 
 from ietf.person.resources import PersonResource
@@ -333,3 +333,42 @@ class GroupExtResourceResource(ModelResource):
             "name": ALL_WITH_RELATIONS,
         }
 api.group.register(GroupExtResourceResource())
+
+
+class AppealResource(ModelResource):
+    group            = ToOneField(GroupResource, 'group')
+    class Meta:
+        queryset = Appeal.objects.all()
+        serializer = api.Serializer()
+        cache = SimpleCache()
+        #resource_name = 'appeal'
+        ordering = ['id', ]
+        filtering = { 
+            "id": ALL,
+            "name": ALL,
+            "date": ALL,
+            "group": ALL_WITH_RELATIONS,
+        }
+api.group.register(AppealResource())
+
+from ietf.name.resources import AppealArtifactTypeNameResource
+class AppealArtifactResource(ModelResource):
+    appeal           = ToOneField(AppealResource, 'appeal')
+    artifact_type    = ToOneField(AppealArtifactTypeNameResource, 'artifact_type')
+    class Meta:
+        excludes= ("bits",)
+        queryset = AppealArtifact.objects.all()
+        serializer = api.Serializer()
+        cache = SimpleCache()
+        #resource_name = 'appealartifact'
+        ordering = [ "id", ]
+        filtering = { 
+            "id": ALL,
+            "date": ALL,
+            "title": ALL,
+            "order": ALL,
+            "content_type": ALL,
+            "appeal": ALL_WITH_RELATIONS,
+            "artifact_type": ALL_WITH_RELATIONS,
+        }
+api.group.register(AppealArtifactResource())

@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2016-2020, All Rights Reserved
+# Copyright The IETF Trust 2016-2023, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -50,6 +50,8 @@ def can_request_review_of_doc(user, doc):
     if not user.is_authenticated:
         return False
 
+    # This is in a strange place as it has nothing to do with the user
+    # but this utility is used in too many places to move this quickly.
     if doc.type_id == 'draft' and doc.get_state_slug() != 'active':
         return False
 
@@ -388,8 +390,12 @@ def assign_review_request_to_reviewer(request, review_req, reviewer, add_skip=Fa
     log.assertion('reviewer is not None')
 
     # cannot reference reviewassignment_set relation until pk exists
-    if review_req.pk is not None and review_req.reviewassignment_set.filter(reviewer=reviewer).exists():
-        return
+    if review_req.pk is not None:
+        reviewassignment_set = review_req.reviewassignment_set.filter(reviewer=reviewer)
+        if (reviewassignment_set.exists() and not
+            (reviewassignment_set.filter(state_id='rejected').exists() or
+             reviewassignment_set.filter(state_id='withdrawn').exists())):
+            return
 
     # Note that assigning a review no longer unassigns other reviews
 

@@ -11,6 +11,8 @@ import time
 import traceback
 import xml2rfc
 
+from pathlib import Path
+from shutil import move
 from typing import Optional, Union  # pyflakes:ignore
 from unidecode import unidecode
 
@@ -25,7 +27,7 @@ from django.utils import timezone
 
 import debug                            # pyflakes:ignore
 
-from ietf.doc.models import ( Document, State, DocAlias, DocEvent, SubmissionDocEvent,
+from ietf.doc.models import ( Document, State, DocEvent, SubmissionDocEvent,
     DocumentAuthor, AddedMessageEvent )
 from ietf.doc.models import NewRevisionDocEvent
 from ietf.doc.models import RelatedDocument, DocRelationshipName, DocExtResource
@@ -287,7 +289,7 @@ def find_submission_filenames(draft):
     """
     path = pathlib.Path(settings.IDSUBMIT_STAGING_PATH)
     stem = f'{draft.name}-{draft.rev}'
-    allowed_types = settings.RFC_FILE_TYPES if draft.get_state_slug() == 'rfc' else settings.IDSUBMIT_FILE_TYPES
+    allowed_types = settings.IDSUBMIT_FILE_TYPES
     candidates = {ext: path / f'{stem}.{ext}' for ext in allowed_types}
     return {ext: str(filename) for ext, filename in candidates.items() if filename.exists()}
 
@@ -374,10 +376,6 @@ def post_submission(request, submission, approved_doc_desc, approved_subm_desc):
     )
     events.append(e)
     log.log(f"{submission.name}: created doc events")
-
-    # update related objects
-    alias, __ = DocAlias.objects.get_or_create(name=submission.name)
-    alias.docs.add(draft)
 
     draft.set_state(State.objects.get(used=True, type="draft", slug="active"))
 
@@ -504,7 +502,7 @@ def update_replaces_from_submission(request, submission, draft):
     if request.user.is_authenticated:
         is_chair_of = list(Group.objects.filter(role__person__user=request.user, role__name="chair"))
 
-    replaces = DocAlias.objects.filter(name__in=submission.replaces.split(",")).prefetch_related("docs", "docs__group")
+    replaces = Document.objects.filter(name__in=submission.replaces.split(",")).prefetch_related("group")
     existing_replaces = list(draft.related_that_doc("replaces"))
     existing_suggested = set(draft.related_that_doc("possibly-replaces"))
 
@@ -516,14 +514,12 @@ def update_replaces_from_submission(request, submission, draft):
         if r in existing_replaces:
             continue
 
-        rdoc = r.document
-
-        if rdoc == draft:
+        if r == draft:
             continue
 
         if (is_secretariat
-            or (draft.group in is_chair_of and (rdoc.group.type_id == "individ" or rdoc.group in is_chair_of))
-            or (submitter_email and rdoc.documentauthor_set.filter(email__address__iexact=submitter_email).exists())):
+            or (draft.group in is_chair_of and (r.group.type_id == "individ" or r.group in is_chair_of))
+            or (submitter_email and r.documentauthor_set.filter(email__address__iexact=submitter_email).exists())):
             approved.append(r)
         else:
             if r not in existing_suggested:
@@ -639,24 +635,27 @@ def cancel_submission(submission):
     submission.save()
     remove_submission_files(submission)
 
+
 def rename_submission_files(submission, prev_rev, new_rev):
     for ext in settings.IDSUBMIT_FILE_TYPES:
-        source = os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s.%s' % (submission.name, prev_rev, ext))
-        dest = os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s.%s' % (submission.name, new_rev, ext))
-        if os.path.exists(source):
-            os.rename(source, dest)
+        staging_path = Path(settings.IDSUBMIT_STAGING_PATH) 
+        source = staging_path / f"{submission.name}-{prev_rev}.{ext}"
+        dest = staging_path / f"{submission.name}-{new_rev}.{ext}"
+        if source.exists():
+            move(source, dest)
+
 
 def move_files_to_repository(submission):
     for ext in settings.IDSUBMIT_FILE_TYPES:
-        source = os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s.%s' % (submission.name, submission.rev, ext))
-        dest = os.path.join(settings.IDSUBMIT_REPOSITORY_PATH, '%s-%s.%s' % (submission.name, submission.rev, ext))
-        if os.path.exists(source):
-            os.rename(source, dest)
-        else:
-            if os.path.exists(dest):
-                log.log("Intended to move '%s' to '%s', but found source missing while destination exists.")
-            elif ext in submission.file_types.split(','):
-                raise ValueError("Intended to move '%s' to '%s', but found source and destination missing.")
+        fname = f"{submission.name}-{submission.rev}.{ext}"
+        source = Path(settings.IDSUBMIT_STAGING_PATH) / fname
+        dest = Path(settings.IDSUBMIT_REPOSITORY_PATH) / fname
+        if source.exists():
+            move(source, dest)
+        elif dest.exists():
+            log.log("Intended to move '%s' to '%s', but found source missing while destination exists.")
+        elif ext in submission.file_types.split(','):
+            raise ValueError("Intended to move '%s' to '%s', but found source and destination missing.")
 
 
 def remove_staging_files(name, rev, exts=None):
@@ -1002,7 +1001,7 @@ def accept_submission(submission: Submission, request: Optional[HttpRequest] = N
     docevent_from_submission(submission, desc="Uploaded new revision",
                              who=requester if requester_is_author else None)
 
-    replaces = DocAlias.objects.filter(name__in=submission.replaces_names)
+    replaces = Document.objects.filter(name__in=submission.replaces_names)
     pretty_replaces = '(none)' if not replaces else (
         ', '.join(prettify_std_name(r.name) for r in replaces)
     )

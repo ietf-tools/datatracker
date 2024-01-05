@@ -1,11 +1,12 @@
 import factory
 
 from ietf.group.factories import GroupFactory
-from ietf.liaisons.models import LiaisonStatement, LiaisonStatementEvent, LiaisonStatementAttachment
+from ietf.liaisons.models import LiaisonStatement, LiaisonStatementEvent, LiaisonStatementAttachment, RelatedLiaisonStatement
 
 class LiaisonStatementFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = LiaisonStatement
+        skip_postgeneration_save = True
 
     title = factory.Faker('sentence')
     from_contact = factory.SubFactory('ietf.person.factories.EmailFactory')
@@ -49,3 +50,12 @@ class LiaisonStatementAttachmentFactory(factory.django.DjangoModelFactory):
         type_id='liai-att',
         # TODO: Make name more convenient (the default now is to try to generate a draftname)
     )
+
+
+class RelatedLiaisonStatementFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = RelatedLiaisonStatement
+
+    source = factory.SubFactory(LiaisonStatementFactory)
+    target = factory.SubFactory(LiaisonStatementFactory)
+    relationship_id = "refunk"

@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2019-2021, All Rights Reserved
+# Copyright The IETF Trust 2019-2023, All Rights Reserved
 
 
 import re
@@ -7,9 +7,10 @@ from django.db.models.aggregates import Max
 from django.utils import timezone
 from simple_history.utils import bulk_update_with_history
 
-from ietf.doc.models import DocumentAuthor, DocAlias
+from ietf.doc.models import DocumentAuthor
 from ietf.doc.utils import extract_complete_replaces_ancestor_mapping_for_docs
 from ietf.group.models import Role
+from ietf.name.models import ReviewAssignmentStateName
 from ietf.person.models import Person
 import debug                            # pyflakes:ignore
 from ietf.review.models import NextReviewerInTeam, ReviewerSettings, ReviewWish, ReviewRequest, \
@@ -55,8 +56,6 @@ def persons_with_previous_review(team, review_req, possible_person_ids, state_id
         reviewassignment__state=state_id,
         team=team,
     ).distinct()
-    if review_req.pk is not None:
-        has_reviewed_previous = has_reviewed_previous.exclude(pk=review_req.pk)
     has_reviewed_previous = set(
         has_reviewed_previous.values_list("reviewassignment__reviewer__person", flat=True))
     return has_reviewed_previous
@@ -70,7 +69,14 @@ class AbstractReviewerQueuePolicy:
         """Assign a reviewer to a request and update policy state accordingly"""
         # Update policy state first - needed by LRU policy to correctly compute whether assignment was in-order
         self.update_policy_state_for_assignment(review_req, reviewer.person, add_skip)
-        return review_req.reviewassignment_set.create(state_id='assigned', reviewer=reviewer, assigned_on=timezone.now())
+        assignment = review_req.reviewassignment_set.filter(reviewer=reviewer).first()
+        if assignment:
+            assignment.state = ReviewAssignmentStateName.objects.get(slug='assigned', used=True)
+            assignment.assigned_on = timezone.now()
+            assignment.save()
+            return assignment
+        else:
+            return review_req.reviewassignment_set.create(state_id='assigned', reviewer=reviewer, assigned_on=timezone.now())
 
     def default_reviewer_rotation_list(self, include_unavailable=False):
         """ Return a list of reviewers (Person objects) in the default reviewer rotation for a policy.
@@ -168,15 +174,15 @@ class AbstractReviewerQueuePolicy:
             PersonEmailChoiceField(label="Assign Reviewer", empty_label="(None)")
         """
 
-        # Collect a set of person IDs for people who have either not responded
-        # to or outright rejected reviewing this document in the past
+        # Collect a set of person IDs for people who have not responded
+        # to this document in the past
         rejecting_reviewer_ids = review_req.doc.reviewrequest_set.filter(
-            reviewassignment__state__slug__in=('rejected', 'no-response')
+            reviewassignment__state__slug='no-response'
         ).values_list(
             'reviewassignment__reviewer__person_id', flat=True
         )
 
-        # Query the Email objects for reviewers who haven't rejected or
+        # Query the Email objects for reviewers who haven't
         # not responded to this document in the past
         field.queryset = field.queryset.filter(
             role__name="reviewer",
@@ -287,8 +293,6 @@ class AssignmentOrderResolver:
     def _collect_context(self):
         """Collect all relevant data about this team, document and review request."""
 
-        self.doc_aliases = DocAlias.objects.filter(docs=self.doc).values_list("name", flat=True)
-
         # This data is collected as a dict, keys being person IDs, values being numbers/objects.
         self.rotation_index = {p.pk: i for i, p in enumerate(self.rotation_list)}
         self.reviewer_settings = self._reviewer_settings_for_person_ids(self.possible_person_ids)
@@ -354,8 +358,7 @@ class AssignmentOrderResolver:
         add_boolean_score(+1, email.person_id in self.wish_to_review, "wishes to review document")
         add_boolean_score(-1, email.person_id in self.connections,
                           self.connections.get(email.person_id))  # reviewer is somehow connected: bad
-        add_boolean_score(-1, settings.filter_re and any(
-            re.search(settings.filter_re, n) for n in self.doc_aliases), "filter regexp matches")
+        add_boolean_score(-1, settings.filter_re and re.search(settings.filter_re, self.doc.name), "filter regexp matches")
         
         # minimum interval between reviews
         days_needed = self.days_needed_for_reviewers.get(email.person_id, 0)

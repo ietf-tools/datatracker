@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2016-2020, All Rights Reserved
+# Copyright The IETF Trust 2016-2023, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -19,7 +19,7 @@ from django.utils.functional import cached_property
 
 import debug                            # pyflakes:ignore
 
-from ietf.doc.models import Document, DocAlias, State, NewRevisionDocEvent
+from ietf.doc.models import Document, State, NewRevisionDocEvent
 from ietf.group.models import Group
 from ietf.group.utils import groups_managed_by
 from ietf.meeting.models import Session, Meeting, Schedule, countries, timezones, TimeSlot, Room
@@ -341,7 +341,6 @@ class InterimSessionModelForm(forms.ModelForm):
                 # FIXME: What about agendas in html or markdown format?
                 uploaded_filename='{}-00.txt'.format(filename))
             doc.set_state(State.objects.get(type__slug=doc.type.slug, slug='active'))
-            DocAlias.objects.create(name=doc.name).docs.add(doc)
             self.instance.sessionpresentation_set.create(document=doc, rev=doc.rev)
             NewRevisionDocEvent.objects.create(
                 type='new_revision',
@@ -361,7 +360,13 @@ class InterimSessionModelForm(forms.ModelForm):
 class InterimAnnounceForm(forms.ModelForm):
     class Meta:
         model = Message
-        fields = ('to', 'frm', 'cc', 'bcc', 'reply_to', 'subject', 'body')
+        fields = ('to', 'cc', 'frm', 'subject', 'body')
+
+    def __init__(self, *args, **kwargs):
+        super(InterimAnnounceForm, self).__init__(*args, **kwargs)
+        self.fields['frm'].label='From'
+        self.fields['frm'].widget.attrs['readonly'] = True
+        self.fields['to'].widget.attrs['readonly'] = True
 
     def save(self, *args, **kwargs):
         user = kwargs.pop('user')

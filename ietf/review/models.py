@@ -143,6 +143,10 @@ class ReviewRequest(models.Model):
     def request_closed_time(self):
         return self.doc.request_closed_time(self) or self.time
 
+    def add_history(self, description):
+        self._change_reason = description
+        self.save()
+
 class ReviewAssignment(models.Model):
     """ One of possibly many reviews assigned in response to a ReviewRequest """
     history        = HistoricalRecords(history_change_reason_field=models.TextField(null=True))
@@ -191,6 +195,7 @@ class ReviewTeamSettings(models.Model):
     """Holds configuration specific to groups that are review teams"""
     group = OneToOneField(Group)
     autosuggest = models.BooleanField(default=True, verbose_name="Automatically suggest possible review requests")
+    allow_reviewer_to_reject_after_deadline = models.BooleanField(default=False, verbose_name="Allow reviewer to reject request after deadline.")
     reviewer_queue_policy = models.ForeignKey(ReviewerQueuePolicyName, default='RotateAlphabetically', on_delete=models.PROTECT)
     review_types = models.ManyToManyField(ReviewTypeName, default=get_default_review_types)
     review_results = models.ManyToManyField(ReviewResultName, default=get_default_review_results, related_name='reviewteamsettings_review_results_set')

@@ -1,6 +1,5 @@
 {% extends "group/group_base.html" %}
-{# Copyright The IETF Trust 2015-2022, All Rights Reserved #}
-{% load origin %}
+{% load origin static %}
 {% block title %}
     Meetings
     {% if group %}for {{ group.acronym }}{% endif %}
@@ -19,15 +18,15 @@
 {% endblock %}
 {% block group_content %}
     {% origin %}
+    {% include "meeting/tz-display.html" with meeting_timezone=None id_suffix="" minimal=False only %}
     {% if in_progress %}
-        <h2 class="mt-3" id="inprogressmeets">Meetings in progress</h2>
+        <h2 class="mt-5" id="inprogressmeets">Meetings in progress</h2>
         {% with sessions=in_progress show_request=True show_ical=True can_edit_materials=can_edit %}
             <table class="table table-sm table-striped tablesorter">
                 <thead>
                     <tr>
-                        <th scope="col" data-sort="meeting">Meeting</th>
-                        <th scope="col" data-sort="date">Date</th>
-                        <th scope="col"></th>
+                        <th class="col-3" scope="col" data-sort="meeting">Meeting</th>
+                        <th class="col-3" scope="col" data-sort="date">Date</th>
                         <th scope="col"></th>
                         <th scope="col">Materials</th>
                     </tr>
@@ -39,7 +38,7 @@
         {% endwith %}
     {% endif %}
     {% if future %}
-        <h2 class="mt-3" id="futuremeets">
+        <h2 class="mt-5" id="futuremeets">
             Future Meetings
             <a class="float-end"
                aria-label="icalendar entry for all scheduled future {{ group.acronym }} meetings"
@@ -51,9 +50,8 @@
         <table class="table table-sm table-striped tablesorter">
             <thead>
                 <tr>
-                    <th scope="col" data-sort="meeting">Meeting</th>
-                    <th scope="col" data-sort="date">Date</th>
-                    <th scope="col"></th>
+                    <th class="col-3" scope="col" data-sort="meeting">Meeting</th>
+                    <th class="col-3" scope="col" data-sort="date">Date</th>
                     <th scope="col"></th>
                     <th scope="col">Materials</th>
                 </tr>
@@ -66,13 +64,12 @@
         </table>
     {% endif %}
     {% if past or recent %}
-        <h2 class="mt-3" id="pastmeets">Past Meetings (within the last four years)</h2>
+        <h2 class="mt-5" id="pastmeets">Past Meetings (within the last four years)</h2>
         <table class="table table-sm table-striped tablesorter">
             <thead>
                 <tr>
-                    <th scope="col" data-sort="meeting">Meeting</th>
-                    <th scope="col" data-sort="date">Date</th>
-                    <th scope="col"></th>
+                    <th class="col-3" scope="col" data-sort="meeting">Meeting</th>
+                    <th class="col-3" scope="col" data-sort="date">Date</th>
                     <th scope="col"></th>
                     <th scope="col">Materials</th>
                 </tr>
@@ -100,13 +97,12 @@
             older_sessions value, this block will need to be adjusted.
         {% endcomment %}
         {% if far_past %}
-            <h2 class="mt-3" id="farpastmeets">Meetings more than four years ago</h2>
+            <h2 class="mt-5" id="farpastmeets">Meetings more than four years ago</h2>
             <table class="table table-sm table-striped tablesorter">
                 <thead>
                     <tr>
-                        <th scope="col" data-sort="meeting">Meeting</th>
-                        <th scope="col" data-sort="date">Date</th>
-                        <th scope="col"></th>
+                        <th class="col-3" scope="col" data-sort="meeting">Meeting</th>
+                        <th class="col-3" scope="col" data-sort="date">Date</th>
                         <th scope="col"></th>
                         <th scope="col">Materials</th>
                     </tr>
@@ -135,6 +131,10 @@
                         </td>
                         <td>
                             {% if not s.canceled %}
+                                <a class="btn btn-sm {% if not s.agenda %}btn-secondary disabled{% else %}btn-primary{% endif %}"
+                                {% if s.agenda %}href="{{ s.agenda.get_absolute_url }}"{% endif %}>
+                                    Agenda
+                                </a>
                                 <a class="btn btn-sm {% if not s.minutes %}btn-secondary disabled{% else %}btn-primary{% endif %}"
                                 {% if s.minutes %}href="{{ s.minutes.get_absolute_url }}"{% endif %}>
                                     Minutes
@@ -155,4 +155,17 @@
             </table>
         {% endif %}
     {% endif %}
+{% endblock %}
+{% block js %}
+    <script src="{% static 'ietf/js/list.js' %}"></script>
+    <script src="{% static 'ietf/js/moment.js' %}"></script>
+    <script src="{% static 'ietf/js/upcoming.js' %}"></script>
+    <script src="{% static 'ietf/js/timezone.js' %}"></script>
+    <script>
+    $(function () {
+            // Init with best guess at local timezone.
+            ietf_timezone.set_tz_change_callback(timezone_changed);
+            ietf_timezone.initialize('local');
+    });
+    </script>
 {% endblock %}

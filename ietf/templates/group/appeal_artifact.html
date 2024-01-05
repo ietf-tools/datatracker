@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% load ietf_filters %}
+{# Copyright The IETF Trust 2023. All Rights Reserved. #}
+{% load origin %}
+{% block title %}{{artifact.display_title}} - {{artifact.appeal.name}}{% endblock %}
+{% block pagehead %}
+    <meta name="description"
+          content="{{artifact.date}} = {{artifact.display_title}} - {{artifact.appeal.name}}">
+{% endblock %}
+{% block content %}
+    {% origin %}
+    <h1>
+        {{artifact.appeal.name}} - {{artifact.appeal.date}}
+        <br>
+        <small class="text-body-secondary">{{ artifact.display_title }} - {{ artifact.date }}</small>
+    </h1>
+    {{ artifact_html }}
+    {% if request.user|has_role:"Secretariat" %}
+    <hr>
+    <div>
+    <a class="btn btn-primary btn-sm" download="{{artifact.download_name}}" href="{% url 'ietf.group.views.appeal_artifact_markdown' acronym=artifact.appeal.group.acronym artifact_id=artifact.pk %}">Download markdown source</a>
+    </div>
+    {% endif %}
+{% endblock %}

@@ -30,6 +30,8 @@ class SearchRuleForm(forms.ModelForm):
         super(SearchRuleForm, self).__init__(*args, **kwargs)
 
         def restrict_state(state_type, slug=None):
+            if "state" not in self.fields:
+                raise RuntimeError(f"Rule type {rule_type} cannot include state filtering")
             f = self.fields['state']
             f.queryset = f.queryset.filter(used=True).filter(type=state_type)
             if slug:
@@ -38,11 +40,15 @@ class SearchRuleForm(forms.ModelForm):
                 f.initial = f.queryset[0].pk
                 f.widget = forms.HiddenInput()
 
+        if rule_type.endswith("_rfc"):
+            del self.fields["state"]  # rfc rules must not look at document states
+
         if rule_type in ["group", "group_rfc", "area", "area_rfc", "group_exp"]:
             if rule_type == "group_exp":
                 restrict_state("draft", "expired")
             else:
-                restrict_state("draft", "rfc" if rule_type.endswith("rfc") else "active")
+                if not rule_type.endswith("_rfc"):
+                    restrict_state("draft", "active")
             
             if rule_type.startswith("area"):
                 self.fields["group"].label = "Area"
@@ -70,7 +76,8 @@ class SearchRuleForm(forms.ModelForm):
             del self.fields["text"]
 
         elif rule_type in ["author", "author_rfc", "shepherd", "ad"]:
-            restrict_state("draft", "rfc" if rule_type.endswith("rfc") else "active")
+            if not rule_type.endswith("_rfc"):
+                restrict_state("draft", "active")
 
             if rule_type.startswith("author"):
                 self.fields["person"].label = "Author"
@@ -84,7 +91,8 @@ class SearchRuleForm(forms.ModelForm):
             del self.fields["text"]
 
         elif rule_type == "name_contains":
-            restrict_state("draft", "rfc" if rule_type.endswith("rfc") else "active")
+            if not rule_type.endswith("_rfc"):
+                restrict_state("draft", "active")
 
             del self.fields["person"]
             del self.fields["group"]

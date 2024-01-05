@@ -1,0 +1,171 @@
+name: Reusable Tests Workflow
+
+on:
+  workflow_call:
+    inputs:
+      ignoreLowerCoverage:
+        description: 'Ignore Lower Coverage'
+        default: false
+        required: true
+        type: boolean
+
+jobs:
+  tests-python:
+    name: Python Tests
+    runs-on: ubuntu-latest
+    container: ghcr.io/ietf-tools/datatracker-app-base:latest
+    
+    services:
+      db:
+        image: ghcr.io/ietf-tools/datatracker-db:latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Prepare for tests
+      run: |
+        chmod +x ./dev/tests/prepare.sh
+        sh ./dev/tests/prepare.sh
+        
+    - name: Ensure DB is ready
+      run: |
+        /usr/local/bin/wait-for db:5432 -- echo "DB ready"
+        
+    - name: Run all tests
+      shell: bash
+      run: |
+        echo "Running checks..."
+        ./ietf/manage.py check
+        ./ietf/manage.py migrate --fake-initial
+        echo "Validating migrations..."
+        if ! ( ietf/manage.py makemigrations --dry-run --check --verbosity 3 ) ; then
+          echo "Model changes without migrations found."
+          exit 1
+        fi
+        echo "Running tests..."
+        if [[ "x${{ github.event.inputs.ignoreLowerCoverage }}" == "xtrue" ]]; then
+          echo "Lower coverage failures will be ignored."
+          HOME=/root ./ietf/manage.py test -v2 --validate-html-harder --settings=settings_test --ignore-lower-coverage
+        else
+          HOME=/root ./ietf/manage.py test -v2 --validate-html-harder --settings=settings_test
+        fi
+        coverage xml
+
+    - name: Upload geckodriver.log
+      uses: actions/upload-artifact@v4
+      if: ${{ failure() }}
+      with:
+        name: geckodriverlog
+        path: geckodriver.log
+
+    - name: Upload Coverage Results to Codecov
+      uses: codecov/codecov-action@v3.1.4
+      with:
+        files: coverage.xml
+        
+    - name: Convert Coverage Results
+      if: ${{ always() }}
+      run: |
+        mv latest-coverage.json coverage.json
+        
+    - name: Upload Coverage Results as Build Artifact
+      uses: actions/upload-artifact@v4
+      if: ${{ always() }}
+      with:
+        name: coverage
+        path: coverage.json
+
+  tests-playwright:
+    name: Playwright Tests
+    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        project: [chromium, firefox]
+    
+    steps:
+    - uses: actions/checkout@v4
+
+    - uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+
+    - name: Run all tests
+      run: |
+        echo "Installing dependencies..."
+        yarn
+        echo "Installing Playwright..."
+        cd playwright
+        mkdir test-results
+        npm ci
+        npx playwright install --with-deps ${{ matrix.project }}
+        echo "Running tests..."
+        npx playwright test --project=${{ matrix.project }}
+        
+    - name: Upload Report
+      uses: actions/upload-artifact@v4
+      if: ${{ always() }}
+      continue-on-error: true
+      with:
+        name: playwright-results-${{ matrix.project }}
+        path: playwright/test-results/
+        if-no-files-found: ignore
+
+  tests-playwright-legacy:
+    name: Playwright Legacy Tests
+    runs-on: ubuntu-latest
+    container: ghcr.io/ietf-tools/datatracker-app-base:latest
+    strategy:
+      fail-fast: false
+      matrix:
+        project: [chromium, firefox]
+    
+    services:
+      db:
+        image: ghcr.io/ietf-tools/datatracker-db:latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Prepare for tests
+      run: |
+        chmod +x ./dev/tests/prepare.sh
+        sh ./dev/tests/prepare.sh
+        
+    - name: Ensure DB is ready
+      run: |
+        /usr/local/bin/wait-for db:5432 -- echo "DB ready"
+        
+    - name: Start Datatracker
+      run: |
+        echo "Running checks..."
+        ./ietf/manage.py check
+        ./ietf/manage.py migrate --fake-initial
+        echo "Starting datatracker..."
+        ./ietf/manage.py runserver 0.0.0.0:8000 --settings=settings_local &
+        echo "Waiting for datatracker to be ready..."
+        /usr/local/bin/wait-for localhost:8000 -- echo "Datatracker ready"
+
+    - name: Run all tests
+      env:
+        # Required to get firefox to run as root:
+        HOME: ""
+      run: |
+        echo "Installing dependencies..."
+        yarn
+        echo "Installing Playwright..."
+        cd playwright
+        mkdir test-results
+        npm ci
+        npx playwright install --with-deps ${{ matrix.project }}
+        echo "Running tests..."
+        npx playwright test --project=${{ matrix.project }} -c playwright-legacy.config.js
+        
+    - name: Upload Report
+      uses: actions/upload-artifact@v4
+      if: ${{ always() }}
+      continue-on-error: true
+      with:
+        name: playwright-legacy-results-${{ matrix.project }}
+        path: playwright/test-results/
+        if-no-files-found: ignore

@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2014-2020, All Rights Reserved
+# Copyright The IETF Trust 2014-2023, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -14,7 +14,7 @@ from django.utils.encoding import force_str
 import debug                            # pyflakes:ignore
 
 from ietf.group.models import Group
-from ietf.doc.fields import SearchableDocAliasField
+from ietf.doc.fields import SearchableDocumentField
 from ietf.ipr.mail import utc_from_string
 from ietf.ipr.fields import SearchableIprDisclosuresField
 from ietf.ipr.models import (IprDocRel, IprDisclosureBase, HolderIprDisclosure,
@@ -95,7 +95,7 @@ class AddEmailForm(forms.Form):
         return self.cleaned_data
 
 class DraftForm(forms.ModelForm):
-    document = SearchableDocAliasField(label="I-D name/RFC number", required=True, doc_type="draft")
+    document = SearchableDocumentField(label="I-D name/RFC number", required=True, doc_type="all")
 
     class Meta:
         model = IprDocRel
@@ -104,6 +104,17 @@ class DraftForm(forms.ModelForm):
             'sections': forms.TextInput(),
         }
         help_texts = { 'sections': 'Sections' }
+
+    def clean(self):
+        cleaned_data = super().clean()
+        revisions = cleaned_data.get("revisions")
+        document = cleaned_data.get("document")
+        if not document:
+            self.add_error("document", "Identifying the Internet-Draft or RFC for this disclosure is required.")
+        elif not document.name.startswith("rfc"):
+            if revisions.strip() == "":
+                self.add_error("revisions", "Revisions of this Internet-Draft for which this disclosure is relevant must be specified.")
+        return cleaned_data
 
 patent_number_help_text = "Enter one or more comma-separated patent publication or application numbers as two-letter country code and serial number, e.g.: US62/123456 or WO2017123456. Do not include thousands-separator commas in serial numbers.  It is preferable to use individual disclosures for each patent, even if this field permits multiple patents to be listed, in order to get inventor, title, and date information below correct." 
 validate_patent_number = RegexValidator(

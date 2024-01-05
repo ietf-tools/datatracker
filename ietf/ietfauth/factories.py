@@ -14,6 +14,7 @@ from ietf.person.factories import UserFactory, PersonFactory
 class OidClientRecordFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = OidClientRecord
+        skip_postgeneration_save = True
 
     name = factory.Faker('company')
     owner = factory.SubFactory(UserFactory)

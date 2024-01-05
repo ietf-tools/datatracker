@@ -488,7 +488,6 @@ INSTALLED_APPS = [
     'ietf.utils',
     # IETF Secretariat apps
     'ietf.secr.announcement',
-    'ietf.secr.areas',
     'ietf.secr.meetings',
     'ietf.secr.rolodex',
     'ietf.secr.sreq',
@@ -573,8 +572,6 @@ GLOBAL_TEST_FIXTURES = [ 'names','ietf.utils.test_data.make_immutable_base_data'
 
 TEST_DIFF_FAILURE_DIR = "/tmp/test/failure/"
 
-TEST_GHOSTDRIVER_LOG_PATH = "ghostdriver.log"
-
 # These are regexes
 TEST_URL_COVERAGE_EXCLUDE = [
     r"^\^admin/",
@@ -601,7 +598,6 @@ TEST_CODE_COVERAGE_EXCLUDE_FILES = [
     "ietf/utils/test_runner.py",
     "ietf/name/generate_fixtures.py",
     "ietf/review/import_from_review_tool.py",
-    "ietf/stats/backfill_data.py",
     "ietf/utils/patch.py",
     "ietf/utils/test_data.py",
 ]
@@ -706,7 +702,7 @@ LIAISON_ATTACH_URL = 'https://www.ietf.org/lib/dt/documents/LIAISON/' # should e
 DOC_HREFS = {
     "charter":  "https://www.ietf.org/charter/{doc.name}-{doc.rev}.txt",
     "draft":    "https://www.ietf.org/archive/id/{doc.name}-{doc.rev}.txt",
-    "rfc":      "https://www.rfc-editor.org/rfc/rfc{doc.rfcnum}.txt",
+    "rfc":      "https://www.rfc-editor.org/rfc/rfc{doc.rfc_number}.txt",
     "slides": "https://www.ietf.org/slides/{doc.name}-{doc.rev}",
     "procmaterials": "https://www.ietf.org/procmaterials/{doc.name}-{doc.rev}",
     "conflrev": "https://www.ietf.org/cr/{doc.name}-{doc.rev}.txt",
@@ -1156,6 +1152,7 @@ CELERY_TIMEZONE = 'UTC'
 CELERY_BROKER_URL = 'amqp://mq/'
 CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
 CELERY_BEAT_SYNC_EVERY = 1  # update DB after every event
+CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True  # the default, but setting it squelches a warning
 
 # Meetecho API setup: Uncomment this and provide real credentials to enable
 # Meetecho conference creation for interim session requests
@@ -1269,6 +1266,8 @@ if 'CACHES' not in locals():
                 },
             },
         }
+
+PUBLISH_IPR_STATES = ['posted', 'removed', 'removed_objfalse']
 
 # We provide a secret key only for test and development modes.  It's
 # absolutely vital that django fails to start in production mode unless a

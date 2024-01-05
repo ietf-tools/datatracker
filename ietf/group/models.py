@@ -13,16 +13,19 @@ from django.db import models
 from django.db.models.deletion import CASCADE, PROTECT
 from django.dispatch import receiver
 from django.utils import timezone
+from django.utils.text import slugify
 
 import debug                            # pyflakes:ignore
 
 from ietf.name.models import (GroupStateName, GroupTypeName, DocTagName, GroupMilestoneStateName, RoleName,
-                              AgendaTypeName, AgendaFilterTypeName, ExtResourceName, SessionPurposeName)
+                              AgendaTypeName, AgendaFilterTypeName, ExtResourceName, SessionPurposeName,
+                              AppealArtifactTypeName )
 from ietf.person.models import Email, Person
 from ietf.utils.db import IETFJSONField
 from ietf.utils.mail import formataddr, send_mail_text
 from ietf.utils import log
 from ietf.utils.models import ForeignKey, OneToOneField
+from ietf.utils.timezone import date_today
 from ietf.utils.validators import JSONForeignKeyListValidator
 
 
@@ -409,6 +412,46 @@ class RoleHistory(models.Model):
     class Meta:
         verbose_name_plural = "role histories"
 
+class Appeal(models.Model):
+    name = models.CharField(max_length=512)
+    group = models.ForeignKey(Group, on_delete=models.PROTECT)
+    date = models.DateField(default=date_today)
+
+    class Meta:
+        ordering = ['-date', '-id']
+
+    def __str__(self):
+        return f"{self.date} - {self.name}"
+
+class AppealArtifact(models.Model):
+    appeal = ForeignKey(Appeal)
+    artifact_type = ForeignKey(AppealArtifactTypeName)
+    date = models.DateField(default=date_today)
+    title = models.CharField(max_length=256, blank=True, help_text="The artifact_type.name will be used if this field is blank")
+    order = models.IntegerField(default=0)
+    content_type = models.CharField(max_length=32)
+    # "Abusing" BinaryField (see the django docs) for the small number of
+    # these things we have on purpose. Later, any non-markdown content may
+    # move off into statics instead.
+    bits = models.BinaryField(editable=True)
+
+    class Meta:
+        ordering = ['date', 'order', 'artifact_type__order']
+
+    def display_title(self):
+        if self.title != "":
+            return self.title
+        else:
+            return self.artifact_type.name
+
+    def is_markdown(self):
+        return self.content_type == "text/markdown;charset=utf-8"
+    
+    def download_name(self):
+        return f"{self.date}-{slugify(self.display_title())}.{'md' if self.is_markdown() else 'pdf'}"
+
+    def __str__(self):
+        return f"{self.date} {self.display_title()} : {self.appeal.name}"
 
 # --- Signal hooks for group models ---
 

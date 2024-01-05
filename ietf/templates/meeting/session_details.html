@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin ietf_filters static %}
-{% block title %}{{ meeting }} : {{ acronym }}{% endblock %}
+{% block title %}{{ meeting }} : {{ group.acronym }}{% endblock %}
 {% block morecss %}
     .drag-handle {
         cursor: move;
@@ -12,13 +12,13 @@
     <h1>
         {{ meeting }}
         <br>
-        <small class="text-body-secondary">{{ acronym }}</small>
+        <small class="text-body-secondary"><a href="{% url 'ietf.group.views.group_about' acronym=group.acronym %}">{{ group.acronym }}</a>: {{ group.name }}</small>
     </h1>
     {% if meeting.start_datetime >= thisweek %}
         <a class="regular float-end"
-           title="icalendar entry for {{ acronym }}@{{ meeting.number }}"
-           aria-label="icalendar entry for {{ acronym }}@{{ meeting.number }}"
-           href="{% url 'ietf.meeting.views.agenda_ical' num=meeting.number acronym=acronym %}">
+           title="icalendar entry for {{ group.acronym }}@{{ meeting.number }}"
+           aria-label="icalendar entry for {{ group.acronym }}@{{ meeting.number }}"
+           href="{% url 'ietf.meeting.views.agenda_ical' num=meeting.number acronym=group.acronym %}">
             <i class="bi bi-calendar"></i>
         </a>
     {% endif %}
@@ -57,6 +57,17 @@
     {% endif %}
 {% endblock %}
 {% block js %}
+    <script src="{% static 'ietf/js/list.js' %}"></script>
+    <script src="{% static 'ietf/js/moment.js' %}"></script>
+    <script src="{% static 'ietf/js/upcoming.js' %}"></script>
+    <script src="{% static 'ietf/js/timezone.js' %}"></script>
+    <script>
+    $(function () {
+            // Init with best guess at local timezone.
+            ietf_timezone.set_tz_change_callback(timezone_changed);
+            ietf_timezone.initialize('local');
+    });
+    </script>
     {% if can_manage_materials %}
         <script src="{% static 'ietf/js/sortable.js' %}"></script>
         <script>

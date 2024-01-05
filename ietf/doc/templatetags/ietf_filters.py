@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2007-2020, All Rights Reserved
+# Copyright The IETF Trust 2007-2023, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -22,7 +22,7 @@ from django.utils import timezone
 
 import debug                            # pyflakes:ignore
 
-from ietf.doc.models import BallotDocEvent, DocAlias
+from ietf.doc.models import BallotDocEvent, Document
 from ietf.doc.models import ConsensusDocEvent
 from ietf.ietfauth.utils import can_request_rfc_publication as utils_can_request_rfc_publication
 from ietf.utils.html import sanitize_fragment
@@ -139,15 +139,16 @@ def rfceditor_info_url(rfcnum : str):
     return urljoin(settings.RFC_EDITOR_INFO_BASE_URL, f'rfc{rfcnum}')
 
 
-def doc_canonical_name(name):
+def doc_name(name):
     """Check whether a given document exists, and return its canonical name"""
 
     def find_unique(n):
         key = hash(n)
         found = cache.get(key)
         if not found:
-            exact = DocAlias.objects.filter(name=n).first()
+            exact = Document.objects.filter(name=n).first()
             found = exact.name if exact else "_"
+            # TODO review this cache policy (and the need for these entire function)
             cache.set(key, found, timeout=60*60*24)  # cache for one day
         return None if found == "_" else found
 
@@ -173,7 +174,7 @@ def doc_canonical_name(name):
 
 
 def link_charter_doc_match(match):
-    if not doc_canonical_name(match[0]):
+    if not doc_name(match[0]):
         return match[0]
     url = urlreverse(
         "ietf.doc.views_doc.document_main",
@@ -186,7 +187,7 @@ def link_non_charter_doc_match(match):
     name = match[0]
     # handle "I-D.*"" reference-style matches
     name = re.sub(r"^i-d\.(.*)", r"draft-\1", name, flags=re.IGNORECASE)
-    cname = doc_canonical_name(name)
+    cname = doc_name(name)
     if not cname:
         return match[0]
     if name == cname:
@@ -201,7 +202,7 @@ def link_non_charter_doc_match(match):
         url = urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=cname))
         return f'<a href="{url}">{match[0]}</a>'
 
-    cname = doc_canonical_name(name)
+    cname = doc_name(name)
     if not cname:
         return match[0]
     if name == cname:
@@ -221,11 +222,10 @@ def link_non_charter_doc_match(match):
 def link_other_doc_match(match):
     doc = match[2].strip().lower()
     rev = match[3]
-    if not doc_canonical_name(doc + rev):
+    if not doc_name(doc + rev):
         return match[0]
     url = urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=doc + rev))
     return f'<a href="{url}">{match[1]}</a>'
-
 
 @register.filter(name="urlize_ietf_docs", is_safe=True, needs_autoescape=True)
 def urlize_ietf_docs(string, autoescape=None):
@@ -255,6 +255,7 @@ def urlize_ietf_docs(string, autoescape=None):
         string,
         flags=re.IGNORECASE | re.ASCII,
     )
+
     return mark_safe(string)
 
 
@@ -267,7 +268,7 @@ def urlize_related_source_list(related, document_html=False):
     names = set()
     titles = set()
     for rel in related:
-        name=rel.source.canonical_name()
+        name=rel.source.name
         title = rel.source.title
         if name in names and title in titles:
             continue
@@ -288,8 +289,8 @@ def urlize_related_target_list(related, document_html=False):
     """Convert a list of RelatedDocuments into list of links using the target document's canonical name"""
     links = []
     for rel in related:
-        name=rel.target.document.canonical_name()
-        title = rel.target.document.title
+        name=rel.target.name
+        title = rel.target.title
         url = urlreverse('ietf.doc.views_doc.document_main' if document_html is False else 'ietf.doc.views_doc.document_html', kwargs=dict(name=name))
         name = escape(name)
         title = escape(title)
@@ -409,9 +410,9 @@ def startswith(x, y):
     return str(x).startswith(y)
 
 
-@register.filter(name='removesuffix', is_safe=False)
-def removesuffix(value, suffix):
-    """Remove an exact-match suffix
+@register.filter(name='removeprefix', is_safe=False)
+def removeprefix(value, prefix):
+    """Remove an exact-match prefix
     
     The is_safe flag is False because indiscriminate use of this could result in non-safe output.
     See https://docs.djangoproject.com/en/2.2/howto/custom-template-tags/#filters-and-auto-escaping
@@ -419,8 +420,8 @@ def removesuffix(value, suffix):
     HTML-unsafe output.
     """
     base = str(value)
-    if base.endswith(suffix):
-        return base[:-len(suffix)]
+    if base.startswith(prefix):
+        return base[len(prefix):]
     else:
         return base
 
@@ -556,7 +557,7 @@ def consensus(doc):
 @register.filter
 def std_level_to_label_format(doc):
     """Returns valid Bootstrap classes to label a status level badge."""
-    if doc.is_rfc():
+    if doc.type_id == "rfc":
         if doc.related_that("obs"):
             return "obs"
         else:
@@ -856,6 +857,7 @@ def badgeify(blob):
         (r"has issues", "warning", "exclamation-lg"),
         (r"assigned", "info", "person-plus-fill"),
         (r"will not review|overtaken by events|withdrawn", "secondary", "dash-lg"),
+        (r"no response", "warning", "question-lg"),
     ]
     text = str(blob)
 
@@ -868,7 +870,7 @@ def badgeify(blob):
 
             return mark_safe(
                 f"""
-                <span class="badge rounded-pill text-bg-{color}">
+                <span class="badge rounded-pill text-bg-{color} text-wrap">
                     <i class="bi bi-{icon}"></i> {text.capitalize()}
                 </span>
                 """

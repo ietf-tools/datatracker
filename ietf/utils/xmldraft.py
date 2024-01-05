@@ -8,6 +8,7 @@ import xml2rfc
 import debug  # pyflakes: ignore
 
 from contextlib import ExitStack
+from lxml.etree import XMLSyntaxError
 from xml2rfc.util.date import augment_date, extract_date
 from ietf.utils.timezone import date_today
 
@@ -54,6 +55,8 @@ class XMLDraft(Draft):
             parser = xml2rfc.XmlRfcParser(filename, quiet=True)
             try:
                 tree = parser.parse()
+            except XMLSyntaxError:
+                raise InvalidXMLError()
             except Exception as e:
                 raise XMLParseError(parser_out.getvalue(), parser_err.getvalue()) from e
 
@@ -88,8 +91,9 @@ class XMLDraft(Draft):
         # check the anchor next
         anchor = ref.get("anchor").lower()  # always give back lowercase
         label = anchor.rstrip("0123456789")  # remove trailing digits
-        if label in series:
-            number = int(anchor[len(label) :])
+        maybe_number = anchor[len(label) :]
+        if label in series and maybe_number.isdigit():
+            number = int(maybe_number)
             return f"{label}{number}"
 
         # if we couldn't find a match so far, try the seriesInfo
@@ -234,3 +238,8 @@ class XMLParseError(Exception):
 
     def parser_msgs(self):
         return self._out.splitlines() + self._err.splitlines()
+
+
+class InvalidXMLError(Exception):
+    """File is not valid XML"""
+    pass

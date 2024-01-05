@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2012-2020, All Rights Reserved
+# Copyright The IETF Trust 2012-2023, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -31,20 +31,21 @@ from django.utils.text import slugify
 
 from tastypie.test import ResourceTestCaseMixin
 
+from weasyprint.urls import URLFetchingError
+
 import debug                            # pyflakes:ignore
 
-from ietf.doc.models import ( Document, DocAlias, DocRelationshipName, RelatedDocument, State,
+from ietf.doc.models import ( Document, DocRelationshipName, RelatedDocument, State,
     DocEvent, BallotPositionDocEvent, LastCallDocEvent, WriteupDocEvent, NewRevisionDocEvent, BallotType,
     EditedAuthorsDocEvent )
-from ietf.doc.factories import ( DocumentFactory, DocEventFactory, CharterFactory, 
+from ietf.doc.factories import ( DocumentFactory, DocEventFactory, CharterFactory,
     ConflictReviewFactory, WgDraftFactory, IndividualDraftFactory, WgRfcFactory, 
     IndividualRfcFactory, StateDocEventFactory, BallotPositionDocEventFactory, 
     BallotDocEventFactory, DocumentAuthorFactory, NewRevisionDocEventFactory,
-    StatusChangeFactory, BofreqFactory, DocExtResourceFactory, RgDraftFactory)
+    StatusChangeFactory, DocExtResourceFactory, RgDraftFactory, BcpFactory)
 from ietf.doc.forms import NotifyForm
 from ietf.doc.fields import SearchableDocumentsField
 from ietf.doc.utils import create_ballot_if_not_open, uppercase_std_abbreviated_name
-from ietf.doc.views_search import ad_dashboard_group, ad_dashboard_group_type, shorten_group_name # TODO: red flag that we're importing from views in tests. Move these to utils.
 from ietf.group.models import Group, Role
 from ietf.group.factories import GroupFactory, RoleFactory
 from ietf.ipr.factories import HolderIprDisclosureFactory
@@ -60,12 +61,14 @@ from ietf.utils.test_utils import login_testing_unauthorized, unicontent
 from ietf.utils.test_utils import TestCase
 from ietf.utils.text import normalize_text
 from ietf.utils.timezone import date_today, datetime_today, DEADLINE_TZINFO, RPC_TZINFO
+from ietf.doc.utils_search import AD_WORKLOAD
 
 
 class SearchTests(TestCase):
     def test_search(self):
 
         draft = WgDraftFactory(name='draft-ietf-mars-test',group=GroupFactory(acronym='mars',parent=Group.objects.get(acronym='farfut')),authors=[PersonFactory()],ad=PersonFactory())
+        rfc = WgRfcFactory()
         draft.set_state(State.objects.get(used=True, type="draft-iesg", slug="pub-req"))
         old_draft = IndividualDraftFactory(name='draft-foo-mars-test',authors=[PersonFactory()],title="Optimizing Martian Network Topologies")
         old_draft.set_state(State.objects.get(used=True, type="draft", slug="expired"))
@@ -97,11 +100,12 @@ class SearchTests(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, "draft-foo-mars-test")
 
-        # find by rfc/active/inactive
-        draft.set_state(State.objects.get(type="draft", slug="rfc"))
-        r = self.client.get(base_url + "?rfcs=on&name=%s" % draft.name)
+        # find by RFC
+        r = self.client.get(base_url + "?rfcs=on&name=%s" % rfc.name)
         self.assertEqual(r.status_code, 200)
-        self.assertContains(r, draft.title)
+        self.assertContains(r, rfc.title)
+
+        # find by active/inactive
 
         draft.set_state(State.objects.get(type="draft", slug="active"))
         r = self.client.get(base_url + "?activedrafts=on&name=%s" % draft.name)
@@ -153,6 +157,23 @@ class SearchTests(TestCase):
         r = self.client.get(base_url + "?activedrafts=on&by=state&state=%s&substate=" % draft.get_state("draft-iesg").pk)
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, draft.title)
+
+    def test_search_became_rfc(self):
+        draft = WgDraftFactory()
+        rfc = WgRfcFactory()
+        draft.set_state(State.objects.get(type="draft", slug="rfc"))
+        draft.relateddocument_set.create(relationship_id="became_rfc", target=rfc)
+        base_url = urlreverse('ietf.doc.views_search.search')
+
+        # find by RFC
+        r = self.client.get(base_url + f"?rfcs=on&name={rfc.name}")
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, rfc.title)
+
+        # find by draft
+        r = self.client.get(base_url + f"?activedrafts=on&rfcs=on&name={draft.name}")
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, rfc.title)
 
     def test_search_for_name(self):
         draft = WgDraftFactory(name='draft-ietf-mars-test',group=GroupFactory(acronym='mars',parent=Group.objects.get(acronym='farfut')),authors=[PersonFactory()],ad=PersonFactory())
@@ -279,52 +300,68 @@ class SearchTests(TestCase):
         self.assertContains(r, "Document Search")
 
     def test_ad_workload(self):
-        Role.objects.filter(name_id='ad').delete()
-        ad = RoleFactory(name_id='ad',group__type_id='area',group__state_id='active',person__name='Example Areadirector').person
-        doc_type_names = ['bofreq', 'charter', 'conflrev', 'draft', 'statchg']
-        expected = defaultdict(lambda :0)
-        for doc_type_name in doc_type_names:
-            if doc_type_name=='draft':
-                states = State.objects.filter(type='draft-iesg', used=True).values_list('slug', flat=True)
-            else:
-                states = State.objects.filter(type=doc_type_name, used=True).values_list('slug', flat=True)
-
-            for state in states:
-                target_num = random.randint(0,2)
+        Role.objects.filter(name_id="ad").delete()
+        ad = RoleFactory(
+            name_id="ad",
+            group__type_id="area",
+            group__state_id="active",
+            person__name="Example Areadirector",
+        ).person
+        expected = defaultdict(lambda: 0)
+        for doc_type_slug in AD_WORKLOAD:
+            for state in AD_WORKLOAD[doc_type_slug]:
+                target_num = random.randint(0, 2)
                 for _ in range(target_num):
-                    if doc_type_name == 'draft':
-                        doc = IndividualDraftFactory(ad=ad,states=[('draft-iesg', state),('draft','rfc' if state=='pub' else 'active')])
-                    elif doc_type_name == 'charter':
-                        doc = CharterFactory(ad=ad, states=[(doc_type_name, state)])
-                    elif doc_type_name == 'bofreq':
-                        # Note that the view currently doesn't handle bofreqs
-                        doc = BofreqFactory(states=[(doc_type_name, state)], bofreqresponsibledocevent__responsible=[ad])
-                    elif doc_type_name == 'conflrev':
-                        doc = ConflictReviewFactory(ad=ad, states=State.objects.filter(type_id=doc_type_name, slug=state))
-                    elif doc_type_name == 'statchg':
-                        doc = StatusChangeFactory(ad=ad, states=State.objects.filter(type_id=doc_type_name, slug=state))
-                    else:
-                        # Currently unreachable
-                        doc = DocumentFactory(type_id=doc_type_name, ad=ad, states=[(doc_type_name, state)])
+                    if (
+                        doc_type_slug == "draft"
+                        or doc_type_slug == "rfc"
+                        and state == "rfcqueue"
+                    ):
+                        IndividualDraftFactory(
+                            ad=ad,
+                            states=[
+                                ("draft-iesg", state),
+                                ("draft", "rfc" if state == "pub" else "active"),
+                            ],
+                        )
+                    elif doc_type_slug == "rfc":
+                        WgRfcFactory.create(
+                            states=[("draft", "rfc"), ("draft-iesg", "pub")]
+                        )
 
-                    if not slugify(ad_dashboard_group_type(doc)) in ('document', 'none'):
-                        expected[(slugify(ad_dashboard_group_type(doc)), slugify(ad.full_name_as_key()), slugify(shorten_group_name(ad_dashboard_group(doc))))] += 1
-        
-        url = urlreverse('ietf.doc.views_search.ad_workload')
+                    elif doc_type_slug == "charter":
+                        CharterFactory(ad=ad, states=[(doc_type_slug, state)])
+                    elif doc_type_slug == "conflrev":
+                        ConflictReviewFactory(
+                            ad=ad,
+                            states=State.objects.filter(
+                                type_id=doc_type_slug, slug=state
+                            ),
+                        )
+                    elif doc_type_slug == "statchg":
+                        StatusChangeFactory(
+                            ad=ad,
+                            states=State.objects.filter(
+                                type_id=doc_type_slug, slug=state
+                            ),
+                        )
+        self.client.login(username="ad", password="ad+password")
+        url = urlreverse("ietf.doc.views_search.ad_workload")
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         for group_type, ad, group in expected:
-            self.assertEqual(int(q(f'#{group_type}-{ad}-{group}').text()),expected[(group_type, ad, group)])
+            self.assertEqual(
+                int(q(f"#{group_type}-{ad}-{group}").text()),
+                expected[(group_type, ad, group)],
+            )
 
     def test_docs_for_ad(self):
         ad = RoleFactory(name_id='ad',group__type_id='area',group__state_id='active').person
         draft = IndividualDraftFactory(ad=ad)
         draft.action_holders.set([PersonFactory()])
         draft.set_state(State.objects.get(type='draft-iesg', slug='lc'))
-        rfc = IndividualDraftFactory(ad=ad)
-        rfc.set_state(State.objects.get(type='draft', slug='rfc'))
-        DocAlias.objects.create(name='rfc6666').docs.add(rfc)
+        rfc = IndividualRfcFactory(ad=ad)
         conflrev = DocumentFactory(type_id='conflrev',ad=ad)
         conflrev.set_state(State.objects.get(type='conflrev', slug='iesgeval'))
         statchg = DocumentFactory(type_id='statchg',ad=ad)
@@ -348,7 +385,7 @@ class SearchTests(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, draft.name)
         self.assertContains(r, escape(draft.action_holders.first().name))
-        self.assertContains(r, rfc.canonical_name())
+        self.assertContains(r, rfc.name)
         self.assertContains(r, conflrev.name)
         self.assertContains(r, statchg.name)
         self.assertContains(r, charter.name)
@@ -396,16 +433,17 @@ class SearchTests(TestCase):
         r = self.client.get(urlreverse('ietf.doc.views_search.index_all_drafts'))
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, draft.name)
-        self.assertContains(r, rfc.canonical_name().upper())
+        self.assertContains(r, rfc.name.upper())
 
         r = self.client.get(urlreverse('ietf.doc.views_search.index_active_drafts'))
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, draft.title)
 
     def test_ajax_search_docs(self):
-        draft = IndividualDraftFactory()
+        draft = IndividualDraftFactory(name="draft-ietf-rfc1234bis")
+        rfc = IndividualRfcFactory(rfc_number=1234)
+        bcp = IndividualRfcFactory(name="bcp12345", type_id="bcp")
 
-        # Document
         url = urlreverse('ietf.doc.views_search.ajax_select2_search_docs', kwargs={
             "model_name": "document",
             "doc_type": "draft",
@@ -415,18 +453,27 @@ class SearchTests(TestCase):
         data = r.json()
         self.assertEqual(data[0]["id"], draft.pk)
 
-        # DocAlias
-        doc_alias = draft.docalias.first()
-
         url = urlreverse('ietf.doc.views_search.ajax_select2_search_docs', kwargs={
-            "model_name": "docalias",
-            "doc_type": "draft",
+            "model_name": "document",
+            "doc_type": "rfc",
         })
-
-        r = self.client.get(url, dict(q=doc_alias.name))
+        r = self.client.get(url, dict(q=rfc.name))
         self.assertEqual(r.status_code, 200)
         data = r.json()
-        self.assertEqual(data[0]["id"], doc_alias.pk)
+        self.assertEqual(data[0]["id"], rfc.pk)
+
+        url = urlreverse('ietf.doc.views_search.ajax_select2_search_docs', kwargs={
+            "model_name": "document",
+            "doc_type": "all",
+        })
+        r = self.client.get(url, dict(q="1234"))
+        self.assertEqual(r.status_code, 200)
+        data = r.json()
+        self.assertEqual(len(data), 3)
+        pks = set([data[i]["id"] for i in range(3)])
+        self.assertEqual(pks, set([bcp.pk, rfc.pk, draft.pk]))
+
+
 
     def test_recent_drafts(self):
         # Three drafts to show with various warnings
@@ -630,23 +677,22 @@ Man                    Expires September 22, 2015               [Page 3]
     def test_document_draft(self):
         draft = WgDraftFactory(name='draft-ietf-mars-test',rev='01', create_revisions=range(0,2))
 
-
         HolderIprDisclosureFactory(docs=[draft])
         
         # Docs for testing relationships. Does not test 'possibly-replaces'. The 'replaced_by' direction
         # is tested separately below.
         replaced = IndividualDraftFactory()
-        draft.relateddocument_set.create(relationship_id='replaces',source=draft,target=replaced.docalias.first())
+        draft.relateddocument_set.create(relationship_id='replaces',source=draft,target=replaced)
         obsoleted = IndividualDraftFactory()
-        draft.relateddocument_set.create(relationship_id='obs',source=draft,target=obsoleted.docalias.first())
+        draft.relateddocument_set.create(relationship_id='obs',source=draft,target=obsoleted)
         obsoleted_by = IndividualDraftFactory()
-        obsoleted_by.relateddocument_set.create(relationship_id='obs',source=obsoleted_by,target=draft.docalias.first())
+        obsoleted_by.relateddocument_set.create(relationship_id='obs',source=obsoleted_by,target=draft)
         updated = IndividualDraftFactory()
-        draft.relateddocument_set.create(relationship_id='updates',source=draft,target=updated.docalias.first())
+        draft.relateddocument_set.create(relationship_id='updates',source=draft,target=updated)
         updated_by = IndividualDraftFactory()
-        updated_by.relateddocument_set.create(relationship_id='updates',source=obsoleted_by,target=draft.docalias.first())
+        updated_by.relateddocument_set.create(relationship_id='updates',source=obsoleted_by,target=draft)
 
-        external_resource = DocExtResourceFactory(doc=draft)
+        DocExtResourceFactory(doc=draft)
 
         # these tests aren't testing all attributes yet, feel free to
         # expand them
@@ -657,69 +703,32 @@ Man                    Expires September 22, 2015               [Page 3]
         if settings.USER_PREFERENCE_DEFAULTS['full_draft'] == 'off':
             self.assertContains(r, "Show full document")
             self.assertNotContains(r, "Deimos street")
-        self.assertContains(r, replaced.canonical_name())
+        self.assertContains(r, replaced.name)
         self.assertContains(r, replaced.title)
-        # obs/updates not included until draft is RFC
-        self.assertNotContains(r, obsoleted.canonical_name())
-        self.assertNotContains(r, obsoleted.title)
-        self.assertNotContains(r, obsoleted_by.canonical_name())
-        self.assertNotContains(r, obsoleted_by.title)
-        self.assertNotContains(r, updated.canonical_name())
-        self.assertNotContains(r, updated.title)
-        self.assertNotContains(r, updated_by.canonical_name())
-        self.assertNotContains(r, updated_by.title)
-        self.assertContains(r, external_resource.value)
 
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)) + "?include_text=0")
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, "Active Internet-Draft")
         self.assertContains(r, "Show full document")
         self.assertNotContains(r, "Deimos street")
-        self.assertContains(r, replaced.canonical_name())
+        self.assertContains(r, replaced.name)
         self.assertContains(r, replaced.title)
-        # obs/updates not included until draft is RFC
-        self.assertNotContains(r, obsoleted.canonical_name())
-        self.assertNotContains(r, obsoleted.title)
-        self.assertNotContains(r, obsoleted_by.canonical_name())
-        self.assertNotContains(r, obsoleted_by.title)
-        self.assertNotContains(r, updated.canonical_name())
-        self.assertNotContains(r, updated.title)
-        self.assertNotContains(r, updated_by.canonical_name())
-        self.assertNotContains(r, updated_by.title)
 
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)) + "?include_text=foo")
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, "Active Internet-Draft")
         self.assertNotContains(r, "Show full document")
         self.assertContains(r, "Deimos street")
-        self.assertContains(r, replaced.canonical_name())
+        self.assertContains(r, replaced.name)
         self.assertContains(r, replaced.title)
-        # obs/updates not included until draft is RFC
-        self.assertNotContains(r, obsoleted.canonical_name())
-        self.assertNotContains(r, obsoleted.title)
-        self.assertNotContains(r, obsoleted_by.canonical_name())
-        self.assertNotContains(r, obsoleted_by.title)
-        self.assertNotContains(r, updated.canonical_name())
-        self.assertNotContains(r, updated.title)
-        self.assertNotContains(r, updated_by.canonical_name())
-        self.assertNotContains(r, updated_by.title)
 
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)) + "?include_text=1")
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, "Active Internet-Draft")
         self.assertNotContains(r, "Show full document")
         self.assertContains(r, "Deimos street")
-        self.assertContains(r, replaced.canonical_name())
+        self.assertContains(r, replaced.name)
         self.assertContains(r, replaced.title)
-        # obs/updates not included until draft is RFC
-        self.assertNotContains(r, obsoleted.canonical_name())
-        self.assertNotContains(r, obsoleted.title)
-        self.assertNotContains(r, obsoleted_by.canonical_name())
-        self.assertNotContains(r, obsoleted_by.title)
-        self.assertNotContains(r, updated.canonical_name())
-        self.assertNotContains(r, updated.title)
-        self.assertNotContains(r, updated_by.canonical_name())
-        self.assertNotContains(r, updated_by.title)
 
         self.client.cookies = SimpleCookie({str('full_draft'): str('on')})
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)))
@@ -727,17 +736,8 @@ Man                    Expires September 22, 2015               [Page 3]
         self.assertContains(r, "Active Internet-Draft")
         self.assertNotContains(r, "Show full document")
         self.assertContains(r, "Deimos street")
-        self.assertContains(r, replaced.canonical_name())
+        self.assertContains(r, replaced.name)
         self.assertContains(r, replaced.title)
-        # obs/updates not included until draft is RFC
-        self.assertNotContains(r, obsoleted.canonical_name())
-        self.assertNotContains(r, obsoleted.title)
-        self.assertNotContains(r, obsoleted_by.canonical_name())
-        self.assertNotContains(r, obsoleted_by.title)
-        self.assertNotContains(r, updated.canonical_name())
-        self.assertNotContains(r, updated.title)
-        self.assertNotContains(r, updated_by.canonical_name())
-        self.assertNotContains(r, updated_by.title)
 
         self.client.cookies = SimpleCookie({str('full_draft'): str('off')})
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)))
@@ -745,17 +745,8 @@ Man                    Expires September 22, 2015               [Page 3]
         self.assertContains(r, "Active Internet-Draft")
         self.assertContains(r, "Show full document")
         self.assertNotContains(r, "Deimos street")
-        self.assertContains(r, replaced.canonical_name())
+        self.assertContains(r, replaced.name)
         self.assertContains(r, replaced.title)
-        # obs/updates not included until draft is RFC
-        self.assertNotContains(r, obsoleted.canonical_name())
-        self.assertNotContains(r, obsoleted.title)
-        self.assertNotContains(r, obsoleted_by.canonical_name())
-        self.assertNotContains(r, obsoleted_by.title)
-        self.assertNotContains(r, updated.canonical_name())
-        self.assertNotContains(r, updated.title)
-        self.assertNotContains(r, updated_by.canonical_name())
-        self.assertNotContains(r, updated_by.title)
 
         self.client.cookies = SimpleCookie({str('full_draft'): str('foo')})
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)))
@@ -764,17 +755,8 @@ Man                    Expires September 22, 2015               [Page 3]
         if settings.USER_PREFERENCE_DEFAULTS['full_draft'] == 'off':
             self.assertContains(r, "Show full document")
             self.assertNotContains(r, "Deimos street")
-        self.assertContains(r, replaced.canonical_name())
+        self.assertContains(r, replaced.name)
         self.assertContains(r, replaced.title)
-        # obs/updates not included until draft is RFC
-        self.assertNotContains(r, obsoleted.canonical_name())
-        self.assertNotContains(r, obsoleted.title)
-        self.assertNotContains(r, obsoleted_by.canonical_name())
-        self.assertNotContains(r, obsoleted_by.title)
-        self.assertNotContains(r, updated.canonical_name())
-        self.assertNotContains(r, updated.title)
-        self.assertNotContains(r, updated_by.canonical_name())
-        self.assertNotContains(r, updated_by.title)
 
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_html", kwargs=dict(name=draft.name)))
         self.assertEqual(r.status_code, 200)
@@ -800,16 +782,16 @@ Man                    Expires September 22, 2015               [Page 3]
         rfc = WgRfcFactory()
         rfc.save_with_history([DocEventFactory(doc=rfc)])
         (Path(settings.RFC_PATH) / rfc.get_base_name()).touch()
-        r = self.client.get(urlreverse("ietf.doc.views_doc.document_html", kwargs=dict(name=rfc.canonical_name())))
+        r = self.client.get(urlreverse("ietf.doc.views_doc.document_html", kwargs=dict(name=rfc.name)))
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertEqual(q('title').text(), f'RFC {rfc.rfc_number()} - {rfc.title}')
+        self.assertEqual(q('title').text(), f'RFC {rfc.rfc_number} - {rfc.title}')
 
         # synonyms for the rfc should be redirected to its canonical view
-        r = self.client.get(urlreverse("ietf.doc.views_doc.document_html", kwargs=dict(name=rfc.rfc_number())))
-        self.assertRedirects(r, urlreverse("ietf.doc.views_doc.document_html", kwargs=dict(name=rfc.canonical_name())))
-        r = self.client.get(urlreverse("ietf.doc.views_doc.document_html", kwargs=dict(name=f'RFC {rfc.rfc_number()}')))
-        self.assertRedirects(r, urlreverse("ietf.doc.views_doc.document_html", kwargs=dict(name=rfc.canonical_name())))
+        r = self.client.get(urlreverse("ietf.doc.views_doc.document_html", kwargs=dict(name=rfc.rfc_number)))
+        self.assertRedirects(r, urlreverse("ietf.doc.views_doc.document_html", kwargs=dict(name=rfc.name)))
+        r = self.client.get(urlreverse("ietf.doc.views_doc.document_html", kwargs=dict(name=f'RFC {rfc.rfc_number}')))
+        self.assertRedirects(r, urlreverse("ietf.doc.views_doc.document_html", kwargs=dict(name=rfc.name)))
 
         # expired draft
         draft.set_state(State.objects.get(type="draft", slug="expired"))
@@ -828,48 +810,55 @@ Man                    Expires September 22, 2015               [Page 3]
             stream_id=draft.stream_id, group_id=draft.group_id, abstract=draft.abstract,stream=draft.stream, rev=draft.rev,
             pages=draft.pages, intended_std_level_id=draft.intended_std_level_id,
             shepherd_id=draft.shepherd_id, ad_id=draft.ad_id, expires=draft.expires,
-            notify=draft.notify, note=draft.note)
+            notify=draft.notify)
         rel = RelatedDocument.objects.create(source=replacement,
-                                             target=draft.docalias.get(name__startswith="draft"),
+                                             target=draft,
                                              relationship_id="replaces")
 
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)))
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, "Replaced Internet-Draft")
-        self.assertContains(r, replacement.canonical_name())
+        self.assertContains(r, replacement.name)
         self.assertContains(r, replacement.title)
         rel.delete()
 
         # draft published as RFC
         draft.set_state(State.objects.get(type="draft", slug="rfc"))
-        draft.std_level_id = "bcp"
-        draft.save_with_history([DocEvent.objects.create(doc=draft, rev=draft.rev, type="published_rfc", by=Person.objects.get(name="(System)"))])
+        draft.std_level_id = "ps"
 
+        rfc = WgRfcFactory(group=draft.group, name="rfc123456")
+        rfc.save_with_history([DocEvent.objects.create(doc=rfc, rev=None, type="published_rfc", by=Person.objects.get(name="(System)"))])
 
-        rfc_alias = DocAlias.objects.create(name="rfc123456")
-        rfc_alias.docs.add(draft)
-        bcp_alias = DocAlias.objects.create(name="bcp123456")
-        bcp_alias.docs.add(draft)
+        draft.relateddocument_set.create(relationship_id="became_rfc", target=rfc)
+
+        obsoleted = IndividualRfcFactory()
+        rfc.relateddocument_set.create(relationship_id='obs',target=obsoleted)
+        obsoleted_by = IndividualRfcFactory()
+        obsoleted_by.relateddocument_set.create(relationship_id='obs',target=rfc)
+        updated = IndividualRfcFactory()
+        rfc.relateddocument_set.create(relationship_id='updates',target=updated)
+        updated_by = IndividualRfcFactory()
+        updated_by.relateddocument_set.create(relationship_id='updates',target=rfc)
+
+        r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name, rev=draft.rev)))
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "This is an older version of an Internet-Draft that was ultimately published as")
 
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)))
         self.assertEqual(r.status_code, 302)
-        r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=bcp_alias.name)))
-        self.assertEqual(r.status_code, 302)
 
-        r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=rfc_alias.name)))
+        r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=rfc.name)))
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, "RFC 123456")
         self.assertContains(r, draft.name)
-        self.assertContains(r, replaced.canonical_name())
-        self.assertContains(r, replaced.title)
         # obs/updates included with RFC
-        self.assertContains(r, obsoleted.canonical_name())
+        self.assertContains(r, obsoleted.name)
         self.assertContains(r, obsoleted.title)
-        self.assertContains(r, obsoleted_by.canonical_name())
+        self.assertContains(r, obsoleted_by.name)
         self.assertContains(r, obsoleted_by.title)
-        self.assertContains(r, updated.canonical_name())
+        self.assertContains(r, updated.name)
         self.assertContains(r, updated.title)
-        self.assertContains(r, updated_by.canonical_name())
+        self.assertContains(r, updated_by.name)
         self.assertContains(r, updated_by.title)
 
         # naked RFC - also weird that we test a PS from the ISE
@@ -902,7 +891,7 @@ Man                    Expires September 22, 2015               [Page 3]
         draft = WgRfcFactory()
         status_change_doc = StatusChangeFactory(
             group=draft.group,
-            changes_status_of=[('tops', draft.docalias.first())],
+            changes_status_of=[('tops', draft)],
         )
         status_change_url = urlreverse(
             'ietf.doc.views_doc.document_main',
@@ -910,7 +899,7 @@ Man                    Expires September 22, 2015               [Page 3]
         )
         proposed_status_change_doc = StatusChangeFactory(
             group=draft.group,
-            changes_status_of=[('tobcp', draft.docalias.first())],
+            changes_status_of=[('tobcp', draft)],
             states=[State.objects.get(slug='needshep', type='statchg')],
         )
         proposed_status_change_url = urlreverse(
@@ -921,7 +910,7 @@ Man                    Expires September 22, 2015               [Page 3]
         r = self.client.get(
             urlreverse(
                 'ietf.doc.views_doc.document_main',
-                kwargs={'name': draft.canonical_name()},
+                kwargs={'name': draft.name},
             )
         )
         self.assertEqual(r.status_code, 200)
@@ -1501,11 +1490,11 @@ Man                    Expires September 22, 2015               [Page 3]
             self.assertEqual(r.status_code, 200)
             self.assert_correct_wg_group_link(r, group)
 
-            rfc = WgRfcFactory(name='draft-rfc-document-%s' % group_type_id, group=group)
+            rfc = WgRfcFactory(group=group)
+            draft = WgDraftFactory(group=group)
+            draft.relateddocument_set.create(relationship_id="became_rfc", target=rfc)
             DocEventFactory.create(doc=rfc, type='published_rfc', time=event_datetime)
-            # get the rfc name to avoid a redirect
-            rfc_name = rfc.docalias.filter(name__startswith='rfc').first().name
-            r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=rfc_name)))
+            r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=rfc.name)))
             self.assertEqual(r.status_code, 200)
             self.assert_correct_wg_group_link(r, group)
 
@@ -1516,11 +1505,11 @@ Man                    Expires September 22, 2015               [Page 3]
             self.assertEqual(r.status_code, 200)
             self.assert_correct_non_wg_group_link(r, group)
 
-            rfc = WgRfcFactory(name='draft-rfc-document-%s' % group_type_id, group=group)
+            rfc = WgRfcFactory(group=group)
+            draft = WgDraftFactory(name='draft-rfc-document-%s'% group_type_id, group=group)
+            draft.relateddocument_set.create(relationship_id="became_rfc", target=rfc)
             DocEventFactory.create(doc=rfc, type='published_rfc', time=event_datetime)
-            # get the rfc name to avoid a redirect
-            rfc_name = rfc.docalias.filter(name__startswith='rfc').first().name
-            r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=rfc_name)))
+            r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=rfc.name)))
             self.assertEqual(r.status_code, 200)
             self.assert_correct_non_wg_group_link(r, group)
 
@@ -1621,8 +1610,8 @@ class DocTestCase(TestCase):
         statchg = StatusChangeFactory()
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=statchg.name)))
         self.assertEqual(r.status_code, 200)
-        r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=statchg.relateddocument_set.first().target.document)))
-        self.assertEqual(r.status_code, 302)
+        r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=statchg.relateddocument_set.first().target)))
+        self.assertEqual(r.status_code, 200)
 
     def test_document_charter(self):
         CharterFactory(name='charter-ietf-mars')
@@ -1786,8 +1775,8 @@ class DocTestCase(TestCase):
         self.assertNotContains(r, 'more YES or NO')
 
         # status change
-        DocAlias.objects.create(name='rfc9998').docs.add(IndividualDraftFactory())
-        DocAlias.objects.create(name='rfc9999').docs.add(IndividualDraftFactory())
+        Document.objects.create(name='rfc9998')
+        Document.objects.create(name='rfc9999')
         doc = DocumentFactory(type_id='statchg',name='status-change-imaginary-mid-review')
         iesgeval_pk = str(State.objects.get(slug='iesgeval',type__slug='statchg').pk)
         empty_outbox()
@@ -1800,12 +1789,12 @@ class DocTestCase(TestCase):
         self.assertIn('iesg-secretary',outbox[0]['To'])
         self.assertIn('drafts-eval',outbox[1]['To'])
 
-        doc.relateddocument_set.create(target=DocAlias.objects.get(name='rfc9998'),relationship_id='tohist')
+        doc.relateddocument_set.create(target=Document.objects.get(name='rfc9998'),relationship_id='tohist')
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_ballot", kwargs=dict(name=doc.name)))
         self.assertNotContains(r, 'Needs a YES')
         self.assertNotContains(r, 'more YES or NO')
 
-        doc.relateddocument_set.create(target=DocAlias.objects.get(name='rfc9999'),relationship_id='tois')
+        doc.relateddocument_set.create(target=Document.objects.get(name='rfc9999'),relationship_id='tois')
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_ballot", kwargs=dict(name=doc.name)))
         self.assertContains(r, 'more YES or NO')
 
@@ -1868,15 +1857,14 @@ class DocTestCase(TestCase):
         self.assertContains(r, e.desc)
 
     def test_history_bis_00(self):
-        rfcname='rfc9090'
-        rfc = WgRfcFactory(alias2=rfcname)
-        bis_draft = WgDraftFactory(name='draft-ietf-{}-{}bis'.format(rfc.group.acronym,rfcname))
+        rfc = WgRfcFactory(rfc_number=9090)
+        bis_draft = WgDraftFactory(name='draft-ietf-{}-{}bis'.format(rfc.group.acronym,rfc.name))
 
         url = urlreverse('ietf.doc.views_doc.document_history', kwargs=dict(name=bis_draft.name))
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200) 
         q = PyQuery(unicontent(r))
-        attr1='value="{}"'.format(rfcname)
+        attr1='value="{}"'.format(rfc.name)
         self.assertEqual(len(q('option['+attr1+'][selected="selected"]')), 1)
 
 
@@ -1926,7 +1914,7 @@ class DocTestCase(TestCase):
         self.assertContains(r, doc.name)
 
     def test_rfc_feed(self):
-        rfc = WgRfcFactory(alias2__name="rfc9000")
+        rfc = WgRfcFactory(rfc_number=9000)
         DocEventFactory(doc=rfc, type="published_rfc")
         r = self.client.get("/feed/rfc/")
         self.assertTrue(r.status_code, 200)
@@ -1983,76 +1971,91 @@ class DocTestCase(TestCase):
 
     @override_settings(RFC_EDITOR_INFO_BASE_URL='https://www.rfc-editor.ietf.org/info/')
     def test_document_bibtex(self):
+
+        for factory in [CharterFactory, BcpFactory, StatusChangeFactory, ConflictReviewFactory]: # Should be extended to all other doc types
+            doc = factory()
+            url = urlreverse("ietf.doc.views_doc.document_bibtex", kwargs=dict(name=doc.name))
+            r = self.client.get(url)
+            self.assertEqual(r.status_code, 404)          
         rfc = WgRfcFactory.create(
-                  #other_aliases = ['rfc6020',],
-                  states = [('draft','rfc'),('draft-iesg','pub')],
-                  std_level_id = 'ps',
-                  time = datetime.datetime(2010, 10, 10, tzinfo=ZoneInfo(settings.TIME_ZONE)),
-              )
-        num = rfc.rfc_number()
+            time=datetime.datetime(2010, 10, 10, tzinfo=ZoneInfo(settings.TIME_ZONE))
+        )
+        num = rfc.rfc_number
         DocEventFactory.create(
             doc=rfc,
-            type='published_rfc',
+            type="published_rfc",
             time=datetime.datetime(2010, 10, 10, tzinfo=RPC_TZINFO),
         )
         #
-        url = urlreverse('ietf.doc.views_doc.document_bibtex', kwargs=dict(name=rfc.name))
+        url = urlreverse("ietf.doc.views_doc.document_bibtex", kwargs=dict(name=rfc.name))
         r = self.client.get(url)
-        entry = self._parse_bibtex_response(r)["rfc%s"%num]
-        self.assertEqual(entry['series'],   'Request for Comments')
-        self.assertEqual(entry['number'],   num)
-        self.assertEqual(entry['doi'],      '10.17487/RFC%s'%num)
-        self.assertEqual(entry['year'],     '2010')
-        self.assertEqual(entry['month'].lower()[0:3], 'oct')
-        self.assertEqual(entry['url'],      f'https://www.rfc-editor.ietf.org/info/rfc{num}')
+        entry = self._parse_bibtex_response(r)["rfc%s" % num]
+        self.assertEqual(entry["series"], "Request for Comments")
+        self.assertEqual(int(entry["number"]), num)
+        self.assertEqual(entry["doi"], "10.17487/RFC%s" % num)
+        self.assertEqual(entry["year"], "2010")
+        self.assertEqual(entry["month"].lower()[0:3], "oct")
+        self.assertEqual(entry["url"], f"https://www.rfc-editor.ietf.org/info/rfc{num}")
         #
-        self.assertNotIn('day', entry)
-
+        self.assertNotIn("day", entry)
+    
         # test for incorrect case - revision for RFC
         rfc = WgRfcFactory(name="rfc0000")
-        url = urlreverse('ietf.doc.views_doc.document_bibtex', kwargs=dict(name=rfc.name, rev='00'))
+        url = urlreverse(
+            "ietf.doc.views_doc.document_bibtex", kwargs=dict(name=rfc.name, rev="00")
+        )
         r = self.client.get(url)
         self.assertEqual(r.status_code, 404)
-
+    
         april1 = IndividualRfcFactory.create(
-                  stream_id =       'ise',
-                  states =          [('draft','rfc'),('draft-iesg','pub')],
-                  std_level_id =    'inf',
-                  time =            datetime.datetime(1990, 4, 1, tzinfo=ZoneInfo(settings.TIME_ZONE)),
-              )
-        num = april1.rfc_number()
+            stream_id="ise",
+            std_level_id="inf",
+            time=datetime.datetime(1990, 4, 1, tzinfo=ZoneInfo(settings.TIME_ZONE)),
+        )
+        num = april1.rfc_number
         DocEventFactory.create(
             doc=april1,
-            type='published_rfc',
+            type="published_rfc",
             time=datetime.datetime(1990, 4, 1, tzinfo=RPC_TZINFO),
         )
         #
-        url = urlreverse('ietf.doc.views_doc.document_bibtex', kwargs=dict(name=april1.name))
+        url = urlreverse(
+            "ietf.doc.views_doc.document_bibtex", kwargs=dict(name=april1.name)
+        )
         r = self.client.get(url)
-        self.assertEqual(r.get('Content-Type'), 'text/plain; charset=utf-8')
-        entry = self._parse_bibtex_response(r)["rfc%s"%num]
-        self.assertEqual(entry['series'],   'Request for Comments')
-        self.assertEqual(entry['number'],   num)
-        self.assertEqual(entry['doi'],      '10.17487/RFC%s'%num)
-        self.assertEqual(entry['year'],     '1990')
-        self.assertEqual(entry['month'].lower()[0:3],    'apr')
-        self.assertEqual(entry['day'],      '1')
-        self.assertEqual(entry['url'],      f'https://www.rfc-editor.ietf.org/info/rfc{num}')
-
+        self.assertEqual(r.get("Content-Type"), "text/plain; charset=utf-8")
+        entry = self._parse_bibtex_response(r)["rfc%s" % num]
+        self.assertEqual(entry["series"], "Request for Comments")
+        self.assertEqual(int(entry["number"]), num)
+        self.assertEqual(entry["doi"], "10.17487/RFC%s" % num)
+        self.assertEqual(entry["year"], "1990")
+        self.assertEqual(entry["month"].lower()[0:3], "apr")
+        self.assertEqual(entry["day"], "1")
+        self.assertEqual(entry["url"], f"https://www.rfc-editor.ietf.org/info/rfc{num}")
+    
         draft = IndividualDraftFactory.create()
-        docname = '%s-%s' % (draft.name, draft.rev)
-        bibname = docname[6:]           # drop the 'draft-' prefix
-        url = urlreverse('ietf.doc.views_doc.document_bibtex', kwargs=dict(name=draft.name))
+        docname = "%s-%s" % (draft.name, draft.rev)
+        bibname = docname[6:]  # drop the 'draft-' prefix
+        url = urlreverse("ietf.doc.views_doc.document_bibtex", kwargs=dict(name=draft.name))
         r = self.client.get(url)
         entry = self._parse_bibtex_response(r)[bibname]
-        self.assertEqual(entry['note'],     'Work in Progress')
-        self.assertEqual(entry['number'],   docname)
-        self.assertEqual(entry['year'],     str(draft.pub_date().year))
-        self.assertEqual(entry['month'].lower()[0:3],    draft.pub_date().strftime('%b').lower())
-        self.assertEqual(entry['day'],      str(draft.pub_date().day))
-        self.assertEqual(entry['url'],      settings.IDTRACKER_BASE_URL + urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name, rev=draft.rev)))
+        self.assertEqual(entry["note"], "Work in Progress")
+        self.assertEqual(entry["number"], docname)
+        self.assertEqual(entry["year"], str(draft.pub_date().year))
+        self.assertEqual(
+            entry["month"].lower()[0:3], draft.pub_date().strftime("%b").lower()
+        )
+        self.assertEqual(entry["day"], str(draft.pub_date().day))
+        self.assertEqual(
+            entry["url"],
+            settings.IDTRACKER_BASE_URL
+            + urlreverse(
+                "ietf.doc.views_doc.document_main",
+                kwargs=dict(name=draft.name, rev=draft.rev),
+            ),
+        )
         #
-        self.assertNotIn('doi', entry)
+        self.assertNotIn("doi", entry)
 
     def test_document_bibxml(self):
         draft = IndividualDraftFactory.create()
@@ -2129,7 +2132,7 @@ class ReferencesTest(TestCase):
 
     def test_references(self):
         doc1 = WgDraftFactory(name='draft-ietf-mars-test')
-        doc2 = IndividualDraftFactory(name='draft-imaginary-independent-submission').docalias.first()
+        doc2 = IndividualDraftFactory(name='draft-imaginary-independent-submission')
         RelatedDocument.objects.get_or_create(source=doc1,target=doc2,relationship=DocRelationshipName.objects.get(slug='refnorm'))
         url = urlreverse('ietf.doc.views_doc.document_references', kwargs=dict(name=doc1.name))
         r = self.client.get(url)
@@ -2141,124 +2144,168 @@ class ReferencesTest(TestCase):
         self.assertContains(r, doc1.name)
 
 class GenerateDraftAliasesTests(TestCase):
-   def setUp(self):
-       super().setUp()
-       self.doc_aliases_file = NamedTemporaryFile(delete=False, mode='w+')
-       self.doc_aliases_file.close()
-       self.doc_virtual_file = NamedTemporaryFile(delete=False, mode='w+')
-       self.doc_virtual_file.close()
-       self.saved_draft_aliases_path = settings.DRAFT_ALIASES_PATH
-       self.saved_draft_virtual_path = settings.DRAFT_VIRTUAL_PATH
-       settings.DRAFT_ALIASES_PATH = self.doc_aliases_file.name
-       settings.DRAFT_VIRTUAL_PATH = self.doc_virtual_file.name
+    def setUp(self):
+        super().setUp()
+        self.doc_aliases_file = NamedTemporaryFile(delete=False, mode="w+")
+        self.doc_aliases_file.close()
+        self.doc_virtual_file = NamedTemporaryFile(delete=False, mode="w+")
+        self.doc_virtual_file.close()
+        self.saved_draft_aliases_path = settings.DRAFT_ALIASES_PATH
+        self.saved_draft_virtual_path = settings.DRAFT_VIRTUAL_PATH
+        settings.DRAFT_ALIASES_PATH = self.doc_aliases_file.name
+        settings.DRAFT_VIRTUAL_PATH = self.doc_virtual_file.name
 
-   def tearDown(self):
-       settings.DRAFT_ALIASES_PATH = self.saved_draft_aliases_path
-       settings.DRAFT_VIRTUAL_PATH = self.saved_draft_virtual_path
-       os.unlink(self.doc_aliases_file.name)
-       os.unlink(self.doc_virtual_file.name)
-       super().tearDown()
+    def tearDown(self):
+        settings.DRAFT_ALIASES_PATH = self.saved_draft_aliases_path
+        settings.DRAFT_VIRTUAL_PATH = self.saved_draft_virtual_path
+        os.unlink(self.doc_aliases_file.name)
+        os.unlink(self.doc_virtual_file.name)
+        super().tearDown()
 
-   def testManagementCommand(self):
-       a_month_ago = (timezone.now() - datetime.timedelta(30)).astimezone(RPC_TZINFO)
-       a_month_ago = a_month_ago.replace(hour=0, minute=0, second=0, microsecond=0)
-       ad = RoleFactory(name_id='ad', group__type_id='area', group__state_id='active').person
-       shepherd = PersonFactory()
-       author1 = PersonFactory()
-       author2 = PersonFactory()
-       author3 = PersonFactory()
-       author4 = PersonFactory()
-       author5 = PersonFactory()
-       author6 = PersonFactory()
-       mars = GroupFactory(type_id='wg', acronym='mars')
-       marschairman = PersonFactory(user__username='marschairman')
-       mars.role_set.create(name_id='chair', person=marschairman, email=marschairman.email())
-       doc1 = IndividualDraftFactory(authors=[author1], shepherd=shepherd.email(), ad=ad)
-       doc2 = WgDraftFactory(name='draft-ietf-mars-test', group__acronym='mars', authors=[author2], ad=ad)
-       doc3 = WgRfcFactory.create(name='draft-ietf-mars-finished', group__acronym='mars', authors=[author3], ad=ad, std_level_id='ps', states=[('draft','rfc'),('draft-iesg','pub')], time=a_month_ago)
-       DocEventFactory.create(doc=doc3, type='published_rfc', time=a_month_ago)
-       doc4 = WgRfcFactory.create(authors=[author4,author5], ad=ad, std_level_id='ps', states=[('draft','rfc'),('draft-iesg','pub')], time=datetime.datetime(2010,10,10, tzinfo=ZoneInfo(settings.TIME_ZONE)))
-       DocEventFactory.create(doc=doc4, type='published_rfc', time=datetime.datetime(2010, 10, 10, tzinfo=RPC_TZINFO))
-       doc5 = IndividualDraftFactory(authors=[author6])
+    def testManagementCommand(self):
+        a_month_ago = (timezone.now() - datetime.timedelta(30)).astimezone(RPC_TZINFO)
+        a_month_ago = a_month_ago.replace(hour=0, minute=0, second=0, microsecond=0)
+        ad = RoleFactory(
+            name_id="ad", group__type_id="area", group__state_id="active"
+        ).person
+        shepherd = PersonFactory()
+        author1 = PersonFactory()
+        author2 = PersonFactory()
+        author3 = PersonFactory()
+        author4 = PersonFactory()
+        author5 = PersonFactory()
+        author6 = PersonFactory()
+        mars = GroupFactory(type_id="wg", acronym="mars")
+        marschairman = PersonFactory(user__username="marschairman")
+        mars.role_set.create(
+            name_id="chair", person=marschairman, email=marschairman.email()
+        )
+        doc1 = IndividualDraftFactory(
+            authors=[author1], shepherd=shepherd.email(), ad=ad
+        )
+        doc2 = WgDraftFactory(
+            name="draft-ietf-mars-test", group__acronym="mars", authors=[author2], ad=ad
+        )
+        doc3 = WgDraftFactory.create(
+            name="draft-ietf-mars-finished",
+            group__acronym="mars",
+            authors=[author3],
+            ad=ad,
+            std_level_id="ps",
+            states=[("draft", "rfc"), ("draft-iesg", "pub")],
+            time=a_month_ago,
+        )
+        rfc3 = WgRfcFactory()
+        DocEventFactory.create(doc=rfc3, type="published_rfc", time=a_month_ago)
+        doc3.relateddocument_set.create(
+            relationship_id="became_rfc", target=rfc3
+        )
+        doc4 = WgDraftFactory.create(
+            authors=[author4, author5],
+            ad=ad,
+            std_level_id="ps",
+            states=[("draft", "rfc"), ("draft-iesg", "pub")],
+            time=datetime.datetime(2010, 10, 10, tzinfo=ZoneInfo(settings.TIME_ZONE)),
+        )
+        rfc4 = WgRfcFactory()
+        DocEventFactory.create(
+            doc=rfc4,
+            type="published_rfc",
+            time=datetime.datetime(2010, 10, 10, tzinfo=RPC_TZINFO),
+        )
+        doc4.relateddocument_set.create(
+            relationship_id="became_rfc", target=rfc4
+        )
+        doc5 = IndividualDraftFactory(authors=[author6])
 
-       args = [ ]
-       kwargs = { }
-       out = io.StringIO()
-       call_command("generate_draft_aliases", *args, **kwargs, stdout=out, stderr=out)
-       self.assertFalse(out.getvalue())
+        args = []
+        kwargs = {}
+        out = io.StringIO()
+        call_command("generate_draft_aliases", *args, **kwargs, stdout=out, stderr=out)
+        self.assertFalse(out.getvalue())
 
-       with open(settings.DRAFT_ALIASES_PATH) as afile:
-           acontent = afile.read()
-           self.assertTrue(all([x in acontent for x in [
-               'xfilter-' + doc1.name,
-               'xfilter-' + doc1.name + '.ad',
-               'xfilter-' + doc1.name + '.authors',
-               'xfilter-' + doc1.name + '.shepherd',
-               'xfilter-' + doc1.name + '.all',
-               'xfilter-' + doc2.name,
-               'xfilter-' + doc2.name + '.ad',
-               'xfilter-' + doc2.name + '.authors',
-               'xfilter-' + doc2.name + '.chairs',
-               'xfilter-' + doc2.name + '.all',
-               'xfilter-' + doc3.name,
-               'xfilter-' + doc3.name + '.ad',
-               'xfilter-' + doc3.name + '.authors',
-               'xfilter-' + doc3.name + '.chairs',
-               'xfilter-' + doc5.name,
-               'xfilter-' + doc5.name + '.authors',
-               'xfilter-' + doc5.name + '.all',
-           ]]))
-           self.assertFalse(all([x in acontent for x in [
-               'xfilter-' + doc1.name + '.chairs',
-               'xfilter-' + doc2.name + '.shepherd',
-               'xfilter-' + doc3.name + '.shepherd',
-               'xfilter-' + doc4.name,
-               'xfilter-' + doc5.name + '.shepherd',
-               'xfilter-' + doc5.name + '.ad',
-           ]]))
+        with open(settings.DRAFT_ALIASES_PATH) as afile:
+            acontent = afile.read()
+            for x in [
+                "xfilter-" + doc1.name,
+                "xfilter-" + doc1.name + ".ad",
+                "xfilter-" + doc1.name + ".authors",
+                "xfilter-" + doc1.name + ".shepherd",
+                "xfilter-" + doc1.name + ".all",
+                "xfilter-" + doc2.name,
+                "xfilter-" + doc2.name + ".ad",
+                "xfilter-" + doc2.name + ".authors",
+                "xfilter-" + doc2.name + ".chairs",
+                "xfilter-" + doc2.name + ".all",
+                "xfilter-" + doc3.name,
+                "xfilter-" + doc3.name + ".ad",
+                "xfilter-" + doc3.name + ".authors",
+                "xfilter-" + doc3.name + ".chairs",
+                "xfilter-" + doc5.name,
+                "xfilter-" + doc5.name + ".authors",
+                "xfilter-" + doc5.name + ".all",
+            ]:
+                self.assertIn(x, acontent)
 
-       with open(settings.DRAFT_VIRTUAL_PATH) as vfile:
-           vcontent = vfile.read()
-           self.assertTrue(all([x in vcontent for x in [
-               ad.email_address(),
-               shepherd.email_address(),
-               marschairman.email_address(),
-               author1.email_address(),
-               author2.email_address(),
-               author3.email_address(),
-               author6.email_address(),
-           ]]))
-           self.assertFalse(all([x in vcontent for x in [
-               author4.email_address(),
-               author5.email_address(),
-           ]]))
-           self.assertTrue(all([x in vcontent for x in [
-               'xfilter-' + doc1.name,
-               'xfilter-' + doc1.name + '.ad',
-               'xfilter-' + doc1.name + '.authors',
-               'xfilter-' + doc1.name + '.shepherd',
-               'xfilter-' + doc1.name + '.all',
-               'xfilter-' + doc2.name,
-               'xfilter-' + doc2.name + '.ad',
-               'xfilter-' + doc2.name + '.authors',
-               'xfilter-' + doc2.name + '.chairs',
-               'xfilter-' + doc2.name + '.all',
-               'xfilter-' + doc3.name,
-               'xfilter-' + doc3.name + '.ad',
-               'xfilter-' + doc3.name + '.authors',
-               'xfilter-' + doc3.name + '.chairs',
-               'xfilter-' + doc5.name,
-               'xfilter-' + doc5.name + '.authors',
-               'xfilter-' + doc5.name + '.all',
-           ]]))
-           self.assertFalse(all([x in vcontent for x in [
-               'xfilter-' + doc1.name + '.chairs',
-               'xfilter-' + doc2.name + '.shepherd',
-               'xfilter-' + doc3.name + '.shepherd',
-               'xfilter-' + doc4.name,
-               'xfilter-' + doc5.name + '.shepherd',
-               'xfilter-' + doc5.name + '.ad',
-           ]]))
+            for x in [
+                "xfilter-" + doc1.name + ".chairs",
+                "xfilter-" + doc2.name + ".shepherd",
+                "xfilter-" + doc3.name + ".shepherd",
+                "xfilter-" + doc4.name,
+                "xfilter-" + doc5.name + ".shepherd",
+                "xfilter-" + doc5.name + ".ad",
+            ]:
+                self.assertNotIn(x, acontent)
+
+        with open(settings.DRAFT_VIRTUAL_PATH) as vfile:
+            vcontent = vfile.read()
+            for x in [
+                ad.email_address(),
+                shepherd.email_address(),
+                marschairman.email_address(),
+                author1.email_address(),
+                author2.email_address(),
+                author3.email_address(),
+                author6.email_address(),
+            ]:
+                self.assertIn(x, vcontent)
+
+            for x in [
+                author4.email_address(),
+                author5.email_address(),
+            ]:
+                self.assertNotIn(x, vcontent)
+
+            for x in [
+                "xfilter-" + doc1.name,
+                "xfilter-" + doc1.name + ".ad",
+                "xfilter-" + doc1.name + ".authors",
+                "xfilter-" + doc1.name + ".shepherd",
+                "xfilter-" + doc1.name + ".all",
+                "xfilter-" + doc2.name,
+                "xfilter-" + doc2.name + ".ad",
+                "xfilter-" + doc2.name + ".authors",
+                "xfilter-" + doc2.name + ".chairs",
+                "xfilter-" + doc2.name + ".all",
+                "xfilter-" + doc3.name,
+                "xfilter-" + doc3.name + ".ad",
+                "xfilter-" + doc3.name + ".authors",
+                "xfilter-" + doc3.name + ".chairs",
+                "xfilter-" + doc5.name,
+                "xfilter-" + doc5.name + ".authors",
+                "xfilter-" + doc5.name + ".all",
+            ]:
+                self.assertIn(x, vcontent)
+
+            for x in [
+                "xfilter-" + doc1.name + ".chairs",
+                "xfilter-" + doc2.name + ".shepherd",
+                "xfilter-" + doc3.name + ".shepherd",
+                "xfilter-" + doc4.name,
+                "xfilter-" + doc5.name + ".shepherd",
+                "xfilter-" + doc5.name + ".ad",
+            ]:
+                self.assertNotIn(x, vcontent)
 
 class EmailAliasesTests(TestCase):
 
@@ -2692,10 +2739,10 @@ class Idnits2SupportTests(TestCase):
     settings_temp_path_overrides = TestCase.settings_temp_path_overrides + ['DERIVED_DIR']
 
     def test_obsoleted(self):
-        rfc = WgRfcFactory(alias2__name='rfc1001')
-        WgRfcFactory(alias2__name='rfc1003',relations=[('obs',rfc)])
-        rfc = WgRfcFactory(alias2__name='rfc1005')
-        WgRfcFactory(alias2__name='rfc1007',relations=[('obs',rfc)])
+        rfc = WgRfcFactory(rfc_number=1001)
+        WgRfcFactory(rfc_number=1003,relations=[('obs',rfc)])
+        rfc = WgRfcFactory(rfc_number=1005)
+        WgRfcFactory(rfc_number=1007,relations=[('obs',rfc)])
 
         url = urlreverse('ietf.doc.views_doc.idnits2_rfcs_obsoleted')
         r = self.client.get(url)
@@ -2720,20 +2767,22 @@ class Idnits2SupportTests(TestCase):
 
     def test_idnits2_state(self):
         rfc = WgRfcFactory()
-        url = urlreverse('ietf.doc.views_doc.idnits2_state', kwargs=dict(name=rfc.canonical_name()))
+        draft = WgDraftFactory()
+        draft.relateddocument_set.create(relationship_id="became_rfc", target=rfc)
+        url = urlreverse('ietf.doc.views_doc.idnits2_state', kwargs=dict(name=rfc.name))
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         self.assertContains(r,'rfcnum')
 
         draft = WgDraftFactory()
-        url = urlreverse('ietf.doc.views_doc.idnits2_state', kwargs=dict(name=draft.canonical_name()))
+        url = urlreverse('ietf.doc.views_doc.idnits2_state', kwargs=dict(name=draft.name))
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         self.assertNotContains(r,'rfcnum')
         self.assertContains(r,'Unknown')
 
         draft = WgDraftFactory(intended_std_level_id='ps')
-        url = urlreverse('ietf.doc.views_doc.idnits2_state', kwargs=dict(name=draft.canonical_name()))
+        url = urlreverse('ietf.doc.views_doc.idnits2_state', kwargs=dict(name=draft.name))
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         self.assertContains(r,'Proposed')
@@ -2778,16 +2827,12 @@ class RawIdTests(TestCase):
         self.should_succeed(dict(name=draft.name, rev='00',ext='txt'))
         self.should_404(dict(name=draft.name, rev='00',ext='html'))
 
-    def test_raw_id_rfc(self):
-        rfc = WgRfcFactory()
-        dir = settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR
-        (Path(dir) / f'{rfc.name}-{rfc.rev}.txt').touch()
-        self.should_succeed(dict(name=rfc.name))
-        self.should_404(dict(name=rfc.canonical_name()))
+    # test_raw_id_rfc intentionally removed
+    # an rfc is no longer a pseudo-version of a draft.
 
     def test_non_draft(self):
-        charter = CharterFactory()
-        self.should_404(dict(name=charter.name))
+        for doc in [CharterFactory(), WgRfcFactory()]:
+            self.should_404(dict(name=doc.name))
 
 class PdfizedTests(TestCase):
 
@@ -2799,31 +2844,40 @@ class PdfizedTests(TestCase):
         url = urlreverse(self.view, kwargs=argdict)
         r = self.client.get(url)
         self.assertEqual(r.status_code,200)
-        self.assertEqual(r.get('Content-Type'),'application/pdf;charset=utf-8')
+        self.assertEqual(r.get('Content-Type'),'application/pdf')
 
     def should_404(self, argdict):
         url = urlreverse(self.view, kwargs=argdict)
         r = self.client.get(url)
         self.assertEqual(r.status_code, 404)
 
+    # This takes a _long_ time (32s on a 2022 m1 macbook pro) - is it worth what it covers?
     def test_pdfized(self):
-        rfc = WgRfcFactory(create_revisions=range(0,2))
+        rfc = WgRfcFactory()
+        draft = WgDraftFactory(create_revisions=range(0,2))
+        draft.relateddocument_set.create(relationship_id="became_rfc", target=rfc)
 
         dir = settings.RFC_PATH
-        with (Path(dir) / f'{rfc.canonical_name()}.txt').open('w') as f:
+        with (Path(dir) / f'{rfc.name}.txt').open('w') as f:
             f.write('text content')
         dir = settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR
         for r in range(0,2):
-            with (Path(dir) / f'{rfc.name}-{r:02d}.txt').open('w') as f:
+            with (Path(dir) / f'{draft.name}-{r:02d}.txt').open('w') as f:
                 f.write('text content')
 
-        self.should_succeed(dict(name=rfc.canonical_name()))
         self.should_succeed(dict(name=rfc.name))
+        self.should_succeed(dict(name=draft.name))
         for r in range(0,2):
-            self.should_succeed(dict(name=rfc.name,rev=f'{r:02d}'))
+            self.should_succeed(dict(name=draft.name,rev=f'{r:02d}'))
             for ext in ('pdf','txt','html','anythingatall'):
-                self.should_succeed(dict(name=rfc.name,rev=f'{r:02d}',ext=ext))
-        self.should_404(dict(name=rfc.name,rev='02'))
+                self.should_succeed(dict(name=draft.name,rev=f'{r:02d}',ext=ext))
+        self.should_404(dict(name=draft.name,rev='02'))
+
+        with mock.patch('ietf.doc.models.DocumentInfo.pdfized', side_effect=URLFetchingError):
+            url = urlreverse(self.view, kwargs=dict(name=rfc.name))
+            r = self.client.get(url)
+            self.assertEqual(r.status_code, 200)
+            self.assertContains(r, "Error while rendering PDF")
 
 class NotifyValidationTests(TestCase):
     def test_notify_validation(self):
@@ -2906,3 +2960,77 @@ class CanRequestConflictReviewTests(TestCase):
         r = self.client.get(url)
         self.assertContains(r, target_string)
 
+class DocInfoMethodsTests(TestCase):
+
+    def test_became_rfc(self):
+        draft = WgDraftFactory()
+        rfc = WgRfcFactory()
+        draft.relateddocument_set.create(relationship_id="became_rfc",target=rfc)
+        self.assertEqual(draft.became_rfc(), rfc)
+        self.assertEqual(rfc.came_from_draft(), draft)
+
+        charter = CharterFactory()
+        self.assertIsNone(charter.became_rfc())
+        self.assertIsNone(charter.came_from_draft())
+
+    def test_revisions(self):
+        draft = WgDraftFactory(rev="09",create_revisions=range(0,10))
+        self.assertEqual(draft.revisions_by_dochistory(),[f"{i:02d}" for i in range(0,10)])
+        self.assertEqual(draft.revisions_by_newrevisionevent(),[f"{i:02d}" for i in range(0,10)])
+        rfc = WgRfcFactory()
+        self.assertEqual(rfc.revisions_by_newrevisionevent(),[])
+        self.assertEqual(rfc.revisions_by_dochistory(),[])
+
+        draft.history_set.filter(rev__lt="08").delete()
+        draft.docevent_set.filter(newrevisiondocevent__rev="05").delete()
+        self.assertEqual(draft.revisions_by_dochistory(),[f"{i:02d}" for i in range(8,10)])
+        self.assertEqual(draft.revisions_by_newrevisionevent(),[f"{i:02d}" for i in [*range(0,5), *range(6,10)]])      
+
+    def test_referenced_by_rfcs(self):
+        # n.b., no significance to the ref* values in this test
+        referring_draft = WgDraftFactory()
+        (rfc, referring_rfc) = WgRfcFactory.create_batch(2)
+        rfc.targets_related.create(relationship_id="refnorm", source=referring_draft)
+        rfc.targets_related.create(relationship_id="refnorm", source=referring_rfc)
+        self.assertCountEqual(
+            rfc.referenced_by_rfcs(),
+            rfc.targets_related.filter(source=referring_rfc),
+        )
+
+    def test_referenced_by_rfcs_as_rfc_or_draft(self):
+        # n.b., no significance to the ref* values in this test
+        draft = WgDraftFactory()
+        rfc = WgRfcFactory()
+        draft.relateddocument_set.create(relationship_id="became_rfc", target=rfc)
+        
+        # Draft referring to the rfc and the draft - should not be reported at all
+        draft_referring_to_both = WgDraftFactory()
+        draft_referring_to_both.relateddocument_set.create(relationship_id="refnorm", target=draft)
+        draft_referring_to_both.relateddocument_set.create(relationship_id="refnorm", target=rfc)
+        
+        # RFC referring only to the draft - should be reported for either the draft or the rfc
+        rfc_referring_to_draft = WgRfcFactory()
+        rfc_referring_to_draft.relateddocument_set.create(relationship_id="refinfo", target=draft)
+
+        # RFC referring only to the rfc - should be reported only for the rfc
+        rfc_referring_to_rfc = WgRfcFactory()
+        rfc_referring_to_rfc.relateddocument_set.create(relationship_id="refinfo", target=rfc)
+
+        # RFC referring only to the rfc - should be reported only for the rfc
+        rfc_referring_to_rfc = WgRfcFactory()
+        rfc_referring_to_rfc.relateddocument_set.create(relationship_id="refinfo", target=rfc)
+
+        # RFC referring to the rfc and the draft - should be reported for both
+        rfc_referring_to_both = WgRfcFactory()
+        rfc_referring_to_both.relateddocument_set.create(relationship_id="refnorm", target=draft)
+        rfc_referring_to_both.relateddocument_set.create(relationship_id="refnorm", target=rfc)
+
+        self.assertCountEqual(
+            draft.referenced_by_rfcs_as_rfc_or_draft(),
+            draft.targets_related.filter(source__type="rfc"),
+        )
+
+        self.assertCountEqual(
+            rfc.referenced_by_rfcs_as_rfc_or_draft(),
+            draft.targets_related.filter(source__type="rfc") | rfc.targets_related.filter(source__type="rfc"),
+        )

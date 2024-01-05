@@ -6,7 +6,6 @@
 <form id="search_form"
       class="form-horizontal"
       action="{% url 'ietf.doc.views_search.search' %}">
-    {% csrf_token %}
     <!-- [html-validate-disable-block input-missing-label -- labelled via aria-label] -->
     <div class="input-group search_field">
         {{ form.name|add_class:"form-control"|attr:"placeholder:Document name/title/RFC number"|attr:"aria-label:Document name/title/RFC number" }}
@@ -180,5 +179,5 @@
 </form>
 <p class="text-center pt-5">
     <a class="btn btn-outline-primary btn-sm" href="https://www.ietf.org/search">Search page for www.ietf.org website</a>
-    <a class="btn btn-outline-primary btn-sm" href="https://mailarchive.ietf.org">Search page for IETF mail list archives</a>
+    <a class="btn btn-outline-primary btn-sm" href="https://mailarchive.ietf.org/arch/">Search page for IETF mail list archives</a>
 </p>

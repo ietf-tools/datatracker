@@ -20,7 +20,7 @@
     {% regroup iabgroups by type as grouped_groups %}
     {% for grouptype in grouped_groups %}
         <tbody>
-        <tr class="bg-info-subtle"><th scope="col" colspan="3">
+        <tr class="table-info"><th scope="col" colspan="3">
             {% firstof grouptype.grouper.verbose_name grouptype.grouper.name %}{{ grouptype.list|pluralize }}
         </th></tr>
         </tbody>

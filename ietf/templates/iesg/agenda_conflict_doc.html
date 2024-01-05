@@ -1,7 +1,7 @@
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
 {% origin %}
-{% load ietf_filters ballot_icon person_filters %}
+{% load ietf_filters ballot_icon person_filters textfilters %}
 <div class="card mb-3">
     <div class="position-absolute top-0 end-0 m-3">{% ballot_icon doc %}</div>
     <div class="card-body">
@@ -11,7 +11,7 @@
                 <div class="col pe-5 me-5">
                     <div class="fw-bold">{{ doc.title }}</div>
                     <a href="{{ doc.get_href }}" aria-label="Content"><i class="bi bi-file-earmark-fill"></i></a>
-                    <a href="{% url "ietf.doc.views_doc.document_main" name=doc.canonical_name %}">{{ doc.canonical_name }}</a>
+                    <a href="{% url "ietf.doc.views_doc.document_main" name=doc.name %}">{{ doc.name }}</a>
                 </div>
             </div>
             <div class="row">
@@ -27,7 +27,7 @@
             {% if conflictdoc.note %}
                 <div class="row">
                     <div class="col-3 text-end fw-bold">Note</div>
-                    <div class="col">{{ conflictdoc.note|linebreaksbr }}</div>
+                    <div class="col">{{ conflictdoc.note|urlize_ietf_docs|linkify|linebreaksbr }}</div>
                 </div>
             {% endif %}
             <div class="row">

@@ -13,11 +13,11 @@
           title="Document changes"
           href="/feed/document-changes/{{ name }}/">
     <meta name="description"
-          content="{{ doc.title }} {% if doc.get_state_slug == 'rfc' and not snapshot %}(RFC {{ rfc_number }}{% if published %}, {{ doc.pub_date|date:'F Y' }}{% endif %}{% if obsoleted_by %}; obsoleted by {% for rel in obsoleted_by %}{{ rel.source.canonical_name|prettystdname}}{% if not forloop.last%}, {% endif %}{% endfor %}{% endif %}){% endif %}">
+          content="{{ doc.title }} {% if doc.type_id == 'rfc' and not snapshot %}(RFC {{ rfc_number }}{% if published %}, {{ doc.pub_date|date:'F Y' }}{% endif %}{% if obsoleted_by %}; obsoleted by {% for rel in obsoleted_by %}{{ rel.source.name|prettystdname}}{% if not forloop.last%}, {% endif %}{% endfor %}{% endif %}){% endif %}">
 {% endblock %}
 {% block morecss %}.inline { display: inline; }{% endblock %}
 {% block title %}
-    {% if doc.get_state_slug == "rfc" and not snapshot %}
+    {% if doc.type_id == "rfc" and not snapshot %}
         RFC {{ rfc_number }} - {{ doc.title }}
     {% else %}
         {{ name }}-{{ doc.rev }} - {{ doc.title }}
@@ -31,7 +31,7 @@
     {% if doc.rev != latest_rev %}
         <div class="alert alert-warning my-3">The information below is for an old version of the document.</div>
     {% else %}
-        {% if doc.get_state_slug == "rfc" and snapshot %}
+        {% if doc.became_rfc %}
             <div class="alert alert-warning my-3">
                 The information below is for an old version of the document that is already published as an RFC.
             </div>
@@ -173,11 +173,11 @@
                     </td>
                 </tr>
             {% endif %}
-            {% if doc.stream_id == 'ietf' or doc.stream_id == 'ise' or doc.stream_id == 'irtf' or doc.stream_id == 'editorial' %}
+            {% if doc.stream_id == 'ietf' or doc.stream_id == 'ise' or doc.stream_id == 'irtf' or doc.stream_id == 'editorial' or doc.stream_id == 'iab' %}
                 <tr>
                     <td></td>
                     <th scope="row">
-                        Document shepherd
+                        {% if doc.stream_id == 'iab' %}IAB shepherd{% else %}Document shepherd{% endif %}
                     </th>
                     <td class="edit">
                         {% if can_edit_stream_info and not snapshot %}
@@ -279,7 +279,7 @@
                         </a>
                     </th>
                     <td class="edit">
-                        {% if iesg_state.slug != 'idexists' and iesg_state.slug != 'dead' and can_edit %}
+                        {% if iesg_state.slug != 'idexists' and iesg_state.slug != 'dead' and can_edit or user|has_role:"Secretariat" %}
                             <a class="btn btn-primary btn-sm"
                                href="{% url 'ietf.doc.views_draft.change_state' name=doc.name %}">
                                 Edit
@@ -408,32 +408,19 @@
                             {% endif %}
                         </td>
                     </tr>
-                    {% if iesg_state.slug != 'idexists' %}
-                        {% if doc.note or can_edit %}
-                            <tr>
-                                <td></td>
-                                <th scope="row">
-                                    IESG note
-                                </th>
-                                <td class="edit">
-                                    {% if can_edit and not snapshot %}
-                                        <a class="btn btn-primary btn-sm"
-                                           href="{% url 'ietf.doc.views_draft.edit_iesg_note' name=doc.name %}">
-                                            Edit
-                                        </a>
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    {% if doc.note %}
-                                        {{ doc.note|linebreaksbr }}
-                                    {% else %}
-                                        <span class="text-body-secondary">
-                                            (None)
-                                        </span>
-                                    {% endif %}
-                                </td>
-                            </tr>
-                        {% endif %}
+                    {% if iesg_state.slug != 'idexists' and doc.note %}
+                        <tr>
+                            <td></td>
+                            <th scope="row">
+                                IESG note
+                            </th>
+                            <td class="edit">
+                                {# IESG Notes are historic and read-only now #}
+                            </td>
+                            <td>
+                                {{ doc.notedoc.note|urlize_ietf_docs|linkify|linebreaksbr }}
+                            </td>
+                        </tr>
                     {% endif %}
                     <tr>
                         <td></td>
@@ -650,14 +637,14 @@
                 {% endif %}
             </a>
             <a class="btn btn-primary btn-sm"
-               href="{% url 'ietf.doc.views_doc.document_references' doc.canonical_name %}"
+               href="{% url 'ietf.doc.views_doc.document_references' doc.name %}"
                rel="nofollow">
                 <i class="bi bi-arrow-left">
                 </i>
                 References
             </a>
             <a class="btn btn-primary btn-sm"
-               href="{% url 'ietf.doc.views_doc.document_referenced_by' doc.canonical_name %}"
+               href="{% url 'ietf.doc.views_doc.document_referenced_by' doc.name %}"
                rel="nofollow">
                 <i class="bi bi-arrow-right">
                 </i>
@@ -684,7 +671,7 @@
                 <ul class="dropdown-menu" role="menu">
                     <li role="presentation">
                         <a class="dropdown-item"
-                           href="https://mailarchive.ietf.org/arch/search?q=%22{{ doc.name }}%22"
+                           href="https://mailarchive.ietf.org/arch/search/?q=%22{{ doc.name }}%22"
                            rel="nofollow"
                            target="_blank">
                             IETF Mail Archive
@@ -711,14 +698,14 @@
                 </ul>
             </div>
             {% if user.is_authenticated %}
-                <a class="btn btn-primary btn-sm track-untrack-doc {% if not doc.tracked_in_personal_community_list %}hide{% endif %}"
+                <a class="btn btn-primary btn-sm track-untrack-doc {% if not doc.tracked_in_personal_community_list %}d-none{% endif %}"
                    href="{% url "ietf.community.views.untrack_document" email_or_name=user.username name=doc.name %}"
                    title="Remove from your personal I-D list">
                     <i class="bi bi-bookmark-check-fill">
                     </i>
                     Untrack
                 </a>
-                <a class="btn btn-primary btn-sm track-untrack-doc {% if doc.tracked_in_personal_community_list %}hide{% endif %}"
+                <a class="btn btn-primary btn-sm track-untrack-doc {% if doc.tracked_in_personal_community_list %}d-none{% endif %}"
                    href="{% url "ietf.community.views.track_document" email_or_name=user.username name=doc.name %}"
                    title="Add to your personal I-D list">
                     <i class="bi bi-bookmark">
@@ -727,14 +714,14 @@
                 </a>
             {% endif %}
             {% if user.person.review_teams %}
-                <a class="btn btn-primary btn-sm review-wish-add-remove-doc ajax {% if not doc.has_review_wish %}hide{% endif %}"
+                <a class="btn btn-primary btn-sm review-wish-add-remove-doc ajax {% if not doc.has_review_wish %}d-none{% endif %}"
                    href="{% url "ietf.doc.views_review.review_wishes_remove" name=doc.name %}?next={{ request.get_full_path|urlencode }}"
                    title="Remove from your review wishes for all teams">
                     <i class="bi bi-chat-left-heart-fill">
                     </i>
                     Remove review wishes
                 </a>
-                <a class="btn btn-primary btn-sm review-wish-add-remove-doc {% if user.person.review_teams|length_is:"1" %}ajax {% endif %}{% if doc.has_review_wish %}hide{% endif %}"
+                <a class="btn btn-primary btn-sm review-wish-add-remove-doc {% if user.person.review_teams|length_is:"1" %}ajax {% endif %}{% if doc.has_review_wish %}d-none{% endif %}"
                    href="{% url "ietf.doc.views_review.review_wish_add" name=doc.name %}?next={{ request.get_full_path|urlencode }}"
                    title="Add to your review wishes">
                     <i class="bi bi-chat-left-heart">
@@ -764,10 +751,10 @@
                 {% endfor %}
             {% endif %}
         </div>
-        {% if doc.get_state_slug == "active" or doc.get_state_slug == "rfc" %}
+        {% if doc.get_state_slug == "active" or doc.type_id == "rfc" or doc.became_rfc %}
             <div class="card mt-5">
                 <div class="card-header">
-                    {% if doc.get_state_slug == "rfc" and not snapshot %}
+                    {% if doc.type_id == "rfc" and not snapshot %}
                         RFC {{ rfc_number }}
                     {% else %}
                         {{ name }}-{{ doc.rev }}

@@ -110,19 +110,18 @@ def manage_list(request, email_or_name=None, acronym=None):
         rule_type_form = SearchRuleTypeForm(request.POST)
         if rule_type_form.is_valid():
             rule_type = rule_type_form.cleaned_data['rule_type']
-
-        if rule_type:
-            rule_form = SearchRuleForm(clist, rule_type, request.POST)
-            if rule_form.is_valid():
-                if clist.pk is None:
-                    clist.save()
-
-                rule = rule_form.save(commit=False)
-                rule.community_list = clist
-                rule.rule_type = rule_type
-                rule.save()
-                if rule.rule_type == "name_contains":
-                    reset_name_contains_index_for_rule(rule)
+            if rule_type:
+                rule_form = SearchRuleForm(clist, rule_type, request.POST)
+                if rule_form.is_valid():
+                    if clist.pk is None:
+                        clist.save()
+    
+                    rule = rule_form.save(commit=False)
+                    rule.community_list = clist
+                    rule.rule_type = rule_type
+                    rule.save()
+                    if rule.rule_type == "name_contains":
+                        reset_name_contains_index_for_rule(rule)
 
                 return HttpResponseRedirect("")
     else:
@@ -161,7 +160,7 @@ def manage_list(request, email_or_name=None, acronym=None):
 
 @login_required
 def track_document(request, name, email_or_name=None, acronym=None):
-    doc = get_object_or_404(Document, docalias__name=name)
+    doc = get_object_or_404(Document, name=name)
 
     if request.method == "POST":
         try:
@@ -188,7 +187,7 @@ def track_document(request, name, email_or_name=None, acronym=None):
 
 @login_required
 def untrack_document(request, name, email_or_name=None, acronym=None):
-    doc = get_object_or_404(Document, docalias__name=name)
+    doc = get_object_or_404(Document, name=name)
     try:
         clist = lookup_community_list(request, email_or_name, acronym)
     except MultiplePersonError as err:

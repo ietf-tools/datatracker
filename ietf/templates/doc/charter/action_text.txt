@@ -1,4 +1,4 @@
-{% load ietf_filters %}{% autoescape off %}From: The IESG <iesg-secretary@ietf.org>
+{% load ietf_filters %}{% autoescape off %}From: {% if group.type_id == "rg" %}The IRTF <irtf-chair@irtf.org>{% else %}The IESG <iesg-secretary@ietf.org>{% endif %}
 To: {{ to }}{% if cc %}
 Cc: {{ cc }} {% endif %}
 Subject: {{ group.type.name }} Action: {{ action_type }} {{ group.name }} ({{ group.acronym }})

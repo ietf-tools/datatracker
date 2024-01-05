@@ -207,11 +207,12 @@ const interimRequest = (function() {
 
         toggleLocation: function () {
             if (this.checked) {
-                $(".location")
+                $(".location input, .location select")
                     .prop('disabled', false);
             } else {
-                $(".location")
-                    .prop('disabled', true);
+                $(".location input, .location select")
+                    .prop('disabled', true)
+                    .val('');
             }
         },
 

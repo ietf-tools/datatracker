@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2009-2022, All Rights Reserved
+# Copyright The IETF Trust 2009-2023, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -27,7 +27,7 @@ from django.utils.html import escape
 from ietf.community.models import CommunityList
 from ietf.community.utils import reset_name_contains_index_for_rule
 from ietf.doc.factories import WgDraftFactory, IndividualDraftFactory, CharterFactory, BallotDocEventFactory
-from ietf.doc.models import Document, DocAlias, DocEvent, State
+from ietf.doc.models import Document, DocEvent, State
 from ietf.doc.utils_charter import charter_name_for_group
 from ietf.group.admin import GroupForm as AdminGroupForm
 from ietf.group.factories import (GroupFactory, RoleFactory, GroupEventFactory, 
@@ -71,7 +71,7 @@ class GroupPagesTests(TestCase):
         self.assertContains(r, group.name)
         self.assertContains(r, escape(group.ad_role().person.name))
 
-        for t in ('rg','area','ag', 'rag', 'dir','review','team','program','iabasg','adm','rfcedtyp'): # See issue 5120
+        for t in ('rg','area','ag', 'rag', 'dir','review','team','program','iabasg','iabworkshop','adm','rfcedtyp'): # See issue 5120
             g = GroupFactory.create(type_id=t,state_id='active') 
             if t in ['dir','review']:
                 g.parent = GroupFactory.create(type_id='area',state_id='active')
@@ -87,7 +87,7 @@ class GroupPagesTests(TestCase):
         self.assertContains(r, "Directorate")
         self.assertContains(r, "AG")
 
-        for slug in GroupTypeName.objects.exclude(slug__in=['wg','rg','ag','rag','area','dir','review','team','program','adhoc','ise','adm','iabasg','rfcedtyp', 'edwg', 'edappr']).values_list('slug',flat=True):
+        for slug in GroupTypeName.objects.exclude(slug__in=['wg','rg','ag','rag','area','dir','review','team','program','adhoc','ise','adm','iabasg','iabworkshop','rfcedtyp', 'edwg', 'edappr']).values_list('slug',flat=True):
             with self.assertRaises(NoReverseMatch):
                 url=urlreverse('ietf.group.views.active_groups', kwargs=dict(group_type=slug))
 
@@ -117,8 +117,9 @@ class GroupPagesTests(TestCase):
 
         chair = Email.objects.filter(role__group=group, role__name="chair")[0]
 
-        with (Path(settings.CHARTER_PATH) / ("%s-%s.txt" % (group.charter.canonical_name(), group.charter.rev))).open("w") as f:
-            f.write("This is a charter.")
+        (
+            Path(settings.CHARTER_PATH) / f"{group.charter.name}-{group.charter.rev}.txt"
+         ).write_text("This is a charter.")
 
         url = urlreverse('ietf.group.views.wg_summary_area', kwargs=dict(group_type="wg"))
         r = self.client.get(url)
@@ -264,8 +265,9 @@ class GroupPagesTests(TestCase):
         group = CharterFactory().group
         draft = WgDraftFactory(group=group)
 
-        with (Path(settings.CHARTER_PATH) / ("%s-%s.txt" % (group.charter.canonical_name(), group.charter.rev))).open("w") as f:
-            f.write("This is a charter.")
+        (
+            Path(settings.CHARTER_PATH) / f"{group.charter.name}-{group.charter.rev}.txt"
+        ).write_text("This is a charter.")
 
         milestone = GroupMilestone.objects.create(
             group=group,
@@ -385,7 +387,6 @@ class GroupPagesTests(TestCase):
             type_id="slides",
         )
         doc.set_state(State.objects.get(type="slides", slug="active"))
-        DocAlias.objects.create(name=doc.name).docs.add(doc)
 
         for url in group_urlreverse_list(group, 'ietf.group.views.materials'):
             r = self.client.get(url)
@@ -668,8 +669,9 @@ class GroupEditTests(TestCase):
         self.assertTrue(len(q('form .is-invalid')) > 0)
         
         # edit info
-        with (Path(settings.CHARTER_PATH) / ("%s-%s.txt" % (group.charter.canonical_name(), group.charter.rev))).open("w") as f:
-            f.write("This is a charter.")
+        (
+            Path(settings.CHARTER_PATH) / f"{group.charter.name}-{group.charter.rev}.txt"
+        ).write_text("This is a charter.")
         area = group.parent
         ad = Person.objects.get(name="Areað Irector")
         state = GroupStateName.objects.get(slug="bof")
@@ -711,7 +713,9 @@ class GroupEditTests(TestCase):
         self.assertEqual(group.list_archive, "archive.mars")
         self.assertEqual(group.description, '')
 
-        self.assertTrue((Path(settings.CHARTER_PATH) / ("%s-%s.txt" % (group.charter.canonical_name(), group.charter.rev))).exists())
+        self.assertTrue(
+            (Path(settings.CHARTER_PATH) / f"{group.charter.name}-{group.charter.rev}.txt").exists()
+        )
         self.assertEqual(len(outbox), 2)
         self.assertTrue('Personnel change' in outbox[0]['Subject'])
         for prefix in ['ad1','ad2','aread','marschairman','marsdelegate']:
@@ -946,9 +950,87 @@ class GroupEditTests(TestCase):
             r = self.client.post(url, {
                 'description': 'Ignored description',
             })
-        self.assertEqual(r.status_code, 302)
+        self.assertEqual(r.status_code, 403)
         group = Group.objects.get(pk=group.pk)  # refresh
         self.assertEqual(group.description, 'Updated description')
+
+    def test_edit_parent(self):
+        group = GroupFactory.create(type_id='wg', parent=GroupFactory.create(type_id='area'))
+        chair = RoleFactory(group=group, name_id='chair').person
+        url = urlreverse('ietf.group.views.edit', kwargs=dict(group_type=group.type_id, acronym=group.acronym, action='edit'))
+
+        # parent is not shown to group chair
+        login_testing_unauthorized(self, chair.user.username, url)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q('form select[name=parent]')), 0)
+
+        # view ignores attempt to change parent
+        old_parent = group.parent
+        new_parent = GroupFactory(type_id='area')
+        self.assertNotEqual(new_parent.acronym, group.parent.acronym)
+        r = self.client.post(url, dict(
+            name=group.name,
+            acronym=group.acronym,
+            state=group.state_id,
+            parent=new_parent.pk))
+        self.assertEqual(r.status_code, 302)
+        group = Group.objects.get(pk=group.pk)
+        self.assertNotEqual(group.parent, new_parent)
+        self.assertEqual(group.parent, old_parent)
+
+        # parent is shown to AD and Secretariat
+        for priv_user in ('ad', 'secretary'):
+            self.client.logout()
+            login_testing_unauthorized(self, priv_user, url)
+            r = self.client.get(url)
+            self.assertEqual(r.status_code, 200)
+            q = PyQuery(r.content)
+            self.assertEqual(len(q('form select[name=parent]')), 1)
+
+            new_parent = GroupFactory(type_id='area')
+            self.assertNotEqual(new_parent.acronym, group.parent.acronym)
+            r = self.client.post(url, dict(
+                name=group.name,
+                acronym=group.acronym,
+                state=group.state_id,
+                parent=new_parent.pk))
+            self.assertEqual(r.status_code, 302)
+            group = Group.objects.get(pk=group.pk)
+            self.assertEqual(group.parent, new_parent)
+
+    def test_edit_parent_field(self):
+        group = GroupFactory.create(type_id='wg', parent=GroupFactory.create(type_id='area'))
+        chair = RoleFactory(group=group, name_id='chair').person
+        url = urlreverse('ietf.group.views.edit', kwargs=dict(group_type=group.type_id, acronym=group.acronym, action='edit', field='parent'))
+
+        # parent is not shown to group chair
+        login_testing_unauthorized(self, chair.user.username, url)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 403)
+
+        # chair is not allowed to change parent
+        new_parent = GroupFactory(type_id='area')
+        self.assertNotEqual(new_parent.acronym, group.parent.acronym)
+        r = self.client.post(url, dict(parent=new_parent.pk))
+        self.assertEqual(r.status_code, 403)
+
+        # parent is shown to AD and Secretariat
+        for priv_user in ('ad', 'secretary'):
+            self.client.logout()
+            login_testing_unauthorized(self, priv_user, url)
+            r = self.client.get(url)
+            self.assertEqual(r.status_code, 200)
+            q = PyQuery(r.content)
+            self.assertEqual(len(q('form select[name=parent]')), 1)
+
+            new_parent = GroupFactory(type_id='area')
+            self.assertNotEqual(new_parent.acronym, group.parent.acronym)
+            r = self.client.post(url, dict(parent=new_parent.pk))
+            self.assertEqual(r.status_code, 302)
+            group = Group.objects.get(pk=group.pk)
+            self.assertEqual(group.parent, new_parent)
 
     def test_conclude(self):
         group = GroupFactory(acronym="mars")

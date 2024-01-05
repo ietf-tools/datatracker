@@ -43,7 +43,7 @@
                             {% endifchanged %}
                         {% endif %}
                         <tbody>
-                            <tr class="bg-info-subtle">
+                            <tr class="table-info">
                                 <th scope="col" colspan="3">
                                     {% block intro_prefix %}IPR that was submitted by "{{ q }}" and{% endblock %}
                                     {% block related %}
@@ -54,7 +54,7 @@
                                                 is related to
                                                 {% for item in iprdocrels %}
                                                     {% if forloop.last and forloop.counter > 1 %}and{% endif %}
-                                                    {{ item.formatted_name|urlize_ietf_docs }} ("{{ item.document.document.title }}"){% if not forloop.last and forloop.counter > 1 %},{% endif %}
+                                                    {{ item.formatted_name|urlize_ietf_docs }}{% if item.document.title %} ("{{ item.document.title }}"){% endif %}{% if not forloop.last and forloop.counter > 1 %},{% endif %}
                                                 {% endfor %}
                                             {% endif %}
                                         {% endwith %}

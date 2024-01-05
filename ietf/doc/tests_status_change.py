@@ -14,8 +14,9 @@ from textwrap import wrap
 from django.conf import settings
 from django.urls import reverse as urlreverse
 
-from ietf.doc.factories import DocumentFactory, IndividualRfcFactory, WgRfcFactory, DocEventFactory
-from ietf.doc.models import ( Document, DocAlias, State, DocEvent,
+from ietf.doc.factories import ( DocumentFactory, IndividualRfcFactory,
+    WgRfcFactory, DocEventFactory, WgDraftFactory )
+from ietf.doc.models import ( Document, State, DocEvent,
     BallotPositionDocEvent, NewRevisionDocEvent, TelechatDocEvent, WriteupDocEvent )
 from ietf.doc.utils import create_ballot_if_not_open
 from ietf.doc.views_status_change import default_approval_text
@@ -74,7 +75,7 @@ class StatusChangeTests(TestCase):
         self.assertEqual(status_change.rev,'00')
         self.assertEqual(status_change.ad.name,'Areað Irector')
         self.assertEqual(status_change.notify,'ipu@ietf.org')
-        self.assertTrue(status_change.relateddocument_set.filter(relationship__slug='tois',target__docs__name='draft-ietf-random-thing'))
+        self.assertTrue(status_change.relateddocument_set.filter(relationship__slug='tois',target__name='rfc9999'))
 
         # Verify that it's possible to start a status change without a responsible ad.
         r = self.client.post(url,dict(
@@ -147,6 +148,21 @@ class StatusChangeTests(TestCase):
         self.assertTrue(doc.active_ballot())
         self.assertEqual(doc.latest_event(BallotPositionDocEvent, type="changed_ballot_position").pos_id,'yes')
 
+        # try to change to an AD-forbidden state
+        appr_sent_pk = str(State.objects.get(used=True, slug='appr-sent',type__slug='statchg').pk)
+        r = self.client.post(url, dict(new_state=appr_sent_pk, comment='xyzzy'))
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertTrue(q('form .invalid-feedback'))
+
+        # try again as secretariat
+        self.client.logout()
+        login_testing_unauthorized(self, 'secretary', url)
+        r = self.client.post(url, dict(new_state=appr_sent_pk, comment='xyzzy'))
+        self.assertEqual(r.status_code, 302)
+        doc = Document.objects.get(name='status-change-imaginary-mid-review')
+        self.assertEqual(doc.get_state('statchg').slug, 'appr-sent')
+
     def test_edit_notices(self):
         doc = Document.objects.get(name='status-change-imaginary-mid-review')
         url = urlreverse('ietf.doc.views_doc.edit_notify;status-change',kwargs=dict(name=doc.name))
@@ -169,8 +185,8 @@ class StatusChangeTests(TestCase):
         self.assertTrue(doc.latest_event(DocEvent,type="added_comment").desc.startswith('Notification list changed'))       
 
         # Some additional setup so there's something to put in a generated notify list
-        doc.relateddocument_set.create(target=DocAlias.objects.get(name='rfc9999'),relationship_id='tois')
-        doc.relateddocument_set.create(target=DocAlias.objects.get(name='rfc9998'),relationship_id='tohist')
+        doc.relateddocument_set.create(target=Document.objects.get(name='rfc9999'),relationship_id='tois')
+        doc.relateddocument_set.create(target=Document.objects.get(name='rfc9998'),relationship_id='tohist')
 
         # Ask the form to regenerate the list
         r = self.client.post(url,dict(regenerate_addresses="1"))
@@ -273,8 +289,8 @@ class StatusChangeTests(TestCase):
         login_testing_unauthorized(self, "ad", url)
 
         # additional setup
-        doc.relateddocument_set.create(target=DocAlias.objects.get(name='rfc9999'),relationship_id='tois')
-        doc.relateddocument_set.create(target=DocAlias.objects.get(name='rfc9998'),relationship_id='tohist')
+        doc.relateddocument_set.create(target=Document.objects.get(name='rfc9999'),relationship_id='tois')
+        doc.relateddocument_set.create(target=Document.objects.get(name='rfc9998'),relationship_id='tohist')
         doc.ad = Person.objects.get(name='Ad No2')
         doc.save_with_history([DocEvent.objects.create(doc=doc, rev=doc.rev, type="changed_document", by=Person.objects.get(user__username="secretary"), desc="Test")])
         
@@ -329,8 +345,8 @@ class StatusChangeTests(TestCase):
         login_testing_unauthorized(self, "secretary", url)
         
         # Some additional setup
-        doc.relateddocument_set.create(target=DocAlias.objects.get(name='rfc9999'),relationship_id='tois')
-        doc.relateddocument_set.create(target=DocAlias.objects.get(name='rfc9998'),relationship_id='tohist')
+        doc.relateddocument_set.create(target=Document.objects.get(name='rfc9999'),relationship_id='tois')
+        doc.relateddocument_set.create(target=Document.objects.get(name='rfc9998'),relationship_id='tohist')
         create_ballot_if_not_open(None, doc, Person.objects.get(user__username="secretary"), "statchg")
         doc.set_state(State.objects.get(slug='appr-pend',type='statchg'))
 
@@ -370,10 +386,10 @@ class StatusChangeTests(TestCase):
         url = urlreverse('ietf.doc.views_status_change.change_state',kwargs=dict(name=doc.name))
 
         # Add some status change related documents
-        doc.relateddocument_set.create(target=DocAlias.objects.get(name='rfc9999'),relationship_id='tois')
-        doc.relateddocument_set.create(target=DocAlias.objects.get(name='rfc9998'),relationship_id='tohist')
+        doc.relateddocument_set.create(target=Document.objects.get(name='rfc9999'),relationship_id='tois')
+        doc.relateddocument_set.create(target=Document.objects.get(name='rfc9998'),relationship_id='tohist')
         # And a non-status change related document
-        doc.relateddocument_set.create(target=DocAlias.objects.get(name='rfc14'),relationship_id='updates')
+        doc.relateddocument_set.create(target=Document.objects.get(name='rfc14'),relationship_id='updates')
 
         login_testing_unauthorized(self, role, url)
         empty_outbox()
@@ -395,9 +411,9 @@ class StatusChangeTests(TestCase):
             self.assertTrue(notification['Subject'].startswith('Approved:'))
             notification_text = get_payload_text(notification)
             self.assertIn('The AD has approved changing the status', notification_text)
-            self.assertIn(DocAlias.objects.get(name='rfc9999').document.canonical_name(), notification_text)
-            self.assertIn(DocAlias.objects.get(name='rfc9998').document.canonical_name(), notification_text)
-            self.assertNotIn(DocAlias.objects.get(name='rfc14').document.canonical_name(), notification_text)
+            self.assertIn(Document.objects.get(name='rfc9999').name, notification_text)
+            self.assertIn(Document.objects.get(name='rfc9998').name, notification_text)
+            self.assertNotIn(Document.objects.get(name='rfc14').name, notification_text)
             self.assertNotIn('No value found for', notification_text)  # make sure all interpolation values were set
         else:
             self.assertEqual(len(outbox), 0)
@@ -417,8 +433,8 @@ class StatusChangeTests(TestCase):
         login_testing_unauthorized(self, "secretary", url)
         
         # Some additional setup
-        doc.relateddocument_set.create(target=DocAlias.objects.get(name='rfc9999'),relationship_id='tois')
-        doc.relateddocument_set.create(target=DocAlias.objects.get(name='rfc9998'),relationship_id='tohist')
+        doc.relateddocument_set.create(target=Document.objects.get(name='rfc9999'),relationship_id='tois')
+        doc.relateddocument_set.create(target=Document.objects.get(name='rfc9998'),relationship_id='tohist')
 
         # get
         r = self.client.get(url)
@@ -471,9 +487,16 @@ class StatusChangeTests(TestCase):
         
     def setUp(self):
         super().setUp()
-        IndividualRfcFactory(alias2__name='rfc14',name='draft-was-never-issued',std_level_id='unkn')
-        WgRfcFactory(alias2__name='rfc9999',name='draft-ietf-random-thing',std_level_id='ps')
-        WgRfcFactory(alias2__name='rfc9998',name='draft-ietf-random-other-thing',std_level_id='inf')
+        IndividualRfcFactory(rfc_number=14,std_level_id='unkn') # draft was never issued
+
+        rfc = WgRfcFactory(rfc_number=9999,std_level_id='ps')
+        draft = WgDraftFactory(name='draft-ietf-random-thing')
+        draft.relateddocument_set.create(relationship_id="became_rfc", target=rfc)
+
+        rfc = WgRfcFactory(rfc_number=9998,std_level_id='inf')
+        draft = WgDraftFactory(name='draft-ietf-random-other-thing')
+        draft.relateddocument_set.create(relationship_id="became_rfc", target=rfc)
+
         DocumentFactory(type_id='statchg',name='status-change-imaginary-mid-review',notify='notify@example.org')
 
 class StatusChangeSubmitTests(TestCase):
@@ -493,7 +516,7 @@ class StatusChangeSubmitTests(TestCase):
         # Right now, nothing to test - we let people put whatever the web browser will let them put into that textbox
 
         # sane post using textbox
-        path = os.path.join(settings.STATUS_CHANGE_PATH, '%s-%s.txt' % (doc.canonical_name(), doc.rev))
+        path = os.path.join(settings.STATUS_CHANGE_PATH, '%s-%s.txt' % (doc.name, doc.rev))
         self.assertEqual(doc.rev,'00')
         self.assertFalse(os.path.exists(path))
         r = self.client.post(url,dict(content="Some initial review text\n",submit_response="1"))
@@ -512,7 +535,7 @@ class StatusChangeSubmitTests(TestCase):
         # A little additional setup 
         # doc.rev is u'00' per the test setup - double-checking that here - if it fails, the breakage is in setUp
         self.assertEqual(doc.rev,'00')
-        path = os.path.join(settings.STATUS_CHANGE_PATH, '%s-%s.txt' % (doc.canonical_name(), doc.rev))
+        path = os.path.join(settings.STATUS_CHANGE_PATH, '%s-%s.txt' % (doc.name, doc.rev))
         with io.open(path,'w') as f:
             f.write('This is the old proposal.')
             f.close()
@@ -544,7 +567,7 @@ class StatusChangeSubmitTests(TestCase):
         self.assertEqual(r.status_code, 302)
         doc = Document.objects.get(name='status-change-imaginary-mid-review')
         self.assertEqual(doc.rev,'01')
-        path = os.path.join(settings.STATUS_CHANGE_PATH, '%s-%s.txt' % (doc.canonical_name(), doc.rev))
+        path = os.path.join(settings.STATUS_CHANGE_PATH, '%s-%s.txt' % (doc.name, doc.rev))
         with io.open(path) as f:
             self.assertEqual(f.read(),"This is a new proposal.")
             f.close()

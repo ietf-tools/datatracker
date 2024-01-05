@@ -79,11 +79,18 @@ class Submission(models.Model):
         return Document.objects.filter(name=self.name).first()
 
     def latest_checks(self):
-        checks = [ self.checks.filter(checker=c).latest('time') for c in self.checks.values_list('checker', flat=True).distinct() ]
-        return checks
+        """Latest check of each type, excluding any that did not apply
+        
+        Ignores any checks where passed is None
+        """
+        latest_for_each_checker = [
+            self.checks.filter(checker=c).latest("time")
+            for c in self.checks.values_list("checker", flat=True).distinct()
+        ]
+        return [check for check in latest_for_each_checker if check.passed is not None]
 
     def has_yang(self):
-        return any ( [ c.checker=='yang validation' and c.passed is not None for c in self.latest_checks()] )
+        return any(c.checker == "yang validation" for c in self.latest_checks())
 
     @property
     def replaces_names(self):
@@ -108,14 +115,14 @@ class Submission(models.Model):
     @property
     def active_wg_drafts_replaced(self):
         return Document.objects.filter(
-            docalias__name__in=self.replaces.split(','),
+            name__in=self.replaces.split(','),
             group__in=Group.objects.active_wgs()
         )
 
     @property
     def closed_wg_drafts_replaced(self):
         return Document.objects.filter(
-            docalias__name__in=self.replaces.split(','),
+            name__in=self.replaces.split(','),
             group__in=Group.objects.closed_wgs()
         )
 

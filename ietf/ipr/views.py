@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2007-2022, All Rights Reserved
+# Copyright The IETF Trust 2007-2023, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -10,7 +10,7 @@ from django.contrib import messages
 from django.db.models import Q
 from django.forms.models import inlineformset_factory, model_to_dict
 from django.forms.formsets import formset_factory
-from django.http import HttpResponse, Http404, HttpResponseRedirect
+from django.http import HttpResponse, Http404, HttpResponseRedirect, HttpResponseBadRequest
 from django.shortcuts import render, get_object_or_404, redirect
 from django.template.loader import render_to_string
 from django.urls import reverse as urlreverse
@@ -18,7 +18,7 @@ from django.utils.html import escape
 
 import debug                            # pyflakes:ignore
 
-from ietf.doc.models import DocAlias
+from ietf.doc.models import Document
 from ietf.group.models import Role, Group
 from ietf.ietfauth.utils import role_required, has_role
 from ietf.ipr.mail import (message_from_message, get_reply_to, get_update_submitter_emails)
@@ -38,7 +38,7 @@ from ietf.message.models import Message
 from ietf.message.utils import infer_message
 from ietf.name.models import IprLicenseTypeName
 from ietf.person.models import Person
-from ietf.secr.utils.document import get_rfc_num, is_draft
+from ietf.utils import log
 from ietf.utils.draft_search import normalize_draftname
 from ietf.utils.mail import send_mail, send_mail_message
 from ietf.utils.response import permission_denied
@@ -69,12 +69,15 @@ def get_document_emails(ipr):
     has been posted"""
     messages = []
     for rel in ipr.iprdocrel_set.all():
-        doc = rel.document.document
+        doc = rel.document
 
-        if is_draft(doc):
+        if doc.type_id=="draft":
             doc_info = 'Internet-Draft entitled "{}" ({})'.format(doc.title,doc.name)
+        elif doc.type_id=="rfc":
+            doc_info = 'RFC entitled "{}" (RFC{})'.format(doc.title, doc.rfc_number)
         else:
-            doc_info = 'RFC entitled "{}" (RFC{})'.format(doc.title,get_rfc_num(doc))
+            log.unreachable("2023-08-15")
+            return ""
 
         addrs = gather_address_lists('ipr_posted_on_doc',doc=doc).as_strings(compact=False)
 
@@ -269,7 +272,7 @@ def add_email(request, id):
 @role_required('Secretariat',)
 def admin(request, state):
     """Administrative disclosure listing.  For non-posted disclosures"""
-    states = IprDisclosureStateName.objects.filter(slug__in=[state, "rejected"] if state == "removed" else [state])
+    states = IprDisclosureStateName.objects.filter(slug__in=[state, "rejected", "removed_objfalse"] if state == "removed" else [state])
     if not states:
         raise Http404
 
@@ -629,11 +632,16 @@ def post(request, id):
     
 def search(request):
     search_type = request.GET.get("submit")
+    if search_type and "\x00" in search_type:
+        return HttpResponseBadRequest("Null characters are not allowed")
+
     # query field
     q = ''
     # legacy support
     if not search_type and request.GET.get("option", None) == "document_search":
         docname = request.GET.get("document_search", "")
+        if docname and "\x00" in docname:
+            return HttpResponseBadRequest("Null characters are not allowed")
         if docname.startswith("draft-"):
             search_type = "draft"
             q = docname
@@ -643,18 +651,24 @@ def search(request):
     if search_type:
         form = SearchForm(request.GET)
         docid = request.GET.get("id") or request.GET.get("id_document_tag") or ""
+        if docid and "\x00" in docid:
+            return HttpResponseBadRequest("Null characters are not allowed")
         docs = doc = None
         iprs = []
         related_iprs = []
 
         # set states
-        states = request.GET.getlist('state',('posted','removed'))
+        states = request.GET.getlist('state',settings.PUBLISH_IPR_STATES)
+        if any("\x00" in state for state in states if state):
+            return HttpResponseBadRequest("Null characters are not allowed")
         if states == ['all']:
             states = IprDisclosureStateName.objects.values_list('slug',flat=True)
         
         # get query field
         if request.GET.get(search_type):
             q = request.GET.get(search_type)
+            if q and "\x00" in q:
+                return HttpResponseBadRequest("Null characters are not allowed")
 
         if q or docid:
             # Search by RFC number or draft-identifier
@@ -663,18 +677,18 @@ def search(request):
                 doc = q
 
                 if docid:
-                    start = DocAlias.objects.filter(name__iexact=docid)
+                    start = Document.objects.filter(name__iexact=docid)
                 else:
                     if search_type == "draft":
                         q = normalize_draftname(q)
-                        start = DocAlias.objects.filter(name__icontains=q, name__startswith="draft")
+                        start = Document.objects.filter(name__icontains=q, name__startswith="draft")
                     elif search_type == "rfc":
-                        start = DocAlias.objects.filter(name="rfc%s" % q.lstrip("0"))
+                        start = Document.objects.filter(name="rfc%s" % q.lstrip("0"))
                 
                 # one match
                 if len(start) == 1:
                     first = start[0]
-                    doc = first.document
+                    doc = first
                     docs = related_docs(first)
                     iprs = iprs_from_docs(docs,states=states)
                     template = "ipr/search_doc_result.html"
@@ -706,27 +720,27 @@ def search(request):
             # Search by wg acronym
             # Document list with IPRs
             elif search_type == "group":
-                docs = list(DocAlias.objects.filter(docs__group=q))
+                docs = list(Document.objects.filter(group=q))
                 related = []
                 for doc in docs:
                     doc.product_of_this_wg = True
                     related += related_docs(doc)
                 iprs = iprs_from_docs(list(set(docs+related)),states=states)
-                docs = [ doc for doc in docs if doc.document.ipr() ]
-                docs = sorted(docs, key=lambda x: max([ipr.disclosure.time for ipr in x.document.ipr()]), reverse=True)
+                docs = [ doc for doc in docs if doc.ipr() ]
+                docs = sorted(docs, key=lambda x: max([ipr.disclosure.time for ipr in x.ipr()]), reverse=True)
                 template = "ipr/search_wg_result.html"
                 q = Group.objects.get(id=q).acronym     # make acronym for use in template
 
             # Search by rfc and id title
             # Document list with IPRs
             elif search_type == "doctitle":
-                docs = list(DocAlias.objects.filter(docs__title__icontains=q))
+                docs = list(Document.objects.filter(title__icontains=q))
                 related = []
                 for doc in docs:
                     related += related_docs(doc)
                 iprs = iprs_from_docs(list(set(docs+related)),states=states)
-                docs = [ doc for doc in docs if doc.document.ipr() ]
-                docs = sorted(docs, key=lambda x: max([ipr.disclosure.time for ipr in x.document.ipr()]), reverse=True)
+                docs = [ doc for doc in docs if doc.ipr() ]
+                docs = sorted(docs, key=lambda x: max([ipr.disclosure.time for ipr in x.ipr()]), reverse=True)
                 template = "ipr/search_doctitle_result.html"
 
             # Search by title of IPR disclosure
@@ -778,7 +792,7 @@ def show(request, id):
     """View of individual declaration"""
     ipr = get_object_or_404(IprDisclosureBase, id=id).get_child()
     if not has_role(request.user, 'Secretariat'):
-        if ipr.state.slug == 'removed':
+        if ipr.state.slug in ['removed', 'removed_objfalse']:
             return render(request, "ipr/removed.html", {
                 'ipr': ipr
             })
@@ -801,10 +815,10 @@ def show(request, id):
 
 def showlist(request):
     """List all disclosures by type, posted only"""
-    generic = GenericIprDisclosure.objects.filter(state__in=('posted','removed')).prefetch_related('relatedipr_source_set__target','relatedipr_target_set__source').order_by('-time')
-    specific = HolderIprDisclosure.objects.filter(state__in=('posted','removed')).prefetch_related('relatedipr_source_set__target','relatedipr_target_set__source').order_by('-time')
-    thirdpty = ThirdPartyIprDisclosure.objects.filter(state__in=('posted','removed')).prefetch_related('relatedipr_source_set__target','relatedipr_target_set__source').order_by('-time')
-    nondocspecific = NonDocSpecificIprDisclosure.objects.filter(state__in=('posted','removed')).prefetch_related('relatedipr_source_set__target','relatedipr_target_set__source').order_by('-time')
+    generic = GenericIprDisclosure.objects.filter(state__in=settings.PUBLISH_IPR_STATES).prefetch_related('relatedipr_source_set__target','relatedipr_target_set__source').order_by('-time')
+    specific = HolderIprDisclosure.objects.filter(state__in=settings.PUBLISH_IPR_STATES).prefetch_related('relatedipr_source_set__target','relatedipr_target_set__source').order_by('-time')
+    thirdpty = ThirdPartyIprDisclosure.objects.filter(state__in=settings.PUBLISH_IPR_STATES).prefetch_related('relatedipr_source_set__target','relatedipr_target_set__source').order_by('-time')
+    nondocspecific = NonDocSpecificIprDisclosure.objects.filter(state__in=settings.PUBLISH_IPR_STATES).prefetch_related('relatedipr_source_set__target','relatedipr_target_set__source').order_by('-time')
     
     # combine nondocspecific with generic and re-sort
     generic = itertools.chain(generic,nondocspecific)

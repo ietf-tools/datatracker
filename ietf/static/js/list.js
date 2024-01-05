@@ -1,16 +1,22 @@
-import * as List from "list.js";
-
-var dummy = new List();
+import {
+    default as List
+} from "list.js";
 
 function text_sort(a, b, options) {
+
+    function prep(e, options) {
+        return $($.parseHTML(e.values()[options.valueName]))
+            .text()
+            .trim()
+            .replaceAll(/\s+/g, ' ');
+    }
+
     // sort by text content
-    return dummy.utils.naturalSort.caseInsensitive($($.parseHTML(a.values()[options.valueName]))
-        .text()
-        .trim()
-        .replaceAll(/\s+/g, ' '), $($.parseHTML(b.values()[options.valueName]))
-        .text()
-        .trim()
-        .replaceAll(/\s+/g, ' '));
+    return prep(a, options).localeCompare(prep(b, options), "en", {
+        sensitivity: "base",
+        ignorePunctuation: true,
+        numeric: true
+    });
 }
 
 function replace_with_internal(table, internal_table, i) {
@@ -20,7 +26,7 @@ function replace_with_internal(table, internal_table, i) {
         .replaceWith(internal_table[i]
             .children("table")
             .children("tbody")
-            .clone());
+            .clone(true));
 }
 
 function field_magic(i, e, fields) {
@@ -160,10 +166,10 @@ $(document)
                         // create the internal table and add list.js to them
                         var thead = $(this)
                             .siblings("thead:first")
-                            .clone();
+                            .clone(true);
 
                         var tbody = $(this)
-                            .clone();
+                            .clone(true);
 
                         var tbody_rows = $(tbody)
                             .find("tr")
@@ -178,7 +184,7 @@ $(document)
 
                         var parent = $(table)
                             .parent()
-                            .clone();
+                            .clone(true);
 
                         $(parent)
                             .children("table")
@@ -204,12 +210,12 @@ $(document)
                         }
 
                         let newlist = new List(hook, pagination ? {
-                                valueNames: fields,
-                                pagination: pagination,
-                                page: items_per_page
-                            } : {
-                                valueNames: fields
-                            });
+                            valueNames: fields,
+                            pagination: pagination,
+                            page: items_per_page
+                        } : {
+                            valueNames: fields
+                        });
                         // override search module with a patched version
                         // see https://github.com/javve/list.js/issues/699
                         // TODO: check if this is still needed if list.js ever sees an update
@@ -220,7 +226,7 @@ $(document)
                 if (enable_search) {
                     reset_search.on("click", function () {
                         search_field.val("");
-                        $.each(list_instance, (i, e) => {
+                        $.each(list_instance, (_, e) => {
                             e.search();
                         });
                     });
@@ -229,7 +235,7 @@ $(document)
                         if (event.key == "Escape") {
                             reset_search.trigger("click");
                         } else {
-                            $.each(list_instance, (i, e) => {
+                            $.each(list_instance, (_, e) => {
                                 e.search($(this)
                                     .val());
                             });
@@ -242,15 +248,19 @@ $(document)
                     .on("click", function () {
                         var order = $(this)
                             .hasClass("asc") ? "desc" : "asc";
-                        $.each(list_instance, (i, e) => {
+                        $.each(list_instance, (_, e) => {
                             e.sort($(this)
-                                .attr("data-sort"), { order: order, sortFunction: text_sort });
+                                .attr("data-sort"), {
+                                    order: order,
+                                    sortFunction: text_sort
+                                });
                         });
                     });
 
                 $.each(list_instance, (i, e) => {
                     e.on("sortComplete", function () {
                         replace_with_internal(table, internal_table, i);
+                        $(table).find("[data-bs-original-title]").tooltip();
                         if (i == list_instance.length - 1) {
                             $(table)
                                 .find("thead:first tr")
@@ -265,6 +275,9 @@ $(document)
 
                                 });
                         }
+                    });
+                    e.on("searchComplete", function () {
+                        replace_with_internal(table, internal_table, i);
                     });
                 });
 
@@ -283,8 +296,11 @@ $(document)
                     if (presort_col) {
                         const order = presort_col.attr("data-default-sort");
                         if (order === "asc" || order === "desc") {
-                            $.each(list_instance, (i, e) => {
-                                e.sort(presort_col.attr("data-sort"), { order: order, sortFunction: text_sort });
+                            $.each(list_instance, (_, e) => {
+                                e.sort(presort_col.attr("data-sort"), {
+                                    order: order,
+                                    sortFunction: text_sort
+                                });
                             });
                         }
                     }

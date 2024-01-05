@@ -11,6 +11,7 @@ from ietf.name.models import ReviewTypeName, ReviewResultName
 class ReviewTeamSettingsFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = ReviewTeamSettings
+        skip_postgeneration_save = True
 
     group = factory.SubFactory('ietf.group.factories.GroupFactory',type_id='review')
     reviewer_queue_policy_id = 'RotateAlphabetically'

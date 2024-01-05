@@ -2,9 +2,6 @@
 {# Copyright The IETF Trust 2015-2020, All Rights Reserved #}
 {% load origin static %}
 {% block subtitle %}- Administration{% endblock %}
-{% block pagehead %}
-    <link rel="stylesheet" href="{% static "ietf/css/list.css" %}">
-{% endblock %}
 {% block nomcom_content %}
     {% origin %}
     <h2 class="mt-3">Nomination status</h2>
@@ -251,7 +248,4 @@
             {% endif %}
         {% endif %}
     {% endif %}
-{% endblock %}
-{% block js %}
-    <script src="{% static "ietf/js/list.js" %}"></script>
 {% endblock %}
