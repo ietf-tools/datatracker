@@ -287,7 +287,8 @@ def document_main(request, name, rev=None, document_html=False):
 
         presentations = doc.future_presentations()
 
-        augment_docs_and_user_with_user_info([doc], request.user)
+        if request.user.is_authenticated:
+            augment_docs_and_person_with_person_info([doc], request.user.person)
 
         exp_comment = doc.latest_event(IanaExpertDocEvent,type="comment")
         iana_experts_comment = exp_comment and exp_comment.desc
