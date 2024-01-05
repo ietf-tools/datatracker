@@ -55,7 +55,7 @@
     "@parcel/transformer-inline-string": "2.10.3",
     "@parcel/transformer-sass": "2.10.3",
     "@rollup/pluginutils": "5.1.0",
-    "@vitejs/plugin-vue": "5.0.2",
+    "@vitejs/plugin-vue": "4.5.0",
     "browserlist": "latest",
     "c8": "9.0.0",
     "eslint": "8.56.0",
@@ -72,7 +72,7 @@
     "pug": "3.0.2",
     "sass": "1.69.7",
     "seedrandom": "3.0.5",
-    "vite": "5.0.10"
+    "vite": "4.5.0"
   },
   "targets": {
     "ietf": {
