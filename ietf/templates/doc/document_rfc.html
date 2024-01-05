@@ -15,7 +15,15 @@
     <meta name="description"
           content="{{ doc.title }} (RFC {{ doc.rfc_number }}, {{ doc.pub_date|date:'F Y' }}{% if obsoleted_by %}; obsoleted by {% for rel in obsoleted_by %}{{ rel.source.name|prettystdname}}{% if not forloop.last%}, {% endif %}{% endfor %}{% endif %})">
 {% endblock %}
-{% block morecss %}.inline { display: inline; }{% endblock %}
+{% block morecss %}
+    .rfcmarkup :is(h1, h2, h3, h4, h5, h6),
+    .rfcmarkup :is(.h1, .h2, .h3, .h4, .h5, .h6) {
+        font-weight: bold;
+        font-size: 1em;
+    }
+    .rfcmarkup .newpage { margin-top: -1.5em; }
+    .rfcmarkup .grey, hr { opacity: .25; }
+{% endblock %}
 {% block title %}
         RFC {{ doc.rfc_number }} - {{ doc.title }}
 {% endblock %}
@@ -155,8 +163,9 @@
             <div class="card-header">
                     RFC {{ doc.rfc_number }}
             </div>
-            <div class="card-body">
-                <pre>{{ content|sanitize|safe|default:"(Unavailable)" }}</pre>
+                <div class="card-body rfcmarkup">
+                    <!-- [html-validate-disable-block attr-quotes, void-style, element-permitted-content, heading-level, no-dup-id, valid-id -- FIXME: rfcmarkup/rfc2html generates HTML with issues] -->
+                    {{ content|safe|default:"(Unavailable)" }}
             </div>
         </div>
         {% if split_content %}
