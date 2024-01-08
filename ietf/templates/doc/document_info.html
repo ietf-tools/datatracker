@@ -1,4 +1,4 @@
-{# Copyright The IETF Trust 2016-2020, All Rights Reserved #}
+{# Copyright The IETF Trust 2016-2023, All Rights Reserved #}
 {% load origin %}
 {% load static %}
 {% load ietf_filters %}
@@ -60,8 +60,8 @@
                     </div>
                 {% endif %}
             {% else %}
-                {% if snapshot and doc.doc.became_rfc %} 
-                   <div{% if document_html %} class="alert alert-warning small p-2 mt-2"{% endif %}>This is an older version of an Internet-Draft that was ultimately published as <a href="{% if document_html %}{% url 'ietf.doc.views_doc.document_html' name=doc.doc.became_rfc.name %}{% else %}{% url 'ietf.doc.views_doc.document_main' name=doc.doc.became_rfc.name %}{% endif %}">{{doc.doc.became_rfc.name|prettystdname}}</a>.</div>
+                {% if doc.became_rfc %} 
+                   <div{% if document_html %} class="alert alert-warning small"{% endif %}>This is an older version of an Internet-Draft that was ultimately published as <a href="{% if document_html %}{% url 'ietf.doc.views_doc.document_html' name=doc.became_rfc.name %}{% else %}{% url 'ietf.doc.views_doc.document_main' name=doc.became_rfc.name %}{% endif %}">{{doc.became_rfc.name|prettystdname}}</a>.</div>
                 {% elif snapshot and doc.rev != latest_rev  %}
                     <div{% if document_html %} class="alert alert-warning small p-2 mt-2"{% endif %}>This is an older version of an Internet-Draft whose latest revision state is "{{ doc.doc.get_state }}".</div>
                  {% else %}
@@ -70,7 +70,7 @@
                     {% if resurrected_by %}- resurrect requested by {{ resurrected_by }}{% endif %}
                 {% endif %}
             {% endif %}
-            {% if doc.get_state_slug != "active" and doc.type_id != "rfc" %}
+            {% if doc.get_state_slug != "active" and doc.get_state_slug != "rfc" and doc.type_id != "rfc" %}
                 <div class="badge rounded-pill text-bg-warning{% if not document_html %} float-end{% endif %}">
                     Expired &amp; archived
                 </div>

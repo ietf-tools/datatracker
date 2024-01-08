@@ -165,7 +165,7 @@
                 {% else %}
                     <div class="rfcmarkup">
                         <br class="noprint">
-                        <!-- [html-validate-disable-block attr-quotes, void-style, element-permitted-content, heading-level -- FIXME: rfcmarkup/rfc2html generates HTML with issues] -->
+                        <!-- [html-validate-disable-block attr-quotes, void-style, element-permitted-content, heading-level, no-dup-id, valid-id -- FIXME: rfcmarkup/rfc2html generates HTML with issues] -->
                         {{ doc.htmlized|default:"Generation of htmlized text failed"|safe }}
                     </div>
                 {% endif %}

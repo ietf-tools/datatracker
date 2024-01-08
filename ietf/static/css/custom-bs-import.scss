@@ -46,6 +46,9 @@ $h4-font-size: $font-size-base * 1.4;
 $h5-font-size: $font-size-base * 1.2;
 $h6-font-size: $font-size-base;
 
+// Default is gray-800, which is the same as the range slider background.
+$light-bg-subtle-dark: mix($gray-800, $black);
+
 @import "bootstrap/scss/maps";
 @import "bootstrap/scss/mixins";
 @import "bootstrap/scss/utilities";

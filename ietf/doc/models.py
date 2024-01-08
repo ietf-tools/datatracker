@@ -634,6 +634,9 @@ class DocumentInfo(models.Model):
                 )
             except AssertionError:
                 pdf = None
+            except Exception as e:
+                log.log('weasyprint failed:'+str(e))
+                raise
             if pdf:
                 cache.set(cache_key, pdf, settings.PDFIZER_CACHE_TIME)
         return pdf

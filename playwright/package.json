@@ -7,17 +7,17 @@
     "test:debug": "playwright test --debug"
   },
   "devDependencies": {
-    "@playwright/test": "1.39.0",
-    "eslint": "8.53.0",
+    "@playwright/test": "1.40.1",
+    "eslint": "8.56.0",
     "eslint-config-standard": "17.1.0",
-    "eslint-plugin-import": "2.29.0",
-    "eslint-plugin-n": "16.3.1",
+    "eslint-plugin-import": "2.29.1",
+    "eslint-plugin-n": "16.6.1",
     "eslint-plugin-node": "11.1.0",
     "eslint-plugin-promise": "6.1.1",
-    "npm-check-updates": "16.14.6"
+    "npm-check-updates": "16.14.12"
   },
   "dependencies": {
-    "@faker-js/faker": "8.2.0",
+    "@faker-js/faker": "8.3.1",
     "lodash": "4.17.21",
     "lodash-es": "4.17.21",
     "luxon": "3.4.4",

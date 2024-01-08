@@ -471,11 +471,11 @@ def ad_workload(request):
             state = doc_state(doc)
 
             state_events = doc.docevent_set.filter(
-                Q(type="started_iesg_process")
-                | Q(type="changed_state")
-                | Q(type="published_rfc")
-                | Q(type="closed_ballot"),
-            ).order_by("-time")
+                type__in=["started_iesg_process", "changed_state", "closed_ballot"]
+            )
+            if doc.became_rfc():
+                state_events = state_events | doc.became_rfc().docevent_set.filter(type="published_rfc")
+            state_events = state_events.order_by("-time")
 
             # compute state history for drafts
             last = now
@@ -591,7 +591,7 @@ def docs_for_ad(request, name):
     if not ad:
         raise Http404
 
-    results, meta = prepare_document_table(request, Document.objects.filter(ad=ad))
+    results, meta = prepare_document_table(request, Document.objects.filter(ad=ad), max_results=500)
     results.sort(key=lambda d: sort_key(d))
     del meta["headers"][-1]
 
@@ -611,6 +611,7 @@ def docs_for_ad(request, name):
             and (
                 r.get_state_slug("draft-iesg") == "dead"
                 or r.get_state_slug("draft") == "repl"
+                or r.get_state_slug("draft") == "rfc"
             )
         )
     ]
