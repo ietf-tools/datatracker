@@ -303,7 +303,6 @@ AD_WORKLOAD = {
         # "defer",  # probably not a useful state to show, since it's rare
         "approved",
         "ann",
-        "expired",
     ],
     "rfc": [
         "rfcqueue",
