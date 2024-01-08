@@ -2,7 +2,7 @@
 {% load origin %}
 {% load ietf_filters %}
 {% origin %}
-{% if doc.type_id == "rfc" %}{{doc.std_level.slug}}{{doc.stream.slug}}
+{% if doc.type_id == "rfc" %}
     {% if doc.stream.slug != "ietf" and doc.std_level.slug|default:"unk" not in "bcp,ds,ps,std"|split:"," %}
         <div class="alert alert-warning {% if document_html %}small p-2 mt-2{% endif %}" role="alert">
             This RFC was published on the {{ doc.stream.desc }} stream.
