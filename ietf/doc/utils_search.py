@@ -199,7 +199,7 @@ def prepare_document_table(request, docs, query=None, max_results=200):
         docs = docs[:max_results]
 
     fill_in_document_table_attributes(docs)
-    if request.user.is_authenticated:
+    if request.user.is_authenticated and hasattr(request.user, "person"):
         augment_docs_and_person_with_person_info(docs, request.user.person)
     augment_docs_with_related_docs_info(docs)
 
