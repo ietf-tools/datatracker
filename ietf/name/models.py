@@ -101,7 +101,7 @@ class DraftSubmissionStateName(NameModel):
     """Uploaded, Awaiting Submitter Authentication, Awaiting Approval from
     Previous Version Authors, Awaiting Initial Version Approval, Awaiting
     Manual Post, Cancelled, Posted"""
-    next_states = models.ManyToManyField('DraftSubmissionStateName', related_name="previous_states", blank=True)
+    next_states = models.ManyToManyField('name.DraftSubmissionStateName', related_name="previous_states", blank=True)
 class RoomResourceName(NameModel):
     "Room resources: Audio Stream, Meetecho, . . ."
 class IprDisclosureStateName(NameModel):
