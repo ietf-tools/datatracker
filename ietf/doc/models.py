@@ -83,7 +83,7 @@ class State(models.Model):
     desc = models.TextField(blank=True)
     order = models.IntegerField(default=0)
 
-    next_states = models.ManyToManyField('State', related_name="previous_states", blank=True)
+    next_states = models.ManyToManyField('doc.State', related_name="previous_states", blank=True)
 
     def __str__(self):
         return self.name
