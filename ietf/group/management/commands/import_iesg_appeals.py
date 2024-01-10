@@ -7,6 +7,7 @@ import subprocess
 import tempfile
 
 from pathlib import Path
+import dateutil
 
 from django.conf import settings
 from django.core.management import BaseCommand
@@ -141,6 +142,108 @@ class Command(BaseCommand):
         assert len(titles) == len(dates)
         assert len(titles) == len(parts)
 
+        part_times = dict()
+        part_times["klensin-2023-08-15.txt"] = "2023-08-15 15:03:55 -0400"
+        part_times["response-to-klensin-2023-08-15.txt"] = "2023-08-24 18:54:13 +0300"
+        part_times["hardie-frindell-2023-07-19.txt"] = "2023-07-19 07:17:16PDT"
+        part_times[
+            "response-to-hardie-frindell-2023-07-19.txt"
+        ] = "2023-08-15 11:58:26PDT"
+        part_times["mcsweeney-2020-07-08.txt"] = "2020-07-08 14:45:00 -0400"
+        part_times["response-to-mcsweeney-2020-07-08.pdf"] = "2020-07-28 12:54:04 -0000"
+        part_times["gont-2020-04-22.txt"] = "2020-04-22 22:26:20 -0400"
+        part_times["response-to-gont-2020-06-02.txt"] = "2020-06-02 20:44:29 -0400"
+        part_times["klensin-2020-02-04.txt"] = "2020-02-04 13:54:46 -0500"
+        # part_times["response-to-klensin-2020-02-04.txt"]="2020-03-24 11:49:31EDT"
+        part_times["response-to-klensin-2020-02-04.txt"] = "2020-03-24 11:49:31 -0400"
+        part_times["klensin-2018-07-07.txt"] = "2018-07-07 12:40:43PDT"
+        # part_times["response-to-klensin-2018-07-07.txt"]="2018-08-16 10:46:45EDT"
+        part_times["response-to-klensin-2018-07-07.txt"] = "2018-08-16 10:46:45 -0400"
+        part_times["klensin-2017-11-29.txt"] = "2017-11-29 09:35:02 -0500"
+        part_times["response-to-klensin-2017-11-29.md"] = "2017-11-30 11:33:04 -0500"
+        part_times["morfin-2015-03-11.pdf"] = "2015-03-11 18:03:44 -0000"
+        part_times["response-to-morfin-2015-03-11.md"] = "2015-04-16 15:18:09 -0000"
+        part_times["conradi-2014-08-28.txt"] = "2014-08-28 22:28:06 +0300"
+        part_times["masotta-2013-11-14.txt"] = "2013-11-14 15:35:19 +0200"
+        part_times["response-to-masotta-2013-11-14.md"] = "2014-01-27 07:39:32 -0800"
+        part_times["baryun-2013-06-19.txt"] = "2013-06-19 06:29:51PDT"
+        part_times["response-to-baryun-2013-06-19.md"] = "2013-07-02 15:24:42 -0700"
+        part_times["otis-2013-05-30.txt"] = "2013-05-30 19:35:18 +0000"
+        part_times["response-to-otis-2013-05-30.md"] = "2013-06-27 11:56:48 -0700"
+        part_times["morfin-2013-04-05.pdf"] = "2013-04-05 17:31:19 -0700"
+        part_times["response-to-morfin-2013-04-05.md"] = "2013-04-17 08:17:29 -0700"
+        part_times["morfin-2010-03-10.pdf"] = "2010-03-10 21:40:58 +0100"
+        part_times["response-to-morfin-2010-03-10.txt"] = "2010-04-07 14:26:06 -0700"
+        part_times["otis-2009-02-16.txt"] = "2009-02-16 15:47:15 -0800"
+        part_times["anderson-2008-11-14.md"] = "2008-11-14 00:16:58 -0500"
+        part_times["response-to-anderson-2008-11-14.txt"] = "2008-12-15 11:00:02 -0800"
+        part_times["morfin-2008-09-10.txt"] = "2008-09-10 04:10:13 +0200"
+        part_times["response-to-morfin-2008-09-10.txt"] = "2008-09-28 10:00:01PDT"
+        part_times["glassey-2008-07-28.txt"] = "2008-07-28 08:34:52 -0700"
+        part_times["response-to-glassey-2008-07-28.txt"] = "2008-09-02 11:00:01PDT"
+        part_times["klensin-2008-06-13.txt"] = "2008-06-13 21:14:38 -0400"
+        part_times["response-to-klensin-2008-06-13.txt"] = "2008-07-07 10:00:01 PDT"
+        # part_times["anderson-2007-12-26.txt"]="2007-12-26 17:19:34EST"
+        part_times["anderson-2007-12-26.txt"] = "2007-12-26 17:19:34 -0500"
+        part_times["response-to-anderson-2007-12-26.txt"] = "2008-01-15 17:21:05 -0500"
+        part_times["glassey-2007-11-26.txt"] = "2007-11-26 08:13:22 -0800"
+        part_times["response-to-glassey-2007-11-26.txt"] = "2008-01-23 17:38:43 -0500"
+        part_times["gellens-2007-06-22.pdf"] = "2007-06-22 21:45:41 -0400"
+        part_times["response-to-gellens-2007-06-22.txt"] = "2007-09-20 14:01:27 -0400"
+        part_times["morfin-2006-10-24.txt"] = "2006-10-24 05:03:17 +0200"
+        part_times["response-to-morfin-2006-10-24.txt"] = "2006-11-07 12:56:02 -0500"
+        part_times["morfin-2006-09-09.txt"] = "2006-09-09 02:54:55 +0200"
+        part_times["response-to-morfin-2006-09-09.txt"] = "2006-09-15 12:56:31 -0400"
+        part_times["sayre-2006-08-29.txt"] = "2006-08-29 17:05:03 -0400"
+        part_times["response-to-sayre-2006-08-29.txt"] = "2006-10-16 13:07:18 -0400"
+        part_times["morfin-2006-08-16.pdf"] = "2006-08-16 18:28:19 -0400"
+        part_times["response-to-morfin-2006-08-17.txt"] = "2006-08-22 12:05:42 -0400"
+        part_times[
+            "response-to-morfin-2006-08-17-part2.txt"
+        ] = "2006-11-07 13:00:58 -0500"
+        # part_times["anderson-2006-06-13.txt"]="2006-06-13 21:51:18EDT"
+        part_times["anderson-2006-06-13.txt"] = "2006-06-13 21:51:18 -0400"
+        part_times["response-to-anderson-2006-06-14.txt"] = "2006-07-10 14:31:08 -0400"
+        part_times["morfin-2006-05-17.pdf"] = "2006-05-17 06:46:18 +0200"
+        part_times["response-to-morfin-2006-05-17.txt"] = "2006-07-10 14:18:10 -0400"
+        part_times["anderson-2006-03-08.md"] = "2006-03-08 09:42:44 +0100"
+        part_times["response-to-anderson-2006-03-08.txt"] = "2006-03-20 14:55:38 -0500"
+        part_times["morfin-2006-02-20.txt"] = "2006-02-20 19:18:24 +0100"
+        part_times["response-to-morfin-2006-02-20.txt"] = "2006-03-06 13:08:39 -0500"
+        part_times["morfin-2006-02-17.txt"] = "2006-02-17 18:59:38 +0100"
+        part_times["response-to-morfin-2006-02-17.txt"] = "2006-07-10 14:05:15 -0400"
+        part_times["morfin-2006-02-07.txt"] = "2006-02-07 19:38:57 -0500"
+        part_times["response-to-morfin-2006-02-07.txt"] = "2006-02-21 19:09:26 -0500"
+        part_times["morfin-2006-01-14.txt"] = "2006-01-14 15:05:24 +0100"
+        part_times["response-to-morfin-2006-01-14.txt"] = "2006-02-21 12:23:38 -0500"
+        part_times["morfin-2005-10-19.txt"] = "2005-10-19 17:12:11 +0200"
+        part_times["response-to-morfin-2005-10-19.txt"] = "2005-11-15 11:42:30 -0500"
+        part_times["leibzon-2005-08-29.txt"] = "2005-08-29 08:28:52PDT"
+        part_times["response-to-leibzon-2005-08-29.txt"] = "2005-12-08 14:04:47 -0500"
+        part_times["mehnle-2005-08-25.txt"] = "2005-08-25 00:45:26 +0200"
+        part_times["response-to-mehnle-2005-08-25.txt"] = "2005-12-08 13:37:38 -0500"
+        part_times["klensin-2005-06-10.txt"] = "2005-06-10 14:49:17 -0400"
+        part_times["response-to-klensin-2005-06-10.txt"] = "2005-07-22 18:14:06 -0400"
+        part_times["meyer-2003-11-15.txt"] = "2003-11-15 09:47:11 -0800"
+        part_times["response-to-meyer-2003-11-15.txt"] = "2003-11-25 10:56:06 -0500"
+        part_times["glassey-2003-08-06.txt"] = "2003-08-06 02:14:24 +0000"
+        part_times["response-to-glassey-2003-08-06.txt"] = "2003-09-24 09:54:51 -0400"
+        part_times["hain-2003-07-31.txt"] = "2003-07-31 16:44:19 -0700"
+        part_times["response-to-hain-2003-07-31.txt"] = "2003-09-30 14:44:30 -0400"
+        part_times["zorn-2003-01-15.txt"] = "2003-01-15 01:22:28 -0800"
+        part_times["elz-2002-11-05.txt"] = "2002-11-05 10:51:13 +0700"
+        # No time could be found for this one:
+        part_times["response-to-zorn-2003-01-15.txt"] = "2003-02-08"
+        # This one was issued sometime between 2002-12-27 (when IESG minutes note that the
+        # appeal response was approved) and 2003-01-04 (when the appeal was escalated to
+        # the IAB) - we're using the earlier end of the window
+        part_times["response-to-elz-2002-11-05.txt"] = "2002-12-27"
+        for name in part_times:
+            part_times[name] = dateutil.parser.parse(part_times[name]).astimezone(
+                datetime.timezone.utc
+            )
+
+        redirects=[]
         for index, title in enumerate(titles):
             # IESG is group 2
             appeal = Appeal.objects.create(
@@ -160,13 +263,15 @@ class Command(BaseCommand):
                     artifact_type_id = (
                         "response" if part.startswith("response") else "appeal"
                     )
-                    AppealArtifact.objects.create(
+                    artifact = AppealArtifact.objects.create(
                         appeal=appeal,
                         artifact_type_id=artifact_type_id,
-                        date=part["date"], # AMHERE - need to get timestamps for all the artifacts.
+                        date=part_times[part].date(),
                         content_type=content_type,
                         bits=bits,
                     )
-        
+                    redirects.append((part.replace(".md",".html") if part.endswith(".md") else part,artifact.pk))
+
         shutil.rmtree(tmpdir)
-        # Build the bulk redirect rules for cloudflare
+        with open("iesg_appeal_redirects.txt","w") as f:
+            f.write(str(redirects))
