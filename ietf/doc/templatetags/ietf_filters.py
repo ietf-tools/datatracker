@@ -539,6 +539,10 @@ def ics_date_time(dt, tzname):
         return f':{timestamp}Z'
     else:
         return f';TZID={ics_esc(tzname)}:{timestamp}'
+    
+@register.filter
+def next_day(value):
+    return value + datetime.timedelta(days=1)
 
 
 @register.filter
