@@ -44,7 +44,7 @@ class LiaisonStatement(models.Model):
     body = models.TextField(blank=True)
 
     tags = models.ManyToManyField(LiaisonStatementTagName, blank=True)
-    attachments = models.ManyToManyField(Document, through='LiaisonStatementAttachment', blank=True)
+    attachments = models.ManyToManyField(Document, through='liaisons.LiaisonStatementAttachment', blank=True)
     state = ForeignKey(LiaisonStatementState, default='pending')
 
     class Meta:

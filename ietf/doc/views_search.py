@@ -591,7 +591,7 @@ def docs_for_ad(request, name):
     if not ad:
         raise Http404
 
-    results, meta = prepare_document_table(request, Document.objects.filter(ad=ad))
+    results, meta = prepare_document_table(request, Document.objects.filter(ad=ad), max_results=500)
     results.sort(key=lambda d: sort_key(d))
     del meta["headers"][-1]
 
@@ -611,6 +611,7 @@ def docs_for_ad(request, name):
             and (
                 r.get_state_slug("draft-iesg") == "dead"
                 or r.get_state_slug("draft") == "repl"
+                or r.get_state_slug("draft") == "rfc"
             )
         )
     ]

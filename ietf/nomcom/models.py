@@ -148,7 +148,7 @@ class Nominee(models.Model):
 
     email = ForeignKey(Email)
     person = ForeignKey(Person, blank=True, null=True)
-    nominee_position = models.ManyToManyField('Position', through='NomineePosition')
+    nominee_position = models.ManyToManyField('nomcom.Position', through='nomcom.NomineePosition')
     duplicated = ForeignKey('Nominee', blank=True, null=True)
     nomcom = ForeignKey('NomCom')
 
@@ -293,9 +293,9 @@ class Topic(models.Model):
 class Feedback(models.Model):
     nomcom = ForeignKey('NomCom')
     author = models.EmailField(verbose_name='Author', blank=True)
-    positions = models.ManyToManyField('Position', blank=True)
-    nominees = models.ManyToManyField('Nominee', blank=True)
-    topics = models.ManyToManyField('Topic', blank=True)
+    positions = models.ManyToManyField('nomcom.Position', blank=True)
+    nominees = models.ManyToManyField('nomcom.Nominee', blank=True)
+    topics = models.ManyToManyField('nomcom.Topic', blank=True)
     subject = models.TextField(verbose_name='Subject', blank=True)
     comments = models.BinaryField(verbose_name='Comments')
     type = ForeignKey(FeedbackTypeName, blank=True, null=True)

@@ -840,6 +840,10 @@ Man                    Expires September 22, 2015               [Page 3]
         updated_by = IndividualRfcFactory()
         updated_by.relateddocument_set.create(relationship_id='updates',target=rfc)
 
+        r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name, rev=draft.rev)))
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "This is an older version of an Internet-Draft that was ultimately published as")
+
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)))
         self.assertEqual(r.status_code, 302)
 

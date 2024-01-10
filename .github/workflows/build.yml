@@ -17,6 +17,11 @@ on:
         default: true
         required: true
         type: boolean
+      sandboxNoDbRefresh:
+        description: 'Sandbox Disable Daily DB Refresh'
+        default: false
+        required: true
+        type: boolean
       legacySandbox:
         description: 'Deploy to Legacy Sandbox'
         default: false
@@ -134,13 +139,13 @@ jobs:
         node-version: '16'
     
     - name: Setup Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: '3.x'
         
     - name: Download a Coverage Results
       if: ${{ github.event.inputs.skiptests == 'false' || github.ref_name == 'release' }}
-      uses: actions/download-artifact@v3.0.2
+      uses: actions/download-artifact@v4.1.0
       with:
         name: coverage
 
@@ -229,7 +234,7 @@ jobs:
         token: ${{ secrets.GITHUB_TOKEN }}
         
     - name: Upload Build Artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: release-${{ env.PKG_VERSION }}
         path: /home/runner/work/release/release.tar.gz
@@ -310,7 +315,7 @@ jobs:
     - uses: actions/checkout@v4
         
     - name: Download a Release Artifact
-      uses: actions/download-artifact@v3.0.2
+      uses: actions/download-artifact@v4.1.0
       with:
         name: release-${{ env.PKG_VERSION }}
         
@@ -325,7 +330,7 @@ jobs:
         npm ci
         cd ../..
         echo "Start Deploy..."
-        node ./dev/deploy-to-container/cli.js --branch ${{ github.ref_name }} --domain dev.ietf.org --appversion ${{ env.PKG_VERSION }} --commit ${{ github.sha }} --ghrunid ${{ github.run_id }}
+        node ./dev/deploy-to-container/cli.js --branch ${{ github.ref_name }} --domain dev.ietf.org --appversion ${{ env.PKG_VERSION }} --commit ${{ github.sha }} --ghrunid ${{ github.run_id }} --nodbrefresh ${{ github.event.inputs.sandboxNoDbRefresh }}
         
     - name: Cleanup old docker resources
       env:
@@ -346,7 +351,7 @@ jobs:
       
     steps:
     - name: Download a Release Artifact
-      uses: actions/download-artifact@v3.0.2
+      uses: actions/download-artifact@v4.1.0
       with:
         name: release-${{ env.PKG_VERSION }}
         path: /a/www/ietf-datatracker/main.dev.${{ github.run_number }}
