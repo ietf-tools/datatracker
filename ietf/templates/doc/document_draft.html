@@ -15,15 +15,7 @@
     <meta name="description"
           content="{{ doc.title }} {% if doc.type_id == 'rfc' and not snapshot %}(RFC {{ rfc_number }}{% if published %}, {{ doc.pub_date|date:'F Y' }}{% endif %}{% if obsoleted_by %}; obsoleted by {% for rel in obsoleted_by %}{{ rel.source.name|prettystdname}}{% if not forloop.last%}, {% endif %}{% endfor %}{% endif %}){% endif %}">
 {% endblock %}
-{% block morecss %}
-    .rfcmarkup :is(h1, h2, h3, h4, h5, h6),
-    .rfcmarkup :is(.h1, .h2, .h3, .h4, .h5, .h6) {
-        font-weight: bold;
-        font-size: 1em;
-    }
-    .rfcmarkup .newpage { margin-top: -1.5em; }
-    .rfcmarkup .grey, hr { opacity: .25; }
-{% endblock %}
+{% block morecss %}.inline { display: inline; }{% endblock %}
 {% block title %}
     {% if doc.type_id == "rfc" and not snapshot %}
         RFC {{ rfc_number }} - {{ doc.title }}
@@ -666,7 +658,7 @@
                 </i>
                 Nits
             </a>
-            <div class="dropdown d-inline">
+            <div class="dropdown inline">
                 <button class="btn btn-primary btn-sm dropdown-toggle"
                         type="button"
                         id="ddSearchMenu"
@@ -768,9 +760,8 @@
                         {{ name }}-{{ doc.rev }}
                     {% endif %}
                 </div>
-                <div class="card-body rfcmarkup">
-                    <!-- [html-validate-disable-block attr-quotes, void-style, element-permitted-content, heading-level, no-dup-id, valid-id -- FIXME: rfcmarkup/rfc2html generates HTML with issues] -->
-                    {{ content|safe|default:"(Unavailable)" }}
+                <div class="card-body">
+                    <pre>{{ content|sanitize|safe|default:"(Unavailable)" }}</pre>
                 </div>
             </div>
             {% if split_content %}
