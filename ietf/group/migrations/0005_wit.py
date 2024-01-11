@@ -11,6 +11,28 @@ DESCRIPTION = (
 )
 
 
+def move_to_area(Group, acronyms, area):
+    for group in Group.objects.filter(acronym__in=acronyms):
+        e = group.groupevent_set.create(
+            by_id=1,
+            type="info_changed",
+            desc=f"Moved group from {group.parent.acronym} to {area.acronym}",
+        )
+        group.parent = area
+        group.time = e.time
+        group.save()  # Creates a GroupHistory object
+
+
+def undo_move_to_area(Group, acronyms, area_to_restore):
+    for group in Group.objects.filter(acronym__in=acronyms):
+        e = group.groupevent_set.filter(
+            desc=f"Moved group from {area_to_restore.acronym} to {group.parent.acronym}"
+        ).last()
+        group.history_set.filter(time__gte=e.time).delete()
+        e.delete()
+    Group.objects.filter(acronym__in=acronyms).update(parent=area_to_restore)
+
+
 def forward(apps, schema_editor):
     Group = apps.get_model("group", "Group")
 
@@ -32,12 +54,18 @@ def forward(apps, schema_editor):
         used_roles="[]",
         uses_milestone_dates=False,
     )
+    wit.groupevent_set.create(
+        by_id=1,
+        type="info_changed",
+        desc="Created area",
+    )
     ops = Group.objects.get(acronym="ops")
     int_area = Group.objects.get(acronym="int")  # int is reserved
     sec = Group.objects.get(acronym="sec")
 
-    Group.objects.filter(
-        acronym__in=[
+    move_to_area(
+        Group,
+        [
             "avtcore",
             "cdni",
             "ccwg",
@@ -54,12 +82,13 @@ def forward(apps, schema_editor):
             "tsvarea",
             "tsvwg",
             "webtrans",
-        ]
-    ).update(parent=wit)
-    Group.objects.filter(acronym__in=["alto", "ippm"]).update(parent=ops)
-    Group.objects.filter(acronym="dtn").update(parent=int_area)
-    Group.objects.filter(acronym__in=["scim", "tigress"]).update(parent=sec)
-    Group.objects.create(
+        ],
+        wit,
+    )
+    move_to_area(Group, ["alto", "ippm"], ops)
+    move_to_area(Group, ["dtn"], int_area)
+    move_to_area(Group, ["scim", "tigress"], sec)
+    witarea = Group.objects.create(
         acronym="witarea",
         charter=None,
         name="Web and Internet Transport Area Open Meeting",
@@ -77,14 +106,20 @@ def forward(apps, schema_editor):
         used_roles="[]",
         uses_milestone_dates=False,
     )
+    witarea.groupevent_set.create(
+        by_id=1,
+        type="info_changed",
+        desc="Created group",
+    )
 
 
 def reverse(apps, schema_editor):
     Group = apps.get_model("group", "Group")
     art = Group.objects.get(acronym="art")
     tsv = Group.objects.get(acronym="tsv")
-    Group.objects.filter(
-        acronym__in=[
+    undo_move_to_area(
+        Group,
+        [
             "avtcore",
             "cdni",
             "core",
@@ -95,10 +130,12 @@ def reverse(apps, schema_editor):
             "scim",
             "tigress",
             "webtrans",
-        ]
-    ).update(parent=art)
-    Group.objects.filter(
-        acronym__in=[
+        ],
+        art,
+    )
+    undo_move_to_area(
+        Group,
+        [
             "alto",
             "ccwg",
             "dtn",
@@ -110,8 +147,9 @@ def reverse(apps, schema_editor):
             "tcpm",
             "tsvarea",
             "tsvwg",
-        ]
-    ).update(parent=tsv)
+        ],
+        tsv,
+    )
     Group.objects.filter(acronym="witarea").delete()
     Group.objects.filter(acronym="wit").delete()
 
