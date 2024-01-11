@@ -59,6 +59,24 @@ def forward(apps, schema_editor):
     Group.objects.filter(acronym__in=["alto", "ippm"]).update(parent=ops)
     Group.objects.filter(acronym="dtn").update(parent=int_area)
     Group.objects.filter(acronym__in=["scim", "tigress"]).update(parent=sec)
+    Group.objects.create(
+        acronym="witarea",
+        charter=None,
+        name="Web and Internet Transport Area Open Meeting",
+        state_id="active",
+        type_id="ag",
+        parent=wit,
+        description="",
+        list_email="witarea@ietf.org",
+        list_subscribe="https://www.ietf.org/mailman/listinfo/witarea",
+        list_archive="https://mailarchive.ietf.org/arch/browse/witarea/",
+        comments="",
+        meeting_seen_as_area=False,
+        # No unused states
+        # No unused tags
+        used_roles="[]",
+        uses_milestone_dates=False,
+    )
 
 
 def reverse(apps, schema_editor):
@@ -94,6 +112,7 @@ def reverse(apps, schema_editor):
             "tsvwg",
         ]
     ).update(parent=tsv)
+    Group.objects.filter(acronym="witarea").delete()
     Group.objects.filter(acronym="wit").delete()
 
 
