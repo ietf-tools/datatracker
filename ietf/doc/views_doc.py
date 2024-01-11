@@ -51,8 +51,6 @@ from django.conf import settings
 from django import forms
 from django.contrib.staticfiles import finders
 
-import rfc2html
-
 import debug                            # pyflakes:ignore
 
 from ietf.doc.models import ( Document, DocHistory, DocEvent, BallotDocEvent, BallotType,
@@ -82,7 +80,7 @@ from ietf.meeting.utils import group_sessions, get_upcoming_manageable_sessions,
 from ietf.review.models import ReviewAssignment
 from ietf.review.utils import can_request_review_of_doc, review_assignments_to_list_for_docs, review_requests_to_list_for_docs
 from ietf.review.utils import no_review_from_teams_on_doc
-from ietf.utils import log, markdown
+from ietf.utils import markup_txt, log, markdown
 from ietf.utils.draft import PlaintextDraft
 from ietf.utils.response import permission_denied
 from ietf.utils.text import maybe_split
@@ -266,9 +264,7 @@ def document_main(request, name, rev=None, document_html=False):
 
         file_urls, found_types = build_file_urls(doc)
         content = doc.text_or_error() # pyflakes:ignore
-        content = maybe_split(content, split=split_content)
-        if content:
-            content = rfc2html.markup(content)
+        content = markup_txt.markup(maybe_split(content, split=split_content))
 
         if not found_types:
             content = "This RFC is not currently available online."
@@ -404,9 +400,7 @@ def document_main(request, name, rev=None, document_html=False):
 
         file_urls, found_types = build_file_urls(doc)
         content = doc.text_or_error() # pyflakes:ignore
-        content = maybe_split(content, split=split_content)
-        if content:
-            content = rfc2html.markup(content)
+        content = markup_txt.markup(maybe_split(content, split=split_content))
 
         latest_revision = doc.latest_event(NewRevisionDocEvent, type="new_revision")
 
@@ -781,7 +775,7 @@ def document_main(request, name, rev=None, document_html=False):
             content = "A conflict review response has not yet been proposed."
         else:     
             content = doc.text_or_error() # pyflakes:ignore
-            content = markdown.markdown(content)
+            content = markup_txt.markup(content)
 
         ballot_summary = None
         if doc.get_state_slug() in ("iesgeval", ) and doc.active_ballot():
@@ -896,6 +890,8 @@ def document_main(request, name, rev=None, document_html=False):
         basename = "{}.txt".format(doc.name)
         pathname = os.path.join(doc.get_file_path(), basename)
         content = get_unicode_document_content(basename, pathname)
+        # If we want to go back to using markup_txt.markup_unicode, call it explicitly here like this:
+        # content = markup_txt.markup_unicode(content, split=False, width=80)
        
         assignments = ReviewAssignment.objects.filter(review__name=doc.name)
         review_assignment = assignments.first()
