@@ -691,7 +691,7 @@ def docs_for_ad(request, name):
         {
             "docs": results,
             "meta": meta,
-            "ad_name": ad.name,
+            "ad": ad,
             "blocked_docs": blocked_docs,
             "not_balloted_docs": not_balloted_docs,
         },
