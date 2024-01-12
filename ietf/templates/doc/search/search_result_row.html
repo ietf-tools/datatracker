@@ -142,7 +142,7 @@
             </a>
         {% endif %}
     </td>
-    {% if ad is None %}
+    {% if meta.show_ad_and_shepherd %}
         <td class="d-none d-sm-table-cell bg-transparent">
             {% if doc.ad %}
                 {% person_link doc.ad title="Area Director" %}
