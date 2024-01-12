@@ -591,9 +591,10 @@ def docs_for_ad(request, name):
     if not ad:
         raise Http404
 
-    results, meta = prepare_document_table(request, Document.objects.filter(ad=ad), max_results=500)
+    results, meta = prepare_document_table(
+        request, Document.objects.filter(ad=ad), max_results=500, show_ad_and_shepherd=False
+    )
     results.sort(key=lambda d: sort_key(d))
-    del meta["headers"][-1]
 
     # filter out some results
     results = [
@@ -691,7 +692,7 @@ def docs_for_ad(request, name):
         {
             "docs": results,
             "meta": meta,
-            "ad_name": ad.name,
+            "ad": ad,
             "blocked_docs": blocked_docs,
             "not_balloted_docs": not_balloted_docs,
         },
