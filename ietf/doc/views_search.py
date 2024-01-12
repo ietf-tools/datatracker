@@ -416,27 +416,23 @@ def state_name(doc_type, state, shorten=True):
     return name.strip()
 
 
-STATE_SLUGS = {
-    dt: {state_name(dt, ds, shorten=False): ds for ds in AD_WORKLOAD[dt]}  # type: ignore
-    for dt in AD_WORKLOAD
-}
-
-
-def state_to_doc_type(state):
-    for dt in STATE_SLUGS:
-        if state in STATE_SLUGS[dt]:
-            return dt
-    return None
-
-
-IESG_STATES = State.objects.filter(type="draft-iesg").values_list("name", flat=True)
-
-
 def date_to_bucket(date, now, num_buckets):
     return num_buckets - int((now.date() - date.date()).total_seconds() / 60 / 60 / 24)
 
 
 def ad_workload(request):
+    IESG_STATES = State.objects.filter(type="draft-iesg").values_list("name", flat=True)
+    STATE_SLUGS = {
+        dt: {state_name(dt, ds, shorten=False): ds for ds in AD_WORKLOAD[dt]}  # type: ignore
+        for dt in AD_WORKLOAD
+    }
+
+    def _state_to_doc_type(state):
+        for dt in STATE_SLUGS:
+            if state in STATE_SLUGS[dt]:
+                return dt
+        return None
+
     # number of days (= buckets) to show in the graphs
     days = 120 if has_role(request.user, ["Area Director", "Secretariat"]) else 1
     now = timezone.now()
@@ -512,7 +508,7 @@ def ad_workload(request):
                     to_state = "RFC"
 
                 if dt == "rfc":
-                    new_dt = state_to_doc_type(to_state)
+                    new_dt = _state_to_doc_type(to_state)
                     if new_dt is not None and new_dt != dt:
                         dt = new_dt
 
