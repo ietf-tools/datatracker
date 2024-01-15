@@ -1153,6 +1153,12 @@ CELERY_BROKER_URL = 'amqp://mq/'
 CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
 CELERY_BEAT_SYNC_EVERY = 1  # update DB after every event
 CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True  # the default, but setting it squelches a warning
+# Use a result backend so we can chain tasks. This uses the rpc backend, see
+# https://docs.celeryq.dev/en/stable/userguide/tasks.html#rpc-result-backend-rabbitmq-qpid
+# Results can be retrieved only once and only by the caller of the task. Results will be
+# lost if the message broker restarts.
+CELERY_RESULT_BACKEND = 'rpc://'  # sends a msg via the msg broker
+CELERY_TASK_IGNORE_RESULT = True  # ignore results unless specifically enabled for a task
 
 # Meetecho API setup: Uncomment this and provide real credentials to enable
 # Meetecho conference creation for interim session requests
