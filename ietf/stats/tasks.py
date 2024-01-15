@@ -14,9 +14,14 @@ from ietf.utils import log
 def fetch_meeting_attendance_task():
     # fetch most recent two meetings
     meetings = Meeting.objects.filter(type="ietf", date__lte=timezone.now()).order_by("-date")[:2]
-    for meeting, stats in zip(meetings, fetch_attendance_from_meetings(meetings)):
-        log.log(
-            "Fetched data for meeting {:>3}: {:4d} processed, {:4d} added, {:4d} in table".format(
-                meeting.number, stats.processed, stats.added, stats.total
+    try:
+        stats = fetch_attendance_from_meetings(meetings)
+    except RuntimeError as err:
+        log.log(f"Error in fetch_meeting_attendance_task: {err}")
+    else:
+        for meeting, stats in zip(meetings, fetch_attendance_from_meetings(meetings)):
+            log.log(
+                "Fetched data for meeting {:>3}: {:4d} processed, {:4d} added, {:4d} in table".format(
+                    meeting.number, stats.processed, stats.added, stats.total
+                )
             )
-        )
