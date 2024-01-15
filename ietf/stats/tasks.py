@@ -10,7 +10,7 @@ from ietf.stats.utils import fetch_attendance_from_meetings
 from ietf.utils import log
 
 
-@shared_task(ignore_result=False)
+@shared_task
 def fetch_meeting_attendance_task():
     # fetch most recent two meetings
     meetings = Meeting.objects.filter(type="ietf", date__lte=timezone.now()).order_by("-date")[:2]
