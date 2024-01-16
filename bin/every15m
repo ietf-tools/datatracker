@@ -17,7 +17,8 @@ source $DTDIR/env/bin/activate
 logger -p user.info -t cron "Running $DTDIR/bin/every15m"
 
 # Send mail scheduled to go out at certain times
-$DTDIR/ietf/bin/send-scheduled-mail all
+# - moved to a Celery task in Jan 2024 
+# $DTDIR/ietf/bin/send-scheduled-mail all
 
 # Reparse the last _year_ of RFC index entries 
 # (which is the default if -d is not provided)
