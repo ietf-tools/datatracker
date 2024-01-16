@@ -140,7 +140,7 @@
                 <li>
                     <a class="dropdown-item {% if flavor != 'top' %}text-wrap{% endif %}"
                        href="{% url "ietf.group.views.group_documents" g.acronym %}">
-                        {{ g.acronym }} {{ g.type.slug }} docs
+                        {{ g.acronym }} {{ g.type_id }} docs
                     </a>
                 </li>
             {% endfor %}
@@ -309,7 +309,7 @@
             <li>
                 <a class="dropdown-item {% if flavor != 'top' %}text-wrap link-primary{% endif %}"
                     href="{% url "ietf.group.views.meetings" g.acronym %}">
-                    {{ g.acronym }} {{ g.type.slug }} meetings
+                    {{ g.acronym }} {{ g.type_id }} meetings
                 </a>
             </li>
         {% endfor %}
