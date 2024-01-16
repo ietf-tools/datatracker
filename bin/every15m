@@ -25,5 +25,6 @@ logger -p user.info -t cron "Running $DTDIR/bin/every15m"
 # until https://github.com/ietf-tools/datatracker/issues/3734
 # is addressed.
 # This takes about 20s on production as of 2022-08-11
-$DTDIR/ietf/bin/rfc-editor-index-updates
+# - moved to a Celery task in Jan 2024 
+# $DTDIR/ietf/bin/rfc-editor-index-updates
 
