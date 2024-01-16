@@ -23,6 +23,10 @@ def rfc_editor_index_update_task(full_index=False):
     
     According to comments on the original script, a year's worth took about 20s on production as of
     August 2022
+    
+    The original rfc-editor-index-update script had a long-disabled provision for running the
+    rebuild_reference_relations scripts after the update. That has not been brought over
+    at all because it should be implemented as its own task if it is needed.
     """
     skip_date = None if full_index else date_today() - datetime.timedelta(days=365)
     log.log(
