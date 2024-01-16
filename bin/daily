@@ -63,7 +63,8 @@ $DTDIR/ietf/bin/rfc-editor-index-updates -d 1969-01-01
 #$DTDIR/ietf/manage.py fetch_meeting_attendance --latest 2
 
 # Send reminders originating from the review app
-$DTDIR/ietf/bin/send-review-reminders
+# - moved to a Celery task in Jan 2024 
+#$DTDIR/ietf/bin/send-review-reminders
 
 # Purge older PersonApiKeyEvents
 $DTDIR/ietf/manage.py purge_old_personal_api_key_events 14
