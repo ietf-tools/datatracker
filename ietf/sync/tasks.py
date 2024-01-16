@@ -57,7 +57,7 @@ def rfc_editor_index_update_task(full_index=False):
         log.log("Not enough errata entries, only %s" % len(errata_data))
         return  # failed
     for rfc_number, changes, doc, rfc_published in update_docs_from_rfc_index(
-        index_data, errata_data, skip_older_than_date=str(skip_date)
+        index_data, errata_data, skip_older_than_date=skip_date
     ):
         for c in changes:
             log.log("RFC%s, %s: %s" % (rfc_number, doc.name, c))
