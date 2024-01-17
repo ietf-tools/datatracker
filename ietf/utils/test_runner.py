@@ -196,7 +196,6 @@ def vnu_filter_message(msg, filter_db_issues, filter_test_issues):
     if filter_test_issues and re.search(
         r"""Ceci\ n'est\ pas\ une\ URL|
             ^The\ '\w+'\ attribute\ on\ the\ '\w+'\ element\ is\ obsolete|
-            ^Duplicate\ ID|^The\ first\ occurrence\ of\ ID|
             ^Section\ lacks\ heading""",
         msg["message"],
         flags=re.VERBOSE,
@@ -892,6 +891,10 @@ class IetfTestRunner(DiscoverRunner):
                     "form-dup-name": "off",
                     # Don't trip over unused disable blocks
                     "no-unused-disable": "off",
+                    # Ignore focusable elements in aria-hidden elements
+                    "hidden-focusable": "off",
+                    # Ignore missing unique identifier for page "landmarks"
+                    "unique-landmark": "off",
                 },
             }
 
