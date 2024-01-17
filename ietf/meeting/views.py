@@ -970,6 +970,7 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
         'rtg' : { 'dark' : (222, 219, 124) , 'light' : (247, 247, 233) },
         'sec' : { 'dark' : (0, 114, 178) , 'light' : (245, 252, 248) },
         'tsv' : { 'dark' : (117,201,119) , 'light' : (251, 252, 255) },
+        'wit' : { 'dark' : (117,201,119) , 'light' : (251, 252, 255) }, # intentionally the same as tsv
     }    
     for i, p in enumerate(session_parents):
         if p.acronym in liz_preferred_colors:
