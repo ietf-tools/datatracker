@@ -468,16 +468,16 @@ class MeetingTests(BaseMeetingTestCase):
         doc = DocumentFactory.create(name='agenda-172-mars', type_id='agenda', title="Agenda",
             uploaded_filename="agenda-172-mars.txt", group=session107.group, rev='00', states=[('agenda','active')])
         pres = SessionPresentation.objects.create(session=session107,document=doc,rev=doc.rev)
-        session107.sessionpresentation_set.add(pres) # 
+        session107.presentations.add(pres) # 
         doc = DocumentFactory.create(name='minutes-172-mars', type_id='minutes', title="Minutes",
             uploaded_filename="minutes-172-mars.md", group=session107.group, rev='00', states=[('minutes','active')])
         pres = SessionPresentation.objects.create(session=session107,document=doc,rev=doc.rev)
-        session107.sessionpresentation_set.add(pres)
+        session107.presentations.add(pres)
         doc = DocumentFactory.create(name='slides-172-mars-1-active', type_id='slides', title="Slideshow",
             uploaded_filename="slides-172-mars.txt", group=session107.group, rev='00',
             states=[('slides','active'), ('reuse_policy', 'single')])
         pres = SessionPresentation.objects.create(session=session107,document=doc,rev=doc.rev)
-        session107.sessionpresentation_set.add(pres)
+        session107.presentations.add(pres)
 
         for session in (
             Session.objects.filter(meeting=meeting, group__acronym="mars").first(),
@@ -548,7 +548,7 @@ class MeetingTests(BaseMeetingTestCase):
         named_row = named_label.closest('tr')
         self.assertTrue(named_row)
 
-        for material in (sp.document for sp in plain_session.sessionpresentation_set.all()):
+        for material in (sp.document for sp in plain_session.presentations.all()):
             if material.type_id == 'draft':
                 expected_url = urlreverse(
                     'ietf.doc.views_doc.document_main',
@@ -559,7 +559,7 @@ class MeetingTests(BaseMeetingTestCase):
             self.assertTrue(plain_row.find(f'a[href="{expected_url}"]'))
             self.assertFalse(named_row.find(f'a[href="{expected_url}"]'))
 
-        for material in (sp.document for sp in named_session.sessionpresentation_set.all()):
+        for material in (sp.document for sp in named_session.presentations.all()):
             if material.type_id == 'draft':
                 expected_url = urlreverse(
                     'ietf.doc.views_doc.document_main',
@@ -955,10 +955,10 @@ class MeetingTests(BaseMeetingTestCase):
         # but lists a different on in its agenda. The expectation is that the pdf and tgz views will return both.
         session = SessionFactory(group__type_id='wg',meeting__type_id='ietf')
         draft1 = WgDraftFactory(group=session.group)
-        session.sessionpresentation_set.create(document=draft1)
+        session.presentations.create(document=draft1)
         draft2 = WgDraftFactory(group=session.group)
         agenda = DocumentFactory(type_id='agenda',group=session.group, uploaded_filename='agenda-%s-%s' % (session.meeting.number,session.group.acronym), states=[('agenda','active')])
-        session.sessionpresentation_set.create(document=agenda)
+        session.presentations.create(document=agenda)
         self.write_materials_file(session.meeting, session.materials.get(type="agenda"),
                                   "1. WG status (15 minutes)\n\n2. Status of %s\n\n" % draft2.name)
         filenames = []
@@ -3083,18 +3083,18 @@ class ReorderSlidesTests(TestCase):
             r = self.client.post(url, {'order':1, 'name':slides.name })
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.json()['success'],True)
-            self.assertEqual(session.sessionpresentation_set.count(),1)
+            self.assertEqual(session.presentations.count(),1)
 
             # Ignore a request to add slides that are already in a session
             r = self.client.post(url, {'order':1, 'name':slides.name })
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.json()['success'],True)
-            self.assertEqual(session.sessionpresentation_set.count(),1)
+            self.assertEqual(session.presentations.count(),1)
 
 
             session2 = SessionFactory(group=session.group, meeting=session.meeting)
             SessionPresentationFactory.create_batch(3, document__type_id='slides', session=session2)
-            for num, sp in enumerate(session2.sessionpresentation_set.filter(document__type_id='slides'),start=1):
+            for num, sp in enumerate(session2.presentations.filter(document__type_id='slides'),start=1):
                 sp.order = num
                 sp.save()
 
@@ -3106,22 +3106,22 @@ class ReorderSlidesTests(TestCase):
             r = self.client.post(url, {'order':1, 'name':more_slides[0].name})
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.json()['success'],True)
-            self.assertEqual(session2.sessionpresentation_set.get(document=more_slides[0]).order,1)
-            self.assertEqual(list(session2.sessionpresentation_set.order_by('order').values_list('order',flat=True)), list(range(1,5)))
+            self.assertEqual(session2.presentations.get(document=more_slides[0]).order,1)
+            self.assertEqual(list(session2.presentations.order_by('order').values_list('order',flat=True)), list(range(1,5)))
 
             # Insert at end
             r = self.client.post(url, {'order':5, 'name':more_slides[1].name})
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.json()['success'],True)
-            self.assertEqual(session2.sessionpresentation_set.get(document=more_slides[1]).order,5)
-            self.assertEqual(list(session2.sessionpresentation_set.order_by('order').values_list('order',flat=True)), list(range(1,6)))
+            self.assertEqual(session2.presentations.get(document=more_slides[1]).order,5)
+            self.assertEqual(list(session2.presentations.order_by('order').values_list('order',flat=True)), list(range(1,6)))
 
             # Insert in middle
             r = self.client.post(url, {'order':3, 'name':more_slides[2].name})
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.json()['success'],True)
-            self.assertEqual(session2.sessionpresentation_set.get(document=more_slides[2]).order,3)
-            self.assertEqual(list(session2.sessionpresentation_set.order_by('order').values_list('order',flat=True)), list(range(1,7)))
+            self.assertEqual(session2.presentations.get(document=more_slides[2]).order,3)
+            self.assertEqual(list(session2.presentations.order_by('order').values_list('order',flat=True)), list(range(1,7)))
 
     def test_remove_slides_from_session(self):
         for type_id in ['ietf','interim']:
@@ -3172,7 +3172,7 @@ class ReorderSlidesTests(TestCase):
             self.assertEqual(r.json()['success'],False)
             self.assertIn('index is not valid',r.json()['error'])
 
-            session.sessionpresentation_set.create(document=slides, rev=slides.rev, order=1)
+            session.presentations.create(document=slides, rev=slides.rev, order=1)
 
             # Bad names
             r = self.client.post(url, {'oldIndex':1})
@@ -3193,7 +3193,7 @@ class ReorderSlidesTests(TestCase):
             self.assertEqual(r.json()['success'],False)
             self.assertIn('SessionPresentation not found',r.json()['error'])
 
-            session.sessionpresentation_set.create(document=slides2, rev=slides2.rev, order=2)
+            session.presentations.create(document=slides2, rev=slides2.rev, order=2)
             r = self.client.post(url, {'oldIndex':1, 'name':slides2.name })
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.json()['success'],False)
@@ -3203,11 +3203,11 @@ class ReorderSlidesTests(TestCase):
             r = self.client.post(url, {'oldIndex':1, 'name':slides.name })
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.json()['success'],True)
-            self.assertEqual(session.sessionpresentation_set.count(),1)
+            self.assertEqual(session.presentations.count(),1)
 
             session2 = SessionFactory(group=session.group, meeting=session.meeting)
             sp_list = SessionPresentationFactory.create_batch(5, document__type_id='slides', session=session2)
-            for num, sp in enumerate(session2.sessionpresentation_set.filter(document__type_id='slides'),start=1):
+            for num, sp in enumerate(session2.presentations.filter(document__type_id='slides'),start=1):
                 sp.order = num
                 sp.save()
 
@@ -3217,22 +3217,22 @@ class ReorderSlidesTests(TestCase):
             r = self.client.post(url, {'oldIndex':1, 'name':sp_list[0].document.name })
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.json()['success'],True)
-            self.assertFalse(session2.sessionpresentation_set.filter(pk=sp_list[0].pk).exists())
-            self.assertEqual(list(session2.sessionpresentation_set.order_by('order').values_list('order',flat=True)), list(range(1,5)))
+            self.assertFalse(session2.presentations.filter(pk=sp_list[0].pk).exists())
+            self.assertEqual(list(session2.presentations.order_by('order').values_list('order',flat=True)), list(range(1,5)))
 
             # delete in middle of list
             r = self.client.post(url, {'oldIndex':4, 'name':sp_list[4].document.name })
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.json()['success'],True)
-            self.assertFalse(session2.sessionpresentation_set.filter(pk=sp_list[4].pk).exists())
-            self.assertEqual(list(session2.sessionpresentation_set.order_by('order').values_list('order',flat=True)), list(range(1,4)))
+            self.assertFalse(session2.presentations.filter(pk=sp_list[4].pk).exists())
+            self.assertEqual(list(session2.presentations.order_by('order').values_list('order',flat=True)), list(range(1,4)))
 
             # delete at end of list
             r = self.client.post(url, {'oldIndex':2, 'name':sp_list[2].document.name })
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.json()['success'],True)
-            self.assertFalse(session2.sessionpresentation_set.filter(pk=sp_list[2].pk).exists())
-            self.assertEqual(list(session2.sessionpresentation_set.order_by('order').values_list('order',flat=True)), list(range(1,3)))
+            self.assertFalse(session2.presentations.filter(pk=sp_list[2].pk).exists())
+            self.assertEqual(list(session2.presentations.order_by('order').values_list('order',flat=True)), list(range(1,3)))
 
 
 
@@ -3290,45 +3290,45 @@ class ReorderSlidesTests(TestCase):
             r = self.client.post(url, {'oldIndex':1, 'newIndex':3})
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.json()['success'],True)
-            self.assertEqual(list(session.sessionpresentation_set.order_by('order').values_list('pk',flat=True)),_sppk_at(sppk,[2,3,1,4,5]))
+            self.assertEqual(list(session.presentations.order_by('order').values_list('pk',flat=True)),_sppk_at(sppk,[2,3,1,4,5]))
 
             # Move to beginning
             r = self.client.post(url, {'oldIndex':3, 'newIndex':1})
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.json()['success'],True)
-            self.assertEqual(list(session.sessionpresentation_set.order_by('order').values_list('pk',flat=True)),_sppk_at(sppk,[1,2,3,4,5]))
+            self.assertEqual(list(session.presentations.order_by('order').values_list('pk',flat=True)),_sppk_at(sppk,[1,2,3,4,5]))
             
             # Move from end
             r = self.client.post(url, {'oldIndex':5, 'newIndex':3})
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.json()['success'],True)
-            self.assertEqual(list(session.sessionpresentation_set.order_by('order').values_list('pk',flat=True)),_sppk_at(sppk,[1,2,5,3,4]))
+            self.assertEqual(list(session.presentations.order_by('order').values_list('pk',flat=True)),_sppk_at(sppk,[1,2,5,3,4]))
 
             # Move to end
             r = self.client.post(url, {'oldIndex':3, 'newIndex':5})
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.json()['success'],True)
-            self.assertEqual(list(session.sessionpresentation_set.order_by('order').values_list('pk',flat=True)),_sppk_at(sppk,[1,2,3,4,5]))
+            self.assertEqual(list(session.presentations.order_by('order').values_list('pk',flat=True)),_sppk_at(sppk,[1,2,3,4,5]))
 
             # Move beginning to end
             r = self.client.post(url, {'oldIndex':1, 'newIndex':5})
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.json()['success'],True)
-            self.assertEqual(list(session.sessionpresentation_set.order_by('order').values_list('pk',flat=True)),_sppk_at(sppk,[2,3,4,5,1]))
+            self.assertEqual(list(session.presentations.order_by('order').values_list('pk',flat=True)),_sppk_at(sppk,[2,3,4,5,1]))
 
             # Move middle to middle 
             r = self.client.post(url, {'oldIndex':3, 'newIndex':4})
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.json()['success'],True)
-            self.assertEqual(list(session.sessionpresentation_set.order_by('order').values_list('pk',flat=True)),_sppk_at(sppk,[2,3,5,4,1]))
+            self.assertEqual(list(session.presentations.order_by('order').values_list('pk',flat=True)),_sppk_at(sppk,[2,3,5,4,1]))
 
             r = self.client.post(url, {'oldIndex':3, 'newIndex':2})
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.json()['success'],True)
-            self.assertEqual(list(session.sessionpresentation_set.order_by('order').values_list('pk',flat=True)),_sppk_at(sppk,[2,5,3,4,1]))
+            self.assertEqual(list(session.presentations.order_by('order').values_list('pk',flat=True)),_sppk_at(sppk,[2,5,3,4,1]))
 
             # Reset for next iteration in the loop
-            session.sessionpresentation_set.update(order=F('pk'))
+            session.presentations.update(order=F('pk'))
             self.client.logout()
 
 
@@ -3345,7 +3345,7 @@ class ReorderSlidesTests(TestCase):
         except AssertionError:
             pass
 
-        self.assertEqual(list(session.sessionpresentation_set.order_by('order').values_list('order',flat=True)),list(range(1,6)))
+        self.assertEqual(list(session.presentations.order_by('order').values_list('order',flat=True)),list(range(1,6)))
 
 
 class EditTests(TestCase):
@@ -4334,7 +4334,7 @@ class SessionDetailsTests(TestCase):
         group.role_set.create(name_id='chair',person = group_chair, email = group_chair.email())
         session = SessionFactory.create(meeting__type_id='ietf',group=group, meeting__date=date_today() + datetime.timedelta(days=90))
         SessionPresentationFactory.create(session=session,document__type_id='draft',rev=None)
-        old_draft = session.sessionpresentation_set.filter(document__type='draft').first().document
+        old_draft = session.presentations.filter(document__type='draft').first().document
         new_draft = DocumentFactory(type_id='draft')
 
         url = urlreverse('ietf.meeting.views.add_session_drafts', kwargs=dict(num=session.meeting.number, session_id=session.pk))
@@ -4355,10 +4355,10 @@ class SessionDetailsTests(TestCase):
         q = PyQuery(r.content)
         self.assertIn("Already linked:", q('form .text-danger').text())
 
-        self.assertEqual(1,session.sessionpresentation_set.count())
+        self.assertEqual(1,session.presentations.count())
         r = self.client.post(url,dict(drafts=[new_draft.pk,]))
         self.assertTrue(r.status_code, 302)
-        self.assertEqual(2,session.sessionpresentation_set.count())
+        self.assertEqual(2,session.presentations.count())
 
         session.meeting.date -= datetime.timedelta(days=180)
         session.meeting.save()
@@ -5972,7 +5972,7 @@ class FinalizeProceedingsTests(TestCase):
     def test_finalize_proceedings(self):
         make_meeting_test_data()
         meeting = Meeting.objects.filter(type_id='ietf').order_by('id').last()
-        meeting.session_set.filter(group__acronym='mars').first().sessionpresentation_set.create(document=Document.objects.filter(type='draft').first(),rev=None)
+        meeting.session_set.filter(group__acronym='mars').first().presentations.create(document=Document.objects.filter(type='draft').first(),rev=None)
 
         url = urlreverse('ietf.meeting.views.finalize_proceedings',kwargs={'num':meeting.number})
         login_testing_unauthorized(self,"secretary",url)
@@ -5980,12 +5980,12 @@ class FinalizeProceedingsTests(TestCase):
         self.assertEqual(r.status_code, 200)
 
         self.assertEqual(meeting.proceedings_final,False)
-        self.assertEqual(meeting.session_set.filter(group__acronym="mars").first().sessionpresentation_set.filter(document__type="draft").first().rev,None)
+        self.assertEqual(meeting.session_set.filter(group__acronym="mars").first().presentations.filter(document__type="draft").first().rev,None)
         r = self.client.post(url,{'finalize':1})
         self.assertEqual(r.status_code, 302)
         meeting = Meeting.objects.get(pk=meeting.pk)
         self.assertEqual(meeting.proceedings_final,True)
-        self.assertEqual(meeting.session_set.filter(group__acronym="mars").first().sessionpresentation_set.filter(document__type="draft").first().rev,'00')
+        self.assertEqual(meeting.session_set.filter(group__acronym="mars").first().presentations.filter(document__type="draft").first().rev,'00')
  
 class MaterialsTests(TestCase):
     settings_temp_path_overrides = TestCase.settings_temp_path_overrides + [
@@ -6027,12 +6027,12 @@ class MaterialsTests(TestCase):
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertIn('Upload', str(q("title")))
-        self.assertFalse(session.sessionpresentation_set.exists())
+        self.assertFalse(session.presentations.exists())
         test_file = StringIO('%PDF-1.4\n%âãÏÓ\nthis is some text for a test')
         test_file.name = "not_really.pdf"
         r = self.client.post(url,dict(file=test_file))
         self.assertEqual(r.status_code, 302)
-        bs_doc = session.sessionpresentation_set.filter(document__type_id='bluesheets').first().document
+        bs_doc = session.presentations.filter(document__type_id='bluesheets').first().document
         self.assertEqual(bs_doc.rev,'00')
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
@@ -6062,12 +6062,12 @@ class MaterialsTests(TestCase):
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertIn('Upload', str(q("title")))
-        self.assertFalse(session.sessionpresentation_set.exists())
+        self.assertFalse(session.presentations.exists())
         test_file = StringIO('%PDF-1.4\n%âãÏÓ\nthis is some text for a test')
         test_file.name = "not_really.pdf"
         r = self.client.post(url,dict(file=test_file))
         self.assertEqual(r.status_code, 302)
-        bs_doc = session.sessionpresentation_set.filter(document__type_id='bluesheets').first().document
+        bs_doc = session.presentations.filter(document__type_id='bluesheets').first().document
         self.assertEqual(bs_doc.rev,'00')
 
     def test_upload_bluesheets_interim_chair_access(self):
@@ -6095,7 +6095,7 @@ class MaterialsTests(TestCase):
             self.assertEqual(r.status_code, 200)
             q = PyQuery(r.content)
             self.assertIn('Upload', str(q("Title")))
-            self.assertFalse(session.sessionpresentation_set.exists())
+            self.assertFalse(session.presentations.exists())
             self.assertFalse(q('form input[type="checkbox"]'))
     
             session2 = SessionFactory(meeting=session.meeting,group=session.group)
@@ -6130,7 +6130,7 @@ class MaterialsTests(TestCase):
             test_file.name = "some.html"
             r = self.client.post(url,dict(submission_method="upload",file=test_file))
             self.assertEqual(r.status_code, 302)
-            doc = session.sessionpresentation_set.filter(document__type_id=doctype).first().document
+            doc = session.presentations.filter(document__type_id=doctype).first().document
             self.assertEqual(doc.rev,'00')
             text = doc.text()
             self.assertIn('Some text', text)
@@ -6142,9 +6142,9 @@ class MaterialsTests(TestCase):
             test_file.name = "some.txt"
             r = self.client.post(url,dict(submission_method="upload",file=test_file,apply_to_all=False))
             self.assertEqual(r.status_code, 302)
-            doc = session.sessionpresentation_set.filter(document__type_id=doctype).first().document
+            doc = session.presentations.filter(document__type_id=doctype).first().document
             self.assertEqual(doc.rev,'01')
-            self.assertFalse(session2.sessionpresentation_set.filter(document__type_id=doctype))
+            self.assertFalse(session2.presentations.filter(document__type_id=doctype))
     
             r = self.client.get(url)
             self.assertEqual(r.status_code, 200)
@@ -6156,7 +6156,7 @@ class MaterialsTests(TestCase):
             self.assertEqual(r.status_code, 302)
             doc = Document.objects.get(pk=doc.pk)
             self.assertEqual(doc.rev,'02')
-            self.assertTrue(session2.sessionpresentation_set.filter(document__type_id=doctype))
+            self.assertTrue(session2.presentations.filter(document__type_id=doctype))
 
             # Test bad encoding
             test_file = BytesIO('<html><h1>Title</h1><section>Some\x93text</section></html>'.encode('latin1'))
@@ -6186,7 +6186,7 @@ class MaterialsTests(TestCase):
             self.assertEqual(r.status_code, 200)
             q = PyQuery(r.content)
             self.assertIn('Upload', str(q("Title")))
-            self.assertFalse(session.sessionpresentation_set.exists())
+            self.assertFalse(session.presentations.exists())
             self.assertFalse(q('form input[type="checkbox"]'))
 
             test_file = BytesIO(b'this is some text for a test')
@@ -6208,12 +6208,12 @@ class MaterialsTests(TestCase):
             self.assertEqual(r.status_code, 200)
             q = PyQuery(r.content)
             self.assertIn('Upload', str(q("title")))
-            self.assertFalse(session.sessionpresentation_set.filter(document__type_id=doctype))
+            self.assertFalse(session.presentations.filter(document__type_id=doctype))
             test_file = BytesIO(b'this is some text for a test')
             test_file.name = "not_really.txt"
             r = self.client.post(url,dict(submission_method="upload",file=test_file))
             self.assertEqual(r.status_code, 302)
-            doc = session.sessionpresentation_set.filter(document__type_id=doctype).first().document
+            doc = session.presentations.filter(document__type_id=doctype).first().document
             self.assertEqual(doc.rev,'00')
 
             # Verify that we don't have dead links
@@ -6232,12 +6232,12 @@ class MaterialsTests(TestCase):
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertIn('Upload', str(q("Title")))
-        self.assertFalse(session.sessionpresentation_set.exists())
+        self.assertFalse(session.presentations.exists())
 
         test_text = 'Enter agenda from scratch'
         r = self.client.post(url,dict(submission_method="enter",content=test_text))
         self.assertRedirects(r, redirect_url)
-        doc = session.sessionpresentation_set.filter(document__type_id='agenda').first().document
+        doc = session.presentations.filter(document__type_id='agenda').first().document
         self.assertEqual(doc.rev,'00')
 
         r = self.client.get(url)
@@ -6273,14 +6273,14 @@ class MaterialsTests(TestCase):
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertIn('Upload', str(q("title")))
-        self.assertFalse(session1.sessionpresentation_set.filter(document__type_id='slides'))
+        self.assertFalse(session1.presentations.filter(document__type_id='slides'))
         test_file = BytesIO(b'this is not really a slide')
         test_file.name = 'not_really.txt'
         r = self.client.post(url,dict(file=test_file,title='a test slide file',apply_to_all=True))
         self.assertEqual(r.status_code, 302)
-        self.assertEqual(session1.sessionpresentation_set.count(),1) 
-        self.assertEqual(session2.sessionpresentation_set.count(),1) 
-        sp = session2.sessionpresentation_set.first()
+        self.assertEqual(session1.presentations.count(),1) 
+        self.assertEqual(session2.presentations.count(),1) 
+        sp = session2.presentations.first()
         self.assertEqual(sp.document.name, 'slides-%s-%s-a-test-slide-file' % (session1.meeting.number,session1.group.acronym ) )
         self.assertEqual(sp.order,1)
 
@@ -6289,14 +6289,14 @@ class MaterialsTests(TestCase):
         test_file.name = 'also_not_really.txt'
         r = self.client.post(url,dict(file=test_file,title='a different slide file',apply_to_all=False))
         self.assertEqual(r.status_code, 302)
-        self.assertEqual(session1.sessionpresentation_set.count(),1)
-        self.assertEqual(session2.sessionpresentation_set.count(),2)
-        sp = session2.sessionpresentation_set.get(document__name__endswith='-a-different-slide-file')
+        self.assertEqual(session1.presentations.count(),1)
+        self.assertEqual(session2.presentations.count(),2)
+        sp = session2.presentations.get(document__name__endswith='-a-different-slide-file')
         self.assertEqual(sp.order,2)
         self.assertEqual(sp.rev,'00')
         self.assertEqual(sp.document.rev,'00')
 
-        url = urlreverse('ietf.meeting.views.upload_session_slides',kwargs={'num':session2.meeting.number,'session_id':session2.id,'name':session2.sessionpresentation_set.get(order=2).document.name})
+        url = urlreverse('ietf.meeting.views.upload_session_slides',kwargs={'num':session2.meeting.number,'session_id':session2.id,'name':session2.presentations.get(order=2).document.name})
         r = self.client.get(url)
         self.assertTrue(r.status_code, 200)
         q = PyQuery(r.content)
@@ -6305,9 +6305,9 @@ class MaterialsTests(TestCase):
         test_file.name = 'doesnotmatter.txt'
         r = self.client.post(url,dict(file=test_file,title='rename the presentation',apply_to_all=False))
         self.assertEqual(r.status_code, 302)
-        self.assertEqual(session1.sessionpresentation_set.count(),1)
-        self.assertEqual(session2.sessionpresentation_set.count(),2)
-        sp = session2.sessionpresentation_set.get(order=2)
+        self.assertEqual(session1.presentations.count(),1)
+        self.assertEqual(session2.presentations.count(),2)
+        sp = session2.presentations.get(order=2)
         self.assertEqual(sp.rev,'01')
         self.assertEqual(sp.document.rev,'01')
  
@@ -6319,7 +6319,7 @@ class MaterialsTests(TestCase):
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertIn('Upload', str(q("title")))
-        self.assertFalse(session1.sessionpresentation_set.filter(document__type_id='slides'))
+        self.assertFalse(session1.presentations.filter(document__type_id='slides'))
         test_file = BytesIO(b'this is not really a slide')
         test_file.name = 'not_really.txt'
         r = self.client.post(url,dict(file=test_file,title='title with bad character \U0001fabc '))
@@ -6331,7 +6331,7 @@ class MaterialsTests(TestCase):
     def test_remove_sessionpresentation(self):
         session = SessionFactory(meeting__type_id='ietf')
         doc = DocumentFactory(type_id='slides')
-        session.sessionpresentation_set.create(document=doc)
+        session.presentations.create(document=doc)
 
         url = urlreverse('ietf.meeting.views.remove_sessionpresentation',kwargs={'num':session.meeting.number,'session_id':session.id,'name':'no-such-doc'})
         response = self.client.get(url)
@@ -6346,10 +6346,10 @@ class MaterialsTests(TestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
 
-        self.assertEqual(1,session.sessionpresentation_set.count())
+        self.assertEqual(1,session.presentations.count())
         response = self.client.post(url,{'remove_session':''})
         self.assertEqual(response.status_code, 302)
-        self.assertEqual(0,session.sessionpresentation_set.count())
+        self.assertEqual(0,session.presentations.count())
         self.assertEqual(2,doc.docevent_set.count())
 
     def test_propose_session_slides(self):
@@ -6438,8 +6438,8 @@ class MaterialsTests(TestCase):
         submission = SlideSubmission.objects.get(id = submission.id)
         self.assertEqual(submission.status_id, 'approved')
         self.assertIsNotNone(submission.doc)
-        self.assertEqual(session.sessionpresentation_set.count(),1)
-        self.assertEqual(session.sessionpresentation_set.first().document.title,'different title')
+        self.assertEqual(session.presentations.count(),1)
+        self.assertEqual(session.presentations.first().document.title,'different title')
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         self.assertRegex(r.content.decode(), r"These\s+slides\s+have\s+already\s+been\s+approved")
@@ -6461,8 +6461,8 @@ class MaterialsTests(TestCase):
         self.assertTrue(q('#id_apply_to_all'))
         r = self.client.post(url,dict(title='yet another title',approve='approve'))
         self.assertEqual(r.status_code,302)
-        self.assertEqual(session1.sessionpresentation_set.count(),1)
-        self.assertEqual(session2.sessionpresentation_set.count(),0)
+        self.assertEqual(session1.presentations.count(),1)
+        self.assertEqual(session2.presentations.count(),0)
 
     def test_approve_proposed_slides_multisession_apply_all(self):
         submission = SlideSubmissionFactory(session__meeting__type_id='ietf')
@@ -6476,8 +6476,8 @@ class MaterialsTests(TestCase):
         self.assertEqual(r.status_code,200)
         r = self.client.post(url,dict(title='yet another title',apply_to_all=1,approve='approve'))
         self.assertEqual(r.status_code,302)
-        self.assertEqual(session1.sessionpresentation_set.count(),1)
-        self.assertEqual(session2.sessionpresentation_set.count(),1)
+        self.assertEqual(session1.presentations.count(),1)
+        self.assertEqual(session2.presentations.count(),1)
 
     def test_submit_and_approve_multiple_versions(self):
         session = SessionFactory(meeting__type_id='ietf')
@@ -6502,7 +6502,7 @@ class MaterialsTests(TestCase):
         self.assertEqual(r.status_code,302)
         self.client.logout()
 
-        self.assertEqual(session.sessionpresentation_set.first().document.rev,'00')
+        self.assertEqual(session.presentations.first().document.rev,'00')
 
         login_testing_unauthorized(self,newperson.user.username,propose_url)
         test_file = BytesIO(b'this is not really a slide, but it is another version of it')
@@ -6530,9 +6530,9 @@ class MaterialsTests(TestCase):
 
         self.assertEqual(SlideSubmission.objects.filter(status__slug = 'pending').count(),0)
         self.assertEqual(SlideSubmission.objects.filter(status__slug = 'rejected').count(),1)
-        self.assertEqual(session.sessionpresentation_set.first().document.rev,'01')
+        self.assertEqual(session.presentations.first().document.rev,'01')
         path = os.path.join(submission.session.meeting.get_materials_path(),'slides')
-        filename = os.path.join(path,session.sessionpresentation_set.first().document.name+'-01.txt')
+        filename = os.path.join(path,session.presentations.first().document.name+'-01.txt')
         self.assertTrue(os.path.exists(filename))
         fd = io.open(filename, 'r')
         contents = fd.read()
@@ -6649,7 +6649,7 @@ class ImportNotesTests(TestCase):
         self.client.login(username='secretary', password='secretary+password')
         r = self.client.post(url, {'markdown_text': 'replaced below'})  # create a rev
         with open(
-                self.session.sessionpresentation_set.filter(document__type="minutes").first().document.get_file_name(),
+                self.session.presentations.filter(document__type="minutes").first().document.get_file_name(),
                 'wb'
         ) as f:
             # Replace existing content with an invalid Unicode byte string. The particular invalid
@@ -6674,7 +6674,7 @@ class ImportNotesTests(TestCase):
         self.client.login(username='secretary', password='secretary+password')
         r = self.client.post(url, {'markdown_text': 'original markdown text'})  # create a rev
         # remove the file uploaded for the first rev
-        minutes_docs = self.session.sessionpresentation_set.filter(document__type='minutes')
+        minutes_docs = self.session.presentations.filter(document__type='minutes')
         self.assertEqual(minutes_docs.count(), 1)
         Path(minutes_docs.first().document.get_file_name()).unlink()
 
@@ -7809,7 +7809,7 @@ class ProceedingsTests(BaseMeetingTestCase):
         named_row = named_label.closest('tr')
         self.assertTrue(named_row)
 
-        for material in (sp.document for sp in plain_session.sessionpresentation_set.all()):
+        for material in (sp.document for sp in plain_session.presentations.all()):
             if material.type_id == 'draft':
                 expected_url = urlreverse(
                     'ietf.doc.views_doc.document_main',
@@ -7820,7 +7820,7 @@ class ProceedingsTests(BaseMeetingTestCase):
             self.assertTrue(plain_row.find(f'a[href="{expected_url}"]'))
             self.assertFalse(named_row.find(f'a[href="{expected_url}"]'))
 
-        for material in (sp.document for sp in named_session.sessionpresentation_set.all()):
+        for material in (sp.document for sp in named_session.presentations.all()):
             if material.type_id == 'draft':
                 expected_url = urlreverse(
                     'ietf.doc.views_doc.document_main',

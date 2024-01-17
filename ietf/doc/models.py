@@ -1015,7 +1015,7 @@ class Document(DocumentInfo):
     def future_presentations(self):
         """ returns related SessionPresentation objects for meetings that
             have not yet ended. This implementation allows for 2 week meetings """
-        candidate_presentations = self.sessionpresentation_set.filter(
+        candidate_presentations = self.presentations.filter(
             session__meeting__date__gte=date_today() - datetime.timedelta(days=15)
         )
         return sorted(
@@ -1028,11 +1028,11 @@ class Document(DocumentInfo):
         """ returns related SessionPresentation objects for the most recent meeting in the past"""
         # Assumes no two meetings have the same start date - if the assumption is violated, one will be chosen arbitrarily
         today = date_today()
-        candidate_presentations = self.sessionpresentation_set.filter(session__meeting__date__lte=today)
+        candidate_presentations = self.presentations.filter(session__meeting__date__lte=today)
         candidate_meetings = set([p.session.meeting for p in candidate_presentations if p.session.meeting.end_date()<today])
         if candidate_meetings:
             mtg = sorted(list(candidate_meetings),key=lambda x:x.date,reverse=True)[0]
-            return self.sessionpresentation_set.filter(session__meeting=mtg)
+            return self.presentations.filter(session__meeting=mtg)
         else:
             return None
 

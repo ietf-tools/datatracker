@@ -236,7 +236,7 @@ class Command(BaseCommand):
                         desc="Minutes moved into datatracker",
                     )
                     doc.save_with_history([e])
-                    session.sessionpresentation_set.create(document=doc, rev=doc.rev)
+                    session.presentations.create(document=doc, rev=doc.rev)
                     dest = (
                         Path(settings.AGENDA_PATH)
                         / meeting_name
@@ -281,7 +281,7 @@ class Command(BaseCommand):
                             desc=f"{verbose_type} moved into datatracker",
                         )
                         doc.save_with_history([e])
-                        session.sessionpresentation_set.create(
+                        session.presentations.create(
                             document=doc, rev=doc.rev
                         )
                         dest = (

@@ -939,8 +939,8 @@ class Constraint(models.Model):
 
 
 class SessionPresentation(models.Model):
-    session = ForeignKey('Session')
-    document = ForeignKey(Document)
+    session = ForeignKey('Session', related_name="presentations")
+    document = ForeignKey(Document, related_name="presentations")
     rev = models.CharField(verbose_name="revision", max_length=16, null=True, blank=True)
     order = models.PositiveSmallIntegerField(default=0)
 
@@ -1079,7 +1079,7 @@ class Session(models.Model):
             for d in l:
                 d.meeting_related = lambda: True
         else:
-            l = self.materials.filter(type=material_type).exclude(states__type=material_type, states__slug='deleted').order_by('sessionpresentation__order')
+            l = self.materials.filter(type=material_type).exclude(states__type=material_type, states__slug='deleted').order_by('presentations__order')
 
         if only_one:
             if l:
@@ -1114,6 +1114,7 @@ class Session(models.Model):
         if not hasattr(self, "_slides_cache"):
             self._slides_cache = list(self.get_material("slides", only_one=False))
         return self._slides_cache
+    
 
     def drafts(self):
         return list(self.materials.filter(type='draft'))
@@ -1201,6 +1202,7 @@ class Session(models.Model):
         return can_manage_materials(user,self.group)
 
     def is_material_submission_cutoff(self):
+        debug.say("is_material_submission_cutoff got called")
         return date_today(datetime.timezone.utc) > self.meeting.get_submission_correction_date()
     
     def joint_with_groups_acronyms(self):
@@ -1314,10 +1316,20 @@ class Session(models.Model):
         return settings.CHAT_URL_PATTERN.format(chat_room_name=self.chat_room_name())
 
     def chat_archive_url(self):
-        chatlog = self.sessionpresentation_set.filter(document__type__slug='chatlog').first()
-        if chatlog is not None:
-            return chatlog.document.get_href()
-        elif self.meeting.date <= datetime.date(2022, 7, 15):
+
+        if hasattr(self,"prefetched_active_materials"):
+            chatlog_doc = None
+            for doc in self.prefetched_active_materials:
+                if doc.type_id=="chatlog":
+                    chatlog_doc = doc
+            if chatlog_doc is not None:
+                return chatlog_doc.get_href()
+        else:
+            chatlog = self.presentations.filter(document__type__slug='chatlog').first()
+            if chatlog is not None:
+                return chatlog.document.get_href()
+            
+        if self.meeting.date <= datetime.date(2022, 7, 15):
             # datatracker 8.8.0 released on 2022 July 15; before that, fall back to old log URL
             return f'https://www.ietf.org/jabber/logs/{ self.chat_room_name() }?C=M;O=D'
         elif hasattr(settings,'CHAT_ARCHIVE_URL_PATTERN'):

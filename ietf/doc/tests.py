@@ -2386,8 +2386,8 @@ class DocumentMeetingTests(TestCase):
 
     def test_view_document_meetings(self):
         doc = IndividualDraftFactory.create()
-        doc.sessionpresentation_set.create(session=self.inprog,rev=None)
-        doc.sessionpresentation_set.create(session=self.interim,rev=None)
+        doc.presentations.create(session=self.inprog,rev=None)
+        doc.presentations.create(session=self.interim,rev=None)
 
         url = urlreverse('ietf.doc.views_doc.all_presentations', kwargs=dict(name=doc.name))
         response = self.client.get(url)
@@ -2398,8 +2398,8 @@ class DocumentMeetingTests(TestCase):
         self.assertFalse(q('#addsessionsbutton'))
         self.assertFalse(q("a.btn:contains('Remove document')"))
 
-        doc.sessionpresentation_set.create(session=self.past_cutoff,rev=None)
-        doc.sessionpresentation_set.create(session=self.past,rev=None)
+        doc.presentations.create(session=self.past_cutoff,rev=None)
+        doc.presentations.create(session=self.past,rev=None)
 
         self.client.login(username="secretary", password="secretary+password")
         response = self.client.get(url)
@@ -2434,7 +2434,7 @@ class DocumentMeetingTests(TestCase):
 
     def test_edit_document_session(self):
         doc = IndividualDraftFactory.create()
-        sp = doc.sessionpresentation_set.create(session=self.future,rev=None)
+        sp = doc.presentations.create(session=self.future,rev=None)
 
         url = urlreverse('ietf.doc.views_doc.edit_sessionpresentation',kwargs=dict(name='no-such-doc',session_id=sp.session_id))
         response = self.client.get(url)
@@ -2461,12 +2461,12 @@ class DocumentMeetingTests(TestCase):
         self.assertEqual(1,doc.docevent_set.count())
         response = self.client.post(url,{'version':'00','save':''})
         self.assertEqual(response.status_code, 302)
-        self.assertEqual(doc.sessionpresentation_set.get(pk=sp.pk).rev,'00')
+        self.assertEqual(doc.presentations.get(pk=sp.pk).rev,'00')
         self.assertEqual(2,doc.docevent_set.count())
 
     def test_edit_document_session_after_proceedings_closed(self):
         doc = IndividualDraftFactory.create()
-        sp = doc.sessionpresentation_set.create(session=self.past_cutoff,rev=None)
+        sp = doc.presentations.create(session=self.past_cutoff,rev=None)
 
         url = urlreverse('ietf.doc.views_doc.edit_sessionpresentation',kwargs=dict(name=doc.name,session_id=sp.session_id))
         self.client.login(username=self.group_chair.user.username,password='%s+password'%self.group_chair.user.username)
@@ -2481,7 +2481,7 @@ class DocumentMeetingTests(TestCase):
 
     def test_remove_document_session(self):
         doc = IndividualDraftFactory.create()
-        sp = doc.sessionpresentation_set.create(session=self.future,rev=None)
+        sp = doc.presentations.create(session=self.future,rev=None)
 
         url = urlreverse('ietf.doc.views_doc.remove_sessionpresentation',kwargs=dict(name='no-such-doc',session_id=sp.session_id))
         response = self.client.get(url)
@@ -2506,12 +2506,12 @@ class DocumentMeetingTests(TestCase):
         self.assertEqual(1,doc.docevent_set.count())
         response = self.client.post(url,{'remove_session':''})
         self.assertEqual(response.status_code, 302)
-        self.assertFalse(doc.sessionpresentation_set.filter(pk=sp.pk).exists())
+        self.assertFalse(doc.presentations.filter(pk=sp.pk).exists())
         self.assertEqual(2,doc.docevent_set.count())
 
     def test_remove_document_session_after_proceedings_closed(self):
         doc = IndividualDraftFactory.create()
-        sp = doc.sessionpresentation_set.create(session=self.past_cutoff,rev=None)
+        sp = doc.presentations.create(session=self.past_cutoff,rev=None)
 
         url = urlreverse('ietf.doc.views_doc.remove_sessionpresentation',kwargs=dict(name=doc.name,session_id=sp.session_id))
         self.client.login(username=self.group_chair.user.username,password='%s+password'%self.group_chair.user.username)

@@ -104,7 +104,7 @@ def preprocess_assignments_for_agenda(assignments_queryset, meeting, extra_prefe
                 queryset=add_event_info_to_session_qs(Session.objects.all().prefetch_related(
                     'group', 'group__charter', 'group__charter__group',
                     Prefetch('materials',
-                             queryset=Document.objects.exclude(states__type=F("type"), states__slug='deleted').order_by('sessionpresentation__order').prefetch_related('states'),
+                             queryset=Document.objects.exclude(states__type=F("type"), states__slug='deleted').order_by('presentations__order').prefetch_related('states'),
                              to_attr='prefetched_active_materials'
                     )
                 ))
