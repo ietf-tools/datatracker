@@ -336,7 +336,7 @@ def parse_index(response):
 
 
 def update_docs_from_rfc_index(
-    index_data, errata_data, skip_older_than_date: Union[str, datetime.date]=None
+    index_data, errata_data, skip_older_than_date: Optional[Union[str, datetime.date]]=None
 ) -> Iterator[tuple[int, list[str], Document, bool]]:
     """Given parsed data from the RFC Editor index, update the documents in the database
 
