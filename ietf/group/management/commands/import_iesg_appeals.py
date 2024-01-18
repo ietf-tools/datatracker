@@ -32,7 +32,9 @@ class Command(BaseCommand):
         )
         sub_stdout, sub_stderr = process.communicate()
         if not (Path(tmpdir) / "iesg_appeals" / "anderson-2006-03-08.md").exists():
-            self.stdout.write("Git clone of the iesg-scraper directory did not go as expected")
+            self.stdout.write(
+                "Git clone of the iesg-scraper directory did not go as expected"
+            )
             self.stdout.write("stdout:", sub_stdout)
             self.stdout.write("stderr:", sub_stderr)
             self.stdout.write(f"Clean up {tmpdir} manually")
@@ -243,7 +245,7 @@ class Command(BaseCommand):
                 datetime.timezone.utc
             )
 
-        redirects=[]
+        redirects = []
         for index, title in enumerate(titles):
             # IESG is group 2
             appeal = Appeal.objects.create(
@@ -270,8 +272,15 @@ class Command(BaseCommand):
                         content_type=content_type,
                         bits=bits,
                     )
-                    redirects.append((part.replace(".md",".html") if part.endswith(".md") else part,artifact.pk))
+                    redirects.append(
+                        (
+                            part.replace(".md", ".html")
+                            if part.endswith(".md")
+                            else part,
+                            artifact.pk,
+                        )
+                    )
 
         shutil.rmtree(tmpdir)
-        with open("iesg_appeal_redirects.txt","w") as f:
+        with open("iesg_appeal_redirects.txt", "w") as f:
             f.write(str(redirects))

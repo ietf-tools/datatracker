@@ -34,38 +34,38 @@ def add_time_of_day(bare_datetime):
     """
     dt = None
     if bare_datetime.year > 2015:
-        dt = bare_datetime.replace(hour=7).astimezone(ZoneInfo("America/Los_Angeles"))
+        dt = bare_datetime.replace(hour=7).replace(tzinfo=ZoneInfo("America/Los_Angeles"))
     elif bare_datetime.year == 2015:
         if bare_datetime.month >= 4:
-            dt = bare_datetime.replace(hour=7).astimezone(
+            dt = bare_datetime.replace(hour=7).replace(tzinfo=
                 ZoneInfo("America/Los_Angeles")
             )
         else:
-            dt = bare_datetime.replace(hour=11, minute=30).astimezone(
+            dt = bare_datetime.replace(hour=11, minute=30).replace(tzinfo=
                 ZoneInfo("America/New_York")
             )
     elif bare_datetime.year > 1993:
-        dt = bare_datetime.replace(hour=11, minute=30).astimezone(
+        dt = bare_datetime.replace(hour=11, minute=30).replace(tzinfo=
             ZoneInfo("America/New_York")
         )
     elif bare_datetime.year == 1993:
         if bare_datetime.month >= 2:
-            dt = bare_datetime.replace(hour=11, minute=30).astimezone(
+            dt = bare_datetime.replace(hour=11, minute=30).replace(tzinfo=
                 ZoneInfo("America/New_York")
             )
         else:
-            dt = bare_datetime.replace(hour=12).astimezone(ZoneInfo("America/New_York"))
+            dt = bare_datetime.replace(hour=12).replace(tzinfo=ZoneInfo("America/New_York"))
     else:
-        dt = bare_datetime.replace(hour=12).astimezone(ZoneInfo("America/New_York"))
+        dt = bare_datetime.replace(hour=12).replace(tzinfo=ZoneInfo("America/New_York"))
 
-    return dt.astimezone(datetime.timezone.utc)
+    return dt.replace(tzinfo=datetime.timezone.utc)
 
 
 def build_bof_coord_data():
     CoordTuple = namedtuple("CoordTuple", "meeting_number source_name")
 
     def utc_from_la_time(time):
-        return time.astimezone(ZoneInfo("America/Los_Angeles")).astimezone(
+        return time.replace(tzinfo=ZoneInfo("America/Los_Angeles")).replace(tzinfo=
             datetime.timezone.utc
         )
 

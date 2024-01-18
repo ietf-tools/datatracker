@@ -33,7 +33,9 @@ class Command(BaseCommand):
         )
         sub_stdout, sub_stderr = process.communicate()
         if not Path(tmpdir).joinpath("iesg_statements", "2000-08-29.md").exists():
-            self.stdout.write("Git clone of the iesg-scraper directory did not go as expected")
+            self.stdout.write(
+                "Git clone of the iesg-scraper directory did not go as expected"
+            )
             self.stdout.write("stdout:", sub_stdout)
             self.stdout.write("stderr:", sub_stderr)
             self.stdout.write(f"Clean up {tmpdir} manually")
@@ -83,7 +85,9 @@ class Command(BaseCommand):
                 dest_filename
             )
             if dest.exists():
-                self.stdout.write(f"WARNING: {dest} already exists - not overwriting it.")
+                self.stdout.write(
+                    f"WARNING: {dest} already exists - not overwriting it."
+                )
             else:
                 os.makedirs(dest.parent, exist_ok=True)
                 shutil.copy(source, dest)
