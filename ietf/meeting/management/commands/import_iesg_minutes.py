@@ -34,27 +34,31 @@ def add_time_of_day(bare_datetime):
     """
     dt = None
     if bare_datetime.year > 2015:
-        dt = bare_datetime.replace(hour=7).replace(tzinfo=ZoneInfo("America/Los_Angeles"))
+        dt = bare_datetime.replace(hour=7).replace(
+            tzinfo=ZoneInfo("America/Los_Angeles")
+        )
     elif bare_datetime.year == 2015:
         if bare_datetime.month >= 4:
-            dt = bare_datetime.replace(hour=7).replace(tzinfo=
-                ZoneInfo("America/Los_Angeles")
+            dt = bare_datetime.replace(hour=7).replace(
+                tzinfo=ZoneInfo("America/Los_Angeles")
             )
         else:
-            dt = bare_datetime.replace(hour=11, minute=30).replace(tzinfo=
-                ZoneInfo("America/New_York")
+            dt = bare_datetime.replace(hour=11, minute=30).replace(
+                tzinfo=ZoneInfo("America/New_York")
             )
     elif bare_datetime.year > 1993:
-        dt = bare_datetime.replace(hour=11, minute=30).replace(tzinfo=
-            ZoneInfo("America/New_York")
+        dt = bare_datetime.replace(hour=11, minute=30).replace(
+            tzinfo=ZoneInfo("America/New_York")
         )
     elif bare_datetime.year == 1993:
         if bare_datetime.month >= 2:
-            dt = bare_datetime.replace(hour=11, minute=30).replace(tzinfo=
-                ZoneInfo("America/New_York")
+            dt = bare_datetime.replace(hour=11, minute=30).replace(
+                tzinfo=ZoneInfo("America/New_York")
             )
         else:
-            dt = bare_datetime.replace(hour=12).replace(tzinfo=ZoneInfo("America/New_York"))
+            dt = bare_datetime.replace(hour=12).replace(
+                tzinfo=ZoneInfo("America/New_York")
+            )
     else:
         dt = bare_datetime.replace(hour=12).replace(tzinfo=ZoneInfo("America/New_York"))
 
@@ -244,7 +248,9 @@ class Command(BaseCommand):
                         / doc_filename
                     )
                     if dest.exists():
-                        self.stdout.write(f"WARNING: {dest} already exists - not overwriting it.")
+                        self.stdout.write(
+                            f"WARNING: {dest} already exists - not overwriting it."
+                        )
                     else:
                         os.makedirs(dest.parent, exist_ok=True)
                         shutil.copy(source, dest)
@@ -281,9 +287,7 @@ class Command(BaseCommand):
                             desc=f"{verbose_type} moved into datatracker",
                         )
                         doc.save_with_history([e])
-                        session.presentations.create(
-                            document=doc, rev=doc.rev
-                        )
+                        session.presentations.create(document=doc, rev=doc.rev)
                         dest = (
                             Path(settings.AGENDA_PATH)
                             / meeting_name
