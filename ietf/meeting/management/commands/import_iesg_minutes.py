@@ -58,14 +58,14 @@ def add_time_of_day(bare_datetime):
     else:
         dt = bare_datetime.replace(hour=12).replace(tzinfo=ZoneInfo("America/New_York"))
 
-    return dt.replace(tzinfo=datetime.timezone.utc)
+    return dt.astimezone(datetime.timezone.utc)
 
 
 def build_bof_coord_data():
     CoordTuple = namedtuple("CoordTuple", "meeting_number source_name")
 
     def utc_from_la_time(time):
-        return time.replace(tzinfo=ZoneInfo("America/Los_Angeles")).replace(tzinfo=
+        return time.replace(tzinfo=ZoneInfo("America/Los_Angeles")).astimezone(
             datetime.timezone.utc
         )
 
