@@ -1322,6 +1322,7 @@ class Session(models.Model):
             for doc in self.prefetched_active_materials:
                 if doc.type_id=="chatlog":
                     chatlog_doc = doc
+                    break
             if chatlog_doc is not None:
                 return chatlog_doc.get_href()
         else:

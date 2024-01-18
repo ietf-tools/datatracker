@@ -873,7 +873,7 @@ def meetings(request, acronym, group_type=None):
         stsa.session.current_status = stsa.sessionstatus
 
     sessions = sorted(
-        list(set([stsa.session for stsa in stsas])),
+        set([stsa.session for stsa in stsas]),
         key=lambda x: (
             x._otsa.timeslot.time,
             x._otsa.timeslot.type_id,
