@@ -23,7 +23,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         if Document.objects.filter(type="statement", group__acronym="iesg").exists():
-            print("IESG statement documents already exist - exiting")
+            self.stdout.write("IESG statement documents already exist - exiting")
             exit(-1)
         tmpdir = tempfile.mkdtemp()
         process = subprocess.Popen(
@@ -31,12 +31,12 @@ class Command(BaseCommand):
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
         )
-        stdout, stderr = process.communicate()
+        sub_stdout, sub_stderr = process.communicate()
         if not Path(tmpdir).joinpath("iesg_statements", "2000-08-29.md").exists():
-            print("Git clone of the iesg-scraper directory did not go as expected")
-            print("stdout:", stdout)
-            print("stderr:", stderr)
-            print(f"Clean up {tmpdir} manually")
+            self.stdout.write("Git clone of the iesg-scraper directory did not go as expected")
+            self.stdout.write("stdout:", sub_stdout)
+            self.stdout.write("stderr:", sub_stderr)
+            self.stdout.write(f"Clean up {tmpdir} manually")
             exit(-1)
 
         for item in self.get_work_items():
@@ -83,7 +83,7 @@ class Command(BaseCommand):
                 dest_filename
             )
             if dest.exists():
-                print(f"WARNING: {dest} already exists - not overwriting it.")
+                self.stdout.write(f"WARNING: {dest} already exists - not overwriting it.")
             else:
                 os.makedirs(dest.parent, exist_ok=True)
                 shutil.copy(source, dest)

@@ -30,12 +30,12 @@ class Command(BaseCommand):
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
         )
-        stdout, stderr = process.communicate()
+        sub_stdout, sub_stderr = process.communicate()
         if not (Path(tmpdir) / "iesg_appeals" / "anderson-2006-03-08.md").exists():
-            print("Git clone of the iesg-scraper directory did not go as expected")
-            print("stdout:", stdout)
-            print("stderr:", stderr)
-            print(f"Clean up {tmpdir} manually")
+            self.stdout.write("Git clone of the iesg-scraper directory did not go as expected")
+            self.stdout.write("stdout:", sub_stdout)
+            self.stdout.write("stderr:", sub_stderr)
+            self.stdout.write(f"Clean up {tmpdir} manually")
             exit(-1)
         titles = [
             "Appeal: IESG Statement on Guidance on In-Person and Online Interim Meetings (John Klensin, 2023-08-15)",

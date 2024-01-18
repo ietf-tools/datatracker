@@ -244,7 +244,7 @@ class Command(BaseCommand):
                         / doc_filename
                     )
                     if dest.exists():
-                        print(f"WARNING: {dest} already exists - not overwriting it.")
+                        self.stdout.write(f"WARNING: {dest} already exists - not overwriting it.")
                     else:
                         os.makedirs(dest.parent, exist_ok=True)
                         shutil.copy(source, dest)
@@ -291,7 +291,7 @@ class Command(BaseCommand):
                             / doc_filename
                         )
                         if dest.exists():
-                            print(
+                            self.stdout.write(
                                 f"WARNING: {dest} already exists - not overwriting it."
                             )
                         else:
