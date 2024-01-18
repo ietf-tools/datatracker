@@ -263,11 +263,11 @@ class Command(BaseCommand):
                 with source_path.open("rb") as source_file:
                     bits = source_file.read()
                     if part == "morfin-2008-09-10.txt":
-                        bits=bits.decode("macintosh")
-                        bits.replace("\r","\n")
-                        bits.encode("utf8")
+                        bits = bits.decode("macintosh")
+                        bits = bits.replace("\r", "\n")
+                        bits = bits.encode("utf8")
                     elif part in ["morfin-2006-02-07.txt", "morfin-2006-01-14.txt"]:
-                        bits=bits.decode("windows-1252").encode("utf8")
+                        bits = bits.decode("windows-1252").encode("utf8")
                     artifact_type_id = (
                         "response" if part.startswith("response") else "appeal"
                     )
