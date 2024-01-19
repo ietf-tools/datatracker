@@ -336,18 +336,15 @@ def parse_index(response):
 
 
 def update_docs_from_rfc_index(
-    index_data, errata_data, skip_older_than_date: Optional[Union[str, datetime.date]]=None
+    index_data, errata_data, skip_older_than_date: Optional[datetime.date] = None
 ) -> Iterator[tuple[int, list[str], Document, bool]]:
     """Given parsed data from the RFC Editor index, update the documents in the database
 
     Returns an iterator that yields (rfc_number, change_list, doc, rfc_published) for the
     RFC document and, if applicable, the I-D that it came from.
-    
-    The skip_older_than_date can be a datetime.date or a string formatted as "YYYY-MM-DD".
-    """
-    if isinstance(skip_older_than_date, datetime.date):
-        skip_older_than_date = skip_older_than_date.strftime("%Y-%m-%d")
 
+    The skip_older_than_date is a bare date, not a datetime.
+    """
     # Create dict mapping doc-id to list of errata records that apply to it
     errata: dict[str, list[dict]] = {}
     for item in errata_data:
