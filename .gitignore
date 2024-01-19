@@ -23,6 +23,7 @@ datatracker.sublime-workspace
 /media
 /node_modules
 /release-coverage.json
+/static
 /tmp-*
 /.testresult
 *.pyc

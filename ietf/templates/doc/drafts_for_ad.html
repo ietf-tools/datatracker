@@ -6,13 +6,13 @@
 {% block pagehead %}
     <link rel="stylesheet" href="{% static "ietf/css/list.css" %}">
 {% endblock %}
-{% block title %}Documents for {{ ad_name }}{% endblock %}
+{% block title %}Documents for {{ ad.name }}{% endblock %}
 {% block content %}
     {% origin %}
-    <h1>Documents for {{ ad_name }}</h1>
+    <h1>Documents for {{ ad.name }}</h1>
     <a class="btn btn-primary my-3" href="{% url 'ietf.doc.views_search.ad_workload' %}">IESG dashboard</a>
     {% if blocked_docs %}
-        <h2 class="mt-4">Blocking positions held by {{ ad_name }}</h2>
+        <h2 class="mt-4">Blocking positions held by {{ ad.name }}</h2>
         <table class="table table-sm table-striped tablesorter">
             <thead>
                 <tr>
@@ -54,7 +54,7 @@
         </table>
     {% endif %}
     {% if not_balloted_docs %}
-        <h2 class="mt-4">Missing ballot positions for {{ ad_name }}</h2>
+        <h2 class="mt-4">Missing ballot positions for {{ ad.name }}</h2>
         <table class="table table-sm table-striped tablesorter">
             <thead>
                 <tr>
@@ -80,7 +80,7 @@
             </tbody>
         </table>
     {% endif %}
-    <h2 class="mt-4">Documents for {{ ad_name }}</h2>
+    <h2 class="mt-4">Documents for {{ ad.name }}</h2>
     {% include "doc/search/search_results.html" with start_table=True end_table=True %}
 {% endblock %}
 {% block js %}

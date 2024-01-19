@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2012-2020, All Rights Reserved
+# Copyright The IETF Trust 2012-2023, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -31,6 +31,8 @@ from django.utils.text import slugify
 
 from tastypie.test import ResourceTestCaseMixin
 
+from weasyprint.urls import URLFetchingError
+
 import debug                            # pyflakes:ignore
 
 from ietf.doc.models import ( Document, DocRelationshipName, RelatedDocument, State,
@@ -40,7 +42,7 @@ from ietf.doc.factories import ( DocumentFactory, DocEventFactory, CharterFactor
     ConflictReviewFactory, WgDraftFactory, IndividualDraftFactory, WgRfcFactory, 
     IndividualRfcFactory, StateDocEventFactory, BallotPositionDocEventFactory, 
     BallotDocEventFactory, DocumentAuthorFactory, NewRevisionDocEventFactory,
-    StatusChangeFactory, DocExtResourceFactory, RgDraftFactory)
+    StatusChangeFactory, DocExtResourceFactory, RgDraftFactory, BcpFactory)
 from ietf.doc.forms import NotifyForm
 from ietf.doc.fields import SearchableDocumentsField
 from ietf.doc.utils import create_ballot_if_not_open, uppercase_std_abbreviated_name
@@ -155,6 +157,23 @@ class SearchTests(TestCase):
         r = self.client.get(base_url + "?activedrafts=on&by=state&state=%s&substate=" % draft.get_state("draft-iesg").pk)
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, draft.title)
+
+    def test_search_became_rfc(self):
+        draft = WgDraftFactory()
+        rfc = WgRfcFactory()
+        draft.set_state(State.objects.get(type="draft", slug="rfc"))
+        draft.relateddocument_set.create(relationship_id="became_rfc", target=rfc)
+        base_url = urlreverse('ietf.doc.views_search.search')
+
+        # find by RFC
+        r = self.client.get(base_url + f"?rfcs=on&name={rfc.name}")
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, rfc.title)
+
+        # find by draft
+        r = self.client.get(base_url + f"?activedrafts=on&rfcs=on&name={draft.name}")
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, rfc.title)
 
     def test_search_for_name(self):
         draft = WgDraftFactory(name='draft-ietf-mars-test',group=GroupFactory(acronym='mars',parent=Group.objects.get(acronym='farfut')),authors=[PersonFactory()],ad=PersonFactory())
@@ -820,6 +839,10 @@ Man                    Expires September 22, 2015               [Page 3]
         rfc.relateddocument_set.create(relationship_id='updates',target=updated)
         updated_by = IndividualRfcFactory()
         updated_by.relateddocument_set.create(relationship_id='updates',target=rfc)
+
+        r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name, rev=draft.rev)))
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "This is an older version of an Internet-Draft that was ultimately published as")
 
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)))
         self.assertEqual(r.status_code, 302)
@@ -1948,6 +1971,12 @@ class DocTestCase(TestCase):
 
     @override_settings(RFC_EDITOR_INFO_BASE_URL='https://www.rfc-editor.ietf.org/info/')
     def test_document_bibtex(self):
+
+        for factory in [CharterFactory, BcpFactory, StatusChangeFactory, ConflictReviewFactory]: # Should be extended to all other doc types
+            doc = factory()
+            url = urlreverse("ietf.doc.views_doc.document_bibtex", kwargs=dict(name=doc.name))
+            r = self.client.get(url)
+            self.assertEqual(r.status_code, 404)          
         rfc = WgRfcFactory.create(
             time=datetime.datetime(2010, 10, 10, tzinfo=ZoneInfo(settings.TIME_ZONE))
         )
@@ -2844,6 +2873,12 @@ class PdfizedTests(TestCase):
                 self.should_succeed(dict(name=draft.name,rev=f'{r:02d}',ext=ext))
         self.should_404(dict(name=draft.name,rev='02'))
 
+        with mock.patch('ietf.doc.models.DocumentInfo.pdfized', side_effect=URLFetchingError):
+            url = urlreverse(self.view, kwargs=dict(name=rfc.name))
+            r = self.client.get(url)
+            self.assertEqual(r.status_code, 200)
+            self.assertContains(r, "Error while rendering PDF")
+
 class NotifyValidationTests(TestCase):
     def test_notify_validation(self):
         valid_values = [
@@ -2951,4 +2986,51 @@ class DocInfoMethodsTests(TestCase):
         self.assertEqual(draft.revisions_by_dochistory(),[f"{i:02d}" for i in range(8,10)])
         self.assertEqual(draft.revisions_by_newrevisionevent(),[f"{i:02d}" for i in [*range(0,5), *range(6,10)]])      
 
+    def test_referenced_by_rfcs(self):
+        # n.b., no significance to the ref* values in this test
+        referring_draft = WgDraftFactory()
+        (rfc, referring_rfc) = WgRfcFactory.create_batch(2)
+        rfc.targets_related.create(relationship_id="refnorm", source=referring_draft)
+        rfc.targets_related.create(relationship_id="refnorm", source=referring_rfc)
+        self.assertCountEqual(
+            rfc.referenced_by_rfcs(),
+            rfc.targets_related.filter(source=referring_rfc),
+        )
 
+    def test_referenced_by_rfcs_as_rfc_or_draft(self):
+        # n.b., no significance to the ref* values in this test
+        draft = WgDraftFactory()
+        rfc = WgRfcFactory()
+        draft.relateddocument_set.create(relationship_id="became_rfc", target=rfc)
+        
+        # Draft referring to the rfc and the draft - should not be reported at all
+        draft_referring_to_both = WgDraftFactory()
+        draft_referring_to_both.relateddocument_set.create(relationship_id="refnorm", target=draft)
+        draft_referring_to_both.relateddocument_set.create(relationship_id="refnorm", target=rfc)
+        
+        # RFC referring only to the draft - should be reported for either the draft or the rfc
+        rfc_referring_to_draft = WgRfcFactory()
+        rfc_referring_to_draft.relateddocument_set.create(relationship_id="refinfo", target=draft)
+
+        # RFC referring only to the rfc - should be reported only for the rfc
+        rfc_referring_to_rfc = WgRfcFactory()
+        rfc_referring_to_rfc.relateddocument_set.create(relationship_id="refinfo", target=rfc)
+
+        # RFC referring only to the rfc - should be reported only for the rfc
+        rfc_referring_to_rfc = WgRfcFactory()
+        rfc_referring_to_rfc.relateddocument_set.create(relationship_id="refinfo", target=rfc)
+
+        # RFC referring to the rfc and the draft - should be reported for both
+        rfc_referring_to_both = WgRfcFactory()
+        rfc_referring_to_both.relateddocument_set.create(relationship_id="refnorm", target=draft)
+        rfc_referring_to_both.relateddocument_set.create(relationship_id="refnorm", target=rfc)
+
+        self.assertCountEqual(
+            draft.referenced_by_rfcs_as_rfc_or_draft(),
+            draft.targets_related.filter(source__type="rfc"),
+        )
+
+        self.assertCountEqual(
+            rfc.referenced_by_rfcs_as_rfc_or_draft(),
+            draft.targets_related.filter(source__type="rfc") | rfc.targets_related.filter(source__type="rfc"),
+        )
