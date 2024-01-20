@@ -31,6 +31,7 @@ CRONTAB_DEFS = {
 
 class Command(BaseCommand):
     """Manage periodic tasks"""
+
     def add_arguments(self, parser):
         parser.add_argument("--create-default", action="store_true")
 
@@ -39,8 +40,8 @@ class Command(BaseCommand):
         if options["create_default"]:
             self.stdout.write("Ha!")
             return
-        self.show_tasks()        
-    
+        self.show_tasks()
+
     def get_or_create_crontabs(self):
         crontabs = {}
         for label, definition in CRONTAB_DEFS.items():
@@ -105,5 +106,4 @@ class Command(BaseCommand):
                 for task in tasks:
                     self.stdout.write(f"  {task.task} - {task.name}\n")
             else:
-                
                 print("  Nothing scheduled")
