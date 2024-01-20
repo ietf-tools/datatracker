@@ -54,14 +54,13 @@ class Command(BaseCommand):
         return crontabs
 
     def create_default_tasks(self):
-        # For now, just install the default task schedules
-        # schedule the tasks
         PeriodicTask.objects.get_or_create(
             name="Send scheduled mail",
             task="ietf.utils.tasks.send_scheduled_mail_task",
             defaults=dict(
                 enabled=False,
                 crontab=self.crontabs["every_15m"],
+                description="Send mail scheduled to go out at certain times"
             ),
         )
 
@@ -72,6 +71,11 @@ class Command(BaseCommand):
             defaults=dict(
                 enabled=False,
                 crontab=self.crontabs["every_15m"],
+                description=(
+                    "Reparse the last _year_ of RFC index entries until "
+                    "https://github.com/ietf-tools/datatracker/issues/3734 is addressed. "
+                    "This takes about 20s on production as of 2022-08-11."
+                )
             ),
         )
 
@@ -82,6 +86,9 @@ class Command(BaseCommand):
             defaults=dict(
                 enabled=False,
                 crontab=self.crontabs["daily"],
+                description=(
+                    "Run an extended version of the rfc editor update to catch changes with backdated timestamps"
+                ),
             ),
         )
 
@@ -91,6 +98,7 @@ class Command(BaseCommand):
             defaults=dict(
                 enabled=False,
                 crontab=self.crontabs["daily"],
+                description="Fetch meeting attendance data from ietf.org/registration/attendees",
             ),
         )
 
@@ -98,7 +106,9 @@ class Command(BaseCommand):
             name="Send review reminders",
             task="ietf.review.tasks.send_review_reminders_task",
             defaults=dict(
+                enabled=False,
                 crontab=self.crontabs["daily"],
+                description="Send reminders originating from the review app",
             ),
         )
 
