@@ -36,9 +36,8 @@ class Command(BaseCommand):
         parser.add_argument("--create-default", action="store_true")
 
     def handle(self, *args, **options):
-        print(repr(options))
         if options["create_default"]:
-            self.stdout.write("Ha!")
+            self.get_or_create_crontabs()
             return
         self.show_tasks()
 
