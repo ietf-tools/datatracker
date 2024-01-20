@@ -60,6 +60,7 @@ class Command(BaseCommand):
             name="Send scheduled mail",
             task="ietf.utils.tasks.send_scheduled_mail_task",
             defaults=dict(
+                enabled=False,
                 crontab=self.crontabs["every_15m"],
             ),
         )
@@ -69,6 +70,7 @@ class Command(BaseCommand):
             task="ietf.review.tasks.rfc_editor_index_update_task",
             kwargs=json.dumps(dict(full_index=False)),
             defaults=dict(
+                enabled=False,
                 crontab=self.crontabs["every_15m"],
             ),
         )
@@ -78,6 +80,7 @@ class Command(BaseCommand):
             task="ietf.review.tasks.rfc_editor_index_update_task",
             kwargs=json.dumps(dict(full_index=True)),
             defaults=dict(
+                enabled=False,
                 crontab=self.crontabs["daily"],
             ),
         )
@@ -86,6 +89,7 @@ class Command(BaseCommand):
             name="Fetch meeting attendance",
             task="ietf.stats.tasks.fetch_meeting_attendance_task",
             defaults=dict(
+                enabled=False,
                 crontab=self.crontabs["daily"],
             ),
         )
