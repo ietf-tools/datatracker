@@ -40,7 +40,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         self.crontabs = self.get_or_create_crontabs()
         if options["create_default"]:
-            self.get_or_create_crontabs()
+            self.create_default_tasks()
         if options["enable"]:
             self.enable_tasks(options["enable"])
         if options["disable"]:
