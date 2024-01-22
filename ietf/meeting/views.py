@@ -54,7 +54,7 @@ from ietf.group.utils import can_manage_session_materials, can_manage_some_group
 from ietf.person.models import Person, User
 from ietf.ietfauth.utils import role_required, has_role, user_is_person
 from ietf.mailtrigger.utils import gather_address_lists
-from ietf.meeting.models import Meeting, Session, Schedule, FloorPlan, SessionPresentation, TimeSlot, SlideSubmission
+from ietf.meeting.models import Meeting, Session, Schedule, FloorPlan, SessionPresentation, TimeSlot, SlideSubmission, Attended
 from ietf.meeting.models import SessionStatusName, SchedulingEvent, SchedTimeSessAssignment, Room, TimeSlotTypeName
 from ietf.meeting.forms import ( CustomDurationField, SwapDaysForm, SwapTimeslotsForm, ImportMinutesForm,
                                  TimeSlotCreateForm, TimeSlotEditForm, SessionCancelForm, SessionEditForm )
@@ -2426,8 +2426,10 @@ def session_details(request, num, acronym):
             session.cancelled = session.current_status in Session.CANCELED_STATUSES
             session.status = status_names.get(session.current_status, session.current_status)
 
-        session.filtered_artifacts = list(session.sessionpresentation_set.filter(document__type__slug__in=['agenda','minutes','bluesheets']))
-        session.filtered_artifacts.sort(key=lambda d:['agenda','minutes','bluesheets'].index(d.document.type.slug))
+        session.use_attended = session.meeting.use_attended()
+        interesting_artifacts = ['agenda','minutes'] if session.use_attended else ['agenda','minutes','bluesheets']
+        session.filtered_artifacts = list(session.sessionpresentation_set.filter(document__type__slug__in=interesting_artifacts))
+        session.filtered_artifacts.sort(key=lambda d:interesting_artifacts.index(d.document.type.slug))
         session.filtered_slides    = session.sessionpresentation_set.filter(document__type__slug='slides').order_by('order')
         session.filtered_drafts    = session.sessionpresentation_set.filter(document__type__slug='draft')
         session.filtered_chatlog_and_polls = session.sessionpresentation_set.filter(document__type__slug__in=('chatlog', 'polls')).order_by('document__type__slug')
@@ -2435,6 +2437,12 @@ def session_details(request, num, acronym):
         for qs in [session.filtered_artifacts,session.filtered_slides,session.filtered_drafts]:
             qs = [p for p in qs if p.document.get_state_slug(p.document.type_id)!='deleted']
             session.type_counter.update([p.document.type.slug for p in qs])
+        if session.use_attended:
+            session.type_counter.update(['bluesheets'])
+            if Attended.objects.filter(session=session):
+                ota = session.official_timeslotassignment()
+                sess_time = ota and ota.timeslot.time
+                session.bluesheet_title = 'Bluesheets %s: %s' % (session.meeting.number, sess_time.strftime("%a %H:%M"))
 
         session.order_number = session.order_in_meeting()
 
@@ -2515,6 +2523,14 @@ def add_session_drafts(request, session_id, num):
                     'form': form,
                   })
 
+def session_attendance(request, session_id, num):
+    # num is redundant, but we're dragging it along an artifact of where we are in the current URL structure
+    session = get_object_or_404(Session, pk=session_id)
+    attendance = Attended.objects.filter(session=session)
+    return render(request, "meeting/bluesheet.html", {
+        'session': session,
+	'attendance': attendance,
+	})
 
 def upload_session_bluesheets(request, session_id, num):
     # num is redundant, but we're dragging it along an artifact of where we are in the current URL structure
@@ -4096,6 +4112,13 @@ def deprecated_api_set_session_video_url(request):
 @role_required('Recording Manager') # TODO : Rework how Meetecho interacts via APIs. There may be better paths to pursue than Personal API keys as they are currently defined.
 @csrf_exempt
 def api_add_session_attendees(request):
+    """Upload attendees for one or more sessions
+
+    parameters:
+      apikey: the poster's personal API key
+      attended: json blob with
+          [{'session_id': 12345, 'attendees': [list of user IDs]}, ...]
+    """
 
     def err(code, text):
         return HttpResponse(text, status=code, content_type='text/plain')

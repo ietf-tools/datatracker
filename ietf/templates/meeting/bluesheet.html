@@ -1,0 +1,9 @@
+{% load origin %}
+{% origin %}
+<pre>Bluesheet for {{ session }}
+========================================================================
+
+{{ attendance|length }} attendees.
+
+{% for attended in attendance %}
+{{ attended.person }}	{#{{ attended.affiliation }}#}{% endfor %}</pre>

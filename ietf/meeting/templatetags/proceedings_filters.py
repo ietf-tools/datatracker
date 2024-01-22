@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2016-2020, All Rights Reserved
+# Copyright The IETF Trust 2016-2023, All Rights Reserved
 from django import template
 
 import debug       # pyflakes:ignore
@@ -22,4 +22,8 @@ def status_for_meeting(group,meeting):
 
 @register.filter
 def meeting_href(doc,meeting):
-    return doc.get_href(meeting)
+    if isinstance(doc, str):
+        url = doc
+        return url
+    else:
+        return doc.get_href(meeting)

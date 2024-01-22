@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2007-2022, All Rights Reserved
+# Copyright The IETF Trust 2007-2023, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -418,6 +418,15 @@ class Meeting(models.Model):
         new_item = find_history_active_at(group, self.meeting_start()) or group  # fall back to original if no history
         self.cached_groups_at_the_time[group.pk] = new_item
         return new_item
+
+    def use_attended(self):
+        if not hasattr(self,'cached_use_attended'):
+            try:
+                meeting_118 = Meeting.objects.get(number="118")
+            except Meeting.DoesNotExist:
+                meeting_118 = None
+            self.cached_use_attended = meeting_118 and self.date >= meeting_118.date
+        return self.cached_use_attended
 
     class Meta:
         ordering = ["-date", "-id"]
@@ -1103,7 +1112,14 @@ class Session(models.Model):
         return list(self.get_material("recording", only_one=False))
 
     def bluesheets(self):
-        return list(self.get_material("bluesheets", only_one=False))
+        if self.meeting.use_attended():
+            if Attended.objects.filter(session=self):
+                return [urlreverse('ietf.meeting.views.session_attendance',
+                                   kwargs={'num':self.meeting.number,'session_id':self.pk})]
+            else:
+                return []
+        else:
+            return list(self.get_material("bluesheets", only_one=False))
 
     def slides(self):
         if not hasattr(self, "_slides_cache"):
