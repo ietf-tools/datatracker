@@ -9,9 +9,12 @@ import datetime
 import mock
 import quopri
 
+from dataclasses import dataclass
+
 from django.conf import settings
 from django.urls import reverse as urlreverse
 from django.utils import timezone
+from django.test.utils import override_settings
 
 import debug                            # pyflakes:ignore
 
@@ -20,7 +23,7 @@ from ietf.doc.models import Document, DocEvent, DeletedEvent, DocTagName, Relate
 from ietf.doc.utils import add_state_change_event
 from ietf.group.factories import GroupFactory
 from ietf.person.models import Person
-from ietf.sync import iana, rfceditor
+from ietf.sync import iana, rfceditor, tasks
 from ietf.utils.mail import outbox, empty_outbox
 from ietf.utils.test_utils import login_testing_unauthorized
 from ietf.utils.test_utils import TestCase
@@ -672,3 +675,90 @@ class RFCEditorUndoTests(TestCase):
 
         e.content_type.model_class().objects.create(**json.loads(e.json))
         self.assertTrue(StateDocEvent.objects.filter(desc="First", doc=draft))
+
+
+class TaskTests(TestCase):
+    @override_settings(
+        RFC_EDITOR_INDEX_URL="https://rfc-editor.example.com/index/",
+        RFC_EDITOR_ERRATA_JSON_URL="https://rfc-editor.example.com/errata/",
+    )
+    @mock.patch("ietf.sync.tasks.update_docs_from_rfc_index")
+    @mock.patch("ietf.sync.tasks.parse_index")
+    @mock.patch("ietf.sync.tasks.requests.get")
+    def test_rfc_editor_index_update_task(
+        self, requests_get_mock, parse_index_mock, update_docs_mock
+    ):
+        """rfc_editor_index_update_task calls helpers correctly
+        
+        This tests that data flow is as expected. Assumes the individual helpers are
+        separately tested to function correctly.
+        """
+        @dataclass
+        class MockIndexData:
+            """Mock index item that claims to be a specified length"""
+            length: int
+
+            def __len__(self):
+                return self.length
+
+        @dataclass
+        class MockResponse:
+            """Mock object that contains text and json() that claims to be a specified length"""
+            text: str
+            json_length: int = 0
+
+            def json(self):
+                return MockIndexData(length=self.json_length)
+
+        # Response objects
+        index_response = MockResponse(text="this is the index")
+        errata_response = MockResponse(
+            text="these are the errata", json_length=rfceditor.MIN_ERRATA_RESULTS
+        )
+
+        # Test with full_index = False
+        requests_get_mock.side_effect = (index_response, errata_response)  # will step through these
+        parse_index_mock.return_value = MockIndexData(length=rfceditor.MIN_INDEX_RESULTS)
+        update_docs_mock.return_value = []  # not tested
+
+        tasks.rfc_editor_index_update_task(full_index=False)
+
+        # Check parse_index() call
+        self.assertTrue(parse_index_mock.called)
+        (parse_index_args, _) = parse_index_mock.call_args
+        self.assertEqual(
+            parse_index_args[0].read(),  # arg is a StringIO
+            "this is the index",
+            "parse_index is called with the index text in a StringIO",
+        )
+
+        # Check update_docs_from_rfc_index call
+        self.assertTrue(update_docs_mock.called)
+        (update_docs_args, update_docs_kwargs) = update_docs_mock.call_args
+        self.assertEqual(
+            update_docs_args, (parse_index_mock.return_value, errata_response.json())
+        )
+        self.assertIsNotNone(update_docs_kwargs["skip_older_than_date"])
+
+        # Test again with full_index = True
+        requests_get_mock.side_effect = (index_response, errata_response)  # will step through these
+        parse_index_mock.return_value = MockIndexData(length=rfceditor.MIN_INDEX_RESULTS)
+        update_docs_mock.return_value = []  # not tested
+        tasks.rfc_editor_index_update_task(full_index=True)
+
+        # Check parse_index() call
+        self.assertTrue(parse_index_mock.called)
+        (parse_index_args, _) = parse_index_mock.call_args
+        self.assertEqual(
+            parse_index_args[0].read(),  # arg is a StringIO
+            "this is the index",
+            "parse_index is called with the index text in a StringIO",
+        )
+
+        # Check update_docs_from_rfc_index call
+        self.assertTrue(update_docs_mock.called)
+        (update_docs_args, update_docs_kwargs) = update_docs_mock.call_args
+        self.assertEqual(
+            update_docs_args, (parse_index_mock.return_value, errata_response.json())
+        )
+        self.assertIsNone(update_docs_kwargs["skip_older_than_date"])
