@@ -29,7 +29,8 @@ from ietf.name.models import FormalLanguageName, DocRelationshipName, CountryNam
 from ietf.review.factories import ReviewRequestFactory, ReviewerSettingsFactory, ReviewAssignmentFactory
 from ietf.stats.models import MeetingRegistration, CountryAlias
 from ietf.stats.factories import MeetingRegistrationFactory
-from ietf.stats.utils import get_meeting_registration_data
+from ietf.stats.tasks import fetch_meeting_attendance_task
+from ietf.stats.utils import get_meeting_registration_data, FetchStats
 from ietf.utils.timezone import date_today
 
 
@@ -300,3 +301,20 @@ class StatisticsTests(TestCase):
         get_meeting_registration_data(meeting)
         query = MeetingRegistration.objects.all()
         self.assertEqual(query.count(), 2)
+
+
+class TaskTests(TestCase):
+    @patch("ietf.stats.tasks.fetch_attendance_from_meetings")
+    def test_fetch_meeting_attendance_task(self, mock_fetch_attendance):
+        today = date_today()
+        meetings = [
+            MeetingFactory(type_id="ietf", date=today - datetime.timedelta(days=1)),
+            MeetingFactory(type_id="ietf", date=today - datetime.timedelta(days=2)),
+            MeetingFactory(type_id="ietf", date=today - datetime.timedelta(days=3)),
+        ]
+        mock_fetch_attendance.return_value = [FetchStats(1,2,3), FetchStats(1,2,3)]
+
+        fetch_meeting_attendance_task()
+        
+        self.assertEqual(mock_fetch_attendance.call_count, 1)
+        self.assertCountEqual(mock_fetch_attendance.call_args[0][0], meetings[0:2])
