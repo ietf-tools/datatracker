@@ -873,11 +873,6 @@ class TaskTests(TestCase):
     def test_rfc_editor_index_update_task(
         self, requests_get_mock, parse_index_mock, update_docs_mock
     ):
-        """rfc_editor_index_update_task calls helpers correctly
-        
-        This tests that data flow is as expected. Assumes the individual helpers are
-        separately tested to function correctly.
-        """
         @dataclass
         class MockIndexData:
             """Mock index item that claims to be a specified length"""
