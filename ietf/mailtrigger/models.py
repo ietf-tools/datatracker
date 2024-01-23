@@ -36,8 +36,8 @@ def clean_duplicates(addrlist):
 class MailTrigger(models.Model):
     slug = models.CharField(max_length=64, primary_key=True)
     desc = models.TextField(blank=True)
-    to   = models.ManyToManyField('Recipient', blank=True, related_name='used_in_to')
-    cc   = models.ManyToManyField('Recipient', blank=True, related_name='used_in_cc')
+    to   = models.ManyToManyField('mailtrigger.Recipient', blank=True, related_name='used_in_to')
+    cc   = models.ManyToManyField('mailtrigger.Recipient', blank=True, related_name='used_in_cc')
 
     class Meta:
         ordering = ["slug"]

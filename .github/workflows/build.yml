@@ -59,7 +59,8 @@ jobs:
     steps:   
     - uses: actions/checkout@v4
       with:
-        fetch-depth: 0
+        fetch-depth: 1
+        fetch-tags: false
 
     - name: Get Next Version
       if: ${{ github.ref_name == 'release' }}
@@ -131,7 +132,8 @@ jobs:
     steps:
     - uses: actions/checkout@v4
       with:
-        fetch-depth: 0
+        fetch-depth: 1
+        fetch-tags: false
         
     - name: Setup Node.js
       uses: actions/setup-node@v4
@@ -145,7 +147,7 @@ jobs:
         
     - name: Download a Coverage Results
       if: ${{ github.event.inputs.skiptests == 'false' || github.ref_name == 'release' }}
-      uses: actions/download-artifact@v4.1.0
+      uses: actions/download-artifact@v4.1.1
       with:
         name: coverage
 
@@ -177,6 +179,20 @@ jobs:
         echo "Build release tarball..."
         mkdir -p /home/runner/work/release
         tar -czf /home/runner/work/release/release.tar.gz -X dev/deploy/exclude-patterns.txt .
+
+    - name: Collect + Push Statics
+      env:
+        DEBIAN_FRONTEND: noninteractive
+        AWS_ACCESS_KEY_ID: ${{ secrets.CF_R2_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.CF_R2_KEY_SECRET }}
+        AWS_DEFAULT_REGION: auto
+        AWS_ENDPOINT_URL: ${{ secrets.CF_R2_ENDPOINT }}
+      run: |
+        echo "Collecting statics..."
+        docker run --rm --name collectstatics -v $(pwd):/workspace ghcr.io/ietf-tools/datatracker-app-base:latest sh dev/deploy/collectstatics.sh
+        echo "Pushing statics..."
+        cd static
+        aws s3 sync . s3://static/dt/$PKG_VERSION --only-show-errors
         
     - name: Update CHANGELOG
       id: changelog
@@ -315,7 +331,7 @@ jobs:
     - uses: actions/checkout@v4
         
     - name: Download a Release Artifact
-      uses: actions/download-artifact@v4.1.0
+      uses: actions/download-artifact@v4.1.1
       with:
         name: release-${{ env.PKG_VERSION }}
         
@@ -351,7 +367,7 @@ jobs:
       
     steps:
     - name: Download a Release Artifact
-      uses: actions/download-artifact@v4.1.0
+      uses: actions/download-artifact@v4.1.1
       with:
         name: release-${{ env.PKG_VERSION }}
         path: /a/www/ietf-datatracker/main.dev.${{ github.run_number }}
