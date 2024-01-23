@@ -598,8 +598,3 @@ class SearchableFieldTests(TestCase):
         self.assertTrue(changed_form.has_changed())
         unchanged_form = TestForm(initial={'test_field': [1]}, data={'test_field': [1]})
         self.assertFalse(unchanged_form.has_changed())
-
-
-class TaskTests(TestCase):
-    def test_send_scheduled_mail_task(self):
-        SendQueue
