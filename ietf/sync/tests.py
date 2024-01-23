@@ -687,7 +687,7 @@ class TaskTests(TestCase):
     @mock.patch("ietf.sync.tasks.requests.get")
     def test_rfc_editor_index_update_task(
         self, requests_get_mock, parse_index_mock, update_docs_mock
-    ):
+    ) -> None:  # the annotation here prevents mypy from complaining about annotation-unchecked
         """rfc_editor_index_update_task calls helpers correctly
         
         This tests that data flow is as expected. Assumes the individual helpers are
