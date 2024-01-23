@@ -19,9 +19,9 @@ def fetch_meeting_attendance_task():
     except RuntimeError as err:
         log.log(f"Error in fetch_meeting_attendance_task: {err}")
     else:
-        for meeting, stats in zip(meetings, fetch_attendance_from_meetings(meetings)):
+        for meeting, meeting_stats in zip(meetings, stats):
             log.log(
                 "Fetched data for meeting {:>3}: {:4d} processed, {:4d} added, {:4d} in table".format(
-                    meeting.number, stats.processed, stats.added, stats.total
+                    meeting.number, meeting_stats.processed, meeting_stats.added, meeting_stats.total
                 )
             )
