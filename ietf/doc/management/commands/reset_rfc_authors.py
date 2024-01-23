@@ -23,6 +23,11 @@ class Command(BaseCommand):
             raise CommandError(
                 f"rfc{options['rfcnum']} does not exist in the Datatracker."
             )
+
+        draft = rfc.came_from_draft()
+        if draft is None:
+            raise CommandError(f"{rfc.name} did not come from a draft. Can't reset.")
+
         orig_authors = rfc.documentauthor_set.all()
         if orig_authors.exists():
             # Potentially dangerous, so refuse unless "--force" is specified
@@ -43,9 +48,6 @@ class Command(BaseCommand):
                     f"Removed author(s): {', '.join(removed_auth_names)}"
                 )
             )
-        draft = rfc.came_from_draft()
-        if draft is None:
-            raise CommandError(f"{rfc.name} did not come from a draft. Can't reset.")
 
         for author in draft.documentauthor_set.all():
             # Copy the author but point at the new doc.
