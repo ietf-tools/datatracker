@@ -23,16 +23,25 @@ class Command(BaseCommand):
             raise CommandError(
                 f"rfc{options['rfcnum']} does not exist in the Datatracker."
             )
-        n_authors = rfc.documentauthor_set.count()
-        if n_authors > 0:
+        orig_authors = rfc.documentauthor_set.all()
+        if orig_authors.exists():
             # Potentially dangerous, so refuse unless "--force" is specified
             if not options["force"]:
                 raise CommandError(
                     f"{rfc.name} already has authors. Not resetting. Use '--force' to reset anyway."
                 )
+            removed_auth_names = list(orig_authors.values_list("person__name", flat=True))
             rfc.documentauthor_set.all().delete()
+            DocEvent.objects.create(
+                doc=rfc,
+                by=Person.objects.get(name="(System)"),
+                type="edited_authors",
+                desc=f"Removed all authors: {', '.join(removed_auth_names)}",
+            )
             self.stdout.write(
-                self.style.SUCCESS(f"Removed existing {n_authors} authors")
+                self.style.SUCCESS(
+                    f"Removed author(s): {', '.join(removed_auth_names)}"
+                )
             )
         draft = rfc.came_from_draft()
         if draft is None:
