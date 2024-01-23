@@ -15,26 +15,6 @@ from ietf.utils.mail import log_smtp_exception, send_error_email
 
 
 @shared_task
-def every_15m_task():
-    """Queue four-times-hourly tasks for execution"""
-    # todo decide whether we want this to be a meta-task or to individually schedule the tasks
-    send_scheduled_mail_task.delay()
-    # Parse the last year of RFC index data to get new RFCs. Needed until
-    # https://github.com/ietf-tools/datatracker/issues/3734 is addressed.
-    rfc_editor_index_update_task.delay(full_index=False)
-
-
-@shared_task
-def daily_task():
-    """Queue daily tasks for execution"""
-    fetch_meeting_attendance_task.delay()
-    send_review_reminders_task.delay()
-    # Run an extended version of the rfc editor update to catch changes
-    # with backdated timestamps
-    rfc_editor_index_update_task.delay(full_index=True)
-
-
-@shared_task
 def send_scheduled_mail_task():
     """Send scheduled email
     
