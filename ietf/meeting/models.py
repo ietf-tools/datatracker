@@ -366,10 +366,6 @@ class Meeting(models.Model):
             pass
         return None
 
-    def set_official_schedule(self, schedule):
-        if self.schedule != schedule:
-            self.schedule = schedule
-            self.save()
 
     def updated(self):
         # should be Meeting.modified, but we don't have that
@@ -457,22 +453,6 @@ class Room(models.Model):
     def __str__(self):
         return u"%s size: %s" % (self.name, self.capacity)
 
-    def delete_timeslots(self):
-        for ts in self.timeslot_set.all():
-            ts.sessionassignments.all().delete()
-            ts.delete()
-
-    def create_timeslots(self):
-        days, time_slices, slots  = self.meeting.build_timeslices()
-        for day in days:
-            for ts in slots[day]:
-                TimeSlot.objects.create(type_id=ts.type_id,
-                                    meeting=self.meeting,
-                                    name=ts.name,
-                                    time=ts.time,
-                                    location=self,
-                                    duration=ts.duration)
-        #self.meeting.create_all_timeslots()
 
     def dom_id(self):
         return "room%u" % (self.pk)
@@ -496,14 +476,6 @@ class Room(models.Model):
         return max(self.x1, self.x2) if (self.x1 and self.x2) else 0
     def bottom(self):
         return max(self.y1, self.y2) if (self.y1 and self.y2) else 0
-    def functional_display_name(self):
-        if not self.functional_name:
-            return ""
-        if 'breakout' in self.functional_name.lower():
-            return ""
-        if self.functional_name[0].isdigit():
-            return ""
-        return self.functional_name
     # audio stream support
     def audio_stream_url(self):
         urlresources = [ur for ur in self.urlresource_set.all() if ur.name_id == 'audiostream']
@@ -775,9 +747,6 @@ class Schedule(models.Model):
         else:
             return "unofficial"
 
-    def delete_assignments(self):
-        self.assignments.all().delete()
-
     @property
     def qs_assignments_with_sessions(self):
         return self.assignments.filter(session__isnull=False)
@@ -789,10 +758,6 @@ class Schedule(models.Model):
     def qs_sessions_scheduled(self):
         """Get QuerySet containing sessions assigned to timeslots by this schedule"""
         return Session.objects.filter(timeslotassignments__schedule=self)
-
-    def delete_schedule(self):
-        self.assignments.all().delete()
-        self.delete()
 
 # to be renamed SchedTimeSessAssignments (stsa)
 class SchedTimeSessAssignment(models.Model):
@@ -1143,30 +1108,6 @@ class Session(models.Model):
             self._order_in_meeting = session_list.index(self) + 1 if self in session_list else 0
         return self._order_in_meeting
 
-    def all_meeting_sessions_cancelled(self):
-        return set(s.current_status for s in self.all_meeting_sessions_for_group()) == {'canceled'}
-
-    def all_meeting_recordings(self):
-        recordings = [] # These are not sets because we need to preserve relative ordering or redo the ordering work later
-        sessions = self.all_meeting_sessions_for_group()
-        for session in sessions:
-            recordings.extend([r for r in session.recordings() if r not in recordings])
-        return recordings
-            
-    def all_meeting_bluesheets(self):
-        bluesheets = []
-        sessions = self.all_meeting_sessions_for_group()
-        for session in sessions:
-            bluesheets.extend([b for b in session.bluesheets() if b not in bluesheets])
-        return bluesheets
-            
-    def all_meeting_drafts(self):
-        drafts = []
-        sessions = self.all_meeting_sessions_for_group()
-        for session in sessions:
-            drafts.extend([d for d in session.drafts() if d not in drafts])
-        return drafts
-
     def all_meeting_agendas(self):
         agendas = []
         sessions = self.all_meeting_sessions_for_group()
@@ -1282,19 +1223,6 @@ class Session(models.Model):
                 return "No agenda file found"
         else:
             return "The agenda has not been uploaded yet."
-
-    def agenda_file(self):
-        if not hasattr(self, '_agenda_file'):
-            self._agenda_file = ""
-
-            agenda = self.agenda()
-            if not agenda:
-                return ""
-
-            # FIXME: uploaded_filename should be replaced with a function that computes filenames when they are of a fixed schema and not uploaded names
-            self._agenda_file = "%s/agenda/%s" % (self.meeting.number, agenda.uploaded_filename)
-            
-        return self._agenda_file
 
     def chat_room_name(self):
         if self.chat_room:
