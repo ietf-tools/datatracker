@@ -809,7 +809,7 @@ class TaskTests(TestCase):
     @mock.patch("ietf.sync.tasks.iana.update_history_with_changes")
     @mock.patch("ietf.sync.tasks.iana.parse_changes_json")
     @mock.patch("ietf.sync.tasks.iana.fetch_changes_json")
-    def test_iana_changes_updates_task(
+    def test_iana_changes_update_task(
         self, 
         fetch_changes_mock,
         parse_changes_mock,
@@ -827,7 +827,7 @@ class TaskTests(TestCase):
             ["oh no!"],  # warnings
         ]
         
-        tasks.iana_changes_updates_task()
+        tasks.iana_changes_update_task()
         self.assertEqual(fetch_changes_mock.call_count, 1)
         self.assertEqual(
             fetch_changes_mock.call_args[0][0],

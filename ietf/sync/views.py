@@ -97,7 +97,7 @@ def notify(request, org, notification):
             tasks.rfc_editor_index_update_task.delay()
         elif notification == "changes":
             log("Queuing IANA changes sync from notify view POST")
-            tasks.iana_changes_updates_task.delay()
+            tasks.iana_changes_update_task.delay()
         else:
             log("Running sync script from notify view POST")
     

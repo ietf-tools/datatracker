@@ -70,7 +70,7 @@ def rfc_editor_index_update_task(full_index=False):
 
 
 @shared_task
-def iana_changes_updates_task():
+def iana_changes_update_task():
     # compensate to avoid we ask for something that happened now and then
     # don't get it back because our request interval is slightly off
     CLOCK_SKEW_COMPENSATION = 5  # seconds
