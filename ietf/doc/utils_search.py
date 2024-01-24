@@ -11,7 +11,7 @@ from django.conf import settings
 
 from ietf.doc.models import Document, RelatedDocument, DocEvent, TelechatDocEvent, BallotDocEvent, DocTypeName
 from ietf.doc.expire import expirable_drafts
-from ietf.doc.utils import augment_docs_and_user_with_user_info
+from ietf.doc.utils import augment_docs_and_person_with_person_info
 from ietf.meeting.models import SessionPresentation, Meeting, Session
 from ietf.review.utils import review_assignments_to_list_for_docs
 from ietf.utils.timezone import date_today
@@ -199,7 +199,8 @@ def prepare_document_table(request, docs, query=None, max_results=200, show_ad_a
         docs = docs[:max_results]
 
     fill_in_document_table_attributes(docs)
-    augment_docs_and_user_with_user_info(docs, request.user)
+    if request.user.is_authenticated and hasattr(request.user, "person"):
+        augment_docs_and_person_with_person_info(docs, request.user.person)
     augment_docs_with_related_docs_info(docs)
 
     meta = {}
