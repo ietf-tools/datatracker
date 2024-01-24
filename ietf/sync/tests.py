@@ -8,6 +8,7 @@ import json
 import datetime
 import mock
 import quopri
+import requests
 
 from dataclasses import dataclass
 
@@ -764,3 +765,37 @@ class TaskTests(TestCase):
         )
         self.assertIsNone(update_docs_kwargs["skip_older_than_date"])
 
+        # Test error handling
+        requests_get_mock.reset_mock()
+        parse_index_mock.reset_mock()
+        update_docs_mock.reset_mock()
+        requests_get_mock.side_effect = requests.Timeout  # timeout on every get()
+        tasks.rfc_editor_index_update_task(full_index=False)
+        self.assertFalse(parse_index_mock.called)
+        self.assertFalse(update_docs_mock.called)
+        
+        requests_get_mock.reset_mock()
+        parse_index_mock.reset_mock()
+        update_docs_mock.reset_mock()
+        requests_get_mock.side_effect = [index_response, requests.Timeout]  # timeout second get()
+        tasks.rfc_editor_index_update_task(full_index=False)
+        self.assertFalse(update_docs_mock.called)
+
+        requests_get_mock.reset_mock()
+        parse_index_mock.reset_mock()
+        update_docs_mock.reset_mock()
+        requests_get_mock.side_effect = [index_response, errata_response]
+        # feed in an index that is too short
+        parse_index_mock.return_value = MockIndexData(length=rfceditor.MIN_INDEX_RESULTS - 1)
+        tasks.rfc_editor_index_update_task(full_index=False)
+        self.assertTrue(parse_index_mock.called)
+        self.assertFalse(update_docs_mock.called)
+
+        requests_get_mock.reset_mock()
+        parse_index_mock.reset_mock()
+        update_docs_mock.reset_mock()
+        requests_get_mock.side_effect = [index_response, errata_response]
+        errata_response.json_length = rfceditor.MIN_ERRATA_RESULTS - 1  # too short
+        parse_index_mock.return_value = MockIndexData(length=rfceditor.MIN_INDEX_RESULTS)
+        tasks.rfc_editor_index_update_task(full_index=False)
+        self.assertFalse(update_docs_mock.called)
