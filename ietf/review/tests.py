@@ -4,7 +4,6 @@ import datetime
 import mock
 import debug # pyflakes:ignore
 
-from dataclasses import dataclass
 from pyquery import PyQuery
 
 from ietf.group.factories import RoleFactory
