@@ -19,7 +19,7 @@ from django.test.utils import override_settings
 
 import debug                            # pyflakes:ignore
 
-from ietf.doc.factories import WgDraftFactory, RfcFactory
+from ietf.doc.factories import WgDraftFactory, RfcFactory, DocumentAuthorFactory
 from ietf.doc.models import Document, DocEvent, DeletedEvent, DocTagName, RelatedDocument, State, StateDocEvent
 from ietf.doc.utils import add_state_change_event
 from ietf.group.factories import GroupFactory
@@ -239,6 +239,7 @@ class RFCSyncTests(TestCase):
             external_url="http://my-external-url.example.com",
             note="this is a note",
         )
+        DocumentAuthorFactory.create_batch(2, document=draft_doc)
         draft_doc.action_holders.add(draft_doc.ad)  # not normally set, but add to be sure it's cleared
 
         RfcFactory(rfc_number=123)
@@ -382,6 +383,7 @@ class RFCSyncTests(TestCase):
 
         rfc_doc = Document.objects.filter(rfc_number=1234, type_id="rfc").first()
         self.assertIsNotNone(rfc_doc, "RFC document should have been created")
+        self.assertEqual(rfc_doc.authors(), draft_doc.authors())
         rfc_events = rfc_doc.docevent_set.all()
         self.assertEqual(len(rfc_events), 8)
         expected_events = [
