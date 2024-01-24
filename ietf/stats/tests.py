@@ -337,6 +337,12 @@ class TaskTests(TestCase):
         mock_fetch_attendance.return_value = [FetchStats(1,2,3), FetchStats(1,2,3)]
 
         fetch_meeting_attendance_task()
-        
         self.assertEqual(mock_fetch_attendance.call_count, 1)
         self.assertCountEqual(mock_fetch_attendance.call_args[0][0], meetings[0:2])
+
+        # test handling of RuntimeError
+        mock_fetch_attendance.reset_mock()
+        mock_fetch_attendance.side_effect = RuntimeError
+        fetch_meeting_attendance_task()
+        self.assertTrue(mock_fetch_attendance.called)
+        # Good enough that we got here without raising an exception
