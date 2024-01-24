@@ -30,7 +30,7 @@ from ietf.review.factories import ReviewRequestFactory, ReviewerSettingsFactory,
 from ietf.stats.models import MeetingRegistration, CountryAlias
 from ietf.stats.factories import MeetingRegistrationFactory
 from ietf.stats.tasks import fetch_meeting_attendance_task
-from ietf.stats.utils import get_meeting_registration_data, FetchStats
+from ietf.stats.utils import get_meeting_registration_data, FetchStats, fetch_attendance_from_meetings
 from ietf.utils.timezone import date_today
 
 
@@ -302,6 +302,28 @@ class StatisticsTests(TestCase):
         query = MeetingRegistration.objects.all()
         self.assertEqual(query.count(), 2)
 
+    @patch("ietf.stats.utils.get_meeting_registration_data")
+    def test_fetch_attendance_from_meetings(self, mock_get_mtg_reg_data):
+        mock_meetings = [object(), object(), object()]
+        mock_get_mtg_reg_data.side_effect = (
+            (1, 2, 3),
+            (4, 5, 6),
+            (7, 8, 9),
+        )
+        stats = fetch_attendance_from_meetings(mock_meetings)
+        self.assertEqual(
+            [mock_get_mtg_reg_data.call_args_list[n][0][0] for n in range(3)],
+            mock_meetings,
+        )
+        self.assertEqual(
+            stats,
+            [
+                FetchStats(1, 2, 3),
+                FetchStats(4, 5, 6),
+                FetchStats(7, 8, 9),
+            ]
+        )
+
 
 class TaskTests(TestCase):
     @patch("ietf.stats.tasks.fetch_attendance_from_meetings")
@@ -315,6 +337,12 @@ class TaskTests(TestCase):
         mock_fetch_attendance.return_value = [FetchStats(1,2,3), FetchStats(1,2,3)]
 
         fetch_meeting_attendance_task()
-        
         self.assertEqual(mock_fetch_attendance.call_count, 1)
         self.assertCountEqual(mock_fetch_attendance.call_args[0][0], meetings[0:2])
+
+        # test handling of RuntimeError
+        mock_fetch_attendance.reset_mock()
+        mock_fetch_attendance.side_effect = RuntimeError
+        fetch_meeting_attendance_task()
+        self.assertTrue(mock_fetch_attendance.called)
+        # Good enough that we got here without raising an exception
