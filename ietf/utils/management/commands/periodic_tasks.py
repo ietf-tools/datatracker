@@ -31,6 +31,7 @@ CRONTAB_DEFS = {
 
 class Command(BaseCommand):
     """Manage periodic tasks"""
+    crontabs = None
 
     def add_arguments(self, parser):
         parser.add_argument("--create-default", action="store_true")
