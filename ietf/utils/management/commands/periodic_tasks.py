@@ -56,7 +56,7 @@ class Command(BaseCommand):
     def create_default_tasks(self):
         PeriodicTask.objects.get_or_create(
             name="Send scheduled mail",
-            task="ietf.meeting.tasks.send_scheduled_mail_task",
+            task="ietf.message.tasks.send_scheduled_mail_task",
             defaults=dict(
                 enabled=False,
                 crontab=self.crontabs["every_15m"],
@@ -66,7 +66,7 @@ class Command(BaseCommand):
 
         PeriodicTask.objects.get_or_create(
             name="Partial sync with RFC Editor index",
-            task="ietf.review.tasks.rfc_editor_index_update_task",
+            task="ietf.sync.tasks.rfc_editor_index_update_task",
             kwargs=json.dumps(dict(full_index=False)),
             defaults=dict(
                 enabled=False,
@@ -81,7 +81,7 @@ class Command(BaseCommand):
 
         PeriodicTask.objects.get_or_create(
             name="Full sync with RFC Editor index",
-            task="ietf.review.tasks.rfc_editor_index_update_task",
+            task="ietf.sync.tasks.rfc_editor_index_update_task",
             kwargs=json.dumps(dict(full_index=True)),
             defaults=dict(
                 enabled=False,
