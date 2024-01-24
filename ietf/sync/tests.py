@@ -741,9 +741,10 @@ class TaskTests(TestCase):
         self.assertIsNotNone(update_docs_kwargs["skip_older_than_date"])
 
         # Test again with full_index = True
+        requests_get_mock.reset_mock()
+        parse_index_mock.reset_mock()
+        update_docs_mock.reset_mock()
         requests_get_mock.side_effect = (index_response, errata_response)  # will step through these
-        parse_index_mock.return_value = MockIndexData(length=rfceditor.MIN_INDEX_RESULTS)
-        update_docs_mock.return_value = []  # not tested
         tasks.rfc_editor_index_update_task(full_index=True)
 
         # Check parse_index() call
@@ -762,3 +763,4 @@ class TaskTests(TestCase):
             update_docs_args, (parse_index_mock.return_value, errata_response.json())
         )
         self.assertIsNone(update_docs_kwargs["skip_older_than_date"])
+
