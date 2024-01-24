@@ -685,8 +685,8 @@ class TaskTests(TestCase):
         RFC_EDITOR_INDEX_URL="https://rfc-editor.example.com/index/",
         RFC_EDITOR_ERRATA_JSON_URL="https://rfc-editor.example.com/errata/",
     )
-    @mock.patch("ietf.sync.tasks.update_docs_from_rfc_index")
-    @mock.patch("ietf.sync.tasks.parse_index")
+    @mock.patch("ietf.sync.tasks.rfceditor.update_docs_from_rfc_index")
+    @mock.patch("ietf.sync.tasks.rfceditor.parse_index")
     @mock.patch("ietf.sync.tasks.requests.get")
     def test_rfc_editor_index_update_task(
         self, requests_get_mock, parse_index_mock, update_docs_mock

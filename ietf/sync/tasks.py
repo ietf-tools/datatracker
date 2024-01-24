@@ -9,7 +9,7 @@ from celery import shared_task
 
 from django.conf import settings
 
-from ietf.sync.rfceditor import MIN_ERRATA_RESULTS, MIN_INDEX_RESULTS, parse_index, update_docs_from_rfc_index
+from ietf.sync import rfceditor
 from ietf.utils import log
 from ietf.utils.timezone import date_today
 
@@ -44,7 +44,7 @@ def rfc_editor_index_update_task(full_index=False):
         log.log(f'GET request timed out retrieving RFC editor index: {exc}')
         return  # failed
     rfc_index_xml = response.text
-    index_data = parse_index(io.StringIO(rfc_index_xml))
+    index_data = rfceditor.parse_index(io.StringIO(rfc_index_xml))
     try:
         response = requests.get(
             settings.RFC_EDITOR_ERRATA_JSON_URL,
@@ -54,13 +54,13 @@ def rfc_editor_index_update_task(full_index=False):
         log.log(f'GET request timed out retrieving RFC editor errata: {exc}')
         return  # failed
     errata_data = response.json()   
-    if len(index_data) < MIN_INDEX_RESULTS:
+    if len(index_data) < rfceditor.MIN_INDEX_RESULTS:
         log.log("Not enough index entries, only %s" % len(index_data))
         return  # failed
-    if len(errata_data) < MIN_ERRATA_RESULTS:
+    if len(errata_data) < rfceditor.MIN_ERRATA_RESULTS:
         log.log("Not enough errata entries, only %s" % len(errata_data))
         return  # failed
-    for rfc_number, changes, doc, rfc_published in update_docs_from_rfc_index(
+    for rfc_number, changes, doc, rfc_published in rfceditor.update_docs_from_rfc_index(
         index_data, errata_data, skip_older_than_date=skip_date
     ):
         for c in changes:
