@@ -170,7 +170,7 @@ if SERVER_MODE != 'production' and SERVE_CDN_FILES_LOCALLY_IN_DEV_MODE:
     STATIC_ROOT = os.path.abspath(BASE_DIR + "/../static/")
 else:
     STATIC_URL = "https://static.ietf.org/lib/%s/"%__version__
-    # Intentionally not setting STATIC_ROOT - see django/django (the default is None)
+    STATIC_ROOT = "/a/www/www6s/lib/dt/%s/"%__version__
 
 # List of finder classes that know how to find static files in
 # various locations.
