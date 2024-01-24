@@ -716,11 +716,14 @@ class TaskTests(TestCase):
         errata_response = MockResponse(
             text="these are the errata", json_length=rfceditor.MIN_ERRATA_RESULTS
         )
-
+        rfc = RfcFactory()
+    
         # Test with full_index = False
         requests_get_mock.side_effect = (index_response, errata_response)  # will step through these
         parse_index_mock.return_value = MockIndexData(length=rfceditor.MIN_INDEX_RESULTS)
-        update_docs_mock.return_value = []  # not tested
+        update_docs_mock.return_value = (
+            (rfc.rfc_number, ("something changed",), rfc, False),
+        )
 
         tasks.rfc_editor_index_update_task(full_index=False)
 
