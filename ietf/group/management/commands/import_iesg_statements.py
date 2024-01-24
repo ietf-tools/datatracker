@@ -32,7 +32,7 @@ class Command(BaseCommand):
             stderr=subprocess.PIPE,
         )
         sub_stdout, sub_stderr = process.communicate()
-        if not Path(tmpdir).joinpath("iesg_statements", "2000-08-29.md").exists():
+        if not Path(tmpdir).joinpath("iesg_statements", "2000-08-29-0.md").exists():
             self.stdout.write(
                 "Git clone of the iesg-scraper directory did not go as expected"
             )
@@ -100,18 +100,27 @@ class Command(BaseCommand):
         dressed_rows = " ".join(
             self.cut_paste_from_www().expandtabs(1).split(" ")
         ).split("\n")
+        # Rube-Goldberg-esque dance to deal with conflicting directions of the scrape and
+        # what order we want the result to sort to
         dressed_rows.reverse()
-        count_date_seen_before = Counter()
+        total_times_date_seen = Counter([row.split(" ")[0] for row in dressed_rows])
+        count_date_seen_so_far = Counter()
         for row in dressed_rows:
             date_part = row.split(" ")[0]
             title_part = row[len(date_part) + 1 :]
             datetime_args = list(map(int, date_part.replace("-0", "-").split("-")))
             # Use the minutes in timestamps to preserve order of statements
             # on the same day as they currently appear at www.ietf.org
-            datetime_args.extend([12, count_date_seen_before[date_part]])
-            count_date_seen_before[date_part] += 1
+            datetime_args.extend([12, count_date_seen_so_far[date_part]])
+            count_date_seen_so_far[date_part] += 1
             doc_time = datetime.datetime(*datetime_args, tzinfo=datetime.timezone.utc)
-            items.append(Item(doc_time, f"{date_part}.md", title_part))
+            items.append(
+                Item(
+                    doc_time,
+                    f"{date_part}-{total_times_date_seen[date_part] - count_date_seen_so_far[date_part]}.md",
+                    title_part,
+                )
+            )
         return items
 
     def cut_paste_from_www(self):
