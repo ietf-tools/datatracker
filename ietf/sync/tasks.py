@@ -8,7 +8,9 @@ import requests
 from celery import shared_task
 
 from django.conf import settings
+from django.utils import timezone
 
+from ietf.sync import iana
 from ietf.sync import rfceditor
 from ietf.utils import log
 from ietf.utils.timezone import date_today
@@ -65,3 +67,47 @@ def rfc_editor_index_update_task(full_index=False):
     ):
         for c in changes:
             log.log("RFC%s, %s: %s" % (rfc_number, doc.name, c))
+
+
+@shared_task
+def iana_changes_updates_task():
+    # compensate to avoid we ask for something that happened now and then
+    # don't get it back because our request interval is slightly off
+    CLOCK_SKEW_COMPENSATION = 5  # seconds
+
+    # actually the interface accepts 24 hours, but then we get into
+    # trouble with daylights savings - meh
+    MAX_INTERVAL_ACCEPTED_BY_IANA = datetime.timedelta(hours=23)
+
+    start = (
+        timezone.now() 
+        - datetime.timedelta(hours=23) 
+        + datetime.timedelta(seconds=CLOCK_SKEW_COMPENSATION,)
+    )
+    end = start + datetime.timedelta(hours=23)
+
+    t = start
+    while t < end:
+        # the IANA server doesn't allow us to fetch more than a certain
+        # period, so loop over the requested period and make multiple
+        # requests if necessary
+
+        text = iana.fetch_changes_json(
+            settings.IANA_SYNC_CHANGES_URL, t, min(end, t + MAX_INTERVAL_ACCEPTED_BY_IANA)
+        )
+        log.log(f"Retrieved the JSON: {text}")
+
+        changes = iana.parse_changes_json(text)
+        added_events, warnings = iana.update_history_with_changes(
+            changes, send_email=True
+        )
+
+        for e in added_events:
+            log.log(
+                f"Added event for {e.doc_id} {e.time}: {e.desc} (parsed json: {e.json})"
+            )
+
+        for w in warnings:
+            log.log(f"WARNING: {w}")
+
+        t += MAX_INTERVAL_ACCEPTED_BY_IANA
