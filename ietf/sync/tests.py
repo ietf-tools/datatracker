@@ -19,7 +19,7 @@ from django.test.utils import override_settings
 
 import debug                            # pyflakes:ignore
 
-from ietf.doc.factories import WgDraftFactory, RfcFactory, DocumentAuthorFactory
+from ietf.doc.factories import WgDraftFactory, RfcFactory, DocumentAuthorFactory, DocEventFactory
 from ietf.doc.models import Document, DocEvent, DeletedEvent, DocTagName, RelatedDocument, State, StateDocEvent
 from ietf.doc.utils import add_state_change_event
 from ietf.group.factories import GroupFactory
@@ -804,3 +804,42 @@ class TaskTests(TestCase):
         parse_index_mock.return_value = MockIndexData(length=rfceditor.MIN_INDEX_RESULTS)
         tasks.rfc_editor_index_update_task(full_index=False)
         self.assertFalse(update_docs_mock.called)
+
+    @override_settings(IANA_SYNC_CHANGES_URL="https://iana.example.com/sync/")
+    @mock.patch("ietf.sync.tasks.iana.update_history_with_changes")
+    @mock.patch("ietf.sync.tasks.iana.parse_changes_json")
+    @mock.patch("ietf.sync.tasks.iana.fetch_changes_json")
+    def test_iana_changes_updates_task(
+        self, 
+        fetch_changes_mock,
+        parse_changes_mock,
+        update_history_mock,
+    ):
+        # set up mocks
+        fetch_return_val = object()
+        fetch_changes_mock.return_value = fetch_return_val
+        parse_return_val = object()
+        parse_changes_mock.return_value = parse_return_val
+        event_with_json = DocEventFactory()
+        event_with_json.json = "hi I'm json"
+        update_history_mock.return_value = [
+            [event_with_json],  # events
+            ["oh no!"],  # warnings
+        ]
+        
+        tasks.iana_changes_updates_task()
+        self.assertEqual(fetch_changes_mock.call_count, 1)
+        self.assertEqual(
+            fetch_changes_mock.call_args[0][0],
+            "https://iana.example.com/sync/",
+        )
+        self.assertTrue(parse_changes_mock.called)
+        self.assertEqual(
+            parse_changes_mock.call_args,
+            ((fetch_return_val,), {}),
+        )
+        self.assertTrue(update_history_mock.called)
+        self.assertEqual(
+            update_history_mock.call_args,
+            ((parse_return_val,), {"send_email": True}),
+        )
