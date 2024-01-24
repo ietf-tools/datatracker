@@ -56,7 +56,7 @@ class Command(BaseCommand):
     def create_default_tasks(self):
         PeriodicTask.objects.get_or_create(
             name="Send scheduled mail",
-            task="ietf.utils.tasks.send_scheduled_mail_task",
+            task="ietf.meeting.tasks.send_scheduled_mail_task",
             defaults=dict(
                 enabled=False,
                 crontab=self.crontabs["every_15m"],

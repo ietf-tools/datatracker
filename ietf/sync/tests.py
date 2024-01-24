@@ -8,6 +8,7 @@ import json
 import datetime
 import mock
 import quopri
+import requests
 
 from dataclasses import dataclass
 
@@ -18,7 +19,7 @@ from django.test.utils import override_settings
 
 import debug                            # pyflakes:ignore
 
-from ietf.doc.factories import WgDraftFactory, RfcFactory
+from ietf.doc.factories import WgDraftFactory, RfcFactory, DocumentAuthorFactory
 from ietf.doc.models import Document, DocEvent, DeletedEvent, DocTagName, RelatedDocument, State, StateDocEvent
 from ietf.doc.utils import add_state_change_event
 from ietf.group.factories import GroupFactory
@@ -238,6 +239,7 @@ class RFCSyncTests(TestCase):
             external_url="http://my-external-url.example.com",
             note="this is a note",
         )
+        DocumentAuthorFactory.create_batch(2, document=draft_doc)
         draft_doc.action_holders.add(draft_doc.ad)  # not normally set, but add to be sure it's cleared
 
         RfcFactory(rfc_number=123)
@@ -381,6 +383,7 @@ class RFCSyncTests(TestCase):
 
         rfc_doc = Document.objects.filter(rfc_number=1234, type_id="rfc").first()
         self.assertIsNotNone(rfc_doc, "RFC document should have been created")
+        self.assertEqual(rfc_doc.authors(), draft_doc.authors())
         rfc_events = rfc_doc.docevent_set.all()
         self.assertEqual(len(rfc_events), 8)
         expected_events = [
@@ -715,11 +718,14 @@ class TaskTests(TestCase):
         errata_response = MockResponse(
             text="these are the errata", json_length=rfceditor.MIN_ERRATA_RESULTS
         )
-
+        rfc = RfcFactory()
+    
         # Test with full_index = False
         requests_get_mock.side_effect = (index_response, errata_response)  # will step through these
         parse_index_mock.return_value = MockIndexData(length=rfceditor.MIN_INDEX_RESULTS)
-        update_docs_mock.return_value = []  # not tested
+        update_docs_mock.return_value = (
+            (rfc.rfc_number, ("something changed",), rfc, False),
+        )
 
         tasks.rfc_editor_index_update_task(full_index=False)
 
@@ -741,9 +747,10 @@ class TaskTests(TestCase):
         self.assertIsNotNone(update_docs_kwargs["skip_older_than_date"])
 
         # Test again with full_index = True
+        requests_get_mock.reset_mock()
+        parse_index_mock.reset_mock()
+        update_docs_mock.reset_mock()
         requests_get_mock.side_effect = (index_response, errata_response)  # will step through these
-        parse_index_mock.return_value = MockIndexData(length=rfceditor.MIN_INDEX_RESULTS)
-        update_docs_mock.return_value = []  # not tested
         tasks.rfc_editor_index_update_task(full_index=True)
 
         # Check parse_index() call
@@ -762,3 +769,38 @@ class TaskTests(TestCase):
             update_docs_args, (parse_index_mock.return_value, errata_response.json())
         )
         self.assertIsNone(update_docs_kwargs["skip_older_than_date"])
+
+        # Test error handling
+        requests_get_mock.reset_mock()
+        parse_index_mock.reset_mock()
+        update_docs_mock.reset_mock()
+        requests_get_mock.side_effect = requests.Timeout  # timeout on every get()
+        tasks.rfc_editor_index_update_task(full_index=False)
+        self.assertFalse(parse_index_mock.called)
+        self.assertFalse(update_docs_mock.called)
+        
+        requests_get_mock.reset_mock()
+        parse_index_mock.reset_mock()
+        update_docs_mock.reset_mock()
+        requests_get_mock.side_effect = [index_response, requests.Timeout]  # timeout second get()
+        tasks.rfc_editor_index_update_task(full_index=False)
+        self.assertFalse(update_docs_mock.called)
+
+        requests_get_mock.reset_mock()
+        parse_index_mock.reset_mock()
+        update_docs_mock.reset_mock()
+        requests_get_mock.side_effect = [index_response, errata_response]
+        # feed in an index that is too short
+        parse_index_mock.return_value = MockIndexData(length=rfceditor.MIN_INDEX_RESULTS - 1)
+        tasks.rfc_editor_index_update_task(full_index=False)
+        self.assertTrue(parse_index_mock.called)
+        self.assertFalse(update_docs_mock.called)
+
+        requests_get_mock.reset_mock()
+        parse_index_mock.reset_mock()
+        update_docs_mock.reset_mock()
+        requests_get_mock.side_effect = [index_response, errata_response]
+        errata_response.json_length = rfceditor.MIN_ERRATA_RESULTS - 1  # too short
+        parse_index_mock.return_value = MockIndexData(length=rfceditor.MIN_INDEX_RESULTS)
+        tasks.rfc_editor_index_update_task(full_index=False)
+        self.assertFalse(update_docs_mock.called)
