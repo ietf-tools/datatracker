@@ -7,8 +7,8 @@ from django.contrib import admin
 from ietf.community.models import CommunityList, SearchRule, EmailSubscription
 
 class CommunityListAdmin(admin.ModelAdmin):
-    list_display = ['id', 'user', 'group']
-    raw_id_fields = ['user', 'group', 'added_docs']
+    list_display = ['id', 'person', 'group']
+    raw_id_fields = ['person', 'group', 'added_docs']
 admin.site.register(CommunityList, CommunityListAdmin)
 
 class SearchRuleAdmin(admin.ModelAdmin):
