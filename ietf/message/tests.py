@@ -1,8 +1,9 @@
 # Copyright The IETF Trust 2013-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
-
-
 import datetime
+import mock
+
+from smtplib import SMTPException
 
 from django.urls import reverse as urlreverse
 from django.utils import timezone
@@ -10,7 +11,9 @@ from django.utils import timezone
 import debug                            # pyflakes:ignore
 
 from ietf.group.factories import GroupFactory
+from ietf.message.factories import SendQueueFactory
 from ietf.message.models import Message, SendQueue
+from ietf.message.tasks import send_scheduled_mail_task
 from ietf.message.utils import send_scheduled_message_from_send_queue
 from ietf.person.models import Person
 from ietf.utils.mail import outbox, send_mail_text, send_mail_message, get_payload_text
@@ -128,3 +131,22 @@ class SendScheduledAnnouncementsTests(TestCase):
         self.assertTrue("This is a test" in outbox[-1]["Subject"])
         self.assertTrue("--NextPart" in outbox[-1].as_string())
         self.assertTrue(SendQueue.objects.get(id=q.id).sent_at)
+
+
+class TaskTests(TestCase):
+    @mock.patch("ietf.message.tasks.log_smtp_exception")
+    @mock.patch("ietf.message.tasks.send_scheduled_message_from_send_queue")
+    def test_send_scheduled_mail_task(self, mock_send_message, mock_log_smtp_exception):
+        not_yet_sent = SendQueueFactory()
+        SendQueueFactory(sent_at=timezone.now())  # already sent
+        send_scheduled_mail_task()
+        self.assertEqual(mock_send_message.call_count, 1)
+        self.assertEqual(mock_send_message.call_args[0], (not_yet_sent,))
+        self.assertFalse(mock_log_smtp_exception.called)
+
+        mock_send_message.reset_mock()
+        mock_send_message.side_effect = SMTPException
+        send_scheduled_mail_task()
+        self.assertEqual(mock_send_message.call_count, 1)
+        self.assertEqual(mock_send_message.call_args[0], (not_yet_sent,))
+        self.assertTrue(mock_log_smtp_exception.called)
