@@ -123,6 +123,16 @@ class Command(BaseCommand):
             ),
         )
 
+        PeriodicTask.objects.get_or_create(
+            name="Sync with IANA protocols page",
+            task="ietf.sync.tasks.iana_changes_update_task",
+            defaults=dict(
+                enabled=False,
+                crontab=self.crontabs["hourly"],
+                description="Fetch protocols page from IANA and update document event logs",
+            ),
+        )
+
     def show_tasks(self):
         for label, crontab in self.crontabs.items():
             tasks = PeriodicTask.objects.filter(crontab=crontab).order_by(
