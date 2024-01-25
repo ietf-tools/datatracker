@@ -4,6 +4,8 @@
 #
 import shutil
 
+import debug    # pyflakes:ignore
+
 from celery import shared_task
 from contextlib import AbstractContextManager
 from pathlib import Path
@@ -18,7 +20,7 @@ class TempFileManager(AbstractContextManager):
         self.dir = tmpdir
 
     def make_temp_file(self, content):
-        with NamedTemporaryFile(delete=False, dir=self.dir) as tf:
+        with NamedTemporaryFile(mode="wt", delete=False, dir=self.dir) as tf:
             tf_path = Path(tf.name)
             self.cleanup_list.add(tf_path)
             tf.write(content)
@@ -34,9 +36,7 @@ class TempFileManager(AbstractContextManager):
             tf_path.unlink(missing_ok=True)
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        if exc_type is not None:
-            # exception occurred
-            self.cleanup()
+        self.cleanup()
         return False  # False: do not suppress the exception
 
 
