@@ -7,7 +7,6 @@ import io
 import requests
 
 from celery import shared_task
-from itertools import batched
 
 from django.conf import settings
 from django.utils import timezone
@@ -137,6 +136,14 @@ def iana_protocols_update_task():
         raise
 
     rfc_numbers = iana.parse_protocol_page(response.text)
+
+    def batched(l, n):
+        """Split list l up in batches of max size n.
+        
+        For Python 3.12 or later, replace this with itertools.batched()
+        """
+        return (l[i:i + n] for i in range(0, len(l), n))
+
     for batch in batched(rfc_numbers, 100):
         updated = iana.update_rfc_log_from_protocol_page(
             batch,
