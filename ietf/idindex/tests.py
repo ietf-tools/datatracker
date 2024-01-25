@@ -16,6 +16,7 @@ from ietf.doc.models import Document, RelatedDocument, State, LastCallDocEvent, 
 from ietf.group.factories import GroupFactory
 from ietf.name.models import DocRelationshipName
 from ietf.idindex.index import all_id_txt, all_id2_txt, id_index_txt
+from ietf.idindex.tasks import idindex_update_task
 from ietf.person.factories import PersonFactory, EmailFactory
 from ietf.utils.test_utils import TestCase
 
@@ -151,3 +152,8 @@ class IndexTests(TestCase):
         txt = id_index_txt(with_abstracts=True)
 
         self.assertTrue(draft.abstract[:20] in txt)
+
+
+class TaskTests(TestCase):
+    def test_idindex_update_task(self):
+        
