@@ -6,6 +6,7 @@ import datetime
 import mock
 
 from pathlib import Path
+from tempfile import TemporaryDirectory
 
 from django.conf import settings
 from django.utils import timezone
@@ -184,4 +185,20 @@ class TaskTests(TestCase):
         )
         self.assertEqual(mgr_mock.make_temp_file.call_count, 11)
         self.assertEqual(mgr_mock.move_into_place.call_count, 11)
-        
+
+    def test_temp_file_manager(self):
+        with TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+            with TempFileManager(temp_path) as tfm:
+                path1 = tfm.make_temp_file("yay")
+                path2 = tfm.make_temp_file("boo")  # do not keep this one
+                self.assertTrue(path1.exists())
+                self.assertTrue(path2.exists())
+                dest = temp_path / "yay.txt"
+                tfm.move_into_place(path1, dest)
+            # make sure things were cleaned up...
+            self.assertFalse(path1.exists())  # moved to dest
+            self.assertFalse(path2.exists())  # left behind
+            # check destination contents and permissions
+            self.assertEqual(dest.read_text(), "yay")
+            self.assertEqual(dest.stat().st_mode & 0o777, 0o644)
