@@ -133,6 +133,16 @@ class Command(BaseCommand):
             ),
         )
 
+        PeriodicTask.objects.get_or_create(
+            name="Update I-D index files",
+            task="ietf.idindex.tasks.idindex_update_task",
+            defaults=dict(
+                enabled=False,
+                crontab=self.crontabs["hourly"],
+                description="Update I-D index files",
+            ),
+        )
+
     def show_tasks(self):
         for label, crontab in self.crontabs.items():
             tasks = PeriodicTask.objects.filter(crontab=crontab).order_by(
