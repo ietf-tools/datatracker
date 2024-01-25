@@ -5,14 +5,14 @@
 import shutil
 
 from celery import shared_task
-from contextlib import contextmanager
+from contextlib import AbstractContextManager
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 
 from .index import all_id_txt, all_id2_txt, id_index_txt
 
 
-class TempFileManager:
+class TempFileManager(AbstractContextManager):
     def __init__(self, tmpdir=None):
         self.cleanup_list: set[Path] = set()
         self.dir = tmpdir
@@ -33,13 +33,11 @@ class TempFileManager:
         for tf_path in self.cleanup_list:
             tf_path.unlink(missing_ok=True)
 
-@contextmanager
-def get_tempfile_manager(tmpdir):
-    mgr = TempFileManager(tmpdir)
-    try:
-        yield mgr
-    finally:
-        mgr.cleanup()
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if exc_type is not None:
+            # exception occurred
+            self.cleanup()
+        return False  # False: do not suppress the exception
 
 
 @shared_task
@@ -49,7 +47,7 @@ def idindex_update_task():
     derived_path = Path("/a/ietfdata/derived")
     download_path = Path("/a/www/www6s/download")
 
-    with get_tempfile_manager("/a/tmp") as tmp_mgr:
+    with TempFileManager("/a/tmp") as tmp_mgr:
         # Generate copies of new contents
         all_id_content = all_id_txt()
         all_id_tmpfile = tmp_mgr.make_temp_file(all_id_content)
