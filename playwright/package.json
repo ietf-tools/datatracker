@@ -7,7 +7,7 @@
     "test:debug": "playwright test --debug"
   },
   "devDependencies": {
-    "@playwright/test": "1.40.1",
+    "@playwright/test": "1.41.1",
     "eslint": "8.56.0",
     "eslint-config-standard": "17.1.0",
     "eslint-plugin-import": "2.29.1",
