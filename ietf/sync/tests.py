@@ -843,3 +843,52 @@ class TaskTests(TestCase):
             update_history_mock.call_args,
             ((parse_return_val,), {"send_email": True}),
         )
+
+    @override_settings(IANA_SYNC_PROTOCOLS_URL="https://iana.example.com/proto/")
+    @mock.patch("ietf.sync.tasks.iana.update_rfc_log_from_protocol_page")
+    @mock.patch("ietf.sync.tasks.iana.parse_protocol_page")
+    @mock.patch("ietf.sync.tasks.requests.get")
+    def test_iana_protocols_update_task(
+        self,
+        requests_get_mock,
+        parse_protocols_mock,
+        update_rfc_log_mock,
+    ):
+        # set up mocks
+        requests_get_mock.return_value = mock.Mock(text="fetched response")
+        parse_protocols_mock.return_value = range(110)  # larger than batch size of 100
+        update_rfc_log_mock.return_value = [
+            mock.Mock(display_name=mock.Mock(return_value="name"))
+        ]
+        
+        # call the task
+        tasks.iana_protocols_update_task()
+        
+        # check that it did the right things
+        self.assertTrue(requests_get_mock.called)
+        self.assertEqual(
+            requests_get_mock.call_args[0], 
+            ("https://iana.example.com/proto/",),
+        )
+        self.assertTrue(parse_protocols_mock.called)
+        self.assertEqual(
+            parse_protocols_mock.call_args[0],
+            ("fetched response",),
+        )
+        self.assertEqual(update_rfc_log_mock.call_count, 2)
+        self.assertEqual(
+            update_rfc_log_mock.call_args_list[0][0][0],
+            range(100),  # first batch
+        )
+        self.assertEqual(
+            update_rfc_log_mock.call_args_list[1][0][0],
+            range(100, 110),  # second batch
+        )
+        # make sure the calls use the same later_than date and that it's the expected one
+        published_later_than = set(
+            update_rfc_log_mock.call_args_list[n][0][1] for n in (0, 1)
+        )
+        self.assertEqual(
+            published_later_than, 
+            {datetime.datetime(2012,11,26,tzinfo=datetime.timezone.utc)}
+        )
