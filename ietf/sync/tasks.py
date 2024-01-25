@@ -5,7 +5,9 @@
 import datetime
 import io
 import requests
+
 from celery import shared_task
+from itertools import batched
 
 from django.conf import settings
 from django.utils import timezone
@@ -111,3 +113,35 @@ def iana_changes_update_task():
             log.log(f"WARNING: {w}")
 
         t += MAX_INTERVAL_ACCEPTED_BY_IANA
+
+
+@shared_task
+def iana_protocols_update_task():
+    # Earliest date for which we have data suitable to update (was described as
+    # "this needs to be the date where this tool is first deployed" in the original
+    # iana-protocols-updates script)"
+    rfc_must_published_later_than = datetime.datetime(
+        2012, 
+        11, 
+        26, 
+        tzinfo=datetime.timezone.utc,
+    )
+
+    try:
+        response = requests.get(
+            settings.IANA_SYNC_PROTOCOLS_URL,
+            timeout=30,
+        )
+    except requests.Timeout as exc:
+        log.log(f'GET request timed out retrieving IANA protocols page: {exc}')
+        raise
+
+    rfc_numbers = iana.parse_protocol_page(response.text)
+    for batch in batched(rfc_numbers, 100):
+        updated = iana.update_rfc_log_from_protocol_page(
+            batch,
+            rfc_must_published_later_than,
+        )
+
+        for d in updated:
+            log.log("Added history entry for %s" % d.display_name())
