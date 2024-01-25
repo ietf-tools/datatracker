@@ -3,6 +3,7 @@
 
 
 import datetime
+import mock
 
 from pathlib import Path
 
@@ -16,7 +17,7 @@ from ietf.doc.models import Document, RelatedDocument, State, LastCallDocEvent, 
 from ietf.group.factories import GroupFactory
 from ietf.name.models import DocRelationshipName
 from ietf.idindex.index import all_id_txt, all_id2_txt, id_index_txt
-from ietf.idindex.tasks import idindex_update_task
+from ietf.idindex.tasks import idindex_update_task, TempFileManager
 from ietf.person.factories import PersonFactory, EmailFactory
 from ietf.utils.test_utils import TestCase
 
@@ -155,5 +156,32 @@ class IndexTests(TestCase):
 
 
 class TaskTests(TestCase):
-    def test_idindex_update_task(self):
+    @mock.patch("ietf.idindex.tasks.all_id_txt")
+    @mock.patch("ietf.idindex.tasks.all_id2_txt")
+    @mock.patch("ietf.idindex.tasks.id_index_txt")
+    @mock.patch.object(TempFileManager, "__enter__")
+    def test_idindex_update_task(
+        self,
+        temp_file_mgr_enter_mock,
+        id_index_mock,
+        all_id2_mock,
+        all_id_mock,
+    ):
+        # Replace TempFileManager's __enter__() method with one that returns a mock.
+        # Pass a spec to the mock so we validate that only actual methods are called.
+        mgr_mock = mock.Mock(spec=TempFileManager)
+        temp_file_mgr_enter_mock.return_value = mgr_mock
+        
+        idindex_update_task()
+
+        self.assertEqual(all_id_mock.call_count, 1)
+        self.assertEqual(all_id2_mock.call_count, 1)
+        self.assertEqual(id_index_mock.call_count, 2)
+        self.assertEqual(id_index_mock.call_args_list[0], (tuple(), dict()))
+        self.assertEqual(
+            id_index_mock.call_args_list[1], 
+            (tuple(), {"with_abstracts": True}),
+        )
+        self.assertEqual(mgr_mock.make_temp_file.call_count, 11)
+        self.assertEqual(mgr_mock.move_into_place.call_count, 11)
         
