@@ -114,6 +114,16 @@ class Command(BaseCommand):
         )
 
         PeriodicTask.objects.get_or_create(
+            name="Expire I-Ds",
+            task="ietf.doc.tasks.expire_ids_task",
+            defaults=dict(
+                enabled=False,
+                crontab=self.crontabs["daily"],
+                description="Create expiration notices for expired I-Ds",
+            ),
+        )
+
+        PeriodicTask.objects.get_or_create(
             name="Sync with IANA changes",
             task="ietf.sync.tasks.iana_changes_update_task",
             defaults=dict(
