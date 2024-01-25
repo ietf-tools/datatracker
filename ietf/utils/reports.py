@@ -13,7 +13,9 @@ from ietf.submit.models import Submission
 def authors_by_year(year: int) -> Set[str]:
     """Email addresses provided by I-D authors for drafts that were submitted in the given year."""
     addresses = set()
-    for submission in Submission.objects.filter(submission_date__year=year,state="posted"):
+    for submission in Submission.objects.filter(
+        submission_date__year=year, state="posted"
+    ):
         addresses.update([a["email"] for a in submission.authors])
     return addresses
 
@@ -45,7 +47,8 @@ def unique_people(addresses: List[str]) -> Tuple["QuerySet[Person]", Set]:
     known_email = set(persons.values_list("email__address", flat=True))
     return (persons, set(addresses) - set(known_email))
 
-def write_reports(year: int) -> None :
+
+def write_reports(year: int) -> None:
     authors = authors_by_year(year)
     submitters = submitters_by_year(year)
     print(f"authors: {len(authors)}")
@@ -53,10 +56,12 @@ def write_reports(year: int) -> None :
     persons, nopersons = unique_people(authors)
     print(f"authors: unique persons: {len(persons)}, no person found: {len(nopersons)}")
     persons, nopersons = unique_people(submitters)
-    print(f"submitters: unique persons: {len(persons)}, no person found: {len(nopersons)}")
-    with open("authors.csv","w",newline="") as file:
+    print(
+        f"submitters: unique persons: {len(persons)}, no person found: {len(nopersons)}"
+    )
+    with open("authors.csv", "w", newline="") as file:
         writer = csv.writer(file)
         writer.writerow(authors)
-    with open("submitters.csv","w",newline="") as file:
+    with open("submitters.csv", "w", newline="") as file:
         writer = csv.writer(file)
         writer.writerow(submitters)
