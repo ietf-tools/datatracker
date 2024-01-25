@@ -892,3 +892,14 @@ class TaskTests(TestCase):
             published_later_than, 
             {datetime.datetime(2012,11,26,tzinfo=datetime.timezone.utc)}
         )
+
+        # try with an exception
+        requests_get_mock.reset_mock()
+        parse_protocols_mock.reset_mock()
+        update_rfc_log_mock.reset_mock()
+        requests_get_mock.side_effect = requests.Timeout
+
+        tasks.iana_protocols_update_task()
+        self.assertTrue(requests_get_mock.called)
+        self.assertFalse(parse_protocols_mock.called)
+        self.assertFalse(update_rfc_log_mock.called)
