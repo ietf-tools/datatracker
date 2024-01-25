@@ -98,14 +98,12 @@ def notify(request, org, notification):
         elif notification == "changes":
             log("Queuing IANA changes sync from notify view POST")
             tasks.iana_changes_update_task.delay()
-        else:
+        elif notification == "protocols":
+            log("Queuing IANA protocols sync from notify view POST")
+            tasks.iana_protocols_update_task.delay()
+        elif notification == "queue":
             log("Running sync script from notify view POST")
-    
-            if notification == "protocols":
-                runscript("iana-protocols-updates")
-    
-            if notification == "queue":
-                runscript("rfc-editor-queue-updates")
+            runscript("rfc-editor-queue-updates")
 
         return HttpResponse("OK", content_type="text/plain; charset=%s"%settings.DEFAULT_CHARSET)
 
