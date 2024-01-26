@@ -6,8 +6,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get purge -y imagemagick imagemagick-6-common
 
 COPY . .
-COPY ./dev/build/start.sh ./datatracker-start.sh
-COPY ./dev/celery/docker-init.sh /celery-start.sh
+COPY ./dev/build/start.sh ./start.sh
 
 RUN pip3 --disable-pip-version-check --no-cache-dir install -r requirements.txt
 RUN pip3 --disable-pip-version-check --no-cache-dir install watchdog[watchmedo]
@@ -23,4 +22,4 @@ VOLUME [ "/a" ]
 
 EXPOSE 8000
 
-CMD ["./datatracker-start.sh"]
+CMD ["./start.sh"]
