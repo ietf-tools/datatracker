@@ -160,6 +160,16 @@ class Command(BaseCommand):
                 description="Update I-D index files",
             ),
         )
+        
+        PeriodicTask.objects.get_or_create(
+            name="Send expiration notifications",
+            task="ietf.doc.tasks.notify_expirations_task",
+            defaults=dict(
+                enabled=False,
+                crontab=self.crontabs["weekly"],
+                description="Send notifications about I-Ds that will expire in the next 14 days",
+            )
+        )
 
     def show_tasks(self):
         for label, crontab in self.crontabs.items():
