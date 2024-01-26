@@ -17,7 +17,9 @@ RUN chmod +x datatracker-start.sh && \
     chmod +x docker/scripts/app-create-dirs.sh && \
     sh ./docker/scripts/app-create-dirs.sh
 
-VOLUME [ "/assets" ]
+RUN mkdir -p /a
+
+VOLUME [ "/a" ]
 
 EXPOSE 8000
 
