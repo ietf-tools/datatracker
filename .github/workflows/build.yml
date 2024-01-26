@@ -123,6 +123,9 @@ jobs:
     if: ${{ !failure() && !cancelled() }}
     needs: [tests, prepare]
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
     env:
       SHOULD_DEPLOY: ${{needs.prepare.outputs.should_deploy}}
       PKG_VERSION: ${{needs.prepare.outputs.pkg_version}}
