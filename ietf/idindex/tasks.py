@@ -15,7 +15,7 @@ from .index import all_id_txt, all_id2_txt, id_index_txt
 
 
 class TempFileManager(AbstractContextManager):
-    def __init__(self, tmpdir=None):
+    def __init__(self, tmpdir=None) -> None:
         self.cleanup_list: set[Path] = set()
         self.dir = tmpdir
 
