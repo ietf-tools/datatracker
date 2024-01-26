@@ -9,30 +9,30 @@ CRONTAB_DEFS = {
     "weekly": {
         "minute": "0",
         "hour": "0",
-        "day_of_week": "0",
         "day_of_month": "*",
         "month_of_year": "*",
+        "day_of_week": "0",
     },
     "daily": {
         "minute": "5",
         "hour": "0",
-        "day_of_week": "*",
         "day_of_month": "*",
         "month_of_year": "*",
+        "day_of_week": "*",
     },
     "hourly": {
         "minute": "5",
         "hour": "*",
-        "day_of_week": "*",
         "day_of_month": "*",
         "month_of_year": "*",
+        "day_of_week": "*",
     },
     "every_15m": {
         "minute": "*/15",
         "hour": "*",
-        "day_of_week": "*",
         "day_of_month": "*",
         "month_of_year": "*",
+        "day_of_week": "*",
     },
 }
 
