@@ -17,6 +17,8 @@ from .expire import (
     send_expire_notice_for_draft,
     expire_draft,
     clean_up_draft_files,
+    get_soon_to_expire_drafts,
+    send_expire_warning_for_draft,
 )
 from .models import Document
 
@@ -46,3 +48,9 @@ def expire_ids_task():
     except Exception as e:
         log.log("Exception in expire-ids: %s" % e)
         raise
+
+
+@shared_task
+def notify_expirations_task(notify_days=14):
+    for doc in get_soon_to_expire_drafts(notify_days):
+        send_expire_warning_for_draft(doc)
