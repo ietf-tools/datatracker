@@ -133,7 +133,7 @@ def iana_protocols_update_task():
         )
     except requests.Timeout as exc:
         log.log(f'GET request timed out retrieving IANA protocols page: {exc}')
-        raise
+        return
 
     rfc_numbers = iana.parse_protocol_page(response.text)
 
