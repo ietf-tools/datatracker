@@ -6,7 +6,7 @@ from ietf.utils.timezone import datetime_today
 
 from .factories import DocumentFactory
 from .models import Document
-from .tasks import expire_ids_task
+from .tasks import expire_ids_task, notify_expirations_task
 
 
 class TaskTests(TestCase):
@@ -52,3 +52,12 @@ class TaskTests(TestCase):
         in_draft_expire_freeze_mock.side_effect = RuntimeError
         with self.assertRaises(RuntimeError):(
             expire_ids_task())
+
+    @mock.patch("ietf.doc.tasks.send_expire_warning_for_draft")
+    @mock.patch("ietf.doc.tasks.get_soon_to_expire_drafts")
+    def test_notify_expirations_task(self, get_drafts_mock, send_warning_mock):
+        # Set up mocks
+        get_drafts_mock.return_value = ["sentinel"]
+        notify_expirations_task()
+        self.assertEqual(send_warning_mock.call_count, 1)
+        self.assertEqual(send_warning_mock.call_args[0], ("sentinel",))
