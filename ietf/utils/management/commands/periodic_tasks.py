@@ -5,6 +5,14 @@ from django_celery_beat.models import CrontabSchedule, PeriodicTask
 from django.core.management.base import BaseCommand
 
 CRONTAB_DEFS = {
+    # same as "@weekly" in a crontab
+    "weekly": {
+        "minute": "0",
+        "hour": "0",
+        "day_of_week": "0",
+        "day_of_month": "*",
+        "month_of_year": "*",
+    },
     "daily": {
         "minute": "5",
         "hour": "0",
