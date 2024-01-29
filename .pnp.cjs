@@ -54,7 +54,7 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["browser-fs-access", "npm:0.35.0"],\
             ["browserlist", "npm:1.0.1"],\
             ["c8", "npm:9.1.0"],\
-            ["caniuse-lite", "npm:1.0.30001579"],\
+            ["caniuse-lite", "npm:1.0.30001581"],\
             ["d3", "npm:7.8.5"],\
             ["eslint", "npm:8.56.0"],\
             ["eslint-config-standard", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:17.1.0"],\
@@ -3443,10 +3443,10 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
           ],\
           "linkType": "HARD"\
         }],\
-        ["npm:1.0.30001579", {\
-          "packageLocation": "./.yarn/cache/caniuse-lite-npm-1.0.30001579-e3fe2d544b-7539dcff74.zip/node_modules/caniuse-lite/",\
+        ["npm:1.0.30001581", {\
+          "packageLocation": "./.yarn/cache/caniuse-lite-npm-1.0.30001581-7909cc6e66-ca4e2cd9d0.zip/node_modules/caniuse-lite/",\
           "packageDependencies": [\
-            ["caniuse-lite", "npm:1.0.30001579"]\
+            ["caniuse-lite", "npm:1.0.30001581"]\
           ],\
           "linkType": "HARD"\
         }]\
@@ -8265,7 +8265,7 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["browser-fs-access", "npm:0.35.0"],\
             ["browserlist", "npm:1.0.1"],\
             ["c8", "npm:9.1.0"],\
-            ["caniuse-lite", "npm:1.0.30001579"],\
+            ["caniuse-lite", "npm:1.0.30001581"],\
             ["d3", "npm:7.8.5"],\
             ["eslint", "npm:8.56.0"],\
             ["eslint-config-standard", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:17.1.0"],\
