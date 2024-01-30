@@ -13,7 +13,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
-from django.http import HttpResponse, Http404
+from django.http import HttpResponse, Http404, JsonResponse
 from django.shortcuts import render, get_object_or_404
 from django.urls import reverse
 from django.utils.decorators import method_decorator
@@ -33,7 +33,7 @@ from ietf.person.models import Person, Email
 from ietf.api import _api_list
 from ietf.api.serializer import JsonExportMixin
 from ietf.api.ietf_utils import is_valid_token
-from ietf.doc.utils import fuzzy_find_documents
+from ietf.doc.utils import DraftAliasGenerator, fuzzy_find_documents
 from ietf.ietfauth.views import send_account_creation_email
 from ietf.ietfauth.utils import role_required
 from ietf.meeting.models import Meeting
@@ -453,3 +453,17 @@ def directauth(request):
 
     else:
         return HttpResponse(status=405)
+
+
+@csrf_exempt
+def draft_aliases(request):
+    if request.method == "POST":
+        # todo authentication
+        return JsonResponse(
+            {
+                "aliases": {
+                    alias: address_list for alias, address_list in DraftAliasGenerator()
+                }
+            }
+        )
+    return HttpResponse(status=405)

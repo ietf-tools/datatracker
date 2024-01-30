@@ -22,6 +22,7 @@ urlpatterns = [
     url(r'^v2/person/person', api_views.ApiV2PersonExportView.as_view()),
     #
     # --- Custom API endpoints, sorted alphabetically ---
+    url(r'^doc/draft-aliases/$', api_views.draft_aliases),
     # GPRD: export of personal information for the logged-in person
     url(r'^export/personal-information/$', api_views.PersonalInformationExportView.as_view()),
     # Let IESG members set positions programmatically
