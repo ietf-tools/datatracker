@@ -32,7 +32,7 @@ import ietf
 from ietf.person.models import Person, Email
 from ietf.api import _api_list
 from ietf.api.serializer import JsonExportMixin
-from ietf.api.ietf_utils import is_valid_token
+from ietf.api.ietf_utils import is_valid_token, requires_api_token
 from ietf.doc.utils import DraftAliasGenerator, fuzzy_find_documents
 from ietf.ietfauth.views import send_account_creation_email
 from ietf.ietfauth.utils import role_required
@@ -455,10 +455,10 @@ def directauth(request):
         return HttpResponse(status=405)
 
 
+@requires_api_token
 @csrf_exempt
 def draft_aliases(request):
     if request.method == "POST":
-        # todo authentication
         return JsonResponse(
             {
                 "aliases": {
