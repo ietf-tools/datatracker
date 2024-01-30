@@ -2190,14 +2190,25 @@ def statements(request, acronym, group_type=None):
     if not acronym in ["iab", "iesg"]:
         raise Http404
     group = get_group_or_404(acronym, group_type)
-    statements = group.document_set.filter(type_id="statement").annotate(
-        published=Subquery(
-            DocEvent.objects.filter(
-                doc=OuterRef("pk"),
-                type="published_statement"
-            ).order_by("-time").values("time")[:1]
+    statements = (
+        group.document_set.filter(type_id="statement")
+        .annotate(
+            published=Subquery(
+                DocEvent.objects.filter(doc=OuterRef("pk"), type="published_statement")
+                .order_by("-time")
+                .values("time")[:1]
+            )
         )
-    ).order_by("-published")
+        .annotate(
+            status=Subquery(
+                Document.states.through.objects.filter(
+                    document_id=OuterRef("pk"), state__type="statement"
+                ).values_list("state__slug", flat=True)[:1]
+            )
+        )
+        .order_by("-published")
+    )
+    debug.show("statements.first().status")
     return render(
         request,
         "group/statements.html",
