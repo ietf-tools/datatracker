@@ -13,7 +13,7 @@ import textwrap
 
 from collections import defaultdict, namedtuple, Counter
 from dataclasses import dataclass
-from typing import Union
+from typing import Iterator, Union
 from zoneinfo import ZoneInfo
 
 from django.conf import settings
@@ -37,11 +37,12 @@ from ietf.doc.models import DocEvent, ConsensusDocEvent, BallotDocEvent, IRSGBal
 from ietf.doc.models import TelechatDocEvent, DocumentActionHolder, EditedAuthorsDocEvent
 from ietf.name.models import DocReminderTypeName, DocRelationshipName
 from ietf.group.models import Role, Group, GroupFeatures
+from ietf.group.utils import get_group_role_emails, get_group_ad_emails
 from ietf.ietfauth.utils import has_role, is_authorized_in_doc_stream, is_individual_draft_author, is_bofreq_editor
 from ietf.person.models import Person
 from ietf.review.models import ReviewWish
 from ietf.utils import draft, log
-from ietf.utils.mail import send_mail
+from ietf.utils.mail import parseaddr, send_mail
 from ietf.mailtrigger.utils import gather_address_lists
 from ietf.utils.timezone import date_today, datetime_from_date, datetime_today, DEADLINE_TZINFO
 from ietf.utils.xmldraft import XMLDraft
@@ -1258,3 +1259,122 @@ def bibxml_for_draft(doc, rev=None):
         
     return render_to_string('doc/bibxml.xml', {'name':name, 'doc':doc, 'doc_bibtype':'I-D', 'settings':settings})
 
+
+class DraftAliasGenerator:
+    days = 2 * 365
+
+    def get_draft_ad_emails(self, doc):
+        """Get AD email addresses for the given draft, if any."""
+        ad_emails = set()
+        # If working group document, return current WG ADs
+        if doc.group and doc.group.acronym != "none":
+            ad_emails.update(get_group_ad_emails(doc.group))
+        # Document may have an explicit AD set
+        if doc.ad:
+            ad_emails.add(doc.ad.email_address())
+        return ad_emails
+
+    def get_draft_chair_emails(self, doc):
+        """Get chair email addresses for the given draft, if any."""
+        chair_emails = set()
+        if doc.group:
+            chair_emails.update(get_group_role_emails(doc.group, ["chair", "secr"]))
+        return chair_emails
+
+    def get_draft_shepherd_email(self, doc):
+        """Get shepherd email addresses for the given draft, if any."""
+        shepherd_email = set()
+        if doc.shepherd:
+            shepherd_email.add(doc.shepherd.email_address())
+        return shepherd_email
+
+    def get_draft_authors_emails(self, doc):
+        """Get list of authors for the given draft."""
+        author_emails = set()
+        for author in doc.documentauthor_set.all():
+            if author.email and author.email.email_address():
+                author_emails.add(author.email.email_address())
+        return author_emails
+
+    def get_draft_notify_emails(self, doc):
+        """Get list of email addresses to notify for the given draft."""
+        ad_email_alias_regex = r"^%s.ad@(%s|%s)$" % (doc.name, settings.DRAFT_ALIAS_DOMAIN, settings.TOOLS_SERVER)
+        all_email_alias_regex = r"^%s.all@(%s|%s)$" % (doc.name, settings.DRAFT_ALIAS_DOMAIN, settings.TOOLS_SERVER)
+        author_email_alias_regex = r"^%s@(%s|%s)$" % (doc.name, settings.DRAFT_ALIAS_DOMAIN, settings.TOOLS_SERVER)
+        notify_email_alias_regex = r"^%s.notify@(%s|%s)$" % (
+        doc.name, settings.DRAFT_ALIAS_DOMAIN, settings.TOOLS_SERVER)
+        shepherd_email_alias_regex = r"^%s.shepherd@(%s|%s)$" % (
+        doc.name, settings.DRAFT_ALIAS_DOMAIN, settings.TOOLS_SERVER)
+        notify_emails = set()
+        if doc.notify:
+            for e in doc.notify.split(','):
+                e = e.strip()
+                if re.search(ad_email_alias_regex, e):
+                    notify_emails.update(self.get_draft_ad_emails(doc))
+                elif re.search(author_email_alias_regex, e):
+                    notify_emails.update(self.get_draft_authors_emails(doc))
+                elif re.search(shepherd_email_alias_regex, e):
+                    notify_emails.update(self.get_draft_shepherd_email(doc))
+                elif re.search(all_email_alias_regex, e):
+                    notify_emails.update(self.get_draft_ad_emails(doc))
+                    notify_emails.update(self.get_draft_authors_emails(doc))
+                    notify_emails.update(self.get_draft_shepherd_email(doc))
+                elif re.search(notify_email_alias_regex, e):
+                    pass
+                else:
+                    (name, email) = parseaddr(e)
+                    notify_emails.add(email)
+        return notify_emails
+
+    def __iter__(self) -> Iterator[tuple[str, list[str]]]:
+        # Internet-Drafts with active status or expired within self.days
+        show_since = timezone.now() - datetime.timedelta(days=self.days)
+        drafts = Document.objects.filter(type_id="draft")
+        active_drafts = drafts.filter(states__slug='active')
+        inactive_recent_drafts = drafts.exclude(states__slug='active').filter(expires__gte=show_since)
+        interesting_drafts = active_drafts | inactive_recent_drafts
+
+        alias_domains = ['ietf.org', ]
+        for draft in interesting_drafts.distinct().iterator():
+            # Omit drafts that became RFCs, unless they were published in the last DEFAULT_YEARS
+            if draft.get_state_slug() == "rfc":
+                rfc = draft.became_rfc()
+                log.assertion("rfc is not None")
+                if rfc.latest_event(type='published_rfc').time < show_since:
+                    continue
+
+            alias = draft.name
+            all = set()
+
+            # no suffix and .authors are the same list
+            emails = self.get_draft_authors_emails(draft)
+            all.update(emails)
+            yield alias, emails
+            yield alias + ".authors", emails
+
+            # .chairs = group chairs
+            emails = self.get_draft_chair_emails(draft)
+            if emails:
+                all.update(emails)
+                yield alias + ".chairs", emails
+
+            # .ad = sponsoring AD / WG AD (WG document)
+            emails = self.get_draft_ad_emails(draft)
+            if emails:
+                all.update(emails)
+                yield alias + ".ad", emails
+
+            # .notify = notify email list from the Document
+            emails = self.get_draft_notify_emails(draft)
+            if emails:
+                all.update(emails)
+                yield alias + ".notify", emails
+
+            # .shepherd = shepherd email from the Document
+            emails = self.get_draft_shepherd_email(draft)
+            if emails:
+                all.update(emails)
+                yield alias + ".shepherd", emails
+
+            # .all = everything from above
+            yield alias + ".all", all
