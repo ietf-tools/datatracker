@@ -37,7 +37,6 @@ from ietf.doc.models import DocEvent, ConsensusDocEvent, BallotDocEvent, IRSGBal
 from ietf.doc.models import TelechatDocEvent, DocumentActionHolder, EditedAuthorsDocEvent
 from ietf.name.models import DocReminderTypeName, DocRelationshipName
 from ietf.group.models import Role, Group, GroupFeatures
-from ietf.group.utils import get_group_role_emails, get_group_ad_emails
 from ietf.ietfauth.utils import has_role, is_authorized_in_doc_stream, is_individual_draft_author, is_bofreq_editor
 from ietf.person.models import Person
 from ietf.review.models import ReviewWish
@@ -1265,6 +1264,7 @@ class DraftAliasGenerator:
 
     def get_draft_ad_emails(self, doc):
         """Get AD email addresses for the given draft, if any."""
+        from ietf.group.utils import get_group_ad_emails  # avoid circular import
         ad_emails = set()
         # If working group document, return current WG ADs
         if doc.group and doc.group.acronym != "none":
@@ -1276,6 +1276,7 @@ class DraftAliasGenerator:
 
     def get_draft_chair_emails(self, doc):
         """Get chair email addresses for the given draft, if any."""
+        from ietf.group.utils import get_group_role_emails  # avoid circular import
         chair_emails = set()
         if doc.group:
             chair_emails.update(get_group_role_emails(doc.group, ["chair", "secr"]))
@@ -1349,32 +1350,32 @@ class DraftAliasGenerator:
             # no suffix and .authors are the same list
             emails = self.get_draft_authors_emails(draft)
             all.update(emails)
-            yield alias, emails
-            yield alias + ".authors", emails
+            yield alias, list(emails)
+            yield alias + ".authors", list(emails)
 
             # .chairs = group chairs
             emails = self.get_draft_chair_emails(draft)
             if emails:
                 all.update(emails)
-                yield alias + ".chairs", emails
+                yield alias + ".chairs", list(emails)
 
             # .ad = sponsoring AD / WG AD (WG document)
             emails = self.get_draft_ad_emails(draft)
             if emails:
                 all.update(emails)
-                yield alias + ".ad", emails
+                yield alias + ".ad", list(emails)
 
             # .notify = notify email list from the Document
             emails = self.get_draft_notify_emails(draft)
             if emails:
                 all.update(emails)
-                yield alias + ".notify", emails
+                yield alias + ".notify", list(emails)
 
             # .shepherd = shepherd email from the Document
             emails = self.get_draft_shepherd_email(draft)
             if emails:
                 all.update(emails)
-                yield alias + ".shepherd", emails
+                yield alias + ".shepherd", list(emails)
 
             # .all = everything from above
-            yield alias + ".all", all
+            yield alias + ".all", list(all)
