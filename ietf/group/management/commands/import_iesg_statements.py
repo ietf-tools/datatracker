@@ -42,16 +42,17 @@ class Command(BaseCommand):
             exit(-1)
 
         for item in self.get_work_items():
-            name = f"statement-iesg-{xslugify(item.title)}"
-            if name.endswith("-superseded"):
-                name = name[: -len("-superseded")]
-            name += f"-{item.doc_time:%Y%m%d}"
+            replaced = item.title.endswith(" SUPERSEDED") or item.doc_time.date() == datetime.date(2007,7,30)
+            title = item.title
+            if title.endswith(" - SUPERSEDED"):
+                title = title[: -len(" - SUPERSEDED")]
+            name = f"statement-iesg-{xslugify(title)}-{item.doc_time:%Y%m%d}"
             dest_filename = f"{name}-00.md"
             # Create Document
             doc = Document.objects.create(
                 name=name,
                 type_id="statement",
-                title=item.title,
+                title=title,
                 group_id=2,  # The IESG group
                 rev="00",
                 uploaded_filename=dest_filename,
@@ -59,7 +60,7 @@ class Command(BaseCommand):
             doc.set_state(
                 State.objects.get(
                     type_id="statement",
-                    slug="replaced" if item.title.endswith("SUPERSEDED") else "active",
+                    slug="replaced" if replaced else "active",
                 )
             )
             e1 = DocEvent.objects.create(
