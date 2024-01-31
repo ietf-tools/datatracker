@@ -8361,6 +8361,26 @@ class ProceedingsTests(BaseMeetingTestCase):
         r = self.client.get(session_url)
         self.assertContains(r, attendance_url)
 
+        # Test for the "I was there" button.
+        def _test_button(person, expected):
+            username = person.user.username
+            self.client.login(username=username, password=f'{username}+password')
+            r = self.client.get(attendance_url)
+            q = PyQuery(r.content)
+            self.assertEqual(bool(q('button')), expected)
+        # recman isn't registered for the meeting
+        _test_button(recman, False)
+        # person0 is already on the bluesheet
+        _test_button(persons[0], False)
+        # person3 attests he was there
+        persons.append(MeetingRegistrationFactory(meeting=meeting).person)
+        attendees.append(persons[3].user.pk)
+        _test_button(persons[3], True)
+        r = self.client.post(attendance_url)
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, persons[3].name)
+        self.assertEqual(session.attended_set.count(), 4)
+
         # When the meeting is finalized, a bluesheet file is generated,
         # and session_attendance redirects to the file.
         self.client.login(username='secretary',password='secretary+password')
@@ -8370,7 +8390,7 @@ class ProceedingsTests(BaseMeetingTestCase):
         doc = session.sessionpresentation_set.filter(document__type_id='bluesheets').first().document
         self.assertEqual(doc.rev,'00')
         text = doc.text()
-        self.assertIn('3 attendees', text)
+        self.assertIn('4 attendees', text)
         for person in persons:
             self.assertIn(person.name, text)
 
@@ -8390,7 +8410,7 @@ class ProceedingsTests(BaseMeetingTestCase):
         self.client.login(username='recman', password='recman+password')
         r = self.client.post(add_attendees_url, {'apikey':apikey.hash(), 'attended':f'{{"session_id":{session.pk},"attendees":{attendees}}}'})
         self.assertEqual(r.status_code, 200)  
-        self.assertEqual(session.attended_set.count(), 3)
+        self.assertEqual(session.attended_set.count(), 4)
 
         doc = session.sessionpresentation_set.filter(document__type_id='bluesheets').first().document
         self.assertEqual(doc.rev,'00')

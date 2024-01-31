@@ -1,3 +1,10 @@
 {% load origin %}
 {% origin %}
 <pre>{% include 'meeting/bluesheet.txt' %}</pre>
+
+    {% if can_add %}
+        <form method="post">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-primary">I was there</button>
+        </form>
+    {% endif %}

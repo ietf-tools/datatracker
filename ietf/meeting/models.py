@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2007-2022, All Rights Reserved
+# Copyright The IETF Trust 2007-2023, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -1479,6 +1479,8 @@ class MeetingHost(models.Model):
 class Attended(models.Model):
     person = ForeignKey(Person)
     session = ForeignKey(Session)
+    time = models.DateTimeField(auto_now_add=True, null=True, blank=True)
+    origin = models.CharField(max_length=32, default='datatracker')
 
     class Meta:
         unique_together = (('person', 'session'),)

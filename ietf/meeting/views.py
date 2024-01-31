@@ -2547,10 +2547,16 @@ def session_attendance(request, session_id, num):
         else:
             raise Http404('Bluesheets not found')
 
+    person = request.user.person
+    if request.method=='POST':
+        session.attended_set.get_or_create(person=person, origin="self declared")
+
     data = bluesheet_data(session)
+    can_add = MeetingRegistration.objects.filter(meeting=session.meeting, person=person).exists() and not Attended.objects.filter(session=session, person=person).exists()
     return render(request, "meeting/bluesheet.html", {
             'session': session,
             'data': data,
+            'can_add': can_add,
         })
 
 def generate_bluesheet(request, session):
