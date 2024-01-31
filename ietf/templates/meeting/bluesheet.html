@@ -1,10 +1,35 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2024, All Rights Reserved #}
 {% load origin %}
-{% origin %}
-<pre>{% include 'meeting/bluesheet.txt' %}</pre>
-
+{% block title %}Bluesheet for {{session}}{% endblock %}
+{% block content %}
+    {% origin %}
+    <h1>
+        Bluesheet for {{session}}
+    </h1>
+    <h2>
+        {{ data|length }} attendees.
+    </h2>
+    <table class="table table-sm table-striped tablesorter">
+        <thead>
+            <tr>
+                <th scope="col" data-sort="num">Name</th>
+                <th scope="col" data-sort="document">Affiliation</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in data %}
+                <tr>
+                    <td>{{ item.name }}</td>
+                    <td>{{ item.affiliation }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
     {% if can_add %}
         <form method="post">
             {% csrf_token %}
             <button type="submit" class="btn btn-primary">I was there</button>
         </form>
     {% endif %}
+{% endblock %}

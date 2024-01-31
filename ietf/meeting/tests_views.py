@@ -8366,8 +8366,7 @@ class ProceedingsTests(BaseMeetingTestCase):
             username = person.user.username
             self.client.login(username=username, password=f'{username}+password')
             r = self.client.get(attendance_url)
-            q = PyQuery(r.content)
-            self.assertEqual(bool(q('button')), expected)
+            self.assertEqual(b"I was there" in r.content, expected)
         # recman isn't registered for the meeting
         _test_button(recman, False)
         # person0 is already on the bluesheet
