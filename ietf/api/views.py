@@ -458,7 +458,7 @@ def directauth(request):
 @requires_api_token
 @csrf_exempt
 def draft_aliases(request):
-    if request.method == "POST":
+    if request.method == "GET":
         return JsonResponse(
             {
                 "aliases": {
