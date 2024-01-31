@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2016-2020, All Rights Reserved
+# Copyright The IETF Trust 2016-2023, All Rights Reserved
 # -*- coding: utf-8 -*-
 import datetime
 import itertools
@@ -139,7 +139,8 @@ def create_proceedings_templates(meeting):
         meeting.overview = template
         meeting.save()
 
-def finalize(meeting):
+def finalize(request, meeting):
+    from ietf.meeting.views import generate_bluesheet
     end_date = meeting.end_date()
     end_time = meeting.tz().localize(
         datetime.datetime.combine(
@@ -155,6 +156,8 @@ def finalize(meeting):
             else:
                 sp.rev = '00'
             sp.save()
+        if meeting.number >= '118':
+            generate_bluesheet(request, session)
     
     create_proceedings_templates(meeting)
     meeting.proceedings_final = True

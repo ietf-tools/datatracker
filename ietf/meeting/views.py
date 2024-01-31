@@ -54,7 +54,7 @@ from ietf.group.utils import can_manage_session_materials, can_manage_some_group
 from ietf.person.models import Person, User
 from ietf.ietfauth.utils import role_required, has_role, user_is_person
 from ietf.mailtrigger.utils import gather_address_lists
-from ietf.meeting.models import Meeting, Session, Schedule, FloorPlan, SessionPresentation, TimeSlot, SlideSubmission
+from ietf.meeting.models import Meeting, Session, Schedule, FloorPlan, SessionPresentation, TimeSlot, SlideSubmission, Attended
 from ietf.meeting.models import SessionStatusName, SchedulingEvent, SchedTimeSessAssignment, Room, TimeSlotTypeName
 from ietf.meeting.forms import ( CustomDurationField, SwapDaysForm, SwapTimeslotsForm, ImportMinutesForm,
                                  TimeSlotCreateForm, TimeSlotEditForm, SessionCancelForm, SessionEditForm )
@@ -2426,8 +2426,17 @@ def session_details(request, num, acronym):
             session.cancelled = session.current_status in Session.CANCELED_STATUSES
             session.status = status_names.get(session.current_status, session.current_status)
 
-        session.filtered_artifacts = list(session.sessionpresentation_set.filter(document__type__slug__in=['agenda','minutes','bluesheets']))
-        session.filtered_artifacts.sort(key=lambda d:['agenda','minutes','bluesheets'].index(d.document.type.slug))
+        if session.meeting.type_id == 'ietf' and not session.meeting.proceedings_final:
+            artifact_types = ['agenda','minutes']
+            if Attended.objects.filter(session=session).exists():
+                session.type_counter.update(['bluesheets'])
+                ota = session.official_timeslotassignment()
+                sess_time = ota and ota.timeslot.time
+                session.bluesheet_title = 'Bluesheets %s: %s' % (session.meeting.number, sess_time.strftime("%a %H:%M"))
+        else:
+            artifact_types = ['agenda','minutes','bluesheets']
+        session.filtered_artifacts = list(session.sessionpresentation_set.filter(document__type__slug__in=artifact_types))
+        session.filtered_artifacts.sort(key=lambda d:artifact_types.index(d.document.type.slug))
         session.filtered_slides    = session.sessionpresentation_set.filter(document__type__slug='slides').order_by('order')
         session.filtered_drafts    = session.sessionpresentation_set.filter(document__type__slug='draft')
         session.filtered_chatlog_and_polls = session.sessionpresentation_set.filter(document__type__slug__in=('chatlog', 'polls')).order_by('document__type__slug')
@@ -2515,6 +2524,47 @@ def add_session_drafts(request, session_id, num):
                     'form': form,
                   })
 
+def bluesheet_data(session):
+    def affiliation(meeting, person):
+        # from OidcExtraScopeClaims.scope_registration()
+        email_list = person.email_set.values_list('address')
+        q = Q(person=person, meeting=meeting) | Q(email__in=email_list, meeting=meeting)
+        regs = MeetingRegistration.objects.filter(q).distinct()
+        return ([reg.affiliation for reg in regs if reg.affiliation] or [''])[0]
+
+    attendance = Attended.objects.filter(session=session)
+    meeting = session.meeting
+    return [{'name':attended.person.name, 'affiliation':affiliation(meeting, attended.person)} for attended in attendance]
+
+def session_attendance(request, session_id, num):
+    # num is redundant, but we're dragging it along as an artifact of where we are in the current URL structure
+    session = get_object_or_404(Session, pk=session_id)
+    if session.meeting.type_id=='interim' or session.meeting.proceedings_final:
+        bluesheets = session.sessionpresentation_set.filter(document__type_id='bluesheets')
+        if bluesheets:
+            bluesheet = bluesheets[0].document
+            return redirect(bluesheet.get_href(session.meeting))
+        else:
+            raise Http404('Bluesheets not found')
+
+    data = bluesheet_data(session)
+    return render(request, "meeting/bluesheet.html", {
+            'session': session,
+            'data': data,
+        })
+
+def generate_bluesheet(request, session):
+    data = bluesheet_data(session)
+    text = render_to_string('meeting/bluesheet.txt', {
+            'session': session,
+            'data': data,
+        })
+    fd, name = tempfile.mkstemp(suffix=".txt", text=True)
+    os.close(fd)
+    with open(name, "w") as file:
+        file.write(text)
+    with open(name, "br") as file:
+        return save_bluesheet(request, session, file)
 
 def upload_session_bluesheets(request, session_id, num):
     # num is redundant, but we're dragging it along an artifact of where we are in the current URL structure
@@ -3883,12 +3933,11 @@ def proceedings(request, num=None):
 def finalize_proceedings(request, num=None):
 
     meeting = get_meeting(num)
-
     if (meeting.number.isdigit() and int(meeting.number) <= 64) or not meeting.schedule or not meeting.schedule.assignments.exists() or meeting.proceedings_final:
         raise Http404
 
     if request.method=='POST':
-        finalize(meeting)
+        finalize(request, meeting)
         return HttpResponseRedirect(reverse('ietf.meeting.views.proceedings',kwargs={'num':meeting.number}))
     
     return render(request, "meeting/finalize.html", {'meeting':meeting,})
@@ -4096,6 +4145,13 @@ def deprecated_api_set_session_video_url(request):
 @role_required('Recording Manager') # TODO : Rework how Meetecho interacts via APIs. There may be better paths to pursue than Personal API keys as they are currently defined.
 @csrf_exempt
 def api_add_session_attendees(request):
+    """Upload attendees for one or more sessions
+
+    parameters:
+      apikey: the poster's personal API key
+      attended: json blob with
+          [{'session_id': session pk, 'attendees': [list of user pks]}, ...]
+    """
 
     def err(code, text):
         return HttpResponse(text, status=code, content_type='text/plain')
@@ -4122,6 +4178,10 @@ def api_add_session_attendees(request):
         return err(400, "Invalid attendee")
     for user in users:
         session.attended_set.get_or_create(person=user.person)
+
+    if session.meeting.type_id == 'interim':
+        generate_bluesheet(request, session)
+
     return HttpResponse("Done", status=200, content_type='text/plain')  
 
 @require_api_key
