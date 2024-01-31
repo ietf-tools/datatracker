@@ -1335,43 +1335,43 @@ class DraftAliasGenerator:
         inactive_recent_drafts = drafts.exclude(states__slug='active').filter(expires__gte=show_since)
         interesting_drafts = active_drafts | inactive_recent_drafts
 
-        for draft in interesting_drafts.distinct().iterator():
+        for this_draft in interesting_drafts.distinct().iterator():
             # Omit drafts that became RFCs, unless they were published in the last DEFAULT_YEARS
-            if draft.get_state_slug() == "rfc":
-                rfc = draft.became_rfc()
+            if this_draft.get_state_slug() == "rfc":
+                rfc = this_draft.became_rfc()
                 log.assertion("rfc is not None")
                 if rfc.latest_event(type='published_rfc').time < show_since:
                     continue
 
-            alias = draft.name
+            alias = this_draft.name
             all = set()
 
             # no suffix and .authors are the same list
-            emails = self.get_draft_authors_emails(draft)
+            emails = self.get_draft_authors_emails(this_draft)
             all.update(emails)
             yield alias, list(emails)
             yield alias + ".authors", list(emails)
 
             # .chairs = group chairs
-            emails = self.get_draft_chair_emails(draft)
+            emails = self.get_draft_chair_emails(this_draft)
             if emails:
                 all.update(emails)
                 yield alias + ".chairs", list(emails)
 
             # .ad = sponsoring AD / WG AD (WG document)
-            emails = self.get_draft_ad_emails(draft)
+            emails = self.get_draft_ad_emails(this_draft)
             if emails:
                 all.update(emails)
                 yield alias + ".ad", list(emails)
 
             # .notify = notify email list from the Document
-            emails = self.get_draft_notify_emails(draft)
+            emails = self.get_draft_notify_emails(this_draft)
             if emails:
                 all.update(emails)
                 yield alias + ".notify", list(emails)
 
             # .shepherd = shepherd email from the Document
-            emails = self.get_draft_shepherd_email(draft)
+            emails = self.get_draft_shepherd_email(this_draft)
             if emails:
                 all.update(emails)
                 yield alias + ".shepherd", list(emails)
