@@ -2563,6 +2563,8 @@ def session_attendance(request, session_id, num):
 
 def generate_bluesheet(request, session):
     data = bluesheet_data(session)
+    if not data:
+        return
     text = render_to_string('meeting/bluesheet.txt', {
             'session': session,
             'data': data,
