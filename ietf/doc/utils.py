@@ -1335,7 +1335,6 @@ class DraftAliasGenerator:
         inactive_recent_drafts = drafts.exclude(states__slug='active').filter(expires__gte=show_since)
         interesting_drafts = active_drafts | inactive_recent_drafts
 
-        alias_domains = ['ietf.org', ]
         for draft in interesting_drafts.distinct().iterator():
             # Omit drafts that became RFCs, unless they were published in the last DEFAULT_YEARS
             if draft.get_state_slug() == "rfc":
