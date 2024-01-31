@@ -156,7 +156,9 @@ def finalize(request, meeting):
             else:
                 sp.rev = '00'
             sp.save()
-        if meeting.number >= '118':
+
+        # Don't try to generate a bluesheet if it's before we had Attended records.
+        if int(meeting.number) >= 108:
             generate_bluesheet(request, session)
     
     create_proceedings_templates(meeting)
