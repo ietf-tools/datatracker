@@ -17,6 +17,7 @@ from django.views.decorators.csrf import csrf_exempt
 
 from ietf.doc.models import DeletedEvent, StateDocEvent, DocEvent
 from ietf.ietfauth.utils import role_required, has_role
+from ietf.sync import tasks
 from ietf.sync.discrepancies import find_discrepancies
 from ietf.utils.serialize import object_as_shallow_dict
 from ietf.utils.log import log
@@ -91,19 +92,18 @@ def notify(request, org, notification):
                 log("Subprocess error %s when running '%s': %s %s" % (p.returncode, cmd, err, out))
                 raise subprocess.CalledProcessError(p.returncode, cmdstring, "\n".join([err, out]))
 
-        log("Running sync script from notify view POST")
-
-        if notification == "protocols":
-            runscript("iana-protocols-updates")
-
-        if notification == "changes":
-            runscript("iana-changes-updates")
-
-        if notification == "queue":
-            runscript("rfc-editor-queue-updates")
-
         if notification == "index":
-            runscript("rfc-editor-index-updates")
+            log("Queuing RFC Editor index sync from notify view POST")
+            tasks.rfc_editor_index_update_task.delay()
+        elif notification == "changes":
+            log("Queuing IANA changes sync from notify view POST")
+            tasks.iana_changes_update_task.delay()
+        elif notification == "protocols":
+            log("Queuing IANA protocols sync from notify view POST")
+            tasks.iana_protocols_update_task.delay()
+        elif notification == "queue":
+            log("Running sync script from notify view POST")
+            runscript("rfc-editor-queue-updates")
 
         return HttpResponse("OK", content_type="text/plain; charset=%s"%settings.DEFAULT_CHARSET)
 

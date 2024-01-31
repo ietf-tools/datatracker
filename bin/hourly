@@ -45,6 +45,7 @@ ID=/a/ietfdata/doc/draft/repository
 DERIVED=/a/ietfdata/derived
 DOWNLOAD=/a/www/www6s/download
 
+## Start of script refactored into idindex_update_task() ===
 export TMPDIR=/a/tmp
 
 TMPFILE1=`mktemp` || exit 1
@@ -84,6 +85,8 @@ mv $TMPFILE8 $DERIVED/all_id.txt
 mv $TMPFILE9 $DERIVED/1id-index.txt
 mv $TMPFILEA $DERIVED/1id-abstracts.txt
 mv $TMPFILEB $DERIVED/all_id2.txt
+
+## End of script refactored into idindex_update_task() ===
 
 $DTDIR/ietf/manage.py generate_idnits2_rfc_status
 $DTDIR/ietf/manage.py generate_idnits2_rfcs_obsoleted
