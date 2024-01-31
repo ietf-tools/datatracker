@@ -1349,8 +1349,9 @@ class DraftAliasGenerator:
             # no suffix and .authors are the same list
             emails = self.get_draft_authors_emails(this_draft)
             all.update(emails)
-            yield alias, list(emails)
-            yield alias + ".authors", list(emails)
+            if emails:
+                yield alias, list(emails)
+                yield alias + ".authors", list(emails)
 
             # .chairs = group chairs
             emails = self.get_draft_chair_emails(this_draft)
@@ -1377,4 +1378,5 @@ class DraftAliasGenerator:
                 yield alias + ".shepherd", list(emails)
 
             # .all = everything from above
-            yield alias + ".all", list(all)
+            if all:
+                yield alias + ".all", list(all)
