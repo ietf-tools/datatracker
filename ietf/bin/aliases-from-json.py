@@ -51,7 +51,7 @@ def generate_files(records, adest, vdest, postconfirm, vdomain):
                 afile.write(f'{filtername + ":":64s}  "|{postconfirm} filter expand-{alias} {vdomain}"\n')
                 for dom in domains:
                     vfile.write(f"{f'{alias}@{ADOMAINS[dom]}':64s}  {filtername}\n")
-                vfile.write(f"{f'expand-{alias}@{vdomain}':64s}  {', '.join(address_list)}\n")
+                vfile.write(f"{f'expand-{alias}@{vdomain}':64s}  {', '.join(sorted(address_list))}\n")
 
         perms = stat.S_IWUSR | stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH
         apath.chmod(perms)
@@ -76,8 +76,8 @@ if __name__ == "__main__":
         help="Destination for output files.",
     )
     parser.add_argument(
-        "--postconfirm", 
-        default=POSTCONFIRM_PATH, 
+        "--postconfirm",
+        default=POSTCONFIRM_PATH,
         help=f"Full path to postconfirm executable (defaults to {POSTCONFIRM_PATH}",
     )
     parser.add_argument(
@@ -90,10 +90,9 @@ if __name__ == "__main__":
         sys.stderr.write("Error: output-dir must be a directory")
     data = json.load(sys.stdin)
     generate_files(
-        data["aliases"], 
+        data["aliases"],
         adest=args.output_dir / f"{args.prefix}-aliases",
         vdest=args.output_dir / f"{args.prefix}-virtual",
         postconfirm=args.postconfirm,
         vdomain=args.vdomain,
-    ) 
-   
+    )
