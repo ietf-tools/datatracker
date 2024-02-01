@@ -1,11 +1,12 @@
 # Copyright The IETF Trust 2012-2023, All Rights Reserved
 # -*- coding: utf-8 -*-
-
+import datetime
 
 from pathlib import Path
 
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 from django.urls import reverse as urlreverse
@@ -353,3 +354,71 @@ def update_role_set(group, role_name, new_value, by):
                 e.save()
 
     return added, removed
+
+
+class GroupAliasGenerator:
+    days = 5 * 365
+    active_states = ["active", "bof", "proposed"]
+    group_types = [
+        "wg",
+        "rg",
+        "rag",
+        "dir",
+        "team",
+        "review",
+        "program",
+        "rfcedtyp",
+        "edappr",
+        "edwg",
+    ]  # This should become groupfeature driven...
+    no_ad_group_types = ["rg", "rag", "team", "program", "rfcedtyp", "edappr", "edwg"]
+
+    def __iter__(self):
+        show_since = timezone.now() - datetime.timedelta(days=self.days)
+
+        # Loop through each group type and build -ads and -chairs entries
+        for g in self.group_types:
+            domains = ["ietf"]
+            if g in ("rg", "rag"):
+                domains += "irtf"
+            if g == "program":
+                domains += "iab"
+
+            entries = Group.objects.filter(type=g).all()
+            active_entries = entries.filter(state__in=self.active_states)
+            inactive_recent_entries = entries.exclude(
+                state__in=self.active_states
+            ).filter(time__gte=show_since)
+            interesting_entries = active_entries | inactive_recent_entries
+
+            for e in interesting_entries.distinct().iterator():
+                name = e.acronym
+
+                # Research groups, teams, and programs do not have -ads lists
+                if not g in self.no_ad_group_types:
+                    yield name + "-ads", domains, get_group_ad_emails(e)
+                # All group types have -chairs lists
+                yield name + "-chairs", domains, get_group_role_emails(
+                    e, ["chair", "secr"]
+                )
+
+        # The area lists include every chair in active working groups in the area
+        areas = Group.objects.filter(type="area").all()
+        active_areas = areas.filter(state__in=self.active_states)
+        for area in active_areas:
+            name = area.acronym
+            area_ad_emails = get_group_role_emails(area, ["pre-ad", "ad", "chair"])
+            yield name + "-ads", "ietf", area_ad_emails
+            yield name + "-chairs", "ietf", get_child_group_role_emails(
+                area, ["chair", "secr"]
+            ) | area_ad_emails
+
+        # Other groups with chairs that require Internet-Draft submission approval
+        gtypes = GroupTypeName.objects.values_list("slug", flat=True)
+        special_groups = Group.objects.filter(
+            type__features__req_subm_approval=True, acronym__in=gtypes, state="active"
+        )
+        for group in special_groups:
+            yield group.acronym + "-chairs", "ietf", get_group_role_emails(
+                group, ["chair", "delegate"]
+            )
