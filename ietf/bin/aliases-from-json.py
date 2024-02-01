@@ -16,10 +16,16 @@ from tempfile import TemporaryDirectory
 # Default options
 POSTCONFIRM_PATH = "/a/postconfirm/wrapper"
 VDOMAIN = "virtual.ietf.org"
-ADOMAINS = ["ietf.org"]
+
+# Map from domain label to dns domain
+ADOMAINS = {
+    "ietf": "ietf.org",
+    "irtf": "irtf.org",
+    "iab": "iab.org",
+}
 
 
-def generate_files(records, adest, vdest, postconfirm, vdomain, adomains):
+def generate_files(records, adest, vdest, postconfirm, vdomain):
     """Generate files from an iterable of records
     
     If adest or vdest exists as a file, it will be overwritten. If it is a directory, files
@@ -28,8 +34,8 @@ def generate_files(records, adest, vdest, postconfirm, vdomain, adomains):
     """
     with TemporaryDirectory() as tmpdir:
         tmppath = Path(tmpdir)
-        apath = tmppath / "draft-aliases"
-        vpath = tmppath / "draft-virtual"
+        apath = tmppath / "aliases"
+        vpath = tmppath / "virtual"
 
         with apath.open("w") as afile, vpath.open("w") as vfile:
             date = datetime.datetime.now(datetime.timezone.utc)
@@ -37,11 +43,14 @@ def generate_files(records, adest, vdest, postconfirm, vdomain, adomains):
             afile.write(signature)
             vfile.write(signature)
 
-            for alias, address_list in records.items():
+            for item in records:
+                alias = item["alias"]
+                domains = item["domains"]
+                address_list = item["addresses"]
                 filtername = f"xfilter-{alias}"
                 afile.write(f'{filtername + ":":64s}  "|{postconfirm} filter expand-{alias} {vdomain}"\n')
-                for domain in adomains:
-                    vfile.write(f"{f'{alias}@{domain}':64s}  {filtername}\n")
+                for dom in domains:
+                    vfile.write(f"{f'{alias}@{ADOMAINS[dom]}':64s}  {filtername}\n")
                 vfile.write(f"{f'expand-{alias}@{vdomain}':64s}  {', '.join(address_list)}\n")
 
         perms = stat.S_IWUSR | stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH
@@ -54,6 +63,11 @@ def generate_files(records, adest, vdest, postconfirm, vdomain, adomains):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Convert a JSON stream of draft alias definitions into alias / virtual alias files."
+    )
+    parser.add_argument(
+        "--prefix",
+        required=True,
+        help="Prefix for output files. Files will be named <prefix>-aliases and <prefix>-virtual."
     )
     parser.add_argument(
         "--output-dir",
@@ -71,22 +85,15 @@ if __name__ == "__main__":
         default=VDOMAIN,
         help=f"Virtual domain (defaults to {VDOMAIN}_",
     )
-    parser.add_argument(
-        "--adomain",
-        action="append",
-        default=[],
-        help=f"Domains in which to create aliases (multiple allowed; if none are specified, defaults to {ADOMAINS})"
-    )
     args = parser.parse_args()
     if not args.output_dir.is_dir():
         sys.stderr.write("Error: output-dir must be a directory")
     data = json.load(sys.stdin)
     generate_files(
         data["aliases"], 
-        adest=args.output_dir / "draft-aliases",
-        vdest=args.output_dir / "draft-virtual",
+        adest=args.output_dir / f"{args.prefix}-aliases",
+        vdest=args.output_dir / f"{args.prefix}-virtual",
         postconfirm=args.postconfirm,
         vdomain=args.vdomain,
-        adomains=args.adomain or ADOMAINS,
     ) 
    
