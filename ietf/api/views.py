@@ -34,6 +34,7 @@ from ietf.api import _api_list
 from ietf.api.serializer import JsonExportMixin
 from ietf.api.ietf_utils import is_valid_token, requires_api_token
 from ietf.doc.utils import DraftAliasGenerator, fuzzy_find_documents
+from ietf.group.utils import GroupAliasGenerator
 from ietf.ietfauth.views import send_account_creation_email
 from ietf.ietfauth.utils import role_required
 from ietf.meeting.models import Meeting
@@ -455,7 +456,7 @@ def directauth(request):
         return HttpResponse(status=405)
 
 
-@requires_api_token
+@requires_api_token("ietf.api.views.email_aliases")
 @csrf_exempt
 def draft_aliases(request):
     if request.method == "GET":
@@ -464,6 +465,25 @@ def draft_aliases(request):
                 "aliases": {
                     alias: address_list for alias, address_list in DraftAliasGenerator()
                 }
+            }
+        )
+    return HttpResponse(status=405)
+
+
+@requires_api_token("ietf.api.views.email_aliases")
+@csrf_exempt
+def group_aliases(request):
+    if request.method == "GET":
+        return JsonResponse(
+            {
+                "aliases": [
+                    {
+                        "alias": alias,
+                        "domains": domains,
+                        "addresses": address_list,
+                    } 
+                    for alias, domains, address_list in GroupAliasGenerator()
+                ]
             }
         )
     return HttpResponse(status=405)

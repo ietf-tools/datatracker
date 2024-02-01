@@ -396,11 +396,11 @@ class GroupAliasGenerator:
 
                 # Research groups, teams, and programs do not have -ads lists
                 if not g in self.no_ad_group_types:
-                    yield name + "-ads", domains, get_group_ad_emails(e)
+                    yield name + "-ads", domains, list(get_group_ad_emails(e))
                 # All group types have -chairs lists
-                yield name + "-chairs", domains, get_group_role_emails(
+                yield name + "-chairs", domains, list(get_group_role_emails(
                     e, ["chair", "secr"]
-                )
+                ))
 
         # The area lists include every chair in active working groups in the area
         areas = Group.objects.filter(type="area").all()
@@ -408,10 +408,10 @@ class GroupAliasGenerator:
         for area in active_areas:
             name = area.acronym
             area_ad_emails = get_group_role_emails(area, ["pre-ad", "ad", "chair"])
-            yield name + "-ads", "ietf", area_ad_emails
-            yield name + "-chairs", "ietf", get_child_group_role_emails(
+            yield name + "-ads", "ietf", list(area_ad_emails)
+            yield name + "-chairs", "ietf", list(get_child_group_role_emails(
                 area, ["chair", "secr"]
-            ) | area_ad_emails
+            ) | area_ad_emails)
 
         # Other groups with chairs that require Internet-Draft submission approval
         gtypes = GroupTypeName.objects.values_list("slug", flat=True)
@@ -419,6 +419,6 @@ class GroupAliasGenerator:
             type__features__req_subm_approval=True, acronym__in=gtypes, state="active"
         )
         for group in special_groups:
-            yield group.acronym + "-chairs", "ietf", get_group_role_emails(
+            yield group.acronym + "-chairs", "ietf", list(get_group_role_emails(
                 group, ["chair", "delegate"]
-            )
+            ))
