@@ -943,7 +943,7 @@ def document_main(request, name, rev=None, document_html=False):
         variants = set([match.name.split(".")[1] for match in Path(doc.get_file_path()).glob(f"{basename}.*")])
         inlineable = any([ext in variants for ext in ["md", "txt"]])
         if inlineable:
-            content = markdown.markdown(doc.text_or_error())
+            content = markdown.liberal_markdown(doc.text_or_error())
         else:
             content = "No format available to display inline"
             if "pdf" in variants:

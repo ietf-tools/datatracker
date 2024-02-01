@@ -94,7 +94,7 @@ class StatementUploadForm(forms.Form):
                     )
         if markdown_content != "":
             try:
-                _ = markdown.markdown(markdown_content)
+                _ = markdown.liberal_markdown(markdown_content)
             except Exception as e:
                 raise forms.ValidationError(f"Markdown processing failed: {e}")
 
