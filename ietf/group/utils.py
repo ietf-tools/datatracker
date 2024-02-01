@@ -380,9 +380,9 @@ class GroupAliasGenerator:
         for g in self.group_types:
             domains = ["ietf"]
             if g in ("rg", "rag"):
-                domains += "irtf"
+                domains.append("irtf")
             if g == "program":
-                domains += "iab"
+                domains.append("iab")
 
             entries = Group.objects.filter(type=g).all()
             active_entries = entries.filter(state__in=self.active_states)
@@ -408,8 +408,8 @@ class GroupAliasGenerator:
         for area in active_areas:
             name = area.acronym
             area_ad_emails = get_group_role_emails(area, ["pre-ad", "ad", "chair"])
-            yield name + "-ads", "ietf", list(area_ad_emails)
-            yield name + "-chairs", "ietf", list(get_child_group_role_emails(
+            yield name + "-ads", ["ietf"], list(area_ad_emails)
+            yield name + "-chairs", ["ietf"], list(get_child_group_role_emails(
                 area, ["chair", "secr"]
             ) | area_ad_emails)
 
@@ -419,6 +419,6 @@ class GroupAliasGenerator:
             type__features__req_subm_approval=True, acronym__in=gtypes, state="active"
         )
         for group in special_groups:
-            yield group.acronym + "-chairs", "ietf", list(get_group_role_emails(
+            yield group.acronym + "-chairs", ["ietf"], list(get_group_role_emails(
                 group, ["chair", "delegate"]
             ))
