@@ -2,11 +2,9 @@
 # -*- coding: utf-8 -*-
 
 import json
-import pytz
 import re
 
-from jwcrypto.jwk import JWK
-
+import pytz
 from django.conf import settings
 from django.contrib.auth import authenticate
 from django.contrib.auth.decorators import login_required
@@ -20,25 +18,23 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.gzip import gzip_page
 from django.views.generic.detail import DetailView
-
+from jwcrypto.jwk import JWK
 from tastypie.exceptions import BadRequest
-from tastypie.utils.mime import determine_format, build_content_type
-from tastypie.utils import is_valid_jsonp_callback_value
 from tastypie.serializers import Serializer
-
-import debug                            # pyflakes:ignore
+from tastypie.utils import is_valid_jsonp_callback_value
+from tastypie.utils.mime import determine_format, build_content_type
 
 import ietf
-from ietf.person.models import Person, Email
 from ietf.api import _api_list
-from ietf.api.serializer import JsonExportMixin
 from ietf.api.ietf_utils import is_valid_token, requires_api_token
+from ietf.api.serializer import JsonExportMixin
 from ietf.doc.utils import DraftAliasGenerator, fuzzy_find_documents
 from ietf.group.utils import GroupAliasGenerator
-from ietf.ietfauth.views import send_account_creation_email
 from ietf.ietfauth.utils import role_required
+from ietf.ietfauth.views import send_account_creation_email
 from ietf.meeting.models import Meeting
 from ietf.nomcom.models import Volunteer, NomCom
+from ietf.person.models import Person, Email
 from ietf.stats.models import MeetingRegistration
 from ietf.utils import log
 from ietf.utils.decorators import require_api_key
@@ -462,9 +458,14 @@ def draft_aliases(request):
     if request.method == "GET":
         return JsonResponse(
             {
-                "aliases": {
-                    alias: address_list for alias, address_list in DraftAliasGenerator()
-                }
+                "aliases": [
+                    {
+                        "alias": alias,
+                        "domains": ["ietf"],
+                        "addresses": address_list,
+                    }
+                    for alias, address_list in DraftAliasGenerator()
+                ]
             }
         )
     return HttpResponse(status=405)
