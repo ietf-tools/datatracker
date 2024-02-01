@@ -89,7 +89,7 @@ class PersonalInformationExportView(DetailView, JsonExportMixin):
             'sendqueue', 'nominee', 'topicfeedbacklastseen', 'alias', 'email', 'apikeys', 'personevent',
             'reviewersettings', 'reviewsecretarysettings', 'unavailableperiod', 'reviewwish',
             'nextreviewerinteam', 'reviewrequest', 'meetingregistration', 'submissionevent', 'preapproval',
-            'user', 'user__communitylist', 'personextresource_set', ]
+            'user', 'communitylist', 'personextresource_set', ]
 
 
         return self.json_view(request, filter={'id':person.id}, expand=expand)

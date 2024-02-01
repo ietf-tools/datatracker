@@ -51,8 +51,6 @@ from django.conf import settings
 from django import forms
 from django.contrib.staticfiles import finders
 
-import rfc2html
-
 import debug                            # pyflakes:ignore
 
 from ietf.doc.models import ( Document, DocHistory, DocEvent, BallotDocEvent, BallotType,
@@ -64,7 +62,7 @@ from ietf.doc.utils import (augment_events_with_revision,
     needed_ballot_positions, nice_consensus, update_telechat, has_same_ballot,
     get_initial_notify, make_notify_changed_event, make_rev_history, default_consensus,
     add_events_message_info, get_unicode_document_content,
-    augment_docs_and_user_with_user_info, irsg_needed_ballot_positions, add_action_holder_change_event,
+    augment_docs_and_person_with_person_info, irsg_needed_ballot_positions, add_action_holder_change_event,
     build_file_urls, update_documentauthors, fuzzy_find_documents,
     bibxml_for_draft)
 from ietf.doc.utils_bofreq import bofreq_editors, bofreq_responsible
@@ -82,7 +80,7 @@ from ietf.meeting.utils import group_sessions, get_upcoming_manageable_sessions,
 from ietf.review.models import ReviewAssignment
 from ietf.review.utils import can_request_review_of_doc, review_assignments_to_list_for_docs, review_requests_to_list_for_docs
 from ietf.review.utils import no_review_from_teams_on_doc
-from ietf.utils import log, markdown
+from ietf.utils import markup_txt, log, markdown
 from ietf.utils.draft import PlaintextDraft
 from ietf.utils.response import permission_denied
 from ietf.utils.text import maybe_split
@@ -266,9 +264,7 @@ def document_main(request, name, rev=None, document_html=False):
 
         file_urls, found_types = build_file_urls(doc)
         content = doc.text_or_error() # pyflakes:ignore
-        content = maybe_split(content, split=split_content)
-        if content:
-            content = rfc2html.markup(content)
+        content = markup_txt.markup(maybe_split(content, split=split_content))
 
         if not found_types:
             content = "This RFC is not currently available online."
@@ -291,7 +287,8 @@ def document_main(request, name, rev=None, document_html=False):
 
         presentations = doc.future_presentations()
 
-        augment_docs_and_user_with_user_info([doc], request.user)
+        if request.user.is_authenticated and hasattr(request.user, "person"):
+            augment_docs_and_person_with_person_info([doc], request.user.person)
 
         exp_comment = doc.latest_event(IanaExpertDocEvent,type="comment")
         iana_experts_comment = exp_comment and exp_comment.desc
@@ -404,9 +401,7 @@ def document_main(request, name, rev=None, document_html=False):
 
         file_urls, found_types = build_file_urls(doc)
         content = doc.text_or_error() # pyflakes:ignore
-        content = maybe_split(content, split=split_content)
-        if content:
-            content = rfc2html.markup(content)
+        content = markup_txt.markup(maybe_split(content, split=split_content))
 
         latest_revision = doc.latest_event(NewRevisionDocEvent, type="new_revision")
 
@@ -586,7 +581,8 @@ def document_main(request, name, rev=None, document_html=False):
             elif can_edit_stream_info and (iesg_state_slug in ('idexists','watching')):
                 actions.append(("Submit to IESG for Publication", urlreverse('ietf.doc.views_draft.to_iesg', kwargs=dict(name=doc.name))))
 
-        augment_docs_and_user_with_user_info([doc], request.user)
+        if request.user.is_authenticated and hasattr(request.user, "person"):
+            augment_docs_and_person_with_person_info([doc], request.user.person)
 
         published = doc.latest_event(type="published_rfc")  # todo rethink this now that published_rfc is on rfc
         started_iesg_process = doc.latest_event(type="started_iesg_process")
@@ -781,7 +777,7 @@ def document_main(request, name, rev=None, document_html=False):
             content = "A conflict review response has not yet been proposed."
         else:     
             content = doc.text_or_error() # pyflakes:ignore
-            content = markdown.markdown(content)
+            content = markup_txt.markup(content)
 
         ballot_summary = None
         if doc.get_state_slug() in ("iesgeval", ) and doc.active_ballot():
@@ -896,6 +892,8 @@ def document_main(request, name, rev=None, document_html=False):
         basename = "{}.txt".format(doc.name)
         pathname = os.path.join(doc.get_file_path(), basename)
         content = get_unicode_document_content(basename, pathname)
+        # If we want to go back to using markup_txt.markup_unicode, call it explicitly here like this:
+        # content = markup_txt.markup_unicode(content, split=False, width=80)
        
         assignments = ReviewAssignment.objects.filter(review__name=doc.name)
         review_assignment = assignments.first()

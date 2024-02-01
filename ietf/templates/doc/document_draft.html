@@ -15,15 +15,7 @@
     <meta name="description"
           content="{{ doc.title }} {% if doc.type_id == 'rfc' and not snapshot %}(RFC {{ rfc_number }}{% if published %}, {{ doc.pub_date|date:'F Y' }}{% endif %}{% if obsoleted_by %}; obsoleted by {% for rel in obsoleted_by %}{{ rel.source.name|prettystdname}}{% if not forloop.last%}, {% endif %}{% endfor %}{% endif %}){% endif %}">
 {% endblock %}
-{% block morecss %}
-    .rfcmarkup :is(h1, h2, h3, h4, h5, h6),
-    .rfcmarkup :is(.h1, .h2, .h3, .h4, .h5, .h6) {
-        font-weight: bold;
-        font-size: 1em;
-    }
-    .rfcmarkup .newpage { margin-top: -1.5em; }
-    .rfcmarkup .grey, hr { opacity: .25; }
-{% endblock %}
+{% block morecss %}.inline { display: inline; }{% endblock %}
 {% block title %}
     {% if doc.type_id == "rfc" and not snapshot %}
         RFC {{ rfc_number }} - {{ doc.title }}
@@ -666,7 +658,7 @@
                 </i>
                 Nits
             </a>
-            <div class="dropdown d-inline">
+            <div class="dropdown inline">
                 <button class="btn btn-primary btn-sm dropdown-toggle"
                         type="button"
                         id="ddSearchMenu"
@@ -707,21 +699,21 @@
             </div>
             {% if user.is_authenticated %}
                 <a class="btn btn-primary btn-sm track-untrack-doc {% if not doc.tracked_in_personal_community_list %}d-none{% endif %}"
-                   href="{% url "ietf.community.views.untrack_document" username=user.username name=doc.name %}"
+                   href="{% url "ietf.community.views.untrack_document" email_or_name=user.username name=doc.name %}"
                    title="Remove from your personal I-D list">
                     <i class="bi bi-bookmark-check-fill">
                     </i>
                     Untrack
                 </a>
                 <a class="btn btn-primary btn-sm track-untrack-doc {% if doc.tracked_in_personal_community_list %}d-none{% endif %}"
-                   href="{% url "ietf.community.views.track_document" username=user.username name=doc.name %}"
+                   href="{% url "ietf.community.views.track_document" email_or_name=user.username name=doc.name %}"
                    title="Add to your personal I-D list">
                     <i class="bi bi-bookmark">
                     </i>
                     Track
                 </a>
             {% endif %}
-            {% if user.review_teams %}
+            {% if user.person.review_teams %}
                 <a class="btn btn-primary btn-sm review-wish-add-remove-doc ajax {% if not doc.has_review_wish %}d-none{% endif %}"
                    href="{% url "ietf.doc.views_review.review_wishes_remove" name=doc.name %}?next={{ request.get_full_path|urlencode }}"
                    title="Remove from your review wishes for all teams">
@@ -729,7 +721,7 @@
                     </i>
                     Remove review wishes
                 </a>
-                <a class="btn btn-primary btn-sm review-wish-add-remove-doc {% if user.review_teams|length_is:"1" %}ajax {% endif %}{% if doc.has_review_wish %}d-none{% endif %}"
+                <a class="btn btn-primary btn-sm review-wish-add-remove-doc {% if user.person.review_teams|length_is:"1" %}ajax {% endif %}{% if doc.has_review_wish %}d-none{% endif %}"
                    href="{% url "ietf.doc.views_review.review_wish_add" name=doc.name %}?next={{ request.get_full_path|urlencode }}"
                    title="Add to your review wishes">
                     <i class="bi bi-chat-left-heart">
@@ -768,9 +760,8 @@
                         {{ name }}-{{ doc.rev }}
                     {% endif %}
                 </div>
-                <div class="card-body rfcmarkup">
-                    <!-- [html-validate-disable-block attr-quotes, void-style, element-permitted-content, heading-level, no-dup-id, valid-id -- FIXME: rfcmarkup/rfc2html generates HTML with issues] -->
-                    {{ content|safe|default:"(Unavailable)" }}
+                <div class="card-body">
+                    <pre>{{ content|sanitize|safe|default:"(Unavailable)" }}</pre>
                 </div>
             </div>
             {% if split_content %}

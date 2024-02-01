@@ -4,7 +4,7 @@
 
 import re
 import requests
-from collections import defaultdict
+from collections import defaultdict, namedtuple
 
 from django.conf import settings
 from django.db.models import Q
@@ -382,3 +382,13 @@ def find_meetingregistration_person_issues(meetings=None):
             summary.no_email.add(f'{mr} ({mr.pk}) provides no email address')
 
     return summary
+
+
+FetchStats = namedtuple("FetchStats", "added processed total")
+
+
+def fetch_attendance_from_meetings(meetings):
+    stats = [
+        FetchStats(*get_meeting_registration_data(meeting)) for meeting in meetings
+    ]
+    return stats
