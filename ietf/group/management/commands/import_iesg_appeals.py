@@ -26,7 +26,7 @@ class Command(BaseCommand):
         )
         tmpdir = tempfile.mkdtemp()
         process = subprocess.Popen(
-            ["git", "clone", "https://github.com/rjsparks/iesg-scraper.git", tmpdir],
+            ["git", "clone", "https://github.com/kesara/iesg-scraper.git", tmpdir],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
         )
