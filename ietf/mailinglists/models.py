@@ -19,6 +19,17 @@ class List(models.Model):
     def info_url(self):
         return settings.MAILING_LIST_INFO_URL % {'list_addr': self.name }
 
+# NonWgMailingList is a temporary bridging class to hold information known about mailman2
+# while decoupling from mailman2 until we integrate with mailman3
+class NonWgMailingList(models.Model):
+    name = models.CharField(max_length=32)
+    description = models.CharField(max_length=256)
+
+    def __str__(self):
+        return "<NonWgMailingList: %s>" % self.name
+    def info_url(self):
+        return settings.MAILING_LIST_INFO_URL % {'list_addr': self.name }
+
 class Subscribed(models.Model):
     time = models.DateTimeField(auto_now_add=True)
     email = models.CharField(max_length=128, validators=[validate_email])

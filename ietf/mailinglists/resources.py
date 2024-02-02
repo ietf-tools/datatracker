@@ -11,7 +11,7 @@ from tastypie.cache import SimpleCache
 from ietf import api
 from ietf.api import ToOneField                         # pyflakes:ignore
 
-from ietf.mailinglists.models import Allowlisted, List, Subscribed
+from ietf.mailinglists.models import Allowlisted, List, Subscribed, NonWgMailingList
 
 
 from ietf.person.resources import PersonResource
@@ -45,6 +45,20 @@ class ListResource(ModelResource):
             "advertised": ALL,
         }
 api.mailinglists.register(ListResource())
+
+class NonWgMailingListResource(ModelResource):
+    class Meta:
+        queryset = NonWgMailingList.objects.all()
+        serializer = api.Serializer()
+        cache = SimpleCache()
+        #resource_name = 'nonwgmailinglist'
+        ordering = ['id', ]
+        filtering = { 
+            "id": ALL,
+            "name": ALL,
+            "description": ALL,
+        }
+api.mailinglists.register(NonWgMailingListResource())
 
 class SubscribedResource(ModelResource):
     lists            = ToManyField(ListResource, 'lists', null=True)
