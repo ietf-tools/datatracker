@@ -601,11 +601,6 @@ def forward(apps, schema_editor):
     ):
         NonWgMailingList.objects.create(name=l.name, description=l.description)
 
-
-def reverse(apps, schema_editor):
-    pass
-
-
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -629,5 +624,5 @@ class Migration(migrations.Migration):
                 ("description", models.CharField(max_length=256)),
             ],
         ),
-        migrations.RunPython(forward, reverse),
+        migrations.RunPython(forward),
     ]
