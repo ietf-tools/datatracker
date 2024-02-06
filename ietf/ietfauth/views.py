@@ -63,11 +63,10 @@ import debug                            # pyflakes:ignore
 
 from ietf.group.models import Role, Group
 from ietf.ietfauth.forms import ( RegistrationForm, PasswordForm, ResetPasswordForm, TestEmailForm,
-                                AllowlistForm, ChangePasswordForm, get_person_form, RoleEmailForm,
+                                ChangePasswordForm, get_person_form, RoleEmailForm,
                                 NewEmailForm, ChangeUsernameForm, PersonPasswordForm)
 from ietf.ietfauth.htpasswd import update_htpasswd_file
-from ietf.ietfauth.utils import role_required, has_role
-from ietf.mailinglists.models import Allowlisted
+from ietf.ietfauth.utils import has_role
 from ietf.name.models import ExtResourceName
 from ietf.nomcom.models import NomCom
 from ietf.person.models import Person, Email, Alias, PersonalApiKey, PERSON_API_KEY_VALUES
@@ -600,23 +599,7 @@ def test_email(request):
 
     return r
 
-@role_required('Secretariat')
-def add_account_allowlist(request):
-    success = False
-    if request.method == 'POST':
-        form = AllowlistForm(request.POST)
-        if form.is_valid():
-            email = form.cleaned_data['email']
-            entry = Allowlisted(email=email, by=request.user.person)
-            entry.save()
-            success = True
-    else:
-        form = AllowlistForm()
 
-    return render(request, 'ietfauth/allowlist_form.html', {
-        'form': form,
-        'success': success,
-    })
 
 class AddReviewWishForm(forms.Form):
     doc = SearchableDocumentField(label="Document", doc_type="draft")
