@@ -40,7 +40,7 @@ from ietf.utils.mail import outbox, get_payload_text
 from ietf.utils.models import DumpInfo
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized, reload_db_objects
 
-from .ietf_utils import requires_api_token
+from .ietf_utils import is_valid_token, requires_api_token
 
 OMITTED_APPS = (
     'ietf.secr.meetings',
@@ -1140,6 +1140,18 @@ class RfcdiffSupportTests(TestCase):
 
 
 class TokenTests(TestCase):
+    @override_settings(APP_API_TOKENS={"known.endpoint": ["token in a list"], "oops": "token as a str"})
+    def test_is_valid_token(self):
+        # various invalid cases
+        self.assertFalse(is_valid_token("unknown.endpoint", "token in a list"))
+        self.assertFalse(is_valid_token("known.endpoint", "token"))
+        self.assertFalse(is_valid_token("known.endpoint", "token as a str"))
+        self.assertFalse(is_valid_token("oops", "token"))
+        self.assertFalse(is_valid_token("oops", "token in a list"))
+        # the only valid cases
+        self.assertTrue(is_valid_token("known.endpoint", "token in a list"))
+        self.assertTrue(is_valid_token("oops", "token as a str"))
+
     @mock.patch("ietf.api.ietf_utils.is_valid_token")
     def test_requires_api_token(self, mock_is_valid_token):
         called = False
