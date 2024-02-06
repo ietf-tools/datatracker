@@ -160,18 +160,8 @@ def create_account(request):
                 )
                 new_account_email = None  # Indicate to the template that we failed to create the requested account
             else:
-                # For the IETF 113 Registration period (at least) we are lowering the
-                # barriers for account creation to the simple email round-trip check
                 send_account_creation_email(request, new_account_email)
 
-                # The following is what to revert to should that lowered barrier prove problematic
-                # existing = Subscribed.objects.filter(email__iexact=new_account_email).first()
-                # ok_to_create = ( Allowlisted.objects.filter(email__iexact=new_account_email).exists()
-                #     or existing and (existing.time + TimeDelta(seconds=settings.LIST_ACCOUNT_DELAY)) < DateTime.now() )
-                # if ok_to_create:
-                #     send_account_creation_email(request, new_account_email)
-                # else:
-                #     return render(request, 'registration/manual.html', { 'account_request_email': settings.ACCOUNT_REQUEST_EMAIL })
     else:
         form = RegistrationForm()
 
