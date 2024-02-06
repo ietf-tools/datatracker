@@ -14,8 +14,13 @@ def is_valid_token(endpoint, token):
     # Settings implementation for now.
     if hasattr(settings, "APP_API_TOKENS"):
         token_store = settings.APP_API_TOKENS
-        if endpoint in token_store and token in token_store[endpoint]:
-            return True
+        if endpoint in token_store:
+            endpoint_tokens = token_store[endpoint]
+            # Be sure endpoints is a list or tuple so we don't accidentally use substring matching!
+            if not isinstance(endpoint_tokens, (list, tuple)):
+                endpoint_tokens = [endpoint_tokens]
+            if token in endpoint_tokens:
+                return True
     return False
 
 
