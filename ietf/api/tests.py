@@ -784,7 +784,40 @@ class CustomApiTests(TestCase):
         url = urlreverse('ietf.meeting.views.api_get_session_materials', kwargs={'session_id': session.pk})
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-
+    
+    @override_settings(APP_API_TOKENS={"ietf.api.views.email_aliases": ["valid-token"]})
+    @mock.patch("ietf.api.views.DraftAliasGenerator")
+    def test_draft_aliases(self, mock):
+        mock.return_value = (("alias1", ("a1", "a2")), ("alias2", ("a3", "a4")))
+        url = urlreverse("ietf.api.views.draft_aliases")
+        r = self.client.get(url, headers={"X-Api-Key": "valid-token"})
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.headers["Content-type"], "application/json")
+        self.assertEqual(
+            json.loads(r.content),
+            {
+                "aliases": [
+                    {"alias": "alias1", "domains": ["ietf"], "addresses": ["a1", "a2"]},
+                    {"alias": "alias2", "domains": ["ietf"], "addresses": ["a3", "a4"]},
+                ]}
+        )
+        # some invalid cases
+        self.assertEqual(
+            self.client.get(url, headers={}).status_code,
+            403,
+        )
+        self.assertEqual(
+            self.client.get(url, headers={"X-Api-Key": "something-else"}).status_code,
+            403,
+        )
+        self.assertEqual(
+            self.client.post(url, headers={"X-Api-Key": "something-else"}).status_code,
+            403,
+        )
+        self.assertEqual(
+            self.client.post(url, headers={"X-Api-Key": "valid-token"}).status_code,
+            405,
+        )
 
 
 class DirectAuthApiTests(TestCase):
