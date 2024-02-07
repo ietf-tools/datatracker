@@ -220,7 +220,7 @@ class GenerateGroupAliasesTests(TestCase):
                 testrgchair.email_address(),
                 testragchair.email_address(),
             ]]))
-            self.assertFalse(all([x in vcontent for x in [
+            self.assertFalse(any([x in vcontent for x in [
                 done_ad.email_address(),
                 wayoldchair.email_address(),
                 individual.email_address(),
