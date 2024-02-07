@@ -2409,9 +2409,46 @@ class GenerateDraftAliasesTests(TestCase):
 
     @override_settings(TOOLS_SERVER="tools.example.org", DRAFT_ALIAS_DOMAIN="draft.example.org")
     def test_get_draft_notify_emails(self):
+        ad = PersonFactory()
+        shepherd = PersonFactory()
+        author = PersonFactory()
+        doc = DocumentFactory(authors=[author], shepherd=shepherd.email(), ad=ad)
         generator = DraftAliasGenerator()
-        doc = DocumentFactory
-        generator.get_draft_notify_emails()
+
+        doc.notify = f"{doc.name}@draft.example.org"
+        doc.save()
+        self.assertCountEqual(generator.get_draft_notify_emails(doc), [author.email_address()])
+
+        doc.notify = f"{doc.name}.ad@draft.example.org"
+        doc.save()
+        self.assertCountEqual(generator.get_draft_notify_emails(doc), [ad.email_address()])
+
+        doc.notify = f"{doc.name}.shepherd@draft.example.org"
+        doc.save()
+        self.assertCountEqual(generator.get_draft_notify_emails(doc), [shepherd.email_address()])
+
+        doc.notify = f"{doc.name}.all@draft.example.org"
+        doc.save()
+        self.assertCountEqual(
+            generator.get_draft_notify_emails(doc),
+            [ad.email_address(), author.email_address(), shepherd.email_address()]
+        )
+
+        doc.notify = f"{doc.name}.notify@draft.example.org"
+        doc.save()
+        self.assertCountEqual(generator.get_draft_notify_emails(doc), [])
+
+        doc.notify = f"{doc.name}.ad@somewhere.example.com"
+        doc.save()
+        self.assertCountEqual(generator.get_draft_notify_emails(doc), [f"{doc.name}.ad@somewhere.example.com"])
+        
+        doc.notify = f"somebody@example.com, nobody@example.com, {doc.name}.ad@tools.example.org"
+        doc.save()
+        self.assertCountEqual(
+            generator.get_draft_notify_emails(doc),
+            ["somebody@example.com", "nobody@example.com", ad.email_address()]
+        )
+
 
 class EmailAliasesTests(TestCase):
 
