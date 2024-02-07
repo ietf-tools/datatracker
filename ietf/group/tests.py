@@ -20,7 +20,7 @@ import debug                             # pyflakes:ignore
 from ietf.doc.factories import DocumentFactory, WgDraftFactory, EditorialDraftFactory
 from ietf.doc.models import DocEvent, RelatedDocument, Document
 from ietf.group.models import Role, Group
-from ietf.group.utils import get_group_role_emails, get_child_group_role_emails, get_group_ad_emails
+from ietf.group.utils import get_group_role_emails, get_child_group_role_emails, get_group_ad_emails, GroupAliasGenerator
 from ietf.group.factories import GroupFactory, RoleFactory
 from ietf.person.factories import PersonFactory, EmailFactory
 from ietf.person.models import Person
@@ -247,6 +247,64 @@ class GenerateGroupAliasesTests(TestCase):
                 'xfilter-' + wayold.acronym + '-ads',
                 'xfilter-' + wayold.acronym + '-chairs',
             ]]))
+
+    def test_generator_class(self):
+        """The GroupAliasGenerator should generate the same lists as the old mgmt cmd"""
+        # clean out test fixture group roles we don't need for this test
+        Role.objects.filter(
+            group__acronym__in=["farfut", "iab", "ietf", "irtf", "ise", "ops", "rsab", "rsoc", "sops"]
+        ).delete()
+    
+        a_month_ago = timezone.now() - datetime.timedelta(30)
+        a_decade_ago = timezone.now() - datetime.timedelta(3650)
+        role1 = RoleFactory(name_id='ad', group__type_id='area', group__acronym='myth', group__state_id='active')
+        area = role1.group
+        ad = role1.person
+        mars = GroupFactory(type_id='wg', acronym='mars', parent=area)
+        marschair = PersonFactory(user__username='marschair')
+        mars.role_set.create(name_id='chair', person=marschair, email=marschair.email())
+        marssecr = PersonFactory(user__username='marssecr')
+        mars.role_set.create(name_id='secr', person=marssecr, email=marssecr.email())
+        ames = GroupFactory(type_id='wg', acronym='ames', parent=area)
+        ameschair = PersonFactory(user__username='ameschair')
+        ames.role_set.create(name_id='chair', person=ameschair, email=ameschair.email())
+        recent = GroupFactory(type_id='wg', acronym='recent', parent=area, state_id='conclude', time=a_month_ago)
+        recentchair = PersonFactory(user__username='recentchair')
+        recent.role_set.create(name_id='chair', person=recentchair, email=recentchair.email())
+        wayold = GroupFactory(type_id='wg', acronym='recent', parent=area, state_id='conclude', time=a_decade_ago)
+        wayoldchair = PersonFactory(user__username='wayoldchair')
+        wayold.role_set.create(name_id='chair', person=wayoldchair, email=wayoldchair.email())
+        # create a "done" group that should not be included anywhere
+        RoleFactory(name_id='ad', group__type_id='area', group__acronym='done', group__state_id='conclude')
+        irtf = Group.objects.get(acronym='irtf')
+        testrg = GroupFactory(type_id='rg', acronym='testrg', parent=irtf)
+        testrgchair = PersonFactory(user__username='testrgchair')
+        testrg.role_set.create(name_id='chair', person=testrgchair, email=testrgchair.email())
+        testrag = GroupFactory(type_id='rg', acronym='testrag', parent=irtf)
+        testragchair = PersonFactory(user__username='testragchair')
+        testrag.role_set.create(name_id='chair', person=testragchair, email=testragchair.email())
+
+        output = [(alias, (domains, alist)) for alias, domains, alist in GroupAliasGenerator()]
+        alias_dict = dict(output)
+        self.maxDiff = None
+        self.assertEqual(len(alias_dict), len(output))  # no duplicate aliases
+        expected_dict = {
+            area.acronym + "-ads": (["ietf"], [ad.email_address()]),
+            area.acronym + "-chairs": (["ietf"], [ad.email_address(), marschair.email_address(), marssecr.email_address(), ameschair.email_address()]),
+            mars.acronym + "-ads": (["ietf"], [ad.email_address()]),
+            mars.acronym + "-chairs": (["ietf"], [marschair.email_address(), marssecr.email_address()]),
+            ames.acronym + "-ads": (["ietf"], [ad.email_address()]),
+            ames.acronym + "-chairs": (["ietf"], [ameschair.email_address()]),
+            recent.acronym + "-ads": (["ietf"], [ad.email_address()]),
+            recent.acronym + "-chairs": (["ietf"], [recentchair.email_address()]),
+            testrg.acronym + "-chairs": (["ietf", "irtf"], [testrgchair.email_address()]),
+            testrag.acronym + "-chairs": (["ietf", "irtf"], [testragchair.email_address()]),
+        }
+        # Sort lists for comparison
+        self.assertEqual(
+            {k: (sorted(doms), sorted(addrs)) for k, (doms, addrs) in alias_dict.items()},
+            {k: (sorted(doms), sorted(addrs)) for k, (doms, addrs) in expected_dict.items()},
+        )
 
 
 class GroupRoleEmailTests(TestCase):
