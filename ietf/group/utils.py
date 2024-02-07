@@ -396,7 +396,9 @@ class GroupAliasGenerator:
 
                 # Research groups, teams, and programs do not have -ads lists
                 if not g in self.no_ad_group_types:
-                    yield name + "-ads", domains, list(get_group_ad_emails(e))
+                    ad_emails = get_group_ad_emails(e)
+                    if ad_emails:
+                        yield name + "-ads", domains, list(ad_emails)
                 # All group types have -chairs lists
                 chair_emails = get_group_role_emails(e, ["chair", "secr"])
                 if chair_emails:
