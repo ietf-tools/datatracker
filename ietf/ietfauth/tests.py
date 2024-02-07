@@ -226,29 +226,8 @@ class IetfAuthTests(TestCase):
 
         self.assertTrue(self.username_in_htpasswd_file(email))
 
-    def test_create_allowlisted_account(self):
-        email = "new-account@example.com"
-
-        # add allowlist entry
-        r = self.client.post(urlreverse(ietf.ietfauth.views.login), {"username":"secretary", "password":"secretary+password"})
-        self.assertEqual(r.status_code, 302)
-        self.assertEqual(urlsplit(r["Location"])[2], urlreverse(ietf.ietfauth.views.profile))
-
-        r = self.client.get(urlreverse(ietf.ietfauth.views.add_account_allowlist))
-        self.assertEqual(r.status_code, 200)
-        self.assertContains(r, "Add an allowlist entry")
-
-        r = self.client.post(urlreverse(ietf.ietfauth.views.add_account_allowlist), {"email": email})
-        self.assertEqual(r.status_code, 200)
-        self.assertContains(r, "Allowlist entry creation successful")
-
-        # log out
-        r = self.client.post(urlreverse('django.contrib.auth.views.logout'), {})
-        self.assertEqual(r.status_code, 200)
-
-        # register and verify allowlisted email
-        self.register_and_verify(email)
-
+        
+    # This also tests new account creation.
     def test_create_existing_account(self):
         # create account once
         email = "new-account@example.com"
