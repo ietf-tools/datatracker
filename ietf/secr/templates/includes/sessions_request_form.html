@@ -103,16 +103,7 @@
                     Joint session with:<br>
                     (To request one session for multiple WGs together.)
                 </td>
-                <td>{{ form.joint_with_groups_selector }}
-                    <button type="button" onclick="ietf_sessions.delete_last_joint_with_groups(); return 1;">Delete the last entry</button><br>
-                    {{ form.joint_with_groups.errors }}{{ form.joint_with_groups }}
-                </td>
-            </tr>
-            <tr class="bg1">
-                <td>
-                    Of the sessions requested by this WG, the joint session, if applicable, is:
-                </td>
-                <td>{{ form.joint_for_session.errors }}{{ form.joint_for_session }}</td>
+                <td>To request a joint session with another group, please contact the secretariat.</td>
             </tr>
 
         {% endif %}
