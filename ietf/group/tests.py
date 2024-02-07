@@ -163,7 +163,7 @@ class GenerateGroupAliasesTests(TestCase):
         recent = GroupFactory(type_id='wg', acronym='recent', parent=area, state_id='conclude', time=a_month_ago)
         recentchair = PersonFactory(user__username='recentchair')
         recent.role_set.create(name_id='chair', person=recentchair, email=recentchair.email())
-        wayold = GroupFactory(type_id='wg', acronym='recent', parent=area, state_id='conclude', time=a_decade_ago)
+        wayold = GroupFactory(type_id='wg', acronym='wayold', parent=area, state_id='conclude', time=a_decade_ago)
         wayoldchair = PersonFactory(user__username='wayoldchair')
         wayold.role_set.create(name_id='chair', person=wayoldchair, email=wayoldchair.email())
         role2 = RoleFactory(name_id='ad', group__type_id='area', group__acronym='done', group__state_id='conclude')
@@ -271,7 +271,7 @@ class GenerateGroupAliasesTests(TestCase):
         recent = GroupFactory(type_id='wg', acronym='recent', parent=area, state_id='conclude', time=a_month_ago)
         recentchair = PersonFactory(user__username='recentchair')
         recent.role_set.create(name_id='chair', person=recentchair, email=recentchair.email())
-        wayold = GroupFactory(type_id='wg', acronym='recent', parent=area, state_id='conclude', time=a_decade_ago)
+        wayold = GroupFactory(type_id='wg', acronym='wayold', parent=area, state_id='conclude', time=a_decade_ago)
         wayoldchair = PersonFactory(user__username='wayoldchair')
         wayold.role_set.create(name_id='chair', person=wayoldchair, email=wayoldchair.email())
         # create a "done" group that should not be included anywhere
