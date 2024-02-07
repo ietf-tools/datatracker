@@ -2308,6 +2308,7 @@ class GenerateDraftAliasesTests(TestCase):
             ]:
                 self.assertNotIn(x, vcontent)
 
+    @override_settings(TOOLS_SERVER="tools.example.org", DRAFT_ALIAS_DOMAIN="draft.example.org")
     def test_generator_class(self):
         """The DraftAliasGenerator should generate the same lists as the old mgmt cmd"""
         a_month_ago = (timezone.now() - datetime.timedelta(30)).astimezone(RPC_TZINFO)
@@ -2331,6 +2332,8 @@ class GenerateDraftAliasesTests(TestCase):
         doc2 = WgDraftFactory(
             name="draft-ietf-mars-test", group__acronym="mars", authors=[author2], ad=ad
         )
+        doc2.notify = f"{doc2.name}.ad@draft.example.org"
+        doc2.save()
         doc3 = WgDraftFactory.create(
             name="draft-ietf-mars-finished",
             group__acronym="mars",
@@ -2377,6 +2380,7 @@ class GenerateDraftAliasesTests(TestCase):
             doc2.name + ".ad": [ad.email_address()],
             doc2.name + ".authors": [author2.email_address()],
             doc2.name + ".chairs": [marschairman.email_address()],
+            doc2.name + ".notify": [ad.email_address()],
             doc2.name
             + ".all": [
                 author2.email_address(),
@@ -2403,6 +2407,11 @@ class GenerateDraftAliasesTests(TestCase):
             {k: sorted(v) for k, v in expected_dict.items()},
         )
 
+    @override_settings(TOOLS_SERVER="tools.example.org", DRAFT_ALIAS_DOMAIN="draft.example.org")
+    def test_get_draft_notify_emails(self):
+        generator = DraftAliasGenerator()
+        doc = DocumentFactory
+        generator.get_draft_notify_emails()
 
 class EmailAliasesTests(TestCase):
 
