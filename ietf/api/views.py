@@ -499,3 +499,4 @@ def active_email_list(request):
                 "addresses": list(Email.objects.filter(active=True).values_list("address", flat=True)),
             }
         )
+    return HttpResponse(status=405)

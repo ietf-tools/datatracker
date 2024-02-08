@@ -858,10 +858,16 @@ class CustomApiTests(TestCase):
         EmailFactory(active=True)  # make sure there's at least one active email...
         EmailFactory(active=False)  # ... and at least one non-active emai
         url = urlreverse("ietf.api.views.active_email_list")
+        r = self.client.post(url, headers={})
+        self.assertEqual(r.status_code, 403)
         r = self.client.get(url, headers={})
         self.assertEqual(r.status_code, 403)
         r = self.client.get(url, headers={"X-Api-Key": "not-the-valid-token"})
         self.assertEqual(r.status_code, 403)
+        r = self.client.post(url, headers={"X-Api-Key": "not-the-valid-token"})
+        self.assertEqual(r.status_code, 403)
+        r = self.client.post(url, headers={"X-Api-Key": "valid-token"})
+        self.assertEqual(r.status_code, 405)
         r = self.client.get(url, headers={"X-Api-Key": "valid-token"})
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.headers["Content-Type"], "application/json")
