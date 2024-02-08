@@ -936,7 +936,6 @@ class DirectAuthApiTests(TestCase):
         self.assertEqual(data["reason"], "invalid post")       
 
     def test_notokenstore(self):
-        debug.show("settings.APP_API_TOKENS")
         self.assertFalse(hasattr(settings, "APP_API_TOKENS"))
         r = self.client.post(self.url,self.valid_body_with_good_password)
         self.assertEqual(r.status_code, 200)
