@@ -488,3 +488,14 @@ def group_aliases(request):
             }
         )
     return HttpResponse(status=405)
+
+
+@requires_api_token
+@csrf_exempt
+def active_email_list(request):
+    if request.method == "GET":
+        return JsonResponse(
+            {
+                "addresses": list(Email.objects.filter(active=True).values_list("address", flat=True)),
+            }
+        )
