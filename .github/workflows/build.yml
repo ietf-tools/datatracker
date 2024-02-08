@@ -123,6 +123,9 @@ jobs:
     if: ${{ !failure() && !cancelled() }}
     needs: [tests, prepare]
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
     env:
       SHOULD_DEPLOY: ${{needs.prepare.outputs.should_deploy}}
       PKG_VERSION: ${{needs.prepare.outputs.pkg_version}}
@@ -154,13 +157,17 @@ jobs:
     - name: Make Release Build
       env:
         DEBIAN_FRONTEND: noninteractive
+        BROWSERSLIST_IGNORE_OLD_DATA: 1
       run: |
         echo "PKG_VERSION: $PKG_VERSION"
         echo "GITHUB_SHA: $GITHUB_SHA"
         echo "GITHUB_REF_NAME: $GITHUB_REF_NAME"
-        echo "Running build script..."
-        chmod +x ./dev/deploy/build.sh
-        sh ./dev/deploy/build.sh
+        echo "Running frontend build script..."
+        echo "Compiling native node packages..."
+        yarn rebuild
+        echo "Packaging static assets..."
+        yarn build --base=https://static.ietf.org/dt/$PKG_VERSION/
+        yarn legacy:build
         echo "Setting version $PKG_VERSION..."
         sed -i -r -e "s|^__version__ += '.*'$|__version__ = '$PKG_VERSION'|" ietf/__init__.py
         sed -i -r -e "s|^__release_hash__ += '.*'$|__release_hash__ = '$GITHUB_SHA'|" ietf/__init__.py
@@ -178,7 +185,7 @@ jobs:
       run: |
         echo "Build release tarball..."
         mkdir -p /home/runner/work/release
-        tar -czf /home/runner/work/release/release.tar.gz -X dev/deploy/exclude-patterns.txt .
+        tar -czf /home/runner/work/release/release.tar.gz -X dev/build/exclude-patterns.txt .
 
     - name: Collect + Push Statics
       env:
@@ -189,10 +196,46 @@ jobs:
         AWS_ENDPOINT_URL: ${{ secrets.CF_R2_ENDPOINT }}
       run: |
         echo "Collecting statics..."
-        docker run --rm --name collectstatics -v $(pwd):/workspace ghcr.io/ietf-tools/datatracker-app-base:latest sh dev/deploy/collectstatics.sh
+        docker run --rm --name collectstatics -v $(pwd):/workspace ghcr.io/ietf-tools/datatracker-app-base:latest sh dev/build/collectstatics.sh
         echo "Pushing statics..."
         cd static
         aws s3 sync . s3://static/dt/$PKG_VERSION --only-show-errors
+
+    - name: Augment dockerignore for docker image build
+      env:
+        DEBIAN_FRONTEND: noninteractive
+      run: |
+        cat >> .dockerignore <<EOL
+        .devcontainer
+        .github
+        .vscode
+        helm
+        playwright
+        svn-history
+        docker-compose.yml
+        EOL
+
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v3
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Login to GitHub Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Build Release Docker Image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: dev/build/Dockerfile
+        platforms: linux/amd64,linux/arm64
+        push: true
+        tags: ghcr.io/ietf-tools/datatracker:${{ env.PKG_VERSION }}
         
     - name: Update CHANGELOG
       id: changelog
@@ -269,7 +312,7 @@ jobs:
     steps:      
     - name: Notify on Slack (Success)
       if: ${{ !contains(join(needs.*.result, ','), 'failure') }}
-      uses: slackapi/slack-github-action@v1.24.0
+      uses: slackapi/slack-github-action@v1.25.0
       with:
         channel-id: ${{ secrets.SLACK_GH_BUILDS_CHANNEL_ID }}
         payload: |
@@ -292,7 +335,7 @@ jobs:
         SLACK_BOT_TOKEN: ${{ secrets.SLACK_GH_BOT }}
     - name: Notify on Slack (Failure)
       if: ${{ contains(join(needs.*.result, ','), 'failure') }}
-      uses: slackapi/slack-github-action@v1.24.0
+      uses: slackapi/slack-github-action@v1.25.0
       with:
         channel-id: ${{ secrets.SLACK_GH_BUILDS_CHANNEL_ID }}
         payload: |

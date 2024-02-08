@@ -280,6 +280,19 @@ class DocumentInfo(models.Model):
                 info = dict(doc=self)
 
             href = format.format(**info)
+
+            # For slides that are not meeting-related, we need to know the file extension.
+            # Assume we have access to the same files as settings.DOC_HREFS["slides"] and
+            # see what extension is available
+            if  self.type_id == "slides" and not self.meeting_related() and not href.endswith("/"):
+                filepath = Path(self.get_file_path()) / self.get_base_name()  # start with this
+                if not filepath.exists():
+                    # Look for other extensions - grab the first one, sorted for stability
+                    for existing in sorted(filepath.parent.glob(f"{filepath.stem}.*")):
+                        filepath = filepath.with_suffix(existing.suffix)
+                        break
+                href += filepath.suffix  # tack on the extension
+
             if href.startswith('/'):
                 href = settings.IDTRACKER_BASE_URL + href
             self._cached_href = href
