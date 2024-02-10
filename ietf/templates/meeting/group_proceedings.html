@@ -1,4 +1,4 @@
-{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{# Copyright The IETF Trust 2015-2024, All Rights Reserved #}
 {% load origin %}
 {% origin %}
 {% load ietf_filters %}
@@ -47,13 +47,25 @@
                     <br>
                 {% endif %}
             {% endfor %}
-            {% for bs in entry.bluesheets %}
-                <a href="{{ bs.material|meeting_href:meeting }}">
-                    Bluesheets
-                    {% if bs.time %}{{ bs.time|date:"D G:i" }}{% endif %}
-                </a>
-                <br>
-            {% endfor %}
+            {% if not meeting.proceedings_final %}
+                {% for attendance in entry.attendances %}
+                    {% with session=attendance.material %}
+                        <a href="{% url 'ietf.meeting.views.session_attendance' session_id=session.pk num=session.meeting.number %}">
+                            Attendance
+                            {% if attendance.time %}{{ attendance.time|date:"D G:i" }}{% endif %}
+                        </a>
+                    {% endwith %}
+                    <br>
+                {% endfor %}
+            {% else %}
+                {% for bs in entry.bluesheets %}
+                    <a href="{{ bs.material|meeting_href:meeting }}">
+                        Bluesheets
+                        {% if bs.time %}{{ bs.time|date:"D G:i" }}{% endif %}
+                    </a>
+                    <br>
+                {% endfor %}
+            {% endif %}
         </td>
         {# recordings #}
         <td>

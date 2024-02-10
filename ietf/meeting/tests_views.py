@@ -517,7 +517,7 @@ class MeetingTests(BaseMeetingTestCase):
         group = GroupFactory()
         plain_session = SessionFactory(meeting=meeting, group=group)
         named_session = SessionFactory(meeting=meeting, group=group, name='I Got a Name')
-        for doc_type_id in ('agenda', 'minutes', 'bluesheets', 'slides', 'draft'):
+        for doc_type_id in ('agenda', 'minutes', 'slides', 'draft'):
             # Set up sessions materials that will have distinct URLs for each session.
             # This depends on settings.MEETING_DOC_HREFS and may need updating if that changes.
             SessionPresentationFactory(
@@ -7774,7 +7774,7 @@ class ProceedingsTests(BaseMeetingTestCase):
 
     def test_named_session(self):
         """Session with a name should appear separately in the proceedings"""
-        meeting = MeetingFactory(type_id='ietf', number='100')
+        meeting = MeetingFactory(type_id='ietf', number='100', proceedings_final=True)
         group = GroupFactory()
         plain_session = SessionFactory(meeting=meeting, group=group)
         named_session = SessionFactory(meeting=meeting, group=group, name='I Got a Name')
@@ -8373,7 +8373,16 @@ class ProceedingsTests(BaseMeetingTestCase):
         _test_button(persons[0], False)
         # person3 attests he was there
         persons.append(MeetingRegistrationFactory(meeting=meeting).person)
-        attendees.append(persons[3].user.pk)
+        # button isn't shown if we're outside the corrections windows
+        meeting.importantdate_set.create(name_id='revsub',date=date_today() - datetime.timedelta(days=20))
+        _test_button(persons[3], False)
+        # attempt to POST anyway is ignored
+        r = self.client.post(attendance_url)
+        self.assertEqual(r.status_code, 200)
+        self.assertNotContains(r, persons[3].name)
+        self.assertEqual(session.attended_set.count(), 3)
+        # button is shown, and POST is accepted
+        meeting.importantdate_set.update(name_id='revsub',date=date_today() + datetime.timedelta(days=20))
         _test_button(persons[3], True)
         r = self.client.post(attendance_url)
         self.assertEqual(r.status_code, 200)
@@ -8407,6 +8416,7 @@ class ProceedingsTests(BaseMeetingTestCase):
         attendance_url = urlreverse('ietf.meeting.views.session_attendance', kwargs={'num':meeting.number, 'session_id':session.id})
         self.assertEqual(session.attended_set.count(), 0)
         self.client.login(username='recman', password='recman+password')
+        attendees = [person.user.pk for person in persons]
         r = self.client.post(add_attendees_url, {'apikey':apikey.hash(), 'attended':f'{{"session_id":{session.pk},"attendees":{attendees}}}'})
         self.assertEqual(r.status_code, 200)  
         self.assertEqual(session.attended_set.count(), 4)

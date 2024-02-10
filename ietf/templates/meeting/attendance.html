@@ -5,8 +5,14 @@
 {% block content %}
     {% origin %}
     <h1>
-        Bluesheet for {{session}}
+        Attendance for {{session}}
     </h1>
+    <div class="alert alert-info my-3">
+        This list will be used to generate the official bluesheet for this session.
+        {% if can_add %}
+            If you attended this session, you can use the "I was there" button at the bottom to add yourself.
+        {% endif %}
+    </div>
     <h2>
         {{ data|length }} attendees.
     </h2>

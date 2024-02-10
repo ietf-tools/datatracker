@@ -2433,7 +2433,9 @@ def session_details(request, num, acronym):
                 session.type_counter.update(['bluesheets'])
                 ota = session.official_timeslotassignment()
                 sess_time = ota and ota.timeslot.time
-                session.bluesheet_title = 'Bluesheets %s: %s' % (session.meeting.number, sess_time.strftime("%a %H:%M"))
+                session.bluesheet_title = 'Attendance IETF%s: %s : %s' % (session.meeting.number, 
+                                                                          session.group.acronym, 
+                                                                          sess_time.strftime("%a %H:%M"))
         else:
             artifact_types = ['agenda','minutes','bluesheets']
         session.filtered_artifacts = list(session.sessionpresentation_set.filter(document__type__slug__in=artifact_types))
@@ -2540,7 +2542,7 @@ def bluesheet_data(session):
 def session_attendance(request, session_id, num):
     # num is redundant, but we're dragging it along as an artifact of where we are in the current URL structure
     session = get_object_or_404(Session, pk=session_id)
-    if session.meeting.type_id=='interim' or session.meeting.proceedings_final:
+    if session.meeting.type_id != 'ietf' or session.meeting.proceedings_final:
         bluesheets = session.sessionpresentation_set.filter(document__type_id='bluesheets')
         if bluesheets:
             bluesheet = bluesheets[0].document
@@ -2548,15 +2550,17 @@ def session_attendance(request, session_id, num):
         else:
             raise Http404('Bluesheets not found')
 
+    cor_cut_off_date = session.meeting.get_submission_correction_date()
+    today_utc = date_today(datetime.timezone.utc)
     person = request.user.person
-    can_add = MeetingRegistration.objects.filter(meeting=session.meeting, person=person).exists() and not Attended.objects.filter(session=session, person=person).exists()
+    can_add = today_utc <= cor_cut_off_date and MeetingRegistration.objects.filter(meeting=session.meeting, person=person).exists() and not Attended.objects.filter(session=session, person=person).exists()
 
     if request.method=='POST' and can_add:
         session.attended_set.get_or_create(person=person, defaults={"origin":"self declared"})
         can_add = False
 
     data = bluesheet_data(session)
-    return render(request, "meeting/bluesheet.html", {
+    return render(request, "meeting/attendance.html", {
             'session': session,
             'data': data,
             'can_add': can_add,
@@ -3850,6 +3854,8 @@ def organize_proceedings_sessions(sessions):
                 'drafts': _format_materials((s, s.drafts()) for s in ss),
                 'last_update': session.last_update if hasattr(session, 'last_update') else None
             }
+            if session and session.meeting.type_id == 'ietf' and not session.meeting.proceedings_final:
+                entry['attendances'] = _format_materials((s, s) for s in ss if Attended.objects.filter(session=s).exists())
             if is_meeting:
                 meeting_groups.append(entry)
             else:
