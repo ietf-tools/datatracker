@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2007-2022, All Rights Reserved
+# Copyright The IETF Trust 2007-2024, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -1069,6 +1069,9 @@ class Session(models.Model):
 
     def bluesheets(self):
         return list(self.get_material("bluesheets", only_one=False))
+
+    def chatlogs(self):
+        return list(self.get_material("chatlog", only_one=False))
 
     def slides(self):
         if not hasattr(self, "_slides_cache"):
