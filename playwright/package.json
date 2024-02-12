@@ -14,10 +14,10 @@
     "eslint-plugin-n": "16.6.2",
     "eslint-plugin-node": "11.1.0",
     "eslint-plugin-promise": "6.1.1",
-    "npm-check-updates": "16.14.14"
+    "npm-check-updates": "16.14.15"
   },
   "dependencies": {
-    "@faker-js/faker": "8.4.0",
+    "@faker-js/faker": "8.4.1",
     "lodash": "4.17.21",
     "lodash-es": "4.17.21",
     "luxon": "3.4.4",
