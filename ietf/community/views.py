@@ -24,6 +24,7 @@ from ietf.group.models import Group
 from ietf.doc.models import DocEvent, Document
 from ietf.doc.utils_search import prepare_document_table
 from ietf.person.utils import lookup_persons
+from ietf.utils.decorators import ignore_view_kwargs
 from ietf.utils.http import is_ajax
 from ietf.utils.response import permission_denied
 
@@ -70,6 +71,7 @@ def view_list(request, email_or_name=None):
     })
 
 @login_required
+@ignore_view_kwargs("group_type")
 def manage_list(request, email_or_name=None, acronym=None):
     # we need to be a bit careful because clist may not exist in the
     # database so we can't call related stuff on it yet
@@ -209,6 +211,7 @@ def untrack_document(request, name, email_or_name=None, acronym=None):
     })
 
 
+@ignore_view_kwargs("group_type")
 def export_to_csv(request, email_or_name=None, acronym=None):
     try:
         clist = lookup_community_list(request, email_or_name, acronym)
@@ -253,6 +256,7 @@ def export_to_csv(request, email_or_name=None, acronym=None):
 
     return response
 
+@ignore_view_kwargs("group_type")
 def feed(request, email_or_name=None, acronym=None):
     try:
         clist = lookup_community_list(request, email_or_name, acronym)
@@ -292,6 +296,7 @@ def feed(request, email_or_name=None, acronym=None):
 
 
 @login_required
+@ignore_view_kwargs("group_type")
 def subscription(request, email_or_name=None, acronym=None):
     try:
         clist = lookup_community_list(request, email_or_name, acronym)
