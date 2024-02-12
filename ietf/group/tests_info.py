@@ -2042,9 +2042,9 @@ class AcronymValidationTests(TestCase):
         # For the ITU we have a hierarchy of group names that use hyphens as delimiters
         form = AdminGroupForm({'acronym':'should-pass','name':'should pass','type':'sdo','state':'active','used_roles':'[]','time':now})
         self.assertTrue(form.is_valid())
-        form = AdminGroupForm({'acronym':'shouldfail-','name':'should fail','type':'wg','state':'active','used_roles':'[]','time':now})
+        form = AdminGroupForm({'acronym':'shouldfail-','name':'should fail','type':'sdo','state':'active','used_roles':'[]','time':now})
         self.assertIn('acronym',form.errors)
-        form = AdminGroupForm({'acronym':'-shouldfail','name':'should fail','type':'wg','state':'active','used_roles':'[]','time':now})
+        form = AdminGroupForm({'acronym':'-shouldfail','name':'should fail','type':'sdo','state':'active','used_roles':'[]','time':now})
         self.assertIn('acronym',form.errors)
         # SDO groups (and only SDO groups) can have a leading number
         form = AdminGroupForm({'acronym':'3gpp-should-pass','name':'should pass','type':'sdo','state':'active','used_roles':'[]','time':now})

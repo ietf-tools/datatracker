@@ -73,7 +73,7 @@ class GroupForm(forms.ModelForm):
                     'two characters and only contain lowercase letters and numbers starting with a letter.'
                 )
             elif self.cleaned_data['type'].pk == 'sdo':
-                valid_re = r'^[a-z0-9-]+[a-z0-9]$'
+                valid_re = r'^[a-z0-9][a-z0-9-]*[a-z0-9]$'
                 error_msg = (
                     'Acronym is invalid. It must be at least two characters and only contain lowercase '
                     'letters and numbers. It may contain hyphens, but that is discouraged.'
