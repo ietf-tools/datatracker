@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2009-2023, All Rights Reserved
+# Copyright The IETF Trust 2009-2024, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -2045,6 +2045,11 @@ class AcronymValidationTests(TestCase):
         form = AdminGroupForm({'acronym':'shouldfail-','name':'should fail','type':'wg','state':'active','used_roles':'[]','time':now})
         self.assertIn('acronym',form.errors)
         form = AdminGroupForm({'acronym':'-shouldfail','name':'should fail','type':'wg','state':'active','used_roles':'[]','time':now})
+        self.assertIn('acronym',form.errors)
+        # SDO groups (and only SDO groups) can have a leading number
+        form = AdminGroupForm({'acronym':'3gpp-should-pass','name':'should pass','type':'sdo','state':'active','used_roles':'[]','time':now})
+        self.assertTrue(form.is_valid())
+        form = AdminGroupForm({'acronym':'123shouldfail','name':'should fail','type':'wg','state':'active','used_roles':'[]','time':now})
         self.assertIn('acronym',form.errors)
 
         wg = GroupFactory(acronym='bad-idea', type_id='wg') # There are some existing wg and programs with hyphens in their acronyms.
