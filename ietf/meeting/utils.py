@@ -159,7 +159,9 @@ def finalize(request, meeting):
 
         # Don't try to generate a bluesheet if it's before we had Attended records.
         if int(meeting.number) >= 108:
-            generate_bluesheet(request, session)
+            save_error = generate_bluesheet(request, session)
+            if save_error:
+                messages.error(request, save_error)
     
     create_proceedings_templates(meeting)
     meeting.proceedings_final = True

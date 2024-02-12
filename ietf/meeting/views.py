@@ -4197,7 +4197,9 @@ def api_add_session_attendees(request):
         session.attended_set.get_or_create(person=user.person)
 
     if session.meeting.type_id == 'interim':
-        generate_bluesheet(request, session)
+        save_error = generate_bluesheet(request, session)
+        if save_error:
+            return err(400, save_error)
 
     return HttpResponse("Done", status=200, content_type='text/plain')  
 
