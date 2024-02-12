@@ -114,3 +114,30 @@ def memoize(func):
     # we cannot set up the cache here.
     return decorate(func, _memoize)
 
+
+def ignore_view_kwargs(*args):
+    """Ignore the specified kwargs if they are present
+
+    Usage: 
+      @ignore_view_kwargs("ignore_arg1", "ignore_arg2")
+      def my_view(request, good_arg, ignore_arg1, ignore_arg2):
+        ...
+
+      This will allow my_view() to be used in url() paths that have zero, one, or both of
+      ignore_arg1 and ignore_arg2 captured. These will be ignored, while good_arg will still
+      be captured as usual.
+    """
+    kwargs_to_ignore = args
+
+    def decorate(view):
+        @wraps(view)
+        def wrapped(*args, **kwargs):
+            for kwarg in kwargs_to_ignore:
+                kwargs.pop(kwarg, None)
+            return view(*args, **kwargs)
+
+        return wrapped
+
+    return decorate
+
+
