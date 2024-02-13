@@ -120,7 +120,7 @@ def ignore_view_kwargs(*args):
 
     Usage: 
       @ignore_view_kwargs("ignore_arg1", "ignore_arg2")
-      def my_view(request, good_arg, ignore_arg1, ignore_arg2):
+      def my_view(request, good_arg):
         ...
 
       This will allow my_view() to be used in url() paths that have zero, one, or both of
