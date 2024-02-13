@@ -181,7 +181,7 @@
                         {% if session.video_stream_url %}
                             <a class="btn btn-outline-primary"
                                 role="button"
-                                href="https://www.meetecho.com/ietf{{ meeting.number }}/recordings#{{ acronym.upper }}"
+                                href="{{ session.session_recording_url }}"
                                 aria-label="Session recording"
                                 title="Session recording">
                                 <i class="bi bi-file-slides"></i>
@@ -351,7 +351,7 @@
                             {% if session.video_stream_url %}
                                 <li>
                                     <a class="dropdown-item"
-                                        href="https://www.meetecho.com/ietf{{ meeting.number }}/recordings#{{ acronym.upper }}">
+                                        href="{{ session.session_recording_url }}">
                                         <i class="bi bi-file-slides"></i> Session recording
                                     </a>
                                 </li>

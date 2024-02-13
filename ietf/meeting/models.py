@@ -1296,6 +1296,16 @@ class Session(models.Model):
             return url.format(session=self)
         return None
 
+    def session_recording_url(self):
+        if (
+            self.meeting.type.slug == "ietf"
+            and self.has_onsite_tool
+            and (url := getattr(settings, "MEETECHO_SESSION_RECORDING_URL", ""))
+        ):
+            self.group.acronym_upper = self.group.acronym.upper()
+            return url.format(session=self)
+        return None
+
 
 class SchedulingEvent(models.Model):
     session = ForeignKey(Session)

@@ -77,7 +77,7 @@
               <br>
           {% endfor %}
             {% if entry.session.video_stream_url %}
-                <a href="https://www.meetecho.com/ietf{{ meeting.number }}/recordings#{{ entry.group.acronym.upper }}">
+                <a href="{{ entry.session.session_recording_url }}">
                     Session recording
                 </a>
                 <br>
