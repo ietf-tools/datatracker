@@ -23,19 +23,21 @@ from urllib.parse import urljoin
 class MeetechoAPI:
     timezone = utc
 
-    def __init__(self, api_base: str, client_id: str, client_secret: str, request_timeout=3.01):
+    def __init__(
+        self, api_base: str, client_id: str, client_secret: str, request_timeout=3.01
+    ):
         self.client_id = client_id
         self.client_secret = client_secret
         self.request_timeout = request_timeout  # python-requests doc recommend slightly > a multiple of 3 seconds
         self._session = requests.Session()
         # if needed, add a trailing slash so urljoin won't eat the trailing path component
-        self.api_base = api_base if api_base.endswith('/') else f'{api_base}/'
+        self.api_base = api_base if api_base.endswith("/") else f"{api_base}/"
 
     def _request(self, method, url, api_token=None, json=None):
         """Execute an API request"""
-        headers = {'Accept': 'application/json'}
+        headers = {"Accept": "application/json"}
         if api_token is not None:
-            headers['Authorization'] = f'bearer {api_token}'
+            headers["Authorization"] = f"bearer {api_token}"
 
         try:
             response = self._session.request(
@@ -48,22 +50,24 @@ class MeetechoAPI:
         except requests.RequestException as err:
             raise MeetechoAPIError(str(err)) from err
         if response.status_code != 200:
-            raise MeetechoAPIError(f'API request failed (HTTP status code = {response.status_code})')
+            raise MeetechoAPIError(
+                f"API request failed (HTTP status code = {response.status_code})"
+            )
 
         # try parsing the result as JSON in case the server failed to set the Content-Type header
         try:
             return response.json()
         except JSONDecodeError as err:
-            if response.headers['Content-Type'].startswith('application/json'):
+            if response.headers["Content-Type"].startswith("application/json"):
                 # complain if server told us to expect JSON and it was invalid
-                raise MeetechoAPIError('Error decoding response as JSON') from err
+                raise MeetechoAPIError("Error decoding response as JSON") from err
         return None
 
     def _deserialize_time(self, s: str) -> datetime:
-        return self.timezone.localize(datetime.strptime(s, '%Y-%m-%d %H:%M:%S'))
+        return self.timezone.localize(datetime.strptime(s, "%Y-%m-%d %H:%M:%S"))
 
     def _serialize_time(self, dt: datetime) -> str:
-        return dt.astimezone(self.timezone).strftime('%Y-%m-%d %H:%M:%S')
+        return dt.astimezone(self.timezone).strftime("%Y-%m-%d %H:%M:%S")
 
     def _deserialize_duration(self, minutes: int) -> timedelta:
         return timedelta(minutes=minutes)
@@ -76,30 +80,41 @@ class MeetechoAPI:
 
         Deserializes data in the structure where needed (currently, that's time-related structures)
         """
-        for session_data in response['rooms'].values():
-            session_data['room']['start_time'] = self._deserialize_time(session_data['room']['start_time'])
-            session_data['room']['duration'] = self._deserialize_duration(session_data['room']['duration'])
+        for session_data in response["rooms"].values():
+            session_data["room"]["start_time"] = self._deserialize_time(
+                session_data["room"]["start_time"]
+            )
+            session_data["room"]["duration"] = self._deserialize_duration(
+                session_data["room"]["duration"]
+            )
         return response
 
     def retrieve_wg_tokens(self, acronyms: Union[str, Sequence[str]]):
         """Retrieve API tokens for one or more WGs
 
-        :param acronyms: list of WG acronyms for which tokens are requested 
+        :param acronyms: list of WG acronyms for which tokens are requested
         :return: {'tokens': {acronym0: token0, acronym1: token1, ...}}
         """
         return self._request(
-            'POST', 'auth/ietfservice/tokens',
+            "POST",
+            "auth/ietfservice/tokens",
             json={
-                'client': self.client_id,
-                'secret': self.client_secret,
-                'wgs': [acronyms] if isinstance(acronyms, str) else acronyms,
-            }
+                "client": self.client_id,
+                "secret": self.client_secret,
+                "wgs": [acronyms] if isinstance(acronyms, str) else acronyms,
+            },
         )
 
-    def schedule_meeting(self, wg_token: str, description: str, start_time: datetime, duration: timedelta,
-                         extrainfo=''):
+    def schedule_meeting(
+        self,
+        wg_token: str,
+        description: str,
+        start_time: datetime,
+        duration: timedelta,
+        extrainfo="",
+    ):
         """Schedule a meeting session
-        
+
         Return structure is:
           {
             "rooms": {
@@ -115,8 +130,8 @@ class MeetechoAPI:
               }
             }
           }
-              
-        :param wg_token: token retrieved via retrieve_wg_tokens() 
+
+        :param wg_token: token retrieved via retrieve_wg_tokens()
         :param description: str describing the meeting
         :param start_time: starting time as a datetime
         :param duration: duration as a timedelta
@@ -125,13 +140,14 @@ class MeetechoAPI:
         """
         return self._deserialize_meetings_response(
             self._request(
-                'POST', 'meeting/interim/createRoom',
+                "POST",
+                "meeting/interim/createRoom",
                 api_token=wg_token,
                 json={
-                    'description': description,
-                    'start_time': self._serialize_time(start_time),
-                    'duration': self._serialize_duration(duration),
-                    'extrainfo': extrainfo,
+                    "description": description,
+                    "start_time": self._serialize_time(start_time),
+                    "duration": self._serialize_duration(duration),
+                    "extrainfo": extrainfo,
                 },
             )
         )
@@ -154,7 +170,7 @@ class MeetechoAPI:
               }
             }
           }
-          
+
         As of 2022-01-31, the return structure also includes a 'group' key whose
         value is the group acronym. This is not shown in the documentation.
 
@@ -162,7 +178,7 @@ class MeetechoAPI:
         :return: meeting data dict
         """
         return self._deserialize_meetings_response(
-            self._request('GET', 'meeting/interim/fetchRooms', api_token=wg_token)
+            self._request("GET", "meeting/interim/fetchRooms", api_token=wg_token)
         )
 
     def delete_meeting(self, deletion_token: str):
@@ -171,7 +187,9 @@ class MeetechoAPI:
         :param deletion_token: deletion_key from fetch_meetings() or schedule_meeting() return data
         :return: {}
         """
-        return self._request('POST', 'meeting/interim/deleteRoom', api_token=deletion_token)
+        return self._request(
+            "POST", "meeting/interim/deleteRoom", api_token=deletion_token
+        )
 
 
 class MeetechoAPIError(Exception):
@@ -180,7 +198,18 @@ class MeetechoAPIError(Exception):
 
 class Conference:
     """Scheduled session/room representation"""
-    def __init__(self, manager, id, public_id, description, start_time, duration, url, deletion_token):
+
+    def __init__(
+        self,
+        manager,
+        id,
+        public_id,
+        description,
+        start_time,
+        duration,
+        url,
+        deletion_token,
+    ):
         self._manager = manager
         self.id = id  # Meetecho system ID
         self.public_id = public_id  # public session UUID
@@ -195,22 +224,23 @@ class Conference:
         # Returns a list of Conferences
         return [
             cls(
-                **val['room'],
+                **val["room"],
                 public_id=public_id,
-                url=val['url'],
-                deletion_token=val['deletion_token'],
+                url=val["url"],
+                deletion_token=val["deletion_token"],
                 manager=manager,
-            ) for public_id, val in api_dict.items()
+            )
+            for public_id, val in api_dict.items()
         ]
 
     def __str__(self):
-        return f'Meetecho conference {self.description}'
+        return f"Meetecho conference {self.description}"
 
     def __repr__(self):
         props = [
             f'description="{self.description}"',
-            f'start_time={repr(self.start_time)}',
-            f'duration={repr(self.duration)}',
+            f"start_time={repr(self.start_time)}",
+            f"duration={repr(self.duration)}",
         ]
         return f'Conference({", ".join(props)})'
 
@@ -218,8 +248,13 @@ class Conference:
         return isinstance(other, type(self)) and all(
             getattr(self, attr) == getattr(other, attr)
             for attr in [
-                'id', 'public_id', 'description', 'start_time',
-                'duration', 'url', 'deletion_token'
+                "id",
+                "public_id",
+                "description",
+                "start_time",
+                "duration",
+                "url",
+                "deletion_token",
             ]
         )
 
@@ -231,20 +266,20 @@ class ConferenceManager:
     def __init__(self, api_config: dict):
         self.api = MeetechoAPI(**api_config)
         self.wg_tokens: Dict[str, str] = {}
-        
+
     def wg_token(self, group):
-        group_acronym = group.acronym if hasattr(group, 'acronym') else group
+        group_acronym = group.acronym if hasattr(group, "acronym") else group
         if group_acronym not in self.wg_tokens:
-            self.wg_tokens[group_acronym] = self.api.retrieve_wg_tokens(
-                group_acronym
-            )['tokens'][group_acronym]
+            self.wg_tokens[group_acronym] = self.api.retrieve_wg_tokens(group_acronym)[
+                "tokens"
+            ][group_acronym]
         return self.wg_tokens[group_acronym]
 
     def fetch(self, group):
         response = self.api.fetch_meetings(self.wg_token(group))
-        return Conference.from_api_dict(self, response['rooms'])
+        return Conference.from_api_dict(self, response["rooms"])
 
-    def create(self, group, description, start_time, duration, extrainfo=''):
+    def create(self, group, description, start_time, duration, extrainfo=""):
         response = self.api.schedule_meeting(
             wg_token=self.wg_token(group),
             description=description,
@@ -252,8 +287,8 @@ class ConferenceManager:
             duration=duration,
             extrainfo=extrainfo,
         )
-        return Conference.from_api_dict(self, response['rooms'])
-    
+        return Conference.from_api_dict(self, response["rooms"])
+
     def delete_by_url(self, group, url):
         for conf in self.fetch(group):
             if conf.url == url:
