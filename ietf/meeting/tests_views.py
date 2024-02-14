@@ -8338,6 +8338,17 @@ class ProceedingsTests(BaseMeetingTestCase):
         persons = [reg.person for reg in regs]
         self.assertEqual(session.attended_set.count(), 0)
 
+        # If there are no attendees, the link isn't offered, and getting
+        # the page directly returns an empty list.
+        session_url = urlreverse('ietf.meeting.views.session_details', kwargs={'num':meeting.number, 'acronym':session.group.acronym})
+        attendance_url = urlreverse('ietf.meeting.views.session_attendance', kwargs={'num':meeting.number, 'session_id':session.id})
+        r = self.client.get(session_url)
+        self.assertNotContains(r, attendance_url)
+        r = self.client.get(attendance_url)
+        self.assertEqual(r.status_code, 200)  
+        self.assertContains(r, '0 attendees')
+
+        # Add some attendees
         add_attendees_url = urlreverse('ietf.meeting.views.api_add_session_attendees')
         recmanrole = RoleFactory(group__type_id='ietf', name_id='recman', person__user__last_login=timezone.now())
         recman = recmanrole.person
@@ -8350,16 +8361,13 @@ class ProceedingsTests(BaseMeetingTestCase):
 
         # Before a meeting is finalized, session_attendance renders a live
         # view of the Attended records for the session.
-        attendance_url = urlreverse('ietf.meeting.views.session_attendance', kwargs={'num':meeting.number, 'session_id':session.id})
+        r = self.client.get(session_url)
+        self.assertContains(r, attendance_url)
         r = self.client.get(attendance_url)
         self.assertEqual(r.status_code, 200)  
         self.assertContains(r, '3 attendees')
         for person in persons:
             self.assertContains(r, person.name)
-
-        session_url = urlreverse('ietf.meeting.views.session_details', kwargs={'num':meeting.number, 'acronym':session.group.acronym})
-        r = self.client.get(session_url)
-        self.assertContains(r, attendance_url)
 
         # Test for the "I was there" button.
         def _test_button(person, expected):
@@ -8401,14 +8409,12 @@ class ProceedingsTests(BaseMeetingTestCase):
         self.assertIn('4 attendees', text)
         for person in persons:
             self.assertIn(person.name, text)
-
-        r = self.client.get(attendance_url)
-        self.assertEqual(r.status_code,302)
-        self.assertEqual(r['Location'],doc.get_href())
-
         r = self.client.get(session_url)
         self.assertContains(r, doc.get_href())
         self.assertNotContains(r, attendance_url)
+        r = self.client.get(attendance_url)
+        self.assertEqual(r.status_code,302)
+        self.assertEqual(r['Location'],doc.get_href())
 
         # An interim meeting is considered finalized immediately.
         meeting = make_interim_meeting(group=GroupFactory(acronym='mars'), date=date_today())
@@ -8420,14 +8426,12 @@ class ProceedingsTests(BaseMeetingTestCase):
         r = self.client.post(add_attendees_url, {'apikey':apikey.hash(), 'attended':f'{{"session_id":{session.pk},"attendees":{attendees}}}'})
         self.assertEqual(r.status_code, 200)  
         self.assertEqual(session.attended_set.count(), 4)
-
         doc = session.sessionpresentation_set.filter(document__type_id='bluesheets').first().document
         self.assertEqual(doc.rev,'00')
-        r = self.client.get(attendance_url)
-        self.assertEqual(r.status_code,302)
-        self.assertEqual(r['Location'],doc.get_href())
-
         session_url = urlreverse('ietf.meeting.views.session_details', kwargs={'num':meeting.number, 'acronym':session.group.acronym})
         r = self.client.get(session_url)
         self.assertContains(r, doc.get_href())
         self.assertNotContains(r, attendance_url)
+        r = self.client.get(attendance_url)
+        self.assertEqual(r.status_code,302)
+        self.assertEqual(r['Location'],doc.get_href())

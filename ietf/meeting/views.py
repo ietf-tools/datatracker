@@ -2537,7 +2537,7 @@ def bluesheet_data(session):
 
     attendance = Attended.objects.filter(session=session)
     meeting = session.meeting
-    return [{'name':attended.person.name, 'affiliation':affiliation(meeting, attended.person)} for attended in attendance]
+    return [{'name':attended.person.plain_name, 'affiliation':affiliation(meeting, attended.person)} for attended in attendance]
 
 def session_attendance(request, session_id, num):
     # num is redundant, but we're dragging it along as an artifact of where we are in the current URL structure
@@ -2552,18 +2552,24 @@ def session_attendance(request, session_id, num):
 
     cor_cut_off_date = session.meeting.get_submission_correction_date()
     today_utc = date_today(datetime.timezone.utc)
-    person = request.user.person
-    can_add = today_utc <= cor_cut_off_date and MeetingRegistration.objects.filter(meeting=session.meeting, person=person).exists() and not Attended.objects.filter(session=session, person=person).exists()
+    try:
+        person = request.user.person
+        was_there = Attended.objects.filter(session=session, person=person).exists()
+        can_add = today_utc <= cor_cut_off_date and MeetingRegistration.objects.filter(meeting=session.meeting, person=person).exists() and Attended.objects.filter(session=session).exists() and not was_there
+    except AttributeError:
+        was_there = can_add = False
 
     if request.method=='POST' and can_add:
         session.attended_set.get_or_create(person=person, defaults={"origin":"self declared"})
         can_add = False
+        was_there = True
 
     data = bluesheet_data(session)
     return render(request, "meeting/attendance.html", {
             'session': session,
             'data': data,
             'can_add': can_add,
+            'was_there': was_there,
         })
 
 def generate_bluesheet(request, session):

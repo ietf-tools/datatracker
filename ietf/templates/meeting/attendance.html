@@ -10,7 +10,10 @@
     <div class="alert alert-info my-3">
         This list will be used to generate the official bluesheet for this session.
         {% if can_add %}
-            If you attended this session, you can use the "I was there" button at the bottom to add yourself.
+            <br>If you attended this session, you can use the "I was there" button at the bottom to add yourself.
+        {% endif %}
+        {% if was_there %}
+            <br>If the affiliation listed here needs to be updated, request the change using support@ietf.org. Note which sessions you are wanting to change in your request.
         {% endif %}
     </div>
     <h2>
