@@ -2537,7 +2537,7 @@ def bluesheet_data(session):
 
     attendance = Attended.objects.filter(session=session)
     meeting = session.meeting
-    return [{'name':attended.person.plain_name, 'affiliation':affiliation(meeting, attended.person)} for attended in attendance]
+    return [{'name':attended.person.plain_name(), 'affiliation':affiliation(meeting, attended.person)} for attended in attendance]
 
 def session_attendance(request, session_id, num):
     # num is redundant, but we're dragging it along as an artifact of where we are in the current URL structure
