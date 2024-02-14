@@ -191,6 +191,10 @@ class MeetechoAPI:
             "POST", "meeting/interim/deleteRoom", api_token=deletion_token
         )
 
+    def send_session_update_notification(self, session_id):
+        debug.say(f"Sent update for Session {session_id}")
+        return None
+
 
 class MeetechoAPIError(Exception):
     """Base class for MeetechoAPI exceptions"""
