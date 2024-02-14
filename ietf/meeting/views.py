@@ -1723,7 +1723,10 @@ def api_get_session_materials (request, session_id=None):
     return JsonResponse({
         "url": agenda_url,
         "slides": {
-            "decks": list(map(agenda_extract_slide, session.slides())),
+            "decks": [
+                agenda_extract_slide(slide) | {"order": order}  # add "order" field
+                for order, slide in enumerate(session.slides())
+            ],
             "actions": slides_actions,
         },
         "minutes": {
@@ -1830,8 +1833,9 @@ def agenda_extract_slide (item):
     return {
         "id": item.id,
         "title": item.title,
+        "rev": item.rev,
         "url": item.get_versionless_href(),
-        "ext": item.file_extension()
+        "ext": item.file_extension(),
     }
 
 def agenda_csv(schedule, filtered_assignments, utc=False):
