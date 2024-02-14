@@ -1694,48 +1694,58 @@ def api_get_agenda_data (request, num=None):
         "floors": list(map(agenda_extract_floorplan, floors))
     })
 
-def api_get_session_materials (request, session_id=None):
-    session = get_object_or_404(Session,pk=session_id)
+
+def api_get_session_materials(request, session_id=None):
+    session = get_object_or_404(Session, pk=session_id)
 
     minutes = session.minutes()
     slides_actions = []
     if can_manage_session_materials(request.user, session.group, session):
-        slides_actions.append({
-            'label': 'Upload slides',
-            'url': reverse(
-                'ietf.meeting.views.upload_session_slides',
-                kwargs={'num': session.meeting.number, 'session_id': session.pk},
-            ),
-        })
+        slides_actions.append(
+            {
+                "label": "Upload slides",
+                "url": reverse(
+                    "ietf.meeting.views.upload_session_slides",
+                    kwargs={"num": session.meeting.number, "session_id": session.pk},
+                ),
+            }
+        )
     elif not session.is_material_submission_cutoff():
-        slides_actions.append({
-            'label': 'Propose slides',
-            'url': reverse(
-                'ietf.meeting.views.propose_session_slides',
-                kwargs={'num': session.meeting.number, 'session_id': session.pk},
-            ),
-        })
+        slides_actions.append(
+            {
+                "label": "Propose slides",
+                "url": reverse(
+                    "ietf.meeting.views.propose_session_slides",
+                    kwargs={"num": session.meeting.number, "session_id": session.pk},
+                ),
+            }
+        )
     else:
         pass  # no action available if it's past cutoff
-    
-    agenda = session.agenda() 
+
+    agenda = session.agenda()
     agenda_url = agenda.get_href() if agenda is not None else None
-    return JsonResponse({
-        "url": agenda_url,
-        "slides": {
-            "decks": [
-                agenda_extract_slide(slide) | {"order": order}  # add "order" field
-                for order, slide in enumerate(session.slides())
-            ],
-            "actions": slides_actions,
-        },
-        "minutes": {
-            "id": minutes.id,
-            "title": minutes.title,
-            "url": minutes.get_href(),
-            "ext": minutes.file_extension()
-        } if minutes is not None else None
-    })
+    return JsonResponse(
+        {
+            "url": agenda_url,
+            "slides": {
+                "decks": [
+                    agenda_extract_slide(slide) | {"order": order}  # add "order" field
+                    for order, slide in enumerate(session.slides())
+                ],
+                "actions": slides_actions,
+            },
+            "minutes": {
+                "id": minutes.id,
+                "title": minutes.title,
+                "url": minutes.get_href(),
+                "ext": minutes.file_extension(),
+            }
+            if minutes is not None
+            else None,
+        }
+    )
+
 
 def agenda_extract_schedule (item):
     return {
@@ -1758,9 +1768,9 @@ def agenda_extract_schedule (item):
         "filterKeywords": item.filter_keywords,
         "groupAcronym": item.session.group_at_the_time().acronym,
         "groupName": item.session.group_at_the_time().name,
-        "groupParent": {
+        "groupParent": ({
             "acronym": item.session.group_parent_at_the_time().acronym
-        } if item.session.group_parent_at_the_time() else {},
+        } if item.session.group_parent_at_the_time() else {}),
         "note": item.session.agenda_note,
         "remoteInstructions": item.session.remote_instructions,
         "flags": {
@@ -1793,7 +1803,8 @@ def agenda_extract_schedule (item):
         # }
     }
 
-def agenda_extract_floorplan (item):
+
+def agenda_extract_floorplan(item):
     try:
         item.image.width
     except FileNotFoundError:
@@ -1806,10 +1817,11 @@ def agenda_extract_floorplan (item):
         "short": item.short,
         "width": item.image.width,
         "height": item.image.height,
-        "rooms": list(map(agenda_extract_room, item.room_set.all()))
+        "rooms": list(map(agenda_extract_room, item.room_set.all())),
     }
 
-def agenda_extract_room (item):
+
+def agenda_extract_room(item):
     return {
         "id": item.id,
         "name": item.name,
@@ -1821,7 +1833,8 @@ def agenda_extract_room (item):
         "bottom": item.bottom()
     }
 
-def agenda_extract_recording (item):
+
+def agenda_extract_recording(item):
     return {
         "id": item.id,
         "name": item.name,
@@ -1829,7 +1842,8 @@ def agenda_extract_recording (item):
         "url": item.external_url
     }
 
-def agenda_extract_slide (item):
+
+def agenda_extract_slide(item):
     return {
         "id": item.id,
         "title": item.title,
@@ -1837,6 +1851,7 @@ def agenda_extract_slide (item):
         "url": item.get_versionless_href(),
         "ext": item.file_extension(),
     }
+
 
 def agenda_csv(schedule, filtered_assignments, utc=False):
     encoding = 'utf-8'
