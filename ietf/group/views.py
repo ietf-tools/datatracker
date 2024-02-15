@@ -119,6 +119,7 @@ from ietf.dbtemplate.models import DBTemplate
 from ietf.mailtrigger.utils import gather_address_lists
 from ietf.mailtrigger.models import Recipient
 from ietf.settings import MAILING_LIST_INFO_URL
+from ietf.utils.decorators import ignore_view_kwargs
 from ietf.utils.response import permission_denied
 from ietf.utils.text import strip_suffix
 from ietf.utils import markdown
@@ -2244,7 +2245,8 @@ def appeals(request, acronym, group_type=None):
         ),
     )
 
-def appeal_artifact(request, acronym, artifact_id, group_type=None):
+@ignore_view_kwargs("group_type")
+def appeal_artifact(request, acronym, artifact_id):
     artifact = get_object_or_404(AppealArtifact, pk=artifact_id)
     if artifact.is_markdown():
         artifact_html = markdown.markdown(artifact.bits.tobytes().decode("utf-8"))
@@ -2263,7 +2265,8 @@ def appeal_artifact(request, acronym, artifact_id, group_type=None):
         )
     
 @role_required("Secretariat")
-def appeal_artifact_markdown(request, acronym, artifact_id, group_type=None):
+@ignore_view_kwargs("group_type")
+def appeal_artifact_markdown(request, acronym, artifact_id):
     artifact = get_object_or_404(AppealArtifact, pk=artifact_id)
     if artifact.is_markdown():
         return HttpResponse(artifact.bits, content_type=artifact.content_type)
