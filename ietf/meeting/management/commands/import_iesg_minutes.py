@@ -160,6 +160,9 @@ class Command(BaseCommand):
         meeting_times = set()
         for file_prefix in ["minutes", "narrative"]:
             paths = list(minutes_dir.glob(f"[12][09][0129][0-9]/{file_prefix}*.txt"))
+            paths.extend(
+                list(minutes_dir.glob(f"[12][09][0129][0-9]/{file_prefix}*.html"))
+            )
             for path in paths:
                 s = date_re.search(path.name)
                 if s:
@@ -198,9 +201,11 @@ class Command(BaseCommand):
                 group_id=2,  # The IESG group
                 type_id="regular",
                 purpose_id="regular",
-                name=f"IETF {bof_coord_data[dt].meeting_number} BOF Coordination Call"
-                if dt in bof_times
-                else "Formal Telechat",
+                name=(
+                    f"IETF {bof_coord_data[dt].meeting_number} BOF Coordination Call"
+                    if dt in bof_times
+                    else "Formal Telechat"
+                ),
             )
             SchedulingEvent.objects.create(
                 session=session,
@@ -259,15 +264,25 @@ class Command(BaseCommand):
                     source_file_prefix = (
                         "minutes" if type_id == "minutes" else "narrative-minutes"
                     )
-                    source = (
+                    txt_source = (
                         minutes_dir
                         / f"{dt.year}"
                         / f"{source_file_prefix}-{dt:%Y-%m-%d}.txt"
                     )
-                    if source.exists():
+                    html_source = (
+                        minutes_dir
+                        / f"{dt.year}"
+                        / f"{source_file_prefix}-{dt:%Y-%m-%d}.html"
+                    )
+                    if txt_source.exists() and html_source.exists():
+                        self.stdout.write(
+                            f"WARNING: Both {txt_source} and {html_source} exist."
+                        )
+                    if txt_source.exists() or html_source.exists():
                         prefix = DocTypeName.objects.get(slug=type_id).prefix
                         doc_name = f"{prefix}-interim-{dt.year}-iesg-{counter:02d}-{dt:%Y%m%d%H%M}"
-                        doc_filename = f"{doc_name}-00.txt"
+                        suffix = "html" if html_source.exists() else "txt"
+                        doc_filename = f"{doc_name}-00.{suffix}"
                         verbose_type = (
                             "Minutes" if type_id == "minutes" else "Narrative Minutes"
                         )
@@ -300,6 +315,23 @@ class Command(BaseCommand):
                             )
                         else:
                             os.makedirs(dest.parent, exist_ok=True)
-                            shutil.copy(source, dest)
+                            if html_source.exists():
+                                html_content = html_source.read_text(encoding="utf-8")
+                                html_content = html_content.replace(
+                                    f'href="IESGnarrative-{dt:%Y-%m-%d}.html#',
+                                    'href="#',
+                                )
+                                html_content = re.sub(
+                                    r'<a href="file:///[^"]*">([^<]*)</a>',
+                                    r"\1",
+                                    html_content,
+                                )
+                                html_content = html_content.replace(
+                                    '<p><a href="http://validator.w3.org/check?uri=referer"><img src="3" alt="Valid HTML 4.01 Strict" height="31" width="88" /></a> </p>',
+                                    "",
+                                )
+                                dest.write_text(html_content, encoding="utf-8")
+                            else:
+                                shutil.copy(txt_source, dest)
 
             counter += 1
