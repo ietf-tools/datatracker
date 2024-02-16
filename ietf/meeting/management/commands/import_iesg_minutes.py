@@ -332,7 +332,7 @@ class Command(BaseCommand):
                                     html_content,
                                 )
                                 html_content = re.sub(
-                                    '<a href="http://validator.w3.org/check?uri=referer"><img [^>]*></a>',
+                                    '<a href="http://validator.w3.org/[^>]*> *<img[^>]*></a>',
                                     "",
                                     html_content
                                 )
