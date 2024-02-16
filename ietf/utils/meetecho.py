@@ -16,7 +16,7 @@ import debug  # pyflakes: ignore
 from datetime import datetime, timedelta
 from json import JSONDecodeError
 from pytz import utc
-from typing import Dict, Sequence, Union
+from typing import Dict, Sequence, TypedDict, Union
 from urllib.parse import urljoin
 
 
@@ -24,11 +24,12 @@ class MeetechoAPI:
     timezone = utc
 
     def __init__(
-        self, api_base: str, client_id: str, client_secret: str, request_timeout=3.01
+        self, api_base: str, client_id: str, client_secret: str, material_repository: str, request_timeout=3.01
     ):
         self.client_id = client_id
         self.client_secret = client_secret
         self.request_timeout = request_timeout  # python-requests doc recommend slightly > a multiple of 3 seconds
+        self.materials_repository = material_repository
         self._session = requests.Session()
         # if needed, add a trailing slash so urljoin won't eat the trailing path component
         self.api_base = api_base if api_base.endswith("/") else f"{api_base}/"
@@ -191,9 +192,85 @@ class MeetechoAPI:
             "POST", "meeting/interim/deleteRoom", api_token=deletion_token
         )
 
-    def send_session_update_notification(self, session_id):
-        debug.say(f"Sent update for Session {session_id}")
-        return None
+    class SlideDeckDict(TypedDict):
+        id: int
+        title: str
+        url: str
+        rev: str
+        order: int
+
+    def add_slide_deck(
+        self, 
+        session: str,  # unique identifier
+        deck: SlideDeckDict,
+    ):
+        """Add a slide deck for the specified session
+        
+        API spec:
+       ⠀POST /materials
+        + Authentication -> same as interim scheduler
+        + content application/json
+        + body
+            {
+                "repository": String, // a constant value that identifies the repository on Meetecho side
+                "session": String, // Unique session identifier
+                "title": String,
+                "id": Number,
+                "url": String,
+                "rev": String,
+                "order": Number
+            }
+         
+        + Results 
+            202 Accepted 
+            {4xx}
+        """
+        response = self._request(
+            "POST",
+            "materials",
+            json={
+                "repository": self.materials_repository,
+                "session": session,
+                "title": deck["title"],
+                "id": deck["id"],
+                "url": deck["url"],
+                "rev": deck["rev"],
+                "order": deck["order"],
+            },
+        )
+        return response  # todo something reasonable
+
+    def delete_slide_deck(
+        self,
+        session: str, # unique identifier
+        id: int, 
+    ):
+        response = self._request(
+            "DELETE",
+            "materials",
+            json={
+                "repository": self.materials_repository,
+                "session": session,
+                "id": id,
+            },
+        )
+        return response  # todo something reasonable
+
+    def update_slide_decks(
+        self,
+        session: str,  # unique id
+        decks: list[SlideDeckDict],
+    ):
+        response = self._request(
+            "PUT",
+            "materials",
+            json={
+                "repository": self.materials_repository,
+                "session": session,
+                "decks": decks,
+            }
+        ) 
+        return response  # todo something reasonable
 
 
 class MeetechoAPIError(Exception):
