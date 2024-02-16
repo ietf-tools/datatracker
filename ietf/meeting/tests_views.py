@@ -5595,8 +5595,17 @@ class InterimTests(TestCase):
         self.assertEqual(r.status_code, 403)
         self.assertFalse(mock.called, 'Should not cancel sessions if request rejected')
 
-        # test cancelling before announcement
+        # test with overly-long comments
+        comments += '0123456789abcdef'*32
         self.client.login(username="marschairman", password="marschairman+password")
+        r = self.client.post(url, {'comments': comments})
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertTrue(q('form .is-invalid'))
+        # truncate to max_length
+        comments = comments[:512]
+
+        # test cancelling before announcement
         length_before = len(outbox)
         r = self.client.post(url, {'comments': comments})
         self.assertRedirects(r, urlreverse('ietf.meeting.views.upcoming'))
