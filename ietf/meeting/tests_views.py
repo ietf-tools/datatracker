@@ -5627,6 +5627,7 @@ class InterimTests(TestCase):
             self.assertEqual(session.agenda_note, comments)
         self.assertEqual(len(outbox), length_before + 1)
         self.assertIn('Interim Meeting Cancelled', outbox[-1]['Subject'])
+        self.assertIn(comments, get_payload_text(outbox[-1]))
         self.assertTrue(mock.called, 'Should cancel sessions if request handled')
         self.assertCountEqual(mock.call_args[0][1], meeting.session_set.all())
 
