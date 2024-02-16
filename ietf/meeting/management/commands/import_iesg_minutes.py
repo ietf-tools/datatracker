@@ -322,13 +322,19 @@ class Command(BaseCommand):
                                     'href="#',
                                 )
                                 html_content = re.sub(
+                                    r'<a href="file:///[^"]*"><span[^>]*>([^<]*)</span></a>',
+                                    r"\1",
+                                    html_content,
+                                )
+                                html_content = re.sub(
                                     r'<a href="file:///[^"]*">([^<]*)</a>',
                                     r"\1",
                                     html_content,
                                 )
-                                html_content = html_content.replace(
-                                    '<p><a href="http://validator.w3.org/check?uri=referer"><img src="3" alt="Valid HTML 4.01 Strict" height="31" width="88" /></a> </p>',
+                                html_content = re.sub(
+                                    '<a href="http://validator.w3.org/check?uri=referer"><img [^>]*></a>',
                                     "",
+                                    html_content
                                 )
                                 dest.write_text(html_content, encoding="utf-8")
                             else:
