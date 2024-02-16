@@ -3124,7 +3124,8 @@ def ajax_reorder_slides_in_session(request, session_id, num):
     if request.method != 'POST' or not request.POST:
         return HttpResponse(json.dumps({ 'success' : False, 'error' : 'No data submitted or not POST' }),content_type='application/json')  
 
-    num_slides_in_session = session.presentations.filter(document__type_id='slides').count()
+    session_slides = session.presentations.filter(document__type_id="slides")
+    num_slides_in_session = session_slides.count()
     oldIndex_str = request.POST.get('oldIndex', None)
     try:
         oldIndex = int(oldIndex_str)
@@ -3145,11 +3146,11 @@ def ajax_reorder_slides_in_session(request, session_id, num):
         return HttpResponse(json.dumps({ 'success' : False, 'error' : 'Supplied index is not valid' }),content_type='application/json')
 
     condition_slide_order(session)
-    sp = session.presentations.get(order=oldIndex)
+    sp = session_slides.get(order=oldIndex)
     if oldIndex < newIndex:
-        session.presentations.filter(order__gt=oldIndex, order__lte=newIndex).update(order=F('order')-1)
+        session_slides.filter(order__gt=oldIndex, order__lte=newIndex).update(order=F('order')-1)
     else:
-        session.presentations.filter(order__gte=newIndex, order__lt=oldIndex).update(order=F('order')+1)
+        session_slides.filter(order__gte=newIndex, order__lt=oldIndex).update(order=F('order')+1)
     sp.order = newIndex
     sp.save()
 
