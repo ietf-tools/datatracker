@@ -891,6 +891,10 @@ class IetfTestRunner(DiscoverRunner):
                     "form-dup-name": "off",
                     # Don't trip over unused disable blocks
                     "no-unused-disable": "off",
+                    # Ignore focusable elements in aria-hidden elements
+                    "hidden-focusable": "off",
+                    # Ignore missing unique identifier for page "landmarks"
+                    "unique-landmark": "off",
                 },
             }
 

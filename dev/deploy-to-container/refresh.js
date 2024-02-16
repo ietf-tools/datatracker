@@ -24,7 +24,8 @@ async function main () {
   const containersToRestart = []
   for (const container of containers) {
     if (
-      container.Names.some(n => n.startsWith('/dt-db-'))
+      container.Names.some(n => n.startsWith('/dt-db-')) &&
+      container.Labels?.nodbrefresh !== '1'
       ) {
       console.info(`Terminating DB container ${container.Id}...`)
       dbContainersToCreate.push(container.Names.find(n => n.startsWith('/dt-db-')).substring(1))
@@ -37,9 +38,11 @@ async function main () {
         v: true
       })
     } else if (
-      container.Names.some(n => n.startsWith('/dt-app-')) ||
-      container.Names.some(n => n.startsWith('/dt-celery-')) ||
-      container.Names.some(n => n.startsWith('/dt-beat-'))
+      (
+        container.Names.some(n => n.startsWith('/dt-app-')) ||
+        container.Names.some(n => n.startsWith('/dt-celery-')) ||
+        container.Names.some(n => n.startsWith('/dt-beat-'))
+      ) && container.Labels?.nodbrefresh !== '1'
     ) {
       if (container.State === 'running') {
         const appContainer = dock.getContainer(container.Id)

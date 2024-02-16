@@ -21,9 +21,11 @@ from ietf.doc.models import NewRevisionDocEvent
 from ietf.doc.utils import add_state_change_event, check_common_doc_name_rules
 from ietf.group.models import Group
 from ietf.group.utils import can_manage_materials
+from ietf.utils.decorators import ignore_view_kwargs
 from ietf.utils.response import permission_denied
 
 @login_required
+@ignore_view_kwargs("group_type")
 def choose_material_type(request, acronym):
     group = get_object_or_404(Group, acronym=acronym)
     if not group.features.has_nonsession_materials:
@@ -91,6 +93,7 @@ class UploadMaterialForm(forms.Form):
         return name
 
 @login_required
+@ignore_view_kwargs("group_type")
 def edit_material(request, name=None, acronym=None, action=None, doc_type=None):
     # the materials process is not very developed, so at the moment we
     # handle everything through the same view/form

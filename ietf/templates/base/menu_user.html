@@ -186,12 +186,6 @@
                 Sync discrepancies
             </a>
         </li>
-        <li>
-            <a class="dropdown-item {% if flavor != 'top' %} text-wrap{% endif %}"
-               href="{% url 'ietf.ietfauth.views.add_account_allowlist' %}">
-                Account allowlist
-            </a>
-        </li>
     {% endif %}
     {% if user|has_role:"IANA" %}
         {% if flavor == "top" %}

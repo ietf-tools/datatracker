@@ -12,10 +12,11 @@ from django.contrib import admin
 from django.core.cache import cache
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Q
+from django.http import Http404
 
 import debug                            # pyflakes:ignore
 
-from ietf.person.models import Person
+from ietf.person.models import Person, Alias, Email
 from ietf.utils.mail import send_mail
 
 def merge_persons(request, source, target, file=sys.stdout, verbose=False):
@@ -30,6 +31,20 @@ def merge_persons(request, source, target, file=sys.stdout, verbose=False):
         email.primary = False
         email.save()
         changes.append('EMAIL ACTION: {} no longer marked as primary'.format(email.address))
+
+    # handle community list
+    for communitylist in source.communitylist_set.all():
+        source.communitylist_set.remove(communitylist)
+        target.communitylist_set.add(communitylist)
+
+    # handle feedback
+    for feedback in source.feedback_set.all():
+        feedback.person = target
+        feedback.save()
+    # handle nominations
+    for nomination in source.nomination_set.all():
+        nomination.person = target
+        nomination.save()
 
     changes.append(handle_users(source, target))
     reviewer_changes = handle_reviewer_settings(source, target)
@@ -103,7 +118,6 @@ def handle_users(source,target,check_only=False):
     if source.user and target.user:
         message = "DATATRACKER LOGIN ACTION: retaining login: {}, removing login: {}".format(target.user,source.user)
         if not check_only:
-            merge_users(source.user, target.user)
             syslog.syslog('merge-person-records: deactivating user {}'.format(source.user.username))
             user = source.user
             source.user = None
@@ -125,21 +139,6 @@ def move_related_objects(source, target, file, verbose=False):
             print("Merging {}:{}".format(accessor,queryset.count()), file=file)
         kwargs = { field_name:target }
         queryset.update(**kwargs)
-
-def merge_users(source, target):
-    '''Move related objects from source user to target user'''
-    # handle community list
-    for communitylist in source.communitylist_set.all():
-        source.communitylist_set.remove(communitylist)
-        target.communitylist_set.add(communitylist)
-    # handle feedback
-    for feedback in source.feedback_set.all():
-        feedback.user = target
-        feedback.save()
-    # handle nominations
-    for nomination in source.nomination_set.all():
-        nomination.user = target
-        nomination.save()
 
 def dedupe_aliases(person):
     '''Check person for duplicate aliases and purge'''
@@ -248,3 +247,17 @@ def get_dots(person):
         if roles.filter(group__acronym__startswith='nomcom', name_id__in=('chair','member')).exists():
             dots.append('nomcom')
         return dots
+
+def lookup_persons(email_or_name):
+    aliases = Alias.objects.filter(name__iexact=email_or_name)
+    persons = set(a.person for a in aliases)
+
+    if '@' in email_or_name:
+        emails = Email.objects.filter(address__iexact=email_or_name)
+        persons.update(e.person for e in emails)
+
+    persons = [p for p in persons if p and p.id]
+    if not persons:
+        raise Http404
+    persons.sort(key=lambda p: p.id)
+    return persons

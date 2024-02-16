@@ -2,6 +2,8 @@
 
 # This is not utils.py because Tastypie implicitly consumes ietf.api.utils.
 # See ietf.api.__init__.py for details.
+from functools import wraps
+from typing import Callable, Optional, Union
 
 from functools import wraps
 from typing import Callable, Optional, Union
@@ -15,8 +17,13 @@ def is_valid_token(endpoint, token):
     # Settings implementation for now.
     if hasattr(settings, "APP_API_TOKENS"):
         token_store = settings.APP_API_TOKENS
-        if endpoint in token_store and token in token_store[endpoint]:
-            return True
+        if endpoint in token_store:
+            endpoint_tokens = token_store[endpoint]
+            # Be sure endpoints is a list or tuple so we don't accidentally use substring matching!
+            if not isinstance(endpoint_tokens, (list, tuple)):
+                endpoint_tokens = [endpoint_tokens]
+            if token in endpoint_tokens:
+                return True
     return False
 
 
@@ -45,7 +52,10 @@ def requires_api_token(func_or_endpoint: Optional[Union[Callable, str]] = None):
         if _endpoint is None:
             fname = getattr(f, "__qualname__", None)
             if fname is None:
-                raise TypeError("Cannot automatically decorate function that does not support __qualname__. Explicitly set the endpoint.")
+                raise TypeError(
+                    "Cannot automatically decorate function that does not support __qualname__. "
+                    "Explicitly set the endpoint."
+                )
             endpoint = "{}.{}".format(f.__module__, fname)
         else:
             endpoint = _endpoint

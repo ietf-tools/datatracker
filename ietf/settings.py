@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2007-2023, All Rights Reserved
+# Copyright The IETF Trust 2007-2024, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -169,7 +169,7 @@ if SERVER_MODE != 'production' and SERVE_CDN_FILES_LOCALLY_IN_DEV_MODE:
     STATIC_URL = "/static/"
     STATIC_ROOT = os.path.abspath(BASE_DIR + "/../static/")
 else:
-    STATIC_URL = "https://www.ietf.org/lib/dt/%s/"%__version__
+    STATIC_URL = "https://static.ietf.org/dt/%s/"%__version__
     STATIC_ROOT = "/a/www/www6s/lib/dt/%s/"%__version__
 
 # List of finder classes that know how to find static files in
@@ -1153,6 +1153,12 @@ CELERY_BROKER_URL = 'amqp://mq/'
 CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
 CELERY_BEAT_SYNC_EVERY = 1  # update DB after every event
 CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True  # the default, but setting it squelches a warning
+# Use a result backend so we can chain tasks. This uses the rpc backend, see
+# https://docs.celeryq.dev/en/stable/userguide/tasks.html#rpc-result-backend-rabbitmq-qpid
+# Results can be retrieved only once and only by the caller of the task. Results will be
+# lost if the message broker restarts.
+CELERY_RESULT_BACKEND = 'rpc://'  # sends a msg via the msg broker
+CELERY_TASK_IGNORE_RESULT = True  # ignore results unless specifically enabled for a task
 
 # Meetecho API setup: Uncomment this and provide real credentials to enable
 # Meetecho conference creation for interim session requests

@@ -51,7 +51,6 @@ from django.conf import settings
 from django import forms
 from django.contrib.staticfiles import finders
 
-
 import debug                            # pyflakes:ignore
 
 from ietf.doc.models import ( Document, DocHistory, DocEvent, BallotDocEvent, BallotType,
@@ -63,7 +62,7 @@ from ietf.doc.utils import (augment_events_with_revision,
     needed_ballot_positions, nice_consensus, update_telechat, has_same_ballot,
     get_initial_notify, make_notify_changed_event, make_rev_history, default_consensus,
     add_events_message_info, get_unicode_document_content,
-    augment_docs_and_user_with_user_info, irsg_needed_ballot_positions, add_action_holder_change_event,
+    augment_docs_and_person_with_person_info, irsg_needed_ballot_positions, add_action_holder_change_event,
     build_file_urls, update_documentauthors, fuzzy_find_documents,
     bibxml_for_draft)
 from ietf.doc.utils_bofreq import bofreq_editors, bofreq_responsible
@@ -288,7 +287,8 @@ def document_main(request, name, rev=None, document_html=False):
 
         presentations = doc.future_presentations()
 
-        augment_docs_and_user_with_user_info([doc], request.user)
+        if request.user.is_authenticated and hasattr(request.user, "person"):
+            augment_docs_and_person_with_person_info([doc], request.user.person)
 
         exp_comment = doc.latest_event(IanaExpertDocEvent,type="comment")
         iana_experts_comment = exp_comment and exp_comment.desc
@@ -581,7 +581,8 @@ def document_main(request, name, rev=None, document_html=False):
             elif can_edit_stream_info and (iesg_state_slug in ('idexists','watching')):
                 actions.append(("Submit to IESG for Publication", urlreverse('ietf.doc.views_draft.to_iesg', kwargs=dict(name=doc.name))))
 
-        augment_docs_and_user_with_user_info([doc], request.user)
+        if request.user.is_authenticated and hasattr(request.user, "person"):
+            augment_docs_and_person_with_person_info([doc], request.user.person)
 
         published = doc.latest_event(type="published_rfc")  # todo rethink this now that published_rfc is on rfc
         started_iesg_process = doc.latest_event(type="started_iesg_process")
@@ -1064,7 +1065,10 @@ def document_pdfized(request, name, rev=None, ext=None):
     if not os.path.exists(doc.get_file_name()):
         raise Http404("File not found: %s" % doc.get_file_name())
 
-    pdf = doc.pdfized()
+    try:
+        pdf = doc.pdfized()
+    except Exception:
+        return render(request, "doc/weasyprint_failed.html")
     if pdf:
         return HttpResponse(pdf,content_type='application/pdf')
     else:
@@ -1261,6 +1265,9 @@ def document_bibtex(request, name, rev=None):
             rev = None
 
     doc = get_object_or_404(Document, name=name)
+
+    if doc.type_id not in ["rfc", "draft"]:
+        raise Http404()
 
     doi = None
     draft_became_rfc = None
@@ -2185,13 +2192,31 @@ def idnits2_state(request, name, rev=None):
     if doc.type_id == "rfc":
         draft = doc.came_from_draft()
         if draft:
-            zero_revision = NewRevisionDocEvent.objects.filter(doc=draft,rev='00').first()
+            zero_revision = NewRevisionDocEvent.objects.filter(
+                doc=draft, rev="00"
+            ).first()
     else:
-        zero_revision = NewRevisionDocEvent.objects.filter(doc=doc,rev='00').first()
+        zero_revision = NewRevisionDocEvent.objects.filter(doc=doc, rev="00").first()
     if zero_revision:
         doc.created = zero_revision.time
     else:
-        doc.created = doc.docevent_set.order_by('-time').first().time
+        if doc.type_id == "draft":
+            if doc.became_rfc():
+                interesting_event = (
+                    doc.became_rfc()
+                    .docevent_set.filter(type="published_rfc")
+                    .order_by("-time")
+                    .first()
+                )
+            else:
+                interesting_event = doc.docevent_set.order_by(
+                    "-time"
+                ).first()  # Is taking the most _recent_ instead of the oldest event correct?
+        else:  # doc.type_id == "rfc"
+            interesting_event = (
+                doc.docevent_set.filter(type="published_rfc").order_by("-time").first()
+            )
+        doc.created = interesting_event.time
     if doc.std_level:
         doc.deststatus = doc.std_level.name
     elif doc.intended_std_level:
@@ -2199,8 +2224,16 @@ def idnits2_state(request, name, rev=None):
     else:
         text = doc.text()
         if text:
-            parsed_draft = PlaintextDraft(text=doc.text(), source=name, name_from_source=False)
+            parsed_draft = PlaintextDraft(
+                text=doc.text(), source=name, name_from_source=False
+            )
             doc.deststatus = parsed_draft.get_status()
         else:
-            doc.deststatus="Unknown"
-    return render(request, 'doc/idnits2-state.txt', context={'doc':doc}, content_type='text/plain;charset=utf-8')    
+            doc.deststatus = "Unknown"
+    return render(
+        request,
+        "doc/idnits2-state.txt",
+        context={"doc": doc},
+        content_type="text/plain;charset=utf-8",
+    )
+

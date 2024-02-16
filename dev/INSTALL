@@ -62,9 +62,11 @@ General Instructions for Deployment of a New Release
 
       docker-compose down
 
- 9. Stop the datatracker 
+ 9. Stop the datatracker and remove the web link so cron or other applications 
+    don't run code in the older deployment. 
 
       sudo systemctl stop datatracker.socket datatracker.service
+      rm /a/www/ietf-datatracker/web
 
  10. Return to the release directory and run migrations as wwwrun:
 
@@ -77,7 +79,7 @@ General Instructions for Deployment of a New Release
  11. Back out one directory level, then re-point the 'web' symlink::
 
       cd ..
-      rm ./web; ln -s ${releasenumber} web
+      ln -s ${releasenumber} web
 
  12. Start the datatracker service (it is no longer necessary to restart apache) ::
 

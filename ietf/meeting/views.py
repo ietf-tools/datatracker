@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2007-2022, All Rights Reserved
+# Copyright The IETF Trust 2007-2023, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -970,6 +970,7 @@ def edit_meeting_schedule(request, num=None, owner=None, name=None):
         'rtg' : { 'dark' : (222, 219, 124) , 'light' : (247, 247, 233) },
         'sec' : { 'dark' : (0, 114, 178) , 'light' : (245, 252, 248) },
         'tsv' : { 'dark' : (117,201,119) , 'light' : (251, 252, 255) },
+        'wit' : { 'dark' : (117,201,119) , 'light' : (251, 252, 255) }, # intentionally the same as tsv
     }    
     for i, p in enumerate(session_parents):
         if p.acronym in liz_preferred_colors:
@@ -2662,6 +2663,40 @@ def upload_session_minutes(request, session_id, num):
                   })
 
 
+class UploadOrEnterAgendaForm(UploadAgendaForm):
+    ACTIONS = [
+        ("upload", "Upload agenda"),
+        ("enter", "Enter agenda"),
+    ]
+    submission_method = forms.ChoiceField(choices=ACTIONS, widget=forms.RadioSelect)
+
+    content = forms.CharField(widget=forms.Textarea, required=False, strip=False, label="Agenda text")
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["file"].required=False
+        self.order_fields(["submission_method", "file", "content"])
+
+    def clean_content(self):
+        return self.cleaned_data["content"].replace("\r", "")
+
+    def clean_file(self):
+        submission_method = self.cleaned_data.get("submission_method")
+        if submission_method == "upload":
+            return super().clean_file()
+        return None
+
+    def clean(self):
+        def require_field(f):
+            if not self.cleaned_data.get(f):
+                self.add_error(f, ValidationError("You must fill in this field."))
+
+        submission_method = self.cleaned_data.get("submission_method")
+        if submission_method == "upload":
+            require_field("file")
+        elif submission_method == "enter":
+            require_field("content")
+
 def upload_session_agenda(request, session_id, num):
     # num is redundant, but we're dragging it along an artifact of where we are in the current URL structure
     session = get_object_or_404(Session,pk=session_id)
@@ -2680,10 +2715,23 @@ def upload_session_agenda(request, session_id, num):
     agenda_sp = session.sessionpresentation_set.filter(document__type='agenda').first()
     
     if request.method == 'POST':
-        form = UploadAgendaForm(show_apply_to_all_checkbox,request.POST,request.FILES)
+        form = UploadOrEnterAgendaForm(show_apply_to_all_checkbox,request.POST,request.FILES)
         if form.is_valid():
-            file = request.FILES['file']
-            _, ext = os.path.splitext(file.name)
+            submission_method = form.cleaned_data['submission_method']
+            if submission_method == "upload":
+                file = request.FILES['file']
+                _, ext = os.path.splitext(file.name)
+            else:
+                if agenda_sp:
+                    doc = agenda_sp.document
+                    _, ext = os.path.splitext(doc.uploaded_filename)
+                else:
+                    ext = ".md"
+                fd, name = tempfile.mkstemp(suffix=ext, text=True)
+                os.close(fd)
+                with open(name, "w") as file:
+                    file.write(form.cleaned_data['content'])
+                file = open(name, "rb")
             apply_to_all = session.type.slug == 'regular'
             if show_apply_to_all_checkbox:
                 apply_to_all = form.cleaned_data['apply_to_all']
@@ -2738,7 +2786,11 @@ def upload_session_agenda(request, session_id, num):
             doc.uploaded_filename = filename
             e = NewRevisionDocEvent.objects.create(doc=doc,by=request.user.person,type='new_revision',desc='New revision available: %s'%doc.rev,rev=doc.rev)
             # The way this function builds the filename it will never trigger the file delete in handle_file_upload.
-            save_error = handle_upload_file(file, filename, session.meeting, 'agenda', request=request, encoding=form.file_encoding[file.name])
+            try:
+                encoding=form.file_encoding[file.name]
+            except AttributeError:
+                encoding=None
+            save_error = handle_upload_file(file, filename, session.meeting, 'agenda', request=request, encoding=encoding)
             if save_error:
                 form.add_error(None, save_error)
             else:
@@ -2746,7 +2798,11 @@ def upload_session_agenda(request, session_id, num):
                 messages.success(request, f'Successfully uploaded agenda as revision {doc.rev}.')
                 return redirect('ietf.meeting.views.session_details',num=num,acronym=session.group.acronym)
     else: 
-        form = UploadAgendaForm(show_apply_to_all_checkbox, initial={'apply_to_all':session.type_id=='regular'})
+        initial={'apply_to_all':session.type_id=='regular', 'submission_method':'upload'}
+        if agenda_sp:
+            doc = agenda_sp.document
+            initial['content'] = doc.text()
+        form = UploadOrEnterAgendaForm(show_apply_to_all_checkbox, initial=initial)
 
     return render(request, "meeting/upload_session_agenda.html", 
                   {'session': session,

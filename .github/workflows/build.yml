@@ -17,6 +17,11 @@ on:
         default: true
         required: true
         type: boolean
+      sandboxNoDbRefresh:
+        description: 'Sandbox Disable Daily DB Refresh'
+        default: false
+        required: true
+        type: boolean
       legacySandbox:
         description: 'Deploy to Legacy Sandbox'
         default: false
@@ -54,7 +59,8 @@ jobs:
     steps:   
     - uses: actions/checkout@v4
       with:
-        fetch-depth: 0
+        fetch-depth: 1
+        fetch-tags: false
 
     - name: Get Next Version
       if: ${{ github.ref_name == 'release' }}
@@ -71,7 +77,7 @@ jobs:
         echo "NEXT_VERSION=$nextStrict" >> $GITHUB_ENV
         
     - name: Create Draft Release
-      uses: ncipollo/release-action@v1.13.0
+      uses: ncipollo/release-action@v1.14.0
       if: ${{ github.ref_name == 'release' }}
       with:
         prerelease: true
@@ -117,6 +123,9 @@ jobs:
     if: ${{ !failure() && !cancelled() }}
     needs: [tests, prepare]
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
     env:
       SHOULD_DEPLOY: ${{needs.prepare.outputs.should_deploy}}
       PKG_VERSION: ${{needs.prepare.outputs.pkg_version}}
@@ -126,7 +135,8 @@ jobs:
     steps:
     - uses: actions/checkout@v4
       with:
-        fetch-depth: 0
+        fetch-depth: 1
+        fetch-tags: false
         
     - name: Setup Node.js
       uses: actions/setup-node@v4
@@ -134,26 +144,30 @@ jobs:
         node-version: '16'
     
     - name: Setup Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: '3.x'
         
     - name: Download a Coverage Results
       if: ${{ github.event.inputs.skiptests == 'false' || github.ref_name == 'release' }}
-      uses: actions/download-artifact@v3.0.2
+      uses: actions/download-artifact@v4.1.2
       with:
         name: coverage
 
     - name: Make Release Build
       env:
         DEBIAN_FRONTEND: noninteractive
+        BROWSERSLIST_IGNORE_OLD_DATA: 1
       run: |
         echo "PKG_VERSION: $PKG_VERSION"
         echo "GITHUB_SHA: $GITHUB_SHA"
         echo "GITHUB_REF_NAME: $GITHUB_REF_NAME"
-        echo "Running build script..."
-        chmod +x ./dev/deploy/build.sh
-        sh ./dev/deploy/build.sh
+        echo "Running frontend build script..."
+        echo "Compiling native node packages..."
+        yarn rebuild
+        echo "Packaging static assets..."
+        yarn build --base=https://static.ietf.org/dt/$PKG_VERSION/
+        yarn legacy:build
         echo "Setting version $PKG_VERSION..."
         sed -i -r -e "s|^__version__ += '.*'$|__version__ = '$PKG_VERSION'|" ietf/__init__.py
         sed -i -r -e "s|^__release_hash__ += '.*'$|__release_hash__ = '$GITHUB_SHA'|" ietf/__init__.py
@@ -171,7 +185,57 @@ jobs:
       run: |
         echo "Build release tarball..."
         mkdir -p /home/runner/work/release
-        tar -czf /home/runner/work/release/release.tar.gz -X dev/deploy/exclude-patterns.txt .
+        tar -czf /home/runner/work/release/release.tar.gz -X dev/build/exclude-patterns.txt .
+
+    - name: Collect + Push Statics
+      env:
+        DEBIAN_FRONTEND: noninteractive
+        AWS_ACCESS_KEY_ID: ${{ secrets.CF_R2_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.CF_R2_KEY_SECRET }}
+        AWS_DEFAULT_REGION: auto
+        AWS_ENDPOINT_URL: ${{ secrets.CF_R2_ENDPOINT }}
+      run: |
+        echo "Collecting statics..."
+        docker run --rm --name collectstatics -v $(pwd):/workspace ghcr.io/ietf-tools/datatracker-app-base:latest sh dev/build/collectstatics.sh
+        echo "Pushing statics..."
+        cd static
+        aws s3 sync . s3://static/dt/$PKG_VERSION --only-show-errors
+
+    - name: Augment dockerignore for docker image build
+      env:
+        DEBIAN_FRONTEND: noninteractive
+      run: |
+        cat >> .dockerignore <<EOL
+        .devcontainer
+        .github
+        .vscode
+        helm
+        playwright
+        svn-history
+        docker-compose.yml
+        EOL
+
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v3
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Login to GitHub Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Build Release Docker Image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: dev/build/Dockerfile
+        platforms: linux/amd64,linux/arm64
+        push: true
+        tags: ghcr.io/ietf-tools/datatracker:${{ env.PKG_VERSION }}
         
     - name: Update CHANGELOG
       id: changelog
@@ -203,7 +267,7 @@ jobs:
         histCoveragePath: historical-coverage.json
         
     - name: Create Release
-      uses: ncipollo/release-action@v1.13.0
+      uses: ncipollo/release-action@v1.14.0
       if: ${{ env.SHOULD_DEPLOY == 'true' }}
       with:
         allowUpdates: true
@@ -216,7 +280,7 @@ jobs:
         token: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Update Baseline Coverage
-      uses: ncipollo/release-action@v1.13.0
+      uses: ncipollo/release-action@v1.14.0
       if: ${{ github.event.inputs.updateCoverage == 'true' || github.ref_name == 'release' }}
       with:
         allowUpdates: true
@@ -229,7 +293,7 @@ jobs:
         token: ${{ secrets.GITHUB_TOKEN }}
         
     - name: Upload Build Artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: release-${{ env.PKG_VERSION }}
         path: /home/runner/work/release/release.tar.gz
@@ -248,7 +312,7 @@ jobs:
     steps:      
     - name: Notify on Slack (Success)
       if: ${{ !contains(join(needs.*.result, ','), 'failure') }}
-      uses: slackapi/slack-github-action@v1.24.0
+      uses: slackapi/slack-github-action@v1.25.0
       with:
         channel-id: ${{ secrets.SLACK_GH_BUILDS_CHANNEL_ID }}
         payload: |
@@ -271,7 +335,7 @@ jobs:
         SLACK_BOT_TOKEN: ${{ secrets.SLACK_GH_BOT }}
     - name: Notify on Slack (Failure)
       if: ${{ contains(join(needs.*.result, ','), 'failure') }}
-      uses: slackapi/slack-github-action@v1.24.0
+      uses: slackapi/slack-github-action@v1.25.0
       with:
         channel-id: ${{ secrets.SLACK_GH_BUILDS_CHANNEL_ID }}
         payload: |
@@ -310,7 +374,7 @@ jobs:
     - uses: actions/checkout@v4
         
     - name: Download a Release Artifact
-      uses: actions/download-artifact@v3.0.2
+      uses: actions/download-artifact@v4.1.2
       with:
         name: release-${{ env.PKG_VERSION }}
         
@@ -325,7 +389,7 @@ jobs:
         npm ci
         cd ../..
         echo "Start Deploy..."
-        node ./dev/deploy-to-container/cli.js --branch ${{ github.ref_name }} --domain dev.ietf.org --appversion ${{ env.PKG_VERSION }} --commit ${{ github.sha }} --ghrunid ${{ github.run_id }}
+        node ./dev/deploy-to-container/cli.js --branch ${{ github.ref_name }} --domain dev.ietf.org --appversion ${{ env.PKG_VERSION }} --commit ${{ github.sha }} --ghrunid ${{ github.run_id }} --nodbrefresh ${{ github.event.inputs.sandboxNoDbRefresh }}
         
     - name: Cleanup old docker resources
       env:
@@ -346,7 +410,7 @@ jobs:
       
     steps:
     - name: Download a Release Artifact
-      uses: actions/download-artifact@v3.0.2
+      uses: actions/download-artifact@v4.1.2
       with:
         name: release-${{ env.PKG_VERSION }}
         path: /a/www/ietf-datatracker/main.dev.${{ github.run_number }}

@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2012-2020, All Rights Reserved
+# Copyright The IETF Trust 2012-2023, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -31,6 +31,8 @@ from django.utils.text import slugify
 
 from tastypie.test import ResourceTestCaseMixin
 
+from weasyprint.urls import URLFetchingError
+
 import debug                            # pyflakes:ignore
 
 from ietf.doc.models import ( Document, DocRelationshipName, RelatedDocument, State,
@@ -40,10 +42,10 @@ from ietf.doc.factories import ( DocumentFactory, DocEventFactory, CharterFactor
     ConflictReviewFactory, WgDraftFactory, IndividualDraftFactory, WgRfcFactory, 
     IndividualRfcFactory, StateDocEventFactory, BallotPositionDocEventFactory, 
     BallotDocEventFactory, DocumentAuthorFactory, NewRevisionDocEventFactory,
-    StatusChangeFactory, DocExtResourceFactory, RgDraftFactory)
+    StatusChangeFactory, DocExtResourceFactory, RgDraftFactory, BcpFactory)
 from ietf.doc.forms import NotifyForm
 from ietf.doc.fields import SearchableDocumentsField
-from ietf.doc.utils import create_ballot_if_not_open, uppercase_std_abbreviated_name
+from ietf.doc.utils import create_ballot_if_not_open, uppercase_std_abbreviated_name, DraftAliasGenerator
 from ietf.group.models import Group, Role
 from ietf.group.factories import GroupFactory, RoleFactory
 from ietf.ipr.factories import HolderIprDisclosureFactory
@@ -155,6 +157,23 @@ class SearchTests(TestCase):
         r = self.client.get(base_url + "?activedrafts=on&by=state&state=%s&substate=" % draft.get_state("draft-iesg").pk)
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, draft.title)
+
+    def test_search_became_rfc(self):
+        draft = WgDraftFactory()
+        rfc = WgRfcFactory()
+        draft.set_state(State.objects.get(type="draft", slug="rfc"))
+        draft.relateddocument_set.create(relationship_id="became_rfc", target=rfc)
+        base_url = urlreverse('ietf.doc.views_search.search')
+
+        # find by RFC
+        r = self.client.get(base_url + f"?rfcs=on&name={rfc.name}")
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, rfc.title)
+
+        # find by draft
+        r = self.client.get(base_url + f"?activedrafts=on&rfcs=on&name={draft.name}")
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, rfc.title)
 
     def test_search_for_name(self):
         draft = WgDraftFactory(name='draft-ietf-mars-test',group=GroupFactory(acronym='mars',parent=Group.objects.get(acronym='farfut')),authors=[PersonFactory()],ad=PersonFactory())
@@ -820,6 +839,10 @@ Man                    Expires September 22, 2015               [Page 3]
         rfc.relateddocument_set.create(relationship_id='updates',target=updated)
         updated_by = IndividualRfcFactory()
         updated_by.relateddocument_set.create(relationship_id='updates',target=rfc)
+
+        r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name, rev=draft.rev)))
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "This is an older version of an Internet-Draft that was ultimately published as")
 
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)))
         self.assertEqual(r.status_code, 302)
@@ -1948,6 +1971,12 @@ class DocTestCase(TestCase):
 
     @override_settings(RFC_EDITOR_INFO_BASE_URL='https://www.rfc-editor.ietf.org/info/')
     def test_document_bibtex(self):
+
+        for factory in [CharterFactory, BcpFactory, StatusChangeFactory, ConflictReviewFactory]: # Should be extended to all other doc types
+            doc = factory()
+            url = urlreverse("ietf.doc.views_doc.document_bibtex", kwargs=dict(name=doc.name))
+            r = self.client.get(url)
+            self.assertEqual(r.status_code, 404)          
         rfc = WgRfcFactory.create(
             time=datetime.datetime(2010, 10, 10, tzinfo=ZoneInfo(settings.TIME_ZONE))
         )
@@ -2262,6 +2291,7 @@ class GenerateDraftAliasesTests(TestCase):
                 "xfilter-" + doc3.name + ".ad",
                 "xfilter-" + doc3.name + ".authors",
                 "xfilter-" + doc3.name + ".chairs",
+                "xfilter-" + doc3.name + ".all",
                 "xfilter-" + doc5.name,
                 "xfilter-" + doc5.name + ".authors",
                 "xfilter-" + doc5.name + ".all",
@@ -2277,6 +2307,148 @@ class GenerateDraftAliasesTests(TestCase):
                 "xfilter-" + doc5.name + ".ad",
             ]:
                 self.assertNotIn(x, vcontent)
+
+    @override_settings(TOOLS_SERVER="tools.example.org", DRAFT_ALIAS_DOMAIN="draft.example.org")
+    def test_generator_class(self):
+        """The DraftAliasGenerator should generate the same lists as the old mgmt cmd"""
+        a_month_ago = (timezone.now() - datetime.timedelta(30)).astimezone(RPC_TZINFO)
+        a_month_ago = a_month_ago.replace(hour=0, minute=0, second=0, microsecond=0)
+        ad = RoleFactory(
+            name_id="ad", group__type_id="area", group__state_id="active"
+        ).person
+        shepherd = PersonFactory()
+        author1 = PersonFactory()
+        author2 = PersonFactory()
+        author3 = PersonFactory()
+        author4 = PersonFactory()
+        author5 = PersonFactory()
+        author6 = PersonFactory()
+        mars = GroupFactory(type_id="wg", acronym="mars")
+        marschairman = PersonFactory(user__username="marschairman")
+        mars.role_set.create(
+            name_id="chair", person=marschairman, email=marschairman.email()
+        )
+        doc1 = IndividualDraftFactory(authors=[author1], shepherd=shepherd.email(), ad=ad)
+        doc2 = WgDraftFactory(
+            name="draft-ietf-mars-test", group__acronym="mars", authors=[author2], ad=ad
+        )
+        doc2.notify = f"{doc2.name}.ad@draft.example.org"
+        doc2.save()
+        doc3 = WgDraftFactory.create(
+            name="draft-ietf-mars-finished",
+            group__acronym="mars",
+            authors=[author3],
+            ad=ad,
+            std_level_id="ps",
+            states=[("draft", "rfc"), ("draft-iesg", "pub")],
+            time=a_month_ago,
+        )
+        rfc3 = WgRfcFactory()
+        DocEventFactory.create(doc=rfc3, type="published_rfc", time=a_month_ago)
+        doc3.relateddocument_set.create(relationship_id="became_rfc", target=rfc3)
+        doc4 = WgDraftFactory.create(
+            authors=[author4, author5],
+            ad=ad,
+            std_level_id="ps",
+            states=[("draft", "rfc"), ("draft-iesg", "pub")],
+            time=datetime.datetime(2010, 10, 10, tzinfo=ZoneInfo(settings.TIME_ZONE)),
+        )
+        rfc4 = WgRfcFactory()
+        DocEventFactory.create(
+            doc=rfc4,
+            type="published_rfc",
+            time=datetime.datetime(2010, 10, 10, tzinfo=RPC_TZINFO),
+        )
+        doc4.relateddocument_set.create(relationship_id="became_rfc", target=rfc4)
+        doc5 = IndividualDraftFactory(authors=[author6])
+
+        output = [(alias, alist) for alias, alist in DraftAliasGenerator()]
+        alias_dict = dict(output)
+        self.assertEqual(len(alias_dict), len(output))  # no duplicate aliases
+        expected_dict = {
+            doc1.name: [author1.email_address()],
+            doc1.name + ".ad": [ad.email_address()],
+            doc1.name + ".authors": [author1.email_address()],
+            doc1.name + ".shepherd": [shepherd.email_address()],
+            doc1.name
+            + ".all": [
+                author1.email_address(),
+                ad.email_address(),
+                shepherd.email_address(),
+            ],
+            doc2.name: [author2.email_address()],
+            doc2.name + ".ad": [ad.email_address()],
+            doc2.name + ".authors": [author2.email_address()],
+            doc2.name + ".chairs": [marschairman.email_address()],
+            doc2.name + ".notify": [ad.email_address()],
+            doc2.name
+            + ".all": [
+                author2.email_address(),
+                ad.email_address(),
+                marschairman.email_address(),
+            ],
+            doc3.name: [author3.email_address()],
+            doc3.name + ".ad": [ad.email_address()],
+            doc3.name + ".authors": [author3.email_address()],
+            doc3.name + ".chairs": [marschairman.email_address()],
+            doc3.name
+            + ".all": [
+                author3.email_address(),
+                ad.email_address(),
+                marschairman.email_address(),
+            ],
+            doc5.name: [author6.email_address()],
+            doc5.name + ".authors": [author6.email_address()],
+            doc5.name + ".all": [author6.email_address()],
+        }
+        # Sort lists for comparison
+        self.assertEqual(
+            {k: sorted(v) for k, v in alias_dict.items()},
+            {k: sorted(v) for k, v in expected_dict.items()},
+        )
+
+    @override_settings(TOOLS_SERVER="tools.example.org", DRAFT_ALIAS_DOMAIN="draft.example.org")
+    def test_get_draft_notify_emails(self):
+        ad = PersonFactory()
+        shepherd = PersonFactory()
+        author = PersonFactory()
+        doc = DocumentFactory(authors=[author], shepherd=shepherd.email(), ad=ad)
+        generator = DraftAliasGenerator()
+
+        doc.notify = f"{doc.name}@draft.example.org"
+        doc.save()
+        self.assertCountEqual(generator.get_draft_notify_emails(doc), [author.email_address()])
+
+        doc.notify = f"{doc.name}.ad@draft.example.org"
+        doc.save()
+        self.assertCountEqual(generator.get_draft_notify_emails(doc), [ad.email_address()])
+
+        doc.notify = f"{doc.name}.shepherd@draft.example.org"
+        doc.save()
+        self.assertCountEqual(generator.get_draft_notify_emails(doc), [shepherd.email_address()])
+
+        doc.notify = f"{doc.name}.all@draft.example.org"
+        doc.save()
+        self.assertCountEqual(
+            generator.get_draft_notify_emails(doc),
+            [ad.email_address(), author.email_address(), shepherd.email_address()]
+        )
+
+        doc.notify = f"{doc.name}.notify@draft.example.org"
+        doc.save()
+        self.assertCountEqual(generator.get_draft_notify_emails(doc), [])
+
+        doc.notify = f"{doc.name}.ad@somewhere.example.com"
+        doc.save()
+        self.assertCountEqual(generator.get_draft_notify_emails(doc), [f"{doc.name}.ad@somewhere.example.com"])
+        
+        doc.notify = f"somebody@example.com, nobody@example.com, {doc.name}.ad@tools.example.org"
+        doc.save()
+        self.assertCountEqual(
+            generator.get_draft_notify_emails(doc),
+            ["somebody@example.com", "nobody@example.com", ad.email_address()]
+        )
+
 
 class EmailAliasesTests(TestCase):
 
@@ -2843,6 +3015,12 @@ class PdfizedTests(TestCase):
             for ext in ('pdf','txt','html','anythingatall'):
                 self.should_succeed(dict(name=draft.name,rev=f'{r:02d}',ext=ext))
         self.should_404(dict(name=draft.name,rev='02'))
+
+        with mock.patch('ietf.doc.models.DocumentInfo.pdfized', side_effect=URLFetchingError):
+            url = urlreverse(self.view, kwargs=dict(name=rfc.name))
+            r = self.client.get(url)
+            self.assertEqual(r.status_code, 200)
+            self.assertContains(r, "Error while rendering PDF")
 
 class NotifyValidationTests(TestCase):
     def test_notify_validation(self):

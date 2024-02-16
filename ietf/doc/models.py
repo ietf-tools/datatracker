@@ -83,7 +83,7 @@ class State(models.Model):
     desc = models.TextField(blank=True)
     order = models.IntegerField(default=0)
 
-    next_states = models.ManyToManyField('State', related_name="previous_states", blank=True)
+    next_states = models.ManyToManyField('doc.State', related_name="previous_states", blank=True)
 
     def __str__(self):
         return self.name
@@ -280,6 +280,19 @@ class DocumentInfo(models.Model):
                 info = dict(doc=self)
 
             href = format.format(**info)
+
+            # For slides that are not meeting-related, we need to know the file extension.
+            # Assume we have access to the same files as settings.DOC_HREFS["slides"] and
+            # see what extension is available
+            if  self.type_id == "slides" and not self.meeting_related() and not href.endswith("/"):
+                filepath = Path(self.get_file_path()) / self.get_base_name()  # start with this
+                if not filepath.exists():
+                    # Look for other extensions - grab the first one, sorted for stability
+                    for existing in sorted(filepath.parent.glob(f"{filepath.stem}.*")):
+                        filepath = filepath.with_suffix(existing.suffix)
+                        break
+                href += filepath.suffix  # tack on the extension
+
             if href.startswith('/'):
                 href = settings.IDTRACKER_BASE_URL + href
             self._cached_href = href
@@ -634,6 +647,9 @@ class DocumentInfo(models.Model):
                 )
             except AssertionError:
                 pdf = None
+            except Exception as e:
+                log.log('weasyprint failed:'+str(e))
+                raise
             if pdf:
                 cache.set(cache_key, pdf, settings.PDFIZER_CACHE_TIME)
         return pdf
@@ -649,7 +665,7 @@ class DocumentInfo(models.Model):
                 source__states__slug="active",
             )
             | models.Q(source__type__slug="rfc")
-        )
+        ).distinct()
     
     def referenced_by_rfcs(self):
         """Get refs to this doc from RFCs"""
