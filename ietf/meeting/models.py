@@ -451,8 +451,9 @@ class Room(models.Model):
     # end floorplan-related stuff
 
     def __str__(self):
-        return u"%s size: %s" % (self.name, self.capacity)
-
+        if len(self.functional_name) > 0 and self.functional_name != self.name:
+            return f"{self.name} [{self.functional_name}] (size: {self.capacity})"    
+        return f"{self.name} (size: {self.capacity})"    
 
     def dom_id(self):
         return "room%u" % (self.pk)
