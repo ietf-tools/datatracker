@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2007-2022, All Rights Reserved
+# Copyright The IETF Trust 2007-2024, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -451,8 +451,9 @@ class Room(models.Model):
     # end floorplan-related stuff
 
     def __str__(self):
-        return u"%s size: %s" % (self.name, self.capacity)
-
+        if len(self.functional_name) > 0 and self.functional_name != self.name:
+            return f"{self.name} [{self.functional_name}] (size: {self.capacity})"    
+        return f"{self.name} (size: {self.capacity})"    
 
     def dom_id(self):
         return "room%u" % (self.pk)
@@ -1017,7 +1018,7 @@ class Session(models.Model):
     group = ForeignKey(Group)    # The group type historically determined the session type.  BOFs also need to be added as a group. Note that not all meeting requests have a natural group to associate with.
     joint_with_groups = models.ManyToManyField(Group, related_name='sessions_joint_in',blank=True)
     attendees = models.IntegerField(null=True, blank=True)
-    agenda_note = models.CharField(blank=True, max_length=255)
+    agenda_note = models.CharField(blank=True, max_length=512)
     requested_duration = models.DurationField(default=datetime.timedelta(0))
     comments = models.TextField(blank=True)
     scheduled = models.DateTimeField(null=True, blank=True)
@@ -1074,6 +1075,9 @@ class Session(models.Model):
 
     def bluesheets(self):
         return list(self.get_material("bluesheets", only_one=False))
+
+    def chatlogs(self):
+        return list(self.get_material("chatlog", only_one=False))
 
     def slides(self):
         if not hasattr(self, "_slides_cache"):
@@ -1285,29 +1289,27 @@ class Session(models.Model):
             return self.meeting.group_at_the_time(self.group_at_the_time().parent)
 
     def audio_stream_url(self):
-        if (
-            self.meeting.type.slug == "ietf"
-            and self.has_onsite_tool
-            and (url := getattr(settings, "MEETECHO_AUDIO_STREAM_URL", ""))
-        ):
+        url = getattr(settings, "MEETECHO_AUDIO_STREAM_URL", "")
+        if self.meeting.type.slug == "ietf" and self.has_onsite_tool and url:
             return url.format(session=self)
         return None
 
     def video_stream_url(self):
-        if (
-            self.meeting.type.slug == "ietf"
-            and self.has_onsite_tool
-            and (url := getattr(settings, "MEETECHO_VIDEO_STREAM_URL", ""))
-        ):
+        url = getattr(settings, "MEETECHO_VIDEO_STREAM_URL", "")
+        if self.meeting.type.slug == "ietf" and self.has_onsite_tool and url:
             return url.format(session=self)
         return None
 
     def onsite_tool_url(self):
-        if (
-            self.meeting.type.slug == "ietf"
-            and self.has_onsite_tool
-            and (url := getattr(settings, "MEETECHO_ONSITE_TOOL_URL", ""))
-        ):
+        url = getattr(settings, "MEETECHO_ONSITE_TOOL_URL", "")
+        if self.meeting.type.slug == "ietf" and self.has_onsite_tool and url:
+            return url.format(session=self)
+        return None
+
+    def session_recording_url(self):
+        url = getattr(settings, "MEETECHO_SESSION_RECORDING_URL", "")
+        if self.meeting.type.slug == "ietf" and self.has_onsite_tool and url:
+            self.group.acronym_upper = self.group.acronym.upper()
             return url.format(session=self)
         return None
 
