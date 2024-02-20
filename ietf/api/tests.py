@@ -368,7 +368,7 @@ class CustomApiTests(TestCase):
             r = self.client.post(url,{'apikey':apikey.hash(),'apidata': f'{{"session_id":{session.pk}, "{type_id}":{content}}}'})
             self.assertEqual(r.status_code, 200)
 
-            newdoc = session.sessionpresentation_set.get(document__type_id=type_id).document
+            newdoc = session.presentations.get(document__type_id=type_id).document
             newdoccontent = get_unicode_document_content(newdoc.name, Path(session.meeting.get_materials_path()) / type_id / newdoc.uploaded_filename)
             self.assertEqual(json.loads(content), json.loads(newdoccontent))
 
@@ -454,7 +454,7 @@ class CustomApiTests(TestCase):
                                    'item': '1', 'bluesheet': bluesheet, })
         self.assertContains(r, "Done", status_code=200)
 
-        bluesheet = session.sessionpresentation_set.filter(document__type__slug='bluesheets').first().document
+        bluesheet = session.presentations.filter(document__type__slug='bluesheets').first().document
         # We've submitted an update; check that the rev is right
         self.assertEqual(bluesheet.rev, '01')
         # Check the content
@@ -569,7 +569,7 @@ class CustomApiTests(TestCase):
         self.assertContains(r, "Done", status_code=200)
 
         bluesheet = (
-            session.sessionpresentation_set.filter(document__type__slug="bluesheets")
+            session.presentations.filter(document__type__slug="bluesheets")
             .first()
             .document
         )

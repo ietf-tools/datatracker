@@ -12,7 +12,7 @@ from markdown.postprocessors import Postprocessor
 from django.utils.safestring import mark_safe
 
 from ietf.doc.templatetags.ietf_filters import urlize_ietf_docs
-from ietf.utils.text import bleach_cleaner, bleach_linker
+from ietf.utils.text import bleach_cleaner, liberal_bleach_cleaner, bleach_linker
 
 
 class LinkifyExtension(Extension):
@@ -37,6 +37,22 @@ class LinkifyPostprocessor(Postprocessor):
 def markdown(text):
     return mark_safe(
         bleach_cleaner.clean(
+            python_markdown.markdown(
+                text,
+                extensions=[
+                    "extra",
+                    "nl2br",
+                    "sane_lists",
+                    "toc",
+                    LinkifyExtension(),
+                ],
+            )
+        )
+    )
+
+def liberal_markdown(text):
+    return mark_safe(
+        liberal_bleach_cleaner.clean(
             python_markdown.markdown(
                 text,
                 extensions=[

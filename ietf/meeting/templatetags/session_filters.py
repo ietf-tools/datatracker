@@ -8,7 +8,7 @@ register = template.Library()
 
 @register.filter
 def presented_versions(session, doc):
-    sp = session.sessionpresentation_set.filter(document=doc)
+    sp = session.presentations.filter(document=doc)
     if not sp:
         return "Document not in session"
     else:
