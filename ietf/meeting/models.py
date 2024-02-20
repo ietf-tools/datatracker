@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2007-2022, All Rights Reserved
+# Copyright The IETF Trust 2007-2024, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -1070,6 +1070,9 @@ class Session(models.Model):
     def bluesheets(self):
         return list(self.get_material("bluesheets", only_one=False))
 
+    def chatlogs(self):
+        return list(self.get_material("chatlog", only_one=False))
+
     def slides(self):
         if not hasattr(self, "_slides_cache"):
             self._slides_cache = list(self.get_material("slides", only_one=False))
@@ -1267,29 +1270,27 @@ class Session(models.Model):
             return self.meeting.group_at_the_time(self.group_at_the_time().parent)
 
     def audio_stream_url(self):
-        if (
-            self.meeting.type.slug == "ietf"
-            and self.has_onsite_tool
-            and (url := getattr(settings, "MEETECHO_AUDIO_STREAM_URL", ""))
-        ):
+        url = getattr(settings, "MEETECHO_AUDIO_STREAM_URL", "")
+        if self.meeting.type.slug == "ietf" and self.has_onsite_tool and url:
             return url.format(session=self)
         return None
 
     def video_stream_url(self):
-        if (
-            self.meeting.type.slug == "ietf"
-            and self.has_onsite_tool
-            and (url := getattr(settings, "MEETECHO_VIDEO_STREAM_URL", ""))
-        ):
+        url = getattr(settings, "MEETECHO_VIDEO_STREAM_URL", "")
+        if self.meeting.type.slug == "ietf" and self.has_onsite_tool and url:
             return url.format(session=self)
         return None
 
     def onsite_tool_url(self):
-        if (
-            self.meeting.type.slug == "ietf"
-            and self.has_onsite_tool
-            and (url := getattr(settings, "MEETECHO_ONSITE_TOOL_URL", ""))
-        ):
+        url = getattr(settings, "MEETECHO_ONSITE_TOOL_URL", "")
+        if self.meeting.type.slug == "ietf" and self.has_onsite_tool and url:
+            return url.format(session=self)
+        return None
+
+    def session_recording_url(self):
+        url = getattr(settings, "MEETECHO_SESSION_RECORDING_URL", "")
+        if self.meeting.type.slug == "ietf" and self.has_onsite_tool and url:
+            self.group.acronym_upper = self.group.acronym.upper()
             return url.format(session=self)
         return None
 
