@@ -49,6 +49,8 @@ urlpatterns = [
     # OpenID authentication provider
     url(r'^openid/$', TemplateView.as_view(template_name='api/openid-issuer.html'), name='ietf.api.urls.oidc_issuer'),
     url(r'^openid/', include('oidc_provider.urls', namespace='oidc_provider')),
+    # Email alias listing
+    url(r'^person/email/$', api_views.active_email_list),
     # Draft submission API
     url(r'^submit/?$', submit_views.api_submit),
     # Draft upload API
