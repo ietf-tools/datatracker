@@ -380,7 +380,8 @@ class InterimAnnounceForm(forms.ModelForm):
 class InterimCancelForm(forms.Form):
     group = forms.CharField(max_length=255, required=False)
     date = forms.DateField(required=False)
-    comments = forms.CharField(required=False, widget=forms.Textarea(attrs={'placeholder': 'enter optional comments here'}), strip=False)
+    # max_length must match Session.agenda_note
+    comments = forms.CharField(max_length=512, required=False, widget=forms.Textarea(attrs={'placeholder': 'enter optional comments here'}), strip=False)
 
     def __init__(self, *args, **kwargs):
         super(InterimCancelForm, self).__init__(*args, **kwargs)
