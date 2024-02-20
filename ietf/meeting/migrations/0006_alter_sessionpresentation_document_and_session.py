@@ -8,7 +8,7 @@ import ietf.utils.models
 class Migration(migrations.Migration):
     dependencies = [
         ("doc", "0021_narrativeminutes"),
-        ("meeting", "0004_session_chat_room"),
+        ("meeting", "0005_alter_session_agenda_note"),
     ]
 
     operations = [
