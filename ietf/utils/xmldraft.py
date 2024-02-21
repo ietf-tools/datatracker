@@ -127,6 +127,8 @@ class XMLDraft(Draft):
 
     def _parse_docname(self):
         docname = self.xmlroot.attrib.get('docName')
+        if docname is None:
+            raise ValueError("Missing docName attribute in the XML root element")
         revmatch = re.match(
             r'^(?P<filename>.+?)(?:-(?P<rev>[0-9][0-9]))?$',
             docname,
