@@ -2539,7 +2539,14 @@ def bluesheet_data(session):
     meeting = session.meeting
     return [{'name':attended.person.plain_name(), 'affiliation':affiliation(meeting, attended.person)} for attended in attendance]
 
+
 def session_attendance(request, session_id, num):
+    """Session attendance view
+    
+    GET - retrieve the current session attendance or redirect to the published bluesheet if finalized
+    
+    POST - self-attest attendance for logged-in user; falls through to GET for AnonymousUser or invalid request
+    """
     # num is redundant, but we're dragging it along as an artifact of where we are in the current URL structure
     session = get_object_or_404(Session, pk=session_id)
     if session.meeting.type_id != 'ietf' or session.meeting.proceedings_final:
@@ -2552,17 +2559,18 @@ def session_attendance(request, session_id, num):
 
     cor_cut_off_date = session.meeting.get_submission_correction_date()
     today_utc = date_today(datetime.timezone.utc)
-    try:
-        person = request.user.person
-        was_there = Attended.objects.filter(session=session, person=person).exists()
-        can_add = today_utc <= cor_cut_off_date and MeetingRegistration.objects.filter(meeting=session.meeting, person=person).exists() and Attended.objects.filter(session=session).exists() and not was_there
-    except AttributeError:
-        was_there = can_add = False
-
-    if request.method=='POST' and can_add:
-        session.attended_set.get_or_create(person=person, defaults={"origin":"self declared"})
-        can_add = False
-        was_there = True
+    was_there = False
+    can_add = False
+    if request.user.is_authenticated:
+        # use getattr() instead of request.user.person because it's a reverse OneToOne field 
+        person = getattr(request.user, "person", None)
+        if person is not None:
+            was_there = Attended.objects.filter(session=session, person=person).exists()
+            can_add = today_utc <= cor_cut_off_date and MeetingRegistration.objects.filter(meeting=session.meeting, person=person).exists() and Attended.objects.filter(session=session).exists() and not was_there
+            if can_add and request.method == "POST":
+                session.attended_set.get_or_create(person=person, defaults={"origin": "self declared"})
+                can_add = False
+                was_there = True
 
     data = bluesheet_data(session)
     return render(request, "meeting/attendance.html", {
