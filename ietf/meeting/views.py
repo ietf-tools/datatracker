@@ -2564,9 +2564,18 @@ def session_attendance(request, session_id, num):
     if request.user.is_authenticated:
         # use getattr() instead of request.user.person because it's a reverse OneToOne field 
         person = getattr(request.user, "person", None)
-        if person is not None:
+        # Consider allowing self-declared attendance if we have a person and at least one Attended instance exists.
+        # The latter condition will be satisfied when Meetecho pushes their attendee records - assuming that at least
+        # one person will have accessed the meeting tool. This prevents people from self-declaring before they are
+        # marked as attending if they did log in to the meeting tool (except for a tiny window while records are
+        # being processed).
+        if person is not None and Attended.objects.filter(session=session).exists():
             was_there = Attended.objects.filter(session=session, person=person).exists()
-            can_add = today_utc <= cor_cut_off_date and MeetingRegistration.objects.filter(meeting=session.meeting, person=person).exists() and Attended.objects.filter(session=session).exists() and not was_there
+            can_add = (
+                today_utc <= cor_cut_off_date
+                and MeetingRegistration.objects.filter(meeting=session.meeting, person=person).exists() 
+                and not was_there
+            )
             if can_add and request.method == "POST":
                 session.attended_set.get_or_create(person=person, defaults={"origin": "self declared"})
                 can_add = False
