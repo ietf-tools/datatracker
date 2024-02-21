@@ -81,14 +81,14 @@
             {% endif %}
         </table>
         <div class="buttonlist">
-            {% with doc_name=doc|mailto_name %}{% if doc_name %}
+            {% if mailto_name %}
                 <a class="btn btn-primary btn-sm"
-                   href="mailto:{{ doc_name }}@ietf.org?subject=Mail%20regarding%20{{ doc.name }}">
+                   href="mailto:{{ mailto_name }}@ietf.org?subject=Mail%20regarding%20{{ doc.name }}">
                     <i class="bi bi-envelope">
                     </i>
                     Email authors
                 </a>
-            {% endif %}{% endwith %}
+            {% endif %}
             {% if doc.group.type_id == "wg" or doc.group.type_id == "rg" %}
                 <a class="btn btn-primary btn-sm"
                    href="mailto:{{ doc.group.list_email }}?subject=Mail%20regarding%20{{ doc.name }}">

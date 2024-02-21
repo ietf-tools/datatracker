@@ -324,6 +324,9 @@ def document_main(request, name, rev=None, document_html=False):
                 submission = group.acronym
             submission = '<a href="%s">%s</a>' % (group.about_url(), submission)
 
+        draft = doc.came_from_draft()
+        mailto_name = draft.name if draft else None
+
         return render(request, "doc/document_rfc.html" if document_html is False else "doc/document_html.html",
                                   dict(doc=doc,
                                        document_html=document_html,
@@ -356,7 +359,8 @@ def document_main(request, name, rev=None, document_html=False):
                                        iana_experts_comment=iana_experts_comment,
                                        presentations=presentations,
                                        diff_revisions=diff_revisions,
-                                       submission=submission
+                                       submission=submission,
+                                       mailto_name=mailto_name,
                                        ))
 
     elif doc.type_id == "draft":

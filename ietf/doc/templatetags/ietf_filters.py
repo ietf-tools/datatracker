@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2007-2024, All Rights Reserved
+# Copyright The IETF Trust 2007-2023, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -137,17 +137,6 @@ def prettystdname(string, space=" "):
 def rfceditor_info_url(rfcnum : str):
     """Link to the RFC editor info page for an RFC"""
     return urljoin(settings.RFC_EDITOR_INFO_BASE_URL, f'rfc{rfcnum}')
-
-
-@register.filter
-def mailto_name(doc):
-    """Return a document name that can be a mailto target, but only if
-    generate_draft_aliases would have emitted that alias.
-    """
-    if doc.type_id == 'rfc':
-        draft = doc.came_from_draft()
-        return draft.name if draft else None
-    return doc.name
 
 
 def doc_name(name):

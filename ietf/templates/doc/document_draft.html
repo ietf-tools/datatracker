@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{# Copyright The IETF Trust 2016-2024, All Rights Reserved #}
+{# Copyright The IETF Trust 2016-2023, All Rights Reserved #}
 {% load origin %}
 {% load static %}
 {% load ietf_filters %}
@@ -610,14 +610,12 @@
             {% endif %}
         </table>
         <div class="buttonlist">
-            {% with doc_name=doc|mailto_name %}{% if doc_name %}
-                <a class="btn btn-primary btn-sm"
-                   href="mailto:{{ doc_name }}@ietf.org?subject=Mail%20regarding%20{{ doc.name }}">
-                    <i class="bi bi-envelope">
-                    </i>
-                    Email authors
-                </a>
-            {% endif %}{% endwith %}
+            <a class="btn btn-primary btn-sm"
+               href="mailto:{{ doc_name }}@ietf.org?subject=Mail%20regarding%20{{ doc.name }}">
+               <i class="bi bi-envelope">
+               </i>
+                Email authors
+            </a>
             {% if doc.group.type.slug == 'wg' or doc.group.type.slug == 'rg' %}
                 <a class="btn btn-primary btn-sm"
                    href="mailto:{{ doc.group.list_email }}?subject=Mail%20regarding%20{{ doc.name }}">
