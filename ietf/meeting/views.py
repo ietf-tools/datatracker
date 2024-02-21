@@ -2527,42 +2527,51 @@ def add_session_drafts(request, session_id, num):
                     'form': form,
                   })
 
+
 def bluesheet_data(session):
     def affiliation(meeting, person):
         # from OidcExtraScopeClaims.scope_registration()
-        email_list = person.email_set.values_list('address')
+        email_list = person.email_set.values_list("address")
         q = Q(person=person, meeting=meeting) | Q(email__in=email_list, meeting=meeting)
         regs = MeetingRegistration.objects.filter(q).distinct()
-        return ([reg.affiliation for reg in regs if reg.affiliation] or [''])[0]
+        return ([reg.affiliation for reg in regs if reg.affiliation] or [""])[0]
 
     attendance = Attended.objects.filter(session=session)
     meeting = session.meeting
-    return [{'name':attended.person.plain_name(), 'affiliation':affiliation(meeting, attended.person)} for attended in attendance]
+    return [
+        {
+            "name": attended.person.plain_name(),
+            "affiliation": affiliation(meeting, attended.person),
+        }
+        for attended in attendance
+    ]
 
 
 def session_attendance(request, session_id, num):
     """Session attendance view
-    
+
     GET - retrieve the current session attendance or redirect to the published bluesheet if finalized
-    
+
     POST - self-attest attendance for logged-in user; falls through to GET for AnonymousUser or invalid request
     """
     # num is redundant, but we're dragging it along as an artifact of where we are in the current URL structure
     session = get_object_or_404(Session, pk=session_id)
-    if session.meeting.type_id != 'ietf' or session.meeting.proceedings_final:
-        bluesheets = session.sessionpresentation_set.filter(document__type_id='bluesheets')
+    if session.meeting.type_id != "ietf" or session.meeting.proceedings_final:
+        bluesheets = session.sessionpresentation_set.filter(
+            document__type_id="bluesheets"
+        )
         if bluesheets:
             bluesheet = bluesheets[0].document
             return redirect(bluesheet.get_href(session.meeting))
         else:
-            raise Http404('Bluesheets not found')
+            raise Http404("Bluesheets not found")
 
     cor_cut_off_date = session.meeting.get_submission_correction_date()
     today_utc = date_today(datetime.timezone.utc)
     was_there = False
     can_add = False
     if request.user.is_authenticated:
-        # use getattr() instead of request.user.person because it's a reverse OneToOne field 
+        # use getattr() instead of request.user.person because it's a reverse OneToOne field
         person = getattr(request.user, "person", None)
         # Consider allowing self-declared attendance if we have a person and at least one Attended instance exists.
         # The latter condition will be satisfied when Meetecho pushes their attendee records - assuming that at least
@@ -2573,21 +2582,30 @@ def session_attendance(request, session_id, num):
             was_there = Attended.objects.filter(session=session, person=person).exists()
             can_add = (
                 today_utc <= cor_cut_off_date
-                and MeetingRegistration.objects.filter(meeting=session.meeting, person=person).exists() 
+                and MeetingRegistration.objects.filter(
+                    meeting=session.meeting, person=person
+                ).exists()
                 and not was_there
             )
             if can_add and request.method == "POST":
-                session.attended_set.get_or_create(person=person, defaults={"origin": "self declared"})
+                session.attended_set.get_or_create(
+                    person=person, defaults={"origin": "self declared"}
+                )
                 can_add = False
                 was_there = True
 
     data = bluesheet_data(session)
-    return render(request, "meeting/attendance.html", {
-            'session': session,
-            'data': data,
-            'can_add': can_add,
-            'was_there': was_there,
-        })
+    return render(
+        request,
+        "meeting/attendance.html",
+        {
+            "session": session,
+            "data": data,
+            "can_add": can_add,
+            "was_there": was_there,
+        },
+    )
+
 
 def generate_bluesheet(request, session):
     data = bluesheet_data(session)
@@ -4181,6 +4199,7 @@ def deprecated_api_set_session_video_url(request):
 
     return HttpResponse("Done", status=200, content_type='text/plain')
 
+
 @require_api_key
 @role_required('Recording Manager') # TODO : Rework how Meetecho interacts via APIs. There may be better paths to pursue than Personal API keys as they are currently defined.
 @csrf_exempt
@@ -4194,37 +4213,42 @@ def api_add_session_attendees(request):
     """
 
     def err(code, text):
-        return HttpResponse(text, status=code, content_type='text/plain')
+        return HttpResponse(text, status=code, content_type="text/plain")
 
-    if request.method != 'POST':
+    if request.method != "POST":
         return err(405, "Method not allowed")
-    attended_post = request.POST.get('attended')
+    attended_post = request.POST.get("attended")
     if not attended_post:
         return err(400, "Missing attended parameter")
     try:
         attended = json.loads(attended_post)
     except json.decoder.JSONDecodeError:
-        return err(400, "Malformed post") 
-    if not ( 'session_id' in attended and type(attended['session_id']) is int ):
         return err(400, "Malformed post")
-    session_id = attended['session_id']
-    if not ( 'attendees' in attended and type(attended['attendees']) is list and all([type(el) is int for el in attended['attendees']]) ):
+    if not ("session_id" in attended and type(attended["session_id"]) is int):
+        return err(400, "Malformed post")
+    session_id = attended["session_id"]
+    if not (
+        "attendees" in attended
+        and type(attended["attendees"]) is list
+        and all([type(el) is int for el in attended["attendees"]])
+    ):
         return err(400, "Malformed post")
     session = Session.objects.filter(pk=session_id).first()
     if not session:
         return err(400, "Invalid session")
-    users = User.objects.filter(pk__in=attended['attendees'])
-    if users.count() != len(attended['attendees']):
+    users = User.objects.filter(pk__in=attended["attendees"])
+    if users.count() != len(attended["attendees"]):
         return err(400, "Invalid attendee")
     for user in users:
         session.attended_set.get_or_create(person=user.person)
 
-    if session.meeting.type_id == 'interim':
+    if session.meeting.type_id == "interim":
         save_error = generate_bluesheet(request, session)
         if save_error:
             return err(400, save_error)
 
-    return HttpResponse("Done", status=200, content_type='text/plain')  
+    return HttpResponse("Done", status=200, content_type="text/plain")
+
 
 @require_api_key
 @role_required('Recording Manager')
