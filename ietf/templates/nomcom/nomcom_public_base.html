@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{# Copyright The IETF Trust 2015-2024, All Rights Reserved #}
 {% load origin static %}
 {% load nomcom_tags %}
 {% load ietf_filters %}
@@ -12,6 +12,7 @@
 {% endblock %}
 {% block content %}
     {% origin %}
+    {% block nomcom_announce %}{% endblock %}
     {% with selected=request.path|split:'/'|slice:'3:-1'|join:'-' %}
     <h1>
         NomCom {{ year }}

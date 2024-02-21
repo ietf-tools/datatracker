@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2012-2024, All Rights Reserved
+# Copyright The IETF Trust 2012-2023, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -74,8 +74,6 @@ def year_index(request, year):
     nomcom = get_nomcom_by_year(year)
     home_template = '/nomcom/%s/%s' % (nomcom.group.acronym, HOME_TEMPLATE)
     template = render_to_string(home_template, {})
-    if int(year) >= 2002:
-        nomcom.ann_url = f"/nomcom/ann/#nomcom-{year}"
     return render(request, 'nomcom/year_index.html',
                               {'nomcom': nomcom,
                                'year': year,
