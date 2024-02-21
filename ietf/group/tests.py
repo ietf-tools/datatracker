@@ -1,7 +1,6 @@
 # Copyright The IETF Trust 2013-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
-import io
 import os
 import datetime
 import json
