@@ -32,8 +32,8 @@ from ietf.meeting.factories import MeetingFactory, SessionFactory
 from ietf.meeting.models import Session
 from ietf.nomcom.models import Volunteer, NomCom
 from ietf.nomcom.factories import NomComFactory, nomcom_kwargs_for_year
-from ietf.person.factories import PersonFactory, random_faker
-from ietf.person.models import User
+from ietf.person.factories import PersonFactory, random_faker, EmailFactory
+from ietf.person.models import Email, User
 from ietf.person.models import PersonalApiKey
 from ietf.stats.models import MeetingRegistration
 from ietf.utils.mail import outbox, get_payload_text
@@ -368,7 +368,7 @@ class CustomApiTests(TestCase):
             r = self.client.post(url,{'apikey':apikey.hash(),'apidata': f'{{"session_id":{session.pk}, "{type_id}":{content}}}'})
             self.assertEqual(r.status_code, 200)
 
-            newdoc = session.sessionpresentation_set.get(document__type_id=type_id).document
+            newdoc = session.presentations.get(document__type_id=type_id).document
             newdoccontent = get_unicode_document_content(newdoc.name, Path(session.meeting.get_materials_path()) / type_id / newdoc.uploaded_filename)
             self.assertEqual(json.loads(content), json.loads(newdoccontent))
 
@@ -454,7 +454,7 @@ class CustomApiTests(TestCase):
                                    'item': '1', 'bluesheet': bluesheet, })
         self.assertContains(r, "Done", status_code=200)
 
-        bluesheet = session.sessionpresentation_set.filter(document__type__slug='bluesheets').first().document
+        bluesheet = session.presentations.filter(document__type__slug='bluesheets').first().document
         # We've submitted an update; check that the rev is right
         self.assertEqual(bluesheet.rev, '01')
         # Check the content
@@ -569,7 +569,7 @@ class CustomApiTests(TestCase):
         self.assertContains(r, "Done", status_code=200)
 
         bluesheet = (
-            session.sessionpresentation_set.filter(document__type__slug="bluesheets")
+            session.presentations.filter(document__type__slug="bluesheets")
             .first()
             .document
         )
@@ -852,6 +852,28 @@ class CustomApiTests(TestCase):
             self.client.post(url, headers={"X-Api-Key": "valid-token"}).status_code,
             405,
         )
+
+    @override_settings(APP_API_TOKENS={"ietf.api.views.active_email_list": ["valid-token"]})
+    def test_active_email_list(self):
+        EmailFactory(active=True)  # make sure there's at least one active email...
+        EmailFactory(active=False)  # ... and at least one non-active emai
+        url = urlreverse("ietf.api.views.active_email_list")
+        r = self.client.post(url, headers={})
+        self.assertEqual(r.status_code, 403)
+        r = self.client.get(url, headers={})
+        self.assertEqual(r.status_code, 403)
+        r = self.client.get(url, headers={"X-Api-Key": "not-the-valid-token"})
+        self.assertEqual(r.status_code, 403)
+        r = self.client.post(url, headers={"X-Api-Key": "not-the-valid-token"})
+        self.assertEqual(r.status_code, 403)
+        r = self.client.post(url, headers={"X-Api-Key": "valid-token"})
+        self.assertEqual(r.status_code, 405)
+        r = self.client.get(url, headers={"X-Api-Key": "valid-token"})
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.headers["Content-Type"], "application/json")
+        result = json.loads(r.content)
+        self.assertCountEqual(result.keys(), ["addresses"])
+        self.assertCountEqual(result["addresses"], Email.objects.filter(active=True).values_list("address", flat=True))
 
 
 class DirectAuthApiTests(TestCase):

@@ -148,7 +148,7 @@
                     {% endfor %}
                 {% elif session.video_stream_url %}
                     <a class="btn btn-outline-primary"
-                       href="http://www.meetecho.com/ietf{{ meeting.number }}/recordings#{{ acronym.upper }}"
+                       href="{{ session.session_recording_url }}"
                        aria-label="Meetecho session recording"
                        title="Meetecho session recording">
                         <i class="bi bi-file-slides"></i>

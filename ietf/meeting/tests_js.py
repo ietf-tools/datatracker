@@ -884,9 +884,9 @@ class SlideReorderTests(IetfSeleniumTestCase):
     def setUp(self):
         super(SlideReorderTests, self).setUp()
         self.session = SessionFactory(meeting__type_id='ietf', status_id='sched')
-        self.session.sessionpresentation_set.create(document=DocumentFactory(type_id='slides',name='one'),order=1)
-        self.session.sessionpresentation_set.create(document=DocumentFactory(type_id='slides',name='two'),order=2)
-        self.session.sessionpresentation_set.create(document=DocumentFactory(type_id='slides',name='three'),order=3)
+        self.session.presentations.create(document=DocumentFactory(type_id='slides',name='one'),order=1)
+        self.session.presentations.create(document=DocumentFactory(type_id='slides',name='two'),order=2)
+        self.session.presentations.create(document=DocumentFactory(type_id='slides',name='three'),order=3)
 
     def secr_login(self):
         self.login('secretary')
@@ -906,7 +906,7 @@ class SlideReorderTests(IetfSeleniumTestCase):
         ActionChains(self.driver).drag_and_drop(second,third).perform()
 
         time.sleep(0.1) # The API that modifies the database runs async
-        names=self.session.sessionpresentation_set.values_list('document__name',flat=True) 
+        names=self.session.presentations.values_list('document__name',flat=True) 
         self.assertEqual(list(names),['one','three','two'])
 
 @ifSeleniumEnabled

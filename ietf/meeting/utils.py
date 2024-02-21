@@ -32,7 +32,10 @@ from ietf.utils.timezone import date_today
 
 
 def session_time_for_sorting(session, use_meeting_date):
-    official_timeslot = TimeSlot.objects.filter(sessionassignments__session=session, sessionassignments__schedule__in=[session.meeting.schedule, session.meeting.schedule.base if session.meeting.schedule else None]).first()
+    if hasattr(session, "_otsa"):
+        official_timeslot=session._otsa.timeslot
+    else:
+        official_timeslot = TimeSlot.objects.filter(sessionassignments__session=session, sessionassignments__schedule__in=[session.meeting.schedule, session.meeting.schedule.base if session.meeting.schedule else None]).first()
     if official_timeslot:
         return official_timeslot.time
     elif use_meeting_date and session.meeting.date:
@@ -75,13 +78,14 @@ def group_sessions(sessions):
     in_progress = []
     recent = []
     past = []
+
     for s in sessions:
         today = date_today(s.meeting.tz())
         if s.meeting.date > today:
             future.append(s)
         elif s.meeting.end_date() >= today:
             in_progress.append(s)
-        elif not s.is_material_submission_cutoff():
+        elif not getattr(s, "cached_is_cutoff", lambda: s.is_material_submission_cutoff):
             recent.append(s)
         else:
             past.append(s)
@@ -90,6 +94,7 @@ def group_sessions(sessions):
     # meetings with descending time
     recent.reverse()
     past.reverse()
+
 
     return future, in_progress, recent, past
 
@@ -148,7 +153,7 @@ def finalize(meeting):
         )
     ).astimezone(pytz.utc) + datetime.timedelta(days=1)
     for session in meeting.session_set.all():
-        for sp in session.sessionpresentation_set.filter(document__type='draft',rev=None):
+        for sp in session.presentations.filter(document__type='draft',rev=None):
             rev_before_end = [e for e in sp.document.docevent_set.filter(newrevisiondocevent__isnull=False).order_by('-time') if e.time <= end_time ]
             if rev_before_end:
                 sp.rev = rev_before_end[-1].newrevisiondocevent.rev
@@ -180,7 +185,7 @@ def sort_accept_tuple(accept):
     return tup
 
 def condition_slide_order(session):
-    qs = session.sessionpresentation_set.filter(document__type_id='slides').order_by('order')
+    qs = session.presentations.filter(document__type_id='slides').order_by('order')
     order_list = qs.values_list('order',flat=True)
     if list(order_list) != list(range(1,qs.count()+1)):
         for num, sp in enumerate(qs, start=1):
@@ -563,7 +568,7 @@ def save_session_minutes_revision(session, file, ext, request, encoding=None, ap
     Returns (Document, [DocEvents]), which should be passed to doc.save_with_history()
     if the file contents are stored successfully.
     """
-    minutes_sp = session.sessionpresentation_set.filter(document__type='minutes').first()
+    minutes_sp = session.presentations.filter(document__type='minutes').first()
     if minutes_sp:
         doc = minutes_sp.document
         doc.rev = '%02d' % (int(doc.rev)+1)
@@ -597,17 +602,17 @@ def save_session_minutes_revision(session, file, ext, request, encoding=None, ap
                 rev = '00',
             )
         doc.states.add(State.objects.get(type_id='minutes',slug='active'))
-        if session.sessionpresentation_set.filter(document=doc).exists():
-            sp = session.sessionpresentation_set.get(document=doc)
+        if session.presentations.filter(document=doc).exists():
+            sp = session.presentations.get(document=doc)
             sp.rev = doc.rev
             sp.save()
         else:
-            session.sessionpresentation_set.create(document=doc,rev=doc.rev)
+            session.presentations.create(document=doc,rev=doc.rev)
     if apply_to_all:
         for other_session in get_meeting_sessions(session.meeting.number, session.group.acronym):
             if other_session != session:
-                other_session.sessionpresentation_set.filter(document__type='minutes').delete()
-                other_session.sessionpresentation_set.create(document=doc,rev=doc.rev)
+                other_session.presentations.filter(document__type='minutes').delete()
+                other_session.presentations.create(document=doc,rev=doc.rev)
     filename = f'{doc.name}-{doc.rev}{ext}'
     doc.uploaded_filename = filename
     e = NewRevisionDocEvent.objects.create(
@@ -719,7 +724,7 @@ def new_doc_for_session(type_id, session):
                 rev = '00',
             )
     doc.states.add(State.objects.get(type_id=type_id, slug='active'))
-    session.sessionpresentation_set.create(document=doc,rev='00')
+    session.presentations.create(document=doc,rev='00')
     return doc
 
 def write_doc_for_session(session, type_id, filename, contents):
@@ -760,7 +765,7 @@ def create_recording(session, url, title=None, user=None):
                                        desc='New revision available',
                                        time=doc.time)
     pres = SessionPresentation.objects.create(session=session,document=doc,rev=doc.rev)
-    session.sessionpresentation_set.add(pres)
+    session.presentations.add(pres)
 
     return doc
 

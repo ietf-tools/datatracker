@@ -121,6 +121,7 @@ a.new-timeslot-link { color: lightgray; font-size: large;}
                             <tr>
                                 <th scope="row">
                                     <span class="room-heading">{{ room.name }}
+                                        {% if room.functional_name and room.name != room.functional_name %} - {{ room.functional_name }}{% endif %}
                                         {% if room.capacity %}<span class="capacity">({{ room.capacity }})</span>{% endif %}
                                     </span>
                                 </th>
