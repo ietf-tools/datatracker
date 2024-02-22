@@ -2209,7 +2209,6 @@ def statements(request, acronym, group_type=None):
         )
         .order_by("-published")
     )
-    debug.show("statements.first().status")
     return render(
         request,
         "group/statements.html",
