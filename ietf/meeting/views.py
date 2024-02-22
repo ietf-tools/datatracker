@@ -2537,7 +2537,7 @@ def bluesheet_data(session):
         reg = MeetingRegistration.objects.filter(q).exclude(affiliation="").first()
         return reg.affiliation if reg else ""
 
-    attendance = Attended.objects.filter(session=session)
+    attendance = Attended.objects.filter(session=session).order_by("time")
     meeting = session.meeting
     return [
         {
