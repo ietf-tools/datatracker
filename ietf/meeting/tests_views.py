@@ -12,7 +12,7 @@ import requests.exceptions
 import requests_mock
 
 from unittest import skipIf
-from mock import patch, PropertyMock
+from mock import call, patch, PropertyMock
 from pyquery import PyQuery
 from lxml.etree import tostring
 from io import StringIO, BytesIO
@@ -5987,6 +5987,34 @@ class FinalizeProceedingsTests(TestCase):
         self.assertEqual(meeting.proceedings_final,True)
         self.assertEqual(meeting.session_set.filter(group__acronym="mars").first().sessionpresentation_set.filter(document__type="draft").first().rev,'00')
  
+    @patch("ietf.meeting.utils.generate_bluesheet")
+    def test_bluesheet_generation(self, mock):
+        meeting = MeetingFactory(type_id="ietf", number="107")  # number where generate_bluesheets should not be called
+        SessionFactory.create_batch(5, meeting=meeting)
+        url = urlreverse("ietf.meeting.views.finalize_proceedings", kwargs={"num": meeting.number})
+        self.client.login(username="secretary", password="secretary+password")
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertFalse(mock.called)
+        r = self.client.post(url,{'finalize': 1})
+        self.assertEqual(r.status_code, 302)
+        self.assertFalse(mock.called)
+
+        meeting = MeetingFactory(type_id="ietf", number="108")  # number where generate_bluesheets should be called
+        SessionFactory.create_batch(5, meeting=meeting)
+        url = urlreverse("ietf.meeting.views.finalize_proceedings", kwargs={"num": meeting.number})
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertFalse(mock.called)
+        r = self.client.post(url,{'finalize': 1})
+        self.assertEqual(r.status_code, 302)
+        self.assertTrue(mock.called)
+        self.assertCountEqual(
+            [call_args[0][1] for call_args in mock.call_args_list],
+            [sess for sess in meeting.session_set.all()],
+        )
+
+
 class MaterialsTests(TestCase):
     settings_temp_path_overrides = TestCase.settings_temp_path_overrides + [
         'AGENDA_PATH',
