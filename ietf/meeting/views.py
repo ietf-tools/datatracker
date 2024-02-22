@@ -4208,16 +4208,41 @@ def api_add_session_attendees(request):
     """Upload attendees for one or more sessions
 
     parameters:
-      apikey: the poster's personal API key
-      attended: json blob with
-          [{'session_id': session pk, 'attendees': [list of user pks]}, ...]
+        apikey: the poster's personal API key
+        attended: json blob with
+            {
+                "session_id": session pk,
+                "attendees": [
+                    {"user_id": user-pk-1, "join_time": "2024-02-21T18:00:00Z"},
+                    {"user_id": user-pk-2, "join_time": "2024-02-21T18:00:01Z"},
+                    {"user_id": user-pk-3, "join_time": "2024-02-21T18:00:02Z"},
+                    ...
+                ]
+            }
     """
     json_validator = jsonschema.Draft202012Validator(
         schema={
             "type": "object",
             "properties": {
                 "session_id": {"type": "integer"},
-                "attendees": {"type": "array", "items": {"type": "integer"}},  # array of user PKs
+                "attendees": {
+                    # Allow either old or new format until after IETF 119
+                    "anyOf": [
+                        {"type": "array", "items": {"type": "integer"}},  # old: array of user PKs
+                        {
+                            # new: array of user_id / join_time objects
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "user_id": {"type": "integer", },
+                                    "join_time": {"type": "string", "format": "date-time"}
+                                },
+                                "required": ["user_id", "join_time"],
+                            },
+                        },
+                    ],
+                }
             },
             "required": ["session_id", "attendees"],
         },
@@ -4235,21 +4260,43 @@ def api_add_session_attendees(request):
 
     # Validate the request payload
     try:
-        attended = json.loads(attended_post)
-        json_validator.validate(attended)
+        payload = json.loads(attended_post)
+        json_validator.validate(payload)
     except (json.decoder.JSONDecodeError, jsonschema.exceptions.ValidationError):
         return err(400, "Malformed post")
 
-    session_id = attended["session_id"]
+    session_id = payload["session_id"]
     session = Session.objects.filter(pk=session_id).first()
     if not session:
         return err(400, "Invalid session")
 
-    users = User.objects.filter(pk__in=attended["attendees"])
-    if users.count() != len(attended["attendees"]):
-        return err(400, "Invalid attendee")
-    for user in users:
-        session.attended_set.get_or_create(person=user.person)
+    attendees = payload["attendees"]
+    if len(attendees) > 0:
+        # Check whether we have old or new format
+        if type(attendees[0]) == int:
+            # it's the old format
+            users = User.objects.filter(pk__in=attendees)
+            if users.count() != len(payload["attendees"]):
+                return err(400, "Invalid attendee")
+            for user in users:
+                session.attended_set.get_or_create(person=user.person)
+        else:
+            # it's the new format
+            join_time_by_pk = {
+                att["user_id"]: datetime.datetime.fromisoformat(
+                    att["join_time"].replace("Z", "+00:00")  # Z not understood until py311
+                )
+                for att in attendees
+            }
+            persons = list(Person.objects.filter(user__pk__in=join_time_by_pk))
+            if len(persons) != len(join_time_by_pk):
+                return err(400, "Invalid attendee")
+            to_create = [
+                Attended(person=person, time=join_time_by_pk[person.user_id])
+                for person in persons
+            ]
+            # Create in bulk, ignoring any that already exist
+            Attended.objects.bulk_create(to_create, ignore_conflicts=True)
 
     if session.meeting.type_id == "interim":
         save_error = generate_bluesheet(request, session)
