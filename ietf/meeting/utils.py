@@ -5,6 +5,7 @@ import itertools
 import os
 import pytz
 import subprocess
+import tempfile
 
 from collections import defaultdict
 from pathlib import Path
@@ -12,6 +13,7 @@ from pathlib import Path
 from django.conf import settings
 from django.contrib import messages
 from django.db.models import Q
+from django.template.loader import render_to_string
 from django.utils import timezone
 from django.utils.encoding import smart_str
 
@@ -26,6 +28,7 @@ from ietf.group.models import Group
 from ietf.group.utils import can_manage_materials
 from ietf.name.models import SessionStatusName, ConstraintName, DocTypeName
 from ietf.person.models import Person
+from ietf.stats.models import MeetingRegistration
 from ietf.utils.html import sanitize_document
 from ietf.utils.log import log
 from ietf.utils.timezone import date_today
@@ -139,8 +142,84 @@ def create_proceedings_templates(meeting):
         meeting.overview = template
         meeting.save()
 
+
+def bluesheet_data(session):
+    def affiliation(meeting, person):
+        # from OidcExtraScopeClaims.scope_registration()
+        email_list = person.email_set.values_list("address")
+        q = Q(person=person, meeting=meeting) | Q(email__in=email_list, meeting=meeting)
+        reg = MeetingRegistration.objects.filter(q).exclude(affiliation="").first()
+        return reg.affiliation if reg else ""
+
+    attendance = Attended.objects.filter(session=session).order_by("time")
+    meeting = session.meeting
+    return [
+        {
+            "name": attended.person.plain_name(),
+            "affiliation": affiliation(meeting, attended.person),
+        }
+        for attended in attendance
+    ]
+
+
+def save_bluesheet(request, session, file, encoding='utf-8'):
+    bluesheet_sp = session.sessionpresentation_set.filter(document__type='bluesheets').first()
+    _, ext = os.path.splitext(file.name)
+
+    if bluesheet_sp:
+        doc = bluesheet_sp.document
+        doc.rev = '%02d' % (int(doc.rev)+1)
+        bluesheet_sp.rev = doc.rev
+        bluesheet_sp.save()
+    else:
+        ota = session.official_timeslotassignment()
+        sess_time = ota and ota.timeslot.time
+
+        if session.meeting.type_id=='ietf':
+            name = 'bluesheets-%s-%s-%s' % (session.meeting.number, 
+                                            session.group.acronym, 
+                                            sess_time.strftime("%Y%m%d%H%M"))
+            title = 'Bluesheets IETF%s: %s : %s' % (session.meeting.number, 
+                                                    session.group.acronym, 
+                                                    sess_time.strftime("%a %H:%M"))
+        else:
+            name = 'bluesheets-%s-%s' % (session.meeting.number, sess_time.strftime("%Y%m%d%H%M"))
+            title = 'Bluesheets %s: %s' % (session.meeting.number, sess_time.strftime("%a %H:%M"))
+        doc = Document.objects.create(
+                  name = name,
+                  type_id = 'bluesheets',
+                  title = title,
+                  group = session.group,
+                  rev = '00',
+              )
+        doc.states.add(State.objects.get(type_id='bluesheets',slug='active'))
+        session.sessionpresentation_set.create(document=doc,rev='00')
+    filename = '%s-%s%s'% ( doc.name, doc.rev, ext)
+    doc.uploaded_filename = filename
+    e = NewRevisionDocEvent.objects.create(doc=doc, rev=doc.rev, by=request.user.person, type='new_revision', desc='New revision available: %s'%doc.rev)
+    save_error = handle_upload_file(file, filename, session.meeting, 'bluesheets', request=request, encoding=encoding)
+    if not save_error:
+        doc.save_with_history([e])
+    return save_error
+
+
+def generate_bluesheet(request, session):
+    data = bluesheet_data(session)
+    if not data:
+        return
+    text = render_to_string('meeting/bluesheet.txt', {
+            'session': session,
+            'data': data,
+        })
+    fd, name = tempfile.mkstemp(suffix=".txt", text=True)
+    os.close(fd)
+    with open(name, "w") as file:
+        file.write(text)
+    with open(name, "br") as file:
+        return save_bluesheet(request, session, file)
+
+
 def finalize(request, meeting):
-    from ietf.meeting.views import generate_bluesheet
     end_date = meeting.end_date()
     end_time = meeting.tz().localize(
         datetime.datetime.combine(

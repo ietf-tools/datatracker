@@ -85,7 +85,7 @@ from ietf.meeting.utils import swap_meeting_schedule_timeslot_assignments, bulk_
 from ietf.meeting.utils import preprocess_meeting_important_dates
 from ietf.meeting.utils import new_doc_for_session, write_doc_for_session
 from ietf.meeting.utils import get_activity_stats, post_process, create_recording
-from ietf.meeting.utils import participants_for_meeting
+from ietf.meeting.utils import participants_for_meeting, generate_bluesheet, bluesheet_data, save_bluesheet
 from ietf.message.utils import infer_message
 from ietf.name.models import SlideSubmissionStatusName, ProceedingsMaterialTypeName, SessionPurposeName
 from ietf.stats.models import MeetingRegistration
@@ -2529,25 +2529,6 @@ def add_session_drafts(request, session_id, num):
                   })
 
 
-def bluesheet_data(session):
-    def affiliation(meeting, person):
-        # from OidcExtraScopeClaims.scope_registration()
-        email_list = person.email_set.values_list("address")
-        q = Q(person=person, meeting=meeting) | Q(email__in=email_list, meeting=meeting)
-        reg = MeetingRegistration.objects.filter(q).exclude(affiliation="").first()
-        return reg.affiliation if reg else ""
-
-    attendance = Attended.objects.filter(session=session).order_by("time")
-    meeting = session.meeting
-    return [
-        {
-            "name": attended.person.plain_name(),
-            "affiliation": affiliation(meeting, attended.person),
-        }
-        for attended in attendance
-    ]
-
-
 def session_attendance(request, session_id, num):
     """Session attendance view
 
@@ -2608,21 +2589,6 @@ def session_attendance(request, session_id, num):
     )
 
 
-def generate_bluesheet(request, session):
-    data = bluesheet_data(session)
-    if not data:
-        return
-    text = render_to_string('meeting/bluesheet.txt', {
-            'session': session,
-            'data': data,
-        })
-    fd, name = tempfile.mkstemp(suffix=".txt", text=True)
-    os.close(fd)
-    with open(name, "w") as file:
-        file.write(text)
-    with open(name, "br") as file:
-        return save_bluesheet(request, session, file)
-
 def upload_session_bluesheets(request, session_id, num):
     # num is redundant, but we're dragging it along an artifact of where we are in the current URL structure
     session = get_object_or_404(Session,pk=session_id)
@@ -2668,47 +2634,6 @@ def upload_session_bluesheets(request, session_id, num):
                    'bluesheet_sp' : bluesheet_sp,
                    'form': form,
                   })
-
-
-def save_bluesheet(request, session, file, encoding='utf-8'):
-    bluesheet_sp = session.sessionpresentation_set.filter(document__type='bluesheets').first()
-    _, ext = os.path.splitext(file.name)
-
-    if bluesheet_sp:
-        doc = bluesheet_sp.document
-        doc.rev = '%02d' % (int(doc.rev)+1)
-        bluesheet_sp.rev = doc.rev
-        bluesheet_sp.save()
-    else:
-        ota = session.official_timeslotassignment()
-        sess_time = ota and ota.timeslot.time
-
-        if session.meeting.type_id=='ietf':
-            name = 'bluesheets-%s-%s-%s' % (session.meeting.number, 
-                                            session.group.acronym, 
-                                            sess_time.strftime("%Y%m%d%H%M"))
-            title = 'Bluesheets IETF%s: %s : %s' % (session.meeting.number, 
-                                                    session.group.acronym, 
-                                                    sess_time.strftime("%a %H:%M"))
-        else:
-            name = 'bluesheets-%s-%s' % (session.meeting.number, sess_time.strftime("%Y%m%d%H%M"))
-            title = 'Bluesheets %s: %s' % (session.meeting.number, sess_time.strftime("%a %H:%M"))
-        doc = Document.objects.create(
-                  name = name,
-                  type_id = 'bluesheets',
-                  title = title,
-                  group = session.group,
-                  rev = '00',
-              )
-        doc.states.add(State.objects.get(type_id='bluesheets',slug='active'))
-        session.sessionpresentation_set.create(document=doc,rev='00')
-    filename = '%s-%s%s'% ( doc.name, doc.rev, ext)
-    doc.uploaded_filename = filename
-    e = NewRevisionDocEvent.objects.create(doc=doc, rev=doc.rev, by=request.user.person, type='new_revision', desc='New revision available: %s'%doc.rev)
-    save_error = handle_upload_file(file, filename, session.meeting, 'bluesheets', request=request, encoding=encoding)
-    if not save_error:
-        doc.save_with_history([e])
-    return save_error
 
 
 def upload_session_minutes(request, session_id, num):
