@@ -1,6 +1,7 @@
 # Copyright The IETF Trust 2023, All Rights Reserved
 
 from collections import namedtuple
+import csv
 import datetime
 import os
 import re
@@ -158,6 +159,7 @@ class Command(BaseCommand):
         minutes_dir = Path(old_minutes_root)
         date_re = re.compile(r"\d{4}-\d{2}-\d{2}")
         meeting_times = set()
+        redirects = []
         for file_prefix in ["minutes", "narrative"]:
             paths = list(minutes_dir.glob(f"[12][09][0129][0-9]/{file_prefix}*.txt"))
             paths.extend(
@@ -259,6 +261,13 @@ class Command(BaseCommand):
                     else:
                         os.makedirs(dest.parent, exist_ok=True)
                         shutil.copy(source, dest)
+                    redirects.append(
+                        [
+                            f"www6.ietf.org/iesg/minutes/{dt.year}/{bof_coord_data[dt].source_name}",
+                            f"https://datatracker.ietf.org/doc/{doc_name}",
+                            302,
+                        ]
+                    )
             else:
                 for type_id in ["minutes", "narrativeminutes"]:
                     source_file_prefix = (
@@ -334,10 +343,22 @@ class Command(BaseCommand):
                                 html_content = re.sub(
                                     '<a href="http://validator.w3.org/[^>]*> *<img[^>]*></a>',
                                     "",
-                                    html_content
+                                    html_content,
                                 )
                                 dest.write_text(html_content, encoding="utf-8")
                             else:
                                 shutil.copy(txt_source, dest)
+                            redirects.append(
+                                [
+                                    f"www6.ietf.org/iesg/minutes/{dt.year}/{txt_source.name if txt_source.exists() else html_source.name}",
+                                    f"https://datatracker.ietf.org/doc/{doc_name}",
+                                    302,
+                                ]
+                            )
 
             counter += 1
+
+        with open("iesg_minutes_redirects.csv", "w", newline="") as f:
+            csvwriter = csv.writer(f)
+            for row in redirects:
+                csvwriter.writerow(row)
