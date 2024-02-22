@@ -2,6 +2,7 @@
 
 import debug  # pyflakes:ignore
 
+import csv
 import datetime
 import os
 import shutil
@@ -41,8 +42,11 @@ class Command(BaseCommand):
             self.stdout.write(f"Clean up {tmpdir} manually")
             exit(-1)
 
+        redirects = []
         for item in self.get_work_items():
-            replaced = item.title.endswith(" SUPERSEDED") or item.doc_time.date() == datetime.date(2007,7,30)
+            replaced = item.title.endswith(
+                " SUPERSEDED"
+            ) or item.doc_time.date() == datetime.date(2007, 7, 30)
             title = item.title
             if title.endswith(" - SUPERSEDED"):
                 title = title[: -len(" - SUPERSEDED")]
@@ -93,20 +97,34 @@ class Command(BaseCommand):
                 os.makedirs(dest.parent, exist_ok=True)
                 shutil.copy(source, dest)
 
+            redirects.append(
+                [
+                    f"www.ietf.org/about/groups/iesg/statements/{item.slug}",
+                    f"https://datatracker.ietf.org/group/iesg/statements/{name}",
+                    302,
+                ]
+            )
+
         shutil.rmtree(tmpdir)
+        with open("iesg_statement_redirects.csv", "w", newline="") as f:
+            csvwriter = csv.writer(f)
+            for row in redirects:
+                csvwriter.writerow(row)
 
     def get_work_items(self):
-        Item = namedtuple("Item", "doc_time source_filename title")
+        Item = namedtuple("Item", "doc_time source_filename title slug")
         items = []
         dressed_rows = " ".join(
             self.cut_paste_from_www().expandtabs(1).split(" ")
         ).split("\n")
+        old_slugs = self.get_old_slugs()
         # Rube-Goldberg-esque dance to deal with conflicting directions of the scrape and
         # what order we want the result to sort to
         dressed_rows.reverse()
+        old_slugs.reverse()
         total_times_date_seen = Counter([row.split(" ")[0] for row in dressed_rows])
         count_date_seen_so_far = Counter()
-        for row in dressed_rows:
+        for row, slug in zip(dressed_rows, old_slugs):
             date_part = row.split(" ")[0]
             title_part = row[len(date_part) + 1 :]
             datetime_args = list(map(int, date_part.replace("-0", "-").split("-")))
@@ -120,6 +138,7 @@ class Command(BaseCommand):
                     doc_time,
                     f"{date_part}-{total_times_date_seen[date_part] - count_date_seen_so_far[date_part]}.md",
                     title_part,
+                    slug,
                 )
             )
         return items
@@ -187,3 +206,69 @@ class Command(BaseCommand):
 2000-11-20	A New IETF Work Area
 2000-08-29	Guidance on Interim IETF Working Group Meetings and Conference Calls - SUPERSEDED
 2000-08-29	IESG Guidance on the Moderation of IETF Working Group Mailing Lists"""
+
+    def get_old_slugs(self):
+        return [
+            "support-documents",
+            "interim-meetings-guidance",
+            "ethertypes",
+            "second-report-on-the-rfc-8989-experiment",
+            "interim-meetings-guidance-2023-01-27",
+            "statement-on-restricting-access",
+            "handling-ballot-positions",
+            "report-on-rfc8989-experiment",
+            "email-addresses-ietf-domain",
+            "on-inclusive-language",
+            "internet-draft-authorship",
+            "processing-errata-ietf-stream",
+            "last-call-guidance",
+            "statement-on-oppressive-exclusionary-language",
+            "interim-meetings-guidance-2020-05-01",
+            "meeting-photography-policy",
+            "interim-meetings-guidance-2018-01-11",
+            "open-source-repositories-license",
+            "support-documents-2016-11-13",
+            "interim-meetings-guidance-2016-02-05",
+            "interim-meetings-guidance-2016-01-11",
+            "maximizing-encrypted-access",
+            "internet-draft-authorship-2015-06-11",
+            "designating-rfcs-historic",
+            "iesg-discuss-criteria",
+            "writable-mib-module",
+            "anti-harassment-policy",
+            "ethertypes-2012-10-25",
+            "internet-draft-removal",
+            "designating-rfcs-historic-2011-10-20",
+            "designating-rfcs-historic-2011-06-27",
+            "rfc-metadata-errata",
+            "document-shepherds",
+            "assignable-codepoints-addresses-names",
+            "nomcom-eligibility-day-passes",
+            "copyright-2009-09-08",
+            "reserving-resources-examples",
+            "interim-meetings-guidance-2008-09-02",
+            "processing-rfc-errata",
+            "spam-control-2008-04-14",
+            "registration-requests-uris",
+            "urn-namespaces-registry",
+            "off-topic-postings",
+            "appeals-actions-decisions",
+            "experimental-congestion-control",
+            "area-director-sponsoring-documents",
+            "last-call-guidance-2007-01-15",
+            "normative-informative-references",
+            "disruptive-posting",
+            "spam-control-2006-01-09",
+            "auth48",
+            "syntax-format-definitions",
+            "idn",
+            "copyright-2002-11-27",
+            "spam-control-2002-03-13",
+            "design-teams",
+            "formal-languages-use",
+            "sub-ip-area-2001-03-21",
+            "sub-ip-area-2000-11-20",
+            "sub-ip-area-2000-12-06",
+            "interim-meetings-guidance-2000-08-29",
+            "mailing-lists-moderation",
+        ]

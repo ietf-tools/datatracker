@@ -1,5 +1,6 @@
 # Copyright The IETF Trust 2023, All Rights Reserved
 
+import csv
 import datetime
 import re
 import shutil
@@ -148,9 +149,9 @@ class Command(BaseCommand):
         part_times["klensin-2023-08-15.txt"] = "2023-08-15 15:03:55 -0400"
         part_times["response-to-klensin-2023-08-15.txt"] = "2023-08-24 18:54:13 +0300"
         part_times["hardie-frindell-2023-07-19.txt"] = "2023-07-19 07:17:16PDT"
-        part_times[
-            "response-to-hardie-frindell-2023-07-19.txt"
-        ] = "2023-08-15 11:58:26PDT"
+        part_times["response-to-hardie-frindell-2023-07-19.txt"] = (
+            "2023-08-15 11:58:26PDT"
+        )
         part_times["mcsweeney-2020-07-08.txt"] = "2020-07-08 14:45:00 -0400"
         part_times["response-to-mcsweeney-2020-07-08.pdf"] = "2020-07-28 12:54:04 -0000"
         part_times["gont-2020-04-22.txt"] = "2020-04-22 22:26:20 -0400"
@@ -200,9 +201,9 @@ class Command(BaseCommand):
         part_times["response-to-sayre-2006-08-29.txt"] = "2006-10-16 13:07:18 -0400"
         part_times["morfin-2006-08-16.pdf"] = "2006-08-16 18:28:19 -0400"
         part_times["response-to-morfin-2006-08-17.txt"] = "2006-08-22 12:05:42 -0400"
-        part_times[
-            "response-to-morfin-2006-08-17-part2.txt"
-        ] = "2006-11-07 13:00:58 -0500"
+        part_times["response-to-morfin-2006-08-17-part2.txt"] = (
+            "2006-11-07 13:00:58 -0500"
+        )
         # part_times["anderson-2006-06-13.txt"]="2006-06-13 21:51:18EDT"
         part_times["anderson-2006-06-13.txt"] = "2006-06-13 21:51:18 -0400"
         part_times["response-to-anderson-2006-06-14.txt"] = "2006-07-10 14:31:08 -0400"
@@ -279,14 +280,15 @@ class Command(BaseCommand):
                         bits=bits,
                     )
                     redirects.append(
-                        (
-                            part.replace(".md", ".html")
-                            if part.endswith(".md")
-                            else part,
-                            artifact.pk,
-                        )
+                        [
+                            f'www6.ietf.org/iesg/appeal/{part.replace(".md", ".html") if part.endswith(".md") else part}',
+                            f"https://datatracker.ietf.org/group/iesg/appeals/artifact/{artifact.pk}",
+                            302,
+                        ]
                     )
 
         shutil.rmtree(tmpdir)
-        with open("iesg_appeal_redirects.txt", "w") as f:
-            f.write(str(redirects))
+        with open("iesg_appeal_redirects.csv", "w", newline="") as f:
+            csvwriter = csv.writer(f)
+            for row in redirects:
+                csvwriter.writerow(row)
