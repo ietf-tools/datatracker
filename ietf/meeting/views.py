@@ -19,6 +19,7 @@ import shutil
 from calendar import timegm
 from collections import OrderedDict, Counter, deque, defaultdict, namedtuple
 from functools import partialmethod
+import jsonschema
 from urllib.parse import parse_qs, unquote, urlencode, urlsplit, urlunsplit
 from tempfile import mkstemp
 from wsgiref.handlers import format_date_time
@@ -4211,6 +4212,17 @@ def api_add_session_attendees(request):
       attended: json blob with
           [{'session_id': session pk, 'attendees': [list of user pks]}, ...]
     """
+    json_validator = jsonschema.Draft202012Validator(
+        schema={
+            "type": "object",
+            "properties": {
+                "session_id": {"type": "integer"},
+                "attendees": {"type": "array", "items": {"type": "integer"}},  # array of user PKs
+            },
+            "required": ["session_id", "attendees"],
+        },
+        format_checker=jsonschema.Draft202012Validator.FORMAT_CHECKER,  # format-checks disabled by default
+    )
 
     def err(code, text):
         return HttpResponse(text, status=code, content_type="text/plain")
@@ -4220,22 +4232,19 @@ def api_add_session_attendees(request):
     attended_post = request.POST.get("attended")
     if not attended_post:
         return err(400, "Missing attended parameter")
+
+    # Validate the request payload
     try:
         attended = json.loads(attended_post)
-    except json.decoder.JSONDecodeError:
+        json_validator.validate(attended)
+    except (json.decoder.JSONDecodeError, jsonschema.exceptions.ValidationError):
         return err(400, "Malformed post")
-    if not ("session_id" in attended and type(attended["session_id"]) is int):
-        return err(400, "Malformed post")
+
     session_id = attended["session_id"]
-    if not (
-        "attendees" in attended
-        and type(attended["attendees"]) is list
-        and all([type(el) is int for el in attended["attendees"]])
-    ):
-        return err(400, "Malformed post")
     session = Session.objects.filter(pk=session_id).first()
     if not session:
         return err(400, "Invalid session")
+
     users = User.objects.filter(pk__in=attended["attendees"])
     if users.count() != len(attended["attendees"]):
         return err(400, "Invalid attendee")
