@@ -100,7 +100,7 @@ class Command(BaseCommand):
             redirects.append(
                 [
                     f"www.ietf.org/about/groups/iesg/statements/{item.slug}",
-                    f"https://datatracker.ietf.org/group/iesg/statements/{name}",
+                    f"https://datatracker.ietf.org/doc/{name}",
                     302,
                 ]
             )
