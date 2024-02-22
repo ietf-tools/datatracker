@@ -4292,7 +4292,7 @@ def api_add_session_attendees(request):
             if len(persons) != len(join_time_by_pk):
                 return err(400, "Invalid attendee")
             to_create = [
-                Attended(person=person, time=join_time_by_pk[person.user_id])
+                Attended(session=session, person=person, time=join_time_by_pk[person.user_id])
                 for person in persons
             ]
             # Create in bulk, ignoring any that already exist
