@@ -2534,8 +2534,8 @@ def bluesheet_data(session):
         # from OidcExtraScopeClaims.scope_registration()
         email_list = person.email_set.values_list("address")
         q = Q(person=person, meeting=meeting) | Q(email__in=email_list, meeting=meeting)
-        regs = MeetingRegistration.objects.filter(q).distinct()
-        return ([reg.affiliation for reg in regs if reg.affiliation] or [""])[0]
+        reg = MeetingRegistration.objects.filter(q).exclude(affiliation="").first()
+        return reg.affiliation if reg else ""
 
     attendance = Attended.objects.filter(session=session)
     meeting = session.meeting
