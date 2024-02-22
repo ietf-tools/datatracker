@@ -331,6 +331,14 @@ class CustomApiTests(TestCase):
             f'{{"session_id":{session.pk},"attendees":"not a list;drop table"}}',
             f'{{"session_id":{session.pk},"attendees":"not a list;drop table"}}',
             f'{{"session_id":{session.pk},"attendees":[1,2,"not an int;drop table",4]}}',
+            f'{{"session_id":{session.pk},"attendees":["user_id":{recman.user.pk}]}}',  # no join_time
+            f'{{"session_id":{session.pk},"attendees":["user_id":{recman.user.pk},"join_time;drop table":"2024-01-01T00:00:00Z]}}',
+            f'{{"session_id":{session.pk},"attendees":["user_id":{recman.user.pk},"join_time":"not a time;drop table"]}}',
+            # next has no time zone indicator
+            f'{{"session_id":{session.pk},"attendees":["user_id":{recman.user.pk},"join_time":"2024-01-01T00:00:00"]}}',
+            f'{{"session_id":{session.pk},"attendees":["user_id":"not an int; drop table","join_time":"2024-01-01T00:00:00Z"]}}',
+            # Uncomment the next one when the _deprecated version of this test is retired
+            # f'{{"session_id":{session.pk},"attendees":[{recman.user.pk}, {otherperson.user.pk}]}}',
         ):
             r = self.client.post(url, {"apikey": apikey.hash(), "attended": baddict})
             self.assertContains(r, "Malformed post", status_code=400)
@@ -349,7 +357,7 @@ class CustomApiTests(TestCase):
             url,
             {
                 "apikey": apikey.hash(),
-                "attended": f'{{"session_id":{session.pk},"attendees":[{bad_user_id}]}}',
+                "attended": f'{{"session_id":{session.pk},"attendees":[{{"user_id":{bad_user_id}, "join_time":"2024-01-01T00:00:00Z"}}]}}',
             },
         )
         self.assertContains(r, "Invalid attendee", status_code=400)
@@ -359,13 +367,35 @@ class CustomApiTests(TestCase):
             url,
             {
                 "apikey": apikey.hash(),
-                "attended": f'{{"session_id":{session.pk},"attendees":[{recman.user.pk}, {otherperson.user.pk}]}}',
+                "attended": json.dumps(
+                    {
+                        "session_id": session.pk,
+                        "attendees": [
+                            {
+                                "user_id": recman.user.pk,
+                                "join_time": "2023-09-03T12:34:56Z",
+                            },
+                            {
+                                "user_id": otherperson.user.pk,
+                                "join_time": "2023-09-03T03:00:19Z",
+                            },
+                        ],
+                    }
+                ),
             },
         )
 
         self.assertEqual(session.attended_set.count(), 2)
         self.assertTrue(session.attended_set.filter(person=recman).exists())
+        self.assertEqual(
+            session.attended_set.get(person=recman).time,
+            datetime.datetime(2023, 9, 3, 12, 34, 56, tzinfo=datetime.timezone.utc),
+        )
         self.assertTrue(session.attended_set.filter(person=otherperson).exists())
+        self.assertEqual(
+            session.attended_set.get(person=otherperson).time,
+            datetime.datetime(2023, 9, 3, 3, 0, 19, tzinfo=datetime.timezone.utc),
+        )
 
     def test_api_upload_polls_and_chatlog(self):
         recmanrole = RoleFactory(group__type_id='ietf', name_id='recman')
