@@ -7,7 +7,7 @@ import django.utils.timezone
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("meeting", "0004_session_chat_room"),
+        ("meeting", "0006_alter_sessionpresentation_document_and_session"),
     ]
 
     operations = [
