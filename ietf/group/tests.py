@@ -7,7 +7,6 @@ import json
 
 from tempfile import NamedTemporaryFile
 
-from django.core.management import call_command
 from django.conf import settings
 from django.urls import reverse as urlreverse
 from django.db.models import Q
