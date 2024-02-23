@@ -66,6 +66,18 @@
                     <br>
                 {% endfor %}
             {% endif %}
+            {% for chatlog in entry.chatlogs %}
+                <a href="{{ chatlog.material|meeting_href:meeting }}">
+                    Chatlog
+                    {% if chatlog.time %}{{chatlog.time|date:"D G:i"}}{% endif %}
+                </a>
+                <br>
+            {% empty %}
+                <a href="{{ entry.session.chat_archive_url }}">
+                    Chatlog
+                </a>
+                <br>
+            {% endfor %}
         </td>
         {# recordings #}
         <td>
@@ -76,6 +88,12 @@
               </a>
               <br>
           {% endfor %}
+            {% if entry.session.video_stream_url %}
+                <a href="{{ entry.session.session_recording_url }}">
+                    Session recording
+                </a>
+                <br>
+            {% endif %}
         </td>
         {# slides #}
         <td>

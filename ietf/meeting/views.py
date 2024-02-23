@@ -2158,7 +2158,7 @@ def agenda_json(request, num=None):
     # time of the meeting
     assignments = preprocess_assignments_for_agenda(assignments, meeting, extra_prefetches=[
         "session__materials__docevent_set",
-        "session__sessionpresentation_set",
+        "session__presentations",
         "timeslot__meeting"
     ])
     for asgn in assignments:
@@ -2429,7 +2429,7 @@ def session_details(request, num, acronym):
             session.status = status_names.get(session.current_status, session.current_status)
 
         if session.meeting.type_id == 'ietf' and not session.meeting.proceedings_final:
-            artifact_types = ['agenda','minutes']
+            artifact_types = ['agenda','minutes','narrativeminutes']
             if Attended.objects.filter(session=session).exists():
                 session.type_counter.update(['bluesheets'])
                 ota = session.official_timeslotassignment()
@@ -2438,13 +2438,13 @@ def session_details(request, num, acronym):
                                                                           session.group.acronym, 
                                                                           sess_time.strftime("%a %H:%M"))
         else:
-            artifact_types = ['agenda','minutes','bluesheets']
-        session.filtered_artifacts = list(session.sessionpresentation_set.filter(document__type__slug__in=artifact_types))
+            artifact_types = ['agenda','minutes','narrativeminutes','bluesheets']
+        session.filtered_artifacts = list(session.presentations.filter(document__type__slug__in=artifact_types))
         session.filtered_artifacts.sort(key=lambda d:artifact_types.index(d.document.type.slug))
-        session.filtered_slides    = session.sessionpresentation_set.filter(document__type__slug='slides').order_by('order')
-        session.filtered_drafts    = session.sessionpresentation_set.filter(document__type__slug='draft')
-        session.filtered_chatlog_and_polls = session.sessionpresentation_set.filter(document__type__slug__in=('chatlog', 'polls')).order_by('document__type__slug')
-        # TODO FIXME Deleted materials shouldn't be in the sessionpresentation_set
+        session.filtered_slides    = session.presentations.filter(document__type__slug='slides').order_by('order')
+        session.filtered_drafts    = session.presentations.filter(document__type__slug='draft')
+        session.filtered_chatlog_and_polls = session.presentations.filter(document__type__slug__in=('chatlog', 'polls')).order_by('document__type__slug')
+        # TODO FIXME Deleted materials shouldn't be in the presentations
         for qs in [session.filtered_artifacts,session.filtered_slides,session.filtered_drafts]:
             qs = [p for p in qs if p.document.get_state_slug(p.document.type_id)!='deleted']
             session.type_counter.update([p.document.type.slug for p in qs])
@@ -2502,7 +2502,7 @@ def add_session_drafts(request, session_id, num):
     if session.is_material_submission_cutoff() and not has_role(request.user, "Secretariat"):
         raise Http404
 
-    already_linked = [sp.document for sp in session.sessionpresentation_set.filter(document__type_id='draft')]
+    already_linked = [sp.document for sp in session.presentations.filter(document__type_id='draft')]
 
     session_number = None
     sessions = get_sessions(session.meeting.number,session.group.acronym)
@@ -2513,7 +2513,7 @@ def add_session_drafts(request, session_id, num):
         form = SessionDraftsForm(request.POST,already_linked=already_linked)
         if form.is_valid():
             for draft in form.cleaned_data['drafts']:
-                session.sessionpresentation_set.create(document=draft,rev=None)
+                session.presentations.create(document=draft,rev=None)
                 c = DocEvent(type="added_comment", doc=draft, rev=draft.rev, by=request.user.person)
                 c.desc = "Added to session: %s" % session
                 c.save()
@@ -2524,7 +2524,7 @@ def add_session_drafts(request, session_id, num):
     return render(request, "meeting/add_session_drafts.html",
                   { 'session': session,
                     'session_number': session_number,
-                    'already_linked': session.sessionpresentation_set.filter(document__type_id='draft'),
+                    'already_linked': session.presentations.filter(document__type_id='draft'),
                     'form': form,
                   })
 
@@ -2626,7 +2626,7 @@ def upload_session_bluesheets(request, session_id, num):
     else: 
         form = UploadBlueSheetForm()
 
-    bluesheet_sp = session.sessionpresentation_set.filter(document__type='bluesheets').first()
+    bluesheet_sp = session.presentations.filter(document__type='bluesheets').first()
 
     return render(request, "meeting/upload_session_bluesheets.html", 
                   {'session': session,
@@ -2651,7 +2651,7 @@ def upload_session_minutes(request, session_id, num):
     if len(sessions) > 1:
        session_number = 1 + sessions.index(session)
 
-    minutes_sp = session.sessionpresentation_set.filter(document__type='minutes').first()
+    minutes_sp = session.presentations.filter(document__type='minutes').first()
     
     if request.method == 'POST':
         form = UploadMinutesForm(show_apply_to_all_checkbox,request.POST,request.FILES)
@@ -2743,7 +2743,7 @@ def upload_session_agenda(request, session_id, num):
     if len(sessions) > 1:
        session_number = 1 + sessions.index(session)
 
-    agenda_sp = session.sessionpresentation_set.filter(document__type='agenda').first()
+    agenda_sp = session.presentations.filter(document__type='agenda').first()
     
     if request.method == 'POST':
         form = UploadOrEnterAgendaForm(show_apply_to_all_checkbox,request.POST,request.FILES)
@@ -2802,17 +2802,17 @@ def upload_session_agenda(request, session_id, num):
                               rev = '00',
                           )
                 doc.states.add(State.objects.get(type_id='agenda',slug='active'))
-            if session.sessionpresentation_set.filter(document=doc).exists():
-                sp = session.sessionpresentation_set.get(document=doc)
+            if session.presentations.filter(document=doc).exists():
+                sp = session.presentations.get(document=doc)
                 sp.rev = doc.rev
                 sp.save()
             else:
-                session.sessionpresentation_set.create(document=doc,rev=doc.rev)
+                session.presentations.create(document=doc,rev=doc.rev)
             if apply_to_all:
                 for other_session in sessions:
                     if other_session != session:
-                        other_session.sessionpresentation_set.filter(document__type='agenda').delete()
-                        other_session.sessionpresentation_set.create(document=doc,rev=doc.rev)
+                        other_session.presentations.filter(document__type='agenda').delete()
+                        other_session.presentations.create(document=doc,rev=doc.rev)
             filename = '%s-%s%s'% ( doc.name, doc.rev, ext)
             doc.uploaded_filename = filename
             e = NewRevisionDocEvent.objects.create(doc=doc,by=request.user.person,type='new_revision',desc='New revision available: %s'%doc.rev,rev=doc.rev)
@@ -2863,7 +2863,7 @@ def upload_session_slides(request, session_id, num, name=None):
         slides = Document.objects.filter(name=name).first()
         if not (slides and slides.type_id=='slides'):
             raise Http404
-        slides_sp = session.sessionpresentation_set.filter(document=slides).first()
+        slides_sp = session.presentations.filter(document=slides).first()
     
     if request.method == 'POST':
         form = UploadSlidesForm(session, show_apply_to_all_checkbox,request.POST,request.FILES)
@@ -2903,18 +2903,18 @@ def upload_session_slides(request, session_id, num, name=None):
                           )
                 doc.states.add(State.objects.get(type_id='slides',slug='active'))
                 doc.states.add(State.objects.get(type_id='reuse_policy',slug='single'))
-            if session.sessionpresentation_set.filter(document=doc).exists():
-                sp = session.sessionpresentation_set.get(document=doc)
+            if session.presentations.filter(document=doc).exists():
+                sp = session.presentations.get(document=doc)
                 sp.rev = doc.rev
                 sp.save()
             else:
-                max_order = session.sessionpresentation_set.filter(document__type='slides').aggregate(Max('order'))['order__max'] or 0
-                session.sessionpresentation_set.create(document=doc,rev=doc.rev,order=max_order+1)
+                max_order = session.presentations.filter(document__type='slides').aggregate(Max('order'))['order__max'] or 0
+                session.presentations.create(document=doc,rev=doc.rev,order=max_order+1)
             if apply_to_all:
                 for other_session in sessions:
-                    if other_session != session and not other_session.sessionpresentation_set.filter(document=doc).exists():
-                        max_order = other_session.sessionpresentation_set.filter(document__type='slides').aggregate(Max('order'))['order__max'] or 0
-                        other_session.sessionpresentation_set.create(document=doc,rev=doc.rev,order=max_order+1)
+                    if other_session != session and not other_session.presentations.filter(document=doc).exists():
+                        max_order = other_session.presentations.filter(document__type='slides').aggregate(Max('order'))['order__max'] or 0
+                        other_session.presentations.create(document=doc,rev=doc.rev,order=max_order+1)
             filename = '%s-%s%s'% ( doc.name, doc.rev, ext)
             doc.uploaded_filename = filename
             e = NewRevisionDocEvent.objects.create(doc=doc,by=request.user.person,type='new_revision',desc='New revision available: %s'%doc.rev,rev=doc.rev)
@@ -3014,7 +3014,7 @@ def remove_sessionpresentation(request, session_id, num, name):
     if session.is_material_submission_cutoff() and not has_role(request.user, "Secretariat"):
         permission_denied(request, "The materials cutoff for this session has passed. Contact the secretariat for further action.")
     if request.method == 'POST':
-        session.sessionpresentation_set.filter(pk=sp.pk).delete()
+        session.presentations.filter(pk=sp.pk).delete()
         c = DocEvent(type="added_comment", doc=sp.document, rev=sp.document.rev, by=request.user.person)
         c.desc = "Removed from session: %s" % (session)
         c.save()
@@ -3039,7 +3039,7 @@ def ajax_add_slides_to_session(request, session_id, num):
         order = int(order_str)
     except (ValueError, TypeError):
         return HttpResponse(json.dumps({ 'success' : False, 'error' : 'Supplied order is not valid' }),content_type='application/json')
-    if order < 1 or order > session.sessionpresentation_set.filter(document__type_id='slides').count() + 1 :
+    if order < 1 or order > session.presentations.filter(document__type_id='slides').count() + 1 :
         return HttpResponse(json.dumps({ 'success' : False, 'error' : 'Supplied order is not valid' }),content_type='application/json')
 
     name = request.POST.get('name', None)
@@ -3047,10 +3047,10 @@ def ajax_add_slides_to_session(request, session_id, num):
     if not doc:
         return HttpResponse(json.dumps({ 'success' : False, 'error' : 'Supplied name is not valid' }),content_type='application/json')
 
-    if not session.sessionpresentation_set.filter(document=doc).exists():
+    if not session.presentations.filter(document=doc).exists():
         condition_slide_order(session)
-        session.sessionpresentation_set.filter(document__type_id='slides', order__gte=order).update(order=F('order')+1)
-        session.sessionpresentation_set.create(document=doc,rev=doc.rev,order=order)
+        session.presentations.filter(document__type_id='slides', order__gte=order).update(order=F('order')+1)
+        session.presentations.create(document=doc,rev=doc.rev,order=order)
         DocEvent.objects.create(type="added_comment", doc=doc, rev=doc.rev, by=request.user.person, desc="Added to session: %s" % session)
 
     return HttpResponse(json.dumps({'success':True}), content_type='application/json')
@@ -3072,7 +3072,7 @@ def ajax_remove_slides_from_session(request, session_id, num):
         oldIndex = int(oldIndex_str)
     except (ValueError, TypeError):
         return HttpResponse(json.dumps({ 'success' : False, 'error' : 'Supplied index is not valid' }),content_type='application/json')
-    if oldIndex < 1 or oldIndex > session.sessionpresentation_set.filter(document__type_id='slides').count() :
+    if oldIndex < 1 or oldIndex > session.presentations.filter(document__type_id='slides').count() :
         return HttpResponse(json.dumps({ 'success' : False, 'error' : 'Supplied index is not valid' }),content_type='application/json')
 
     name = request.POST.get('name', None)
@@ -3081,11 +3081,11 @@ def ajax_remove_slides_from_session(request, session_id, num):
         return HttpResponse(json.dumps({ 'success' : False, 'error' : 'Supplied name is not valid' }),content_type='application/json')
 
     condition_slide_order(session)
-    affected_presentations = session.sessionpresentation_set.filter(document=doc).first()
+    affected_presentations = session.presentations.filter(document=doc).first()
     if affected_presentations:
         if affected_presentations.order == oldIndex:
             affected_presentations.delete()
-            session.sessionpresentation_set.filter(document__type_id='slides', order__gt=oldIndex).update(order=F('order')-1)    
+            session.presentations.filter(document__type_id='slides', order__gt=oldIndex).update(order=F('order')-1)    
             DocEvent.objects.create(type="added_comment", doc=doc, rev=doc.rev, by=request.user.person, desc="Removed from session: %s" % session)
             return HttpResponse(json.dumps({'success':True}), content_type='application/json')
         else:
@@ -3105,7 +3105,7 @@ def ajax_reorder_slides_in_session(request, session_id, num):
     if request.method != 'POST' or not request.POST:
         return HttpResponse(json.dumps({ 'success' : False, 'error' : 'No data submitted or not POST' }),content_type='application/json')  
 
-    num_slides_in_session = session.sessionpresentation_set.filter(document__type_id='slides').count()
+    num_slides_in_session = session.presentations.filter(document__type_id='slides').count()
     oldIndex_str = request.POST.get('oldIndex', None)
     try:
         oldIndex = int(oldIndex_str)
@@ -3126,11 +3126,11 @@ def ajax_reorder_slides_in_session(request, session_id, num):
         return HttpResponse(json.dumps({ 'success' : False, 'error' : 'Supplied index is not valid' }),content_type='application/json')
 
     condition_slide_order(session)
-    sp = session.sessionpresentation_set.get(order=oldIndex)
+    sp = session.presentations.get(order=oldIndex)
     if oldIndex < newIndex:
-        session.sessionpresentation_set.filter(order__gt=oldIndex, order__lte=newIndex).update(order=F('order')-1)
+        session.presentations.filter(order__gt=oldIndex, order__lte=newIndex).update(order=F('order')-1)
     else:
-        session.sessionpresentation_set.filter(order__gte=newIndex, order__lt=oldIndex).update(order=F('order')+1)
+        session.presentations.filter(order__gte=newIndex, order__lt=oldIndex).update(order=F('order')+1)
     sp.order = newIndex
     sp.save()
 
@@ -3780,7 +3780,7 @@ def organize_proceedings_sessions(sessions):
             if s.current_status != 'canceled':
                 all_canceled = False
             by_name.setdefault(s.name, [])
-            if s.current_status != 'notmeet' or s.sessionpresentation_set.exists():
+            if s.current_status != 'notmeet' or s.presentations.exists():
                 by_name[s.name].append(s)  # for notmeet, only include sessions with materials
         for sess_name, ss in by_name.items():
             session = ss[0] if ss else None
@@ -3812,11 +3812,12 @@ def organize_proceedings_sessions(sessions):
                 'name': sess_name,
                 'session': session,
                 'canceled': all_canceled,
-                'has_materials': s.sessionpresentation_set.exists(),
+                'has_materials': s.presentations.exists(),
                 'agendas': _format_materials((s, s.agenda()) for s in ss),
                 'minutes': _format_materials((s, s.minutes()) for s in ss),
                 'bluesheets': _format_materials((s, s.bluesheets()) for s in ss),
                 'recordings': _format_materials((s, s.recordings()) for s in ss),
+                'chatlogs': _format_materials((s, s.chatlogs()) for s in ss),
                 'slides': _format_materials((s, s.slides()) for s in ss),
                 'drafts': _format_materials((s, s.drafts()) for s in ss),
                 'last_update': session.last_update if hasattr(session, 'last_update') else None
@@ -4254,7 +4255,7 @@ def api_upload_chatlog(request):
     session = Session.objects.filter(pk=session_id).first()
     if not session:
         return err(400, "Invalid session")
-    chatlog_sp = session.sessionpresentation_set.filter(document__type='chatlog').first()
+    chatlog_sp = session.presentations.filter(document__type='chatlog').first()
     if chatlog_sp:
         doc = chatlog_sp.document
         doc.rev = f"{(int(doc.rev)+1):02d}"
@@ -4294,7 +4295,7 @@ def api_upload_polls(request):
     session = Session.objects.filter(pk=session_id).first()
     if not session:
         return err(400, "Invalid session")
-    polls_sp = session.sessionpresentation_set.filter(document__type='polls').first()
+    polls_sp = session.presentations.filter(document__type='polls').first()
     if polls_sp:
         doc = polls_sp.document
         doc.rev = f"{(int(doc.rev)+1):02d}"
@@ -4711,18 +4712,18 @@ def approve_proposed_slides(request, slidesubmission_id, num):
                           )
                 doc.states.add(State.objects.get(type_id='slides',slug='active'))
                 doc.states.add(State.objects.get(type_id='reuse_policy',slug='single'))
-                if submission.session.sessionpresentation_set.filter(document=doc).exists():
-                    sp = submission.session.sessionpresentation_set.get(document=doc)
+                if submission.session.presentations.filter(document=doc).exists():
+                    sp = submission.session.presentations.get(document=doc)
                     sp.rev = doc.rev
                     sp.save()
                 else:
-                    max_order = submission.session.sessionpresentation_set.filter(document__type='slides').aggregate(Max('order'))['order__max'] or 0
-                    submission.session.sessionpresentation_set.create(document=doc,rev=doc.rev,order=max_order+1)
+                    max_order = submission.session.presentations.filter(document__type='slides').aggregate(Max('order'))['order__max'] or 0
+                    submission.session.presentations.create(document=doc,rev=doc.rev,order=max_order+1)
                 if apply_to_all:
                     for other_session in sessions:
-                        if other_session != submission.session and not other_session.sessionpresentation_set.filter(document=doc).exists():
-                            max_order = other_session.sessionpresentation_set.filter(document__type='slides').aggregate(Max('order'))['order__max'] or 0
-                            other_session.sessionpresentation_set.create(document=doc,rev=doc.rev,order=max_order+1)
+                        if other_session != submission.session and not other_session.presentations.filter(document=doc).exists():
+                            max_order = other_session.presentations.filter(document__type='slides').aggregate(Max('order'))['order__max'] or 0
+                            other_session.presentations.create(document=doc,rev=doc.rev,order=max_order+1)
                 sub_name, sub_ext = os.path.splitext(submission.filename)
                 target_filename = '%s-%s%s' % (sub_name[:sub_name.rfind('-ss')],doc.rev,sub_ext)
                 doc.uploaded_filename = target_filename

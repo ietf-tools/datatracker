@@ -45,7 +45,7 @@ from ietf.doc.factories import ( DocumentFactory, DocEventFactory, CharterFactor
     StatusChangeFactory, DocExtResourceFactory, RgDraftFactory, BcpFactory)
 from ietf.doc.forms import NotifyForm
 from ietf.doc.fields import SearchableDocumentsField
-from ietf.doc.utils import create_ballot_if_not_open, uppercase_std_abbreviated_name
+from ietf.doc.utils import create_ballot_if_not_open, uppercase_std_abbreviated_name, DraftAliasGenerator
 from ietf.group.models import Group, Role
 from ietf.group.factories import GroupFactory, RoleFactory
 from ietf.ipr.factories import HolderIprDisclosureFactory
@@ -2291,6 +2291,7 @@ class GenerateDraftAliasesTests(TestCase):
                 "xfilter-" + doc3.name + ".ad",
                 "xfilter-" + doc3.name + ".authors",
                 "xfilter-" + doc3.name + ".chairs",
+                "xfilter-" + doc3.name + ".all",
                 "xfilter-" + doc5.name,
                 "xfilter-" + doc5.name + ".authors",
                 "xfilter-" + doc5.name + ".all",
@@ -2306,6 +2307,148 @@ class GenerateDraftAliasesTests(TestCase):
                 "xfilter-" + doc5.name + ".ad",
             ]:
                 self.assertNotIn(x, vcontent)
+
+    @override_settings(TOOLS_SERVER="tools.example.org", DRAFT_ALIAS_DOMAIN="draft.example.org")
+    def test_generator_class(self):
+        """The DraftAliasGenerator should generate the same lists as the old mgmt cmd"""
+        a_month_ago = (timezone.now() - datetime.timedelta(30)).astimezone(RPC_TZINFO)
+        a_month_ago = a_month_ago.replace(hour=0, minute=0, second=0, microsecond=0)
+        ad = RoleFactory(
+            name_id="ad", group__type_id="area", group__state_id="active"
+        ).person
+        shepherd = PersonFactory()
+        author1 = PersonFactory()
+        author2 = PersonFactory()
+        author3 = PersonFactory()
+        author4 = PersonFactory()
+        author5 = PersonFactory()
+        author6 = PersonFactory()
+        mars = GroupFactory(type_id="wg", acronym="mars")
+        marschairman = PersonFactory(user__username="marschairman")
+        mars.role_set.create(
+            name_id="chair", person=marschairman, email=marschairman.email()
+        )
+        doc1 = IndividualDraftFactory(authors=[author1], shepherd=shepherd.email(), ad=ad)
+        doc2 = WgDraftFactory(
+            name="draft-ietf-mars-test", group__acronym="mars", authors=[author2], ad=ad
+        )
+        doc2.notify = f"{doc2.name}.ad@draft.example.org"
+        doc2.save()
+        doc3 = WgDraftFactory.create(
+            name="draft-ietf-mars-finished",
+            group__acronym="mars",
+            authors=[author3],
+            ad=ad,
+            std_level_id="ps",
+            states=[("draft", "rfc"), ("draft-iesg", "pub")],
+            time=a_month_ago,
+        )
+        rfc3 = WgRfcFactory()
+        DocEventFactory.create(doc=rfc3, type="published_rfc", time=a_month_ago)
+        doc3.relateddocument_set.create(relationship_id="became_rfc", target=rfc3)
+        doc4 = WgDraftFactory.create(
+            authors=[author4, author5],
+            ad=ad,
+            std_level_id="ps",
+            states=[("draft", "rfc"), ("draft-iesg", "pub")],
+            time=datetime.datetime(2010, 10, 10, tzinfo=ZoneInfo(settings.TIME_ZONE)),
+        )
+        rfc4 = WgRfcFactory()
+        DocEventFactory.create(
+            doc=rfc4,
+            type="published_rfc",
+            time=datetime.datetime(2010, 10, 10, tzinfo=RPC_TZINFO),
+        )
+        doc4.relateddocument_set.create(relationship_id="became_rfc", target=rfc4)
+        doc5 = IndividualDraftFactory(authors=[author6])
+
+        output = [(alias, alist) for alias, alist in DraftAliasGenerator()]
+        alias_dict = dict(output)
+        self.assertEqual(len(alias_dict), len(output))  # no duplicate aliases
+        expected_dict = {
+            doc1.name: [author1.email_address()],
+            doc1.name + ".ad": [ad.email_address()],
+            doc1.name + ".authors": [author1.email_address()],
+            doc1.name + ".shepherd": [shepherd.email_address()],
+            doc1.name
+            + ".all": [
+                author1.email_address(),
+                ad.email_address(),
+                shepherd.email_address(),
+            ],
+            doc2.name: [author2.email_address()],
+            doc2.name + ".ad": [ad.email_address()],
+            doc2.name + ".authors": [author2.email_address()],
+            doc2.name + ".chairs": [marschairman.email_address()],
+            doc2.name + ".notify": [ad.email_address()],
+            doc2.name
+            + ".all": [
+                author2.email_address(),
+                ad.email_address(),
+                marschairman.email_address(),
+            ],
+            doc3.name: [author3.email_address()],
+            doc3.name + ".ad": [ad.email_address()],
+            doc3.name + ".authors": [author3.email_address()],
+            doc3.name + ".chairs": [marschairman.email_address()],
+            doc3.name
+            + ".all": [
+                author3.email_address(),
+                ad.email_address(),
+                marschairman.email_address(),
+            ],
+            doc5.name: [author6.email_address()],
+            doc5.name + ".authors": [author6.email_address()],
+            doc5.name + ".all": [author6.email_address()],
+        }
+        # Sort lists for comparison
+        self.assertEqual(
+            {k: sorted(v) for k, v in alias_dict.items()},
+            {k: sorted(v) for k, v in expected_dict.items()},
+        )
+
+    @override_settings(TOOLS_SERVER="tools.example.org", DRAFT_ALIAS_DOMAIN="draft.example.org")
+    def test_get_draft_notify_emails(self):
+        ad = PersonFactory()
+        shepherd = PersonFactory()
+        author = PersonFactory()
+        doc = DocumentFactory(authors=[author], shepherd=shepherd.email(), ad=ad)
+        generator = DraftAliasGenerator()
+
+        doc.notify = f"{doc.name}@draft.example.org"
+        doc.save()
+        self.assertCountEqual(generator.get_draft_notify_emails(doc), [author.email_address()])
+
+        doc.notify = f"{doc.name}.ad@draft.example.org"
+        doc.save()
+        self.assertCountEqual(generator.get_draft_notify_emails(doc), [ad.email_address()])
+
+        doc.notify = f"{doc.name}.shepherd@draft.example.org"
+        doc.save()
+        self.assertCountEqual(generator.get_draft_notify_emails(doc), [shepherd.email_address()])
+
+        doc.notify = f"{doc.name}.all@draft.example.org"
+        doc.save()
+        self.assertCountEqual(
+            generator.get_draft_notify_emails(doc),
+            [ad.email_address(), author.email_address(), shepherd.email_address()]
+        )
+
+        doc.notify = f"{doc.name}.notify@draft.example.org"
+        doc.save()
+        self.assertCountEqual(generator.get_draft_notify_emails(doc), [])
+
+        doc.notify = f"{doc.name}.ad@somewhere.example.com"
+        doc.save()
+        self.assertCountEqual(generator.get_draft_notify_emails(doc), [f"{doc.name}.ad@somewhere.example.com"])
+        
+        doc.notify = f"somebody@example.com, nobody@example.com, {doc.name}.ad@tools.example.org"
+        doc.save()
+        self.assertCountEqual(
+            generator.get_draft_notify_emails(doc),
+            ["somebody@example.com", "nobody@example.com", ad.email_address()]
+        )
+
 
 class EmailAliasesTests(TestCase):
 
@@ -2386,8 +2529,8 @@ class DocumentMeetingTests(TestCase):
 
     def test_view_document_meetings(self):
         doc = IndividualDraftFactory.create()
-        doc.sessionpresentation_set.create(session=self.inprog,rev=None)
-        doc.sessionpresentation_set.create(session=self.interim,rev=None)
+        doc.presentations.create(session=self.inprog,rev=None)
+        doc.presentations.create(session=self.interim,rev=None)
 
         url = urlreverse('ietf.doc.views_doc.all_presentations', kwargs=dict(name=doc.name))
         response = self.client.get(url)
@@ -2398,8 +2541,8 @@ class DocumentMeetingTests(TestCase):
         self.assertFalse(q('#addsessionsbutton'))
         self.assertFalse(q("a.btn:contains('Remove document')"))
 
-        doc.sessionpresentation_set.create(session=self.past_cutoff,rev=None)
-        doc.sessionpresentation_set.create(session=self.past,rev=None)
+        doc.presentations.create(session=self.past_cutoff,rev=None)
+        doc.presentations.create(session=self.past,rev=None)
 
         self.client.login(username="secretary", password="secretary+password")
         response = self.client.get(url)
@@ -2434,7 +2577,7 @@ class DocumentMeetingTests(TestCase):
 
     def test_edit_document_session(self):
         doc = IndividualDraftFactory.create()
-        sp = doc.sessionpresentation_set.create(session=self.future,rev=None)
+        sp = doc.presentations.create(session=self.future,rev=None)
 
         url = urlreverse('ietf.doc.views_doc.edit_sessionpresentation',kwargs=dict(name='no-such-doc',session_id=sp.session_id))
         response = self.client.get(url)
@@ -2461,12 +2604,12 @@ class DocumentMeetingTests(TestCase):
         self.assertEqual(1,doc.docevent_set.count())
         response = self.client.post(url,{'version':'00','save':''})
         self.assertEqual(response.status_code, 302)
-        self.assertEqual(doc.sessionpresentation_set.get(pk=sp.pk).rev,'00')
+        self.assertEqual(doc.presentations.get(pk=sp.pk).rev,'00')
         self.assertEqual(2,doc.docevent_set.count())
 
     def test_edit_document_session_after_proceedings_closed(self):
         doc = IndividualDraftFactory.create()
-        sp = doc.sessionpresentation_set.create(session=self.past_cutoff,rev=None)
+        sp = doc.presentations.create(session=self.past_cutoff,rev=None)
 
         url = urlreverse('ietf.doc.views_doc.edit_sessionpresentation',kwargs=dict(name=doc.name,session_id=sp.session_id))
         self.client.login(username=self.group_chair.user.username,password='%s+password'%self.group_chair.user.username)
@@ -2481,7 +2624,7 @@ class DocumentMeetingTests(TestCase):
 
     def test_remove_document_session(self):
         doc = IndividualDraftFactory.create()
-        sp = doc.sessionpresentation_set.create(session=self.future,rev=None)
+        sp = doc.presentations.create(session=self.future,rev=None)
 
         url = urlreverse('ietf.doc.views_doc.remove_sessionpresentation',kwargs=dict(name='no-such-doc',session_id=sp.session_id))
         response = self.client.get(url)
@@ -2506,12 +2649,12 @@ class DocumentMeetingTests(TestCase):
         self.assertEqual(1,doc.docevent_set.count())
         response = self.client.post(url,{'remove_session':''})
         self.assertEqual(response.status_code, 302)
-        self.assertFalse(doc.sessionpresentation_set.filter(pk=sp.pk).exists())
+        self.assertFalse(doc.presentations.filter(pk=sp.pk).exists())
         self.assertEqual(2,doc.docevent_set.count())
 
     def test_remove_document_session_after_proceedings_closed(self):
         doc = IndividualDraftFactory.create()
-        sp = doc.sessionpresentation_set.create(session=self.past_cutoff,rev=None)
+        sp = doc.presentations.create(session=self.past_cutoff,rev=None)
 
         url = urlreverse('ietf.doc.views_doc.remove_sessionpresentation',kwargs=dict(name=doc.name,session_id=sp.session_id))
         self.client.login(username=self.group_chair.user.username,password='%s+password'%self.group_chair.user.username)

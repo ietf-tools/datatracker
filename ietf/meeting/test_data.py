@@ -51,7 +51,7 @@ def make_interim_meeting(group,date,status='sched',tz='UTC'):
     doc = DocumentFactory.create(name=name, type_id='agenda', title="Agenda",
         uploaded_filename=file, group=group, rev=rev, states=[('draft','active')])
     pres = SessionPresentation.objects.create(session=session, document=doc, rev=doc.rev)
-    session.sessionpresentation_set.add(pres)
+    session.presentations.add(pres)
     # minutes
     name = "minutes-%s-%s" % (meeting.number, time.strftime("%Y%m%d%H%M"))
     rev = '00'
@@ -59,7 +59,7 @@ def make_interim_meeting(group,date,status='sched',tz='UTC'):
     doc = DocumentFactory.create(name=name, type_id='minutes', title="Minutes",
         uploaded_filename=file, group=group, rev=rev, states=[('draft','active')])
     pres = SessionPresentation.objects.create(session=session, document=doc, rev=doc.rev)
-    session.sessionpresentation_set.add(pres)
+    session.presentations.add(pres)
     # slides
     title = "Slideshow"
 
@@ -70,7 +70,7 @@ def make_interim_meeting(group,date,status='sched',tz='UTC'):
         uploaded_filename=file, group=group, rev=rev,
         states=[('slides','active'), ('reuse_policy', 'single')])
     pres = SessionPresentation.objects.create(session=session, document=doc, rev=doc.rev)
-    session.sessionpresentation_set.add(pres)
+    session.presentations.add(pres)
     #
     return meeting
 
@@ -198,24 +198,24 @@ def make_meeting_test_data(meeting=None, create_interims=False):
     doc = DocumentFactory.create(name='agenda-72-mars', type_id='agenda', title="Agenda",
         uploaded_filename="agenda-72-mars.txt", group=mars, rev='00', states=[('agenda','active')])
     pres = SessionPresentation.objects.create(session=mars_session,document=doc,rev=doc.rev)
-    mars_session.sessionpresentation_set.add(pres) # 
+    mars_session.presentations.add(pres) # 
 
     doc = DocumentFactory.create(name='minutes-72-mars', type_id='minutes', title="Minutes",
         uploaded_filename="minutes-72-mars.md", group=mars, rev='00', states=[('minutes','active')])
     pres = SessionPresentation.objects.create(session=mars_session,document=doc,rev=doc.rev)
-    mars_session.sessionpresentation_set.add(pres)
+    mars_session.presentations.add(pres)
 
     doc = DocumentFactory.create(name='slides-72-mars-1-active', type_id='slides', title="Slideshow",
         uploaded_filename="slides-72-mars.txt", group=mars, rev='00',
         states=[('slides','active'), ('reuse_policy', 'single')])
     pres = SessionPresentation.objects.create(session=mars_session,document=doc,rev=doc.rev)
-    mars_session.sessionpresentation_set.add(pres)
+    mars_session.presentations.add(pres)
 
     doc = DocumentFactory.create(name='slides-72-mars-2-deleted', type_id='slides',
         title="Bad Slideshow", uploaded_filename="slides-72-mars-2-deleted.txt", group=mars, rev='00',
         states=[('slides','deleted'), ('reuse_policy', 'single')])
     pres = SessionPresentation.objects.create(session=mars_session,document=doc,rev=doc.rev)
-    mars_session.sessionpresentation_set.add(pres)
+    mars_session.presentations.add(pres)
     
     # Future Interim Meetings
     date = date_today() + datetime.timedelta(days=365)

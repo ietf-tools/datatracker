@@ -399,7 +399,7 @@ def edit_milestones(request, acronym, group_type=None, milestone_set="current"):
                        can_change_uses_milestone_dates=can_change_uses_milestone_dates))
 
 @login_required
-def reset_charter_milestones(request, group_type, acronym):
+def reset_charter_milestones(request, acronym, group_type=None):
     """Reset charter milestones to the currently in-use milestones."""
     group = get_group_or_404(acronym, group_type)
     if not group.features.has_milestones:

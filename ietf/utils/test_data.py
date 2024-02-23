@@ -84,7 +84,7 @@ def make_immutable_base_data():
     create_person(iab, "chair")
     create_person(iab, "member")
 
-    ise = create_group(name="Independent Submission Editor", acronym="ise", type_id="rfcedtyp")
+    ise = create_group(name="Independent Submission Editor", acronym="ise", type_id="ise")
     create_person(ise, "chair")
 
     rsoc = create_group(name="RFC Series Oversight Committee", acronym="rsoc", type_id="rfcedtyp")
