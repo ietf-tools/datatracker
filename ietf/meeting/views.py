@@ -2539,7 +2539,7 @@ def session_attendance(request, session_id, num):
     # num is redundant, but we're dragging it along as an artifact of where we are in the current URL structure
     session = get_object_or_404(Session, pk=session_id)
     if session.meeting.type_id != "ietf" or session.meeting.proceedings_final:
-        bluesheets = session.sessionpresentation_set.filter(
+        bluesheets = session.presentations.filter(
             document__type_id="bluesheets"
         )
         if bluesheets:

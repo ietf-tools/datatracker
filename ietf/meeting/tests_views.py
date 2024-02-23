@@ -8441,7 +8441,7 @@ class ProceedingsTests(BaseMeetingTestCase):
         finalize_url = urlreverse('ietf.meeting.views.finalize_proceedings', kwargs={'num':meeting.number})
         r = self.client.post(finalize_url, {'finalize':1})
         self.assertRedirects(r, urlreverse('ietf.meeting.views.proceedings', kwargs={'num':meeting.number}))
-        doc = session.sessionpresentation_set.filter(document__type_id='bluesheets').first().document
+        doc = session.presentations.filter(document__type_id='bluesheets').first().document
         self.assertEqual(doc.rev,'00')
         text = doc.text()
         self.assertIn('4 attendees', text)
@@ -8464,7 +8464,7 @@ class ProceedingsTests(BaseMeetingTestCase):
         r = self.client.post(add_attendees_url, {'apikey':apikey.hash(), 'attended':f'{{"session_id":{session.pk},"attendees":{attendees}}}'})
         self.assertEqual(r.status_code, 200)  
         self.assertEqual(session.attended_set.count(), 4)
-        doc = session.sessionpresentation_set.filter(document__type_id='bluesheets').first().document
+        doc = session.presentations.filter(document__type_id='bluesheets').first().document
         self.assertEqual(doc.rev,'00')
         session_url = urlreverse('ietf.meeting.views.session_details', kwargs={'num':meeting.number, 'acronym':session.group.acronym})
         r = self.client.get(session_url)

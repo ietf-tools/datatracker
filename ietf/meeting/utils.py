@@ -168,7 +168,7 @@ def bluesheet_data(session):
 
 
 def save_bluesheet(request, session, file, encoding='utf-8'):
-    bluesheet_sp = session.sessionpresentation_set.filter(document__type='bluesheets').first()
+    bluesheet_sp = session.presentations.filter(document__type='bluesheets').first()
     _, ext = os.path.splitext(file.name)
 
     if bluesheet_sp:
@@ -198,7 +198,7 @@ def save_bluesheet(request, session, file, encoding='utf-8'):
                   rev = '00',
               )
         doc.states.add(State.objects.get(type_id='bluesheets',slug='active'))
-        session.sessionpresentation_set.create(document=doc,rev='00')
+        session.presentations.create(document=doc,rev='00')
     filename = '%s-%s%s'% ( doc.name, doc.rev, ext)
     doc.uploaded_filename = filename
     e = NewRevisionDocEvent.objects.create(doc=doc, rev=doc.rev, by=request.user.person, type='new_revision', desc='New revision available: %s'%doc.rev)
