@@ -47,7 +47,7 @@ from ietf.meeting.models import Session, TimeSlot, Meeting, SchedTimeSessAssignm
 from ietf.meeting.test_data import make_meeting_test_data, make_interim_meeting, make_interim_test_data
 from ietf.meeting.utils import condition_slide_order
 from ietf.meeting.utils import add_event_info_to_session_qs, participants_for_meeting
-from ietf.meeting.utils import create_recording, get_next_sequence
+from ietf.meeting.utils import create_recording, get_next_sequence, bluesheet_data
 from ietf.meeting.views import session_draft_list, parse_agenda_filter_params, sessions_post_save, agenda_extract_schedule
 from ietf.meeting.views import get_summary_by_area, get_summary_by_type, get_summary_by_purpose
 from ietf.name.models import SessionStatusName, ImportantDateName, RoleName, ProceedingsMaterialTypeName
@@ -8463,3 +8463,21 @@ class ProceedingsTests(BaseMeetingTestCase):
         r = self.client.get(attendance_url)
         self.assertEqual(r.status_code,302)
         self.assertEqual(r['Location'],doc.get_href())
+
+    def test_bluesheet_data(self):
+        session = SessionFactory(meeting__type_id="ietf") 
+        attended_with_affil = MeetingRegistrationFactory(meeting=session.meeting, affiliation="Somewhere")
+        AttendedFactory(session=session, person=attended_with_affil.person, time="2023-03-13T01:24:00")  # joined 2nd
+        attended_no_affil = MeetingRegistrationFactory(meeting=session.meeting)
+        AttendedFactory(session=session, person=attended_no_affil.person, time="2023-03-13T01:23:00")  # joined 1st
+        MeetingRegistrationFactory(meeting=session.meeting)  # did not attend
+        
+        data = bluesheet_data(session)
+        self.assertEqual(
+            data,
+            [
+                {"name": attended_no_affil.person.plain_name(), "affiliation": ""},
+                {"name": attended_with_affil.person.plain_name(), "affiliation": "Somewhere"},
+            ]
+        )
+
