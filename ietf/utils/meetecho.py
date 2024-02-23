@@ -201,6 +201,7 @@ class MeetechoAPI:
 
     def add_slide_deck(
         self, 
+        wg_token: str,
         session: str,  # unique identifier
         deck: SlideDeckDict,
     ):
@@ -224,9 +225,10 @@ class MeetechoAPI:
             202 Accepted 
             {4xx}
         """
-        response = self._request(
+        self._request(
             "POST",
             "materials",
+            api_token=wg_token,
             json={
                 "session": session,
                 "title": deck["title"],
@@ -236,37 +238,38 @@ class MeetechoAPI:
                 "order": deck["order"],
             },
         )
-        return response  # todo something reasonable
 
     def delete_slide_deck(
         self,
+        wg_token: str,
         session: str, # unique identifier
         id: int, 
     ):
-        response = self._request(
+        self._request(
             "DELETE",
             "materials",
+            api_token=wg_token,
             json={
                 "session": session,
                 "id": id,
             },
         )
-        return response  # todo something reasonable
 
     def update_slide_decks(
         self,
+        wg_token: str,
         session: str,  # unique id
         decks: list[SlideDeckDict],
     ):
-        response = self._request(
+        self._request(
             "PUT",
             "materials",
+            api_token=wg_token,
             json={
                 "session": session,
                 "decks": decks,
             }
         ) 
-        return response  # todo something reasonable
 
 
 class MeetechoAPIError(Exception):
@@ -339,8 +342,15 @@ class Conference:
         self._manager.delete_conference(self)
 
 
-class ConferenceManager:
-    def __init__(self, api_config: dict):
+class APIConfigDict(TypedDict):
+    api_base: str  # url
+    client_id: str
+    client_secret: str
+    request_timeout: Union[float, int]
+
+
+class Manager:
+    def __init__(self, api_config: APIConfigDict):
         self.api = MeetechoAPI(**api_config)
         self.wg_tokens: Dict[str, str] = {}
 
@@ -352,6 +362,8 @@ class ConferenceManager:
             ][group_acronym]
         return self.wg_tokens[group_acronym]
 
+
+class ConferenceManager(Manager):
     def fetch(self, group):
         response = self.api.fetch_meetings(self.wg_token(group))
         return Conference.from_api_dict(self, response["rooms"])
@@ -373,3 +385,21 @@ class ConferenceManager:
 
     def delete_conference(self, conf: Conference):
         self.api.delete_meeting(conf.deletion_token)
+
+
+class SlidesManager(Manager):
+    def send_update(self, session):
+        self.api.update_slide_decks(
+            wg_token=self.wg_token(session.group),
+            session=str(session.pk),
+            decks=[
+                {
+                    "id": deck.pk,
+                    "title": deck.title,
+                    "url": deck.get_absolute_url(),
+                    "rev": deck.rev,
+                    "order": deck.order,
+                }
+                for deck in session.sessionpresentation_set.all(type="slides")
+            ]
+        )

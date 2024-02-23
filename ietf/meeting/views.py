@@ -92,6 +92,7 @@ from ietf.stats.models import MeetingRegistration
 from ietf.utils import markdown
 from ietf.utils.decorators import require_api_key
 from ietf.utils.hedgedoc import Note, NoteError
+from ietf.utils.meetecho import SlidesManager
 from ietf.utils.log import assertion
 from ietf.utils.mail import send_mail_message, send_mail_text
 from ietf.utils.mime import get_mime_type
@@ -3153,6 +3154,11 @@ def ajax_reorder_slides_in_session(request, session_id, num):
         session_slides.filter(order__gte=newIndex, order__lt=oldIndex).update(order=F('order')+1)
     sp.order = newIndex
     sp.save()
+
+    # Update slide order with Meetecho if the API is configured
+    if hasattr(settings, "MEETECHO_API_CONFIG"):
+        mgr = SlidesManager(api_config=settings.MEETECHO_API_CONFIG)
+        mgr.send_update(session)
 
     return HttpResponse(json.dumps({'success':True}), content_type='application/json')
 
