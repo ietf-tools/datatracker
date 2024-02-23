@@ -8,6 +8,22 @@ from . import checks                           # pyflakes:ignore
 # Don't add patch number here:
 __version__ = '1.0.0-dev'
 
+if __version__ == '1.0.0-dev':
+    import subprocess
+    branch = subprocess.run(
+        ["/usr/bin/git", "branch", "--show-current"],
+        capture_output=True,
+    ).stdout.decode().strip()
+    tag = subprocess.run(
+        ["/usr/bin/git", "rev-parse", "head"],
+        capture_output=True,
+    ).stdout.decode().strip()
+    rev = subprocess.run(
+        ["/usr/bin/git", "describe", "--tags", tag],
+        capture_output=True,
+    ).stdout.decode().strip().split('-', 1)[0]
+    __version__ = f"{rev}-dev ({branch} - {tag[:7]})"
+
 # Release hash must stay in single quotes for automatic CI replace
 __release_hash__ = ''
 
