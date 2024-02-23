@@ -212,7 +212,6 @@ class MeetechoAPI:
         + content application/json
         + body
             {
-                "repository": String, // a constant value that identifies the repository on Meetecho side
                 "session": String, // Unique session identifier
                 "title": String,
                 "id": Number,
@@ -229,7 +228,6 @@ class MeetechoAPI:
             "POST",
             "materials",
             json={
-                "repository": self.materials_repository,
                 "session": session,
                 "title": deck["title"],
                 "id": deck["id"],
@@ -249,7 +247,6 @@ class MeetechoAPI:
             "DELETE",
             "materials",
             json={
-                "repository": self.materials_repository,
                 "session": session,
                 "id": id,
             },
@@ -265,7 +262,6 @@ class MeetechoAPI:
             "PUT",
             "materials",
             json={
-                "repository": self.materials_repository,
                 "session": session,
                 "decks": decks,
             }
