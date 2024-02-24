@@ -269,6 +269,35 @@ class APITests(TestCase):
             "Incorrect request content"
         )
 
+    def test_delete_slide_deck(self):
+        self.requests_mock.delete(self.slide_deck_url, status_code=202)
+
+        api = MeetechoAPI(API_BASE, CLIENT_ID, CLIENT_SECRET)
+        api_response = api.delete_slide_deck(
+            wg_token="my-token",
+            session="1234",
+            id=17,
+        )
+        self.assertIsNone(api_response)  # no return value from this call
+
+        self.assertTrue(self.requests_mock.called)
+        request = self.requests_mock.last_request
+        self.assertIn("Authorization", request.headers)
+        self.assertEqual(
+            request.headers["Content-Type"],
+            "application/json",
+            "Incorrect request content-type",
+        )
+        self.assertEqual(request.headers["Authorization"], "bearer my-token",
+                         "Incorrect request authorization header")
+        self.assertEqual(
+            request.json(),
+            {
+                "session": "1234",
+                "id": 17,
+            },
+            "Incorrect request content"
+        )
 
     def test_request_helper_failed_requests(self):
         self.requests_mock.register_uri(requests_mock.ANY, urljoin(API_BASE, 'unauthorized/url/endpoint'), status_code=401)

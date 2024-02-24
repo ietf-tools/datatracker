@@ -244,6 +244,22 @@ class MeetechoAPI:
         session: str, # unique identifier
         id: int, 
     ):
+        """Delete a slide deck from the specified session
+
+        API spec:
+        DELETE /materials
+        + Authentication -> same as interim scheduler
+        + content application/json
+        + body
+            {
+                "session": String,
+                "id": Number
+            }
+         
+        + Results 
+            202 Accepted
+            {4xx}
+        """
         self._request(
             "DELETE",
             "materials",
