@@ -276,6 +276,36 @@ class MeetechoAPI:
         session: str,  # unique id
         decks: list[SlideDeckDict],
     ):
+        """Update/reorder decks for specified session
+
+        PUT /materials
+        + Authentication -> same as interim scheduler
+        + content application/json
+        + body
+            {
+                "session": String,
+                "decks": [
+                    {
+                        "id": Number,
+                        "title": String,
+                        "url": String,
+                        "rev": String,
+                        "order": Number
+                    },
+                    {
+                        "id": Number,
+                        "title": String,
+                        "url": String,
+                        "rev": String,
+                        "order": Number
+                    },
+                    ...
+                ]
+            }
+         
+        + Results 
+            202 Accepted
+        """
         self._request(
             "PUT",
             "materials",
