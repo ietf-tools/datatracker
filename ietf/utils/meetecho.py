@@ -23,12 +23,11 @@ class MeetechoAPI:
     timezone = datetime.timezone.utc
 
     def __init__(
-        self, api_base: str, client_id: str, client_secret: str, material_repository: str, request_timeout=3.01
+        self, api_base: str, client_id: str, client_secret: str, request_timeout=3.01
     ):
         self.client_id = client_id
         self.client_secret = client_secret
         self.request_timeout = request_timeout  # python-requests doc recommend slightly > a multiple of 3 seconds
-        self.materials_repository = material_repository
         self._session = requests.Session()
         # if needed, add a trailing slash so urljoin won't eat the trailing path component
         self.api_base = api_base if api_base.endswith("/") else f"{api_base}/"
