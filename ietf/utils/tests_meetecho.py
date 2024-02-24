@@ -1,12 +1,12 @@
 # Copyright The IETF Trust 2021, All Rights Reserved
 # -*- coding: utf-8 -*-
 import datetime
-import pytz
 import requests
 import requests_mock
 
 from unittest.mock import patch
 from urllib.parse import urljoin
+from zoneinfo import ZoneInfo
 
 from django.conf import settings
 from django.test import override_settings
@@ -31,6 +31,7 @@ class APITests(TestCase):
     schedule_meeting_url = urljoin(API_BASE, 'meeting/interim/createRoom')
     fetch_meetings_url = urljoin(API_BASE, 'meeting/interim/fetchRooms')
     delete_meetings_url = urljoin(API_BASE, 'meeting/interim/deleteRoom')
+    slide_deck_url = urljoin(API_BASE, "materials")
 
     def setUp(self):
         super().setUp()
@@ -93,7 +94,7 @@ class APITests(TestCase):
         api = MeetechoAPI(API_BASE, CLIENT_ID, CLIENT_SECRET)
         api_response = api.schedule_meeting(
             wg_token='my-token',
-            start_time=pytz.utc.localize(datetime.datetime(2021, 9, 14, 10, 0, 0)),
+            start_time=datetime.datetime(2021, 9, 14, 10, 0, 0, tzinfo=datetime.timezone.utc),
             duration=datetime.timedelta(minutes=130),
             description='interim-2021-wgname-01',
             extrainfo='message for staff',
@@ -121,11 +122,11 @@ class APITests(TestCase):
         )
         # same time in different time zones
         for start_time in [
-            pytz.utc.localize(datetime.datetime(2021, 9, 14, 10, 0, 0)),
-            pytz.timezone('america/halifax').localize(datetime.datetime(2021, 9, 14, 7, 0, 0)),
-            pytz.timezone('europe/kiev').localize(datetime.datetime(2021, 9, 14, 13, 0, 0)),
-            pytz.timezone('pacific/easter').localize(datetime.datetime(2021, 9, 14, 5, 0, 0)),
-            pytz.timezone('africa/porto-novo').localize(datetime.datetime(2021, 9, 14, 11, 0, 0)),
+            datetime.datetime(2021, 9, 14, 10, 0, 0, tzinfo=datetime.timezone.utc),
+            datetime.datetime(2021, 9, 14, 7, 0, 0, tzinfo=ZoneInfo('America/Halifax')),
+            datetime.datetime(2021, 9, 14, 13, 0, 0, tzinfo=ZoneInfo('Europe/Kiev')),
+            datetime.datetime(2021, 9, 14, 5, 0, 0, tzinfo=ZoneInfo('Pacific/Easter')),
+            datetime.datetime(2021, 9, 14, 11, 0, 0, tzinfo=ZoneInfo('Africa/Porto-Novo')),
         ]:
             self.assertEqual(
                 api_response,
@@ -143,7 +144,7 @@ class APITests(TestCase):
                         },
                     }
                 },
-                f'Incorrect time conversion for {start_time.tzinfo.zone}',
+                f'Incorrect time conversion for {start_time.tzinfo}',
             )
 
     def test_fetch_meetings(self):
@@ -192,7 +193,7 @@ class APITests(TestCase):
                     '3d55bce0-535e-4ba8-bb8e-734911cf3c32': {
                         'room': {
                             'id': 18,
-                            'start_time': pytz.utc.localize(datetime.datetime(2021, 9, 14, 10, 0, 0)),
+                            'start_time': datetime.datetime(2021, 9, 14, 10, 0, 0, tzinfo=datetime.timezone.utc),
                             'duration': datetime.timedelta(minutes=130),
                             'description': 'interim-2021-wgname-01',
                         },
@@ -202,7 +203,7 @@ class APITests(TestCase):
                     'e68e96d4-d38f-475b-9073-ecab46ca96a5': {
                         'room': {
                             'id': 23,
-                            'start_time': pytz.utc.localize(datetime.datetime(2021, 9, 15, 14, 30, 0)),
+                            'start_time': datetime.datetime(2021, 9, 15, 14, 30, 0, tzinfo=datetime.timezone.utc),
                             'duration': datetime.timedelta(minutes=30),
                             'description': 'interim-2021-wgname-02',
                         },
@@ -250,7 +251,7 @@ class APITests(TestCase):
 
     def test_time_serialization(self):
         """Time de/serialization should be consistent"""
-        time = timezone.now().astimezone(pytz.utc).replace(microsecond=0)  # cut off to 0 microseconds
+        time = timezone.now().astimezone(datetime.timezone.utc).replace(microsecond=0)  # cut off to 0 microseconds
         api = MeetechoAPI(API_BASE, CLIENT_ID, CLIENT_SECRET)
         self.assertEqual(api._deserialize_time(api._serialize_time(time)), time)
 
@@ -264,7 +265,7 @@ class ConferenceManagerTests(TestCase):
                 'session-1-uuid': {
                     'room': {
                         'id': 1,
-                        'start_time': pytz.utc.localize(datetime.datetime(2022,2,4,1,2,3)),
+                        'start_time': datetime.datetime(2022,2,4,1,2,3, tzinfo=datetime.timezone.utc),
                         'duration': datetime.timedelta(minutes=45),
                         'description': 'some-description',
                     },
@@ -274,7 +275,7 @@ class ConferenceManagerTests(TestCase):
                 'session-2-uuid': {
                     'room': {
                         'id': 2,
-                        'start_time': pytz.utc.localize(datetime.datetime(2022,2,5,4,5,6)),
+                        'start_time': datetime.datetime(2022,2,5,4,5,6, tzinfo=datetime.timezone.utc),
                         'duration': datetime.timedelta(minutes=90),
                         'description': 'another-description',
                     },
@@ -291,7 +292,7 @@ class ConferenceManagerTests(TestCase):
                     id=1,
                     public_id='session-1-uuid',
                     description='some-description',
-                    start_time=pytz.utc.localize(datetime.datetime(2022, 2, 4, 1, 2, 3)),
+                    start_time=datetime.datetime(2022, 2, 4, 1, 2, 3, tzinfo=datetime.timezone.utc),
                     duration=datetime.timedelta(minutes=45),
                     url='https://example.com/some/url',
                     deletion_token='delete-me',
@@ -301,7 +302,7 @@ class ConferenceManagerTests(TestCase):
                     id=2,
                     public_id='session-2-uuid',
                     description='another-description',
-                    start_time=pytz.utc.localize(datetime.datetime(2022, 2, 5, 4, 5, 6)),
+                    start_time=datetime.datetime(2022, 2, 5, 4, 5, 6, tzinfo=datetime.timezone.utc),
                     duration=datetime.timedelta(minutes=90),
                     url='https://example.com/another/url',
                     deletion_token='delete-me-too',
@@ -317,7 +318,7 @@ class ConferenceManagerTests(TestCase):
                 'session-1-uuid': {
                     'room': {
                         'id': 1,
-                        'start_time': pytz.utc.localize(datetime.datetime(2022,2,4,1,2,3)),
+                        'start_time': datetime.datetime(2022,2,4,1,2,3, tzinfo=datetime.timezone.utc),
                         'duration': datetime.timedelta(minutes=45),
                         'description': 'some-description',
                     },
@@ -336,7 +337,7 @@ class ConferenceManagerTests(TestCase):
                 id=1,
                 public_id='session-1-uuid',
                 description='some-description',
-                start_time=pytz.utc.localize(datetime.datetime(2022,2,4,1,2,3)),
+                start_time=datetime.datetime(2022,2,4,1,2,3, tzinfo=datetime.timezone.utc),
                 duration=datetime.timedelta(minutes=45),
                 url='https://example.com/some/url',
                 deletion_token='delete-me',
@@ -352,7 +353,7 @@ class ConferenceManagerTests(TestCase):
                 'session-1-uuid': {
                     'room': {
                         'id': 1,
-                        'start_time': pytz.utc.localize(datetime.datetime(2022,2,4,1,2,3)),
+                        'start_time': datetime.datetime(2022,2,4,1,2,3, tzinfo=datetime.timezone.utc),
                         'duration': datetime.timedelta(minutes=45),
                         'description': 'some-description',
                     },
@@ -370,7 +371,7 @@ class ConferenceManagerTests(TestCase):
                 id=1,
                 public_id='session-1-uuid',
                 description='some-description',
-                start_time=pytz.utc.localize(datetime.datetime(2022,2,4,1,2,3)),
+                start_time=datetime.datetime(2022,2,4,1,2,3, tzinfo=datetime.timezone.utc),
                 duration=datetime.timedelta(minutes=45),
                 url='https://example.com/some/url',
                 deletion_token='delete-me',

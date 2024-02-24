@@ -13,7 +13,7 @@ import requests
 
 import debug  # pyflakes: ignore
 
-from datetime import datetime, timedelta
+import datetime
 from json import JSONDecodeError
 from typing import Dict, Sequence, TypedDict, Union
 from urllib.parse import urljoin
@@ -62,16 +62,16 @@ class MeetechoAPI:
                 raise MeetechoAPIError("Error decoding response as JSON") from err
         return None
 
-    def _deserialize_time(self, s: str) -> datetime:
-        return self.timezone.localize(datetime.strptime(s, "%Y-%m-%d %H:%M:%S"))
+    def _deserialize_time(self, s: str) -> datetime.datetime:
+        return datetime.datetime.strptime(s, "%Y-%m-%d %H:%M:%S").replace(tzinfo=self.timezone)
 
-    def _serialize_time(self, dt: datetime) -> str:
+    def _serialize_time(self, dt: datetime.datetime) -> str:
         return dt.astimezone(self.timezone).strftime("%Y-%m-%d %H:%M:%S")
 
-    def _deserialize_duration(self, minutes: int) -> timedelta:
-        return timedelta(minutes=minutes)
+    def _deserialize_duration(self, minutes: int) -> datetime.timedelta:
+        return datetime.timedelta(minutes=minutes)
 
-    def _serialize_duration(self, td: timedelta) -> int:
+    def _serialize_duration(self, td: datetime.timedelta) -> int:
         return int(td.total_seconds() // 60)
 
     def _deserialize_meetings_response(self, response):
@@ -108,8 +108,8 @@ class MeetechoAPI:
         self,
         wg_token: str,
         description: str,
-        start_time: datetime,
-        duration: timedelta,
+        start_time: datetime.datetime,
+        duration: datetime.timedelta,
         extrainfo="",
     ):
         """Schedule a meeting session
