@@ -48,7 +48,8 @@ class MeetechoAPI:
             )
         except requests.RequestException as err:
             raise MeetechoAPIError(str(err)) from err
-        if response.status_code != 200:
+        if response.status_code not in (200, 202):
+            # Could be more selective about status codes, but not seeing an immediate need
             raise MeetechoAPIError(
                 f"API request failed (HTTP status code = {response.status_code})"
             )
@@ -57,7 +58,7 @@ class MeetechoAPI:
         try:
             return response.json()
         except JSONDecodeError as err:
-            if response.headers["Content-Type"].startswith("application/json"):
+            if response.headers.get("Content-Type", "").startswith("application/json"):
                 # complain if server told us to expect JSON and it was invalid
                 raise MeetechoAPIError("Error decoding response as JSON") from err
         return None
