@@ -229,6 +229,47 @@ class APITests(TestCase):
         self.assertIsNone(request.body, 'Delete meeting request has no body')
         self.assertCountEqual(api_response, data_to_fetch)
 
+    def test_add_slide_deck(self):
+        self.requests_mock.post(self.slide_deck_url, status_code=202)
+        
+        api = MeetechoAPI(API_BASE, CLIENT_ID, CLIENT_SECRET)
+        api_response = api.add_slide_deck(
+            wg_token="my-token",
+            session="1234",
+            deck={
+                "title": "A Slide Deck",
+                "id": 17,
+                "url": "https://example.com/decks/17",
+                "rev": "00",
+                "order": 0,
+            }
+        )
+        self.assertIsNone(api_response)  # no return value from this call
+
+        self.assertTrue(self.requests_mock.called)
+        request = self.requests_mock.last_request
+        self.assertIn("Authorization", request.headers)
+        self.assertEqual(
+            request.headers["Content-Type"],
+            "application/json",
+            "Incorrect request content-type",
+        )
+        self.assertEqual(request.headers["Authorization"], "bearer my-token",
+                         "Incorrect request authorization header")
+        self.assertEqual(
+            request.json(),
+            {
+                "session": "1234",
+                "title": "A Slide Deck",
+                "id": 17,
+                "url": "https://example.com/decks/17",
+                "rev": "00",
+                "order": 0,
+            },
+            "Incorrect request content"
+        )
+
+
     def test_request_helper_failed_requests(self):
         self.requests_mock.register_uri(requests_mock.ANY, urljoin(API_BASE, 'unauthorized/url/endpoint'), status_code=401)
         self.requests_mock.register_uri(requests_mock.ANY, urljoin(API_BASE, 'forbidden/url/endpoint'), status_code=403)
