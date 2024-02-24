@@ -15,13 +15,12 @@ import debug  # pyflakes: ignore
 
 from datetime import datetime, timedelta
 from json import JSONDecodeError
-from pytz import utc
 from typing import Dict, Sequence, TypedDict, Union
 from urllib.parse import urljoin
 
 
 class MeetechoAPI:
-    timezone = utc
+    timezone = datetime.timezone.utc
 
     def __init__(
         self, api_base: str, client_id: str, client_secret: str, material_repository: str, request_timeout=3.01
