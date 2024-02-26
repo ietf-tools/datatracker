@@ -611,9 +611,9 @@
         </table>
         <div class="buttonlist">
             <a class="btn btn-primary btn-sm"
-               href="mailto:{{ doc_name }}@ietf.org?subject=Mail%20regarding%20{{ doc.name }}">
-               <i class="bi bi-envelope">
-               </i>
+               href="mailto:{{ doc.name }}@ietf.org?subject=Mail%20regarding%20{{ doc.name }}">
+                <i class="bi bi-envelope">
+                </i>
                 Email authors
             </a>
             {% if doc.group.type.slug == 'wg' or doc.group.type.slug == 'rg' %}
