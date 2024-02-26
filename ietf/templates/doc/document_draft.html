@@ -666,16 +666,6 @@
                 </i>
                 Search email archive
             </a>
-            {% if user|has_role:"Area Director" %}
-                <a class="btn btn-primary btn-sm"
-                   href="https://www.iesg.org/bin/c5i?mid=6&amp;rid=77&amp;target={{ doc.name }}"
-                   rel="nofollow"
-                   target="_blank">
-                    <i class="bi bi-search">
-                    </i>
-                    Search ARO
-                </a>
-            {% endif %}
             {% if user.is_authenticated %}
                 <a class="btn btn-primary btn-sm track-untrack-doc {% if not doc.tracked_in_personal_community_list %}d-none{% endif %}"
                    href="{% url "ietf.community.views.untrack_document" email_or_name=user.username name=doc.name %}"
