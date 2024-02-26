@@ -19,6 +19,7 @@ import shutil
 from calendar import timegm
 from collections import OrderedDict, Counter, deque, defaultdict, namedtuple
 from functools import partialmethod
+import jsonschema
 from urllib.parse import parse_qs, unquote, urlencode, urlsplit, urlunsplit
 from tempfile import mkstemp
 from wsgiref.handlers import format_date_time
@@ -54,7 +55,7 @@ from ietf.group.utils import can_manage_session_materials, can_manage_some_group
 from ietf.person.models import Person, User
 from ietf.ietfauth.utils import role_required, has_role, user_is_person
 from ietf.mailtrigger.utils import gather_address_lists
-from ietf.meeting.models import Meeting, Session, Schedule, FloorPlan, SessionPresentation, TimeSlot, SlideSubmission
+from ietf.meeting.models import Meeting, Session, Schedule, FloorPlan, SessionPresentation, TimeSlot, SlideSubmission, Attended
 from ietf.meeting.models import SessionStatusName, SchedulingEvent, SchedTimeSessAssignment, Room, TimeSlotTypeName
 from ietf.meeting.forms import ( CustomDurationField, SwapDaysForm, SwapTimeslotsForm, ImportMinutesForm,
                                  TimeSlotCreateForm, TimeSlotEditForm, SessionCancelForm, SessionEditForm )
@@ -84,7 +85,7 @@ from ietf.meeting.utils import swap_meeting_schedule_timeslot_assignments, bulk_
 from ietf.meeting.utils import preprocess_meeting_important_dates
 from ietf.meeting.utils import new_doc_for_session, write_doc_for_session
 from ietf.meeting.utils import get_activity_stats, post_process, create_recording
-from ietf.meeting.utils import participants_for_meeting
+from ietf.meeting.utils import participants_for_meeting, generate_bluesheet, bluesheet_data, save_bluesheet
 from ietf.message.utils import infer_message
 from ietf.name.models import SlideSubmissionStatusName, ProceedingsMaterialTypeName, SessionPurposeName
 from ietf.stats.models import MeetingRegistration
@@ -2427,8 +2428,19 @@ def session_details(request, num, acronym):
             session.cancelled = session.current_status in Session.CANCELED_STATUSES
             session.status = status_names.get(session.current_status, session.current_status)
 
-        session.filtered_artifacts = list(session.presentations.filter(document__type__slug__in=['agenda','minutes','narrativeminutes', 'bluesheets']))
-        session.filtered_artifacts.sort(key=lambda d:['agenda','minutes', 'narrativeminutes', 'bluesheets'].index(d.document.type.slug))
+        if session.meeting.type_id == 'ietf' and not session.meeting.proceedings_final:
+            artifact_types = ['agenda','minutes','narrativeminutes']
+            if Attended.objects.filter(session=session).exists():
+                session.type_counter.update(['bluesheets'])
+                ota = session.official_timeslotassignment()
+                sess_time = ota and ota.timeslot.time
+                session.bluesheet_title = 'Attendance IETF%s: %s : %s' % (session.meeting.number, 
+                                                                          session.group.acronym, 
+                                                                          sess_time.strftime("%a %H:%M"))
+        else:
+            artifact_types = ['agenda','minutes','narrativeminutes','bluesheets']
+        session.filtered_artifacts = list(session.presentations.filter(document__type__slug__in=artifact_types))
+        session.filtered_artifacts.sort(key=lambda d:artifact_types.index(d.document.type.slug))
         session.filtered_slides    = session.presentations.filter(document__type__slug='slides').order_by('order')
         session.filtered_drafts    = session.presentations.filter(document__type__slug='draft')
         session.filtered_chatlog_and_polls = session.presentations.filter(document__type__slug__in=('chatlog', 'polls')).order_by('document__type__slug')
@@ -2517,6 +2529,66 @@ def add_session_drafts(request, session_id, num):
                   })
 
 
+def session_attendance(request, session_id, num):
+    """Session attendance view
+
+    GET - retrieve the current session attendance or redirect to the published bluesheet if finalized
+
+    POST - self-attest attendance for logged-in user; falls through to GET for AnonymousUser or invalid request
+    """
+    # num is redundant, but we're dragging it along as an artifact of where we are in the current URL structure
+    session = get_object_or_404(Session, pk=session_id)
+    if session.meeting.type_id != "ietf" or session.meeting.proceedings_final:
+        bluesheets = session.presentations.filter(
+            document__type_id="bluesheets"
+        )
+        if bluesheets:
+            bluesheet = bluesheets[0].document
+            return redirect(bluesheet.get_href(session.meeting))
+        else:
+            raise Http404("Bluesheets not found")
+
+    cor_cut_off_date = session.meeting.get_submission_correction_date()
+    today_utc = date_today(datetime.timezone.utc)
+    was_there = False
+    can_add = False
+    if request.user.is_authenticated:
+        # use getattr() instead of request.user.person because it's a reverse OneToOne field
+        person = getattr(request.user, "person", None)
+        # Consider allowing self-declared attendance if we have a person and at least one Attended instance exists.
+        # The latter condition will be satisfied when Meetecho pushes their attendee records - assuming that at least
+        # one person will have accessed the meeting tool. This prevents people from self-declaring before they are
+        # marked as attending if they did log in to the meeting tool (except for a tiny window while records are
+        # being processed).
+        if person is not None and Attended.objects.filter(session=session).exists():
+            was_there = Attended.objects.filter(session=session, person=person).exists()
+            can_add = (
+                today_utc <= cor_cut_off_date
+                and MeetingRegistration.objects.filter(
+                    meeting=session.meeting, person=person
+                ).exists()
+                and not was_there
+            )
+            if can_add and request.method == "POST":
+                session.attended_set.get_or_create(
+                    person=person, defaults={"origin": "self declared"}
+                )
+                can_add = False
+                was_there = True
+
+    data = bluesheet_data(session)
+    return render(
+        request,
+        "meeting/attendance.html",
+        {
+            "session": session,
+            "data": data,
+            "can_add": can_add,
+            "was_there": was_there,
+        },
+    )
+
+
 def upload_session_bluesheets(request, session_id, num):
     # num is redundant, but we're dragging it along an artifact of where we are in the current URL structure
     session = get_object_or_404(Session,pk=session_id)
@@ -2562,47 +2634,6 @@ def upload_session_bluesheets(request, session_id, num):
                    'bluesheet_sp' : bluesheet_sp,
                    'form': form,
                   })
-
-
-def save_bluesheet(request, session, file, encoding='utf-8'):
-    bluesheet_sp = session.presentations.filter(document__type='bluesheets').first()
-    _, ext = os.path.splitext(file.name)
-
-    if bluesheet_sp:
-        doc = bluesheet_sp.document
-        doc.rev = '%02d' % (int(doc.rev)+1)
-        bluesheet_sp.rev = doc.rev
-        bluesheet_sp.save()
-    else:
-        ota = session.official_timeslotassignment()
-        sess_time = ota and ota.timeslot.time
-
-        if session.meeting.type_id=='ietf':
-            name = 'bluesheets-%s-%s-%s' % (session.meeting.number, 
-                                            session.group.acronym, 
-                                            sess_time.strftime("%Y%m%d%H%M"))
-            title = 'Bluesheets IETF%s: %s : %s' % (session.meeting.number, 
-                                                    session.group.acronym, 
-                                                    sess_time.strftime("%a %H:%M"))
-        else:
-            name = 'bluesheets-%s-%s' % (session.meeting.number, sess_time.strftime("%Y%m%d%H%M"))
-            title = 'Bluesheets %s: %s' % (session.meeting.number, sess_time.strftime("%a %H:%M"))
-        doc = Document.objects.create(
-                  name = name,
-                  type_id = 'bluesheets',
-                  title = title,
-                  group = session.group,
-                  rev = '00',
-              )
-        doc.states.add(State.objects.get(type_id='bluesheets',slug='active'))
-        session.presentations.create(document=doc,rev='00')
-    filename = '%s-%s%s'% ( doc.name, doc.rev, ext)
-    doc.uploaded_filename = filename
-    e = NewRevisionDocEvent.objects.create(doc=doc, rev=doc.rev, by=request.user.person, type='new_revision', desc='New revision available: %s'%doc.rev)
-    save_error = handle_upload_file(file, filename, session.meeting, 'bluesheets', request=request, encoding=encoding)
-    if not save_error:
-        doc.save_with_history([e])
-    return save_error
 
 
 def upload_session_minutes(request, session_id, num):
@@ -3791,6 +3822,8 @@ def organize_proceedings_sessions(sessions):
                 'drafts': _format_materials((s, s.drafts()) for s in ss),
                 'last_update': session.last_update if hasattr(session, 'last_update') else None
             }
+            if session and session.meeting.type_id == 'ietf' and not session.meeting.proceedings_final:
+                entry['attendances'] = _format_materials((s, s) for s in ss if Attended.objects.filter(session=s).exists())
             if is_meeting:
                 meeting_groups.append(entry)
             else:
@@ -3885,12 +3918,11 @@ def proceedings(request, num=None):
 def finalize_proceedings(request, num=None):
 
     meeting = get_meeting(num)
-
     if (meeting.number.isdigit() and int(meeting.number) <= 64) or not meeting.schedule or not meeting.schedule.assignments.exists() or meeting.proceedings_final:
         raise Http404
 
     if request.method=='POST':
-        finalize(meeting)
+        finalize(request, meeting)
         return HttpResponseRedirect(reverse('ietf.meeting.views.proceedings',kwargs={'num':meeting.number}))
     
     return render(request, "meeting/finalize.html", {'meeting':meeting,})
@@ -4094,37 +4126,111 @@ def deprecated_api_set_session_video_url(request):
 
     return HttpResponse("Done", status=200, content_type='text/plain')
 
+
 @require_api_key
 @role_required('Recording Manager') # TODO : Rework how Meetecho interacts via APIs. There may be better paths to pursue than Personal API keys as they are currently defined.
 @csrf_exempt
 def api_add_session_attendees(request):
+    """Upload attendees for one or more sessions
+
+    parameters:
+        apikey: the poster's personal API key
+        attended: json blob with
+            {
+                "session_id": session pk,
+                "attendees": [
+                    {"user_id": user-pk-1, "join_time": "2024-02-21T18:00:00Z"},
+                    {"user_id": user-pk-2, "join_time": "2024-02-21T18:00:01Z"},
+                    {"user_id": user-pk-3, "join_time": "2024-02-21T18:00:02Z"},
+                    ...
+                ]
+            }
+    """
+    json_validator = jsonschema.Draft202012Validator(
+        schema={
+            "type": "object",
+            "properties": {
+                "session_id": {"type": "integer"},
+                "attendees": {
+                    # Allow either old or new format until after IETF 119
+                    "anyOf": [
+                        {"type": "array", "items": {"type": "integer"}},  # old: array of user PKs
+                        {
+                            # new: array of user_id / join_time objects
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "user_id": {"type": "integer", },
+                                    "join_time": {"type": "string", "format": "date-time"}
+                                },
+                                "required": ["user_id", "join_time"],
+                            },
+                        },
+                    ],
+                }
+            },
+            "required": ["session_id", "attendees"],
+        },
+        format_checker=jsonschema.Draft202012Validator.FORMAT_CHECKER,  # format-checks disabled by default
+    )
 
     def err(code, text):
-        return HttpResponse(text, status=code, content_type='text/plain')
+        return HttpResponse(text, status=code, content_type="text/plain")
 
-    if request.method != 'POST':
+    if request.method != "POST":
         return err(405, "Method not allowed")
-    attended_post = request.POST.get('attended')
+    attended_post = request.POST.get("attended")
     if not attended_post:
         return err(400, "Missing attended parameter")
+
+    # Validate the request payload
     try:
-        attended = json.loads(attended_post)
-    except json.decoder.JSONDecodeError:
-        return err(400, "Malformed post") 
-    if not ( 'session_id' in attended and type(attended['session_id']) is int ):
+        payload = json.loads(attended_post)
+        json_validator.validate(payload)
+    except (json.decoder.JSONDecodeError, jsonschema.exceptions.ValidationError):
         return err(400, "Malformed post")
-    session_id = attended['session_id']
-    if not ( 'attendees' in attended and type(attended['attendees']) is list and all([type(el) is int for el in attended['attendees']]) ):
-        return err(400, "Malformed post")
+
+    session_id = payload["session_id"]
     session = Session.objects.filter(pk=session_id).first()
     if not session:
         return err(400, "Invalid session")
-    users = User.objects.filter(pk__in=attended['attendees'])
-    if users.count() != len(attended['attendees']):
-        return err(400, "Invalid attendee")
-    for user in users:
-        session.attended_set.get_or_create(person=user.person)
-    return HttpResponse("Done", status=200, content_type='text/plain')  
+
+    attendees = payload["attendees"]
+    if len(attendees) > 0:
+        # Check whether we have old or new format
+        if type(attendees[0]) == int:
+            # it's the old format
+            users = User.objects.filter(pk__in=attendees)
+            if users.count() != len(payload["attendees"]):
+                return err(400, "Invalid attendee")
+            for user in users:
+                session.attended_set.get_or_create(person=user.person)
+        else:
+            # it's the new format
+            join_time_by_pk = {
+                att["user_id"]: datetime.datetime.fromisoformat(
+                    att["join_time"].replace("Z", "+00:00")  # Z not understood until py311
+                )
+                for att in attendees
+            }
+            persons = list(Person.objects.filter(user__pk__in=join_time_by_pk))
+            if len(persons) != len(join_time_by_pk):
+                return err(400, "Invalid attendee")
+            to_create = [
+                Attended(session=session, person=person, time=join_time_by_pk[person.user_id])
+                for person in persons
+            ]
+            # Create in bulk, ignoring any that already exist
+            Attended.objects.bulk_create(to_create, ignore_conflicts=True)
+
+    if session.meeting.type_id == "interim":
+        save_error = generate_bluesheet(request, session)
+        if save_error:
+            return err(400, save_error)
+
+    return HttpResponse("Done", status=200, content_type="text/plain")
+
 
 @require_api_key
 @role_required('Recording Manager')

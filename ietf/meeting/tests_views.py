@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2009-2023, All Rights Reserved
+# Copyright The IETF Trust 2009-2024, All Rights Reserved
 # -*- coding: utf-8 -*-
 import datetime
 import io
@@ -12,7 +12,7 @@ import requests.exceptions
 import requests_mock
 
 from unittest import skipIf
-from mock import patch, PropertyMock
+from mock import call, patch, PropertyMock
 from pyquery import PyQuery
 from lxml.etree import tostring
 from io import StringIO, BytesIO
@@ -38,16 +38,16 @@ import debug           # pyflakes:ignore
 from ietf.doc.models import Document, NewRevisionDocEvent
 from ietf.group.models import Group, Role, GroupFeatures
 from ietf.group.utils import can_manage_group
-from ietf.person.models import Person
+from ietf.person.models import Person, PersonalApiKey
 from ietf.meeting.helpers import can_approve_interim_request, can_view_interim_request, preprocess_assignments_for_agenda
 from ietf.meeting.helpers import send_interim_approval_request, AgendaKeywordTagger
 from ietf.meeting.helpers import send_interim_meeting_cancellation_notice, send_interim_session_cancellation_notice
 from ietf.meeting.helpers import send_interim_minutes_reminder, populate_important_dates, update_important_dates
 from ietf.meeting.models import Session, TimeSlot, Meeting, SchedTimeSessAssignment, Schedule, SessionPresentation, SlideSubmission, SchedulingEvent, Room, Constraint, ConstraintName
 from ietf.meeting.test_data import make_meeting_test_data, make_interim_meeting, make_interim_test_data
-from ietf.meeting.utils import finalize, condition_slide_order
+from ietf.meeting.utils import condition_slide_order
 from ietf.meeting.utils import add_event_info_to_session_qs, participants_for_meeting
-from ietf.meeting.utils import create_recording, get_next_sequence
+from ietf.meeting.utils import create_recording, get_next_sequence, bluesheet_data
 from ietf.meeting.views import session_draft_list, parse_agenda_filter_params, sessions_post_save, agenda_extract_schedule
 from ietf.meeting.views import get_summary_by_area, get_summary_by_type, get_summary_by_purpose
 from ietf.name.models import SessionStatusName, ImportantDateName, RoleName, ProceedingsMaterialTypeName
@@ -517,7 +517,7 @@ class MeetingTests(BaseMeetingTestCase):
         group = GroupFactory()
         plain_session = SessionFactory(meeting=meeting, group=group)
         named_session = SessionFactory(meeting=meeting, group=group, name='I Got a Name')
-        for doc_type_id in ('agenda', 'minutes', 'bluesheets', 'slides', 'draft'):
+        for doc_type_id in ('agenda', 'minutes', 'slides', 'draft'):
             # Set up sessions materials that will have distinct URLs for each session.
             # This depends on settings.MEETING_DOC_HREFS and may need updating if that changes.
             SessionPresentationFactory(
@@ -5997,6 +5997,34 @@ class FinalizeProceedingsTests(TestCase):
         self.assertEqual(meeting.proceedings_final,True)
         self.assertEqual(meeting.session_set.filter(group__acronym="mars").first().presentations.filter(document__type="draft").first().rev,'00')
  
+    @patch("ietf.meeting.utils.generate_bluesheet")
+    def test_bluesheet_generation(self, mock):
+        meeting = MeetingFactory(type_id="ietf", number="107")  # number where generate_bluesheets should not be called
+        SessionFactory.create_batch(5, meeting=meeting)
+        url = urlreverse("ietf.meeting.views.finalize_proceedings", kwargs={"num": meeting.number})
+        self.client.login(username="secretary", password="secretary+password")
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertFalse(mock.called)
+        r = self.client.post(url,{'finalize': 1})
+        self.assertEqual(r.status_code, 302)
+        self.assertFalse(mock.called)
+
+        meeting = MeetingFactory(type_id="ietf", number="108")  # number where generate_bluesheets should be called
+        SessionFactory.create_batch(5, meeting=meeting)
+        url = urlreverse("ietf.meeting.views.finalize_proceedings", kwargs={"num": meeting.number})
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertFalse(mock.called)
+        r = self.client.post(url,{'finalize': 1})
+        self.assertEqual(r.status_code, 302)
+        self.assertTrue(mock.called)
+        self.assertCountEqual(
+            [call_args[0][1] for call_args in mock.call_args_list],
+            [sess for sess in meeting.session_set.all()],
+        )
+
+
 class MaterialsTests(TestCase):
     settings_temp_path_overrides = TestCase.settings_temp_path_overrides + [
         'AGENDA_PATH',
@@ -7784,7 +7812,7 @@ class ProceedingsTests(BaseMeetingTestCase):
 
     def test_named_session(self):
         """Session with a name should appear separately in the proceedings"""
-        meeting = MeetingFactory(type_id='ietf', number='100')
+        meeting = MeetingFactory(type_id='ietf', number='100', proceedings_final=True)
         group = GroupFactory()
         plain_session = SessionFactory(meeting=meeting, group=group)
         named_session = SessionFactory(meeting=meeting, group=group, name='I Got a Name')
@@ -7905,7 +7933,6 @@ class ProceedingsTests(BaseMeetingTestCase):
            - prefer onsite checkedin=True to remote attended when same person has both
         """
 
-        make_meeting_test_data()
         meeting = MeetingFactory(type_id='ietf', date=datetime.date(2023, 11, 4), number="118")
         person_a = PersonFactory(name='Person A')
         person_b = PersonFactory(name='Person B')
@@ -7930,9 +7957,14 @@ class ProceedingsTests(BaseMeetingTestCase):
         '''Test proceedings IETF Overview page.
         Note: old meetings aren't supported so need to add a new meeting then test.
         '''
-        make_meeting_test_data()
-        meeting = MeetingFactory(type_id='ietf', date=datetime.date(2016,7,14), number="97")
-        finalize(meeting)
+        meeting = make_meeting_test_data(meeting=MeetingFactory(type_id='ietf', date=datetime.date(2016,7,14), number="97"))
+
+        # finalize meeting
+        url = urlreverse('ietf.meeting.views.finalize_proceedings',kwargs={'num':meeting.number})
+        login_testing_unauthorized(self,"secretary",url)
+        r = self.client.post(url,{'finalize':1})
+        self.assertEqual(r.status_code, 302)
+
         url = urlreverse('ietf.meeting.views.proceedings_overview',kwargs={'num':97})
         response = self.client.get(url)
         self.assertContains(response, 'The Internet Engineering Task Force')
@@ -8335,3 +8367,127 @@ class ProceedingsTests(BaseMeetingTestCase):
         self.assertTrue(person_b.pk not in checked_in)
         self.assertTrue(person_c.pk in attended)
         self.assertTrue(person_d.pk not in attended)
+
+    def test_session_attendance(self):
+        meeting = MeetingFactory(type_id='ietf', date=datetime.date(2023, 11, 4), number='118')
+        make_meeting_test_data(meeting=meeting)
+        session = Session.objects.filter(meeting=meeting, group__acronym='mars').first()
+        regs = MeetingRegistrationFactory.create_batch(3, meeting=meeting)
+        persons = [reg.person for reg in regs]
+        self.assertEqual(session.attended_set.count(), 0)
+
+        # If there are no attendees, the link isn't offered, and getting
+        # the page directly returns an empty list.
+        session_url = urlreverse('ietf.meeting.views.session_details', kwargs={'num':meeting.number, 'acronym':session.group.acronym})
+        attendance_url = urlreverse('ietf.meeting.views.session_attendance', kwargs={'num':meeting.number, 'session_id':session.id})
+        r = self.client.get(session_url)
+        self.assertNotContains(r, attendance_url)
+        r = self.client.get(attendance_url)
+        self.assertEqual(r.status_code, 200)  
+        self.assertContains(r, '0 attendees')
+
+        # Add some attendees
+        add_attendees_url = urlreverse('ietf.meeting.views.api_add_session_attendees')
+        recmanrole = RoleFactory(group__type_id='ietf', name_id='recman', person__user__last_login=timezone.now())
+        recman = recmanrole.person
+        apikey = PersonalApiKey.objects.create(endpoint=add_attendees_url, person=recman)
+        attendees = [person.user.pk for person in persons]
+        self.client.login(username='recman', password='recman+password')
+        r = self.client.post(add_attendees_url, {'apikey':apikey.hash(), 'attended':f'{{"session_id":{session.pk},"attendees":{attendees}}}'})
+        self.assertEqual(r.status_code, 200)  
+        self.assertEqual(session.attended_set.count(), 3)
+
+        # Before a meeting is finalized, session_attendance renders a live
+        # view of the Attended records for the session.
+        r = self.client.get(session_url)
+        self.assertContains(r, attendance_url)
+        r = self.client.get(attendance_url)
+        self.assertEqual(r.status_code, 200)  
+        self.assertContains(r, '3 attendees')
+        for person in persons:
+            self.assertContains(r, person.name)
+
+        # Test for the "I was there" button.
+        def _test_button(person, expected):
+            username = person.user.username
+            self.client.login(username=username, password=f'{username}+password')
+            r = self.client.get(attendance_url)
+            self.assertEqual(b"I was there" in r.content, expected)
+        # recman isn't registered for the meeting
+        _test_button(recman, False)
+        # person0 is already on the bluesheet
+        _test_button(persons[0], False)
+        # person3 attests he was there
+        persons.append(MeetingRegistrationFactory(meeting=meeting).person)
+        # button isn't shown if we're outside the corrections windows
+        meeting.importantdate_set.create(name_id='revsub',date=date_today() - datetime.timedelta(days=20))
+        _test_button(persons[3], False)
+        # attempt to POST anyway is ignored
+        r = self.client.post(attendance_url)
+        self.assertEqual(r.status_code, 200)
+        self.assertNotContains(r, persons[3].name)
+        self.assertEqual(session.attended_set.count(), 3)
+        # button is shown, and POST is accepted
+        meeting.importantdate_set.update(name_id='revsub',date=date_today() + datetime.timedelta(days=20))
+        _test_button(persons[3], True)
+        r = self.client.post(attendance_url)
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, persons[3].name)
+        self.assertEqual(session.attended_set.count(), 4)
+
+        # When the meeting is finalized, a bluesheet file is generated,
+        # and session_attendance redirects to the file.
+        self.client.login(username='secretary',password='secretary+password')
+        finalize_url = urlreverse('ietf.meeting.views.finalize_proceedings', kwargs={'num':meeting.number})
+        r = self.client.post(finalize_url, {'finalize':1})
+        self.assertRedirects(r, urlreverse('ietf.meeting.views.proceedings', kwargs={'num':meeting.number}))
+        doc = session.presentations.filter(document__type_id='bluesheets').first().document
+        self.assertEqual(doc.rev,'00')
+        text = doc.text()
+        self.assertIn('4 attendees', text)
+        for person in persons:
+            self.assertIn(person.name, text)
+        r = self.client.get(session_url)
+        self.assertContains(r, doc.get_href())
+        self.assertNotContains(r, attendance_url)
+        r = self.client.get(attendance_url)
+        self.assertEqual(r.status_code,302)
+        self.assertEqual(r['Location'],doc.get_href())
+
+        # An interim meeting is considered finalized immediately.
+        meeting = make_interim_meeting(group=GroupFactory(acronym='mars'), date=date_today())
+        session = Session.objects.filter(meeting=meeting, group__acronym='mars').first()
+        attendance_url = urlreverse('ietf.meeting.views.session_attendance', kwargs={'num':meeting.number, 'session_id':session.id})
+        self.assertEqual(session.attended_set.count(), 0)
+        self.client.login(username='recman', password='recman+password')
+        attendees = [person.user.pk for person in persons]
+        r = self.client.post(add_attendees_url, {'apikey':apikey.hash(), 'attended':f'{{"session_id":{session.pk},"attendees":{attendees}}}'})
+        self.assertEqual(r.status_code, 200)  
+        self.assertEqual(session.attended_set.count(), 4)
+        doc = session.presentations.filter(document__type_id='bluesheets').first().document
+        self.assertEqual(doc.rev,'00')
+        session_url = urlreverse('ietf.meeting.views.session_details', kwargs={'num':meeting.number, 'acronym':session.group.acronym})
+        r = self.client.get(session_url)
+        self.assertContains(r, doc.get_href())
+        self.assertNotContains(r, attendance_url)
+        r = self.client.get(attendance_url)
+        self.assertEqual(r.status_code,302)
+        self.assertEqual(r['Location'],doc.get_href())
+
+    def test_bluesheet_data(self):
+        session = SessionFactory(meeting__type_id="ietf") 
+        attended_with_affil = MeetingRegistrationFactory(meeting=session.meeting, affiliation="Somewhere")
+        AttendedFactory(session=session, person=attended_with_affil.person, time="2023-03-13T01:24:00")  # joined 2nd
+        attended_no_affil = MeetingRegistrationFactory(meeting=session.meeting)
+        AttendedFactory(session=session, person=attended_no_affil.person, time="2023-03-13T01:23:00")  # joined 1st
+        MeetingRegistrationFactory(meeting=session.meeting)  # did not attend
+        
+        data = bluesheet_data(session)
+        self.assertEqual(
+            data,
+            [
+                {"name": attended_no_affil.person.plain_name(), "affiliation": ""},
+                {"name": attended_with_affil.person.plain_name(), "affiliation": "Somewhere"},
+            ]
+        )
+
