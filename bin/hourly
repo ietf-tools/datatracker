@@ -19,27 +19,6 @@ source $DTDIR/env/bin/activate
 
 logger -p user.info -t cron "Running $DTDIR/bin/hourly"
 
-# *** Enable when removed from /a/www/ietf-datatracker/scripts/Cron-runner: ***
-
-# # Update community lists.  Remove once the community rewrite (will be around 6.20.0 )
-# $DTDIR/ietf/manage.py update_community_lists
-# 
-# # Polling backup for iana and rfc-editory post APIs
-$DTDIR/ietf/bin/iana-changes-updates
-$DTDIR/ietf/bin/iana-protocols-updates
-# $DTDIR/ietf/bin/rfc-editor-index-updates
-# $DTDIR/ietf/bin/rfc-editor-queue-updates
-# 
-# # Generate alias and virtual files for draft email aliases
-# $DTDIR/ietf/bin/generate-draft-aliases && \
-# 	( cd /a/postfix; /usr/sbin/postalias -o draft-aliases; ) && \
-# 	( cd /a/postfix; /usr/sbin/postmap -o draft-virtual; )
-# 
-# # Generate alias and virtual files for group email aliases
-# $DTDIR/ietf/bin/generate-wg-aliases && \
-# 	( cd /a/postfix; /usr/sbin/postalias -o group-aliases; ) && \
-# 	( cd /a/postfix; /usr/sbin/postmap -o group-virtual; )
-# 
 # Generate some static files 
 ID=/a/ietfdata/doc/draft/repository
 DERIVED=/a/ietfdata/derived
