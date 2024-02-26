@@ -5,7 +5,7 @@
 {% block nomcom_announce %}
     <p class="alert alert-info my-3">
         Announcements from this nomcom are available 
-        <a href="/nomcom/ann/#nomcom-{{year}}">here</a>
+        <a href="{% url "ietf.nomcom.views.announcements" %}#nomcom-{{year}}">here</a>
     </p>
 {% endblock %}
 {% block nomcom_content %}
