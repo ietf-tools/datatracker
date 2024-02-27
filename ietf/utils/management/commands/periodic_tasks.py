@@ -153,7 +153,7 @@ class Command(BaseCommand):
 
         PeriodicTask.objects.get_or_create(
             name="Sync with IANA protocols page",
-            task="ietf.sync.tasks.iana_changes_update_task",
+            task="ietf.sync.tasks.iana_protocols_update_task",
             defaults=dict(
                 enabled=False,
                 crontab=self.crontabs["hourly"],
