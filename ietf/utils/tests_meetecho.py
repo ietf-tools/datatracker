@@ -4,7 +4,7 @@ import datetime
 import requests
 import requests_mock
 
-from unittest.mock import patch
+from unittest.mock import call, patch
 from urllib.parse import urljoin
 from zoneinfo import ZoneInfo
 
@@ -12,8 +12,9 @@ from django.conf import settings
 from django.test import override_settings
 from django.utils import timezone
 
+from ietf.meeting.factories import SessionPresentationFactory
 from ietf.utils.tests import TestCase
-from .meetecho import Conference, ConferenceManager, MeetechoAPI, MeetechoAPIError
+from .meetecho import Conference, ConferenceManager, MeetechoAPI, MeetechoAPIError, SlidesManager
 
 API_BASE = 'https://meetecho-api.example.com'
 CLIENT_ID = 'datatracker'
@@ -532,3 +533,34 @@ class ConferenceManagerTests(TestCase):
         cm.delete_conference(Conference(None, None, None, None, None, None, 'the-url', 'delete-this'))
         args, kwargs = mock_delete.call_args
         self.assertEqual(args, ('delete-this',))
+
+
+@patch.object(SlidesManager, 'wg_token', return_value='atoken')
+@override_settings(MEETECHO_API_CONFIG=API_CONFIG)
+class SlidesManagerTests(TestCase):
+    @patch("ietf.utils.meetecho.MeetechoAPI.update_slide_decks")
+    def test_send_update(self, mock_send_update, mock_wg_token):
+        sm = SlidesManager(settings.MEETECHO_API_CONFIG)
+        slides = SessionPresentationFactory(
+            document__type_id="slides",
+            document__title="This is a title",
+        )
+        SessionPresentationFactory(session=slides.session, document__type_id="agenda")
+        sm.send_update(slides.session)
+        self.assertTrue(mock_send_update.called)
+        self.assertEqual(
+            mock_send_update.call_args,
+            call(
+                wg_token="atoken",
+                session=str(slides.session.pk),
+                decks=[
+                    {
+                        "id": slides.document.pk,
+                        "title": "This is a title",
+                        "url": slides.document.get_absolute_url(),
+                        "rev": slides.document.rev,
+                        "order": 0,
+                    }
+                ]
+            )
+        )
