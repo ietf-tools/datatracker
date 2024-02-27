@@ -445,6 +445,6 @@ class SlidesManager(Manager):
                     "rev": deck.rev,
                     "order": deck.order,
                 }
-                for deck in session.sessionpresentation_set.all(type="slides")
+                for deck in session.presentations.all(type="slides")
             ]
         )
