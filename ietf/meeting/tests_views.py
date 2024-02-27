@@ -12,7 +12,7 @@ import requests.exceptions
 import requests_mock
 
 from unittest import skipIf
-from mock import patch, PropertyMock
+from mock import call, patch, PropertyMock
 from pyquery import PyQuery
 from lxml.etree import tostring
 from io import StringIO, BytesIO
@@ -3236,8 +3236,9 @@ class ReorderSlidesTests(TestCase):
 
 
 
-
-    def test_reorder_slides_in_session(self):
+    @override_settings(MEETECHO_API_CONFIG="fake settings")  # enough to trigger API calls
+    @patch("ietf.meeting.views.SlidesManager")
+    def test_reorder_slides_in_session(self, mock_slides_manager_cls):
         def _sppk_at(sppk, positions):
             return [sppk[p-1] for p in positions]
         chair_role = RoleFactory(name_id='chair')
@@ -3259,6 +3260,7 @@ class ReorderSlidesTests(TestCase):
             r = self.client.post(url, {'oldIndex':1, 'newIndex':2 })
             self.assertEqual(r.status_code, 403)
             self.assertIn('have permission', unicontent(r))
+            self.assertFalse(mock_slides_manager_cls.called)
 
             self.client.login(username=chair_role.person.user.username, password=chair_role.person.user.username+"+password")
 
@@ -3266,6 +3268,7 @@ class ReorderSlidesTests(TestCase):
             r = self.client.post(url, {'oldIndex':1, 'newIndex':2 })
             self.assertEqual(r.status_code, 403)
             self.assertIn('materials cutoff', unicontent(r))
+            self.assertFalse(mock_slides_manager_cls.called)
 
             session.meeting.date = date_today()
             session.meeting.save()
@@ -3275,57 +3278,95 @@ class ReorderSlidesTests(TestCase):
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.json()['success'],False)
             self.assertIn('index is not valid',r.json()['error'])
+            self.assertFalse(mock_slides_manager_cls.called)
 
             r = self.client.post(url, {'oldIndex':2, 'newIndex':6 })
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.json()['success'],False)
             self.assertIn('index is not valid',r.json()['error'])
+            self.assertFalse(mock_slides_manager_cls.called)
 
             r = self.client.post(url, {'oldIndex':2, 'newIndex':2 })
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.json()['success'],False)
             self.assertIn('index is not valid',r.json()['error'])
+            self.assertFalse(mock_slides_manager_cls.called)
 
             # Move from beginning
             r = self.client.post(url, {'oldIndex':1, 'newIndex':3})
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.json()['success'],True)
             self.assertEqual(list(session.presentations.order_by('order').values_list('pk',flat=True)),_sppk_at(sppk,[2,3,1,4,5]))
+            self.assertTrue(mock_slides_manager_cls.called)
+            self.assertEqual(mock_slides_manager_cls.call_args, call(api_config="fake settings"))
+            self.assertTrue(mock_slides_manager_cls.return_value.send_update.called)
+            self.assertEqual(mock_slides_manager_cls.return_value.send_update.call_args, call(session))
+            mock_slides_manager_cls.reset_mock()
 
             # Move to beginning
             r = self.client.post(url, {'oldIndex':3, 'newIndex':1})
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.json()['success'],True)
             self.assertEqual(list(session.presentations.order_by('order').values_list('pk',flat=True)),_sppk_at(sppk,[1,2,3,4,5]))
-            
+            self.assertTrue(mock_slides_manager_cls.called)
+            self.assertEqual(mock_slides_manager_cls.call_args, call(api_config="fake settings"))
+            self.assertTrue(mock_slides_manager_cls.return_value.send_update.called)
+            self.assertEqual(mock_slides_manager_cls.return_value.send_update.call_args, call(session))
+            mock_slides_manager_cls.reset_mock()
+
             # Move from end
             r = self.client.post(url, {'oldIndex':5, 'newIndex':3})
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.json()['success'],True)
             self.assertEqual(list(session.presentations.order_by('order').values_list('pk',flat=True)),_sppk_at(sppk,[1,2,5,3,4]))
+            self.assertTrue(mock_slides_manager_cls.called)
+            self.assertEqual(mock_slides_manager_cls.call_args, call(api_config="fake settings"))
+            self.assertTrue(mock_slides_manager_cls.return_value.send_update.called)
+            self.assertEqual(mock_slides_manager_cls.return_value.send_update.call_args, call(session))
+            mock_slides_manager_cls.reset_mock()
 
             # Move to end
             r = self.client.post(url, {'oldIndex':3, 'newIndex':5})
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.json()['success'],True)
             self.assertEqual(list(session.presentations.order_by('order').values_list('pk',flat=True)),_sppk_at(sppk,[1,2,3,4,5]))
+            self.assertTrue(mock_slides_manager_cls.called)
+            self.assertEqual(mock_slides_manager_cls.call_args, call(api_config="fake settings"))
+            self.assertTrue(mock_slides_manager_cls.return_value.send_update.called)
+            self.assertEqual(mock_slides_manager_cls.return_value.send_update.call_args, call(session))
+            mock_slides_manager_cls.reset_mock()
 
             # Move beginning to end
             r = self.client.post(url, {'oldIndex':1, 'newIndex':5})
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.json()['success'],True)
             self.assertEqual(list(session.presentations.order_by('order').values_list('pk',flat=True)),_sppk_at(sppk,[2,3,4,5,1]))
+            self.assertTrue(mock_slides_manager_cls.called)
+            self.assertEqual(mock_slides_manager_cls.call_args, call(api_config="fake settings"))
+            self.assertTrue(mock_slides_manager_cls.return_value.send_update.called)
+            self.assertEqual(mock_slides_manager_cls.return_value.send_update.call_args, call(session))
+            mock_slides_manager_cls.reset_mock()
 
             # Move middle to middle 
             r = self.client.post(url, {'oldIndex':3, 'newIndex':4})
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.json()['success'],True)
             self.assertEqual(list(session.presentations.order_by('order').values_list('pk',flat=True)),_sppk_at(sppk,[2,3,5,4,1]))
+            self.assertTrue(mock_slides_manager_cls.called)
+            self.assertEqual(mock_slides_manager_cls.call_args, call(api_config="fake settings"))
+            self.assertTrue(mock_slides_manager_cls.return_value.send_update.called)
+            self.assertEqual(mock_slides_manager_cls.return_value.send_update.call_args, call(session))
+            mock_slides_manager_cls.reset_mock()
 
             r = self.client.post(url, {'oldIndex':3, 'newIndex':2})
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.json()['success'],True)
             self.assertEqual(list(session.presentations.order_by('order').values_list('pk',flat=True)),_sppk_at(sppk,[2,5,3,4,1]))
+            self.assertTrue(mock_slides_manager_cls.called)
+            self.assertEqual(mock_slides_manager_cls.call_args, call(api_config="fake settings"))
+            self.assertTrue(mock_slides_manager_cls.return_value.send_update.called)
+            self.assertEqual(mock_slides_manager_cls.return_value.send_update.call_args, call(session))
+            mock_slides_manager_cls.reset_mock()
 
             # Reset for next iteration in the loop
             session.presentations.update(order=F('pk'))
