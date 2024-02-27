@@ -439,12 +439,12 @@ class SlidesManager(Manager):
             session=str(session.pk),
             decks=[
                 {
-                    "id": deck.pk,
-                    "title": deck.title,
-                    "url": deck.get_absolute_url(),
-                    "rev": deck.rev,
+                    "id": deck.document.pk,
+                    "title": deck.document.title,
+                    "url": deck.document.get_absolute_url(),
+                    "rev": deck.document.rev,
                     "order": deck.order,
                 }
-                for deck in session.presentations.all(type="slides")
+                for deck in session.presentations.filter(document__type="slides")
             ]
         )
