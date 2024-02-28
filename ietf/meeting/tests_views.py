@@ -3020,7 +3020,9 @@ class EditTimeslotsTests(TestCase):
 
 class ReorderSlidesTests(TestCase):
 
-    def test_add_slides_to_session(self):
+    @override_settings(MEETECHO_API_CONFIG="fake settings")  # enough to trigger API calls
+    @patch("ietf.meeting.views.SlidesManager")
+    def test_add_slides_to_session(self, mock_slides_manager_cls):
         for type_id in ('ietf','interim'):
             chair_role = RoleFactory(name_id='chair')
             session = SessionFactory(group=chair_role.group, meeting__date=date_today() - datetime.timedelta(days=90), meeting__type_id=type_id)
@@ -3031,6 +3033,7 @@ class ReorderSlidesTests(TestCase):
             r = self.client.post(url, {'order':1, 'name':slides.name })
             self.assertEqual(r.status_code, 403)
             self.assertIn('have permission', unicontent(r))
+            self.assertFalse(mock_slides_manager_cls.called)
 
             self.client.login(username=chair_role.person.user.username, password=chair_role.person.user.username+"+password")
 
@@ -3038,6 +3041,7 @@ class ReorderSlidesTests(TestCase):
             r = self.client.post(url, {'order':0, 'name':slides.name })
             self.assertEqual(r.status_code, 403)
             self.assertIn('materials cutoff', unicontent(r))
+            self.assertFalse(mock_slides_manager_cls.called)
 
             session.meeting.date = date_today()
             session.meeting.save()
@@ -3047,49 +3051,62 @@ class ReorderSlidesTests(TestCase):
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.json()['success'],False)
             self.assertIn('No data',r.json()['error'])
+            self.assertFalse(mock_slides_manager_cls.called)
 
             r = self.client.post(url, {'garbage':'garbage'})
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.json()['success'],False)
             self.assertIn('order is not valid',r.json()['error'])
+            self.assertFalse(mock_slides_manager_cls.called)
 
             r = self.client.post(url, {'order':0, 'name':slides.name })
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.json()['success'],False)
             self.assertIn('order is not valid',r.json()['error'])
+            self.assertFalse(mock_slides_manager_cls.called)
 
             r = self.client.post(url, {'order':2, 'name':slides.name })
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.json()['success'],False)
             self.assertIn('order is not valid',r.json()['error'])
+            self.assertFalse(mock_slides_manager_cls.called)
 
             r = self.client.post(url, {'order':'garbage', 'name':slides.name })
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.json()['success'],False)
             self.assertIn('order is not valid',r.json()['error'])
+            self.assertFalse(mock_slides_manager_cls.called)
 
             # Invalid name
             r = self.client.post(url, {'order':1 })
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.json()['success'],False)
             self.assertIn('name is not valid',r.json()['error'])
+            self.assertFalse(mock_slides_manager_cls.called)
 
             r = self.client.post(url, {'order':1, 'name':'garbage' })
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.json()['success'],False)
             self.assertIn('name is not valid',r.json()['error'])
+            self.assertFalse(mock_slides_manager_cls.called)
 
             # Valid post
             r = self.client.post(url, {'order':1, 'name':slides.name })
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.json()['success'],True)
             self.assertEqual(session.presentations.count(),1)
+            self.assertTrue(mock_slides_manager_cls.called)
+            self.assertEqual(mock_slides_manager_cls.call_args, call(api_config="fake settings"))
+            self.assertTrue(mock_slides_manager_cls.return_value.add.called)
+            self.assertEqual(mock_slides_manager_cls.return_value.add.call_args, call(session=session, slides=slides, order=1))
+            mock_slides_manager_cls.reset_mock()
 
             # Ignore a request to add slides that are already in a session
             r = self.client.post(url, {'order':1, 'name':slides.name })
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.json()['success'],True)
             self.assertEqual(session.presentations.count(),1)
+            self.assertFalse(mock_slides_manager_cls.called)
 
 
             session2 = SessionFactory(group=session.group, meeting=session.meeting)
@@ -3108,6 +3125,11 @@ class ReorderSlidesTests(TestCase):
             self.assertEqual(r.json()['success'],True)
             self.assertEqual(session2.presentations.get(document=more_slides[0]).order,1)
             self.assertEqual(list(session2.presentations.order_by('order').values_list('order',flat=True)), list(range(1,5)))
+            self.assertTrue(mock_slides_manager_cls.called)
+            self.assertEqual(mock_slides_manager_cls.call_args, call(api_config="fake settings"))
+            self.assertTrue(mock_slides_manager_cls.return_value.add.called)
+            self.assertEqual(mock_slides_manager_cls.return_value.add.call_args, call(session=session2, slides=more_slides[0], order=1))
+            mock_slides_manager_cls.reset_mock()
 
             # Insert at end
             r = self.client.post(url, {'order':5, 'name':more_slides[1].name})
@@ -3115,6 +3137,11 @@ class ReorderSlidesTests(TestCase):
             self.assertEqual(r.json()['success'],True)
             self.assertEqual(session2.presentations.get(document=more_slides[1]).order,5)
             self.assertEqual(list(session2.presentations.order_by('order').values_list('order',flat=True)), list(range(1,6)))
+            self.assertTrue(mock_slides_manager_cls.called)
+            self.assertEqual(mock_slides_manager_cls.call_args, call(api_config="fake settings"))
+            self.assertTrue(mock_slides_manager_cls.return_value.add.called)
+            self.assertEqual(mock_slides_manager_cls.return_value.add.call_args, call(session=session2, slides=more_slides[1], order=5))
+            mock_slides_manager_cls.reset_mock()
 
             # Insert in middle
             r = self.client.post(url, {'order':3, 'name':more_slides[2].name})
@@ -3122,6 +3149,11 @@ class ReorderSlidesTests(TestCase):
             self.assertEqual(r.json()['success'],True)
             self.assertEqual(session2.presentations.get(document=more_slides[2]).order,3)
             self.assertEqual(list(session2.presentations.order_by('order').values_list('order',flat=True)), list(range(1,7)))
+            self.assertTrue(mock_slides_manager_cls.called)
+            self.assertEqual(mock_slides_manager_cls.call_args, call(api_config="fake settings"))
+            self.assertTrue(mock_slides_manager_cls.return_value.add.called)
+            self.assertEqual(mock_slides_manager_cls.return_value.add.call_args, call(session=session2, slides=more_slides[2], order=3))
+            mock_slides_manager_cls.reset_mock()
 
     def test_remove_slides_from_session(self):
         for type_id in ['ietf','interim']:
