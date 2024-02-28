@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2016-2020, All Rights Reserved
+# Copyright The IETF Trust 2016-2024, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -955,6 +955,8 @@ def complete_review(request, name, assignment_id=None, acronym=None):
 
     mail_archive_query_urls = mailarch.construct_query_urls(doc, team)
 
+    team_list_email = team.list_email or "directorate"
+
     return render(request, 'doc/review/complete_review.html', {
         'doc': doc,
         'team': team,
@@ -965,6 +967,7 @@ def complete_review(request, name, assignment_id=None, acronym=None):
         'review_to': to,
         'review_cc': cc,
         'is_reviewer': is_reviewer,
+        'team_list_email': team_list_email,
     })
 
 def search_mail_archive(request, name, acronym=None, assignment_id=None):
