@@ -4,6 +4,7 @@
 import datetime
 import json
 import html
+import mock
 import os
 import sys
 
@@ -12,7 +13,8 @@ from pathlib import Path
 
 from django.apps import apps
 from django.conf import settings
-from django.test import Client
+from django.http import HttpResponseForbidden
+from django.test import Client, RequestFactory
 from django.test.utils import override_settings
 from django.urls import reverse as urlreverse
 from django.utils import timezone
@@ -30,13 +32,15 @@ from ietf.meeting.factories import MeetingFactory, SessionFactory
 from ietf.meeting.models import Session
 from ietf.nomcom.models import Volunteer, NomCom
 from ietf.nomcom.factories import NomComFactory, nomcom_kwargs_for_year
-from ietf.person.factories import PersonFactory, random_faker
-from ietf.person.models import User
+from ietf.person.factories import PersonFactory, random_faker, EmailFactory
+from ietf.person.models import Email, User
 from ietf.person.models import PersonalApiKey
 from ietf.stats.models import MeetingRegistration
 from ietf.utils.mail import outbox, get_payload_text
 from ietf.utils.models import DumpInfo
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized, reload_db_objects
+
+from .ietf_utils import is_valid_token, requires_api_token
 
 OMITTED_APPS = (
     'ietf.secr.meetings',
@@ -364,7 +368,7 @@ class CustomApiTests(TestCase):
             r = self.client.post(url,{'apikey':apikey.hash(),'apidata': f'{{"session_id":{session.pk}, "{type_id}":{content}}}'})
             self.assertEqual(r.status_code, 200)
 
-            newdoc = session.sessionpresentation_set.get(document__type_id=type_id).document
+            newdoc = session.presentations.get(document__type_id=type_id).document
             newdoccontent = get_unicode_document_content(newdoc.name, Path(session.meeting.get_materials_path()) / type_id / newdoc.uploaded_filename)
             self.assertEqual(json.loads(content), json.loads(newdoccontent))
 
@@ -450,7 +454,7 @@ class CustomApiTests(TestCase):
                                    'item': '1', 'bluesheet': bluesheet, })
         self.assertContains(r, "Done", status_code=200)
 
-        bluesheet = session.sessionpresentation_set.filter(document__type__slug='bluesheets').first().document
+        bluesheet = session.presentations.filter(document__type__slug='bluesheets').first().document
         # We've submitted an update; check that the rev is right
         self.assertEqual(bluesheet.rev, '01')
         # Check the content
@@ -565,7 +569,7 @@ class CustomApiTests(TestCase):
         self.assertContains(r, "Done", status_code=200)
 
         bluesheet = (
-            session.sessionpresentation_set.filter(document__type__slug="bluesheets")
+            session.presentations.filter(document__type__slug="bluesheets")
             .first()
             .document
         )
@@ -780,7 +784,96 @@ class CustomApiTests(TestCase):
         url = urlreverse('ietf.meeting.views.api_get_session_materials', kwargs={'session_id': session.pk})
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
+    
+    @override_settings(APP_API_TOKENS={"ietf.api.views.email_aliases": ["valid-token"]})
+    @mock.patch("ietf.api.views.DraftAliasGenerator")
+    def test_draft_aliases(self, mock):
+        mock.return_value = (("alias1", ("a1", "a2")), ("alias2", ("a3", "a4")))
+        url = urlreverse("ietf.api.views.draft_aliases")
+        r = self.client.get(url, headers={"X-Api-Key": "valid-token"})
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.headers["Content-type"], "application/json")
+        self.assertEqual(
+            json.loads(r.content),
+            {
+                "aliases": [
+                    {"alias": "alias1", "domains": ["ietf"], "addresses": ["a1", "a2"]},
+                    {"alias": "alias2", "domains": ["ietf"], "addresses": ["a3", "a4"]},
+                ]}
+        )
+        # some invalid cases
+        self.assertEqual(
+            self.client.get(url, headers={}).status_code,
+            403,
+        )
+        self.assertEqual(
+            self.client.get(url, headers={"X-Api-Key": "something-else"}).status_code,
+            403,
+        )
+        self.assertEqual(
+            self.client.post(url, headers={"X-Api-Key": "something-else"}).status_code,
+            403,
+        )
+        self.assertEqual(
+            self.client.post(url, headers={"X-Api-Key": "valid-token"}).status_code,
+            405,
+        )
 
+    @override_settings(APP_API_TOKENS={"ietf.api.views.email_aliases": ["valid-token"]})
+    @mock.patch("ietf.api.views.GroupAliasGenerator")
+    def test_group_aliases(self, mock):
+        mock.return_value = (("alias1", ("ietf",), ("a1", "a2")), ("alias2", ("ietf", "iab"), ("a3", "a4")))
+        url = urlreverse("ietf.api.views.group_aliases")
+        r = self.client.get(url, headers={"X-Api-Key": "valid-token"})
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.headers["Content-type"], "application/json")
+        self.assertEqual(
+            json.loads(r.content),
+            {
+                "aliases": [
+                    {"alias": "alias1", "domains": ["ietf"], "addresses": ["a1", "a2"]},
+                    {"alias": "alias2", "domains": ["ietf", "iab"], "addresses": ["a3", "a4"]},
+                ]}
+        )
+        # some invalid cases
+        self.assertEqual(
+            self.client.get(url, headers={}).status_code,
+            403,
+        )
+        self.assertEqual(
+            self.client.get(url, headers={"X-Api-Key": "something-else"}).status_code,
+            403,
+        )
+        self.assertEqual(
+            self.client.post(url, headers={"X-Api-Key": "something-else"}).status_code,
+            403,
+        )
+        self.assertEqual(
+            self.client.post(url, headers={"X-Api-Key": "valid-token"}).status_code,
+            405,
+        )
+
+    @override_settings(APP_API_TOKENS={"ietf.api.views.active_email_list": ["valid-token"]})
+    def test_active_email_list(self):
+        EmailFactory(active=True)  # make sure there's at least one active email...
+        EmailFactory(active=False)  # ... and at least one non-active emai
+        url = urlreverse("ietf.api.views.active_email_list")
+        r = self.client.post(url, headers={})
+        self.assertEqual(r.status_code, 403)
+        r = self.client.get(url, headers={})
+        self.assertEqual(r.status_code, 403)
+        r = self.client.get(url, headers={"X-Api-Key": "not-the-valid-token"})
+        self.assertEqual(r.status_code, 403)
+        r = self.client.post(url, headers={"X-Api-Key": "not-the-valid-token"})
+        self.assertEqual(r.status_code, 403)
+        r = self.client.post(url, headers={"X-Api-Key": "valid-token"})
+        self.assertEqual(r.status_code, 405)
+        r = self.client.get(url, headers={"X-Api-Key": "valid-token"})
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.headers["Content-Type"], "application/json")
+        result = json.loads(r.content)
+        self.assertCountEqual(result.keys(), ["addresses"])
+        self.assertCountEqual(result["addresses"], Email.objects.filter(active=True).values_list("address", flat=True))
 
 
 class DirectAuthApiTests(TestCase):
@@ -1133,3 +1226,85 @@ class RfcdiffSupportTests(TestCase):
             url = urlreverse(self.target_view, kwargs={'name': name})
             r = self.client.get(url)
             self.assertEqual(r.status_code, 404)
+
+
+class TokenTests(TestCase):
+    @override_settings(APP_API_TOKENS={"known.endpoint": ["token in a list"], "oops": "token as a str"})
+    def test_is_valid_token(self):
+        # various invalid cases
+        self.assertFalse(is_valid_token("unknown.endpoint", "token in a list"))
+        self.assertFalse(is_valid_token("known.endpoint", "token"))
+        self.assertFalse(is_valid_token("known.endpoint", "token as a str"))
+        self.assertFalse(is_valid_token("oops", "token"))
+        self.assertFalse(is_valid_token("oops", "token in a list"))
+        # the only valid cases
+        self.assertTrue(is_valid_token("known.endpoint", "token in a list"))
+        self.assertTrue(is_valid_token("oops", "token as a str"))
+
+    @mock.patch("ietf.api.ietf_utils.is_valid_token")
+    def test_requires_api_token(self, mock_is_valid_token):
+        called = False
+
+        @requires_api_token
+        def fn_to_wrap(request, *args, **kwargs):
+            nonlocal called
+            called = True
+            return request, args, kwargs
+        
+        req_factory = RequestFactory()
+        arg = object()
+        kwarg = object()
+
+        # No X-Api-Key header
+        mock_is_valid_token.return_value = False
+        val = fn_to_wrap(
+            req_factory.get("/some/url", headers={}),
+            arg,
+            kwarg=kwarg,
+        )
+        self.assertTrue(isinstance(val, HttpResponseForbidden))
+        self.assertFalse(mock_is_valid_token.called)
+        self.assertFalse(called)
+
+        # Bad X-Api-Key header (not resetting the mock, it was not used yet)
+        val = fn_to_wrap(
+            req_factory.get("/some/url", headers={"X-Api-Key": "some-value"}),
+            arg, 
+            kwarg=kwarg,
+        )
+        self.assertTrue(isinstance(val, HttpResponseForbidden))
+        self.assertTrue(mock_is_valid_token.called)
+        self.assertEqual(
+            mock_is_valid_token.call_args[0], 
+            (fn_to_wrap.__module__ + "." + fn_to_wrap.__qualname__, "some-value"),
+        )
+        self.assertFalse(called)
+
+        # Valid header
+        mock_is_valid_token.reset_mock()
+        mock_is_valid_token.return_value = True
+        request = req_factory.get("/some/url", headers={"X-Api-Key": "some-value"}) 
+        # Bad X-Api-Key header (not resetting the mock, it was not used yet)
+        val = fn_to_wrap(
+            request,
+            arg, 
+            kwarg=kwarg,
+        )
+        self.assertEqual(val, (request, (arg,), {"kwarg": kwarg}))
+        self.assertTrue(mock_is_valid_token.called)
+        self.assertEqual(
+            mock_is_valid_token.call_args[0], 
+            (fn_to_wrap.__module__ + "." + fn_to_wrap.__qualname__, "some-value"),
+        )
+        self.assertTrue(called)
+
+        # Test the endpoint setting
+        @requires_api_token("endpoint")
+        def another_fn_to_wrap(request):
+            return "yep"
+        
+        val = another_fn_to_wrap(request)
+        self.assertEqual(
+            mock_is_valid_token.call_args[0], 
+            ("endpoint", "some-value"),
+        )

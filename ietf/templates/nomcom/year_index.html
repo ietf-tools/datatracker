@@ -1,7 +1,13 @@
 {% extends "nomcom/nomcom_public_base.html" %}
-{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{# Copyright The IETF Trust 2015-2024, All Rights Reserved #}
 {% load origin %}
 {% block subtitle %}- Home{% endblock %}
+{% block nomcom_announce %}
+    <p class="alert alert-info my-3">
+        Announcements from this nomcom are available 
+        <a href="{% url "ietf.nomcom.views.announcements" %}#nomcom-{{year}}">here</a>
+    </p>
+{% endblock %}
 {% block nomcom_content %}
     {% origin %}
     <!-- [html-validate-disable-block heading-level -- FIXME: old HTML in the database] -->

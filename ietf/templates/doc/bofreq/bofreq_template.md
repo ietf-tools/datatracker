@@ -8,7 +8,6 @@ Fill in the details below. Keep items in the order they appear here.
 - Status: (not) WG Forming
 - Responsible AD: name
 - BOF proponents: name <email>, name <email> (1-3 people - who are requesting and coordinating discussion for proposal) 
-- BOF chairs: TBD
 - Number of people expected to attend: 100
 - Length of session (1 or 2 hours): 2 hours
 - Conflicts (whole Areas and/or WGs)

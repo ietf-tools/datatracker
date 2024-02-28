@@ -323,6 +323,9 @@ def document_main(request, name, rev=None, document_html=False):
                 submission = group.acronym
             submission = '<a href="%s">%s</a>' % (group.about_url(), submission)
 
+        draft = doc.came_from_draft()
+        mailto_name = draft.name if draft else None
+
         return render(request, "doc/document_rfc.html" if document_html is False else "doc/document_html.html",
                                   dict(doc=doc,
                                        document_html=document_html,
@@ -355,7 +358,8 @@ def document_main(request, name, rev=None, document_html=False):
                                        iana_experts_comment=iana_experts_comment,
                                        presentations=presentations,
                                        diff_revisions=diff_revisions,
-                                       submission=submission
+                                       submission=submission,
+                                       mailto_name=mailto_name,
                                        ))
 
     elif doc.type_id == "draft":
@@ -823,7 +827,7 @@ def document_main(request, name, rev=None, document_html=False):
                                        sorted_relations=sorted_relations,
                                        ))
 
-    elif doc.type_id in ("slides", "agenda", "minutes", "bluesheets", "procmaterials",):
+    elif doc.type_id in ("slides", "agenda", "minutes", "narrativeminutes", "bluesheets", "procmaterials",):
         can_manage_material = can_manage_materials(request.user, doc.group)
         presentations = doc.future_presentations()
         if doc.uploaded_filename:
@@ -907,9 +911,9 @@ def document_main(request, name, rev=None, document_html=False):
 
     elif doc.type_id in ("chatlog", "polls"):
         if isinstance(doc,DocHistory):
-            session = doc.doc.sessionpresentation_set.last().session
+            session = doc.doc.presentations.last().session
         else:
-            session = doc.sessionpresentation_set.last().session
+            session = doc.presentations.last().session
         pathname = Path(session.meeting.get_materials_path()) / doc.type_id / doc.uploaded_filename
         content = get_unicode_document_content(doc.name, str(pathname))
         return render(
@@ -934,7 +938,7 @@ def document_main(request, name, rev=None, document_html=False):
         variants = set([match.name.split(".")[1] for match in Path(doc.get_file_path()).glob(f"{basename}.*")])
         inlineable = any([ext in variants for ext in ["md", "txt"]])
         if inlineable:
-            content = markdown.markdown(doc.text_or_error())
+            content = markdown.liberal_markdown(doc.text_or_error())
         else:
             content = "No format available to display inline"
             if "pdf" in variants:
@@ -2048,7 +2052,7 @@ class VersionForm(forms.Form):
 
 def edit_sessionpresentation(request,name,session_id):
     doc = get_object_or_404(Document, name=name)
-    sp = get_object_or_404(doc.sessionpresentation_set, session_id=session_id)
+    sp = get_object_or_404(doc.presentations, session_id=session_id)
 
     if not sp.session.can_manage_materials(request.user):
         raise Http404
@@ -2065,7 +2069,7 @@ def edit_sessionpresentation(request,name,session_id):
         if form.is_valid():
             new_selection = form.cleaned_data['version']
             if initial['version'] != new_selection:
-                doc.sessionpresentation_set.filter(pk=sp.pk).update(rev=None if new_selection=='current' else new_selection)
+                doc.presentations.filter(pk=sp.pk).update(rev=None if new_selection=='current' else new_selection)
                 c = DocEvent(type="added_comment", doc=doc, rev=doc.rev, by=request.user.person)
                 c.desc = "Revision for session %s changed to  %s" % (sp.session,new_selection)
                 c.save()
@@ -2077,7 +2081,7 @@ def edit_sessionpresentation(request,name,session_id):
 
 def remove_sessionpresentation(request,name,session_id):
     doc = get_object_or_404(Document, name=name)
-    sp = get_object_or_404(doc.sessionpresentation_set, session_id=session_id)
+    sp = get_object_or_404(doc.presentations, session_id=session_id)
 
     if not sp.session.can_manage_materials(request.user):
         raise Http404
@@ -2086,7 +2090,7 @@ def remove_sessionpresentation(request,name,session_id):
         raise Http404
 
     if request.method == 'POST':
-        doc.sessionpresentation_set.filter(pk=sp.pk).delete()
+        doc.presentations.filter(pk=sp.pk).delete()
         c = DocEvent(type="added_comment", doc=doc, rev=doc.rev, by=request.user.person)
         c.desc = "Removed from session: %s" % (sp.session)
         c.save()
@@ -2110,7 +2114,7 @@ def add_sessionpresentation(request,name):
     version_choices.insert(0,('current','Current at the time of the session'))
 
     sessions = get_upcoming_manageable_sessions(request.user)
-    sessions = sort_sessions([s for s in sessions if not s.sessionpresentation_set.filter(document=doc).exists()])
+    sessions = sort_sessions([s for s in sessions if not s.presentations.filter(document=doc).exists()])
     if doc.group:
         sessions = sorted(sessions,key=lambda x:0 if x.group==doc.group else 1)
 
@@ -2123,7 +2127,7 @@ def add_sessionpresentation(request,name):
             session_id = session_form.cleaned_data['session']
             version = version_form.cleaned_data['version']
             rev = None if version=='current' else version
-            doc.sessionpresentation_set.create(session_id=session_id,rev=rev)
+            doc.presentations.create(session_id=session_id,rev=rev)
             c = DocEvent(type="added_comment", doc=doc, rev=doc.rev, by=request.user.person)
             c.desc = "%s to session: %s" % ('Added -%s'%rev if rev else 'Added', Session.objects.get(pk=session_id))
             c.save()
