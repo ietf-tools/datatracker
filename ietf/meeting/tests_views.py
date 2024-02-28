@@ -3155,7 +3155,9 @@ class ReorderSlidesTests(TestCase):
             self.assertEqual(mock_slides_manager_cls.return_value.add.call_args, call(session=session2, slides=more_slides[2], order=3))
             mock_slides_manager_cls.reset_mock()
 
-    def test_remove_slides_from_session(self):
+    @override_settings(MEETECHO_API_CONFIG="fake settings")  # enough to trigger API calls
+    @patch("ietf.meeting.views.SlidesManager")
+    def test_remove_slides_from_session(self, mock_slides_manager_cls):
         for type_id in ['ietf','interim']:
             chair_role = RoleFactory(name_id='chair')
             session = SessionFactory(group=chair_role.group, meeting__date=date_today()-datetime.timedelta(days=90), meeting__type_id=type_id)
@@ -3166,6 +3168,7 @@ class ReorderSlidesTests(TestCase):
             r = self.client.post(url, {'oldIndex':1, 'name':slides.name })
             self.assertEqual(r.status_code, 403)
             self.assertIn('have permission', unicontent(r))
+            self.assertFalse(mock_slides_manager_cls.called)
 
             self.client.login(username=chair_role.person.user.username, password=chair_role.person.user.username+"+password")
             
@@ -3173,6 +3176,7 @@ class ReorderSlidesTests(TestCase):
             r = self.client.post(url, {'oldIndex':0, 'name':slides.name })
             self.assertEqual(r.status_code, 403)
             self.assertIn('materials cutoff', unicontent(r))
+            self.assertFalse(mock_slides_manager_cls.called)
 
             session.meeting.date = date_today()
             session.meeting.save()
@@ -3182,27 +3186,32 @@ class ReorderSlidesTests(TestCase):
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.json()['success'],False)
             self.assertIn('No data',r.json()['error'])
+            self.assertFalse(mock_slides_manager_cls.called)
 
             r = self.client.post(url, {'garbage':'garbage'})
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.json()['success'],False)
             self.assertIn('index is not valid',r.json()['error'])
+            self.assertFalse(mock_slides_manager_cls.called)
 
             r = self.client.post(url, {'oldIndex':0, 'name':slides.name })
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.json()['success'],False)
             self.assertIn('index is not valid',r.json()['error'])
+            self.assertFalse(mock_slides_manager_cls.called)
 
             r = self.client.post(url, {'oldIndex':'garbage', 'name':slides.name })
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.json()['success'],False)
             self.assertIn('index is not valid',r.json()['error'])
-           
+            self.assertFalse(mock_slides_manager_cls.called)
+
             # No matching thing to delete
             r = self.client.post(url, {'oldIndex':1, 'name':slides.name })
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.json()['success'],False)
             self.assertIn('index is not valid',r.json()['error'])
+            self.assertFalse(mock_slides_manager_cls.called)
 
             session.presentations.create(document=slides, rev=slides.rev, order=1)
 
@@ -3211,11 +3220,13 @@ class ReorderSlidesTests(TestCase):
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.json()['success'],False)
             self.assertIn('name is not valid',r.json()['error'])
+            self.assertFalse(mock_slides_manager_cls.called)
 
             r = self.client.post(url, {'oldIndex':1, 'name':'garbage' })
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.json()['success'],False)
             self.assertIn('name is not valid',r.json()['error'])
+            self.assertFalse(mock_slides_manager_cls.called)
 
             slides2 = DocumentFactory(type_id='slides')
 
@@ -3224,18 +3235,25 @@ class ReorderSlidesTests(TestCase):
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.json()['success'],False)
             self.assertIn('SessionPresentation not found',r.json()['error'])
+            self.assertFalse(mock_slides_manager_cls.called)
 
             session.presentations.create(document=slides2, rev=slides2.rev, order=2)
             r = self.client.post(url, {'oldIndex':1, 'name':slides2.name })
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.json()['success'],False)
             self.assertIn('Name does not match index',r.json()['error'])
+            self.assertFalse(mock_slides_manager_cls.called)
 
             # valid removal
             r = self.client.post(url, {'oldIndex':1, 'name':slides.name })
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.json()['success'],True)
             self.assertEqual(session.presentations.count(),1)
+            self.assertTrue(mock_slides_manager_cls.called)
+            self.assertEqual(mock_slides_manager_cls.call_args, call(api_config="fake settings"))
+            self.assertTrue(mock_slides_manager_cls.return_value.delete.called)
+            self.assertEqual(mock_slides_manager_cls.return_value.delete.call_args, call(session=session, slides=slides))
+            mock_slides_manager_cls.reset_mock()
 
             session2 = SessionFactory(group=session.group, meeting=session.meeting)
             sp_list = SessionPresentationFactory.create_batch(5, document__type_id='slides', session=session2)
@@ -3251,6 +3269,11 @@ class ReorderSlidesTests(TestCase):
             self.assertEqual(r.json()['success'],True)
             self.assertFalse(session2.presentations.filter(pk=sp_list[0].pk).exists())
             self.assertEqual(list(session2.presentations.order_by('order').values_list('order',flat=True)), list(range(1,5)))
+            self.assertTrue(mock_slides_manager_cls.called)
+            self.assertEqual(mock_slides_manager_cls.call_args, call(api_config="fake settings"))
+            self.assertTrue(mock_slides_manager_cls.return_value.delete.called)
+            self.assertEqual(mock_slides_manager_cls.return_value.delete.call_args, call(session=session2, slides=sp_list[0].document))
+            mock_slides_manager_cls.reset_mock()
 
             # delete in middle of list
             r = self.client.post(url, {'oldIndex':4, 'name':sp_list[4].document.name })
@@ -3258,6 +3281,11 @@ class ReorderSlidesTests(TestCase):
             self.assertEqual(r.json()['success'],True)
             self.assertFalse(session2.presentations.filter(pk=sp_list[4].pk).exists())
             self.assertEqual(list(session2.presentations.order_by('order').values_list('order',flat=True)), list(range(1,4)))
+            self.assertTrue(mock_slides_manager_cls.called)
+            self.assertEqual(mock_slides_manager_cls.call_args, call(api_config="fake settings"))
+            self.assertTrue(mock_slides_manager_cls.return_value.delete.called)
+            self.assertEqual(mock_slides_manager_cls.return_value.delete.call_args, call(session=session2, slides=sp_list[4].document))
+            mock_slides_manager_cls.reset_mock()
 
             # delete at end of list
             r = self.client.post(url, {'oldIndex':2, 'name':sp_list[2].document.name })
@@ -3265,8 +3293,11 @@ class ReorderSlidesTests(TestCase):
             self.assertEqual(r.json()['success'],True)
             self.assertFalse(session2.presentations.filter(pk=sp_list[2].pk).exists())
             self.assertEqual(list(session2.presentations.order_by('order').values_list('order',flat=True)), list(range(1,3)))
-
-
+            self.assertTrue(mock_slides_manager_cls.called)
+            self.assertEqual(mock_slides_manager_cls.call_args, call(api_config="fake settings"))
+            self.assertTrue(mock_slides_manager_cls.return_value.delete.called)
+            self.assertEqual(mock_slides_manager_cls.return_value.delete.call_args, call(session=session2, slides=sp_list[2].document))
+            mock_slides_manager_cls.reset_mock()
 
     @override_settings(MEETECHO_API_CONFIG="fake settings")  # enough to trigger API calls
     @patch("ietf.meeting.views.SlidesManager")
