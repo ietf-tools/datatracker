@@ -3073,6 +3073,11 @@ def ajax_add_slides_to_session(request, session_id, num):
         session.presentations.create(document=doc,rev=doc.rev,order=order)
         DocEvent.objects.create(type="added_comment", doc=doc, rev=doc.rev, by=request.user.person, desc="Added to session: %s" % session)
 
+        # Notify Meetecho of new slides if the API is configured
+        if hasattr(settings, "MEETECHO_API_CONFIG"):
+            sm = SlidesManager(api_config=settings.MEETECHO_API_CONFIG)
+            sm.add(session=session, slides=doc, order=order)
+
     return HttpResponse(json.dumps({'success':True}), content_type='application/json')
 
 
