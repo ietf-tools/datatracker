@@ -557,17 +557,26 @@ class SlidesManagerTests(TestCase):
                     "url": slides_doc.get_absolute_url(),
                     "rev": slides_doc.rev,
                     "order": 13,
-                }
-            )
+                },
+            ),
+        )
+
+    @patch("ietf.utils.meetecho.MeetechoAPI.delete_slide_deck")
+    def test_delete(self, mock_delete, mock_wg_token):
+        sm = SlidesManager(settings.MEETECHO_API_CONFIG)
+        slides = SessionPresentationFactory(document__type_id="slides")
+        sm.delete(slides.session, slides.document)
+        self.assertTrue(mock_wg_token.called)
+        self.assertTrue(mock_delete.called)
+        self.assertEqual(
+            mock_delete.call_args,
+            call(wg_token="atoken", session=str(slides.session.pk), id=slides.document_id),
         )
 
     @patch("ietf.utils.meetecho.MeetechoAPI.update_slide_decks")
     def test_send_update(self, mock_send_update, mock_wg_token):
         sm = SlidesManager(settings.MEETECHO_API_CONFIG)
-        slides = SessionPresentationFactory(
-            document__type_id="slides",
-            document__title="This is a title",
-        )
+        slides = SessionPresentationFactory(document__type_id="slides")
         SessionPresentationFactory(session=slides.session, document__type_id="agenda")
         sm.send_update(slides.session)
         self.assertTrue(mock_wg_token.called)
@@ -576,11 +585,11 @@ class SlidesManagerTests(TestCase):
             mock_send_update.call_args,
             call(
                 wg_token="atoken",
-                session=str(slides.session.pk),
+                session=str(slides.session_id),
                 decks=[
                     {
-                        "id": slides.document.pk,
-                        "title": "This is a title",
+                        "id": slides.document_id,
+                        "title": slides.document.title,
                         "url": slides.document.get_absolute_url(),
                         "rev": slides.document.rev,
                         "order": 0,
