@@ -451,6 +451,13 @@ class SlidesManager(Manager):
             }
         )
 
+    def delete(self, session: "Session", slides: "Document"):
+        self.api.delete_slide_deck(
+            wg_token=self.wg_token(session.group),
+            session=str(session.pk),
+            id=slides.pk,
+        )
+    
     def send_update(self, session: "Session"):
         self.api.update_slide_decks(
             wg_token=self.wg_token(session.group),
