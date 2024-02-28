@@ -12,6 +12,7 @@ CRONTAB_DEFS = {
         "day_of_month": "*",
         "month_of_year": "*",
         "day_of_week": "0",
+        "timezone": "America/Los_Angeles",
     },
     "daily": {
         "minute": "5",
@@ -19,6 +20,7 @@ CRONTAB_DEFS = {
         "day_of_month": "*",
         "month_of_year": "*",
         "day_of_week": "*",
+        "timezone": "America/Los_Angeles",
     },
     "hourly": {
         "minute": "5",
@@ -33,6 +35,14 @@ CRONTAB_DEFS = {
         "day_of_month": "*",
         "month_of_year": "*",
         "day_of_week": "*",
+    },
+    "every_15m_except_midnight": {
+        "minute": "*/15",
+        "hour": "1-23",
+        "day_of_month": "*",
+        "month_of_year": "*",
+        "day_of_week": "*",
+        "timezone": "America/Los_Angeles",
     },
 }
 
@@ -79,7 +89,7 @@ class Command(BaseCommand):
             kwargs=json.dumps(dict(full_index=False)),
             defaults=dict(
                 enabled=False,
-                crontab=self.crontabs["every_15m"],
+                crontab=self.crontabs["every_15m_except_midnight"],  # don't collide with full sync
                 description=(
                     "Reparse the last _year_ of RFC index entries until "
                     "https://github.com/ietf-tools/datatracker/issues/3734 is addressed. "
@@ -143,7 +153,7 @@ class Command(BaseCommand):
 
         PeriodicTask.objects.get_or_create(
             name="Sync with IANA protocols page",
-            task="ietf.sync.tasks.iana_changes_update_task",
+            task="ietf.sync.tasks.iana_protocols_update_task",
             defaults=dict(
                 enabled=False,
                 crontab=self.crontabs["hourly"],
