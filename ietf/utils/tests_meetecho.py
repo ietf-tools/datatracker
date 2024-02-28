@@ -12,7 +12,8 @@ from django.conf import settings
 from django.test import override_settings
 from django.utils import timezone
 
-from ietf.meeting.factories import SessionPresentationFactory
+from ietf.doc.factories import DocumentFactory
+from ietf.meeting.factories import SessionFactory, SessionPresentationFactory
 from ietf.utils.tests import TestCase
 from .meetecho import Conference, ConferenceManager, MeetechoAPI, MeetechoAPIError, SlidesManager
 
@@ -526,7 +527,6 @@ class ConferenceManagerTests(TestCase):
         args, kwargs = mock_delete.call_args
         self.assertEqual(args, ('delete-this',))
 
-
     @patch('ietf.utils.meetecho.MeetechoAPI.delete_meeting')
     def test_delete_by_url(self, mock_delete):
         cm = ConferenceManager(settings.MEETECHO_API_CONFIG)
@@ -538,6 +538,29 @@ class ConferenceManagerTests(TestCase):
 @patch.object(SlidesManager, 'wg_token', return_value='atoken')
 @override_settings(MEETECHO_API_CONFIG=API_CONFIG)
 class SlidesManagerTests(TestCase):
+    @patch("ietf.utils.meetecho.MeetechoAPI.add_slide_deck")
+    def test_add(self, mock_add, mock_wg_token):
+        sm = SlidesManager(settings.MEETECHO_API_CONFIG)
+        session = SessionFactory()
+        slides_doc = DocumentFactory(type_id="slides")
+        sm.add(session, slides_doc, 13)
+        self.assertTrue(mock_wg_token.called)
+        self.assertTrue(mock_add.called)
+        self.assertEqual(
+            mock_add.call_args,
+            call(
+                wg_token="atoken",
+                session=str(session.pk),
+                deck={
+                    "id": slides_doc.pk,
+                    "title": slides_doc.title,
+                    "url": slides_doc.get_absolute_url(),
+                    "rev": slides_doc.rev,
+                    "order": 13,
+                }
+            )
+        )
+
     @patch("ietf.utils.meetecho.MeetechoAPI.update_slide_decks")
     def test_send_update(self, mock_send_update, mock_wg_token):
         sm = SlidesManager(settings.MEETECHO_API_CONFIG)
@@ -547,6 +570,7 @@ class SlidesManagerTests(TestCase):
         )
         SessionPresentationFactory(session=slides.session, document__type_id="agenda")
         sm.send_update(slides.session)
+        self.assertTrue(mock_wg_token.called)
         self.assertTrue(mock_send_update.called)
         self.assertEqual(
             mock_send_update.call_args,
