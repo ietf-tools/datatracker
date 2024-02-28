@@ -3112,6 +3112,11 @@ def ajax_remove_slides_from_session(request, session_id, num):
             affected_presentations.delete()
             session.presentations.filter(document__type_id='slides', order__gt=oldIndex).update(order=F('order')-1)    
             DocEvent.objects.create(type="added_comment", doc=doc, rev=doc.rev, by=request.user.person, desc="Removed from session: %s" % session)
+            # Notify Meetecho of removed slides if the API is configured
+            if hasattr(settings, "MEETECHO_API_CONFIG"):
+                sm = SlidesManager(api_config=settings.MEETECHO_API_CONFIG)
+                sm.delete(session=session, slides=doc)
+            # Report success
             return HttpResponse(json.dumps({'success':True}), content_type='application/json')
         else:
             return HttpResponse(json.dumps({ 'success' : False, 'error' : 'Name does not match index' }),content_type='application/json')
