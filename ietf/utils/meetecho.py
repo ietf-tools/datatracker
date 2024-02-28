@@ -1,9 +1,10 @@
-# Copyright The IETF Trust 2021, All Rights Reserved
+# Copyright The IETF Trust 2021-2024, All Rights Reserved
 #
 """Meetecho interim meeting scheduling API
 
 Implements the v1 API described in email from alex@meetecho.com
-on 2021-12-09.
+on 2021-12-09, plus additional slide management API discussed via
+IM in 2024 Feb.
 
 API methods return Python objects equivalent to the JSON structures
 specified in the API documentation. Times and durations are represented
