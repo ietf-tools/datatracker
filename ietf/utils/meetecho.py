@@ -15,8 +15,13 @@ import debug  # pyflakes: ignore
 
 import datetime
 from json import JSONDecodeError
-from typing import Dict, Sequence, TypedDict, Union
+from typing import Dict, Sequence, TypedDict, TYPE_CHECKING, Union
 from urllib.parse import urljoin
+
+# Guard against hypothetical cyclical import problems
+if TYPE_CHECKING:
+    from ietf.doc.models import Document
+    from ietf.meeting.models import Session
 
 
 class MeetechoAPI:
@@ -433,7 +438,20 @@ class ConferenceManager(Manager):
 
 
 class SlidesManager(Manager):
-    def send_update(self, session):
+    def add(self, session: "Session", slides: "Document", order: int):
+        self.api.add_slide_deck(
+            wg_token=self.wg_token(session.group),
+            session=str(session.pk),
+            deck={
+                "id": slides.pk,
+                "title": slides.title,
+                "url": slides.get_absolute_url(),
+                "rev": slides.rev,
+                "order": order,
+            }
+        )
+
+    def send_update(self, session: "Session"):
         self.api.update_slide_decks(
             wg_token=self.wg_token(session.group),
             session=str(session.pk),
