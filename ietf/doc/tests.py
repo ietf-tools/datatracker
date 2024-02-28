@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2012-2023, All Rights Reserved
+# Copyright The IETF Trust 2012-2024, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -1512,6 +1512,25 @@ Man                    Expires September 22, 2015               [Page 3]
             r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=rfc.name)))
             self.assertEqual(r.status_code, 200)
             self.assert_correct_non_wg_group_link(r, group)
+
+    def test_document_email_authors_button(self):
+        # rfc not from draft
+        rfc = WgRfcFactory()
+        DocEventFactory.create(doc=rfc, type='published_rfc')
+        url = urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=rfc.name))
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q('a:contains("Email authors")')), 0, 'Did not expect "Email authors" button')
+
+        # rfc from draft
+        draft = WgDraftFactory(group=rfc.group)
+        draft.relateddocument_set.create(relationship_id="became_rfc", target=rfc)
+        draft.set_state(State.objects.get(used=True, type="draft", slug="rfc"))
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q('a:contains("Email authors")')), 1, 'Expected "Email authors" button')
 
     def test_document_primary_and_history_views(self):
         IndividualDraftFactory(name='draft-imaginary-independent-submission')
