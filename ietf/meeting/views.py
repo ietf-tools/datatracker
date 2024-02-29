@@ -92,6 +92,7 @@ from ietf.stats.models import MeetingRegistration
 from ietf.utils import markdown
 from ietf.utils.decorators import require_api_key
 from ietf.utils.hedgedoc import Note, NoteError
+from ietf.utils.meetecho import SlidesManager
 from ietf.utils.log import assertion
 from ietf.utils.mail import send_mail_message, send_mail_text
 from ietf.utils.mime import get_mime_type
@@ -1694,45 +1695,58 @@ def api_get_agenda_data (request, num=None):
         "floors": list(map(agenda_extract_floorplan, floors))
     })
 
-def api_get_session_materials (request, session_id=None):
-    session = get_object_or_404(Session,pk=session_id)
+
+def api_get_session_materials(request, session_id=None):
+    session = get_object_or_404(Session, pk=session_id)
 
     minutes = session.minutes()
     slides_actions = []
     if can_manage_session_materials(request.user, session.group, session):
-        slides_actions.append({
-            'label': 'Upload slides',
-            'url': reverse(
-                'ietf.meeting.views.upload_session_slides',
-                kwargs={'num': session.meeting.number, 'session_id': session.pk},
-            ),
-        })
+        slides_actions.append(
+            {
+                "label": "Upload slides",
+                "url": reverse(
+                    "ietf.meeting.views.upload_session_slides",
+                    kwargs={"num": session.meeting.number, "session_id": session.pk},
+                ),
+            }
+        )
     elif not session.is_material_submission_cutoff():
-        slides_actions.append({
-            'label': 'Propose slides',
-            'url': reverse(
-                'ietf.meeting.views.propose_session_slides',
-                kwargs={'num': session.meeting.number, 'session_id': session.pk},
-            ),
-        })
+        slides_actions.append(
+            {
+                "label": "Propose slides",
+                "url": reverse(
+                    "ietf.meeting.views.propose_session_slides",
+                    kwargs={"num": session.meeting.number, "session_id": session.pk},
+                ),
+            }
+        )
     else:
         pass  # no action available if it's past cutoff
-    
-    agenda = session.agenda() 
+
+    agenda = session.agenda()
     agenda_url = agenda.get_href() if agenda is not None else None
-    return JsonResponse({
-        "url": agenda_url,
-        "slides": {
-            "decks": list(map(agenda_extract_slide, session.slides())),
-            "actions": slides_actions,
-        },
-        "minutes": {
-            "id": minutes.id,
-            "title": minutes.title,
-            "url": minutes.get_href(),
-            "ext": minutes.file_extension()
-        } if minutes is not None else None
-    })
+    return JsonResponse(
+        {
+            "url": agenda_url,
+            "slides": {
+                "decks": [
+                    agenda_extract_slide(slide) | {"order": order}  # add "order" field
+                    for order, slide in enumerate(session.slides())
+                ],
+                "actions": slides_actions,
+            },
+            "minutes": {
+                "id": minutes.id,
+                "title": minutes.title,
+                "url": minutes.get_href(),
+                "ext": minutes.file_extension(),
+            }
+            if minutes is not None
+            else None,
+        }
+    )
+
 
 def agenda_extract_schedule (item):
     return {
@@ -1755,9 +1769,9 @@ def agenda_extract_schedule (item):
         "filterKeywords": item.filter_keywords,
         "groupAcronym": item.session.group_at_the_time().acronym,
         "groupName": item.session.group_at_the_time().name,
-        "groupParent": {
+        "groupParent": ({
             "acronym": item.session.group_parent_at_the_time().acronym
-        } if item.session.group_parent_at_the_time() else {},
+        } if item.session.group_parent_at_the_time() else {}),
         "note": item.session.agenda_note,
         "remoteInstructions": item.session.remote_instructions,
         "flags": {
@@ -1790,7 +1804,8 @@ def agenda_extract_schedule (item):
         # }
     }
 
-def agenda_extract_floorplan (item):
+
+def agenda_extract_floorplan(item):
     try:
         item.image.width
     except FileNotFoundError:
@@ -1803,10 +1818,11 @@ def agenda_extract_floorplan (item):
         "short": item.short,
         "width": item.image.width,
         "height": item.image.height,
-        "rooms": list(map(agenda_extract_room, item.room_set.all()))
+        "rooms": list(map(agenda_extract_room, item.room_set.all())),
     }
 
-def agenda_extract_room (item):
+
+def agenda_extract_room(item):
     return {
         "id": item.id,
         "name": item.name,
@@ -1818,7 +1834,8 @@ def agenda_extract_room (item):
         "bottom": item.bottom()
     }
 
-def agenda_extract_recording (item):
+
+def agenda_extract_recording(item):
     return {
         "id": item.id,
         "name": item.name,
@@ -1826,13 +1843,16 @@ def agenda_extract_recording (item):
         "url": item.external_url
     }
 
-def agenda_extract_slide (item):
+
+def agenda_extract_slide(item):
     return {
         "id": item.id,
         "title": item.title,
+        "rev": item.rev,
         "url": item.get_versionless_href(),
-        "ext": item.file_extension()
+        "ext": item.file_extension(),
     }
+
 
 def agenda_csv(schedule, filtered_assignments, utc=False):
     encoding = 'utf-8'
@@ -3053,6 +3073,11 @@ def ajax_add_slides_to_session(request, session_id, num):
         session.presentations.create(document=doc,rev=doc.rev,order=order)
         DocEvent.objects.create(type="added_comment", doc=doc, rev=doc.rev, by=request.user.person, desc="Added to session: %s" % session)
 
+        # Notify Meetecho of new slides if the API is configured
+        if hasattr(settings, "MEETECHO_API_CONFIG"):
+            sm = SlidesManager(api_config=settings.MEETECHO_API_CONFIG)
+            sm.add(session=session, slides=doc, order=order)
+
     return HttpResponse(json.dumps({'success':True}), content_type='application/json')
 
 
@@ -3087,6 +3112,11 @@ def ajax_remove_slides_from_session(request, session_id, num):
             affected_presentations.delete()
             session.presentations.filter(document__type_id='slides', order__gt=oldIndex).update(order=F('order')-1)    
             DocEvent.objects.create(type="added_comment", doc=doc, rev=doc.rev, by=request.user.person, desc="Removed from session: %s" % session)
+            # Notify Meetecho of removed slides if the API is configured
+            if hasattr(settings, "MEETECHO_API_CONFIG"):
+                sm = SlidesManager(api_config=settings.MEETECHO_API_CONFIG)
+                sm.delete(session=session, slides=doc)
+            # Report success
             return HttpResponse(json.dumps({'success':True}), content_type='application/json')
         else:
             return HttpResponse(json.dumps({ 'success' : False, 'error' : 'Name does not match index' }),content_type='application/json')
@@ -3105,7 +3135,8 @@ def ajax_reorder_slides_in_session(request, session_id, num):
     if request.method != 'POST' or not request.POST:
         return HttpResponse(json.dumps({ 'success' : False, 'error' : 'No data submitted or not POST' }),content_type='application/json')  
 
-    num_slides_in_session = session.presentations.filter(document__type_id='slides').count()
+    session_slides = session.presentations.filter(document__type_id="slides")
+    num_slides_in_session = session_slides.count()
     oldIndex_str = request.POST.get('oldIndex', None)
     try:
         oldIndex = int(oldIndex_str)
@@ -3126,13 +3157,18 @@ def ajax_reorder_slides_in_session(request, session_id, num):
         return HttpResponse(json.dumps({ 'success' : False, 'error' : 'Supplied index is not valid' }),content_type='application/json')
 
     condition_slide_order(session)
-    sp = session.presentations.get(order=oldIndex)
+    sp = session_slides.get(order=oldIndex)
     if oldIndex < newIndex:
-        session.presentations.filter(order__gt=oldIndex, order__lte=newIndex).update(order=F('order')-1)
+        session_slides.filter(order__gt=oldIndex, order__lte=newIndex).update(order=F('order')-1)
     else:
-        session.presentations.filter(order__gte=newIndex, order__lt=oldIndex).update(order=F('order')+1)
+        session_slides.filter(order__gte=newIndex, order__lt=oldIndex).update(order=F('order')+1)
     sp.order = newIndex
     sp.save()
+
+    # Update slide order with Meetecho if the API is configured
+    if hasattr(settings, "MEETECHO_API_CONFIG"):
+        mgr = SlidesManager(api_config=settings.MEETECHO_API_CONFIG)
+        mgr.send_update(session)
 
     return HttpResponse(json.dumps({'success':True}), content_type='application/json')
 
