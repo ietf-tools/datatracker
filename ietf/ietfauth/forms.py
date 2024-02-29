@@ -10,6 +10,7 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.contrib.auth.models import User
+from django.contrib.auth.validators import ASCIIUsernameValidator
 
 import debug                            # pyflakes:ignore
 
@@ -20,8 +21,21 @@ from ietf.utils.text import isascii
 from .widgets import PasswordStrengthInput, PasswordConfirmationInput
 
 
+validate_username_email = ASCIIUsernameValidator(
+    message=(
+        "This value may contain only unaccented lowercase a-z "
+        "and uppercase A-Z letters, numbers, and @/./+/-/_ characters."
+    )
+)
+
+
+class UsernameEmailField(forms.EmailField):
+    """Email that is suitable for a username"""
+    default_validators = forms.EmailField.default_validators + [validate_username_email]
+
+
 class RegistrationForm(forms.Form):
-    email = forms.EmailField(label="Your email (lowercase)")
+    email = UsernameEmailField(label="Your email (lowercase)")
 
     def clean_email(self):
         email = self.cleaned_data.get('email', '')
