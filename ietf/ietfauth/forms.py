@@ -244,9 +244,18 @@ class ChangeUsernameForm(forms.Form):
         assert isinstance(user, User)
         super(ChangeUsernameForm, self).__init__(*args, **kwargs)
         self.user = user
-        emails = user.person.email_set.filter(active=True)
-        choices = [ (email.address, email.address) for email in emails ]
+        choices = [(email.address, email.address) for email in self._allowed_emails(user)]
         self.fields['username'] = forms.ChoiceField(choices=choices)
+
+    @staticmethod
+    def _allowed_emails(user):
+        for email in user.person.email_set.filter(active=True):
+            try:
+                validate_username_email(email.address)
+            except ValidationError:
+                pass
+            else:
+                yield email
 
     def clean_password(self):
         password = self.cleaned_data['password']
