@@ -23,8 +23,8 @@ from .widgets import PasswordStrengthInput, PasswordConfirmationInput
 
 validate_username_email = ASCIIUsernameValidator(
     message=(
-        "This value may contain only unaccented lowercase a-z "
-        "and uppercase A-Z letters, numbers, and @/./+/-/_ characters."
+        'This value may contain only unaccented lowercase letters (a-z), '
+        'digits (0-9), and the special characters "@", ".", "+", "-", and "_".'
     )
 )
 
