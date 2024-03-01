@@ -6233,6 +6233,32 @@ class MaterialsTests(TestCase):
             self.requests_mock.get(f'{session.notes_url()}/info', text=json.dumps({'title': 'title', 'updatetime': '2021-12-01T17:11:00z'}))
             self.crawl_materials(url=url, top=top)
 
+    @override_settings(MEETING_MATERIALS_SERVE_LOCALLY=True)
+    def test_upload_narrativeminutes(self):
+        session=SessionFactory(meeting__type_id='interim',group__acronym='iesg')
+        doctype='narrativeminutes'
+        url = urlreverse('ietf.meeting.views.upload_session_narrativeminutes',kwargs={'num':session.meeting.number,'session_id':session.id})
+        self.client.logout()
+        login_testing_unauthorized(self,"secretary",url)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertIn('Upload', str(q("title")))
+        self.assertFalse(session.presentations.filter(document__type_id=doctype))
+        test_file = BytesIO(b'this is some text for a test')
+        test_file.name = "not_really.txt"
+        r = self.client.post(url,dict(submission_method="upload",file=test_file))
+        self.assertEqual(r.status_code, 302)
+        doc = session.presentations.filter(document__type_id=doctype).first().document
+        self.assertEqual(doc.rev,'00')
+
+        # Verify that we don't have dead links
+        url = urlreverse('ietf.meeting.views.session_details', kwargs={'num':session.meeting.number, 'acronym': session.group.acronym})
+        top = '/meeting/%s/' % session.meeting.number
+        self.requests_mock.get(f'{session.notes_url()}/download', text='markdown notes')
+        self.requests_mock.get(f'{session.notes_url()}/info', text=json.dumps({'title': 'title', 'updatetime': '2021-12-01T17:11:00z'}))
+        self.crawl_materials(url=url, top=top)
+
     def test_enter_agenda(self):
         session = SessionFactory(meeting__type_id='ietf')
         url = urlreverse('ietf.meeting.views.upload_session_agenda',kwargs={'num':session.meeting.number,'session_id':session.id})

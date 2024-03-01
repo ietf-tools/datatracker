@@ -2580,6 +2580,32 @@
   },
   {
     "fields": {
+      "desc": "",
+      "name": "Active",
+      "next_states": [],
+      "order": 0,
+      "slug": "active",
+      "type": "narrativeminutes",
+      "used": true
+    },
+    "model": "doc.state",
+    "pk": 178
+  },
+  {
+    "fields": {
+      "desc": "",
+      "name": "Deleted",
+      "next_states": [],
+      "order": 1,
+      "slug": "deleted",
+      "type": "narrativeminutes",
+      "used": true
+    },
+    "model": "doc.state",
+    "pk": 179
+  },
+  {
+    "fields": {
       "label": "State"
     },
     "model": "doc.statetype",
@@ -2738,6 +2764,13 @@
     },
     "model": "doc.statetype",
     "pk": "minutes"
+  },
+  {
+    "fields": {
+      "label": "State"
+    },
+    "model": "doc.statetype",
+    "pk": "narrativeminutes"
   },
   {
     "fields": {
@@ -10766,6 +10799,17 @@
   {
     "fields": {
       "desc": "",
+      "name": "Narrative Minutes",
+      "order": 0,
+      "prefix": "narrative-minutes",
+      "used": true
+    },
+    "model": "name.doctypename",
+    "pk": "narrativeminutes"
+  },
+  {
+    "fields": {
+      "desc": "",
       "name": "Polls",
       "order": 0,
       "prefix": "polls",
@@ -16734,7 +16778,7 @@
     "fields": {
       "command": "xym",
       "switch": "--version",
-      "time": "2023-11-21T08:09:45.989Z",
+      "time": "2024-02-21T08:06:28.313Z",
       "used": true,
       "version": "xym 0.7.0"
     },
@@ -16745,7 +16789,7 @@
     "fields": {
       "command": "pyang",
       "switch": "--version",
-      "time": "2023-11-21T08:09:46.322Z",
+      "time": "2024-02-21T08:06:28.663Z",
       "used": true,
       "version": "pyang 2.6.0"
     },
@@ -16756,7 +16800,7 @@
     "fields": {
       "command": "yanglint",
       "switch": "--version",
-      "time": "2023-11-21T08:09:46.338Z",
+      "time": "2024-02-21T08:06:28.685Z",
       "used": true,
       "version": "yanglint SO 1.9.2"
     },
@@ -16767,9 +16811,9 @@
     "fields": {
       "command": "xml2rfc",
       "switch": "--version",
-      "time": "2023-11-21T08:09:47.251Z",
+      "time": "2024-02-21T08:06:29.492Z",
       "used": true,
-      "version": "xml2rfc 3.18.2"
+      "version": "xml2rfc 3.19.4"
     },
     "model": "utils.versioninfo",
     "pk": 4

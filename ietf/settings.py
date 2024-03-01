@@ -913,7 +913,7 @@ MEETING_VALID_UPLOAD_EXTENSIONS = {
 MEETING_VALID_UPLOAD_MIME_TYPES = {
     'agenda':       ['text/plain', 'text/html', 'text/markdown', 'text/x-markdown', ],
     'minutes':      ['text/plain', 'text/html', 'application/pdf', 'text/markdown', 'text/x-markdown', ],
-    'narrative-minutes': ['text/plain', 'text/html', 'application/pdf', 'text/markdown', 'text/x-markdown', ],
+    'narrativeminutes': ['text/plain', 'text/html', 'application/pdf', 'text/markdown', 'text/x-markdown', ],
     'slides':       [],
     'bluesheets':   ['application/pdf', 'text/plain', ],
     'procmaterials':['application/pdf', ],
