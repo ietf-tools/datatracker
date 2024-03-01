@@ -21,12 +21,26 @@ from ietf.utils.text import isascii
 from .widgets import PasswordStrengthInput, PasswordConfirmationInput
 
 
-validate_username_email = ASCIIUsernameValidator(
+class UsernameEmailValidator(ASCIIUsernameValidator):
     message=(
         'This value may contain only unaccented lowercase letters (a-z), '
         'digits (0-9), and the special characters "@", ".", "+", "-", and "_".'
     )
-)
+
+    def __call__(self, value):
+        if value.lower() != value:
+            raise forms.ValidationError(
+                (
+                    "The supplied address contained uppercase letters.  "
+                    "Please use a lowercase email address."
+                ), 
+                code="invalid_case",
+                params={"value": value},
+            )
+        super().__call__(value)
+
+
+validate_username_email = UsernameEmailValidator()
 
 
 class UsernameEmailField(forms.EmailField):
@@ -36,14 +50,6 @@ class UsernameEmailField(forms.EmailField):
 
 class RegistrationForm(forms.Form):
     email = UsernameEmailField(label="Your email (lowercase)")
-
-    def clean_email(self):
-        email = self.cleaned_data.get('email', '')
-        if not email:
-            return email
-        if email.lower() != email:
-            raise forms.ValidationError('The supplied address contained uppercase letters.  Please use a lowercase email address.')
-        return email
 
 
 class PasswordForm(forms.Form):
