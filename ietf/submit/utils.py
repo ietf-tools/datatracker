@@ -1280,11 +1280,11 @@ def process_and_validate_submission(submission):
         if xml_metadata is not None:
             # Items preferred / only available from XML
             submission.xml_version = xml_metadata["xml_version"]
-            submission.title = xml_metadata["title"]
+            submission.title = xml_metadata["title"] or ""
             submission.authors = xml_metadata["authors"]
         else:
             # Items to get from text only if XML not available
-            submission.title = text_metadata["title"]
+            submission.title = text_metadata["title"] or ""
             submission.authors = text_metadata["authors"]
 
         if not submission.title:
