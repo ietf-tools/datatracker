@@ -1371,6 +1371,7 @@ def process_and_accept_uploaded_submission(submission):
     try:
         process_and_validate_submission(submission)
     except SubmissionError as err:
+        submission.refresh_from_db()  # guard against incomplete changes in submission validation / processing
         cancel_submission(submission)  # changes Submission.state
         create_submission_event(None, submission, f"Submission rejected: {err}")
         return
@@ -1410,11 +1411,13 @@ def process_uploaded_submission(submission):
     try:
         process_and_validate_submission(submission)
     except InconsistentRevisionError as consistency_error:
+        submission.refresh_from_db()  # guard against incomplete changes in submission validation / processing
         submission.state_id = "manual"
         submission.save()
         create_submission_event(None, submission, desc="Uploaded submission (diverted to manual process)")
         send_manual_post_request(None, submission, errors=dict(consistency=str(consistency_error)))
     except SubmissionError as err:
+        submission.refresh_from_db()  # guard against incomplete changes in submission validation / processing
         cancel_submission(submission)  # changes Submission.state
         create_submission_event(None, submission, f"Submission rejected: {err}")
     else:
