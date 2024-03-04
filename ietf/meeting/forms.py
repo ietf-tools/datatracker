@@ -472,6 +472,9 @@ class ApplyToAllFileUploadForm(FileUploadForm):
 class UploadMinutesForm(ApplyToAllFileUploadForm):
     doc_type = 'minutes'
 
+class UploadNarrativeMinutesForm(ApplyToAllFileUploadForm):
+    doc_type = 'narrativeminutes'
+
 
 class UploadAgendaForm(ApplyToAllFileUploadForm):
     doc_type = 'agenda'
