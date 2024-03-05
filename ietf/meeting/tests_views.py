@@ -6405,7 +6405,9 @@ class MaterialsTests(TestCase):
         doc = Document.objects.get(pk=doc.pk)
         self.assertEqual(doc.rev,'02')
 
-    def test_upload_slides(self):
+    @override_settings(MEETECHO_API_CONFIG="fake settings")  # enough to trigger API calls
+    @patch("ietf.meeting.views.SlidesManager")
+    def test_upload_slides(self, mock_slides_manager_cls):
 
         session1 = SessionFactory(meeting__type_id='ietf')
         session2 = SessionFactory(meeting=session1.meeting,group=session1.group)
@@ -6413,6 +6415,7 @@ class MaterialsTests(TestCase):
         login_testing_unauthorized(self,"secretary",url)
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
+        self.assertFalse(mock_slides_manager_cls.called)
         q = PyQuery(r.content)
         self.assertIn('Upload', str(q("title")))
         self.assertFalse(session1.presentations.filter(document__type_id='slides'))
@@ -6425,6 +6428,18 @@ class MaterialsTests(TestCase):
         sp = session2.presentations.first()
         self.assertEqual(sp.document.name, 'slides-%s-%s-a-test-slide-file' % (session1.meeting.number,session1.group.acronym ) )
         self.assertEqual(sp.order,1)
+        self.assertEqual(mock_slides_manager_cls.call_count, 1)
+        self.assertEqual(mock_slides_manager_cls.call_args, call(api_config="fake settings"))
+        self.assertEqual(mock_slides_manager_cls.return_value.add.call_count, 2)
+        # don't care which order they were called in, just that both sessions were updated
+        self.assertCountEqual(
+            mock_slides_manager_cls.return_value.add.call_args,
+            [
+                call(session=session1, slides=sp.document, order=1),
+                call(session=session2, slides=sp.document, order=1),
+            ],
+        )
+        mock_slides_manager_cls.reset_mock()
 
         url = urlreverse('ietf.meeting.views.upload_session_slides',kwargs={'num':session2.meeting.number,'session_id':session2.id})
         test_file = BytesIO(b'some other thing still not slidelike')
@@ -6437,6 +6452,14 @@ class MaterialsTests(TestCase):
         self.assertEqual(sp.order,2)
         self.assertEqual(sp.rev,'00')
         self.assertEqual(sp.document.rev,'00')
+        self.assertEqual(mock_slides_manager_cls.call_count, 1)
+        self.assertEqual(mock_slides_manager_cls.call_args, call(api_config="fake settings"))
+        self.assertEqual(mock_slides_manager_cls.return_value.add.call_count, 1)
+        self.assertEqual(
+            mock_slides_manager_cls.return_value.add.call_args,
+            call(session=session2, slides=sp.document, order=2),
+        )
+        mock_slides_manager_cls.reset_mock()
 
         url = urlreverse('ietf.meeting.views.upload_session_slides',kwargs={'num':session2.meeting.number,'session_id':session2.id,'name':session2.presentations.get(order=2).document.name})
         r = self.client.get(url)
@@ -6449,10 +6472,22 @@ class MaterialsTests(TestCase):
         self.assertEqual(r.status_code, 302)
         self.assertEqual(session1.presentations.count(),1)
         self.assertEqual(session2.presentations.count(),2)
-        sp = session2.presentations.get(order=2)
-        self.assertEqual(sp.rev,'01')
-        self.assertEqual(sp.document.rev,'01')
- 
+        replacement_sp = session2.presentations.get(order=2)
+        self.assertEqual(replacement_sp.rev,'01')
+        self.assertEqual(replacement_sp.document.rev,'01')
+        self.assertEqual(mock_slides_manager_cls.call_count, 1)
+        self.assertEqual(mock_slides_manager_cls.call_args, call(api_config="fake settings"))
+        self.assertEqual(mock_slides_manager_cls.return_value.delete.call_count, 1)
+        self.assertEqual(
+            mock_slides_manager_cls.return_value.delete.call_args,
+            call(session=session2, slides=sp.document),
+        )
+        self.assertEqual(mock_slides_manager_cls.return_value.add.call_count, 1)
+        self.assertEqual(
+            mock_slides_manager_cls.return_value.add.call_args,
+            call(session=session2, slides=replacement_sp.document, order=2),
+        )
+
     def test_upload_slide_title_bad_unicode(self):
         session1 = SessionFactory(meeting__type_id='ietf')
         url = urlreverse('ietf.meeting.views.upload_session_slides',kwargs={'num':session1.meeting.number,'session_id':session1.id})
