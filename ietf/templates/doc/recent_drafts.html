@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{# Copyright The IETF Trust 2015-2024, All Rights Reserved #}
 {% load origin static %}
 {% load cache %}
 {% block pagehead %}
@@ -17,7 +17,14 @@
         {% endif %}
     </h1>
     {% include "doc/search/search_results.html" with start_table=True end_table=True %}
-{% endcache %}
+    {% endcache %}
+    <div>
+        <a class="btn btn-primary"
+           title="Feed of recent drafts"
+           href="/feed/draft/">
+          <i class="bi bi-rss"></i> Atom feed
+        </a>
+    </div>
 {% endblock %}
 {% block js %}
     <script src="{% static "ietf/js/list.js" %}"></script>
