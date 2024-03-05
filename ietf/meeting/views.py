@@ -3039,6 +3039,10 @@ def remove_sessionpresentation(request, session_id, num, name):
         c.desc = "Removed from session: %s" % (session)
         c.save()
         messages.success(request, f'Successfully removed {name}.')
+        if sp.document.type_id == "slides" and hasattr(settings, "MEETECHO_API_CONFIG"):
+            sm = SlidesManager(api_config=settings.MEETECHO_API_CONFIG)
+            sm.delete(session=session, slides=sp.document)
+            
         return redirect('ietf.meeting.views.session_details', num=session.meeting.number, acronym=session.group.acronym)
 
     return render(request,'meeting/remove_sessionpresentation.html', {'sp': sp })
