@@ -16,7 +16,8 @@ import debug  # pyflakes: ignore
 
 import datetime
 from json import JSONDecodeError
-from typing import Dict, Sequence, TypedDict, TYPE_CHECKING, Union
+from pprint import pformat
+from typing import Dict, Optional, Sequence, TypedDict, TYPE_CHECKING, Union
 from urllib.parse import urljoin
 
 # Guard against hypothetical cyclical import problems
@@ -320,7 +321,39 @@ class MeetechoAPI:
                 "session": session,
                 "decks": decks,
             }
-        ) 
+        )
+
+
+class DebugMeetechoAPI(MeetechoAPI):
+    """Meetecho API stand-in that writes to stdout instead of making requests"""
+    def _request(self, method, url, api_token=None, json=None):
+        json_lines = pformat(json, width=60).split("\n")
+        debug.say(
+            "\n" +
+            "\n".join(
+                [
+                    f">> MeetechoAPI: request(method={method},",
+                    f">> MeetechoAPI:         url={url},",
+                    f">> MeetechoAPI:         api_token={api_token},",
+                    f">> MeetechoAPI:         json=" + json_lines[0],
+                    (
+                        ">> MeetechoAPI:              " +
+                        f"\n>> MeetechoAPI:              ".join(l for l in json_lines[1:])
+                    ),
+                    f">> MeetechoAPI: )"
+                ]
+            )
+        )
+
+    def retrieve_wg_tokens(self, acronyms: Union[str, Sequence[str]]):
+        super().retrieve_wg_tokens(acronyms)  # so that we capture the outgoing request
+        acronyms = [acronyms] if isinstance(acronyms, str) else acronyms
+        return {
+            "tokens": {
+                acro: f"{acro}-token"
+                for acro in acronyms
+            }
+        }    
 
 
 class MeetechoAPIError(Exception):
@@ -398,11 +431,17 @@ class APIConfigDict(TypedDict):
     client_id: str
     client_secret: str
     request_timeout: Union[float, int]
+    debug: Optional[bool]
 
 
 class Manager:
     def __init__(self, api_config: APIConfigDict):
-        self.api = MeetechoAPI(**api_config)
+        debug = api_config.get("debug", False)
+        api_config = {k: v for k, v in api_config.items() if k != "debug"}
+        if debug:
+            self.api = DebugMeetechoAPI(**api_config)
+        else:
+            self.api = MeetechoAPI(**api_config)
         self.wg_tokens: Dict[str, str] = {}
 
     def wg_token(self, group):
