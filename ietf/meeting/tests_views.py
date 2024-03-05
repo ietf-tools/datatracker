@@ -6470,29 +6470,61 @@ class MaterialsTests(TestCase):
         self.assertTrue(q('form .is-invalid'))
         self.assertIn("Unicode BMP", q('form .is-invalid div').text())
 
-    def test_remove_sessionpresentation(self):
+    @override_settings(MEETECHO_API_CONFIG="fake settings")  # enough to trigger API calls
+    @patch("ietf.meeting.views.SlidesManager")
+    def test_remove_sessionpresentation(self, mock_slides_manager_cls):
         session = SessionFactory(meeting__type_id='ietf')
+        agenda = DocumentFactory(type_id='agenda')
         doc = DocumentFactory(type_id='slides')
+        session.presentations.create(document=agenda)
         session.presentations.create(document=doc)
 
         url = urlreverse('ietf.meeting.views.remove_sessionpresentation',kwargs={'num':session.meeting.number,'session_id':session.id,'name':'no-such-doc'})
         response = self.client.get(url)
         self.assertEqual(response.status_code, 404)
+        self.assertFalse(mock_slides_manager_cls.called)
 
         url = urlreverse('ietf.meeting.views.remove_sessionpresentation',kwargs={'num':session.meeting.number,'session_id':0,'name':doc.name})
         response = self.client.get(url)
         self.assertEqual(response.status_code, 404)
+        self.assertFalse(mock_slides_manager_cls.called)
 
         url = urlreverse('ietf.meeting.views.remove_sessionpresentation',kwargs={'num':session.meeting.number,'session_id':session.id,'name':doc.name})
         login_testing_unauthorized(self,"secretary",url)
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
+        self.assertFalse(mock_slides_manager_cls.called)
 
-        self.assertEqual(1,session.presentations.count())
+        # Removing slides should remove the materials and call MeetechoAPI
+        self.assertEqual(2, session.presentations.count())
         response = self.client.post(url,{'remove_session':''})
         self.assertEqual(response.status_code, 302)
-        self.assertEqual(0,session.presentations.count())
-        self.assertEqual(2,doc.docevent_set.count())
+        self.assertEqual(1, session.presentations.count())
+        self.assertEqual(2, doc.docevent_set.count())
+        self.assertEqual(mock_slides_manager_cls.call_count, 1)
+        self.assertEqual(mock_slides_manager_cls.call_args, call(api_config="fake settings"))
+        self.assertEqual(mock_slides_manager_cls.return_value.delete.call_count, 1)
+        self.assertEqual(
+            mock_slides_manager_cls.return_value.delete.call_args,
+            call(session=session, slides=doc),
+        )
+        mock_slides_manager_cls.reset_mock()
+
+        # Removing non-slides should only remove the materials
+        url = urlreverse(
+            "ietf.meeting.views.remove_sessionpresentation",
+            kwargs={
+                "num": session.meeting.number,
+                "session_id": session.id,
+                "name": agenda.name,
+            },
+        )
+        response = self.client.post(url, {"remove_session" : ""})
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(0, session.presentations.count())
+        self.assertEqual(2, agenda.docevent_set.count())
+        self.assertFalse(mock_slides_manager_cls.called)
+
 
     def test_propose_session_slides(self):
         for type_id in ['ietf','interim']:
