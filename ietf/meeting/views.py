@@ -1762,7 +1762,7 @@ def agenda_extract_schedule (item):
         "remoteInstructions": item.session.remote_instructions,
         "flags": {
             "agenda": True if item.session.agenda() is not None else False,
-            "showAgenda": True if (item.session.agenda() is not None or item.session.remote_instructions or item.session.agenda_note) else False
+            "showAgenda": True if (item.session.agenda() is not None or item.session.remote_instructions) else False
         },
         "agenda": {
             "url": item.session.agenda().get_href()
