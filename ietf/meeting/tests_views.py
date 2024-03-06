@@ -6433,7 +6433,7 @@ class MaterialsTests(TestCase):
         self.assertEqual(mock_slides_manager_cls.return_value.add.call_count, 2)
         # don't care which order they were called in, just that both sessions were updated
         self.assertCountEqual(
-            mock_slides_manager_cls.return_value.add.call_args,
+            mock_slides_manager_cls.return_value.add.call_args_list,
             [
                 call(session=session1, slides=sp.document, order=1),
                 call(session=session2, slides=sp.document, order=1),
