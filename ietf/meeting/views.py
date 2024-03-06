@@ -2892,9 +2892,9 @@ def upload_session_slides(request, session_id, num, name=None):
 
     doc = None
     if name:
-        doc = Document.objects.filter(name=name).first()
-        if not (doc and doc.type_id == "slides"):
-            raise Http404
+        doc = get_object_or_404(
+            session.presentations, document__name=name, document__type_id="slides"
+        ).document
 
     if request.method == "POST":
         form = UploadSlidesForm(
