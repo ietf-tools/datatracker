@@ -2865,81 +2865,129 @@ def upload_session_agenda(request, session_id, num):
 
 def upload_session_slides(request, session_id, num, name=None):
     # num is redundant, but we're dragging it along an artifact of where we are in the current URL structure
-    session = get_object_or_404(Session,pk=session_id)
+    session = get_object_or_404(Session, pk=session_id)
     if not session.can_manage_materials(request.user):
-        permission_denied(request, "You don't have permission to upload slides for this session.")
-    if session.is_material_submission_cutoff() and not has_role(request.user, "Secretariat"):
-        permission_denied(request, "The materials cutoff for this session has passed. Contact the secretariat for further action.")
+        permission_denied(
+            request, "You don't have permission to upload slides for this session."
+        )
+    if session.is_material_submission_cutoff() and not has_role(
+        request.user, "Secretariat"
+    ):
+        permission_denied(
+            request,
+            "The materials cutoff for this session has passed. Contact the secretariat for further action.",
+        )
 
     session_number = None
-    sessions = get_sessions(session.meeting.number,session.group.acronym)
-    show_apply_to_all_checkbox = len(sessions) > 1 if session.type_id == 'regular' else False
+    sessions = get_sessions(session.meeting.number, session.group.acronym)
+    show_apply_to_all_checkbox = (
+        len(sessions) > 1 if session.type_id == "regular" else False
+    )
     if len(sessions) > 1:
-       session_number = 1 + sessions.index(session)
+        session_number = 1 + sessions.index(session)
 
     slides = None
     slides_sp = None
     if name:
         slides = Document.objects.filter(name=name).first()
-        if not (slides and slides.type_id=='slides'):
+        if not (slides and slides.type_id == "slides"):
             raise Http404
         slides_sp = session.presentations.filter(document=slides).first()
-    
-    if request.method == 'POST':
-        form = UploadSlidesForm(session, show_apply_to_all_checkbox,request.POST,request.FILES)
+
+    if request.method == "POST":
+        form = UploadSlidesForm(
+            session, show_apply_to_all_checkbox, request.POST, request.FILES
+        )
         if form.is_valid():
-            file = request.FILES['file']
+            file = request.FILES["file"]
             _, ext = os.path.splitext(file.name)
-            apply_to_all = session.type_id == 'regular'
+            apply_to_all = session.type_id == "regular"
             if show_apply_to_all_checkbox:
-                apply_to_all = form.cleaned_data['apply_to_all']
+                apply_to_all = form.cleaned_data["apply_to_all"]
             if slides_sp:
                 doc = slides_sp.document
-                doc.rev = '%02d' % (int(doc.rev)+1)
-                doc.title = form.cleaned_data['title']
+                doc.rev = "%02d" % (int(doc.rev) + 1)
+                doc.title = form.cleaned_data["title"]
                 slides_sp.rev = doc.rev
                 slides_sp.save()
             else:
-                title = form.cleaned_data['title']
-                if session.meeting.type_id=='ietf':
-                    name = 'slides-%s-%s' % (session.meeting.number, 
-                                             session.group.acronym) 
+                title = form.cleaned_data["title"]
+                if session.meeting.type_id == "ietf":
+                    name = "slides-%s-%s" % (
+                        session.meeting.number,
+                        session.group.acronym,
+                    )
                     if not apply_to_all:
-                        name += '-%s' % (session.docname_token(),)
+                        name += "-%s" % (session.docname_token(),)
                 else:
-                    name = 'slides-%s-%s' % (session.meeting.number, session.docname_token())
-                name = name + '-' + slugify(title).replace('_', '-')[:128]
+                    name = "slides-%s-%s" % (
+                        session.meeting.number,
+                        session.docname_token(),
+                    )
+                name = name + "-" + slugify(title).replace("_", "-")[:128]
                 if Document.objects.filter(name=name).exists():
-                   doc = Document.objects.get(name=name)
-                   doc.rev = '%02d' % (int(doc.rev)+1)
-                   doc.title = form.cleaned_data['title']
+                    doc = Document.objects.get(name=name)
+                    doc.rev = "%02d" % (int(doc.rev) + 1)
+                    doc.title = form.cleaned_data["title"]
                 else:
                     doc = Document.objects.create(
-                              name = name,
-                              type_id = 'slides',
-                              title = title,
-                              group = session.group,
-                              rev = '00',
-                          )
-                doc.states.add(State.objects.get(type_id='slides',slug='active'))
-                doc.states.add(State.objects.get(type_id='reuse_policy',slug='single'))
+                        name=name,
+                        type_id="slides",
+                        title=title,
+                        group=session.group,
+                        rev="00",
+                    )
+                doc.states.add(State.objects.get(type_id="slides", slug="active"))
+                doc.states.add(State.objects.get(type_id="reuse_policy", slug="single"))
             if session.presentations.filter(document=doc).exists():
                 sp = session.presentations.get(document=doc)
                 sp.rev = doc.rev
                 sp.save()
             else:
-                max_order = session.presentations.filter(document__type='slides').aggregate(Max('order'))['order__max'] or 0
-                session.presentations.create(document=doc,rev=doc.rev,order=max_order+1)
+                max_order = (
+                    session.presentations.filter(document__type="slides").aggregate(
+                        Max("order")
+                    )["order__max"]
+                    or 0
+                )
+                session.presentations.create(
+                    document=doc, rev=doc.rev, order=max_order + 1
+                )
             if apply_to_all:
                 for other_session in sessions:
-                    if other_session != session and not other_session.presentations.filter(document=doc).exists():
-                        max_order = other_session.presentations.filter(document__type='slides').aggregate(Max('order'))['order__max'] or 0
-                        other_session.presentations.create(document=doc,rev=doc.rev,order=max_order+1)
-            filename = '%s-%s%s'% ( doc.name, doc.rev, ext)
+                    if (
+                        other_session != session
+                        and not other_session.presentations.filter(
+                            document=doc
+                        ).exists()
+                    ):
+                        max_order = (
+                            other_session.presentations.filter(
+                                document__type="slides"
+                            ).aggregate(Max("order"))["order__max"]
+                            or 0
+                        )
+                        other_session.presentations.create(
+                            document=doc, rev=doc.rev, order=max_order + 1
+                        )
+            filename = "%s-%s%s" % (doc.name, doc.rev, ext)
             doc.uploaded_filename = filename
-            e = NewRevisionDocEvent.objects.create(doc=doc,by=request.user.person,type='new_revision',desc='New revision available: %s'%doc.rev,rev=doc.rev)
+            e = NewRevisionDocEvent.objects.create(
+                doc=doc,
+                by=request.user.person,
+                type="new_revision",
+                desc="New revision available: %s" % doc.rev,
+                rev=doc.rev,
+            )
             # The way this function builds the filename it will never trigger the file delete in handle_file_upload.
-            save_error = handle_upload_file(file, filename, session.meeting, 'slides', request=request, encoding=form.file_encoding[file.name])
+            save_error = handle_upload_file(
+                file,
+                filename,
+                session.meeting,
+                "slides",
+                request=request,
+                encoding=form.file_encoding[file.name],
+            )
             if save_error:
                 form.add_error(None, save_error)
             else:
@@ -2947,20 +2995,31 @@ def upload_session_slides(request, session_id, num, name=None):
                 post_process(doc)
                 messages.success(
                     request,
-                    f'Successfully uploaded slides as revision {doc.rev} of {doc.name}.')
-                return redirect('ietf.meeting.views.session_details',num=num,acronym=session.group.acronym)
-    else: 
+                    f"Successfully uploaded slides as revision {doc.rev} of {doc.name}.",
+                )
+                return redirect(
+                    "ietf.meeting.views.session_details",
+                    num=num,
+                    acronym=session.group.acronym,
+                )
+    else:
         initial = {}
         if slides:
-            initial = {'title':slides.title}
+            initial = {"title": slides.title}
         form = UploadSlidesForm(session, show_apply_to_all_checkbox, initial=initial)
 
-    return render(request, "meeting/upload_session_slides.html", 
-                  {'session': session,
-                   'session_number': session_number,
-                   'slides_sp' : slides_sp,
-                   'form': form,
-                  })
+    return render(
+        request,
+        "meeting/upload_session_slides.html",
+        {
+            "session": session,
+            "session_number": session_number,
+            "slides_sp": slides_sp,
+            "form": form,
+        },
+    )
+
+
 @login_required
 def propose_session_slides(request, session_id, num):
     session = get_object_or_404(Session,pk=session_id)
@@ -3026,146 +3085,263 @@ def propose_session_slides(request, session_id, num):
                    'form': form,
                   })
 
+
 def remove_sessionpresentation(request, session_id, num, name):
-    sp = get_object_or_404(SessionPresentation,session_id=session_id,document__name=name)
+    sp = get_object_or_404(
+        SessionPresentation, session_id=session_id, document__name=name
+    )
     session = sp.session
     if not session.can_manage_materials(request.user):
-        permission_denied(request, "You don't have permission to manage materials for this session.")
-    if session.is_material_submission_cutoff() and not has_role(request.user, "Secretariat"):
-        permission_denied(request, "The materials cutoff for this session has passed. Contact the secretariat for further action.")
-    if request.method == 'POST':
+        permission_denied(
+            request, "You don't have permission to manage materials for this session."
+        )
+    if session.is_material_submission_cutoff() and not has_role(
+        request.user, "Secretariat"
+    ):
+        permission_denied(
+            request,
+            "The materials cutoff for this session has passed. Contact the secretariat for further action.",
+        )
+    if request.method == "POST":
         session.presentations.filter(pk=sp.pk).delete()
-        c = DocEvent(type="added_comment", doc=sp.document, rev=sp.document.rev, by=request.user.person)
+        c = DocEvent(
+            type="added_comment",
+            doc=sp.document,
+            rev=sp.document.rev,
+            by=request.user.person,
+        )
         c.desc = "Removed from session: %s" % (session)
         c.save()
-        messages.success(request, f'Successfully removed {name}.')
+        messages.success(request, f"Successfully removed {name}.")
         if sp.document.type_id == "slides" and hasattr(settings, "MEETECHO_API_CONFIG"):
             sm = SlidesManager(api_config=settings.MEETECHO_API_CONFIG)
             sm.delete(session=session, slides=sp.document)
-            
-        return redirect('ietf.meeting.views.session_details', num=session.meeting.number, acronym=session.group.acronym)
 
-    return render(request,'meeting/remove_sessionpresentation.html', {'sp': sp })
+        return redirect(
+            "ietf.meeting.views.session_details",
+            num=session.meeting.number,
+            acronym=session.group.acronym,
+        )
+
+    return render(request, "meeting/remove_sessionpresentation.html", {"sp": sp})
+
 
 def ajax_add_slides_to_session(request, session_id, num):
-    session = get_object_or_404(Session,pk=session_id)
+    session = get_object_or_404(Session, pk=session_id)
 
     if not session.can_manage_materials(request.user):
-        permission_denied(request, "You don't have permission to upload slides for this session.")
-    if session.is_material_submission_cutoff() and not has_role(request.user, "Secretariat"):
-        permission_denied(request, "The materials cutoff for this session has passed. Contact the secretariat for further action.")
+        permission_denied(
+            request, "You don't have permission to upload slides for this session."
+        )
+    if session.is_material_submission_cutoff() and not has_role(
+        request.user, "Secretariat"
+    ):
+        permission_denied(
+            request,
+            "The materials cutoff for this session has passed. Contact the secretariat for further action.",
+        )
 
-    if request.method != 'POST' or not request.POST:
-        return HttpResponse(json.dumps({ 'success' : False, 'error' : 'No data submitted or not POST' }),content_type='application/json')
+    if request.method != "POST" or not request.POST:
+        return HttpResponse(
+            json.dumps({"success": False, "error": "No data submitted or not POST"}),
+            content_type="application/json",
+        )
 
-    order_str = request.POST.get('order', None)    
+    order_str = request.POST.get("order", None)
     try:
         order = int(order_str)
     except (ValueError, TypeError):
-        return HttpResponse(json.dumps({ 'success' : False, 'error' : 'Supplied order is not valid' }),content_type='application/json')
-    if order < 1 or order > session.presentations.filter(document__type_id='slides').count() + 1 :
-        return HttpResponse(json.dumps({ 'success' : False, 'error' : 'Supplied order is not valid' }),content_type='application/json')
+        return HttpResponse(
+            json.dumps({"success": False, "error": "Supplied order is not valid"}),
+            content_type="application/json",
+        )
+    if (
+        order < 1
+        or order > session.presentations.filter(document__type_id="slides").count() + 1
+    ):
+        return HttpResponse(
+            json.dumps({"success": False, "error": "Supplied order is not valid"}),
+            content_type="application/json",
+        )
 
-    name = request.POST.get('name', None)
+    name = request.POST.get("name", None)
     doc = Document.objects.filter(name=name).first()
     if not doc:
-        return HttpResponse(json.dumps({ 'success' : False, 'error' : 'Supplied name is not valid' }),content_type='application/json')
+        return HttpResponse(
+            json.dumps({"success": False, "error": "Supplied name is not valid"}),
+            content_type="application/json",
+        )
 
     if not session.presentations.filter(document=doc).exists():
         condition_slide_order(session)
-        session.presentations.filter(document__type_id='slides', order__gte=order).update(order=F('order')+1)
-        session.presentations.create(document=doc,rev=doc.rev,order=order)
-        DocEvent.objects.create(type="added_comment", doc=doc, rev=doc.rev, by=request.user.person, desc="Added to session: %s" % session)
+        session.presentations.filter(
+            document__type_id="slides", order__gte=order
+        ).update(order=F("order") + 1)
+        session.presentations.create(document=doc, rev=doc.rev, order=order)
+        DocEvent.objects.create(
+            type="added_comment",
+            doc=doc,
+            rev=doc.rev,
+            by=request.user.person,
+            desc="Added to session: %s" % session,
+        )
 
         # Notify Meetecho of new slides if the API is configured
         if hasattr(settings, "MEETECHO_API_CONFIG"):
             sm = SlidesManager(api_config=settings.MEETECHO_API_CONFIG)
             sm.add(session=session, slides=doc, order=order)
 
-    return HttpResponse(json.dumps({'success':True}), content_type='application/json')
+    return HttpResponse(json.dumps({"success": True}), content_type="application/json")
 
 
 def ajax_remove_slides_from_session(request, session_id, num):
-    session = get_object_or_404(Session,pk=session_id)
+    session = get_object_or_404(Session, pk=session_id)
 
     if not session.can_manage_materials(request.user):
-        permission_denied(request, "You don't have permission to upload slides for this session.")
-    if session.is_material_submission_cutoff() and not has_role(request.user, "Secretariat"):
-        permission_denied(request, "The materials cutoff for this session has passed. Contact the secretariat for further action.")
+        permission_denied(
+            request, "You don't have permission to upload slides for this session."
+        )
+    if session.is_material_submission_cutoff() and not has_role(
+        request.user, "Secretariat"
+    ):
+        permission_denied(
+            request,
+            "The materials cutoff for this session has passed. Contact the secretariat for further action.",
+        )
 
-    if request.method != 'POST' or not request.POST:
-        return HttpResponse(json.dumps({ 'success' : False, 'error' : 'No data submitted or not POST' }),content_type='application/json')  
+    if request.method != "POST" or not request.POST:
+        return HttpResponse(
+            json.dumps({"success": False, "error": "No data submitted or not POST"}),
+            content_type="application/json",
+        )
 
-    oldIndex_str = request.POST.get('oldIndex', None)
+    oldIndex_str = request.POST.get("oldIndex", None)
     try:
         oldIndex = int(oldIndex_str)
     except (ValueError, TypeError):
-        return HttpResponse(json.dumps({ 'success' : False, 'error' : 'Supplied index is not valid' }),content_type='application/json')
-    if oldIndex < 1 or oldIndex > session.presentations.filter(document__type_id='slides').count() :
-        return HttpResponse(json.dumps({ 'success' : False, 'error' : 'Supplied index is not valid' }),content_type='application/json')
+        return HttpResponse(
+            json.dumps({"success": False, "error": "Supplied index is not valid"}),
+            content_type="application/json",
+        )
+    if (
+        oldIndex < 1
+        or oldIndex > session.presentations.filter(document__type_id="slides").count()
+    ):
+        return HttpResponse(
+            json.dumps({"success": False, "error": "Supplied index is not valid"}),
+            content_type="application/json",
+        )
 
-    name = request.POST.get('name', None)
+    name = request.POST.get("name", None)
     doc = Document.objects.filter(name=name).first()
     if not doc:
-        return HttpResponse(json.dumps({ 'success' : False, 'error' : 'Supplied name is not valid' }),content_type='application/json')
+        return HttpResponse(
+            json.dumps({"success": False, "error": "Supplied name is not valid"}),
+            content_type="application/json",
+        )
 
     condition_slide_order(session)
     affected_presentations = session.presentations.filter(document=doc).first()
     if affected_presentations:
         if affected_presentations.order == oldIndex:
             affected_presentations.delete()
-            session.presentations.filter(document__type_id='slides', order__gt=oldIndex).update(order=F('order')-1)    
-            DocEvent.objects.create(type="added_comment", doc=doc, rev=doc.rev, by=request.user.person, desc="Removed from session: %s" % session)
+            session.presentations.filter(
+                document__type_id="slides", order__gt=oldIndex
+            ).update(order=F("order") - 1)
+            DocEvent.objects.create(
+                type="added_comment",
+                doc=doc,
+                rev=doc.rev,
+                by=request.user.person,
+                desc="Removed from session: %s" % session,
+            )
             # Notify Meetecho of removed slides if the API is configured
             if hasattr(settings, "MEETECHO_API_CONFIG"):
                 sm = SlidesManager(api_config=settings.MEETECHO_API_CONFIG)
                 sm.delete(session=session, slides=doc)
             # Report success
-            return HttpResponse(json.dumps({'success':True}), content_type='application/json')
+            return HttpResponse(
+                json.dumps({"success": True}), content_type="application/json"
+            )
         else:
-            return HttpResponse(json.dumps({ 'success' : False, 'error' : 'Name does not match index' }),content_type='application/json')
+            return HttpResponse(
+                json.dumps({"success": False, "error": "Name does not match index"}),
+                content_type="application/json",
+            )
     else:
-        return HttpResponse(json.dumps({ 'success' : False, 'error' : 'SessionPresentation not found' }),content_type='application/json')
+        return HttpResponse(
+            json.dumps({"success": False, "error": "SessionPresentation not found"}),
+            content_type="application/json",
+        )
 
 
 def ajax_reorder_slides_in_session(request, session_id, num):
-    session = get_object_or_404(Session,pk=session_id)
+    session = get_object_or_404(Session, pk=session_id)
 
     if not session.can_manage_materials(request.user):
-        permission_denied(request, "You don't have permission to upload slides for this session.")
-    if session.is_material_submission_cutoff() and not has_role(request.user, "Secretariat"):
-        permission_denied(request, "The materials cutoff for this session has passed. Contact the secretariat for further action.")
+        permission_denied(
+            request, "You don't have permission to upload slides for this session."
+        )
+    if session.is_material_submission_cutoff() and not has_role(
+        request.user, "Secretariat"
+    ):
+        permission_denied(
+            request,
+            "The materials cutoff for this session has passed. Contact the secretariat for further action.",
+        )
 
-    if request.method != 'POST' or not request.POST:
-        return HttpResponse(json.dumps({ 'success' : False, 'error' : 'No data submitted or not POST' }),content_type='application/json')  
+    if request.method != "POST" or not request.POST:
+        return HttpResponse(
+            json.dumps({"success": False, "error": "No data submitted or not POST"}),
+            content_type="application/json",
+        )
 
     session_slides = session.presentations.filter(document__type_id="slides")
     num_slides_in_session = session_slides.count()
-    oldIndex_str = request.POST.get('oldIndex', None)
+    oldIndex_str = request.POST.get("oldIndex", None)
     try:
         oldIndex = int(oldIndex_str)
     except (ValueError, TypeError):
-        return HttpResponse(json.dumps({ 'success' : False, 'error' : 'Supplied index is not valid' }),content_type='application/json')
-    if oldIndex < 1 or oldIndex > num_slides_in_session :
-        return HttpResponse(json.dumps({ 'success' : False, 'error' : 'Supplied index is not valid' }),content_type='application/json')
+        return HttpResponse(
+            json.dumps({"success": False, "error": "Supplied index is not valid"}),
+            content_type="application/json",
+        )
+    if oldIndex < 1 or oldIndex > num_slides_in_session:
+        return HttpResponse(
+            json.dumps({"success": False, "error": "Supplied index is not valid"}),
+            content_type="application/json",
+        )
 
-    newIndex_str = request.POST.get('newIndex', None)
+    newIndex_str = request.POST.get("newIndex", None)
     try:
         newIndex = int(newIndex_str)
     except (ValueError, TypeError):
-        return HttpResponse(json.dumps({ 'success' : False, 'error' : 'Supplied index is not valid' }),content_type='application/json')
-    if newIndex < 1 or newIndex > num_slides_in_session :
-        return HttpResponse(json.dumps({ 'success' : False, 'error' : 'Supplied index is not valid' }),content_type='application/json')
+        return HttpResponse(
+            json.dumps({"success": False, "error": "Supplied index is not valid"}),
+            content_type="application/json",
+        )
+    if newIndex < 1 or newIndex > num_slides_in_session:
+        return HttpResponse(
+            json.dumps({"success": False, "error": "Supplied index is not valid"}),
+            content_type="application/json",
+        )
 
     if newIndex == oldIndex:
-        return HttpResponse(json.dumps({ 'success' : False, 'error' : 'Supplied index is not valid' }),content_type='application/json')
+        return HttpResponse(
+            json.dumps({"success": False, "error": "Supplied index is not valid"}),
+            content_type="application/json",
+        )
 
     condition_slide_order(session)
     sp = session_slides.get(order=oldIndex)
     if oldIndex < newIndex:
-        session_slides.filter(order__gt=oldIndex, order__lte=newIndex).update(order=F('order')-1)
+        session_slides.filter(order__gt=oldIndex, order__lte=newIndex).update(
+            order=F("order") - 1
+        )
     else:
-        session_slides.filter(order__gte=newIndex, order__lt=oldIndex).update(order=F('order')+1)
+        session_slides.filter(order__gte=newIndex, order__lt=oldIndex).update(
+            order=F("order") + 1
+        )
     sp.order = newIndex
     sp.save()
 
@@ -3174,7 +3350,7 @@ def ajax_reorder_slides_in_session(request, session_id, num):
         mgr = SlidesManager(api_config=settings.MEETECHO_API_CONFIG)
         mgr.send_update(session)
 
-    return HttpResponse(json.dumps({'success':True}), content_type='application/json')
+    return HttpResponse(json.dumps({"success": True}), content_type="application/json")
 
 
 @role_required('Secretariat')
