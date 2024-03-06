@@ -2945,11 +2945,18 @@ def upload_session_slides(request, session_id, num, name=None):
 
             # Now handle creation / update of the SessionPresentation(s)
             sessions_to_apply = sessions if apply_to_all else [session]
+            if hasattr(settings, "MEETECHO_API_CONFIG"):
+                sm = SlidesManager(api_config=settings.MEETECHO_API_CONFIG)
+            else:
+                sm = None
             for sess in sessions_to_apply:
                 sp = sess.presentations.filter(document=doc).first()
                 if sp is not None:
                     sp.rev = doc.rev
                     sp.save()
+                    if sm is not None:
+                        sm.delete(session=sess, slides=doc)  # removes the existing deck with previous revision
+                        sm.add(session=sess, slides=doc, order=sp.order)
                 else:
                     max_order = (
                         sess.presentations.filter(document__type="slides").aggregate(
@@ -2960,6 +2967,8 @@ def upload_session_slides(request, session_id, num, name=None):
                     sp = sess.presentations.create(
                         document=doc, rev=doc.rev, order=max_order + 1
                     )
+                    if sm is not None:
+                        sm.add(session=sess, slides=doc, order=sp.order)
 
             # Now handle the uploaded file
             filename = "%s-%s%s" % (doc.name, doc.rev, ext)
