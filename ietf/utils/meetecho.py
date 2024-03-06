@@ -17,7 +17,7 @@ import debug  # pyflakes: ignore
 import datetime
 from json import JSONDecodeError
 from pprint import pformat
-from typing import Dict, Optional, Sequence, TypedDict, TYPE_CHECKING, Union
+from typing import Sequence, TypedDict, TYPE_CHECKING, Union
 from urllib.parse import urljoin
 
 # Guard against hypothetical cyclical import problems
@@ -335,12 +335,12 @@ class DebugMeetechoAPI(MeetechoAPI):
                     f">> MeetechoAPI: request(method={method},",
                     f">> MeetechoAPI:         url={url},",
                     f">> MeetechoAPI:         api_token={api_token},",
-                    f">> MeetechoAPI:         json=" + json_lines[0],
+                    ">> MeetechoAPI:         json=" + json_lines[0],
                     (
                         ">> MeetechoAPI:              " +
-                        f"\n>> MeetechoAPI:              ".join(l for l in json_lines[1:])
+                        "\n>> MeetechoAPI:              ".join(l for l in json_lines[1:])
                     ),
-                    f">> MeetechoAPI: )"
+                    ">> MeetechoAPI: )"
                 ]
             )
         )
@@ -426,23 +426,15 @@ class Conference:
         self._manager.delete_conference(self)
 
 
-class APIConfigDict(TypedDict):
-    api_base: str  # url
-    client_id: str
-    client_secret: str
-    request_timeout: Union[float, int]
-    debug: Optional[bool]
-
-
 class Manager:
-    def __init__(self, api_config: APIConfigDict):
-        debug = api_config.get("debug", False)
-        api_config = {k: v for k, v in api_config.items() if k != "debug"}
+    def __init__(self, api_config):
+        api_config_copy = api_config.copy()
+        debug = api_config_copy.pop("debug", False)
         if debug:
-            self.api = DebugMeetechoAPI(**api_config)
+            self.api = DebugMeetechoAPI(**api_config_copy)
         else:
-            self.api = MeetechoAPI(**api_config)
-        self.wg_tokens: Dict[str, str] = {}
+            self.api = MeetechoAPI(**api_config_copy)
+        self.wg_tokens = {}
 
     def wg_token(self, group):
         group_acronym = group.acronym if hasattr(group, "acronym") else group
