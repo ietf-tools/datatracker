@@ -2864,6 +2864,10 @@ def upload_session_agenda(request, session_id, num):
 
 
 def upload_session_slides(request, session_id, num, name=None):
+    """Upload new or replacement slides for a session
+    
+    If name is None or "", expects a new set of slides. Otherwise, replaces the named slides with a new rev.
+    """
     # num is redundant, but we're dragging it along an artifact of where we are in the current URL structure
     session = get_object_or_404(Session, pk=session_id)
     if not session.can_manage_materials(request.user):
@@ -2886,13 +2890,11 @@ def upload_session_slides(request, session_id, num, name=None):
     if len(sessions) > 1:
         session_number = 1 + sessions.index(session)
 
-    slides = None
-    slides_sp = None
+    doc = None
     if name:
-        slides = Document.objects.filter(name=name).first()
-        if not (slides and slides.type_id == "slides"):
+        doc = Document.objects.filter(name=name).first()
+        if not (doc and doc.type_id == "slides"):
             raise Http404
-        slides_sp = session.presentations.filter(document=slides).first()
 
     if request.method == "POST":
         form = UploadSlidesForm(
@@ -2904,13 +2906,14 @@ def upload_session_slides(request, session_id, num, name=None):
             apply_to_all = session.type_id == "regular"
             if show_apply_to_all_checkbox:
                 apply_to_all = form.cleaned_data["apply_to_all"]
-            if slides_sp:
-                doc = slides_sp.document
+
+            # Handle creation / update of the Document (but do not save yet)
+            if doc is not None:
+                # This is a revision - bump the version and update the title.
                 doc.rev = "%02d" % (int(doc.rev) + 1)
                 doc.title = form.cleaned_data["title"]
-                slides_sp.rev = doc.rev
-                slides_sp.save()
             else:
+                # This is a new slide deck - create a new doc unless one exists with that name
                 title = form.cleaned_data["title"]
                 if session.meeting.type_id == "ietf":
                     name = "slides-%s-%s" % (
@@ -2939,37 +2942,26 @@ def upload_session_slides(request, session_id, num, name=None):
                     )
                 doc.states.add(State.objects.get(type_id="slides", slug="active"))
                 doc.states.add(State.objects.get(type_id="reuse_policy", slug="single"))
-            if session.presentations.filter(document=doc).exists():
-                sp = session.presentations.get(document=doc)
-                sp.rev = doc.rev
-                sp.save()
-            else:
-                max_order = (
-                    session.presentations.filter(document__type="slides").aggregate(
-                        Max("order")
-                    )["order__max"]
-                    or 0
-                )
-                session.presentations.create(
-                    document=doc, rev=doc.rev, order=max_order + 1
-                )
-            if apply_to_all:
-                for other_session in sessions:
-                    if (
-                        other_session != session
-                        and not other_session.presentations.filter(
-                            document=doc
-                        ).exists()
-                    ):
-                        max_order = (
-                            other_session.presentations.filter(
-                                document__type="slides"
-                            ).aggregate(Max("order"))["order__max"]
-                            or 0
-                        )
-                        other_session.presentations.create(
-                            document=doc, rev=doc.rev, order=max_order + 1
-                        )
+
+            # Now handle creation / update of the SessionPresentation(s)
+            sessions_to_apply = sessions if apply_to_all else [session]
+            for sess in sessions_to_apply:
+                sp = sess.presentations.filter(document=doc).first()
+                if sp is not None:
+                    sp.rev = doc.rev
+                    sp.save()
+                else:
+                    max_order = (
+                        sess.presentations.filter(document__type="slides").aggregate(
+                            Max("order")
+                        )["order__max"]
+                        or 0
+                    )
+                    sp = sess.presentations.create(
+                        document=doc, rev=doc.rev, order=max_order + 1
+                    )
+
+            # Now handle the uploaded file
             filename = "%s-%s%s" % (doc.name, doc.rev, ext)
             doc.uploaded_filename = filename
             e = NewRevisionDocEvent.objects.create(
@@ -3004,8 +2996,8 @@ def upload_session_slides(request, session_id, num, name=None):
                 )
     else:
         initial = {}
-        if slides:
-            initial = {"title": slides.title}
+        if doc is not None:
+            initial = {"title": doc.title}
         form = UploadSlidesForm(session, show_apply_to_all_checkbox, initial=initial)
 
     return render(
@@ -3014,7 +3006,7 @@ def upload_session_slides(request, session_id, num, name=None):
         {
             "session": session,
             "session_number": session_number,
-            "slides_sp": slides_sp,
+            "slides_sp": session.presentations.filter(document=doc).first() if doc else None,
             "form": form,
         },
     )
