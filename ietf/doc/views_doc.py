@@ -82,6 +82,7 @@ from ietf.review.utils import can_request_review_of_doc, review_assignments_to_l
 from ietf.review.utils import no_review_from_teams_on_doc
 from ietf.utils import markup_txt, log, markdown
 from ietf.utils.draft import PlaintextDraft
+from ietf.utils.meetecho import SlidesManager
 from ietf.utils.response import permission_denied
 from ietf.utils.text import maybe_split
 from ietf.utils.timezone import date_today
@@ -2075,6 +2076,9 @@ def edit_sessionpresentation(request,name,session_id):
             new_selection = form.cleaned_data['version']
             if initial['version'] != new_selection:
                 doc.presentations.filter(pk=sp.pk).update(rev=None if new_selection=='current' else new_selection)
+                if hasattr(settings, "MEETECHO_API_CONFIG"):
+                    sm = SlidesManager(api_config=settings.MEETECHO_API_CONFIG)
+                    sm.send_update(sp.session)
                 c = DocEvent(type="added_comment", doc=doc, rev=doc.rev, by=request.user.person)
                 c.desc = "Revision for session %s changed to  %s" % (sp.session,new_selection)
                 c.save()
