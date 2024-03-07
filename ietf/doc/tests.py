@@ -2722,6 +2722,7 @@ class DocumentMeetingTests(TestCase):
         response = self.client.post(url,{'session':self.future.pk,'version':'current'})
         self.assertEqual(response.status_code,302)
         self.assertEqual(2,doc.docevent_set.count())
+        self.assertEqual(doc.presentations.get(session__pk=self.future.pk).order, 1)
         self.assertEqual(mock_slides_manager_cls.call_args, mock.call(api_config="fake settings"))
         self.assertEqual(mock_slides_manager_cls.return_value.add.call_count, 1)
         self.assertEqual(
