@@ -6,19 +6,21 @@ import os
 import shutil
 import io
 
+from mock import call, patch
 from pathlib import Path
 from pyquery import PyQuery
 
 import debug              # pyflakes:ignore
 
 from django.conf import settings
+from django.test import override_settings
 from django.urls import reverse as urlreverse
 from django.utils import timezone
 
 from ietf.doc.models import Document, State, NewRevisionDocEvent
 from ietf.group.factories import RoleFactory
 from ietf.group.models import Group
-from ietf.meeting.factories import MeetingFactory, SessionFactory
+from ietf.meeting.factories import MeetingFactory, SessionFactory, SessionPresentationFactory
 from ietf.meeting.models import Meeting, SessionPresentation, SchedulingEvent
 from ietf.name.models import SessionStatusName
 from ietf.person.models import Person
@@ -135,17 +137,43 @@ class GroupMaterialTests(TestCase):
         doc = Document.objects.get(name=doc.name)
         self.assertEqual(doc.get_state_slug(), "deleted")
 
-    def test_edit_title(self):
+    @override_settings(MEETECHO_API_CONFIG="fake settings")
+    @patch("ietf.doc.views_material.SlidesManager")
+    def test_edit_title(self, mock_slides_manager_cls):
         doc = self.create_slides()
 
         url = urlreverse('ietf.doc.views_material.edit_material', kwargs=dict(name=doc.name, action="title"))
         login_testing_unauthorized(self, "secretary", url)
+        self.assertFalse(mock_slides_manager_cls.called)
 
         # post
         r = self.client.post(url, dict(title="New title"))
         self.assertEqual(r.status_code, 302)
         doc = Document.objects.get(name=doc.name)
         self.assertEqual(doc.title, "New title")
+        self.assertFalse(mock_slides_manager_cls.return_value.send_update.called)
+
+        # assign to a session to see that it now sends updates to Meetecho
+        session = SessionPresentationFactory(session__group=doc.group, document=doc).session
+
+        # Grab the title on the slides when the API call was made (to be sure it's not before it was updated)
+        titles_sent = []
+        mock_slides_manager_cls.return_value.send_update.side_effect = lambda sess: titles_sent.extend(
+            list(sess.presentations.values_list("document__title", flat=True))
+        ) 
+
+        r = self.client.post(url, dict(title="Newer title"))
+        self.assertEqual(r.status_code, 302)
+        doc = Document.objects.get(name=doc.name)
+        self.assertEqual(doc.title, "Newer title")
+        self.assertTrue(mock_slides_manager_cls.called)
+        self.assertEqual(mock_slides_manager_cls.call_args, call(api_config="fake settings"))
+        self.assertEqual(mock_slides_manager_cls.return_value.send_update.call_count, 1)
+        self.assertEqual(
+            mock_slides_manager_cls.return_value.send_update.call_args,
+            call(session),
+        )
+        self.assertEqual(titles_sent, ["Newer title"])
 
     def test_revise(self):
         doc = self.create_slides()
