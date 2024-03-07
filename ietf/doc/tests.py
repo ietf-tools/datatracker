@@ -2608,17 +2608,34 @@ class DocumentMeetingTests(TestCase):
         self.assertEqual(2,len(q('select#id_version option')))
         self.assertFalse(mock_slides_manager_cls.called)
 
+        # edit draft
         self.assertEqual(1,doc.docevent_set.count())
         response = self.client.post(url,{'version':'00','save':''})
         self.assertEqual(response.status_code, 302)
         self.assertEqual(doc.presentations.get(pk=sp.pk).rev,'00')
         self.assertEqual(2,doc.docevent_set.count())
+        self.assertFalse(mock_slides_manager_cls.called)
+
+        # editing slides should call Meetecho API
+        slides = SessionPresentationFactory(
+            session=self.future,
+            document__type_id="slides",
+            document__rev="00",
+            rev=None,
+            order=1,
+        ).document
+        url = urlreverse(
+            "ietf.doc.views_doc.edit_sessionpresentation",
+            kwargs={"name": slides.name, "session_id": self.future.pk},
+        )
+        response = self.client.post(url, {"version": "00", "save": ""})
+        self.assertEqual(response.status_code, 302)
         self.assertEqual(mock_slides_manager_cls.call_count, 1)
         self.assertEqual(mock_slides_manager_cls.call_args, mock.call(api_config="fake settings"))
         self.assertEqual(mock_slides_manager_cls.return_value.send_update.call_count, 1)
         self.assertEqual(
             mock_slides_manager_cls.return_value.send_update.call_args,
-            mock.call(sp.session),
+            mock.call(self.future),
         )
 
     def test_edit_document_session_after_proceedings_closed(self):
@@ -2667,17 +2684,28 @@ class DocumentMeetingTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertFalse(mock_slides_manager_cls.called)
 
+        # removing a draft
         self.assertEqual(1,doc.docevent_set.count())
         response = self.client.post(url,{'remove_session':''})
         self.assertEqual(response.status_code, 302)
         self.assertFalse(doc.presentations.filter(pk=sp.pk).exists())
         self.assertEqual(2,doc.docevent_set.count())
+        self.assertFalse(mock_slides_manager_cls.called)
+
+        # removing slides should call Meetecho API
+        slides = SessionPresentationFactory(session=self.future, document__type_id="slides", order=1).document
+        url = urlreverse(
+            "ietf.doc.views_doc.remove_sessionpresentation",
+            kwargs={"name": slides.name, "session_id": self.future.pk},
+        )
+        response = self.client.post(url, {"remove_session": ""})
+        self.assertEqual(response.status_code, 302)
         self.assertEqual(mock_slides_manager_cls.call_count, 1)
         self.assertEqual(mock_slides_manager_cls.call_args, mock.call(api_config="fake settings"))
         self.assertEqual(mock_slides_manager_cls.return_value.delete.call_count, 1)
         self.assertEqual(
             mock_slides_manager_cls.return_value.delete.call_args,
-            mock.call(sp.session, doc),
+            mock.call(self.future, slides),
         )
 
     def test_remove_document_session_after_proceedings_closed(self):
@@ -2718,16 +2746,25 @@ class DocumentMeetingTests(TestCase):
         self.assertTrue(q('.form-select.is-invalid'))
         self.assertFalse(mock_slides_manager_cls.called)
 
+        # adding a draft
         self.assertEqual(1,doc.docevent_set.count())
         response = self.client.post(url,{'session':self.future.pk,'version':'current'})
         self.assertEqual(response.status_code,302)
         self.assertEqual(2,doc.docevent_set.count())
-        self.assertEqual(doc.presentations.get(session__pk=self.future.pk).order, 1)
+        self.assertEqual(doc.presentations.get(session__pk=self.future.pk).order, 0)
+        self.assertFalse(mock_slides_manager_cls.called)
+
+        # adding slides should set order / call Meetecho API
+        slides = DocumentFactory(type_id="slides")
+        url = urlreverse("ietf.doc.views_doc.add_sessionpresentation", kwargs=dict(name=slides.name))
+        response = self.client.post(url, {"session": self.future.pk, "version": "current"})
+        self.assertEqual(response.status_code,302)
+        self.assertEqual(slides.presentations.get(session__pk=self.future.pk).order, 1)
         self.assertEqual(mock_slides_manager_cls.call_args, mock.call(api_config="fake settings"))
         self.assertEqual(mock_slides_manager_cls.return_value.add.call_count, 1)
         self.assertEqual(
             mock_slides_manager_cls.return_value.add.call_args,
-            mock.call(self.future, doc, order=1),
+            mock.call(self.future, slides, order=1),
         )
 
     def test_get_related_meeting(self):

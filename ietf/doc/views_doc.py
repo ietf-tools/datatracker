@@ -2077,7 +2077,7 @@ def edit_sessionpresentation(request,name,session_id):
             new_selection = form.cleaned_data['version']
             if initial['version'] != new_selection:
                 doc.presentations.filter(pk=sp.pk).update(rev=None if new_selection=='current' else new_selection)
-                if hasattr(settings, "MEETECHO_API_CONFIG"):
+                if doc.type_id == "slides" and hasattr(settings, "MEETECHO_API_CONFIG"):
                     sm = SlidesManager(api_config=settings.MEETECHO_API_CONFIG)
                     sm.send_update(sp.session)
                 c = DocEvent(type="added_comment", doc=doc, rev=doc.rev, by=request.user.person)
@@ -2101,7 +2101,7 @@ def remove_sessionpresentation(request,name,session_id):
 
     if request.method == 'POST':
         doc.presentations.filter(pk=sp.pk).delete()
-        if hasattr(settings, "MEETECHO_API_CONFIG"):
+        if doc.type_id == "slides" and hasattr(settings, "MEETECHO_API_CONFIG"):
             sm = SlidesManager(api_config=settings.MEETECHO_API_CONFIG)
             sm.delete(sp.session, doc)
         c = DocEvent(type="added_comment", doc=doc, rev=doc.rev, by=request.user.person)
@@ -2140,16 +2140,20 @@ def add_sessionpresentation(request,name):
             session_id = session_form.cleaned_data['session']
             version = version_form.cleaned_data['version']
             rev = None if version=='current' else version
-            max_order = SessionPresentation.objects.filter(
-                document__type='slides',
-                session__pk=session_id,
-            ).aggregate(Max('order'))['order__max'] or 0
+            if doc.type_id == "slides":
+                max_order = SessionPresentation.objects.filter(
+                    document__type='slides',
+                    session__pk=session_id,
+                ).aggregate(Max('order'))['order__max'] or 0
+                order = max_order + 1
+            else:
+                order = 0
             sp = doc.presentations.create(
                 session_id=session_id,
                 rev=rev,
-                order=max_order + 1,
+                order=order,
             )
-            if hasattr(settings, "MEETECHO_API_CONFIG"):
+            if doc.type_id == "slides" and hasattr(settings, "MEETECHO_API_CONFIG"):
                 sm = SlidesManager(api_config=settings.MEETECHO_API_CONFIG)
                 sm.add(sp.session, doc, order=sp.order)
             c = DocEvent(type="added_comment", doc=doc, rev=doc.rev, by=request.user.person)
