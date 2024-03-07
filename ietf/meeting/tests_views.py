@@ -8648,9 +8648,9 @@ class ProceedingsTests(BaseMeetingTestCase):
     def test_bluesheet_data(self):
         session = SessionFactory(meeting__type_id="ietf") 
         attended_with_affil = MeetingRegistrationFactory(meeting=session.meeting, affiliation="Somewhere")
-        AttendedFactory(session=session, person=attended_with_affil.person, time="2023-03-13T01:24:00")  # joined 2nd
+        AttendedFactory(session=session, person=attended_with_affil.person, time="2023-03-13T01:24:00Z")  # joined 2nd
         attended_no_affil = MeetingRegistrationFactory(meeting=session.meeting)
-        AttendedFactory(session=session, person=attended_no_affil.person, time="2023-03-13T01:23:00")  # joined 1st
+        AttendedFactory(session=session, person=attended_no_affil.person, time="2023-03-13T01:23:00Z")  # joined 1st
         MeetingRegistrationFactory(meeting=session.meeting)  # did not attend
         
         data = bluesheet_data(session)
