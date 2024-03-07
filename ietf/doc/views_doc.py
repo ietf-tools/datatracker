@@ -2100,6 +2100,9 @@ def remove_sessionpresentation(request,name,session_id):
 
     if request.method == 'POST':
         doc.presentations.filter(pk=sp.pk).delete()
+        if hasattr(settings, "MEETECHO_API_CONFIG"):
+            sm = SlidesManager(api_config=settings.MEETECHO_API_CONFIG)
+            sm.delete(sp.session, doc)
         c = DocEvent(type="added_comment", doc=doc, rev=doc.rev, by=request.user.person)
         c.desc = "Removed from session: %s" % (sp.session)
         c.save()

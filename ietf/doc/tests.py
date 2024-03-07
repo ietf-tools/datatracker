@@ -2636,35 +2636,49 @@ class DocumentMeetingTests(TestCase):
         q=PyQuery(response.content)
         self.assertEqual(1,len(q(".alert-warning:contains('may affect published proceedings')")))
 
-    def test_remove_document_session(self):
+    @override_settings(MEETECHO_API_CONFIG="fake settings")
+    @mock.patch("ietf.doc.views_doc.SlidesManager")
+    def test_remove_document_session(self, mock_slides_manager_cls):
         doc = IndividualDraftFactory.create()
         sp = doc.presentations.create(session=self.future,rev=None)
 
         url = urlreverse('ietf.doc.views_doc.remove_sessionpresentation',kwargs=dict(name='no-such-doc',session_id=sp.session_id))
         response = self.client.get(url)
         self.assertEqual(response.status_code, 404)
+        self.assertFalse(mock_slides_manager_cls.called)
 
         url = urlreverse('ietf.doc.views_doc.remove_sessionpresentation',kwargs=dict(name=doc.name,session_id=0))
         response = self.client.get(url)
         self.assertEqual(response.status_code, 404)
+        self.assertFalse(mock_slides_manager_cls.called)
 
         url = urlreverse('ietf.doc.views_doc.remove_sessionpresentation',kwargs=dict(name=doc.name,session_id=sp.session_id))
         response = self.client.get(url)
         self.assertEqual(response.status_code, 404)
+        self.assertFalse(mock_slides_manager_cls.called)
 
         self.client.login(username=self.other_chair.user.username,password='%s+password'%self.other_chair.user.username)
         response = self.client.get(url)
         self.assertEqual(response.status_code, 404)
-        
+        self.assertFalse(mock_slides_manager_cls.called)
+
         self.client.login(username=self.group_chair.user.username,password='%s+password'%self.group_chair.user.username)
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
+        self.assertFalse(mock_slides_manager_cls.called)
 
         self.assertEqual(1,doc.docevent_set.count())
         response = self.client.post(url,{'remove_session':''})
         self.assertEqual(response.status_code, 302)
         self.assertFalse(doc.presentations.filter(pk=sp.pk).exists())
         self.assertEqual(2,doc.docevent_set.count())
+        self.assertEqual(mock_slides_manager_cls.call_count, 1)
+        self.assertEqual(mock_slides_manager_cls.call_args, mock.call(api_config="fake settings"))
+        self.assertEqual(mock_slides_manager_cls.return_value.delete.call_count, 1)
+        self.assertEqual(
+            mock_slides_manager_cls.return_value.delete.call_args,
+            mock.call(sp.session, doc),
+        )
 
     def test_remove_document_session_after_proceedings_closed(self):
         doc = IndividualDraftFactory.create()
