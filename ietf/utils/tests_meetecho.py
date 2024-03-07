@@ -554,7 +554,7 @@ class SlidesManagerTests(TestCase):
                 deck={
                     "id": slides_doc.pk,
                     "title": slides_doc.title,
-                    "url": slides_doc.get_absolute_url(),
+                    "url": slides_doc.get_versionless_href(),
                     "rev": slides_doc.rev,
                     "order": 13,
                 },
@@ -590,7 +590,7 @@ class SlidesManagerTests(TestCase):
                     {
                         "id": slides.document_id,
                         "title": slides.document.title,
-                        "url": slides.document.get_absolute_url(),
+                        "url": slides.document.get_versionless_href(),
                         "rev": slides.document.rev,
                         "order": 0,
                     }
