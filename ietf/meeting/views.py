@@ -102,7 +102,8 @@ from ietf.utils.timezone import datetime_today, date_today
 
 from .forms import (InterimMeetingModelForm, InterimAnnounceForm, InterimSessionModelForm,
     InterimCancelForm, InterimSessionInlineFormSet, RequestMinutesForm,
-    UploadAgendaForm, UploadBlueSheetForm, UploadMinutesForm, UploadSlidesForm)
+    UploadAgendaForm, UploadBlueSheetForm, UploadMinutesForm, UploadSlidesForm,
+    UploadNarrativeMinutesForm)
 
 request_summary_exclude_group_types = ['team']
 
@@ -1761,7 +1762,7 @@ def agenda_extract_schedule (item):
         "remoteInstructions": item.session.remote_instructions,
         "flags": {
             "agenda": True if item.session.agenda() is not None else False,
-            "showAgenda": True if (item.session.agenda() is not None or item.session.remote_instructions or item.session.agenda_note) else False
+            "showAgenda": True if (item.session.agenda() is not None or item.session.remote_instructions) else False
         },
         "agenda": {
             "url": item.session.agenda().get_href()
@@ -2662,6 +2663,61 @@ def upload_session_minutes(request, session_id, num):
                    'form': form,
                   })
 
+@role_required("Secretariat")
+def upload_session_narrativeminutes(request, session_id, num):
+    # num is redundant, but we're dragging it along an artifact of where we are in the current URL structure
+    session = get_object_or_404(Session,pk=session_id)
+    if session.group.acronym != "iesg":
+        raise Http404()
+    
+    session_number = None
+    sessions = get_sessions(session.meeting.number,session.group.acronym)
+    show_apply_to_all_checkbox = len(sessions) > 1 if session.type_id == 'regular' else False
+    if len(sessions) > 1:
+       session_number = 1 + sessions.index(session)
+
+    narrativeminutes_sp = session.presentations.filter(document__type='narrativeminutes').first()
+    
+    if request.method == 'POST':
+        form = UploadNarrativeMinutesForm(show_apply_to_all_checkbox,request.POST,request.FILES)
+        if form.is_valid():
+            file = request.FILES['file']
+            _, ext = os.path.splitext(file.name)
+            apply_to_all = session.type_id == 'regular'
+            if show_apply_to_all_checkbox:
+                apply_to_all = form.cleaned_data['apply_to_all']
+
+            # Set up the new revision
+            try:
+                save_session_minutes_revision(
+                    session=session,
+                    apply_to_all=apply_to_all,
+                    file=file,
+                    ext=ext,
+                    encoding=form.file_encoding[file.name],
+                    request=request,
+                    narrative=True
+                )
+            except SessionNotScheduledError:
+                return HttpResponseGone(
+                    "Cannot receive uploads for an unscheduled session. Please check the session ID.",
+                    content_type="text/plain",
+                )
+            except SaveMaterialsError as err:
+                form.add_error(None, str(err))
+            else:
+                # no exception -- success!
+                messages.success(request, f'Successfully uploaded narrative minutes as revision {session.narrative_minutes().rev}.')
+                return redirect('ietf.meeting.views.session_details', num=num, acronym=session.group.acronym)
+    else:
+        form = UploadMinutesForm(show_apply_to_all_checkbox)
+
+    return render(request, "meeting/upload_session_narrativeminutes.html", 
+                  {'session': session,
+                   'session_number': session_number,
+                   'minutes_sp' : narrativeminutes_sp,
+                   'form': form,
+                  })
 
 class UploadOrEnterAgendaForm(UploadAgendaForm):
     ACTIONS = [

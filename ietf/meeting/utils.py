@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2016-2020, All Rights Reserved
+# Copyright The IETF Trust 2016-2024, All Rights Reserved
 # -*- coding: utf-8 -*-
 import datetime
 import itertools
@@ -555,7 +555,7 @@ class SaveMaterialsError(Exception):
     pass
 
 
-def save_session_minutes_revision(session, file, ext, request, encoding=None, apply_to_all=False):
+def save_session_minutes_revision(session, file, ext, request, encoding=None, apply_to_all=False, narrative=False):
     """Creates or updates session minutes records
 
     This updates the database models to reflect a new version. It does not handle
@@ -568,7 +568,8 @@ def save_session_minutes_revision(session, file, ext, request, encoding=None, ap
     Returns (Document, [DocEvents]), which should be passed to doc.save_with_history()
     if the file contents are stored successfully.
     """
-    minutes_sp = session.presentations.filter(document__type='minutes').first()
+    document_type = DocTypeName.objects.get(slug= 'narrativeminutes' if narrative else 'minutes')
+    minutes_sp = session.presentations.filter(document__type=document_type).first()
     if minutes_sp:
         doc = minutes_sp.document
         doc.rev = '%02d' % (int(doc.rev)+1)
@@ -580,28 +581,26 @@ def save_session_minutes_revision(session, file, ext, request, encoding=None, ap
         if not sess_time:
             raise SessionNotScheduledError
         if session.meeting.type_id=='ietf':
-            name = 'minutes-%s-%s' % (session.meeting.number,
-                                      session.group.acronym)
-            title = 'Minutes IETF%s: %s' % (session.meeting.number,
-                                            session.group.acronym)
+            name = f"{document_type.prefix}-{session.meeting.number}-{session.group.acronym}"
+            title = f"{document_type.name} IETF{session.meeting.number}: {session.group.acronym}"
             if not apply_to_all:
                 name += '-%s' % (sess_time.strftime("%Y%m%d%H%M"),)
                 title += ': %s' % (sess_time.strftime("%a %H:%M"),)
         else:
-            name = 'minutes-%s-%s' % (session.meeting.number, sess_time.strftime("%Y%m%d%H%M"))
-            title = 'Minutes %s: %s' % (session.meeting.number, sess_time.strftime("%a %H:%M"))
+            name =f"{document_type.prefix}-{session.meeting.number}-{sess_time.strftime('%Y%m%d%H%M')}"
+            title = f"{document_type.name} {session.meeting.number}: {sess_time.strftime('%a %H:%M')}"
         if Document.objects.filter(name=name).exists():
             doc = Document.objects.get(name=name)
             doc.rev = '%02d' % (int(doc.rev)+1)
         else:
             doc = Document.objects.create(
                 name = name,
-                type_id = 'minutes',
+                type = document_type,
                 title = title,
                 group = session.group,
                 rev = '00',
             )
-        doc.states.add(State.objects.get(type_id='minutes',slug='active'))
+        doc.states.add(State.objects.get(type_id=document_type.slug,slug='active'))
         if session.presentations.filter(document=doc).exists():
             sp = session.presentations.get(document=doc)
             sp.rev = doc.rev
@@ -611,7 +610,7 @@ def save_session_minutes_revision(session, file, ext, request, encoding=None, ap
     if apply_to_all:
         for other_session in get_meeting_sessions(session.meeting.number, session.group.acronym):
             if other_session != session:
-                other_session.presentations.filter(document__type='minutes').delete()
+                other_session.presentations.filter(document__type=document_type).delete()
                 other_session.presentations.create(document=doc,rev=doc.rev)
     filename = f'{doc.name}-{doc.rev}{ext}'
     doc.uploaded_filename = filename
@@ -628,7 +627,7 @@ def save_session_minutes_revision(session, file, ext, request, encoding=None, ap
         file=file,
         filename=doc.uploaded_filename,
         meeting=session.meeting,
-        subdir='minutes',
+        subdir=document_type.slug,
         request=request,
         encoding=encoding,
     )

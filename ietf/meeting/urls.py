@@ -18,6 +18,7 @@ safe_for_all_meeting_types = [
     url(r'^session/(?P<session_id>\d+)/drafts$',  views.add_session_drafts),
     url(r'^session/(?P<session_id>\d+)/bluesheets$', views.upload_session_bluesheets),
     url(r'^session/(?P<session_id>\d+)/minutes$', views.upload_session_minutes),
+    url(r'^session/(?P<session_id>\d+)/narrativeminutes$', views.upload_session_narrativeminutes),
     url(r'^session/(?P<session_id>\d+)/agenda$', views.upload_session_agenda),
     url(r'^session/(?P<session_id>\d+)/import/minutes$', views.import_session_minutes),
     url(r'^session/(?P<session_id>\d+)/propose_slides$', views.propose_session_slides),

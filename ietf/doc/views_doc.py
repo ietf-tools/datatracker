@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2009-2023, All Rights Reserved
+# Copyright The IETF Trust 2009-2024, All Rights Reserved
 # -*- coding: utf-8 -*-
 #
 # Parts Copyright (C) 2009-2010 Nokia Corporation and/or its subsidiary(-ies).
@@ -40,7 +40,6 @@ import json
 import os
 import re
 
-from urllib.parse import quote
 from pathlib import Path
 
 from django.http import HttpResponse, Http404
@@ -324,6 +323,9 @@ def document_main(request, name, rev=None, document_html=False):
                 submission = group.acronym
             submission = '<a href="%s">%s</a>' % (group.about_url(), submission)
 
+        draft = doc.came_from_draft()
+        mailto_name = draft.name if draft else None
+
         return render(request, "doc/document_rfc.html" if document_html is False else "doc/document_html.html",
                                   dict(doc=doc,
                                        document_html=document_html,
@@ -356,7 +358,8 @@ def document_main(request, name, rev=None, document_html=False):
                                        iana_experts_comment=iana_experts_comment,
                                        presentations=presentations,
                                        diff_revisions=diff_revisions,
-                                       submission=submission
+                                       submission=submission,
+                                       mailto_name=mailto_name,
                                        ))
 
     elif doc.type_id == "draft":
@@ -475,13 +478,6 @@ def document_main(request, name, rev=None, document_html=False):
         if request.user.is_authenticated:
             can_submit_unsolicited_review_for_teams = Group.objects.filter(
                 reviewteamsettings__isnull=False, role__person__user=request.user, role__name='secr')
-
-        # mailing list search archive
-        search_archive = "www.ietf.org/mail-archive/web/"
-        if doc.stream_id == "ietf" and group.type_id == "wg" and group.list_archive:
-            search_archive = group.list_archive
-
-        search_archive = quote(search_archive, safe="~")
 
         # conflict reviews
         conflict_reviews = [r.source.name for r in interesting_relations_that.filter(relationship="conflrev")]
@@ -701,7 +697,6 @@ def document_main(request, name, rev=None, document_html=False):
                                        iana_experts_comment=iana_experts_comment,
                                        started_iesg_process=started_iesg_process,
                                        shepherd_writeup=shepherd_writeup,
-                                       search_archive=search_archive,
                                        actions=actions,
                                        presentations=presentations,
                                        review_assignments=review_assignments,

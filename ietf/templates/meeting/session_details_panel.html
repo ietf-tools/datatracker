@@ -73,6 +73,8 @@
                                 {% if user|has_role:"Secretariat" or can_manage_materials %}
                                     {% if pres.document.type.slug == 'minutes' %}
                                         {% url 'ietf.meeting.views.upload_session_minutes' session_id=session.pk num=session.meeting.number as upload_url %}
+                                    {% elif pres.document.type.slug == 'narrativeminutes' %}
+                                        {% url 'ietf.meeting.views.upload_session_narrativeminutes' session_id=session.pk num=session.meeting.number as upload_url %}
                                     {% elif pres.document.type.slug == 'agenda' %}
                                         {% url 'ietf.meeting.views.upload_session_agenda' session_id=session.pk num=session.meeting.number as upload_url %}
                                     {% else %}
@@ -106,6 +108,12 @@
                     Upload minutes
                 </a>
             {% endif %}
+            {% if not session.type_counter.narrativeminutes and session.group.acronym == "iesg" %}
+                <a class="btn btn-primary"
+                href="{% url 'ietf.meeting.views.upload_session_narrativeminutes' session_id=session.pk num=session.meeting.number %}">
+                    Upload narrative minutes
+                </a>
+        {% endif %}           
         {% endif %}
         {% if user|has_role:"Secretariat" and not session.type_counter.bluesheets or meeting.type.slug == 'interim' and can_manage_materials and not session.type_counter.bluesheets %}
             <a class="btn btn-primary"
