@@ -2695,28 +2695,39 @@ class DocumentMeetingTests(TestCase):
         q=PyQuery(response.content)
         self.assertEqual(1,len(q(".alert-warning:contains('may affect published proceedings')")))
 
-    def test_add_document_session(self):
+    @override_settings(MEETECHO_API_CONFIG="fake settings")
+    @mock.patch("ietf.doc.views_doc.SlidesManager")
+    def test_add_document_session(self, mock_slides_manager_cls):
         doc = IndividualDraftFactory.create()
 
         url = urlreverse('ietf.doc.views_doc.add_sessionpresentation',kwargs=dict(name=doc.name))
         login_testing_unauthorized(self,self.group_chair.user.username,url)
         response = self.client.get(url)
         self.assertEqual(response.status_code,200)
-    
+        self.assertFalse(mock_slides_manager_cls.called)
+
         response = self.client.post(url,{'session':0,'version':'current'})
         self.assertEqual(response.status_code,200)
         q=PyQuery(response.content)
         self.assertTrue(q('.form-select.is-invalid'))
+        self.assertFalse(mock_slides_manager_cls.called)
 
         response = self.client.post(url,{'session':self.future.pk,'version':'bogus version'})
         self.assertEqual(response.status_code,200)
         q=PyQuery(response.content)
         self.assertTrue(q('.form-select.is-invalid'))
+        self.assertFalse(mock_slides_manager_cls.called)
 
         self.assertEqual(1,doc.docevent_set.count())
         response = self.client.post(url,{'session':self.future.pk,'version':'current'})
         self.assertEqual(response.status_code,302)
         self.assertEqual(2,doc.docevent_set.count())
+        self.assertEqual(mock_slides_manager_cls.call_args, mock.call(api_config="fake settings"))
+        self.assertEqual(mock_slides_manager_cls.return_value.add.call_count, 1)
+        self.assertEqual(
+            mock_slides_manager_cls.return_value.add.call_args,
+            mock.call(self.future, doc, order=1),
+        )
 
     def test_get_related_meeting(self):
         """Should be able to retrieve related meeting"""

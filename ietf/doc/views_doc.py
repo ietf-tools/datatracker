@@ -2139,7 +2139,10 @@ def add_sessionpresentation(request,name):
             session_id = session_form.cleaned_data['session']
             version = version_form.cleaned_data['version']
             rev = None if version=='current' else version
-            doc.presentations.create(session_id=session_id,rev=rev)
+            sp = doc.presentations.create(session_id=session_id,rev=rev)
+            if hasattr(settings, "MEETECHO_API_CONFIG"):
+                sm = SlidesManager(api_config=settings.MEETECHO_API_CONFIG)
+                sm.add(sp.session, doc, order=sp.order)
             c = DocEvent(type="added_comment", doc=doc, rev=doc.rev, by=request.user.person)
             c.desc = "%s to session: %s" % ('Added -%s'%rev if rev else 'Added', Session.objects.get(pk=session_id))
             c.save()
