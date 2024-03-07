@@ -477,7 +477,7 @@ class SlidesManager(Manager):
             deck={
                 "id": slides.pk,
                 "title": slides.title,
-                "url": slides.get_absolute_url(),
+                "url": slides.get_versionless_href(),
                 "rev": slides.rev,
                 "order": order,
             }
@@ -498,7 +498,7 @@ class SlidesManager(Manager):
                 {
                     "id": deck.document.pk,
                     "title": deck.document.title,
-                    "url": deck.document.get_absolute_url(),
+                    "url": deck.document.get_versionless_href(),
                     "rev": deck.document.rev,
                     "order": deck.order,
                 }
