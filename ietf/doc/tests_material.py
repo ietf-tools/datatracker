@@ -175,7 +175,9 @@ class GroupMaterialTests(TestCase):
         )
         self.assertEqual(titles_sent, ["Newer title"])
 
-    def test_revise(self):
+    @override_settings(MEETECHO_API_CONFIG="fake settings")
+    @patch("ietf.doc.views_material.SlidesManager")
+    def test_revise(self, mock_slides_manager_cls):
         doc = self.create_slides()
 
         session = SessionFactory(
@@ -193,10 +195,17 @@ class GroupMaterialTests(TestCase):
 
         url = urlreverse('ietf.doc.views_material.edit_material', kwargs=dict(name=doc.name, action="revise"))
         login_testing_unauthorized(self, "secretary", url)
+        self.assertFalse(mock_slides_manager_cls.called)
 
         content = "some text"
         test_file = io.StringIO(content)
         test_file.name = "unnamed.txt"
+
+        # Grab the title on the slides when the API call was made (to be sure it's not before it was updated)
+        titles_sent = []
+        mock_slides_manager_cls.return_value.send_update.side_effect = lambda sess: titles_sent.extend(
+            list(sess.presentations.values_list("document__title", flat=True))
+        ) 
 
         # post
         r = self.client.post(url, dict(title="New title",
@@ -208,6 +217,14 @@ class GroupMaterialTests(TestCase):
         self.assertEqual(doc.rev, "02")
         self.assertEqual(doc.title, "New title")
         self.assertEqual(doc.get_state_slug(), "active")
+        self.assertTrue(mock_slides_manager_cls.called)
+        self.assertEqual(mock_slides_manager_cls.call_args, call(api_config="fake settings"))
+        self.assertEqual(mock_slides_manager_cls.return_value.send_update.call_count, 1)
+        self.assertEqual(
+            mock_slides_manager_cls.return_value.send_update.call_args,
+            call(session),
+        )
+        self.assertEqual(titles_sent, ["New title"])
 
         with io.open(os.path.join(doc.get_file_path(), doc.name + "-" + doc.rev + ".txt")) as f:
             self.assertEqual(f.read(), content)
