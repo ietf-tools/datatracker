@@ -5,16 +5,3 @@ metadata:
 data:
   settings_local.py: |-
 {{ .Files.Get "settings_local.py" | indent 4 }}
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: app-configmap
-data:
-  DBHOST: "host.minikube.internal"
-  DBPORT: "54177"
-  DBNAME: "datatracker"
-  DBUSER: "django"
-  DBPASS: "RkTkDPFnKpko"
-  # This is the usual dev SECRET_KEY
-  DJANGO_SECRET_KEY: "PDwXboUq!=hPjnrtG2=ge#N$Dwy+wn@uivrugwpic8mxyPfHk"

@@ -48,9 +48,6 @@ spec:
             {{- toYaml .Values.memcached.startupProbe | nindent 12 }}
           resources:
             {{- toYaml .Values.memcached.resources | nindent 12 }}
-          envFrom:
-            - configMapRef:
-                name: app-configmap
       {{- with .Values.memcached.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
