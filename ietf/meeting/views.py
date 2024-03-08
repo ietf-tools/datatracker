@@ -2955,8 +2955,7 @@ def upload_session_slides(request, session_id, num, name=None):
                     sp.rev = doc.rev
                     sp.save()
                     if sm is not None:
-                        sm.delete(session=sess, slides=doc)  # removes the existing deck with previous revision
-                        sm.add(session=sess, slides=doc, order=sp.order)
+                        sm.revise(session=sess, slides=doc)
                 else:
                     max_order = (
                         sess.presentations.filter(document__type="slides").aggregate(

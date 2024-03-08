@@ -493,12 +493,29 @@ class SlidesManager(Manager):
         )
 
     def delete(self, session: "Session", slides: "Document"):
+        """Delete a slide deck from the session"""
+        # remove, leaving a hole
         self.api.delete_slide_deck(
             wg_token=self.wg_token(session.group),
             session=str(session.pk),
             id=slides.pk,
         )
+        self.send_update(session)  # adjust order to fill in the hole        
     
+    def revise(self, session: "Session", slides: "Document"):
+        """Replace existing deck with its current state"""
+        sp = session.presentations.filter(document=slides).first()
+        if sp is None:
+            raise MeetechoAPIError(f"Slides {slides.pk} not in session {session.pk}")
+        order = sp.order
+        # remove, leaving a hole in the order on Meetecho's side
+        self.api.delete_slide_deck(
+            wg_token=self.wg_token(session.group),
+            session=str(session.pk),
+            id=slides.pk,
+        )
+        self.add(session, slides, order)  # fill in the hole
+        
     def send_update(self, session: "Session"):
         self.api.update_slide_decks(
             wg_token=self.wg_token(session.group),

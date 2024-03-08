@@ -561,10 +561,12 @@ class SlidesManagerTests(TestCase):
             ),
         )
 
+    @patch("ietf.utils.meetecho.MeetechoAPI.update_slide_decks")
     @patch("ietf.utils.meetecho.MeetechoAPI.delete_slide_deck")
-    def test_delete(self, mock_delete, mock_wg_token):
+    def test_delete(self, mock_delete, mock_update, mock_wg_token):
         sm = SlidesManager(settings.MEETECHO_API_CONFIG)
-        slides = SessionPresentationFactory(document__type_id="slides")
+        slides = SessionPresentationFactory(document__type_id="slides", order=17)
+        slides_doc = slides.document
         sm.delete(slides.session, slides.document)
         self.assertTrue(mock_wg_token.called)
         self.assertTrue(mock_delete.called)
@@ -572,6 +574,53 @@ class SlidesManagerTests(TestCase):
             mock_delete.call_args,
             call(wg_token="atoken", session=str(slides.session.pk), id=slides.document_id),
         )
+        self.assertTrue(mock_update.called)
+        self.assertEqual(
+            mock_update.call_args,
+            call(
+                wg_token="atoken",
+                session=str(slides.session.pk),
+                decks=[
+                    {
+                        "id": slides_doc.pk,
+                        "title": slides_doc.title,
+                        "url": slides_doc.get_versionless_href(),
+                        "rev": slides_doc.rev,
+                        "order": 17,
+                    },
+                ]
+            )
+        )
+
+    @patch("ietf.utils.meetecho.MeetechoAPI.delete_slide_deck")
+    @patch("ietf.utils.meetecho.MeetechoAPI.add_slide_deck")
+    def test_revise(self, mock_add, mock_delete, mock_wg_token):
+        sm = SlidesManager(settings.MEETECHO_API_CONFIG)
+        slides = SessionPresentationFactory(document__type_id="slides", order=23)
+        slides_doc = slides.document
+        sm.revise(slides.session, slides.document)
+        self.assertTrue(mock_wg_token.called)
+        self.assertTrue(mock_delete.called)
+        self.assertEqual(
+            mock_delete.call_args,
+            call(wg_token="atoken", session=str(slides.session.pk), id=slides_doc.pk),
+        )
+        self.assertTrue(mock_add.called)
+        self.assertEqual(
+            mock_add.call_args,
+            call(
+                wg_token="atoken",
+                session=str(slides.session.pk),
+                deck={
+                    "id": slides_doc.pk,
+                    "title": slides_doc.title,
+                    "url": slides_doc.get_versionless_href(),
+                    "rev": slides_doc.rev,
+                    "order": 23,
+                },
+            ),
+        )
+
 
     @patch("ietf.utils.meetecho.MeetechoAPI.update_slide_decks")
     def test_send_update(self, mock_send_update, mock_wg_token):
