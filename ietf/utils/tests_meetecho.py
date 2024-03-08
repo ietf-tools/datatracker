@@ -565,32 +565,49 @@ class SlidesManagerTests(TestCase):
     @patch("ietf.utils.meetecho.MeetechoAPI.delete_slide_deck")
     def test_delete(self, mock_delete, mock_update, mock_wg_token):
         sm = SlidesManager(settings.MEETECHO_API_CONFIG)
-        slides = SessionPresentationFactory(document__type_id="slides", order=17)
+        # Test scenario: we had a session with two slide decks and we already deleted the SessionPresentation
+        # for one and are now updating Meetecho
+        slides = SessionPresentationFactory(document__type_id="slides", order=1)  # still attached to the session
+        session = slides.session
         slides_doc = slides.document
-        sm.delete(slides.session, slides.document)
+        removed_slides_doc = DocumentFactory(type_id="slides")
+        
+        with self.assertRaises(MeetechoAPIError):
+            sm.delete(session, slides_doc)  # can't remove slides still attached to the session
+        self.assertFalse(any([mock_wg_token.called, mock_delete.called, mock_update.called]))
+
+        sm.delete(session, removed_slides_doc)
         self.assertTrue(mock_wg_token.called)
         self.assertTrue(mock_delete.called)
         self.assertEqual(
             mock_delete.call_args,
-            call(wg_token="atoken", session=str(slides.session.pk), id=slides.document_id),
+            call(wg_token="atoken", session=str(session.pk), id=removed_slides_doc.pk),
         )
         self.assertTrue(mock_update.called)
         self.assertEqual(
             mock_update.call_args,
             call(
                 wg_token="atoken",
-                session=str(slides.session.pk),
+                session=str(session.pk),
                 decks=[
                     {
                         "id": slides_doc.pk,
                         "title": slides_doc.title,
                         "url": slides_doc.get_versionless_href(),
                         "rev": slides_doc.rev,
-                        "order": 17,
+                        "order": 1,
                     },
                 ]
             )
         )
+        mock_delete.reset_mock()
+        mock_update.reset_mock()
+        
+        # Delete the other session and check that we don't make the update call
+        slides.delete()
+        sm.delete(session, slides_doc)
+        self.assertTrue(mock_delete.called)
+        self.assertFalse(mock_update.called)
 
     @patch("ietf.utils.meetecho.MeetechoAPI.delete_slide_deck")
     @patch("ietf.utils.meetecho.MeetechoAPI.add_slide_deck")

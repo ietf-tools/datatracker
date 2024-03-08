@@ -480,6 +480,8 @@ class SlidesManager(Manager):
     avoid this requirement.) 
     """
     def add(self, session: "Session", slides: "Document", order: int):
+        # Would like to confirm that session.presentations includes the slides Document, but we can't
+        # (same problem regarding unsaved Documents discussed in the docstring)
         self.api.add_slide_deck(
             wg_token=self.wg_token(session.group),
             session=str(session.pk),
@@ -494,13 +496,20 @@ class SlidesManager(Manager):
 
     def delete(self, session: "Session", slides: "Document"):
         """Delete a slide deck from the session"""
+        if session.presentations.filter(document=slides).exists():
+            # "order" problems are very likely to result if we delete slides that are actually still
+            # linked to the session
+            raise MeetechoAPIError(
+                f"Slides {slides.pk} are still linked to session {session.pk}."
+            )
         # remove, leaving a hole
         self.api.delete_slide_deck(
             wg_token=self.wg_token(session.group),
             session=str(session.pk),
             id=slides.pk,
         )
-        self.send_update(session)  # adjust order to fill in the hole        
+        if session.presentations.filter(document__type_id="slides").exists():
+            self.send_update(session)  # adjust order to fill in the hole        
     
     def revise(self, session: "Session", slides: "Document"):
         """Replace existing deck with its current state"""
