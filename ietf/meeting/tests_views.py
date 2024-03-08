@@ -6477,15 +6477,10 @@ class MaterialsTests(TestCase):
         self.assertEqual(replacement_sp.document.rev,'01')
         self.assertEqual(mock_slides_manager_cls.call_count, 1)
         self.assertEqual(mock_slides_manager_cls.call_args, call(api_config="fake settings"))
-        self.assertEqual(mock_slides_manager_cls.return_value.delete.call_count, 1)
+        self.assertEqual(mock_slides_manager_cls.return_value.revise.call_count, 1)
         self.assertEqual(
-            mock_slides_manager_cls.return_value.delete.call_args,
+            mock_slides_manager_cls.return_value.revise.call_args,
             call(session=session2, slides=sp.document),
-        )
-        self.assertEqual(mock_slides_manager_cls.return_value.add.call_count, 1)
-        self.assertEqual(
-            mock_slides_manager_cls.return_value.add.call_args,
-            call(session=session2, slides=replacement_sp.document, order=2),
         )
 
     def test_upload_slide_title_bad_unicode(self):
