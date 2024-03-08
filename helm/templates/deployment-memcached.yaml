@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "datatracker.fullname" . }}
+  name: {{ include "memcached.fullname" . }}
   labels:
     {{- include "datatracker.labels" . | nindent 4 }}
 spec:
@@ -23,47 +23,47 @@ spec:
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
-        - name: {{ .Chart.Name }}
+        - name: {{ .Chart.Name }}-memcached
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
-          image: "{{ .Values.image.repository }}:{{ default .Chart.AppVersion .Values.image.tag }}"
-          imagePullPolicy: {{ default "IfNotPresent" .Values.image.imagePullPolicy }}
+          image: "{{ default "memcached" .Values.memcached.image.repository }}:{{ required "Must specify memcached tag" .Values.memcached.image.tag }}"
+          imagePullPolicy: {{ default "IfNotPresent" .Values.memcached.image.imagePullPolicy }}
           env:
-            {{- if .Values.env }}
-            {{- toYaml .Values.env | nindent 12 }}
+            {{- if .Values.memcached.env }}
+            {{- toYaml .Values.memcached.env | nindent 12 }}
             {{- end }}
-    {{- with .Values.volumeMounts }}
+    {{- with .Values.memcached.volumeMounts }}
           volumeMounts:
             {{- toYaml . | nindent 12 }}
     {{- end }}
           ports:
-            - name: http
-              containerPort: 8000
+            - name: memcached
+              containerPort: 11211
               protocol: TCP
           livenessProbe:
-            {{- toYaml .Values.livenessProbe | nindent 12 }}
+            {{- toYaml .Values.memcached.livenessProbe | nindent 12 }}
           readinessProbe:
-            {{- toYaml .Values.readinessProbe | nindent 12 }}
+            {{- toYaml .Values.memcached.readinessProbe | nindent 12 }}
           startupProbe:
-            {{- toYaml .Values.startupProbe | nindent 12 }}
+            {{- toYaml .Values.memcached.startupProbe | nindent 12 }}
           resources:
-            {{- toYaml .Values.resources | nindent 12 }}
+            {{- toYaml .Values.memcached.resources | nindent 12 }}
           envFrom:
             - configMapRef:
                 name: app-configmap
-      {{- with .Values.nodeSelector }}
+      {{- with .Values.memcached.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-    {{- with .Values.affinity }}
+    {{- with .Values.memcached.affinity }}
       affinity:
         {{- toYaml . | nindent 8 }}
     {{- end }}
-    {{- with .Values.tolerations }}
+    {{- with .Values.memcached.tolerations }}
       tolerations:
         {{- toYaml . | nindent 8 }}
     {{- end }}
-    {{- with .Values.volumes }}
+    {{- with .Values.memcached.volumes }}
       volumes:
         {{- toYaml . | nindent 8 }}
     {{- end }}

@@ -27,13 +27,15 @@ serviceAccount:
 
 livenessProbe:
   httpGet:
-    path: /healthz
+    # /submit/tool-instructions/ just happens to be cheap until we get a real health endpoint
+    path: /submit/tool-instructions/
     port: http
 
-readinessProbe:
-  httpGet:
-    path: /healthz
-    port: http
+#readinessProbe:
+#  httpGet:
+#    # /submit/tool-instructions/ just happens to be cheap until we get a real health endpoint
+#    path: /submit/tool-instructions/
+#    port: http
 
 startupProbe:
   initialDelaySeconds: 15
@@ -42,7 +44,8 @@ startupProbe:
   successThreshold: 1
   failureThreshold: 60
   httpGet:
-    path: /healthz
+    # /submit/tool-instructions/ just happens to be cheap until we get a real health endpoint
+    path: /submit/tool-instructions/
     port: http
 
 podAnnotations: {}
@@ -70,7 +73,8 @@ ingress:
     # kubernetes.io/ingress.class: nginx
     # kubernetes.io/tls-acme: "true"
   hosts:
-    - host: datatracker.local
+#    - host: datatracker.local
+    - host: localhost #datatracker.local
       paths:
         - path: /
           pathType: ImplementationSpecific
@@ -103,6 +107,12 @@ volumes:
   - name: settings-local-volume
     configMap:
       name: django-configmap
+  - name: cache-volume
+    emptyDir:
+      sizeLimit: 1Gi
+  - name: staging-volume
+    emptyDir:
+      sizeLimit: 1Gi
 # - name: foo
 #   secret:
 #     secretName: mysecret
@@ -114,6 +124,11 @@ volumeMounts:
     mountPath: /workspace/ietf/settings_local.py
     subPath: settings_local.py
     readOnly: true
+  - name: cache-volume
+    mountPath: "/a/cache"
+  - name: staging-volume
+    mountPath: "/test/staging"
+
 # - name: foo
 #   mountPath: "/etc/foo"
 #   readOnly: true
@@ -123,3 +138,15 @@ nodeSelector: {}
 tolerations: []
 
 affinity: {}
+
+# Values for memcached
+memcached:
+  image:
+    repository: memcached
+    pullPolicy: IfNotPresent
+    tag: "1.6-alpine"
+
+  service:
+    type: ClusterIP
+    port: 11211
+    
