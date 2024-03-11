@@ -2,7 +2,6 @@
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
 {% load static ietf_filters %}
-{% load markup_tags %}
 {% load textfilters group_filters %}
 {% block morecss %}
 #deps-modal .modal-body {
@@ -387,7 +386,7 @@ height: 100vh;
             Group description
         </h2>
         {% comment %}{{ group.description|default:"No description yet."|linebreaks }}{% endcomment %}
-        {{ group.description|default:"No description yet."| apply_markup:"restructuredtext" }}
+        {{ group.description|default:"No description yet."| apply_markdown }}
         {% if can_edit_group %}
             <a class="btn btn-primary mb-3"
                href="{% url 'ietf.group.views.edit' acronym=group.acronym field='description' %}">

@@ -730,7 +730,7 @@
                     {% endif %}
                 </div>
                 <div class="card-body">
-                    <pre>{{ content|sanitize|safe|default:"(Unavailable)" }}</pre>
+                    {{ content|default:"(Unavailable)" }}
                 </div>
             </div>
             {% if split_content %}

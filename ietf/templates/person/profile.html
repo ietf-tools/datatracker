@@ -1,7 +1,6 @@
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015-2022, All Rights Reserved #}
 {% load origin %}
-{% load markup_tags %}
 {% load static %}
 {% load ietf_filters textfilters %}
 {% load group_filters %}
@@ -34,7 +33,7 @@
             {% if person.photo %}
                 <div class="float-end ms-3 mb-3">{% include "person/photo.html" with person=person %}</div>
             {% endif %}
-            {{ person.biography|apply_markup:"restructuredtext"|urlize_ietf_docs|linkify }}
+            {{ person.biography|apply_markdown }}
         </div>
         {% if person.role_set.exists %}
             <h2 class="mt-5" id="roles-{{ forloop.counter }}">Roles</h2>
