@@ -62,7 +62,7 @@ jobs:
         fetch-depth: 1
         fetch-tags: false
 
-    - name: Get Next Version
+    - name: Get Next Version (Prod)
       if: ${{ github.ref_name == 'release' }}
       id: semver
       uses: ietf-tools/semver-action@v1
@@ -70,11 +70,22 @@ jobs:
         token: ${{ github.token }}
         branch: release
         skipInvalidTags: true
-        
-    - name: Set Next Version Env Var
+
+    - name: Get Dev Version
+      if: ${{ github.ref_name != 'release' }}
+      id: semverdev
+      uses: ietf-tools/semver-action@v1
+      with:
+        token: ${{ github.token }}
+        branch: release
+        skipInvalidTags: true
+        noVersionBumpBehavior: 'current'
+        noNewCommitBehavior: 'current'
+      
+    - name: Set Release Flag
       if: ${{ github.ref_name == 'release' }}
       run: |
-        echo "NEXT_VERSION=$nextStrict" >> $GITHUB_ENV
+        echo "IS_RELEASE=true" >> $GITHUB_ENV
         
     - name: Create Draft Release
       uses: ncipollo/release-action@v1.14.0
@@ -83,24 +94,24 @@ jobs:
         prerelease: true
         draft: false
         commit: ${{ github.sha }}
-        tag: ${{ env.NEXT_VERSION }}
-        name: ${{ env.NEXT_VERSION }}
+        tag: ${{ steps.semver.outputs.nextStrict }}
+        name: ${{ steps.semver.outputs.nextStrict }}
         body: '*pending*'
         token: ${{ secrets.GITHUB_TOKEN }}
     
     - name: Set Build Variables
       id: buildvars
       run: |
-        if [[ $NEXT_VERSION ]]; then
-          echo "Using AUTO SEMVER mode: $NEXT_VERSION"
+        if [[ $IS_RELEASE ]]; then
+          echo "Using AUTO SEMVER mode: ${{ steps.semver.outputs.nextStrict }}"
           echo "should_deploy=true" >> $GITHUB_OUTPUT
-          echo "pkg_version=$NEXT_VERSION" >> $GITHUB_OUTPUT
-          echo "::notice::Release $NEXT_VERSION created using branch $GITHUB_REF_NAME"
+          echo "pkg_version=${{ steps.semver.outputs.nextStrict }}" >> $GITHUB_OUTPUT
+          echo "::notice::Release ${{ steps.semver.outputs.nextStrict }} created using branch $GITHUB_REF_NAME"
         else
-          echo "Using TEST mode: 11.0.0-dev.$GITHUB_RUN_NUMBER"
+          echo "Using TEST mode: ${{ steps.semverdev.outputs.nextMajorStrict }}.0.0-dev.$GITHUB_RUN_NUMBER"
           echo "should_deploy=false" >> $GITHUB_OUTPUT
-          echo "pkg_version=11.0.0-dev.$GITHUB_RUN_NUMBER" >> $GITHUB_OUTPUT
-          echo "::notice::Non-production build 11.0.0-dev.$GITHUB_RUN_NUMBER created using branch $GITHUB_REF_NAME"
+          echo "pkg_version=${{ steps.semverdev.outputs.nextMajorStrict }}.0.0-dev.$GITHUB_RUN_NUMBER" >> $GITHUB_OUTPUT
+          echo "::notice::Non-production build ${{ steps.semverdev.outputs.nextMajorStrict }}.0.0-dev.$GITHUB_RUN_NUMBER created using branch $GITHUB_REF_NAME"
         fi
 
   # -----------------------------------------------------------------
