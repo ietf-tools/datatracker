@@ -5,32 +5,51 @@ from django_celery_beat.models import CrontabSchedule, PeriodicTask
 from django.core.management.base import BaseCommand
 
 CRONTAB_DEFS = {
+    # same as "@weekly" in a crontab
+    "weekly": {
+        "minute": "0",
+        "hour": "0",
+        "day_of_month": "*",
+        "month_of_year": "*",
+        "day_of_week": "0",
+        "timezone": "America/Los_Angeles",
+    },
     "daily": {
         "minute": "5",
         "hour": "0",
-        "day_of_week": "*",
         "day_of_month": "*",
         "month_of_year": "*",
+        "day_of_week": "*",
+        "timezone": "America/Los_Angeles",
     },
     "hourly": {
         "minute": "5",
         "hour": "*",
-        "day_of_week": "*",
         "day_of_month": "*",
         "month_of_year": "*",
+        "day_of_week": "*",
     },
     "every_15m": {
         "minute": "*/15",
         "hour": "*",
-        "day_of_week": "*",
         "day_of_month": "*",
         "month_of_year": "*",
+        "day_of_week": "*",
+    },
+    "every_15m_except_midnight": {
+        "minute": "*/15",
+        "hour": "1-23",
+        "day_of_month": "*",
+        "month_of_year": "*",
+        "day_of_week": "*",
+        "timezone": "America/Los_Angeles",
     },
 }
 
 
 class Command(BaseCommand):
     """Manage periodic tasks"""
+    crontabs = None
 
     def add_arguments(self, parser):
         parser.add_argument("--create-default", action="store_true")
@@ -70,7 +89,7 @@ class Command(BaseCommand):
             kwargs=json.dumps(dict(full_index=False)),
             defaults=dict(
                 enabled=False,
-                crontab=self.crontabs["every_15m"],
+                crontab=self.crontabs["every_15m_except_midnight"],  # don't collide with full sync
                 description=(
                     "Reparse the last _year_ of RFC index entries until "
                     "https://github.com/ietf-tools/datatracker/issues/3734 is addressed. "
@@ -110,6 +129,56 @@ class Command(BaseCommand):
                 crontab=self.crontabs["daily"],
                 description="Send reminders originating from the review app",
             ),
+        )
+
+        PeriodicTask.objects.get_or_create(
+            name="Expire I-Ds",
+            task="ietf.doc.tasks.expire_ids_task",
+            defaults=dict(
+                enabled=False,
+                crontab=self.crontabs["daily"],
+                description="Create expiration notices for expired I-Ds",
+            ),
+        )
+
+        PeriodicTask.objects.get_or_create(
+            name="Sync with IANA changes",
+            task="ietf.sync.tasks.iana_changes_update_task",
+            defaults=dict(
+                enabled=False,
+                crontab=self.crontabs["hourly"],
+                description="Fetch change list from IANA and apply to documents",
+            ),
+        )
+
+        PeriodicTask.objects.get_or_create(
+            name="Sync with IANA protocols page",
+            task="ietf.sync.tasks.iana_protocols_update_task",
+            defaults=dict(
+                enabled=False,
+                crontab=self.crontabs["hourly"],
+                description="Fetch protocols page from IANA and update document event logs",
+            ),
+        )
+
+        PeriodicTask.objects.get_or_create(
+            name="Update I-D index files",
+            task="ietf.idindex.tasks.idindex_update_task",
+            defaults=dict(
+                enabled=False,
+                crontab=self.crontabs["hourly"],
+                description="Update I-D index files",
+            ),
+        )
+        
+        PeriodicTask.objects.get_or_create(
+            name="Send expiration notifications",
+            task="ietf.doc.tasks.notify_expirations_task",
+            defaults=dict(
+                enabled=False,
+                crontab=self.crontabs["weekly"],
+                description="Send notifications about I-Ds that will expire in the next 14 days",
+            )
         )
 
     def show_tasks(self):

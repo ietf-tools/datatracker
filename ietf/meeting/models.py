@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2007-2022, All Rights Reserved
+# Copyright The IETF Trust 2007-2024, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -451,8 +451,9 @@ class Room(models.Model):
     # end floorplan-related stuff
 
     def __str__(self):
-        return u"%s size: %s" % (self.name, self.capacity)
-
+        if len(self.functional_name) > 0 and self.functional_name != self.name:
+            return f"{self.name} [{self.functional_name}] (size: {self.capacity})"    
+        return f"{self.name} (size: {self.capacity})"    
 
     def dom_id(self):
         return "room%u" % (self.pk)
@@ -904,8 +905,8 @@ class Constraint(models.Model):
 
 
 class SessionPresentation(models.Model):
-    session = ForeignKey('Session')
-    document = ForeignKey(Document)
+    session = ForeignKey('Session', related_name="presentations")
+    document = ForeignKey(Document, related_name="presentations")
     rev = models.CharField(verbose_name="revision", max_length=16, null=True, blank=True)
     order = models.PositiveSmallIntegerField(default=0)
 
@@ -1017,7 +1018,7 @@ class Session(models.Model):
     group = ForeignKey(Group)    # The group type historically determined the session type.  BOFs also need to be added as a group. Note that not all meeting requests have a natural group to associate with.
     joint_with_groups = models.ManyToManyField(Group, related_name='sessions_joint_in',blank=True)
     attendees = models.IntegerField(null=True, blank=True)
-    agenda_note = models.CharField(blank=True, max_length=255)
+    agenda_note = models.CharField(blank=True, max_length=512)
     requested_duration = models.DurationField(default=datetime.timedelta(0))
     comments = models.TextField(blank=True)
     scheduled = models.DateTimeField(null=True, blank=True)
@@ -1044,7 +1045,7 @@ class Session(models.Model):
             for d in l:
                 d.meeting_related = lambda: True
         else:
-            l = self.materials.filter(type=material_type).exclude(states__type=material_type, states__slug='deleted').order_by('sessionpresentation__order')
+            l = self.materials.filter(type=material_type).exclude(states__type=material_type, states__slug='deleted').order_by('presentations__order')
 
         if only_one:
             if l:
@@ -1064,16 +1065,25 @@ class Session(models.Model):
             self._cached_minutes = self.get_material("minutes", only_one=True)
         return self._cached_minutes
 
+    def narrative_minutes(self):
+        if not hasattr(self, '_cached_narrative_minutes'):
+            self._cached_minutes = self.get_material("narrativeminutes", only_one=True)
+        return self._cached_minutes
+
     def recordings(self):
         return list(self.get_material("recording", only_one=False))
 
     def bluesheets(self):
         return list(self.get_material("bluesheets", only_one=False))
 
+    def chatlogs(self):
+        return list(self.get_material("chatlog", only_one=False))
+
     def slides(self):
         if not hasattr(self, "_slides_cache"):
             self._slides_cache = list(self.get_material("slides", only_one=False))
         return self._slides_cache
+    
 
     def drafts(self):
         return list(self.materials.filter(type='draft'))
@@ -1137,6 +1147,7 @@ class Session(models.Model):
         return can_manage_materials(user,self.group)
 
     def is_material_submission_cutoff(self):
+        debug.say("is_material_submission_cutoff got called")
         return date_today(datetime.timezone.utc) > self.meeting.get_submission_correction_date()
     
     def joint_with_groups_acronyms(self):
@@ -1237,10 +1248,21 @@ class Session(models.Model):
         return settings.CHAT_URL_PATTERN.format(chat_room_name=self.chat_room_name())
 
     def chat_archive_url(self):
-        chatlog = self.sessionpresentation_set.filter(document__type__slug='chatlog').first()
-        if chatlog is not None:
-            return chatlog.document.get_href()
-        elif self.meeting.date <= datetime.date(2022, 7, 15):
+
+        if hasattr(self,"prefetched_active_materials"):
+            chatlog_doc = None
+            for doc in self.prefetched_active_materials:
+                if doc.type_id=="chatlog":
+                    chatlog_doc = doc
+                    break
+            if chatlog_doc is not None:
+                return chatlog_doc.get_href()
+        else:
+            chatlog = self.presentations.filter(document__type__slug='chatlog').first()
+            if chatlog is not None:
+                return chatlog.document.get_href()
+            
+        if self.meeting.date <= datetime.date(2022, 7, 15):
             # datatracker 8.8.0 released on 2022 July 15; before that, fall back to old log URL
             return f'https://www.ietf.org/jabber/logs/{ self.chat_room_name() }?C=M;O=D'
         elif hasattr(settings,'CHAT_ARCHIVE_URL_PATTERN'):
@@ -1267,29 +1289,27 @@ class Session(models.Model):
             return self.meeting.group_at_the_time(self.group_at_the_time().parent)
 
     def audio_stream_url(self):
-        if (
-            self.meeting.type.slug == "ietf"
-            and self.has_onsite_tool
-            and (url := getattr(settings, "MEETECHO_AUDIO_STREAM_URL", ""))
-        ):
+        url = getattr(settings, "MEETECHO_AUDIO_STREAM_URL", "")
+        if self.meeting.type.slug == "ietf" and self.has_onsite_tool and url:
             return url.format(session=self)
         return None
 
     def video_stream_url(self):
-        if (
-            self.meeting.type.slug == "ietf"
-            and self.has_onsite_tool
-            and (url := getattr(settings, "MEETECHO_VIDEO_STREAM_URL", ""))
-        ):
+        url = getattr(settings, "MEETECHO_VIDEO_STREAM_URL", "")
+        if self.meeting.type.slug == "ietf" and self.has_onsite_tool and url:
             return url.format(session=self)
         return None
 
     def onsite_tool_url(self):
-        if (
-            self.meeting.type.slug == "ietf"
-            and self.has_onsite_tool
-            and (url := getattr(settings, "MEETECHO_ONSITE_TOOL_URL", ""))
-        ):
+        url = getattr(settings, "MEETECHO_ONSITE_TOOL_URL", "")
+        if self.meeting.type.slug == "ietf" and self.has_onsite_tool and url:
+            return url.format(session=self)
+        return None
+
+    def session_recording_url(self):
+        url = getattr(settings, "MEETECHO_SESSION_RECORDING_URL", "")
+        if self.meeting.type.slug == "ietf" and self.has_onsite_tool and url:
+            self.group.acronym_upper = self.group.acronym.upper()
             return url.format(session=self)
         return None
 

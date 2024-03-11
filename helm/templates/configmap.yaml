@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: django-configmap
+data:
+  settings_local.py: |-
+    {{- .Files.Get "settings_local.py" | indent 4 }}

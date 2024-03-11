@@ -59,8 +59,9 @@ datatracker:
 
   livenessProbe:
     httpGet:
-      path: /health
-      port: http
+    # /submit/tool-instructions/ just happens to be cheap until we get a real health endpoint
+    path: /submit/tool-instructions/
+    port: http
 
   podAnnotations: {}
   podLabels: {}
@@ -68,10 +69,11 @@ datatracker:
   podSecurityContext: {}
     # fsGroup: 2000
 
-  readinessProbe:
-    httpGet:
-      path: /health
-      port: http
+#readinessProbe:
+#  httpGet:
+#    # /submit/tool-instructions/ just happens to be cheap until we get a real health endpoint
+#    path: /submit/tool-instructions/
+#    port: http
 
   replicaCount: 1
 
@@ -117,8 +119,10 @@ datatracker:
     successThreshold: 1
     failureThreshold: 60
     httpGet:
-      path: /health
-      port: http
+  httpGet:
+    # /submit/tool-instructions/ just happens to be cheap until we get a real health endpoint
+    path: /submit/tool-instructions/
+    port: http
 
   # Additional volumes on the output Deployment definition.
   volumes: []
@@ -305,14 +309,31 @@ beat:
       command: celery inspect ping
 
   # Additional volumes on the output Deployment definition.
-  volumes: []
-  # - name: foo
-  #   secret:
-  #     secretName: mysecret
-  #     optional: false
+  volumes:
+    - name: settings-local-volume
+      configMap:
+        - name: django-configmap
+    - name: cache-volume
+      emptyDir:
+        sizeLimit: 1Gi
+    - name: staging-volume
+      emptyDir:
+        sizeLimit: 1Gi
+#   - name: foo
+#     secret:
+#       secretName: mysecret
+#       optional: false
 
   # Additional volumeMounts on the output Deployment definition.
-  volumeMounts: []
+  volumeMounts:
+    - name: settings-local-volume
+      mountPath: /workspace/ietf/settings_local.py
+      subPath: settings_local.py
+      readOnly: true
+    - name: cache-volume
+      mountPath: "/a/cache"
+    - name: staging-volume
+      mountPath: "/test/staging"
   # - name: foo
   #   mountPath: "/etc/foo"
   #   readOnly: true
@@ -396,14 +417,14 @@ rabbitmq:
       command: rabbitmq-diagnostics -q ping
 
   # Additional volumes on the output Deployment definition.
-  volumes: []
+volumes: []
   # - name: foo
   #   secret:
   #     secretName: mysecret
   #     optional: false
 
   # Additional volumeMounts on the output Deployment definition.
-  volumeMounts: []
+volumeMounts: []
   # - name: foo
   #   mountPath: "/etc/foo"
   #   readOnly: true
@@ -422,7 +443,7 @@ memcached:
   image:
     repository: "memcached"
     pullPolicy: IfNotPresent
-    tag: "latest"
+    tag: "1.6-alpine"
 
   imagePullSecrets: []
   nameOverride: ""
@@ -458,7 +479,7 @@ memcached:
 
   service:
     type: ClusterIP
-    port: 80
+    port: 11211
 
   serviceAccount:
     # Specifies whether a service account should be created
@@ -487,3 +508,13 @@ autoscaling:
   maxReplicas: 100
   targetCPUUtilizationPercentage: 80
   # targetMemoryUtilizationPercentage: 80
+
+env:
+  # n.b., these are debug values / non-secret secrets
+  DBHOST: "host.minikube.internal"
+  DBPORT: "5432"
+  DBNAME: "datatracker"
+  DBUSER: "django"
+  DBPASS: "RkTkDPFnKpko"
+  DJANGO_SECRET_KEY: "PDwXboUq!=hPjnrtG2=ge#N$Dwy+wn@uivrugwpic8mxyPfHk"
+    

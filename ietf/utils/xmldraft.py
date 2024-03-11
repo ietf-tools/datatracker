@@ -29,7 +29,7 @@ class XMLDraft(Draft):
         # cast xml_file to str so, e.g., this will work with a Path
         self.xmltree, self.xml_version = self.parse_xml(str(xml_file))
         self.xmlroot = self.xmltree.getroot()
-        self.filename, self.revision = self._parse_docname()
+        self.filename, self.revision = self.parse_docname(self.xmlroot)
 
     @staticmethod
     def parse_xml(filename):
@@ -125,8 +125,11 @@ class XMLDraft(Draft):
             section_name = section_elt.get('title')  # fall back to title if we have it
         return section_name
 
-    def _parse_docname(self):
-        docname = self.xmlroot.attrib.get('docName')
+    @staticmethod
+    def parse_docname(xmlroot):
+        docname = xmlroot.attrib.get('docName')
+        if docname is None:
+            raise ValueError("Missing docName attribute in the XML root element")
         revmatch = re.match(
             r'^(?P<filename>.+?)(?:-(?P<rev>[0-9][0-9]))?$',
             docname,

@@ -3669,7 +3669,8 @@ class ApiSubmitTests(BaseSubmitTestCase):
         self.assertContains(r, expected, status_code=400)
 
     def test_api_submit_failed_idnits(self):
-        r, author, name = self.do_post_submission('00', year="2010")
+        # `year` on the next line must be leap year or this test will fail every Feb 29
+        r, author, name = self.do_post_submission('00', year="2012")
         expected = "Document date must be within 3 days of submission date"
         self.assertContains(r, expected, status_code=400)
 

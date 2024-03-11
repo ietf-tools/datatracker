@@ -29,7 +29,9 @@
             {% for statement in statements %}
             <tr>
                 <td title="{{ statement.published|date:'Y-m-d H:i:s O' }}">{{ statement.published|date:"Y-m-d" }}</td>
-                <td><a href="{% url 'ietf.doc.views_doc.document_main' name=statement.name %}">{{statement.title}}</a></td>
+                <td><a href="{% url 'ietf.doc.views_doc.document_main' name=statement.name %}">{{statement.title}}</a>
+                    {% if statement.status == "replaced" %}<span class="badge rounded-pill text-bg-warning">Replaced</span>{% endif %}
+                </td>
             </tr>
             {% endfor %}
         </tbody>

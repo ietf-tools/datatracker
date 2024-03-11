@@ -77,7 +77,7 @@ jobs:
         echo "NEXT_VERSION=$nextStrict" >> $GITHUB_ENV
         
     - name: Create Draft Release
-      uses: ncipollo/release-action@v1.13.0
+      uses: ncipollo/release-action@v1.14.0
       if: ${{ github.ref_name == 'release' }}
       with:
         prerelease: true
@@ -150,7 +150,7 @@ jobs:
         
     - name: Download a Coverage Results
       if: ${{ github.event.inputs.skiptests == 'false' || github.ref_name == 'release' }}
-      uses: actions/download-artifact@v4.1.1
+      uses: actions/download-artifact@v4.1.2
       with:
         name: coverage
 
@@ -267,7 +267,7 @@ jobs:
         histCoveragePath: historical-coverage.json
         
     - name: Create Release
-      uses: ncipollo/release-action@v1.13.0
+      uses: ncipollo/release-action@v1.14.0
       if: ${{ env.SHOULD_DEPLOY == 'true' }}
       with:
         allowUpdates: true
@@ -280,7 +280,7 @@ jobs:
         token: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Update Baseline Coverage
-      uses: ncipollo/release-action@v1.13.0
+      uses: ncipollo/release-action@v1.14.0
       if: ${{ github.event.inputs.updateCoverage == 'true' || github.ref_name == 'release' }}
       with:
         allowUpdates: true
@@ -312,7 +312,7 @@ jobs:
     steps:      
     - name: Notify on Slack (Success)
       if: ${{ !contains(join(needs.*.result, ','), 'failure') }}
-      uses: slackapi/slack-github-action@v1.24.0
+      uses: slackapi/slack-github-action@v1.25.0
       with:
         channel-id: ${{ secrets.SLACK_GH_BUILDS_CHANNEL_ID }}
         payload: |
@@ -335,7 +335,7 @@ jobs:
         SLACK_BOT_TOKEN: ${{ secrets.SLACK_GH_BOT }}
     - name: Notify on Slack (Failure)
       if: ${{ contains(join(needs.*.result, ','), 'failure') }}
-      uses: slackapi/slack-github-action@v1.24.0
+      uses: slackapi/slack-github-action@v1.25.0
       with:
         channel-id: ${{ secrets.SLACK_GH_BUILDS_CHANNEL_ID }}
         payload: |
@@ -374,7 +374,7 @@ jobs:
     - uses: actions/checkout@v4
         
     - name: Download a Release Artifact
-      uses: actions/download-artifact@v4.1.1
+      uses: actions/download-artifact@v4.1.2
       with:
         name: release-${{ env.PKG_VERSION }}
         
@@ -410,7 +410,7 @@ jobs:
       
     steps:
     - name: Download a Release Artifact
-      uses: actions/download-artifact@v4.1.1
+      uses: actions/download-artifact@v4.1.2
       with:
         name: release-${{ env.PKG_VERSION }}
         path: /a/www/ietf-datatracker/main.dev.${{ github.run_number }}
