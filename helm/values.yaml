@@ -141,18 +141,12 @@ affinity: {}
 
 env:
   # n.b., these are debug values / non-secret secrets
-  - name: DBHOST
-    value: "host.minikube.internal"
-  - name: DBPORT
-    value: "54177"
-  - name: DBNAME
-    value: "datatracker"
-  - name: DBUSER
-    value: "django"
-  - name: DBPASS
-    value: "RkTkDPFnKpko"
-  - name: DJANGO_SECRET_KEY
-    value: "PDwXboUq!=hPjnrtG2=ge#N$Dwy+wn@uivrugwpic8mxyPfHk"
+  DBHOST: "host.minikube.internal"
+  DBPORT: "5432"
+  DBNAME: "datatracker"
+  DBUSER: "django"
+  DBPASS: "RkTkDPFnKpko"
+  DJANGO_SECRET_KEY: "PDwXboUq!=hPjnrtG2=ge#N$Dwy+wn@uivrugwpic8mxyPfHk"
 
 # Values for memcached
 memcached:

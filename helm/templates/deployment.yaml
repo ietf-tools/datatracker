@@ -30,7 +30,10 @@ spec:
           imagePullPolicy: {{ default "IfNotPresent" .Values.image.imagePullPolicy }}
           env:
             {{- if .Values.env }}
-            {{- toYaml .Values.env | nindent 12 }}
+            {{- range $key, $val := .Values.env }}
+            - name: {{ $key | quote }}
+              value: {{ $val | quote }}
+            {{- end }}
             {{- end }}
     {{- with .Values.volumeMounts }}
           volumeMounts:

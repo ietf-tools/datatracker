@@ -4,4 +4,4 @@ metadata:
   name: django-configmap
 data:
   settings_local.py: |-
-{{ .Files.Get "settings_local.py" | indent 4 }}
+    {{- .Files.Get "settings_local.py" | indent 4 }}
