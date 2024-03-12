@@ -5,7 +5,7 @@ metadata:
   labels:
     {{- include "datatracker.labels" . | nindent 4 }}
 spec:
-  {{- $podValues := .Values.rabbitmq }}
+  {{- $podValues := .Values.beat }}
   replicas: {{ $podValues.replicaCount }}
   revisionHistoryLimit: {{ $podValues.revisionHistoryLimit }}
   selector:
