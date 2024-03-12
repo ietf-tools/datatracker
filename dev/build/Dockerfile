@@ -13,7 +13,7 @@ COPY ./dev/build/celery-start.sh ./celery-start.sh
 RUN pip3 --disable-pip-version-check --no-cache-dir install -r requirements.txt
 
 RUN chmod +x datatracker-start.sh && \
-    chmod +x celery-start.sh \
+    chmod +x celery-start.sh && \
     chmod +x docker/scripts/app-create-dirs.sh && \
     sh ./docker/scripts/app-create-dirs.sh
 
