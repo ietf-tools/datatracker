@@ -19,7 +19,7 @@ from django.test.utils import override_settings
 
 import debug                            # pyflakes:ignore
 
-from ietf.doc.factories import WgDraftFactory, RfcFactory, DocumentAuthorFactory
+from ietf.doc.factories import WgDraftFactory, RfcFactory, DocumentAuthorFactory, DocEventFactory
 from ietf.doc.models import Document, DocEvent, DeletedEvent, DocTagName, RelatedDocument, State, StateDocEvent
 from ietf.doc.utils import add_state_change_event
 from ietf.group.factories import GroupFactory
@@ -685,8 +685,8 @@ class TaskTests(TestCase):
         RFC_EDITOR_INDEX_URL="https://rfc-editor.example.com/index/",
         RFC_EDITOR_ERRATA_JSON_URL="https://rfc-editor.example.com/errata/",
     )
-    @mock.patch("ietf.sync.tasks.update_docs_from_rfc_index")
-    @mock.patch("ietf.sync.tasks.parse_index")
+    @mock.patch("ietf.sync.tasks.rfceditor.update_docs_from_rfc_index")
+    @mock.patch("ietf.sync.tasks.rfceditor.parse_index")
     @mock.patch("ietf.sync.tasks.requests.get")
     def test_rfc_editor_index_update_task(
         self, requests_get_mock, parse_index_mock, update_docs_mock
@@ -804,3 +804,102 @@ class TaskTests(TestCase):
         parse_index_mock.return_value = MockIndexData(length=rfceditor.MIN_INDEX_RESULTS)
         tasks.rfc_editor_index_update_task(full_index=False)
         self.assertFalse(update_docs_mock.called)
+
+    @override_settings(IANA_SYNC_CHANGES_URL="https://iana.example.com/sync/")
+    @mock.patch("ietf.sync.tasks.iana.update_history_with_changes")
+    @mock.patch("ietf.sync.tasks.iana.parse_changes_json")
+    @mock.patch("ietf.sync.tasks.iana.fetch_changes_json")
+    def test_iana_changes_update_task(
+        self, 
+        fetch_changes_mock,
+        parse_changes_mock,
+        update_history_mock,
+    ):
+        # set up mocks
+        fetch_return_val = object()
+        fetch_changes_mock.return_value = fetch_return_val
+        parse_return_val = object()
+        parse_changes_mock.return_value = parse_return_val
+        event_with_json = DocEventFactory()
+        event_with_json.json = "hi I'm json"
+        update_history_mock.return_value = [
+            [event_with_json],  # events
+            ["oh no!"],  # warnings
+        ]
+        
+        tasks.iana_changes_update_task()
+        self.assertEqual(fetch_changes_mock.call_count, 1)
+        self.assertEqual(
+            fetch_changes_mock.call_args[0][0],
+            "https://iana.example.com/sync/",
+        )
+        self.assertTrue(parse_changes_mock.called)
+        self.assertEqual(
+            parse_changes_mock.call_args,
+            ((fetch_return_val,), {}),
+        )
+        self.assertTrue(update_history_mock.called)
+        self.assertEqual(
+            update_history_mock.call_args,
+            ((parse_return_val,), {"send_email": True}),
+        )
+
+    @override_settings(IANA_SYNC_PROTOCOLS_URL="https://iana.example.com/proto/")
+    @mock.patch("ietf.sync.tasks.iana.update_rfc_log_from_protocol_page")
+    @mock.patch("ietf.sync.tasks.iana.parse_protocol_page")
+    @mock.patch("ietf.sync.tasks.requests.get")
+    def test_iana_protocols_update_task(
+        self,
+        requests_get_mock,
+        parse_protocols_mock,
+        update_rfc_log_mock,
+    ):
+        # set up mocks
+        requests_get_mock.return_value = mock.Mock(text="fetched response")
+        parse_protocols_mock.return_value = range(110)  # larger than batch size of 100
+        update_rfc_log_mock.return_value = [
+            mock.Mock(display_name=mock.Mock(return_value="name"))
+        ]
+        
+        # call the task
+        tasks.iana_protocols_update_task()
+        
+        # check that it did the right things
+        self.assertTrue(requests_get_mock.called)
+        self.assertEqual(
+            requests_get_mock.call_args[0], 
+            ("https://iana.example.com/proto/",),
+        )
+        self.assertTrue(parse_protocols_mock.called)
+        self.assertEqual(
+            parse_protocols_mock.call_args[0],
+            ("fetched response",),
+        )
+        self.assertEqual(update_rfc_log_mock.call_count, 2)
+        self.assertEqual(
+            update_rfc_log_mock.call_args_list[0][0][0],
+            range(100),  # first batch
+        )
+        self.assertEqual(
+            update_rfc_log_mock.call_args_list[1][0][0],
+            range(100, 110),  # second batch
+        )
+        # make sure the calls use the same later_than date and that it's the expected one
+        published_later_than = set(
+            update_rfc_log_mock.call_args_list[n][0][1] for n in (0, 1)
+        )
+        self.assertEqual(
+            published_later_than, 
+            {datetime.datetime(2012,11,26,tzinfo=datetime.timezone.utc)}
+        )
+
+        # try with an exception
+        requests_get_mock.reset_mock()
+        parse_protocols_mock.reset_mock()
+        update_rfc_log_mock.reset_mock()
+        requests_get_mock.side_effect = requests.Timeout
+
+        tasks.iana_protocols_update_task()
+        self.assertTrue(requests_get_mock.called)
+        self.assertFalse(parse_protocols_mock.called)
+        self.assertFalse(update_rfc_log_mock.called)

@@ -20,6 +20,3 @@ logger -p user.info -t cron "Running $DTDIR/bin/weekly"
 
 $DTDIR/ietf/manage.py send_apikey_usage_emails
 
-# Send notifications about coming expirations
-$DTDIR/ietf/bin/notify-expirations
-

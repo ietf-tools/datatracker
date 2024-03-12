@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2009-2023, All Rights Reserved
+# Copyright The IETF Trust 2009-2024, All Rights Reserved
 # -*- coding: utf-8 -*-
 #
 # Parts Copyright (C) 2009-2010 Nokia Corporation and/or its subsidiary(-ies).
@@ -40,9 +40,9 @@ import json
 import os
 import re
 
-from urllib.parse import quote
 from pathlib import Path
 
+from django.db.models import Max
 from django.http import HttpResponse, Http404
 from django.shortcuts import render, get_object_or_404, redirect
 from django.template.loader import render_to_string
@@ -75,13 +75,14 @@ from ietf.utils.history import find_history_active_at
 from ietf.doc.forms import TelechatForm, NotifyForm, ActionHoldersForm, DocAuthorForm, DocAuthorChangeBasisForm
 from ietf.doc.mails import email_comment, email_remind_action_holders
 from ietf.mailtrigger.utils import gather_relevant_expansions
-from ietf.meeting.models import Session
+from ietf.meeting.models import Session, SessionPresentation
 from ietf.meeting.utils import group_sessions, get_upcoming_manageable_sessions, sort_sessions, add_event_info_to_session_qs
 from ietf.review.models import ReviewAssignment
 from ietf.review.utils import can_request_review_of_doc, review_assignments_to_list_for_docs, review_requests_to_list_for_docs
 from ietf.review.utils import no_review_from_teams_on_doc
 from ietf.utils import markup_txt, log, markdown
 from ietf.utils.draft import PlaintextDraft
+from ietf.utils.meetecho import MeetechoAPIError, SlidesManager
 from ietf.utils.response import permission_denied
 from ietf.utils.text import maybe_split
 from ietf.utils.timezone import date_today
@@ -324,6 +325,9 @@ def document_main(request, name, rev=None, document_html=False):
                 submission = group.acronym
             submission = '<a href="%s">%s</a>' % (group.about_url(), submission)
 
+        draft = doc.came_from_draft()
+        mailto_name = draft.name if draft else None
+
         return render(request, "doc/document_rfc.html" if document_html is False else "doc/document_html.html",
                                   dict(doc=doc,
                                        document_html=document_html,
@@ -356,7 +360,8 @@ def document_main(request, name, rev=None, document_html=False):
                                        iana_experts_comment=iana_experts_comment,
                                        presentations=presentations,
                                        diff_revisions=diff_revisions,
-                                       submission=submission
+                                       submission=submission,
+                                       mailto_name=mailto_name,
                                        ))
 
     elif doc.type_id == "draft":
@@ -475,13 +480,6 @@ def document_main(request, name, rev=None, document_html=False):
         if request.user.is_authenticated:
             can_submit_unsolicited_review_for_teams = Group.objects.filter(
                 reviewteamsettings__isnull=False, role__person__user=request.user, role__name='secr')
-
-        # mailing list search archive
-        search_archive = "www.ietf.org/mail-archive/web/"
-        if doc.stream_id == "ietf" and group.type_id == "wg" and group.list_archive:
-            search_archive = group.list_archive
-
-        search_archive = quote(search_archive, safe="~")
 
         # conflict reviews
         conflict_reviews = [r.source.name for r in interesting_relations_that.filter(relationship="conflrev")]
@@ -701,7 +699,6 @@ def document_main(request, name, rev=None, document_html=False):
                                        iana_experts_comment=iana_experts_comment,
                                        started_iesg_process=started_iesg_process,
                                        shepherd_writeup=shepherd_writeup,
-                                       search_archive=search_archive,
                                        actions=actions,
                                        presentations=presentations,
                                        review_assignments=review_assignments,
@@ -832,7 +829,7 @@ def document_main(request, name, rev=None, document_html=False):
                                        sorted_relations=sorted_relations,
                                        ))
 
-    elif doc.type_id in ("slides", "agenda", "minutes", "bluesheets", "procmaterials",):
+    elif doc.type_id in ("slides", "agenda", "minutes", "narrativeminutes", "bluesheets", "procmaterials",):
         can_manage_material = can_manage_materials(request.user, doc.group)
         presentations = doc.future_presentations()
         if doc.uploaded_filename:
@@ -916,9 +913,9 @@ def document_main(request, name, rev=None, document_html=False):
 
     elif doc.type_id in ("chatlog", "polls"):
         if isinstance(doc,DocHistory):
-            session = doc.doc.sessionpresentation_set.last().session
+            session = doc.doc.presentations.last().session
         else:
-            session = doc.sessionpresentation_set.last().session
+            session = doc.presentations.last().session
         pathname = Path(session.meeting.get_materials_path()) / doc.type_id / doc.uploaded_filename
         content = get_unicode_document_content(doc.name, str(pathname))
         return render(
@@ -943,7 +940,7 @@ def document_main(request, name, rev=None, document_html=False):
         variants = set([match.name.split(".")[1] for match in Path(doc.get_file_path()).glob(f"{basename}.*")])
         inlineable = any([ext in variants for ext in ["md", "txt"]])
         if inlineable:
-            content = markdown.markdown(doc.text_or_error())
+            content = markdown.liberal_markdown(doc.text_or_error())
         else:
             content = "No format available to display inline"
             if "pdf" in variants:
@@ -2057,7 +2054,7 @@ class VersionForm(forms.Form):
 
 def edit_sessionpresentation(request,name,session_id):
     doc = get_object_or_404(Document, name=name)
-    sp = get_object_or_404(doc.sessionpresentation_set, session_id=session_id)
+    sp = get_object_or_404(doc.presentations, session_id=session_id)
 
     if not sp.session.can_manage_materials(request.user):
         raise Http404
@@ -2074,7 +2071,13 @@ def edit_sessionpresentation(request,name,session_id):
         if form.is_valid():
             new_selection = form.cleaned_data['version']
             if initial['version'] != new_selection:
-                doc.sessionpresentation_set.filter(pk=sp.pk).update(rev=None if new_selection=='current' else new_selection)
+                doc.presentations.filter(pk=sp.pk).update(rev=None if new_selection=='current' else new_selection)
+                if doc.type_id == "slides" and hasattr(settings, "MEETECHO_API_CONFIG"):
+                    sm = SlidesManager(api_config=settings.MEETECHO_API_CONFIG)
+                    try:
+                        sm.send_update(sp.session)
+                    except MeetechoAPIError as err:
+                        log.log(f"Error in SlidesManager.send_update(): {err}")
                 c = DocEvent(type="added_comment", doc=doc, rev=doc.rev, by=request.user.person)
                 c.desc = "Revision for session %s changed to  %s" % (sp.session,new_selection)
                 c.save()
@@ -2086,7 +2089,7 @@ def edit_sessionpresentation(request,name,session_id):
 
 def remove_sessionpresentation(request,name,session_id):
     doc = get_object_or_404(Document, name=name)
-    sp = get_object_or_404(doc.sessionpresentation_set, session_id=session_id)
+    sp = get_object_or_404(doc.presentations, session_id=session_id)
 
     if not sp.session.can_manage_materials(request.user):
         raise Http404
@@ -2095,7 +2098,13 @@ def remove_sessionpresentation(request,name,session_id):
         raise Http404
 
     if request.method == 'POST':
-        doc.sessionpresentation_set.filter(pk=sp.pk).delete()
+        doc.presentations.filter(pk=sp.pk).delete()
+        if doc.type_id == "slides" and hasattr(settings, "MEETECHO_API_CONFIG"):
+            sm = SlidesManager(api_config=settings.MEETECHO_API_CONFIG)
+            try:
+                sm.delete(sp.session, doc)
+            except MeetechoAPIError as err:
+                log.log(f"Error in SlidesManager.delete(): {err}")
         c = DocEvent(type="added_comment", doc=doc, rev=doc.rev, by=request.user.person)
         c.desc = "Removed from session: %s" % (sp.session)
         c.save()
@@ -2119,7 +2128,7 @@ def add_sessionpresentation(request,name):
     version_choices.insert(0,('current','Current at the time of the session'))
 
     sessions = get_upcoming_manageable_sessions(request.user)
-    sessions = sort_sessions([s for s in sessions if not s.sessionpresentation_set.filter(document=doc).exists()])
+    sessions = sort_sessions([s for s in sessions if not s.presentations.filter(document=doc).exists()])
     if doc.group:
         sessions = sorted(sessions,key=lambda x:0 if x.group==doc.group else 1)
 
@@ -2132,7 +2141,25 @@ def add_sessionpresentation(request,name):
             session_id = session_form.cleaned_data['session']
             version = version_form.cleaned_data['version']
             rev = None if version=='current' else version
-            doc.sessionpresentation_set.create(session_id=session_id,rev=rev)
+            if doc.type_id == "slides":
+                max_order = SessionPresentation.objects.filter(
+                    document__type='slides',
+                    session__pk=session_id,
+                ).aggregate(Max('order'))['order__max'] or 0
+                order = max_order + 1
+            else:
+                order = 0
+            sp = doc.presentations.create(
+                session_id=session_id,
+                rev=rev,
+                order=order,
+            )
+            if doc.type_id == "slides" and hasattr(settings, "MEETECHO_API_CONFIG"):
+                sm = SlidesManager(api_config=settings.MEETECHO_API_CONFIG)
+                try:
+                    sm.add(sp.session, doc, order=sp.order)
+                except MeetechoAPIError as err:
+                    log.log(f"Error in SlidesManager.add(): {err}")
             c = DocEvent(type="added_comment", doc=doc, rev=doc.rev, by=request.user.person)
             c.desc = "%s to session: %s" % ('Added -%s'%rev if rev else 'Added', Session.objects.get(pk=session_id))
             c.save()

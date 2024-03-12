@@ -341,7 +341,7 @@ class InterimSessionModelForm(forms.ModelForm):
                 # FIXME: What about agendas in html or markdown format?
                 uploaded_filename='{}-00.txt'.format(filename))
             doc.set_state(State.objects.get(type__slug=doc.type.slug, slug='active'))
-            self.instance.sessionpresentation_set.create(document=doc, rev=doc.rev)
+            self.instance.presentations.create(document=doc, rev=doc.rev)
             NewRevisionDocEvent.objects.create(
                 type='new_revision',
                 by=self.user.person,
@@ -380,7 +380,8 @@ class InterimAnnounceForm(forms.ModelForm):
 class InterimCancelForm(forms.Form):
     group = forms.CharField(max_length=255, required=False)
     date = forms.DateField(required=False)
-    comments = forms.CharField(required=False, widget=forms.Textarea(attrs={'placeholder': 'enter optional comments here'}), strip=False)
+    # max_length must match Session.agenda_note
+    comments = forms.CharField(max_length=512, required=False, widget=forms.Textarea(attrs={'placeholder': 'enter optional comments here'}), strip=False)
 
     def __init__(self, *args, **kwargs):
         super(InterimCancelForm, self).__init__(*args, **kwargs)
@@ -470,6 +471,9 @@ class ApplyToAllFileUploadForm(FileUploadForm):
 
 class UploadMinutesForm(ApplyToAllFileUploadForm):
     doc_type = 'minutes'
+
+class UploadNarrativeMinutesForm(ApplyToAllFileUploadForm):
+    doc_type = 'narrativeminutes'
 
 
 class UploadAgendaForm(ApplyToAllFileUploadForm):

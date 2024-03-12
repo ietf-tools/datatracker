@@ -5,6 +5,7 @@
 import datetime
 import io
 import json
+import lxml.etree
 import os.path
 import pytz
 import shutil
@@ -449,6 +450,41 @@ class XMLDraftTests(TestCase):
                 ),
                 datetime.date(today.year, 1 if today.month != 1 else 2, 15),
             )
+
+    def test_parse_docname(self):
+        with self.assertRaises(ValueError) as cm:
+            XMLDraft.parse_docname(lxml.etree.Element("xml"))  # no docName
+        self.assertIn("Missing docName attribute", str(cm.exception))
+
+        # There to be more invalid docNames, but we use XMLDraft in places where we don't
+        # actually care about the validation, so for now just test what has long been the
+        # implementation. 
+        with self.assertRaises(ValueError) as cm:
+            XMLDraft.parse_docname(lxml.etree.Element("xml", docName=""))  # not a valid docName
+        self.assertIn("Unable to parse docName", str(cm.exception))
+
+        self.assertEqual(
+            XMLDraft.parse_docname(lxml.etree.Element("xml", docName="draft-foo-bar-baz-01")),
+            ("draft-foo-bar-baz", "01"),
+        )
+
+        self.assertEqual(
+            XMLDraft.parse_docname(lxml.etree.Element("xml", docName="draft-foo-bar-baz")),
+            ("draft-foo-bar-baz", None),
+        )
+
+        self.assertEqual(
+            XMLDraft.parse_docname(lxml.etree.Element("xml", docName="draft-foo-bar-baz-")),
+            ("draft-foo-bar-baz-", None),
+        )
+
+        # This is awful, but is how we've been running for some time. The missing rev will trigger
+        # validation errors for submissions, so we're at least somewhat guarded against this
+        # property.
+        self.assertEqual(
+            XMLDraft.parse_docname(lxml.etree.Element("xml", docName="-01")),
+            ("-01", None),
+        )
 
 
 class NameTests(TestCase):

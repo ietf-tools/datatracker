@@ -66,7 +66,10 @@ class MeetingRegistration(models.Model):
     email =  models.EmailField(blank=True, null=True)
     reg_type = models.CharField(blank=True, max_length=255)
     ticket_type = models.CharField(blank=True, max_length=255)
+    # attended was used prior to the introduction of the ietf.meeting.Attended model and is still used by
+    # Meeting.get_attendance() for older meetings. It should not be used except for dealing with legacy data.
     attended = models.BooleanField(default=False)
+    # checkedin indicates that the badge was picked up
     checkedin = models.BooleanField(default=False)
 
     def __str__(self):
