@@ -125,14 +125,31 @@ datatracker:
       port: http
 
   # Additional volumes on the output Deployment definition.
-  volumes: []
+  volumes:
+    - name: settings-local-volume
+      configMap:
+        name: django-configmap
+    - name: cache-volume
+      emptyDir:
+        sizeLimit: 1Gi
+    - name: staging-volume
+      emptyDir:
+        sizeLimit: 1Gi
   # - name: foo
   #   secret:
   #     secretName: mysecret
   #     optional: false
 
   # Additional volumeMounts on the output Deployment definition.
-  volumeMounts: []
+  volumeMounts:
+    - name: settings-local-volume
+      mountPath: /workspace/ietf/settings_local.py
+      subPath: settings_local.py
+      readOnly: true
+    - name: cache-volume
+      mountPath: "/a/cache"
+    - name: staging-volume
+      mountPath: "/test/staging"
   # - name: foo
   #   mountPath: "/etc/foo"
   #   readOnly: true
@@ -161,7 +178,10 @@ celery:
 
   livenessProbe:
     exec:
-      command: celery inspect ping
+      command: 
+        - celery
+        - inspect
+        - ping
     periodSeconds: 30
     timeoutSeconds: 5
 
@@ -215,17 +235,37 @@ celery:
     successThreshold: 1
     failureThreshold: 60
     exec:
-      command: celery inspect ping
+      command:
+        - celery
+        - inspect
+        - ping
 
   # Additional volumes on the output Deployment definition.
-  volumes: []
+  volumes:
+    - name: settings-local-volume
+      configMap:
+        name: django-configmap
+    - name: cache-volume
+      emptyDir:
+        sizeLimit: 1Gi
+    - name: staging-volume
+      emptyDir:
+        sizeLimit: 1Gi
   # - name: foo
   #   secret:
   #     secretName: mysecret
   #     optional: false
 
   # Additional volumeMounts on the output Deployment definition.
-  volumeMounts: []
+  volumeMounts:
+    - name: settings-local-volume
+      mountPath: /workspace/ietf/settings_local.py
+      subPath: settings_local.py
+      readOnly: true
+    - name: cache-volume
+      mountPath: "/a/cache"
+    - name: staging-volume
+      mountPath: "/test/staging"
   # - name: foo
   #   mountPath: "/etc/foo"
   #   readOnly: true
@@ -254,7 +294,10 @@ beat:
 
   livenessProbe:
     exec:
-      command: celery inspect ping
+      command:
+        - celery
+        - inspect
+        - ping
     periodSeconds: 30
     timeoutSeconds: 5
 
@@ -308,13 +351,16 @@ beat:
     successThreshold: 1
     failureThreshold: 60
     exec:
-      command: celery inspect ping
+      command:
+        - celery
+        - inspect
+        - ping
 
   # Additional volumes on the output Deployment definition.
   volumes:
     - name: settings-local-volume
       configMap:
-        - name: django-configmap
+        name: django-configmap
     - name: cache-volume
       emptyDir:
         sizeLimit: 1Gi

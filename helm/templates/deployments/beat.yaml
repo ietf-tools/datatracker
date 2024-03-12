@@ -27,7 +27,7 @@ spec:
         - name: {{ .Chart.Name }}
           securityContext:
             {{- toYaml $podValues.securityContext | nindent 12 }}
-          image: "{{ $podValues.image.repository }}:{{ default .Chart.AppVersion $podValues.image.tag }}"
+          image: "{{ $podValues.image.repository }}:{{ default .Chart.AppVersion (default $.Values.datatracker.image.tag $podValues.image.tag) }}"
           imagePullPolicy: {{ default "IfNotPresent" $podValues.image.imagePullPolicy }}
           env:
             - name: "CONTAINER_ROLE"
