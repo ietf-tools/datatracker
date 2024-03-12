@@ -5,8 +5,9 @@ metadata:
   labels:
     {{- include "datatracker.labels" . | nindent 4 }}
 spec:
-  replicas: {{ .Values.replicaCount }}
-  revisionHistoryLimit: {{ .Values.revisionHistoryLimit }}
+  {{- $podValues := .Values.datatracker }}
+  replicas: {{ $podValues.replicaCount }}
+  revisionHistoryLimit: {{ $podValues.revisionHistoryLimit }}
   selector:
     matchLabels:
       {{- include "datatracker.selectorLabels" . | nindent 6 }}
@@ -15,29 +16,29 @@ spec:
       labels:
         {{- include "datatracker.selectorLabels" . | nindent 8 }}
     spec:
-    {{- with .Values.datatracker.imagePullSecrets }}
+    {{- with $podValues.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
     {{- end }}
       serviceAccountName: {{ include "datatracker.serviceAccountName.datatracker" . }}
       securityContext:
-        {{- toYaml .Values.datatracker.podSecurityContext | nindent 8 }}
+        {{- toYaml $podValues.podSecurityContext | nindent 8 }}
       containers:
         - name: {{ .Chart.Name }}
           securityContext:
-            {{- toYaml .Values.datatracker.securityContext | nindent 12 }}
-          image: "{{ .Values.datatracker.image.repository }}:{{ default "latest" .Values.datatracker.image.tag }}"
-          imagePullPolicy: {{ default "IfNotPresent" .Values.datatracker.image.imagePullPolicy }}
+            {{- toYaml $podValues.securityContext | nindent 12 }}
+          image: "{{ $podValues.image.repository }}:{{ default "latest" $podValues.image.tag }}"
+          imagePullPolicy: {{ default "IfNotPresent" $podValues.image.imagePullPolicy }}
           env:
             - name: "CONTAINER_ROLE"
               value: "datatracker"
-            {{- if .Values.env }}
-            {{- range $key, $val := .Values.env }}
+            {{- if $.Values.env }}
+            {{- range $key, $val := $.Values.env }}
             - name: {{ $key | quote }}
               value: {{ $val | quote }}
             {{- end }}
             {{- end }}
-    {{- with .Values.datatracker.volumeMounts }}
+    {{- with $podValues.volumeMounts }}
           volumeMounts:
             {{- toYaml . | nindent 12 }}
     {{- end }}
@@ -46,26 +47,26 @@ spec:
               containerPort: 8000
               protocol: TCP
           livenessProbe:
-            {{- toYaml .Values.datatracker.livenessProbe | nindent 12 }}
+            {{- toYaml $podValues.livenessProbe | nindent 12 }}
           readinessProbe:
-            {{- toYaml .Values.datatracker.readinessProbe | nindent 12 }}
+            {{- toYaml $podValues.readinessProbe | nindent 12 }}
           startupProbe:
-            {{- toYaml .Values.datatracker.startupProbe | nindent 12 }}
+            {{- toYaml $podValues.startupProbe | nindent 12 }}
           resources:
-            {{- toYaml .Values.datatracker.resources | nindent 12 }}
-      {{- with .Values.datatracker.nodeSelector }}
+            {{- toYaml $podValues.resources | nindent 12 }}
+      {{- with $podValues.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-    {{- with .Values.datatracker.affinity }}
+    {{- with $podValues.affinity }}
       affinity:
         {{- toYaml . | nindent 8 }}
     {{- end }}
-    {{- with .Values.datatracker.tolerations }}
+    {{- with $podValues.tolerations }}
       tolerations:
         {{- toYaml . | nindent 8 }}
     {{- end }}
-    {{- with .Values.datatracker.volumes }}
+    {{- with $podValues.volumes }}
       volumes:
         {{- toYaml . | nindent 8 }}
     {{- end }}
