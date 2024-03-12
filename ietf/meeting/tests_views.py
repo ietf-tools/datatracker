@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2009-2023, All Rights Reserved
+# Copyright The IETF Trust 2009-2024, All Rights Reserved
 # -*- coding: utf-8 -*-
 import datetime
 import io
@@ -12,7 +12,7 @@ import requests.exceptions
 import requests_mock
 
 from unittest import skipIf
-from mock import patch, PropertyMock
+from mock import call, patch, PropertyMock
 from pyquery import PyQuery
 from lxml.etree import tostring
 from io import StringIO, BytesIO
@@ -38,16 +38,16 @@ import debug           # pyflakes:ignore
 from ietf.doc.models import Document, NewRevisionDocEvent
 from ietf.group.models import Group, Role, GroupFeatures
 from ietf.group.utils import can_manage_group
-from ietf.person.models import Person
+from ietf.person.models import Person, PersonalApiKey
 from ietf.meeting.helpers import can_approve_interim_request, can_view_interim_request, preprocess_assignments_for_agenda
 from ietf.meeting.helpers import send_interim_approval_request, AgendaKeywordTagger
 from ietf.meeting.helpers import send_interim_meeting_cancellation_notice, send_interim_session_cancellation_notice
 from ietf.meeting.helpers import send_interim_minutes_reminder, populate_important_dates, update_important_dates
 from ietf.meeting.models import Session, TimeSlot, Meeting, SchedTimeSessAssignment, Schedule, SessionPresentation, SlideSubmission, SchedulingEvent, Room, Constraint, ConstraintName
 from ietf.meeting.test_data import make_meeting_test_data, make_interim_meeting, make_interim_test_data
-from ietf.meeting.utils import finalize, condition_slide_order
+from ietf.meeting.utils import condition_slide_order
 from ietf.meeting.utils import add_event_info_to_session_qs, participants_for_meeting
-from ietf.meeting.utils import create_recording, get_next_sequence
+from ietf.meeting.utils import create_recording, get_next_sequence, bluesheet_data
 from ietf.meeting.views import session_draft_list, parse_agenda_filter_params, sessions_post_save, agenda_extract_schedule
 from ietf.meeting.views import get_summary_by_area, get_summary_by_type, get_summary_by_purpose
 from ietf.name.models import SessionStatusName, ImportantDateName, RoleName, ProceedingsMaterialTypeName
@@ -517,7 +517,7 @@ class MeetingTests(BaseMeetingTestCase):
         group = GroupFactory()
         plain_session = SessionFactory(meeting=meeting, group=group)
         named_session = SessionFactory(meeting=meeting, group=group, name='I Got a Name')
-        for doc_type_id in ('agenda', 'minutes', 'bluesheets', 'slides', 'draft'):
+        for doc_type_id in ('agenda', 'minutes', 'slides', 'draft'):
             # Set up sessions materials that will have distinct URLs for each session.
             # This depends on settings.MEETING_DOC_HREFS and may need updating if that changes.
             SessionPresentationFactory(
@@ -3020,7 +3020,9 @@ class EditTimeslotsTests(TestCase):
 
 class ReorderSlidesTests(TestCase):
 
-    def test_add_slides_to_session(self):
+    @override_settings(MEETECHO_API_CONFIG="fake settings")  # enough to trigger API calls
+    @patch("ietf.meeting.views.SlidesManager")
+    def test_add_slides_to_session(self, mock_slides_manager_cls):
         for type_id in ('ietf','interim'):
             chair_role = RoleFactory(name_id='chair')
             session = SessionFactory(group=chair_role.group, meeting__date=date_today() - datetime.timedelta(days=90), meeting__type_id=type_id)
@@ -3031,6 +3033,7 @@ class ReorderSlidesTests(TestCase):
             r = self.client.post(url, {'order':1, 'name':slides.name })
             self.assertEqual(r.status_code, 403)
             self.assertIn('have permission', unicontent(r))
+            self.assertFalse(mock_slides_manager_cls.called)
 
             self.client.login(username=chair_role.person.user.username, password=chair_role.person.user.username+"+password")
 
@@ -3038,6 +3041,7 @@ class ReorderSlidesTests(TestCase):
             r = self.client.post(url, {'order':0, 'name':slides.name })
             self.assertEqual(r.status_code, 403)
             self.assertIn('materials cutoff', unicontent(r))
+            self.assertFalse(mock_slides_manager_cls.called)
 
             session.meeting.date = date_today()
             session.meeting.save()
@@ -3047,49 +3051,62 @@ class ReorderSlidesTests(TestCase):
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.json()['success'],False)
             self.assertIn('No data',r.json()['error'])
+            self.assertFalse(mock_slides_manager_cls.called)
 
             r = self.client.post(url, {'garbage':'garbage'})
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.json()['success'],False)
             self.assertIn('order is not valid',r.json()['error'])
+            self.assertFalse(mock_slides_manager_cls.called)
 
             r = self.client.post(url, {'order':0, 'name':slides.name })
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.json()['success'],False)
             self.assertIn('order is not valid',r.json()['error'])
+            self.assertFalse(mock_slides_manager_cls.called)
 
             r = self.client.post(url, {'order':2, 'name':slides.name })
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.json()['success'],False)
             self.assertIn('order is not valid',r.json()['error'])
+            self.assertFalse(mock_slides_manager_cls.called)
 
             r = self.client.post(url, {'order':'garbage', 'name':slides.name })
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.json()['success'],False)
             self.assertIn('order is not valid',r.json()['error'])
+            self.assertFalse(mock_slides_manager_cls.called)
 
             # Invalid name
             r = self.client.post(url, {'order':1 })
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.json()['success'],False)
             self.assertIn('name is not valid',r.json()['error'])
+            self.assertFalse(mock_slides_manager_cls.called)
 
             r = self.client.post(url, {'order':1, 'name':'garbage' })
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.json()['success'],False)
             self.assertIn('name is not valid',r.json()['error'])
+            self.assertFalse(mock_slides_manager_cls.called)
 
             # Valid post
             r = self.client.post(url, {'order':1, 'name':slides.name })
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.json()['success'],True)
             self.assertEqual(session.presentations.count(),1)
+            self.assertTrue(mock_slides_manager_cls.called)
+            self.assertEqual(mock_slides_manager_cls.call_args, call(api_config="fake settings"))
+            self.assertTrue(mock_slides_manager_cls.return_value.add.called)
+            self.assertEqual(mock_slides_manager_cls.return_value.add.call_args, call(session=session, slides=slides, order=1))
+            mock_slides_manager_cls.reset_mock()
 
             # Ignore a request to add slides that are already in a session
             r = self.client.post(url, {'order':1, 'name':slides.name })
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.json()['success'],True)
             self.assertEqual(session.presentations.count(),1)
+            self.assertFalse(mock_slides_manager_cls.called)
 
 
             session2 = SessionFactory(group=session.group, meeting=session.meeting)
@@ -3108,6 +3125,11 @@ class ReorderSlidesTests(TestCase):
             self.assertEqual(r.json()['success'],True)
             self.assertEqual(session2.presentations.get(document=more_slides[0]).order,1)
             self.assertEqual(list(session2.presentations.order_by('order').values_list('order',flat=True)), list(range(1,5)))
+            self.assertTrue(mock_slides_manager_cls.called)
+            self.assertEqual(mock_slides_manager_cls.call_args, call(api_config="fake settings"))
+            self.assertTrue(mock_slides_manager_cls.return_value.add.called)
+            self.assertEqual(mock_slides_manager_cls.return_value.add.call_args, call(session=session2, slides=more_slides[0], order=1))
+            mock_slides_manager_cls.reset_mock()
 
             # Insert at end
             r = self.client.post(url, {'order':5, 'name':more_slides[1].name})
@@ -3115,6 +3137,11 @@ class ReorderSlidesTests(TestCase):
             self.assertEqual(r.json()['success'],True)
             self.assertEqual(session2.presentations.get(document=more_slides[1]).order,5)
             self.assertEqual(list(session2.presentations.order_by('order').values_list('order',flat=True)), list(range(1,6)))
+            self.assertTrue(mock_slides_manager_cls.called)
+            self.assertEqual(mock_slides_manager_cls.call_args, call(api_config="fake settings"))
+            self.assertTrue(mock_slides_manager_cls.return_value.add.called)
+            self.assertEqual(mock_slides_manager_cls.return_value.add.call_args, call(session=session2, slides=more_slides[1], order=5))
+            mock_slides_manager_cls.reset_mock()
 
             # Insert in middle
             r = self.client.post(url, {'order':3, 'name':more_slides[2].name})
@@ -3122,8 +3149,15 @@ class ReorderSlidesTests(TestCase):
             self.assertEqual(r.json()['success'],True)
             self.assertEqual(session2.presentations.get(document=more_slides[2]).order,3)
             self.assertEqual(list(session2.presentations.order_by('order').values_list('order',flat=True)), list(range(1,7)))
+            self.assertTrue(mock_slides_manager_cls.called)
+            self.assertEqual(mock_slides_manager_cls.call_args, call(api_config="fake settings"))
+            self.assertTrue(mock_slides_manager_cls.return_value.add.called)
+            self.assertEqual(mock_slides_manager_cls.return_value.add.call_args, call(session=session2, slides=more_slides[2], order=3))
+            mock_slides_manager_cls.reset_mock()
 
-    def test_remove_slides_from_session(self):
+    @override_settings(MEETECHO_API_CONFIG="fake settings")  # enough to trigger API calls
+    @patch("ietf.meeting.views.SlidesManager")
+    def test_remove_slides_from_session(self, mock_slides_manager_cls):
         for type_id in ['ietf','interim']:
             chair_role = RoleFactory(name_id='chair')
             session = SessionFactory(group=chair_role.group, meeting__date=date_today()-datetime.timedelta(days=90), meeting__type_id=type_id)
@@ -3134,6 +3168,7 @@ class ReorderSlidesTests(TestCase):
             r = self.client.post(url, {'oldIndex':1, 'name':slides.name })
             self.assertEqual(r.status_code, 403)
             self.assertIn('have permission', unicontent(r))
+            self.assertFalse(mock_slides_manager_cls.called)
 
             self.client.login(username=chair_role.person.user.username, password=chair_role.person.user.username+"+password")
             
@@ -3141,6 +3176,7 @@ class ReorderSlidesTests(TestCase):
             r = self.client.post(url, {'oldIndex':0, 'name':slides.name })
             self.assertEqual(r.status_code, 403)
             self.assertIn('materials cutoff', unicontent(r))
+            self.assertFalse(mock_slides_manager_cls.called)
 
             session.meeting.date = date_today()
             session.meeting.save()
@@ -3150,27 +3186,32 @@ class ReorderSlidesTests(TestCase):
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.json()['success'],False)
             self.assertIn('No data',r.json()['error'])
+            self.assertFalse(mock_slides_manager_cls.called)
 
             r = self.client.post(url, {'garbage':'garbage'})
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.json()['success'],False)
             self.assertIn('index is not valid',r.json()['error'])
+            self.assertFalse(mock_slides_manager_cls.called)
 
             r = self.client.post(url, {'oldIndex':0, 'name':slides.name })
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.json()['success'],False)
             self.assertIn('index is not valid',r.json()['error'])
+            self.assertFalse(mock_slides_manager_cls.called)
 
             r = self.client.post(url, {'oldIndex':'garbage', 'name':slides.name })
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.json()['success'],False)
             self.assertIn('index is not valid',r.json()['error'])
-           
+            self.assertFalse(mock_slides_manager_cls.called)
+
             # No matching thing to delete
             r = self.client.post(url, {'oldIndex':1, 'name':slides.name })
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.json()['success'],False)
             self.assertIn('index is not valid',r.json()['error'])
+            self.assertFalse(mock_slides_manager_cls.called)
 
             session.presentations.create(document=slides, rev=slides.rev, order=1)
 
@@ -3179,11 +3220,13 @@ class ReorderSlidesTests(TestCase):
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.json()['success'],False)
             self.assertIn('name is not valid',r.json()['error'])
+            self.assertFalse(mock_slides_manager_cls.called)
 
             r = self.client.post(url, {'oldIndex':1, 'name':'garbage' })
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.json()['success'],False)
             self.assertIn('name is not valid',r.json()['error'])
+            self.assertFalse(mock_slides_manager_cls.called)
 
             slides2 = DocumentFactory(type_id='slides')
 
@@ -3192,18 +3235,25 @@ class ReorderSlidesTests(TestCase):
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.json()['success'],False)
             self.assertIn('SessionPresentation not found',r.json()['error'])
+            self.assertFalse(mock_slides_manager_cls.called)
 
             session.presentations.create(document=slides2, rev=slides2.rev, order=2)
             r = self.client.post(url, {'oldIndex':1, 'name':slides2.name })
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.json()['success'],False)
             self.assertIn('Name does not match index',r.json()['error'])
+            self.assertFalse(mock_slides_manager_cls.called)
 
             # valid removal
             r = self.client.post(url, {'oldIndex':1, 'name':slides.name })
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.json()['success'],True)
             self.assertEqual(session.presentations.count(),1)
+            self.assertTrue(mock_slides_manager_cls.called)
+            self.assertEqual(mock_slides_manager_cls.call_args, call(api_config="fake settings"))
+            self.assertTrue(mock_slides_manager_cls.return_value.delete.called)
+            self.assertEqual(mock_slides_manager_cls.return_value.delete.call_args, call(session=session, slides=slides))
+            mock_slides_manager_cls.reset_mock()
 
             session2 = SessionFactory(group=session.group, meeting=session.meeting)
             sp_list = SessionPresentationFactory.create_batch(5, document__type_id='slides', session=session2)
@@ -3219,6 +3269,11 @@ class ReorderSlidesTests(TestCase):
             self.assertEqual(r.json()['success'],True)
             self.assertFalse(session2.presentations.filter(pk=sp_list[0].pk).exists())
             self.assertEqual(list(session2.presentations.order_by('order').values_list('order',flat=True)), list(range(1,5)))
+            self.assertTrue(mock_slides_manager_cls.called)
+            self.assertEqual(mock_slides_manager_cls.call_args, call(api_config="fake settings"))
+            self.assertTrue(mock_slides_manager_cls.return_value.delete.called)
+            self.assertEqual(mock_slides_manager_cls.return_value.delete.call_args, call(session=session2, slides=sp_list[0].document))
+            mock_slides_manager_cls.reset_mock()
 
             # delete in middle of list
             r = self.client.post(url, {'oldIndex':4, 'name':sp_list[4].document.name })
@@ -3226,6 +3281,11 @@ class ReorderSlidesTests(TestCase):
             self.assertEqual(r.json()['success'],True)
             self.assertFalse(session2.presentations.filter(pk=sp_list[4].pk).exists())
             self.assertEqual(list(session2.presentations.order_by('order').values_list('order',flat=True)), list(range(1,4)))
+            self.assertTrue(mock_slides_manager_cls.called)
+            self.assertEqual(mock_slides_manager_cls.call_args, call(api_config="fake settings"))
+            self.assertTrue(mock_slides_manager_cls.return_value.delete.called)
+            self.assertEqual(mock_slides_manager_cls.return_value.delete.call_args, call(session=session2, slides=sp_list[4].document))
+            mock_slides_manager_cls.reset_mock()
 
             # delete at end of list
             r = self.client.post(url, {'oldIndex':2, 'name':sp_list[2].document.name })
@@ -3233,11 +3293,15 @@ class ReorderSlidesTests(TestCase):
             self.assertEqual(r.json()['success'],True)
             self.assertFalse(session2.presentations.filter(pk=sp_list[2].pk).exists())
             self.assertEqual(list(session2.presentations.order_by('order').values_list('order',flat=True)), list(range(1,3)))
+            self.assertTrue(mock_slides_manager_cls.called)
+            self.assertEqual(mock_slides_manager_cls.call_args, call(api_config="fake settings"))
+            self.assertTrue(mock_slides_manager_cls.return_value.delete.called)
+            self.assertEqual(mock_slides_manager_cls.return_value.delete.call_args, call(session=session2, slides=sp_list[2].document))
+            mock_slides_manager_cls.reset_mock()
 
-
-
-
-    def test_reorder_slides_in_session(self):
+    @override_settings(MEETECHO_API_CONFIG="fake settings")  # enough to trigger API calls
+    @patch("ietf.meeting.views.SlidesManager")
+    def test_reorder_slides_in_session(self, mock_slides_manager_cls):
         def _sppk_at(sppk, positions):
             return [sppk[p-1] for p in positions]
         chair_role = RoleFactory(name_id='chair')
@@ -3259,6 +3323,7 @@ class ReorderSlidesTests(TestCase):
             r = self.client.post(url, {'oldIndex':1, 'newIndex':2 })
             self.assertEqual(r.status_code, 403)
             self.assertIn('have permission', unicontent(r))
+            self.assertFalse(mock_slides_manager_cls.called)
 
             self.client.login(username=chair_role.person.user.username, password=chair_role.person.user.username+"+password")
 
@@ -3266,6 +3331,7 @@ class ReorderSlidesTests(TestCase):
             r = self.client.post(url, {'oldIndex':1, 'newIndex':2 })
             self.assertEqual(r.status_code, 403)
             self.assertIn('materials cutoff', unicontent(r))
+            self.assertFalse(mock_slides_manager_cls.called)
 
             session.meeting.date = date_today()
             session.meeting.save()
@@ -3275,57 +3341,95 @@ class ReorderSlidesTests(TestCase):
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.json()['success'],False)
             self.assertIn('index is not valid',r.json()['error'])
+            self.assertFalse(mock_slides_manager_cls.called)
 
             r = self.client.post(url, {'oldIndex':2, 'newIndex':6 })
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.json()['success'],False)
             self.assertIn('index is not valid',r.json()['error'])
+            self.assertFalse(mock_slides_manager_cls.called)
 
             r = self.client.post(url, {'oldIndex':2, 'newIndex':2 })
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.json()['success'],False)
             self.assertIn('index is not valid',r.json()['error'])
+            self.assertFalse(mock_slides_manager_cls.called)
 
             # Move from beginning
             r = self.client.post(url, {'oldIndex':1, 'newIndex':3})
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.json()['success'],True)
             self.assertEqual(list(session.presentations.order_by('order').values_list('pk',flat=True)),_sppk_at(sppk,[2,3,1,4,5]))
+            self.assertTrue(mock_slides_manager_cls.called)
+            self.assertEqual(mock_slides_manager_cls.call_args, call(api_config="fake settings"))
+            self.assertTrue(mock_slides_manager_cls.return_value.send_update.called)
+            self.assertEqual(mock_slides_manager_cls.return_value.send_update.call_args, call(session))
+            mock_slides_manager_cls.reset_mock()
 
             # Move to beginning
             r = self.client.post(url, {'oldIndex':3, 'newIndex':1})
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.json()['success'],True)
             self.assertEqual(list(session.presentations.order_by('order').values_list('pk',flat=True)),_sppk_at(sppk,[1,2,3,4,5]))
-            
+            self.assertTrue(mock_slides_manager_cls.called)
+            self.assertEqual(mock_slides_manager_cls.call_args, call(api_config="fake settings"))
+            self.assertTrue(mock_slides_manager_cls.return_value.send_update.called)
+            self.assertEqual(mock_slides_manager_cls.return_value.send_update.call_args, call(session))
+            mock_slides_manager_cls.reset_mock()
+
             # Move from end
             r = self.client.post(url, {'oldIndex':5, 'newIndex':3})
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.json()['success'],True)
             self.assertEqual(list(session.presentations.order_by('order').values_list('pk',flat=True)),_sppk_at(sppk,[1,2,5,3,4]))
+            self.assertTrue(mock_slides_manager_cls.called)
+            self.assertEqual(mock_slides_manager_cls.call_args, call(api_config="fake settings"))
+            self.assertTrue(mock_slides_manager_cls.return_value.send_update.called)
+            self.assertEqual(mock_slides_manager_cls.return_value.send_update.call_args, call(session))
+            mock_slides_manager_cls.reset_mock()
 
             # Move to end
             r = self.client.post(url, {'oldIndex':3, 'newIndex':5})
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.json()['success'],True)
             self.assertEqual(list(session.presentations.order_by('order').values_list('pk',flat=True)),_sppk_at(sppk,[1,2,3,4,5]))
+            self.assertTrue(mock_slides_manager_cls.called)
+            self.assertEqual(mock_slides_manager_cls.call_args, call(api_config="fake settings"))
+            self.assertTrue(mock_slides_manager_cls.return_value.send_update.called)
+            self.assertEqual(mock_slides_manager_cls.return_value.send_update.call_args, call(session))
+            mock_slides_manager_cls.reset_mock()
 
             # Move beginning to end
             r = self.client.post(url, {'oldIndex':1, 'newIndex':5})
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.json()['success'],True)
             self.assertEqual(list(session.presentations.order_by('order').values_list('pk',flat=True)),_sppk_at(sppk,[2,3,4,5,1]))
+            self.assertTrue(mock_slides_manager_cls.called)
+            self.assertEqual(mock_slides_manager_cls.call_args, call(api_config="fake settings"))
+            self.assertTrue(mock_slides_manager_cls.return_value.send_update.called)
+            self.assertEqual(mock_slides_manager_cls.return_value.send_update.call_args, call(session))
+            mock_slides_manager_cls.reset_mock()
 
             # Move middle to middle 
             r = self.client.post(url, {'oldIndex':3, 'newIndex':4})
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.json()['success'],True)
             self.assertEqual(list(session.presentations.order_by('order').values_list('pk',flat=True)),_sppk_at(sppk,[2,3,5,4,1]))
+            self.assertTrue(mock_slides_manager_cls.called)
+            self.assertEqual(mock_slides_manager_cls.call_args, call(api_config="fake settings"))
+            self.assertTrue(mock_slides_manager_cls.return_value.send_update.called)
+            self.assertEqual(mock_slides_manager_cls.return_value.send_update.call_args, call(session))
+            mock_slides_manager_cls.reset_mock()
 
             r = self.client.post(url, {'oldIndex':3, 'newIndex':2})
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.json()['success'],True)
             self.assertEqual(list(session.presentations.order_by('order').values_list('pk',flat=True)),_sppk_at(sppk,[2,5,3,4,1]))
+            self.assertTrue(mock_slides_manager_cls.called)
+            self.assertEqual(mock_slides_manager_cls.call_args, call(api_config="fake settings"))
+            self.assertTrue(mock_slides_manager_cls.return_value.send_update.called)
+            self.assertEqual(mock_slides_manager_cls.return_value.send_update.call_args, call(session))
+            mock_slides_manager_cls.reset_mock()
 
             # Reset for next iteration in the loop
             session.presentations.update(order=F('pk'))
@@ -5997,6 +6101,34 @@ class FinalizeProceedingsTests(TestCase):
         self.assertEqual(meeting.proceedings_final,True)
         self.assertEqual(meeting.session_set.filter(group__acronym="mars").first().presentations.filter(document__type="draft").first().rev,'00')
  
+    @patch("ietf.meeting.utils.generate_bluesheet")
+    def test_bluesheet_generation(self, mock):
+        meeting = MeetingFactory(type_id="ietf", number="107")  # number where generate_bluesheets should not be called
+        SessionFactory.create_batch(5, meeting=meeting)
+        url = urlreverse("ietf.meeting.views.finalize_proceedings", kwargs={"num": meeting.number})
+        self.client.login(username="secretary", password="secretary+password")
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertFalse(mock.called)
+        r = self.client.post(url,{'finalize': 1})
+        self.assertEqual(r.status_code, 302)
+        self.assertFalse(mock.called)
+
+        meeting = MeetingFactory(type_id="ietf", number="108")  # number where generate_bluesheets should be called
+        SessionFactory.create_batch(5, meeting=meeting)
+        url = urlreverse("ietf.meeting.views.finalize_proceedings", kwargs={"num": meeting.number})
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertFalse(mock.called)
+        r = self.client.post(url,{'finalize': 1})
+        self.assertEqual(r.status_code, 302)
+        self.assertTrue(mock.called)
+        self.assertCountEqual(
+            [call_args[0][1] for call_args in mock.call_args_list],
+            [sess for sess in meeting.session_set.all()],
+        )
+
+
 class MaterialsTests(TestCase):
     settings_temp_path_overrides = TestCase.settings_temp_path_overrides + [
         'AGENDA_PATH',
@@ -6233,6 +6365,33 @@ class MaterialsTests(TestCase):
             self.requests_mock.get(f'{session.notes_url()}/info', text=json.dumps({'title': 'title', 'updatetime': '2021-12-01T17:11:00z'}))
             self.crawl_materials(url=url, top=top)
 
+    @override_settings(MEETING_MATERIALS_SERVE_LOCALLY=True)
+    def test_upload_narrativeminutes(self):
+        for type_id in ["interim","ietf"]:
+            session=SessionFactory(meeting__type_id=type_id,group__acronym='iesg')
+            doctype='narrativeminutes'
+            url = urlreverse('ietf.meeting.views.upload_session_narrativeminutes',kwargs={'num':session.meeting.number,'session_id':session.id})
+            self.client.logout()
+            login_testing_unauthorized(self,"secretary",url)
+            r = self.client.get(url)
+            self.assertEqual(r.status_code, 200)
+            q = PyQuery(r.content)
+            self.assertIn('Upload', str(q("title")))
+            self.assertFalse(session.presentations.filter(document__type_id=doctype))
+            test_file = BytesIO(b'this is some text for a test')
+            test_file.name = "not_really.txt"
+            r = self.client.post(url,dict(submission_method="upload",file=test_file))
+            self.assertEqual(r.status_code, 302)
+            doc = session.presentations.filter(document__type_id=doctype).first().document
+            self.assertEqual(doc.rev,'00')
+
+            # Verify that we don't have dead links
+            url = urlreverse('ietf.meeting.views.session_details', kwargs={'num':session.meeting.number, 'acronym': session.group.acronym})
+            top = '/meeting/%s/' % session.meeting.number
+            self.requests_mock.get(f'{session.notes_url()}/download', text='markdown notes')
+            self.requests_mock.get(f'{session.notes_url()}/info', text=json.dumps({'title': 'title', 'updatetime': '2021-12-01T17:11:00z'}))
+            self.crawl_materials(url=url, top=top)
+
     def test_enter_agenda(self):
         session = SessionFactory(meeting__type_id='ietf')
         url = urlreverse('ietf.meeting.views.upload_session_agenda',kwargs={'num':session.meeting.number,'session_id':session.id})
@@ -6273,7 +6432,9 @@ class MaterialsTests(TestCase):
         doc = Document.objects.get(pk=doc.pk)
         self.assertEqual(doc.rev,'02')
 
-    def test_upload_slides(self):
+    @override_settings(MEETECHO_API_CONFIG="fake settings")  # enough to trigger API calls
+    @patch("ietf.meeting.views.SlidesManager")
+    def test_upload_slides(self, mock_slides_manager_cls):
 
         session1 = SessionFactory(meeting__type_id='ietf')
         session2 = SessionFactory(meeting=session1.meeting,group=session1.group)
@@ -6281,6 +6442,7 @@ class MaterialsTests(TestCase):
         login_testing_unauthorized(self,"secretary",url)
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
+        self.assertFalse(mock_slides_manager_cls.called)
         q = PyQuery(r.content)
         self.assertIn('Upload', str(q("title")))
         self.assertFalse(session1.presentations.filter(document__type_id='slides'))
@@ -6293,6 +6455,18 @@ class MaterialsTests(TestCase):
         sp = session2.presentations.first()
         self.assertEqual(sp.document.name, 'slides-%s-%s-a-test-slide-file' % (session1.meeting.number,session1.group.acronym ) )
         self.assertEqual(sp.order,1)
+        self.assertEqual(mock_slides_manager_cls.call_count, 1)
+        self.assertEqual(mock_slides_manager_cls.call_args, call(api_config="fake settings"))
+        self.assertEqual(mock_slides_manager_cls.return_value.add.call_count, 2)
+        # don't care which order they were called in, just that both sessions were updated
+        self.assertCountEqual(
+            mock_slides_manager_cls.return_value.add.call_args_list,
+            [
+                call(session=session1, slides=sp.document, order=1),
+                call(session=session2, slides=sp.document, order=1),
+            ],
+        )
+        mock_slides_manager_cls.reset_mock()
 
         url = urlreverse('ietf.meeting.views.upload_session_slides',kwargs={'num':session2.meeting.number,'session_id':session2.id})
         test_file = BytesIO(b'some other thing still not slidelike')
@@ -6305,6 +6479,14 @@ class MaterialsTests(TestCase):
         self.assertEqual(sp.order,2)
         self.assertEqual(sp.rev,'00')
         self.assertEqual(sp.document.rev,'00')
+        self.assertEqual(mock_slides_manager_cls.call_count, 1)
+        self.assertEqual(mock_slides_manager_cls.call_args, call(api_config="fake settings"))
+        self.assertEqual(mock_slides_manager_cls.return_value.add.call_count, 1)
+        self.assertEqual(
+            mock_slides_manager_cls.return_value.add.call_args,
+            call(session=session2, slides=sp.document, order=2),
+        )
+        mock_slides_manager_cls.reset_mock()
 
         url = urlreverse('ietf.meeting.views.upload_session_slides',kwargs={'num':session2.meeting.number,'session_id':session2.id,'name':session2.presentations.get(order=2).document.name})
         r = self.client.get(url)
@@ -6317,10 +6499,17 @@ class MaterialsTests(TestCase):
         self.assertEqual(r.status_code, 302)
         self.assertEqual(session1.presentations.count(),1)
         self.assertEqual(session2.presentations.count(),2)
-        sp = session2.presentations.get(order=2)
-        self.assertEqual(sp.rev,'01')
-        self.assertEqual(sp.document.rev,'01')
- 
+        replacement_sp = session2.presentations.get(order=2)
+        self.assertEqual(replacement_sp.rev,'01')
+        self.assertEqual(replacement_sp.document.rev,'01')
+        self.assertEqual(mock_slides_manager_cls.call_count, 1)
+        self.assertEqual(mock_slides_manager_cls.call_args, call(api_config="fake settings"))
+        self.assertEqual(mock_slides_manager_cls.return_value.revise.call_count, 1)
+        self.assertEqual(
+            mock_slides_manager_cls.return_value.revise.call_args,
+            call(session=session2, slides=sp.document),
+        )
+
     def test_upload_slide_title_bad_unicode(self):
         session1 = SessionFactory(meeting__type_id='ietf')
         url = urlreverse('ietf.meeting.views.upload_session_slides',kwargs={'num':session1.meeting.number,'session_id':session1.id})
@@ -6338,29 +6527,61 @@ class MaterialsTests(TestCase):
         self.assertTrue(q('form .is-invalid'))
         self.assertIn("Unicode BMP", q('form .is-invalid div').text())
 
-    def test_remove_sessionpresentation(self):
+    @override_settings(MEETECHO_API_CONFIG="fake settings")  # enough to trigger API calls
+    @patch("ietf.meeting.views.SlidesManager")
+    def test_remove_sessionpresentation(self, mock_slides_manager_cls):
         session = SessionFactory(meeting__type_id='ietf')
+        agenda = DocumentFactory(type_id='agenda')
         doc = DocumentFactory(type_id='slides')
+        session.presentations.create(document=agenda)
         session.presentations.create(document=doc)
 
         url = urlreverse('ietf.meeting.views.remove_sessionpresentation',kwargs={'num':session.meeting.number,'session_id':session.id,'name':'no-such-doc'})
         response = self.client.get(url)
         self.assertEqual(response.status_code, 404)
+        self.assertFalse(mock_slides_manager_cls.called)
 
         url = urlreverse('ietf.meeting.views.remove_sessionpresentation',kwargs={'num':session.meeting.number,'session_id':0,'name':doc.name})
         response = self.client.get(url)
         self.assertEqual(response.status_code, 404)
+        self.assertFalse(mock_slides_manager_cls.called)
 
         url = urlreverse('ietf.meeting.views.remove_sessionpresentation',kwargs={'num':session.meeting.number,'session_id':session.id,'name':doc.name})
         login_testing_unauthorized(self,"secretary",url)
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
+        self.assertFalse(mock_slides_manager_cls.called)
 
-        self.assertEqual(1,session.presentations.count())
+        # Removing slides should remove the materials and call MeetechoAPI
+        self.assertEqual(2, session.presentations.count())
         response = self.client.post(url,{'remove_session':''})
         self.assertEqual(response.status_code, 302)
-        self.assertEqual(0,session.presentations.count())
-        self.assertEqual(2,doc.docevent_set.count())
+        self.assertEqual(1, session.presentations.count())
+        self.assertEqual(2, doc.docevent_set.count())
+        self.assertEqual(mock_slides_manager_cls.call_count, 1)
+        self.assertEqual(mock_slides_manager_cls.call_args, call(api_config="fake settings"))
+        self.assertEqual(mock_slides_manager_cls.return_value.delete.call_count, 1)
+        self.assertEqual(
+            mock_slides_manager_cls.return_value.delete.call_args,
+            call(session=session, slides=doc),
+        )
+        mock_slides_manager_cls.reset_mock()
+
+        # Removing non-slides should only remove the materials
+        url = urlreverse(
+            "ietf.meeting.views.remove_sessionpresentation",
+            kwargs={
+                "num": session.meeting.number,
+                "session_id": session.id,
+                "name": agenda.name,
+            },
+        )
+        response = self.client.post(url, {"remove_session" : ""})
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(0, session.presentations.count())
+        self.assertEqual(2, agenda.docevent_set.count())
+        self.assertFalse(mock_slides_manager_cls.called)
+
 
     def test_propose_session_slides(self):
         for type_id in ['ietf','interim']:
@@ -7784,7 +8005,7 @@ class ProceedingsTests(BaseMeetingTestCase):
 
     def test_named_session(self):
         """Session with a name should appear separately in the proceedings"""
-        meeting = MeetingFactory(type_id='ietf', number='100')
+        meeting = MeetingFactory(type_id='ietf', number='100', proceedings_final=True)
         group = GroupFactory()
         plain_session = SessionFactory(meeting=meeting, group=group)
         named_session = SessionFactory(meeting=meeting, group=group, name='I Got a Name')
@@ -7905,7 +8126,6 @@ class ProceedingsTests(BaseMeetingTestCase):
            - prefer onsite checkedin=True to remote attended when same person has both
         """
 
-        make_meeting_test_data()
         meeting = MeetingFactory(type_id='ietf', date=datetime.date(2023, 11, 4), number="118")
         person_a = PersonFactory(name='Person A')
         person_b = PersonFactory(name='Person B')
@@ -7930,9 +8150,14 @@ class ProceedingsTests(BaseMeetingTestCase):
         '''Test proceedings IETF Overview page.
         Note: old meetings aren't supported so need to add a new meeting then test.
         '''
-        make_meeting_test_data()
-        meeting = MeetingFactory(type_id='ietf', date=datetime.date(2016,7,14), number="97")
-        finalize(meeting)
+        meeting = make_meeting_test_data(meeting=MeetingFactory(type_id='ietf', date=datetime.date(2016,7,14), number="97"))
+
+        # finalize meeting
+        url = urlreverse('ietf.meeting.views.finalize_proceedings',kwargs={'num':meeting.number})
+        login_testing_unauthorized(self,"secretary",url)
+        r = self.client.post(url,{'finalize':1})
+        self.assertEqual(r.status_code, 302)
+
         url = urlreverse('ietf.meeting.views.proceedings_overview',kwargs={'num':97})
         response = self.client.get(url)
         self.assertContains(response, 'The Internet Engineering Task Force')
@@ -8335,3 +8560,127 @@ class ProceedingsTests(BaseMeetingTestCase):
         self.assertTrue(person_b.pk not in checked_in)
         self.assertTrue(person_c.pk in attended)
         self.assertTrue(person_d.pk not in attended)
+
+    def test_session_attendance(self):
+        meeting = MeetingFactory(type_id='ietf', date=datetime.date(2023, 11, 4), number='118')
+        make_meeting_test_data(meeting=meeting)
+        session = Session.objects.filter(meeting=meeting, group__acronym='mars').first()
+        regs = MeetingRegistrationFactory.create_batch(3, meeting=meeting)
+        persons = [reg.person for reg in regs]
+        self.assertEqual(session.attended_set.count(), 0)
+
+        # If there are no attendees, the link isn't offered, and getting
+        # the page directly returns an empty list.
+        session_url = urlreverse('ietf.meeting.views.session_details', kwargs={'num':meeting.number, 'acronym':session.group.acronym})
+        attendance_url = urlreverse('ietf.meeting.views.session_attendance', kwargs={'num':meeting.number, 'session_id':session.id})
+        r = self.client.get(session_url)
+        self.assertNotContains(r, attendance_url)
+        r = self.client.get(attendance_url)
+        self.assertEqual(r.status_code, 200)  
+        self.assertContains(r, '0 attendees')
+
+        # Add some attendees
+        add_attendees_url = urlreverse('ietf.meeting.views.api_add_session_attendees')
+        recmanrole = RoleFactory(group__type_id='ietf', name_id='recman', person__user__last_login=timezone.now())
+        recman = recmanrole.person
+        apikey = PersonalApiKey.objects.create(endpoint=add_attendees_url, person=recman)
+        attendees = [person.user.pk for person in persons]
+        self.client.login(username='recman', password='recman+password')
+        r = self.client.post(add_attendees_url, {'apikey':apikey.hash(), 'attended':f'{{"session_id":{session.pk},"attendees":{attendees}}}'})
+        self.assertEqual(r.status_code, 200)  
+        self.assertEqual(session.attended_set.count(), 3)
+
+        # Before a meeting is finalized, session_attendance renders a live
+        # view of the Attended records for the session.
+        r = self.client.get(session_url)
+        self.assertContains(r, attendance_url)
+        r = self.client.get(attendance_url)
+        self.assertEqual(r.status_code, 200)  
+        self.assertContains(r, '3 attendees')
+        for person in persons:
+            self.assertContains(r, person.name)
+
+        # Test for the "I was there" button.
+        def _test_button(person, expected):
+            username = person.user.username
+            self.client.login(username=username, password=f'{username}+password')
+            r = self.client.get(attendance_url)
+            self.assertEqual(b"I was there" in r.content, expected)
+        # recman isn't registered for the meeting
+        _test_button(recman, False)
+        # person0 is already on the bluesheet
+        _test_button(persons[0], False)
+        # person3 attests he was there
+        persons.append(MeetingRegistrationFactory(meeting=meeting).person)
+        # button isn't shown if we're outside the corrections windows
+        meeting.importantdate_set.create(name_id='revsub',date=date_today() - datetime.timedelta(days=20))
+        _test_button(persons[3], False)
+        # attempt to POST anyway is ignored
+        r = self.client.post(attendance_url)
+        self.assertEqual(r.status_code, 200)
+        self.assertNotContains(r, persons[3].name)
+        self.assertEqual(session.attended_set.count(), 3)
+        # button is shown, and POST is accepted
+        meeting.importantdate_set.update(name_id='revsub',date=date_today() + datetime.timedelta(days=20))
+        _test_button(persons[3], True)
+        r = self.client.post(attendance_url)
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, persons[3].name)
+        self.assertEqual(session.attended_set.count(), 4)
+
+        # When the meeting is finalized, a bluesheet file is generated,
+        # and session_attendance redirects to the file.
+        self.client.login(username='secretary',password='secretary+password')
+        finalize_url = urlreverse('ietf.meeting.views.finalize_proceedings', kwargs={'num':meeting.number})
+        r = self.client.post(finalize_url, {'finalize':1})
+        self.assertRedirects(r, urlreverse('ietf.meeting.views.proceedings', kwargs={'num':meeting.number}))
+        doc = session.presentations.filter(document__type_id='bluesheets').first().document
+        self.assertEqual(doc.rev,'00')
+        text = doc.text()
+        self.assertIn('4 attendees', text)
+        for person in persons:
+            self.assertIn(person.name, text)
+        r = self.client.get(session_url)
+        self.assertContains(r, doc.get_href())
+        self.assertNotContains(r, attendance_url)
+        r = self.client.get(attendance_url)
+        self.assertEqual(r.status_code,302)
+        self.assertEqual(r['Location'],doc.get_href())
+
+        # An interim meeting is considered finalized immediately.
+        meeting = make_interim_meeting(group=GroupFactory(acronym='mars'), date=date_today())
+        session = Session.objects.filter(meeting=meeting, group__acronym='mars').first()
+        attendance_url = urlreverse('ietf.meeting.views.session_attendance', kwargs={'num':meeting.number, 'session_id':session.id})
+        self.assertEqual(session.attended_set.count(), 0)
+        self.client.login(username='recman', password='recman+password')
+        attendees = [person.user.pk for person in persons]
+        r = self.client.post(add_attendees_url, {'apikey':apikey.hash(), 'attended':f'{{"session_id":{session.pk},"attendees":{attendees}}}'})
+        self.assertEqual(r.status_code, 200)  
+        self.assertEqual(session.attended_set.count(), 4)
+        doc = session.presentations.filter(document__type_id='bluesheets').first().document
+        self.assertEqual(doc.rev,'00')
+        session_url = urlreverse('ietf.meeting.views.session_details', kwargs={'num':meeting.number, 'acronym':session.group.acronym})
+        r = self.client.get(session_url)
+        self.assertContains(r, doc.get_href())
+        self.assertNotContains(r, attendance_url)
+        r = self.client.get(attendance_url)
+        self.assertEqual(r.status_code,302)
+        self.assertEqual(r['Location'],doc.get_href())
+
+    def test_bluesheet_data(self):
+        session = SessionFactory(meeting__type_id="ietf") 
+        attended_with_affil = MeetingRegistrationFactory(meeting=session.meeting, affiliation="Somewhere")
+        AttendedFactory(session=session, person=attended_with_affil.person, time="2023-03-13T01:24:00Z")  # joined 2nd
+        attended_no_affil = MeetingRegistrationFactory(meeting=session.meeting)
+        AttendedFactory(session=session, person=attended_no_affil.person, time="2023-03-13T01:23:00Z")  # joined 1st
+        MeetingRegistrationFactory(meeting=session.meeting)  # did not attend
+        
+        data = bluesheet_data(session)
+        self.assertEqual(
+            data,
+            [
+                {"name": attended_no_affil.person.plain_name(), "affiliation": ""},
+                {"name": attended_with_affil.person.plain_name(), "affiliation": "Somewhere"},
+            ]
+        )
+

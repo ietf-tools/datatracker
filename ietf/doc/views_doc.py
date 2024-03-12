@@ -42,6 +42,7 @@ import re
 
 from pathlib import Path
 
+from django.db.models import Max
 from django.http import HttpResponse, Http404
 from django.shortcuts import render, get_object_or_404, redirect
 from django.template.loader import render_to_string
@@ -74,13 +75,14 @@ from ietf.utils.history import find_history_active_at
 from ietf.doc.forms import TelechatForm, NotifyForm, ActionHoldersForm, DocAuthorForm, DocAuthorChangeBasisForm
 from ietf.doc.mails import email_comment, email_remind_action_holders
 from ietf.mailtrigger.utils import gather_relevant_expansions
-from ietf.meeting.models import Session
+from ietf.meeting.models import Session, SessionPresentation
 from ietf.meeting.utils import group_sessions, get_upcoming_manageable_sessions, sort_sessions, add_event_info_to_session_qs
 from ietf.review.models import ReviewAssignment
 from ietf.review.utils import can_request_review_of_doc, review_assignments_to_list_for_docs, review_requests_to_list_for_docs
 from ietf.review.utils import no_review_from_teams_on_doc
 from ietf.utils import markup_txt, log, markdown
 from ietf.utils.draft import PlaintextDraft
+from ietf.utils.meetecho import MeetechoAPIError, SlidesManager
 from ietf.utils.response import permission_denied
 from ietf.utils.text import maybe_split
 from ietf.utils.timezone import date_today
@@ -2070,6 +2072,12 @@ def edit_sessionpresentation(request,name,session_id):
             new_selection = form.cleaned_data['version']
             if initial['version'] != new_selection:
                 doc.presentations.filter(pk=sp.pk).update(rev=None if new_selection=='current' else new_selection)
+                if doc.type_id == "slides" and hasattr(settings, "MEETECHO_API_CONFIG"):
+                    sm = SlidesManager(api_config=settings.MEETECHO_API_CONFIG)
+                    try:
+                        sm.send_update(sp.session)
+                    except MeetechoAPIError as err:
+                        log.log(f"Error in SlidesManager.send_update(): {err}")
                 c = DocEvent(type="added_comment", doc=doc, rev=doc.rev, by=request.user.person)
                 c.desc = "Revision for session %s changed to  %s" % (sp.session,new_selection)
                 c.save()
@@ -2091,6 +2099,12 @@ def remove_sessionpresentation(request,name,session_id):
 
     if request.method == 'POST':
         doc.presentations.filter(pk=sp.pk).delete()
+        if doc.type_id == "slides" and hasattr(settings, "MEETECHO_API_CONFIG"):
+            sm = SlidesManager(api_config=settings.MEETECHO_API_CONFIG)
+            try:
+                sm.delete(sp.session, doc)
+            except MeetechoAPIError as err:
+                log.log(f"Error in SlidesManager.delete(): {err}")
         c = DocEvent(type="added_comment", doc=doc, rev=doc.rev, by=request.user.person)
         c.desc = "Removed from session: %s" % (sp.session)
         c.save()
@@ -2127,7 +2141,25 @@ def add_sessionpresentation(request,name):
             session_id = session_form.cleaned_data['session']
             version = version_form.cleaned_data['version']
             rev = None if version=='current' else version
-            doc.presentations.create(session_id=session_id,rev=rev)
+            if doc.type_id == "slides":
+                max_order = SessionPresentation.objects.filter(
+                    document__type='slides',
+                    session__pk=session_id,
+                ).aggregate(Max('order'))['order__max'] or 0
+                order = max_order + 1
+            else:
+                order = 0
+            sp = doc.presentations.create(
+                session_id=session_id,
+                rev=rev,
+                order=order,
+            )
+            if doc.type_id == "slides" and hasattr(settings, "MEETECHO_API_CONFIG"):
+                sm = SlidesManager(api_config=settings.MEETECHO_API_CONFIG)
+                try:
+                    sm.add(sp.session, doc, order=sp.order)
+                except MeetechoAPIError as err:
+                    log.log(f"Error in SlidesManager.add(): {err}")
             c = DocEvent(type="added_comment", doc=doc, rev=doc.rev, by=request.user.person)
             c.desc = "%s to session: %s" % ('Added -%s'%rev if rev else 'Added', Session.objects.get(pk=session_id))
             c.save()

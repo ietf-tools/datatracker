@@ -567,10 +567,9 @@ autoscaling:
 
 env:
   # n.b., these are debug values / non-secret secrets
-  DBHOST: "host.minikube.internal"
-  DBPORT: "5432"
+  # DBHOST: "host.minikube.internal"
+  # DBPORT: "5432"
   DBNAME: "datatracker"
   DBUSER: "django"
   DBPASS: "RkTkDPFnKpko"
   DJANGO_SECRET_KEY: "PDwXboUq!=hPjnrtG2=ge#N$Dwy+wn@uivrugwpic8mxyPfHk"
-    

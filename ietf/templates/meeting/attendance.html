@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2024, All Rights Reserved #}
+{% load origin %}
+{% block title %}Bluesheet for {{session}}{% endblock %}
+{% block content %}
+    {% origin %}
+    <h1>
+        Attendance for {{session}}
+    </h1>
+    <div class="alert alert-info my-3">
+        This list will be used to generate the official bluesheet for this session.
+        {% if can_add %}
+            <br>If you attended this session, you can use the "I was there" button at the bottom to add yourself.
+        {% endif %}
+        {% if was_there %}
+            <br>If the affiliation listed here needs to be updated, request the change using support@ietf.org. Note which sessions you are wanting to change in your request.
+        {% endif %}
+    </div>
+    <h2>
+        {{ data|length }} attendees.
+    </h2>
+    <table class="table table-sm table-striped tablesorter">
+        <thead>
+            <tr>
+                <th scope="col" data-sort="num">Name</th>
+                <th scope="col" data-sort="document">Affiliation</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in data %}
+                <tr>
+                    <td>{{ item.name }}</td>
+                    <td>{{ item.affiliation }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% if can_add %}
+        <form method="post">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-primary">I was there</button>
+        </form>
+    {% endif %}
+{% endblock %}

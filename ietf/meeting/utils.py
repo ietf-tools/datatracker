@@ -1,10 +1,11 @@
-# Copyright The IETF Trust 2016-2020, All Rights Reserved
+# Copyright The IETF Trust 2016-2024, All Rights Reserved
 # -*- coding: utf-8 -*-
 import datetime
 import itertools
 import os
 import pytz
 import subprocess
+import tempfile
 
 from collections import defaultdict
 from pathlib import Path
@@ -12,6 +13,7 @@ from pathlib import Path
 from django.conf import settings
 from django.contrib import messages
 from django.db.models import Q
+from django.template.loader import render_to_string
 from django.utils import timezone
 from django.utils.encoding import smart_str
 
@@ -26,6 +28,7 @@ from ietf.group.models import Group
 from ietf.group.utils import can_manage_materials
 from ietf.name.models import SessionStatusName, ConstraintName, DocTypeName
 from ietf.person.models import Person
+from ietf.stats.models import MeetingRegistration
 from ietf.utils.html import sanitize_document
 from ietf.utils.log import log
 from ietf.utils.timezone import date_today
@@ -144,7 +147,84 @@ def create_proceedings_templates(meeting):
         meeting.overview = template
         meeting.save()
 
-def finalize(meeting):
+
+def bluesheet_data(session):
+    def affiliation(meeting, person):
+        # from OidcExtraScopeClaims.scope_registration()
+        email_list = person.email_set.values_list("address")
+        q = Q(person=person, meeting=meeting) | Q(email__in=email_list, meeting=meeting)
+        reg = MeetingRegistration.objects.filter(q).exclude(affiliation="").first()
+        return reg.affiliation if reg else ""
+
+    attendance = Attended.objects.filter(session=session).order_by("time")
+    meeting = session.meeting
+    return [
+        {
+            "name": attended.person.plain_name(),
+            "affiliation": affiliation(meeting, attended.person),
+        }
+        for attended in attendance
+    ]
+
+
+def save_bluesheet(request, session, file, encoding='utf-8'):
+    bluesheet_sp = session.presentations.filter(document__type='bluesheets').first()
+    _, ext = os.path.splitext(file.name)
+
+    if bluesheet_sp:
+        doc = bluesheet_sp.document
+        doc.rev = '%02d' % (int(doc.rev)+1)
+        bluesheet_sp.rev = doc.rev
+        bluesheet_sp.save()
+    else:
+        ota = session.official_timeslotassignment()
+        sess_time = ota and ota.timeslot.time
+
+        if session.meeting.type_id=='ietf':
+            name = 'bluesheets-%s-%s-%s' % (session.meeting.number, 
+                                            session.group.acronym, 
+                                            sess_time.strftime("%Y%m%d%H%M"))
+            title = 'Bluesheets IETF%s: %s : %s' % (session.meeting.number, 
+                                                    session.group.acronym, 
+                                                    sess_time.strftime("%a %H:%M"))
+        else:
+            name = 'bluesheets-%s-%s' % (session.meeting.number, sess_time.strftime("%Y%m%d%H%M"))
+            title = 'Bluesheets %s: %s' % (session.meeting.number, sess_time.strftime("%a %H:%M"))
+        doc = Document.objects.create(
+                  name = name,
+                  type_id = 'bluesheets',
+                  title = title,
+                  group = session.group,
+                  rev = '00',
+              )
+        doc.states.add(State.objects.get(type_id='bluesheets',slug='active'))
+        session.presentations.create(document=doc,rev='00')
+    filename = '%s-%s%s'% ( doc.name, doc.rev, ext)
+    doc.uploaded_filename = filename
+    e = NewRevisionDocEvent.objects.create(doc=doc, rev=doc.rev, by=request.user.person, type='new_revision', desc='New revision available: %s'%doc.rev)
+    save_error = handle_upload_file(file, filename, session.meeting, 'bluesheets', request=request, encoding=encoding)
+    if not save_error:
+        doc.save_with_history([e])
+    return save_error
+
+
+def generate_bluesheet(request, session):
+    data = bluesheet_data(session)
+    if not data:
+        return
+    text = render_to_string('meeting/bluesheet.txt', {
+            'session': session,
+            'data': data,
+        })
+    fd, name = tempfile.mkstemp(suffix=".txt", text=True)
+    os.close(fd)
+    with open(name, "w") as file:
+        file.write(text)
+    with open(name, "br") as file:
+        return save_bluesheet(request, session, file)
+
+
+def finalize(request, meeting):
     end_date = meeting.end_date()
     end_time = meeting.tz().localize(
         datetime.datetime.combine(
@@ -160,6 +240,12 @@ def finalize(meeting):
             else:
                 sp.rev = '00'
             sp.save()
+
+        # Don't try to generate a bluesheet if it's before we had Attended records.
+        if int(meeting.number) >= 108:
+            save_error = generate_bluesheet(request, session)
+            if save_error:
+                messages.error(request, save_error)
     
     create_proceedings_templates(meeting)
     meeting.proceedings_final = True
@@ -555,7 +641,7 @@ class SaveMaterialsError(Exception):
     pass
 
 
-def save_session_minutes_revision(session, file, ext, request, encoding=None, apply_to_all=False):
+def save_session_minutes_revision(session, file, ext, request, encoding=None, apply_to_all=False, narrative=False):
     """Creates or updates session minutes records
 
     This updates the database models to reflect a new version. It does not handle
@@ -568,7 +654,8 @@ def save_session_minutes_revision(session, file, ext, request, encoding=None, ap
     Returns (Document, [DocEvents]), which should be passed to doc.save_with_history()
     if the file contents are stored successfully.
     """
-    minutes_sp = session.presentations.filter(document__type='minutes').first()
+    document_type = DocTypeName.objects.get(slug= 'narrativeminutes' if narrative else 'minutes')
+    minutes_sp = session.presentations.filter(document__type=document_type).first()
     if minutes_sp:
         doc = minutes_sp.document
         doc.rev = '%02d' % (int(doc.rev)+1)
@@ -580,28 +667,26 @@ def save_session_minutes_revision(session, file, ext, request, encoding=None, ap
         if not sess_time:
             raise SessionNotScheduledError
         if session.meeting.type_id=='ietf':
-            name = 'minutes-%s-%s' % (session.meeting.number,
-                                      session.group.acronym)
-            title = 'Minutes IETF%s: %s' % (session.meeting.number,
-                                            session.group.acronym)
+            name = f"{document_type.prefix}-{session.meeting.number}-{session.group.acronym}"
+            title = f"{document_type.name} IETF{session.meeting.number}: {session.group.acronym}"
             if not apply_to_all:
                 name += '-%s' % (sess_time.strftime("%Y%m%d%H%M"),)
                 title += ': %s' % (sess_time.strftime("%a %H:%M"),)
         else:
-            name = 'minutes-%s-%s' % (session.meeting.number, sess_time.strftime("%Y%m%d%H%M"))
-            title = 'Minutes %s: %s' % (session.meeting.number, sess_time.strftime("%a %H:%M"))
+            name =f"{document_type.prefix}-{session.meeting.number}-{sess_time.strftime('%Y%m%d%H%M')}"
+            title = f"{document_type.name} {session.meeting.number}: {sess_time.strftime('%a %H:%M')}"
         if Document.objects.filter(name=name).exists():
             doc = Document.objects.get(name=name)
             doc.rev = '%02d' % (int(doc.rev)+1)
         else:
             doc = Document.objects.create(
                 name = name,
-                type_id = 'minutes',
+                type = document_type,
                 title = title,
                 group = session.group,
                 rev = '00',
             )
-        doc.states.add(State.objects.get(type_id='minutes',slug='active'))
+        doc.states.add(State.objects.get(type_id=document_type.slug,slug='active'))
         if session.presentations.filter(document=doc).exists():
             sp = session.presentations.get(document=doc)
             sp.rev = doc.rev
@@ -611,7 +696,7 @@ def save_session_minutes_revision(session, file, ext, request, encoding=None, ap
     if apply_to_all:
         for other_session in get_meeting_sessions(session.meeting.number, session.group.acronym):
             if other_session != session:
-                other_session.presentations.filter(document__type='minutes').delete()
+                other_session.presentations.filter(document__type=document_type).delete()
                 other_session.presentations.create(document=doc,rev=doc.rev)
     filename = f'{doc.name}-{doc.rev}{ext}'
     doc.uploaded_filename = filename
@@ -628,7 +713,7 @@ def save_session_minutes_revision(session, file, ext, request, encoding=None, ap
         file=file,
         filename=doc.uploaded_filename,
         meeting=session.meeting,
-        subdir='minutes',
+        subdir=document_type.slug,
         request=request,
         encoding=encoding,
     )

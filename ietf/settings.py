@@ -913,7 +913,7 @@ MEETING_VALID_UPLOAD_EXTENSIONS = {
 MEETING_VALID_UPLOAD_MIME_TYPES = {
     'agenda':       ['text/plain', 'text/html', 'text/markdown', 'text/x-markdown', ],
     'minutes':      ['text/plain', 'text/html', 'application/pdf', 'text/markdown', 'text/x-markdown', ],
-    'narrative-minutes': ['text/plain', 'text/html', 'application/pdf', 'text/markdown', 'text/x-markdown', ],
+    'narrativeminutes': ['text/plain', 'text/html', 'application/pdf', 'text/markdown', 'text/x-markdown', ],
     'slides':       [],
     'bluesheets':   ['application/pdf', 'text/plain', ],
     'procmaterials':['application/pdf', ],
@@ -1173,6 +1173,10 @@ CELERY_TASK_IGNORE_RESULT = True  # ignore results unless specifically enabled f
 #     'client_id': 'datatracker',
 #     'client_secret': 'some secret',
 #     'request_timeout': 3.01,  # python-requests doc recommend slightly > a multiple of 3 seconds
+#     # How many minutes before/after session to enable slide update API. Defaults to 15. Set to None to disable,
+#     # or < 0 to _always_ send updates (useful for debugging)
+#     'slides_notify_time': 15, 
+#     'debug': False,  # if True, API calls will be echoed as debug instead of sent (only works for slides for now)
 # }
 
 # Meetecho URLs - instantiate with url.format(session=some_session)

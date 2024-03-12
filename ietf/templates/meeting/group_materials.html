@@ -1,4 +1,4 @@
-{# Copyright The IETF Trust 2015-2019, All Rights Reserved #}
+{# Copyright The IETF Trust 2015-2024, All Rights Reserved #}
 {% load origin %}
 {% origin %}
 {% load ietf_filters proceedings_filters managed_groups %}
@@ -45,16 +45,14 @@
                 {% if show_agenda == "True" %}<span class="badge rounded-pill text-bg-warning">No minutes</span>{% endif %}
             {% endfor %}
             {% if entry.session.type_id == 'regular' and show_agenda == "True" %}
-                {% for bluesheet in entry.bluesheets %}
-                    <a href="{{ bluesheet.material|meeting_href:meeting }}">
-                      Bluesheets
-		      {% if bluesheet.time %}
-		      <br><span class="small float-end">{{ bluesheet.time|date:"D G:i" }}</span>
-		      {% endif %}
-                    </a>
+                {% for attendance in entry.attendances %}
+                    {% with session=attendance.material %}
+                        <a href="{% url 'ietf.meeting.views.session_attendance' session_id=session.pk num=session.meeting.number %}">
+                            Attendance
+                            {% if attendance.time %}{{ attendance.time|date:"D G:i" }}{% endif %}
+                        </a>
+                    {% endwith %}
                     <br>
-                {% empty %}
-                    <span class="badge rounded-pill text-bg-warning">No bluesheets</span>
                 {% endfor %}
             {% endif %}
         </td>
