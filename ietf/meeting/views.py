@@ -2945,20 +2945,14 @@ def upload_session_slides(request, session_id, num, name=None):
 
             # Now handle creation / update of the SessionPresentation(s)
             sessions_to_apply = sessions if apply_to_all else [session]
-            if hasattr(settings, "MEETECHO_API_CONFIG"):
-                sm = SlidesManager(api_config=settings.MEETECHO_API_CONFIG)
-            else:
-                sm = None
+            added_presentations = []
+            revised_presentations = []
             for sess in sessions_to_apply:
                 sp = sess.presentations.filter(document=doc).first()
                 if sp is not None:
                     sp.rev = doc.rev
                     sp.save()
-                    if sm is not None:
-                        try:
-                            sm.revise(session=sess, slides=doc)
-                        except MeetechoAPIError as err:
-                            log(f"Error in SlidesManager.revise(): {err}")
+                    revised_presentations.append(sp)
                 else:
                     max_order = (
                         sess.presentations.filter(document__type="slides").aggregate(
@@ -2969,11 +2963,7 @@ def upload_session_slides(request, session_id, num, name=None):
                     sp = sess.presentations.create(
                         document=doc, rev=doc.rev, order=max_order + 1
                     )
-                    if sm is not None:
-                        try:
-                            sm.add(session=sess, slides=doc, order=sp.order)
-                        except MeetechoAPIError as err:
-                            log(f"Error in SlidesManager.add(): {err}")
+                    added_presentations.append(sp)
 
             # Now handle the uploaded file
             filename = "%s-%s%s" % (doc.name, doc.rev, ext)
@@ -2999,6 +2989,23 @@ def upload_session_slides(request, session_id, num, name=None):
             else:
                 doc.save_with_history([e])
                 post_process(doc)
+
+            # Send MeetEcho updates even if we had a problem saving - that will keep it in sync with the
+            # SessionPresentation, which was already saved regardless of problems saving the file.
+            if hasattr(settings, "MEETECHO_API_CONFIG"):
+                sm = SlidesManager(api_config=settings.MEETECHO_API_CONFIG)
+                for sp in added_presentations:
+                    try:
+                        sm.add(session=sp.session, slides=doc, order=sp.order)
+                    except MeetechoAPIError as err:
+                        log(f"Error in SlidesManager.add(): {err}")
+                for sp in revised_presentations:
+                    try:
+                        sm.revise(session=sp.session, slides=doc)
+                    except MeetechoAPIError as err:
+                        log(f"Error in SlidesManager.revise(): {err}")
+
+            if not save_error:
                 messages.success(
                     request,
                     f"Successfully uploaded slides as revision {doc.rev} of {doc.name}.",
