@@ -428,12 +428,20 @@ class Conference:
 
 class Manager:
     def __init__(self, api_config):
-        api_config_copy = api_config.copy()
-        debug = api_config_copy.pop("debug", False)
-        if debug:
-            self.api = DebugMeetechoAPI(**api_config_copy)
+        if api_config.get("debug", False):
+            self.api = DebugMeetechoAPI(
+                api_base=api_config["api_base"],
+                client_id=api_config["client_id"],
+                client_secret=api_config["client_secret"],
+                request_timeout=api_config["request_timeout"],
+            )
         else:
-            self.api = MeetechoAPI(**api_config_copy)
+            self.api = MeetechoAPI(
+                api_base=api_config["api_base"],
+                client_id=api_config["client_id"],
+                client_secret=api_config["client_secret"],
+                request_timeout=api_config["request_timeout"],
+            )
         self.wg_tokens = {}
 
     def wg_token(self, group):
@@ -479,7 +487,31 @@ class SlidesManager(Manager):
     example, using get_absolute_url() will cause bugs. (We should refactor upload_session_slides() to
     avoid this requirement.) 
     """
+
+    def __init__(self, api_config):
+        super().__init__(api_config)
+        slides_notify_time = api_config.get("slides_notify_time", 15)
+        if slides_notify_time is None:
+            self.slides_notify_time = None
+        else:
+            self.slides_notify_time = datetime.timedelta(minutes=slides_notify_time)
+
+    def _should_send_update(self, session):
+        if self.slides_notify_time is None:
+            return False
+        timeslot = session.official_timeslotassignment().timeslot
+        if timeslot is None:
+            return False
+        if self.slides_notify_time < datetime.timedelta(0):
+            return True  # < 0 means "always" for a scheduled session
+        else:
+            now = datetime.datetime.now(tz=datetime.timezone.utc)
+            return (timeslot.time - self.slides_notify_time) < now < (timeslot.end_time() + self.slides_notify_time)
+
     def add(self, session: "Session", slides: "Document", order: int):
+        if not self._should_send_update(session):
+            return
+
         # Would like to confirm that session.presentations includes the slides Document, but we can't
         # (same problem regarding unsaved Documents discussed in the docstring)
         self.api.add_slide_deck(
@@ -496,6 +528,9 @@ class SlidesManager(Manager):
 
     def delete(self, session: "Session", slides: "Document"):
         """Delete a slide deck from the session"""
+        if not self._should_send_update(session):
+            return
+
         if session.presentations.filter(document=slides).exists():
             # "order" problems are very likely to result if we delete slides that are actually still
             # linked to the session
@@ -513,6 +548,9 @@ class SlidesManager(Manager):
     
     def revise(self, session: "Session", slides: "Document"):
         """Replace existing deck with its current state"""
+        if not self._should_send_update(session):
+            return
+
         sp = session.presentations.filter(document=slides).first()
         if sp is None:
             raise MeetechoAPIError(f"Slides {slides.pk} not in session {session.pk}")
@@ -526,6 +564,9 @@ class SlidesManager(Manager):
         self.add(session, slides, order)  # fill in the hole
         
     def send_update(self, session: "Session"):
+        if not self._should_send_update(session):
+            return
+
         self.api.update_slide_decks(
             wg_token=self.wg_token(session.group),
             session=str(session.pk),
