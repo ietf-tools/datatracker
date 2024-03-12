@@ -22,8 +22,9 @@ from ietf.doc.models import NewRevisionDocEvent
 from ietf.doc.utils import add_state_change_event, check_common_doc_name_rules
 from ietf.group.models import Group
 from ietf.group.utils import can_manage_materials
+from ietf.utils import log
 from ietf.utils.decorators import ignore_view_kwargs
-from ietf.utils.meetecho import SlidesManager
+from ietf.utils.meetecho import MeetechoAPIError, SlidesManager
 from ietf.utils.response import permission_denied
 
 @login_required
@@ -203,8 +204,11 @@ def edit_material(request, name=None, acronym=None, action=None, doc_type=None):
             if sessions_with_slide_title_updates and hasattr(settings, "MEETECHO_API_CONFIG"):
                 sm = SlidesManager(api_config=settings.MEETECHO_API_CONFIG)
                 for session in sessions_with_slide_title_updates:
-                    # SessionPresentations are unique over (session, document) so there will be no duplicates
-                    sm.send_update(session)
+                    try:
+                        # SessionPresentations are unique over (session, document) so there will be no duplicates
+                        sm.send_update(session)
+                    except MeetechoAPIError as err:
+                        log.log(f"Error in SlidesManager.send_update(): {err}")
 
             return redirect("ietf.doc.views_doc.document_main", name=doc.name)
     else:

@@ -83,7 +83,7 @@ from ietf.review.utils import can_request_review_of_doc, review_assignments_to_l
 from ietf.review.utils import no_review_from_teams_on_doc
 from ietf.utils import markup_txt, log, markdown
 from ietf.utils.draft import PlaintextDraft
-from ietf.utils.meetecho import SlidesManager
+from ietf.utils.meetecho import MeetechoAPIError, SlidesManager
 from ietf.utils.response import permission_denied
 from ietf.utils.text import maybe_split
 from ietf.utils.timezone import date_today
@@ -2079,7 +2079,10 @@ def edit_sessionpresentation(request,name,session_id):
                 doc.presentations.filter(pk=sp.pk).update(rev=None if new_selection=='current' else new_selection)
                 if doc.type_id == "slides" and hasattr(settings, "MEETECHO_API_CONFIG"):
                     sm = SlidesManager(api_config=settings.MEETECHO_API_CONFIG)
-                    sm.send_update(sp.session)
+                    try:
+                        sm.send_update(sp.session)
+                    except MeetechoAPIError as err:
+                        log.log(f"Error in SlidesManager.send_update(): {err}")
                 c = DocEvent(type="added_comment", doc=doc, rev=doc.rev, by=request.user.person)
                 c.desc = "Revision for session %s changed to  %s" % (sp.session,new_selection)
                 c.save()
@@ -2103,7 +2106,10 @@ def remove_sessionpresentation(request,name,session_id):
         doc.presentations.filter(pk=sp.pk).delete()
         if doc.type_id == "slides" and hasattr(settings, "MEETECHO_API_CONFIG"):
             sm = SlidesManager(api_config=settings.MEETECHO_API_CONFIG)
-            sm.delete(sp.session, doc)
+            try:
+                sm.delete(sp.session, doc)
+            except MeetechoAPIError as err:
+                log.log(f"Error in SlidesManager.delete(): {err}")
         c = DocEvent(type="added_comment", doc=doc, rev=doc.rev, by=request.user.person)
         c.desc = "Removed from session: %s" % (sp.session)
         c.save()
@@ -2155,7 +2161,10 @@ def add_sessionpresentation(request,name):
             )
             if doc.type_id == "slides" and hasattr(settings, "MEETECHO_API_CONFIG"):
                 sm = SlidesManager(api_config=settings.MEETECHO_API_CONFIG)
-                sm.add(sp.session, doc, order=sp.order)
+                try:
+                    sm.add(sp.session, doc, order=sp.order)
+                except MeetechoAPIError as err:
+                    log.log(f"Error in SlidesManager.add(): {err}")
             c = DocEvent(type="added_comment", doc=doc, rev=doc.rev, by=request.user.person)
             c.desc = "%s to session: %s" % ('Added -%s'%rev if rev else 'Added', Session.objects.get(pk=session_id))
             c.save()

@@ -92,8 +92,8 @@ from ietf.stats.models import MeetingRegistration
 from ietf.utils import markdown
 from ietf.utils.decorators import require_api_key
 from ietf.utils.hedgedoc import Note, NoteError
-from ietf.utils.meetecho import SlidesManager
-from ietf.utils.log import assertion
+from ietf.utils.meetecho import MeetechoAPIError, SlidesManager
+from ietf.utils.log import assertion, log
 from ietf.utils.mail import send_mail_message, send_mail_text
 from ietf.utils.mime import get_mime_type
 from ietf.utils.pipe import pipe
@@ -2955,7 +2955,10 @@ def upload_session_slides(request, session_id, num, name=None):
                     sp.rev = doc.rev
                     sp.save()
                     if sm is not None:
-                        sm.revise(session=sess, slides=doc)
+                        try:
+                            sm.revise(session=sess, slides=doc)
+                        except MeetechoAPIError as err:
+                            log(f"Error in SlidesManager.revise(): {err}")
                 else:
                     max_order = (
                         sess.presentations.filter(document__type="slides").aggregate(
@@ -2967,7 +2970,10 @@ def upload_session_slides(request, session_id, num, name=None):
                         document=doc, rev=doc.rev, order=max_order + 1
                     )
                     if sm is not None:
-                        sm.add(session=sess, slides=doc, order=sp.order)
+                        try:
+                            sm.add(session=sess, slides=doc, order=sp.order)
+                        except MeetechoAPIError as err:
+                            log(f"Error in SlidesManager.add(): {err}")
 
             # Now handle the uploaded file
             filename = "%s-%s%s" % (doc.name, doc.rev, ext)
@@ -3115,7 +3121,10 @@ def remove_sessionpresentation(request, session_id, num, name):
         messages.success(request, f"Successfully removed {name}.")
         if sp.document.type_id == "slides" and hasattr(settings, "MEETECHO_API_CONFIG"):
             sm = SlidesManager(api_config=settings.MEETECHO_API_CONFIG)
-            sm.delete(session=session, slides=sp.document)
+            try:
+                sm.delete(session=session, slides=sp.document)
+            except MeetechoAPIError as err:
+                log(f"Error in SlidesManager.delete(): {err}")
 
         return redirect(
             "ietf.meeting.views.session_details",
@@ -3189,7 +3198,10 @@ def ajax_add_slides_to_session(request, session_id, num):
         # Notify Meetecho of new slides if the API is configured
         if hasattr(settings, "MEETECHO_API_CONFIG"):
             sm = SlidesManager(api_config=settings.MEETECHO_API_CONFIG)
-            sm.add(session=session, slides=doc, order=order)
+            try:
+                sm.add(session=session, slides=doc, order=order)
+            except MeetechoAPIError as err:
+                log(f"Error in SlidesManager.add(): {err}")
 
     return HttpResponse(json.dumps({"success": True}), content_type="application/json")
 
@@ -3258,7 +3270,10 @@ def ajax_remove_slides_from_session(request, session_id, num):
             # Notify Meetecho of removed slides if the API is configured
             if hasattr(settings, "MEETECHO_API_CONFIG"):
                 sm = SlidesManager(api_config=settings.MEETECHO_API_CONFIG)
-                sm.delete(session=session, slides=doc)
+                try:
+                    sm.delete(session=session, slides=doc)
+                except MeetechoAPIError as err:
+                    log(f"Error in SlidesManager.delete(): {err}")
             # Report success
             return HttpResponse(
                 json.dumps({"success": True}), content_type="application/json"
@@ -3347,8 +3362,11 @@ def ajax_reorder_slides_in_session(request, session_id, num):
 
     # Update slide order with Meetecho if the API is configured
     if hasattr(settings, "MEETECHO_API_CONFIG"):
-        mgr = SlidesManager(api_config=settings.MEETECHO_API_CONFIG)
-        mgr.send_update(session)
+        sm = SlidesManager(api_config=settings.MEETECHO_API_CONFIG)
+        try:
+            sm.send_update(session)
+        except MeetechoAPIError as err:
+            log(f"Error in SlidesManager.send_update(): {err}")
 
     return HttpResponse(json.dumps({"success": True}), content_type="application/json")
 
