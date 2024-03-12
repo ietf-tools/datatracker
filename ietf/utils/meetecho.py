@@ -428,20 +428,17 @@ class Conference:
 
 class Manager:
     def __init__(self, api_config):
+        api_kwargs = dict(
+            api_base=api_config["api_base"],
+            client_id=api_config["client_id"],
+            client_secret=api_config["client_secret"],
+        )
+        if "request_timeout" in api_config:
+            api_kwargs["request_timeout"] = api_config["request_timeout"]
         if api_config.get("debug", False):
-            self.api = DebugMeetechoAPI(
-                api_base=api_config["api_base"],
-                client_id=api_config["client_id"],
-                client_secret=api_config["client_secret"],
-                request_timeout=api_config["request_timeout"],
-            )
+            self.api = DebugMeetechoAPI(**api_kwargs)
         else:
-            self.api = MeetechoAPI(
-                api_base=api_config["api_base"],
-                client_id=api_config["client_id"],
-                client_secret=api_config["client_secret"],
-                request_timeout=api_config["request_timeout"],
-            )
+            self.api = MeetechoAPI(**api_kwargs)
         self.wg_tokens = {}
 
     def wg_token(self, group):
