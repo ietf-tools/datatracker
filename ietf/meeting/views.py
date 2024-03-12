@@ -2996,7 +2996,7 @@ def upload_session_slides(request, session_id, num, name=None):
                 sm = SlidesManager(api_config=settings.MEETECHO_API_CONFIG)
                 for sp in added_presentations:
                     try:
-                            sm.add(session=sp.session, slides=doc, order=sp.order)
+                        sm.add(session=sp.session, slides=doc, order=sp.order)
                     except MeetechoAPIError as err:
                         log(f"Error in SlidesManager.add(): {err}")
                 for sp in revised_presentations:
