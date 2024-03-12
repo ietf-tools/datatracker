@@ -2637,10 +2637,10 @@ browserlist@latest:
   languageName: node
   linkType: hard
 
-"caniuse-lite@npm:1.0.30001593":
-  version: 1.0.30001593
-  resolution: "caniuse-lite@npm:1.0.30001593"
-  checksum: 3e2b19075563c3222101c8d5e6ab2f6e1ba99c3ad03b8d2449f9ee7ed03e9d3dac0b1fb24c129e9a5d89fdde4abb97392280c0abb113c0c60250a2b49f378c60
+"caniuse-lite@npm:1.0.30001597":
+  version: 1.0.30001597
+  resolution: "caniuse-lite@npm:1.0.30001597"
+  checksum: ec6a2cf0fd49f37d16732e6595939fc80a125dcd188a950bc936c61b4ad53becc0fe51bf2d9a625415de7b1cb23bd835f220e8b68d8ab951a940edeea65476fd
   languageName: node
   linkType: hard
 
@@ -4646,10 +4646,10 @@ browserlist@latest:
   languageName: node
   linkType: hard
 
-"highcharts@npm:11.3.0":
-  version: 11.3.0
-  resolution: "highcharts@npm:11.3.0"
-  checksum: 6511a004f772a33bbd5a255e59810149e92fded0dbf947157769d0ce40182d248a2c8af95942be3e95d7b4e30fd044b7e9980e4689f36ba56ee71dac1a4f9977
+"highcharts@npm:11.4.0":
+  version: 11.4.0
+  resolution: "highcharts@npm:11.4.0"
+  checksum: 873e6619148d346223f7a98e3d23c1d58975ef4143d67d57ef88898c967495519b76b47c1f546c48535362bf4542cbe4f9f3423cc4339db152454f86e7887ddf
   languageName: node
   linkType: hard
 
@@ -4667,9 +4667,9 @@ browserlist@latest:
   languageName: node
   linkType: hard
 
-"html-validate@npm:8.12.0":
-  version: 8.12.0
-  resolution: "html-validate@npm:8.12.0"
+"html-validate@npm:8.15.0":
+  version: 8.15.0
+  resolution: "html-validate@npm:8.15.0"
   dependencies:
     "@babel/code-frame": ^7.10.0
     "@html-validate/stylish": ^4.1.0
@@ -4698,7 +4698,7 @@ browserlist@latest:
       optional: true
   bin:
     html-validate: bin/html-validate.js
-  checksum: 4979a700852f096538c292e39db6e00249fb285d1e62290f92b7be9fe9966a9563935bf6ad6d5fd3744a2e37d3b83f90203ff24aa3daf9ddff448240b979ef7d
+  checksum: 0af7685ca1302cbcbbaebae771b64048267aa3ce26fe279f99647b4febd03373e1fbb85cc3e5ba2b0986741eecb6a2b6f5a3143615b6d8407e28210199ec136a
   languageName: node
   linkType: hard
 
@@ -6987,7 +6987,7 @@ browserlist@latest:
     browser-fs-access: 0.35.0
     browserlist: latest
     c8: 9.1.0
-    caniuse-lite: 1.0.30001593
+    caniuse-lite: 1.0.30001597
     d3: 7.8.5
     eslint: 8.57.0
     eslint-config-standard: 17.1.0
@@ -6998,8 +6998,8 @@ browserlist@latest:
     eslint-plugin-promise: 6.1.1
     eslint-plugin-vue: 9.22.0
     file-saver: 2.0.5
-    highcharts: 11.3.0
-    html-validate: 8.12.0
+    highcharts: 11.4.0
+    html-validate: 8.15.0
     ical.js: 1.5.0
     jquery: 3.7.1
     jquery-migrate: 3.4.1
