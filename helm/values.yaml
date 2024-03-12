@@ -363,7 +363,10 @@ rabbitmq:
 
   livenessProbe:
     exec:
-      command: rabbitmq-diagnostics -q ping
+      command:
+        - rabbitmq-diagnostics
+        - -q
+        - ping
     periodSeconds: 30
     timeoutSeconds: 5
 
@@ -417,7 +420,10 @@ rabbitmq:
     successThreshold: 1
     failureThreshold: 60
     exec:
-      command: rabbitmq-diagnostics -q ping
+      command:
+        - rabbitmq-diagnostics
+        - -q
+        - ping
 
   # Additional volumes on the output Deployment definition.
   volumes: []
