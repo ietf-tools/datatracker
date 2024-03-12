@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "datatracker.fullname" . }}
+  name: {{ include "datatracker.rabbitmq.fullname" . }}
   labels:
     {{- include "datatracker.labels" . | nindent 4 }}
 spec:
@@ -19,7 +19,7 @@ spec:
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
     {{- end }}
-      serviceAccountName: {{ include "datatracker.serviceAccountName" . }}
+      serviceAccountName: {{ include "datatracker.serviceAccountName.rabbitmq" . }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
@@ -29,9 +29,11 @@ spec:
           image: "{{ .Values.image.repository }}:{{ default "latest" .Values.image.tag }}"
           imagePullPolicy: {{ default "IfNotPresent" .Values.image.imagePullPolicy }}
           env:
-          CONTAINER_ROLE: beat
             {{- if .Values.env }}
-            {{- toYaml .Values.env | nindent 12 }}
+            {{- range $key, $val := .Values.env }}
+            - name: {{ $key | quote }}
+              value: {{ $val | quote }}
+            {{- end }}
             {{- end }}
     {{- with .Values.volumeMounts }}
           volumeMounts:

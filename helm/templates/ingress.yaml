@@ -1,6 +1,6 @@
 {{- if .Values.datatracker.ingress.enabled -}}
 {{- $fullName := include "datatracker.fullname" . -}}
-{{- $svcPort := .Values.service.port -}}
+{{- $svcPort := .Values.datatracker.service.port -}}
 {{- if and .Values.datatracker.ingress.className (not (semverCompare ">=1.18-0" .Capabilities.KubeVersion.GitVersion)) }}
   {{- if not (hasKey .Values.datatracker.ingress.annotations "kubernetes.io/ingress.class") }}
   {{- $_ := set .Values.datatracker.ingress.annotations "kubernetes.io/ingress.class" .Values.datatracker.ingress.className}}
