@@ -62,7 +62,7 @@
         {% endif %}
         <h3 class="mt-4">Agenda, Minutes, and Bluesheets</h3>
         <table class="table table-sm table-striped">
-            {% if session.filtered_artifacts %}
+            {% if session.filtered_artifacts or session.bluesheet_title %}
                 <tbody>
                     {% for pres in session.filtered_artifacts %}
                         <tr>
@@ -91,6 +91,13 @@
                             </td>
                         </tr>
                     {% endfor %}
+                    {% if session.bluesheet_title %}
+                        <tr><td>
+                            <a href="{% url 'ietf.meeting.views.session_attendance' session_id=session.pk num=session.meeting.number %}">
+                                {{ session.bluesheet_title }}
+                            </a>
+                        </td></tr>
+                    {% endif %}
                 </tbody>
             {% endif %}
         </table>

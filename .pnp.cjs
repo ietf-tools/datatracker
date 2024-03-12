@@ -54,7 +54,7 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["browser-fs-access", "npm:0.35.0"],\
             ["browserlist", "npm:1.0.1"],\
             ["c8", "npm:9.1.0"],\
-            ["caniuse-lite", "npm:1.0.30001593"],\
+            ["caniuse-lite", "npm:1.0.30001597"],\
             ["d3", "npm:7.8.5"],\
             ["eslint", "npm:8.57.0"],\
             ["eslint-config-standard", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:17.1.0"],\
@@ -65,8 +65,8 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["eslint-plugin-promise", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.1"],\
             ["eslint-plugin-vue", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:9.22.0"],\
             ["file-saver", "npm:2.0.5"],\
-            ["highcharts", "npm:11.3.0"],\
-            ["html-validate", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:8.12.0"],\
+            ["highcharts", "npm:11.4.0"],\
+            ["html-validate", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:8.15.0"],\
             ["ical.js", "npm:1.5.0"],\
             ["jquery", "npm:3.7.1"],\
             ["jquery-migrate", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:3.4.1"],\
@@ -2431,10 +2431,10 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
           ],\
           "linkType": "SOFT"\
         }],\
-        ["virtual:8610821c5e1e51c5c5dd69b04c702b6346ee6c1bf2a4ae51e6f8e83cab57f22f2adcccaceefc54eea7a8a65ad6b6f37bc97e0a24ce478bc46010609f3b800357#npm:2.1.3", {\
-          "packageLocation": "./.yarn/__virtual__/@sidvind-better-ajv-errors-virtual-52941d62ff/0/cache/@sidvind-better-ajv-errors-npm-2.1.3-e3d1c524a8-949cb805a1.zip/node_modules/@sidvind/better-ajv-errors/",\
+        ["virtual:2a2a921469e6f0bfdb6b2bd79f75a3395d47a481854507365048f3d989418f207cf814cb2ce1a012d2da774c1d130b4ca418582463ec08381da55e543b959c4c#npm:2.1.3", {\
+          "packageLocation": "./.yarn/__virtual__/@sidvind-better-ajv-errors-virtual-6ac4a81dfc/0/cache/@sidvind-better-ajv-errors-npm-2.1.3-e3d1c524a8-949cb805a1.zip/node_modules/@sidvind/better-ajv-errors/",\
           "packageDependencies": [\
-            ["@sidvind/better-ajv-errors", "virtual:8610821c5e1e51c5c5dd69b04c702b6346ee6c1bf2a4ae51e6f8e83cab57f22f2adcccaceefc54eea7a8a65ad6b6f37bc97e0a24ce478bc46010609f3b800357#npm:2.1.3"],\
+            ["@sidvind/better-ajv-errors", "virtual:2a2a921469e6f0bfdb6b2bd79f75a3395d47a481854507365048f3d989418f207cf814cb2ce1a012d2da774c1d130b4ca418582463ec08381da55e543b959c4c#npm:2.1.3"],\
             ["@babel/code-frame", "npm:7.16.7"],\
             ["@types/ajv", null],\
             ["ajv", "npm:8.11.0"],\
@@ -3452,10 +3452,10 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
           ],\
           "linkType": "HARD"\
         }],\
-        ["npm:1.0.30001593", {\
-          "packageLocation": "./.yarn/cache/caniuse-lite-npm-1.0.30001593-bb646b1090-3e2b190755.zip/node_modules/caniuse-lite/",\
+        ["npm:1.0.30001597", {\
+          "packageLocation": "./.yarn/cache/caniuse-lite-npm-1.0.30001597-1e349680d5-ec6a2cf0fd.zip/node_modules/caniuse-lite/",\
           "packageDependencies": [\
-            ["caniuse-lite", "npm:1.0.30001593"]\
+            ["caniuse-lite", "npm:1.0.30001597"]\
           ],\
           "linkType": "HARD"\
         }]\
@@ -5747,10 +5747,10 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
         }]\
       ]],\
       ["highcharts", [\
-        ["npm:11.3.0", {\
-          "packageLocation": "./.yarn/cache/highcharts-npm-11.3.0-d9aa04531f-6511a004f7.zip/node_modules/highcharts/",\
+        ["npm:11.4.0", {\
+          "packageLocation": "./.yarn/cache/highcharts-npm-11.4.0-8a1f46b545-873e661914.zip/node_modules/highcharts/",\
           "packageDependencies": [\
-            ["highcharts", "npm:11.3.0"]\
+            ["highcharts", "npm:11.4.0"]\
           ],\
           "linkType": "HARD"\
         }]\
@@ -5774,20 +5774,20 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
         }]\
       ]],\
       ["html-validate", [\
-        ["npm:8.12.0", {\
-          "packageLocation": "./.yarn/cache/html-validate-npm-8.12.0-a271026de7-4979a70085.zip/node_modules/html-validate/",\
+        ["npm:8.15.0", {\
+          "packageLocation": "./.yarn/cache/html-validate-npm-8.15.0-a1dfa4198d-0af7685ca1.zip/node_modules/html-validate/",\
           "packageDependencies": [\
-            ["html-validate", "npm:8.12.0"]\
+            ["html-validate", "npm:8.15.0"]\
           ],\
           "linkType": "SOFT"\
         }],\
-        ["virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:8.12.0", {\
-          "packageLocation": "./.yarn/__virtual__/html-validate-virtual-8610821c5e/0/cache/html-validate-npm-8.12.0-a271026de7-4979a70085.zip/node_modules/html-validate/",\
+        ["virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:8.15.0", {\
+          "packageLocation": "./.yarn/__virtual__/html-validate-virtual-2a2a921469/0/cache/html-validate-npm-8.15.0-a1dfa4198d-0af7685ca1.zip/node_modules/html-validate/",\
           "packageDependencies": [\
-            ["html-validate", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:8.12.0"],\
+            ["html-validate", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:8.15.0"],\
             ["@babel/code-frame", "npm:7.16.7"],\
             ["@html-validate/stylish", "npm:4.1.0"],\
-            ["@sidvind/better-ajv-errors", "virtual:8610821c5e1e51c5c5dd69b04c702b6346ee6c1bf2a4ae51e6f8e83cab57f22f2adcccaceefc54eea7a8a65ad6b6f37bc97e0a24ce478bc46010609f3b800357#npm:2.1.3"],\
+            ["@sidvind/better-ajv-errors", "virtual:2a2a921469e6f0bfdb6b2bd79f75a3395d47a481854507365048f3d989418f207cf814cb2ce1a012d2da774c1d130b4ca418582463ec08381da55e543b959c4c#npm:2.1.3"],\
             ["@types/jest", null],\
             ["@types/jest-diff", null],\
             ["@types/jest-snapshot", null],\
@@ -8274,7 +8274,7 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["browser-fs-access", "npm:0.35.0"],\
             ["browserlist", "npm:1.0.1"],\
             ["c8", "npm:9.1.0"],\
-            ["caniuse-lite", "npm:1.0.30001593"],\
+            ["caniuse-lite", "npm:1.0.30001597"],\
             ["d3", "npm:7.8.5"],\
             ["eslint", "npm:8.57.0"],\
             ["eslint-config-standard", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:17.1.0"],\
@@ -8285,8 +8285,8 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["eslint-plugin-promise", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:6.1.1"],\
             ["eslint-plugin-vue", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:9.22.0"],\
             ["file-saver", "npm:2.0.5"],\
-            ["highcharts", "npm:11.3.0"],\
-            ["html-validate", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:8.12.0"],\
+            ["highcharts", "npm:11.4.0"],\
+            ["html-validate", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:8.15.0"],\
             ["ical.js", "npm:1.5.0"],\
             ["jquery", "npm:3.7.1"],\
             ["jquery-migrate", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:3.4.1"],\

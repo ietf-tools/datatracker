@@ -219,7 +219,9 @@ class CustomApiTests(TestCase):
         event = doc.latest_event()
         self.assertEqual(event.by, recman)
 
-    def test_api_add_session_attendees(self):
+    def test_api_add_session_attendees_deprecated(self):
+        # Deprecated test - should be removed when we stop accepting a simple list of user PKs in
+        # the add_session_attendees() view
         url = urlreverse('ietf.meeting.views.api_add_session_attendees')
         otherperson = PersonFactory()
         recmanrole = RoleFactory(group__type_id='ietf', name_id='recman')
@@ -284,6 +286,120 @@ class CustomApiTests(TestCase):
         self.assertEqual(session.attended_set.count(),2)
         self.assertTrue(session.attended_set.filter(person=recman).exists())
         self.assertTrue(session.attended_set.filter(person=otherperson).exists())
+
+    def test_api_add_session_attendees(self):
+        url = urlreverse("ietf.meeting.views.api_add_session_attendees")
+        otherperson = PersonFactory()
+        recmanrole = RoleFactory(group__type_id="ietf", name_id="recman")
+        recman = recmanrole.person
+        meeting = MeetingFactory(type_id="ietf")
+        session = SessionFactory(group__type_id="wg", meeting=meeting)
+        apikey = PersonalApiKey.objects.create(endpoint=url, person=recman)
+
+        badrole = RoleFactory(group__type_id="ietf", name_id="ad")
+        badapikey = PersonalApiKey.objects.create(endpoint=url, person=badrole.person)
+        badrole.person.user.last_login = timezone.now()
+        badrole.person.user.save()
+
+        # Improper credentials, or method
+        r = self.client.post(url, {})
+        self.assertContains(r, "Missing apikey parameter", status_code=400)
+
+        r = self.client.post(url, {"apikey": badapikey.hash()})
+        self.assertContains(r, "Restricted to role: Recording Manager", status_code=403)
+
+        r = self.client.post(url, {"apikey": apikey.hash()})
+        self.assertContains(r, "Too long since last regular login", status_code=400)
+
+        recman.user.last_login = timezone.now() - datetime.timedelta(days=365)
+        recman.user.save()
+        r = self.client.post(url, {"apikey": apikey.hash()})
+        self.assertContains(r, "Too long since last regular login", status_code=400)
+
+        recman.user.last_login = timezone.now()
+        recman.user.save()
+        r = self.client.get(url, {"apikey": apikey.hash()})
+        self.assertContains(r, "Method not allowed", status_code=405)
+
+        recman.user.last_login = timezone.now()
+        recman.user.save()
+
+        # Malformed requests
+        r = self.client.post(url, {"apikey": apikey.hash()})
+        self.assertContains(r, "Missing attended parameter", status_code=400)
+
+        for baddict in (
+            "{}",
+            '{"bogons;drop table":"bogons;drop table"}',
+            '{"session_id":"Not an integer;drop table"}',
+            f'{{"session_id":{session.pk},"attendees":"not a list;drop table"}}',
+            f'{{"session_id":{session.pk},"attendees":"not a list;drop table"}}',
+            f'{{"session_id":{session.pk},"attendees":[1,2,"not an int;drop table",4]}}',
+            f'{{"session_id":{session.pk},"attendees":["user_id":{recman.user.pk}]}}',  # no join_time
+            f'{{"session_id":{session.pk},"attendees":["user_id":{recman.user.pk},"join_time;drop table":"2024-01-01T00:00:00Z]}}',
+            f'{{"session_id":{session.pk},"attendees":["user_id":{recman.user.pk},"join_time":"not a time;drop table"]}}',
+            # next has no time zone indicator
+            f'{{"session_id":{session.pk},"attendees":["user_id":{recman.user.pk},"join_time":"2024-01-01T00:00:00"]}}',
+            f'{{"session_id":{session.pk},"attendees":["user_id":"not an int; drop table","join_time":"2024-01-01T00:00:00Z"]}}',
+            # Uncomment the next one when the _deprecated version of this test is retired
+            # f'{{"session_id":{session.pk},"attendees":[{recman.user.pk}, {otherperson.user.pk}]}}',
+        ):
+            r = self.client.post(url, {"apikey": apikey.hash(), "attended": baddict})
+            self.assertContains(r, "Malformed post", status_code=400)
+
+        bad_session_id = Session.objects.order_by("-pk").first().pk + 1
+        r = self.client.post(
+            url,
+            {
+                "apikey": apikey.hash(),
+                "attended": f'{{"session_id":{bad_session_id},"attendees":[]}}',
+            },
+        )
+        self.assertContains(r, "Invalid session", status_code=400)
+        bad_user_id = User.objects.order_by("-pk").first().pk + 1
+        r = self.client.post(
+            url,
+            {
+                "apikey": apikey.hash(),
+                "attended": f'{{"session_id":{session.pk},"attendees":[{{"user_id":{bad_user_id}, "join_time":"2024-01-01T00:00:00Z"}}]}}',
+            },
+        )
+        self.assertContains(r, "Invalid attendee", status_code=400)
+
+        # Reasonable request
+        r = self.client.post(
+            url,
+            {
+                "apikey": apikey.hash(),
+                "attended": json.dumps(
+                    {
+                        "session_id": session.pk,
+                        "attendees": [
+                            {
+                                "user_id": recman.user.pk,
+                                "join_time": "2023-09-03T12:34:56Z",
+                            },
+                            {
+                                "user_id": otherperson.user.pk,
+                                "join_time": "2023-09-03T03:00:19Z",
+                            },
+                        ],
+                    }
+                ),
+            },
+        )
+
+        self.assertEqual(session.attended_set.count(), 2)
+        self.assertTrue(session.attended_set.filter(person=recman).exists())
+        self.assertEqual(
+            session.attended_set.get(person=recman).time,
+            datetime.datetime(2023, 9, 3, 12, 34, 56, tzinfo=datetime.timezone.utc),
+        )
+        self.assertTrue(session.attended_set.filter(person=otherperson).exists())
+        self.assertEqual(
+            session.attended_set.get(person=otherperson).time,
+            datetime.datetime(2023, 9, 3, 3, 0, 19, tzinfo=datetime.timezone.utc),
+        )
 
     def test_api_upload_polls_and_chatlog(self):
         recmanrole = RoleFactory(group__type_id='ietf', name_id='recman')
