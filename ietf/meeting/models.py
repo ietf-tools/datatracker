@@ -1426,6 +1426,8 @@ class MeetingHost(models.Model):
 class Attended(models.Model):
     person = ForeignKey(Person)
     session = ForeignKey(Session)
+    time = models.DateTimeField(default=timezone.now, null=True, blank=True)
+    origin = models.CharField(max_length=32, default='datatracker')
 
     class Meta:
         unique_together = (('person', 'session'),)
