@@ -24,6 +24,7 @@ API_CONFIG={
     'api_base': API_BASE,
     'client_id': CLIENT_ID,
     'client_secret': CLIENT_SECRET,
+    'slides_notify_time': -1,  # always send notification
 }
 
 
