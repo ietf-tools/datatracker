@@ -76,7 +76,7 @@ class DocumentChangesFeed(Feed):
             truncatewords_html(format_textarea(item.desc), 20)
         )
 
-    def item_pubdate(self, item):
+    def item_updateddate(self, item):
         return item.time
 
     def item_author_name(self, item):
@@ -123,7 +123,7 @@ class InLastCallFeed(Feed):
     def item_description(self, item):
         return strip_control_characters(linebreaks(item.lc_event.desc))
 
-    def item_pubdate(self, item):
+    def item_updateddate(self, item):
         return item.lc_event.time
 
 
@@ -147,7 +147,7 @@ class DraftFeed(Feed):
     def item_description(self, item):
         return item.abstract
 
-    def item_pubdate(self, item):
+    def item_updateddate(self, item):
         return item.time
 
 
