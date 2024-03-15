@@ -10,7 +10,7 @@ metadata:
     {{- end }}
   {{- end }}
 spec:
-  type: {{.Values.datatracker.service.type}}
+  type: {{.Values.memcached.service.type}}
   ports:
     - port: {{ default "11211" .Values.memcached.service.port}}
       targetPort: memcached
