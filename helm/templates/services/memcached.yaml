@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{include "datatracker.memcached.fullname" .}}
+  name: memcached
   labels: {{- include "datatracker.labels" . | nindent 4 }}
   {{- with .Values.memcached.service.annotations }}
   annotations:
