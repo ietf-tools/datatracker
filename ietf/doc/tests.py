@@ -37,7 +37,7 @@ import debug                            # pyflakes:ignore
 
 from ietf.doc.models import ( Document, DocRelationshipName, RelatedDocument, State,
     DocEvent, BallotPositionDocEvent, LastCallDocEvent, WriteupDocEvent, NewRevisionDocEvent, BallotType,
-    EditedAuthorsDocEvent )
+    EditedAuthorsDocEvent, StateType)
 from ietf.doc.factories import ( DocumentFactory, DocEventFactory, CharterFactory,
     ConflictReviewFactory, WgDraftFactory, IndividualDraftFactory, WgRfcFactory, 
     IndividualRfcFactory, StateDocEventFactory, BallotPositionDocEventFactory, 
@@ -3273,3 +3273,17 @@ class DocInfoMethodsTests(TestCase):
             rfc.referenced_by_rfcs_as_rfc_or_draft(),
             draft.targets_related.filter(source__type="rfc") | rfc.targets_related.filter(source__type="rfc"),
         )
+
+class StateIndexTests(TestCase):
+
+    def test_state_index(self):
+        url = urlreverse('ietf.doc.views_help.state_index')
+        r = self.client.get(url)
+        q = PyQuery(r.content)
+        content = [ e.text for e in q('#content table td a ') ]
+        names = StateType.objects.values_list('slug', flat=True)
+        # The following doesn't cover all doc types, only a selection
+        for name in names:
+            if not '-' in name:
+                self.assertIn(name, content)
+

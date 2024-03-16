@@ -23,7 +23,7 @@
                 {% if type.stategroups != None %}
                     <tr>
                         <td>
-                            <a href="{% url 'ietf.help.views.state' doc=type.slug %}">{{ type.slug }}</a>
+                            <a href="{% url 'ietf.doc.views_help.state_help' type=type.slug %}">{{ type.slug }}</a>
                         </td>
                         <td>
                             {% for group in type.stategroups %}
