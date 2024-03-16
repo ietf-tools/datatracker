@@ -6,6 +6,7 @@ import debug                            # pyflakes:ignore
 
 from ietf.doc.models import State, StateType
 from ietf.name.models import StreamName
+from django.shortcuts import redirect
 
 def state_index(request):
     types = StateType.objects.all()
@@ -27,4 +28,6 @@ def state(request, doc, type=None):
     slug = "%s-%s" % (doc,type) if type else doc
     statetype = get_object_or_404(StateType, slug=slug)
     states = State.objects.filter(used=True, type=statetype).order_by('order')
+    if doc == 'draft' and type:
+        return redirect('/doc/help/state/%s' % slug, permanent = True)
     return render(request, 'help/states.html', {"doc": doc, "type": statetype, "states":states} )
