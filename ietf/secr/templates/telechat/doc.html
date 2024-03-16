@@ -86,7 +86,7 @@
                 <h2 id="downrefs">Downward References</h2>
                 {% for ref in downrefs %}
                     <p>Add {{ref.target.name}}
-                        ({{ref.target.std_level}} - {{ref.target.stream.desc}})
+                        ({{ref.target.std_level}} - {{ref.target.stream.desc}} stream)
                         to downref registry.<br>
                         {% if not ref.target.std_level %}
                             +++ Warning: The standards level has not been set yet!!!<br>

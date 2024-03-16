@@ -33,7 +33,7 @@ No IPR declarations have been submitted directly on this I-D.
 {% if downrefs %}
 The document contains these normative downward references.
 See RFC 3967 for additional information: 
-{% for ref in downrefs %}    {{ref.target.name}}: {{ref.target.title}} ({{ref.target.std_level}} - {{ref.target.stream.desc}})
+{% for ref in downrefs %}    {{ref.target.name}}: {{ref.target.title}} ({{ref.target.std_level}} - {{ref.target.stream.desc}} stream)
 {% endfor %}{%endif%}
 
 {% endautoescape %}
