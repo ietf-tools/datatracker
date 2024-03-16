@@ -8598,7 +8598,7 @@ class ProceedingsTests(BaseMeetingTestCase):
         self.assertEqual(r.status_code, 200)  
         self.assertContains(r, '3 attendees')
         for person in persons:
-            self.assertContains(r, person.name)
+            self.assertContains(r, person.plain_name())
 
         # Test for the "I was there" button.
         def _test_button(person, expected):
@@ -8618,14 +8618,14 @@ class ProceedingsTests(BaseMeetingTestCase):
         # attempt to POST anyway is ignored
         r = self.client.post(attendance_url)
         self.assertEqual(r.status_code, 200)
-        self.assertNotContains(r, persons[3].name)
+        self.assertNotContains(r, persons[3].plain_name())
         self.assertEqual(session.attended_set.count(), 3)
         # button is shown, and POST is accepted
         meeting.importantdate_set.update(name_id='revsub',date=date_today() + datetime.timedelta(days=20))
         _test_button(persons[3], True)
         r = self.client.post(attendance_url)
         self.assertEqual(r.status_code, 200)
-        self.assertContains(r, persons[3].name)
+        self.assertContains(r, persons[3].plain_name())
         self.assertEqual(session.attended_set.count(), 4)
 
         # When the meeting is finalized, a bluesheet file is generated,
@@ -8639,7 +8639,7 @@ class ProceedingsTests(BaseMeetingTestCase):
         text = doc.text()
         self.assertIn('4 attendees', text)
         for person in persons:
-            self.assertIn(person.name, text)
+            self.assertIn(person.plain_name(), text)
         r = self.client.get(session_url)
         self.assertContains(r, doc.get_href())
         self.assertNotContains(r, attendance_url)
