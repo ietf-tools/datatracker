@@ -5,10 +5,16 @@
 {% block pagehead %}
     <link rel="stylesheet" href="{% static "ietf/css/list.css" %}">
 {% endblock %}
-{% block title %}Non-Working Group email lists{% endblock %}
+{% block title %}Other (not WG) email lists{% endblock %}
 {% block content %}
     {% origin %}
-    <h1>Non-Working Group email lists</h1>
+    <h1>Other (not Working Group) email lists</h1>
+    <p>Guidelines for these lists, including how to request a
+    new one to be created, are at
+    <a href="https://www.ietf.org/how/lists/nonwglist-guidelines/">
+	 https://www.ietf.org/how/lists/nonwglist-guidelines/
+    </a>
+    </p>
     {% cache 900 nonwglisttable %}
     <table class="table table-sm table-striped tablesorter">
         <thead>
