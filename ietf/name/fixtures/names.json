@@ -14058,7 +14058,7 @@
   },
   {
     "fields": {
-      "desc": "Legacy stream",
+      "desc": "Legacy",
       "name": "Legacy",
       "order": 6,
       "used": true
