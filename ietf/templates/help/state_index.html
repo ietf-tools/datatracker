@@ -28,7 +28,12 @@
                         <td>
                             {% for group in type.stategroups %}
                                 {# djlint:off #}
-                                    <a href="{% url 'ietf.help.views.state' doc=type.slug type=group %}">{{ group }}</a>{% if not forloop.last %},{% endif %}
+                                    {% if type.slug == "draft" %}
+                                        <a href="{% url 'ietf.doc.views_help.state_help' type=type.slug|add:'-'|add:group %}">
+                                    {% else %}
+                                        <a href="{% url 'ietf.help.views.state' doc=type.slug type=group %}">
+                                    {% endif %}
+                                    {{ group }}</a>{% if not forloop.last %},{% endif %}
                                 {# djlint:on #}
                             {% endfor %}
                         </td>
