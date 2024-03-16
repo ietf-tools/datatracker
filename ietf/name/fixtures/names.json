@@ -11286,8 +11286,8 @@
   },
   {
     "fields": {
-      "desc": "Issuer Tracker",
-      "name": "Issuer Tracker",
+      "desc": "Issue Tracker",
+      "name": "Issue Tracker",
       "order": 0,
       "type": "url",
       "used": true
