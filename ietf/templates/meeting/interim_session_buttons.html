@@ -34,7 +34,7 @@
             </a>
         {% endif %}
         {# notes #}
-        {% if use_notes %}
+        {% if session.agenda.uses_notes %}
             <a class="btn btn-outline-primary"
                href="{{ session.notes_url }}"
                aria-label="Notepad for note-takers"

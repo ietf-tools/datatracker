@@ -382,7 +382,20 @@ class Meeting(models.Model):
         return Meeting.objects.filter(type_id=self.type_id,date__lt=self.date).order_by('-date').first()
 
     def uses_notes(self):
-        return self.date>=datetime.date(2020,7,6)
+        if self.type_id != 'ietf':
+            return True
+        num = self.get_number()
+        return num != None and num >= 108
+
+    def has_recordings(self):
+        if self.type_id != 'ietf':
+            return True
+        num = self.get_number()
+        return num != None and num >= 80
+
+    def has_chat_logs(self):
+        num = self.get_number()
+        return num != None and num >= 60
 
     def meeting_start(self):
         """Meeting-local midnight at the start of the meeting date"""
