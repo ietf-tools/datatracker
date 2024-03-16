@@ -1053,10 +1053,9 @@ def edit_deadline(request, name, request_id):
         if form.is_valid():
             if form.cleaned_data['deadline'] != old_deadline:
                 form.save()
+                subject = f"Deadline changed: {review_req.team.acronym.capitalize()} {review_req.type.name.lower()} review of {review_req.doc.name}"
                 if review_req.requested_rev:
-                    subject = "Deadline changed: {} {} review of {}-{}".format(review_req.team.acronym.capitalize(),review_req.type.name.lower(), review_req.doc.name, review_req.requested_rev)
-                else:
-                    subject = "Deadline changed: {} {} review of {}".format(review_req.team.acronym.capitalize(),review_req.type.name.lower(), review_req.doc.name)
+                    subject += f"-{review_req.requested_rev}"
                 descr = "Deadine changed from {} to {}".format(old_deadline, review_req.deadline)
                 update_change_reason(review_req, descr)
                 msg = render_to_string("review/deadline_changed.txt", {
