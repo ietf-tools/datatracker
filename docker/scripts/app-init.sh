@@ -103,11 +103,11 @@ if [ -z "$EDITOR_VSCODE" ]; then
         echo
         echo "You can execute arbitrary commands now, e.g.,"
         echo
-        echo "    ietf/manage.py runserver 8001"
+        echo "    ./ietf/manage.py runserver"
         echo
         echo "to start a development instance of the Datatracker."
         echo
-        echo "    ietf/manage.py test --settings=settings_test"
+        echo "    ./ietf/manage.py test --settings=settings_test"
         echo
         echo "to run all the python tests."
         echo

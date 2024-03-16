@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from ietf.settings import *                                          # pyflakes:ignore
+IDTRACKER_BASE_URL = "https://localhost:8000"
 
 ALLOWED_HOSTS = ['*']
 

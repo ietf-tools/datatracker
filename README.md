@@ -83,7 +83,7 @@ If VS Code is not available to you, in your clone, type `cd docker; ./run`
 
 Once the containers are started, run the tests to make sure your checkout is a good place to start from (all tests should pass - if any fail, ask for help at tools-develop@). Inside the app container's shell type:
 ```sh
-ietf/manage.py test --settings=settings_test
+./ietf/manage.py test --settings=settings_test
 ```
 
 Note that we recently moved the datatracker onto PostgreSQL - you may still find older documentation that suggests testing with settings_sqlitetest. That will no longer work.
@@ -187,7 +187,7 @@ The result is that all static files collected via the `collectstatic` command wi
 
 ##### Development Mode
 
-In development mode, `STATIC_URL` is set to `/static/`, and Django's `staticfiles` infrastructure makes the static files available under that local URL root (unless you set `settings.SERVE_CDN_FILES_LOCALLY_IN_DEV_MODE` to `False`). It is not necessary to actually populate the `static/` directory by running `collectstatic` in order for static files to be served when running `ietf/manage.py runserver` -- the `runserver` command has extra support for finding and serving static files without running collectstatic.
+In development mode, `STATIC_URL` is set to `/static/`, and Django's `staticfiles` infrastructure makes the static files available under that local URL root (unless you set `settings.SERVE_CDN_FILES_LOCALLY_IN_DEV_MODE` to `False`). It is not necessary to actually populate the `static/` directory by running `collectstatic` in order for static files to be served when running `./ietf/manage.py runserver` -- the `runserver` command has extra support for finding and serving static files without running collectstatic.
 
 In order to work backwards from a file served in development mode to the location from which it is served, the mapping is as follows:
 
@@ -218,7 +218,7 @@ In order to make the template files refer to the correct versioned CDN URL (as g
 During deployment, it is now necessary to run the management command:
 
 ```sh
-ietf/manage.py collectstatic
+./ietf/manage.py collectstatic
 ````
 before activating a new release.
 
