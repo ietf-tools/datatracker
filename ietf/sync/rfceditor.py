@@ -23,6 +23,7 @@ from ietf.doc.models import ( Document, State, StateType, DocEvent, DocRelations
 from ietf.doc.expire import move_draft_files_to_archive
 from ietf.doc.utils import add_state_change_event, prettify_std_name, update_action_holders
 from ietf.group.models import Group
+from ietf.ipr.models import IprDocRel
 from ietf.name.models import StdLevelName, StreamName
 from ietf.person.models import Person
 from ietf.utils.log import log
@@ -335,11 +336,12 @@ def parse_index(response):
 
 
 def update_docs_from_rfc_index(
-    index_data, errata_data, skip_older_than_date=None
-) -> Iterator[tuple[list[str], Document, bool]]:
+    index_data, errata_data, skip_older_than_date: Optional[datetime.date] = None
+) -> Iterator[tuple[int, list[str], Document, bool]]:
     """Given parsed data from the RFC Editor index, update the documents in the database
 
-    Yields a list of change descriptions for each document, if any.
+    Returns an iterator that yields (rfc_number, change_list, doc, rfc_published) for the
+    RFC document and, if applicable, the I-D that it came from.
 
     The skip_older_than_date is a bare date, not a datetime.
     """
@@ -403,7 +405,8 @@ def update_docs_from_rfc_index(
         abstract,
     ) in index_data:
         if skip_older_than_date and rfc_published_date < skip_older_than_date:
-            # speed up the process by skipping old entries
+            # speed up the process by skipping old entries (n.b., the comparison above is a
+            # lexical comparison between "YYYY-MM-DD"-formatted dates)
             continue
 
         # we assume two things can happen: we get a new RFC, or an
@@ -460,6 +463,14 @@ def update_docs_from_rfc_index(
             doc.set_state(rfc_published_state)
             if draft:
                 doc.formal_languages.set(draft.formal_languages.all())
+                for author in draft.documentauthor_set.all():
+                    # Copy the author but point at the new doc. 
+                    # See https://docs.djangoproject.com/en/4.2/topics/db/queries/#copying-model-instances
+                    author.pk = None
+                    author.id = None
+                    author._state.adding = True
+                    author.document = doc
+                    author.save()
 
         if draft:
             draft_events = []
@@ -526,14 +537,7 @@ def update_docs_from_rfc_index(
             elif draft.stream.slug in ["iab", "irtf", "ise"]:
                 stream_slug = f"draft-stream-{draft.stream.slug}"
                 prev_state = draft.get_state(stream_slug)
-                if prev_state is None:
-                    pass
-                    # It turns out that this is not an exception to log, but is rather more the norm.
-                    # That said, the behavior in the `elif` is still the right behavior if one of these streams
-                    # does set state.
-                    #
-                    # log(f"Warning while processing {doc.name}: draft {draft.name} stream state was not set")
-                elif prev_state.slug != "pub":
+                if prev_state is not None and prev_state.slug != "pub":
                     new_state = State.objects.select_related("type").get(used=True, type__slug=stream_slug, slug="pub")
                     draft.set_state(new_state)
                     draft_changes.append(
@@ -553,7 +557,7 @@ def update_docs_from_rfc_index(
                     )
                 )
                 draft.save_with_history(draft_events)
-                yield draft_changes, draft, False  # yield changes to the draft
+                yield rfc_number, draft_changes, draft, False  # yield changes to the draft
 
         # check attributes
         verbed = "set" if created_rfc else "changed"
@@ -626,17 +630,7 @@ def update_docs_from_rfc_index(
         def parse_relation_list(l):
             res = []
             for x in l:
-                # This lookup wasn't finding anything but maybe some STD and we know
-                # if the STD had more than one RFC the wrong thing happens
-                #
-                # if x[:3] in ("NIC", "IEN", "STD", "RTR"):
-                #    # try translating this to RFCs that we can handle
-                #    # sensibly; otherwise we'll have to ignore them
-                #   l = DocAlias.objects.filter(name__startswith="rfc", docs__docalias__name=x.lower())
-                # else:
-                l = Document.objects.filter(name=x.lower(), type_id="rfc")
-
-                for a in l:
+                for a in Document.objects.filter(name=x.lower(), type_id="rfc"):
                     if a not in res:
                         res.append(a)
             return res
@@ -757,7 +751,7 @@ def update_docs_from_rfc_index(
                 )
             )
             doc.save_with_history(rfc_events)
-            yield rfc_changes, doc, rfc_published  # yield changes to the RFC
+            yield rfc_number, rfc_changes, doc, rfc_published  # yield changes to the RFC
     
     if first_sync_creating_subseries:
         # First - create the known subseries documents that have ghosted. 
@@ -792,6 +786,15 @@ def update_docs_from_rfc_index(
                 Document.objects.filter(name=OuterRef("originaltargetaliasname")).values_list("pk",flat=True)[:1]
             )
         ).update(target=F("subseries_target"))
+        IprDocRel.objects.filter(
+            Q(originaldocumentaliasname__startswith="bcp") |
+            Q(originaldocumentaliasname__startswith="std") |
+            Q(originaldocumentaliasname__startswith="fyi")
+        ).annotate(
+            subseries_target=Subquery(
+                Document.objects.filter(name=OuterRef("originaldocumentaliasname")).values_list("pk",flat=True)[:1]
+            )
+        ).update(document=F("subseries_target"))
 
 
 def post_approved_draft(url, name):

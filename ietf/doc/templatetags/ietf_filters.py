@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2007-2020, All Rights Reserved
+# Copyright The IETF Trust 2007-2023, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -227,7 +227,6 @@ def link_other_doc_match(match):
     url = urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=doc + rev))
     return f'<a href="{url}">{match[1]}</a>'
 
-
 @register.filter(name="urlize_ietf_docs", is_safe=True, needs_autoescape=True)
 def urlize_ietf_docs(string, autoescape=None):
     """
@@ -411,9 +410,9 @@ def startswith(x, y):
     return str(x).startswith(y)
 
 
-@register.filter(name='removesuffix', is_safe=False)
-def removesuffix(value, suffix):
-    """Remove an exact-match suffix
+@register.filter(name='removeprefix', is_safe=False)
+def removeprefix(value, prefix):
+    """Remove an exact-match prefix
     
     The is_safe flag is False because indiscriminate use of this could result in non-safe output.
     See https://docs.djangoproject.com/en/2.2/howto/custom-template-tags/#filters-and-auto-escaping
@@ -421,8 +420,8 @@ def removesuffix(value, suffix):
     HTML-unsafe output.
     """
     base = str(value)
-    if base.endswith(suffix):
-        return base[:-len(suffix)]
+    if base.startswith(prefix):
+        return base[len(prefix):]
     else:
         return base
 
@@ -540,6 +539,10 @@ def ics_date_time(dt, tzname):
         return f':{timestamp}Z'
     else:
         return f';TZID={ics_esc(tzname)}:{timestamp}'
+    
+@register.filter
+def next_day(value):
+    return value + datetime.timedelta(days=1)
 
 
 @register.filter

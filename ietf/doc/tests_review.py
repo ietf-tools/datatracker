@@ -380,6 +380,25 @@ class ReviewTests(TestCase):
         reviewer_label = q("option[value=\"{}\"]".format(reviewer_email.address)).text().lower()
         self.assertIn("rejected review of document before", reviewer_label)
 
+    def test_assign_reviewer_after_withdraw(self):
+        doc = WgDraftFactory()
+        review_team = ReviewTeamFactory()
+        rev_role = RoleFactory(group=review_team,person__user__username='reviewer',person__user__email='reviewer@example.com',name_id='reviewer')
+        RoleFactory(group=review_team,person__user__username='reviewsecretary',name_id='secr')
+        review_req = ReviewRequestFactory(team=review_team,doc=doc)
+        reviewer = rev_role.person.email_set.first()
+        ReviewAssignmentFactory(review_request=review_req, state_id='withdrawn', reviewer=reviewer)
+        req_url = urlreverse('ietf.doc.views_review.review_request', kwargs={ "name": doc.name, "request_id": review_req.pk })
+        assign_url = urlreverse('ietf.doc.views_review.assign_reviewer', kwargs={ "name": doc.name, "request_id": review_req.pk })
+
+        login_testing_unauthorized(self, "reviewsecretary", assign_url)
+        r = self.client.post(assign_url, { "action": "assign", "reviewer": reviewer.pk })
+        self.assertRedirects(r, req_url)
+        review_req = reload_db_objects(review_req)
+        assignment = review_req.reviewassignment_set.last()
+        self.assertEqual(assignment.state, ReviewAssignmentStateName.objects.get(slug='assigned'))
+        self.assertEqual(review_req.state, ReviewRequestStateName.objects.get(slug='assigned'))
+
     def test_previously_reviewed_replaced_doc(self):
         review_team = ReviewTeamFactory(acronym="reviewteam", name="Review Team", type_id="review", list_email="reviewteam@ietf.org", parent=Group.objects.get(acronym="farfut"))
         rev_role = RoleFactory(group=review_team,person__user__username='reviewer',person__user__email='reviewer@example.com',person__name='Some Reviewer',name_id='reviewer')

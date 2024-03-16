@@ -1,4 +1,4 @@
-{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{# Copyright The IETF Trust 2015-2024, All Rights Reserved #}
 {% load origin %}
 {% origin %}
 {% load ietf_filters %}
@@ -47,10 +47,34 @@
                     <br>
                 {% endif %}
             {% endfor %}
-            {% for bs in entry.bluesheets %}
-                <a href="{{ bs.material|meeting_href:meeting }}">
-                    Bluesheets
-                    {% if bs.time %}{{ bs.time|date:"D G:i" }}{% endif %}
+            {% if not meeting.proceedings_final %}
+                {% for attendance in entry.attendances %}
+                    {% with session=attendance.material %}
+                        <a href="{% url 'ietf.meeting.views.session_attendance' session_id=session.pk num=session.meeting.number %}">
+                            Attendance
+                            {% if attendance.time %}{{ attendance.time|date:"D G:i" }}{% endif %}
+                        </a>
+                    {% endwith %}
+                    <br>
+                {% endfor %}
+            {% else %}
+                {% for bs in entry.bluesheets %}
+                    <a href="{{ bs.material|meeting_href:meeting }}">
+                        Bluesheets
+                        {% if bs.time %}{{ bs.time|date:"D G:i" }}{% endif %}
+                    </a>
+                    <br>
+                {% endfor %}
+            {% endif %}
+            {% for chatlog in entry.chatlogs %}
+                <a href="{{ chatlog.material|meeting_href:meeting }}">
+                    Chatlog
+                    {% if chatlog.time %}{{chatlog.time|date:"D G:i"}}{% endif %}
+                </a>
+                <br>
+            {% empty %}
+                <a href="{{ entry.session.chat_archive_url }}">
+                    Chatlog
                 </a>
                 <br>
             {% endfor %}
@@ -64,6 +88,12 @@
               </a>
               <br>
           {% endfor %}
+            {% if entry.session.video_stream_url %}
+                <a href="{{ entry.session.session_recording_url }}">
+                    Session recording
+                </a>
+                <br>
+            {% endif %}
         </td>
         {# slides #}
         <td>

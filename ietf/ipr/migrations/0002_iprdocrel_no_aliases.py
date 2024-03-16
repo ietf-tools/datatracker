@@ -2,14 +2,29 @@
 
 from django.db import migrations
 import django.db.models.deletion
-from django.db.models import F, Subquery, OuterRef, ManyToManyField
+from django.db.models import F, Subquery, OuterRef, ManyToManyField, CharField
 import ietf.utils.models
 
 def forward(apps, schema_editor):
     IprDocRel = apps.get_model("ipr", "IprDocRel")
     DocAlias = apps.get_model("doc", "DocAlias")
-    subquery = Subquery(DocAlias.objects.filter(pk=OuterRef("deprecated_document")).values("docs")[:1])
-    IprDocRel.objects.annotate(firstdoc=subquery).update(document=F("firstdoc")) 
+    document_subquery = Subquery(
+        DocAlias.objects.filter(
+            pk=OuterRef("deprecated_document")
+        ).values("docs")[:1]
+    )
+    name_subquery = Subquery(
+        DocAlias.objects.filter(
+            pk=OuterRef("deprecated_document")
+        ).values("name")[:1]
+    )
+    IprDocRel.objects.annotate(
+        firstdoc=document_subquery,
+        aliasname=name_subquery,
+    ).update(
+        document=F("firstdoc"),
+        originaldocumentaliasname=F("aliasname"),
+    ) 
     # This might not be right - we may need here (and in the relateddocument migrations) to pay attention to
     # whether the name being pointed to is and rfc name or a draft name and point to the right object instead...
 
@@ -19,7 +34,7 @@ def reverse(apps, schema_editor):
 class Migration(migrations.Migration):
     dependencies = [
         ("ipr", "0001_initial"),
-        ("doc", "0015_relate_hist_no_aliases")
+        ("doc", "0016_relate_hist_no_aliases")
     ]
 
     operations = [
@@ -56,6 +71,12 @@ class Migration(migrations.Migration):
                 db_index=False,
             ),
             preserve_default=False,
+        ),
+        migrations.AddField(
+            model_name="iprdocrel",
+            name="originaldocumentaliasname",
+            field=CharField(max_length=255,null=True,blank=True),
+            preserve_default=True,
         ),
         migrations.RunPython(forward, reverse),
         migrations.AlterField(

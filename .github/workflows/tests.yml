@@ -45,14 +45,21 @@ jobs:
         echo "Running tests..."
         if [[ "x${{ github.event.inputs.ignoreLowerCoverage }}" == "xtrue" ]]; then
           echo "Lower coverage failures will be ignored."
-          ./ietf/manage.py test -v2 --validate-html-harder --settings=settings_test --ignore-lower-coverage
+          HOME=/root ./ietf/manage.py test -v2 --validate-html-harder --settings=settings_test --ignore-lower-coverage
         else
-          ./ietf/manage.py test -v2 --validate-html-harder --settings=settings_test
+          HOME=/root ./ietf/manage.py test -v2 --validate-html-harder --settings=settings_test
         fi
         coverage xml
 
+    - name: Upload geckodriver.log
+      uses: actions/upload-artifact@v4
+      if: ${{ failure() }}
+      with:
+        name: geckodriverlog
+        path: geckodriver.log
+
     - name: Upload Coverage Results to Codecov
-      uses: codecov/codecov-action@v3.1.4
+      uses: codecov/codecov-action@v4.1.0
       with:
         files: coverage.xml
         
@@ -62,7 +69,7 @@ jobs:
         mv latest-coverage.json coverage.json
         
     - name: Upload Coverage Results as Build Artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       if: ${{ always() }}
       with:
         name: coverage
@@ -79,7 +86,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - uses: actions/setup-node@v3
+    - uses: actions/setup-node@v4
       with:
         node-version: '18'
 
@@ -96,7 +103,7 @@ jobs:
         npx playwright test --project=${{ matrix.project }}
         
     - name: Upload Report
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       if: ${{ always() }}
       continue-on-error: true
       with:
@@ -155,7 +162,7 @@ jobs:
         npx playwright test --project=${{ matrix.project }} -c playwright-legacy.config.js
         
     - name: Upload Report
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       if: ${{ always() }}
       continue-on-error: true
       with:

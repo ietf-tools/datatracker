@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2009-2023, All Rights Reserved
+# Copyright The IETF Trust 2009-2024, All Rights Reserved
 # -*- coding: utf-8 -*-
 #
 # Parts Copyright (C) 2009-2010 Nokia Corporation and/or its subsidiary(-ies).
@@ -40,9 +40,9 @@ import json
 import os
 import re
 
-from urllib.parse import quote
 from pathlib import Path
 
+from django.db.models import Max
 from django.http import HttpResponse, Http404
 from django.shortcuts import render, get_object_or_404, redirect
 from django.template.loader import render_to_string
@@ -50,7 +50,6 @@ from django.urls import reverse as urlreverse
 from django.conf import settings
 from django import forms
 from django.contrib.staticfiles import finders
-
 
 import debug                            # pyflakes:ignore
 
@@ -63,7 +62,7 @@ from ietf.doc.utils import (augment_events_with_revision,
     needed_ballot_positions, nice_consensus, update_telechat, has_same_ballot,
     get_initial_notify, make_notify_changed_event, make_rev_history, default_consensus,
     add_events_message_info, get_unicode_document_content,
-    augment_docs_and_user_with_user_info, irsg_needed_ballot_positions, add_action_holder_change_event,
+    augment_docs_and_person_with_person_info, irsg_needed_ballot_positions, add_action_holder_change_event,
     build_file_urls, update_documentauthors, fuzzy_find_documents,
     bibxml_for_draft)
 from ietf.doc.utils_bofreq import bofreq_editors, bofreq_responsible
@@ -76,13 +75,14 @@ from ietf.utils.history import find_history_active_at
 from ietf.doc.forms import TelechatForm, NotifyForm, ActionHoldersForm, DocAuthorForm, DocAuthorChangeBasisForm
 from ietf.doc.mails import email_comment, email_remind_action_holders
 from ietf.mailtrigger.utils import gather_relevant_expansions
-from ietf.meeting.models import Session
+from ietf.meeting.models import Session, SessionPresentation
 from ietf.meeting.utils import group_sessions, get_upcoming_manageable_sessions, sort_sessions, add_event_info_to_session_qs
 from ietf.review.models import ReviewAssignment
 from ietf.review.utils import can_request_review_of_doc, review_assignments_to_list_for_docs, review_requests_to_list_for_docs
 from ietf.review.utils import no_review_from_teams_on_doc
 from ietf.utils import markup_txt, log, markdown
 from ietf.utils.draft import PlaintextDraft
+from ietf.utils.meetecho import MeetechoAPIError, SlidesManager
 from ietf.utils.response import permission_denied
 from ietf.utils.text import maybe_split
 from ietf.utils.timezone import date_today
@@ -210,8 +210,8 @@ def document_main(request, name, rev=None, document_html=False):
     snapshot = False
 
     gh = None
-    if rev:
-        # find the entry in the history
+    if rev and rev != doc.rev:
+        # find the entry in the history if the rev requested is not the current rev
         for h in doc.history_set.order_by("-time"):
             if rev == h.rev:
                 snapshot = True
@@ -288,7 +288,8 @@ def document_main(request, name, rev=None, document_html=False):
 
         presentations = doc.future_presentations()
 
-        augment_docs_and_user_with_user_info([doc], request.user)
+        if request.user.is_authenticated and hasattr(request.user, "person"):
+            augment_docs_and_person_with_person_info([doc], request.user.person)
 
         exp_comment = doc.latest_event(IanaExpertDocEvent,type="comment")
         iana_experts_comment = exp_comment and exp_comment.desc
@@ -324,6 +325,9 @@ def document_main(request, name, rev=None, document_html=False):
                 submission = group.acronym
             submission = '<a href="%s">%s</a>' % (group.about_url(), submission)
 
+        draft = doc.came_from_draft()
+        mailto_name = draft.name if draft else None
+
         return render(request, "doc/document_rfc.html" if document_html is False else "doc/document_html.html",
                                   dict(doc=doc,
                                        document_html=document_html,
@@ -356,7 +360,8 @@ def document_main(request, name, rev=None, document_html=False):
                                        iana_experts_comment=iana_experts_comment,
                                        presentations=presentations,
                                        diff_revisions=diff_revisions,
-                                       submission=submission
+                                       submission=submission,
+                                       mailto_name=mailto_name,
                                        ))
 
     elif doc.type_id == "draft":
@@ -476,13 +481,6 @@ def document_main(request, name, rev=None, document_html=False):
             can_submit_unsolicited_review_for_teams = Group.objects.filter(
                 reviewteamsettings__isnull=False, role__person__user=request.user, role__name='secr')
 
-        # mailing list search archive
-        search_archive = "www.ietf.org/mail-archive/web/"
-        if doc.stream_id == "ietf" and group.type_id == "wg" and group.list_archive:
-            search_archive = group.list_archive
-
-        search_archive = quote(search_archive, safe="~")
-
         # conflict reviews
         conflict_reviews = [r.source.name for r in interesting_relations_that.filter(relationship="conflrev")]
 
@@ -581,7 +579,8 @@ def document_main(request, name, rev=None, document_html=False):
             elif can_edit_stream_info and (iesg_state_slug in ('idexists','watching')):
                 actions.append(("Submit to IESG for Publication", urlreverse('ietf.doc.views_draft.to_iesg', kwargs=dict(name=doc.name))))
 
-        augment_docs_and_user_with_user_info([doc], request.user)
+        if request.user.is_authenticated and hasattr(request.user, "person"):
+            augment_docs_and_person_with_person_info([doc], request.user.person)
 
         published = doc.latest_event(type="published_rfc")  # todo rethink this now that published_rfc is on rfc
         started_iesg_process = doc.latest_event(type="started_iesg_process")
@@ -700,7 +699,6 @@ def document_main(request, name, rev=None, document_html=False):
                                        iana_experts_comment=iana_experts_comment,
                                        started_iesg_process=started_iesg_process,
                                        shepherd_writeup=shepherd_writeup,
-                                       search_archive=search_archive,
                                        actions=actions,
                                        presentations=presentations,
                                        review_assignments=review_assignments,
@@ -712,7 +710,7 @@ def document_main(request, name, rev=None, document_html=False):
 
     elif doc.type_id == "charter":
         content = doc.text_or_error()     # pyflakes:ignore
-        content = markup_txt.markup(content)
+        content = markdown.markdown(content)
 
         ballot_summary = None
         if doc.get_state_slug() in ("intrev", "iesgrev"):
@@ -831,7 +829,7 @@ def document_main(request, name, rev=None, document_html=False):
                                        sorted_relations=sorted_relations,
                                        ))
 
-    elif doc.type_id in ("slides", "agenda", "minutes", "bluesheets", "procmaterials",):
+    elif doc.type_id in ("slides", "agenda", "minutes", "narrativeminutes", "bluesheets", "procmaterials",):
         can_manage_material = can_manage_materials(request.user, doc.group)
         presentations = doc.future_presentations()
         if doc.uploaded_filename:
@@ -915,9 +913,9 @@ def document_main(request, name, rev=None, document_html=False):
 
     elif doc.type_id in ("chatlog", "polls"):
         if isinstance(doc,DocHistory):
-            session = doc.doc.sessionpresentation_set.last().session
+            session = doc.doc.presentations.last().session
         else:
-            session = doc.sessionpresentation_set.last().session
+            session = doc.presentations.last().session
         pathname = Path(session.meeting.get_materials_path()) / doc.type_id / doc.uploaded_filename
         content = get_unicode_document_content(doc.name, str(pathname))
         return render(
@@ -942,7 +940,7 @@ def document_main(request, name, rev=None, document_html=False):
         variants = set([match.name.split(".")[1] for match in Path(doc.get_file_path()).glob(f"{basename}.*")])
         inlineable = any([ext in variants for ext in ["md", "txt"]])
         if inlineable:
-            content = markdown.markdown(doc.text_or_error())
+            content = markdown.liberal_markdown(doc.text_or_error())
         else:
             content = "No format available to display inline"
             if "pdf" in variants:
@@ -1064,7 +1062,10 @@ def document_pdfized(request, name, rev=None, ext=None):
     if not os.path.exists(doc.get_file_name()):
         raise Http404("File not found: %s" % doc.get_file_name())
 
-    pdf = doc.pdfized()
+    try:
+        pdf = doc.pdfized()
+    except Exception:
+        return render(request, "doc/weasyprint_failed.html")
     if pdf:
         return HttpResponse(pdf,content_type='application/pdf')
     else:
@@ -1262,6 +1263,9 @@ def document_bibtex(request, name, rev=None):
 
     doc = get_object_or_404(Document, name=name)
 
+    if doc.type_id not in ["rfc", "draft"]:
+        raise Http404()
+
     doi = None
     draft_became_rfc = None
     replaced_by = None
@@ -1437,8 +1441,26 @@ def document_references(request, name):
     return render(request, "doc/document_references.html",dict(doc=doc,refs=sorted(refs,key=lambda x:x.target.name),))
 
 def document_referenced_by(request, name):
+    """View documents that reference the named document
+    
+    The view lists both direct references to a the named document, plus references to
+    related other documents. For a draft that became an RFC, this will include references
+    to the RFC. For an RFC, this will include references to the draft it came from, if any.
+    For a subseries document, this will include references to any of the RFC documents it
+    contains. 
+    
+    In the rendered output, a badge is applied to indicate the name of the document the
+    reference actually targeted. E.g., on the display for a draft that became RFC NNN,
+    references included because they point to that RFC would be shown with a tag "As RFC NNN".
+    The intention is to make the "Referenced By" page useful for finding related work while
+    accurately reflecting the actual reference relationships.     
+    """
     doc = get_object_or_404(Document,name=name)
     refs = doc.referenced_by()
+    if doc.came_from_draft():
+        refs |= doc.came_from_draft().referenced_by()
+    if doc.became_rfc():
+        refs |= doc.became_rfc().referenced_by()
     if doc.type_id in ["bcp","std","fyi"]:
         for rfc in doc.contains():
             refs |= rfc.referenced_by()
@@ -2032,7 +2054,7 @@ class VersionForm(forms.Form):
 
 def edit_sessionpresentation(request,name,session_id):
     doc = get_object_or_404(Document, name=name)
-    sp = get_object_or_404(doc.sessionpresentation_set, session_id=session_id)
+    sp = get_object_or_404(doc.presentations, session_id=session_id)
 
     if not sp.session.can_manage_materials(request.user):
         raise Http404
@@ -2049,7 +2071,13 @@ def edit_sessionpresentation(request,name,session_id):
         if form.is_valid():
             new_selection = form.cleaned_data['version']
             if initial['version'] != new_selection:
-                doc.sessionpresentation_set.filter(pk=sp.pk).update(rev=None if new_selection=='current' else new_selection)
+                doc.presentations.filter(pk=sp.pk).update(rev=None if new_selection=='current' else new_selection)
+                if doc.type_id == "slides" and hasattr(settings, "MEETECHO_API_CONFIG"):
+                    sm = SlidesManager(api_config=settings.MEETECHO_API_CONFIG)
+                    try:
+                        sm.send_update(sp.session)
+                    except MeetechoAPIError as err:
+                        log.log(f"Error in SlidesManager.send_update(): {err}")
                 c = DocEvent(type="added_comment", doc=doc, rev=doc.rev, by=request.user.person)
                 c.desc = "Revision for session %s changed to  %s" % (sp.session,new_selection)
                 c.save()
@@ -2061,7 +2089,7 @@ def edit_sessionpresentation(request,name,session_id):
 
 def remove_sessionpresentation(request,name,session_id):
     doc = get_object_or_404(Document, name=name)
-    sp = get_object_or_404(doc.sessionpresentation_set, session_id=session_id)
+    sp = get_object_or_404(doc.presentations, session_id=session_id)
 
     if not sp.session.can_manage_materials(request.user):
         raise Http404
@@ -2070,7 +2098,13 @@ def remove_sessionpresentation(request,name,session_id):
         raise Http404
 
     if request.method == 'POST':
-        doc.sessionpresentation_set.filter(pk=sp.pk).delete()
+        doc.presentations.filter(pk=sp.pk).delete()
+        if doc.type_id == "slides" and hasattr(settings, "MEETECHO_API_CONFIG"):
+            sm = SlidesManager(api_config=settings.MEETECHO_API_CONFIG)
+            try:
+                sm.delete(sp.session, doc)
+            except MeetechoAPIError as err:
+                log.log(f"Error in SlidesManager.delete(): {err}")
         c = DocEvent(type="added_comment", doc=doc, rev=doc.rev, by=request.user.person)
         c.desc = "Removed from session: %s" % (sp.session)
         c.save()
@@ -2094,7 +2128,7 @@ def add_sessionpresentation(request,name):
     version_choices.insert(0,('current','Current at the time of the session'))
 
     sessions = get_upcoming_manageable_sessions(request.user)
-    sessions = sort_sessions([s for s in sessions if not s.sessionpresentation_set.filter(document=doc).exists()])
+    sessions = sort_sessions([s for s in sessions if not s.presentations.filter(document=doc).exists()])
     if doc.group:
         sessions = sorted(sessions,key=lambda x:0 if x.group==doc.group else 1)
 
@@ -2107,7 +2141,25 @@ def add_sessionpresentation(request,name):
             session_id = session_form.cleaned_data['session']
             version = version_form.cleaned_data['version']
             rev = None if version=='current' else version
-            doc.sessionpresentation_set.create(session_id=session_id,rev=rev)
+            if doc.type_id == "slides":
+                max_order = SessionPresentation.objects.filter(
+                    document__type='slides',
+                    session__pk=session_id,
+                ).aggregate(Max('order'))['order__max'] or 0
+                order = max_order + 1
+            else:
+                order = 0
+            sp = doc.presentations.create(
+                session_id=session_id,
+                rev=rev,
+                order=order,
+            )
+            if doc.type_id == "slides" and hasattr(settings, "MEETECHO_API_CONFIG"):
+                sm = SlidesManager(api_config=settings.MEETECHO_API_CONFIG)
+                try:
+                    sm.add(sp.session, doc, order=sp.order)
+                except MeetechoAPIError as err:
+                    log.log(f"Error in SlidesManager.add(): {err}")
             c = DocEvent(type="added_comment", doc=doc, rev=doc.rev, by=request.user.person)
             c.desc = "%s to session: %s" % ('Added -%s'%rev if rev else 'Added', Session.objects.get(pk=session_id))
             c.save()
@@ -2167,13 +2219,31 @@ def idnits2_state(request, name, rev=None):
     if doc.type_id == "rfc":
         draft = doc.came_from_draft()
         if draft:
-            zero_revision = NewRevisionDocEvent.objects.filter(doc=draft,rev='00').first()
+            zero_revision = NewRevisionDocEvent.objects.filter(
+                doc=draft, rev="00"
+            ).first()
     else:
-        zero_revision = NewRevisionDocEvent.objects.filter(doc=doc,rev='00').first()
+        zero_revision = NewRevisionDocEvent.objects.filter(doc=doc, rev="00").first()
     if zero_revision:
         doc.created = zero_revision.time
     else:
-        doc.created = doc.docevent_set.order_by('-time').first().time
+        if doc.type_id == "draft":
+            if doc.became_rfc():
+                interesting_event = (
+                    doc.became_rfc()
+                    .docevent_set.filter(type="published_rfc")
+                    .order_by("-time")
+                    .first()
+                )
+            else:
+                interesting_event = doc.docevent_set.order_by(
+                    "-time"
+                ).first()  # Is taking the most _recent_ instead of the oldest event correct?
+        else:  # doc.type_id == "rfc"
+            interesting_event = (
+                doc.docevent_set.filter(type="published_rfc").order_by("-time").first()
+            )
+        doc.created = interesting_event.time
     if doc.std_level:
         doc.deststatus = doc.std_level.name
     elif doc.intended_std_level:
@@ -2181,8 +2251,16 @@ def idnits2_state(request, name, rev=None):
     else:
         text = doc.text()
         if text:
-            parsed_draft = PlaintextDraft(text=doc.text(), source=name, name_from_source=False)
+            parsed_draft = PlaintextDraft(
+                text=doc.text(), source=name, name_from_source=False
+            )
             doc.deststatus = parsed_draft.get_status()
         else:
-            doc.deststatus="Unknown"
-    return render(request, 'doc/idnits2-state.txt', context={'doc':doc}, content_type='text/plain;charset=utf-8')    
+            doc.deststatus = "Unknown"
+    return render(
+        request,
+        "doc/idnits2-state.txt",
+        context={"doc": doc},
+        content_type="text/plain;charset=utf-8",
+    )
+

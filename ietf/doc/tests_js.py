@@ -41,7 +41,7 @@ class EditAuthorsTests(IetfSeleniumTestCase):
                     (By.CSS_SELECTOR, result_selector),
                     name
                 ))
-            input.send_keys('\n')  # select the object
+            self.driver.find_element(By.CSS_SELECTOR, result_selector).click()
 
             # After the author is selected, the email select options will be populated.
             # Wait for that, then click on the option corresponding to the requested email.
@@ -94,10 +94,8 @@ class EditAuthorsTests(IetfSeleniumTestCase):
         # get the "add author" button so we can add blank author forms
         add_author_button = self.driver.find_element(By.ID, 'add-author-button')
         for index, auth in enumerate(authors):
-            self.driver.execute_script("arguments[0].scrollIntoView();", add_author_button)  # FIXME: no idea why this fails:
-            # self.scroll_to_element(add_author_button)  # Can only click if it's in view!
-            self.driver.execute_script("arguments[0].click();", add_author_button)  # FIXME: no idea why this fails:
-            # add_author_button.click()  # Create a new form. Automatically scrolls to it.
+            self.scroll_to_element(add_author_button)  # Can only click if it's in view!
+            add_author_button.click()  # Create a new form. Automatically scrolls to it.
             author_forms = authors_list.find_elements(By.CLASS_NAME, 'author-panel')
             authors_added = index + 1
             self.assertEqual(len(author_forms), authors_added + 1)  # Started with 1 author, hence +1
@@ -119,9 +117,8 @@ class EditAuthorsTests(IetfSeleniumTestCase):
         self.driver.find_element(By.ID, 'id_basis').send_keys('change testing')
         # Now click the 'submit' button and check that the update was accepted.
         submit_button = self.driver.find_element(By.CSS_SELECTOR, '#content button[type="submit"]')
-        self.driver.execute_script("arguments[0].click();", submit_button)  # FIXME: no idea why this fails:
-        # self.scroll_to_element(submit_button)
-        # submit_button.click()
+        self.scroll_to_element(submit_button)
+        submit_button.click()
         # Wait for redirect to the document_main view
         self.wait.until(
             expected_conditions.url_to_be(

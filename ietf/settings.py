@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2007-2023, All Rights Reserved
+# Copyright The IETF Trust 2007-2024, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -169,7 +169,7 @@ if SERVER_MODE != 'production' and SERVE_CDN_FILES_LOCALLY_IN_DEV_MODE:
     STATIC_URL = "/static/"
     STATIC_ROOT = os.path.abspath(BASE_DIR + "/../static/")
 else:
-    STATIC_URL = "https://www.ietf.org/lib/dt/%s/"%__version__
+    STATIC_URL = "https://static.ietf.org/dt/%s/"%__version__
     STATIC_ROOT = "/a/www/www6s/lib/dt/%s/"%__version__
 
 # List of finder classes that know how to find static files in
@@ -572,8 +572,6 @@ GLOBAL_TEST_FIXTURES = [ 'names','ietf.utils.test_data.make_immutable_base_data'
 
 TEST_DIFF_FAILURE_DIR = "/tmp/test/failure/"
 
-TEST_GHOSTDRIVER_LOG_PATH = "ghostdriver.log"
-
 # These are regexes
 TEST_URL_COVERAGE_EXCLUDE = [
     r"^\^admin/",
@@ -679,7 +677,6 @@ STATUS_CHANGE_PATH = '/a/ietfdata/doc/status-change'
 AGENDA_PATH = '/a/www/www6s/proceedings/'
 MEETINGHOST_LOGO_PATH = AGENDA_PATH  # put these in the same place as other proceedings files
 IPR_DOCUMENT_PATH = '/a/www/ietf-ftp/ietf/IPR/'
-IESG_WG_EVALUATION_DIR = "/a/www/www6/iesg/evaluation"
 # Move drafts to this directory when they expire
 INTERNET_DRAFT_ARCHIVE_DIR = '/a/ietfdata/doc/draft/collection/draft-archive/'
 # The following directory contains linked copies of all drafts, but don't
@@ -858,6 +855,7 @@ MEETING_MATERIALS_SERVE_LOCALLY = True
 MEETING_DOC_LOCAL_HREFS = {
     "agenda": "/meeting/{meeting.number}/materials/{doc.name}-{doc.rev}",
     "minutes": "/meeting/{meeting.number}/materials/{doc.name}-{doc.rev}",
+    "narrativeminutes": "/meeting/{meeting.number}/materials/{doc.name}-{doc.rev}",
     "slides": "/meeting/{meeting.number}/materials/{doc.name}-{doc.rev}",
     "chatlog": "/meeting/{meeting.number}/materials/{doc.name}-{doc.rev}",
     "polls": "/meeting/{meeting.number}/materials/{doc.name}-{doc.rev}",
@@ -869,6 +867,7 @@ MEETING_DOC_LOCAL_HREFS = {
 MEETING_DOC_CDN_HREFS = {
     "agenda": "https://www.ietf.org/proceedings/{meeting.number}/agenda/{doc.name}-{doc.rev}",
     "minutes": "https://www.ietf.org/proceedings/{meeting.number}/minutes/{doc.name}-{doc.rev}",
+    "narrativeminutes": "https://www.ietf.org/proceedings/{meeting.number}/narrative-minutes/{doc.name}-{doc.rev}",
     "slides": "https://www.ietf.org/proceedings/{meeting.number}/slides/{doc.name}-{doc.rev}",
     "recording": "{doc.external_url}",
     "bluesheets": "https://www.ietf.org/proceedings/{meeting.number}/bluesheets/{doc.uploaded_filename}",
@@ -880,6 +879,7 @@ MEETING_DOC_HREFS = MEETING_DOC_LOCAL_HREFS if MEETING_MATERIALS_SERVE_LOCALLY e
 MEETING_DOC_OLD_HREFS = {
     "agenda": "/meeting/{meeting.number}/materials/{doc.name}",
     "minutes": "/meeting/{meeting.number}/materials/{doc.name}",
+    "narrativeminutes" : "/meeting/{meeting.number}/materials/{doc.name}",
     "slides": "/meeting/{meeting.number}/materials/{doc.name}",
     "recording": "{doc.external_url}",
     "bluesheets": "https://www.ietf.org/proceedings/{meeting.number}/bluesheets/{doc.uploaded_filename}",
@@ -889,6 +889,7 @@ MEETING_DOC_OLD_HREFS = {
 MEETING_DOC_GREFS = {
     "agenda": "/meeting/{meeting.number}/materials/{doc.name}",
     "minutes": "/meeting/{meeting.number}/materials/{doc.name}",
+    "narrativeminutes": "/meeting/{meeting.number}/materials/{doc.name}",
     "slides": "/meeting/{meeting.number}/materials/{doc.name}",
     "recording": "{doc.external_url}",
     "bluesheets": "https://www.ietf.org/proceedings/{meeting.number}/bluesheets/{doc.uploaded_filename}",
@@ -902,6 +903,7 @@ MEETING_MATERIALS_DEFAULT_SUBMISSION_CORRECTION_DAYS = 50
 MEETING_VALID_UPLOAD_EXTENSIONS = {
     'agenda':       ['.txt','.html','.htm', '.md', ],
     'minutes':      ['.txt','.html','.htm', '.md', '.pdf', ],
+    'narrativeminutes': ['.txt','.html','.htm', '.md', '.pdf', ],
     'slides':       ['.doc','.docx','.pdf','.ppt','.pptx','.txt', ], # Note the removal of .zip
     'bluesheets':   ['.pdf', '.txt', ],
     'procmaterials':['.pdf', ],
@@ -911,6 +913,7 @@ MEETING_VALID_UPLOAD_EXTENSIONS = {
 MEETING_VALID_UPLOAD_MIME_TYPES = {
     'agenda':       ['text/plain', 'text/html', 'text/markdown', 'text/x-markdown', ],
     'minutes':      ['text/plain', 'text/html', 'application/pdf', 'text/markdown', 'text/x-markdown', ],
+    'narrativeminutes': ['text/plain', 'text/html', 'application/pdf', 'text/markdown', 'text/x-markdown', ],
     'slides':       [],
     'bluesheets':   ['application/pdf', 'text/plain', ],
     'procmaterials':['application/pdf', ],
@@ -1154,6 +1157,13 @@ CELERY_TIMEZONE = 'UTC'
 CELERY_BROKER_URL = 'amqp://mq/'
 CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
 CELERY_BEAT_SYNC_EVERY = 1  # update DB after every event
+CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True  # the default, but setting it squelches a warning
+# Use a result backend so we can chain tasks. This uses the rpc backend, see
+# https://docs.celeryq.dev/en/stable/userguide/tasks.html#rpc-result-backend-rabbitmq-qpid
+# Results can be retrieved only once and only by the caller of the task. Results will be
+# lost if the message broker restarts.
+CELERY_RESULT_BACKEND = 'rpc://'  # sends a msg via the msg broker
+CELERY_TASK_IGNORE_RESULT = True  # ignore results unless specifically enabled for a task
 
 # Meetecho API setup: Uncomment this and provide real credentials to enable
 # Meetecho conference creation for interim session requests
@@ -1163,12 +1173,17 @@ CELERY_BEAT_SYNC_EVERY = 1  # update DB after every event
 #     'client_id': 'datatracker',
 #     'client_secret': 'some secret',
 #     'request_timeout': 3.01,  # python-requests doc recommend slightly > a multiple of 3 seconds
+#     # How many minutes before/after session to enable slide update API. Defaults to 15. Set to None to disable,
+#     # or < 0 to _always_ send updates (useful for debugging)
+#     'slides_notify_time': 15, 
+#     'debug': False,  # if True, API calls will be echoed as debug instead of sent (only works for slides for now)
 # }
 
 # Meetecho URLs - instantiate with url.format(session=some_session)
 MEETECHO_ONSITE_TOOL_URL = "https://meetings.conf.meetecho.com/onsite{session.meeting.number}/?session={session.pk}"
 MEETECHO_VIDEO_STREAM_URL = "https://meetings.conf.meetecho.com/ietf{session.meeting.number}/?session={session.pk}"
 MEETECHO_AUDIO_STREAM_URL = "https://mp3.conf.meetecho.com/ietf{session.meeting.number}/{session.pk}.m3u"
+MEETECHO_SESSION_RECORDING_URL = "https://www.meetecho.com/ietf{session.meeting.number}/recordings#{session.group.acronym_upper}"
 
 # Put the production SECRET_KEY in settings_local.py, and also any other
 # sensitive or site-specific changes.  DO NOT commit settings_local.py to svn.

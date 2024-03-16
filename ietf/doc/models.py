@@ -83,7 +83,7 @@ class State(models.Model):
     desc = models.TextField(blank=True)
     order = models.IntegerField(default=0)
 
-    next_states = models.ManyToManyField('State', related_name="previous_states", blank=True)
+    next_states = models.ManyToManyField('doc.State', related_name="previous_states", blank=True)
 
     def __str__(self):
         return self.name
@@ -148,7 +148,7 @@ class DocumentInfo(models.Model):
                     else:
                         self._cached_file_path = settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR
             elif self.meeting_related() and self.type_id in (
-                    "agenda", "minutes", "slides", "bluesheets", "procmaterials", "chatlog", "polls"
+                    "agenda", "minutes", "narrativeminutes", "slides", "bluesheets", "procmaterials", "chatlog", "polls"
             ):
                 meeting = self.get_related_meeting()
                 if meeting is not None:
@@ -280,6 +280,19 @@ class DocumentInfo(models.Model):
                 info = dict(doc=self)
 
             href = format.format(**info)
+
+            # For slides that are not meeting-related, we need to know the file extension.
+            # Assume we have access to the same files as settings.DOC_HREFS["slides"] and
+            # see what extension is available
+            if  self.type_id == "slides" and not self.meeting_related() and not href.endswith("/"):
+                filepath = Path(self.get_file_path()) / self.get_base_name()  # start with this
+                if not filepath.exists():
+                    # Look for other extensions - grab the first one, sorted for stability
+                    for existing in sorted(filepath.parent.glob(f"{filepath.stem}.*")):
+                        filepath = filepath.with_suffix(existing.suffix)
+                        break
+                href += filepath.suffix  # tack on the extension
+
             if href.startswith('/'):
                 href = settings.IDTRACKER_BASE_URL + href
             self._cached_href = href
@@ -425,7 +438,7 @@ class DocumentInfo(models.Model):
         return e != None and (e.text != "")
 
     def meeting_related(self):
-        if self.type_id in ("agenda","minutes","bluesheets","slides","recording","procmaterials","chatlog","polls"):
+        if self.type_id in ("agenda","minutes", "narrativeminutes", "bluesheets","slides","recording","procmaterials","chatlog","polls"):
              return self.type_id != "slides" or self.get_state_slug('reuse_policy')=='single'
         return False
 
@@ -539,7 +552,7 @@ class DocumentInfo(models.Model):
         return self.text() or "Error; cannot read '%s'"%self.get_base_name()
 
     def html_body(self, classes=""):
-        if self.get_state_slug() == "rfc":
+        if self.type_id == "rfc":
             try:
                 html = Path(
                     os.path.join(settings.RFC_PATH, self.name + ".html")
@@ -634,6 +647,9 @@ class DocumentInfo(models.Model):
                 )
             except AssertionError:
                 pdf = None
+            except Exception as e:
+                log.log('weasyprint failed:'+str(e))
+                raise
             if pdf:
                 cache.set(cache_key, pdf, settings.PDFIZER_CACHE_TIME)
         return pdf
@@ -649,10 +665,10 @@ class DocumentInfo(models.Model):
                 source__states__slug="active",
             )
             | models.Q(source__type__slug="rfc")
-        )
-    
+        ).distinct()
     
     def referenced_by_rfcs(self):
+        """Get refs to this doc from RFCs"""
         return self.relations_that(("refnorm", "refinfo", "refunk", "refold")).filter(
             source__type__slug="rfc"
         )
@@ -675,6 +691,13 @@ class DocumentInfo(models.Model):
     def part_of(self):
         return self.related_that("contains")
 
+    def referenced_by_rfcs_as_rfc_or_draft(self):
+        """Get refs to this doc, or a draft/rfc it came from, from an RFC"""
+        refs_to = self.referenced_by_rfcs()
+        if self.type_id == "rfc" and self.came_from_draft():
+            refs_to |= self.came_from_draft().referenced_by_rfcs()
+        return refs_to
+
     class Meta:
         abstract = True
 
@@ -684,27 +707,26 @@ class RelatedDocument(models.Model):
     source = ForeignKey('Document')
     target = ForeignKey('Document', related_name='targets_related')
     relationship = ForeignKey(DocRelationshipName)
-    originaltargetaliasname = models.CharField(max_length=255,null=True)
+    originaltargetaliasname = models.CharField(max_length=255, null=True, blank=True)
     def action(self):
         return self.relationship.name
     def __str__(self):
         return u"%s %s %s" % (self.source.name, self.relationship.name.lower(), self.target.name)
 
     def is_downref(self):
-        if self.source.type.slug != "draft" or self.relationship.slug not in [
+        if self.source.type_id not in ["draft","rfc"] or self.relationship.slug not in [
             "refnorm",
             "refold",
             "refunk",
         ]:
             return None
 
-        state = self.source.get_state()
-        if state and state.slug == "rfc":
-            source_lvl = self.source.std_level.slug if self.source.std_level else None
-        elif self.source.intended_std_level:
-            source_lvl = self.source.intended_std_level.slug
+        if self.source.type_id == "rfc":
+            source_lvl = self.source.std_level_id
+        elif self.source.type_id in ["bcp","std"]:
+            source_lvl = self.source.type_id
         else:
-            source_lvl = None
+            source_lvl = self.source.intended_std_level_id
 
         if source_lvl not in ["bcp", "ps", "ds", "std", "unkn"]:
             return None
@@ -713,12 +735,14 @@ class RelatedDocument(models.Model):
             if not self.target.std_level:
                 target_lvl = 'unkn'
             else:
-                target_lvl = self.target.std_level.slug
+                target_lvl = self.target.std_level_id
+        elif self.target.type_id in ["bcp", "std"]:
+            target_lvl = self.target.type_id
         else:
             if not self.target.intended_std_level:
                 target_lvl = 'unkn'
             else:
-                target_lvl = self.target.intended_std_level.slug
+                target_lvl = self.target.intended_std_level_id
 
         if self.relationship.slug not in ["refnorm", "refunk"]:
             return None
@@ -727,7 +751,7 @@ class RelatedDocument(models.Model):
             return None
 
         pos_downref = (
-            "Downref" if self.relationship.slug != "refunk" else "Possible Downref"
+            "Downref" if self.relationship_id != "refunk" else "Possible Downref"
         )
 
         if source_lvl in ["bcp", "ps", "ds", "std"] and target_lvl in ["inf", "exp"]:
@@ -1004,7 +1028,7 @@ class Document(DocumentInfo):
     def future_presentations(self):
         """ returns related SessionPresentation objects for meetings that
             have not yet ended. This implementation allows for 2 week meetings """
-        candidate_presentations = self.sessionpresentation_set.filter(
+        candidate_presentations = self.presentations.filter(
             session__meeting__date__gte=date_today() - datetime.timedelta(days=15)
         )
         return sorted(
@@ -1017,11 +1041,11 @@ class Document(DocumentInfo):
         """ returns related SessionPresentation objects for the most recent meeting in the past"""
         # Assumes no two meetings have the same start date - if the assumption is violated, one will be chosen arbitrarily
         today = date_today()
-        candidate_presentations = self.sessionpresentation_set.filter(session__meeting__date__lte=today)
+        candidate_presentations = self.presentations.filter(session__meeting__date__lte=today)
         candidate_meetings = set([p.session.meeting for p in candidate_presentations if p.session.meeting.end_date()<today])
         if candidate_meetings:
             mtg = sorted(list(candidate_meetings),key=lambda x:x.date,reverse=True)[0]
-            return self.sessionpresentation_set.filter(session__meeting=mtg)
+            return self.presentations.filter(session__meeting=mtg)
         else:
             return None
 
@@ -1139,7 +1163,7 @@ class RelatedDocHistory(models.Model):
     source = ForeignKey('DocHistory')
     target = ForeignKey('Document', related_name="reversely_related_document_history_set")
     relationship = ForeignKey(DocRelationshipName)
-    originaltargetaliasname = models.CharField(max_length=255,null=True)
+    originaltargetaliasname = models.CharField(max_length=255, null=True, blank=True)
     def __str__(self):
         return u"%s %s %s" % (self.source.doc.name, self.relationship.name.lower(), self.target.name)
 
@@ -1290,6 +1314,9 @@ EVENT_TYPES = [
 
     # Statement events
     ("published_statement", "Published statement"),
+
+    # Slide events
+    ("approved_slides", "Slides approved"),
     
     ]
 

@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2012-2020, All Rights Reserved
+# Copyright The IETF Trust 2012-2023, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -15,18 +15,47 @@ from django.utils.html import strip_tags
 
 import debug                            # pyflakes:ignore
 
-from ietf.community.models import SearchRule, EmailSubscription
+from ietf.community.models import CommunityList, EmailSubscription, SearchRule
 from ietf.community.forms import SearchRuleTypeForm, SearchRuleForm, AddDocumentsForm, SubscriptionForm
-from ietf.community.utils import lookup_community_list, can_manage_community_list
+from ietf.community.utils import can_manage_community_list
 from ietf.community.utils import docs_tracked_by_community_list, docs_matching_community_list_rule
 from ietf.community.utils import states_of_significant_change, reset_name_contains_index_for_rule
+from ietf.group.models import Group
 from ietf.doc.models import DocEvent, Document
 from ietf.doc.utils_search import prepare_document_table
+from ietf.person.utils import lookup_persons
+from ietf.utils.decorators import ignore_view_kwargs
 from ietf.utils.http import is_ajax
 from ietf.utils.response import permission_denied
 
-def view_list(request, username=None):
-    clist = lookup_community_list(username)
+class MultiplePersonError(Exception):
+    """More than one Person record matches the given email or name"""
+    pass
+
+def lookup_community_list(request, email_or_name=None, acronym=None):
+    assert email_or_name or acronym
+
+    if acronym:
+        group = get_object_or_404(Group, acronym=acronym)
+        clist = CommunityList.objects.filter(group=group).first() or CommunityList(group=group)
+    else:
+        persons = lookup_persons(email_or_name)
+        if len(persons) > 1:
+            if hasattr(request.user, 'person') and request.user.person in persons:
+                person = request.user.person
+            else:
+                raise MultiplePersonError("\r\n".join([p.user.username for p in persons]))
+        else:
+            person = persons[0]
+        clist = CommunityList.objects.filter(person=person).first() or CommunityList(person=person)
+
+    return clist
+
+def view_list(request, email_or_name=None):
+    try:
+        clist = lookup_community_list(request, email_or_name)
+    except MultiplePersonError as err:
+        return HttpResponse(str(err), status=300)
 
     docs = docs_tracked_by_community_list(clist)
     docs, meta = prepare_document_table(request, docs, request.GET)
@@ -42,10 +71,14 @@ def view_list(request, username=None):
     })
 
 @login_required
-def manage_list(request, username=None, acronym=None, group_type=None):
+@ignore_view_kwargs("group_type")
+def manage_list(request, email_or_name=None, acronym=None):
     # we need to be a bit careful because clist may not exist in the
     # database so we can't call related stuff on it yet
-    clist = lookup_community_list(username, acronym)
+    try:
+        clist = lookup_community_list(request, email_or_name, acronym)
+    except MultiplePersonError as err:
+        return HttpResponse(str(err), status=300)
 
     if not can_manage_community_list(request.user, clist):
         permission_denied(request, "You do not have permission to access this view")
@@ -128,11 +161,14 @@ def manage_list(request, username=None, acronym=None, group_type=None):
 
 
 @login_required
-def track_document(request, name, username=None, acronym=None):
+def track_document(request, name, email_or_name=None, acronym=None):
     doc = get_object_or_404(Document, name=name)
 
     if request.method == "POST":
-        clist = lookup_community_list(username, acronym)
+        try:
+            clist = lookup_community_list(request, email_or_name, acronym)
+        except MultiplePersonError as err:
+            return HttpResponse(str(err), status=300)
         if not can_manage_community_list(request.user, clist):
             permission_denied(request, "You do not have permission to access this view")
 
@@ -152,9 +188,12 @@ def track_document(request, name, username=None, acronym=None):
     })
 
 @login_required
-def untrack_document(request, name, username=None, acronym=None):
+def untrack_document(request, name, email_or_name=None, acronym=None):
     doc = get_object_or_404(Document, name=name)
-    clist = lookup_community_list(username, acronym)
+    try:
+        clist = lookup_community_list(request, email_or_name, acronym)
+    except MultiplePersonError as err:
+        return HttpResponse(str(err), status=300)
     if not can_manage_community_list(request.user, clist):
         permission_denied(request, "You do not have permission to access this view")
 
@@ -172,8 +211,12 @@ def untrack_document(request, name, username=None, acronym=None):
     })
 
 
-def export_to_csv(request, username=None, acronym=None, group_type=None):
-    clist = lookup_community_list(username, acronym)
+@ignore_view_kwargs("group_type")
+def export_to_csv(request, email_or_name=None, acronym=None):
+    try:
+        clist = lookup_community_list(request, email_or_name, acronym)
+    except MultiplePersonError as err:
+        return HttpResponse(str(err), status=300)
 
     response = HttpResponse(content_type='text/csv')
 
@@ -213,8 +256,12 @@ def export_to_csv(request, username=None, acronym=None, group_type=None):
 
     return response
 
-def feed(request, username=None, acronym=None, group_type=None):
-    clist = lookup_community_list(username, acronym)
+@ignore_view_kwargs("group_type")
+def feed(request, email_or_name=None, acronym=None):
+    try:
+        clist = lookup_community_list(request, email_or_name, acronym)
+    except MultiplePersonError as err:
+        return HttpResponse(str(err), status=300)
 
     significant = request.GET.get('significant', '') == '1'
 
@@ -249,17 +296,23 @@ def feed(request, username=None, acronym=None, group_type=None):
 
 
 @login_required
-def subscription(request, username=None, acronym=None, group_type=None):
-    clist = lookup_community_list(username, acronym)
-    if clist.pk is None:
-        raise Http404
+@ignore_view_kwargs("group_type")
+def subscription(request, email_or_name=None, acronym=None):
+    try:
+        clist = lookup_community_list(request, email_or_name, acronym)
+        if clist.pk is None:
+            raise Http404
+    except MultiplePersonError as err:
+        return HttpResponse(str(err), status=300)
 
-    existing_subscriptions = EmailSubscription.objects.filter(community_list=clist, email__person__user=request.user)
+    person = request.user.person
+
+    existing_subscriptions = EmailSubscription.objects.filter(community_list=clist, email__person=person)
 
     if request.method == 'POST':
         action = request.POST.get("action")
         if action == "subscribe":
-            form = SubscriptionForm(request.user, clist, request.POST)
+            form = SubscriptionForm(person, clist, request.POST)
             if form.is_valid():
                 subscription = form.save(commit=False)
                 subscription.community_list = clist
@@ -272,7 +325,7 @@ def subscription(request, username=None, acronym=None, group_type=None):
 
             return HttpResponseRedirect("")
     else:
-        form = SubscriptionForm(request.user, clist)
+        form = SubscriptionForm(person, clist)
 
     return render(request, 'community/subscription.html', {
         'clist': clist,

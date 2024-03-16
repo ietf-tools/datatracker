@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2009-2022, All Rights Reserved
+# Copyright The IETF Trust 2009-2024, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -71,7 +71,7 @@ class GroupPagesTests(TestCase):
         self.assertContains(r, group.name)
         self.assertContains(r, escape(group.ad_role().person.name))
 
-        for t in ('rg','area','ag', 'rag', 'dir','review','team','program','iabasg','adm','rfcedtyp'): # See issue 5120
+        for t in ('rg','area','ag', 'rag', 'dir','review','team','program','iabasg','iabworkshop','adm','rfcedtyp'): # See issue 5120
             g = GroupFactory.create(type_id=t,state_id='active') 
             if t in ['dir','review']:
                 g.parent = GroupFactory.create(type_id='area',state_id='active')
@@ -87,7 +87,7 @@ class GroupPagesTests(TestCase):
         self.assertContains(r, "Directorate")
         self.assertContains(r, "AG")
 
-        for slug in GroupTypeName.objects.exclude(slug__in=['wg','rg','ag','rag','area','dir','review','team','program','adhoc','ise','adm','iabasg','rfcedtyp', 'edwg', 'edappr']).values_list('slug',flat=True):
+        for slug in GroupTypeName.objects.exclude(slug__in=['wg','rg','ag','rag','area','dir','review','team','program','adhoc','ise','adm','iabasg','iabworkshop','rfcedtyp', 'edwg', 'edappr']).values_list('slug',flat=True):
             with self.assertRaises(NoReverseMatch):
                 url=urlreverse('ietf.group.views.active_groups', kwargs=dict(group_type=slug))
 
@@ -950,9 +950,87 @@ class GroupEditTests(TestCase):
             r = self.client.post(url, {
                 'description': 'Ignored description',
             })
-        self.assertEqual(r.status_code, 302)
+        self.assertEqual(r.status_code, 403)
         group = Group.objects.get(pk=group.pk)  # refresh
         self.assertEqual(group.description, 'Updated description')
+
+    def test_edit_parent(self):
+        group = GroupFactory.create(type_id='wg', parent=GroupFactory.create(type_id='area'))
+        chair = RoleFactory(group=group, name_id='chair').person
+        url = urlreverse('ietf.group.views.edit', kwargs=dict(group_type=group.type_id, acronym=group.acronym, action='edit'))
+
+        # parent is not shown to group chair
+        login_testing_unauthorized(self, chair.user.username, url)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q('form select[name=parent]')), 0)
+
+        # view ignores attempt to change parent
+        old_parent = group.parent
+        new_parent = GroupFactory(type_id='area')
+        self.assertNotEqual(new_parent.acronym, group.parent.acronym)
+        r = self.client.post(url, dict(
+            name=group.name,
+            acronym=group.acronym,
+            state=group.state_id,
+            parent=new_parent.pk))
+        self.assertEqual(r.status_code, 302)
+        group = Group.objects.get(pk=group.pk)
+        self.assertNotEqual(group.parent, new_parent)
+        self.assertEqual(group.parent, old_parent)
+
+        # parent is shown to AD and Secretariat
+        for priv_user in ('ad', 'secretary'):
+            self.client.logout()
+            login_testing_unauthorized(self, priv_user, url)
+            r = self.client.get(url)
+            self.assertEqual(r.status_code, 200)
+            q = PyQuery(r.content)
+            self.assertEqual(len(q('form select[name=parent]')), 1)
+
+            new_parent = GroupFactory(type_id='area')
+            self.assertNotEqual(new_parent.acronym, group.parent.acronym)
+            r = self.client.post(url, dict(
+                name=group.name,
+                acronym=group.acronym,
+                state=group.state_id,
+                parent=new_parent.pk))
+            self.assertEqual(r.status_code, 302)
+            group = Group.objects.get(pk=group.pk)
+            self.assertEqual(group.parent, new_parent)
+
+    def test_edit_parent_field(self):
+        group = GroupFactory.create(type_id='wg', parent=GroupFactory.create(type_id='area'))
+        chair = RoleFactory(group=group, name_id='chair').person
+        url = urlreverse('ietf.group.views.edit', kwargs=dict(group_type=group.type_id, acronym=group.acronym, action='edit', field='parent'))
+
+        # parent is not shown to group chair
+        login_testing_unauthorized(self, chair.user.username, url)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 403)
+
+        # chair is not allowed to change parent
+        new_parent = GroupFactory(type_id='area')
+        self.assertNotEqual(new_parent.acronym, group.parent.acronym)
+        r = self.client.post(url, dict(parent=new_parent.pk))
+        self.assertEqual(r.status_code, 403)
+
+        # parent is shown to AD and Secretariat
+        for priv_user in ('ad', 'secretary'):
+            self.client.logout()
+            login_testing_unauthorized(self, priv_user, url)
+            r = self.client.get(url)
+            self.assertEqual(r.status_code, 200)
+            q = PyQuery(r.content)
+            self.assertEqual(len(q('form select[name=parent]')), 1)
+
+            new_parent = GroupFactory(type_id='area')
+            self.assertNotEqual(new_parent.acronym, group.parent.acronym)
+            r = self.client.post(url, dict(parent=new_parent.pk))
+            self.assertEqual(r.status_code, 302)
+            group = Group.objects.get(pk=group.pk)
+            self.assertEqual(group.parent, new_parent)
 
     def test_conclude(self):
         group = GroupFactory(acronym="mars")
@@ -1966,7 +2044,16 @@ class AcronymValidationTests(TestCase):
         self.assertTrue(form.is_valid())
         form = AdminGroupForm({'acronym':'shouldfail-','name':'should fail','type':'wg','state':'active','used_roles':'[]','time':now})
         self.assertIn('acronym',form.errors)
+        form = AdminGroupForm({'acronym':'shouldfail-','name':'should fail','type':'sdo','state':'active','used_roles':'[]','time':now})
+        self.assertIn('acronym',form.errors)
         form = AdminGroupForm({'acronym':'-shouldfail','name':'should fail','type':'wg','state':'active','used_roles':'[]','time':now})
+        self.assertIn('acronym',form.errors)
+        form = AdminGroupForm({'acronym':'-shouldfail','name':'should fail','type':'sdo','state':'active','used_roles':'[]','time':now})
+        self.assertIn('acronym',form.errors)
+        # SDO groups (and only SDO groups) can have a leading number
+        form = AdminGroupForm({'acronym':'3gpp-should-pass','name':'should pass','type':'sdo','state':'active','used_roles':'[]','time':now})
+        self.assertTrue(form.is_valid())
+        form = AdminGroupForm({'acronym':'123shouldfail','name':'should fail','type':'wg','state':'active','used_roles':'[]','time':now})
         self.assertIn('acronym',form.errors)
 
         wg = GroupFactory(acronym='bad-idea', type_id='wg') # There are some existing wg and programs with hyphens in their acronyms.

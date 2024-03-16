@@ -7,7 +7,6 @@ import os
 from django.db import models
 from django.db.models.signals import post_delete
 from django.conf import settings
-from django.contrib.auth.models import User
 from django.template.loader import render_to_string
 from django.template.defaultfilters import linebreaks # type: ignore
 
@@ -128,7 +127,7 @@ class Nomination(models.Model):
     nominee = ForeignKey('Nominee')
     comments = ForeignKey('Feedback')
     nominator_email = models.EmailField(verbose_name='Nominator Email', blank=True)
-    user = ForeignKey(User, editable=False, null=True, on_delete=models.SET_NULL)
+    person = ForeignKey(Person, editable=False, null=True, on_delete=models.SET_NULL)
     time = models.DateTimeField(auto_now_add=True)
     share_nominator = models.BooleanField(verbose_name='OK to share nominator\'s name with candidate', default=False,
                                           help_text='Check this box to allow the NomCom to let the '
@@ -148,7 +147,7 @@ class Nominee(models.Model):
 
     email = ForeignKey(Email)
     person = ForeignKey(Person, blank=True, null=True)
-    nominee_position = models.ManyToManyField('Position', through='NomineePosition')
+    nominee_position = models.ManyToManyField('nomcom.Position', through='nomcom.NomineePosition')
     duplicated = ForeignKey('Nominee', blank=True, null=True)
     nomcom = ForeignKey('NomCom')
 
@@ -293,13 +292,13 @@ class Topic(models.Model):
 class Feedback(models.Model):
     nomcom = ForeignKey('NomCom')
     author = models.EmailField(verbose_name='Author', blank=True)
-    positions = models.ManyToManyField('Position', blank=True)
-    nominees = models.ManyToManyField('Nominee', blank=True)
-    topics = models.ManyToManyField('Topic', blank=True)
+    positions = models.ManyToManyField('nomcom.Position', blank=True)
+    nominees = models.ManyToManyField('nomcom.Nominee', blank=True)
+    topics = models.ManyToManyField('nomcom.Topic', blank=True)
     subject = models.TextField(verbose_name='Subject', blank=True)
     comments = models.BinaryField(verbose_name='Comments')
     type = ForeignKey(FeedbackTypeName, blank=True, null=True)
-    user = ForeignKey(User, editable=False, blank=True, null=True, on_delete=models.SET_NULL)
+    person = ForeignKey(Person, editable=False, blank=True, null=True, on_delete=models.SET_NULL)
     time = models.DateTimeField(auto_now_add=True)
 
     objects = FeedbackManager()
@@ -327,7 +326,10 @@ class Volunteer(models.Model):
     nomcom = ForeignKey('NomCom')
     person = ForeignKey(Person)
     affiliation = models.CharField(blank=True, max_length=255)
-
+    time = models.DateTimeField(auto_now_add=True, null=True, blank=True)
+    origin = models.CharField(max_length=32, default='datatracker')
+    withdrawn = models.DateTimeField(blank=True, null=True)
+    
     def __str__(self):
         return f'{self.person} for {self.nomcom}'
     

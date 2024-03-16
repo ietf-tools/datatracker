@@ -29,7 +29,8 @@ from ietf.name.models import FormalLanguageName, DocRelationshipName, CountryNam
 from ietf.review.factories import ReviewRequestFactory, ReviewerSettingsFactory, ReviewAssignmentFactory
 from ietf.stats.models import MeetingRegistration, CountryAlias
 from ietf.stats.factories import MeetingRegistrationFactory
-from ietf.stats.utils import get_meeting_registration_data
+from ietf.stats.tasks import fetch_meeting_attendance_task
+from ietf.stats.utils import get_meeting_registration_data, FetchStats, fetch_attendance_from_meetings
 from ietf.utils.timezone import date_today
 
 
@@ -272,3 +273,76 @@ class StatisticsTests(TestCase):
         self.assertEqual(query.count(), 1)
         self.assertEqual(query.filter(reg_type='onsite').count(), 1)
         self.assertEqual(query.filter(reg_type='hackathon').count(), 0)
+
+    @patch('requests.get')
+    def test_get_meeting_registration_data_duplicates(self, mock_get):
+        '''Test that get_meeting_registration_data does not create duplicate
+           MeetingRegistration records
+        '''
+        person = PersonFactory()
+        data = {
+            'LastName': person.last_name() + ' ',
+            'FirstName': person.first_name(),
+            'Company': 'ABC',
+            'Country': 'US',
+            'Email': person.email().address,
+            'RegType': 'onsite',
+            'TicketType': 'week_pass',
+            'CheckedIn': 'True',
+        }
+        data2 = data.copy()
+        data2['RegType'] = 'hackathon'
+        response = Response()
+        response.status_code = 200
+        response._content = json.dumps([data, data2, data]).encode('utf8')
+        mock_get.return_value = response
+        meeting = MeetingFactory(type_id='ietf', date=datetime.date(2016, 7, 14), number="96")
+        self.assertEqual(MeetingRegistration.objects.count(), 0)
+        get_meeting_registration_data(meeting)
+        query = MeetingRegistration.objects.all()
+        self.assertEqual(query.count(), 2)
+
+    @patch("ietf.stats.utils.get_meeting_registration_data")
+    def test_fetch_attendance_from_meetings(self, mock_get_mtg_reg_data):
+        mock_meetings = [object(), object(), object()]
+        mock_get_mtg_reg_data.side_effect = (
+            (1, 2, 3),
+            (4, 5, 6),
+            (7, 8, 9),
+        )
+        stats = fetch_attendance_from_meetings(mock_meetings)
+        self.assertEqual(
+            [mock_get_mtg_reg_data.call_args_list[n][0][0] for n in range(3)],
+            mock_meetings,
+        )
+        self.assertEqual(
+            stats,
+            [
+                FetchStats(1, 2, 3),
+                FetchStats(4, 5, 6),
+                FetchStats(7, 8, 9),
+            ]
+        )
+
+
+class TaskTests(TestCase):
+    @patch("ietf.stats.tasks.fetch_attendance_from_meetings")
+    def test_fetch_meeting_attendance_task(self, mock_fetch_attendance):
+        today = date_today()
+        meetings = [
+            MeetingFactory(type_id="ietf", date=today - datetime.timedelta(days=1)),
+            MeetingFactory(type_id="ietf", date=today - datetime.timedelta(days=2)),
+            MeetingFactory(type_id="ietf", date=today - datetime.timedelta(days=3)),
+        ]
+        mock_fetch_attendance.return_value = [FetchStats(1,2,3), FetchStats(1,2,3)]
+
+        fetch_meeting_attendance_task()
+        self.assertEqual(mock_fetch_attendance.call_count, 1)
+        self.assertCountEqual(mock_fetch_attendance.call_args[0][0], meetings[0:2])
+
+        # test handling of RuntimeError
+        mock_fetch_attendance.reset_mock()
+        mock_fetch_attendance.side_effect = RuntimeError
+        fetch_meeting_attendance_task()
+        self.assertTrue(mock_fetch_attendance.called)
+        # Good enough that we got here without raising an exception

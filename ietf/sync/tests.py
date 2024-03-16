@@ -8,19 +8,23 @@ import json
 import datetime
 import mock
 import quopri
+import requests
+
+from dataclasses import dataclass
 
 from django.conf import settings
 from django.urls import reverse as urlreverse
 from django.utils import timezone
+from django.test.utils import override_settings
 
 import debug                            # pyflakes:ignore
 
-from ietf.doc.factories import WgDraftFactory, RfcFactory
+from ietf.doc.factories import WgDraftFactory, RfcFactory, DocumentAuthorFactory, DocEventFactory
 from ietf.doc.models import Document, DocEvent, DeletedEvent, DocTagName, RelatedDocument, State, StateDocEvent
 from ietf.doc.utils import add_state_change_event
 from ietf.group.factories import GroupFactory
 from ietf.person.models import Person
-from ietf.sync import iana, rfceditor
+from ietf.sync import iana, rfceditor, tasks
 from ietf.utils.mail import outbox, empty_outbox
 from ietf.utils.test_utils import login_testing_unauthorized
 from ietf.utils.test_utils import TestCase
@@ -235,6 +239,7 @@ class RFCSyncTests(TestCase):
             external_url="http://my-external-url.example.com",
             note="this is a note",
         )
+        DocumentAuthorFactory.create_batch(2, document=draft_doc)
         draft_doc.action_holders.add(draft_doc.ad)  # not normally set, but add to be sure it's cleared
 
         RfcFactory(rfc_number=123)
@@ -260,7 +265,7 @@ class RFCSyncTests(TestCase):
         </is-also>
     </fyi-entry>
     <std-entry>
-        <doc-id>STD0001</doc-id>
+        <doc-id>STD0002</doc-id>
         <title>Test</title>
         <is-also>
             <doc-id>RFC1234</doc-id>
@@ -323,7 +328,6 @@ class RFCSyncTests(TestCase):
 
         data = rfceditor.parse_index(io.StringIO(t))
         self.assertEqual(len(data), 1)
-        
         rfc_number, title, authors, rfc_published_date, current_status, updates, updated_by, obsoletes, obsoleted_by, also, draft, has_errata, stream, wg, file_formats, pages, abstract = data[0]
 
         # currently, we only check what we actually use
@@ -333,7 +337,7 @@ class RFCSyncTests(TestCase):
         self.assertEqual(rfc_published_date.month, today.month)
         self.assertEqual(current_status, "Proposed Standard")
         self.assertEqual(updates, ["RFC123"])
-        self.assertEqual(set(also), set(["BCP1", "FYI1", "STD1"]))
+        self.assertEqual(set(also), set(["BCP1", "FYI1", "STD2"]))
         self.assertEqual(draft, draft_doc.name)
         self.assertEqual(wg, draft_doc.group.acronym)
         self.assertEqual(has_errata, True)
@@ -348,12 +352,21 @@ class RFCSyncTests(TestCase):
         draft_title_before = draft_doc.title
         draft_abstract_before = draft_doc.abstract
         draft_pages_before = draft_doc.pages
+
         changes = []
         with mock.patch("ietf.sync.rfceditor.log") as mock_log:
-            for _, d, rfc_published in rfceditor.update_docs_from_rfc_index(data, errata, today - datetime.timedelta(days=30)):
+            for rfc_number, _, d, rfc_published in rfceditor.update_docs_from_rfc_index(data, errata, today - datetime.timedelta(days=30)):
                 changes.append({"doc_pk": d.pk, "rfc_published": rfc_published})  # we ignore the actual change list
+                self.assertEqual(rfc_number, 1234)
+                if rfc_published:
+                    self.assertEqual(d.type_id, "rfc")
+                    self.assertEqual(d.rfc_number, rfc_number)
+                else:
+                    self.assertEqual(d.type_id, "draft")
+                    self.assertIsNone(d.rfc_number)
+                    
         self.assertFalse(mock_log.called, "No log messages expected")
-        
+
         draft_doc = Document.objects.get(name=draft_doc.name)
         draft_events = draft_doc.docevent_set.all()
         self.assertEqual(len(draft_events) - event_count_before, 2)
@@ -370,15 +383,16 @@ class RFCSyncTests(TestCase):
 
         rfc_doc = Document.objects.filter(rfc_number=1234, type_id="rfc").first()
         self.assertIsNotNone(rfc_doc, "RFC document should have been created")
+        self.assertEqual(rfc_doc.authors(), draft_doc.authors())
         rfc_events = rfc_doc.docevent_set.all()
         self.assertEqual(len(rfc_events), 8)
         expected_events = [
             ["sync_from_rfc_editor", ""], # Not looking for exact desc match here - see detailed tests below
-            ["sync_from_rfc_editor", "Added rfc1234 to std1"],
-            ["std_history_marker", "No history of STD1 is currently available in the datatracker before this point"],
-            ["sync_from_rfc_editor", "Added rfc1234 to fyi1"],
+            ["sync_from_rfc_editor", "Imported membership of rfc1234 in std2 via sync to the rfc-index"],
+            ["std_history_marker", "No history of STD2 is currently available in the datatracker before this point"],
+            ["sync_from_rfc_editor", "Imported membership of rfc1234 in fyi1 via sync to the rfc-index"],
             ["fyi_history_marker", "No history of FYI1 is currently available in the datatracker before this point"],
-            ["sync_from_rfc_editor", "Added rfc1234 to bcp1"],
+            ["sync_from_rfc_editor", "Imported membership of rfc1234 in bcp1 via sync to the rfc-index"],
             ["bcp_history_marker", "No history of BCP1 is currently available in the datatracker before this point"],
             ["published_rfc", "RFC published"]
         ]
@@ -391,15 +405,15 @@ class RFCSyncTests(TestCase):
                 self.assertIn("set abstract to 'This is some interesting text.'", rfc_events[0].desc)
                 self.assertIn("set pages to 42", rfc_events[0].desc)
                 self.assertIn("set standardization level to Proposed Standard", rfc_events[0].desc)
-                self.assertIn(f"added RFC published event at {rfc_events[0].time:%Y-%m-%d}", rfc_events[0].desc)
+                self.assertIn(f"added RFC published event at {rfc_events[0].time.astimezone(RPC_TZINFO):%Y-%m-%d}", rfc_events[0].desc)
                 self.assertIn("created updates relation between RFC 1234 and RFC 123", rfc_events[0].desc)
                 self.assertIn("added Errata tag", rfc_events[0].desc)
             else:
                 self.assertEqual(rfc_events[index].desc, desc)
         self.assertEqual(rfc_events[7].time.astimezone(RPC_TZINFO).date(), today)
-        for subseries_slug in ["bcp", "fyi", "std"]:
-            sub = Document.objects.filter(type_id=subseries_slug,name=f"{subseries_slug}1").first()
-            self.assertIsNotNone(sub, f"{subseries_slug}1 not created")
+        for subseries_name in ["bcp1", "fyi1", "std2"]:
+            sub = Document.objects.filter(type_id=subseries_name[:3],name=subseries_name).first()
+            self.assertIsNotNone(sub, f"{subseries_name} not created")
             self.assertTrue(rfc_doc in sub.contains())
             self.assertTrue(sub in rfc_doc.part_of())
         self.assertEqual(rfc_doc.get_state_slug(), "published")
@@ -664,3 +678,228 @@ class RFCEditorUndoTests(TestCase):
 
         e.content_type.model_class().objects.create(**json.loads(e.json))
         self.assertTrue(StateDocEvent.objects.filter(desc="First", doc=draft))
+
+
+class TaskTests(TestCase):
+    @override_settings(
+        RFC_EDITOR_INDEX_URL="https://rfc-editor.example.com/index/",
+        RFC_EDITOR_ERRATA_JSON_URL="https://rfc-editor.example.com/errata/",
+    )
+    @mock.patch("ietf.sync.tasks.rfceditor.update_docs_from_rfc_index")
+    @mock.patch("ietf.sync.tasks.rfceditor.parse_index")
+    @mock.patch("ietf.sync.tasks.requests.get")
+    def test_rfc_editor_index_update_task(
+        self, requests_get_mock, parse_index_mock, update_docs_mock
+    ) -> None:  # the annotation here prevents mypy from complaining about annotation-unchecked
+        """rfc_editor_index_update_task calls helpers correctly
+        
+        This tests that data flow is as expected. Assumes the individual helpers are
+        separately tested to function correctly.
+        """
+        @dataclass
+        class MockIndexData:
+            """Mock index item that claims to be a specified length"""
+            length: int
+
+            def __len__(self):
+                return self.length
+
+        @dataclass
+        class MockResponse:
+            """Mock object that contains text and json() that claims to be a specified length"""
+            text: str
+            json_length: int = 0
+
+            def json(self):
+                return MockIndexData(length=self.json_length)
+
+        # Response objects
+        index_response = MockResponse(text="this is the index")
+        errata_response = MockResponse(
+            text="these are the errata", json_length=rfceditor.MIN_ERRATA_RESULTS
+        )
+        rfc = RfcFactory()
+    
+        # Test with full_index = False
+        requests_get_mock.side_effect = (index_response, errata_response)  # will step through these
+        parse_index_mock.return_value = MockIndexData(length=rfceditor.MIN_INDEX_RESULTS)
+        update_docs_mock.return_value = (
+            (rfc.rfc_number, ("something changed",), rfc, False),
+        )
+
+        tasks.rfc_editor_index_update_task(full_index=False)
+
+        # Check parse_index() call
+        self.assertTrue(parse_index_mock.called)
+        (parse_index_args, _) = parse_index_mock.call_args
+        self.assertEqual(
+            parse_index_args[0].read(),  # arg is a StringIO
+            "this is the index",
+            "parse_index is called with the index text in a StringIO",
+        )
+
+        # Check update_docs_from_rfc_index call
+        self.assertTrue(update_docs_mock.called)
+        (update_docs_args, update_docs_kwargs) = update_docs_mock.call_args
+        self.assertEqual(
+            update_docs_args, (parse_index_mock.return_value, errata_response.json())
+        )
+        self.assertIsNotNone(update_docs_kwargs["skip_older_than_date"])
+
+        # Test again with full_index = True
+        requests_get_mock.reset_mock()
+        parse_index_mock.reset_mock()
+        update_docs_mock.reset_mock()
+        requests_get_mock.side_effect = (index_response, errata_response)  # will step through these
+        tasks.rfc_editor_index_update_task(full_index=True)
+
+        # Check parse_index() call
+        self.assertTrue(parse_index_mock.called)
+        (parse_index_args, _) = parse_index_mock.call_args
+        self.assertEqual(
+            parse_index_args[0].read(),  # arg is a StringIO
+            "this is the index",
+            "parse_index is called with the index text in a StringIO",
+        )
+
+        # Check update_docs_from_rfc_index call
+        self.assertTrue(update_docs_mock.called)
+        (update_docs_args, update_docs_kwargs) = update_docs_mock.call_args
+        self.assertEqual(
+            update_docs_args, (parse_index_mock.return_value, errata_response.json())
+        )
+        self.assertIsNone(update_docs_kwargs["skip_older_than_date"])
+
+        # Test error handling
+        requests_get_mock.reset_mock()
+        parse_index_mock.reset_mock()
+        update_docs_mock.reset_mock()
+        requests_get_mock.side_effect = requests.Timeout  # timeout on every get()
+        tasks.rfc_editor_index_update_task(full_index=False)
+        self.assertFalse(parse_index_mock.called)
+        self.assertFalse(update_docs_mock.called)
+        
+        requests_get_mock.reset_mock()
+        parse_index_mock.reset_mock()
+        update_docs_mock.reset_mock()
+        requests_get_mock.side_effect = [index_response, requests.Timeout]  # timeout second get()
+        tasks.rfc_editor_index_update_task(full_index=False)
+        self.assertFalse(update_docs_mock.called)
+
+        requests_get_mock.reset_mock()
+        parse_index_mock.reset_mock()
+        update_docs_mock.reset_mock()
+        requests_get_mock.side_effect = [index_response, errata_response]
+        # feed in an index that is too short
+        parse_index_mock.return_value = MockIndexData(length=rfceditor.MIN_INDEX_RESULTS - 1)
+        tasks.rfc_editor_index_update_task(full_index=False)
+        self.assertTrue(parse_index_mock.called)
+        self.assertFalse(update_docs_mock.called)
+
+        requests_get_mock.reset_mock()
+        parse_index_mock.reset_mock()
+        update_docs_mock.reset_mock()
+        requests_get_mock.side_effect = [index_response, errata_response]
+        errata_response.json_length = rfceditor.MIN_ERRATA_RESULTS - 1  # too short
+        parse_index_mock.return_value = MockIndexData(length=rfceditor.MIN_INDEX_RESULTS)
+        tasks.rfc_editor_index_update_task(full_index=False)
+        self.assertFalse(update_docs_mock.called)
+
+    @override_settings(IANA_SYNC_CHANGES_URL="https://iana.example.com/sync/")
+    @mock.patch("ietf.sync.tasks.iana.update_history_with_changes")
+    @mock.patch("ietf.sync.tasks.iana.parse_changes_json")
+    @mock.patch("ietf.sync.tasks.iana.fetch_changes_json")
+    def test_iana_changes_update_task(
+        self, 
+        fetch_changes_mock,
+        parse_changes_mock,
+        update_history_mock,
+    ):
+        # set up mocks
+        fetch_return_val = object()
+        fetch_changes_mock.return_value = fetch_return_val
+        parse_return_val = object()
+        parse_changes_mock.return_value = parse_return_val
+        event_with_json = DocEventFactory()
+        event_with_json.json = "hi I'm json"
+        update_history_mock.return_value = [
+            [event_with_json],  # events
+            ["oh no!"],  # warnings
+        ]
+        
+        tasks.iana_changes_update_task()
+        self.assertEqual(fetch_changes_mock.call_count, 1)
+        self.assertEqual(
+            fetch_changes_mock.call_args[0][0],
+            "https://iana.example.com/sync/",
+        )
+        self.assertTrue(parse_changes_mock.called)
+        self.assertEqual(
+            parse_changes_mock.call_args,
+            ((fetch_return_val,), {}),
+        )
+        self.assertTrue(update_history_mock.called)
+        self.assertEqual(
+            update_history_mock.call_args,
+            ((parse_return_val,), {"send_email": True}),
+        )
+
+    @override_settings(IANA_SYNC_PROTOCOLS_URL="https://iana.example.com/proto/")
+    @mock.patch("ietf.sync.tasks.iana.update_rfc_log_from_protocol_page")
+    @mock.patch("ietf.sync.tasks.iana.parse_protocol_page")
+    @mock.patch("ietf.sync.tasks.requests.get")
+    def test_iana_protocols_update_task(
+        self,
+        requests_get_mock,
+        parse_protocols_mock,
+        update_rfc_log_mock,
+    ):
+        # set up mocks
+        requests_get_mock.return_value = mock.Mock(text="fetched response")
+        parse_protocols_mock.return_value = range(110)  # larger than batch size of 100
+        update_rfc_log_mock.return_value = [
+            mock.Mock(display_name=mock.Mock(return_value="name"))
+        ]
+        
+        # call the task
+        tasks.iana_protocols_update_task()
+        
+        # check that it did the right things
+        self.assertTrue(requests_get_mock.called)
+        self.assertEqual(
+            requests_get_mock.call_args[0], 
+            ("https://iana.example.com/proto/",),
+        )
+        self.assertTrue(parse_protocols_mock.called)
+        self.assertEqual(
+            parse_protocols_mock.call_args[0],
+            ("fetched response",),
+        )
+        self.assertEqual(update_rfc_log_mock.call_count, 2)
+        self.assertEqual(
+            update_rfc_log_mock.call_args_list[0][0][0],
+            range(100),  # first batch
+        )
+        self.assertEqual(
+            update_rfc_log_mock.call_args_list[1][0][0],
+            range(100, 110),  # second batch
+        )
+        # make sure the calls use the same later_than date and that it's the expected one
+        published_later_than = set(
+            update_rfc_log_mock.call_args_list[n][0][1] for n in (0, 1)
+        )
+        self.assertEqual(
+            published_later_than, 
+            {datetime.datetime(2012,11,26,tzinfo=datetime.timezone.utc)}
+        )
+
+        # try with an exception
+        requests_get_mock.reset_mock()
+        parse_protocols_mock.reset_mock()
+        update_rfc_log_mock.reset_mock()
+        requests_get_mock.side_effect = requests.Timeout
+
+        tasks.iana_protocols_update_task()
+        self.assertTrue(requests_get_mock.called)
+        self.assertFalse(parse_protocols_mock.called)
+        self.assertFalse(update_rfc_log_mock.called)

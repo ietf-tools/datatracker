@@ -38,10 +38,10 @@
         </thead>
         <tbody>
             {% for ref in refs %}
-                {% with ref.source.name as name %}
+                {% with ref.source.name as src_name %}
                     <tr>
                         <td>
-                            <a href="{% url 'ietf.doc.views_doc.document_main' name=name %}">{{ name|prettystdname }}</a>
+                            <a href="{% url 'ietf.doc.views_doc.document_main' name=src_name %}">{{ src_name|prettystdname }}</a>
                             {% if ref.target.name != name %}
                                 <br>
                                 <span class="badge rounded-pill text-bg-info">As {{ ref.target.name }}</span>
@@ -51,13 +51,13 @@
                             <b>{{ ref.source.title }}</b>
                             <br>
                             <a class="btn btn-primary btn-sm"
-                               href="{% url 'ietf.doc.views_doc.document_references' name %}"
+                               href="{% url 'ietf.doc.views_doc.document_references' src_name %}"
                                rel="nofollow">
                                 <i class="bi bi-arrow-left"></i>
                                 References
                             </a>
                             <a class="btn btn-primary btn-sm"
-                               href="{% url 'ietf.doc.views_doc.document_referenced_by' name %}"
+                               href="{% url 'ietf.doc.views_doc.document_referenced_by' src_name %}"
                                rel="nofollow">
                                 <i class="bi bi-arrow-right"></i>
                                 Referenced by

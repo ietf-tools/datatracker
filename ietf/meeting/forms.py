@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2016-2020, All Rights Reserved
+# Copyright The IETF Trust 2016-2023, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -341,7 +341,7 @@ class InterimSessionModelForm(forms.ModelForm):
                 # FIXME: What about agendas in html or markdown format?
                 uploaded_filename='{}-00.txt'.format(filename))
             doc.set_state(State.objects.get(type__slug=doc.type.slug, slug='active'))
-            self.instance.sessionpresentation_set.create(document=doc, rev=doc.rev)
+            self.instance.presentations.create(document=doc, rev=doc.rev)
             NewRevisionDocEvent.objects.create(
                 type='new_revision',
                 by=self.user.person,
@@ -360,7 +360,13 @@ class InterimSessionModelForm(forms.ModelForm):
 class InterimAnnounceForm(forms.ModelForm):
     class Meta:
         model = Message
-        fields = ('to', 'frm', 'cc', 'bcc', 'reply_to', 'subject', 'body')
+        fields = ('to', 'cc', 'frm', 'subject', 'body')
+
+    def __init__(self, *args, **kwargs):
+        super(InterimAnnounceForm, self).__init__(*args, **kwargs)
+        self.fields['frm'].label='From'
+        self.fields['frm'].widget.attrs['readonly'] = True
+        self.fields['to'].widget.attrs['readonly'] = True
 
     def save(self, *args, **kwargs):
         user = kwargs.pop('user')
@@ -374,7 +380,8 @@ class InterimAnnounceForm(forms.ModelForm):
 class InterimCancelForm(forms.Form):
     group = forms.CharField(max_length=255, required=False)
     date = forms.DateField(required=False)
-    comments = forms.CharField(required=False, widget=forms.Textarea(attrs={'placeholder': 'enter optional comments here'}), strip=False)
+    # max_length must match Session.agenda_note
+    comments = forms.CharField(max_length=512, required=False, widget=forms.Textarea(attrs={'placeholder': 'enter optional comments here'}), strip=False)
 
     def __init__(self, *args, **kwargs):
         super(InterimCancelForm, self).__init__(*args, **kwargs)
@@ -464,6 +471,9 @@ class ApplyToAllFileUploadForm(FileUploadForm):
 
 class UploadMinutesForm(ApplyToAllFileUploadForm):
     doc_type = 'minutes'
+
+class UploadNarrativeMinutesForm(ApplyToAllFileUploadForm):
+    doc_type = 'narrativeminutes'
 
 
 class UploadAgendaForm(ApplyToAllFileUploadForm):

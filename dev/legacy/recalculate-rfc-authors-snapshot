@@ -1,18 +1,20 @@
-#!/usr/bin/env python
+#!/bin/sh
 
-"""DANGER, WILL ROBINSON
+echo "This is only here as documentation. Please read the file"
+exit
 
-This code was used in the construction of person migrations 0016 through 0019
-and doc migration 0029 The original intent was to provide a utility that could
-be run periodically, but the need for manual inspection of the results was too
-great. It is here as a _starting point_ for future exploration of updating rfc
-documentauthor sets. Be careful to check that assumptions haven't changed in
-the interim.
+# #!/usr/bin/env python
 
-"""
+# """DANGER, WILL ROBINSON
 
-print("This file exists as documentation - there's nothing here that's safe to actually run")
+# This code was used in the construction of person migrations 0016 through 0019
+# and doc migration 0029 The original intent was to provide a utility that could
+# be run periodically, but the need for manual inspection of the results was too
+# great. It is here as a _starting point_ for future exploration of updating rfc
+# documentauthor sets. Be careful to check that assumptions haven't changed in
+# the interim.
 
+# """
 
 # import os, sys
 # import django
@@ -8341,3 +8343,4 @@ print("This file exists as documentation - there's nothing here that's safe to a
 
 # if __name__ == "__main__":
 #     _main()
+

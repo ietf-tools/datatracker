@@ -46,6 +46,15 @@ bleach_cleaner = bleach.sanitizer.Cleaner(
     tags=tags, attributes=attributes, protocols=protocols, strip=True
 )
 
+liberal_tags = copy.copy(tags)
+liberal_attributes = copy.copy(attributes)
+liberal_tags.update(["img","figure","figcaption"])
+liberal_attributes["img"] = ["src","alt"]
+
+liberal_bleach_cleaner = bleach.sanitizer.Cleaner(
+    tags=liberal_tags, attributes=liberal_attributes, protocols=protocols, strip=True
+)
+
 validate_url = URLValidator()
 
 

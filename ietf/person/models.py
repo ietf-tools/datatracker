@@ -190,7 +190,7 @@ class Person(models.Model):
 
     def rfcs(self):
         from ietf.doc.models import Document
-        rfcs = list(Document.objects.filter(documentauthor__person=self, type='draft', states__slug='rfc'))
+        rfcs = list(Document.objects.filter(documentauthor__person=self, type='rfc'))
         rfcs.sort(key=lambda d: d.name )
         return rfcs
 

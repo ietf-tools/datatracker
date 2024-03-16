@@ -16,6 +16,11 @@
                 {% endwith %}
             {% else %}
                 <div class="badge rounded-pill text-bg-secondary">{{ s.current_status_name }}</div>
+                {% if s.current_status == "canceled" %}
+                    {% with timeslot=s.official_timeslotassignment.timeslot %}
+                        <span class="text-decoration-line-through text-secondary session-time date me-3" data-start-utc="{{ timeslot.time|utc|date:'Y-m-d' }}" data-end-utc="{{ timeslot.end_time|utc|date:'Y-m-d' }}"></span>
+                    {% endwith %}
+                {% endif %}
             {% endif %}
             {% if show_request and s.meeting.type_id == 'ietf' %}
                 {% if can_edit %}
@@ -32,7 +37,6 @@
         <td>
             {% if show_ical and s.current_status == "sched" %}
                 {% if s.meeting.type_id == 'ietf' %}
-                    {{ s.time|date:"H:i" }}
                     <a class="btn btn-primary btn-sm"
                        aria-label="icalendar entry for {{s.group.acronym}} at IETF {{s.meeting.number}}"
                        title="icalendar entry for {{s.group.acronym}} at IETF {{s.meeting.number}}"
@@ -56,6 +60,12 @@
                {% if s.minutes %}href="{{ s.minutes.get_absolute_url }}"{% endif %}>
                 Minutes
             </a>
+            {% if group.acronym == "iesg" %}
+            <a class="btn btn-sm {% if not s.narrative_minutes %}btn-secondary disabled{% else %}btn-primary{% endif %}"
+               {% if s.narrative_minutes %}href="{{ s.narrative_minutes.get_absolute_url }}"{% endif %}>
+                Narrative Minutes
+            </a>
+            {% endif %}
             <a class="btn btn-primary btn-sm"
                 href="{% url 'ietf.meeting.views.session_details' num=s.meeting.number acronym=s.group.acronym %}">
                 {% if can_always_edit or can_edit_materials %}
