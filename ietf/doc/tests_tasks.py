@@ -1,13 +1,21 @@
 # Copyright The IETF Trust 2024, All Rights Reserved
+
+import io
+import os
 import mock
+
+from django.urls import reverse as urlreverse
+from django.conf import settings
 
 from ietf.utils.test_utils import TestCase
 from ietf.utils.timezone import datetime_today
+from ietf.utils.test_utils import unicontent
 
-from .factories import DocumentFactory
+from .factories import DocumentFactory, IndividualDraftFactory, WgRfcFactory
 from .models import Document
 from .tasks import expire_ids_task, notify_expirations_task
-
+from .tasks import generate_idnits2_rfcs_obsoleted_task, generate_idnits2_rfc_status_task
+from .tasks import generate_bibxml_files_for_all_drafts_task, generate_bibxml_files_for_recent_drafts_task
 
 class TaskTests(TestCase):
 
@@ -61,3 +69,66 @@ class TaskTests(TestCase):
         notify_expirations_task()
         self.assertEqual(send_warning_mock.call_count, 1)
         self.assertEqual(send_warning_mock.call_args[0], ("sentinel",))
+
+
+class Idnits2SupportTests(TestCase):
+    settings_temp_path_overrides = TestCase.settings_temp_path_overrides + ['DERIVED_DIR']
+
+    def test_generate_idnits2_rfcs_obsoleted_task(self):
+        rfc = WgRfcFactory(rfc_number=1001)
+        WgRfcFactory(rfc_number=1003,relations=[('obs',rfc)])
+        rfc = WgRfcFactory(rfc_number=1005)
+        WgRfcFactory(rfc_number=1007,relations=[('obs',rfc)])
+        url = urlreverse('ietf.doc.views_doc.idnits2_rfcs_obsoleted')
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 404)
+        generate_idnits2_rfcs_obsoleted_task()
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.content, b'1001 1003\n1005 1007\n')
+        
+    def test_generate_idnits2_rfc_status_task(self):
+        for slug in ('bcp', 'ds', 'exp', 'hist', 'inf', 'std', 'ps', 'unkn'):
+            WgRfcFactory(std_level_id=slug)
+        url = urlreverse('ietf.doc.views_doc.idnits2_rfc_status')
+        r = self.client.get(url)
+        self.assertEqual(r.status_code,404)
+        generate_idnits2_rfc_status_task()
+        r = self.client.get(url)
+        self.assertEqual(r.status_code,200)
+        blob = unicontent(r).replace('\n','')
+        self.assertEqual(blob[6312-1],'O')
+
+
+class BIBXMLSupportTests(TestCase):
+    def test_generate_bibxml_files_for_all_drafts_task(self):
+        draft = IndividualDraftFactory.create()
+        filename = 'reference.I-D.%s-%s.xml' % (draft.name, draft.rev)
+        bibxmldir = os.path.join(settings.BIBXML_BASE_PATH, 'bibxml-ids')
+        os.mkdir(bibxmldir)
+        filepath = os.path.join(bibxmldir, filename)
+        self.assertFalse(os.path.exists(filepath))
+        generate_bibxml_files_for_all_drafts_task()
+        self.assertTrue(os.path.exists(filepath))
+        with io.open(filepath, encoding='utf-8') as f:
+            content = f.read()
+        self.assertIn(draft.title, content)
+
+    def test_generate_bibxml_files_for_recent_drafts_task(self):
+        draft = IndividualDraftFactory.create()
+        filename = 'reference.I-D.%s-%s.xml' % (draft.name, draft.rev)
+        bibxmldir = os.path.join(settings.BIBXML_BASE_PATH, 'bibxml-ids')
+        os.mkdir(bibxmldir)
+        filepath = os.path.join(bibxmldir, filename)
+        self.assertFalse(os.path.exists(filepath))
+        generate_bibxml_files_for_recent_drafts_task(days=7)
+        self.assertTrue(os.path.exists(filepath))
+        with io.open(filepath, encoding='utf-8') as f:
+            content = f.read()
+        self.assertIn(draft.title, content)
+
+    def test_generate_bibxml_files_for_recent_drafts_task_with_bad_vakue(self):
+        bibxmldir = os.path.join(settings.BIBXML_BASE_PATH, 'bibxml-ids')
+        os.mkdir(bibxmldir)
+        with self.assertRaises(ValueError):
+            generate_bibxml_files_for_recent_drafts_task(days=0)
