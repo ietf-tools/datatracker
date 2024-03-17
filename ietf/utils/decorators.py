@@ -4,7 +4,6 @@
 
 import datetime
 
-from decorator import decorator, decorate
 from functools import wraps
 
 from django.conf import settings
@@ -20,25 +19,29 @@ from ietf.utils.test_runner import set_coverage_checking
 from ietf.person.models import Person, PersonalApiKey, PersonApiKeyEvent
 from ietf.utils import log
 
-@decorator
-def skip_coverage(f, *args, **kwargs):
-    if settings.TEST_CODE_COVERAGE_CHECKER:
-        set_coverage_checking(False)
-        result = f(*args, **kwargs)
-        set_coverage_checking(True)
-        return result
-    else:
-        return  f(*args, **kwargs)
+def skip_coverage(f):
+    @wraps(f)
+    def _wrapper(*args, **kwargs):
+        if settings.TEST_CODE_COVERAGE_CHECKER:
+            set_coverage_checking(False)
+            result = f(*args, **kwargs)
+            set_coverage_checking(True)
+            return result
+        else:
+            return  f(*args, **kwargs)
+    return _wrapper
 
-@decorator
-def person_required(f, request, *args, **kwargs):
-    if not request.user.is_authenticated:
-        raise ValueError("The @person_required decorator should be called after @login_required.")
-    try:
-        request.user.person
-    except Person.DoesNotExist:
-        return render(request, 'registration/missing_person.html')
-    return  f(request, *args, **kwargs)
+def person_required(f):
+    @wraps(f)
+    def _wrapper(request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            raise ValueError("The @person_required decorator should be called after @login_required.")
+        try:
+            request.user.person
+        except Person.DoesNotExist:
+            return render(request, 'registration/missing_person.html')
+        return  f(request, *args, **kwargs)
+    return _wrapper
 
 
 def require_api_key(f):
@@ -90,29 +93,31 @@ def require_api_key(f):
     return _wrapper
 
 
-def _memoize(func, self, *args, **kwargs):
-    '''Memoize wrapper for instance methods.  Use @lru_cache for functions.'''
-    if kwargs:  # frozenset is used to ensure hashability
-        key = args, frozenset(list(kwargs.items()))
-    else:
-        key = args
-    # instance method, set up cache if needed
-    if not hasattr(self, '_cache'):
-        self._cache = {}
-    if not func in self._cache:
-        self._cache[func] = {}            
-    #
-    cache = self._cache[func]
-    if key not in cache:
-        cache[key] = func(self, *args, **kwargs)
-    return cache[key]
 def memoize(func):
+    @wraps(func)
+    def _memoize(self, *args, **kwargs):
+        '''Memoize wrapper for instance methods.  Use @lru_cache for functions.'''
+        if kwargs:  # frozenset is used to ensure hashability
+            key = args, frozenset(list(kwargs.items()))
+        else:
+            key = args
+        # instance method, set up cache if needed
+        if not hasattr(self, '_cache'):
+            self._cache = {}
+        if not func in self._cache:
+            self._cache[func] = {}            
+        #
+        cache = self._cache[func]
+        if key not in cache:
+            cache[key] = func(self, *args, **kwargs)
+        return cache[key]
+
     if not hasattr(func, '__class__'):
         raise NotImplementedError("Use @lru_cache instead of memoize() for functions.")
     # For methods, we want the cache on the object, not on the class, in order
     # to not having to think about cache bloat and content becoming stale, so
     # we cannot set up the cache here.
-    return decorate(func, _memoize)
+    return _memoize
 
 
 def ignore_view_kwargs(*args):
