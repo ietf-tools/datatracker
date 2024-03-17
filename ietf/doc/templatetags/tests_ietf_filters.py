@@ -7,9 +7,20 @@ from ietf.doc.factories import (
     IndividualDraftFactory,
     CharterFactory,
     NewRevisionDocEventFactory,
+    StatusChangeFactory,
+    RgDraftFactory,
+    EditorialDraftFactory,
+    WgDraftFactory,
+    ConflictReviewFactory,
+    BofreqFactory,
+    StatementFactory,
 )
 from ietf.doc.models import DocEvent
-from ietf.doc.templatetags.ietf_filters import urlize_ietf_docs, is_valid_url
+from ietf.doc.templatetags.ietf_filters import (
+    urlize_ietf_docs,
+    is_valid_url,
+    is_in_stream,
+)
 from ietf.person.models import Person
 from ietf.utils.test_utils import TestCase
 
@@ -19,13 +30,28 @@ import debug  # pyflakes: ignore
 
 
 class IetfFiltersTests(TestCase):
+    def test_is_in_stream(self):
+        for draft in [
+            IndividualDraftFactory(),
+            CharterFactory(),
+            StatusChangeFactory(),
+            ConflictReviewFactory(),
+            StatementFactory(),
+            BofreqFactory(),
+        ]:
+            self.assertFalse(is_in_stream(draft))
+        for draft in [RgDraftFactory(), WgDraftFactory(), EditorialDraftFactory()]:
+            self.assertTrue(is_in_stream(draft))
+        for stream in ["iab", "ietf", "irtf", "ise", "editorial"]:
+            self.assertTrue(is_in_stream(IndividualDraftFactory(stream_id=stream)))
+
     def test_is_valid_url(self):
         cases = [(settings.IDTRACKER_BASE_URL, True), ("not valid", False)]
         for url, result in cases:
             self.assertEqual(is_valid_url(url), result)
 
     def test_urlize_ietf_docs(self):
-        rfc = WgRfcFactory(rfc_number=123456,std_level_id="bcp")
+        rfc = WgRfcFactory(rfc_number=123456, std_level_id="bcp")
         rfc.save_with_history(
             [
                 DocEvent.objects.create(
@@ -57,7 +83,6 @@ class IetfFiltersTests(TestCase):
 
         cases = [
             ("no change", "no change"),
-
             # TODO: rework subseries when we add them
             # ("bCp123456", '<a href="/doc/bcp123456/">bCp123456</a>'),
             # ("Std 00123456", '<a href="/doc/std123456/">Std 00123456</a>'),
