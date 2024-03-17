@@ -27,8 +27,8 @@ spec:
         - name: {{ .Chart.Name }}
           securityContext:
             {{- toYaml $podValues.securityContext | nindent 12 }}
-          image: "{{ $podValues.image.repository }}:{{ default .Chart.AppVersion (default $.Values.datatracker.image.tag $podValues.image.tag) }}"
-          imagePullPolicy: {{ default "IfNotPresent" $podValues.image.imagePullPolicy }}
+          image: "{{ default $.Values.datatracker.image.repository $podValues.image.repository }}:{{ default .Chart.AppVersion (default $.Values.datatracker.image.tag $podValues.image.tag) }}"
+          imagePullPolicy: {{ default "IfNotPresent" (default $.Values.datatracker.image.imagePullPolicy $podValues.image.imagePullPolicy) }}
           env:
             - name: "CONTAINER_ROLE"
               value: "beat"

@@ -166,9 +166,10 @@ datatracker:
 
 celery:
   name: celery
-  image:
-    repository: "ghcr.io/ietf-tools/datatracker"
-    pullPolicy: IfNotPresent
+  image: {}
+    # defaults to datatracker settings if not specified separately
+    #repository: "ghcr.io/ietf-tools/datatracker"
+    #pullPolicy: IfNotPresent
     # Overrides the image tag whose default is the chart appVersion.
     # tag: "v1.1.0"
 
@@ -178,10 +179,7 @@ celery:
 
   livenessProbe:
     exec:
-      command: 
-        - celery
-        - inspect
-        - ping
+      command: ["celery", "inspect", "ping"] 
     periodSeconds: 30
     timeoutSeconds: 5
 
@@ -235,10 +233,7 @@ celery:
     successThreshold: 1
     failureThreshold: 60
     exec:
-      command:
-        - celery
-        - inspect
-        - ping
+      command: ["celery", "inspect", "ping"]
 
   # Additional volumes on the output Deployment definition.
   volumes:
@@ -282,9 +277,10 @@ celery:
 
 beat:
   name: beat
-  image:
-    repository: "ghcr.io/ietf-tools/datatracker"
-    pullPolicy: IfNotPresent
+  image: {}
+    # defaults to datatracker settings if not specified separately
+    # repository: "ghcr.io/ietf-tools/datatracker"
+    # pullPolicy: IfNotPresent
     # Overrides the image tag whose default is the chart appVersion.
     # tag: "v1.1.0"
 
@@ -294,10 +290,7 @@ beat:
 
   livenessProbe:
     exec:
-      command:
-        - celery
-        - inspect
-        - ping
+      command: ["celery", "inspect", "ping"]
     periodSeconds: 30
     timeoutSeconds: 5
 
@@ -351,10 +344,7 @@ beat:
     successThreshold: 1
     failureThreshold: 60
     exec:
-      command:
-        - celery
-        - inspect
-        - ping
+      command: ["celery", "inspect", "ping"]
 
   # Additional volumes on the output Deployment definition.
   volumes:
@@ -409,10 +399,7 @@ rabbitmq:
 
   livenessProbe:
     exec:
-      command:
-        - rabbitmq-diagnostics
-        - -q
-        - ping
+      command: ["rabbitmq-diagnostics", "-q", "ping"]
     periodSeconds: 30
     timeoutSeconds: 5
 
@@ -466,10 +453,7 @@ rabbitmq:
     successThreshold: 1
     failureThreshold: 60
     exec:
-      command:
-        - rabbitmq-diagnostics
-        - -q
-        - ping
+      command: ["rabbitmq-diagnostics", "-q", "ping"]
 
   # Additional volumes on the output Deployment definition.
   volumes: []
