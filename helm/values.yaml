@@ -179,10 +179,7 @@ celery:
 
   livenessProbe:
     exec:
-      command: 
-        - celery
-        - inspect
-        - ping
+      command: ["celery", "inspect", "ping"] 
     periodSeconds: 30
     timeoutSeconds: 5
 
@@ -236,10 +233,7 @@ celery:
     successThreshold: 1
     failureThreshold: 60
     exec:
-      command:
-        - celery
-        - inspect
-        - ping
+      command: ["celery", "inspect", "ping"]
 
   # Additional volumes on the output Deployment definition.
   volumes:
@@ -296,10 +290,7 @@ beat:
 
   livenessProbe:
     exec:
-      command:
-        - celery
-        - inspect
-        - ping
+      command: ["celery", "inspect", "ping"]
     periodSeconds: 30
     timeoutSeconds: 5
 
@@ -353,10 +344,7 @@ beat:
     successThreshold: 1
     failureThreshold: 60
     exec:
-      command:
-        - celery
-        - inspect
-        - ping
+      command: ["celery", "inspect", "ping"]
 
   # Additional volumes on the output Deployment definition.
   volumes:
@@ -411,10 +399,7 @@ rabbitmq:
 
   livenessProbe:
     exec:
-      command:
-        - rabbitmq-diagnostics
-        - -q
-        - ping
+      command: ["rabbitmq-diagnostics", "-q", "ping"]
     periodSeconds: 30
     timeoutSeconds: 5
 
@@ -468,10 +453,7 @@ rabbitmq:
     successThreshold: 1
     failureThreshold: 60
     exec:
-      command:
-        - rabbitmq-diagnostics
-        - -q
-        - ping
+      command: ["rabbitmq-diagnostics", "-q", "ping"]
 
   # Additional volumes on the output Deployment definition.
   volumes: []
