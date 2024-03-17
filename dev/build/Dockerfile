@@ -18,6 +18,9 @@ RUN chmod +x start.sh && \
     chmod +x docker/scripts/app-create-dirs.sh && \
     sh ./docker/scripts/app-create-dirs.sh
 
+RUN yarn build && \
+    yarn legacy:build
+
 RUN mkdir -p /a
 
 VOLUME [ "/a" ]
