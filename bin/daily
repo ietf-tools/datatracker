@@ -47,5 +47,5 @@ $DTDIR/ietf/manage.py run_yang_model_checks -v0
 # Enable when removed from /a/www/ietf-datatracker/scripts/Cron-runner:
 $DTDIR/ietf/bin/expire-last-calls
 
-I# Purge older PersonApiKeyEvents
+# Purge older PersonApiKeyEvents
 $DTDIR/ietf/manage.py purge_old_personal_api_key_events 14
