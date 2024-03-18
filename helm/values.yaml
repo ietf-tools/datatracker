@@ -387,11 +387,11 @@ beat:
 # -------------------------------------------------------------
 
 rabbitmq:
-  name: rabbitmq
+  name: "rabbitmq"
   image:
-    repository: "ghcr.io/ietf-tools/datatracker-mq"
+    repository: "rabbitmq"
     pullPolicy: IfNotPresent
-    tag: "latest"
+    tag: "3.13"
 
   imagePullSecrets: []
   nameOverride: ""
@@ -433,7 +433,7 @@ rabbitmq:
 
   service:
     type: ClusterIP
-    port: 80
+    port: 5672
 
   serviceAccount:
     # Specifies whether a service account should be created
