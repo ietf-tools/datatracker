@@ -55,7 +55,7 @@ def trace(fn):                 # renamed from 'report' by henrik 16 Jun 2011
         if len(s) > n+3:
             s = s[:n]+"..."
         return s
-    def wrap(fn, *params,**kwargs):
+    def wrap(*params,**kwargs):
         call = wrap.callcount = wrap.callcount + 1
 
         indent = ' ' * _report_indent[0]
@@ -81,8 +81,8 @@ def trace(fn):                 # renamed from 'report' by henrik 16 Jun 2011
         return ret
     wrap.callcount = 0
     if debug:
-        from decorator import decorator
-        return decorator(wrap, fn)
+        from functools import update_wrapper
+        return update_wrapper(wrap, fn)
     else:
         return fn
 
@@ -119,7 +119,7 @@ def clock(s):
 def time(fn):
     """Decorator to print timing information about a function call.
     """
-    def wrap(fn, *params,**kwargs):
+    def wrap(*params,**kwargs):
 
         indent = ' ' * _report_indent[0]
         fc = "%s.%s()" % (fn.__module__, fn.__name__,)
@@ -132,8 +132,8 @@ def time(fn):
         return ret
     wrap.callcount = 0
     if debug:
-        from decorator import decorator
-        return decorator(wrap, fn)
+        from functools import update_wrapper
+        return update_wrapper(wrap, fn)
     else:
         return fn
 
@@ -190,7 +190,7 @@ def type(name):
         value = eval(name, frame.f_globals, frame.f_locals)
         indent = ' ' * (_report_indent[0])
         sys.stderr.write("%s%s: %s\n" % (indent, name, value))
-            
+
 def say(s):
     if debug:
         indent = ' ' * (_report_indent[0])
@@ -205,11 +205,11 @@ def profile(fn):
         prof.dump_stats(datafn)
         return retval
     if debug:
-        from decorator import decorator
-        return decorator(wrapper, fn)
+        from functools import update_wrapper
+        return update_wrapper(wrapper, fn)
     else:
         return fn
-    
+
 def traceback(levels=None):
     if debug:
         indent = ' ' * (_report_indent[0])
