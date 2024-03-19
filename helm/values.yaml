@@ -387,11 +387,11 @@ beat:
 # -------------------------------------------------------------
 
 rabbitmq:
-  name: rabbitmq
+  name: "rabbitmq"
   image:
-    repository: "ghcr.io/ietf-tools/datatracker-mq"
+    repository: "rabbitmq"
     pullPolicy: IfNotPresent
-    tag: "latest"
+    tag: "3.13"
 
   imagePullSecrets: []
   nameOverride: ""
@@ -433,7 +433,7 @@ rabbitmq:
 
   service:
     type: ClusterIP
-    port: 80
+    port: 5672
 
   serviceAccount:
     # Specifies whether a service account should be created
@@ -456,14 +456,19 @@ rabbitmq:
       command: ["rabbitmq-diagnostics", "-q", "ping"]
 
   # Additional volumes on the output Deployment definition.
-  volumes: []
+  volumes:
+    - name: "rabbitmq-config"
+      configMap:
+        name: "rabbitmq-configmap"
     # - name: foo
     #   secret:
     #     secretName: mysecret
     #     optional: false
   
     # Additional volumeMounts on the output Deployment definition.
-  volumeMounts: []
+  volumeMounts:
+    - name: "rabbitmq-config"
+      mountPath: "/etc/rabbitmq"
     # - name: foo
     #   mountPath: "/etc/foo"
     #   readOnly: true
@@ -557,3 +562,4 @@ env:
   DBUSER: "django"
   DBPASS: "RkTkDPFnKpko"
   DJANGO_SECRET_KEY: "PDwXboUq!=hPjnrtG2=ge#N$Dwy+wn@uivrugwpic8mxyPfHk"
+  CELERY_BROKER_URL: "amqp://datatracker:frog@rabbitmq/dt"

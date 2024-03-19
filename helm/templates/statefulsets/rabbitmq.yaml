@@ -1,5 +1,5 @@
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: {{ include "datatracker.rabbitmq.fullname" . }}
   labels:
@@ -41,8 +41,8 @@ spec:
             {{- toYaml . | nindent 12 }}
     {{- end }}
           ports:
-            - name: http
-              containerPort: 8000
+            - name: amqp
+              containerPort: 5672
               protocol: TCP
           livenessProbe:
             {{- toYaml $podValues.livenessProbe | nindent 12 }}
