@@ -13,8 +13,9 @@ gunicorn \
           --max-requests 32768 \
           --timeout 180 \
           --bind :8000 \
-          --error-logfile gunicorn_error.log \
           --log-level info \
           ietf.wsgi:application
-
+          
+          # Leaving this here as a reminder to set up the env in the chart
+          # Remove this once that's complete.
           #--env SCOUT_NAME=Datatracker \
