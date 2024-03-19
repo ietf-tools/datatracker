@@ -68,7 +68,6 @@ IDSUBMIT_REPOSITORY_PATH = INTERNET_DRAFT_PATH
 NOMCOM_PUBLIC_KEYS_DIR = "data/nomcom_keys/public_keys/"
 SLIDE_STAGING_PATH = "/test/staging/"
 
-# todo check that de-gfm is in place
 DE_GFM_BINARY = "/usr/local/bin/de-gfm"
 
 # OIDC configuration
