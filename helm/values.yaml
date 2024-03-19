@@ -37,7 +37,7 @@ datatracker:
     pullPolicy: IfNotPresent
     # Overrides the image tag whose default is the chart appVersion.
     # tag: "v1.1.0"
-
+  
   imagePullSecrets: []
   nameOverride: ""
   fullnameOverride: ""
@@ -457,6 +457,9 @@ rabbitmq:
 
   # Additional volumes on the output Deployment definition.
   volumes:
+    - name: "rabbitmq-data"
+      persistentVolumeClaim:
+        claimName: "rabbitmq-data-claim"
     - name: "rabbitmq-config"
       configMap:
         name: "rabbitmq-configmap"
@@ -467,6 +470,8 @@ rabbitmq:
   
     # Additional volumeMounts on the output Deployment definition.
   volumeMounts:
+    - name: "rabbitmq-data"
+      mountPath: "/var/lib/rabbitmq/mnesia"
     - name: "rabbitmq-config"
       mountPath: "/etc/rabbitmq"
     # - name: foo

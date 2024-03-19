@@ -68,14 +68,13 @@ IDSUBMIT_REPOSITORY_PATH = INTERNET_DRAFT_PATH
 NOMCOM_PUBLIC_KEYS_DIR = "data/nomcom_keys/public_keys/"
 SLIDE_STAGING_PATH = "/test/staging/"
 
-# todo check that de-gfm is in place
 DE_GFM_BINARY = "/usr/local/bin/de-gfm"
 
 # OIDC configuration
 SITE_URL = os.environ.get("OIDC_SITE_URL")
 
 # todo: parameterize memcached url in settings.py
-MEMCACHED_HOST = os.environ.get(f"MEMCACHED_SERVICE_HOST", "127.0.0.1")
+MEMCACHED_HOST = os.environ.get("MEMCACHED_SERVICE_HOST", "127.0.0.1")
 MEMCACHED_PORT = os.environ.get("MEMCACHED_SERVICE_PORT", "11211")
 from ietf import __version__
 CACHES = {
