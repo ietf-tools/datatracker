@@ -75,7 +75,7 @@ DE_GFM_BINARY = "/usr/local/bin/de-gfm"
 SITE_URL = os.environ.get("OIDC_SITE_URL")
 
 # todo: parameterize memcached url in settings.py
-MEMCACHED_HOST = os.environ.get(f"MEMCACHED_SERVICE_HOST", "127.0.0.1")
+MEMCACHED_HOST = os.environ.get("MEMCACHED_SERVICE_HOST", "127.0.0.1")
 MEMCACHED_PORT = os.environ.get("MEMCACHED_SERVICE_PORT", "11211")
 from ietf import __version__
 CACHES = {
