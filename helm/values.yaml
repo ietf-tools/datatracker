@@ -58,11 +58,11 @@ datatracker:
     #    hosts:
     #      - chart-example.local
 
-  livenessProbe:
-    httpGet:
-      # /submit/tool-instructions/ just happens to be cheap until we get a real health endpoint
-      path: /submit/tool-instructions/
-      port: http
+#  livenessProbe:
+#    httpGet:
+#      # /submit/tool-instructions/ just happens to be cheap until we get a real health endpoint
+#      path: /submit/tool-instructions/
+#      port: http
 
   podAnnotations: {}
   podLabels: {}
@@ -113,16 +113,16 @@ datatracker:
     # If not set and create is true, a name is generated using the fullname template
     name: ""
 
-  startupProbe:
-    initialDelaySeconds: 15
-    periodSeconds: 5
-    timeoutSeconds: 5
-    successThreshold: 1
-    failureThreshold: 60
-    httpGet:
-      # /submit/tool-instructions/ just happens to be cheap until we get a real health endpoint
-      path: /submit/tool-instructions/
-      port: http
+#  startupProbe:
+#    initialDelaySeconds: 15
+#    periodSeconds: 5
+#    timeoutSeconds: 5
+#    successThreshold: 1
+#    failureThreshold: 60
+#    httpGet:
+#      # /submit/tool-instructions/ just happens to be cheap until we get a real health endpoint
+#      path: /submit/tool-instructions/
+#      port: http
 
   # Additional volumes on the output Deployment definition.
   volumes:
