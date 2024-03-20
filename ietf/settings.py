@@ -236,7 +236,7 @@ LOGGING = {
     #
     'loggers': {
         'django': {
-            'handlers': ['debug_console', 'mail_admins'],
+            'handlers': ['console', 'mail_admins',],
             'level': 'INFO',
         },
         'django.request': {
@@ -248,13 +248,17 @@ LOGGING = {
             'level': 'INFO',
         },
         'django.security': {
-	    'handlers': ['debug_console', ],
+	        'handlers': ['console', ],
             'level': 'INFO',
         },
- 	'oidc_provider': {
-	    'handlers': ['debug_console', ],
-	    'level': 'DEBUG',
-	},
+ 	    'oidc_provider': {
+	        'handlers': ['debug_console', ],
+	        'level': 'DEBUG',
+	    },
+        'datatracker': {
+            'handlers': ['console', ],
+            'level': 'INFO',
+        },
     },
     #
     # No logger filters
@@ -263,14 +267,7 @@ LOGGING = {
         'console': {
             'level': 'DEBUG',
             'class': 'logging.StreamHandler',
-            'formatter': 'plain',
-        },
-        'syslog': {
-            'level': 'DEBUG',
-            'class': 'logging.handlers.SysLogHandler',
-            'facility': 'user',
-            'formatter': 'plain',
-            'address': '/dev/log',
+            'formatter': 'json',
         },
         'debug_console': {
             # Active only when DEBUG=True
@@ -325,6 +322,9 @@ LOGGING = {
             'style': '{',
             'format': '{levelname}: {name}:{lineno}: {message}',
         },
+        'json' : {
+            '()': 'pythonjsonlogger.jsonlogger.JsonFormatter'
+        }
     },
 }
 
