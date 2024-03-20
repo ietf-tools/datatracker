@@ -18,7 +18,11 @@ DATABASES = {
 
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY")
 
-CELERY_BROKER_URL = os.environ.get("CELERY_BROKER_URL")
+CELERY_BROKER_URL = "amqp://datatracker:{password}@{host}/{queue}".format(
+    host=os.environ.get("RABBITMQ_HOSTNAME", "rabbitmq"),
+    password=os.environ.get("CELERY_PASSWORD", ""),
+    queue=os.environ.get("RABBITMQ_QUEUE", "dt")
+)
 
 IDSUBMIT_IDNITS_BINARY = "/usr/local/bin/idnits"
 IDSUBMIT_REPOSITORY_PATH = "/test/id/"
