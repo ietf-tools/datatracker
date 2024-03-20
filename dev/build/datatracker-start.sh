@@ -12,7 +12,7 @@ echo "Running collectstatic..."
 echo "Starting Datatracker..."
 
 gunicorn \
-          --workers 53 \
+          --workers 9 \
           --max-requests 32768 \
           --timeout 180 \
           --bind :8000 \
