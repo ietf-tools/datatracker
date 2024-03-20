@@ -179,7 +179,7 @@ celery:
 
   livenessProbe:
     exec:
-      command: ["celery", "inspect", "ping"] 
+      command: ["celery", "-A", "ietf", "inspect", "ping"] 
     periodSeconds: 30
     timeoutSeconds: 5
 
@@ -233,7 +233,7 @@ celery:
     successThreshold: 1
     failureThreshold: 60
     exec:
-      command: ["celery", "inspect", "ping"]
+      command: ["celery", "-A", "ietf", "inspect", "ping"] 
 
   # Additional volumes on the output Deployment definition.
   volumes:
@@ -290,7 +290,7 @@ beat:
 
   livenessProbe:
     exec:
-      command: ["celery", "inspect", "ping"]
+      command: ["celery", "-A", "ietf", "inspect", "ping"] 
     periodSeconds: 30
     timeoutSeconds: 5
 
@@ -344,7 +344,7 @@ beat:
     successThreshold: 1
     failureThreshold: 60
     exec:
-      command: ["celery", "inspect", "ping"]
+      command: ["celery", "-A", "ietf", "inspect", "ping"] 
 
   # Additional volumes on the output Deployment definition.
   volumes:
@@ -389,9 +389,9 @@ beat:
 rabbitmq:
   name: "rabbitmq"
   image:
-    repository: "rabbitmq"
+    repository: "ghcr.io/ietf-tools/datatracker-mq"
     pullPolicy: IfNotPresent
-    tag: "3.13"
+    tag: "3.12-alpine"
 
   imagePullSecrets: []
   nameOverride: ""
@@ -567,4 +567,4 @@ env:
   DBUSER: "django"
   DBPASS: "RkTkDPFnKpko"
   DJANGO_SECRET_KEY: "PDwXboUq!=hPjnrtG2=ge#N$Dwy+wn@uivrugwpic8mxyPfHk"
-  CELERY_BROKER_URL: "amqp://datatracker:frog@rabbitmq/dt"
+  CELERY_PASSWORD: "this-is-a-secret"
