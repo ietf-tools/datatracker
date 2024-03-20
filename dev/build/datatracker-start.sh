@@ -6,6 +6,9 @@ echo "Running Datatracker checks..."
 echo "Running Datatracker migrations..."
 ./ietf/manage.py migrate --settings=settings_local
 
+echo "Running collectstatic..."
+./ietf/manage.py collectstatic
+
 echo "Starting Datatracker..."
 
 gunicorn \
