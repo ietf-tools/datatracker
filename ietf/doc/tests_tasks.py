@@ -127,7 +127,7 @@ class BIBXMLSupportTests(TestCase):
             content = f.read()
         self.assertIn(draft.title, content)
 
-    def test_generate_bibxml_files_for_recent_drafts_task_with_bad_vakue(self):
+    def test_generate_bibxml_files_for_recent_drafts_task_with_bad_value(self):
         bibxmldir = os.path.join(settings.BIBXML_BASE_PATH, 'bibxml-ids')
         os.mkdir(bibxmldir)
         with self.assertRaises(ValueError):
