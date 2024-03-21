@@ -1281,7 +1281,6 @@ def bibxml_for_all_drafts(bibxmldir):
             write_bibxml_file_if_changed(ref_rev_file_name, bibxml)
         except Exception as ee:
             log.log('\n%s-%s: %s\n' % (e.doc.name, e.doc.rev, str(ee)))
-            raise ee
 
 
 def bibxml_for_recent_drafts(bibxmldir, days=7):
