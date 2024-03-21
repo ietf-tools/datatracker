@@ -881,3 +881,15 @@ def badgeify(blob):
             )
 
     return text
+
+@register.filter
+def has_chat_logs(meeting):
+    num = meeting.get_number()
+    return num != None and num >= 60
+
+@register.filter
+def has_recordings(meeting):
+    if meeting.type_id != 'ietf':
+        return True
+    num = meeting.get_number()
+    return num != None and num >= 80

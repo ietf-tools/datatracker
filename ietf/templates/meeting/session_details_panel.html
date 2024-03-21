@@ -320,7 +320,7 @@
                 </tr>
             {% endif %}
             {# Recordings #}
-            {% if meeting.type_id == 'ietf' and meeting.number|add:"0" >= 80  or meeting.type_id != 'ietf' %}
+            {% if meeting|has_recordings %}
                 {% with session.recordings as recordings %}
                     {% if recordings %}
                         {# There's no guaranteed order, so this is a bit messy: #}
