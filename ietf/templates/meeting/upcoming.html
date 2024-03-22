@@ -89,7 +89,7 @@
                                         <span class="badge rounded-pill text-bg-warning">Cancelled</span>
                                     </td>
                                 {% else %}
-                                    <td class="text-end">{% include "meeting/interim_session_buttons.html" with show_agenda=True use_notes=meeting.uses_notes %}</td>
+                                    <td class="text-end">{% include "meeting/interim_session_buttons.html" with show_agenda=True %}</td>
                                 {% endif %}
                             {% endwith %}
                         {% else %}

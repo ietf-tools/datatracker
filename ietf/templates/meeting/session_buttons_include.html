@@ -41,7 +41,7 @@
                     </a>
                 {% endif %}
                 {# Notes #}
-                {% if use_notes %}
+                {% if meeting|has_notes %}
                     <a class="btn btn-outline-primary"
                         role="button"
                         href="{{ session.notes_url }}"
@@ -229,7 +229,7 @@
                         </li>
                     {% endif %}
                     {# Notes #}
-                    {% if use_notes %}
+                    {% if meeting|has_notes %}
                         <li>
                             <a class="dropdown-item" href="{{ session.notes_url }}">
                                 <i class="bi bi-journal-text"></i> Notepad for note-takers

@@ -893,3 +893,7 @@ def has_recordings(meeting):
         return True
     num = meeting.get_number()
     return num != None and num >= 80
+
+#register.filter
+#define has_notes(meeting):
+    return meeting.uses_notes()

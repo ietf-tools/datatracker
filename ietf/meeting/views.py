@@ -1616,7 +1616,6 @@ def agenda_plain(request, num=None, name=None, base=None, ext=None, owner=None, 
                 "now": timezone.now().astimezone(meeting.tz()),
                 "display_timezone": display_timezone,
                 "is_current_meeting": is_current_meeting,
-                "use_notes": meeting.uses_notes(),
                 "cache_time": 150 if is_current_meeting else 3600,
             },
             content_type=mimetype[ext],
@@ -2498,7 +2497,6 @@ def session_details(request, num, acronym):
                     'can_manage_materials' : can_manage,
                     'can_view_request': can_view_request,
                     'thisweek': datetime_today()-datetime.timedelta(days=7),
-                    'use_notes': meeting.uses_notes(),
                   })
 
 class SessionDraftsForm(forms.Form):
