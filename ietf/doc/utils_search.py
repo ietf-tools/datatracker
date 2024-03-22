@@ -295,14 +295,15 @@ def prepare_document_table(request, docs, query=None, max_results=200, show_ad_a
 #
 AD_WORKLOAD = {
     "draft": [
+        "idexists",
         "pub-req",
         "ad-eval",
         "lc-req",
         "lc",
         "writeupw",
-        # "defer",  # probably not a useful state to show, since it's rare
-        "iesg-eva",
         "goaheadw",
+        "iesg-eva",
+        # "defer",  # probably not a useful state to show, since it's rare
         "approved",
         "ann",
     ],
@@ -322,8 +323,8 @@ AD_WORKLOAD = {
         "adrev",
         "lc-req",
         "in-lc",
-        "iesgeval",
         "goahead",
+        "iesgeval",
         "appr-sent",
         # "dead",  # probably not a useful state to show
     ],
