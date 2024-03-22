@@ -5,10 +5,7 @@ import debug                            # pyflakes:ignore
 from ietf.name.models import StreamName
 from django.shortcuts import redirect
 
-# These are just redirects to the new URLs under /doc; can probably go away eventually.
-
-def state_index(request):
-    return redirect('/doc/help/state/', permanent = True)
+# This is just a redirect to the new URL under /doc; can probably go away eventually.
 
 def state(request, doc, type=None):
     if type:
