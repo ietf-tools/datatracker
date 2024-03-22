@@ -230,7 +230,7 @@
         <table class="table table-sm table-striped meeting-tools"
                id="meeting_tools_{{ session.pk }}">
             <tbody>
-            {% if meeting|has_notes %}
+            {% if meeting.uses_notes() %}
                 <tr>
                     <td>
                         <a href="{{ session.notes_url }}">
@@ -310,7 +310,7 @@
         <table class="table table-sm table-striped meeting-tools"
                id="notes_and_recordings_{{ session.pk }}">
             <tbody>
-            {% if meeting|has_notes %}
+            {% if meeting.uses_notes() %}
                 <tr>
                     <td>
                         <a href="{{ session.notes_url }}">
@@ -320,7 +320,7 @@
                 </tr>
             {% endif %}
             {# Recordings #}
-            {% if meeting|has_recordings %}
+            {% if meeting.has_recordings() %}
                 {% with session.recordings as recordings %}
                     {% if recordings %}
                         {# There's no guaranteed order, so this is a bit messy: #}
