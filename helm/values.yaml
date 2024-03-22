@@ -561,10 +561,35 @@ autoscaling:
 
 env:
   # n.b., these are debug values / non-secret secrets
-  # DBHOST: "host.minikube.internal"
-  # DBPORT: "5432"
-  DBNAME: "datatracker"
-  DBUSER: "django"
-  DBPASS: "RkTkDPFnKpko"
-  DJANGO_SECRET_KEY: "PDwXboUq!=hPjnrtG2=ge#N$Dwy+wn@uivrugwpic8mxyPfHk"
+  DATATRACKER_SERVER_MODE: "development"  # defaults to "production"
+  DATATRACKER_ADMINS: |-
+    Robert Sparks <rjsparks@nostrum.com>
+    Ryan Cross <rcross@amsl.com>
+    Kesara Rathnayake <kesara@staff.ietf.org>
+    Jennifer Richards <jennifer@staff.ietf.org>
+    Nicolas Giard <nick@staff.ietf.org>
+  DATATRACKER_ALLOWED_HOSTS: "*"  # empty for production
+  # DATATRACKER_DATATRACKER_DEBUG: "false"
+  # DATATRACKER_DBHOST: "db"
+  # DATATRACKER_DBPORT: "5432"
+  # DATATRACKER_DBNAME: "datatracker"
+  # DATATRACKER_DBUSER: "django"
+  DATATRACKER_DBPASS: "RkTkDPFnKpko"
+  DATATRACKER_DJANGO_SECRET_KEY: "PDwXboUq!=hPjnrtG2=ge#N$Dwy+wn@uivrugwpic8mxyPfHk"
+  DATATRACKER_EMAIL_DEBUG: "true"
+  DATATRACKER_EMAIL_HOST: "localhost"
+  DATATRACKER_EMAIL_PORT: "2025"
+  # DATATRACKER_NOMCOM_APP_SECRET_B64: "<base64-encoded bytes>"
+  DATATRACKER_IANA_SYNC_PASSWORD: "this-is-the-iana-sync-password"
+  DATATRACKER_RFC_EDITOR_SYNC_PASSWORD: "this-is-the-rfc-editor-sync-password"
+  DATATRACKER_YOUTUBE_API_KEY: "this-is-the-youtube-api-key"
+  DATATRACKER_GITHUB_BACKUP_API_KEY: "this-is-the-github-backup-api-key"
+  # DATATRACKER_API_KEY_TYPE: "ES265"
+  # DATATRACKER_API_PUBLIC_KEY_PEM_B64: "<base64-encoded PEM"
+  # DATATRACKER_API_PRIVATE_KEY_PEM_B64: "<base64-encoded PEM"
+  # DATATRACKER_MEETECHO_API_BASE: "https://meetings.conf.meetecho.com/api/v1/"
+  DATATRACKER_MEETECHO_CLIENT_ID: "this-is-the-meetecho-client-id"
+  DATATRACKER_MEETECHO_CLIENT_SECRET: "this-is-the-meetecho-client-secret"
+  # DATATRACKER_MATOMO_SITE_ID: "7"  # must be present to enable Matomo
+  # DATATRACKER_MATOMO_DOMAIN_PATH: "analytics.ietf.org"
   CELERY_PASSWORD: "this-is-a-secret"
