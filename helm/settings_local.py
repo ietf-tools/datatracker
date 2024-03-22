@@ -8,20 +8,55 @@ from ietf import __release_hash__
 from ietf.settings import *                                          # pyflakes:ignore
 
 
+SERVER_MODE = os.environ.get("DATATRACKER_SERVER_MODE", "development")  # todo decide if we need a "staging" mode
+
 # Secrets
 
-SECRET_KEY = os.environ.get("DATATRACKER_DJANGO_SECRET_KEY")
-NOMCOM_APP_SECRET = b64decode(os.environ.get("DATATRACKER_NOMCOM_APP_SECRET_B64")) 
-IANA_SYNC_PASSWORD = os.environ.get("DATATRACKER_IANA_SYNC_PASSWORD")
-RFC_EDITOR_SYNC_PASSWORD = os.environ.get("DATATRACKER_RFC_EDITOR_SYNC_PASSWORD")
-YOUTUBE_API_KEY = os.environ.get("DATATRACKER_YOUTUBE_API_KEY")
-GITHUB_BACKUP_API_KEY = os.environ.get("DATATRACKER_GITHUB_BACKUP_API_KEY")
+if "DATATRACKER_DJANGO_SECRET_KEY" in os.environ:
+    SECRET_KEY = os.environ.get("DATATRACKER_DJANGO_SECRET_KEY")
+elif SERVER_MODE == "production":
+    raise RuntimeError("DATATRACKER_DJANGO_SECRET_KEY must be set in production")    
 
-API_KEY_TYPE = os.environ.get("DATATRACKER_API_KEY_TYPE", "ES265")
-API_PUBLIC_KEY_PEM = b64decode(os.environ.get("DATATRACKER_API_PUBLIC_KEY_PEM_B64"))
-API_PRIVATEC_KEY_PEM = b64decode(os.environ.get("DATATRACKER_API_PRIVATE_KEY_PEM_B64"))
+if "DATATRACKER_NOMCOM_APP_SECRET_B64" in os.environ:
+    NOMCOM_APP_SECRET = b64decode(os.environ.get("DATATRACKER_NOMCOM_APP_SECRET_B64"))
+elif SERVER_MODE == "production":
+    raise RuntimeError("DATATRACKER_NOMCOM_APP_SECRET_B64 must be set in production")    
 
-SERVER_MODE = os.environ.get("DATATRACKER_SERVER_MODE", "development")  # todo decide if we need a "staging" mode
+if "DATATRACKER_IANA_SYNC_PASSWORD" in os.environ:
+    IANA_SYNC_PASSWORD = os.environ.get("DATATRACKER_IANA_SYNC_PASSWORD")
+elif SERVER_MODE == "production":
+    raise RuntimeError("DATATRACKER_IANA_SYNC_PASSWORD must be set in production")    
+
+if "DATATRACKER_RFC_EDITOR_SYNC_PASSWORD" in os.environ:
+    RFC_EDITOR_SYNC_PASSWORD = os.environ.get("DATATRACKER_RFC_EDITOR_SYNC_PASSWORD")
+elif SERVER_MODE == "production":
+    raise RuntimeError("DATATRACKER_RFC_EDITOR_SYNC_PASSWORD must be set in production")    
+
+if "DATATRACKER_YOUTUBE_API_KEY" in os.environ:
+    YOUTUBE_API_KEY = os.environ.get("DATATRACKER_YOUTUBE_API_KEY")
+    elif SERVER_MODE == "production":
+    raise RuntimeError("DATATRACKER_YOUTUBE_API_KEY must be set in production")    
+
+if "DATATRACKER_GITHUB_BACKUP_API_KEY" in os.environ:
+    GITHUB_BACKUP_API_KEY = os.environ.get("DATATRACKER_GITHUB_BACKUP_API_KEY")
+elif SERVER_MODE == "production":
+    raise RuntimeError("DATATRACKER_GITHUB_BACKUP_API_KEY must be set in production")    
+
+
+if "DATATRACKER_API_KEY_TYPE" in os.environ:
+    API_KEY_TYPE = os.environ.get("DATATRACKER_API_KEY_TYPE")
+elif SERVER_MODE == "production":
+    raise RuntimeError("DATATRACKER_API_KEY_TYPE must be set in production")    
+
+if "DATATRACKER_API_PUBLIC_KEY_PEM_B64" in os.environ:
+    API_PUBLIC_KEY_PEM = b64decode(os.environ.get("DATATRACKER_API_PUBLIC_KEY_PEM_B64"))
+elif SERVER_MODE == "production":
+    raise RuntimeError("DATATRACKER_API_PUBLIC_KEY_PEM_B64 must be set in production")    
+
+if "DATATRACKER_API_PRIVATE_KEY_PEM_B64" in os.environ:
+    API_PRIVATEC_KEY_PEM = b64decode(os.environ.get("DATATRACKER_API_PRIVATE_KEY_PEM_B64"))
+elif SERVER_MODE == "production":
+    raise RuntimeError("DATATRACKER_API_PRIVATE_KEY_PEM_B64 must be set in production")    
 
 DEBUG = os.environ.get("DATATRACKER_DEBUG", "false").lower() == "true"
 
