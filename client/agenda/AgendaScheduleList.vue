@@ -296,7 +296,7 @@ const meetingEvents = computed(() => {
           color: 'red'
         })
       }
-      if (agendaStore.useNotes) {
+      if (agendaStore.uses_notes) {
         links.push({
           id: `lnk-${item.id}-note`,
           label: 'Notepad for note-takers',
