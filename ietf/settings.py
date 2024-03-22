@@ -125,6 +125,10 @@ FORM_RENDERER = "django.forms.renderers.DjangoDivFormRenderer"
 # In the future (relative to 4.2), the default will become 'django.db.models.BigAutoField.'
 DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 
+# OIDC configuration
+_SITE_URL = os.environ.get("OIDC_SITE_URL", None)
+if _SITE_URL is not None:
+    SITE_URL=_SITE_URL
 
 if SERVER_MODE == 'production':
     MEDIA_ROOT = '/a/www/www6s/lib/dt/media/'
@@ -1204,43 +1208,46 @@ else:
     MIDDLEWARE += DEV_MIDDLEWARE
     TEMPLATES[0]['OPTIONS']['context_processors'] += DEV_TEMPLATE_CONTEXT_PROCESSORS
 
+MEMCACHED_HOST = os.environ.get("MEMCACHED_SERVICE_HOST", "127.0.0.1")
+MEMCACHED_PORT = os.environ.get("MEMCACHED_SERVICE_PORT", "11211")
+
 if 'CACHES' not in locals():
     if SERVER_MODE == 'production':
         CACHES = {
-            'default': {
-                'BACKEND': 'ietf.utils.cache.LenientMemcacheCache',
-                'LOCATION': '127.0.0.1:11211',
-                'VERSION': __version__,
-                'KEY_PREFIX': 'ietf:dt',
-                'KEY_FUNCTION': lambda key, key_prefix, version: (
+            "default": {
+                "BACKEND": "ietf.utils.cache.LenientMemcacheCache",
+                "LOCATION": f"{MEMCACHED_HOST}:{MEMCACHED_PORT}",
+                "VERSION": __version__,
+                "KEY_PREFIX": "ietf:dt",
+                "KEY_FUNCTION": lambda key, key_prefix, version: (
                     f"{key_prefix}:{version}:{sha384(str(key).encode('utf8')).hexdigest()}"
                 ),
             },
-            'sessions': {
-                'BACKEND': 'ietf.utils.cache.LenientMemcacheCache',
-                'LOCATION': '127.0.0.1:11211',
+            "sessions": {
+                "BACKEND": "ietf.utils.cache.LenientMemcacheCache",
+                "LOCATION": f"{MEMCACHED_HOST}:{MEMCACHED_PORT}",
                 # No release-specific VERSION setting.
-                'KEY_PREFIX': 'ietf:dt',
+                "KEY_PREFIX": "ietf:dt",
             },
-            'htmlized': {
-                'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
-                'LOCATION': '/a/cache/datatracker/htmlized',
-                'OPTIONS': {
-                    'MAX_ENTRIES': 100000,      # 100,000
+            "htmlized": {
+                "BACKEND": "django.core.cache.backends.filebased.FileBasedCache",
+                "LOCATION": "/a/cache/datatracker/htmlized",
+                "OPTIONS": {
+                    "MAX_ENTRIES": 100000,  # 100,000
                 },
             },
-            'pdfized': {
-                'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
-                'LOCATION': '/a/cache/datatracker/pdfized',
-                'OPTIONS': {
-                    'MAX_ENTRIES': 100000,      # 100,000
+            "pdfized": {
+                "BACKEND": "django.core.cache.backends.filebased.FileBasedCache",
+                "LOCATION": "/a/cache/datatracker/pdfized",
+                "OPTIONS": {
+                    "MAX_ENTRIES": 100000,  # 100,000
                 },
             },
-            'slowpages': {
-                'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
-                'LOCATION': '/a/cache/datatracker/slowpages',
-                'OPTIONS': {
-                    'MAX_ENTRIES': 5000,
+            "slowpages": {
+                "BACKEND": "django.core.cache.backends.filebased.FileBasedCache",
+                "LOCATION": "/a/cache/datatracker/slowpages",
+                "OPTIONS": {
+                    "MAX_ENTRIES": 5000,
                 },
             },
         }
