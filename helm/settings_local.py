@@ -7,7 +7,6 @@ from email.utils import parseaddr
 from ietf import __release_hash__
 from ietf.settings import *                                          # pyflakes:ignore
 
-USE_TZ = True
 
 # Secrets
 
