@@ -17,15 +17,6 @@ urlpatterns = [
     url(r'^approvals/cancelpreapproval/(?P<preapproval_id>[a-f\d]+)/$', views.cancel_preapproval),
 
     url(r'^manualpost/$', views.manualpost),
-    url(r'^manualpost/addemail$', views.add_manualpost_email),
-    url(r'^manualpost/addemail/(?P<submission_id>\d+)/(?P<access_token>[a-f\d]*)/$', views.add_manualpost_email),
-    url(r'^manualpost/attachment/(?P<submission_id>\d+)/(?P<message_id>\d+)/(?P<filename>.*)$', views.show_submission_email_attachment),
-    url(r'^manualpost/cancel$', views.cancel_waiting_for_draft),
-    url(r'^manualpost/email/(?P<submission_id>\d+)/(?P<message_id>\d+)/$', views.show_submission_email_message),
-    url(r'^manualpost/email/(?P<submission_id>\d+)/(?P<message_id>\d+)/(?P<access_token>[a-f\d]*)/$', views.show_submission_email_message),
-    url(r'^manualpost/replyemail/(?P<submission_id>\d+)/(?P<message_id>\d+)/$', views.send_submission_email),
-    url(r'^manualpost/sendemail/(?P<submission_id>\d+)/$', views.send_submission_email),
-
     # proof-of-concept for celery async tasks
     url(r'^async-poke/?$', views.async_poke_test),
 ]
