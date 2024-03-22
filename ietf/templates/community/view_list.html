@@ -12,7 +12,7 @@
     {% bootstrap_messages %}
     {% if can_manage_list %}
         <a class="btn btn-primary my-3"
-           href="{% url "ietf.community.views.manage_list" email_or_name=clist.person.email_address %}">
+           href="{% url "ietf.community.views.manage_list" email_or_name=email_or_name %}">
             <i class="bi bi-gear"></i>
             Manage list
         </a>
