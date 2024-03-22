@@ -163,6 +163,7 @@ urlpatterns = [
     url(r'^%(name)s/edit/issueballot/rsab/$' % settings.URL_REGEXPS, views_ballot.issue_rsab_ballot),
     url(r'^%(name)s/edit/closeballot/rsab/$' % settings.URL_REGEXPS, views_ballot.close_rsab_ballot),
 
+    url(r'^help/state/?$', views_help.state_index),
     url(r'^help/state/(?P<type>[\w-]+)/$', views_help.state_help),
     url(r'^help/relationships/$', views_help.relationship_help),
     url(r'^help/relationships/(?P<subset>\w+)/$', views_help.relationship_help),
