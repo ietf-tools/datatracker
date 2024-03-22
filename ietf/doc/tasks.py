@@ -2,13 +2,20 @@
 #
 # Celery task definitions
 #
+import os
 import datetime
 import debug  # pyflakes:ignore
+
+from django.conf import settings
 
 from celery import shared_task
 
 from ietf.utils import log
 from ietf.utils.timezone import datetime_today
+from ietf.doc.utils import generate_idnits2_rfcs_obsoleted
+from ietf.doc.utils import generate_idnits2_rfc_status
+from ietf.doc.utils import bibxml_for_all_drafts
+from ietf.doc.utils import bibxml_for_recent_drafts
 
 from .expire import (
     in_draft_expire_freeze,
@@ -54,3 +61,46 @@ def expire_ids_task():
 def notify_expirations_task(notify_days=14):
     for doc in get_soon_to_expire_drafts(notify_days):
         send_expire_warning_for_draft(doc)
+
+
+@shared_task
+def generate_idnits2_rfcs_obsoleted_task():
+    filename = os.path.join(settings.DERIVED_DIR, 'idnits2-rfcs-obsoleted')
+    blob = generate_idnits2_rfcs_obsoleted()
+    try:
+        f = open(filename, 'wb')
+        f.write(blob.encode('utf-8'))
+    except Exception as e:
+        log.log('failed to write idnits2-rfcs-obsoleted: ' + str(e))
+        raise e
+
+
+@shared_task
+def generate_idnits2_rfc_status_task():
+    filename = os.path.join(settings.DERIVED_DIR, 'idnits2-rfc-status')
+    blob = generate_idnits2_rfc_status()
+    try:
+        f = open(filename, 'wb')
+        f.write(blob.encode('utf-8'))
+    except Exception as e:
+        log.log('failed to write idnits2-rfc-status: ' + str(e))
+        raise e
+
+
+@shared_task
+def generate_bibxml_files_for_all_drafts_task():
+    bibxmldir = os.path.join(settings.BIBXML_BASE_PATH, 'bibxml-ids')
+    if not os.path.exists(bibxmldir):
+        log.log('%s directory needs to be created' % bibxmldir)
+        print(bibxmldir)
+        raise FileNotFoundError(bibxmldir)
+    bibxml_for_all_drafts(bibxmldir)
+
+
+@shared_task
+def generate_bibxml_files_for_recent_drafts_task(days=7):
+    bibxmldir = os.path.join(settings.BIBXML_BASE_PATH, 'bibxml-ids')
+    if not os.path.exists(bibxmldir):
+        log.log('%s directory needs to be created' % bibxmldir)
+        raise FileNotFoundError(bibxmldir)
+    bibxml_for_recent_drafts(bibxmldir, days=days)
