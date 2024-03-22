@@ -56,6 +56,7 @@
     "@parcel/transformer-sass": "2.12.0",
     "@rollup/pluginutils": "5.1.0",
     "@vitejs/plugin-vue": "4.6.2",
+    "@vue/language-plugin-pug": "2.0.7",
     "browserlist": "latest",
     "c8": "9.1.0",
     "eslint": "8.57.0",

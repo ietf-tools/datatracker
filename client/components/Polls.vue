@@ -3,9 +3,11 @@
   n-data-table(
     v-if='state.items.length > 0'
     :data='state.items'
-    :columns='columns'
+    :columns='state.columns'
     striped
     )
+  span.text-danger(v-else-if='state.errMessage')
+    em {{ state.errMessage }}
   span.text-body-secondary(v-else)
     em No polls available.
 </template>
@@ -13,9 +15,8 @@
 <script setup>
 import { onMounted, reactive } from 'vue'
 import { DateTime } from 'luxon'
-import {
-  NDataTable
-} from 'naive-ui'
+import { cloneDeep, startCase } from 'lodash-es'
+import { NDataTable } from 'naive-ui'
 
 // PROPS
 
@@ -29,13 +30,15 @@ const props = defineProps({
 // STATE
 
 const state = reactive({
-  items: []
+  items: [],
+  colums: [],
+  errMessage: null
 })
 
-const columns = [
+const defaultColumns = [
   {
     title: 'Question',
-    key: 'question'
+    key: 'text'
   },
   {
     title: 'Start Time',
@@ -44,14 +47,6 @@ const columns = [
   {
     title: 'End Time',
     key: 'end_time'
-  },
-  {
-    title: 'Raise Hand',
-    key: 'raise_hand'
-  },
-  {
-    title: 'Do Not Raise Hand',
-    key: 'do_not_raise_hand'
   }
 ]
 
@@ -59,20 +54,38 @@ const columns = [
 
 onMounted(() => {
   // Get polls from embedded json tag
-  const polls = JSON.parse(document.getElementById(`${props.componentId}-data`).textContent || '[]')
-  if (polls.length > 0) {
-    let idx = 1
-    for (const poll of polls) {
-      state.items.push({
-        id: `poll-${idx}`,
-        question: poll.text,
-        start_time: DateTime.fromISO(poll.start_time).toFormat('dd LLLL yyyy \'at\' HH:mm:ss a ZZZZ'),
-        end_time: DateTime.fromISO(poll.end_time).toFormat('dd LLLL yyyy \'at\' HH:mm:ss a ZZZZ'),
-        raise_hand: poll.raise_hand,
-        do_not_raise_hand: poll.do_not_raise_hand
-      })
-      idx++
+  try {
+    const polls = JSON.parse(document.getElementById(`${props.componentId}-data`).textContent || '[]')
+    if (polls.length > 0) {
+      // Populate columns
+      state.columns = cloneDeep(defaultColumns)
+      for (const col in polls[0]) {
+        if (!['text', 'start_time', 'end_time'].includes(col)) {
+          state.columns.push({
+            title: startCase(col),
+            key: col,
+            minWidth: 100,
+            titleAlign: 'center',
+            align: 'center'
+          })
+        }
+      }
+
+      // Populate rows
+      let idx = 1
+      for (const poll of polls) {
+        state.items.push({
+          ...poll,
+          id: `poll-${idx}`,
+          start_time: DateTime.fromISO(poll.start_time).toFormat('dd LLLL yyyy \'at\' HH:mm:ss a ZZZZ'),
+          end_time: DateTime.fromISO(poll.end_time).toFormat('dd LLLL yyyy \'at\' HH:mm:ss a ZZZZ')
+        })
+        idx++
+      }
     }
+  } catch (err) {
+    console.warn(err)
+    state.errMessage = 'Failed to load poll results.'
   }
 })
 </script>
