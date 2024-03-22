@@ -22,7 +22,7 @@ API_KEY_TYPE = os.environ.get("DATATRACKER_API_KEY_TYPE", "ES265")
 API_PUBLIC_KEY_PEM = b64decode(os.environ.get("DATATRACKER_API_PUBLIC_KEY_PEM_B64"))
 API_PRIVATEC_KEY_PEM = b64decode(os.environ.get("DATATRACKER_API_PRIVATE_KEY_PEM_B64"))
 
-SERVER_MODE = os.environ.get("DATATRACKER_SERVER_MODE", "production")
+SERVER_MODE = os.environ.get("DATATRACKER_SERVER_MODE", "development")  # todo decide if we need a "staging" mode
 
 DEBUG = os.environ.get("DATATRACKER_DEBUG", "false").lower() == "true"
 
