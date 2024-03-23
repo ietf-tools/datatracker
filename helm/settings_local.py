@@ -34,7 +34,7 @@ elif SERVER_MODE == "production":
 
 if "DATATRACKER_YOUTUBE_API_KEY" in os.environ:
     YOUTUBE_API_KEY = os.environ.get("DATATRACKER_YOUTUBE_API_KEY")
-    elif SERVER_MODE == "production":
+elif SERVER_MODE == "production":
     raise RuntimeError("DATATRACKER_YOUTUBE_API_KEY must be set in production")    
 
 if "DATATRACKER_GITHUB_BACKUP_API_KEY" in os.environ:
