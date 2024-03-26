@@ -1206,10 +1206,12 @@ else:
 
 if "CACHES" not in locals():
     if SERVER_MODE == "production":
+        MEMCACHED_HOST = os.environ.get("MEMCACHED_SERVICE_HOST", "127.0.0.1")
+        MEMCACHED_PORT = os.environ.get("MEMCACHED_SERVICE_PORT", "11211")
         CACHES = {
             "default": {
                 "BACKEND": "ietf.utils.cache.LenientMemcacheCache",
-                "LOCATION": "127.0.0.1:11211",
+                "LOCATION": f"{MEMCACHED_HOST}:{MEMCACHED_PORT}",
                 "VERSION": __version__,
                 "KEY_PREFIX": "ietf:dt",
                 "KEY_FUNCTION": lambda key, key_prefix, version: (
@@ -1218,7 +1220,7 @@ if "CACHES" not in locals():
             },
             "sessions": {
                 "BACKEND": "ietf.utils.cache.LenientMemcacheCache",
-                "LOCATION": "127.0.0.1:11211",
+                "LOCATION": f"{MEMCACHED_HOST}:{MEMCACHED_PORT}",
                 # No release-specific VERSION setting.
                 "KEY_PREFIX": "ietf:dt",
             },
