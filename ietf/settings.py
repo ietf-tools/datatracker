@@ -125,6 +125,10 @@ FORM_RENDERER = "django.forms.renderers.DjangoDivFormRenderer"
 # In the future (relative to 4.2), the default will become 'django.db.models.BigAutoField.'
 DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 
+# OIDC configuration
+_SITE_URL = os.environ.get("OIDC_SITE_URL", None)
+if _SITE_URL is not None:
+    SITE_URL = _SITE_URL
 
 if SERVER_MODE == 'production':
     MEDIA_ROOT = '/a/www/www6s/lib/dt/media/'
