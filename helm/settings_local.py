@@ -12,57 +12,67 @@ from ietf.settings import *                                          # pyflakes:
 SERVER_MODE = os.environ.get("DATATRACKER_SERVER_MODE", "development")
 
 # Secrets
-if "DATATRACKER_DJANGO_SECRET_KEY" in os.environ:
-    SECRET_KEY = os.environ.get("DATATRACKER_DJANGO_SECRET_KEY")
+_SECRET_KEY = os.environ.get("DATATRACKER_DJANGO_SECRET_KEY", None)
+if _SECRET_KEY is not None:
+    SECRET_KEY = _SECRET_KEY
 elif SERVER_MODE == "production":
     raise RuntimeError("DATATRACKER_DJANGO_SECRET_KEY must be set in production")    
 
-if "DATATRACKER_NOMCOM_APP_SECRET_B64" in os.environ:
-    NOMCOM_APP_SECRET = b64decode(os.environ.get("DATATRACKER_NOMCOM_APP_SECRET_B64"))
+_NOMCOM_APP_SECRET_B64 = os.environ.get("DATATRACKER_NOMCOM_APP_SECRET_B64", None)
+if _NOMCOM_APP_SECRET_B64 is not None:
+    NOMCOM_APP_SECRET = b64decode(_NOMCOM_APP_SECRET_B64)
 elif SERVER_MODE == "production":
-    raise RuntimeError("DATATRACKER_NOMCOM_APP_SECRET_B64 must be set in production")    
+    raise RuntimeError("DATATRACKER_NOMCOM_APP_SECRET_B64 must be set in production")
 
-if "DATATRACKER_IANA_SYNC_PASSWORD" in os.environ:
-    IANA_SYNC_PASSWORD = os.environ.get("DATATRACKER_IANA_SYNC_PASSWORD")
+_IANA_SYNC_PASSWORD = os.environ.get("DATATRACKER_IANA_SYNC_PASSWORD", None)
+if _IANA_SYNC_PASSWORD is not None:
+    IANA_SYNC_PASSWORD = _IANA_SYNC_PASSWORD
 elif SERVER_MODE == "production":
     raise RuntimeError("DATATRACKER_IANA_SYNC_PASSWORD must be set in production")    
 
-if "DATATRACKER_RFC_EDITOR_SYNC_PASSWORD" in os.environ:
+_RFC_EDITOR_SYNC_PASSWORD = os.environ.get("DATATRACKER_RFC_EDITOR_SYNC_PASSWORD", None)
+if _RFC_EDITOR_SYNC_PASSWORD is not None:
     RFC_EDITOR_SYNC_PASSWORD = os.environ.get("DATATRACKER_RFC_EDITOR_SYNC_PASSWORD")
 elif SERVER_MODE == "production":
-    raise RuntimeError("DATATRACKER_RFC_EDITOR_SYNC_PASSWORD must be set in production")    
+    raise RuntimeError("DATATRACKER_RFC_EDITOR_SYNC_PASSWORD must be set in production")
 
-if "DATATRACKER_YOUTUBE_API_KEY" in os.environ:
-    YOUTUBE_API_KEY = os.environ.get("DATATRACKER_YOUTUBE_API_KEY")
+_YOUTUBE_API_KEY = os.environ.get("DATATRACKER_YOUTUBE_API_KEY", None)
+if _YOUTUBE_API_KEY is not None:
+    YOUTUBE_API_KEY = _YOUTUBE_API_KEY
 elif SERVER_MODE == "production":
-    raise RuntimeError("DATATRACKER_YOUTUBE_API_KEY must be set in production")    
+    raise RuntimeError("DATATRACKER_YOUTUBE_API_KEY must be set in production")
 
-if "DATATRACKER_GITHUB_BACKUP_API_KEY" in os.environ:
-    GITHUB_BACKUP_API_KEY = os.environ.get("DATATRACKER_GITHUB_BACKUP_API_KEY")
+_GITHUB_BACKUP_API_KEY = os.environ.get("DATATRACKER_GITHUB_BACKUP_API_KEY", None)
+if _GITHUB_BACKUP_API_KEY is not None:
+    GITHUB_BACKUP_API_KEY = _GITHUB_BACKUP_API_KEY
 elif SERVER_MODE == "production":
     raise RuntimeError("DATATRACKER_GITHUB_BACKUP_API_KEY must be set in production")    
 
-
-if "DATATRACKER_API_KEY_TYPE" in os.environ:
-    API_KEY_TYPE = os.environ.get("DATATRACKER_API_KEY_TYPE")
+_API_KEY_TYPE = os.environ.get("DATATRACKER_API_KEY_TYPE", None)
+if _API_KEY_TYPE is not None:
+    API_KEY_TYPE = _API_KEY_TYPE
 elif SERVER_MODE == "production":
     raise RuntimeError("DATATRACKER_API_KEY_TYPE must be set in production")    
 
-if "DATATRACKER_API_PUBLIC_KEY_PEM_B64" in os.environ:
-    API_PUBLIC_KEY_PEM = b64decode(os.environ.get("DATATRACKER_API_PUBLIC_KEY_PEM_B64"))
+_API_PUBLIC_KEY_PEM_B64 = os.environ.get("DATATRACKER_API_PUBLIC_KEY_PEM_B64", None)
+if _API_PUBLIC_KEY_PEM_B64 is not None:
+    API_PUBLIC_KEY_PEM = b64decode(_API_PUBLIC_KEY_PEM_B64)
 elif SERVER_MODE == "production":
     raise RuntimeError("DATATRACKER_API_PUBLIC_KEY_PEM_B64 must be set in production")    
 
-if "DATATRACKER_API_PRIVATE_KEY_PEM_B64" in os.environ:
-    API_PRIVATEC_KEY_PEM = b64decode(os.environ.get("DATATRACKER_API_PRIVATE_KEY_PEM_B64"))
+_API_PRIVATE_KEY_PEM_B64 = os.environ.get("DATATRACKER_API_PRIVATE_KEY_PEM_B64", None)
+if _API_PRIVATE_KEY_PEM_B64 is not None:
+    API_PRIVATE_KEY_PEM = b64decode(_API_PRIVATE_KEY_PEM_B64)
 elif SERVER_MODE == "production":
     raise RuntimeError("DATATRACKER_API_PRIVATE_KEY_PEM_B64 must be set in production")    
 
+# Set DEBUG if DATATRACKER_DEBUG env var is the word "true"
 DEBUG = os.environ.get("DATATRACKER_DEBUG", "false").lower() == "true"
 
-allowed_hosts_env = os.environ.get("DATATRACKER_ALLOWED_HOSTS", None)
-if allowed_hosts_env is not None:
-    ALLOWED_HOSTS = [h.strip() for h in allowed_hosts_env.split(",")]
+# DATATRACKER_ALLOWED_HOSTS env var is a comma-separated list of allowed hosts
+_allowed_hosts_str = os.environ.get("DATATRACKER_ALLOWED_HOSTS", None)
+if _allowed_hosts_str is not None:
+    ALLOWED_HOSTS = [h.strip() for h in _allowed_hosts_str.split(",")]
 
 DATABASES = {
     "default": {
@@ -75,7 +85,10 @@ DATABASES = {
     },
 }
 
-ADMINS = [parseaddr(admin) for admin in os.environ.get("DATATRACKER_ADMINS").split("\n")]
+# DATATRACKER_ADMINS is a newline-delimited list of addresses parseable by email.utils.parseaddr
+_ADMINS = os.environ.get("DATATRACKER_ADMINS", None)
+if _ADMINS is not None:
+    ADMINS = [parseaddr(admin) for admin in _ADMINS.split("\n")]
 
 USING_DEBUG_EMAIL_SERVER = os.environ.get("DATATRACKER_EMAIL_DEBUG", "false").lower() == "true"
 EMAIL_HOST = os.environ.get("DATATRACKER_EMAIL_HOST", "localhost")
