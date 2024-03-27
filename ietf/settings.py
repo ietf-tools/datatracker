@@ -991,11 +991,7 @@ BIBXML_BASE_PATH = '/a/ietfdata/derived/bibxml'
 # Timezone files for iCalendar
 TZDATA_ICS_PATH = BASE_DIR + '/../vzic/zoneinfo/'
 
-SECR_BLUE_SHEET_PATH = '/a/www/ietf-datatracker/documents/blue_sheet.rtf'
-SECR_BLUE_SHEET_URL = IDTRACKER_BASE_URL + '/documents/blue_sheet.rtf'
-SECR_INTERIM_LISTING_DIR = '/a/www/www6/meeting/interim'
 SECR_MAX_UPLOAD_SIZE = 40960000
-SECR_PROCEEDINGS_DIR = '/a/www/www6s/proceedings/'
 SECR_PPT2PDF_COMMAND = ['/usr/bin/soffice','--headless','--convert-to','pdf:writer_globaldocument_pdf_Export','--outdir']
 STATS_REGISTRATION_ATTENDEES_JSON_URL = 'https://registration.ietf.org/{number}/attendees/'
 PROCEEDINGS_VERSION_CHANGES = [
