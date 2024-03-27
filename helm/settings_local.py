@@ -1,22 +1,100 @@
 # Copyright The IETF Trust 2007-2024, All Rights Reserved
 # -*- coding: utf-8 -*-
 
+from base64 import b64decode
+from email.utils import parseaddr
+
+from ietf import __release_hash__
 from ietf.settings import *                                          # pyflakes:ignore
 
-ALLOWED_HOSTS = ['*']
+
+# Default to "development". Production _must_ set DATATRACKER_SERVER_MODE="production" in the env!
+SERVER_MODE = os.environ.get("DATATRACKER_SERVER_MODE", "development")
+
+# Secrets
+_SECRET_KEY = os.environ.get("DATATRACKER_DJANGO_SECRET_KEY", None)
+if _SECRET_KEY is not None:
+    SECRET_KEY = _SECRET_KEY
+elif SERVER_MODE == "production":
+    raise RuntimeError("DATATRACKER_DJANGO_SECRET_KEY must be set in production")    
+
+_NOMCOM_APP_SECRET_B64 = os.environ.get("DATATRACKER_NOMCOM_APP_SECRET_B64", None)
+if _NOMCOM_APP_SECRET_B64 is not None:
+    NOMCOM_APP_SECRET = b64decode(_NOMCOM_APP_SECRET_B64)
+elif SERVER_MODE == "production":
+    raise RuntimeError("DATATRACKER_NOMCOM_APP_SECRET_B64 must be set in production")
+
+_IANA_SYNC_PASSWORD = os.environ.get("DATATRACKER_IANA_SYNC_PASSWORD", None)
+if _IANA_SYNC_PASSWORD is not None:
+    IANA_SYNC_PASSWORD = _IANA_SYNC_PASSWORD
+elif SERVER_MODE == "production":
+    raise RuntimeError("DATATRACKER_IANA_SYNC_PASSWORD must be set in production")    
+
+_RFC_EDITOR_SYNC_PASSWORD = os.environ.get("DATATRACKER_RFC_EDITOR_SYNC_PASSWORD", None)
+if _RFC_EDITOR_SYNC_PASSWORD is not None:
+    RFC_EDITOR_SYNC_PASSWORD = os.environ.get("DATATRACKER_RFC_EDITOR_SYNC_PASSWORD")
+elif SERVER_MODE == "production":
+    raise RuntimeError("DATATRACKER_RFC_EDITOR_SYNC_PASSWORD must be set in production")
+
+_YOUTUBE_API_KEY = os.environ.get("DATATRACKER_YOUTUBE_API_KEY", None)
+if _YOUTUBE_API_KEY is not None:
+    YOUTUBE_API_KEY = _YOUTUBE_API_KEY
+elif SERVER_MODE == "production":
+    raise RuntimeError("DATATRACKER_YOUTUBE_API_KEY must be set in production")
+
+_GITHUB_BACKUP_API_KEY = os.environ.get("DATATRACKER_GITHUB_BACKUP_API_KEY", None)
+if _GITHUB_BACKUP_API_KEY is not None:
+    GITHUB_BACKUP_API_KEY = _GITHUB_BACKUP_API_KEY
+elif SERVER_MODE == "production":
+    raise RuntimeError("DATATRACKER_GITHUB_BACKUP_API_KEY must be set in production")    
+
+_API_KEY_TYPE = os.environ.get("DATATRACKER_API_KEY_TYPE", None)
+if _API_KEY_TYPE is not None:
+    API_KEY_TYPE = _API_KEY_TYPE
+elif SERVER_MODE == "production":
+    raise RuntimeError("DATATRACKER_API_KEY_TYPE must be set in production")    
+
+_API_PUBLIC_KEY_PEM_B64 = os.environ.get("DATATRACKER_API_PUBLIC_KEY_PEM_B64", None)
+if _API_PUBLIC_KEY_PEM_B64 is not None:
+    API_PUBLIC_KEY_PEM = b64decode(_API_PUBLIC_KEY_PEM_B64)
+elif SERVER_MODE == "production":
+    raise RuntimeError("DATATRACKER_API_PUBLIC_KEY_PEM_B64 must be set in production")    
+
+_API_PRIVATE_KEY_PEM_B64 = os.environ.get("DATATRACKER_API_PRIVATE_KEY_PEM_B64", None)
+if _API_PRIVATE_KEY_PEM_B64 is not None:
+    API_PRIVATE_KEY_PEM = b64decode(_API_PRIVATE_KEY_PEM_B64)
+elif SERVER_MODE == "production":
+    raise RuntimeError("DATATRACKER_API_PRIVATE_KEY_PEM_B64 must be set in production")    
+
+# Set DEBUG if DATATRACKER_DEBUG env var is the word "true"
+DEBUG = os.environ.get("DATATRACKER_DEBUG", "false").lower() == "true"
+
+# DATATRACKER_ALLOWED_HOSTS env var is a comma-separated list of allowed hosts
+_allowed_hosts_str = os.environ.get("DATATRACKER_ALLOWED_HOSTS", None)
+if _allowed_hosts_str is not None:
+    ALLOWED_HOSTS = [h.strip() for h in _allowed_hosts_str.split(",")]
 
 DATABASES = {
     "default": {
-        "HOST": os.environ.get("DBHOST", "db"),
-        "PORT": os.environ.get("DBPORT", "5432"),
-        "NAME": os.environ.get("DBNAME", "datatracker"),
+        "HOST": os.environ.get("DATATRACKER_DBHOST", "db"),
+        "PORT": os.environ.get("DATATRACKER_DBPORT", "5432"),
+        "NAME": os.environ.get("DATATRACKER_DBNAME", "datatracker"),
         "ENGINE": "django.db.backends.postgresql",
-        "USER": os.environ.get("DBUSER", "django"),
-        "PASSWORD": os.environ.get("DBPASS", ""),
+        "USER": os.environ.get("DATATRACKER_DBUSER", "django"),
+        "PASSWORD": os.environ.get("DATATRACKER_DBPASS", ""),
     },
 }
 
-SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY")
+# DATATRACKER_ADMINS is a newline-delimited list of addresses parseable by email.utils.parseaddr
+_ADMINS = os.environ.get("DATATRACKER_ADMINS", None)
+if _ADMINS is not None:
+    ADMINS = [parseaddr(admin) for admin in _ADMINS.split("\n")]
+elif SERVER_MODE == "production":
+    raise RuntimeError("DATATRACKER_ADMINS must be set in production")    
+
+USING_DEBUG_EMAIL_SERVER = os.environ.get("DATATRACKER_EMAIL_DEBUG", "false").lower() == "true"
+EMAIL_HOST = os.environ.get("DATATRACKER_EMAIL_HOST", "localhost")
+EMAIL_PORT = int(os.environ.get("DATATRACKER_EMAIL_PORT", "2025"))
 
 CELERY_BROKER_URL = "amqp://datatracker:{password}@{host}/{queue}".format(
     host=os.environ.get("RABBITMQ_HOSTNAME", "rabbitmq"),
@@ -24,62 +102,99 @@ CELERY_BROKER_URL = "amqp://datatracker:{password}@{host}/{queue}".format(
     queue=os.environ.get("RABBITMQ_QUEUE", "dt")
 )
 
-IDSUBMIT_IDNITS_BINARY = "/usr/local/bin/idnits"
-IDSUBMIT_REPOSITORY_PATH = "/test/id/"
-IDSUBMIT_STAGING_PATH = "/test/staging/"
+IANA_SYNC_USERNAME = "ietfsync"
+IANA_SYNC_CHANGES_URL = "https://datatracker.iana.org:4443/data-tracker/changes"
+IANA_SYNC_PROTOCOLS_URL = "http://www.iana.org/protocols/"
 
-AGENDA_PATH = "/assets/www6s/proceedings/"
-MEETINGHOST_LOGO_PATH = AGENDA_PATH
+RFC_EDITOR_NOTIFICATION_URL = "http://www.rfc-editor.org/parser/parser.php"
 
-USING_DEBUG_EMAIL_SERVER=True
-EMAIL_HOST= "localhost"
-EMAIL_PORT=2025
+STATS_REGISTRATION_ATTENDEES_JSON_URL = 'https://registration.ietf.org/{number}/attendees/?apikey=redacted'
 
-MEDIA_BASE_DIR = "/assets"
-MEDIA_ROOT = MEDIA_BASE_DIR + "/media/"
-MEDIA_URL = "/media/"
+#FIRST_CUTOFF_DAYS = 12
+#SECOND_CUTOFF_DAYS = 12
+#SUBMISSION_CUTOFF_DAYS = 26
+#SUBMISSION_CORRECTION_DAYS = 57
+MEETING_MATERIALS_SUBMISSION_CUTOFF_DAYS = 26
+MEETING_MATERIALS_SUBMISSION_CORRECTION_DAYS = 54
 
+HTPASSWD_COMMAND = "/usr/bin/htpasswd2"
+
+_MEETECHO_CLIENT_ID = os.environ.get("DATATRACKER_MEETECHO_CLIENT_ID", None)
+_MEETECHO_CLIENT_SECRET = os.environ.get("DATATRACKER_MEETECHO_CLIENT_SECRET", None)
+if _MEETECHO_CLIENT_ID is not None and _MEETECHO_CLIENT_SECRET is not None:
+    MEETECHO_API_CONFIG = {
+        "api_base": os.environ.get(
+            "DATATRACKER_MEETECHO_API_BASE", 
+            "https://meetings.conf.meetecho.com/api/v1/",
+        ),
+        "client_id": _MEETECHO_CLIENT_ID,
+        "client_secret": _MEETECHO_CLIENT_SECRET,
+        "request_timeout": 3.01,  # python-requests doc recommend slightly > a multiple of 3 seconds
+    }
+elif SERVER_MODE == "production":
+    raise RuntimeError(
+        "DATATRACKER_MEETECHO_CLIENT_ID and DATATRACKER_MEETECHO_CLIENT_SECRET must be set in production"
+    )
+
+APP_API_TOKENS = {
+    "ietf.api.views.directauth": ["redacted",],
+    "ietf.api.views.email_aliases": ["redacted"],
+    "ietf.api.views.active_email_list": ["redacted"],
+}
+
+EMAIL_COPY_TO = ""
+
+# Until we teach the datatracker to look beyond cloudflare for this check
+IDSUBMIT_MAX_DAILY_SAME_SUBMITTER = 5000
+
+# Leave DATATRACKER_MATOMO_SITE_ID unset to disable Matomo reporting
+if "DATATRACKER_MATOMO_SITE_ID" in os.environ:
+    MATOMO_DOMAIN_PATH = os.environ.get("DATATRACKER_MATOMO_DOMAIN_PATH", "analytics.ietf.org")
+    MATOMO_SITE_ID = os.environ.get("DATATRACKER_MATOMO_SITE_ID")
+    MATOMO_DISABLE_COOKIES = True
+
+# Leave DATATRACKER_SCOUT_KEY unset to disable Scout APM agent
+_SCOUT_KEY = os.environ.get("DATATRACKER_SCOUT_KEY", None)
+if _SCOUT_KEY is not None:
+    if SERVER_MODE == "production":
+        PROD_PRE_APPS = ["scout_apm.django", ]
+    else:
+        DEV_PRE_APPS = ["scout_apm.django", ]
+    SCOUT_MONITOR = True
+    SCOUT_KEY = _SCOUT_KEY
+    SCOUT_NAME = "Datatracker"
+    SCOUT_ERRORS_ENABLED = True
+    SCOUT_SHUTDOWN_MESSAGE_ENABLED = False
+    SCOUT_CORE_AGENT_DIR = "/a/core-agent/1.4.0"
+    SCOUT_CORE_AGENT_FULL_NAME = "scout_apm_core-v1.4.0-x86_64-unknown-linux-musl"
+    SCOUT_CORE_AGENT_SOCKET_PATH = "tcp://{host}:{port}".format(
+        host=os.environ.get("DATATRACKER_SCOUT_CORE_AGENT_HOST", "scout"),
+        port=os.environ.get("DATATRACKER_SCOUT_CORE_AGENT_PORT", "16590"),
+    ),
+    SCOUT_CORE_AGENT_DOWNLOAD = False
+    SCOUT_CORE_AGENT_LAUNCH = False
+    SCOUT_REVISION_SHA = __release_hash__[:7]
+
+# Path to the email alias lists.  Used by ietf.utils.aliases
+DRAFT_ALIASES_PATH = "/a/postfix/draft-aliases"
+DRAFT_VIRTUAL_PATH = "/a/postfix/draft-virtual"
+GROUP_ALIASES_PATH = "/a/postfix/group-aliases"
+GROUP_VIRTUAL_PATH = "/a/postfix/group-virtual"
+
+# Set these to the same as "production" in settings.py, whether production mode or not
+MEDIA_ROOT = "/a/www/www6s/lib/dt/media/"
+MEDIA_URL  = "https://www.ietf.org/lib/dt/media/"
 PHOTOS_DIRNAME = "photo"
 PHOTOS_DIR = MEDIA_ROOT + PHOTOS_DIRNAME
 
-SUBMIT_YANG_CATALOG_MODEL_DIR = "/assets/ietf-ftp/yang/catalogmod/"
-SUBMIT_YANG_DRAFT_MODEL_DIR = "/assets/ietf-ftp/yang/draftmod/"
-SUBMIT_YANG_INVAL_MODEL_DIR = "/assets/ietf-ftp/yang/invalmod/"
-SUBMIT_YANG_IANA_MODEL_DIR = "/assets/ietf-ftp/yang/ianamod/"
-SUBMIT_YANG_RFC_MODEL_DIR = "/assets/ietf-ftp/yang/rfcmod/"
+# Normally only set for debug, but needed until we have a real FS
+DJANGO_VITE_MANIFEST_PATH = os.path.join(BASE_DIR, 'static/dist-neue/manifest.json')
 
-# Set INTERNAL_IPS for use within Docker. See https://knasmueller.net/fix-djangos-debug-toolbar-not-showing-inside-docker
-import socket
-hostname, _, ips = socket.gethostbyname_ex(socket.gethostname())
-INTERNAL_IPS = [".".join(ip.split(".")[:-1] + ["1"]) for ip in ips]
-
-# DEV_TEMPLATE_CONTEXT_PROCESSORS = [
-#    'ietf.context_processors.sql_debug',
-# ]
-
-DOCUMENT_PATH_PATTERN = "/assets/ietfdata/doc/{doc.type_id}/"
-INTERNET_DRAFT_PATH = "/assets/ietf-ftp/internet-drafts/"
-RFC_PATH = "/assets/ietf-ftp/rfc/"
-CHARTER_PATH = "/assets/ietf-ftp/charter/"
-BOFREQ_PATH = "/assets/ietf-ftp/bofreq/"
-CONFLICT_REVIEW_PATH = "/assets/ietf-ftp/conflict-reviews/"
-STATUS_CHANGE_PATH = "/assets/ietf-ftp/status-changes/"
-INTERNET_DRAFT_ARCHIVE_DIR = "/assets/archive/id"
-INTERNET_ALL_DRAFTS_ARCHIVE_DIR = "/assets/archive/id"
-BIBXML_BASE_PATH = "/assets/ietfdata/derived/bibxml"
-IDSUBMIT_REPOSITORY_PATH = INTERNET_DRAFT_PATH
-
-NOMCOM_PUBLIC_KEYS_DIR = "data/nomcom_keys/public_keys/"
-SLIDE_STAGING_PATH = "/test/staging/"
-
+# Binaries that are different in the docker image
 DE_GFM_BINARY = "/usr/local/bin/de-gfm"
+IDSUBMIT_IDNITS_BINARY = "/usr/local/bin/idnits"
 
-# OIDC configuration
-SITE_URL = os.environ.get("OIDC_SITE_URL")
-
-# todo: parameterize memcached url in settings.py
-MEMCACHED_HOST = os.environ.get("MEMCACHED_SERVICE_HOST", "127.0.0.1")
-MEMCACHED_PORT = os.environ.get("MEMCACHED_SERVICE_PORT", "11211")
+# Duplicating production cache from settings.py and using it whether we're in production mode or not
 from ietf import __version__
 CACHES = {
     "default": {
@@ -119,6 +234,3 @@ CACHES = {
         },
     },
 }
-
-# Normally only set for debug, but needed until we have a real FS
-DJANGO_VITE_MANIFEST_PATH = os.path.join(BASE_DIR, 'static/dist-neue/manifest.json')
