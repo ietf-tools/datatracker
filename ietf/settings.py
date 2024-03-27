@@ -980,7 +980,7 @@ DE_GFM_BINARY = '/usr/bin/de-gfm.ruby2.5'
 DAYS_TO_EXPIRE_REGISTRATION_LINK = 3
 MINUTES_TO_EXPIRE_RESET_PASSWORD_LINK = 60
 HTPASSWD_COMMAND = "/usr/bin/htpasswd"
-HTPASSWD_FILE = "/www/htpasswd"
+HTPASSWD_FILE = "/a/www/htpasswd"
 
 # Generation of pdf files
 GHOSTSCRIPT_COMMAND = "/usr/bin/gs"
