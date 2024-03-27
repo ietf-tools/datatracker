@@ -8,10 +8,10 @@ from ietf import __release_hash__
 from ietf.settings import *                                          # pyflakes:ignore
 
 
-SERVER_MODE = os.environ.get("DATATRACKER_SERVER_MODE", "development")  # todo decide if we need a "staging" mode
+# Default to "development". Production _must_ set DATATRACKER_SERVER_MODE="production" in the env!
+SERVER_MODE = os.environ.get("DATATRACKER_SERVER_MODE", "development")
 
 # Secrets
-
 if "DATATRACKER_DJANGO_SECRET_KEY" in os.environ:
     SECRET_KEY = os.environ.get("DATATRACKER_DJANGO_SECRET_KEY")
 elif SERVER_MODE == "production":
@@ -150,18 +150,13 @@ if "DATATRACKER_SCOUT_KEY" in os.environ:
     SCOUT_CORE_AGENT_LAUNCH = False
     SCOUT_REVISION_SHA = __release_hash__[:7]
 
-## Paths from production settings_local --jlr
-
-AGENDA_PATH = "/a/www/www6s/proceedings/"
-
 # Path to the email alias lists.  Used by ietf.utils.aliases
 DRAFT_ALIASES_PATH = "/a/postfix/draft-aliases"
 DRAFT_VIRTUAL_PATH = "/a/postfix/draft-virtual"
 GROUP_ALIASES_PATH = "/a/postfix/group-aliases"
 GROUP_VIRTUAL_PATH = "/a/postfix/group-virtual"
 
-NOMCOM_PUBLIC_KEYS_DIR = "/a/www/nomcom/public_keys/"
-
+# Set these to the same as "production" in settings.py, whether production mode or not
 MEDIA_ROOT = "/a/www/www6s/lib/dt/media/"
 MEDIA_URL  = "https://www.ietf.org/lib/dt/media/"
 PHOTOS_DIRNAME = "photo"
@@ -170,6 +165,9 @@ PHOTOS_DIR = MEDIA_ROOT + PHOTOS_DIRNAME
 # Normally only set for debug, but needed until we have a real FS
 DJANGO_VITE_MANIFEST_PATH = os.path.join(BASE_DIR, 'static/dist-neue/manifest.json')
 
+# Binaries that are different in the docker image
+DE_GFM_BINARY = "/usr/local/bin/de-gfm"
+IDSUBMIT_IDNITS_BINARY = "/usr/local/bin/idnits"
 
 ## below here is from dev settings_local --jlr
 # IDSUBMIT_IDNITS_BINARY = "/usr/local/bin/idnits"
