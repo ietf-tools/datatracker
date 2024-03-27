@@ -89,6 +89,8 @@ DATABASES = {
 _ADMINS = os.environ.get("DATATRACKER_ADMINS", None)
 if _ADMINS is not None:
     ADMINS = [parseaddr(admin) for admin in _ADMINS.split("\n")]
+elif SERVER_MODE == "production":
+    raise RuntimeError("DATATRACKER_ADMINS must be set in production")    
 
 USING_DEBUG_EMAIL_SERVER = os.environ.get("DATATRACKER_EMAIL_DEBUG", "false").lower() == "true"
 EMAIL_HOST = os.environ.get("DATATRACKER_EMAIL_HOST", "localhost")
@@ -117,15 +119,22 @@ MEETING_MATERIALS_SUBMISSION_CORRECTION_DAYS = 54
 
 HTPASSWD_COMMAND = "/usr/bin/htpasswd2"
 
-MEETECHO_API_CONFIG = {
-    "api_base": os.environ.get(
-        "DATATRACKER_MEETECHO_API_BASE", 
-        "https://meetings.conf.meetecho.com/api/v1/",
-    ),
-    "client_id": os.environ.get("DATATRACKER_MEETECHO_CLIENT_ID"),
-    "client_secret": os.environ.get("DATATRACKER_MEETECHO_CLIENT_SECRET"),
-    "request_timeout": 3.01,  # python-requests doc recommend slightly > a multiple of 3 seconds
-}
+_MEETECHO_CLIENT_ID = os.environ.get("DATATRACKER_MEETECHO_CLIENT_ID", None)
+_MEETECHO_CLIENT_SECRET = os.environ.get("DATATRACKER_MEETECHO_CLIENT_SECRET", None)
+if _MEETECHO_CLIENT_ID is not None and _MEETECHO_CLIENT_SECRET is not None:
+    MEETECHO_API_CONFIG = {
+        "api_base": os.environ.get(
+            "DATATRACKER_MEETECHO_API_BASE", 
+            "https://meetings.conf.meetecho.com/api/v1/",
+        ),
+        "client_id": _MEETECHO_CLIENT_ID,
+        "client_secret": _MEETECHO_CLIENT_SECRET,
+        "request_timeout": 3.01,  # python-requests doc recommend slightly > a multiple of 3 seconds
+    }
+elif SERVER_MODE == "production":
+    raise RuntimeError(
+        "DATATRACKER_MEETECHO_CLIENT_ID and DATATRACKER_MEETECHO_CLIENT_SECRET must be set in production"
+    )
 
 APP_API_TOKENS = {
     "ietf.api.views.directauth": ["redacted",],
@@ -133,23 +142,26 @@ APP_API_TOKENS = {
     "ietf.api.views.active_email_list": ["redacted"],
 }
 
-EMAIL_COPY_TO = ''
+EMAIL_COPY_TO = ""
 
 # Until we teach the datatracker to look beyond cloudflare for this check
 IDSUBMIT_MAX_DAILY_SAME_SUBMITTER = 5000
 
+# Leave DATATRACKER_MATOMO_SITE_ID unset to disable Matomo reporting
 if "DATATRACKER_MATOMO_SITE_ID" in os.environ:
     MATOMO_DOMAIN_PATH = os.environ.get("DATATRACKER_MATOMO_DOMAIN_PATH", "analytics.ietf.org")
     MATOMO_SITE_ID = os.environ.get("DATATRACKER_MATOMO_SITE_ID")
     MATOMO_DISABLE_COOKIES = True
 
-if "DATATRACKER_SCOUT_KEY" in os.environ:
+# Leave DATATRACKER_SCOUT_KEY unset to disable Scout APM agent
+_SCOUT_KEY = os.environ.get("DATATRACKER_SCOUT_KEY", None)
+if _SCOUT_KEY is not None:
     if SERVER_MODE == "production":
         PROD_PRE_APPS = ["scout_apm.django", ]
     else:
         DEV_PRE_APPS = ["scout_apm.django", ]
     SCOUT_MONITOR = True
-    SCOUT_KEY = os.environ.get("DATATRACKER_SCOUT_KEY")
+    SCOUT_KEY = _SCOUT_KEY
     SCOUT_NAME = "Datatracker"
     SCOUT_ERRORS_ENABLED = True
     SCOUT_SHUTDOWN_MESSAGE_ENABLED = False
@@ -182,7 +194,7 @@ DJANGO_VITE_MANIFEST_PATH = os.path.join(BASE_DIR, 'static/dist-neue/manifest.js
 DE_GFM_BINARY = "/usr/local/bin/de-gfm"
 IDSUBMIT_IDNITS_BINARY = "/usr/local/bin/idnits"
 
-# Duplicating production cache from settings.py and using it whether we're in production mode or not 
+# Duplicating production cache from settings.py and using it whether we're in production mode or not
 from ietf import __version__
 CACHES = {
     "default": {
