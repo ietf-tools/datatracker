@@ -991,7 +991,7 @@ BIBXML_BASE_PATH = '/a/ietfdata/derived/bibxml'
 # Timezone files for iCalendar
 TZDATA_ICS_PATH = BASE_DIR + '/../vzic/zoneinfo/'
 
-SECR_MAX_UPLOAD_SIZE = 40960000
+DATATRACKER_MAX_UPLOAD_SIZE = 40960000
 SECR_PPT2PDF_COMMAND = ['/usr/bin/soffice','--headless','--convert-to','pdf:writer_globaldocument_pdf_Export','--outdir']
 STATS_REGISTRATION_ATTENDEES_JSON_URL = 'https://registration.ietf.org/{number}/attendees/'
 PROCEEDINGS_VERSION_CHANGES = [
