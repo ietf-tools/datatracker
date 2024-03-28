@@ -24,7 +24,7 @@ for name, level in settings.UTILS_LOGGER_LEVELS.items():
             logging.StreamHandler(),
         ]
         for h in handlers:
-            h.setFormatter(formatter)
+            h.setFormatter(formatter)  # type: ignore
             h.setLevel(level)
             logger.addHandler(h)
     debug.say(" Setting %s logging level to %s" % (logger.name, level))

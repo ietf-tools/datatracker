@@ -3,14 +3,11 @@
 
 
 import datetime
-import os
-import shutil
 
 from pyquery import PyQuery
 
 import debug         # pyflakes:ignore
 
-from django.conf import settings
 from django.urls import reverse
 from django.utils import timezone
 
