@@ -3,6 +3,7 @@
 
 from base64 import b64decode
 from email.utils import parseaddr
+import json
 
 from ietf import __release_hash__
 from ietf.settings import *                                          # pyflakes:ignore
@@ -136,11 +137,11 @@ elif SERVER_MODE == "production":
         "DATATRACKER_MEETECHO_CLIENT_ID and DATATRACKER_MEETECHO_CLIENT_SECRET must be set in production"
     )
 
-APP_API_TOKENS = {
-    "ietf.api.views.directauth": ["redacted",],
-    "ietf.api.views.email_aliases": ["redacted"],
-    "ietf.api.views.active_email_list": ["redacted"],
-}
+_APP_API_TOKENS_JSON = os.environ.get("DATATRACKER_APP_API_TOKENS_JSON", None)
+if _APP_API_TOKENS_JSON is not None:
+    APP_API_TOKENS = json.loads(_APP_API_TOKENS_JSON)
+else:
+    APP_API_TOKENS = {}
 
 EMAIL_COPY_TO = ""
 
