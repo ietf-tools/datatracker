@@ -73,7 +73,7 @@ def validate_file_size(file, missing_ok=False):
     if size > settings.DATATRACKER_MAX_UPLOAD_SIZE:
         raise ValidationError(
             "Please keep filesize under {}. Requested upload size was {}".format(
-                filesizeformat(settings.DATATRACKE_MAX_UPLOAD_SIZE),
+                filesizeformat(settings.DATATRACKER_MAX_UPLOAD_SIZE),
                 filesizeformat(file.size)
             )
         )
