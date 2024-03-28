@@ -58,14 +58,17 @@
             n-button(
               :type='agendaStore.isTimezoneMeeting ? `primary` : `default`'
               @click='setTimezone(`meeting`)'
+              :text-color='agendaStore.isTimezoneMeeting ? `#FFF` : null'
               ) Meeting
             n-button(
               :type='agendaStore.isTimezoneLocal ? `primary` : `default`'
               @click='setTimezone(`local`)'
+              :text-color='agendaStore.isTimezoneLocal ? `#FFF` : null'
               ) Local
             n-button(
               :type='agendaStore.timezone === `UTC` ? `primary` : `default`'
               @click='setTimezone(`UTC`)'
+              :text-color='agendaStore.timezone === `UTC` ? `#FFF` : null'
               ) UTC
           n-select.agenda-timezone-ddn(
             v-if='siteStore.viewport > 1250'

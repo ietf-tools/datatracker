@@ -1,14 +1,12 @@
 # Copyright The IETF Trust 2013-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
-import io
 import os
 import datetime
 import json
 
 from tempfile import NamedTemporaryFile
 
-from django.core.management import call_command
 from django.conf import settings
 from django.urls import reverse as urlreverse
 from django.db.models import Q
@@ -145,108 +143,6 @@ class GenerateGroupAliasesTests(TestCase):
         os.unlink(self.doc_aliases_file.name)
         os.unlink(self.doc_virtual_file.name)
         super().tearDown()
-
-    def testManagementCommand(self):
-        a_month_ago = timezone.now() - datetime.timedelta(30)
-        a_decade_ago = timezone.now() - datetime.timedelta(3650)
-        role1 = RoleFactory(name_id='ad', group__type_id='area', group__acronym='myth', group__state_id='active')
-        area = role1.group
-        ad = role1.person
-        mars = GroupFactory(type_id='wg', acronym='mars', parent=area)
-        marschair = PersonFactory(user__username='marschair')
-        mars.role_set.create(name_id='chair', person=marschair, email=marschair.email())
-        marssecr = PersonFactory(user__username='marssecr')
-        mars.role_set.create(name_id='secr', person=marssecr, email=marssecr.email())
-        ames = GroupFactory(type_id='wg', acronym='ames', parent=area)
-        ameschair = PersonFactory(user__username='ameschair')
-        ames.role_set.create(name_id='chair', person=ameschair, email=ameschair.email())
-        recent = GroupFactory(type_id='wg', acronym='recent', parent=area, state_id='conclude', time=a_month_ago)
-        recentchair = PersonFactory(user__username='recentchair')
-        recent.role_set.create(name_id='chair', person=recentchair, email=recentchair.email())
-        wayold = GroupFactory(type_id='wg', acronym='wayold', parent=area, state_id='conclude', time=a_decade_ago)
-        wayoldchair = PersonFactory(user__username='wayoldchair')
-        wayold.role_set.create(name_id='chair', person=wayoldchair, email=wayoldchair.email())
-        role2 = RoleFactory(name_id='ad', group__type_id='area', group__acronym='done', group__state_id='conclude')
-        done = role2.group
-        done_ad = role2.person
-        irtf = Group.objects.get(acronym='irtf')
-        testrg = GroupFactory(type_id='rg', acronym='testrg', parent=irtf)
-        testrgchair = PersonFactory(user__username='testrgchair')
-        testrg.role_set.create(name_id='chair', person=testrgchair, email=testrgchair.email())
-        testrag = GroupFactory(type_id='rg', acronym='testrag', parent=irtf)
-        testragchair = PersonFactory(user__username='testragchair')
-        testrag.role_set.create(name_id='chair', person=testragchair, email=testragchair.email())
-        individual = PersonFactory()
-
-        args = [ ]
-        kwargs = { }
-        out = io.StringIO()
-        call_command("generate_group_aliases", *args, **kwargs, stdout=out, stderr=out)
-        self.assertFalse(out.getvalue())
-
-        with open(settings.GROUP_ALIASES_PATH) as afile:
-            acontent = afile.read()
-            self.assertTrue('xfilter-' + area.acronym + '-ads' in acontent)
-            self.assertTrue('xfilter-' + area.acronym + '-chairs' in acontent)
-            self.assertTrue('xfilter-' + mars.acronym + '-ads' in acontent)
-            self.assertTrue('xfilter-' + mars.acronym + '-chairs' in acontent)
-            self.assertTrue('xfilter-' + ames.acronym + '-ads' in acontent)
-            self.assertTrue('xfilter-' + ames.acronym + '-chairs' in acontent)
-            self.assertTrue(all([x in acontent for x in [
-                'xfilter-' + area.acronym + '-ads',
-                'xfilter-' + area.acronym + '-chairs',
-                'xfilter-' + mars.acronym + '-ads',
-                'xfilter-' + mars.acronym + '-chairs',
-                'xfilter-' + ames.acronym + '-ads',
-                'xfilter-' + ames.acronym + '-chairs',
-                'xfilter-' + recent.acronym + '-ads',
-                'xfilter-' + recent.acronym + '-chairs',
-            ]]))
-            self.assertFalse(all([x in acontent for x in [
-                'xfilter-' + done.acronym + '-ads',
-                'xfilter-' + done.acronym + '-chairs',
-                'xfilter-' + wayold.acronym + '-ads',
-                'xfilter-' + wayold.acronym + '-chairs',
-            ]]))
-
-        with open(settings.GROUP_VIRTUAL_PATH) as vfile:
-            vcontent = vfile.read()
-            self.assertTrue(all([x in vcontent for x in [
-                ad.email_address(),
-                marschair.email_address(),
-                marssecr.email_address(),
-                ameschair.email_address(),
-                recentchair.email_address(),
-                testrgchair.email_address(),
-                testragchair.email_address(),
-            ]]))
-            self.assertFalse(any([x in vcontent for x in [
-                done_ad.email_address(),
-                wayoldchair.email_address(),
-                individual.email_address(),
-            ]]))
-            self.assertTrue(all([x in vcontent for x in [
-                'xfilter-' + area.acronym + '-ads',
-                'xfilter-' + area.acronym + '-chairs',
-                'xfilter-' + mars.acronym + '-ads',
-                'xfilter-' + mars.acronym + '-chairs',
-                'xfilter-' + ames.acronym + '-ads',
-                'xfilter-' + ames.acronym + '-chairs',
-                'xfilter-' + recent.acronym + '-ads',
-                'xfilter-' + recent.acronym + '-chairs',
-                'xfilter-' + testrg.acronym + '-chairs',
-                'xfilter-' + testrag.acronym + '-chairs',
-                testrg.acronym + '-chairs@ietf.org',
-                testrg.acronym + '-chairs@irtf.org',
-                testrag.acronym + '-chairs@ietf.org',
-                testrag.acronym + '-chairs@irtf.org',
-            ]]))
-            self.assertFalse(all([x in vcontent for x in [
-                'xfilter-' + done.acronym + '-ads',
-                'xfilter-' + done.acronym + '-chairs',
-                'xfilter-' + wayold.acronym + '-ads',
-                'xfilter-' + wayold.acronym + '-chairs',
-            ]]))
 
     def test_generator_class(self):
         """The GroupAliasGenerator should generate the same lists as the old mgmt cmd"""

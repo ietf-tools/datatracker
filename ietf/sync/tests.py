@@ -597,6 +597,29 @@ class RFCSyncTests(TestCase):
         auth48_docurl = draft.documenturl_set.filter(tag_id='auth48').first()
         self.assertIsNone(auth48_docurl)
 
+    def test_post_approved_draft_in_production_only(self):
+        self.requests_mock.post("https://rfceditor.example.com/", status_code=200, text="OK")
+
+        # be careful playing with SERVER_MODE!
+        with override_settings(SERVER_MODE="test"):
+            self.assertEqual(
+                rfceditor.post_approved_draft("https://rfceditor.example.com/", "some-draft"),
+                ("", "")
+            )
+            self.assertFalse(self.requests_mock.called)
+        with override_settings(SERVER_MODE="development"):
+            self.assertEqual(
+                rfceditor.post_approved_draft("https://rfceditor.example.com/", "some-draft"),
+                ("", "")
+            )
+            self.assertFalse(self.requests_mock.called)
+        with override_settings(SERVER_MODE="production"):
+            self.assertEqual(
+                rfceditor.post_approved_draft("https://rfceditor.example.com/", "some-draft"),
+                ("", "")
+            )
+            self.assertTrue(self.requests_mock.called)
+
 
 class DiscrepanciesTests(TestCase):
     def test_discrepancies(self):
@@ -635,6 +658,7 @@ class DiscrepanciesTests(TestCase):
 
         r = self.client.get(urlreverse("ietf.sync.views.discrepancies"))
         self.assertContains(r, doc.name)
+
 
 class RFCEditorUndoTests(TestCase):
     def test_rfceditor_undo(self):

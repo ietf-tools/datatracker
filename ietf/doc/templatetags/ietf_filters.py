@@ -881,3 +881,21 @@ def badgeify(blob):
             )
 
     return text
+
+@register.filter
+def simple_history_delta_changes(history):
+    """Returns diff between given history and previous entry."""
+    prev = history.prev_record
+    if prev:
+        delta = history.diff_against(prev)
+        return delta.changes
+    return []
+
+@register.filter
+def simple_history_delta_change_cnt(history):
+    """Returns number of changes between given history and previous entry."""
+    prev = history.prev_record
+    if prev:
+        delta = history.diff_against(prev)
+        return len(delta.changes)
+    return 0
