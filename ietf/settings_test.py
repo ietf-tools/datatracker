@@ -10,8 +10,9 @@
 #
 
 import os 
+import tempfile
 from ietf.settings import *                                          # pyflakes:ignore
-from ietf.settings import TEST_CODE_COVERAGE_CHECKER, BASE_DIR, PHOTOS_DIRNAME
+from ietf.settings import TEST_CODE_COVERAGE_CHECKER
 import debug                            # pyflakes:ignore
 debug.debug = True
 
@@ -48,11 +49,12 @@ DATABASES = {
 if TEST_CODE_COVERAGE_CHECKER and not TEST_CODE_COVERAGE_CHECKER._started: # pyflakes:ignore
     TEST_CODE_COVERAGE_CHECKER.start()                          # pyflakes:ignore
 
-NOMCOM_PUBLIC_KEYS_DIR=os.path.abspath("tmp-nomcom-public-keys-dir")
+NOMCOM_PUBLIC_KEYS_DIR = tempfile.mkdtemp(suffix="-nomcom-public-keys-dir")
 
-MEDIA_ROOT = os.path.join(os.path.dirname(BASE_DIR), 'test/media/') # pyflakes:ignore
-MEDIA_URL = '/test/media/'
-PHOTOS_DIR = MEDIA_ROOT + PHOTOS_DIRNAME                            # pyflakes:ignore
+MEDIA_ROOT = tempfile.mkdtemp(suffix="-media")
+PHOTOS_DIRNAME = "photo"
+PHOTOS_DIR = os.path.join(MEDIA_ROOT, PHOTOS_DIRNAME)
+os.mkdir(PHOTOS_DIR)
 
 # Undo any developer-dependent middleware when running the tests
 MIDDLEWARE = [ c for c in MIDDLEWARE if not c in DEV_MIDDLEWARE ] # pyflakes:ignore
