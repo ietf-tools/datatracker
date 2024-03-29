@@ -196,6 +196,8 @@ DE_GFM_BINARY = "/usr/local/bin/de-gfm"
 IDSUBMIT_IDNITS_BINARY = "/usr/local/bin/idnits"
 
 # Duplicating production cache from settings.py and using it whether we're in production mode or not
+MEMCACHED_HOST = os.environ.get("MEMCACHED_SERVICE_HOST", "127.0.0.1")
+MEMCACHED_PORT = os.environ.get("MEMCACHED_SERVICE_PORT", "11211")
 from ietf import __version__
 CACHES = {
     "default": {

@@ -597,5 +597,5 @@ env:
     {
       "ietf.api.views.directauth": ["secret-for-directauth"],
       "ietf.api.views.email_aliases": ["secret-for-email-aliases"],
-      "ietf.api.views.active_email_list": ["secret-for-active-email-list"],
+      "ietf.api.views.active_email_list": ["secret-for-active-email-list"]
     }
