@@ -14,7 +14,7 @@
     "eslint-plugin-n": "16.6.2",
     "eslint-plugin-node": "11.1.0",
     "eslint-plugin-promise": "6.1.1",
-    "npm-check-updates": "16.14.17"
+    "npm-check-updates": "16.14.18"
   },
   "dependencies": {
     "@faker-js/faker": "8.4.1",
