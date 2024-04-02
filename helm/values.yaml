@@ -129,12 +129,16 @@ datatracker:
     - name: settings-local-volume
       configMap:
         name: django-configmap
-    - name: cache-volume
-      emptyDir:
-        sizeLimit: 1Gi
-    - name: staging-volume
-      emptyDir:
-        sizeLimit: 1Gi
+    - name: datatracker-shared-volume
+      persistentVolumeClaim:
+        claimName: "datatracker-shared-volume-claim"
+# cache-volume and staging-volume are a hack to create paths for debugging without a /a volume
+#    - name: cache-volume
+#      emptyDir:
+#        sizeLimit: 1Gi
+#    - name: staging-volume
+#      emptyDir:
+#        sizeLimit: 1Gi
   # - name: foo
   #   secret:
   #     secretName: mysecret
@@ -146,10 +150,13 @@ datatracker:
       mountPath: /workspace/ietf/settings_local.py
       subPath: settings_local.py
       readOnly: true
-    - name: cache-volume
-      mountPath: "/a/cache"
-    - name: staging-volume
-      mountPath: "/test/staging"
+    - name: datatracker-shared-volume
+      mountPath: /a
+# cache-volume and staging-volume are a hack to create paths for debugging without a /a volume
+#    - name: cache-volume
+#      mountPath: "/a/cache"
+#    - name: staging-volume
+#      mountPath: "/test/staging"
   # - name: foo
   #   mountPath: "/etc/foo"
   #   readOnly: true
@@ -240,12 +247,16 @@ celery:
     - name: settings-local-volume
       configMap:
         name: django-configmap
-    - name: cache-volume
-      emptyDir:
-        sizeLimit: 1Gi
-    - name: staging-volume
-      emptyDir:
-        sizeLimit: 1Gi
+    - name: datatracker-shared-volume
+      persistentVolumeClaim:
+        claimName: "datatracker-shared-volume-claim"
+# cache-volume and staging-volume are a hack to create paths for debugging without a /a volume
+#    - name: cache-volume
+#      emptyDir:
+#        sizeLimit: 1Gi
+#    - name: staging-volume
+#      emptyDir:
+#        sizeLimit: 1Gi
   # - name: foo
   #   secret:
   #     secretName: mysecret
@@ -257,10 +268,13 @@ celery:
       mountPath: /workspace/ietf/settings_local.py
       subPath: settings_local.py
       readOnly: true
-    - name: cache-volume
-      mountPath: "/a/cache"
-    - name: staging-volume
-      mountPath: "/test/staging"
+    - name: datatracker-shared-volume
+      mountPath: /a
+# cache-volume and staging-volume are a hack to create paths for debugging without a /a volume
+#    - name: cache-volume
+#      mountPath: "/a/cache"
+#    - name: staging-volume
+#      mountPath: "/test/staging"
   # - name: foo
   #   mountPath: "/etc/foo"
   #   readOnly: true
@@ -351,12 +365,16 @@ beat:
     - name: settings-local-volume
       configMap:
         name: django-configmap
-    - name: cache-volume
-      emptyDir:
-        sizeLimit: 1Gi
-    - name: staging-volume
-      emptyDir:
-        sizeLimit: 1Gi
+    - name: datatracker-shared-volume
+      persistentVolumeClaim:
+        claimName: "datatracker-shared-volume-claim"
+# cache-volume and staging-volume are a hack to create paths for debugging without a /a volume
+#    - name: cache-volume
+#      emptyDir:
+#        sizeLimit: 1Gi
+#    - name: staging-volume
+#      emptyDir:
+#        sizeLimit: 1Gi
   # - name: foo
   #   secret:
   #     secretName: mysecret
@@ -368,10 +386,13 @@ beat:
       mountPath: /workspace/ietf/settings_local.py
       subPath: settings_local.py
       readOnly: true
-    - name: cache-volume
-      mountPath: "/a/cache"
-    - name: staging-volume
-      mountPath: "/test/staging"
+    - name: datatracker-shared-volume
+      mountPath: /a
+# cache-volume and staging-volume are a hack to create paths for debugging without a /a volume
+#    - name: cache-volume
+#      mountPath: "/a/cache"
+#    - name: staging-volume
+#      mountPath: "/test/staging"
   # - name: foo
   #   mountPath: "/etc/foo"
   #   readOnly: true
