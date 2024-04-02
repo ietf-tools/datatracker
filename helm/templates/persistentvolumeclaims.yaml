@@ -1,6 +1,20 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
+  name: "datatracker-shared-volume-claim"
+  # Note: This is the /a shared volume. The spec should be adjusted to ensure it always
+  # matches the correct EBS volume in production. For the moment, it just requests a
+  # large volume.
+spec:
+  accessModes:
+    - ReadWriteMany  # or ReadWriteOnce and force datatracker/celery/beat to a single node
+  resources:
+    requests:
+      storage: 600Gi  # adjust to something satisfied by the /a PersistentVolume
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
   name: "rabbitmq-data-claim"
 spec:
 #  storageClassName: "local"
