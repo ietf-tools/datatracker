@@ -593,3 +593,4 @@ env:
   # DATATRACKER_MATOMO_SITE_ID: "7"  # must be present to enable Matomo
   # DATATRACKER_MATOMO_DOMAIN_PATH: "analytics.ietf.org"
   CELERY_PASSWORD: "this-is-a-secret"
+  # DATATRACKER_APP_API_TOKENS_JSON: "<JSON blob>" 
