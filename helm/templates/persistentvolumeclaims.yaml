@@ -1,6 +1,17 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
+  name: "datatracker-shared-volume-claim"
+spec:
+  accessModes:
+    - ReadWriteMany  # or ReadWriteOnce and force datatracker/celery/beat to a single node
+  resources:
+    requests:
+      storage: 400Gi  # adjust to something satisfied by the /a PersistentVolume
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
   name: "rabbitmq-data-claim"
 spec:
 #  storageClassName: "local"
