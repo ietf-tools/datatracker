@@ -592,7 +592,7 @@ env:
   DATATRACKER_ALLOWED_HOSTS: ".ietf.org"  # newline-separated list also allowed
   # DATATRACKER_DATATRACKER_DEBUG: "false"
   
-  # DB access details
+  # DB access details - needs to be filled in
   # DATATRACKER_DBHOST: "db"
   # DATATRACKER_DBPORT: "5432"
   # DATATRACKER_DBNAME: "datatracker"
