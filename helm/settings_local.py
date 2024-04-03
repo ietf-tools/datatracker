@@ -90,16 +90,19 @@ DATABASES = {
 _ADMINS = os.environ.get("DATATRACKER_ADMINS", None)
 if _ADMINS is not None:
     ADMINS = [parseaddr(admin) for admin in _ADMINS.split("\n")]
-elif SERVER_MODE == "production":
-    raise RuntimeError("DATATRACKER_ADMINS must be set in production")    
+else:
+    raise RuntimeError("DATATRACKER_ADMINS must be set")    
 
 USING_DEBUG_EMAIL_SERVER = os.environ.get("DATATRACKER_EMAIL_DEBUG", "false").lower() == "true"
 EMAIL_HOST = os.environ.get("DATATRACKER_EMAIL_HOST", "localhost")
 EMAIL_PORT = int(os.environ.get("DATATRACKER_EMAIL_PORT", "2025"))
 
+_celery_password = os.environ.get("CELERY_PASSWORD", None)
+if _celery_password is None:
+    raise RuntimeError("CELERY_PASSWORD must be set")
 CELERY_BROKER_URL = "amqp://datatracker:{password}@{host}/{queue}".format(
     host=os.environ.get("RABBITMQ_HOSTNAME", "rabbitmq"),
-    password=os.environ.get("CELERY_PASSWORD", ""),
+    password=_celery_password,
     queue=os.environ.get("RABBITMQ_QUEUE", "dt")
 )
 
