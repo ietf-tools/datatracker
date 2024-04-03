@@ -9,6 +9,11 @@ from ietf import __release_hash__
 from ietf.settings import *                                          # pyflakes:ignore
 
 
+def _remove_whitespace_and_b64decode(s):
+    """Helper to strip out whitespace and base64 decode"""
+    return b64decode("".join(s.split()))
+
+
 # Default to "development". Production _must_ set DATATRACKER_SERVER_MODE="production" in the env!
 SERVER_MODE = os.environ.get("DATATRACKER_SERVER_MODE", "development")
 
@@ -16,56 +21,56 @@ SERVER_MODE = os.environ.get("DATATRACKER_SERVER_MODE", "development")
 _SECRET_KEY = os.environ.get("DATATRACKER_DJANGO_SECRET_KEY", None)
 if _SECRET_KEY is not None:
     SECRET_KEY = _SECRET_KEY
-elif SERVER_MODE == "production":
-    raise RuntimeError("DATATRACKER_DJANGO_SECRET_KEY must be set in production")    
+else:
+    raise RuntimeError("DATATRACKER_DJANGO_SECRET_KEY must be set")    
 
 _NOMCOM_APP_SECRET_B64 = os.environ.get("DATATRACKER_NOMCOM_APP_SECRET_B64", None)
 if _NOMCOM_APP_SECRET_B64 is not None:
-    NOMCOM_APP_SECRET = b64decode(_NOMCOM_APP_SECRET_B64)
-elif SERVER_MODE == "production":
-    raise RuntimeError("DATATRACKER_NOMCOM_APP_SECRET_B64 must be set in production")
+    NOMCOM_APP_SECRET = _remove_whitespace_and_b64decode(_NOMCOM_APP_SECRET_B64)
+else:
+    raise RuntimeError("DATATRACKER_NOMCOM_APP_SECRET_B64 must be set")
 
 _IANA_SYNC_PASSWORD = os.environ.get("DATATRACKER_IANA_SYNC_PASSWORD", None)
 if _IANA_SYNC_PASSWORD is not None:
     IANA_SYNC_PASSWORD = _IANA_SYNC_PASSWORD
-elif SERVER_MODE == "production":
-    raise RuntimeError("DATATRACKER_IANA_SYNC_PASSWORD must be set in production")    
+else:
+    raise RuntimeError("DATATRACKER_IANA_SYNC_PASSWORD must be set")    
 
 _RFC_EDITOR_SYNC_PASSWORD = os.environ.get("DATATRACKER_RFC_EDITOR_SYNC_PASSWORD", None)
 if _RFC_EDITOR_SYNC_PASSWORD is not None:
     RFC_EDITOR_SYNC_PASSWORD = os.environ.get("DATATRACKER_RFC_EDITOR_SYNC_PASSWORD")
-elif SERVER_MODE == "production":
-    raise RuntimeError("DATATRACKER_RFC_EDITOR_SYNC_PASSWORD must be set in production")
+else:
+    raise RuntimeError("DATATRACKER_RFC_EDITOR_SYNC_PASSWORD must be set")
 
 _YOUTUBE_API_KEY = os.environ.get("DATATRACKER_YOUTUBE_API_KEY", None)
 if _YOUTUBE_API_KEY is not None:
     YOUTUBE_API_KEY = _YOUTUBE_API_KEY
-elif SERVER_MODE == "production":
-    raise RuntimeError("DATATRACKER_YOUTUBE_API_KEY must be set in production")
+else:
+    raise RuntimeError("DATATRACKER_YOUTUBE_API_KEY must be set")
 
 _GITHUB_BACKUP_API_KEY = os.environ.get("DATATRACKER_GITHUB_BACKUP_API_KEY", None)
 if _GITHUB_BACKUP_API_KEY is not None:
     GITHUB_BACKUP_API_KEY = _GITHUB_BACKUP_API_KEY
-elif SERVER_MODE == "production":
-    raise RuntimeError("DATATRACKER_GITHUB_BACKUP_API_KEY must be set in production")    
+else:
+    raise RuntimeError("DATATRACKER_GITHUB_BACKUP_API_KEY must be set")    
 
 _API_KEY_TYPE = os.environ.get("DATATRACKER_API_KEY_TYPE", None)
 if _API_KEY_TYPE is not None:
     API_KEY_TYPE = _API_KEY_TYPE
-elif SERVER_MODE == "production":
-    raise RuntimeError("DATATRACKER_API_KEY_TYPE must be set in production")    
+else:
+    raise RuntimeError("DATATRACKER_API_KEY_TYPE must be set")    
 
 _API_PUBLIC_KEY_PEM_B64 = os.environ.get("DATATRACKER_API_PUBLIC_KEY_PEM_B64", None)
 if _API_PUBLIC_KEY_PEM_B64 is not None:
-    API_PUBLIC_KEY_PEM = b64decode(_API_PUBLIC_KEY_PEM_B64)
-elif SERVER_MODE == "production":
-    raise RuntimeError("DATATRACKER_API_PUBLIC_KEY_PEM_B64 must be set in production")    
+    API_PUBLIC_KEY_PEM = _remove_whitespace_and_b64decode(_API_PUBLIC_KEY_PEM_B64)
+else:
+    raise RuntimeError("DATATRACKER_API_PUBLIC_KEY_PEM_B64 must be set")    
 
 _API_PRIVATE_KEY_PEM_B64 = os.environ.get("DATATRACKER_API_PRIVATE_KEY_PEM_B64", None)
 if _API_PRIVATE_KEY_PEM_B64 is not None:
-    API_PRIVATE_KEY_PEM = b64decode(_API_PRIVATE_KEY_PEM_B64)
-elif SERVER_MODE == "production":
-    raise RuntimeError("DATATRACKER_API_PRIVATE_KEY_PEM_B64 must be set in production")    
+    API_PRIVATE_KEY_PEM = _remove_whitespace_and_b64decode(_API_PRIVATE_KEY_PEM_B64)
+else:
+    raise RuntimeError("DATATRACKER_API_PRIVATE_KEY_PEM_B64 must be set")    
 
 # Set DEBUG if DATATRACKER_DEBUG env var is the word "true"
 DEBUG = os.environ.get("DATATRACKER_DEBUG", "false").lower() == "true"
@@ -73,7 +78,7 @@ DEBUG = os.environ.get("DATATRACKER_DEBUG", "false").lower() == "true"
 # DATATRACKER_ALLOWED_HOSTS env var is a comma-separated list of allowed hosts
 _allowed_hosts_str = os.environ.get("DATATRACKER_ALLOWED_HOSTS", None)
 if _allowed_hosts_str is not None:
-    ALLOWED_HOSTS = [h.strip() for h in _allowed_hosts_str.split(",")]
+    ALLOWED_HOSTS = [h.strip() for h in _allowed_hosts_str.split("\n")]
 
 DATABASES = {
     "default": {
@@ -90,16 +95,19 @@ DATABASES = {
 _ADMINS = os.environ.get("DATATRACKER_ADMINS", None)
 if _ADMINS is not None:
     ADMINS = [parseaddr(admin) for admin in _ADMINS.split("\n")]
-elif SERVER_MODE == "production":
-    raise RuntimeError("DATATRACKER_ADMINS must be set in production")    
+else:
+    raise RuntimeError("DATATRACKER_ADMINS must be set")    
 
 USING_DEBUG_EMAIL_SERVER = os.environ.get("DATATRACKER_EMAIL_DEBUG", "false").lower() == "true"
 EMAIL_HOST = os.environ.get("DATATRACKER_EMAIL_HOST", "localhost")
 EMAIL_PORT = int(os.environ.get("DATATRACKER_EMAIL_PORT", "2025"))
 
+_celery_password = os.environ.get("CELERY_PASSWORD", None)
+if _celery_password is None:
+    raise RuntimeError("CELERY_PASSWORD must be set")
 CELERY_BROKER_URL = "amqp://datatracker:{password}@{host}/{queue}".format(
     host=os.environ.get("RABBITMQ_HOSTNAME", "rabbitmq"),
-    password=os.environ.get("CELERY_PASSWORD", ""),
+    password=_celery_password,
     queue=os.environ.get("RABBITMQ_QUEUE", "dt")
 )
 
