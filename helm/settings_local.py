@@ -9,6 +9,11 @@ from ietf import __release_hash__
 from ietf.settings import *                                          # pyflakes:ignore
 
 
+def _remove_whitespace_and_b64decode(s):
+    """Helper to strip out whitespace and base64 decode"""
+    return b64decode("".join(s.split()))
+
+
 # Default to "development". Production _must_ set DATATRACKER_SERVER_MODE="production" in the env!
 SERVER_MODE = os.environ.get("DATATRACKER_SERVER_MODE", "development")
 
@@ -21,7 +26,7 @@ else:
 
 _NOMCOM_APP_SECRET_B64 = os.environ.get("DATATRACKER_NOMCOM_APP_SECRET_B64", None)
 if _NOMCOM_APP_SECRET_B64 is not None:
-    NOMCOM_APP_SECRET = b64decode(_NOMCOM_APP_SECRET_B64)
+    NOMCOM_APP_SECRET = _remove_whitespace_and_b64decode(_NOMCOM_APP_SECRET_B64)
 else:
     raise RuntimeError("DATATRACKER_NOMCOM_APP_SECRET_B64 must be set")
 
@@ -57,13 +62,13 @@ else:
 
 _API_PUBLIC_KEY_PEM_B64 = os.environ.get("DATATRACKER_API_PUBLIC_KEY_PEM_B64", None)
 if _API_PUBLIC_KEY_PEM_B64 is not None:
-    API_PUBLIC_KEY_PEM = b64decode(_API_PUBLIC_KEY_PEM_B64)
+    API_PUBLIC_KEY_PEM = _remove_whitespace_and_b64decode(_API_PUBLIC_KEY_PEM_B64)
 else:
     raise RuntimeError("DATATRACKER_API_PUBLIC_KEY_PEM_B64 must be set")    
 
 _API_PRIVATE_KEY_PEM_B64 = os.environ.get("DATATRACKER_API_PRIVATE_KEY_PEM_B64", None)
 if _API_PRIVATE_KEY_PEM_B64 is not None:
-    API_PRIVATE_KEY_PEM = b64decode(_API_PRIVATE_KEY_PEM_B64)
+    API_PRIVATE_KEY_PEM = _remove_whitespace_and_b64decode(_API_PRIVATE_KEY_PEM_B64)
 else:
     raise RuntimeError("DATATRACKER_API_PRIVATE_KEY_PEM_B64 must be set")    
 
@@ -73,7 +78,7 @@ DEBUG = os.environ.get("DATATRACKER_DEBUG", "false").lower() == "true"
 # DATATRACKER_ALLOWED_HOSTS env var is a comma-separated list of allowed hosts
 _allowed_hosts_str = os.environ.get("DATATRACKER_ALLOWED_HOSTS", None)
 if _allowed_hosts_str is not None:
-    ALLOWED_HOSTS = [h.strip() for h in _allowed_hosts_str.split(",")]
+    ALLOWED_HOSTS = [h.strip() for h in _allowed_hosts_str.split("\n")]
 
 DATABASES = {
     "default": {
