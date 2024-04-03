@@ -1548,6 +1548,7 @@ def document_ballot_content(request, doc, ballot_id, editable=True):
 def document_ballot(request, name, ballot_id=None):
     doc = get_object_or_404(Document, name=name)
     all_ballots = list(BallotDocEvent.objects.filter(doc=doc, type="created_ballot").order_by("time"))
+    ballot = None
     if not ballot_id:
         if all_ballots:
             ballot = all_ballots[-1]
