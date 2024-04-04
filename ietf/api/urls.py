@@ -9,6 +9,7 @@ from ietf.api import views as api_views
 from ietf.doc import views_ballot
 from ietf.meeting import views as meeting_views
 from ietf.submit import views as submit_views
+from ietf.sync import views as sync_views
 from ietf.utils.urls import url
 
 api.autodiscover()
@@ -24,7 +25,9 @@ urlpatterns = [
     # --- Custom API endpoints, sorted alphabetically ---
     # Email alias information for drafts
     url(r'^doc/draft-aliases/$', api_views.draft_aliases),
-    # GPRD: export of personal information for the logged-in person
+    # IANA review email ingestor
+    url(r'email/iana-review/$', sync_views.ingest_iana_review_email),
+    # GDPR: export of personal information for the logged-in person
     url(r'^export/personal-information/$', api_views.PersonalInformationExportView.as_view()),
     # Email alias information for groups
     url(r'^group/group-aliases/$', api_views.group_aliases),
