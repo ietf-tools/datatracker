@@ -10,7 +10,7 @@ from tempfile import NamedTemporaryFile
 from django.conf import settings
 from django.urls import reverse as urlreverse
 from django.db.models import Q
-from django.test import Client
+from django.test import Client, override_settings
 from django.utils import timezone
 
 import debug                             # pyflakes:ignore
@@ -21,7 +21,7 @@ from ietf.group.models import Role, Group
 from ietf.group.utils import get_group_role_emails, get_child_group_role_emails, get_group_ad_emails, GroupAliasGenerator
 from ietf.group.factories import GroupFactory, RoleFactory
 from ietf.person.factories import PersonFactory, EmailFactory
-from ietf.person.models import Person
+from ietf.person.models import Email, Person
 from ietf.utils.test_utils import login_testing_unauthorized, TestCase
 
 class StreamTests(TestCase):
@@ -240,3 +240,57 @@ class GroupRoleEmailTests(TestCase):
             self.assertGreater(len(emails), 0)
             for item in emails:
                 self.assertIn('@', item)
+
+
+class ApiTests(TestCase):
+    @override_settings(APP_API_TOKENS={"ietf.api.views.email_aliases": "valid-token"})
+    def test_role_holder_addresses(self):
+        # The test fixtures create a bunch of addresses that pollute this test's results - disable them
+        Email.objects.update(active=False)
+
+        role_holders = [
+            RoleFactory(name_id="member", group__type_id=gt).person
+            for gt in [
+                "ag",
+                "area",
+                "dir",
+                "iab",
+                "ietf",
+                "irtf",
+                "nomcom",
+                "rg",
+                "team",
+                "wg",
+                "rag",
+            ] 
+        ]
+        expected_emails = {rh.email_address() for rh in role_holders}
+        assert len(expected_emails) > 0  # just to be sure they were created
+        # Expect an additional active email to be included
+        expected_emails.add(
+            EmailFactory(
+                person=role_holders[0],
+                active=True,
+            ).address
+        )
+        # Do not expect an inactive email to be included, so do not add to set
+        EmailFactory(
+            person=role_holders[1],
+            active=False,
+        )
+        # Do not expect address on a role-holder for a different group type, so do not add to set
+        RoleFactory(name_id="member", group__type_id="adhoc")  # arbitrary type not in the of-interest list
+        
+        url = urlreverse("ietf.group.views.role_holder_addresses")
+        r = self.client.get(url, headers={})
+        self.assertEqual(r.status_code, 403, "No api token, no access")
+        r = self.client.get(url, headers={"X-Api-Key": "not-valid-token"})
+        self.assertEqual(r.status_code, 403, "Bad api token, no access")
+        r = self.client.get(url, headers={"X-Api-Key": "valid-token"})
+        self.assertEqual(r.status_code, 200, "Good api token, access")
+        content_dict = json.loads(r.content)
+        self.assertCountEqual(content_dict.keys(), ["addresses"])
+        self.assertEqual(
+            content_dict["addresses"],
+            sorted(expected_emails),
+        )
