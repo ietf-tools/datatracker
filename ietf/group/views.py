@@ -61,7 +61,6 @@ from django.views.decorators.cache import cache_page, cache_control
 
 import debug                            # pyflakes:ignore
 
-from ietf.api.ietf_utils import requires_api_token
 from ietf.community.models import CommunityList, EmailSubscription
 from ietf.community.utils import docs_tracked_by_community_list
 from ietf.doc.models import DocTagName, State, RelatedDocument, Document, DocEvent
