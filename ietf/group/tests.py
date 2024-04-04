@@ -18,7 +18,13 @@ import debug                             # pyflakes:ignore
 from ietf.doc.factories import DocumentFactory, WgDraftFactory, EditorialDraftFactory
 from ietf.doc.models import DocEvent, RelatedDocument, Document
 from ietf.group.models import Role, Group
-from ietf.group.utils import get_group_role_emails, get_child_group_role_emails, get_group_ad_emails, GroupAliasGenerator
+from ietf.group.utils import (
+    get_group_role_emails,
+    get_child_group_role_emails,
+    get_group_ad_emails,
+    GroupAliasGenerator,
+    role_holder_emails,
+)
 from ietf.group.factories import GroupFactory, RoleFactory
 from ietf.person.factories import PersonFactory, EmailFactory
 from ietf.person.models import Email, Person
@@ -240,3 +246,41 @@ class GroupRoleEmailTests(TestCase):
             self.assertGreater(len(emails), 0)
             for item in emails:
                 self.assertIn('@', item)
+
+    def test_role_holder_emails(self):
+        # The test fixtures create a bunch of addresses that pollute this test's results - disable them
+        Email.objects.update(active=False)
+
+        role_holders = [
+            RoleFactory(name_id="member", group__type_id=gt).person
+            for gt in [
+                "ag",
+                "area",
+                "dir",
+                "iab",
+                "ietf",
+                "irtf",
+                "nomcom",
+                "rg",
+                "team",
+                "wg",
+                "rag",
+            ]
+        ]
+        # Expect an additional active email to be included
+        EmailFactory(
+            person=role_holders[0],
+            active=True,
+        )
+        # Do not expect an inactive email to be included
+        EmailFactory(
+            person=role_holders[1],
+            active=False,
+        )
+        # Do not expect address on a role-holder for a different group type
+        RoleFactory(name_id="member", group__type_id="adhoc")  # arbitrary type not in the of-interest list
+        
+        self.assertCountEqual(
+            role_holder_emails(),
+            Email.objects.filter(active=True, person__in=role_holders),
+        )
