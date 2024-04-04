@@ -243,7 +243,7 @@ class GroupRoleEmailTests(TestCase):
 
 
 class ApiTests(TestCase):
-    @override_settings(APP_API_TOKENS={"ietf.api.views.email_aliases": "valid-token"})
+    @override_settings(APP_API_TOKENS={"ietf.group.views.role_holder_addresses": "valid-token"})
     def test_role_holder_addresses(self):
         # The test fixtures create a bunch of addresses that pollute this test's results - disable them
         Email.objects.update(active=False)

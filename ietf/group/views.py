@@ -2274,7 +2274,7 @@ def appeal_artifact_markdown(request, acronym, artifact_id):
         raise Http404
 
 
-@requires_api_token("ietf.api.views.email_aliases")
+@requires_api_token
 def role_holder_addresses(request):
     """Retrieve a list of active email addresses for group role holders
 
