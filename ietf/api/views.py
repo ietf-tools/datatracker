@@ -452,7 +452,7 @@ def directauth(request):
         return HttpResponse(status=405)
 
 
-@requires_api_token("ietf.api.views.email_aliases")
+@requires_api_token
 @csrf_exempt
 def draft_aliases(request):
     if request.method == "GET":
@@ -471,7 +471,7 @@ def draft_aliases(request):
     return HttpResponse(status=405)
 
 
-@requires_api_token("ietf.api.views.email_aliases")
+@requires_api_token
 @csrf_exempt
 def group_aliases(request):
     if request.method == "GET":
