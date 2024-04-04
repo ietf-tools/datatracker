@@ -2272,35 +2272,3 @@ def appeal_artifact_markdown(request, acronym, artifact_id):
         return HttpResponse(artifact.bits, content_type=artifact.content_type)
     else:
         raise Http404
-
-
-@requires_api_token
-def role_holder_addresses(request):
-    """Retrieve a list of active email addresses for group role holders
-
-    Used by postconfirm to construct an allow-list
-    """
-    group_types_of_interest = [
-        "ag",
-        "area",
-        "dir",
-        "iab",
-        "ietf",
-        "irtf",
-        "nomcom",
-        "rg",
-        "team",
-        "wg",
-        "rag",
-    ]
-    roles = Role.objects.filter(
-        group__state__slug="active",
-        group__type__in=group_types_of_interest,
-    )
-    emails = Email.objects.filter(active=True).exclude(
-        address__startswith="unknown-email-"
-    )
-    role_holder_emails = emails.filter(person__role__in=roles).order_by("address")
-    return JsonResponse(
-        {"addresses": list(role_holder_emails.values_list("address", flat=True).distinct())}
-    )
