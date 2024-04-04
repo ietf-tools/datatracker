@@ -993,54 +993,24 @@ class CustomApiTests(TestCase):
 
     @override_settings(APP_API_TOKENS={"ietf.api.views.role_holder_addresses": ["valid-token"]})
     def test_role_holder_addresses(self):
-        # The test fixtures create a bunch of addresses that pollute this test's results - disable them
-        Email.objects.update(active=False)
-
-        role_holders = [
-            RoleFactory(name_id="member", group__type_id=gt).person
-            for gt in [
-                "ag",
-                "area",
-                "dir",
-                "iab",
-                "ietf",
-                "irtf",
-                "nomcom",
-                "rg",
-                "team",
-                "wg",
-                "rag",
-            ]
-        ]
-        expected_emails = {rh.email_address() for rh in role_holders}
-        assert len(expected_emails) > 0  # just to be sure they were created
-        # Expect an additional active email to be included
-        expected_emails.add(
-            EmailFactory(
-                person=role_holders[0],
-                active=True,
-            ).address
-        )
-        # Do not expect an inactive email to be included, so do not add to set
-        EmailFactory(
-            person=role_holders[1],
-            active=False,
-        )
-        # Do not expect address on a role-holder for a different group type, so do not add to set
-        RoleFactory(name_id="member", group__type_id="adhoc")  # arbitrary type not in the of-interest list
-
         url = urlreverse("ietf.api.views.role_holder_addresses")
         r = self.client.get(url, headers={})
         self.assertEqual(r.status_code, 403, "No api token, no access")
         r = self.client.get(url, headers={"X-Api-Key": "not-valid-token"})
         self.assertEqual(r.status_code, 403, "Bad api token, no access")
-        r = self.client.get(url, headers={"X-Api-Key": "valid-token"})
-        self.assertEqual(r.status_code, 200, "Good api token, access")
+        r = self.client.post(url, headers={"X-Api-Key": "valid-token"})
+        self.assertEqual(r.status_code, 405, "Bad method, no access")
+
+        emails = EmailFactory.create_batch(5)
+        email_queryset = Email.objects.filter(pk__in=[e.pk for e in emails])
+        with mock.patch("ietf.api.views.role_holder_emails", return_value=email_queryset):
+            r = self.client.get(url, headers={"X-Api-Key": "valid-token"})
+        self.assertEqual(r.status_code, 200, "Good api token and method, access")
         content_dict = json.loads(r.content)
         self.assertCountEqual(content_dict.keys(), ["addresses"])
         self.assertEqual(
             content_dict["addresses"],
-            sorted(expected_emails),
+            sorted(e.address for e in emails),
         )
 
 
