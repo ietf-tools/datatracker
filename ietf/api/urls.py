@@ -7,6 +7,7 @@ from django.views.generic import TemplateView
 from ietf import api
 from ietf.api import views as api_views
 from ietf.doc import views_ballot
+from ietf.group import views as group_views
 from ietf.meeting import views as meeting_views
 from ietf.submit import views as submit_views
 from ietf.utils.urls import url
@@ -28,6 +29,8 @@ urlpatterns = [
     url(r'^export/personal-information/$', api_views.PersonalInformationExportView.as_view()),
     # Email alias information for groups
     url(r'^group/group-aliases/$', api_views.group_aliases),
+    # Email addresses belonging to role holders
+    url(r'^group/role-holder-addresses/$', group_views.role_holder_addresses),
     # Let IESG members set positions programmatically
     url(r'^iesg/position', views_ballot.api_set_position),
     # Let Meetecho set session video URLs
