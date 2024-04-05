@@ -1,6 +1,7 @@
 # Copyright The IETF Trust 2014-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
+from ietf.ipr.mail import process_response_email
 from ietf.ipr.models import IprDocRel
 
 import debug                            # pyflakes:ignore
@@ -86,3 +87,12 @@ def generate_draft_recursive_txt():
         f.write(data)
 
     
+def ingest_response_email(message: bytes):
+    from ietf.api.views import EmailIngestionError  # avoid circular import
+    try:
+        result = process_response_email(message)
+    except Exception:
+        raise EmailIngestionError("Unable to process message as an IPR response email")
+    
+    if result is None:
+        raise EmailIngestionError("Message rejected")

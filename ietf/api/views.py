@@ -35,6 +35,7 @@ from ietf.doc.utils import DraftAliasGenerator, fuzzy_find_documents
 from ietf.group.utils import GroupAliasGenerator
 from ietf.ietfauth.utils import role_required
 from ietf.ietfauth.views import send_account_creation_email
+from ietf.ipr.utils import ingest_response_email as ipr_ingest_response_email
 from ietf.meeting.models import Meeting
 from ietf.nomcom.models import Volunteer, NomCom
 from ietf.person.models import Person, Email
@@ -577,7 +578,7 @@ def ingest_email(request):
         if dest == "iana-review":
             iana_ingest_review_email(message)
         elif dest == "ipr-response":
-            raise NotImplementedError()
+            ipr_ingest_response_email(message)
         elif dest == "nomcom-feedback":
             raise NotImplementedError()
         else:
