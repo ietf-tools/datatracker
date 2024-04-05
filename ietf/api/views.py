@@ -38,6 +38,7 @@ from ietf.ietfauth.views import send_account_creation_email
 from ietf.ipr.utils import ingest_response_email as ipr_ingest_response_email
 from ietf.meeting.models import Meeting
 from ietf.nomcom.models import Volunteer, NomCom
+from ietf.nomcom.utils import ingest_feedback_email as nomcom_ingest_feedback_email
 from ietf.person.models import Person, Email
 from ietf.stats.models import MeetingRegistration
 from ietf.sync.iana import ingest_review_email as iana_ingest_review_email
@@ -580,7 +581,8 @@ def ingest_email(request):
         elif dest == "ipr-response":
             ipr_ingest_response_email(message)
         elif dest == "nomcom-feedback":
-            raise NotImplementedError()
+            year = payload["year"]
+            nomcom_ingest_feedback_email(message, year)
         else:
             # Should never get here - json schema validation should enforce the enum
             log.unreachable(date="2024-04-04")

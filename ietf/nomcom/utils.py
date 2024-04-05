@@ -715,3 +715,21 @@ def extract_volunteers(year):
     decorate_volunteers_with_qualifications(volunteers,nomcom=nomcom)
     volunteers = sorted(volunteers,key=lambda v:(not v.eligible,v.person.last_name()))
     return nomcom, volunteers
+
+
+def ingest_feedback_email(message: bytes, year: int):
+    from ietf.api.views import EmailIngestionError  # avoid circular import
+    from .models import NomCom
+    try:
+        nomcom = NomCom.objects.get(group__acronym__icontains=year,
+                                         group__state__slug='active')
+    except NomCom.DoesNotExist:
+        raise EmailIngestionError(f"NomCom {year} does not exist or it isn't active")
+
+    try:
+        feedback = create_feedback_email(nomcom, message)
+    except EncryptedException:
+        raise EmailIngestionError("Error encrypting nomcom feedback message")
+    except Exception as err:
+        raise EmailIngestionError("Unable to process message as nomcom feedback email")
+    log("Received nomcom email from %s" % feedback.author)
