@@ -10,7 +10,7 @@ from tempfile import NamedTemporaryFile
 from django.conf import settings
 from django.urls import reverse as urlreverse
 from django.db.models import Q
-from django.test import Client, override_settings
+from django.test import Client
 from django.utils import timezone
 
 import debug                             # pyflakes:ignore
