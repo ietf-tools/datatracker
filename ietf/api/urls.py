@@ -25,8 +25,8 @@ urlpatterns = [
     # --- Custom API endpoints, sorted alphabetically ---
     # Email alias information for drafts
     url(r'^doc/draft-aliases/$', api_views.draft_aliases),
-    # IANA review email ingestor
-    url(r'email/iana-review/$', sync_views.ingest_iana_review_email),
+    # email ingestor
+    url(r'email/$', api_views.ingest_email),
     # GDPR: export of personal information for the logged-in person
     url(r'^export/personal-information/$', api_views.PersonalInformationExportView.as_view()),
     # Email alias information for groups

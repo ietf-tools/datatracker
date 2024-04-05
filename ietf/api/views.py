@@ -1,10 +1,13 @@
 # Copyright The IETF Trust 2017-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
+import base64
+import binascii
 import json
+import jsonschema
+import pytz
 import re
 
-import pytz
 from django.conf import settings
 from django.contrib.auth import authenticate
 from django.contrib.auth.decorators import login_required
@@ -36,6 +39,7 @@ from ietf.meeting.models import Meeting
 from ietf.nomcom.models import Volunteer, NomCom
 from ietf.person.models import Person, Email
 from ietf.stats.models import MeetingRegistration
+from ietf.sync.iana import ingest_review_email as iana_ingest_review_email
 from ietf.utils import log
 from ietf.utils.decorators import require_api_key
 from ietf.utils.models import DumpInfo
@@ -500,3 +504,87 @@ def active_email_list(request):
             }
         )
     return HttpResponse(status=405)
+
+
+_response_email_json_validator = jsonschema.Draft202012Validator(
+    schema={
+        "type": "object",
+        "properties": {
+            "dest": {
+                "enum": [
+                    "iana-review",
+                    "ipr-response",
+                    "nomcom-feedback",
+                ]
+            },
+            "message": {
+                "type": "string",  # base64-encoded mail message
+            },
+        },
+        "required": ["dest", "message"],
+        "additonalProperties": False,
+        "if": {
+            # If dest == "nomcom-feedback"...
+            "properties": {
+                "dest": {"const": "nomcom-feedback"},
+            }
+        },
+        "then": {
+            # ... then also require year, an integer, be present
+            "properties": {
+                "year": {
+                    "type": "integer",
+                },
+            },
+            "required": ["year"],
+        },
+    }
+)
+
+
+class EmailIngestionError(Exception):
+    """Exception indicating ingestion failed"""
+    def __init__(self, message="Message rejected"):
+        self.message = message
+
+
+@requires_api_token
+@csrf_exempt
+def ingest_email(request):
+
+    def _err(code, text):
+        return HttpResponse(text, status=code, content_type="text/plain")
+
+    if request.method != "POST":
+        return _err(405, "Method not allowed")
+
+    # Validate
+    try:
+        payload = json.loads(request.body)
+        _response_email_json_validator.validate(payload)
+    except json.decoder.JSONDecodeError as err:
+        return _err(400, f"JSON parse error at line {err.lineno} col {err.colno}: {err.msg}")
+    except jsonschema.exceptions.ValidationError as err:
+        return _err(400, f"JSON schema error at {err.json_path}: {err.message}")
+
+    try:
+        message = base64.b64decode(payload["message"], validate=True)
+    except binascii.Error:
+        return _err(400, "Invalid message: bad base64 encoding")
+
+    dest = payload["dest"]
+    try:
+        if dest == "iana-review":
+            iana_ingest_review_email(message)
+        elif dest == "ipr-response":
+            raise NotImplementedError()
+        elif dest == "nomcom-feedback":
+            raise NotImplementedError()
+        else:
+            # Should never get here - json schema validation should enforce the enum
+            log.unreachable(date="2024-04-04")
+            return _err(400, "Invalid dest")  # return something reasonable if we got here unexpectedly
+    except EmailIngestionError as err:
+        return _err(400, err.message)
+
+    return HttpResponse(status=200)

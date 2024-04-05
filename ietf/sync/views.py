@@ -1,13 +1,10 @@
 # Copyright The IETF Trust 2012-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
-import base64
-import binascii
 import datetime
 import subprocess
 import os
 import json
-import jsonschema
 
 from django.conf import settings
 from django.contrib.auth.models import User
@@ -17,12 +14,10 @@ from django.shortcuts import render
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 
-from ietf.api.ietf_utils import requires_api_token
-from ietf.doc.models import DeletedEvent, StateDocEvent, DocEvent, Document
+from ietf.doc.models import DeletedEvent, StateDocEvent, DocEvent
 from ietf.ietfauth.utils import role_required, has_role
 from ietf.sync import tasks
 from ietf.sync.discrepancies import find_discrepancies
-from ietf.sync.iana import add_review_comment, parse_review_email
 from ietf.utils.serialize import object_as_shallow_dict
 from ietf.utils.log import log
 from ietf.utils.response import permission_denied
@@ -166,45 +161,3 @@ def rfceditor_undo(request):
         return HttpResponseRedirect("")
 
     return render(request, 'sync/rfceditor_undo.html', dict(events=events))
-
-
-@requires_api_token
-def ingest_iana_review_email(request):
-    """IANA review email ingestor API endpoint"""
-    json_validator = jsonschema.Draft202012Validator(
-        schema={
-            "type": "object",
-            "properties": {
-                "message": {
-                    "type": "string",  # base64-encoded mail message
-                },
-            }
-        }
-    )
-
-    def _err(code, text):
-        return HttpResponse(text, status=code, content_type="text/plain")
-
-    if request.method != "POST":
-        return _err(405, "Method not allowed")
-
-    # Validate
-    try:
-        payload = json.loads(request.body)
-        json_validator.validate(payload)
-    except (json.decoder.JSONDecodeError, jsonschema.exceptions.ValidationError):
-        return _err(400, "Malformed post")
-    
-    try:
-        message = base64.b64decode(payload["message"], validate=True)
-    except binascii.Error:
-        return _err(400, "Invalid message: bad base64 encoding")
-    
-    doc_name, review_time, by, comment = parse_review_email(message)
-    log(f"Read IANA review email for {doc_name} at {review_time} by {by}")
-    if by.name == "(System)":
-        log("WARNING: person responsible for email does not have a IANA role")  # (sic)
-    try:
-        add_review_comment(doc_name, review_time, by, comment)
-    except Document.DoesNotExist:
-        log(f"ERROR: unknown document {doc_name}")
