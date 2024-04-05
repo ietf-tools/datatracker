@@ -901,7 +901,7 @@ class CustomApiTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
     
-    @override_settings(APP_API_TOKENS={"ietf.api.views.email_aliases": ["valid-token"]})
+    @override_settings(APP_API_TOKENS={"ietf.api.views.draft_aliases": ["valid-token"]})
     @mock.patch("ietf.api.views.DraftAliasGenerator")
     def test_draft_aliases(self, mock):
         mock.return_value = (("alias1", ("a1", "a2")), ("alias2", ("a3", "a4")))
@@ -935,7 +935,7 @@ class CustomApiTests(TestCase):
             405,
         )
 
-    @override_settings(APP_API_TOKENS={"ietf.api.views.email_aliases": ["valid-token"]})
+    @override_settings(APP_API_TOKENS={"ietf.api.views.group_aliases": ["valid-token"]})
     @mock.patch("ietf.api.views.GroupAliasGenerator")
     def test_group_aliases(self, mock):
         mock.return_value = (("alias1", ("ietf",), ("a1", "a2")), ("alias2", ("ietf", "iab"), ("a3", "a4")))
