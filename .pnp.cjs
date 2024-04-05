@@ -68,7 +68,7 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["file-saver", "npm:2.0.5"],\
             ["highcharts", "npm:11.4.0"],\
             ["html-validate", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:8.18.1"],\
-            ["ical.js", "npm:2.0.0"],\
+            ["ical.js", "npm:1.5.0"],\
             ["jquery", "npm:3.7.1"],\
             ["jquery-migrate", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:3.4.1"],\
             ["js-cookie", "npm:3.0.5"],\
@@ -626,7 +626,7 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["@fullcalendar/core", "npm:6.1.11"],\
             ["@types/fullcalendar__core", null],\
             ["@types/ical.js", null],\
-            ["ical.js", "npm:2.0.0"]\
+            ["ical.js", "npm:1.5.0"]\
           ],\
           "packagePeers": [\
             "@fullcalendar/core",\
@@ -5996,10 +5996,10 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
         }]\
       ]],\
       ["ical.js", [\
-        ["npm:2.0.0", {\
-          "packageLocation": "./.yarn/cache/ical.js-npm-2.0.0-00c3a15280-e4a5cf06d2.zip/node_modules/ical.js/",\
+        ["npm:1.5.0", {\
+          "packageLocation": "./.yarn/cache/ical.js-npm-1.5.0-5ba1c69420-51df7a01f4.zip/node_modules/ical.js/",\
           "packageDependencies": [\
-            ["ical.js", "npm:2.0.0"]\
+            ["ical.js", "npm:1.5.0"]\
           ],\
           "linkType": "HARD"\
         }]\
@@ -8352,7 +8352,7 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["file-saver", "npm:2.0.5"],\
             ["highcharts", "npm:11.4.0"],\
             ["html-validate", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:8.18.1"],\
-            ["ical.js", "npm:2.0.0"],\
+            ["ical.js", "npm:1.5.0"],\
             ["jquery", "npm:3.7.1"],\
             ["jquery-migrate", "virtual:dc3fc578bfa5e06182a4d2be39ede0bc5b74940b1ffe0d70c26892ab140a4699787750fba175dc306292e80b4aa2c8c5f68c2a821e69b2c37e360c0dff36ff66#npm:3.4.1"],\
             ["js-cookie", "npm:3.0.5"],\
