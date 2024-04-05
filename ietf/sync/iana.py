@@ -306,7 +306,7 @@ def add_review_comment(doc_name, review_time, by, comment):
         e.save()
 
 
-def ingest_review_email(message):
+def ingest_review_email(message: bytes):
     from ietf.api.views import EmailIngestionError  # avoid circular import
     try:
         doc_name, review_time, by, comment = parse_review_email(message)
