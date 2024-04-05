@@ -1547,21 +1547,12 @@ def document_ballot_content(request, doc, ballot_id, editable=True):
 
 def document_ballot(request, name, ballot_id=None):
     doc = get_object_or_404(Document, name=name)
-    all_ballots = list(BallotDocEvent.objects.filter(doc=doc, type="created_ballot").order_by("time"))
-    if not ballot_id:
-        if all_ballots:
-            ballot = all_ballots[-1]
-        else:
-            raise Http404("Ballot not found for: %s" % name)
-        ballot_id = ballot.id
+    ballots = BallotDocEvent.objects.filter(doc=doc, type="created_ballot").order_by("time")
+    if ballot_id is not None:
+        ballot = ballots.filter(id=ballot_id).first()
     else:
-        ballot_id = int(ballot_id)
-        for b in all_ballots:
-            if b.id == ballot_id:
-                ballot = b
-                break
-
-    if not ballot_id or not ballot:
+        ballot = ballots.last()
+    if not ballot:
         raise Http404("Ballot not found for: %s" % name)
 
     if ballot.ballot_type.slug == "irsg-approve":
@@ -1571,14 +1562,13 @@ def document_ballot(request, name, ballot_id=None):
 
     top = render_document_top(request, doc, ballot_tab, name)
 
-    c = document_ballot_content(request, doc, ballot_id, editable=True)
+    c = document_ballot_content(request, doc, ballot.id, editable=True)
     request.session['ballot_edit_return_point'] = request.path_info
 
     return render(request, "doc/document_ballot.html",
                               dict(doc=doc,
                                    top=top,
                                    ballot_content=c,
-                                   # ballot_type_slug=ballot.ballot_type.slug,
                                    ))
 
 def document_irsg_ballot(request, name, ballot_id=None):
