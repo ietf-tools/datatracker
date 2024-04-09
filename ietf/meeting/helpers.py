@@ -1099,6 +1099,7 @@ def create_interim_session_conferences(sessions):
             try:
                 confs = meetecho_manager.create(
                     group=session.group,
+                    session_id=session.pk,
                     description=str(session),
                     start_time=ts.utc_start_time(),
                     duration=ts.duration,
