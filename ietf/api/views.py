@@ -546,8 +546,8 @@ _response_email_json_validator = jsonschema.Draft202012Validator(
 
 class EmailIngestionError(Exception):
     """Exception indicating ingestion failed"""
-    def __init__(self, message="Message rejected"):
-        self.message = message
+    def __init__(self, msg="Message rejected"):
+        self.msg = msg
 
 
 @requires_api_token
@@ -588,6 +588,6 @@ def ingest_email(request):
             log.unreachable(date="2024-04-04")
             return _err(400, "Invalid dest")  # return something reasonable if we got here unexpectedly
     except EmailIngestionError as err:
-        return _err(400, err.message)
+        return _err(400, err.msg)
 
     return HttpResponse(status=200)
