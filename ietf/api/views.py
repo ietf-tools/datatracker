@@ -29,7 +29,7 @@ from ietf.api import _api_list
 from ietf.api.ietf_utils import is_valid_token, requires_api_token
 from ietf.api.serializer import JsonExportMixin
 from ietf.doc.utils import DraftAliasGenerator, fuzzy_find_documents
-from ietf.group.utils import GroupAliasGenerator
+from ietf.group.utils import GroupAliasGenerator, role_holder_emails
 from ietf.ietfauth.utils import role_required
 from ietf.ietfauth.views import send_account_creation_email
 from ietf.meeting.models import Meeting
@@ -452,7 +452,7 @@ def directauth(request):
         return HttpResponse(status=405)
 
 
-@requires_api_token("ietf.api.views.email_aliases")
+@requires_api_token
 @csrf_exempt
 def draft_aliases(request):
     if request.method == "GET":
@@ -471,7 +471,7 @@ def draft_aliases(request):
     return HttpResponse(status=405)
 
 
-@requires_api_token("ietf.api.views.email_aliases")
+@requires_api_token
 @csrf_exempt
 def group_aliases(request):
     if request.method == "GET":
@@ -497,6 +497,21 @@ def active_email_list(request):
         return JsonResponse(
             {
                 "addresses": list(Email.objects.filter(active=True).values_list("address", flat=True)),
+            }
+        )
+    return HttpResponse(status=405)
+
+
+@requires_api_token
+def role_holder_addresses(request):
+    if request.method == "GET":
+        return JsonResponse(
+            {
+                "addresses": list(
+                    role_holder_emails()
+                    .order_by("address")
+                    .values_list("address", flat=True)
+                )
             }
         )
     return HttpResponse(status=405)
