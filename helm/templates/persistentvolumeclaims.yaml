@@ -2,25 +2,36 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: "datatracker-shared-volume-claim"
-  # Note: This is the /a shared volume. The spec should be adjusted to ensure it always
-  # matches the correct EBS volume in production. For the moment, it just requests a
-  # large volume.
 spec:
+  {{- with .Values.persistentVolumes.datatrackerSharedVolume }}
+  storageClassName: {{ .storageClassName | quote }}
+  {{- if .volumeName }}
+  volumeName: {{ .volumeName | quote }}
+  {{- end }}
   accessModes:
-    - ReadWriteMany  # or ReadWriteOnce and force datatracker/celery/beat to a single node
+    {{- range  .accessModes }}
+    - {{ . | quote }}
+    {{- end }}
   resources:
     requests:
-      storage: 600Gi  # adjust to something satisfied by the /a PersistentVolume
+      storage: {{ .storage | quote }}
+  {{- end }}
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: "rabbitmq-data-claim"
 spec:
-#  storageClassName: "local"
-#  volumeName: ""
+  {{- with .Values.persistentVolumes.rabbitmqDataVolume }}
+  storageClassName: {{ .storageClassName | quote }}
+  {{- if .volumeName }}
+  volumeName: {{ .volumeName | quote }}
+  {{- end }}
   accessModes:
-    - ReadWriteOnce
+    {{- range  .accessModes }}
+    - {{ . | quote }}
+    {{- end }}
   resources:
     requests:
-      storage: 8Gi
+      storage: {{ .storage | quote }}
+  {{- end }}

@@ -562,6 +562,26 @@ memcached:
   affinity: {}
 
 # -------------------------------------------------------------
+# PERSISTENT VOLUMES
+# -------------------------------------------------------------
+
+persistentVolumes:
+  datatrackerSharedVolume:
+    # Note: This is the /a shared volume
+    volumeName: "datatracker-shared-volume"
+    accessModes:
+      - "ReadWriteMany"  # or ReadWriteOnce and force datatracker/celery/beat to a single node
+    storageClassName: ""  # Empty string means do not use default storage class
+    storage: "600Gi"  # actual PersistentVolume must be at least this big or the PVC will not bind
+
+  rabbitmqDataVolume:
+    volumeName: "rabbitmq-data-volume"
+    accessModes:
+      - "ReadWriteOnce"
+    storageClassName: ""  # Empty string means do not use default storage class
+    storage: "8Gi"  # actual PersistentVolume must be at least this big or the PVC will not bind
+
+# -------------------------------------------------------------
 # COMMON
 # -------------------------------------------------------------
 
