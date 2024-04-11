@@ -118,20 +118,20 @@ Create chart name and version as used by the chart label.
 {{/*
 Common labels
 */}}
-{{- define "datatracker.labels" -}}
+{{- define "datatracker.commonLabels" -}}
 helm.sh/chart: {{ include "datatracker.chart" . }}
-{{ include "datatracker.selectorLabels" . }}
 {{- if .Chart.AppVersion }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
+app.kubernetes.io/instance: {{ .Release.Name }}
+app.kubernetes.io/part-of: {{ include "datatracker.name" . | default "datatracker" }}
 {{- end }}
 
 {{/*
 Selector labels
 */}}
 {{- define "datatracker.selectorLabels" -}}
-app.kubernetes.io/name: {{ include "datatracker.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 

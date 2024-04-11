@@ -3,7 +3,8 @@ kind: Deployment
 metadata:
   name: {{ include "datatracker.beat.fullname" . }}
   labels:
-    {{- include "datatracker.labels" . | nindent 4 }}
+    {{- include "datatracker.commonLabels" . | nindent 4 }}
+    app.kubernetes.io/name: {{ .Values.beat.name }}
 spec:
   {{- $podValues := .Values.beat }}
   replicas: {{ $podValues.replicaCount }}
@@ -11,10 +12,12 @@ spec:
   selector:
     matchLabels:
       {{- include "datatracker.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/name: {{ $podValues.name }}
   template:
     metadata:
       labels:
         {{- include "datatracker.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/name: {{ $podValues.name }}
     spec:
     {{- with $podValues.imagePullSecrets }}
       imagePullSecrets:

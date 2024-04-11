@@ -218,10 +218,6 @@ celery:
     # runAsNonRoot: true
     # runAsUser: 1000
 
-  service:
-    type: ClusterIP
-    port: 80
-
   serviceAccount:
     # Specifies whether a service account should be created
     create: true
@@ -335,10 +331,6 @@ beat:
     # readOnlyRootFilesystem: true
     # runAsNonRoot: true
     # runAsUser: 1000
-
-  service:
-    type: ClusterIP
-    port: 80
 
   serviceAccount:
     # Specifies whether a service account should be created
