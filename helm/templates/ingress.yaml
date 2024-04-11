@@ -17,7 +17,7 @@ kind: Ingress
 metadata:
   name: {{ $fullName }}
   labels:
-    {{- include "datatracker.labels" . | nindent 4 }}
+    {{- include "datatracker.commonLabels" . | nindent 4 }}
   {{- with .Values.datatracker.ingress.annotations }}
   annotations:
     {{- toYaml . | nindent 4 }}
