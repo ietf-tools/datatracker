@@ -190,6 +190,11 @@ DRAFT_VIRTUAL_PATH = "/a/postfix/draft-virtual"
 GROUP_ALIASES_PATH = "/a/postfix/group-aliases"
 GROUP_VIRTUAL_PATH = "/a/postfix/group-virtual"
 
+# Repoint STATIC_URL - hack to let staging access statics without hosting them itself
+_STATIC_URL = os.environ.get("DATATRACKER_STATIC_URL", None)
+if _STATIC_URL is not None:
+    STATIC_URL = _STATIC_URL
+
 # Set these to the same as "production" in settings.py, whether production mode or not
 MEDIA_ROOT = "/a/www/www6s/lib/dt/media/"
 MEDIA_URL  = "https://www.ietf.org/lib/dt/media/"
