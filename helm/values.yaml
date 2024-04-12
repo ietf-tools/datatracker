@@ -612,10 +612,10 @@ env:
   # DATATRACKER_DBPASS: "RkTkDPFnKpko"  # secret
   
   DATATRACKER_DJANGO_SECRET_KEY: "PDwXboUq!=hPjnrtG2=ge#N$Dwy+wn@uivrugwpic8mxyPfHk"  # secret
-  
+
   # Set this to point testing / staging at the production statics server until we
   # sort that out
-  DATATRACKER_STATIC_URL: "https://static.ietf.org/dt/12.10.0/"
+  # DATATRACKER_STATIC_URL: "https://static.ietf.org/dt/12.10.0/"
   
   # DATATRACKER_EMAIL_DEBUG: "true"
   
@@ -657,3 +657,7 @@ env:
   CELERY_PASSWORD: "this-is-a-secret"  # secret
 
   DATATRACKER_APP_API_TOKENS_JSON: "{}"  # secret 
+
+  # use this to override default - one entry per line
+  # DATATRACKER_CSRF_TRUSTED_ORIGINS: |-
+  #   https://datatracker.staging.ietf.org
