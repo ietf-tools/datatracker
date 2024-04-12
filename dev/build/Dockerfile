@@ -27,6 +27,8 @@ RUN yarn rebuild && \
     yarn build && \
     yarn legacy:build
 
+RUN echo "yes" | /bin/bash dev/build/collectstatics.sh
+
 RUN mkdir -p /a
 
 VOLUME [ "/a" ]
