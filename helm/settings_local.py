@@ -140,9 +140,9 @@ if _MEETECHO_CLIENT_ID is not None and _MEETECHO_CLIENT_SECRET is not None:
         "client_secret": _MEETECHO_CLIENT_SECRET,
         "request_timeout": 3.01,  # python-requests doc recommend slightly > a multiple of 3 seconds
     }
-elif SERVER_MODE == "production":
+else:
     raise RuntimeError(
-        "DATATRACKER_MEETECHO_CLIENT_ID and DATATRACKER_MEETECHO_CLIENT_SECRET must be set in production"
+        "DATATRACKER_MEETECHO_CLIENT_ID and DATATRACKER_MEETECHO_CLIENT_SECRET must be set"
     )
 
 _APP_API_TOKENS_JSON = os.environ.get("DATATRACKER_APP_API_TOKENS_JSON", None)
@@ -189,6 +189,11 @@ DRAFT_ALIASES_PATH = "/a/postfix/draft-aliases"
 DRAFT_VIRTUAL_PATH = "/a/postfix/draft-virtual"
 GROUP_ALIASES_PATH = "/a/postfix/group-aliases"
 GROUP_VIRTUAL_PATH = "/a/postfix/group-virtual"
+
+# Repoint STATIC_URL - hack to let staging access statics without hosting them itself
+_STATIC_URL = os.environ.get("DATATRACKER_STATIC_URL", None)
+if _STATIC_URL is not None:
+    STATIC_URL = _STATIC_URL
 
 # Set these to the same as "production" in settings.py, whether production mode or not
 MEDIA_ROOT = "/a/www/www6s/lib/dt/media/"
