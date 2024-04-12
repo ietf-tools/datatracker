@@ -140,9 +140,9 @@ if _MEETECHO_CLIENT_ID is not None and _MEETECHO_CLIENT_SECRET is not None:
         "client_secret": _MEETECHO_CLIENT_SECRET,
         "request_timeout": 3.01,  # python-requests doc recommend slightly > a multiple of 3 seconds
     }
-elif SERVER_MODE == "production":
+else:
     raise RuntimeError(
-        "DATATRACKER_MEETECHO_CLIENT_ID and DATATRACKER_MEETECHO_CLIENT_SECRET must be set in production"
+        "DATATRACKER_MEETECHO_CLIENT_ID and DATATRACKER_MEETECHO_CLIENT_SECRET must be set"
     )
 
 _APP_API_TOKENS_JSON = os.environ.get("DATATRACKER_APP_API_TOKENS_JSON", None)
