@@ -14,6 +14,11 @@ def _remove_whitespace_and_b64decode(s):
     return b64decode("".join(s.split()))
 
 
+def _multiline_to_list(s):
+    """Helper to split at newlines and conver to list"""
+    return [item.strip() for item in s.split("\n")]
+
+
 # Default to "development". Production _must_ set DATATRACKER_SERVER_MODE="production" in the env!
 SERVER_MODE = os.environ.get("DATATRACKER_SERVER_MODE", "development")
 
@@ -78,7 +83,7 @@ DEBUG = os.environ.get("DATATRACKER_DEBUG", "false").lower() == "true"
 # DATATRACKER_ALLOWED_HOSTS env var is a comma-separated list of allowed hosts
 _allowed_hosts_str = os.environ.get("DATATRACKER_ALLOWED_HOSTS", None)
 if _allowed_hosts_str is not None:
-    ALLOWED_HOSTS = [h.strip() for h in _allowed_hosts_str.split("\n")]
+    ALLOWED_HOSTS = _multiline_to_list(_allowed_hosts_str)
 
 DATABASES = {
     "default": {
@@ -92,9 +97,9 @@ DATABASES = {
 }
 
 # DATATRACKER_ADMINS is a newline-delimited list of addresses parseable by email.utils.parseaddr
-_ADMINS = os.environ.get("DATATRACKER_ADMINS", None)
-if _ADMINS is not None:
-    ADMINS = [parseaddr(admin) for admin in _ADMINS.split("\n")]
+_admins_str = os.environ.get("DATATRACKER_ADMINS", None)
+if _admins_str is not None:
+    ADMINS = [parseaddr(admin) for admin in _multiline_to_list(_admins_str)]
 else:
     raise RuntimeError("DATATRACKER_ADMINS must be set")    
 
@@ -250,3 +255,7 @@ CACHES = {
         },
     },
 }
+
+_csrf_trusted_origins_str = os.environ.get("DATATRACKER_CSRF_TRUSTED_ORIGINS")
+if _csrf_trusted_origins_str is not None:
+    CSRF_TRUSTED_ORIGINS = _multiline_to_list(_csrf_trusted_origins_str)

@@ -657,3 +657,7 @@ env:
   CELERY_PASSWORD: "this-is-a-secret"  # secret
 
   DATATRACKER_APP_API_TOKENS_JSON: "{}"  # secret 
+
+  # use this to override default - one entry per line
+  # DATATRACKER_CSRF_TRUSTED_ORIGINS: |-
+  #   https://datatracker.staging.ietf.org
