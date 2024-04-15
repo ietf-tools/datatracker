@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2012-2022, All Rights Reserved
+# Copyright The IETF Trust 2012-2023, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -30,7 +30,8 @@ from ietf.doc.models import DocEvent, NewRevisionDocEvent
 from ietf.group.models import Group, Role
 from ietf.person.models import Email, Person
 from ietf.mailtrigger.utils import gather_address_lists
-from ietf.meeting.models import Meeting, Attended
+from ietf.meeting.models import Meeting
+from ietf.meeting.utils import participants_for_meeting
 from ietf.utils.pipe import pipe
 from ietf.utils.mail import send_mail_text, send_mail, get_payload_text
 from ietf.utils.log import log
@@ -66,8 +67,11 @@ DEFAULT_NOMCOM_TEMPLATES = [HOME_TEMPLATE,
                         ]
 
 # See RFC8713 section 4.15
+# This potentially over-disqualifies past nomcom chairs if some 
+# nomcom 2+ nomcoms ago is still in the active state
 DISQUALIFYING_ROLE_QUERY_EXPRESSION = (   Q(group__acronym__in=['isocbot', 'ietf-trust', 'llc-board', 'iab'], name_id__in=['member', 'chair'])
                                         | Q(group__type_id='area', group__state='active',name_id='ad')
+                                        | Q(group__type_id='nomcom', group__state='active', name_id='chair')
                                       )
 
 
@@ -84,26 +88,21 @@ def get_year_by_nomcom(nomcom):
     return m.group(0)
 
 
-def get_user_email(user):
-    # a user object already has an email field, but we don't want to
-    # overwrite anything that might be there, and we don't know that
-    # what's there is the right thing, so we cache the lookup results in a
-    # separate attribute
-    if not hasattr(user, "_email_cache"):
-        user._email_cache = None
-        if hasattr(user, "person"):
-            emails = user.person.email_set.filter(active=True).order_by('-time')
-            if emails:
-                user._email_cache = emails[0]
-                for email in emails:
-                    if email.address.lower() == user.username.lower():
-                        user._email_cache = email
+def get_person_email(person):
+    if not hasattr(person, "_email_cache"):
+        person._email_cache = None
+        emails = person.email_set.filter(active=True).order_by('-time')
+        if emails:
+            person._email_cache = emails[0]
+            for email in emails:
+                if email.address.lower() == person.user.username.lower():
+                    person._email_cache = email
         else:
             try: 
-                user._email_cache = Email.objects.get(address=user.username)
+                person._email_cache = Email.objects.get(address=person.user.username)
             except ObjectDoesNotExist:
                 pass
-    return user._email_cache
+    return person._email_cache
 
 def get_hash_nominee_position(date, nominee_position_id):
     return hmac.new(settings.NOMCOM_APP_SECRET, f"{date}{nominee_position_id}".encode('utf-8'), hashlib.sha256).hexdigest()
@@ -686,9 +685,7 @@ def three_of_five_eligible_9389(previous_five, queryset=None):
 
     counts = defaultdict(lambda: 0)
     for meeting in previous_five:
-        checked_in = meeting.meetingregistration_set.filter(reg_type='onsite', checkedin=True).values_list('person', flat=True)
-        sessions = meeting.session_set.filter(Q(type='plenary') | Q(group__type__in=['wg', 'rg']))
-        attended = Attended.objects.filter(session__in=sessions).values_list('person', flat=True)
+        checked_in, attended = participants_for_meeting(meeting)
         for id in set(checked_in) | set(attended):
             counts[id] += 1
     return queryset.filter(pk__in=[id for id, count in counts.items() if count >= 3])

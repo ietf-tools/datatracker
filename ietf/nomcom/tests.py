@@ -689,20 +689,16 @@ class NomcomViewsTest(TestCase):
         self.assertIn('nominee@', outbox[1]['To'])
 
 
-    def nominate_view(self, *args, **kwargs):
-        public = kwargs.pop('public', True)
-        searched_email = kwargs.pop('searched_email', None)
-        nominee_email = kwargs.pop('nominee_email', 'nominee@example.com')
+    def nominate_view(self, public=True, searched_email=None,
+                      nominee_email='nominee@example.com',
+                      nominator_email=COMMUNITY_USER+EMAIL_DOMAIN,
+                      position='IAOC', confirmation=False):
+
         if not searched_email:
-            searched_email = Email.objects.filter(address=nominee_email).first() 
-            if not searched_email:
-                searched_email = EmailFactory(address=nominee_email, primary=True, origin='test')
+            searched_email = Email.objects.filter(address=nominee_email).first() or EmailFactory(address=nominee_email, primary=True, origin='test')
         if not searched_email.person:
             searched_email.person = PersonFactory()
             searched_email.save()
-        nominator_email = kwargs.pop('nominator_email', "%s%s" % (COMMUNITY_USER, EMAIL_DOMAIN))
-        position_name = kwargs.pop('position', 'IAOC')
-        confirmation = kwargs.pop('confirmation', False)
 
         if public:
             nominate_url = self.public_nominate_url
@@ -726,7 +722,7 @@ class NomcomViewsTest(TestCase):
         q = PyQuery(response.content)
         self.assertEqual(len(q("#nominate-form")), 1)
 
-        position = Position.objects.get(name=position_name)
+        position = Position.objects.get(name=position)
         comment_text = 'Test nominate view. Comments with accents äöåÄÖÅ éáíóú âêîôû ü àèìòù.'
         candidate_phone = '123456'
 
@@ -764,12 +760,9 @@ class NomcomViewsTest(TestCase):
                                comments=feedback,
                                nominator_email="%s%s" % (COMMUNITY_USER, EMAIL_DOMAIN))
 
-    def nominate_newperson_view(self, *args, **kwargs):
-        public = kwargs.pop('public', True)
-        nominee_email = kwargs.pop('nominee_email', 'nominee@example.com')
-        nominator_email = kwargs.pop('nominator_email', "%s%s" % (COMMUNITY_USER, EMAIL_DOMAIN))
-        position_name = kwargs.pop('position', 'IAOC')
-        confirmation = kwargs.pop('confirmation', False)
+    def nominate_newperson_view(self, public=True, nominee_email='nominee@example.com',
+                                nominator_email=COMMUNITY_USER+EMAIL_DOMAIN,
+                                position='IAOC', confirmation=False):
 
         if public:
             nominate_url = self.public_nominate_newperson_url
@@ -793,7 +786,7 @@ class NomcomViewsTest(TestCase):
         q = PyQuery(response.content)
         self.assertEqual(len(q("#nominate-form")), 1)
 
-        position = Position.objects.get(name=position_name)
+        position = Position.objects.get(name=position)
         candidate_email = nominee_email
         candidate_name = 'nominee'
         comment_text = 'Test nominate view. Comments with accents äöåÄÖÅ éáíóú âêîôû ü àèìòù.'
@@ -847,15 +840,13 @@ class NomcomViewsTest(TestCase):
         self.access_chair_url(self.add_questionnaire_url)
         self.add_questionnaire()
 
-    def add_questionnaire(self, *args, **kwargs):
-        public = kwargs.pop('public', False)
-        nominee_email = kwargs.pop('nominee_email', 'nominee@example.com')
-        nominator_email = kwargs.pop('nominator_email', "%s%s" % (COMMUNITY_USER, EMAIL_DOMAIN))
-        position_name = kwargs.pop('position', 'IAOC')
+    def add_questionnaire(self, public=False, nominee_email='nominee@example.com',
+                          nominator_email=COMMUNITY_USER+EMAIL_DOMAIN,
+                          position='IAOC'):
 
         self.nominate_view(public=public,
                            nominee_email=nominee_email,
-                           position=position_name,
+                           position=position,
                            nominator_email=nominator_email)
 
         response = self.client.get(self.add_questionnaire_url)
@@ -874,7 +865,7 @@ class NomcomViewsTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "questionnnaireform")
 
-        position = Position.objects.get(name=position_name)
+        position = Position.objects.get(name=position)
         nominee = Nominee.objects.get(email__address=nominee_email)
 
         comment_text = 'Test add questionnaire view. Comments with accents äöåÄÖÅ éáíóú âêîôû ü àèìòù.'
@@ -924,16 +915,13 @@ class NomcomViewsTest(TestCase):
         self.access_member_url(self.private_feedback_url)
         self.feedback_view(public=False)
 
-    def feedback_view(self, *args, **kwargs):
-        public = kwargs.pop('public', True)
-        nominee_email = kwargs.pop('nominee_email', 'nominee@example.com')
-        nominator_email = kwargs.pop('nominator_email', "%s%s" % (COMMUNITY_USER, EMAIL_DOMAIN))
-        position_name = kwargs.pop('position', 'IAOC')
-        confirmation = kwargs.pop('confirmation', False)
+    def feedback_view(self, public=True, nominee_email='nominee@example.com',
+                      nominator_email=COMMUNITY_USER+EMAIL_DOMAIN,
+                      position='IAOC', confirmation=False):
 
         self.nominate_view(public=public,
                            nominee_email=nominee_email,
-                           position=position_name,
+                           position=position,
                            nominator_email=nominator_email)
 
         feedback_url = self.public_feedback_url
@@ -956,7 +944,7 @@ class NomcomViewsTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertNotContains(response, "feedbackform")
 
-        position = Position.objects.get(name=position_name)
+        position = Position.objects.get(name=position)
         nominee = Nominee.objects.get(email__address=nominee_email)
 
         feedback_url += "?nominee=%d&position=%d" % (nominee.id, position.id)
@@ -972,7 +960,7 @@ class NomcomViewsTest(TestCase):
         comments = 'Test feedback view. Comments with accents äöåÄÖÅ éáíóú âêîôû ü àèìòù.'
 
         test_data = {'comment_text': comments,
-                     'position_name': position.name,
+                     'position': position.name,
                      'nominee_name': nominee.email.person.name,
                      'nominee_email': nominee.email.address,
                      'confirmation': confirmation}
@@ -1168,7 +1156,7 @@ class ReminderTest(TestCase):
         feedback = Feedback.objects.create(nomcom=self.nomcom,
                                            comments=self.nomcom.encrypt('some non-empty comments'),
                                            type=FeedbackTypeName.objects.get(slug='questio'),
-                                           user=User.objects.get(username=CHAIR_USER))
+                                           person=User.objects.get(username=CHAIR_USER).person)
         feedback.positions.add(gen)
         feedback.nominees.add(n)
 
@@ -1326,6 +1314,36 @@ class InactiveNomcomTests(TestCase):
         self.assertEqual(response.status_code, 200)
         q = PyQuery(response.content)
         self.assertIn('not active', q('.alert-warning').text() )
+
+    def test_filter_nominees(self):
+        url = reverse(
+            "ietf.nomcom.views.private_index", kwargs={"year": self.nc.year()}
+        )
+        login_testing_unauthorized(self, self.chair.user.username, url)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+
+        states = list(NomineePositionStateName.objects.values_list("slug", flat=True))
+        states += ["not-declined", "questionnaire"]
+        for state in states:
+            response = self.client.get(url, {"state": state})
+            self.assertEqual(response.status_code, 200)
+            q = PyQuery(response.content)
+            nps = []
+            if state == "not-declined":
+                nps = NomineePosition.objects.exclude(state__slug="declined")
+            elif state == "questionnaire":
+                nps = [
+                    np
+                    for np in NomineePosition.objects.not_duplicated()
+                    if np.questionnaires
+                ]
+            else:
+                nps = NomineePosition.objects.filter(state__slug=state)
+            # nomination state is in third table column
+            self.assertEqual(
+                len(nps), len(q("#nominee-position-table td:nth-child(3)"))
+            )
 
     def test_email_pasting_closed(self):
         url = reverse('ietf.nomcom.views.private_feedback_email', kwargs={'year':self.nc.year()})
@@ -2162,7 +2180,7 @@ class AcceptingTests(TestCase):
         self.assertIn('not currently accepting feedback', unicontent(response))
 
         test_data = {'comment_text': 'junk',
-                     'position_name': pos.name,
+                     'position': pos.name,
                      'nominee_name': pos.nominee_set.first().email.person.name,
                      'nominee_email': pos.nominee_set.first().email.address,
                      'confirmation': False,
@@ -2389,6 +2407,7 @@ class rfc8713EligibilityTests(TestCase):
         self.eligible_people = list()
         self.ineligible_people = list()
 
+        # Section 4.14 qualification criteria
         for combo_len in range(0,6):
             for combo in combinations(meetings,combo_len):
                 p = PersonFactory()
@@ -2398,6 +2417,18 @@ class rfc8713EligibilityTests(TestCase):
                     self.ineligible_people.append(p)
                 else:
                     self.eligible_people.append(p)
+
+        # Section 4.15 disqualification criteria
+        def ineligible_person_with_role(**kwargs):
+            p = RoleFactory(**kwargs).person
+            for m in meetings:
+                MeetingRegistrationFactory(person=p, meeting=m, attended=True)
+            self.ineligible_people.append(p)
+        for group in ['isocbot', 'ietf-trust', 'llc-board', 'iab']:
+            for role in ['member', 'chair']:
+                ineligible_person_with_role(group__acronym=group, name_id=role)
+        ineligible_person_with_role(group__type_id='area', group__state_id='active',name_id='ad')
+        ineligible_person_with_role(group=self.nomcom.group, name_id='chair')
 
         # No-one is eligible for the other_nomcom
         self.other_nomcom = NomComFactory(group__acronym='nomcom2018',first_call_for_volunteers=datetime.date(2018,5,1))
@@ -2731,6 +2762,7 @@ class rfc9389EligibilityTests(TestCase):
 
         for person in ineligible_people:
             self.assertFalse(is_eligible(person,self.nomcom))
+
 
 class VolunteerTests(TestCase):
 

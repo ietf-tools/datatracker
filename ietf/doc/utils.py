@@ -13,7 +13,7 @@ import textwrap
 
 from collections import defaultdict, namedtuple, Counter
 from dataclasses import dataclass
-from typing import Union
+from typing import Iterator, Union
 from zoneinfo import ZoneInfo
 
 from django.conf import settings
@@ -32,7 +32,7 @@ from ietf.community.models import CommunityList
 from ietf.community.utils import docs_tracked_by_community_list
 
 from ietf.doc.models import Document, DocHistory, State, DocumentAuthor, DocHistoryAuthor
-from ietf.doc.models import DocAlias, RelatedDocument, RelatedDocHistory, BallotType, DocReminder
+from ietf.doc.models import RelatedDocument, RelatedDocHistory, BallotType, DocReminder
 from ietf.doc.models import DocEvent, ConsensusDocEvent, BallotDocEvent, IRSGBallotDocEvent, NewRevisionDocEvent, StateDocEvent
 from ietf.doc.models import TelechatDocEvent, DocumentActionHolder, EditedAuthorsDocEvent
 from ietf.name.models import DocReminderTypeName, DocRelationshipName
@@ -41,7 +41,7 @@ from ietf.ietfauth.utils import has_role, is_authorized_in_doc_stream, is_indivi
 from ietf.person.models import Person
 from ietf.review.models import ReviewWish
 from ietf.utils import draft, log
-from ietf.utils.mail import send_mail
+from ietf.utils.mail import parseaddr, send_mail
 from ietf.mailtrigger.utils import gather_address_lists
 from ietf.utils.timezone import date_today, datetime_from_date, datetime_today, DEADLINE_TZINFO
 from ietf.utils.xmldraft import XMLDraft
@@ -57,7 +57,7 @@ def save_document_in_history(doc):
     # copy fields
     fields = get_model_fields_as_dict(doc)
     fields["doc"] = doc
-    fields["name"] = doc.canonical_name()
+    fields["name"] = doc.name
 
     dochist = DocHistory(**fields)
     dochist.save()
@@ -219,7 +219,7 @@ def needed_ballot_positions(doc, active_positions):
         else:
             related_set = RelatedDocHistory.objects.none()
         for rel in related_set.filter(relationship__slug__in=['tops', 'tois', 'tohist', 'toinf', 'tobcp', 'toexp']):
-            if (rel.target.document.std_level_id in ['bcp','ps','ds','std']) or (rel.relationship_id in ['tops','tois','tobcp']):
+            if (rel.target.std_level_id in ['bcp','ps','ds','std']) or (rel.relationship_id in ['tops','tois','tobcp']):
                 needed = two_thirds_rule(recused=len(recuse))
                 break
     else:
@@ -351,16 +351,6 @@ def augment_events_with_revision(doc, events):
     else:
         qs = NewRevisionDocEvent.objects.filter(doc=doc)
     event_revisions = list(qs.order_by('time', 'id').values('id', 'rev', 'time'))
-
-    if doc.type_id == "draft" and doc.get_state_slug() == "rfc":
-        # add fake "RFC" revision
-        if isinstance(events, QuerySetAny):
-            e = events.filter(type="published_rfc").order_by('time').last()
-        else:
-            e = doc.latest_event(type="published_rfc")
-        if e:
-            event_revisions.append(dict(id=e.id, time=e.time, rev="RFC"))
-            event_revisions.sort(key=lambda x: (x["time"], x["id"]))
 
     for e in sorted(events, key=lambda e: (e.time, e.id), reverse=True):
         while event_revisions and (e.time, e.id) < (event_revisions[-1]["time"], event_revisions[-1]["id"]):
@@ -798,22 +788,21 @@ def rebuild_reference_relations(doc, filenames):
     errors = []
     unfound = set()
     for ( ref, refType ) in refs.items():
-        refdoc = DocAlias.objects.filter(name=ref)
+        refdoc = Document.objects.filter(name=ref)
         if not refdoc and re.match(r"^draft-.*-\d{2}$", ref):
-            refdoc = DocAlias.objects.filter(name=ref[:-3])
+            refdoc = Document.objects.filter(name=ref[:-3])
         count = refdoc.count()
-        # As of Dec 2021, DocAlias has a unique constraint on the name field, so count > 1 should not occur
         if count == 0:
             unfound.add( "%s" % ref )
             continue
         elif count > 1:
-            errors.append("Too many DocAlias objects found for %s"%ref)
+            errors.append("Too many Document objects found for %s"%ref)
         else:
             # Don't add references to ourself
-            if doc != refdoc[0].document:
+            if doc != refdoc[0]:
                 RelatedDocument.objects.get_or_create( source=doc, target=refdoc[ 0 ], relationship=DocRelationshipName.objects.get( slug='ref%s' % refType ) )
     if unfound:
-        warnings.append('There were %d references with no matching DocAlias'%len(unfound))
+        warnings.append('There were %d references with no matching Document'%len(unfound))
 
     ret = {}
     if errors:
@@ -848,26 +837,26 @@ def set_replaces_for_document(request, doc, new_replaces, by, email_subject, com
 
     for d in old_replaces:
         if d not in new_replaces:
-            other_addrs = gather_address_lists('doc_replacement_changed',doc=d.document)
+            other_addrs = gather_address_lists('doc_replacement_changed',doc=d)
             to.update(other_addrs.to)
             cc.update(other_addrs.cc)
             RelatedDocument.objects.filter(source=doc, target=d, relationship=relationship).delete()
             if not RelatedDocument.objects.filter(target=d, relationship=relationship):
-                s = 'active' if d.document.expires > timezone.now() else 'expired'
-                d.document.set_state(State.objects.get(type='draft', slug=s))
+                s = 'active' if d.expires > timezone.now() else 'expired'
+                d.set_state(State.objects.get(type='draft', slug=s))
 
     for d in new_replaces:
         if d not in old_replaces:
-            other_addrs = gather_address_lists('doc_replacement_changed',doc=d.document)
+            other_addrs = gather_address_lists('doc_replacement_changed',doc=d)
             to.update(other_addrs.to)
             cc.update(other_addrs.cc)
             RelatedDocument.objects.create(source=doc, target=d, relationship=relationship)
-            d.document.set_state(State.objects.get(type='draft', slug='repl'))
+            d.set_state(State.objects.get(type='draft', slug='repl'))
             
-            if d.document.stream_id in ('irtf','ise','iab'):
-                repl_state = State.objects.get(type_id='draft-stream-%s'%d.document.stream_id, slug='repl')
-                d.document.set_state(repl_state)
-                events.append(StateDocEvent.objects.create(doc=d.document, rev=d.document.rev, by=by, type='changed_state', desc="Set stream state to Replaced",state_type=repl_state.type, state=repl_state))
+            if d.stream_id in ('irtf','ise','iab'):
+                repl_state = State.objects.get(type_id='draft-stream-%s'%d.stream_id, slug='repl')
+                d.set_state(repl_state)
+                events.append(StateDocEvent.objects.create(doc=d, rev=d.rev, by=by, type='changed_state', desc="Set stream state to Replaced",state_type=repl_state.type, state=repl_state))
 
     # make sure there are no lingering suggestions duplicating new replacements
     RelatedDocument.objects.filter(source=doc, target__in=new_replaces, relationship="possibly-replaces").delete()
@@ -937,7 +926,7 @@ def extract_complete_replaces_ancestor_mapping_for_docs(names):
             break
 
         relations = ( RelatedDocument.objects.filter(source__name__in=front, relationship="replaces")
-                          .select_related("target").values_list("source__name", "target__docs__name") )
+                          .select_related("target").values_list("source__name", "target__name") )
         if not relations:
             break
 
@@ -958,49 +947,67 @@ def make_rev_history(doc):
 
     def get_predecessors(doc, predecessors=None):
         if predecessors is None:
-            predecessors = []
+            predecessors = set()
         if hasattr(doc, 'relateddocument_set'):
-            for alias in doc.related_that_doc('replaces'):
-                for document in alias.docs.all():
-                    if document not in predecessors:
-                        predecessors.append(document)
-                        predecessors.extend(get_predecessors(document, predecessors))
+            for document in doc.related_that_doc('replaces'):
+                if document not in predecessors:
+                    predecessors.add(document)
+                    predecessors.update(get_predecessors(document, predecessors))
+        if doc.came_from_draft():
+            predecessors.add(doc.came_from_draft())
+            predecessors.update(get_predecessors(doc.came_from_draft(), predecessors))
         return predecessors
 
     def get_ancestors(doc, ancestors = None):
         if ancestors is None:
-            ancestors = []
+            ancestors = set()
         if hasattr(doc, 'relateddocument_set'):
-            for alias in doc.related_that('replaces'):
-                for document in alias.docs.all():
-                    if document not in ancestors:
-                        ancestors.append(document)
-                        ancestors.extend(get_ancestors(document, ancestors))
+            for document in doc.related_that('replaces'):
+                if document not in ancestors:
+                    ancestors.add(document)
+                    ancestors.update(get_ancestors(document, ancestors))
+        if doc.became_rfc():
+            if doc.became_rfc() not in ancestors:
+                ancestors.add(doc.became_rfc())
+                ancestors.update(get_ancestors(doc.became_rfc(), ancestors))
         return ancestors
 
     def get_replaces_tree(doc):
         tree = get_predecessors(doc)
-        tree.extend(get_ancestors(doc))
+        tree.update(get_ancestors(doc))
         return tree
 
     history = {}
     docs = get_replaces_tree(doc)
     if docs is not None:
-        docs.append(doc)
+        docs.add(doc)
         for d in docs:
-            for e in d.docevent_set.filter(type='new_revision').distinct():
-                if hasattr(e, 'newrevisiondocevent'):
-                    url = urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=d)) + e.newrevisiondocevent.rev + "/"
-                    history[url] = {
-                        'name': d.name,
-                        'rev': e.newrevisiondocevent.rev,
-                        'published': e.time.isoformat(),
-                        'url': url,
-                    }
-                    if d.history_set.filter(rev=e.newrevisiondocevent.rev).exists():
-                        history[url]['pages'] = d.history_set.filter(rev=e.newrevisiondocevent.rev).first().pages
+            if d.type_id == "rfc":
+                url = urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=d))
+                e = d.docevent_set.filter(type="published_rfc").order_by("-time").first()
+                history[url] = {
+                    "name": d.name,
+                    "rev": d.name,
+                    "published": e and e.time.isoformat(),
+                    "url": url,
+                }
+            else:
+                for e in d.docevent_set.filter(type='new_revision').distinct():
+                    if hasattr(e, 'newrevisiondocevent'):
+                        url = urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=d)) + e.newrevisiondocevent.rev + "/"
+                        history[url] = {
+                            'name': d.name,
+                            'rev': e.newrevisiondocevent.rev,
+                            'published': e.time.isoformat(),
+                            'url': url,
+                        }
+                        if d.history_set.filter(rev=e.newrevisiondocevent.rev).exists():
+                            history[url]['pages'] = d.history_set.filter(rev=e.newrevisiondocevent.rev).first().pages
 
     if doc.type_id == "draft":
+        # Do nothing - all draft revisions are captured above already.
+        e = None 
+    elif doc.type_id == "rfc":
         # e.time.date() agrees with RPC publication date when shown in the RPC_TZINFO time zone
         e = doc.latest_event(type='published_rfc')
     else:
@@ -1008,12 +1015,12 @@ def make_rev_history(doc):
     if e:
         url = urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=e.doc))
         history[url] = {
-            'name': e.doc.canonical_name(),
-            'rev': e.doc.canonical_name(),
+            'name': e.doc.name,
+            'rev': e.doc.name,
             'published': e.time.isoformat(),
             'url': url
         }
-        if hasattr(e, 'newrevisiondocevent') and doc.history_set.filter(rev=e.newrevisiondocevent.rev).exists():
+        if doc.type_id != "rfc" and hasattr(e, 'newrevisiondocevent') and doc.history_set.filter(rev=e.newrevisiondocevent.rev).exists():
             history[url]['pages'] = doc.history_set.filter(rev=e.newrevisiondocevent.rev).first().pages
     history = list(history.values())
     return sorted(history, key=lambda x: x['published'])
@@ -1025,14 +1032,11 @@ def get_search_cache_key(params):
     kwargs = dict([ (k,v) for (k,v) in list(params.items()) if k in fields ])
     key = "doc:document:search:" + hashlib.sha512(json.dumps(kwargs, sort_keys=True).encode('utf-8')).hexdigest()
     return key
-    
-def build_file_urls(doc: Union[Document, DocHistory]):
-    if doc.type_id != 'draft':
-        return [], []
 
-    if doc.get_state_slug() == "rfc":
-        name = doc.canonical_name()
-        base_path = os.path.join(settings.RFC_PATH, name + ".")
+
+def build_file_urls(doc: Union[Document, DocHistory]):
+    if doc.type_id == "rfc":
+        base_path = os.path.join(settings.RFC_PATH, doc.name + ".")
         possible_types = settings.RFC_FILE_TYPES
         found_types = [t for t in possible_types if os.path.exists(base_path + t)]
 
@@ -1041,23 +1045,25 @@ def build_file_urls(doc: Union[Document, DocHistory]):
         file_urls = []
         for t in found_types:
             label = "plain text" if t == "txt" else t
-            file_urls.append((label, base + name + "." + t))
+            file_urls.append((label, base + doc.name + "." + t))
 
         if "pdf" not in found_types and "txt" in found_types:
-            file_urls.append(("pdf", base + "pdfrfc/" + name + ".txt.pdf"))
+            file_urls.append(("pdf", base + "pdfrfc/" + doc.name + ".txt.pdf"))
 
         if "txt" in found_types:
-            file_urls.append(("htmlized", urlreverse('ietf.doc.views_doc.document_html', kwargs=dict(name=name))))
+            file_urls.append(("htmlized", urlreverse('ietf.doc.views_doc.document_html', kwargs=dict(name=doc.name))))
             if doc.tags.filter(slug="verified-errata").exists():
-                file_urls.append(("with errata", settings.RFC_EDITOR_INLINE_ERRATA_URL.format(rfc_number=doc.rfc_number())))
-        file_urls.append(("bibtex", urlreverse('ietf.doc.views_doc.document_bibtex',kwargs=dict(name=name))))
-    elif doc.rev:
+                file_urls.append(("with errata", settings.RFC_EDITOR_INLINE_ERRATA_URL.format(rfc_number=doc.rfc_number)))
+        file_urls.append(("bibtex", urlreverse('ietf.doc.views_doc.document_bibtex',kwargs=dict(name=doc.name))))
+    elif doc.type_id == "draft" and doc.rev != "":
         base_path = os.path.join(settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR, doc.name + "-" + doc.rev + ".")
         possible_types = settings.IDSUBMIT_FILE_TYPES
         found_types = [t for t in possible_types if os.path.exists(base_path + t)]
         base = settings.IETF_ID_ARCHIVE_URL
         file_urls = []
         for t in found_types:
+            if t == "ps": # Postscript might have been submitted but should not be displayed in the list of URLs
+                continue
             label = "plain text" if t == "txt" else t
             file_urls.append((label, base + doc.name + "-" + doc.rev + "." + t))
 
@@ -1067,37 +1073,36 @@ def build_file_urls(doc: Union[Document, DocHistory]):
         file_urls.append(("bibtex", urlreverse('ietf.doc.views_doc.document_bibtex',kwargs=dict(name=doc.name,rev=doc.rev))))
         file_urls.append(("bibxml", urlreverse('ietf.doc.views_doc.document_bibxml',kwargs=dict(name=doc.name,rev=doc.rev))))
     else:
-        # As of 2022-12-14, there are 1463 Document and 3136 DocHistory records with type='draft' and rev=''.
-        # All of these are in the rfc state and are covered by the above cases.
-        log.unreachable('2022-12-14')
+        if doc.type_id == "draft":
+            # TODO: look at the state of the database post migration and update this comment, or remove the block
+            # As of 2022-12-14, there are 1463 Document and 3136 DocHistory records with type='draft' and rev=''.
+            # All of these are in the rfc state and are covered by the above cases.
+            log.unreachable('2022-12-14')
         file_urls = []
         found_types = []
-
+        
     return file_urls, found_types
 
-def augment_docs_and_user_with_user_info(docs, user):
+def augment_docs_and_person_with_person_info(docs, person):
     """Add attribute to each document with whether the document is tracked
-    or has a review wish by the user or not, and the review teams the user is on."""
+    or has a review wish by the person or not, and the review teams the person is on."""
 
     tracked = set()
     review_wished = set()
-    
-    if user and user.is_authenticated:
-        user.review_teams = Group.objects.filter(
-                reviewteamsettings__isnull=False, role__person__user=user, role__name='reviewer')
 
-        doc_pks = [d.pk for d in docs]
-        clist = CommunityList.objects.filter(user=user).first()
-        if clist:
-            tracked.update(
-                docs_tracked_by_community_list(clist).filter(pk__in=doc_pks).values_list("pk", flat=True))
+    # used in templates
+    person.review_teams = Group.objects.filter(
+        reviewteamsettings__isnull=False, role__person=person, role__name='reviewer')
 
-        try:
-            wishes = ReviewWish.objects.filter(person=Person.objects.get(user=user))
-            wishes = wishes.filter(doc__pk__in=doc_pks).values_list("doc__pk", flat=True)
-            review_wished.update(wishes)
-        except Person.DoesNotExist:
-            pass
+    doc_pks = [d.pk for d in docs]
+    clist = CommunityList.objects.filter(person=person).first()
+    if clist:
+        tracked.update(
+            docs_tracked_by_community_list(clist).filter(pk__in=doc_pks).values_list("pk", flat=True))
+
+    wishes = ReviewWish.objects.filter(person=person)
+    wishes = wishes.filter(doc__pk__in=doc_pks).values_list("doc__pk", flat=True)
+    review_wished.update(wishes)
 
     for d in docs:
         d.tracked_in_personal_community_list = d.pk in tracked
@@ -1139,21 +1144,24 @@ def generate_idnits2_rfc_status():
         'unkn': 'U',
     }
 
-    rfcs = Document.objects.filter(type_id='draft',states__slug='rfc',states__type='draft')
+    rfcs = Document.objects.filter(type_id='rfc')
     for rfc in rfcs:
-        offset = int(rfc.rfcnum)-1
+        offset = int(rfc.rfc_number)-1
         blob[offset] = symbols[rfc.std_level_id]
         if rfc.related_that('obs'):
             blob[offset] = 'O'
 
     # Workarounds for unusual states in the datatracker
 
-    # Document.get(docalias='rfc6312').rfcnum == 6342 
-    # 6312 was published with the wrong rfc number in it
-    # weird workaround in the datatracker - there are two 
-    # DocAliases starting with rfc - the canonical name code
-    # searches for the lexically highest alias starting with rfc
-    # which is getting lucky.
+    # The explanation for 6312 is from before docalias was removed
+    # The workaround is still needed, even if the datatracker
+    # state no longer matches what's described here:
+    #   Document.get(docalias='rfc6312').rfc_number == 6342 
+    #   6312 was published with the wrong rfc number in it
+    #   weird workaround in the datatracker - there are two 
+    #   DocAliases starting with rfc - the canonical name code
+    #   searches for the lexically highest alias starting with rfc
+    #   which is getting lucky.
     blob[6312 - 1] = 'O'
 
     # RFC200 is an old RFC List by Number
@@ -1169,7 +1177,7 @@ def generate_idnits2_rfc_status():
 def generate_idnits2_rfcs_obsoleted():
     obsdict = defaultdict(list)
     for r in RelatedDocument.objects.filter(relationship_id='obs'):
-        obsdict[int(r.target.document.rfc_number())].append(int(r.source.rfc_number()))
+        obsdict[int(r.target.rfc_number)].append(int(r.source.rfc_number)) # Aren't these already guaranteed to be ints?
     for k in obsdict:
         obsdict[k] = sorted(obsdict[k])
     return render_to_string('doc/idnits2-rfcs-obsoleted.txt', context={'obsitems':sorted(obsdict.items())})
@@ -1198,13 +1206,20 @@ def fuzzy_find_documents(name, rev=None):
     if re.match("^[0-9]+$", name):
         name = f'rfc{name}'
 
+    if name.startswith("rfc"):
+        sought_type = "rfc"
+        name = name.split("-")[0] # strip any noise (like a revision) at and after the first hyphen
+        rev = None # If someone is looking for an RFC and supplies a version, ignore it.
+    else:
+        sought_type = "draft"
+
     # see if we can find a document using this name
-    docs = Document.objects.filter(docalias__name=name, type_id='draft')
-    if rev and not docs.exists():
-        # No document found, see if the name/rev split has been misidentified.
+    docs = Document.objects.filter(name=name, type_id=sought_type)
+    if sought_type == "draft" and rev and not docs.exists():
+        # No draft found, see if the name/rev split has been misidentified.
         # Handles some special cases, like draft-ietf-tsvwg-ieee-802-11.
         name = '%s-%s' % (name, rev)
-        docs = Document.objects.filter(docalias__name=name, type_id='draft')
+        docs = Document.objects.filter(name=name, type_id='draft')
         if docs.exists():
             rev = None  # found a doc by name with rev = None, so update that
 
@@ -1245,3 +1260,125 @@ def bibxml_for_draft(doc, rev=None):
         
     return render_to_string('doc/bibxml.xml', {'name':name, 'doc':doc, 'doc_bibtype':'I-D', 'settings':settings})
 
+
+class DraftAliasGenerator:
+    days = 2 * 365
+
+    def get_draft_ad_emails(self, doc):
+        """Get AD email addresses for the given draft, if any."""
+        from ietf.group.utils import get_group_ad_emails  # avoid circular import
+        ad_emails = set()
+        # If working group document, return current WG ADs
+        if doc.group and doc.group.acronym != "none":
+            ad_emails.update(get_group_ad_emails(doc.group))
+        # Document may have an explicit AD set
+        if doc.ad:
+            ad_emails.add(doc.ad.email_address())
+        return ad_emails
+
+    def get_draft_chair_emails(self, doc):
+        """Get chair email addresses for the given draft, if any."""
+        from ietf.group.utils import get_group_role_emails  # avoid circular import
+        chair_emails = set()
+        if doc.group:
+            chair_emails.update(get_group_role_emails(doc.group, ["chair", "secr"]))
+        return chair_emails
+
+    def get_draft_shepherd_email(self, doc):
+        """Get shepherd email addresses for the given draft, if any."""
+        shepherd_email = set()
+        if doc.shepherd:
+            shepherd_email.add(doc.shepherd.email_address())
+        return shepherd_email
+
+    def get_draft_authors_emails(self, doc):
+        """Get list of authors for the given draft."""
+        author_emails = set()
+        for author in doc.documentauthor_set.all():
+            if author.email and author.email.email_address():
+                author_emails.add(author.email.email_address())
+        return author_emails
+
+    def get_draft_notify_emails(self, doc):
+        """Get list of email addresses to notify for the given draft."""
+        ad_email_alias_regex = r"^%s.ad@(%s|%s)$" % (doc.name, settings.DRAFT_ALIAS_DOMAIN, settings.TOOLS_SERVER)
+        all_email_alias_regex = r"^%s.all@(%s|%s)$" % (doc.name, settings.DRAFT_ALIAS_DOMAIN, settings.TOOLS_SERVER)
+        author_email_alias_regex = r"^%s@(%s|%s)$" % (doc.name, settings.DRAFT_ALIAS_DOMAIN, settings.TOOLS_SERVER)
+        notify_email_alias_regex = r"^%s.notify@(%s|%s)$" % (
+        doc.name, settings.DRAFT_ALIAS_DOMAIN, settings.TOOLS_SERVER)
+        shepherd_email_alias_regex = r"^%s.shepherd@(%s|%s)$" % (
+        doc.name, settings.DRAFT_ALIAS_DOMAIN, settings.TOOLS_SERVER)
+        notify_emails = set()
+        if doc.notify:
+            for e in doc.notify.split(','):
+                e = e.strip()
+                if re.search(ad_email_alias_regex, e):
+                    notify_emails.update(self.get_draft_ad_emails(doc))
+                elif re.search(author_email_alias_regex, e):
+                    notify_emails.update(self.get_draft_authors_emails(doc))
+                elif re.search(shepherd_email_alias_regex, e):
+                    notify_emails.update(self.get_draft_shepherd_email(doc))
+                elif re.search(all_email_alias_regex, e):
+                    notify_emails.update(self.get_draft_ad_emails(doc))
+                    notify_emails.update(self.get_draft_authors_emails(doc))
+                    notify_emails.update(self.get_draft_shepherd_email(doc))
+                elif re.search(notify_email_alias_regex, e):
+                    pass
+                else:
+                    (name, email) = parseaddr(e)
+                    notify_emails.add(email)
+        return notify_emails
+
+    def __iter__(self) -> Iterator[tuple[str, list[str]]]:
+        # Internet-Drafts with active status or expired within self.days
+        show_since = timezone.now() - datetime.timedelta(days=self.days)
+        drafts = Document.objects.filter(type_id="draft")
+        active_drafts = drafts.filter(states__slug='active')
+        inactive_recent_drafts = drafts.exclude(states__slug='active').filter(expires__gte=show_since)
+        interesting_drafts = active_drafts | inactive_recent_drafts
+
+        for this_draft in interesting_drafts.distinct().iterator():
+            # Omit drafts that became RFCs, unless they were published in the last DEFAULT_YEARS
+            if this_draft.get_state_slug() == "rfc":
+                rfc = this_draft.became_rfc()
+                log.assertion("rfc is not None")
+                if rfc.latest_event(type='published_rfc').time < show_since:
+                    continue
+
+            alias = this_draft.name
+            all = set()
+
+            # no suffix and .authors are the same list
+            emails = self.get_draft_authors_emails(this_draft)
+            all.update(emails)
+            if emails:
+                yield alias, list(emails)
+                yield alias + ".authors", list(emails)
+
+            # .chairs = group chairs
+            emails = self.get_draft_chair_emails(this_draft)
+            if emails:
+                all.update(emails)
+                yield alias + ".chairs", list(emails)
+
+            # .ad = sponsoring AD / WG AD (WG document)
+            emails = self.get_draft_ad_emails(this_draft)
+            if emails:
+                all.update(emails)
+                yield alias + ".ad", list(emails)
+
+            # .notify = notify email list from the Document
+            emails = self.get_draft_notify_emails(this_draft)
+            if emails:
+                all.update(emails)
+                yield alias + ".notify", list(emails)
+
+            # .shepherd = shepherd email from the Document
+            emails = self.get_draft_shepherd_email(this_draft)
+            if emails:
+                all.update(emails)
+                yield alias + ".shepherd", list(emails)
+
+            # .all = everything from above
+            if all:
+                yield alias + ".all", list(all)

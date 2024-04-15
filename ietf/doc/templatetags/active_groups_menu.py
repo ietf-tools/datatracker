@@ -11,7 +11,7 @@ register = template.Library()
 
 @register.simple_tag
 def active_groups_menu(flavor):
-    parents = GroupTypeName.objects.filter(slug__in=["ag", "area", "rag", "team", "dir", "program"])
+    parents = GroupTypeName.objects.filter(slug__in=["ag", "area", "rag", "team", "dir", "program", "iabworkshop"])
     others = []
     for group in Group.objects.filter(acronym__in=("rsoc",), state_id="active"):
         group.menu_url = reverse("ietf.group.views.group_home", kwargs=dict(acronym=group.acronym))  # type: ignore

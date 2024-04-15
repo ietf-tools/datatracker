@@ -62,7 +62,8 @@
         n-button.mt-2(
           id='agenda-quickaccess-calview-btn'
           block
-          color='#6c757d'
+          color='#6f42c1'
+          text-color='#FFF'
           size='large'
           strong
           @click='agendaStore.$patch({ calendarShown: true })'
@@ -78,8 +79,8 @@
           n-button.mt-2(
             id='agenda-quickaccess-addtocal-btn'
             block
-            secondary
-            color='#6c757d'
+            :color='siteStore.theme === `dark` ? `rgba(111, 66, 193, .3)` : `#e2d9f3`'
+            :text-color='siteStore.theme === `dark` ? `#e2d9f3` : `#59359a`'
             size='large'
             strong
             )

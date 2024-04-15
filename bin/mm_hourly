@@ -21,4 +21,3 @@ source $DTDIR/env/bin/activate
 
 logger -p user.info -t cron "Running $DTDIR/bin/mm_hourly"
 
-$DTDIR/ietf/manage.py import_mailman_listinfo

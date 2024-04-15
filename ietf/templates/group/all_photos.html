@@ -8,7 +8,8 @@
     <h1>{{ group_type | upper }} {{ role }} photos</h1>
     {% regroup roles|dictsort:"last_initial" by last_initial as alphabet_blocks %}
     {% for letter in alphabet_blocks %}
-        <h2 class="mt-4" {% if letter.grouper|slugify %}id="{{ letter.grouper|slugify }}"{% endif %}>{{ letter.grouper }}</h2>
+        <!-- [html-validate-disable-next valid-id -- Unicode IDs are OK in HTML5] -->
+        <h2 class="mt-4" {% if letter.grouper|slugify %}id="{{ letter.grouper }}"{% endif %}>{{ letter.grouper }}</h2>
         {% regroup letter.list by person as person_groups %}
         {# keep in sync with group_photos.html #}
         <div class="mt-0 row row-cols-2 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-4 row-cols-xxl-5 g-2">

@@ -1,19 +1,27 @@
 # Copyright The IETF Trust 2019-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 import datetime
+import mock
+import debug # pyflakes:ignore
+
+from pyquery import PyQuery
 
 from ietf.group.factories import RoleFactory
+from ietf.doc.factories import WgDraftFactory
 from ietf.utils.mail import empty_outbox, get_payload_text, outbox
 from ietf.utils.test_utils import TestCase, reload_db_objects
+from ietf.utils.test_utils import login_testing_unauthorized, unicontent
 from ietf.utils.timezone import date_today, datetime_from_date
 from .factories import ReviewAssignmentFactory, ReviewRequestFactory, ReviewerSettingsFactory
 from .mailarch import hash_list_message_id
 from .models import ReviewerSettings, ReviewSecretarySettings, ReviewTeamSettings, UnavailablePeriod
+from .tasks import send_review_reminders_task
 from .utils import (email_secretary_reminder, review_assignments_needing_secretary_reminder,
                     email_reviewer_reminder, review_assignments_needing_reviewer_reminder,
                     send_reminder_unconfirmed_assignments, send_review_reminder_overdue_assignment,
                     send_reminder_all_open_reviews, send_unavailability_period_ending_reminder,
                     ORIGIN_DATE_PERIODIC_REMINDERS)
+from django.urls import reverse as urlreverse
 
 class HashTest(TestCase):
 
@@ -508,3 +516,103 @@ class ReviewAssignmentReminderTests(TestCase):
         self.assertTrue(self.reviewer.email_address() in log[0])
         self.assertTrue('1 open review' in log[0])
 
+class AddReviewCommentTestCase(TestCase):
+    def test_review_add_comment(self):
+        draft = WgDraftFactory(name='draft-ietf-mars-test',group__acronym='mars')
+        review_req = ReviewRequestFactory(doc=draft, state_id='assigned')
+        ReviewAssignmentFactory(review_request=review_req, state_id='assigned')
+
+        url_post = urlreverse('ietf.doc.views_review.add_request_comment', kwargs=dict(name=draft.name, request_id=review_req.pk))
+        url_page = urlreverse('ietf.doc.views_review.review_request', kwargs=dict(name=draft.name, request_id=review_req.pk))
+
+        login_testing_unauthorized(self, "secretary", url_post)
+
+        # Check that we do not have entry on the page
+        r = self.client.get(url_page)
+        self.assertEqual(r.status_code, 200)
+        # Needs to have history
+        self.assertContains(r, 'History')
+        # But can't have the comment we are goint to add.
+        self.assertNotContains(r, 'This is a test.')
+
+        # Get the form
+        r = self.client.get(url_post)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(unicontent(r))
+        self.assertEqual(len(q('form textarea[name=comment]')), 1)
+
+        # Post the comment
+        r = self.client.post(url_post, dict(comment="This is a test."))
+        self.assertEqual(r.status_code, 302)
+
+        # Get the main page again
+        r = self.client.get(url_page)
+        self.assertEqual(r.status_code, 200)
+        # Needs to have history
+        self.assertContains(r, 'History')
+        # But can't have the comment we are goint to add.
+        self.assertContains(r, 'This is a test.')
+
+
+class TaskTests(TestCase):
+    # hyaaa it's mockzilla
+    @mock.patch("ietf.review.tasks.date_today")
+    @mock.patch("ietf.review.tasks.review_assignments_needing_reviewer_reminder")
+    @mock.patch("ietf.review.tasks.email_reviewer_reminder")
+    @mock.patch("ietf.review.tasks.review_assignments_needing_secretary_reminder")
+    @mock.patch("ietf.review.tasks.email_secretary_reminder")
+    @mock.patch("ietf.review.tasks.send_unavailability_period_ending_reminder") 
+    @mock.patch("ietf.review.tasks.send_reminder_all_open_reviews")
+    @mock.patch("ietf.review.tasks.send_review_reminder_overdue_assignment")
+    @mock.patch("ietf.review.tasks.send_reminder_unconfirmed_assignments")
+    def test_send_review_reminders_task(
+        self,
+        mock_send_reminder_unconfirmed_assignments,
+        mock_send_review_reminder_overdue_assignment,
+        mock_send_reminder_all_open_reviews,
+        mock_send_unavailability_period_ending_reminder,
+        mock_email_secretary_reminder,
+        mock_review_assignments_needing_secretary_reminder,
+        mock_email_reviewer_reminder,
+        mock_review_assignments_needing_reviewer_reminder,
+        mock_date_today,
+    ):
+        """Test that send_review_reminders calls functions correctly
+        
+        Does not test individual methods, just that they are called as expected.
+        """
+        mock_today = object()
+        assignment = ReviewAssignmentFactory()
+        secretary_role = RoleFactory(name_id="secr")
+
+        mock_date_today.return_value = mock_today 
+        mock_review_assignments_needing_reviewer_reminder.return_value = [assignment]
+        mock_review_assignments_needing_secretary_reminder.return_value = [[assignment, secretary_role]]
+        mock_send_unavailability_period_ending_reminder.return_value = ["pretending I sent a period end reminder"]
+        mock_send_review_reminder_overdue_assignment.return_value = ["pretending I sent an overdue reminder"]
+        mock_send_reminder_all_open_reviews.return_value = ["pretending I sent an open review reminder"]
+        mock_send_reminder_unconfirmed_assignments.return_value = ["pretending I sent an unconfirmed reminder"]
+        
+        send_review_reminders_task()
+
+        self.assertEqual(mock_review_assignments_needing_reviewer_reminder.call_count, 1)
+        self.assertEqual(mock_review_assignments_needing_reviewer_reminder.call_args[0], (mock_today,))
+        self.assertEqual(mock_email_reviewer_reminder.call_count, 1)
+        self.assertEqual(mock_email_reviewer_reminder.call_args[0], (assignment,))
+
+        self.assertEqual(mock_review_assignments_needing_secretary_reminder.call_count, 1)
+        self.assertEqual(mock_review_assignments_needing_secretary_reminder.call_args[0], (mock_today,))
+        self.assertEqual(mock_email_secretary_reminder.call_count, 1)
+        self.assertEqual(mock_email_secretary_reminder.call_args[0], (assignment, secretary_role))
+
+        self.assertEqual(mock_send_unavailability_period_ending_reminder.call_count, 1)
+        self.assertEqual(mock_send_unavailability_period_ending_reminder.call_args[0], (mock_today,))
+
+        self.assertEqual(mock_send_review_reminder_overdue_assignment.call_count, 1)
+        self.assertEqual(mock_send_review_reminder_overdue_assignment.call_args[0], (mock_today,))
+
+        self.assertEqual(mock_send_reminder_all_open_reviews.call_count, 1)
+        self.assertEqual(mock_send_reminder_all_open_reviews.call_args[0], (mock_today,))
+
+        self.assertEqual(mock_send_reminder_unconfirmed_assignments.call_count, 1)
+        self.assertEqual(mock_send_reminder_unconfirmed_assignments.call_args[0], (mock_today,))

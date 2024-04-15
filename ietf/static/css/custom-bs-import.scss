@@ -1,0 +1,58 @@
+@import "bootstrap/scss/functions";
+
+// Enable negative margin classes.
+$enable-negative-margins: true;
+
+// Don't add carets to dropdowns by default.
+// $enable-caret: false;
+
+$popover-max-width: 100%;
+
+// Override default fonts
+
+$font-family-sans-serif: "Inter",
+system-ui,
+-apple-system,
+"Segoe UI",
+Roboto,
+"Helvetica Neue",
+"Noto Sans",
+"Liberation Sans",
+Arial,
+sans-serif,
+"Apple Color Emoji",
+"Segoe UI Emoji",
+"Segoe UI Symbol",
+"Noto Color Emoji";
+$font-family-monospace: "Noto Sans Mono",
+SFMono-Regular,
+Menlo,
+Monaco,
+Consolas,
+"Liberation Mono",
+"Courier New",
+monospace;
+
+// Enable color modes
+$color-mode-type: data;
+
+@import "bootstrap/scss/variables";
+@import "bootstrap/scss/variables-dark";
+
+$h1-font-size: $font-size-base * 2.2;
+$h2-font-size: $font-size-base * 1.8;
+$h3-font-size: $font-size-base * 1.6;
+$h4-font-size: $font-size-base * 1.4;
+$h5-font-size: $font-size-base * 1.2;
+$h6-font-size: $font-size-base;
+
+// Default is gray-800, which is the same as the range slider background.
+$light-bg-subtle-dark: mix($gray-800, $black);
+
+@import "bootstrap/scss/maps";
+@import "bootstrap/scss/mixins";
+@import "bootstrap/scss/utilities";
+@import "bootstrap/scss/root";
+
+
+

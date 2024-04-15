@@ -14,7 +14,6 @@ import debug                            # pyflakes:ignore
 
 from ietf.doc import views_search
 from ietf.group.urls import group_urls, grouptype_urls, stream_urls
-from ietf.help import views as help_views
 from ietf.ipr.sitemaps import IPRMap
 from ietf.liaisons.sitemaps import LiaisonMap
 from ietf.utils.urls import url
@@ -66,7 +65,7 @@ urlpatterns = [
     url(r'^submit/', include('ietf.submit.urls')),
     url(r'^sync/', include('ietf.sync.urls')),
     url(r'^templates/', include('ietf.dbtemplate.urls')),
-    url(r'^(?P<group_type>(wg|rg|ag|rag|team|dir|review|area|program|iabasg|adhoc|ise|adm|rfcedtyp|edwg|edappr))/', include(grouptype_urls)),
+    url(r'^(?P<group_type>(wg|rg|ag|rag|team|dir|review|area|program|iabasg|iabworkshop|adhoc|ise|adm|rfcedtyp|edwg|edappr))/', include(grouptype_urls)),
 
     # Redirects
     url(r'^(?P<path>public)/', include('ietf.redirects.urls')),
@@ -85,7 +84,6 @@ if settings.SERVER_MODE in ('development', 'test'):
     urlpatterns += staticfiles_urlpatterns()
     urlpatterns += [
             url(r'^_test500/$', server_error), #utils_views.exception),
-            url(r'^environment/$', help_views.environment),
             ## maybe preserve some static legacy URLs ?
             url(r'^(?P<path>(?:images|css|js)/.*)$', static_view.serve, {'document_root': settings.STATIC_ROOT+'ietf/'}),
         ]

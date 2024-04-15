@@ -31,7 +31,7 @@ from ietf.liaisons.fields import SearchableLiaisonStatementsField
 from ietf.group.models import Group
 from ietf.person.models import Email
 from ietf.person.fields import SearchableEmailField
-from ietf.doc.models import Document, DocAlias
+from ietf.doc.models import Document
 from ietf.utils.fields import DatepickerDateField
 from ietf.utils.timezone import date_today, datetime_from_date, DEADLINE_TZINFO
 from functools import reduce
@@ -375,8 +375,6 @@ class LiaisonModelForm(forms.ModelForm):
                     uploaded_filename = name + extension, 
                     )
                 )
-            if created:
-                DocAlias.objects.create(name=attach.name).docs.add(attach)
             LiaisonStatementAttachment.objects.create(statement=self.instance,document=attach)
             attach_file = io.open(os.path.join(settings.LIAISON_ATTACH_PATH, attach.name + extension), 'wb')
             attach_file.write(attached_file.read())
@@ -520,8 +518,7 @@ class EditLiaisonForm(LiaisonModelForm):
         super(EditLiaisonForm, self).__init__(*args, **kwargs)
         self.edit = True
         self.fields['attachments'].initial = self.instance.liaisonstatementattachment_set.exclude(removed=True)
-        related = [ str(x.pk) for x in self.instance.source_of_set.all() ]
-        self.fields['related_to'].initial = ','.join(related)
+        self.fields['related_to'].initial = [ x.target for x in self.instance.source_of_set.all() ]
         self.fields['submitted_date'].initial = self.instance.submitted
 
     def save(self, *args, **kwargs):

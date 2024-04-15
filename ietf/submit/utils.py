@@ -27,7 +27,7 @@ from django.utils import timezone
 
 import debug                            # pyflakes:ignore
 
-from ietf.doc.models import ( Document, State, DocAlias, DocEvent, SubmissionDocEvent,
+from ietf.doc.models import ( Document, State, DocEvent, SubmissionDocEvent,
     DocumentAuthor, AddedMessageEvent )
 from ietf.doc.models import NewRevisionDocEvent
 from ietf.doc.models import RelatedDocument, DocRelationshipName, DocExtResource
@@ -289,7 +289,7 @@ def find_submission_filenames(draft):
     """
     path = pathlib.Path(settings.IDSUBMIT_STAGING_PATH)
     stem = f'{draft.name}-{draft.rev}'
-    allowed_types = settings.RFC_FILE_TYPES if draft.get_state_slug() == 'rfc' else settings.IDSUBMIT_FILE_TYPES
+    allowed_types = settings.IDSUBMIT_FILE_TYPES
     candidates = {ext: path / f'{stem}.{ext}' for ext in allowed_types}
     return {ext: str(filename) for ext, filename in candidates.items() if filename.exists()}
 
@@ -376,10 +376,6 @@ def post_submission(request, submission, approved_doc_desc, approved_subm_desc):
     )
     events.append(e)
     log.log(f"{submission.name}: created doc events")
-
-    # update related objects
-    alias, __ = DocAlias.objects.get_or_create(name=submission.name)
-    alias.docs.add(draft)
 
     draft.set_state(State.objects.get(used=True, type="draft", slug="active"))
 
@@ -506,7 +502,7 @@ def update_replaces_from_submission(request, submission, draft):
     if request.user.is_authenticated:
         is_chair_of = list(Group.objects.filter(role__person__user=request.user, role__name="chair"))
 
-    replaces = DocAlias.objects.filter(name__in=submission.replaces.split(",")).prefetch_related("docs", "docs__group")
+    replaces = Document.objects.filter(name__in=submission.replaces.split(",")).prefetch_related("group")
     existing_replaces = list(draft.related_that_doc("replaces"))
     existing_suggested = set(draft.related_that_doc("possibly-replaces"))
 
@@ -518,14 +514,12 @@ def update_replaces_from_submission(request, submission, draft):
         if r in existing_replaces:
             continue
 
-        rdoc = r.document
-
-        if rdoc == draft:
+        if r == draft:
             continue
 
         if (is_secretariat
-            or (draft.group in is_chair_of and (rdoc.group.type_id == "individ" or rdoc.group in is_chair_of))
-            or (submitter_email and rdoc.documentauthor_set.filter(email__address__iexact=submitter_email).exists())):
+            or (draft.group in is_chair_of and (r.group.type_id == "individ" or r.group in is_chair_of))
+            or (submitter_email and r.documentauthor_set.filter(email__address__iexact=submitter_email).exists())):
             approved.append(r)
         else:
             if r not in existing_suggested:
@@ -1007,7 +1001,7 @@ def accept_submission(submission: Submission, request: Optional[HttpRequest] = N
     docevent_from_submission(submission, desc="Uploaded new revision",
                              who=requester if requester_is_author else None)
 
-    replaces = DocAlias.objects.filter(name__in=submission.replaces_names)
+    replaces = Document.objects.filter(name__in=submission.replaces_names)
     pretty_replaces = '(none)' if not replaces else (
         ', '.join(prettify_std_name(r.name) for r in replaces)
     )
@@ -1286,11 +1280,11 @@ def process_and_validate_submission(submission):
         if xml_metadata is not None:
             # Items preferred / only available from XML
             submission.xml_version = xml_metadata["xml_version"]
-            submission.title = xml_metadata["title"]
+            submission.title = xml_metadata["title"] or ""
             submission.authors = xml_metadata["authors"]
         else:
             # Items to get from text only if XML not available
-            submission.title = text_metadata["title"]
+            submission.title = text_metadata["title"] or ""
             submission.authors = text_metadata["authors"]
 
         if not submission.title:
@@ -1377,6 +1371,7 @@ def process_and_accept_uploaded_submission(submission):
     try:
         process_and_validate_submission(submission)
     except SubmissionError as err:
+        submission.refresh_from_db()  # guard against incomplete changes in submission validation / processing
         cancel_submission(submission)  # changes Submission.state
         create_submission_event(None, submission, f"Submission rejected: {err}")
         return
@@ -1416,11 +1411,13 @@ def process_uploaded_submission(submission):
     try:
         process_and_validate_submission(submission)
     except InconsistentRevisionError as consistency_error:
+        submission.refresh_from_db()  # guard against incomplete changes in submission validation / processing
         submission.state_id = "manual"
         submission.save()
         create_submission_event(None, submission, desc="Uploaded submission (diverted to manual process)")
         send_manual_post_request(None, submission, errors=dict(consistency=str(consistency_error)))
     except SubmissionError as err:
+        submission.refresh_from_db()  # guard against incomplete changes in submission validation / processing
         cancel_submission(submission)  # changes Submission.state
         create_submission_event(None, submission, f"Submission rejected: {err}")
     else:

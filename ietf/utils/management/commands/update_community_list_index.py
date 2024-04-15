@@ -32,7 +32,7 @@ class Command(BaseCommand):
                 person  = rule.person
                 if not person and not group:
                     try:
-                        person = rule.community_list.user.person
+                        person = rule.community_list.person
                     except:
                         pass
                 name = ((group and group.acronym) or (person and person.email_address())) or '?'

@@ -13,7 +13,7 @@ from django.template.loader import render_to_string
 from ietf.utils import markdown
 from django.utils.html import escape
 
-from ietf.doc.models import Document, DocAlias, DocEvent, NewRevisionDocEvent, State
+from ietf.doc.models import Document, DocEvent, NewRevisionDocEvent, State
 from ietf.group.models import Group
 from ietf.ietfauth.utils import role_required
 from ietf.utils.text import xslugify
@@ -94,7 +94,7 @@ class StatementUploadForm(forms.Form):
                     )
         if markdown_content != "":
             try:
-                _ = markdown.markdown(markdown_content)
+                _ = markdown.liberal_markdown(markdown_content)
             except Exception as e:
                 raise forms.ValidationError(f"Markdown processing failed: {e}")
 
@@ -239,10 +239,9 @@ def new_statement(request):
                 rev=statement.rev,
                 by=request.user.person,
                 desc="Statement published",
+                time=statement.time,
             )
             statement.save_with_history([e1, e2])
-            alias = DocAlias.objects.create(name=name)
-            alias.docs.set([statement])
             markdown_content = ""
             if statement_submission == "upload":
                 if not writing_pdf:

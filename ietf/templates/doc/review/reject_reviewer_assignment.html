@@ -10,7 +10,7 @@
         <small class="text-body-secondary">{{ review_req.doc.name }}</small>
     </h1>
     {% include "doc/review/request_info.html" %}
-    {% if not review_request_past_deadline %}
+    {% if allow_reject_request %}
         <p class="alert alert-danger my-3">
             Do you want to reject this assignment?
         </p>
@@ -18,7 +18,7 @@
             {% csrf_token %}
             {% bootstrap_form form %}
             <a class="btn btn-secondary float-end"
-               href="{% url "ietf.doc.views_review.review_request" name=doc.canonical_name request_id=review_req.pk %}">
+               href="{% url "ietf.doc.views_review.review_request" name=doc.name request_id=review_req.pk %}">
                 Back
             </a>
             <button type="submit" class="btn btn-warning" name="action" value="reject">Reject assignment</button>

@@ -2,20 +2,15 @@
 
 from django.contrib import admin
 
-from ietf.mailinglists.models import List, Subscribed, Allowlisted
+from ietf.mailinglists.models import NonWgMailingList, Allowlisted
 
 
-class ListAdmin(admin.ModelAdmin):
-    list_display = ('id', 'name', 'description', 'advertised')
+
+
+class NonWgMailingListAdmin(admin.ModelAdmin):
+    list_display = ('id', 'name', 'description')
     search_fields = ('name',)
-admin.site.register(List, ListAdmin)
-
-
-class SubscribedAdmin(admin.ModelAdmin):
-    list_display = ('id', 'time', 'email')
-    raw_id_fields = ('lists',)
-    search_fields = ('email',)
-admin.site.register(Subscribed, SubscribedAdmin)
+admin.site.register(NonWgMailingList, NonWgMailingListAdmin)
 
 
 class AllowlistedAdmin(admin.ModelAdmin):

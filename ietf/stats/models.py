@@ -11,6 +11,10 @@ from ietf.name.models import CountryName
 from ietf.person.models import Person
 from ietf.utils.models import ForeignKey
 
+### NOTE WELL: These models are expected to be removed and the stats app reimplemented.
+#   A bare python file that should have been a management command was used to populate
+#   these models when the app was first installed - it has been removed from main, but
+#   can be seen at https://github.com/ietf-tools/datatracker/blob/f2b716fc052a0152c32b86b428ba6ebfdcdf5cd2/ietf/stats/backfill_data.py
 
 class AffiliationAlias(models.Model):
     """Records that alias should be treated as name for statistical
@@ -62,7 +66,10 @@ class MeetingRegistration(models.Model):
     email =  models.EmailField(blank=True, null=True)
     reg_type = models.CharField(blank=True, max_length=255)
     ticket_type = models.CharField(blank=True, max_length=255)
+    # attended was used prior to the introduction of the ietf.meeting.Attended model and is still used by
+    # Meeting.get_attendance() for older meetings. It should not be used except for dealing with legacy data.
     attended = models.BooleanField(default=False)
+    # checkedin indicates that the badge was picked up
     checkedin = models.BooleanField(default=False)
 
     def __str__(self):

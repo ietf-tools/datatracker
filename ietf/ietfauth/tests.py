@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2009-2022, All Rights Reserved
+# Copyright The IETF Trust 2009-2023, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -37,7 +37,6 @@ from ietf.group.factories import GroupFactory, RoleFactory
 from ietf.group.models import Group, Role, RoleName
 from ietf.ietfauth.htpasswd import update_htpasswd_file
 from ietf.ietfauth.utils import has_role
-from ietf.mailinglists.models import Subscribed
 from ietf.meeting.factories import MeetingFactory
 from ietf.nomcom.factories import NomComFactory
 from ietf.person.factories import PersonFactory, EmailFactory, UserFactory, PersonalApiKeyFactory
@@ -110,6 +109,35 @@ class IetfAuthTests(TestCase):
         r = self.client.post(urlreverse(ietf.ietfauth.views.login) + "?next=/foobar", {"username":"plain", "password":"plain+password"})
         self.assertEqual(r.status_code, 302)
         self.assertEqual(urlsplit(r["Location"])[2], "/foobar")
+
+    def test_login_button(self):
+        PersonFactory(user__username='plain')
+
+        def _test_login(url):
+            # try mashing the sign-in button repeatedly
+            r = self.client.get(url)
+            if r.status_code == 302:
+                r = self.client.get(r["Location"])
+            self.assertEqual(r.status_code, 200)
+            q = PyQuery(r.content)
+            login_url = q("a:Contains('Sign in')").attr("href")
+            self.assertEqual(login_url, "/accounts/login/?next=" + url)
+            r = self.client.get(login_url)
+            self.assertEqual(r.status_code, 200)
+            q = PyQuery(r.content)
+            login_url = q("a:Contains('Sign in')").attr("href")
+            self.assertEqual(login_url, "/accounts/login/?next=" + url)
+
+            # try logging in with the provided next
+            r = self.client.post(login_url, {"username":"plain", "password":"plain+password"})
+            self.assertEqual(r.status_code, 302)
+            self.assertEqual(urlsplit(r["Location"])[2], url)
+            self.client.logout()
+
+        # try with a trivial next
+        _test_login("/")
+        # try with a next that requires login
+        _test_login(urlreverse(ietf.ietfauth.views.profile))
 
     def test_login_with_different_email(self):
         person = PersonFactory(user__username='plain')
@@ -198,41 +226,8 @@ class IetfAuthTests(TestCase):
 
         self.assertTrue(self.username_in_htpasswd_file(email))
 
-    def test_create_allowlisted_account(self):
-        email = "new-account@example.com"
-
-        # add allowlist entry
-        r = self.client.post(urlreverse(ietf.ietfauth.views.login), {"username":"secretary", "password":"secretary+password"})
-        self.assertEqual(r.status_code, 302)
-        self.assertEqual(urlsplit(r["Location"])[2], urlreverse(ietf.ietfauth.views.profile))
-
-        r = self.client.get(urlreverse(ietf.ietfauth.views.add_account_allowlist))
-        self.assertEqual(r.status_code, 200)
-        self.assertContains(r, "Add an allowlist entry")
-
-        r = self.client.post(urlreverse(ietf.ietfauth.views.add_account_allowlist), {"email": email})
-        self.assertEqual(r.status_code, 200)
-        self.assertContains(r, "Allowlist entry creation successful")
-
-        # log out
-        r = self.client.post(urlreverse('django.contrib.auth.views.logout'), {})
-        self.assertEqual(r.status_code, 200)
-
-        # register and verify allowlisted email
-        self.register_and_verify(email)
-
-
-    def test_create_subscribed_account(self):
-        # verify creation with email in subscribed list
-        saved_delay = settings.LIST_ACCOUNT_DELAY
-        settings.LIST_ACCOUNT_DELAY = 1
-        email = "subscribed@example.com"
-        s = Subscribed(email=email)
-        s.save()
-        time.sleep(1.1)
-        self.register_and_verify(email)
-        settings.LIST_ACCOUNT_DELAY = saved_delay
-
+        
+    # This also tests new account creation.
     def test_create_existing_account(self):
         # create account once
         email = "new-account@example.com"

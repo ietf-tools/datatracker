@@ -3,19 +3,22 @@
 
 
 import datetime
+import mock
 
 from pathlib import Path
+from tempfile import TemporaryDirectory
 
 from django.conf import settings
 from django.utils import timezone
 
 import debug    # pyflakes:ignore
 
-from ietf.doc.factories import WgDraftFactory
-from ietf.doc.models import Document, DocAlias, RelatedDocument, State, LastCallDocEvent, NewRevisionDocEvent
+from ietf.doc.factories import WgDraftFactory, RfcFactory
+from ietf.doc.models import Document, RelatedDocument, State, LastCallDocEvent, NewRevisionDocEvent
 from ietf.group.factories import GroupFactory
 from ietf.name.models import DocRelationshipName
 from ietf.idindex.index import all_id_txt, all_id2_txt, id_index_txt
+from ietf.idindex.tasks import idindex_update_task, TempFileManager
 from ietf.person.factories import PersonFactory, EmailFactory
 from ietf.utils.test_utils import TestCase
 
@@ -41,7 +44,8 @@ class IndexTests(TestCase):
 
         # published
         draft.set_state(State.objects.get(type="draft", slug="rfc"))
-        DocAlias.objects.create(name="rfc1234").docs.add(draft)
+        rfc = RfcFactory(rfc_number=1234)
+        draft.relateddocument_set.create(relationship_id="became_rfc", target=rfc)
 
         txt = all_id_txt()
         self.assertTrue(draft.name + "-" + draft.rev in txt)
@@ -52,8 +56,13 @@ class IndexTests(TestCase):
 
         RelatedDocument.objects.create(
             relationship=DocRelationshipName.objects.get(slug="replaces"),
-            source=Document.objects.create(type_id="draft", rev="00", name="draft-test-replacement"),
-            target=draft.docalias.get(name__startswith="draft"))
+            source=Document.objects.create(
+                type_id="draft",
+                rev="00",
+                name="draft-test-replacement"
+            ),
+            target=draft
+        )
 
         txt = all_id_txt()
         self.assertTrue(draft.name + "-" + draft.rev in txt)
@@ -103,7 +112,8 @@ class IndexTests(TestCase):
 
         # test RFC
         draft.set_state(State.objects.get(type="draft", slug="rfc"))
-        DocAlias.objects.create(name="rfc1234").docs.add(draft)
+        rfc = RfcFactory(rfc_number=1234)
+        draft.relateddocument_set.create(relationship_id="became_rfc", target=rfc)
         t = get_fields(all_id2_txt())
         self.assertEqual(t[4], "1234")
 
@@ -111,8 +121,12 @@ class IndexTests(TestCase):
         draft.set_state(State.objects.get(type="draft", slug="repl"))
         RelatedDocument.objects.create(
             relationship=DocRelationshipName.objects.get(slug="replaces"),
-            source=Document.objects.create(type_id="draft", rev="00", name="draft-test-replacement"),
-            target=draft.docalias.get(name__startswith="draft"))
+            source=Document.objects.create(
+                type_id="draft",
+                rev="00", 
+                name="draft-test-replacement"
+            ),
+            target=draft)
 
         t = get_fields(all_id2_txt())
         self.assertEqual(t[5], "draft-test-replacement")
@@ -140,3 +154,51 @@ class IndexTests(TestCase):
         txt = id_index_txt(with_abstracts=True)
 
         self.assertTrue(draft.abstract[:20] in txt)
+
+
+class TaskTests(TestCase):
+    @mock.patch("ietf.idindex.tasks.all_id_txt")
+    @mock.patch("ietf.idindex.tasks.all_id2_txt")
+    @mock.patch("ietf.idindex.tasks.id_index_txt")
+    @mock.patch.object(TempFileManager, "__enter__")
+    def test_idindex_update_task(
+        self,
+        temp_file_mgr_enter_mock,
+        id_index_mock,
+        all_id2_mock,
+        all_id_mock,
+    ):
+        # Replace TempFileManager's __enter__() method with one that returns a mock.
+        # Pass a spec to the mock so we validate that only actual methods are called.
+        mgr_mock = mock.Mock(spec=TempFileManager)
+        temp_file_mgr_enter_mock.return_value = mgr_mock
+        
+        idindex_update_task()
+
+        self.assertEqual(all_id_mock.call_count, 1)
+        self.assertEqual(all_id2_mock.call_count, 1)
+        self.assertEqual(id_index_mock.call_count, 2)
+        self.assertEqual(id_index_mock.call_args_list[0], (tuple(), dict()))
+        self.assertEqual(
+            id_index_mock.call_args_list[1], 
+            (tuple(), {"with_abstracts": True}),
+        )
+        self.assertEqual(mgr_mock.make_temp_file.call_count, 11)
+        self.assertEqual(mgr_mock.move_into_place.call_count, 11)
+
+    def test_temp_file_manager(self):
+        with TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+            with TempFileManager(temp_path) as tfm:
+                path1 = tfm.make_temp_file("yay")
+                path2 = tfm.make_temp_file("boo")  # do not keep this one
+                self.assertTrue(path1.exists())
+                self.assertTrue(path2.exists())
+                dest = temp_path / "yay.txt"
+                tfm.move_into_place(path1, dest)
+            # make sure things were cleaned up...
+            self.assertFalse(path1.exists())  # moved to dest
+            self.assertFalse(path2.exists())  # left behind
+            # check destination contents and permissions
+            self.assertEqual(dest.read_text(), "yay")
+            self.assertEqual(dest.stat().st_mode & 0o777, 0o644)

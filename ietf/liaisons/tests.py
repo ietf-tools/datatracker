@@ -24,7 +24,7 @@ from ietf.utils.mail import outbox
 
 from ietf.group.factories import GroupFactory, RoleFactory
 from ietf.liaisons.factories import ( LiaisonStatementFactory, 
-    LiaisonStatementEventFactory, LiaisonStatementAttachmentFactory, )
+    LiaisonStatementEventFactory, LiaisonStatementAttachmentFactory, RelatedLiaisonStatementFactory)
 from ietf.liaisons.models import (LiaisonStatement, LiaisonStatementPurposeName,
     LiaisonStatementAttachment)
 from ietf.person.models import Person
@@ -393,6 +393,8 @@ class LiaisonManagementTests(TestCase):
         LiaisonStatementEventFactory(statement=liaison,type_id='posted')
         from_group = liaison.from_groups.first()
         to_group = liaison.to_groups.first()
+        rel1 = RelatedLiaisonStatementFactory(source=liaison)
+        rel2 = RelatedLiaisonStatementFactory(source=liaison)
 
         url = urlreverse('ietf.liaisons.views.liaison_edit', kwargs=dict(object_id=liaison.pk))
         login_testing_unauthorized(self, "secretary", url)
@@ -402,6 +404,13 @@ class LiaisonManagementTests(TestCase):
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertEqual(len(q('form input[name=from_contact]')), 1)
+        json_data = q('form select[name=related_to]').attr('data-pre')
+        try:
+            decoded = json.loads(json_data)
+        except json.JSONDecodeError as e:
+            self.fail('data-pre contained invalid JSON data: %s' % str(e))
+        decoded_ids = [item['id'] for item in decoded]
+        self.assertEqual(decoded_ids, [rel1.target.id, rel2.target.id])
 
         # edit
         attachments_before = liaison.attachments.count()
