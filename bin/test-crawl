@@ -66,16 +66,16 @@ args = parser.parse_args()
 # Import Django, call setup()
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", args.settings or "ietf.settings_testcrawl")
 
-# import django
-# import django.test
-# import django.core.checks
-# from django.conf import settings
-# from django.utils import timezone
-# 
-# django.setup()
+import django
+import django.test
+import django.core.checks
+from django.conf import settings
+from django.utils import timezone
+
+django.setup()
 
 # This needs to come after we set up sys path to include the local django
-# import debug    # pyflakes:ignore
+import debug    # pyflakes:ignore
 
 # prevent memory from leaking when settings.DEBUG=True
 # from django.db import connection
@@ -84,7 +84,7 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", args.settings or "ietf.settings_
 #         pass
 # connection.queries = DontSaveQueries()
 
-# from ietf.name.models import DocTypeName
+from ietf.name.models import DocTypeName
 from ietf.utils.html import unescape
 from ietf.utils.test_utils import unicontent
 from ietf.utils.test_runner import start_vnu_server, vnu_validate, vnu_fmt_message, vnu_filter_message
@@ -257,7 +257,7 @@ def nowstr():
     t = time.time_ns()/(10**9)
     if nowtime != t:
         nowtime = t
-        nowstrn = datetime.datetime.now(tz=datetime.timezone.utc).strftime('%H:%M:%S').encode()
+        nowstrn = timezone.now().strftime('%H:%M:%S').encode()
     return nowstrn
 
 b_exthost = re.sub(b'https?', b'', args.exthost.encode()) if args.exthost else None
@@ -408,8 +408,7 @@ parser = html5lib.HTMLParser(strict=True)
 # because they aren't under our control, such as uploaded group agendas.
 validated_urls = {'/meeting/nn/agenda/foo/': True, }
 
-# doc_types = [ t.slug for t in DocTypeName.objects.all() ]
-doc_types = ["agenda", "bcp", "bluesheets", "bofreq", "charter", "draft", "rfc"]  # partial list
+doc_types = [ t.slug for t in DocTypeName.objects.all() ]
 
 errors = 0
 warnings = 0
@@ -417,36 +416,7 @@ count = 0
 
 start_time = datetime.datetime.now()
 
-# client = django.test.Client(Accept='text/html,text/plain,application/json')
-class ExtResponse:
-    charset = "utf8"
-    def __init__(self, requests_response):
-        self._requests_response = requests_response
-
-    def __getattr__(self, item):
-        return getattr(self._requests_response, item)
-
-    def __getitem__(self, item):
-        return self._requests_response.headers[item]
-
-
-class ExtClient:
-    base_url = "http://localhost"
-    accept_header = "text/html,text/plain,application/json"
-    
-    def get(self, url, **kwargs):
-        kwargs.pop("secure", None)
-        headers = kwargs.setdefault("headers", {})
-        headers["accept"] = self.accept_header
-        return ExtResponse(
-            requests.get(
-                urllib.parse.urljoin(self.base_url, url),
-                **kwargs,
-            )
-        )
-    
-
-client = ExtClient()
+client = django.test.Client(Accept='text/html,text/plain,application/json')
 
 logfile = None
 if args.logfile:
@@ -480,8 +450,7 @@ if __name__ == "__main__":
             do_exit(1)
 
     # Run django system checks and checks from ietf.checks:
-    # error_list = django.core.checks.run_checks()
-    error_list = []
+    error_list = django.core.checks.run_checks()
     silenced = []
     for i in range(len(error_list)):
         if error_list[i].id in settings.SILENCED_SYSTEM_CHECKS:
