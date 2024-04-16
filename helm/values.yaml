@@ -667,3 +667,7 @@ env:
   # use this to override default - one entry per line
   # DATATRACKER_CSRF_TRUSTED_ORIGINS: |-
   #   https://datatracker.staging.ietf.org
+
+  # Scout configuration
+  DATATRACKER_SCOUT_KEY: "this-is-the-scout-key"
+  DATATRACKER_SCOUT_NAME: "StagingDatatracker"
