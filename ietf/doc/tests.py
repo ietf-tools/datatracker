@@ -45,7 +45,7 @@ from ietf.doc.factories import ( DocumentFactory, DocEventFactory, CharterFactor
     StatusChangeFactory, DocExtResourceFactory, RgDraftFactory, BcpFactory)
 from ietf.doc.forms import NotifyForm
 from ietf.doc.fields import SearchableDocumentsField
-from ietf.doc.utils import create_ballot_if_not_open, uppercase_std_abbreviated_name, DraftAliasGenerator
+from ietf.doc.utils import create_ballot_if_not_open, investigate_fragment, uppercase_std_abbreviated_name, DraftAliasGenerator
 from ietf.group.models import Group, Role
 from ietf.group.factories import GroupFactory, RoleFactory
 from ietf.ipr.factories import HolderIprDisclosureFactory
@@ -3141,3 +3141,137 @@ class StateIndexTests(TestCase):
             if not '-' in name:
                 self.assertIn(name, content)
 
+class InvestigateTests(TestCase):
+    settings_temp_path_overrides = TestCase.settings_temp_path_overrides + [
+        "AGENDA_PATH",
+        # "INTERNET_DRAFT_PATH",
+        # "INTERNET_DRAFT_ARCHIVE_DIR",
+        # "INTERNET_ALL_DRAFTS_ARCHIVE_DIR",
+    ]
+
+    def setUp(self):
+        super().setUp()
+        # Contort the draft archive dir temporary replacement
+        # to match the "collections" concept
+        archive_tmp_dir = Path(settings.INTERNET_DRAFT_ARCHIVE_DIR)
+        new_archive_dir = archive_tmp_dir / "draft-archive"
+        new_archive_dir.mkdir()
+        settings.INTERNET_DRAFT_ARCHIVE_DIR = str(new_archive_dir)
+        donated_personal_copy_dir = archive_tmp_dir / "donated-personal-copy"
+        donated_personal_copy_dir.mkdir()
+        meeting_dir = Path(settings.AGENDA_PATH) / "666"
+        meeting_dir.mkdir()
+        all_archive_dir = Path(settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR)
+        repository_dir = Path(settings.INTERNET_DRAFT_PATH)
+
+        for path in [repository_dir, all_archive_dir]:
+            (path / "draft-this-is-active-00.txt").touch()
+        for path in [new_archive_dir, all_archive_dir]:
+            (path / "draft-old-but-can-authenticate-00.txt").touch()
+            (path / "draft-has-mixed-provenance-01.txt").touch()
+        for path in [donated_personal_copy_dir, all_archive_dir]:
+            (path / "draft-donated-from-a-personal-collection-00.txt").touch()
+            (path / "draft-has-mixed-provenance-00.txt").touch()
+            (path / "draft-has-mixed-provenance-00.txt.Z").touch()
+        (all_archive_dir / "draft-this-should-not-be-possible-00.txt").touch()
+        (meeting_dir / "draft-this-predates-the-archive-00.txt").touch()
+
+    def test_investigate_fragment(self):
+
+        result = investigate_fragment("this-is-active")
+        self.assertEqual(len(result["can_verify"]), 1)
+        self.assertEqual(len(result["unverifiable_collections"]), 0)
+        self.assertEqual(len(result["unexpected"]), 0)
+        self.assertEqual(
+            list(result["can_verify"])[0].name, "draft-this-is-active-00.txt"
+        )
+
+        result = investigate_fragment("old-but-can")
+        self.assertEqual(len(result["can_verify"]), 1)
+        self.assertEqual(len(result["unverifiable_collections"]), 0)
+        self.assertEqual(len(result["unexpected"]), 0)
+        self.assertEqual(
+            list(result["can_verify"])[0].name, "draft-old-but-can-authenticate-00.txt"
+        )
+
+        result = investigate_fragment("predates")
+        self.assertEqual(len(result["can_verify"]), 1)
+        self.assertEqual(len(result["unverifiable_collections"]), 0)
+        self.assertEqual(len(result["unexpected"]), 0)
+        self.assertEqual(
+            list(result["can_verify"])[0].name, "draft-this-predates-the-archive-00.txt"
+        )
+
+        result = investigate_fragment("personal-collection")
+        self.assertEqual(len(result["can_verify"]), 0)
+        self.assertEqual(len(result["unverifiable_collections"]), 1)
+        self.assertEqual(len(result["unexpected"]), 0)
+        self.assertEqual(
+            list(result["unverifiable_collections"])[0].name,
+            "draft-donated-from-a-personal-collection-00.txt",
+        )
+
+        result = investigate_fragment("mixed-provenance")
+        self.assertEqual(len(result["can_verify"]), 1)
+        self.assertEqual(len(result["unverifiable_collections"]), 2)
+        self.assertEqual(len(result["unexpected"]), 0)
+        self.assertEqual(
+            list(result["can_verify"])[0].name, "draft-has-mixed-provenance-01.txt"
+        )
+        self.assertEqual(
+            set([p.name for p in result["unverifiable_collections"]]),
+            set(
+                [
+                    "draft-has-mixed-provenance-00.txt",
+                    "draft-has-mixed-provenance-00.txt.Z",
+                ]
+            ),
+        )
+
+        result = investigate_fragment("not-be-possible")
+        self.assertEqual(len(result["can_verify"]), 0)
+        self.assertEqual(len(result["unverifiable_collections"]), 0)
+        self.assertEqual(len(result["unexpected"]), 1)
+        self.assertEqual(
+            list(result["unexpected"])[0].name,
+            "draft-this-should-not-be-possible-00.txt",
+        )
+
+    def test_investigate(self):
+        url = urlreverse("ietf.doc.views_doc.investigate")
+        login_testing_unauthorized(self, "secretary", url)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q("form#investigate")), 1)
+        self.assertEqual(len(q("div#results")), 0)
+        r = self.client.post(url, dict(name_fragment="this-is-not-found"))
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q("div#results")), 1)
+        self.assertEqual(len(q("table#authenticated")), 0)
+        self.assertEqual(len(q("table#unverifiable")), 0)
+        self.assertEqual(len(q("table#unexpected")), 0)
+        r = self.client.post(url, dict(name_fragment="mixed-provenance"))
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q("div#results")), 1)
+        self.assertEqual(len(q("table#authenticated")), 1)
+        self.assertEqual(len(q("table#unverifiable")), 1)
+        self.assertEqual(len(q("table#unexpected")), 0)
+        r = self.client.post(url, dict(name_fragment="not-be-possible"))
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q("div#results")), 1)
+        self.assertEqual(len(q("table#authenticated")), 0)
+        self.assertEqual(len(q("table#unverifiable")), 0)
+        self.assertEqual(len(q("table#unexpected")), 1)
+        r = self.client.post(url, dict(name_fragment="short"))
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q("#id_name_fragment.is-invalid")), 1)
+        for char in ["*", "%", "/", "\\"]:
+            r = self.client.post(url, dict(name_fragment=f"bad{char}character"))
+            self.assertEqual(r.status_code, 200)
+            q = PyQuery(r.content)
+            self.assertEqual(len(q("#id_name_fragment.is-invalid")), 1)
