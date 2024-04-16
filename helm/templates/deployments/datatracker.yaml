@@ -57,6 +57,13 @@ spec:
             {{- toYaml $podValues.startupProbe | nindent 12 }}
           resources:
             {{- toYaml $podValues.resources | nindent 12 }}
+      {{- if $podValues.scoutapm }}
+      initContainers:
+        - name: "scoutapm"
+          image: "{{ $podValues.scoutapm.image.repository }}:{{ default "latest" $podValues.image.tag }}"
+          imagePullPolicy: {{ default "IfNotPresent" $podValues.scoutapm.image.imagePullPolicy }}
+          restartPolicy: "Always"
+      {{- end }}
       {{- with $podValues.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
