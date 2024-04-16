@@ -166,6 +166,12 @@ datatracker:
   nodeSelector: {}
 
   affinity: {}
+  
+  # Set this to enable a Scout APM Core Agent sidecar
+  scoutapm:
+    image:
+      repository: "scoutapp/scoutapm"
+      tag: "version-1.4.0"
 
 # -------------------------------------------------------------
 # CELERY
