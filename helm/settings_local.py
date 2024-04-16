@@ -176,14 +176,12 @@ if _SCOUT_KEY is not None:
         DEV_PRE_APPS = ["scout_apm.django", ]
     SCOUT_MONITOR = True
     SCOUT_KEY = _SCOUT_KEY
-    SCOUT_NAME = "Datatracker"
+    SCOUT_NAME = os.environ.get("DATATRACKER_SCOUT_NAME", "Datatracker")
     SCOUT_ERRORS_ENABLED = True
     SCOUT_SHUTDOWN_MESSAGE_ENABLED = False
-    SCOUT_CORE_AGENT_DIR = "/a/core-agent/1.4.0"
-    SCOUT_CORE_AGENT_FULL_NAME = "scout_apm_core-v1.4.0-x86_64-unknown-linux-musl"
     SCOUT_CORE_AGENT_SOCKET_PATH = "tcp://{host}:{port}".format(
-        host=os.environ.get("DATATRACKER_SCOUT_CORE_AGENT_HOST", "scout"),
-        port=os.environ.get("DATATRACKER_SCOUT_CORE_AGENT_PORT", "16590"),
+        host=os.environ.get("DATATRACKER_SCOUT_CORE_AGENT_HOST", "localhost"),
+        port=os.environ.get("DATATRACKER_SCOUT_CORE_AGENT_PORT", "6590"),
     ),
     SCOUT_CORE_AGENT_DOWNLOAD = False
     SCOUT_CORE_AGENT_LAUNCH = False
