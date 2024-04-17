@@ -831,6 +831,9 @@ def restore_draft_file(request, draft):
     log.log("Resurrecting %s.  Moving files:" % draft.name)
     for file in files:
         try:
+            # ghostlinkd would keep this in the combined all archive since it would
+            # be sourced from a different place. But when ghostlinkd is removed, nothing
+            # new is needed here - the file will already exist in the combined archive
             shutil.move(file, settings.INTERNET_DRAFT_PATH)
             log.log("  Moved file %s to %s" % (file, settings.INTERNET_DRAFT_PATH))
         except shutil.Error as ex:

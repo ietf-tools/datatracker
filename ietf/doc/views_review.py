@@ -803,6 +803,7 @@ def complete_review(request, name, assignment_id=None, acronym=None):
             else:
                 content = form.cleaned_data['review_content']
 
+            # TODO: MULTIWRITE - this also needs to be written to ftp
             filename = os.path.join(review.get_file_path(), '{}.txt'.format(review.name))
             with io.open(filename, 'w', encoding='utf-8') as destination:
                 destination.write(content)

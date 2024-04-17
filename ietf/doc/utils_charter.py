@@ -94,6 +94,7 @@ def fix_charter_revision_after_approval(charter, by):
     try:
         old = os.path.join(charter.get_file_path(), '%s-%s.txt' % (charter.name, charter.rev))
         new = os.path.join(charter.get_file_path(), '%s-%s.txt' % (charter.name, next_approved_revision(charter.rev)))
+        # TODO: MULTIWRITE - needs to also land in the ftp dir
         shutil.copy(old, new)
     except IOError:
         log("There was an error copying %s to %s" % (old, new))

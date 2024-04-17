@@ -167,7 +167,10 @@ def validate_submission_rev(name, rev):
 
         if rev != expected:
             return 'Invalid revision (revision %02d is expected)' % expected
-
+        
+        # This is not really correct, though the edges that it doesn't cover are not likely.
+        # It might be better just to look in the combined archive to make sure we're not colliding with
+        # a thing that exists there already because it was included from an approved personal collection.
         for dirname in [settings.INTERNET_DRAFT_PATH, settings.INTERNET_DRAFT_ARCHIVE_DIR, ]:
             dir = pathlib.Path(dirname)
             pattern = '%s-%02d.*' % (name, rev)
@@ -651,6 +654,8 @@ def move_files_to_repository(submission):
         source = Path(settings.IDSUBMIT_STAGING_PATH) / fname
         dest = Path(settings.IDSUBMIT_REPOSITORY_PATH) / fname
         if source.exists():
+            # TODO: MULTIWRITE, both to the all-archive dir and the ftp dir
+            # while here, question whether having IDSUBMIT_REPOSITORY_PATH and INTERNET_DRAFT_PATH as separate settings makes sense.
             move(source, dest)
         elif dest.exists():
             log.log("Intended to move '%s' to '%s', but found source missing while destination exists.")

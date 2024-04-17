@@ -69,6 +69,7 @@ def idindex_update_task():
         derived_all_id2_tmpfile = tmp_mgr.make_temp_file(all_id2_content)
 
         # Move temp files as-atomically-as-possible into place
+        # TODO: multiwrite - anything being written into id_path also needs to be written to the all archive path
         tmp_mgr.move_into_place(all_id_tmpfile, id_path / "all_id.txt")
         tmp_mgr.move_into_place(derived_all_id_tmpfile, derived_path / "all_id.txt")
         tmp_mgr.move_into_place(download_all_id_tmpfile, download_path / "id-all.txt")

@@ -435,6 +435,7 @@ def submit(request, name, option=None):
             events.append(e)
 
             # Save file on disk
+            # TODO : MULTIWRITE - this also needs to be written to ftp
             charter_filename = charter_filename.with_name(
                 f"{name}-{charter.rev}.txt"
             )  # update rev
