@@ -679,8 +679,8 @@ MEETINGHOST_LOGO_PATH = AGENDA_PATH  # put these in the same place as other proc
 IPR_DOCUMENT_PATH = '/a/www/ietf-ftp/ietf/IPR/'
 # Move drafts to this directory when they expire
 INTERNET_DRAFT_ARCHIVE_DIR = '/a/ietfdata/doc/draft/collection/draft-archive/'
-# The following directory contains linked copies of all drafts, but don't
-# write anything to this directory -- its content is maintained by ghostlinkd:
+# The following directory contains copies of all drafts - it used to be
+# a set of hardlinks maintained by ghostlinkd, but is now explicitly written to
 INTERNET_ALL_DRAFTS_ARCHIVE_DIR = '/a/ietfdata/doc/draft/archive'
 MEETING_RECORDINGS_DIR = '/a/www/audio'
 DERIVED_DIR = '/a/ietfdata/derived'
