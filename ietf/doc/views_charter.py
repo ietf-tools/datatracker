@@ -4,6 +4,7 @@
 
 import datetime
 import json
+import os
 import textwrap
 
 from pathlib import Path
@@ -42,7 +43,7 @@ from ietf.ietfauth.utils import has_role, role_required
 from ietf.name.models import GroupStateName
 from ietf.person.models import Person
 from ietf.utils.history import find_history_active_at
-from ietf.utils.log import assertion
+from ietf.utils.log import assertion, log
 from ietf.utils.mail import send_mail_preformatted 
 from ietf.utils.textupload import get_cleaned_text_file_content
 from ietf.utils.response import permission_denied
@@ -444,6 +445,18 @@ def submit(request, name, option=None):
                     destination.write(form.cleaned_data["txt"])
                 else:
                     destination.write(form.cleaned_data["content"])
+            # Also provide a copy to the legacy ftp source directory, which is served by rsync
+            # This replaces the hardlink copy that ghostlink has made in the past
+            # Still using a hardlink as long as these are on the same filesystem.
+            ftp_filename = Path(settings.FTP_DIR) / "charter" / charter_filename.name
+            try:
+                os.link(charter_filename, ftp_filename) # os.link until we are on python>=3.10
+            except IOError:
+                log(
+                    "There was an error creating a hardlink at %s pointing to %s"
+                    % (ftp_filename, charter_filename)
+                )     
+
 
             if option in ["initcharter", "recharter"] and charter.ad == None:
                 charter.ad = getattr(group.ad_role(), "person", None)
