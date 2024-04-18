@@ -1,6 +1,8 @@
 # Copyright The IETF Trust 2014-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
+from textwrap import dedent
+
 from ietf.ipr.mail import process_response_email
 from ietf.ipr.models import IprDocRel
 
@@ -91,8 +93,15 @@ def ingest_response_email(message: bytes):
     from ietf.api.views import EmailIngestionError  # avoid circular import
     try:
         result = process_response_email(message)
-    except Exception:
-        raise EmailIngestionError("Unable to process message as an IPR response email")
+    except Exception as err:
+        raise EmailIngestionError(
+            "Error ingesting IPR email",
+            email_body=dedent("""\
+                An error occurred while ingesting IPR email.
+                
+                {error_summary}
+                """),
+        ) from err
     
     if result is None:
         raise EmailIngestionError("Message rejected")
