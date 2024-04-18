@@ -221,6 +221,7 @@ class ManualSubmissionTests(TestCase):
 class SubmitTests(BaseSubmitTestCase):
     def setUp(self):
         super().setUp()
+        (Path(settings.FTP_DIR) / "internet-drafts").mkdir()
         # Submit views assume there is a "next" IETF to look for cutoff dates against
         MeetingFactory(type_id='ietf', date=date_today()+datetime.timedelta(days=180))
 
@@ -953,6 +954,24 @@ class SubmitTests(BaseSubmitTestCase):
         self.assertEqual(new_revision.type, "new_revision")
         self.assertEqual(new_revision.by.name, "Submitter Name")
         self.verify_bibxml_ids_creation(draft)
+
+        repository_path = Path(draft.get_file_name())
+        self.assertTrue(repository_path.exists()) # Note that this doesn't check that it has the right _content_
+        ftp_path = Path(settings.FTP_DIR) / "internet-drafts" / repository_path.name
+        self.assertTrue(repository_path.samefile(ftp_path))
+        all_archive_path = Path(settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR) / repository_path.name
+        self.assertTrue(repository_path.samefile(all_archive_path))
+        for ext in settings.IDSUBMIT_FILE_TYPES:
+            if ext == "txt":
+                continue
+            variant_path = repository_path.parent / f"{repository_path.stem}.{ext}"
+            if variant_path.exists():
+                variant_ftp_path = Path(settings.FTP_DIR) / "internet-drafts" / variant_path.name
+                self.assertTrue(variant_path.samefile(variant_ftp_path))
+                variant_all_archive_path = Path(settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR) / variant_path.name
+                self.assertTrue(variant_path.samefile(variant_all_archive_path))
+
+
 
     def test_submit_new_individual_txt(self):
         self.submit_new_individual(["txt"])
