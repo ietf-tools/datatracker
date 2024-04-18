@@ -436,7 +436,6 @@ def submit(request, name, option=None):
             events.append(e)
 
             # Save file on disk
-            # TODO : MULTIWRITE - this also needs to be written to ftp
             charter_filename = charter_filename.with_name(
                 f"{name}-{charter.rev}.txt"
             )  # update rev
@@ -451,7 +450,8 @@ def submit(request, name, option=None):
             ftp_filename = Path(settings.FTP_DIR) / "charter" / charter_filename.name
             try:
                 os.link(charter_filename, ftp_filename) # os.link until we are on python>=3.10
-            except IOError:
+            except IOError as e:
+                debug.show("e")
                 log(
                     "There was an error creating a hardlink at %s pointing to %s"
                     % (ftp_filename, charter_filename)
