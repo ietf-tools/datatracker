@@ -16,6 +16,7 @@ from email.errors import HeaderParseError
 from email.header import decode_header
 from email.iterators import typed_subpart_iterator
 from email.utils import parseaddr
+from textwrap import dedent
 
 from django.db.models import Q, Count
 from django.conf import settings
@@ -724,12 +725,25 @@ def ingest_feedback_email(message: bytes, year: int):
         nomcom = NomCom.objects.get(group__acronym__icontains=year,
                                          group__state__slug='active')
     except NomCom.DoesNotExist:
-        raise EmailIngestionError(f"NomCom {year} does not exist or it isn't active")
+        raise EmailIngestionError(
+            f"Error ingesting nomcom email: nomcom {year} does not exist or is not active",
+            email_body=dedent(f"""\
+                An email for nomcom {year} was posted to ingest_feedback_email, but no
+                active nomcom exists for that year.
+                """),
+        )
 
     try:
         feedback = create_feedback_email(nomcom, message)
-    except EncryptedException:
-        raise EmailIngestionError("Error encrypting nomcom feedback message")
     except Exception as err:
-        raise EmailIngestionError("Unable to process message as nomcom feedback email")
+        raise EmailIngestionError(
+            f"Error ingesting nomcom {year} feedback email",
+            email_recipients=nomcom.chair_emails(),
+            email_body=dedent(f"""\
+                An error occurred while ingesting feedback email for nomcom {year}.
+                
+                {{error_summary}}
+                """),
+            email_original_message=message,
+        ) from err
     log("Received nomcom email from %s" % feedback.author)
