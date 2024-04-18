@@ -451,7 +451,6 @@ def submit(request, name, option=None):
             try:
                 os.link(charter_filename, ftp_filename) # os.link until we are on python>=3.10
             except IOError as e:
-                debug.show("e")
                 log(
                     "There was an error creating a hardlink at %s pointing to %s"
                     % (ftp_filename, charter_filename)
