@@ -815,9 +815,11 @@ class EditCharterTests(TestCase):
         self.assertTrue(not charter.ballot_open("approve"))
 
         self.assertEqual(charter.rev, "01")
-        self.assertTrue(
-            (Path(settings.CHARTER_PATH) / ("charter-ietf-%s-%s.txt" % (group.acronym, charter.rev))).exists()
-        )
+        charter_path = Path(settings.CHARTER_PATH) / ("charter-ietf-%s-%s.txt" % (group.acronym, charter.rev))
+        charter_ftp_path = Path(settings.FTP_DIR) / "charter" / charter_path.name
+        self.assertTrue(charter_path.exists())
+        self.assertTrue(charter_ftp_path.exists())
+        self.assertTrue(charter_path.samefile(charter_ftp_path))
 
         self.assertEqual(len(outbox), 2)
         #
