@@ -654,8 +654,6 @@ def move_files_to_repository(submission):
         source = Path(settings.IDSUBMIT_STAGING_PATH) / fname
         dest = Path(settings.IDSUBMIT_REPOSITORY_PATH) / fname
         if source.exists():
-            # TODO: MULTIWRITE, both to the all-archive dir and the ftp dir
-            # while here, question whether having IDSUBMIT_REPOSITORY_PATH and INTERNET_DRAFT_PATH as separate settings makes sense.
             move(source, dest)
             all_archive_dest = Path(settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR) / dest.name
             ftp_dest = Path(settings.FTP_DIR) / "internet-drafts" / dest.name
