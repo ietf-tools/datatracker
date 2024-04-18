@@ -182,7 +182,7 @@ if _SCOUT_KEY is not None:
     SCOUT_CORE_AGENT_SOCKET_PATH = "tcp://{host}:{port}".format(
         host=os.environ.get("DATATRACKER_SCOUT_CORE_AGENT_HOST", "localhost"),
         port=os.environ.get("DATATRACKER_SCOUT_CORE_AGENT_PORT", "6590"),
-    ),
+    )
     SCOUT_CORE_AGENT_DOWNLOAD = False
     SCOUT_CORE_AGENT_LAUNCH = False
     SCOUT_REVISION_SHA = __release_hash__[:7]
