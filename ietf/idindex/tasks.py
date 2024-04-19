@@ -53,7 +53,7 @@ def idindex_update_task():
     """Update I-D indexes"""
     id_path = Path(settings.INTERNET_DRAFT_PATH)
     derived_path = Path(settings.DERIVED_DIR)
-    download_path = Path(settings.ALLID_DOWNLOAD_DIR)
+    download_path = Path(settings.ALL_ID_DOWNLOAD_DIR)
     ftp_path = Path(settings.FTP_DIR) / "internet-drafts"
     all_archive_path = Path(settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR)
 
