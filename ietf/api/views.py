@@ -562,7 +562,7 @@ class EmailIngestionError(Exception):
         self.msg = msg
         self.email_body = email_body
         self.email_subject = msg
-        self.email_recipients = email_recipients 
+        self.email_recipients = email_recipients or tuple(adm[1] for adm in settings.ADMINS)
         self.email_attach_traceback = email_attach_traceback
         self.email_original_message = email_original_message
         self.email_from = settings.SERVER_EMAIL
@@ -578,18 +578,15 @@ class EmailIngestionError(Exception):
 
     def as_emailmessage(self) -> Optional[EmailMessage]:
         """Generate an EmailMessage to report an error"""
-        if self.email_body is None:
-            return None  
+        if self.email_recipients is None:
+          return None  
         error = self if self.__cause__ is None else self.__cause__
         format_values = dict(
             error=error,
             error_summary=self._summarize_error(error),
         )
         msg = EmailMessage()
-        if self.email_recipients is None:
-            msg["To"] = tuple(adm[1] for adm in settings.ADMINS) 
-        else: 
-            msg["To"] = self.email_recipients
+        msg["To"] = self.email_recipients
         msg["From"] = self.email_from
         msg["Subject"] = self.msg
         msg.set_content(
