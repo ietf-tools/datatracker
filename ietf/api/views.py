@@ -620,6 +620,9 @@ def ingest_email(request):
     if request.method != "POST":
         return _err(405, "Method not allowed")
 
+    if request.content_type != "application/json":
+        return _err(415, "Content-Type must be application/json")
+
     # Validate
     try:
         payload = json.loads(request.body)
@@ -628,6 +631,8 @@ def ingest_email(request):
         return _err(400, f"JSON parse error at line {err.lineno} col {err.colno}: {err.msg}")
     except jsonschema.exceptions.ValidationError as err:
         return _err(400, f"JSON schema error at {err.json_path}: {err.message}")
+    except Exception:
+        return _err(400, "Invalid request format")
 
     try:
         message = base64.b64decode(payload["message"], validate=True)
