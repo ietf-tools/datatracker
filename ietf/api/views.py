@@ -529,7 +529,6 @@ _response_email_json_validator = jsonschema.Draft202012Validator(
             },
         },
         "required": ["dest", "message"],
-        "additionalProperties": False,
         "if": {
             # If dest == "nomcom-feedback"...
             "properties": {
