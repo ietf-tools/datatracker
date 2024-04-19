@@ -95,13 +95,24 @@ def ingest_response_email(message: bytes):
         result = process_response_email(message)
     except Exception as err:
         raise EmailIngestionError(
-            "Error ingesting IPR email",
+            "Datatracker IPR email ingestion error",
             email_body=dedent("""\
-                An error occurred while ingesting IPR email.
+                An error occurred while ingesting IPR email into the Datatracker. The original message is attached.
                 
                 {error_summary}
                 """),
+            email_original_message=message,
+            email_attach_traceback=True,
         ) from err
     
     if result is None:
-        raise EmailIngestionError("Message rejected")
+        raise EmailIngestionError(
+            "Datatracker IPR email ingestion rejected",
+            email_body=dedent("""\
+            A message was rejected while ingesting IPR email into the Datatracker. The original message is attached.
+
+            {error_summary}
+            """),
+            email_original_message=message,
+            email_attach_traceback=True,
+        )
