@@ -685,6 +685,7 @@ INTERNET_ALL_DRAFTS_ARCHIVE_DIR = '/a/ietfdata/doc/draft/archive'
 MEETING_RECORDINGS_DIR = '/a/www/audio'
 DERIVED_DIR = '/a/ietfdata/derived'
 FTP_DIR = '/a/ftp'
+ALLID_DOWNLOAD_DIR = '/a/www/www6s/download'
 
 DOCUMENT_FORMAT_ALLOWLIST = ["txt", "ps", "pdf", "xml", "html", ]
 

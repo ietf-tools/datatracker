@@ -13,6 +13,8 @@ from pathlib import Path
 from tempfile import NamedTemporaryFile
 from typing import List
 
+from django.conf import settings
+
 from .index import all_id_txt, all_id2_txt, id_index_txt
 
 
@@ -49,12 +51,11 @@ class TempFileManager(AbstractContextManager):
 @shared_task
 def idindex_update_task():
     """Update I-D indexes"""
-    # Why are these not using values from django.conf.settings?
-    id_path = Path("/a/ietfdata/doc/draft/repository")
-    derived_path = Path("/a/ietfdata/derived")
-    download_path = Path("/a/www/www6s/download")
-    ftp_path = Path("/a/ftp/internet-drafts")
-    all_archive_path = Path("/a/ietfdata/doc/draft/archive")
+    id_path = Path(settings.INTERNET_DRAFT_PATH)
+    derived_path = Path(settings.DERIVED_DIR)
+    download_path = Path(settings.ALLID_DOWNLOAD_DIR)
+    ftp_path = Path(settings.FTP_DIR) / "internet-drafts"
+    all_archive_path = Path(settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR)
 
     with TempFileManager("/a/tmp") as tmp_mgr:
         # Generate copies of new contents
