@@ -1067,7 +1067,7 @@ class CustomApiTests(TestCase):
         self.assertFalse(any(m.called for m in mocks))
 
         # test that valid requests call handlers appropriately
-        message_b64: str = base64.b64encode(b"This is a message").decode()
+        message_b64 = base64.b64encode(b"This is a message").decode()
         r = self.client.post(
             url,
             {"dest": "iana-review", "message": message_b64},

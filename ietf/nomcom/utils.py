@@ -722,7 +722,7 @@ def ingest_feedback_email(message: bytes, year: int):
     from ietf.api.views import EmailIngestionError  # avoid circular import
     from .models import NomCom
     try:
-        nomcom = NomCom.objects.get(group__acronym__icontains=year,
+        nomcom = NomCom.objects.get(group__acronym__icontains=str(year),
                                          group__state__slug='active')
     except NomCom.DoesNotExist:
         raise EmailIngestionError(

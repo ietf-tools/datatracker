@@ -9,7 +9,6 @@ from ietf.api import views as api_views
 from ietf.doc import views_ballot
 from ietf.meeting import views as meeting_views
 from ietf.submit import views as submit_views
-from ietf.sync import views as sync_views
 from ietf.utils.urls import url
 
 api.autodiscover()
