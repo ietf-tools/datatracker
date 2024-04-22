@@ -142,6 +142,7 @@ class DocumentInfo(models.Model):
                 if self.is_dochistory():
                     self._cached_file_path = settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR
                 else:
+                    # This could be simplified since anything in INTERNET_DRAFT_PATH is also already in INTERNET_ALL_DRAFTS_ARCHIVE_DIR
                     draft_state = self.get_state('draft')
                     if draft_state and draft_state.slug == 'active':
                         self._cached_file_path = settings.INTERNET_DRAFT_PATH

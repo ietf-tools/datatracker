@@ -425,3 +425,28 @@ class GroupAliasGenerator:
             chair_emails = get_group_role_emails(group, ["chair", "delegate"])
             if chair_emails:
                 yield group.acronym + "-chairs", ["ietf"], list(chair_emails)
+
+
+def role_holder_emails():
+    """Get queryset of active Emails for group role holders"""
+    group_types_of_interest = [
+        "ag",
+        "area",
+        "dir",
+        "iab",
+        "ietf",
+        "irtf",
+        "nomcom",
+        "rg",
+        "team",
+        "wg",
+        "rag",
+    ]
+    roles = Role.objects.filter(
+        group__state__slug="active",
+        group__type__in=group_types_of_interest,
+    )
+    emails = Email.objects.filter(active=True).exclude(
+        address__startswith="unknown-email-"
+    )
+    return emails.filter(person__role__in=roles).distinct()

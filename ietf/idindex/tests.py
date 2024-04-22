@@ -188,17 +188,20 @@ class TaskTests(TestCase):
 
     def test_temp_file_manager(self):
         with TemporaryDirectory() as temp_dir:
-            temp_path = Path(temp_dir)
-            with TempFileManager(temp_path) as tfm:
-                path1 = tfm.make_temp_file("yay")
-                path2 = tfm.make_temp_file("boo")  # do not keep this one
-                self.assertTrue(path1.exists())
-                self.assertTrue(path2.exists())
-                dest = temp_path / "yay.txt"
-                tfm.move_into_place(path1, dest)
-            # make sure things were cleaned up...
-            self.assertFalse(path1.exists())  # moved to dest
-            self.assertFalse(path2.exists())  # left behind
-            # check destination contents and permissions
-            self.assertEqual(dest.read_text(), "yay")
-            self.assertEqual(dest.stat().st_mode & 0o777, 0o644)
+            with TemporaryDirectory() as other_dir:
+                temp_path = Path(temp_dir)
+                other_path = Path(other_dir)
+                with TempFileManager(temp_path) as tfm:
+                    path1 = tfm.make_temp_file("yay")
+                    path2 = tfm.make_temp_file("boo")  # do not keep this one
+                    self.assertTrue(path1.exists())
+                    self.assertTrue(path2.exists())
+                    dest = temp_path / "yay.txt"
+                    tfm.move_into_place(path1, dest, [other_path])
+                # make sure things were cleaned up...
+                self.assertFalse(path1.exists())  # moved to dest
+                self.assertFalse(path2.exists())  # left behind
+                # check destination contents and permissions
+                self.assertEqual(dest.read_text(), "yay")
+                self.assertEqual(dest.stat().st_mode & 0o777, 0o644)
+                self.assertTrue(dest.samefile(other_path / "yay.txt"))
