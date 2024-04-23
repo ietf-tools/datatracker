@@ -304,3 +304,22 @@ def add_review_comment(doc_name, review_time, by, comment):
         e.by = by
 
         e.save()
+
+
+def ingest_review_email(message: bytes):
+    from ietf.api.views import EmailIngestionError  # avoid circular import
+    try:
+        doc_name, review_time, by, comment = parse_review_email(message)
+    except Exception as err:
+        raise EmailIngestionError("Unable to parse message as IANA review email") from err
+    log(f"Read IANA review email for {doc_name} at {review_time} by {by}")
+    if by.name == "(System)":
+        log("WARNING: person responsible for email does not have a IANA role")  # (sic)
+    try:
+        add_review_comment(doc_name, review_time, by, comment)
+    except Document.DoesNotExist:
+        log(f"ERROR: unknown document {doc_name}")
+        raise EmailIngestionError(f"Unknown document {doc_name}")
+    except Exception as err:
+        raise EmailIngestionError("Error ingesting IANA review email") from err
+    
