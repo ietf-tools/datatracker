@@ -27,10 +27,10 @@ spec:
       securityContext:
         {{- toYaml $podValues.podSecurityContext | nindent 8 }}
       containers:
-        {{- if $podValues.scoutapm }}
+        {{- if .Values.scoutapm }}
         - name: "scoutapm"
-          image: "{{ $podValues.scoutapm.image.repository }}:{{ default "latest" $podValues.scoutapm.image.tag }}"
-          imagePullPolicy: {{ default "IfNotPresent" $podValues.scoutapm.image.imagePullPolicy }}
+          image: "{{ .Values.scoutapm.image.repository }}:{{ default "latest" .Values.scoutapm.image.tag }}"
+          imagePullPolicy: {{ default "IfNotPresent" .Values.scoutapm.image.imagePullPolicy }}
           livenessProbe:
             exec:
               command:

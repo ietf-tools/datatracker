@@ -166,12 +166,6 @@ datatracker:
   nodeSelector: {}
 
   affinity: {}
-  
-  # Set this to enable a Scout APM Core Agent sidecar
-  scoutapm:
-    image:
-      repository: "scoutapp/scoutapm"
-      tag: "version-1.4.0"
 
 # -------------------------------------------------------------
 # CELERY
@@ -566,6 +560,15 @@ memcached:
   nodeSelector: {}
 
   affinity: {}
+
+# -------------------------------------------------------------
+# SCOUT APM SETTINGS
+# -------------------------------------------------------------
+# Set this to enable a Scout APM Core Agent sidecar
+scoutapm:
+  image:
+    repository: "scoutapp/scoutapm"
+    tag: "version-1.4.0"
 
 # -------------------------------------------------------------
 # PERSISTENT VOLUMES

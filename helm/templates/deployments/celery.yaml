@@ -27,6 +27,17 @@ spec:
       securityContext:
         {{- toYaml $podValues.podSecurityContext | nindent 8 }}
       containers:
+        {{- if .Values.scoutapm }}
+        - name: "scoutapm"
+          image: "{{ .Values.scoutapm.image.repository }}:{{ default "latest" .Values.scoutapm.image.tag }}"
+          imagePullPolicy: {{ default "IfNotPresent" .Values.scoutapm.image.imagePullPolicy }}
+          livenessProbe:
+            exec:
+              command:
+                - "sh"
+                - "-c"
+                - "./core-agent probe --tcp 0.0.0.0:6590 | grep -q 'Agent found'"
+        {{- end }}
         - name: {{ .Chart.Name }}
           securityContext:
             {{- toYaml $podValues.securityContext | nindent 12 }}
