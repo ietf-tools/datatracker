@@ -274,6 +274,7 @@ class InvestigateForm(forms.Form):
         help_text=(
             "Enter a filename such as draft-ietf-some-draft-00.txt or a fragment like draft-ietf-some-draft using at least 8 characters. The search will also work for files that are not necessarily drafts."
         ),
+        min_length=8,
     )
 
     def clean_name_fragment(self):
@@ -283,8 +284,6 @@ class InvestigateForm(forms.Form):
         # looking for files with less than 8 characters in the name is not useful
         # Requiring this will help protect against the secretariat unintentionally
         # matching every draft.
-        if len(name_fragment) < 8:
-            raise ValidationError("Please enter at least 8 characters")
-        if any([c in name_fragment for c in disallowed_characters]):
+        if any(c in name_fragment for c in disallowed_characters):
             raise ValidationError(f"The following characters are disallowed: {', '.join(disallowed_characters)}")
         return name_fragment
