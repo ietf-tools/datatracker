@@ -19,10 +19,12 @@ from django.test.utils import override_settings
 
 import debug                            # pyflakes:ignore
 
+from ietf.api.views import EmailIngestionError
 from ietf.doc.factories import WgDraftFactory, RfcFactory, DocumentAuthorFactory, DocEventFactory
 from ietf.doc.models import Document, DocEvent, DeletedEvent, DocTagName, RelatedDocument, State, StateDocEvent
 from ietf.doc.utils import add_state_change_event
 from ietf.group.factories import GroupFactory
+from ietf.person.factories import PersonFactory
 from ietf.person.models import Person
 from ietf.sync import iana, rfceditor, tasks
 from ietf.utils.mail import outbox, empty_outbox
@@ -213,6 +215,61 @@ ICANN
                         # make sure it doesn't create duplicates
                         iana.add_review_comment(doc_name, review_time, by, comment)
                         self.assertEqual(DocEvent.objects.filter(doc=draft, type="iana_review").count(), events_before+1)
+
+    @mock.patch("ietf.sync.iana.add_review_comment")
+    @mock.patch("ietf.sync.iana.parse_review_email")
+    def test_ingest_review_email(self, mock_parse_review_email, mock_add_review_comment):
+        mock_parse_review_email.side_effect = ValueError("ouch!")
+        message = b"message"
+        
+        # Error parsing mail
+        with self.assertRaises(EmailIngestionError) as context:
+            iana.ingest_review_email(message)
+        self.assertIsNone(context.exception.as_emailmessage())  # no email
+        self.assertEqual("Unable to parse message as IANA review email", str(context.exception))
+        self.assertTrue(mock_parse_review_email.called)
+        self.assertEqual(mock_parse_review_email.call_args, mock.call(message))
+        self.assertFalse(mock_add_review_comment.called)
+        mock_parse_review_email.reset_mock()
+
+        args = (
+            "doc-name",
+            datetime.datetime.now(tz=datetime.timezone.utc),
+            PersonFactory(),
+            "yadda yadda yadda",
+        )
+        mock_parse_review_email.side_effect = None
+        mock_parse_review_email.return_value = args
+        mock_add_review_comment.side_effect = Document.DoesNotExist
+        with self.assertRaises(EmailIngestionError) as context:
+            iana.ingest_review_email(message)
+        self.assertIsNone(context.exception.as_emailmessage())  # no email
+        self.assertEqual(str(context.exception), "Unknown document doc-name")
+        self.assertTrue(mock_parse_review_email.called)
+        self.assertEqual(mock_parse_review_email.call_args, mock.call(message))
+        self.assertTrue(mock_add_review_comment.called)
+        self.assertEqual(mock_add_review_comment.call_args, mock.call(*args))
+        mock_parse_review_email.reset_mock()
+        mock_add_review_comment.reset_mock()
+
+        mock_add_review_comment.side_effect = ValueError("ouch!")
+        with self.assertRaises(EmailIngestionError) as context:
+            iana.ingest_review_email(message)
+        self.assertIsNone(context.exception.as_emailmessage())  # no email
+        self.assertEqual("Error ingesting IANA review email", str(context.exception))
+        self.assertTrue(mock_parse_review_email.called)
+        self.assertEqual(mock_parse_review_email.call_args, mock.call(message))
+        self.assertTrue(mock_add_review_comment.called)
+        self.assertEqual(mock_add_review_comment.call_args, mock.call(*args))
+        mock_parse_review_email.reset_mock()
+        mock_add_review_comment.reset_mock()
+
+        mock_add_review_comment.side_effect = None
+        iana.ingest_review_email(message)
+        self.assertTrue(mock_parse_review_email.called)
+        self.assertEqual(mock_parse_review_email.call_args, mock.call(message))
+        self.assertTrue(mock_add_review_comment.called)
+        self.assertEqual(mock_add_review_comment.call_args, mock.call(*args))
 
     def test_notify_page(self):
         # check that we can get the notify page

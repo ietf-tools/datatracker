@@ -3,18 +3,20 @@
 
 
 import datetime
-
+import mock
 
 from pyquery import PyQuery
 from urllib.parse import quote, urlparse
 from zoneinfo import ZoneInfo
 
 from django.conf import settings
+from django.test.utils import override_settings
 from django.urls import reverse as urlreverse
 from django.utils import timezone
 
 import debug                            # pyflakes:ignore
 
+from ietf.api.views import EmailIngestionError
 from ietf.doc.factories import (
     DocumentFactory,
     WgDraftFactory,
@@ -34,8 +36,9 @@ from ietf.ipr.mail import (process_response_email, get_reply_to, get_update_subm
 from ietf.ipr.models import (IprDisclosureBase,GenericIprDisclosure,HolderIprDisclosure,
     ThirdPartyIprDisclosure)
 from ietf.ipr.templatetags.ipr_filters import no_revisions_message
-from ietf.ipr.utils import get_genitive, get_ipr_summary
+from ietf.ipr.utils import get_genitive, get_ipr_summary, ingest_response_email
 from ietf.mailtrigger.utils import gather_address_lists
+from ietf.message.factories import MessageFactory
 from ietf.message.models import Message
 from ietf.utils.mail import outbox, empty_outbox, get_payload_text
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized
@@ -768,6 +771,39 @@ Subject: test
             ).encode('utf8') + b'\nInvalid stuff: \xfe\xff\n'
             result = process_response_email(message_bytes)
             self.assertIsNone(result)
+
+    @override_settings(ADMINS=(("Some Admin", "admin@example.com"),))
+    @mock.patch("ietf.ipr.utils.process_response_email")
+    def test_ingest_response_email(self, mock_process_response_email):
+        message = b"What a nice message"
+        mock_process_response_email.side_effect = ValueError("ouch!")
+        with self.assertRaises(EmailIngestionError) as context:
+            ingest_response_email(message)
+        self.assertIsNone(context.exception.email_recipients)  # default recipients
+        self.assertIsNotNone(context.exception.email_body)  # body set
+        self.assertIsNotNone(context.exception.email_original_message)  # original message attached
+        self.assertEqual(context.exception.email_attach_traceback, True)
+        self.assertTrue(mock_process_response_email.called)
+        self.assertEqual(mock_process_response_email.call_args, mock.call(message))
+        mock_process_response_email.reset_mock()
+        
+        mock_process_response_email.side_effect = None
+        mock_process_response_email.return_value = None  # rejected message
+        with self.assertRaises(EmailIngestionError) as context:
+            ingest_response_email(message)
+        self.assertIsNone(context.exception.email_recipients)  # default recipients
+        self.assertIsNotNone(context.exception.email_body)  # body set
+        self.assertIsNotNone(context.exception.email_original_message)  # original message attached
+        self.assertEqual(context.exception.email_attach_traceback, True)
+        self.assertTrue(mock_process_response_email.called)
+        self.assertEqual(mock_process_response_email.call_args, mock.call(message))
+        mock_process_response_email.reset_mock()
+
+        # successful operation
+        mock_process_response_email.return_value = MessageFactory()
+        ingest_response_email(message)
+        self.assertTrue(mock_process_response_email.called)
+        self.assertEqual(mock_process_response_email.call_args, mock.call(message))
 
     def test_ajax_search(self):
         url = urlreverse('ietf.ipr.views.ajax_search')
