@@ -15,7 +15,3 @@ gunicorn \
           --bind :8000 \
           --log-level "${DATATRACKER_GUNICORN_LOG_LEVEL:-info}" \
           ietf.wsgi:application
-          
-          # Leaving this here as a reminder to set up the env in the chart
-          # Remove this once that's complete.
-          #--env SCOUT_NAME=Datatracker \
