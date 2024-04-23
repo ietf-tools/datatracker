@@ -115,6 +115,7 @@ class MeetechoAPI:
     def schedule_meeting(
         self,
         wg_token: str,
+        room_id: int,
         description: str,
         start_time: datetime.datetime,
         duration: datetime.timedelta,
@@ -139,6 +140,7 @@ class MeetechoAPI:
           }
 
         :param wg_token: token retrieved via retrieve_wg_tokens()
+        :param room_id: int id to identify the room (will be echoed as room.id) 
         :param description: str describing the meeting
         :param start_time: starting time as a datetime
         :param duration: duration as a timedelta
@@ -151,6 +153,7 @@ class MeetechoAPI:
                 "meeting/interim/createRoom",
                 api_token=wg_token,
                 json={
+                    "room_id": room_id,
                     "description": description,
                     "start_time": self._serialize_time(start_time),
                     "duration": self._serialize_duration(duration),
@@ -455,9 +458,10 @@ class ConferenceManager(Manager):
         response = self.api.fetch_meetings(self.wg_token(group))
         return Conference.from_api_dict(self, response["rooms"])
 
-    def create(self, group, description, start_time, duration, extrainfo=""):
+    def create(self, group, session_id, description, start_time, duration, extrainfo=""):
         response = self.api.schedule_meeting(
             wg_token=self.wg_token(group),
+            room_id=int(session_id),
             description=description,
             start_time=start_time,
             duration=duration,
