@@ -4,6 +4,7 @@
 
 import datetime
 import re
+from pathlib import Path
 from urllib.parse import urljoin
 from zoneinfo import ZoneInfo
 
@@ -899,3 +900,32 @@ def simple_history_delta_change_cnt(history):
         delta = history.diff_against(prev)
         return len(delta.changes)
     return 0
+
+@register.filter
+def mtime(path):
+    """Returns a datetime object representing mtime given a pathlib Path object"""
+    return datetime.datetime.fromtimestamp(path.stat().st_mtime).astimezone(ZoneInfo(settings.TIME_ZONE))
+
+@register.filter
+def url_for_path(path):
+    """Consructs a 'best' URL for web access to the given pathlib Path object.
+
+    Assumes that the path is into the Internet-Draft archive or the proceedings.
+    """
+    if path.match(f"{settings.AGENDA_PATH}/**/*"):
+        return (
+            f"https://www.ietf.org/proceedings/{path.relative_to(settings.AGENDA_PATH)}"
+        )
+    elif any(
+        [
+            pathdir in path.parents
+            for pathdir in [
+                Path(settings.INTERNET_DRAFT_PATH),
+                Path(settings.INTERNET_DRAFT_ARCHIVE_DIR).parent,
+                Path(settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR),
+            ]
+        ]
+    ):
+        return f"{settings.IETF_ID_ARCHIVE_URL}{path.name}"
+    else:
+        return "#"

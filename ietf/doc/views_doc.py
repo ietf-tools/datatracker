@@ -58,7 +58,7 @@ from ietf.doc.models import ( Document, DocHistory, DocEvent, BallotDocEvent, Ba
     IESG_BALLOT_ACTIVE_STATES, STATUSCHANGE_RELATIONS, DocumentActionHolder, DocumentAuthor,
     RelatedDocument, RelatedDocHistory)
 from ietf.doc.utils import (augment_events_with_revision,
-    can_adopt_draft, can_unadopt_draft, get_chartering_type, get_tags_for_stream_id,
+    can_adopt_draft, can_unadopt_draft, get_chartering_type, get_tags_for_stream_id, investigate_fragment,
     needed_ballot_positions, nice_consensus, update_telechat, has_same_ballot,
     get_initial_notify, make_notify_changed_event, make_rev_history, default_consensus,
     add_events_message_info, get_unicode_document_content,
@@ -72,7 +72,7 @@ from ietf.ietfauth.utils import ( has_role, is_authorized_in_doc_stream, user_is
     role_required, is_individual_draft_author, can_request_rfc_publication)
 from ietf.name.models import StreamName, BallotPositionName
 from ietf.utils.history import find_history_active_at
-from ietf.doc.forms import TelechatForm, NotifyForm, ActionHoldersForm, DocAuthorForm, DocAuthorChangeBasisForm
+from ietf.doc.forms import InvestigateForm, TelechatForm, NotifyForm, ActionHoldersForm, DocAuthorForm, DocAuthorChangeBasisForm
 from ietf.doc.mails import email_comment, email_remind_action_holders
 from ietf.mailtrigger.utils import gather_relevant_expansions
 from ietf.meeting.models import Session, SessionPresentation
@@ -2254,3 +2254,16 @@ def idnits2_state(request, name, rev=None):
         content_type="text/plain;charset=utf-8",
     )
 
+@role_required("Secretariat")
+def investigate(request):
+    results = None
+    if request.method == "POST":
+        form = InvestigateForm(request.POST)
+        if form.is_valid():
+            name_fragment = form.cleaned_data["name_fragment"]
+            results = investigate_fragment(name_fragment)
+    else:
+        form = InvestigateForm()
+    return render(
+        request, "doc/investigate.html", context=dict(form=form, results=results)
+    )
