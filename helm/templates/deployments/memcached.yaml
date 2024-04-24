@@ -31,6 +31,7 @@ spec:
           securityContext:
             {{- toYaml $podValues.securityContext | nindent 12 }}
           image: "{{ $podValues.image.repository }}:{{ default "latest" $podValues.image.tag }}"
+          args: ["-m", "$(MEMCACHED_MEM_LIMIT)"]
           imagePullPolicy: {{ default "IfNotPresent" $podValues.image.imagePullPolicy }}
           env:
             {{- if .Values.env }}

@@ -515,9 +515,6 @@ memcached:
   podAnnotations: {}
   podLabels: {}
 
-  podSecurityContext: {}
-    # fsGroup: 2000
-
   replicaCount: 1
 
   resources: {}
@@ -532,13 +529,17 @@ memcached:
     #   cpu: 100m
     #   memory: 128Mi
 
-  securityContext: {}
-    # capabilities:
-    #   drop:
-    #   - ALL
-    # readOnlyRootFilesystem: true
-    # runAsNonRoot: true
-    # runAsUser: 1000
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 11211
+    runAsGroup: 11211
+
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+      - ALL
+    readOnlyRootFilesystem: true
 
   service:
     type: ClusterIP
@@ -674,3 +675,5 @@ env:
   # Scout configuration
   DATATRACKER_SCOUT_KEY: "this-is-the-scout-key"
   DATATRACKER_SCOUT_NAME: "StagingDatatracker"
+
+  MEMCACHED_MEM_LIMIT: "1024"
