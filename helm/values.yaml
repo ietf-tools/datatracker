@@ -419,9 +419,6 @@ rabbitmq:
   podAnnotations: {}
   podLabels: {}
 
-  podSecurityContext: {}
-    # fsGroup: 2000
-
   replicaCount: 1
 
   resources: {}
@@ -436,13 +433,18 @@ rabbitmq:
     #   cpu: 100m
     #   memory: 128Mi
 
-  securityContext: {}
-    # capabilities:
-    #   drop:
-    #   - ALL
-    # readOnlyRootFilesystem: true
-    # runAsNonRoot: true
-    # runAsUser: 1000
+  podSecurityContext:
+    runAsNonRoot: true
+
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+    readOnlyRootFilesystem: true
+    # rabbitmq image sets up uid/gid 100/101
+    runAsUser: 100
+    runAsGroup: 101
 
   service:
     type: ClusterIP
@@ -531,8 +533,6 @@ memcached:
 
   podSecurityContext:
     runAsNonRoot: true
-    runAsUser: 11211
-    runAsGroup: 11211
 
   securityContext:
     allowPrivilegeEscalation: false
@@ -540,6 +540,9 @@ memcached:
       drop:
       - ALL
     readOnlyRootFilesystem: true
+    # memcached image sets up uid/gid 11211
+    runAsUser: 11211
+    runAsGroup: 11211
 
   service:
     type: ClusterIP
