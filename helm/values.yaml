@@ -488,7 +488,8 @@ rabbitmq:
     # Additional volumeMounts on the output Deployment definition.
   volumeMounts:
     - name: "rabbitmq-data"
-      mountPath: "/var/lib/rabbitmq/mnesia"
+      mountPath: "/var/lib/rabbitmq"
+      subPath: "rabbitmq"
     - name: "rabbitmq-config"
       mountPath: "/etc/rabbitmq"
     - name: "rabbitmq-tmp"
