@@ -405,7 +405,6 @@ rabbitmq:
     repository: "ghcr.io/ietf-tools/datatracker-mq"
     pullPolicy: IfNotPresent
     tag: "3.12-alpine"
-
   imagePullSecrets: []
   nameOverride: ""
   fullnameOverride: ""
@@ -478,6 +477,9 @@ rabbitmq:
     - name: "rabbitmq-config"
       configMap:
         name: "rabbitmq-configmap"
+    - name: "rabbitmq-tmp"
+      emptyDir:
+        sizeLimit: 50Mi
     # - name: foo
     #   secret:
     #     secretName: mysecret
@@ -489,9 +491,8 @@ rabbitmq:
       mountPath: "/var/lib/rabbitmq/mnesia"
     - name: "rabbitmq-config"
       mountPath: "/etc/rabbitmq"
-    # - name: foo
-    #   mountPath: "/etc/foo"
-    #   readOnly: true
+    - name: "rabbitmq-tmp"
+      mountPath: "/tmp"
 
   tolerations: []
 
