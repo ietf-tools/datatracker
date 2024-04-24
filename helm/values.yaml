@@ -405,7 +405,6 @@ rabbitmq:
     repository: "ghcr.io/ietf-tools/datatracker-mq"
     pullPolicy: IfNotPresent
     tag: "3.12-alpine"
-
   imagePullSecrets: []
   nameOverride: ""
   fullnameOverride: ""
@@ -418,9 +417,6 @@ rabbitmq:
 
   podAnnotations: {}
   podLabels: {}
-
-  podSecurityContext: {}
-    # fsGroup: 2000
 
   replicaCount: 1
 
@@ -436,13 +432,18 @@ rabbitmq:
     #   cpu: 100m
     #   memory: 128Mi
 
-  securityContext: {}
-    # capabilities:
-    #   drop:
-    #   - ALL
-    # readOnlyRootFilesystem: true
-    # runAsNonRoot: true
-    # runAsUser: 1000
+  podSecurityContext:
+    runAsNonRoot: true
+
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+    readOnlyRootFilesystem: true
+    # rabbitmq image sets up uid/gid 100/101
+    runAsUser: 100
+    runAsGroup: 101
 
   service:
     type: ClusterIP
@@ -476,6 +477,9 @@ rabbitmq:
     - name: "rabbitmq-config"
       configMap:
         name: "rabbitmq-configmap"
+    - name: "rabbitmq-tmp"
+      emptyDir:
+        sizeLimit: 50Mi
     # - name: foo
     #   secret:
     #     secretName: mysecret
@@ -484,12 +488,12 @@ rabbitmq:
     # Additional volumeMounts on the output Deployment definition.
   volumeMounts:
     - name: "rabbitmq-data"
-      mountPath: "/var/lib/rabbitmq/mnesia"
+      mountPath: "/var/lib/rabbitmq"
+      subPath: "rabbitmq"
     - name: "rabbitmq-config"
       mountPath: "/etc/rabbitmq"
-    # - name: foo
-    #   mountPath: "/etc/foo"
-    #   readOnly: true
+    - name: "rabbitmq-tmp"
+      mountPath: "/tmp"
 
   tolerations: []
 
@@ -531,8 +535,6 @@ memcached:
 
   podSecurityContext:
     runAsNonRoot: true
-    runAsUser: 11211
-    runAsGroup: 11211
 
   securityContext:
     allowPrivilegeEscalation: false
@@ -540,6 +542,9 @@ memcached:
       drop:
       - ALL
     readOnlyRootFilesystem: true
+    # memcached image sets up uid/gid 11211
+    runAsUser: 11211
+    runAsGroup: 11211
 
   service:
     type: ClusterIP

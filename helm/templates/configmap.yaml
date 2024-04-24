@@ -61,3 +61,9 @@ data:
     # absolute number because relative will be proprtional to the full machine
     # memory.
     vm_memory_high_watermark.absolute = 1600MB
+    
+    # Logging
+    log.file = false
+    log.console = true
+    log.console.level = info
+    log.console.formatter = json

@@ -26,6 +26,20 @@ spec:
       serviceAccountName: {{ include "datatracker.serviceAccountName.rabbitmq" . }}
       securityContext:
         {{- toYaml $podValues.podSecurityContext | nindent 8 }}
+      initContainers:
+        - name: init-rabbitmq
+          image: busybox:stable
+          command:
+            - "sh"
+            - "-c"
+            - "mkdir -p -m700 /mnt/rabbitmq && chown 100:101 /mnt/rabbitmq"
+          securityContext:
+            runAsNonRoot: false
+            runAsUser: 0
+            readOnlyRootFilesystem: true
+          volumeMounts:
+            - name: "rabbitmq-data"
+              mountPath: "/mnt"
       containers:
         - name: {{ .Chart.Name }}
           securityContext:
