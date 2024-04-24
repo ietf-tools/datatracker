@@ -13,6 +13,7 @@ import textwrap
 
 from collections import defaultdict, namedtuple, Counter
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Iterator, Union
 from zoneinfo import ZoneInfo
 
@@ -1382,3 +1383,29 @@ class DraftAliasGenerator:
             # .all = everything from above
             if all:
                 yield alias + ".all", list(all)
+
+def investigate_fragment(name_fragment):
+    can_verify = set()
+    for root in [settings.INTERNET_DRAFT_PATH, settings.INTERNET_DRAFT_ARCHIVE_DIR]:
+        can_verify.update(list(Path(root).glob(f"*{name_fragment}*")))
+
+    can_verify.update(list(Path(settings.AGENDA_PATH).glob(f"**/*{name_fragment}*")))
+
+    # N.B. This reflects the assumption that the internet draft archive dir is in the
+    # a directory with other collections (at /a/ietfdata/draft/collections as this is written)
+    unverifiable_collections = set(
+        Path(settings.INTERNET_DRAFT_ARCHIVE_DIR).parent.glob(f"**/*{name_fragment}*")
+    )
+    unverifiable_collections.difference_update(can_verify)
+
+    expected_names = set([p.name for p in can_verify.union(unverifiable_collections)])
+    maybe_unexpected = list(
+        Path(settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR).glob(f"*{name_fragment}*")
+    )
+    unexpected = [p for p in maybe_unexpected if p.name not in expected_names]
+
+    return dict(
+        can_verify=can_verify,
+        unverifiable_collections=unverifiable_collections,
+        unexpected=unexpected,
+    )

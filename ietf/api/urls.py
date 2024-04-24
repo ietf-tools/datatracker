@@ -24,7 +24,9 @@ urlpatterns = [
     # --- Custom API endpoints, sorted alphabetically ---
     # Email alias information for drafts
     url(r'^doc/draft-aliases/$', api_views.draft_aliases),
-    # GPRD: export of personal information for the logged-in person
+    # email ingestor
+    url(r'email/$', api_views.ingest_email),
+    # GDPR: export of personal information for the logged-in person
     url(r'^export/personal-information/$', api_views.PersonalInformationExportView.as_view()),
     # Email alias information for groups
     url(r'^group/group-aliases/$', api_views.group_aliases),

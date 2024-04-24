@@ -1,6 +1,9 @@
 # Copyright The IETF Trust 2014-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
+from textwrap import dedent
+
+from ietf.ipr.mail import process_response_email
 from ietf.ipr.models import IprDocRel
 
 import debug                            # pyflakes:ignore
@@ -86,3 +89,30 @@ def generate_draft_recursive_txt():
         f.write(data)
 
     
+def ingest_response_email(message: bytes):
+    from ietf.api.views import EmailIngestionError  # avoid circular import
+    try:
+        result = process_response_email(message)
+    except Exception as err:
+        raise EmailIngestionError(
+            "Datatracker IPR email ingestion error",
+            email_body=dedent("""\
+                An error occurred while ingesting IPR email into the Datatracker. The original message is attached.
+                
+                {error_summary}
+                """),
+            email_original_message=message,
+            email_attach_traceback=True,
+        ) from err
+    
+    if result is None:
+        raise EmailIngestionError(
+            "Datatracker IPR email ingestion rejected",
+            email_body=dedent("""\
+            A message was rejected while ingesting IPR email into the Datatracker. The original message is attached.
+
+            {error_summary}
+            """),
+            email_original_message=message,
+            email_attach_traceback=True,
+        )

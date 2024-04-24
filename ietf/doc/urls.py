@@ -66,6 +66,8 @@ urlpatterns = [
         r"^shepherdwriteup-template/(?P<type>\w+)/?$",
         views_doc.document_shepherd_writeup_template,
     ),
+    url(r'^investigate/?$', views_doc.investigate),
+
 
     url(r'^stats/newrevisiondocevent/?$', views_stats.chart_newrevisiondocevent),
     url(r'^stats/newrevisiondocevent/conf/?$', views_stats.chart_conf_newrevisiondocevent),
@@ -179,7 +181,8 @@ urlpatterns = [
     url(r'^%(name)s/session/' % settings.URL_REGEXPS, include('ietf.doc.urls_material')),
     url(r'^(?P<name>[A-Za-z0-9._+-]+)/session/', include(session_patterns)),
     url(r'^(?P<name>[A-Za-z0-9\._\+\-]+)$', views_search.search_for_name),
-    # latest versions - keep old URLs alive during migration period
+    # rfcdiff - latest versions - keep old URLs alive during migration period
     url(r'^rfcdiff-latest-json/%(name)s(?:-%(rev)s)?(\.txt|\.html)?/?$' % settings.URL_REGEXPS, RedirectView.as_view(pattern_name='ietf.api.views.rfcdiff_latest_json', permanent=True)),
     url(r'^rfcdiff-latest-json/(?P<name>[Rr][Ff][Cc] [0-9]+?)(\.txt|\.html)?/?$', RedirectView.as_view(pattern_name='ietf.api.views.rfcdiff_latest_json', permanent=True)),
+    # end of rfcdiff support URLs
 ]

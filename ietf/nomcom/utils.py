@@ -16,6 +16,7 @@ from email.errors import HeaderParseError
 from email.header import decode_header
 from email.iterators import typed_subpart_iterator
 from email.utils import parseaddr
+from textwrap import dedent
 
 from django.db.models import Q, Count
 from django.conf import settings
@@ -715,3 +716,34 @@ def extract_volunteers(year):
     decorate_volunteers_with_qualifications(volunteers,nomcom=nomcom)
     volunteers = sorted(volunteers,key=lambda v:(not v.eligible,v.person.last_name()))
     return nomcom, volunteers
+
+
+def ingest_feedback_email(message: bytes, year: int):
+    from ietf.api.views import EmailIngestionError  # avoid circular import
+    from .models import NomCom
+    try:
+        nomcom = NomCom.objects.get(group__acronym__icontains=str(year),
+                                         group__state__slug='active')
+    except NomCom.DoesNotExist:
+        raise EmailIngestionError(
+            f"Error ingesting nomcom email: nomcom {year} does not exist or is not active",
+            email_body=dedent(f"""\
+                An email for nomcom {year} was posted to ingest_feedback_email, but no
+                active nomcom exists for that year.
+                """),
+        )
+
+    try:
+        feedback = create_feedback_email(nomcom, message)
+    except Exception as err:
+        raise EmailIngestionError(
+            f"Error ingesting nomcom {year} feedback email",
+            email_recipients=nomcom.chair_emails(),
+            email_body=dedent(f"""\
+                An error occurred while ingesting feedback email for nomcom {year}.
+                
+                {{error_summary}}
+                """),
+            email_original_message=message,
+        ) from err
+    log("Received nomcom email from %s" % feedback.author)
