@@ -37,6 +37,10 @@ spec:
                 - "sh"
                 - "-c"
                 - "./core-agent probe --tcp 0.0.0.0:6590 | grep -q 'Agent found'"
+          securityContext:
+            readOnlyRootFilesystem: {{ default true .Values.scoutapm.readOnlyRootFilesystem }}
+            runAsUser: {{ default 65534 .Values.scoutapm.runAsUser }} # "nobody" user by default
+            runAsGroup: {{ default 65534 .Values.scoutapm.runAsGroup }} # "nogroup" group by default
         {{- end }}
         - name: {{ .Chart.Name }}
           securityContext:
