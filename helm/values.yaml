@@ -180,9 +180,6 @@ celery:
   podAnnotations: {}
   podLabels: {}
 
-  podSecurityContext: {}
-    # fsGroup: 2000
-
   replicaCount: 1
 
   resources: {}
@@ -197,13 +194,17 @@ celery:
     #   cpu: 100m
     #   memory: 128Mi
 
-  securityContext: {}
-    # capabilities:
-    #   drop:
-    #   - ALL
-    # readOnlyRootFilesystem: true
-    # runAsNonRoot: true
-    # runAsUser: 1000
+  podSecurityContext:
+    runAsNonRoot: true
+
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+      - ALL
+    readOnlyRootFilesystem: true
+    runAsUser: 1000
+    runAsGroup: 1000
 
   serviceAccount:
     # Specifies whether a service account should be created
@@ -233,17 +234,9 @@ celery:
     - name: datatracker-shared-volume
       persistentVolumeClaim:
         claimName: "datatracker-shared-volume-claim"
-# cache-volume and staging-volume are a hack to create paths for debugging without a /a volume
-#    - name: cache-volume
-#      emptyDir:
-#        sizeLimit: 1Gi
-#    - name: staging-volume
-#      emptyDir:
-#        sizeLimit: 1Gi
-  # - name: foo
-  #   secret:
-  #     secretName: mysecret
-  #     optional: false
+    - name: celery-tmp
+      emptyDir:
+        sizeLimit: "2Gi"
 
   # Additional volumeMounts on the output Deployment definition.
   volumeMounts:
@@ -253,14 +246,8 @@ celery:
       readOnly: true
     - name: datatracker-shared-volume
       mountPath: /a
-# cache-volume and staging-volume are a hack to create paths for debugging without a /a volume
-#    - name: cache-volume
-#      mountPath: "/a/cache"
-#    - name: staging-volume
-#      mountPath: "/test/staging"
-  # - name: foo
-  #   mountPath: "/etc/foo"
-  #   readOnly: true
+    - name: celery-tmp
+      mountPath: /tmp
 
   tolerations: []
 
@@ -294,9 +281,6 @@ beat:
   podAnnotations: {}
   podLabels: {}
 
-  podSecurityContext: {}
-    # fsGroup: 2000
-
   replicaCount: 1
 
   resources: {}
@@ -311,13 +295,17 @@ beat:
     #   cpu: 100m
     #   memory: 128Mi
 
-  securityContext: {}
-    # capabilities:
-    #   drop:
-    #   - ALL
-    # readOnlyRootFilesystem: true
-    # runAsNonRoot: true
-    # runAsUser: 1000
+  podSecurityContext:
+    runAsNonRoot: true
+
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+      - ALL
+    readOnlyRootFilesystem: true
+    runAsUser: 1000
+    runAsGroup: 1000
 
   serviceAccount:
     # Specifies whether a service account should be created
@@ -347,17 +335,9 @@ beat:
     - name: datatracker-shared-volume
       persistentVolumeClaim:
         claimName: "datatracker-shared-volume-claim"
-# cache-volume and staging-volume are a hack to create paths for debugging without a /a volume
-#    - name: cache-volume
-#      emptyDir:
-#        sizeLimit: 1Gi
-#    - name: staging-volume
-#      emptyDir:
-#        sizeLimit: 1Gi
-  # - name: foo
-  #   secret:
-  #     secretName: mysecret
-  #     optional: false
+    - name: beat-tmp
+      emptyDir:
+        sizeLimit: "2Gi"
 
   # Additional volumeMounts on the output Deployment definition.
   volumeMounts:
@@ -367,14 +347,8 @@ beat:
       readOnly: true
     - name: datatracker-shared-volume
       mountPath: /a
-# cache-volume and staging-volume are a hack to create paths for debugging without a /a volume
-#    - name: cache-volume
-#      mountPath: "/a/cache"
-#    - name: staging-volume
-#      mountPath: "/test/staging"
-  # - name: foo
-  #   mountPath: "/etc/foo"
-  #   readOnly: true
+    - name: beat-tmp
+      mountPath: /tmp
 
   tolerations: []
 
