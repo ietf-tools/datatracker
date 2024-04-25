@@ -19,7 +19,9 @@ COPY ./dev/build/datatracker-start.sh ./datatracker-start.sh
 COPY ./dev/build/celery-start.sh ./celery-start.sh
 
 RUN pip3 --disable-pip-version-check --no-cache-dir install -r requirements.txt && \
-    ietf/manage.py patch_libraries
+    echo '# empty' > ietf/settings_local.py && \
+    ietf/manage.py patch_libraries && \
+    rm -f ietf/settings_local.py
 
 RUN chmod +x start.sh && \
     chmod +x datatracker-start.sh && \
