@@ -23,10 +23,13 @@ app = celery.Celery('ietf')
 app.config_from_object('django.conf:settings', namespace='CELERY')
 
 # Turn on Scout APM celery instrumentation if configured in the environment
-scout_key = os.environ.get("SCOUT_KEY", "")
-scout_name = os.environ.get("SCOUT_NAME", "")
-scout_core_agent_socket_path = os.environ.get("SCOUT_CORE_AGENT_SOCKET_PATH", "tcp://scoutapm:6590")
-if scout_key and scout_name:
+scout_key = os.environ.get("DATATRACKER_SCOUT_KEY", None)
+if scout_key is not None:
+    scout_name = os.environ.get("DATATRACKER_SCOUT_NAME", "Datatracker")
+    scout_core_agent_socket_path = "tcp://{host}:{port}".format(
+        host=os.environ.get("DATATRACKER_SCOUT_CORE_AGENT_HOST", "localhost"),
+        port=os.environ.get("DATATRACKER_SCOUT_CORE_AGENT_PORT", "6590"),
+    )
     Config.set(
         key=scout_key,
         name=scout_name,
