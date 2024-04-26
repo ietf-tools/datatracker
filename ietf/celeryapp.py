@@ -1,14 +1,20 @@
 import os
 import scout_apm.celery
 
-from celery import Celery
+import celery
 from scout_apm.api import Config
+
+
+# Disable celery's internal logging configuration, we set it up via Django
+@celery.signals.setup_logging.connect
+def on_setup_logging(**kwargs):
+    pass
 
 
 # Set the default Django settings module for the 'celery' program
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'ietf.settings')
 
-app = Celery('ietf')
+app = celery.Celery('ietf')
 
 # Using a string here means the worker doesn't have to serialize
 # the configuration object to child processes.
