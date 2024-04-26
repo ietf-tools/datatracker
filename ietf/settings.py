@@ -252,17 +252,21 @@ LOGGING = {
             'level': 'INFO',
         },
         'django.security': {
-	        'handlers': ['console', ],
+            'handlers': ['console', ],
             'level': 'INFO',
         },
- 	    'oidc_provider': {
-	        'handlers': ['debug_console', ],
-	        'level': 'DEBUG',
-	    },
+        'oidc_provider': {
+            'handlers': ['debug_console', ],
+            'level': 'DEBUG',
+        },
         'datatracker': {
             'handlers': ['console', ],
             'level': 'INFO',
         },
+        'celery': {
+            'handlers': ['console'],
+            'level': 'INFO',
+        }
     },
     #
     # No logger filters
