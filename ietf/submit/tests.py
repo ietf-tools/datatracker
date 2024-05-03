@@ -49,9 +49,9 @@ from ietf.submit.factories import SubmissionFactory, SubmissionExtResourceFactor
 from ietf.submit.forms import SubmissionBaseUploadForm, SubmissionAutoUploadForm
 from ietf.submit.models import Submission, Preapproval, SubmissionExtResource
 from ietf.submit.tasks import cancel_stale_submissions, process_and_accept_uploaded_submission_task
+from ietf.utils import tool_version
 from ietf.utils.accesstoken import generate_access_token
 from ietf.utils.mail import outbox, get_payload_text
-from ietf.utils.models import VersionInfo
 from ietf.utils.test_utils import login_testing_unauthorized, TestCase
 from ietf.utils.timezone import date_today
 from ietf.utils.draft import PlaintextDraft
@@ -1854,7 +1854,7 @@ class SubmitTests(BaseSubmitTestCase):
         #
         m = q('#yang-validation-message').text()
         for command in ['xym', 'pyang', 'yanglint']:
-            version = VersionInfo.objects.get(command=command).version
+            version = tool_version[command]
             if command != 'yanglint' or (settings.SUBMIT_YANGLINT_COMMAND and os.path.exists(settings.YANGLINT_BINARY)):
                 self.assertIn(version, m)
         self.assertIn("draft-yang-testing-invalid-00.txt", m)
