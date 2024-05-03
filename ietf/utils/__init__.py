@@ -14,22 +14,15 @@ class _ToolVersionManager:
     def __getitem__(self, item):
         if item not in self._known:
             return "Unknown"
-        if item not in self._versions:
-            result = subprocess.run(
-                [item, "--version"],
-                capture_output=True,
-                check=True,
-            )
-            if result.returncode != 0:
-                version = "Unknown"
-            else:
-                version = "\n".join(
-                    [
-                        result.stdout.decode().strip(),
-                        result.stderr.decode().strip(),
-                    ]
-                ).strip()
-            self._versions[item] = version
+        elif item not in self._versions:
+            try:
+                self._versions[item] = subprocess.run(
+                    [item, "--version"],
+                    capture_output=True,
+                    check=True,
+                ).stdout.decode().strip()
+            except subprocess.CalledProcessError:
+                return "Unknown"
         return self._versions[item]
 
 
