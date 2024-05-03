@@ -16789,49 +16789,5 @@
     },
     "model": "stats.countryalias",
     "pk": 303
-  },
-  {
-    "fields": {
-      "command": "xym",
-      "switch": "--version",
-      "time": "2024-03-21T07:06:23.405Z",
-      "used": true,
-      "version": "xym 0.7.0"
-    },
-    "model": "utils.versioninfo",
-    "pk": 1
-  },
-  {
-    "fields": {
-      "command": "pyang",
-      "switch": "--version",
-      "time": "2024-03-21T07:06:23.755Z",
-      "used": true,
-      "version": "pyang 2.6.0"
-    },
-    "model": "utils.versioninfo",
-    "pk": 2
-  },
-  {
-    "fields": {
-      "command": "yanglint",
-      "switch": "--version",
-      "time": "2024-03-21T07:06:23.773Z",
-      "used": true,
-      "version": "yanglint SO 1.9.2"
-    },
-    "model": "utils.versioninfo",
-    "pk": 3
-  },
-  {
-    "fields": {
-      "command": "xml2rfc",
-      "switch": "--version",
-      "time": "2024-03-21T07:06:24.609Z",
-      "used": true,
-      "version": "xml2rfc 3.20.1"
-    },
-    "model": "utils.versioninfo",
-    "pk": 4
   }
 ]
