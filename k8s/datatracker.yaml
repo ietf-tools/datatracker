@@ -64,11 +64,8 @@ spec:
             runAsUser: 1000
             runAsGroup: 1000
       volumes:
+        # To be overriden with the actual shared volume
         - name: dt-vol
-          nfs:
-            server: 10.108.0.18
-            path: "/mnt/datatracker"
-            readOnly: false
         - name: dt-tmp
           emptyDir:
             sizeLimit: "2Gi"
