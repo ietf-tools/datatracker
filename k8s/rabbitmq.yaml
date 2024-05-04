@@ -76,7 +76,8 @@ spec:
             runAsGroup: 101
       volumes:
         - name: rabbitmq-data
-          # TODO: TODO TODO
+          persistentVolumeClaim:
+            claimName: "rabbitmq-data-vol"
         - name: rabbitmq-tmp
           emptyDir:
             sizeLimit: "50Mi"
@@ -86,6 +87,16 @@ spec:
       dnsPolicy: ClusterFirst
       restartPolicy: Always
       terminationGracePeriodSeconds: 30
+  volumeClaimTemplates:
+  - metadata:
+      name: rabbitmq-data-vol
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      resources:
+        requests:
+          storage: 8Gi
+      # storageClassName: ""
 ---
 apiVersion: v1
 kind: ConfigMap
