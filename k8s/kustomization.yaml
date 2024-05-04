@@ -1,5 +1,5 @@
 namespace: datatracker
-namePrefix: datatracker-
+namePrefix: dt-
 configMapGenerator:
   - name: files-cfgmap
     files:
