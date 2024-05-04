@@ -10,7 +10,7 @@
 
 set -x
 ietf/manage.py dumpdata --indent 1 doc.State doc.BallotType doc.StateType       \
-        mailtrigger.MailTrigger mailtrigger.Recipient name utils.VersionInfo    \
+        mailtrigger.MailTrigger mailtrigger.Recipient name                      \
         group.GroupFeatures stats.CountryAlias dbtemplate.DBTemplate            \
         | jq --sort-keys "sort_by(.model, .pk)"                                 \
         | jq '[.[] | select(.model!="dbtemplate.dbtemplate" or .pk==354)]' > ietf/name/fixtures/names.json
