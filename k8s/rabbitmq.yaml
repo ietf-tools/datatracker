@@ -14,24 +14,6 @@ spec:
       labels:
         app: rabbitmq
     spec:
-      # -------------------------------------------------------
-      # Node Affinity
-      # -------------------------------------------------------
-      nodeSelector:
-        doks.digitalocean.com/node-pool: pool-apollo-hperf
-      affinity:
-        podAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - weight: 100
-              podAffinityTerm:
-                labelSelector:
-                  matchExpressions:
-                  - key: app
-                    operator: In
-                    values:
-                    - datatracker
-                topologyKey: "kubernetes.io/hostname"
-      # -------------------------------------------------------
       securityContext:
         runAsNonRoot: true
       initContainers:
