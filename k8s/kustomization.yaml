@@ -1,0 +1,10 @@
+namespace: datatracker
+namePrefix: datatracker-
+configMapGenerator:
+  - name: files-cfgmap
+    files:
+      - settings_local.py
+resources:
+  - datatracker.yaml
+  - memcached.yaml
+  - rabbitmq.yaml
