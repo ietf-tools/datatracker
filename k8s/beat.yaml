@@ -1,47 +1,28 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: datatracker
+  name: beat
 spec:
   replicas: 1
   revisionHistoryLimit: 2
   selector:
     matchLabels:
-      app: datatracker
+      app: beat
   strategy:
     type: Recreate
   template:
     metadata:
       labels:
-        app: datatracker
+        app: beat
     spec:
       securityContext:
         runAsNonRoot: true
       containers:
-        # -----------------------------------------------------
-        # ScoutAPM Container
-        # -----------------------------------------------------
-        - name: scoutapm
-          image: "scoutapp/scoutapm:version-1.4.0"
-          imagePullPolicy: IfNotPresent
-          livenessProbe:
-            exec:
-              command:
-                - "sh"
-                - "-c"
-                - "./core-agent probe --tcp 0.0.0.0:6590 | grep -q 'Agent found'"
-          securityContext:
-            readOnlyRootFilesystem: true
-            runAsUser: 65534 # "nobody" user by default
-            runAsGroup: 65534  # "nogroup" group by default
-        # -----------------------------------------------------
-        # Datatracker Container
-        # -----------------------------------------------------
-        - name: datatracker
+        - name: beat
           image: "ghcr.io/ietf-tools/datatracker:$APP_IMAGE_TAG"
           imagePullPolicy: Always
           ports:
-            - containerPort: 80
+            - containerPort: 8000
               name: http
               protocol: TCP
           volumeMounts:
@@ -54,7 +35,7 @@ spec:
               subPath: settings_local.py
           env:
             - name: "CONTAINER_ROLE"
-              value: "datatracker"
+              value: "beat"
           envFrom:
             - configMapRef:
                 name: django-config
@@ -78,17 +59,3 @@ spec:
       dnsPolicy: ClusterFirst
       restartPolicy: Always
       terminationGracePeriodSeconds: 30
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: datatracker
-spec:
-  type: ClusterIP
-  ports:
-    - port: 80
-      targetPort: http
-      protocol: TCP
-      name: http
-  selector:
-    app: datatracker
