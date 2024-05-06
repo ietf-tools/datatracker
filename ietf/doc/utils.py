@@ -1388,14 +1388,18 @@ def investigate_fragment(name_fragment):
     can_verify = set()
     for root in [settings.INTERNET_DRAFT_PATH, settings.INTERNET_DRAFT_ARCHIVE_DIR]:
         can_verify.update(list(Path(root).glob(f"*{name_fragment}*")))
-
+    archive_verifiable_names = set([p.name for p in can_verify])
+    # Can also verify drafts in proceedings directories
     can_verify.update(list(Path(settings.AGENDA_PATH).glob(f"**/*{name_fragment}*")))
 
     # N.B. This reflects the assumption that the internet draft archive dir is in the
     # a directory with other collections (at /a/ietfdata/draft/collections as this is written)
-    unverifiable_collections = set(
+    unverifiable_collections = set([
+        p for p in
         Path(settings.INTERNET_DRAFT_ARCHIVE_DIR).parent.glob(f"**/*{name_fragment}*")
-    )
+        if p.name not in archive_verifiable_names
+    ])
+    
     unverifiable_collections.difference_update(can_verify)
 
     expected_names = set([p.name for p in can_verify.union(unverifiable_collections)])
