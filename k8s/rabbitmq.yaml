@@ -74,9 +74,6 @@ spec:
             runAsUser: 100
             runAsGroup: 101
       volumes:
-        - name: rabbitmq-data
-          persistentVolumeClaim:
-            claimName: "rabbitmq-data-vol"
         - name: rabbitmq-tmp
           emptyDir:
             sizeLimit: "50Mi"
@@ -88,7 +85,7 @@ spec:
       terminationGracePeriodSeconds: 30
   volumeClaimTemplates:
   - metadata:
-      name: rabbitmq-data-vol
+      name: rabbitmq-data
     spec:
       accessModes:
       - ReadWriteOnce
