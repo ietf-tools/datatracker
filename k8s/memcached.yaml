@@ -5,7 +5,6 @@ metadata:
 spec:
   replicas: 1
   revisionHistoryLimit: 2
-  serviceName: memcached
   selector:
     matchLabels:
       app: memcached
