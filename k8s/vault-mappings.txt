@@ -1,0 +1,13 @@
+kv/data/k8s/apollo/datatracker API_PRIVATE_KEY_PEM_B64 | DATATRACKER_API_PRIVATE_KEY_PEM_B64 ;
+kv/data/k8s/apollo/datatracker API_PUBLIC_KEY_PEM_B64 | DATATRACKER_API_PUBLIC_KEY_PEM_B64 ;
+kv/data/k8s/apollo/datatracker APP_API_TOKENS_JSON | DATATRACKER_APP_API_TOKENS_JSON ;
+kv/data/k8s/apollo/datatracker CELERY_PASSWORD | CELERY_PASSWORD ;
+kv/data/k8s/apollo/datatracker DB_PASS | DATATRACKER_DB_PASS ;
+kv/data/k8s/apollo/datatracker DJANGO_SECRET_KEY | DATATRACKER_DJANGO_SECRET_KEY ;
+kv/data/k8s/apollo/datatracker GITHUB_BACKUP_API_KEY | DATATRACKER_GITHUB_BACKUP_API_KEY ;
+kv/data/k8s/apollo/datatracker IANA_SYNC_PASSWORD | DATATRACKER_IANA_SYNC_PASSWORD ;
+kv/data/k8s/apollo/datatracker MEETECHO_CLIENT_SECRET | DATATRACKER_MEETECHO_CLIENT_SECRET ;
+kv/data/k8s/apollo/datatracker NOMCOM_APP_SECRET_B64 | DATATRACKER_NOMCOM_APP_SECRET_B64 ;
+kv/data/k8s/apollo/datatracker RFC_EDITOR_SYNC_PASSWORD | DATATRACKER_RFC_EDITOR_SYNC_PASSWORD ;
+kv/data/k8s/apollo/datatracker SCOUT_KEY | DATATRACKER_SCOUT_KEY ;
+kv/data/k8s/apollo/datatracker YOUTUBE_API_KEY | DATATRACKER_YOUTUBE_API_KEY ;
