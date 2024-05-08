@@ -87,12 +87,12 @@ if _allowed_hosts_str is not None:
 
 DATABASES = {
     "default": {
-        "HOST": os.environ.get("DATATRACKER_DBHOST", "db"),
-        "PORT": os.environ.get("DATATRACKER_DBPORT", "5432"),
-        "NAME": os.environ.get("DATATRACKER_DBNAME", "datatracker"),
+        "HOST": os.environ.get("DATATRACKER_DB_HOST", "db"),
+        "PORT": os.environ.get("DATATRACKER_DB_PORT", "5432"),
+        "NAME": os.environ.get("DATATRACKER_DB_NAME", "datatracker"),
         "ENGINE": "django.db.backends.postgresql",
-        "USER": os.environ.get("DATATRACKER_DBUSER", "django"),
-        "PASSWORD": os.environ.get("DATATRACKER_DBPASS", ""),
+        "USER": os.environ.get("DATATRACKER_DB_USER", "django"),
+        "PASSWORD": os.environ.get("DATATRACKER_DB_PASS", ""),
     },
 }
 
