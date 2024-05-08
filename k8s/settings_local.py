@@ -111,7 +111,7 @@ _celery_password = os.environ.get("CELERY_PASSWORD", None)
 if _celery_password is None:
     raise RuntimeError("CELERY_PASSWORD must be set")
 CELERY_BROKER_URL = "amqp://datatracker:{password}@{host}/{queue}".format(
-    host=os.environ.get("RABBITMQ_HOSTNAME", "rabbitmq"),
+    host=os.environ.get("RABBITMQ_HOSTNAME", "dt-rabbitmq"),
     password=_celery_password,
     queue=os.environ.get("RABBITMQ_QUEUE", "dt")
 )
@@ -212,8 +212,8 @@ DE_GFM_BINARY = "/usr/local/bin/de-gfm"
 IDSUBMIT_IDNITS_BINARY = "/usr/local/bin/idnits"
 
 # Duplicating production cache from settings.py and using it whether we're in production mode or not
-MEMCACHED_HOST = os.environ.get("MEMCACHED_SERVICE_HOST", "127.0.0.1")
-MEMCACHED_PORT = os.environ.get("MEMCACHED_SERVICE_PORT", "11211")
+MEMCACHED_HOST = os.environ.get("DT_MEMCACHED_SERVICE_HOST", "127.0.0.1")
+MEMCACHED_PORT = os.environ.get("DT_MEMCACHED_SERVICE_PORT", "11211")
 from ietf import __version__
 CACHES = {
     "default": {
