@@ -53,7 +53,7 @@ spec:
               mountPath: "/etc/rabbitmq"
           env:
             - name: "CELERY_PASSWORD"
-              value: "this-is-a-secret"
+              value: "$CELERY_PASSWORD"
           livenessProbe:
             exec:
               command: ["rabbitmq-diagnostics", "-q", "ping"]
