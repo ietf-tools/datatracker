@@ -41,7 +41,7 @@ spec:
           image: "ghcr.io/ietf-tools/datatracker:$APP_IMAGE_TAG"
           imagePullPolicy: Always
           ports:
-            - containerPort: 80
+            - containerPort: 8000
               name: http
               protocol: TCP
           volumeMounts:
