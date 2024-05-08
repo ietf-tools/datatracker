@@ -15,13 +15,13 @@ data:
   # DATATRACKER_DATATRACKER_DEBUG: "false"
   
   # DB access details - needs to be filled in
-  # DATATRACKER_DB_HOST: "db"
-  # DATATRACKER_DB_PORT: "5432"
-  # DATATRACKER_DB_NAME: "datatracker"
-  # DATATRACKER_DB_USER: "django"  # secret
-  # DATATRACKER_DB_PASS: "RkTkDPFnKpko"  # secret
+  DATATRACKER_DB_HOST: "$DATATRACKER_DB_HOST"
+  DATATRACKER_DB_PORT: "$DATATRACKER_DB_PORT"
+  DATATRACKER_DB_NAME: "$DATATRACKER_DB_NAME"
+  DATATRACKER_DB_USER: "$DATATRACKER_DB_USER"
+  DATATRACKER_DB_PASS: "$DATATRACKER_DB_PASS"  # secret
   
-  DATATRACKER_DJANGO_SECRET_KEY: "PDwXboUq!=hPjnrtG2=ge#N$Dwy+wn@uivrugwpic8mxyPfHk"  # secret
+  DATATRACKER_DJANGO_SECRET_KEY: "$DATATRACKER_DJANGO_SECRET_KEY"  # secret
 
   # Set this to point testing / staging at the production statics server until we
   # sort that out
@@ -30,48 +30,36 @@ data:
   # DATATRACKER_EMAIL_DEBUG: "true"
   
   # Outgoing email details
-  # DATATRACKER_EMAIL_HOST: "localhost"  # defaults to localhost
-  # DATATRACKER_EMAIL_PORT: "2025"  # defaults to 2025
+  DATATRACKER_EMAIL_HOST: "$DATATRACKER_EMAIL_HOST"
+  DATATRACKER_EMAIL_PORT: "$DATATRACKER_EMAIL_PORT"
 
   # The value here is the default from settings.py (i.e., not actually secret)
-  DATATRACKER_NOMCOM_APP_SECRET_B64: "m9pzMezVoFNJfsvU9XSZxGnXnwup6P5ZgCQeEnROOoQ="  # secret
+  DATATRACKER_NOMCOM_APP_SECRET_B64: "$DATATRACKER_NOMCOM_APP_SECRET_B64"  # secret
 
-  DATATRACKER_IANA_SYNC_PASSWORD: "this-is-the-iana-sync-password"  # secret
-  DATATRACKER_RFC_EDITOR_SYNC_PASSWORD: "this-is-the-rfc-editor-sync-password"  # secret
-  DATATRACKER_YOUTUBE_API_KEY: "this-is-the-youtube-api-key"  # secret
-  DATATRACKER_GITHUB_BACKUP_API_KEY: "this-is-the-github-backup-api-key"  # secret
+  DATATRACKER_IANA_SYNC_PASSWORD: "$DATATRACKER_IANA_SYNC_PASSWORD"  # secret
+  DATATRACKER_RFC_EDITOR_SYNC_PASSWORD: "$DATATRACKER_RFC_EDITOR_SYNC_PASSWORD"  # secret
+  DATATRACKER_YOUTUBE_API_KEY: "$DATATRACKER_YOUTUBE_API_KEY"  # secret
+  DATATRACKER_GITHUB_BACKUP_API_KEY: "$DATATRACKER_GITHUB_BACKUP_KEY"  # secret
 
   # API key configuration
   DATATRACKER_API_KEY_TYPE: "ES265"
-  # secret - value here is the default from settings.py (i.e., not actually secret)
-  DATATRACKER_API_PUBLIC_KEY_PEM_B64: |-
-    Ci0tLS0tQkVHSU4gUFVCTElDIEtFWS0tLS0tCk1Ga3dFd1lIS29aSXpqMENBUVlJS
-    29aSXpqMERBUWNEUWdBRXFWb2pzYW9mREpTY3VNSk4rdHNodW15Tk01TUUKZ2Fyel
-    ZQcWtWb3ZtRjZ5RTdJSi9kdjRGY1YrUUtDdEovck9TOGUzNlk4WkFFVll1dWtoZXM
-    weVoxdz09Ci0tLS0tRU5EIFBVQkxJQyBLRVktLS0tLQo=
-  # secret - value here is the default from settings.py (i.e., not actually secret)
-  DATATRACKER_API_PRIVATE_KEY_PEM_B64: |- 
-    Ci0tLS0tQkVHSU4gUFJJVkFURSBLRVktLS0tLQpNSUdIQWdFQU1CTUdCeXFHU000O
-    UFnRUdDQ3FHU000OUF3RUhCRzB3YXdJQkFRUWdvSTZMSmtvcEtxOFhySGk5ClFxR1
-    F2RTRBODNURllqcUx6KzhnVUxZZWNzcWhSQU5DQUFTcFdpT3hxaDhNbEp5NHdrMzY
-    yeUc2Ykkwemt3U0IKcXZOVStxUldpK1lYcklUc2duOTIvZ1Z4WDVBb0swbitzNUx4
-    N2ZwanhrQVJWaTY2U0Y2elRKblgKLS0tLS1FTkQgUFJJVkFURSBLRVktLS0tLQo=
+  DATATRACKER_API_PUBLIC_KEY_PEM_B64: "$DATATRACKER_API_PUBLIC_KEY_PEM_B64"  # secret
+  DATATRACKER_API_PRIVATE_KEY_PEM_B64: "$DATATRACKER_API_PRIVATE_KEY_PEM_B64"  # secret
 
-  # DATATRACKER_MEETECHO_API_BASE: "https://meetings.conf.meetecho.com/api/v1/"
-  DATATRACKER_MEETECHO_CLIENT_ID: "this-is-the-meetecho-client-id"  # secret
-  DATATRACKER_MEETECHO_CLIENT_SECRET: "this-is-the-meetecho-client-secret"  # secret
+  DATATRACKER_MEETECHO_API_BASE: "$DATATRACKER_MEETECHO_API_BASE"
+  DATATRACKER_MEETECHO_CLIENT_ID: "$DATATRACKER_MEETECHO_CLIENT_ID"
+  DATATRACKER_MEETECHO_CLIENT_SECRET: "$DATATRACKER_MEETECHO_CLIENT_SECRET"  # secret
 
-  # DATATRACKER_MATOMO_SITE_ID: "7"  # must be present to enable Matomo
-  # DATATRACKER_MATOMO_DOMAIN_PATH: "analytics.ietf.org"
+  DATATRACKER_MATOMO_SITE_ID: "$DATATRACKER_MATOMO_SITE_ID"  # must be present to enable Matomo
+  DATATRACKER_MATOMO_DOMAIN_PATH: "$DATATRACKER_MATOMO_DOMAIN_PATH"
 
-  CELERY_PASSWORD: "this-is-a-secret"  # secret
+  CELERY_PASSWORD: "$CELERY_PASSWORD"  # secret
 
-  DATATRACKER_APP_API_TOKENS_JSON: "{}"  # secret 
+  DATATRACKER_APP_API_TOKENS_JSON: "$DATATRACKER_APP_API_TOKENS_JSON"  # secret 
 
   # use this to override default - one entry per line
-  # DATATRACKER_CSRF_TRUSTED_ORIGINS: |-
-  #   https://datatracker.staging.ietf.org
+  DATATRACKER_CSRF_TRUSTED_ORIGINS: "$DATATRACKER_CSRF_TRUSTED_ORIGINS"
 
   # Scout configuration
-  DATATRACKER_SCOUT_KEY: "this-is-the-scout-key"
-  DATATRACKER_SCOUT_NAME: "StagingDatatracker"
+  DATATRACKER_SCOUT_KEY: "$DATATRACKER_SCOUT_KEY"  # secret
+  DATATRACKER_SCOUT_NAME: "$DATATRACKER_SCOUT_NAME"
