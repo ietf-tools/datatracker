@@ -4,11 +4,6 @@ configMapGenerator:
   - name: files-cfgmap
     files:
       - settings_local.py
-secretGenerator:
-  - name: celery-secret
-    type: Opaque
-    literals:
-      - "password=this-is-the-celery-secret"
 resources:
   - beat.yaml
   - celery.yaml
