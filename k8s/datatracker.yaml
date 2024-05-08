@@ -55,6 +55,11 @@ spec:
           env:
             - name: "CONTAINER_ROLE"
               value: "datatracker"
+            - name: "CELERY_PASSWORD"
+              valueFrom:
+                secretKeyRef:
+                  name: "celery-secret"
+                  key: "password"
           envFrom:
             - configMapRef:
                 name: django-config

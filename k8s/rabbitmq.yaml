@@ -51,6 +51,12 @@ spec:
               mountPath: /tmp
             - name: rabbitmq-config
               mountPath: "/etc/rabbitmq"
+          env:
+            - name: "CELERY_PASSWORD"
+              valueFrom:
+                secretKeyRef:
+                  name: "celery-secret"
+                  key: "password"
           livenessProbe:
             exec:
               command: ["rabbitmq-diagnostics", "-q", "ping"]
