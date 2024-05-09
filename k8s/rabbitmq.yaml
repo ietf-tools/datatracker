@@ -5,7 +5,6 @@ metadata:
 spec:
   replicas: 1
   revisionHistoryLimit: 2
-  serviceName: rabbitmq
   selector:
     matchLabels:
       app: rabbitmq
@@ -52,6 +51,9 @@ spec:
               mountPath: /tmp
             - name: rabbitmq-config
               mountPath: "/etc/rabbitmq"
+          env:
+            - name: "CELERY_PASSWORD"
+              value: "this-is-a-secret"
           livenessProbe:
             exec:
               command: ["rabbitmq-diagnostics", "-q", "ping"]
@@ -75,9 +77,6 @@ spec:
             runAsUser: 100
             runAsGroup: 101
       volumes:
-        - name: rabbitmq-data
-          persistentVolumeClaim:
-            claimName: "rabbitmq-data-vol"
         - name: rabbitmq-tmp
           emptyDir:
             sizeLimit: "50Mi"
@@ -89,7 +88,7 @@ spec:
       terminationGracePeriodSeconds: 30
   volumeClaimTemplates:
   - metadata:
-      name: rabbitmq-data-vol
+      name: rabbitmq-data
     spec:
       accessModes:
       - ReadWriteOnce

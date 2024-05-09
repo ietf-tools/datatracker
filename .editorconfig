@@ -56,3 +56,9 @@ insert_final_newline = false
 # Use 2-space indents
 [helm/**.yaml]
 indent_size = 2
+
+# Settings for Kubernetes yaml
+# ---------------------------------------------------------
+# Use 2-space indents
+[k8s/**.yaml]
+indent_size = 2
