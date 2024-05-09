@@ -93,6 +93,7 @@ DATABASES = {
         "ENGINE": "django.db.backends.postgresql",
         "USER": os.environ.get("DATATRACKER_DB_USER", "django"),
         "PASSWORD": os.environ.get("DATATRACKER_DB_PASS", ""),
+        "OPTIONS": json.loads(os.environ.get("DATATRACKER_DB_OPTS_JSON", "{}")),
     },
 }
 
