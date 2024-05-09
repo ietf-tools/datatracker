@@ -15,11 +15,11 @@ data:
   # DATATRACKER_DATATRACKER_DEBUG: "false"
   
   # DB access details - needs to be filled in
-  # DATATRACKER_DBHOST: "db"
-  # DATATRACKER_DBPORT: "5432"
-  # DATATRACKER_DBNAME: "datatracker"
-  # DATATRACKER_DBUSER: "django"  # secret
-  # DATATRACKER_DBPASS: "RkTkDPFnKpko"  # secret
+  # DATATRACKER_DB_HOST: "db"
+  # DATATRACKER_DB_PORT: "5432"
+  # DATATRACKER_DB_NAME: "datatracker"
+  # DATATRACKER_DB_USER: "django"  # secret
+  # DATATRACKER_DB_PASS: "RkTkDPFnKpko"  # secret
   
   DATATRACKER_DJANGO_SECRET_KEY: "PDwXboUq!=hPjnrtG2=ge#N$Dwy+wn@uivrugwpic8mxyPfHk"  # secret
 
