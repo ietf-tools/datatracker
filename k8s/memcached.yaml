@@ -23,6 +23,14 @@ spec:
             - name: metrics
               containerPort: 9150
               protocol: TCP
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
+            runAsUser: 65534  # nobody
+            runAsGroup: 65534  # nobody
         - image: "memcached:1.6-alpine"
           imagePullPolicy: IfNotPresent
           args: ["-m", "1024"]
