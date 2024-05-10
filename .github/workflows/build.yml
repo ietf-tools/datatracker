@@ -248,17 +248,6 @@ jobs:
         push: true
         tags: ghcr.io/ietf-tools/datatracker:${{ env.PKG_VERSION }}
         
-    - name: Package and Push Chart
-      env:
-        VERSION: 2.0.${{ github.run_number }}
-      run: |
-        echo "Setting version ${{ env.PKG_VERSION }}..."
-        sed -i -r -e "s|^version: .*$|version: '${{ env.PKG_VERSION }}'|" -e "s|^appVersion: .*$|appVersion: '${{ env.PKG_VERSION }}'|" helm/Chart.yaml
-        helm plugin install https://github.com/chartmuseum/helm-push.git
-        helm repo add chartmuseum https://charts.ietf.org
-        helm cm-push --version="${{ env.PKG_VERSION }}" --username="${{ secrets.HELM_REPO_USERNAME }}" --password="${{ secrets.HELM_REPO_PASSWORD }}" helm/ chartmuseum
-        helm repo remove chartmuseum
-
     - name: Update CHANGELOG
       id: changelog
       uses: Requarks/changelog-action@v1
