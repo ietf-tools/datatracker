@@ -3,6 +3,7 @@ LABEL maintainer="IETF Tools Team <tools-discuss@ietf.org>"
 
 ENV DEBIAN_FRONTEND=noninteractive
 
+# uid 498 = wwwrun and gid 496 = www on ietfa
 RUN groupadd -g 496 datatracker && \
     useradd -c "Datatracker User" -u 498 -g datatracker -m -s /bin/false datatracker
 
