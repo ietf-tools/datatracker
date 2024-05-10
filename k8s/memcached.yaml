@@ -58,6 +58,7 @@ metadata:
   name: memcached
   annotations:
     k8s.grafana.com/scrape: "yes"
+    k8s.grafana.com/metrics.portName: "metrics"
 spec:
   type: ClusterIP
   ports:
