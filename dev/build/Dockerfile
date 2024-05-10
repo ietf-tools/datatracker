@@ -3,8 +3,8 @@ LABEL maintainer="IETF Tools Team <tools-discuss@ietf.org>"
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-RUN groupadd -g 1000 datatracker && \
-    useradd -c "Datatracker User" -u 1000 -g datatracker -m -s /bin/false datatracker
+RUN groupadd -g 496 datatracker && \
+    useradd -c "Datatracker User" -u 498 -g datatracker -m -s /bin/false datatracker
 
 RUN apt-get purge -y imagemagick imagemagick-6-common
 

@@ -64,8 +64,8 @@ spec:
               drop:
               - ALL
             readOnlyRootFilesystem: true
-            runAsUser: 1000
-            runAsGroup: 1000
+            runAsUser: 498  # wwwrun uid on ietfa
+            runAsGroup: 496  # www group on ietfa
       volumes:
         # To be overriden with the actual shared volume
         - name: dt-vol
