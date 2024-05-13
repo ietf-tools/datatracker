@@ -151,7 +151,16 @@ else:
         "DATATRACKER_MEETECHO_CLIENT_ID and DATATRACKER_MEETECHO_CLIENT_SECRET must be set"
     )
 
-_APP_API_TOKENS_JSON = os.environ.get("DATATRACKER_APP_API_TOKENS_JSON", None)
+# For APP_API_TOKENS, ccept either base64-encoded JSON or raw JSON, but not both
+if "DATATRACKER_APP_API_TOKENS_JSON_B64" in os.environ:
+    if "DATATRACKER_APP_API_TOKENS_JSON" in os.environ:
+        raise RuntimeError(
+            "Only one of DATATRACKER_APP_API_TOKENS_JSON and DATATRACKER_APP_API_TOKENS_JSON_B64 may be set"
+        )
+    _APP_API_TOKENS_JSON = b64decode(os.environ.get("DATATRACKER_APP_API_TOKENS_JSON_B64"))
+else:
+    _APP_API_TOKENS_JSON = os.environ.get("DATATRACKER_APP_API_TOKENS_JSON", None)
+
 if _APP_API_TOKENS_JSON is not None:
     APP_API_TOKENS = json.loads(_APP_API_TOKENS_JSON)
 else:
