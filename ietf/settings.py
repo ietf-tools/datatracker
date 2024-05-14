@@ -256,7 +256,7 @@ LOGGING = {
 	        'level': 'DEBUG',
 	    },
         'datatracker': {
-            'handlers': ['console', ],
+            'handlers': ['syslog'],
             'level': 'INFO',
         },
     },
