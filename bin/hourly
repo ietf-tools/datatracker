@@ -24,9 +24,6 @@ ID=/a/ietfdata/doc/draft/repository
 DERIVED=/a/ietfdata/derived
 DOWNLOAD=/a/www/www6s/download
 
-$DTDIR/ietf/manage.py generate_idnits2_rfc_status
-$DTDIR/ietf/manage.py generate_idnits2_rfcs_obsoleted
-
 CHARTER=/a/www/ietf-ftp/charter
 wget -q https://datatracker.ietf.org/wg/1wg-charters-by-acronym.txt -O $CHARTER/1wg-charters-by-acronym.txt
 wget -q https://datatracker.ietf.org/wg/1wg-charters.txt            -O $CHARTER/1wg-charters.txt
