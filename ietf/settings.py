@@ -236,7 +236,7 @@ LOGGING = {
     #
     'loggers': {
         'django': {
-            'handlers': ['console', 'mail_admins',],
+            'handlers': ['debug_console', 'mail_admins',],
             'level': 'INFO',
         },
         'django.request': {
@@ -248,7 +248,7 @@ LOGGING = {
             'level': 'INFO',
         },
         'django.security': {
-	        'handlers': ['console', ],
+	        'handlers': ['debug_console', ],
             'level': 'INFO',
         },
  	    'oidc_provider': {
@@ -280,6 +280,13 @@ LOGGING = {
             'level': 'INFO',
             'class': 'logging.StreamHandler',
             'formatter': 'django.server',
+        },
+        'syslog': {
+            'level': 'DEBUG',
+            'class': 'logging.handlers.SysLogHandler',
+            'facility': 'user',
+            'formatter': 'plain',
+            'address': '/dev/log',
         },
         'mail_admins': {
             'level': 'ERROR',
