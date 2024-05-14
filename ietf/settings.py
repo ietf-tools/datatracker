@@ -236,7 +236,7 @@ LOGGING = {
     #
     'loggers': {
         'django': {
-            'handlers': ['debug_console', 'mail_admins'],
+            'handlers': ['debug_console', 'mail_admins',],
             'level': 'INFO',
         },
         'django.request': {
@@ -248,13 +248,17 @@ LOGGING = {
             'level': 'INFO',
         },
         'django.security': {
-	    'handlers': ['debug_console', ],
+	        'handlers': ['debug_console', ],
             'level': 'INFO',
         },
- 	'oidc_provider': {
-	    'handlers': ['debug_console', ],
-	    'level': 'DEBUG',
-	},
+ 	    'oidc_provider': {
+	        'handlers': ['debug_console', ],
+	        'level': 'DEBUG',
+	    },
+        'datatracker': {
+            'handlers': ['syslog'],
+            'level': 'INFO',
+        },
     },
     #
     # No logger filters
@@ -263,14 +267,7 @@ LOGGING = {
         'console': {
             'level': 'DEBUG',
             'class': 'logging.StreamHandler',
-            'formatter': 'plain',
-        },
-        'syslog': {
-            'level': 'DEBUG',
-            'class': 'logging.handlers.SysLogHandler',
-            'facility': 'user',
-            'formatter': 'plain',
-            'address': '/dev/log',
+            'formatter': 'json',
         },
         'debug_console': {
             # Active only when DEBUG=True
@@ -283,6 +280,13 @@ LOGGING = {
             'level': 'INFO',
             'class': 'logging.StreamHandler',
             'formatter': 'django.server',
+        },
+        'syslog': {
+            'level': 'DEBUG',
+            'class': 'logging.handlers.SysLogHandler',
+            'facility': 'user',
+            'formatter': 'plain',
+            'address': '/dev/log',
         },
         'mail_admins': {
             'level': 'ERROR',
@@ -325,16 +329,10 @@ LOGGING = {
             'style': '{',
             'format': '{levelname}: {name}:{lineno}: {message}',
         },
+        'json' : {
+            '()': 'pythonjsonlogger.jsonlogger.JsonFormatter'
+        }
     },
-}
-
-# This should be overridden by settings_local for any logger where debug (or
-# other) custom log settings are wanted.  Use "ietf/manage.py showloggers -l"
-# to show registered loggers.  The content here should match the levels above
-# and is shown as an example:
-UTILS_LOGGER_LEVELS: Dict[str, str] = {
-#    'django':           'INFO',
-#    'django.server':    'INFO',
 }
 
 # End logging
