@@ -9,7 +9,7 @@ class _ToolVersionManager:
         "xym",
         "yanglint",
     ]
-    _versions = dict()
+    _versions: dict[str, str] = dict()
 
     def __getitem__(self, item):
         if item not in self._known:
