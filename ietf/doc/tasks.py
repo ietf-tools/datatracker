@@ -6,6 +6,9 @@ import datetime
 import debug  # pyflakes:ignore
 
 from celery import shared_task
+from pathlib import Path
+
+from django.conf import settings
 
 from ietf.utils import log
 from ietf.utils.timezone import datetime_today
@@ -21,6 +24,7 @@ from .expire import (
     send_expire_warning_for_draft,
 )
 from .models import Document
+from .utils import generate_idnits2_rfc_status, generate_idnits2_rfcs_obsoleted
 
 
 @shared_task
@@ -54,3 +58,23 @@ def expire_ids_task():
 def notify_expirations_task(notify_days=14):
     for doc in get_soon_to_expire_drafts(notify_days):
         send_expire_warning_for_draft(doc)
+
+
+@shared_task
+def generate_idnits2_rfc_status_task():
+    outpath = Path(settings.DERIVED_DIR) / "idnits2-rfc-status"
+    blob = generate_idnits2_rfc_status()
+    try:
+        outpath.write_text(blob, encoding="utf8")
+    except Exception as e:
+        log.log(f"failed to write idnits2-rfc-status: {e}")
+
+
+@shared_task
+def generate_idnits2_rfcs_obsoleted_task():
+    outpath = Path(settings.DERIVED_DIR) / "idnits2-rfcs-obsoleted"
+    blob = generate_idnits2_rfcs_obsoleted()
+    try:
+        outpath.write_text(blob, encoding="utf8")
+    except Exception as e:
+        log.log(f"failed to write idnits2-rfcs-obsoleted: {e}")
