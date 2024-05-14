@@ -6,7 +6,7 @@ from ietf.utils.timezone import datetime_today
 
 from .factories import DocumentFactory
 from .models import Document
-from .tasks import expire_ids_task, notify_expirations_task
+from .tasks import expire_ids_task, expire_last_calls_task, notify_expirations_task
 
 
 class TaskTests(TestCase):
@@ -61,3 +61,26 @@ class TaskTests(TestCase):
         notify_expirations_task()
         self.assertEqual(send_warning_mock.call_count, 1)
         self.assertEqual(send_warning_mock.call_args[0], ("sentinel",))
+
+    @mock.patch("ietf.doc.tasks.expire_last_call")
+    @mock.patch("ietf.doc.tasks.get_expired_last_calls")
+    def test_expire_last_calls_task(self, mock_get_expired, mock_expire):
+        docs = DocumentFactory.create_batch(3)
+        mock_get_expired.return_value = docs
+        expire_last_calls_task()
+        self.assertTrue(mock_get_expired.called)
+        self.assertEqual(mock_expire.call_count, 3)
+        self.assertEqual(mock_expire.call_args_list[0], mock.call(docs[0]))
+        self.assertEqual(mock_expire.call_args_list[1], mock.call(docs[1]))
+        self.assertEqual(mock_expire.call_args_list[2], mock.call(docs[2]))
+    
+        # Check that it runs even if exceptions occur
+        mock_get_expired.reset_mock()
+        mock_expire.reset_mock()
+        mock_expire.side_effect = ValueError
+        expire_last_calls_task()
+        self.assertTrue(mock_get_expired.called)
+        self.assertEqual(mock_expire.call_count, 3)
+        self.assertEqual(mock_expire.call_args_list[0], mock.call(docs[0]))
+        self.assertEqual(mock_expire.call_args_list[1], mock.call(docs[1]))
+        self.assertEqual(mock_expire.call_args_list[2], mock.call(docs[2]))
