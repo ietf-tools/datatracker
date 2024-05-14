@@ -9,9 +9,7 @@ import inspect
 import os.path
 import traceback
 
-from typing import Callable         # pyflakes:ignore
 from django.conf import settings
-from pythonjsonlogger import jsonlogger
 
 import debug                            # pyflakes:ignore
 
