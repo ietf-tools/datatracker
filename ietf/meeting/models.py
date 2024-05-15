@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2007-2022, All Rights Reserved
+# Copyright The IETF Trust 2007-2024, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -366,10 +366,6 @@ class Meeting(models.Model):
             pass
         return None
 
-    def set_official_schedule(self, schedule):
-        if self.schedule != schedule:
-            self.schedule = schedule
-            self.save()
 
     def updated(self):
         # should be Meeting.modified, but we don't have that
@@ -455,24 +451,9 @@ class Room(models.Model):
     # end floorplan-related stuff
 
     def __str__(self):
-        return u"%s size: %s" % (self.name, self.capacity)
-
-    def delete_timeslots(self):
-        for ts in self.timeslot_set.all():
-            ts.sessionassignments.all().delete()
-            ts.delete()
-
-    def create_timeslots(self):
-        days, time_slices, slots  = self.meeting.build_timeslices()
-        for day in days:
-            for ts in slots[day]:
-                TimeSlot.objects.create(type_id=ts.type_id,
-                                    meeting=self.meeting,
-                                    name=ts.name,
-                                    time=ts.time,
-                                    location=self,
-                                    duration=ts.duration)
-        #self.meeting.create_all_timeslots()
+        if len(self.functional_name) > 0 and self.functional_name != self.name:
+            return f"{self.name} [{self.functional_name}] (size: {self.capacity})"    
+        return f"{self.name} (size: {self.capacity})"    
 
     def dom_id(self):
         return "room%u" % (self.pk)
@@ -496,14 +477,6 @@ class Room(models.Model):
         return max(self.x1, self.x2) if (self.x1 and self.x2) else 0
     def bottom(self):
         return max(self.y1, self.y2) if (self.y1 and self.y2) else 0
-    def functional_display_name(self):
-        if not self.functional_name:
-            return ""
-        if 'breakout' in self.functional_name.lower():
-            return ""
-        if self.functional_name[0].isdigit():
-            return ""
-        return self.functional_name
     # audio stream support
     def audio_stream_url(self):
         urlresources = [ur for ur in self.urlresource_set.all() if ur.name_id == 'audiostream']
@@ -569,7 +542,7 @@ class TimeSlot(models.Model):
     duration = models.DurationField(default=datetime.timedelta(0))
     location = ForeignKey(Room, blank=True, null=True)
     show_location = models.BooleanField(default=True, help_text="Show location in agenda.")
-    sessions = models.ManyToManyField('Session', related_name='slots', through='SchedTimeSessAssignment', blank=True, help_text="Scheduled session, if any.")
+    sessions = models.ManyToManyField('meeting.Session', related_name='slots', through='meeting.SchedTimeSessAssignment', blank=True, help_text="Scheduled session, if any.")
     modified = models.DateTimeField(auto_now=True)
     #
 
@@ -775,9 +748,6 @@ class Schedule(models.Model):
         else:
             return "unofficial"
 
-    def delete_assignments(self):
-        self.assignments.all().delete()
-
     @property
     def qs_assignments_with_sessions(self):
         return self.assignments.filter(session__isnull=False)
@@ -789,10 +759,6 @@ class Schedule(models.Model):
     def qs_sessions_scheduled(self):
         """Get QuerySet containing sessions assigned to timeslots by this schedule"""
         return Session.objects.filter(timeslotassignments__schedule=self)
-
-    def delete_schedule(self):
-        self.assignments.all().delete()
-        self.delete()
 
 # to be renamed SchedTimeSessAssignments (stsa)
 class SchedTimeSessAssignment(models.Model):
@@ -939,8 +905,8 @@ class Constraint(models.Model):
 
 
 class SessionPresentation(models.Model):
-    session = ForeignKey('Session')
-    document = ForeignKey(Document)
+    session = ForeignKey('Session', related_name="presentations")
+    document = ForeignKey(Document, related_name="presentations")
     rev = models.CharField(verbose_name="revision", max_length=16, null=True, blank=True)
     order = models.PositiveSmallIntegerField(default=0)
 
@@ -1052,7 +1018,7 @@ class Session(models.Model):
     group = ForeignKey(Group)    # The group type historically determined the session type.  BOFs also need to be added as a group. Note that not all meeting requests have a natural group to associate with.
     joint_with_groups = models.ManyToManyField(Group, related_name='sessions_joint_in',blank=True)
     attendees = models.IntegerField(null=True, blank=True)
-    agenda_note = models.CharField(blank=True, max_length=255)
+    agenda_note = models.CharField(blank=True, max_length=512)
     requested_duration = models.DurationField(default=datetime.timedelta(0))
     comments = models.TextField(blank=True)
     scheduled = models.DateTimeField(null=True, blank=True)
@@ -1079,7 +1045,7 @@ class Session(models.Model):
             for d in l:
                 d.meeting_related = lambda: True
         else:
-            l = self.materials.filter(type=material_type).exclude(states__type=material_type, states__slug='deleted').order_by('sessionpresentation__order')
+            l = self.materials.filter(type=material_type).exclude(states__type=material_type, states__slug='deleted').order_by('presentations__order')
 
         if only_one:
             if l:
@@ -1099,16 +1065,25 @@ class Session(models.Model):
             self._cached_minutes = self.get_material("minutes", only_one=True)
         return self._cached_minutes
 
+    def narrative_minutes(self):
+        if not hasattr(self, '_cached_narrative_minutes'):
+            self._cached_minutes = self.get_material("narrativeminutes", only_one=True)
+        return self._cached_minutes
+
     def recordings(self):
         return list(self.get_material("recording", only_one=False))
 
     def bluesheets(self):
         return list(self.get_material("bluesheets", only_one=False))
 
+    def chatlogs(self):
+        return list(self.get_material("chatlog", only_one=False))
+
     def slides(self):
         if not hasattr(self, "_slides_cache"):
             self._slides_cache = list(self.get_material("slides", only_one=False))
         return self._slides_cache
+    
 
     def drafts(self):
         return list(self.materials.filter(type='draft'))
@@ -1142,30 +1117,6 @@ class Session(models.Model):
             session_list = self.all_meeting_sessions_for_group()
             self._order_in_meeting = session_list.index(self) + 1 if self in session_list else 0
         return self._order_in_meeting
-
-    def all_meeting_sessions_cancelled(self):
-        return set(s.current_status for s in self.all_meeting_sessions_for_group()) == {'canceled'}
-
-    def all_meeting_recordings(self):
-        recordings = [] # These are not sets because we need to preserve relative ordering or redo the ordering work later
-        sessions = self.all_meeting_sessions_for_group()
-        for session in sessions:
-            recordings.extend([r for r in session.recordings() if r not in recordings])
-        return recordings
-            
-    def all_meeting_bluesheets(self):
-        bluesheets = []
-        sessions = self.all_meeting_sessions_for_group()
-        for session in sessions:
-            bluesheets.extend([b for b in session.bluesheets() if b not in bluesheets])
-        return bluesheets
-            
-    def all_meeting_drafts(self):
-        drafts = []
-        sessions = self.all_meeting_sessions_for_group()
-        for session in sessions:
-            drafts.extend([d for d in session.drafts() if d not in drafts])
-        return drafts
 
     def all_meeting_agendas(self):
         agendas = []
@@ -1283,19 +1234,6 @@ class Session(models.Model):
         else:
             return "The agenda has not been uploaded yet."
 
-    def agenda_file(self):
-        if not hasattr(self, '_agenda_file'):
-            self._agenda_file = ""
-
-            agenda = self.agenda()
-            if not agenda:
-                return ""
-
-            # FIXME: uploaded_filename should be replaced with a function that computes filenames when they are of a fixed schema and not uploaded names
-            self._agenda_file = "%s/agenda/%s" % (self.meeting.number, agenda.uploaded_filename)
-            
-        return self._agenda_file
-
     def chat_room_name(self):
         if self.chat_room:
             return self.chat_room
@@ -1309,10 +1247,21 @@ class Session(models.Model):
         return settings.CHAT_URL_PATTERN.format(chat_room_name=self.chat_room_name())
 
     def chat_archive_url(self):
-        chatlog = self.sessionpresentation_set.filter(document__type__slug='chatlog').first()
-        if chatlog is not None:
-            return chatlog.document.get_href()
-        elif self.meeting.date <= datetime.date(2022, 7, 15):
+
+        if hasattr(self,"prefetched_active_materials"):
+            chatlog_doc = None
+            for doc in self.prefetched_active_materials:
+                if doc.type_id=="chatlog":
+                    chatlog_doc = doc
+                    break
+            if chatlog_doc is not None:
+                return chatlog_doc.get_href()
+        else:
+            chatlog = self.presentations.filter(document__type__slug='chatlog').first()
+            if chatlog is not None:
+                return chatlog.document.get_href()
+            
+        if self.meeting.date <= datetime.date(2022, 7, 15):
             # datatracker 8.8.0 released on 2022 July 15; before that, fall back to old log URL
             return f'https://www.ietf.org/jabber/logs/{ self.chat_room_name() }?C=M;O=D'
         elif hasattr(settings,'CHAT_ARCHIVE_URL_PATTERN'):
@@ -1339,29 +1288,27 @@ class Session(models.Model):
             return self.meeting.group_at_the_time(self.group_at_the_time().parent)
 
     def audio_stream_url(self):
-        if (
-            self.meeting.type.slug == "ietf"
-            and self.has_onsite_tool
-            and (url := getattr(settings, "MEETECHO_AUDIO_STREAM_URL", ""))
-        ):
+        url = getattr(settings, "MEETECHO_AUDIO_STREAM_URL", "")
+        if self.meeting.type.slug == "ietf" and self.has_onsite_tool and url:
             return url.format(session=self)
         return None
 
     def video_stream_url(self):
-        if (
-            self.meeting.type.slug == "ietf"
-            and self.has_onsite_tool
-            and (url := getattr(settings, "MEETECHO_VIDEO_STREAM_URL", ""))
-        ):
+        url = getattr(settings, "MEETECHO_VIDEO_STREAM_URL", "")
+        if self.meeting.type.slug == "ietf" and self.has_onsite_tool and url:
             return url.format(session=self)
         return None
 
     def onsite_tool_url(self):
-        if (
-            self.meeting.type.slug == "ietf"
-            and self.has_onsite_tool
-            and (url := getattr(settings, "MEETECHO_ONSITE_TOOL_URL", ""))
-        ):
+        url = getattr(settings, "MEETECHO_ONSITE_TOOL_URL", "")
+        if self.meeting.type.slug == "ietf" and self.has_onsite_tool and url:
+            return url.format(session=self)
+        return None
+
+    def session_recording_url(self):
+        url = getattr(settings, "MEETECHO_SESSION_RECORDING_URL", "")
+        if self.meeting.type.slug == "ietf" and self.has_onsite_tool and url:
+            self.group.acronym_upper = self.group.acronym.upper()
             return url.format(session=self)
         return None
 
@@ -1479,6 +1426,8 @@ class MeetingHost(models.Model):
 class Attended(models.Model):
     person = ForeignKey(Person)
     session = ForeignKey(Session)
+    time = models.DateTimeField(default=timezone.now, null=True, blank=True)
+    origin = models.CharField(max_length=32, default='datatracker')
 
     class Meta:
         unique_together = (('person', 'session'),)

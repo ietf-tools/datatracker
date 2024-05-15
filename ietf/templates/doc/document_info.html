@@ -434,7 +434,7 @@
                         {% endfor %}
                         {% if doc.group and doc.group.list_archive %}
                             {% if doc.group.list_archive|startswith:settings.MAILING_LIST_ARCHIVE_URL %}
-                                <a href="{{ doc.group.list_archive }}?q={{ doc.name }}">
+                                <a href="{{ doc.group.list_archive }}?q={{ doc.name }}{% if doc.came_from_draft %} OR %22{{ doc.came_from_draft.name }}%22{% endif%}">
                                     Mailing list discussion
                                 </a>
                             {% elif doc.group.list_archive|is_valid_url %}

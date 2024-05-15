@@ -13,7 +13,8 @@ import textwrap
 
 from collections import defaultdict, namedtuple, Counter
 from dataclasses import dataclass
-from typing import Union
+from pathlib import Path
+from typing import Iterator, Union
 from zoneinfo import ZoneInfo
 
 from django.conf import settings
@@ -41,7 +42,7 @@ from ietf.ietfauth.utils import has_role, is_authorized_in_doc_stream, is_indivi
 from ietf.person.models import Person
 from ietf.review.models import ReviewWish
 from ietf.utils import draft, log
-from ietf.utils.mail import send_mail
+from ietf.utils.mail import parseaddr, send_mail
 from ietf.mailtrigger.utils import gather_address_lists
 from ietf.utils.timezone import date_today, datetime_from_date, datetime_today, DEADLINE_TZINFO
 from ietf.utils.xmldraft import XMLDraft
@@ -1062,6 +1063,8 @@ def build_file_urls(doc: Union[Document, DocHistory]):
         base = settings.IETF_ID_ARCHIVE_URL
         file_urls = []
         for t in found_types:
+            if t == "ps": # Postscript might have been submitted but should not be displayed in the list of URLs
+                continue
             label = "plain text" if t == "txt" else t
             file_urls.append((label, base + doc.name + "-" + doc.rev + "." + t))
 
@@ -1081,29 +1084,26 @@ def build_file_urls(doc: Union[Document, DocHistory]):
         
     return file_urls, found_types
 
-def augment_docs_and_user_with_user_info(docs, user):
+def augment_docs_and_person_with_person_info(docs, person):
     """Add attribute to each document with whether the document is tracked
-    or has a review wish by the user or not, and the review teams the user is on."""
+    or has a review wish by the person or not, and the review teams the person is on."""
 
     tracked = set()
     review_wished = set()
-    
-    if user and user.is_authenticated:
-        user.review_teams = Group.objects.filter(
-                reviewteamsettings__isnull=False, role__person__user=user, role__name='reviewer')
 
-        doc_pks = [d.pk for d in docs]
-        clist = CommunityList.objects.filter(user=user).first()
-        if clist:
-            tracked.update(
-                docs_tracked_by_community_list(clist).filter(pk__in=doc_pks).values_list("pk", flat=True))
+    # used in templates
+    person.review_teams = Group.objects.filter(
+        reviewteamsettings__isnull=False, role__person=person, role__name='reviewer')
 
-        try:
-            wishes = ReviewWish.objects.filter(person=Person.objects.get(user=user))
-            wishes = wishes.filter(doc__pk__in=doc_pks).values_list("doc__pk", flat=True)
-            review_wished.update(wishes)
-        except Person.DoesNotExist:
-            pass
+    doc_pks = [d.pk for d in docs]
+    clist = CommunityList.objects.filter(person=person).first()
+    if clist:
+        tracked.update(
+            docs_tracked_by_community_list(clist).filter(pk__in=doc_pks).values_list("pk", flat=True))
+
+    wishes = ReviewWish.objects.filter(person=person)
+    wishes = wishes.filter(doc__pk__in=doc_pks).values_list("doc__pk", flat=True)
+    review_wished.update(wishes)
 
     for d in docs:
         d.tracked_in_personal_community_list = d.pk in tracked
@@ -1261,3 +1261,151 @@ def bibxml_for_draft(doc, rev=None):
         
     return render_to_string('doc/bibxml.xml', {'name':name, 'doc':doc, 'doc_bibtype':'I-D', 'settings':settings})
 
+
+class DraftAliasGenerator:
+    days = 2 * 365
+
+    def get_draft_ad_emails(self, doc):
+        """Get AD email addresses for the given draft, if any."""
+        from ietf.group.utils import get_group_ad_emails  # avoid circular import
+        ad_emails = set()
+        # If working group document, return current WG ADs
+        if doc.group and doc.group.acronym != "none":
+            ad_emails.update(get_group_ad_emails(doc.group))
+        # Document may have an explicit AD set
+        if doc.ad:
+            ad_emails.add(doc.ad.email_address())
+        return ad_emails
+
+    def get_draft_chair_emails(self, doc):
+        """Get chair email addresses for the given draft, if any."""
+        from ietf.group.utils import get_group_role_emails  # avoid circular import
+        chair_emails = set()
+        if doc.group:
+            chair_emails.update(get_group_role_emails(doc.group, ["chair", "secr"]))
+        return chair_emails
+
+    def get_draft_shepherd_email(self, doc):
+        """Get shepherd email addresses for the given draft, if any."""
+        shepherd_email = set()
+        if doc.shepherd:
+            shepherd_email.add(doc.shepherd.email_address())
+        return shepherd_email
+
+    def get_draft_authors_emails(self, doc):
+        """Get list of authors for the given draft."""
+        author_emails = set()
+        for author in doc.documentauthor_set.all():
+            if author.email and author.email.email_address():
+                author_emails.add(author.email.email_address())
+        return author_emails
+
+    def get_draft_notify_emails(self, doc):
+        """Get list of email addresses to notify for the given draft."""
+        ad_email_alias_regex = r"^%s.ad@(%s|%s)$" % (doc.name, settings.DRAFT_ALIAS_DOMAIN, settings.TOOLS_SERVER)
+        all_email_alias_regex = r"^%s.all@(%s|%s)$" % (doc.name, settings.DRAFT_ALIAS_DOMAIN, settings.TOOLS_SERVER)
+        author_email_alias_regex = r"^%s@(%s|%s)$" % (doc.name, settings.DRAFT_ALIAS_DOMAIN, settings.TOOLS_SERVER)
+        notify_email_alias_regex = r"^%s.notify@(%s|%s)$" % (
+        doc.name, settings.DRAFT_ALIAS_DOMAIN, settings.TOOLS_SERVER)
+        shepherd_email_alias_regex = r"^%s.shepherd@(%s|%s)$" % (
+        doc.name, settings.DRAFT_ALIAS_DOMAIN, settings.TOOLS_SERVER)
+        notify_emails = set()
+        if doc.notify:
+            for e in doc.notify.split(','):
+                e = e.strip()
+                if re.search(ad_email_alias_regex, e):
+                    notify_emails.update(self.get_draft_ad_emails(doc))
+                elif re.search(author_email_alias_regex, e):
+                    notify_emails.update(self.get_draft_authors_emails(doc))
+                elif re.search(shepherd_email_alias_regex, e):
+                    notify_emails.update(self.get_draft_shepherd_email(doc))
+                elif re.search(all_email_alias_regex, e):
+                    notify_emails.update(self.get_draft_ad_emails(doc))
+                    notify_emails.update(self.get_draft_authors_emails(doc))
+                    notify_emails.update(self.get_draft_shepherd_email(doc))
+                elif re.search(notify_email_alias_regex, e):
+                    pass
+                else:
+                    (name, email) = parseaddr(e)
+                    notify_emails.add(email)
+        return notify_emails
+
+    def __iter__(self) -> Iterator[tuple[str, list[str]]]:
+        # Internet-Drafts with active status or expired within self.days
+        show_since = timezone.now() - datetime.timedelta(days=self.days)
+        drafts = Document.objects.filter(type_id="draft")
+        active_drafts = drafts.filter(states__slug='active')
+        inactive_recent_drafts = drafts.exclude(states__slug='active').filter(expires__gte=show_since)
+        interesting_drafts = active_drafts | inactive_recent_drafts
+
+        for this_draft in interesting_drafts.distinct().iterator():
+            # Omit drafts that became RFCs, unless they were published in the last DEFAULT_YEARS
+            if this_draft.get_state_slug() == "rfc":
+                rfc = this_draft.became_rfc()
+                log.assertion("rfc is not None")
+                if rfc.latest_event(type='published_rfc').time < show_since:
+                    continue
+
+            alias = this_draft.name
+            all = set()
+
+            # no suffix and .authors are the same list
+            emails = self.get_draft_authors_emails(this_draft)
+            all.update(emails)
+            if emails:
+                yield alias, list(emails)
+                yield alias + ".authors", list(emails)
+
+            # .chairs = group chairs
+            emails = self.get_draft_chair_emails(this_draft)
+            if emails:
+                all.update(emails)
+                yield alias + ".chairs", list(emails)
+
+            # .ad = sponsoring AD / WG AD (WG document)
+            emails = self.get_draft_ad_emails(this_draft)
+            if emails:
+                all.update(emails)
+                yield alias + ".ad", list(emails)
+
+            # .notify = notify email list from the Document
+            emails = self.get_draft_notify_emails(this_draft)
+            if emails:
+                all.update(emails)
+                yield alias + ".notify", list(emails)
+
+            # .shepherd = shepherd email from the Document
+            emails = self.get_draft_shepherd_email(this_draft)
+            if emails:
+                all.update(emails)
+                yield alias + ".shepherd", list(emails)
+
+            # .all = everything from above
+            if all:
+                yield alias + ".all", list(all)
+
+def investigate_fragment(name_fragment):
+    can_verify = set()
+    for root in [settings.INTERNET_DRAFT_PATH, settings.INTERNET_DRAFT_ARCHIVE_DIR]:
+        can_verify.update(list(Path(root).glob(f"*{name_fragment}*")))
+
+    can_verify.update(list(Path(settings.AGENDA_PATH).glob(f"**/*{name_fragment}*")))
+
+    # N.B. This reflects the assumption that the internet draft archive dir is in the
+    # a directory with other collections (at /a/ietfdata/draft/collections as this is written)
+    unverifiable_collections = set(
+        Path(settings.INTERNET_DRAFT_ARCHIVE_DIR).parent.glob(f"**/*{name_fragment}*")
+    )
+    unverifiable_collections.difference_update(can_verify)
+
+    expected_names = set([p.name for p in can_verify.union(unverifiable_collections)])
+    maybe_unexpected = list(
+        Path(settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR).glob(f"*{name_fragment}*")
+    )
+    unexpected = [p for p in maybe_unexpected if p.name not in expected_names]
+
+    return dict(
+        can_verify=can_verify,
+        unverifiable_collections=unverifiable_collections,
+        unexpected=unexpected,
+    )

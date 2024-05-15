@@ -42,17 +42,15 @@ from ietf.group.models import Group
 from ietf.group.utils import setup_default_community_list_for_group
 from ietf.meeting.models import Meeting
 from ietf.meeting.factories import MeetingFactory
-from ietf.message.models import Message
 from ietf.name.models import FormalLanguageName
 from ietf.person.models import Person
 from ietf.person.factories import UserFactory, PersonFactory, EmailFactory
 from ietf.submit.factories import SubmissionFactory, SubmissionExtResourceFactory
 from ietf.submit.forms import SubmissionBaseUploadForm, SubmissionAutoUploadForm
 from ietf.submit.models import Submission, Preapproval, SubmissionExtResource
-from ietf.submit.mail import add_submission_email, process_response_email
 from ietf.submit.tasks import cancel_stale_submissions, process_and_accept_uploaded_submission_task
 from ietf.utils.accesstoken import generate_access_token
-from ietf.utils.mail import outbox, empty_outbox, get_payload_text
+from ietf.utils.mail import outbox, get_payload_text
 from ietf.utils.models import VersionInfo
 from ietf.utils.test_utils import login_testing_unauthorized, TestCase
 from ietf.utils.timezone import date_today
@@ -198,9 +196,32 @@ def create_draft_submission_with_rev_mismatch(rev='01'):
     return draft, sub
 
 
+class ManualSubmissionTests(TestCase):
+    def test_manualpost_view(self):
+        submission = SubmissionFactory(state_id="manual")
+        url = urlreverse("ietf.submit.views.manualpost")
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertIn(
+            urlreverse(
+                "ietf.submit.views.submission_status", 
+                kwargs=dict(submission_id=submission.pk)
+            ),
+            q("#manual.submissions td a").attr("href")
+        )
+        self.assertIn(
+            submission.name,
+            q("#manual.submissions td a").text()
+        )
+
+    def test_manualpost_cancel(self):
+        pass
+
 class SubmitTests(BaseSubmitTestCase):
     def setUp(self):
         super().setUp()
+        (Path(settings.FTP_DIR) / "internet-drafts").mkdir()
         # Submit views assume there is a "next" IETF to look for cutoff dates against
         MeetingFactory(type_id='ietf', date=date_today()+datetime.timedelta(days=180))
 
@@ -933,6 +954,24 @@ class SubmitTests(BaseSubmitTestCase):
         self.assertEqual(new_revision.type, "new_revision")
         self.assertEqual(new_revision.by.name, "Submitter Name")
         self.verify_bibxml_ids_creation(draft)
+
+        repository_path = Path(draft.get_file_name())
+        self.assertTrue(repository_path.exists()) # Note that this doesn't check that it has the right _content_
+        ftp_path = Path(settings.FTP_DIR) / "internet-drafts" / repository_path.name
+        self.assertTrue(repository_path.samefile(ftp_path))
+        all_archive_path = Path(settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR) / repository_path.name
+        self.assertTrue(repository_path.samefile(all_archive_path))
+        for ext in settings.IDSUBMIT_FILE_TYPES:
+            if ext == "txt":
+                continue
+            variant_path = repository_path.parent / f"{repository_path.stem}.{ext}"
+            if variant_path.exists():
+                variant_ftp_path = Path(settings.FTP_DIR) / "internet-drafts" / variant_path.name
+                self.assertTrue(variant_path.samefile(variant_ftp_path))
+                variant_all_archive_path = Path(settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR) / variant_path.name
+                self.assertTrue(variant_path.samefile(variant_all_archive_path))
+
+
 
     def test_submit_new_individual_txt(self):
         self.submit_new_individual(["txt"])
@@ -2293,451 +2332,6 @@ class ApprovalsTestCase(BaseSubmitTestCase):
 
         self.assertEqual(len(Preapproval.objects.filter(name=preapproval.name)), 0)
 
-class ManualPostsTestCase(BaseSubmitTestCase):
-    def test_manual_posts(self):
-        GroupFactory(acronym='mars')
-
-        url = urlreverse('ietf.submit.views.manualpost')
-        # Secretariat has access
-        self.client.login(username="secretary", password="secretary+password")
-
-        Submission.objects.create(name="draft-ietf-mars-foo",
-                                  group=Group.objects.get(acronym="mars"),
-                                  submission_date=date_today(),
-                                  state_id="manual")
-        Submission.objects.create(name="draft-ietf-mars-bar",
-                                  group=Group.objects.get(acronym="mars"),
-                                  submission_date=date_today(),
-                                  rev="00",
-                                  state_id="grp-appr")
-
-        # get
-        r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
-        q = PyQuery(r.content)
-
-        self.assertEqual(len(q('.submissions a:contains("draft-ietf-mars-foo")')), 1)
-        self.assertEqual(len(q('.submissions a:contains("draft-ietf-mars-bar")')), 0)
-
-    def test_waiting_for_draft(self):
-        message_string = """To: somebody@ietf.org
-From: joe@test.com
-Date: {}
-Subject: test submission via email
-
-Please submit my draft at http://test.com/mydraft.txt
-
-Thank you
-""".format(timezone.now().ctime())
-        message = email.message_from_string(force_str(message_string))
-        submission, submission_email_event = (
-            add_submission_email(request=None,
-                                 remote_ip ="192.168.0.1",
-                                 name = "draft-my-new-draft",
-                                 rev='00',
-                                 submission_pk=None,
-                                 message = message,
-                                 by = Person.objects.get(name="(System)"),
-                                 msgtype = "msgin") )
-
-        url = urlreverse('ietf.submit.views.manualpost')
-        # Secretariat has access
-        self.client.login(username="secretary", password="secretary+password")
-
-        # get
-        r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
-        q = PyQuery(r.content)
-
-        self.assertEqual(len(q('.waiting-for-draft a:contains("draft-my-new-draft")')), 1)
-
-        # Same name should raise an error
-        with self.assertRaises(Exception):
-            add_submission_email(request=None,
-                                 remote_ip ="192.168.0.1",
-                                 name = "draft-my-new-draft",
-                                 rev='00',
-                                 submission_pk=None,
-                                 message = message,
-                                 by = Person.objects.get(name="(System)"),
-                                 msgtype = "msgin")
-
-        # Cancel this one
-        r = self.client.post(urlreverse("ietf.submit.views.cancel_waiting_for_draft"), {
-            "submission_id": submission.pk,
-            "access_token": submission.access_token(),
-        })
-        self.assertEqual(r.status_code, 302)
-        url = r["Location"]
-        r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
-        q = PyQuery(r.content)
-        self.assertEqual(len(q('.waiting-for-draft a:contains("draft-my-new-draft")')), 0)
-
-        # Should now be able to add it again
-        submission, submission_email_event = (
-            add_submission_email(request=None,
-                                 remote_ip ="192.168.0.1",
-                                 name = "draft-my-new-draft",
-                                 rev='00',
-                                 submission_pk=None,
-                                 message = message,
-                                 by = Person.objects.get(name="(System)"),
-                                 msgtype = "msgin") )
-
-
-    def test_waiting_for_draft_with_attachment(self):
-        frm = "joe@test.com"
-        
-        message_string = """To: somebody@ietf.org
-From: {}
-Date: {}
-Subject: A very important message with a small attachment
-Content-Type: multipart/mixed; boundary="------------090908050800030909090207"
-
-This is a multi-part message in MIME format.
---------------090908050800030909090207
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Transfer-Encoding: 7bit
-
-The message body will probably say something about the attached document
-
---------------090908050800030909090207
-Content-Type: text/plain; charset=UTF-8; name="attach.txt"
-Content-Transfer-Encoding: base64
-Content-Disposition: attachment; filename="attach.txt"
-
-QW4gZXhhbXBsZSBhdHRhY2htZW50IHd0aG91dCB2ZXJ5IG11Y2ggaW4gaXQuCgpBIGNvdXBs
-ZSBvZiBsaW5lcyAtIGJ1dCBpdCBjb3VsZCBiZSBhIGRyYWZ0Cg==
---------------090908050800030909090207--
-""".format(frm, timezone.now().ctime())
-
-        message = email.message_from_string(force_str(message_string))
-        submission, submission_email_event = (
-            add_submission_email(request=None,
-                                 remote_ip ="192.168.0.1",
-                                 name = "draft-my-new-draft",
-                                 rev='00',
-                                 submission_pk=None,
-                                 message = message,
-                                 by = Person.objects.get(name="(System)"),
-                                 msgtype = "msgin") )
-
-        manualpost_page_url = urlreverse('ietf.submit.views.manualpost')
-        # Secretariat has access
-        self.client.login(username="secretary", password="secretary+password")
-
-        self.check_manualpost_page(submission=submission, 
-                                   submission_email_event=submission_email_event,
-                                   the_url=manualpost_page_url, 
-                                   submission_name_fragment='draft-my-new-draft',
-                                   frm=frm,
-                                   is_secretariat=True)
- 
-        # Try the status page with no credentials
-        self.client.logout()
-
-        self.check_manualpost_page(submission=submission, 
-                                   submission_email_event=submission_email_event,
-                                   the_url=manualpost_page_url, 
-                                   submission_name_fragment='draft-my-new-draft',
-                                   frm=frm,
-                                   is_secretariat=False)
-        
-        # Post another message to this submission using the link
-        message_string = """To: somebody@ietf.org
-From: joe@test.com
-Date: {}
-Subject: A new submission message with a small attachment
-Content-Type: multipart/mixed; boundary="------------090908050800030909090207"
-
-This is a multi-part message in MIME format.
---------------090908050800030909090207
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Transfer-Encoding: 7bit
-
-The message body will probably say something more about the attached document
-
---------------090908050800030909090207
-Content-Type: text/plain; charset=UTF-8; name="attach.txt"
-Content-Transfer-Encoding: base64
-Content-Disposition: attachment; filename="attachment.txt"
-
-QW4gZXhhbXBsZSBhdHRhY2htZW50IHd0aG91dCB2ZXJ5IG11Y2ggaW4gaXQuCgpBIGNvdXBs
-ZSBvZiBsaW5lcyAtIGJ1dCBpdCBjb3VsZCBiZSBhIGRyYWZ0Cg==
---------------090908050800030909090207--
-""".format(timezone.now().ctime())
-
-        # Back to secretariat
-        self.client.login(username="secretary", password="secretary+password")
-
-        r, q = self.request_and_parse(manualpost_page_url)
-
-        url = self.get_href(q, "a#new-submission-email:contains('New submission from email')")
-
-        # Get the form
-        r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
-        q = PyQuery(r.content)
-        #self.assertEqual(len(q('input[name=edit-title]')), 1)
-
-        # Post the new message
-        r = self.client.post(url, {
-            "name": "draft-my-next-new-draft-00",
-            "direction": "incoming",
-            "message": message_string,
-        })
-
-        if r.status_code != 302:
-            q = PyQuery(r.content)
-            print(q)
-
-        self.assertEqual(r.status_code, 302)
-        
-
-        #self.check_manualpost_page(submission, submission_email_event,
-        #                        url, 'draft-my-next-new-draft'
-        #                        'Another very important message',
-        #                        true)
-
-    def check_manualpost_page(self, submission, submission_email_event,
-                              the_url, submission_name_fragment,
-                              frm,
-                              is_secretariat):
-        # get the page listing manual posts
-        r, q = self.request_and_parse(the_url)
-        selector = "#waiting-for-draft a#add-submission-email%s:contains('Add email')" % submission.pk
-
-        if is_secretariat:
-            # Can add an email to the submission
-            add_email_url = self.get_href(q, selector)
-        else:
-            # No add email button button
-            self.assertEqual(len(q(selector)), 0)
-
-        # Find the link for our submission in those awaiting drafts
-        submission_url = self.get_href(q, "#waiting-for-draft a#aw{}:contains('{}')".
-                                       format(submission.pk, submission_name_fragment))
-
-        # Follow the link to the status page for this submission
-        r, q = self.request_and_parse(submission_url)
-        
-        selector = "#history a#reply%s:contains('Reply')" % submission.pk
-
-        if is_secretariat:
-            # check that reply button is visible and get the form
-            reply_url = self.get_href(q, selector)
-
-            # Get the form
-            r = self.client.get(reply_url)
-            self.assertEqual(r.status_code, 200)
-            reply_q = PyQuery(r.content)
-            self.assertEqual(len(reply_q('input[name=to]')), 1)
-        else:
-            # No reply button
-            self.assertEqual(len(q(selector)), 0)
-
-        if is_secretariat:
-            # Now try to send an email using the send email link
-    
-            selector = "a#send%s:contains('Send Email')" % submission.pk
-            send_url = self.get_href(q, selector)
-
-            self.do_submission_email(the_url = send_url,
-                                     to = frm,
-                                     body = "A new message")
-
-        # print q
-        # print submission.pk
-        # print submission_email_event.pk
-        
-        # Find the link for our message in the list
-        url = self.get_href(q, "#aw{}-{}:contains('{}')".format(submission.pk, 
-                                                                submission_email_event.message.pk,
-                                                                "Received message - manual post"))
-        
-        # Page displaying message details
-        r, q = self.request_and_parse(url)
-        
-        if is_secretariat:
-            # check that reply button is visible
-
-            reply_href = self.get_href(q, "a#reply%s:contains('Reply')" % submission.pk)
-
-        else:
-            # No reply button
-            self.assertEqual(len(q(selector)), 0)
-            reply_href = None
-
-        # check that attachment link is visible
-
-        url = self.get_href(q, "#email-details a#attach{}:contains('attach.txt')".format(submission.pk))
-
-        # Fetch the attachment
-        r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
-        
-        # Attempt a reply if we can
-        if reply_href == None:
-            return
-
-        self.do_submission_email(the_url = reply_href,
-                                 to = frm,
-                                 body = "A reply to the message")
-        
-        # try adding an email to the submission
-        # Use the add email link from the manual post listing page
-
-        if is_secretariat:
-            # Can add an email to the submission
-            # add_email_url set previously
-            r = self.client.get(add_email_url)
-            self.assertEqual(r.status_code, 200)
-            add_email_q = PyQuery(r.content)
-            self.assertEqual(len(add_email_q('input[name=submission_pk]')), 1)
-
-            # Add a simple email
-            new_message_string = """To: somebody@ietf.org
-From: joe@test.com
-Date: {}
-Subject: Another message
-
-About my submission
-
-Thank you
-""".format(timezone.now().ctime())
-
-            r = self.client.post(add_email_url, {
-                "name": "{}-{}".format(submission.name, submission.rev),
-                "direction": "incoming",
-                "submission_pk": submission.pk,
-                "message": new_message_string,
-            })
-
-            if r.status_code != 302:
-                q = PyQuery(r.content)
-                print(q)
-
-            self.assertEqual(r.status_code, 302)
-
-    def request_and_parse(self, url):
-        r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
-        return r, PyQuery(r.content)
-
-        
-    def get_href(self, q, query):
-        link = q(query)
-        self.assertEqual(len(link), 1)
-
-        return PyQuery(link[0]).attr('href')
-
-
-    def do_submission_email(self, the_url, to, body):
-        # check the page
-        r = self.client.get(the_url)
-        q = PyQuery(r.content)
-        post_button = q('[type=submit]:contains("Send email")')
-        self.assertEqual(len(post_button), 1)
-        subject = post_button.parents("form").find('input[name="subject"]').val()
-        frm = post_button.parents("form").find('input[name="frm"]').val()
-        cc = post_button.parents("form").find('input[name="cc"]').val()
-        reply_to = post_button.parents("form").find('input[name="reply_to"]').val()
-
-        empty_outbox()
-        
-        # post submitter info
-        r = self.client.post(the_url, {
-            "subject": subject,
-            "frm": frm,
-            "to": to,
-            "cc": cc,
-            "reply_to": reply_to,
-            "body": body,
-        })
-
-        self.assertEqual(r.status_code, 302)
-
-        self.assertEqual(len(outbox), 1)
-
-        outmsg = outbox[0]
-        self.assertTrue(to in outmsg['To'])
-        
-        reply_to = outmsg['Reply-To']
-        self.assertIsNotNone(reply_to, "Expected Reply-To")
-        
-        # Build a reply
-
-        message_string = """To: {}
-From: {}
-Date: {}
-Subject: test
-""".format(reply_to, to, timezone.now().ctime())
-
-        result = process_response_email(message_string)
-        self.assertIsInstance(result, Message)
-
-        return r
-
-    def do_submission(self, name, rev, group=None, formats=["txt",]):
-        # We're not testing the submission process - just the submission status 
-
-        # get
-        url = urlreverse('ietf.submit.views.upload_submission')
-        r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
-        q = PyQuery(r.content)
-        self.assertEqual(len(q('input[type=file][name=txt]')), 1)
-        self.assertEqual(len(q('input[type=file][name=xml]')), 1)
-
-        # submit
-        files = {}
-        for format in formats:
-            files[format], author = submission_file(f'{name}-{rev}', f'{name}-{rev}.{format}', group, "test_submission.%s" % format)
-
-        r = self.post_to_upload_submission(url, files)
-        if r.status_code != 302:
-            q = PyQuery(r.content)
-            print(q('div.invalid-feedback span.form-text div').text())
-
-        self.assertEqual(r.status_code, 302)
-
-        status_url = r["Location"]
-        for format in formats:
-            self.assertTrue(os.path.exists(os.path.join(self.staging_dir, "%s-%s.%s" % (name, rev, format))))
-        self.assertEqual(Submission.objects.filter(name=name).count(), 1)
-        submission = Submission.objects.get(name=name)
-        self.assertTrue(all([ c.passed!=False for c in submission.checks.all() ]))
-        self.assertEqual(len(submission.authors), 1)
-        author = submission.authors[0]
-        self.assertEqual(author["name"], "Author Name")
-        self.assertEqual(author["email"], "author@example.com")
-
-        return status_url
-
-
-    def supply_extra_metadata(self, name, status_url, submitter_name, submitter_email):
-        # check the page
-        r = self.client.get(status_url)
-        q = PyQuery(r.content)
-        post_button = q('[type=submit]:contains("Post")')
-        self.assertEqual(len(post_button), 1)
-        action = post_button.parents("form").find('input[type=hidden][name="action"]').val()
-
-        # post submitter info
-        r = self.client.post(status_url, {
-            "action": action,
-            "submitter-name": submitter_name,
-            "submitter-email": submitter_email,
-            "approvals_received": True,
-        })
-
-        if r.status_code == 302:
-            submission = Submission.objects.get(name=name)
-            self.assertEqual(submission.submitter, email.utils.formataddr((submitter_name, submitter_email)))
-
-        return r
-
 
 # Transaction.on_commit() requires use of TransactionTestCase, but that has a performance penalty. Replace it
 # with a no-op for testing purposes.
@@ -3669,7 +3263,8 @@ class ApiSubmitTests(BaseSubmitTestCase):
         self.assertContains(r, expected, status_code=400)
 
     def test_api_submit_failed_idnits(self):
-        r, author, name = self.do_post_submission('00', year="2010")
+        # `year` on the next line must be leap year or this test will fail every Feb 29
+        r, author, name = self.do_post_submission('00', year="2012")
         expected = "Document date must be within 3 days of submission date"
         self.assertContains(r, expected, status_code=400)
 

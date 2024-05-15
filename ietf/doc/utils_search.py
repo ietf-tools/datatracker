@@ -11,7 +11,7 @@ from django.conf import settings
 
 from ietf.doc.models import Document, RelatedDocument, DocEvent, TelechatDocEvent, BallotDocEvent, DocTypeName
 from ietf.doc.expire import expirable_drafts
-from ietf.doc.utils import augment_docs_and_user_with_user_info
+from ietf.doc.utils import augment_docs_and_person_with_person_info
 from ietf.meeting.models import SessionPresentation, Meeting, Session
 from ietf.review.utils import review_assignments_to_list_for_docs
 from ietf.utils.timezone import date_today
@@ -181,7 +181,7 @@ def augment_docs_with_related_docs_info(docs):
             originalDoc = d.related_that_doc('conflrev')[0]
             d.pages = originalDoc.pages
 
-def prepare_document_table(request, docs, query=None, max_results=200):
+def prepare_document_table(request, docs, query=None, max_results=200, show_ad_and_shepherd=True):
     """Take a queryset of documents and a QueryDict with sorting info
     and return list of documents with attributes filled in for
     displaying a full table of information about the documents, plus
@@ -199,7 +199,8 @@ def prepare_document_table(request, docs, query=None, max_results=200):
         docs = docs[:max_results]
 
     fill_in_document_table_attributes(docs)
-    augment_docs_and_user_with_user_info(docs, request.user)
+    if request.user.is_authenticated and hasattr(request.user, "person"):
+        augment_docs_and_person_with_person_info(docs, request.user.person)
     augment_docs_with_related_docs_info(docs)
 
     meta = {}
@@ -259,12 +260,14 @@ def prepare_document_table(request, docs, query=None, max_results=200):
     if len(docs) == max_results:
         meta['max'] = max_results
 
-    meta['headers'] = [{'title': 'Document', 'key':'document'},
-                       {'title': 'Title', 'key':'title'},
-                       {'title': 'Date', 'key':'date'},
-                       {'title': 'Status', 'key':'status'},
-                       {'title': 'IPR', 'key':'ipr'},
-                       {'title': 'AD / Shepherd', 'key':'ad'}]
+    meta['headers'] = [{'title': 'Document', 'key': 'document'},
+                       {'title': 'Title', 'key': 'title'},
+                       {'title': 'Date', 'key': 'date'},
+                       {'title': 'Status', 'key': 'status'},
+                       {'title': 'IPR', 'key': 'ipr'}]
+    if show_ad_and_shepherd:
+        meta['headers'].append({'title': 'AD / Shepherd', 'key': 'ad'})
+    meta['show_ad_and_shepherd'] = show_ad_and_shepherd
 
     if query and hasattr(query, "urlencode"):  # fed a Django QueryDict
         d = query.copy()

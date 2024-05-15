@@ -140,13 +140,13 @@ class TimeSlotEditFormTests(TestCase):
         rendered = str(TimeSlotEditForm(instance=ts)['location'])
         # noinspection PyTypeChecker
         self.assertInHTML(
-            f'<option value="{ts.location.pk}" selected>{ts.location.name} size: None</option>',
+            f'<option value="{ts.location.pk}" selected>{ts.location}</option>',
             rendered,
         )
         for room in rooms:
             # noinspection PyTypeChecker
             self.assertInHTML(
-                f'<option value="{room.pk}">{room.name} size: {room.capacity}</option>',
+                f'<option value="{room.pk}">{room}</option>',
                 rendered,
             )
 

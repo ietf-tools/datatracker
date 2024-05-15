@@ -336,12 +336,12 @@ def parse_index(response):
 
 
 def update_docs_from_rfc_index(
-    index_data, errata_data, skip_older_than_date=None
+    index_data, errata_data, skip_older_than_date: Optional[datetime.date] = None
 ) -> Iterator[tuple[int, list[str], Document, bool]]:
     """Given parsed data from the RFC Editor index, update the documents in the database
 
     Returns an iterator that yields (rfc_number, change_list, doc, rfc_published) for the
-    RFC document and, if applicable, the I-D that it came from.   
+    RFC document and, if applicable, the I-D that it came from.
 
     The skip_older_than_date is a bare date, not a datetime.
     """
@@ -405,7 +405,8 @@ def update_docs_from_rfc_index(
         abstract,
     ) in index_data:
         if skip_older_than_date and rfc_published_date < skip_older_than_date:
-            # speed up the process by skipping old entries
+            # speed up the process by skipping old entries (n.b., the comparison above is a
+            # lexical comparison between "YYYY-MM-DD"-formatted dates)
             continue
 
         # we assume two things can happen: we get a new RFC, or an
@@ -462,6 +463,14 @@ def update_docs_from_rfc_index(
             doc.set_state(rfc_published_state)
             if draft:
                 doc.formal_languages.set(draft.formal_languages.all())
+                for author in draft.documentauthor_set.all():
+                    # Copy the author but point at the new doc. 
+                    # See https://docs.djangoproject.com/en/4.2/topics/db/queries/#copying-model-instances
+                    author.pk = None
+                    author.id = None
+                    author._state.adding = True
+                    author.document = doc
+                    author.save()
 
         if draft:
             draft_events = []
@@ -792,6 +801,10 @@ def post_approved_draft(url, name):
     """Post an approved draft to the RFC Editor so they can retrieve
     the data from the Datatracker and start processing it. Returns
     response and error (empty string if no error)."""
+
+    if settings.SERVER_MODE != "production":
+        log(f"In production, would have posted RFC-Editor notification of approved I-D '{name}' to '{url}'")
+        return "", ""
 
     # HTTP basic auth
     username = "dtracksync"

@@ -3,8 +3,10 @@
 
 
 import datetime
+import mock
 
 from pathlib import Path
+from tempfile import TemporaryDirectory
 
 from django.conf import settings
 from django.utils import timezone
@@ -16,6 +18,7 @@ from ietf.doc.models import Document, RelatedDocument, State, LastCallDocEvent, 
 from ietf.group.factories import GroupFactory
 from ietf.name.models import DocRelationshipName
 from ietf.idindex.index import all_id_txt, all_id2_txt, id_index_txt
+from ietf.idindex.tasks import idindex_update_task, TempFileManager
 from ietf.person.factories import PersonFactory, EmailFactory
 from ietf.utils.test_utils import TestCase
 
@@ -151,3 +154,54 @@ class IndexTests(TestCase):
         txt = id_index_txt(with_abstracts=True)
 
         self.assertTrue(draft.abstract[:20] in txt)
+
+
+class TaskTests(TestCase):
+    @mock.patch("ietf.idindex.tasks.all_id_txt")
+    @mock.patch("ietf.idindex.tasks.all_id2_txt")
+    @mock.patch("ietf.idindex.tasks.id_index_txt")
+    @mock.patch.object(TempFileManager, "__enter__")
+    def test_idindex_update_task(
+        self,
+        temp_file_mgr_enter_mock,
+        id_index_mock,
+        all_id2_mock,
+        all_id_mock,
+    ):
+        # Replace TempFileManager's __enter__() method with one that returns a mock.
+        # Pass a spec to the mock so we validate that only actual methods are called.
+        mgr_mock = mock.Mock(spec=TempFileManager)
+        temp_file_mgr_enter_mock.return_value = mgr_mock
+        
+        idindex_update_task()
+
+        self.assertEqual(all_id_mock.call_count, 1)
+        self.assertEqual(all_id2_mock.call_count, 1)
+        self.assertEqual(id_index_mock.call_count, 2)
+        self.assertEqual(id_index_mock.call_args_list[0], (tuple(), dict()))
+        self.assertEqual(
+            id_index_mock.call_args_list[1], 
+            (tuple(), {"with_abstracts": True}),
+        )
+        self.assertEqual(mgr_mock.make_temp_file.call_count, 11)
+        self.assertEqual(mgr_mock.move_into_place.call_count, 11)
+
+    def test_temp_file_manager(self):
+        with TemporaryDirectory() as temp_dir:
+            with TemporaryDirectory() as other_dir:
+                temp_path = Path(temp_dir)
+                other_path = Path(other_dir)
+                with TempFileManager(temp_path) as tfm:
+                    path1 = tfm.make_temp_file("yay")
+                    path2 = tfm.make_temp_file("boo")  # do not keep this one
+                    self.assertTrue(path1.exists())
+                    self.assertTrue(path2.exists())
+                    dest = temp_path / "yay.txt"
+                    tfm.move_into_place(path1, dest, [other_path])
+                # make sure things were cleaned up...
+                self.assertFalse(path1.exists())  # moved to dest
+                self.assertFalse(path2.exists())  # left behind
+                # check destination contents and permissions
+                self.assertEqual(dest.read_text(), "yay")
+                self.assertEqual(dest.stat().st_mode & 0o777, 0o644)
+                self.assertTrue(dest.samefile(other_path / "yay.txt"))

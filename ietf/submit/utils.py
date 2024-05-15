@@ -167,7 +167,10 @@ def validate_submission_rev(name, rev):
 
         if rev != expected:
             return 'Invalid revision (revision %02d is expected)' % expected
-
+        
+        # This is not really correct, though the edges that it doesn't cover are not likely.
+        # It might be better just to look in the combined archive to make sure we're not colliding with
+        # a thing that exists there already because it was included from an approved personal collection.
         for dirname in [settings.INTERNET_DRAFT_PATH, settings.INTERNET_DRAFT_ARCHIVE_DIR, ]:
             dir = pathlib.Path(dirname)
             pattern = '%s-%02d.*' % (name, rev)
@@ -652,6 +655,10 @@ def move_files_to_repository(submission):
         dest = Path(settings.IDSUBMIT_REPOSITORY_PATH) / fname
         if source.exists():
             move(source, dest)
+            all_archive_dest = Path(settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR) / dest.name
+            ftp_dest = Path(settings.FTP_DIR) / "internet-drafts" / dest.name
+            os.link(dest, all_archive_dest)
+            os.link(dest, ftp_dest)
         elif dest.exists():
             log.log("Intended to move '%s' to '%s', but found source missing while destination exists.")
         elif ext in submission.file_types.split(','):
@@ -1280,11 +1287,11 @@ def process_and_validate_submission(submission):
         if xml_metadata is not None:
             # Items preferred / only available from XML
             submission.xml_version = xml_metadata["xml_version"]
-            submission.title = xml_metadata["title"]
+            submission.title = xml_metadata["title"] or ""
             submission.authors = xml_metadata["authors"]
         else:
             # Items to get from text only if XML not available
-            submission.title = text_metadata["title"]
+            submission.title = text_metadata["title"] or ""
             submission.authors = text_metadata["authors"]
 
         if not submission.title:
@@ -1371,6 +1378,7 @@ def process_and_accept_uploaded_submission(submission):
     try:
         process_and_validate_submission(submission)
     except SubmissionError as err:
+        submission.refresh_from_db()  # guard against incomplete changes in submission validation / processing
         cancel_submission(submission)  # changes Submission.state
         create_submission_event(None, submission, f"Submission rejected: {err}")
         return
@@ -1410,11 +1418,13 @@ def process_uploaded_submission(submission):
     try:
         process_and_validate_submission(submission)
     except InconsistentRevisionError as consistency_error:
+        submission.refresh_from_db()  # guard against incomplete changes in submission validation / processing
         submission.state_id = "manual"
         submission.save()
         create_submission_event(None, submission, desc="Uploaded submission (diverted to manual process)")
         send_manual_post_request(None, submission, errors=dict(consistency=str(consistency_error)))
     except SubmissionError as err:
+        submission.refresh_from_db()  # guard against incomplete changes in submission validation / processing
         cancel_submission(submission)  # changes Submission.state
         create_submission_event(None, submission, f"Submission rejected: {err}")
     else:

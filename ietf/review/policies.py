@@ -131,12 +131,15 @@ class AbstractReviewerQueuePolicy:
         assignee_index = rotation_pks.index(assignee_person.pk)
         skipped = rotation_pks[0:assignee_index]
         skipped_settings = self.team.reviewersettings_set.filter(person__in=skipped)  # list of PKs is valid here
+        changed = []
         for ss in skipped_settings:
-            ss.skip_next = max(0, ss.skip_next - 1)  # ensure we don't go negative
-        bulk_update_with_history(skipped_settings,
+            if ss.skip_next > 0:
+                ss.skip_next = max(0, ss.skip_next - 1)  # ensure we don't go negative
+                ss._change_reason = "Skip count decremented"
+                changed.append(ss)
+        bulk_update_with_history(changed,
                                  ReviewerSettings,
-                                 ['skip_next'],
-                                 default_change_reason='skipped')
+                                 ['skip_next'])
 
     def _assignment_in_order(self, rotation_pks, assignee_person):
         """Is this an in-order assignment?"""
@@ -262,12 +265,15 @@ class AbstractReviewerQueuePolicy:
 
     def _clear_request_next_assignment(self, person):
         s = self._reviewer_settings_for(person)
-        s.request_assignment_next = False
-        s.save()
+        if s.request_assignment_next:
+            s.request_assignment_next = False
+            s._change_reason = "Clearing request next assignment"
+            s.save()
 
     def _add_skip(self, person):
         s = self._reviewer_settings_for(person)
         s.skip_next += 1
+        s._change_reason = "Incrementing skip count"
         s.save()
 
     def _reviewer_settings_for(self, person):
@@ -484,6 +490,7 @@ class RotateAlphabeticallyReviewerQueuePolicy(AbstractReviewerQueuePolicy):
         # Instead, the "assign me next" flag is set.
         settings = self._reviewer_settings_for(reviewer_person)
         settings.request_assignment_next = True
+        settings._change_reason = "Setting request next assignment"
         settings.save()
 
     def _update_skip_next(self, rotation_pks, assignee_person):
@@ -523,20 +530,22 @@ class RotateAlphabeticallyReviewerQueuePolicy(AbstractReviewerQueuePolicy):
             min_skip_next = min([rs.skip_next for rs in rotation_settings.values()])
 
         next_reviewer_index = None
+        changed = []
         for index, pk in enumerate(unfolded_rotation_pks):
             rs = rotation_settings.get(pk)
             if (rs is None) or (rs.skip_next == min_skip_next):
                 next_reviewer_index = index
                 break
             else:
-                rs.skip_next = max(0, rs.skip_next - 1)  # ensure never negative
+                if rs.skip_next > 0:
+                    rs.skip_next = max(0, rs.skip_next - 1)  # ensure never negative
+                    rs._change_reason = "Skip count decremented"
+                    changed.append(rs)
                 
         log.assertion('next_reviewer_index is not None')  # some entry in the list must have the minimum value
-
-        bulk_update_with_history(rotation_settings.values(),
+        bulk_update_with_history(changed,
                                  ReviewerSettings,
-                                 ['skip_next'],
-                                 default_change_reason='skipped')
+                                 ['skip_next'])
 
         next_reviewer_pk = unfolded_rotation_pks[next_reviewer_index]
         NextReviewerInTeam.objects.update_or_create(
@@ -578,6 +587,7 @@ class LeastRecentlyUsedReviewerQueuePolicy(AbstractReviewerQueuePolicy):
         # who rejected a review and no further action is needed.
         settings = self._reviewer_settings_for(reviewer_person)
         settings.request_assignment_next = True
+        settings._change_reason = "Setting request next assignment"
         settings.save()
 
 
