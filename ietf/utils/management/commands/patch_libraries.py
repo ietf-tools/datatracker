@@ -1,6 +1,5 @@
 # Copyright The IETF Trust 2024, All Rights Reserved
 import django
-import os
 
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
