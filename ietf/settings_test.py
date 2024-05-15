@@ -60,3 +60,36 @@ MIDDLEWARE = [ c for c in MIDDLEWARE if not c in DEV_MIDDLEWARE ] # pyflakes:ign
 TEMPLATES[0]['OPTIONS']['context_processors'] = [ p for p in TEMPLATES[0]['OPTIONS']['context_processors'] if not p in DEV_TEMPLATE_CONTEXT_PROCESSORS ] # pyflakes:ignore
 
 REQUEST_PROFILE_STORE_ANONYMOUS_SESSIONS = False
+
+# Override loggers with a safer set in case things go to the log during testing. Specifically,
+# make sure there are no syslog loggers that might send things to a real syslog.
+LOGGING["loggers"] = {
+    'django': {
+        'handlers': ['debug_console'],
+        'level': 'INFO',
+    },
+    'django.request': {
+        'handlers': ['debug_console'],
+        'level': 'ERROR',
+    },
+    'django.server': {
+        'handlers': ['django.server'],
+        'level': 'INFO',
+    },
+    'django.security': {
+        'handlers': ['debug_console', ],
+        'level': 'INFO',
+    },
+    'oidc_provider': {
+        'handlers': ['debug_console', ],
+        'level': 'DEBUG',
+    },
+    'datatracker': {
+        'handlers': ['debug_console'],
+        'level': 'INFO',
+    },
+    'celery': {
+        'handlers': ['debug_console'],
+        'level': 'INFO',
+    },
+}
