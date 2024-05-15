@@ -1,15 +1,25 @@
 # Copyright The IETF Trust 2024, All Rights Reserved
 import mock
 
+from pathlib import Path
+
+from django.conf import settings
+
 from ietf.utils.test_utils import TestCase
 from ietf.utils.timezone import datetime_today
 
 from .factories import DocumentFactory
 from .models import Document
-from .tasks import expire_ids_task, expire_last_calls_task, notify_expirations_task
-
+from .tasks import (
+    expire_ids_task,
+    expire_last_calls_task,
+    generate_idnits2_rfcs_obsoleted_task,
+    generate_idnits2_rfc_status_task,
+    notify_expirations_task,
+)
 
 class TaskTests(TestCase):
+    settings_temp_path_overrides = TestCase.settings_temp_path_overrides + ["DERIVED_DIR"]
 
     @mock.patch("ietf.doc.tasks.in_draft_expire_freeze")
     @mock.patch("ietf.doc.tasks.get_expired_drafts")
@@ -35,10 +45,10 @@ class TaskTests(TestCase):
             Document.objects.filter(pk=doc.pk),
             Document.objects.filter(pk=other_doc.pk),
         ]
-        
+
         # call task
         expire_ids_task()
-        
+
         # check results
         self.assertTrue(in_draft_expire_freeze_mock.called)
         self.assertEqual(expirable_drafts_mock.call_count, 2)
@@ -50,7 +60,7 @@ class TaskTests(TestCase):
 
         # test that an exception is raised
         in_draft_expire_freeze_mock.side_effect = RuntimeError
-        with self.assertRaises(RuntimeError):(
+        with self.assertRaises(RuntimeError): (
             expire_ids_task())
 
     @mock.patch("ietf.doc.tasks.send_expire_warning_for_draft")
@@ -84,3 +94,23 @@ class TaskTests(TestCase):
         self.assertEqual(mock_expire.call_args_list[0], mock.call(docs[0]))
         self.assertEqual(mock_expire.call_args_list[1], mock.call(docs[1]))
         self.assertEqual(mock_expire.call_args_list[2], mock.call(docs[2]))
+
+    @mock.patch("ietf.doc.tasks.generate_idnits2_rfc_status")
+    def test_generate_idnits2_rfc_status_task(self, mock_generate):
+        mock_generate.return_value = "dåtå"
+        generate_idnits2_rfc_status_task()
+        self.assertEqual(mock_generate.call_count, 1)
+        self.assertEqual(
+            "dåtå".encode("utf8"),
+            (Path(settings.DERIVED_DIR) / "idnits2-rfc-status").read_bytes(),
+        )
+    
+    @mock.patch("ietf.doc.tasks.generate_idnits2_rfcs_obsoleted")
+    def test_generate_idnits2_rfcs_obsoleted_task(self, mock_generate):
+        mock_generate.return_value = "dåtå"
+        generate_idnits2_rfcs_obsoleted_task()
+        self.assertEqual(mock_generate.call_count, 1)
+        self.assertEqual(
+            "dåtå".encode("utf8"),
+            (Path(settings.DERIVED_DIR) / "idnits2-rfcs-obsoleted").read_bytes(),
+        )

@@ -191,6 +191,26 @@ class Command(BaseCommand):
             )
         )
 
+        PeriodicTask.objects.get_or_create(
+            name="Generate idnits2 rfcs-obsoleted blob",
+            task="ietf.doc.tasks.generate_idnits2_rfcs_obsoleted_task",
+            defaults=dict(
+                enabled=False,
+                crontab=self.crontabs["hourly"],
+                description="Generate the rfcs-obsoleted file used by idnits",
+            ),
+        )
+
+        PeriodicTask.objects.get_or_create(
+            name="Generate idnits2 rfc-status blob",
+            task="ietf.doc.tasks.generate_idnits2_rfc_status_task",
+            defaults=dict(
+                enabled=False,
+                crontab=self.crontabs["hourly"],
+                description="Generate the rfc_status blob used by idnits",
+            ),
+        )
+
     def show_tasks(self):
         for label, crontab in self.crontabs.items():
             tasks = PeriodicTask.objects.filter(crontab=crontab).order_by(
