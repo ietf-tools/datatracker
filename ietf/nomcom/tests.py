@@ -44,10 +44,11 @@ from ietf.nomcom.management.commands.send_reminders import Command, is_time_to_s
 from ietf.nomcom.factories import NomComFactory, FeedbackFactory, TopicFactory, \
                                   nomcom_kwargs_for_year, provide_private_key_to_test_client, \
                                   key
+from ietf.nomcom.tasks import send_nomcom_reminders_task
 from ietf.nomcom.utils import get_nomcom_by_year, make_nomineeposition, \
                               get_hash_nominee_position, is_eligible, list_eligible, \
                               get_eligibility_date, suggest_affiliation, ingest_feedback_email, \
-                              decorate_volunteers_with_qualifications
+                              decorate_volunteers_with_qualifications, send_reminders, _is_time_to_send_reminder
 from ietf.person.factories import PersonFactory, EmailFactory
 from ietf.person.models import Email, Person
 from ietf.stats.models import MeetingRegistration
@@ -1208,6 +1209,41 @@ class ReminderTest(TestCase):
         super().tearDown()
 
     def test_is_time_to_send(self):
+        self.nomcom.reminder_interval = 4
+        today = date_today()
+        self.assertTrue(
+            is_time_to_send(self.nomcom, today + datetime.timedelta(days=4), today)
+        )
+        for delta in range(4):
+            self.assertFalse(
+                _is_time_to_send_reminder(
+                    self.nomcom, today + datetime.timedelta(days=delta), today
+                )
+            )
+        self.nomcom.reminder_interval = None
+        self.assertFalse(is_time_to_send(self.nomcom, today, today))
+        self.nomcom.reminderdates_set.create(date=today)
+        self.assertTrue(is_time_to_send(self.nomcom, today, today))
+
+    def test_send_reminders(self):
+        messages_before = len(outbox)
+        self.nomcom.reminder_interval = 3
+        self.nomcom.save()
+        send_reminders()
+        self.assertEqual(len(outbox), messages_before + 2)
+        self.assertIn('nominee1@example.org', outbox[-1]['To'])
+        self.assertIn('please complete', outbox[-1]['Subject'])
+        self.assertIn('nominee1@example.org', outbox[-2]['To'])
+        self.assertIn('please accept', outbox[-2]['Subject'])
+        messages_before = len(outbox)
+        self.nomcom.reminder_interval = 4
+        self.nomcom.save()
+        send_reminders()
+        self.assertEqual(len(outbox), messages_before + 1)
+        self.assertIn('nominee2@example.org', outbox[-1]['To'])
+        self.assertIn('please accept', outbox[-1]['Subject'])
+
+    def test_is_time_to_send_old(self):
         self.nomcom.reminder_interval = 4
         today = date_today()
         self.assertTrue(is_time_to_send(self.nomcom,today+datetime.timedelta(days=4),today))
@@ -3048,3 +3084,10 @@ class ReclassifyFeedbackTests(TestCase):
         self.assertEqual(fb.type_id, 'junk')
         self.assertEqual(Feedback.objects.filter(type='read').count(), 0)
         self.assertEqual(Feedback.objects.filter(type='junk').count(), 1)
+
+
+class TaskTests(TestCase):
+    @mock.patch("ietf.nomcom.tasks.send_reminders")
+    def test_send_nomcom_reminders_task(self, mock_send):
+        send_nomcom_reminders_task()
+        self.assertEqual(mock_send.call_count, 1)
