@@ -63,7 +63,7 @@ REQUEST_PROFILE_STORE_ANONYMOUS_SESSIONS = False
 
 # Override loggers with a safer set in case things go to the log during testing. Specifically,
 # make sure there are no syslog loggers that might send things to a real syslog.
-LOGGING["loggers"] = {
+LOGGING["loggers"] = {  # pyflakes:ignore
     'django': {
         'handlers': ['debug_console'],
         'level': 'INFO',
