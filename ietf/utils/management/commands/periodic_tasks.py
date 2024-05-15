@@ -201,6 +201,16 @@ class Command(BaseCommand):
             ),
         )
 
+        PeriodicTask.objects.get_or_create(
+            name="Send NomCom reminders",
+            task="ietf.nomcom.tasks.send_nomcom_reminders_task",
+            defaults=dict(
+                enabled=False,
+                crontab=self.crontabs["daily"],
+                description="Send acceptance and questionnaire reminders to nominees",
+            ),
+        )
+
     def show_tasks(self):
         for label, crontab in self.crontabs.items():
             tasks = PeriodicTask.objects.filter(crontab=crontab).order_by(
