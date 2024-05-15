@@ -240,7 +240,7 @@ LOGGING = {
     #
     'loggers': {
         'django': {
-            'handlers': ['console', 'mail_admins',],
+            'handlers': ['debug_console', 'mail_admins'],
             'level': 'INFO',
         },
         'django.request': {
@@ -252,7 +252,7 @@ LOGGING = {
             'level': 'INFO',
         },
         'django.security': {
-            'handlers': ['console', ],
+	    'handlers': ['debug_console', ],
             'level': 'INFO',
         },
         'oidc_provider': {
@@ -260,13 +260,13 @@ LOGGING = {
             'level': 'DEBUG',
         },
         'datatracker': {
-            'handlers': ['console', ],
+            'handlers': ['syslog'],
             'level': 'INFO',
         },
         'celery': {
-            'handlers': ['console'],
+            'handlers': ['syslog'],
             'level': 'INFO',
-        }
+        },
     },
     #
     # No logger filters
@@ -288,6 +288,13 @@ LOGGING = {
             'level': 'INFO',
             'class': 'logging.StreamHandler',
             'formatter': 'django.server',
+        },
+        'syslog': {
+            'level': 'DEBUG',
+            'class': 'logging.handlers.SysLogHandler',
+            'facility': 'user',
+            'formatter': 'plain',
+            'address': '/dev/log',
         },
         'mail_admins': {
             'level': 'ERROR',
@@ -334,15 +341,6 @@ LOGGING = {
             '()': 'pythonjsonlogger.jsonlogger.JsonFormatter'
         }
     },
-}
-
-# This should be overridden by settings_local for any logger where debug (or
-# other) custom log settings are wanted.  Use "ietf/manage.py showloggers -l"
-# to show registered loggers.  The content here should match the levels above
-# and is shown as an example:
-UTILS_LOGGER_LEVELS: Dict[str, str] = {
-#    'django':           'INFO',
-#    'django.server':    'INFO',
 }
 
 # End logging
