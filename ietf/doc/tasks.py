@@ -23,6 +23,7 @@ from .expire import (
     get_soon_to_expire_drafts,
     send_expire_warning_for_draft,
 )
+from .lastcall import get_expired_last_calls, expire_last_call
 from .models import Document
 from .utils import generate_idnits2_rfc_status, generate_idnits2_rfcs_obsoleted
 
@@ -61,6 +62,17 @@ def notify_expirations_task(notify_days=14):
 
 
 @shared_task
+def expire_last_calls_task():
+    for doc in get_expired_last_calls():
+        try:
+            expire_last_call(doc)
+        except Exception:
+            log.log(f"ERROR: Failed to expire last call for {doc.file_tag()} (id={doc.pk})")
+        else:
+            log.log(f"Expired last call for {doc.file_tag()} (id={doc.pk})")
+
+
+@shared_task            
 def generate_idnits2_rfc_status_task():
     outpath = Path(settings.DERIVED_DIR) / "idnits2-rfc-status"
     blob = generate_idnits2_rfc_status()
