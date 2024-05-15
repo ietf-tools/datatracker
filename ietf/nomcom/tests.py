@@ -40,7 +40,6 @@ from ietf.nomcom.models import NomineePosition, Position, Nominee, \
                                NomineePositionStateName, Feedback, FeedbackTypeName, \
                                Nomination, FeedbackLastSeen, TopicFeedbackLastSeen, ReminderDates, \
                                NomCom
-from ietf.nomcom.management.commands.send_reminders import Command, is_time_to_send
 from ietf.nomcom.factories import NomComFactory, FeedbackFactory, TopicFactory, \
                                   nomcom_kwargs_for_year, provide_private_key_to_test_client, \
                                   key
@@ -1208,11 +1207,11 @@ class ReminderTest(TestCase):
         teardown_test_public_keys_dir(self)
         super().tearDown()
 
-    def test_is_time_to_send(self):
+    def test_is_time_to_send_reminder(self):
         self.nomcom.reminder_interval = 4
         today = date_today()
         self.assertTrue(
-            is_time_to_send(self.nomcom, today + datetime.timedelta(days=4), today)
+            _is_time_to_send_reminder(self.nomcom, today + datetime.timedelta(days=4), today)
         )
         for delta in range(4):
             self.assertFalse(
@@ -1221,9 +1220,9 @@ class ReminderTest(TestCase):
                 )
             )
         self.nomcom.reminder_interval = None
-        self.assertFalse(is_time_to_send(self.nomcom, today, today))
+        self.assertFalse(_is_time_to_send_reminder(self.nomcom, today, today))
         self.nomcom.reminderdates_set.create(date=today)
-        self.assertTrue(is_time_to_send(self.nomcom, today, today))
+        self.assertTrue(_is_time_to_send_reminder(self.nomcom, today, today))
 
     def test_send_reminders(self):
         messages_before = len(outbox)
@@ -1243,36 +1242,6 @@ class ReminderTest(TestCase):
         self.assertIn('nominee2@example.org', outbox[-1]['To'])
         self.assertIn('please accept', outbox[-1]['Subject'])
 
-    def test_is_time_to_send_old(self):
-        self.nomcom.reminder_interval = 4
-        today = date_today()
-        self.assertTrue(is_time_to_send(self.nomcom,today+datetime.timedelta(days=4),today))
-        for delta in range(4):
-            self.assertFalse(is_time_to_send(self.nomcom,today+datetime.timedelta(days=delta),today))
-        self.nomcom.reminder_interval = None
-        self.assertFalse(is_time_to_send(self.nomcom,today,today))
-        self.nomcom.reminderdates_set.create(date=today)
-        self.assertTrue(is_time_to_send(self.nomcom,today,today))
-
-    def test_command(self):
-        c = Command()
-        messages_before=len(outbox)
-        self.nomcom.reminder_interval = 3
-        self.nomcom.save()
-        c.handle(None,None)
-        self.assertEqual(len(outbox), messages_before + 2)
-        self.assertIn('nominee1@example.org', outbox[-1]['To'])
-        self.assertIn('please complete', outbox[-1]['Subject'])
-        self.assertIn('nominee1@example.org', outbox[-2]['To'])
-        self.assertIn('please accept', outbox[-2]['Subject'])
-        messages_before=len(outbox)
-        self.nomcom.reminder_interval = 4
-        self.nomcom.save()
-        c.handle(None,None)
-        self.assertEqual(len(outbox), messages_before + 1)
-        self.assertIn('nominee2@example.org', outbox[-1]['To'])
-        self.assertIn('please accept', outbox[-1]['Subject'])
-     
     def test_remind_accept_view(self):
         url = reverse('ietf.nomcom.views.send_reminder_mail', kwargs={'year': NOMCOM_YEAR,'type':'accept'})
         login_testing_unauthorized(self, CHAIR_USER, url)
