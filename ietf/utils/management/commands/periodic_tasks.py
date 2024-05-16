@@ -222,6 +222,16 @@ class Command(BaseCommand):
         )
 
         PeriodicTask.objects.get_or_create(
+            name="Generate WG charter files",
+            task="ietf.group.tasks.generate_wg_charters_files_task",
+            defaults=dict(
+                enabled=False,
+                crontab=self.crontabs["hourly"],
+                description="Update 1wg-charters.txt and 1wg-charters-by-acronym.txt",
+            ),
+        )
+
+        PeriodicTask.objects.get_or_create(
             name="Generate I-D bibxml files",
             task="ietf.doc.tasks.generate_draft_bibxml_files_task",
             defaults=dict(
