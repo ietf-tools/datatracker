@@ -220,7 +220,7 @@ jobs:
         .devcontainer
         .github
         .vscode
-        helm
+        k8s
         playwright
         svn-history
         docker-compose.yml

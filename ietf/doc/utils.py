@@ -1413,3 +1413,20 @@ def investigate_fragment(name_fragment):
         unverifiable_collections=unverifiable_collections,
         unexpected=unexpected,
     )
+
+
+def update_or_create_draft_bibxml_file(doc, rev):
+    log.assertion("doc.type_id == 'draft'")
+    normalized_bibxml = re.sub(r"\r\n?", r"\n", bibxml_for_draft(doc, rev))
+    ref_rev_file_path = Path(settings.BIBXML_BASE_PATH) / "bibxml-ids" / f"reference.I-D.{doc.name}-{rev}.xml"
+    try:
+        existing_bibxml = ref_rev_file_path.read_text(encoding="utf8")
+    except IOError:
+        existing_bibxml = ""
+    if normalized_bibxml.strip() != existing_bibxml.strip():
+        log.log(f"Writing {ref_rev_file_path}")
+        ref_rev_file_path.write_text(normalized_bibxml, encoding="utf8")
+
+
+def ensure_draft_bibxml_path_exists():
+    (Path(settings.BIBXML_BASE_PATH) / "bibxml-ids").mkdir(exist_ok=True)
