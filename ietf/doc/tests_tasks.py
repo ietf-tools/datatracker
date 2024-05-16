@@ -1,18 +1,21 @@
 # Copyright The IETF Trust 2024, All Rights Reserved
+import datetime
 import mock
 
 from pathlib import Path
 
 from django.conf import settings
+from django.utils import timezone
 
 from ietf.utils.test_utils import TestCase
 from ietf.utils.timezone import datetime_today
 
-from .factories import DocumentFactory
-from .models import Document
+from .factories import DocumentFactory, NewRevisionDocEventFactory
+from .models import Document, NewRevisionDocEvent
 from .tasks import (
     expire_ids_task,
     expire_last_calls_task,
+    generate_draft_bibxml_files_task,
     generate_idnits2_rfcs_obsoleted_task,
     generate_idnits2_rfc_status_task,
     notify_expirations_task,
@@ -113,4 +116,87 @@ class TaskTests(TestCase):
         self.assertEqual(
             "dåtå".encode("utf8"),
             (Path(settings.DERIVED_DIR) / "idnits2-rfcs-obsoleted").read_bytes(),
+        )
+
+    @mock.patch("ietf.doc.tasks.ensure_draft_bibxml_path_exists")
+    @mock.patch("ietf.doc.tasks.update_or_create_draft_bibxml_file")
+    def test_generate_draft_bibxml_files_task(self, mock_create, mock_ensure_path):
+        now = timezone.now()
+        very_old_event = NewRevisionDocEventFactory(
+            time=now - datetime.timedelta(days=1000), rev="17"
+        )
+        old_event = NewRevisionDocEventFactory(
+            time=now - datetime.timedelta(days=8), rev="03"
+        )
+        young_event = NewRevisionDocEventFactory(
+            time=now - datetime.timedelta(days=6), rev="06"
+        )
+        # a couple that should always be ignored
+        NewRevisionDocEventFactory(
+            time=now - datetime.timedelta(days=6), rev="09", doc__type_id="rfc"  # not a draft
+        )
+        NewRevisionDocEventFactory(
+            type="changed_document",  # not a "new_revision" type
+            time=now - datetime.timedelta(days=6),
+            rev="09",
+            doc__type_id="rfc",
+        )
+    
+        # Get rid of the "00" events created by the factories -- they're just noise for this test
+        NewRevisionDocEvent.objects.filter(rev="00").delete()
+    
+        # default args - look back 7 days
+        generate_draft_bibxml_files_task()
+        self.assertTrue(mock_ensure_path.called)
+        self.assertCountEqual(
+            mock_create.call_args_list, [mock.call(young_event.doc, young_event.rev)]
+        )
+        mock_create.reset_mock()
+        mock_ensure_path.reset_mock()
+    
+        # shorter lookback
+        generate_draft_bibxml_files_task(days=5)
+        self.assertTrue(mock_ensure_path.called)
+        self.assertCountEqual(mock_create.call_args_list, [])
+        mock_create.reset_mock()
+        mock_ensure_path.reset_mock()
+    
+        # longer lookback
+        generate_draft_bibxml_files_task(days=9)
+        self.assertTrue(mock_ensure_path.called)
+        self.assertCountEqual(
+            mock_create.call_args_list,
+            [
+                mock.call(young_event.doc, young_event.rev),
+                mock.call(old_event.doc, old_event.rev),
+            ],
+        )
+        mock_create.reset_mock()
+        mock_ensure_path.reset_mock()
+    
+        # everything
+        generate_draft_bibxml_files_task(process_all=True)
+        self.assertTrue(mock_ensure_path.called)
+        self.assertCountEqual(
+            mock_create.call_args_list,
+            [
+                mock.call(young_event.doc, young_event.rev),
+                mock.call(old_event.doc, old_event.rev),
+                mock.call(very_old_event.doc, very_old_event.rev),
+            ],
+        )
+        mock_create.reset_mock()
+        mock_ensure_path.reset_mock()
+    
+        # everything should still be tried, even if there's an exception
+        mock_create.side_effect = RuntimeError
+        generate_draft_bibxml_files_task(process_all=True)
+        self.assertTrue(mock_ensure_path.called)
+        self.assertCountEqual(
+            mock_create.call_args_list,
+            [
+                mock.call(young_event.doc, young_event.rev),
+                mock.call(old_event.doc, old_event.rev),
+                mock.call(very_old_event.doc, very_old_event.rev),
+            ],
         )
