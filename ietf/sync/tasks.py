@@ -13,6 +13,7 @@ from django.utils import timezone
 
 from ietf.sync import iana
 from ietf.sync import rfceditor
+from ietf.sync.rfceditor import MIN_QUEUE_RESULTS, parse_queue, update_drafts_from_queue
 from ietf.utils import log
 from ietf.utils.timezone import date_today
 
@@ -68,6 +69,33 @@ def rfc_editor_index_update_task(full_index=False):
     ):
         for c in changes:
             log.log("RFC%s, %s: %s" % (rfc_number, doc.name, c))
+
+
+@shared_task
+def rfc_editor_queue_updates_task():
+    log.log(f"Updating RFC Editor queue states from {settings.RFC_EDITOR_QUEUE_URL}")
+    try:
+        response = requests.get(
+            settings.RFC_EDITOR_QUEUE_URL,
+            timeout=30,  # seconds
+        )
+    except requests.Timeout as exc:
+        log.log(f"GET request timed out retrieving RFC editor queue: {exc}")
+        return  # failed
+    drafts, warnings = parse_queue(io.StringIO(response.text))
+    for w in warnings:
+        log.log(f"Warning: {w}")
+    
+    if len(drafts) < MIN_QUEUE_RESULTS:
+        log.log("Not enough results, only %s" % len(drafts))
+        return  # failed
+    
+    changed, warnings = update_drafts_from_queue(drafts)
+    for w in warnings:
+        log.log(f"Warning: {w}")
+    
+    for c in changed:
+        log.log(f"Updated {c}")
 
 
 @shared_task

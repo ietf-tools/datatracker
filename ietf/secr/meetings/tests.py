@@ -3,14 +3,11 @@
 
 
 import datetime
-import os
-import shutil
 
 from pyquery import PyQuery
 
 import debug         # pyflakes:ignore
 
-from django.conf import settings
 from django.urls import reverse
 from django.utils import timezone
 
@@ -27,24 +24,6 @@ from ietf.utils.test_utils import TestCase
 
 class SecrMeetingTestCase(TestCase):
     settings_temp_path_overrides = TestCase.settings_temp_path_overrides + ['AGENDA_PATH']
-    def setUp(self):
-        super().setUp()
-        self.bluesheet_dir = self.tempdir('bluesheet')
-        self.bluesheet_path = os.path.join(self.bluesheet_dir,'blue_sheet.rtf')
-        self.saved_secr_blue_sheet_path = settings.SECR_BLUE_SHEET_PATH
-        settings.SECR_BLUE_SHEET_PATH = self.bluesheet_path
-
-        # n.b., the bluesheet upload relies on SECR_PROCEEDINGS_DIR being the same
-        # as AGENDA_PATH. This is probably a bug, but may not be worth fixing if
-        # the secr app is on the way out.
-        self.saved_secr_proceedings_dir = settings.SECR_PROCEEDINGS_DIR
-        settings.SECR_PROCEEDINGS_DIR = settings.AGENDA_PATH
-
-    def tearDown(self):
-        settings.SECR_PROCEEDINGS_DIR = self.saved_secr_proceedings_dir
-        settings.SECR_BLUE_SHEET_PATH = self.saved_secr_blue_sheet_path
-        shutil.rmtree(self.bluesheet_dir)
-        super().tearDown()
 
     def test_main(self):
         "Main Test"

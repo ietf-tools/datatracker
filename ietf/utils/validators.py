@@ -60,6 +60,7 @@ class RegexStringValidator(object):
 
 validate_regular_expression_string = RegexStringValidator()
 
+
 def validate_file_size(file, missing_ok=False):
     try:
         size = file.size
@@ -69,8 +70,14 @@ def validate_file_size(file, missing_ok=False):
         else:
             raise
 
-    if size > settings.SECR_MAX_UPLOAD_SIZE:
-        raise ValidationError('Please keep filesize under %s. Requested upload size was %s' % (filesizeformat(settings.SECR_MAX_UPLOAD_SIZE), filesizeformat(file.size)))
+    if size > settings.DATATRACKER_MAX_UPLOAD_SIZE:
+        raise ValidationError(
+            "Please keep filesize under {}. Requested upload size was {}".format(
+                filesizeformat(settings.DATATRACKER_MAX_UPLOAD_SIZE),
+                filesizeformat(file.size)
+            )
+        )
+
 
 def validate_mime_type(file, valid, missing_ok=False):
     try:

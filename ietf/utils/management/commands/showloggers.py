@@ -11,18 +11,7 @@ from django.core.management.base import BaseCommand
 import debug                            # pyflakes:ignore
 
 class Command(BaseCommand):
-    """
-    Display a list or tree representation of python loggers.
-
-    Add a UTILS_LOGGER_LEVELS setting in settings_local.py to configure
-    non-default logging levels for any registered logger, for instance:
-
-    UTILS_LOGGER_LEVELS = {
-        'oicd_provider': 'DEBUG',
-        'urllib3.connection': 'DEBUG',
-    }
-
-    """
+    """Display a list or tree representation of python loggers"""
 
     help = dedent(__doc__).strip()
 

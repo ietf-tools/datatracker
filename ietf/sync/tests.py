@@ -886,6 +886,36 @@ class TaskTests(TestCase):
         tasks.rfc_editor_index_update_task(full_index=False)
         self.assertFalse(update_docs_mock.called)
 
+    @override_settings(RFC_EDITOR_QUEUE_URL="https://rfc-editor.example.com/queue/")
+    @mock.patch("ietf.sync.tasks.update_drafts_from_queue")
+    @mock.patch("ietf.sync.tasks.parse_queue")
+    def test_rfc_editor_queue_updates_task(self, mock_parse, mock_update):
+        # test a request timeout
+        self.requests_mock.get("https://rfc-editor.example.com/queue/", exc=requests.exceptions.Timeout)
+        tasks.rfc_editor_queue_updates_task()
+        self.assertFalse(mock_parse.called)
+        self.assertFalse(mock_update.called)
+        
+        # now return a value rather than an exception
+        self.requests_mock.get("https://rfc-editor.example.com/queue/", text="the response")
+
+        # mock returning < MIN_QUEUE_RESULTS values - treated as an error, so no update takes place
+        mock_parse.return_value = ([n for n in range(rfceditor.MIN_QUEUE_RESULTS - 1)], ["a warning"])
+        tasks.rfc_editor_queue_updates_task()
+        self.assertEqual(mock_parse.call_count, 1)
+        self.assertEqual(mock_parse.call_args[0][0].read(), "the response")
+        self.assertFalse(mock_update.called)
+        mock_parse.reset_mock()
+        
+        # mock returning +. MIN_QUEUE_RESULTS - should succeed
+        mock_parse.return_value = ([n for n in range(rfceditor.MIN_QUEUE_RESULTS)], ["a warning"])
+        mock_update.return_value = ([1,2,3], ["another warning"])
+        tasks.rfc_editor_queue_updates_task()
+        self.assertEqual(mock_parse.call_count, 1)
+        self.assertEqual(mock_parse.call_args[0][0].read(), "the response")
+        self.assertEqual(mock_update.call_count, 1)
+        self.assertEqual(mock_update.call_args, mock.call([n for n in range(rfceditor.MIN_QUEUE_RESULTS)]))
+
     @override_settings(IANA_SYNC_CHANGES_URL="https://iana.example.com/sync/")
     @mock.patch("ietf.sync.tasks.iana.update_history_with_changes")
     @mock.patch("ietf.sync.tasks.iana.parse_changes_json")

@@ -50,3 +50,9 @@ indent_size = 2
 
 [ietf/**.html]
 insert_final_newline = false
+
+# Settings for Kubernetes yaml
+# ---------------------------------------------------------
+# Use 2-space indents
+[k8s/**.yaml]
+indent_size = 2
