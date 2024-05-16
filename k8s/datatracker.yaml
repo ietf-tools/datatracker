@@ -1,0 +1,94 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: datatracker
+spec:
+  replicas: 1
+  revisionHistoryLimit: 2
+  selector:
+    matchLabels:
+      app: datatracker
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: datatracker
+    spec:
+      securityContext:
+        runAsNonRoot: true
+      containers:
+        # -----------------------------------------------------
+        # ScoutAPM Container
+        # -----------------------------------------------------
+        - name: scoutapm
+          image: "scoutapp/scoutapm:version-1.4.0"
+          imagePullPolicy: IfNotPresent
+          livenessProbe:
+            exec:
+              command:
+                - "sh"
+                - "-c"
+                - "./core-agent probe --tcp 0.0.0.0:6590 | grep -q 'Agent found'"
+          securityContext:
+            readOnlyRootFilesystem: true
+            runAsUser: 65534 # "nobody" user by default
+            runAsGroup: 65534  # "nogroup" group by default
+        # -----------------------------------------------------
+        # Datatracker Container
+        # -----------------------------------------------------
+        - name: datatracker
+          image: "ghcr.io/ietf-tools/datatracker:$APP_IMAGE_TAG"
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8000
+              name: http
+              protocol: TCP
+          volumeMounts:
+            - name: dt-vol
+              mountPath: /a
+            - name: dt-tmp
+              mountPath: /tmp
+            - name: dt-cfg
+              mountPath: /workspace/ietf/settings_local.py
+              subPath: settings_local.py
+          env:
+            - name: "CONTAINER_ROLE"
+              value: "datatracker"
+          envFrom:
+            - configMapRef:
+                name: django-config
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            readOnlyRootFilesystem: true
+            runAsUser: 1000
+            runAsGroup: 1000
+      volumes:
+        # To be overriden with the actual shared volume
+        - name: dt-vol
+        - name: dt-tmp
+          emptyDir:
+            sizeLimit: "2Gi"
+        - name: dt-cfg
+          configMap:
+            name: files-cfgmap
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: datatracker
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app: datatracker
