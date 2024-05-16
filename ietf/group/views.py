@@ -75,12 +75,13 @@ from ietf.group.forms import (GroupForm, StatusUpdateForm, ConcludeGroupForm, St
 from ietf.group.mails import email_admin_re_charter, email_personnel_change, email_comment
 from ietf.group.models import ( Group, Role, GroupEvent, GroupStateTransitions,
                               ChangeStateGroupEvent, GroupFeatures, AppealArtifact )
-from ietf.group.utils import (get_charter_text, can_manage_all_groups_of_type, 
+from ietf.group.utils import (can_manage_all_groups_of_type,
                               milestone_reviewer_for_group_type, can_provide_status_update,
                               can_manage_materials, group_attribute_change_desc,
                               construct_group_menu_context, get_group_materials,
                               save_group_in_history, can_manage_group, update_role_set,
-                              get_group_or_404, setup_default_community_list_for_group, )                              
+                              get_group_or_404, setup_default_community_list_for_group, fill_in_charter_info,
+                              fill_in_wg_roles, fill_in_wg_drafts, )                              
 #
 from ietf.ietfauth.utils import has_role, is_authorized_in_group
 from ietf.mailtrigger.utils import gather_relevant_expansions
@@ -132,70 +133,9 @@ def roles(group, role_name):
     return Role.objects.filter(group=group, name=role_name).select_related("email", "person")
 
 
-def fill_in_charter_info(group, include_drafts=False):
-    group.areadirector = getattr(group.ad_role(),'email',None)
-
-    personnel = {}
-    for r in Role.objects.filter(group=group).order_by('person__name').select_related("email", "person", "name"):
-        if r.name_id not in personnel:
-            personnel[r.name_id] = []
-        personnel[r.name_id].append(r)
-
-    if group.parent and group.parent.type_id == "area" and group.ad_role() and "ad" not in personnel:
-        ad_roles = list(Role.objects.filter(group=group.parent, name="ad", person=group.ad_role().person))
-        if ad_roles:
-            personnel["ad"] = ad_roles
-
-    group.personnel = []
-    for role_name_slug, roles in personnel.items():
-        label = roles[0].name.name
-        if len(roles) > 1:
-            if label.endswith("y"):
-                label = label[:-1] + "ies"
-            else:
-                label += "s"
-
-        group.personnel.append((role_name_slug, label, roles))
-
-    group.personnel.sort(key=lambda t: t[2][0].name.order)
-
-    milestone_state = "charter" if group.state_id == "proposed" else "active"
-    group.milestones = group.groupmilestone_set.filter(state=milestone_state)
-    if group.uses_milestone_dates:
-        group.milestones = group.milestones.order_by('resolved', 'due')
-    else:
-        group.milestones = group.milestones.order_by('resolved', 'order')
-
-    if group.charter:
-        group.charter_text = get_charter_text(group)
-    else:
-        group.charter_text = "Not chartered yet."
-    group.charter_html = markdown.markdown(group.charter_text)
-
 def extract_last_name(role):
     return role.person.name_parts()[3]
 
-def fill_in_wg_roles(group):
-    def get_roles(slug, default):
-        for role_slug, label, roles in group.personnel:
-            if slug == role_slug:
-                return roles
-        return default
-
-    group.chairs = get_roles("chair", [])
-    ads = get_roles("ad", [])
-    group.areadirector = ads[0] if ads else None
-    group.techadvisors = get_roles("techadv", [])
-    group.editors = get_roles("editor", [])
-    group.secretaries = get_roles("secr", [])
-
-def fill_in_wg_drafts(group):
-    group.drafts = Document.objects.filter(type_id="draft", group=group).order_by("name")
-    group.rfcs = Document.objects.filter(type_id="rfc", group=group).order_by("rfc_number")
-    for rfc in group.rfcs:
-        # TODO: remote_field?
-        rfc.remote_field = RelatedDocument.objects.filter(source=rfc,relationship_id__in=['obs','updates']).distinct()
-        rfc.invrel = RelatedDocument.objects.filter(target=rfc,relationship_id__in=['obs','updates']).distinct()
 
 def check_group_email_aliases():
     pattern = re.compile(r'expand-(.*?)(-\w+)@.*? +(.*)$')
