@@ -81,8 +81,7 @@ from ietf.group.utils import (can_manage_all_groups_of_type,
                               can_manage_materials, group_attribute_change_desc,
                               construct_group_menu_context, get_group_materials,
                               save_group_in_history, can_manage_group, update_role_set,
-                              get_group_or_404, setup_default_community_list_for_group, fill_in_charter_info,
-                              fill_in_wg_roles, fill_in_wg_drafts, )                              
+                              get_group_or_404, setup_default_community_list_for_group, fill_in_charter_info)                              
 #
 from ietf.ietfauth.utils import has_role, is_authorized_in_group
 from ietf.mailtrigger.utils import gather_relevant_expansions
