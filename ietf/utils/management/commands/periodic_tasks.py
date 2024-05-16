@@ -221,6 +221,16 @@ class Command(BaseCommand):
             ),
         )
 
+        PeriodicTask.objects.get_or_create(
+            name="Generate I-D bibxml files",
+            task="ietf.doc.tasks.generate_draft_bibxml_files_task",
+            defaults=dict(
+                enabled=False,
+                crontab=self.crontabs["hourly"],
+                description="Generate draft bibxml files for the last week's drafts",
+            ),
+        )
+
     def show_tasks(self):
         for label, crontab in self.crontabs.items():
             tasks = PeriodicTask.objects.filter(crontab=crontab).order_by(
