@@ -13,7 +13,7 @@ from .utils import fill_in_charter_info, fill_in_wg_drafts, fill_in_wg_roles
 
 
 @shared_task
-def generate_1wg_charter_files_task():
+def generate_wg_charters_files_task():
     areas = Group.objects.filter(type="area", state="active").order_by("name")
     for area in areas:
         area.groups = Group.objects.filter(parent=area, type="wg", state="active").order_by("name")
