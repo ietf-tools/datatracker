@@ -41,9 +41,10 @@ import io
 import math
 import re
 import json
+import types
 
 from collections import OrderedDict, defaultdict
-import types
+from pathlib import Path
 from simple_history.utils import update_change_reason
 
 from django import forms
@@ -181,34 +182,28 @@ def wg_summary_acronym(request, group_type):
                     'groups': groups },
                   content_type='text/plain; charset=UTF-8')
 
-@cache_page ( 60 * 60, cache="slowpages" )
+
 def wg_charters(request, group_type):
     if group_type != "wg":
         raise Http404
-    areas = Group.objects.filter(type="area", state="active").order_by("name")
-    for area in areas:
-        area.groups = Group.objects.filter(parent=area, type="wg", state="active").order_by("name")
-        for group in area.groups:
-            fill_in_charter_info(group)
-            fill_in_wg_roles(group)
-            fill_in_wg_drafts(group)
-    return render(request, 'group/1wg-charters.txt',
-                  { 'areas': areas },
-                  content_type='text/plain; charset=UTF-8')
+    fpath = Path(settings.CHARTER_PATH) / "1wg-charters.txt" 
+    try:
+        content = fpath.read_text(encoding="utf8")
+    except IOError:
+        raise Http404
+    return HttpResponse(content, content_type="text/plain; charset=UTF-8")
 
-@cache_page ( 60 * 60, cache="slowpages" )
+
 def wg_charters_by_acronym(request, group_type):
     if group_type != "wg":
         raise Http404
+    fpath = Path(settings.CHARTER_PATH) / "1wg-charters-by-acronym.txt" 
+    try:
+        content = fpath.read_text(encoding="utf8")
+    except IOError:
+        raise Http404
+    return HttpResponse(content, content_type="text/plain; charset=UTF-8")
 
-    groups = Group.objects.filter(type="wg", state="active").exclude(parent=None).order_by("acronym")
-    for group in groups:
-        fill_in_charter_info(group)
-        fill_in_wg_roles(group)
-        fill_in_wg_drafts(group)
-    return render(request, 'group/1wg-charters-by-acronym.txt',
-                  { 'groups': groups },
-                  content_type='text/plain; charset=UTF-8')
 
 def active_groups(request, group_type=None):
 
