@@ -17,9 +17,6 @@ cd $DTDIR/
 
 logger -p user.info -t cron "Running $DTDIR/bin/daily"
 
-# Run the hourly jobs first
-$DTDIR/bin/hourly
-
 # Set up the virtual environment
 source $DTDIR/env/bin/activate
 

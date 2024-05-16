@@ -37,7 +37,7 @@ Goals and Milestones:
 {% for milestone in group.milestones %}  {% if milestone.resolved %}{{ milestone.resolved }}    {% else %}{{ milestone.due|date:"M Y" }}{% endif %} - {{ milestone.desc }}
 {% endfor %}
 Internet-Drafts:
-{% for document in group.drafts %}  - {{ document.title }} [{{ document.name }}-{{ document.rev }}] ({{ document.pages }} pages)
+{% for document in group.drafts %}  - {{ document.title|clean_whitespace }} [{{ document.name }}-{{ document.rev }}] ({{ document.pages }} pages)
 {% endfor %}
 {% if group.rfcs %}Requests for Comments:
 {% for document in group.rfcs %}  {{ document.name.upper }}: {{ document.title}} ({{ document.pages }} pages){% for r in document.rel %}

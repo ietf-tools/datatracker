@@ -37,8 +37,8 @@ from ietf.doc.utils_charter import ( historic_milestones_for_charter,
 from ietf.doc.mails import email_state_changed, email_charter_internal_review
 from ietf.group.mails import email_admin_re_charter
 from ietf.group.models import Group, ChangeStateGroupEvent, MilestoneGroupEvent
-from ietf.group.utils import save_group_in_history, save_milestone_in_history, can_manage_all_groups_of_type
-from ietf.group.views import fill_in_charter_info
+from ietf.group.utils import save_group_in_history, save_milestone_in_history, can_manage_all_groups_of_type, \
+    fill_in_charter_info
 from ietf.ietfauth.utils import has_role, role_required
 from ietf.name.models import GroupStateName
 from ietf.person.models import Person
