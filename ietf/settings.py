@@ -252,7 +252,7 @@ LOGGING = {
             'level': 'INFO',
         },
         'django.security': {
-	    'handlers': ['debug_console', ],
+            'handlers': ['debug_console', ],
             'level': 'INFO',
         },
         'oidc_provider': {
@@ -260,11 +260,11 @@ LOGGING = {
             'level': 'DEBUG',
         },
         'datatracker': {
-            'handlers': ['syslog'],
+            'handlers': ['debug_console'],
             'level': 'INFO',
         },
         'celery': {
-            'handlers': ['syslog'],
+            'handlers': ['debug_console'],
             'level': 'INFO',
         },
     },
@@ -288,13 +288,6 @@ LOGGING = {
             'level': 'INFO',
             'class': 'logging.StreamHandler',
             'formatter': 'django.server',
-        },
-        'syslog': {
-            'level': 'DEBUG',
-            'class': 'logging.handlers.SysLogHandler',
-            'facility': 'user',
-            'formatter': 'plain',
-            'address': '/dev/log',
         },
         'mail_admins': {
             'level': 'ERROR',
