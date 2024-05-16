@@ -187,7 +187,7 @@ def wg_charters(request, group_type):
         raise Http404
     fpath = Path(settings.CHARTER_PATH) / "1wg-charters.txt" 
     try:
-        content = fpath.read_text(encoding="utf8")
+        content = fpath.read_bytes()
     except IOError:
         raise Http404
     return HttpResponse(content, content_type="text/plain; charset=UTF-8")
@@ -198,7 +198,7 @@ def wg_charters_by_acronym(request, group_type):
         raise Http404
     fpath = Path(settings.CHARTER_PATH) / "1wg-charters-by-acronym.txt" 
     try:
-        content = fpath.read_text(encoding="utf8")
+        content = fpath.read_bytes()
     except IOError:
         raise Http404
     return HttpResponse(content, content_type="text/plain; charset=UTF-8")
