@@ -17,6 +17,7 @@ import debug                            # pyflakes:ignore
 
 from django.conf import settings
 from django.test import RequestFactory
+from django.test.utils import override_settings
 from django.urls import reverse as urlreverse
 from django.urls import NoReverseMatch
 from django.utils import timezone
@@ -196,6 +197,24 @@ class GroupPagesTests(TestCase):
         self.assertIn("This is a charter.", wg_charters_by_acronym_contents)
         wg_charters_by_acronymcopy = (Path(settings.CHARTER_COPY_PATH) / "1wg-charters-by-acronym.txt").read_text(encoding="utf8")
         self.assertEqual(wg_charters_by_acronymcopy, wg_charters_by_acronym_contents)
+
+    def test_generate_wg_charters_files_task_without_copy(self):
+        group = CharterFactory(group__type_id='wg',group__parent=GroupFactory(type_id='area')).group
+        RoleFactory(group=group,name_id='chair',person=PersonFactory())
+        RoleFactory(group=group,name_id='ad',person=PersonFactory())
+        chair = Email.objects.filter(role__group=group, role__name="chair")[0]
+        (
+            Path(settings.CHARTER_PATH) / f"{group.charter.name}-{group.charter.rev}.txt"
+         ).write_text("This is a charter.")
+
+        with override_settings():
+            del(settings.CHARTER_COPY_PATH)
+            generate_wg_charters_files_task()
+        # n.b., CHARTER_COPY_PATH is set again outside the with block
+        self.assertTrue((Path(settings.CHARTER_PATH) / "1wg-charters.txt").exists())
+        self.assertFalse((Path(settings.CHARTER_COPY_PATH) / "1wg-charters.txt").exists())
+        self.assertTrue((Path(settings.CHARTER_PATH) / "1wg-charters-by-acronym.txt").exists())
+        self.assertFalse((Path(settings.CHARTER_COPY_PATH) / "1wg-charters-by-acronym.txt").exists())
 
     def test_chartering_groups(self):
         group = CharterFactory(group__type_id='wg',group__parent=GroupFactory(type_id='area'),states=[('charter','intrev')]).group
