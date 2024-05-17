@@ -57,7 +57,7 @@ def pklist(docs):
     return [ str(doc.pk) for doc in docs.all() ]
 
 class GroupPagesTests(TestCase):
-    settings_temp_path_overrides = TestCase.settings_temp_path_overrides + ['CHARTER_PATH']
+    settings_temp_path_overrides = TestCase.settings_temp_path_overrides + ['CHARTER_PATH', 'CHARTER_COPY_PATH']
 
     def test_active_groups(self):
         area = GroupFactory.create(type_id='area')
@@ -185,6 +185,8 @@ class GroupPagesTests(TestCase):
         self.assertIn(group.ad_role().person.plain_name(), wg_charters_contents)
         self.assertIn(chair.address, wg_charters_contents)
         self.assertIn("This is a charter.", wg_charters_contents)
+        wg_charters_copy = (Path(settings.CHARTER_COPY_PATH) / "1wg-charters.txt").read_text(encoding="utf8")
+        self.assertEqual(wg_charters_copy, wg_charters_contents)
 
         wg_charters_by_acronym_contents = (Path(settings.CHARTER_PATH) / "1wg-charters-by-acronym.txt").read_text(encoding="utf8")
         self.assertIn(group.acronym, wg_charters_by_acronym_contents)
@@ -192,6 +194,8 @@ class GroupPagesTests(TestCase):
         self.assertIn(group.ad_role().person.plain_name(), wg_charters_by_acronym_contents)
         self.assertIn(chair.address, wg_charters_by_acronym_contents)
         self.assertIn("This is a charter.", wg_charters_by_acronym_contents)
+        wg_charters_by_acronymcopy = (Path(settings.CHARTER_COPY_PATH) / "1wg-charters-by-acronym.txt").read_text(encoding="utf8")
+        self.assertEqual(wg_charters_by_acronymcopy, wg_charters_by_acronym_contents)
 
     def test_chartering_groups(self):
         group = CharterFactory(group__type_id='wg',group__parent=GroupFactory(type_id='area'),states=[('charter','intrev')]).group
