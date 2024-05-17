@@ -209,6 +209,12 @@ class GroupPagesTests(TestCase):
         self.assertEqual(wg_charters_by_acronymcopy, wg_charters_by_acronym_contents)
 
     def test_generate_wg_charters_files_task_without_copy(self):
+        """Test disabling charter file copying
+
+        Note that these tests mostly check that errors are not encountered. Because they unset
+        the CHARTER_COPY_PATH or set it to a non-directory destination, it's not clear where to
+        look to see whether the files were (incorrectly) copied somewhere.
+        """
         group = CharterFactory(
             group__type_id="wg", group__parent=GroupFactory(type_id="area")
         ).group
@@ -219,6 +225,7 @@ class GroupPagesTests(TestCase):
             Path(settings.CHARTER_PATH) / f"{group.charter.name}-{group.charter.rev}.txt"
         ).write_text("This is a charter.")
 
+        # No directory set
         with override_settings():
             del settings.CHARTER_COPY_PATH
             generate_wg_charters_files_task()
@@ -231,6 +238,24 @@ class GroupPagesTests(TestCase):
         self.assertFalse(
             (Path(settings.CHARTER_COPY_PATH) / "1wg-charters-by-acronym.txt").exists()
         )
+        (Path(settings.CHARTER_PATH) / "1wg-charters.txt").unlink()
+        (Path(settings.CHARTER_PATH) / "1wg-charters-by-acronym.txt").unlink()
+
+        # Set to a file, not a directory
+        not_a_dir = Path(settings.CHARTER_COPY_PATH) / "not-a-dir.txt"
+        not_a_dir.write_text("Not a dir")
+        with override_settings(CHARTER_COPY_PATH=str(not_a_dir)):
+            generate_wg_charters_files_task()
+        # n.b., CHARTER_COPY_PATH is set again outside the with block
+        self.assertTrue((Path(settings.CHARTER_PATH) / "1wg-charters.txt").exists())
+        self.assertFalse((Path(settings.CHARTER_COPY_PATH) / "1wg-charters.txt").exists())
+        self.assertTrue(
+            (Path(settings.CHARTER_PATH) / "1wg-charters-by-acronym.txt").exists()
+        )
+        self.assertFalse(
+            (Path(settings.CHARTER_COPY_PATH) / "1wg-charters-by-acronym.txt").exists()
+        )
+        self.assertEqual(not_a_dir.read_text(), "Not a dir")
 
     def test_chartering_groups(self):
         group = CharterFactory(group__type_id='wg',group__parent=GroupFactory(type_id='area'),states=[('charter','intrev')]).group
