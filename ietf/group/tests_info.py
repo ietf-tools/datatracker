@@ -218,9 +218,6 @@ class GroupPagesTests(TestCase):
         group = CharterFactory(
             group__type_id="wg", group__parent=GroupFactory(type_id="area")
         ).group
-        RoleFactory(group=group, name_id="chair", person=PersonFactory())
-        RoleFactory(group=group, name_id="ad", person=PersonFactory())
-        chair = Email.objects.filter(role__group=group, role__name="chair")[0]
         (
             Path(settings.CHARTER_PATH) / f"{group.charter.name}-{group.charter.rev}.txt"
         ).write_text("This is a charter.")
