@@ -761,25 +761,27 @@ def login(request, extra_context=None):
     which is not recognized as a valid password hash.
     """
 
+    user = None
     if request.method == "POST":
         form = AuthenticationForm(request, data=request.POST)
-        username = form.data.get('username')
-        user = User.objects.filter(username__iexact=username).first() # Consider _never_ actually looking for the User username and only looking at Email
-        if not user:
-            # try to find user ID from the email address
-            email = Email.objects.filter(address=username).first()
-            if email and email.person and email.person.user:
-                u2 = email.person.user
-                # be conservative, only accept this if login is valid
-                if u2:
-                    pw = form.data.get('password')
-                    au = authenticate(request, username=u2.username, password=pw)
-                    if au:
-                        # kludge to change the querydict
-                        q2 = request.POST.copy()
-                        q2['username'] = u2.username
-                        request.POST = q2
-                        user = u2
+        if form.is_valid():
+            username = form.cleaned_data.get('username')
+            user = User.objects.filter(username__iexact=username).first() # Consider _never_ actually looking for the User username and only looking at Email
+            if not user:
+                # try to find user ID from the email address
+                email = Email.objects.filter(address=username).first()
+                if email and email.person and email.person.user:
+                    u2 = email.person.user
+                    # be conservative, only accept this if login is valid
+                    if u2:
+                        pw = form.cleaned_data.get('password')
+                        au = authenticate(request, username=u2.username, password=pw)
+                        if au:
+                            # kludge to change the querydict
+                            q2 = request.POST.copy()
+                            q2['username'] = u2.username
+                            request.POST = q2
+                            user = u2
         #
         if user:
             try:
