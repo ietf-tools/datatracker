@@ -17,15 +17,9 @@ cd $DTDIR/
 
 logger -p user.info -t cron "Running $DTDIR/bin/daily"
 
-# Run the hourly jobs first
-$DTDIR/bin/hourly
-
 # Set up the virtual environment
 source $DTDIR/env/bin/activate
 
-
-# Update our information about the current version of some commands we use
-$DTDIR/ietf/manage.py update_external_command_info
 
 # Get IANA-registered yang models
 #YANG_IANA_DIR=$(python -c 'import ietf.settings; print ietf.settings.SUBMIT_YANG_IANA_MODEL_DIR')
@@ -42,10 +36,6 @@ $DTDIR/ietf/manage.py populate_yang_model_dirs -v0
 
 # Re-run yang checks on active documents
 $DTDIR/ietf/manage.py run_yang_model_checks -v0
-
-# Expire last calls
-# Enable when removed from /a/www/ietf-datatracker/scripts/Cron-runner:
-$DTDIR/ietf/bin/expire-last-calls
 
 # Purge older PersonApiKeyEvents
 $DTDIR/ietf/manage.py purge_old_personal_api_key_events 14

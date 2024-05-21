@@ -907,12 +907,16 @@ def mtime(path):
     return datetime.datetime.fromtimestamp(path.stat().st_mtime).astimezone(ZoneInfo(settings.TIME_ZONE))
 
 @register.filter
+def mtime_is_epoch(path):
+    return path.stat().st_mtime == 0
+
+@register.filter
 def url_for_path(path):
     """Consructs a 'best' URL for web access to the given pathlib Path object.
 
     Assumes that the path is into the Internet-Draft archive or the proceedings.
     """
-    if path.match(f"{settings.AGENDA_PATH}/**/*"):
+    if Path(settings.AGENDA_PATH) in path.parents:
         return (
             f"https://www.ietf.org/proceedings/{path.relative_to(settings.AGENDA_PATH)}"
         )

@@ -1388,14 +1388,18 @@ def investigate_fragment(name_fragment):
     can_verify = set()
     for root in [settings.INTERNET_DRAFT_PATH, settings.INTERNET_DRAFT_ARCHIVE_DIR]:
         can_verify.update(list(Path(root).glob(f"*{name_fragment}*")))
-
+    archive_verifiable_names = set([p.name for p in can_verify])
+    # Can also verify drafts in proceedings directories
     can_verify.update(list(Path(settings.AGENDA_PATH).glob(f"**/*{name_fragment}*")))
 
     # N.B. This reflects the assumption that the internet draft archive dir is in the
     # a directory with other collections (at /a/ietfdata/draft/collections as this is written)
-    unverifiable_collections = set(
+    unverifiable_collections = set([
+        p for p in
         Path(settings.INTERNET_DRAFT_ARCHIVE_DIR).parent.glob(f"**/*{name_fragment}*")
-    )
+        if p.name not in archive_verifiable_names
+    ])
+    
     unverifiable_collections.difference_update(can_verify)
 
     expected_names = set([p.name for p in can_verify.union(unverifiable_collections)])
@@ -1409,3 +1413,20 @@ def investigate_fragment(name_fragment):
         unverifiable_collections=unverifiable_collections,
         unexpected=unexpected,
     )
+
+
+def update_or_create_draft_bibxml_file(doc, rev):
+    log.assertion("doc.type_id == 'draft'")
+    normalized_bibxml = re.sub(r"\r\n?", r"\n", bibxml_for_draft(doc, rev))
+    ref_rev_file_path = Path(settings.BIBXML_BASE_PATH) / "bibxml-ids" / f"reference.I-D.{doc.name}-{rev}.xml"
+    try:
+        existing_bibxml = ref_rev_file_path.read_text(encoding="utf8")
+    except IOError:
+        existing_bibxml = ""
+    if normalized_bibxml.strip() != existing_bibxml.strip():
+        log.log(f"Writing {ref_rev_file_path}")
+        ref_rev_file_path.write_text(normalized_bibxml, encoding="utf8")
+
+
+def ensure_draft_bibxml_path_exists():
+    (Path(settings.BIBXML_BASE_PATH) / "bibxml-ids").mkdir(exist_ok=True)

@@ -747,3 +747,27 @@ def ingest_feedback_email(message: bytes, year: int):
             email_original_message=message,
         ) from err
     log("Received nomcom email from %s" % feedback.author)
+
+
+def _is_time_to_send_reminder(nomcom, send_date, nomination_date):
+    if nomcom.reminder_interval:
+        days_passed = (send_date - nomination_date).days
+        return days_passed > 0 and days_passed % nomcom.reminder_interval == 0
+    else:
+        return bool(nomcom.reminderdates_set.filter(date=send_date))
+
+
+def send_reminders():
+    from .models import NomCom, NomineePosition
+    for nomcom in NomCom.objects.filter(group__state__slug="active"):
+        nps = NomineePosition.objects.filter(
+            nominee__nomcom=nomcom, nominee__duplicated__isnull=True
+        )
+        for nominee_position in nps.pending():
+            if _is_time_to_send_reminder(nomcom, date_today(), nominee_position.time.date()):
+                send_accept_reminder_to_nominee(nominee_position)
+                log(f"Sent accept reminder to {nominee_position.nominee.email.address}")
+        for nominee_position in nps.accepted().without_questionnaire_response():
+            if _is_time_to_send_reminder(nomcom, date_today(), nominee_position.time.date()):
+                send_questionnaire_reminder_to_nominee(nominee_position)
+                log(f"Sent questionnaire reminder to {nominee_position.nominee.email.address}")

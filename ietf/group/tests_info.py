@@ -17,6 +17,7 @@ import debug                            # pyflakes:ignore
 
 from django.conf import settings
 from django.test import RequestFactory
+from django.test.utils import override_settings
 from django.urls import reverse as urlreverse
 from django.urls import NoReverseMatch
 from django.utils import timezone
@@ -34,6 +35,7 @@ from ietf.group.factories import (GroupFactory, RoleFactory, GroupEventFactory,
     DatedGroupMilestoneFactory, DatelessGroupMilestoneFactory)
 from ietf.group.forms import GroupForm
 from ietf.group.models import Group, GroupEvent, GroupMilestone, GroupStateTransitions, Role
+from ietf.group.tasks import generate_wg_charters_files_task
 from ietf.group.utils import save_group_in_history, setup_default_community_list_for_group
 from ietf.meeting.factories import SessionFactory
 from ietf.name.models import DocTagName, GroupStateName, GroupTypeName, ExtResourceName, RoleName
@@ -56,7 +58,7 @@ def pklist(docs):
     return [ str(doc.pk) for doc in docs.all() ]
 
 class GroupPagesTests(TestCase):
-    settings_temp_path_overrides = TestCase.settings_temp_path_overrides + ['CHARTER_PATH']
+    settings_temp_path_overrides = TestCase.settings_temp_path_overrides + ['CHARTER_PATH', 'CHARTER_COPY_PATH']
 
     def test_active_groups(self):
         area = GroupFactory.create(type_id='area')
@@ -117,10 +119,6 @@ class GroupPagesTests(TestCase):
 
         chair = Email.objects.filter(role__group=group, role__name="chair")[0]
 
-        (
-            Path(settings.CHARTER_PATH) / f"{group.charter.name}-{group.charter.rev}.txt"
-         ).write_text("This is a charter.")
-
         url = urlreverse('ietf.group.views.wg_summary_area', kwargs=dict(group_type="wg"))
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
@@ -136,23 +134,125 @@ class GroupPagesTests(TestCase):
         self.assertContains(r, group.name)
         self.assertContains(r, chair.address)
         
-        url = urlreverse('ietf.group.views.wg_charters', kwargs=dict(group_type="wg"))
+    def test_wg_charters(self):
+        # file does not exist = 404
+        url = urlreverse("ietf.group.views.wg_charters", kwargs=dict(group_type="wg"))
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
-        self.assertContains(r, group.acronym)
-        self.assertContains(r, group.name)
-        self.assertContains(r, group.ad_role().person.plain_name())
-        self.assertContains(r, chair.address)
-        self.assertContains(r, "This is a charter.")
+        self.assertEqual(r.status_code, 404)
 
-        url = urlreverse('ietf.group.views.wg_charters_by_acronym', kwargs=dict(group_type="wg"))
+        # should return expected file with expected encoding
+        wg_path = Path(settings.CHARTER_PATH) / "1wg-charters.txt"
+        wg_path.write_text("This is a charters file with an é")
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-        self.assertContains(r, group.acronym)
-        self.assertContains(r, group.name)
-        self.assertContains(r, group.ad_role().person.plain_name())
-        self.assertContains(r, chair.address)
-        self.assertContains(r, "This is a charter.")
+        self.assertEqual(r.charset, "UTF-8")
+        self.assertEqual(r.content.decode("utf8"), "This is a charters file with an é")
+
+        # non-wg request = 404 even if the file exists
+        url = urlreverse("ietf.group.views.wg_charters", kwargs=dict(group_type="rg"))
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 404)
+
+    def test_wg_charters_by_acronym(self):
+        url = urlreverse("ietf.group.views.wg_charters_by_acronym", kwargs=dict(group_type="wg"))
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 404)
+
+        wg_path = Path(settings.CHARTER_PATH) / "1wg-charters-by-acronym.txt"
+        wg_path.write_text("This is a charters file with an é")
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.charset, "UTF-8")
+        self.assertEqual(r.content.decode("utf8"), "This is a charters file with an é")
+
+        # non-wg request = 404 even if the file exists
+        url = urlreverse("ietf.group.views.wg_charters_by_acronym", kwargs=dict(group_type="rg"))
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 404)
+
+    def test_generate_wg_charters_files_task(self):
+        group = CharterFactory(
+            group__type_id="wg", group__parent=GroupFactory(type_id="area")
+        ).group
+        RoleFactory(group=group, name_id="chair", person=PersonFactory())
+        RoleFactory(group=group, name_id="ad", person=PersonFactory())
+        chair = Email.objects.filter(role__group=group, role__name="chair")[0]
+        (
+            Path(settings.CHARTER_PATH) / f"{group.charter.name}-{group.charter.rev}.txt"
+        ).write_text("This is a charter.")
+
+        generate_wg_charters_files_task()
+        wg_charters_contents = (Path(settings.CHARTER_PATH) / "1wg-charters.txt").read_text(
+            encoding="utf8"
+        )
+        self.assertIn(group.acronym, wg_charters_contents)
+        self.assertIn(group.name, wg_charters_contents)
+        self.assertIn(group.ad_role().person.plain_name(), wg_charters_contents)
+        self.assertIn(chair.address, wg_charters_contents)
+        self.assertIn("This is a charter.", wg_charters_contents)
+        wg_charters_copy = (
+            Path(settings.CHARTER_COPY_PATH) / "1wg-charters.txt"
+        ).read_text(encoding="utf8")
+        self.assertEqual(wg_charters_copy, wg_charters_contents)
+
+        wg_charters_by_acronym_contents = (
+            Path(settings.CHARTER_PATH) / "1wg-charters-by-acronym.txt"
+        ).read_text(encoding="utf8")
+        self.assertIn(group.acronym, wg_charters_by_acronym_contents)
+        self.assertIn(group.name, wg_charters_by_acronym_contents)
+        self.assertIn(group.ad_role().person.plain_name(), wg_charters_by_acronym_contents)
+        self.assertIn(chair.address, wg_charters_by_acronym_contents)
+        self.assertIn("This is a charter.", wg_charters_by_acronym_contents)
+        wg_charters_by_acronymcopy = (
+            Path(settings.CHARTER_COPY_PATH) / "1wg-charters-by-acronym.txt"
+        ).read_text(encoding="utf8")
+        self.assertEqual(wg_charters_by_acronymcopy, wg_charters_by_acronym_contents)
+
+    def test_generate_wg_charters_files_task_without_copy(self):
+        """Test disabling charter file copying
+
+        Note that these tests mostly check that errors are not encountered. Because they unset
+        the CHARTER_COPY_PATH or set it to a non-directory destination, it's not clear where to
+        look to see whether the files were (incorrectly) copied somewhere.
+        """
+        group = CharterFactory(
+            group__type_id="wg", group__parent=GroupFactory(type_id="area")
+        ).group
+        (
+            Path(settings.CHARTER_PATH) / f"{group.charter.name}-{group.charter.rev}.txt"
+        ).write_text("This is a charter.")
+
+        # No directory set
+        with override_settings():
+            del settings.CHARTER_COPY_PATH
+            generate_wg_charters_files_task()
+        # n.b., CHARTER_COPY_PATH is set again outside the with block
+        self.assertTrue((Path(settings.CHARTER_PATH) / "1wg-charters.txt").exists())
+        self.assertFalse((Path(settings.CHARTER_COPY_PATH) / "1wg-charters.txt").exists())
+        self.assertTrue(
+            (Path(settings.CHARTER_PATH) / "1wg-charters-by-acronym.txt").exists()
+        )
+        self.assertFalse(
+            (Path(settings.CHARTER_COPY_PATH) / "1wg-charters-by-acronym.txt").exists()
+        )
+        (Path(settings.CHARTER_PATH) / "1wg-charters.txt").unlink()
+        (Path(settings.CHARTER_PATH) / "1wg-charters-by-acronym.txt").unlink()
+
+        # Set to a file, not a directory
+        not_a_dir = Path(settings.CHARTER_COPY_PATH) / "not-a-dir.txt"
+        not_a_dir.write_text("Not a dir")
+        with override_settings(CHARTER_COPY_PATH=str(not_a_dir)):
+            generate_wg_charters_files_task()
+        # n.b., CHARTER_COPY_PATH is set again outside the with block
+        self.assertTrue((Path(settings.CHARTER_PATH) / "1wg-charters.txt").exists())
+        self.assertFalse((Path(settings.CHARTER_COPY_PATH) / "1wg-charters.txt").exists())
+        self.assertTrue(
+            (Path(settings.CHARTER_PATH) / "1wg-charters-by-acronym.txt").exists()
+        )
+        self.assertFalse(
+            (Path(settings.CHARTER_COPY_PATH) / "1wg-charters-by-acronym.txt").exists()
+        )
+        self.assertEqual(not_a_dir.read_text(), "Not a dir")
 
     def test_chartering_groups(self):
         group = CharterFactory(group__type_id='wg',group__parent=GroupFactory(type_id='area'),states=[('charter','intrev')]).group

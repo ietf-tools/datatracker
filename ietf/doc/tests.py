@@ -20,7 +20,6 @@ from tempfile import NamedTemporaryFile
 from collections import defaultdict
 from zoneinfo import ZoneInfo
 
-from django.core.management import call_command
 from django.urls import reverse as urlreverse
 from django.conf import settings
 from django.forms import Form
@@ -45,7 +44,14 @@ from ietf.doc.factories import ( DocumentFactory, DocEventFactory, CharterFactor
     StatusChangeFactory, DocExtResourceFactory, RgDraftFactory, BcpFactory)
 from ietf.doc.forms import NotifyForm
 from ietf.doc.fields import SearchableDocumentsField
-from ietf.doc.utils import create_ballot_if_not_open, investigate_fragment, uppercase_std_abbreviated_name, DraftAliasGenerator
+from ietf.doc.utils import (
+    create_ballot_if_not_open,
+    investigate_fragment,
+    uppercase_std_abbreviated_name,
+    DraftAliasGenerator,
+    generate_idnits2_rfc_status,
+    generate_idnits2_rfcs_obsoleted,
+)
 from ietf.group.models import Group, Role
 from ietf.group.factories import GroupFactory, RoleFactory
 from ietf.ipr.factories import HolderIprDisclosureFactory
@@ -2831,32 +2837,40 @@ class MaterialsTests(TestCase):
 class Idnits2SupportTests(TestCase):
     settings_temp_path_overrides = TestCase.settings_temp_path_overrides + ['DERIVED_DIR']
 
-    def test_obsoleted(self):
+    def test_generate_idnits2_rfcs_obsoleted(self):
         rfc = WgRfcFactory(rfc_number=1001)
         WgRfcFactory(rfc_number=1003,relations=[('obs',rfc)])
         rfc = WgRfcFactory(rfc_number=1005)
         WgRfcFactory(rfc_number=1007,relations=[('obs',rfc)])
+        blob = generate_idnits2_rfcs_obsoleted()
+        self.assertEqual(blob, b'1001 1003\n1005 1007\n'.decode("utf8"))
 
+    def test_obsoleted(self):
         url = urlreverse('ietf.doc.views_doc.idnits2_rfcs_obsoleted')
         r = self.client.get(url)
         self.assertEqual(r.status_code, 404)
-        call_command('generate_idnits2_rfcs_obsoleted')
+        # value written is arbitrary, expect it to be passed through
+        (Path(settings.DERIVED_DIR) / "idnits2-rfcs-obsoleted").write_bytes(b'1001 1003\n1005 1007\n')
         url = urlreverse('ietf.doc.views_doc.idnits2_rfcs_obsoleted')
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.content, b'1001 1003\n1005 1007\n')
 
-    def test_rfc_status(self):
+    def test_generate_idnits2_rfc_status(self):
         for slug in ('bcp', 'ds', 'exp', 'hist', 'inf', 'std', 'ps', 'unkn'):
             WgRfcFactory(std_level_id=slug)
+        blob = generate_idnits2_rfc_status().replace("\n", "")
+        self.assertEqual(blob[6312-1], "O")
+
+    def test_rfc_status(self):
         url = urlreverse('ietf.doc.views_doc.idnits2_rfc_status')
         r = self.client.get(url)
         self.assertEqual(r.status_code,404)
-        call_command('generate_idnits2_rfc_status')
+        # value written is arbitrary, expect it to be passed through
+        (Path(settings.DERIVED_DIR) / "idnits2-rfc-status").write_bytes(b'1001 1003\n1005 1007\n')
         r = self.client.get(url)
         self.assertEqual(r.status_code,200)
-        blob = unicontent(r).replace('\n','')
-        self.assertEqual(blob[6312-1],'O')
+        self.assertEqual(r.content, b'1001 1003\n1005 1007\n')
 
     def test_idnits2_state(self):
         rfc = WgRfcFactory()

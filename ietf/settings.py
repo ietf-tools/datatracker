@@ -125,6 +125,10 @@ FORM_RENDERER = "django.forms.renderers.DjangoDivFormRenderer"
 # In the future (relative to 4.2), the default will become 'django.db.models.BigAutoField.'
 DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 
+# OIDC configuration
+_SITE_URL = os.environ.get("OIDC_SITE_URL", None)
+if _SITE_URL is not None:
+    SITE_URL = _SITE_URL
 
 if SERVER_MODE == 'production':
     MEDIA_ROOT = '/a/www/www6s/lib/dt/media/'
@@ -248,13 +252,21 @@ LOGGING = {
             'level': 'INFO',
         },
         'django.security': {
-	    'handlers': ['debug_console', ],
+            'handlers': ['debug_console', ],
             'level': 'INFO',
         },
- 	'oidc_provider': {
-	    'handlers': ['debug_console', ],
-	    'level': 'DEBUG',
-	},
+        'oidc_provider': {
+            'handlers': ['debug_console', ],
+            'level': 'DEBUG',
+        },
+        'datatracker': {
+            'handlers': ['debug_console'],
+            'level': 'INFO',
+        },
+        'celery': {
+            'handlers': ['debug_console'],
+            'level': 'INFO',
+        },
     },
     #
     # No logger filters
@@ -263,14 +275,7 @@ LOGGING = {
         'console': {
             'level': 'DEBUG',
             'class': 'logging.StreamHandler',
-            'formatter': 'plain',
-        },
-        'syslog': {
-            'level': 'DEBUG',
-            'class': 'logging.handlers.SysLogHandler',
-            'facility': 'user',
-            'formatter': 'plain',
-            'address': '/dev/log',
+            'formatter': 'json',
         },
         'debug_console': {
             # Active only when DEBUG=True
@@ -325,16 +330,10 @@ LOGGING = {
             'style': '{',
             'format': '{levelname}: {name}:{lineno}: {message}',
         },
+        'json' : {
+            '()': 'pythonjsonlogger.jsonlogger.JsonFormatter'
+        }
     },
-}
-
-# This should be overridden by settings_local for any logger where debug (or
-# other) custom log settings are wanted.  Use "ietf/manage.py showloggers -l"
-# to show registered loggers.  The content here should match the levels above
-# and is shown as an example:
-UTILS_LOGGER_LEVELS: Dict[str, str] = {
-#    'django':           'INFO',
-#    'django.server':    'INFO',
 }
 
 # End logging
@@ -671,6 +670,7 @@ INTERNET_DRAFT_PATH = '/a/ietfdata/doc/draft/repository'
 INTERNET_DRAFT_PDF_PATH = '/a/www/ietf-datatracker/pdf/'
 RFC_PATH = '/a/www/ietf-ftp/rfc/'
 CHARTER_PATH = '/a/ietfdata/doc/charter/'
+CHARTER_COPY_PATH = '/a/www/ietf-ftp/ietf'  # copy 1wg-charters files here if set
 BOFREQ_PATH = '/a/ietfdata/doc/bofreq/'
 CONFLICT_REVIEW_PATH = '/a/ietfdata/doc/conflict-review'
 STATUS_CHANGE_PATH = '/a/ietfdata/doc/status-change'
@@ -978,7 +978,7 @@ DE_GFM_BINARY = '/usr/bin/de-gfm.ruby2.5'
 DAYS_TO_EXPIRE_REGISTRATION_LINK = 3
 MINUTES_TO_EXPIRE_RESET_PASSWORD_LINK = 60
 HTPASSWD_COMMAND = "/usr/bin/htpasswd"
-HTPASSWD_FILE = "/www/htpasswd"
+HTPASSWD_FILE = "/a/www/htpasswd"
 
 # Generation of pdf files
 GHOSTSCRIPT_COMMAND = "/usr/bin/gs"
@@ -989,12 +989,11 @@ BIBXML_BASE_PATH = '/a/ietfdata/derived/bibxml'
 # Timezone files for iCalendar
 TZDATA_ICS_PATH = BASE_DIR + '/../vzic/zoneinfo/'
 
-SECR_BLUE_SHEET_PATH = '/a/www/ietf-datatracker/documents/blue_sheet.rtf'
-SECR_BLUE_SHEET_URL = IDTRACKER_BASE_URL + '/documents/blue_sheet.rtf'
-SECR_INTERIM_LISTING_DIR = '/a/www/www6/meeting/interim'
-SECR_MAX_UPLOAD_SIZE = 40960000
-SECR_PROCEEDINGS_DIR = '/a/www/www6s/proceedings/'
-SECR_PPT2PDF_COMMAND = ['/usr/bin/soffice','--headless','--convert-to','pdf:writer_globaldocument_pdf_Export','--outdir']
+DATATRACKER_MAX_UPLOAD_SIZE = 40960000
+PPT2PDF_COMMAND = [
+    "/usr/bin/soffice", "--headless", "--convert-to", "pdf:writer_globaldocument_pdf_Export", "--outdir"
+]
+
 STATS_REGISTRATION_ATTENDEES_JSON_URL = 'https://registration.ietf.org/{number}/attendees/'
 PROCEEDINGS_VERSION_CHANGES = [
     0,   # version 1
@@ -1206,81 +1205,83 @@ else:
     MIDDLEWARE += DEV_MIDDLEWARE
     TEMPLATES[0]['OPTIONS']['context_processors'] += DEV_TEMPLATE_CONTEXT_PROCESSORS
 
-if 'CACHES' not in locals():
-    if SERVER_MODE == 'production':
+if "CACHES" not in locals():
+    if SERVER_MODE == "production":
+        MEMCACHED_HOST = os.environ.get("MEMCACHED_SERVICE_HOST", "127.0.0.1")
+        MEMCACHED_PORT = os.environ.get("MEMCACHED_SERVICE_PORT", "11211")
         CACHES = {
-            'default': {
-                'BACKEND': 'ietf.utils.cache.LenientMemcacheCache',
-                'LOCATION': '127.0.0.1:11211',
-                'VERSION': __version__,
-                'KEY_PREFIX': 'ietf:dt',
-                'KEY_FUNCTION': lambda key, key_prefix, version: (
+            "default": {
+                "BACKEND": "ietf.utils.cache.LenientMemcacheCache",
+                "LOCATION": f"{MEMCACHED_HOST}:{MEMCACHED_PORT}",
+                "VERSION": __version__,
+                "KEY_PREFIX": "ietf:dt",
+                "KEY_FUNCTION": lambda key, key_prefix, version: (
                     f"{key_prefix}:{version}:{sha384(str(key).encode('utf8')).hexdigest()}"
                 ),
             },
-            'sessions': {
-                'BACKEND': 'ietf.utils.cache.LenientMemcacheCache',
-                'LOCATION': '127.0.0.1:11211',
+            "sessions": {
+                "BACKEND": "ietf.utils.cache.LenientMemcacheCache",
+                "LOCATION": f"{MEMCACHED_HOST}:{MEMCACHED_PORT}",
                 # No release-specific VERSION setting.
-                'KEY_PREFIX': 'ietf:dt',
+                "KEY_PREFIX": "ietf:dt",
             },
-            'htmlized': {
-                'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
-                'LOCATION': '/a/cache/datatracker/htmlized',
-                'OPTIONS': {
-                    'MAX_ENTRIES': 100000,      # 100,000
+            "htmlized": {
+                "BACKEND": "django.core.cache.backends.filebased.FileBasedCache",
+                "LOCATION": "/a/cache/datatracker/htmlized",
+                "OPTIONS": {
+                    "MAX_ENTRIES": 100000,  # 100,000
                 },
             },
-            'pdfized': {
-                'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
-                'LOCATION': '/a/cache/datatracker/pdfized',
-                'OPTIONS': {
-                    'MAX_ENTRIES': 100000,      # 100,000
+            "pdfized": {
+                "BACKEND": "django.core.cache.backends.filebased.FileBasedCache",
+                "LOCATION": "/a/cache/datatracker/pdfized",
+                "OPTIONS": {
+                    "MAX_ENTRIES": 100000,  # 100,000
                 },
             },
-            'slowpages': {
-                'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
-                'LOCATION': '/a/cache/datatracker/slowpages',
-                'OPTIONS': {
-                    'MAX_ENTRIES': 5000,
+            "slowpages": {
+                "BACKEND": "django.core.cache.backends.filebased.FileBasedCache",
+                "LOCATION": "/a/cache/datatracker/slowpages",
+                "OPTIONS": {
+                    "MAX_ENTRIES": 5000,
                 },
             },
         }
     else:
         CACHES = {
-            'default': {
-                'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
+            "default": {
+                "BACKEND": "django.core.cache.backends.dummy.DummyCache",
                 #'BACKEND': 'ietf.utils.cache.LenientMemcacheCache',
                 #'LOCATION': '127.0.0.1:11211',
                 #'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
-                'VERSION': __version__,
-                'KEY_PREFIX': 'ietf:dt',
+                "VERSION": __version__,
+                "KEY_PREFIX": "ietf:dt",
             },
-            'sessions': {
-                'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+            "sessions": {
+                "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
             },
-            'htmlized': {
-                'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
+            "htmlized": {
+                "BACKEND": "django.core.cache.backends.dummy.DummyCache",
                 #'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
-                'LOCATION': '/var/cache/datatracker/htmlized',
-                'OPTIONS': {
-                    'MAX_ENTRIES': 1000,
+                "LOCATION": "/var/cache/datatracker/htmlized",
+                "OPTIONS": {
+                    "MAX_ENTRIES": 1000,
                 },
             },
-            'pdfized': {
-                'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
+            "pdfized": {
+                "BACKEND": "django.core.cache.backends.dummy.DummyCache",
                 #'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
-                'LOCATION': '/var/cache/datatracker/pdfized',
-                'OPTIONS': {
-                    'MAX_ENTRIES': 1000,
+                "LOCATION": "/var/cache/datatracker/pdfized",
+                "OPTIONS": {
+                    "MAX_ENTRIES": 1000,
                 },
             },
-            'slowpages': {
-                'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
+            "slowpages": {
+                "BACKEND": "django.core.cache.backends.dummy.DummyCache",
                 #'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
-                'LOCATION': '/var/cache/datatracker/',
-                'OPTIONS': {
-                    'MAX_ENTRIES': 5000,
+                "LOCATION": "/var/cache/datatracker/",
+                "OPTIONS": {
+                    "MAX_ENTRIES": 5000,
                 },
             },
         }

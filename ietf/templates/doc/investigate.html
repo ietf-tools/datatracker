@@ -23,12 +23,24 @@
               <th scope="col" data-sort="name">Name</th>
               <th scope="col" data-sort="modified">Last Modified On</th>
               <th scope="col" data-sort="link">Link</th>
+              <th scope="col" data-sort="source">Source</th>
             </tr>
           </thead>
           <tbody>
             {% for path in results.can_verify %}
               {% with url=path|url_for_path %}
-              <tr><td>{{path.name}}</td><td>{{path|mtime|date:"DATETIME_FORMAT"}}</td><td><a href="{{url}}">{{url}}</a></td></tr>
+                <tr>
+                    <td>{{path.name}}</td>
+                    <td>
+                        {% if path|mtime_is_epoch %}
+                          Timestamp has been lost (is Unix Epoch)
+                        {% else %}
+                          {{path|mtime|date:"DATETIME_FORMAT"}}
+                        {% endif %}
+                    </td>
+                    <td><a href="{{url}}">{{url}}</a></td>
+                    <td>{{path}}</td>
+                </tr>
               {% endwith %}
             {% endfor %}
           </tbody>
@@ -53,7 +65,13 @@
               {% with url=path|url_for_path %}
               <tr>
                 <td>{{path.name}}</td>
-                <td>{{path|mtime|date:"DATETIME_FORMAT"}}</td>
+                <td>
+                    {% if path|mtime_is_epoch %}
+                      Timestamp has been lost (is Unix Epoch)
+                    {% else %}
+                      {{path|mtime|date:"DATETIME_FORMAT"}}
+                    {% endif %}
+                </td>
                 <td><a href="{{url}}">{{url}}</a></td>
                 <td>{{path}}</td>
               </tr>
@@ -77,7 +95,13 @@
               {% with url=path|url_for_path %}
               <tr>
                 <td>{{path.name}}</td>
-                <td>{{path|mtime|date:"DATETIME_FORMAT"}}</td>
+                <td>
+                    {% if path|mtime_is_epoch %}
+                      Timestamp has been lost (is Unix Epoch)
+                    {% else %}
+                      {{path|mtime|date:"DATETIME_FORMAT"}}
+                    {% endif %}
+                </td>
                 <td><a href="{{url}}">{{url}}</a></td>
               </tr>
               {% endwith %}
