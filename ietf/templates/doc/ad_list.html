@@ -103,7 +103,6 @@
          Array.from(document.querySelectorAll("table"))
             .filter(table => {
                 const hasDataSum = Boolean(table.querySelector("[data-sum]"))
-                console.log("filter", hasDataSum)
                 return hasDataSum
             })
             .forEach(table => {
