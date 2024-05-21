@@ -752,55 +752,56 @@ def change_username(request):
     return render(request, 'registration/change_username.html', {'form': form})
 
 
-
-def login(request, extra_context=None):
+class AnyEmailAuthenticationForm(AuthenticationForm):
+    """AuthenticationForm that allows any email address as the username
+    
+    Also performs a check for a cleared password field and provides a helpful error message
+    if that applies to the user attempting to log in.
     """
-    This login function is a wrapper around django's login() for the purpose
-    of providing a notification if the user's password has been cleared.  The
-    warning will be triggered if the password field has been set to something
-    which is not recognized as a valid password hash.
-    """
+    _unauthenticated_user = None
 
-    user = None
-    if request.method == "POST":
-        form = AuthenticationForm(request, data=request.POST)
-        if form.is_valid():
-            username = form.cleaned_data.get('username')
-            user = User.objects.filter(username__iexact=username).first() # Consider _never_ actually looking for the User username and only looking at Email
-            if not user:
-                # try to find user ID from the email address
-                email = Email.objects.filter(address=username).first()
-                if email and email.person and email.person.user:
-                    u2 = email.person.user
-                    # be conservative, only accept this if login is valid
-                    if u2:
-                        pw = form.cleaned_data.get('password')
-                        au = authenticate(request, username=u2.username, password=pw)
-                        if au:
-                            # kludge to change the querydict
-                            q2 = request.POST.copy()
-                            q2['username'] = u2.username
-                            request.POST = q2
-                            user = u2
-        #
-        if user:
-            try:
-                identify_hasher(user.password)
+    def clean_username(self):
+        username = self.cleaned_data.get("username", None)
+        if username is None:
+            raise self.get_invalid_login_error()
+        user = User.objects.filter(username__iexact=username).first()
+        if user is None:
+            email = Email.objects.filter(address=username).first()
+            if email and email.person:
+                user = email.person.user  # might be None
+        if user is None:
+            raise self.get_invalid_login_error()
+        self._unauthenticated_user = user  # remember this for the clean() method
+        return user.username
+
+    def clean(self):
+        if self._unauthenticated_user is not None:
+            try: 
+                identify_hasher(self._unauthenticated_user.password)
             except ValueError:
-                extra_context = {"alert":
-                                    "Note: Your password has been cleared because "
-                                    "of possible password leakage.  "
-                                    "Please use the password reset link below "
-                                    "to set a new password for your account.",
-                                }
-    response = LoginView.as_view(extra_context=extra_context)(request)
-    if isinstance(response, HttpResponseRedirect) and user and user.is_authenticated:
-        try:
-            user.person
-        except Person.DoesNotExist:
-            logout(request)
-            response = render(request, 'registration/missing_person.html')
-    return response
+                self.add_error(
+                    "password",
+                    'Your password has been cleared because of possible password leakage. '
+                    'Please use the "Forgot your password?" button below to set a new password '
+                    'for your account.',
+                )
+        return super().clean()
+
+
+class AnyEmailLoginView(LoginView):
+    """LoginView that allows any email address as the username
+    
+    Redirects to the missing_person page instead of logging in if the user does not have a Person 
+    """
+    form_class = AnyEmailAuthenticationForm
+
+    def form_valid(self, form):
+        """Security check complete. Log the user in if they have a Person."""
+        user = form.get_user()  # user has authenticated at this point
+        if not hasattr(user, "person"):
+            return render(self.request, "registration/missing_person.html")
+        return super().form_valid(form)
+        
 
 @login_required
 @person_required
