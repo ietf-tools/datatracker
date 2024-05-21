@@ -484,6 +484,13 @@ def ad_workload(request):
         )
         ad.buckets = copy.deepcopy(bucket_template)
 
+        # https://github.com/ietf-tools/datatracker/issues/4577
+        # "a count of adopted I-Ds in the WGs overseen by the AD+
+        # any independent documents the AD is assigned to (in cases of
+        # AD sponsored documents)"
+        # "WG state = * AND IESG state = I-D Exists"
+        ad.total_ids = len(Document.objects.filter(ad=ad))
+
         for doc in Document.objects.exclude(type_id="rfc").filter(ad=ad):
             dt = doc_type(doc)
             state = doc_state(doc)

@@ -35,6 +35,8 @@
             <thead class="wrap-anywhere">
                 <tr>
                     <th scope="col" data-sort="name">Area Director</th>
+                    <th scope="col" data-sort="total-ids">Total I-Ds</th>
+                    
                     {% for state, state_name in dt.states %}
                         <th scope="col" class="col-1" title=""
                             data-sort="{{ state }}-num">
@@ -51,6 +53,12 @@
                         <td>
                             <a href="{{ ad.dashboard }}">{{ ad.name }}</a>
                         </td>
+                        <td
+                            class="col-1 align-bottom"
+                            data-sum="total-ids"
+                        >
+                            {{ ad.total_ids }}
+                        </td>
                         {% for state, state_name in dt.states %}
                         <td class="col-1 align-bottom"
                             id="{{ dt.type.0 }}-{{ ad|slugify }}-{{ state }}">
@@ -63,6 +71,9 @@
             <tfoot class="table-group-divider">
                 <tr>
                     <th scope="row">Sum</th>
+                    <td class="align-bottom">
+                        <div data-sum-result="total-ids"></div>
+                    </td>
                     {% for state, state_name in dt.states %}
                         <td class="align-bottom">
                             <div id="chart-{{ dt.type.0 }}-sum-{{ state }}"></div>
@@ -87,6 +98,38 @@
     </script>
     <script src="{% static "ietf/js/highcharts.js" %}"></script>
     {{ data|json_script:"data" }}
+
+    <script>
+         Array.from(document.querySelectorAll("table"))
+            .filter(table => {
+                const hasDataSum = Boolean(table.querySelector("[data-sum]"))
+                console.log("filter", hasDataSum)
+                return hasDataSum
+            })
+            .forEach(table => {
+                const sums = Array.from(table.querySelectorAll("[data-sum]")).reduce((
+                    sums,
+                    cell
+                ) => {                    
+                    const key = cell.dataset.sum
+                    const value = parseFloat(cell.textContent)
+                    if(key && !isNaN(value)) {
+                        sums[key] = (sums[key] || 0) + (value || 0);
+                    }
+                    return sums;
+                }, {});
+
+                Array.from(table.querySelectorAll('[data-sum-result]')).forEach(result => {
+                    const key = result.dataset.sumResult
+                    const value = sums[key]
+
+                    if(value) {
+                        result.innerText = value
+                    }
+                })
+
+            })
+    </script>
     <script>
         const data = JSON.parse(document.getElementById("data").textContent);
 
