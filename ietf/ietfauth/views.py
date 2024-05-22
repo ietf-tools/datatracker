@@ -45,7 +45,7 @@ import django.core.signing
 from django import forms
 from django.contrib import messages
 from django.conf import settings
-from django.contrib.auth import update_session_auth_hash, logout, authenticate
+from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.hashers import identify_hasher
