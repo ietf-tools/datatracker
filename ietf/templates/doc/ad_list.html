@@ -35,8 +35,9 @@
             <thead class="wrap-anywhere">
                 <tr>
                     <th scope="col" data-sort="name">Area Director</th>
-                    <th scope="col" data-sort="total-ids">Total I-Ds</th>
-                    
+                    {% if dt.type.1 == "Internet-Draft" %}
+                        <th scope="col" data-sort="pre-pubreq">Pre pubreq</th>
+                    {% endif %}                    
                     {% for state, state_name in dt.states %}
                         <th scope="col" class="col-1" title=""
                             data-sort="{{ state }}-num">
@@ -53,12 +54,14 @@
                         <td>
                             <a href="{{ ad.dashboard }}">{{ ad.name }}</a>
                         </td>
-                        <td
-                            class="col-1 align-bottom"
-                            data-sum="total-ids"
-                        >
-                            {{ ad.total_ids }}
-                        </td>
+                        {% if dt.type.1 == "Internet-Draft" %}
+                            <td
+                                class="col-1 align-bottom"
+                                data-sum="pre-pubreq"
+                            >
+                                {{ ad.total_ids }}
+                            </td>
+                        {% endif %}            
                         {% for state, state_name in dt.states %}
                         <td class="col-1 align-bottom"
                             id="{{ dt.type.0 }}-{{ ad|slugify }}-{{ state }}">
@@ -71,9 +74,11 @@
             <tfoot class="table-group-divider">
                 <tr>
                     <th scope="row">Sum</th>
-                    <td class="align-bottom">
-                        <div data-sum-result="total-ids"></div>
-                    </td>
+                    {% if dt.type.1 == "Internet-Draft" %}
+                        <td class="align-bottom">
+                            <div data-sum-result="pre-pubreq"></div>
+                        </td>
+                    {% endif %}
                     {% for state, state_name in dt.states %}
                         <td class="align-bottom">
                             <div id="chart-{{ dt.type.0 }}-sum-{{ state }}"></div>
