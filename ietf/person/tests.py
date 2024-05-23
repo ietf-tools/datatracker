@@ -246,9 +246,11 @@ class PersonTests(TestCase):
         self.assertNotIn('cdn-cgi/photo',p.cdn_photo_url())
 
     def test_invalid_name_characters_rejected(self):
-        slash_person = PersonFactory.build(name='I have a /', user=None)  # build() does not save the new object
-        with self.assertRaises(ValidationError):
-            slash_person.full_clean()  # calls validators (save() does *not*)
+        for disallowed in "/:@":
+            # build() does not save the new object
+            person_with_bad_name = PersonFactory.build(name=f"I have a {disallowed}", user=None)
+            with self.assertRaises(ValidationError, msg=f"Name with a {disallowed} char should be rejected"):
+                person_with_bad_name.full_clean()  # calls validators (save() does *not*)
 
 
 class PersonUtilsTests(TestCase):
