@@ -485,7 +485,27 @@ def ad_workload(request):
         ad.buckets = copy.deepcopy(bucket_template)
 
         # https://github.com/ietf-tools/datatracker/issues/4577
-        ad.pre_pubreq = Document.objects.filter((~Q(group__acronym="none")&Q(group__role__name="ad",group__role__person=ad))|Q(ad=ad)).filter(type="draft").filter(states__type="draft",states__slug="active").filter(states__type="draft-iesg",states__slug="idexists").distinct().count()
+        docs_via_group_ad = Document.objects.exclude(
+            group__acronym="none"
+        ).filter(
+            group__role__name="ad",
+            group__role__person=ad
+        ).filter(
+            states__type="draft-stream-ietf",
+            states__slug__in=["wg-doc","wg-lc","waiting-for-implementation","chair-w","writeupw"]
+        )
+
+        doc_for_ad = Document.objects.filter(ad=ad)
+
+        ad.pre_pubreq = (docs_via_group_ad | doc_for_ad).filter(
+            type="draft"
+        ).filter(
+            states__type="draft",
+            states__slug="active"
+        ).filter(
+            states__type="draft-iesg",
+            states__slug="idexists"
+        ).distinct().count()
 
         for doc in Document.objects.exclude(type_id="rfc").filter(ad=ad):
             dt = doc_type(doc)
