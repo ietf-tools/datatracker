@@ -933,3 +933,28 @@ def url_for_path(path):
         return f"{settings.IETF_ID_ARCHIVE_URL}{path.name}"
     else:
         return "#"
+
+
+@register.filter
+def is_in_stream(doc):
+    """
+    Check if the doc is in one of the states in it stream that
+    indicate that is actually adopted, i.e., part of the stream.
+    (There are various "candidate" states that necessitate this
+    filter.)
+    """
+    if not doc.stream:
+        return False
+    stream = doc.stream.slug
+    state = doc.get_state_slug(f"draft-stream-{doc.stream.slug}")
+    if not state:
+        return True
+    if stream == "ietf":
+        return state not in ["wg-cand", "c-adopt"]
+    elif stream == "irtf":
+        return state != "candidat"
+    elif stream == "iab":
+        return state not in ["candidat", "diff-org"]
+    elif stream == "editorial":
+        return True
+    return False
