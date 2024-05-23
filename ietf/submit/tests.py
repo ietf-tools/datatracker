@@ -42,7 +42,7 @@ from ietf.group.models import Group
 from ietf.group.utils import setup_default_community_list_for_group
 from ietf.meeting.models import Meeting
 from ietf.meeting.factories import MeetingFactory
-from ietf.name.models import FormalLanguageName
+from ietf.name.models import DraftSubmissionStateName, FormalLanguageName
 from ietf.person.models import Person
 from ietf.person.factories import UserFactory, PersonFactory, EmailFactory
 from ietf.submit.factories import SubmissionFactory, SubmissionExtResourceFactory
@@ -3136,28 +3136,59 @@ class AsyncSubmissionTests(BaseSubmitTestCase):
         self.assertContains(r, s.name)
         self.assertContains(r, 'This submission is being processed and validated.', status_code=200)
 
-    @override_settings(IDSUBMIT_MAX_VALIDATION_TIME=datetime.timedelta(minutes=30))
+    @override_settings(
+        IDSUBMIT_MAX_VALIDATION_TIME=datetime.timedelta(minutes=30),
+        IDSUBMIT_EXPIRATION_AGE=datetime.timedelta(minutes=90),
+    )
     def test_cancel_stale_submissions(self):
+        # these will be lists of (Submission, "state_id") pairs
+        submissions_to_skip = []
+        submissions_to_cancel = []
+
+        # submissions in the validating state
         fresh_submission = SubmissionFactory(state_id='validating')
         fresh_submission.submissionevent_set.create(
             desc='fake created event',
             time=timezone.now() - datetime.timedelta(minutes=15),
         )
+        submissions_to_skip.append((fresh_submission, "validating"))
+
         stale_submission = SubmissionFactory(state_id='validating')
         stale_submission.submissionevent_set.create(
             desc='fake created event',
             time=timezone.now() - datetime.timedelta(minutes=30, seconds=1),
         )
+        submissions_to_cancel.append((stale_submission, "validating"))
+        
+        # submissions in other states
+        for state in DraftSubmissionStateName.objects.filter(used=True).exclude(slug="validating"):
+            to_skip = SubmissionFactory(state_id=state.pk)
+            to_skip.submissionevent_set.create(
+                desc="fake created event",
+                time=timezone.now() - datetime.timedelta(minutes=45),  # would be canceled if it were "validating"
+            )
+            submissions_to_skip.append((to_skip, state.pk))
+            to_expire = SubmissionFactory(state_id=state.pk)
+            to_expire.submissionevent_set.create(
+                desc="fake created event",
+                time=timezone.now() - datetime.timedelta(minutes=90, seconds=1),
+            )
+            if state.pk in ["posted", "cancel"]:
+                submissions_to_skip.append((to_expire, state.pk))  # these ones should not be expired regardless of age
+            else:
+                submissions_to_cancel.append(((to_expire, state.pk)))
 
         cancel_stale_submissions()
 
-        fresh_submission = Submission.objects.get(pk=fresh_submission.pk)
-        self.assertEqual(fresh_submission.state_id, 'validating')
-        self.assertEqual(fresh_submission.submissionevent_set.count(), 1)
+        for _subm, original_state_id in submissions_to_skip:
+            subm = Submission.objects.get(pk=_subm.pk)
+            self.assertEqual(subm.state_id, original_state_id)
+            self.assertEqual(subm.submissionevent_set.count(), 1)
 
-        stale_submission = Submission.objects.get(pk=stale_submission.pk)
-        self.assertEqual(stale_submission.state_id, 'cancel')
-        self.assertEqual(stale_submission.submissionevent_set.count(), 2)
+        for _subm, _ in submissions_to_cancel:
+            subm = Submission.objects.get(pk=_subm.pk)
+            self.assertEqual(subm.state_id, "cancel")
+            self.assertEqual(subm.submissionevent_set.count(), 2)
 
 
 class ApiSubmitTests(BaseSubmitTestCase):
