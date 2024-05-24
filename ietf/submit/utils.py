@@ -661,7 +661,7 @@ def move_files_to_repository(submission):
             os.link(dest, ftp_dest)
         elif dest.exists():
             log.log("Intended to move '%s' to '%s', but found source missing while destination exists.")
-        elif ext in submission.file_types.split(','):
+        elif f".{ext}" in submission.file_types.split(','):
             raise ValueError("Intended to move '%s' to '%s', but found source and destination missing.")
 
 
