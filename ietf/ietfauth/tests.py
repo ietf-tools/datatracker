@@ -50,8 +50,6 @@ from ietf.utils.test_utils import TestCase, login_testing_unauthorized
 from ietf.utils.timezone import date_today
 
 
-import ietf.ietfauth.views
-
 if os.path.exists(settings.HTPASSWD_COMMAND):
     skip_htpasswd_command = False
     skip_message = ""
@@ -83,30 +81,30 @@ class IetfAuthTests(TestCase):
         super().tearDown()
 
     def test_index(self):
-        self.assertEqual(self.client.get(urlreverse(ietf.ietfauth.views.index)).status_code, 200)
+        self.assertEqual(self.client.get(urlreverse("ietf.ietfauth.views.index")).status_code, 200)
 
     def test_login_and_logout(self):
         PersonFactory(user__username='plain')
 
         # try logging in without a next
-        r = self.client.get(urlreverse(ietf.ietfauth.views.login))
+        r = self.client.get(urlreverse("ietf.ietfauth.views.login"))
         self.assertEqual(r.status_code, 200)
 
-        r = self.client.post(urlreverse(ietf.ietfauth.views.login), {"username":"plain", "password":"plain+password"})
+        r = self.client.post(urlreverse("ietf.ietfauth.views.login"), {"username":"plain", "password":"plain+password"})
         self.assertEqual(r.status_code, 302)
-        self.assertEqual(urlsplit(r["Location"])[2], urlreverse(ietf.ietfauth.views.profile))
+        self.assertEqual(urlsplit(r["Location"])[2], urlreverse("ietf.ietfauth.views.profile"))
 
         # try logging out
         r = self.client.post(urlreverse('django.contrib.auth.views.logout'), {})
         self.assertEqual(r.status_code, 200)
         self.assertNotContains(r, "accounts/logout")
 
-        r = self.client.get(urlreverse(ietf.ietfauth.views.profile))
+        r = self.client.get(urlreverse("ietf.ietfauth.views.profile"))
         self.assertEqual(r.status_code, 302)
-        self.assertEqual(urlsplit(r["Location"])[2], urlreverse(ietf.ietfauth.views.login))
+        self.assertEqual(urlsplit(r["Location"])[2], urlreverse("ietf.ietfauth.views.login"))
 
         # try logging in with a next
-        r = self.client.post(urlreverse(ietf.ietfauth.views.login) + "?next=/foobar", {"username":"plain", "password":"plain+password"})
+        r = self.client.post(urlreverse("ietf.ietfauth.views.login") + "?next=/foobar", {"username":"plain", "password":"plain+password"})
         self.assertEqual(r.status_code, 302)
         self.assertEqual(urlsplit(r["Location"])[2], "/foobar")
 
@@ -137,19 +135,19 @@ class IetfAuthTests(TestCase):
         # try with a trivial next
         _test_login("/")
         # try with a next that requires login
-        _test_login(urlreverse(ietf.ietfauth.views.profile))
+        _test_login(urlreverse("ietf.ietfauth.views.profile"))
 
     def test_login_with_different_email(self):
         person = PersonFactory(user__username='plain')
         email = EmailFactory(person=person)
 
         # try logging in without a next
-        r = self.client.get(urlreverse(ietf.ietfauth.views.login))
+        r = self.client.get(urlreverse("ietf.ietfauth.views.login"))
         self.assertEqual(r.status_code, 200)
 
-        r = self.client.post(urlreverse(ietf.ietfauth.views.login), {"username":email, "password":"plain+password"})
+        r = self.client.post(urlreverse("ietf.ietfauth.views.login"), {"username":email, "password":"plain+password"})
         self.assertEqual(r.status_code, 302)
-        self.assertEqual(urlsplit(r["Location"])[2], urlreverse(ietf.ietfauth.views.profile))
+        self.assertEqual(urlsplit(r["Location"])[2], urlreverse("ietf.ietfauth.views.profile"))
 
     def extract_confirm_url(self, confirm_email):
         # dig out confirm_email link
@@ -176,7 +174,7 @@ class IetfAuthTests(TestCase):
 # For the lowered barrier to account creation period, we are disabling this kind of failure
     # def test_create_account_failure(self):
 
-    #     url = urlreverse(ietf.ietfauth.views.create_account)
+    #     url = urlreverse("ietf.ietfauth.views.create_account")
 
     #     # get
     #     r = self.client.get(url)
@@ -195,7 +193,7 @@ class IetfAuthTests(TestCase):
         self.assertTrue("Additional Assistance Required" in r)
 
     def register(self, email):
-        url = urlreverse(ietf.ietfauth.views.create_account)
+        url = urlreverse("ietf.ietfauth.views.create_account")
 
         # register email
         empty_outbox()
@@ -240,7 +238,7 @@ class IetfAuthTests(TestCase):
         note = get_payload_text(outbox[-1])
         self.assertIn(email, note)
         self.assertIn("A datatracker account for that email already exists", note)
-        self.assertIn(urlreverse(ietf.ietfauth.views.password_reset), note)
+        self.assertIn(urlreverse("ietf.ietfauth.views.password_reset"), note)
 
     def test_ietfauth_profile(self):
         EmailFactory(person__user__username='plain')
@@ -249,7 +247,7 @@ class IetfAuthTests(TestCase):
         username = "plain"
         email_address = Email.objects.filter(person__user__username=username).first().address
 
-        url = urlreverse(ietf.ietfauth.views.profile)
+        url = urlreverse("ietf.ietfauth.views.profile")
         login_testing_unauthorized(self, username, url)
 
 
@@ -400,7 +398,7 @@ class IetfAuthTests(TestCase):
     def test_email_case_insensitive_protection(self):
         EmailFactory(address="TestAddress@example.net")
         person = PersonFactory()
-        url = urlreverse(ietf.ietfauth.views.profile)
+        url = urlreverse("ietf.ietfauth.views.profile")
         login_testing_unauthorized(self, person.user.username, url)
 
         data = {
@@ -441,7 +439,7 @@ class IetfAuthTests(TestCase):
 
 
     def test_reset_password(self):
-        url = urlreverse(ietf.ietfauth.views.password_reset)
+        url = urlreverse("ietf.ietfauth.views.password_reset")
         email = 'someone@example.com'
         password = 'foobar'
 
@@ -507,7 +505,7 @@ class IetfAuthTests(TestCase):
         self.assertEqual(len(outbox), 1)
         confirm_url = self.extract_confirm_url(outbox[-1])
 
-        r = self.client.post(urlreverse(ietf.ietfauth.views.login), {'username': email, 'password': password})
+        r = self.client.post(urlreverse("ietf.ietfauth.views.login"), {'username': email, 'password': password})
 
         r = self.client.get(confirm_url)
         self.assertEqual(r.status_code, 404)
@@ -589,7 +587,7 @@ class IetfAuthTests(TestCase):
             availability="unavailable",
         )
 
-        url = urlreverse(ietf.ietfauth.views.review_overview)
+        url = urlreverse("ietf.ietfauth.views.review_overview")
 
         login_testing_unauthorized(self, reviewer.user.username, url)
 
@@ -633,10 +631,9 @@ class IetfAuthTests(TestCase):
         
 
     def test_change_password(self):
-
-        chpw_url = urlreverse(ietf.ietfauth.views.change_password)
-        prof_url = urlreverse(ietf.ietfauth.views.profile)
-        login_url = urlreverse(ietf.ietfauth.views.login)
+        chpw_url = urlreverse("ietf.ietfauth.views.change_password")
+        prof_url = urlreverse("ietf.ietfauth.views.profile")
+        login_url = urlreverse("ietf.ietfauth.views.login")
         redir_url = '%s?next=%s' % (login_url, chpw_url)
 
         # get without logging in
@@ -681,9 +678,9 @@ class IetfAuthTests(TestCase):
 
     def test_change_username(self):
 
-        chun_url = urlreverse(ietf.ietfauth.views.change_username)
-        prof_url = urlreverse(ietf.ietfauth.views.profile)
-        login_url = urlreverse(ietf.ietfauth.views.login)
+        chun_url = urlreverse("ietf.ietfauth.views.change_username")
+        prof_url = urlreverse("ietf.ietfauth.views.profile")
+        login_url = urlreverse("ietf.ietfauth.views.login")
         redir_url = '%s?next=%s' % (login_url, chun_url)
 
         # get without logging in
