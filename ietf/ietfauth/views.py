@@ -45,7 +45,7 @@ import django.core.signing
 from django import forms
 from django.contrib import messages
 from django.conf import settings
-from django.contrib.auth import update_session_auth_hash
+from django.contrib.auth import logout, update_session_auth_hash
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.hashers import identify_hasher
@@ -799,6 +799,7 @@ class AnyEmailLoginView(LoginView):
         """Security check complete. Log the user in if they have a Person."""
         user = form.get_user()  # user has authenticated at this point
         if not hasattr(user, "person"):
+            logout(self.request)  # should not be logged in yet, but just in case...
             return render(self.request, "registration/missing_person.html")
         return super().form_valid(form)
         
