@@ -21,6 +21,6 @@ test.describe('/doc/ad/', () => {
     expect(tablesCount).toBeGreaterThan(0)
     const firstTable = tablesLocator.nth(0)
     const theadTexts = await firstTable.locator('thead').allInnerTexts()
-    expect(theadTexts).toContains('Pre pubreq')
+    expect(theadTexts).toContain('Pre pubreq')
   })
 })
