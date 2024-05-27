@@ -356,9 +356,17 @@ class MissingOkImageField(models.ImageField):
 
 
 class ModelMultipleChoiceField(forms.ModelMultipleChoiceField):
+    """ModelMultipleChoiceField that rejects null characters cleanly"""
     validate_no_nulls = ProhibitNullCharactersValidator()
 
     def clean(self, value):
-        for item in value:
-            self.validate_no_nulls(item)
+        try:
+            for item in value:
+                self.validate_no_nulls(item)
+        except TypeError:
+            # A TypeError probably means value is not iterable, which most commonly comes up
+            # with None as a value. If it's something more exotic, we don't know how to test
+            # for null characters anyway. Either way, trust the superclass clean() method to 
+            # handle it.
+            pass
         return super().clean(value)
