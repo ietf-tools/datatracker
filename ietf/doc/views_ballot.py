@@ -38,6 +38,7 @@ from ietf.mailtrigger.forms import CcSelectForm
 from ietf.message.utils import infer_message
 from ietf.name.models import BallotPositionName, DocTypeName
 from ietf.person.models import Person
+from ietf.utils.fields import ModelMultipleChoiceField
 from ietf.utils.mail import send_mail_text, send_mail_preformatted
 from ietf.utils.decorators import require_api_key
 from ietf.utils.response import permission_denied
@@ -931,7 +932,7 @@ def approve_ballot(request, name):
 
 
 class ApproveDownrefsForm(forms.Form):
-    checkboxes = forms.ModelMultipleChoiceField(
+    checkboxes = ModelMultipleChoiceField(
         widget = forms.CheckboxSelectMultiple,
         queryset =  RelatedDocument.objects.none(), )
 

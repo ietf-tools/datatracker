@@ -52,7 +52,7 @@ from ietf.utils.text import strip_prefix, xslugify
 from ietf.utils.textupload import get_cleaned_text_file_content
 from ietf.utils.mail import send_mail_message
 from ietf.mailtrigger.utils import gather_address_lists
-from ietf.utils.fields import MultiEmailField
+from ietf.utils.fields import ModelMultipleChoiceField, MultiEmailField
 from ietf.utils.http import is_ajax
 from ietf.utils.response import permission_denied
 from ietf.utils.timezone import date_today, DEADLINE_TZINFO
@@ -68,7 +68,7 @@ def clean_doc_revision(doc, rev):
     return rev
 
 class RequestReviewForm(forms.ModelForm):
-    team = forms.ModelMultipleChoiceField(queryset=Group.objects.all(), widget=forms.CheckboxSelectMultiple)
+    team = ModelMultipleChoiceField(queryset=Group.objects.all(), widget=forms.CheckboxSelectMultiple)
     deadline = DatepickerDateField(date_format="yyyy-mm-dd", picker_settings={ "autoclose": "1", "start-date": "+0d" })
 
     class Meta:

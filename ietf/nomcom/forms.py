@@ -21,6 +21,7 @@ from ietf.nomcom.utils import (NOMINATION_RECEIPT_TEMPLATE, FEEDBACK_RECEIPT_TEM
 from ietf.person.models import Email
 from ietf.person.fields import (SearchableEmailField, SearchableEmailsField,
                                 SearchablePersonField, SearchablePersonsField )
+from ietf.utils.fields import ModelMultipleChoiceField
 from ietf.utils.mail import send_mail
 from ietf.mailtrigger.utils import gather_address_lists
 
@@ -719,9 +720,9 @@ class MutableFeedbackForm(forms.ModelForm):
                                                                   required= self.feedback_type.slug != 'comment',
                                                                   help_text='Hold down "Control", or "Command" on a Mac, to select more than one.')
             if self.feedback_type.slug == 'comment':
-                self.fields['topic'] = forms.ModelMultipleChoiceField(queryset=self.nomcom.topic_set.all(),
-                                                                      help_text='Hold down "Control" or "Command" on a Mac, to select more than one.',
-                                                                      required=False,)
+                self.fields['topic'] = ModelMultipleChoiceField(queryset=self.nomcom.topic_set.all(),
+                                                                help_text='Hold down "Control" or "Command" on a Mac, to select more than one.',
+                                                                required=False,)
         else:
             self.fields['position'] = forms.ModelChoiceField(queryset=Position.objects.get_by_nomcom(self.nomcom).filter(is_open=True), label="Position")
             self.fields['searched_email'] = SearchableEmailField(only_users=False,help_text="Try to find the candidate you are classifying with this field first. Only use the name and email fields below if this search does not find the candidate.",label="Candidate",required=False)
@@ -847,7 +848,7 @@ class EditNomineeForm(forms.ModelForm):
 class NominationResponseCommentForm(forms.Form):
     comments = forms.CharField(widget=forms.Textarea,required=False,help_text="Any comments provided will be encrypted and will only be visible to the NomCom.", strip=False)
 
-class NomcomVolunteerMultipleChoiceField(forms.ModelMultipleChoiceField):
+class NomcomVolunteerMultipleChoiceField(ModelMultipleChoiceField):
     def label_from_instance(self, obj):
         year = obj.year()
         return f'Volunteer for the {year}/{year+1} Nominating Committee'
