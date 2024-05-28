@@ -52,6 +52,7 @@ from ietf.person.models import Person, Email
 from ietf.utils.mail import send_mail, send_mail_message, on_behalf_of
 from ietf.utils.textupload import get_cleaned_text_file_content
 from ietf.utils import log
+from ietf.utils.fields import ModelMultipleChoiceField
 from ietf.utils.response import permission_denied
 from ietf.utils.timezone import datetime_today, DEADLINE_TZINFO
 
@@ -390,9 +391,9 @@ def replaces(request, name):
                    ))
 
 class SuggestedReplacesForm(forms.Form):
-    replaces = forms.ModelMultipleChoiceField(queryset=Document.objects.all(),
-                                              label="Suggestions", required=False, widget=forms.CheckboxSelectMultiple,
-                                              help_text="Select only the documents that are replaced by this document")
+    replaces = ModelMultipleChoiceField(queryset=Document.objects.all(),
+                                        label="Suggestions", required=False, widget=forms.CheckboxSelectMultiple,
+                                        help_text="Select only the documents that are replaced by this document")
     comment = forms.CharField(label="Optional comment", widget=forms.Textarea, required=False, strip=False)
 
     def __init__(self, suggested, *args, **kwargs):
@@ -1601,7 +1602,7 @@ class ChangeStreamStateForm(forms.Form):
     new_state = forms.ModelChoiceField(queryset=State.objects.filter(used=True), label='State' )
     weeks = forms.IntegerField(label='Expected weeks in state',required=False)
     comment = forms.CharField(widget=forms.Textarea, required=False, help_text="Optional comment for the document history.", strip=False)
-    tags = forms.ModelMultipleChoiceField(queryset=DocTagName.objects.filter(used=True), widget=forms.CheckboxSelectMultiple, required=False)
+    tags = ModelMultipleChoiceField(queryset=DocTagName.objects.filter(used=True), widget=forms.CheckboxSelectMultiple, required=False)
 
     def __init__(self, *args, **kwargs):
         doc = kwargs.pop("doc")
