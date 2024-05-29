@@ -36,6 +36,3 @@ $DTDIR/ietf/manage.py populate_yang_model_dirs -v0
 
 # Re-run yang checks on active documents
 $DTDIR/ietf/manage.py run_yang_model_checks -v0
-
-# Purge older PersonApiKeyEvents
-$DTDIR/ietf/manage.py purge_old_personal_api_key_events 14
