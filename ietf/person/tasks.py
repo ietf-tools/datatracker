@@ -12,7 +12,7 @@ from .models import PersonApiKeyEvent
 
 
 @shared_task
-def purge_personal_api_key_events(keep_days):
+def purge_personal_api_key_events_task(keep_days):
     keep_since = timezone.now() - datetime.timedelta(days=keep_days)
     old_events = PersonApiKeyEvent.objects.filter(time__lt=keep_since)
     count = len(old_events)
