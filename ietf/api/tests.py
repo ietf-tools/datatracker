@@ -30,7 +30,7 @@ from ietf.doc.factories import IndividualDraftFactory, WgDraftFactory, WgRfcFact
 from ietf.group.factories import RoleFactory
 from ietf.meeting.factories import MeetingFactory, SessionFactory
 from ietf.meeting.models import Session
-from ietf.nomcom.models import Volunteer, NomCom
+from ietf.nomcom.models import Volunteer
 from ietf.nomcom.factories import NomComFactory, nomcom_kwargs_for_year
 from ietf.person.factories import PersonFactory, random_faker, EmailFactory
 from ietf.person.models import Email, User
@@ -828,7 +828,7 @@ class CustomApiTests(TestCase):
             'reg_type': 'onsite',
             'ticket_type': '',
             'checkedin': 'False',
-            'is_nomcom_volunteer': 'True',
+            'is_nomcom_volunteer': 'False',
         }
         person = PersonFactory()
         reg['email'] = person.email().address
@@ -842,16 +842,22 @@ class CustomApiTests(TestCase):
         # create appropriate group and nomcom objects
         nomcom = NomComFactory.create(is_accepting_volunteers=True, **nomcom_kwargs_for_year(year))
         url = urlreverse('ietf.api.views.api_new_meeting_registration')
-        r = self.client.post(url, reg)
-        self.assertContains(r, 'Invalid apikey', status_code=403)
         oidcp = PersonFactory(user__is_staff=True)
         # Make sure 'oidcp' has an acceptable role
         RoleFactory(name_id='robot', person=oidcp, email=oidcp.email(), group__acronym='secretariat')
         key = PersonalApiKey.objects.create(person=oidcp, endpoint=url)
         reg['apikey'] = key.hash()
+
+        # first test is_nomcom_volunteer False
         r = self.client.post(url, reg)
-        nomcom = NomCom.objects.last()
         self.assertContains(r, "Accepted, New registration", status_code=202)
+        # assert no Volunteers exists
+        self.assertEqual(Volunteer.objects.count(), 0)
+
+        # test is_nomcom_volunteer True
+        reg['is_nomcom_volunteer'] = 'True'
+        r = self.client.post(url, reg)
+        self.assertContains(r, "Accepted, Updated registration", status_code=202)
         # assert Volunteer exists
         self.assertEqual(Volunteer.objects.count(), 1)
         volunteer = Volunteer.objects.last()
