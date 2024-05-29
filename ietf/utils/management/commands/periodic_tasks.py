@@ -241,6 +241,17 @@ class Command(BaseCommand):
             ),
         )
 
+        PeriodicTask.objects.get_or_create(
+            name="Send personal API key usage emails",
+            task="ietf.person.tasks.send_apikey_usage_emails_task",
+            kwargs=json.dumps(dict(days=7)),
+            defaults=dict(
+                enabled=False,
+                crontab=self.crontabs["weekly"],
+                description="Send personal API key usage summary emails for the past week",
+            ),
+        )
+
     def show_tasks(self):
         for label, crontab in self.crontabs.items():
             tasks = PeriodicTask.objects.filter(crontab=crontab).order_by(
