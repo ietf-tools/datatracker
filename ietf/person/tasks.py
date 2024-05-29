@@ -7,11 +7,14 @@ import datetime
 from celery import shared_task
 from django.utils import timezone
 
+from ietf.utils import log
 from .models import PersonApiKeyEvent
 
 
 @shared_task
 def purge_personal_api_key_events(keep_days):
-    now = timezone.now()
-    old_events = PersonApiKeyEvent.objects.filter(time__lt=now - datetime.timedelta(days=keep_days))
+    keep_since = timezone.now() - datetime.timedelta(days=keep_days)
+    old_events = PersonApiKeyEvent.objects.filter(time__lt=keep_since)
+    count = len(old_events)
     old_events.delete()
+    log.log(f"Deleted {count} PersonApiKeyEvents older than {keep_since}")
