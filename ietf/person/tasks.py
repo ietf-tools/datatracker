@@ -15,9 +15,12 @@ from .models import PersonalApiKey, PersonApiKeyEvent
 @shared_task
 def send_apikey_usage_emails_task(days):
     """Send usage emails to Persons who have API keys"""
-    keys = PersonalApiKey.objects.filter(valid=True)
+    earliest = timezone.now() - datetime.timedelta(days=days)
+    keys = PersonalApiKey.objects.filter(
+        valid=True,
+        personapikeyevent__time__gt=earliest,
+    ).distinct()
     for key in keys:
-        earliest = timezone.now() - datetime.timedelta(days=days)
         events = PersonApiKeyEvent.objects.filter(key=key, time__gt=earliest)
         count = events.count()
         events = events[:32]
