@@ -242,6 +242,17 @@ class Command(BaseCommand):
         )
 
         PeriodicTask.objects.get_or_create(
+            name="Send personal API key usage emails",
+            task="ietf.person.tasks.send_apikey_usage_emails_task",
+            kwargs=json.dumps(dict(days=7)),
+            defaults=dict(
+                enabled=False,
+                crontab=self.crontabs["weekly"],
+                description="Send personal API key usage summary emails for the past week",
+            ),
+        )
+        
+        PeriodicTask.objects.get_or_create(
             name="Purge old personal API key events",
             task="ietf.person.tasks.purge_personal_api_key_events_task",
             kwargs=json.dumps(dict(keep_days=14)),

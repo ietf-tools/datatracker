@@ -41,6 +41,7 @@ from ietf.meeting.factories import MeetingFactory
 from ietf.nomcom.factories import NomComFactory
 from ietf.person.factories import PersonFactory, EmailFactory, UserFactory, PersonalApiKeyFactory
 from ietf.person.models import Person, Email, PersonalApiKey
+from ietf.person.tasks import send_apikey_usage_emails_task
 from ietf.review.factories import ReviewRequestFactory, ReviewAssignmentFactory
 from ietf.review.models import ReviewWish, UnavailablePeriod
 from ietf.stats.models import MeetingRegistration
@@ -853,9 +854,6 @@ class IetfAuthTests(TestCase):
             key2.delete()
 
     def test_send_apikey_report(self):
-        from ietf.ietfauth.management.commands.send_apikey_usage_emails import Command
-        from ietf.utils.mail import outbox, empty_outbox
-
         person =  RoleFactory(name_id='secr', group__acronym='secretariat').person
 
         url = urlreverse('ietf.ietfauth.views.apikey_create')
@@ -880,9 +878,8 @@ class IetfAuthTests(TestCase):
         date = str(date_today())
 
         empty_outbox()
-        cmd = Command()
-        cmd.handle(verbosity=0, days=7)
-        
+        send_apikey_usage_emails_task(days=7)
+
         self.assertEqual(len(outbox), len(endpoints))
         for mail in outbox:
             body = get_payload_text(mail)
