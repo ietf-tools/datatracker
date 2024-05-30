@@ -6,7 +6,7 @@
 
 > See the [IETF Tools Windows Dev guide](https://github.com/ietf-tools/.github/blob/main/docs/windows-dev.md) on how to get started when using Windows.
 
-2. On Linux, you must also install [Docker Compose](https://docs.docker.com/compose/install/). Docker Desktop for Mac and Windows already include Docker Compose.
+2. On Linux, you must [install Docker Compose manually](https://docs.docker.com/compose/install/linux/#install-the-plugin-manually) and not install Docker Desktop. On Mac and Windows install Docker Desktop which already includes Docker Compose.
 
 2. If you have a copy of the datatracker code checked out already, simply `cd` to the top-level directory.
 
@@ -183,3 +183,18 @@ The content of the source files will be copied into the target `.ics` files. Mak
 ### Missing assets in the data folder
 
 Because including all assets in the image would significantly increase the file size, they are not included by default. You can however fetch them by running the **Fetch assets via rsync** task in VS Code or run manually the script `docker/scripts/app-rsync-extras.sh`
+
+
+### Linux file permissions leaking to the host system
+
+If on the host filesystem you have permissions that look like this,
+
+```bash
+$ ls -la
+total 4624
+drwxrwxr-x   2  100999  100999    4096 May 25 07:56 bin
+drwxrwxr-x   5  100999  100999    4096 May 25 07:56 client
+(etc...)
+```
+
+Try uninstalling Docker Desktop and installing Docker Compose manually. The Docker Compose bundled with Docker Desktop is incompatible with our software. See also [Rootless Docker: file ownership changes #3343](https://github.com/lando/lando/issues/3343), [Docker context desktop-linux has container permission issues #75](https://github.com/docker/desktop-linux/issues/75).

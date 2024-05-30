@@ -61,6 +61,13 @@ def generate_files(records, adest, vdest, postconfirm, vdomain):
         shutil.move(vpath, vdest)
 
 
+def directory_path(val):
+    p = Path(val)
+    if p.is_dir():
+        return p
+    else:
+        raise argparse.ArgumentTypeError(f"{p} is not a directory")
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Convert a JSON stream of draft alias definitions into alias / virtual alias files."
@@ -73,7 +80,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--output-dir",
         default="./",
-        type=Path,
+        type=directory_path,
         help="Destination for output files.",
     )
     parser.add_argument(
@@ -87,8 +94,6 @@ if __name__ == "__main__":
         help=f"Virtual domain (defaults to {VDOMAIN}_",
     )
     args = parser.parse_args()
-    if not args.output_dir.is_dir():
-        sys.stderr.write("Error: output-dir must be a directory")
     data = json.load(sys.stdin)
     generate_files(
         data["aliases"],
