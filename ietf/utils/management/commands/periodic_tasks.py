@@ -251,6 +251,17 @@ class Command(BaseCommand):
                 description="Send personal API key usage summary emails for the past week",
             ),
         )
+        
+        PeriodicTask.objects.get_or_create(
+            name="Purge old personal API key events",
+            task="ietf.person.tasks.purge_personal_api_key_events_task",
+            kwargs=json.dumps(dict(keep_days=14)),
+            defaults=dict(
+                enabled=False,
+                crontab=self.crontabs["daily"],
+                description="Purge PersonApiKeyEvent instances older than 14 days",
+            ),
+        )
 
     def show_tasks(self):
         for label, crontab in self.crontabs.items():
