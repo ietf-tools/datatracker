@@ -2,7 +2,7 @@ const { test, expect } = require('@playwright/test')
 const viewports = require('../../helpers/viewports')
 
 // ====================================================================
-// NOMCOM - EXPERTISE
+// IESG Dashboard
 // ====================================================================
 
 test.describe('/doc/ad/', () => {
