@@ -212,7 +212,7 @@ def api_new_meeting_registration(request):
                 response += ", Email sent"
 
             # handle nomcom volunteer
-            if data['is_nomcom_volunteer'] and object.person:
+            if request.POST.get('is_nomcom_volunteer', 'false').lower() == 'true' and object.person:
                 try:
                     nomcom = NomCom.objects.get(is_accepting_volunteers=True)
                 except (NomCom.DoesNotExist, NomCom.MultipleObjectsReturned):

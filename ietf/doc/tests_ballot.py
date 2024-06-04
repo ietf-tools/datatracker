@@ -32,7 +32,7 @@ from ietf.person.utils import get_active_ads
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized
 from ietf.utils.mail import outbox, empty_outbox, get_payload_text
 from ietf.utils.text import unwrap
-from ietf.utils.timezone import date_today
+from ietf.utils.timezone import date_today, datetime_today
 
 
 class EditPositionTests(TestCase):
@@ -529,12 +529,45 @@ class BallotWriteupsTests(TestCase):
         login_testing_unauthorized(self, "secretary", url)
 
         # expect warning about issuing a ballot before IETF Last Call is done
+        # No last call has yet been issued
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertEqual(len(q('textarea[name=ballot_writeup]')), 1)
         self.assertTrue(q('[class=text-danger]:contains("not completed IETF Last Call")'))
         self.assertTrue(q('[type=submit]:contains("Save")'))
+
+        # Last call exists but hasn't expired
+        LastCallDocEvent.objects.create(
+            doc=draft,
+            expires=datetime_today()+datetime.timedelta(days=14),
+            by=Person.objects.get(name="(System)")
+        )
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertTrue(q('[class=text-danger]:contains("not completed IETF Last Call")'))
+
+        # Last call exists and has expired
+        LastCallDocEvent.objects.filter(doc=draft).update(expires=datetime_today()-datetime.timedelta(days=2))
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertFalse(q('[class=text-danger]:contains("not completed IETF Last Call")'))
+
+        for state_slug in ["lc", "watching", "ad-eval"]:
+            draft.set_state(State.objects.get(type="draft-iesg",slug=state_slug))
+            r = self.client.get(url)
+            self.assertEqual(r.status_code, 200)
+            q = PyQuery(r.content)
+            self.assertTrue(q('[class=text-danger]:contains("It would be unexpected to issue a ballot while in this state.")'))
+
+        draft.set_state(State.objects.get(type="draft-iesg",slug="writeupw"))
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertFalse(q('[class=text-danger]:contains("It would be unexpected to issue a ballot while in this state.")'))         
+                         
 
     def test_edit_approval_text(self):
         ad = Person.objects.get(user__username="ad")

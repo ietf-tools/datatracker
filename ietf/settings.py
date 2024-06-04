@@ -817,6 +817,9 @@ IDSUBMIT_CHECKER_CLASSES = (
 # Max time to allow for validation before a submission is subject to cancellation
 IDSUBMIT_MAX_VALIDATION_TIME = datetime.timedelta(minutes=20)
 
+# Age at which a submission expires if not posted
+IDSUBMIT_EXPIRATION_AGE = datetime.timedelta(days=14)
+
 IDSUBMIT_MANUAL_STAGING_DIR = '/tmp/'
 
 IDSUBMIT_FILE_TYPES = (

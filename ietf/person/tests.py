@@ -4,6 +4,7 @@
 
 import datetime
 import json
+import mock
 
 from io import StringIO, BytesIO
 from PIL import Image
@@ -25,8 +26,9 @@ from ietf.group.models import Group
 from ietf.nomcom.models import NomCom
 from ietf.nomcom.test_data import nomcom_test_data
 from ietf.nomcom.factories import NomComFactory, NomineeFactory, NominationFactory, FeedbackFactory, PositionFactory
-from ietf.person.factories import EmailFactory, PersonFactory
-from ietf.person.models import Person, Alias
+from ietf.person.factories import EmailFactory, PersonFactory, PersonApiKeyEventFactory
+from ietf.person.models import Person, Alias, PersonApiKeyEvent
+from ietf.person.tasks import purge_personal_api_key_events_task
 from ietf.person.utils import (merge_persons, determine_merge_order, send_merge_notification,
     handle_users, get_extra_primary, dedupe_aliases, move_related_objects, merge_nominees,
     handle_reviewer_settings, get_dots)
@@ -450,3 +452,16 @@ class PersonUtilsTests(TestCase):
         self.assertEqual(get_dots(ncmember),['nomcom'])
         ncchair = RoleFactory(group__acronym='nomcom2020',group__type_id='nomcom',name_id='chair').person
         self.assertEqual(get_dots(ncchair),['nomcom'])
+
+
+class TaskTests(TestCase):
+    @mock.patch("ietf.person.tasks.log.log")
+    def test_purge_personal_api_key_events_task(self, mock_log):
+        now = timezone.now()
+        old_event = PersonApiKeyEventFactory(time=now - datetime.timedelta(days=1, minutes=1))
+        young_event = PersonApiKeyEventFactory(time=now - datetime.timedelta(days=1, minutes=-1))
+        purge_personal_api_key_events_task(keep_days=1)
+        self.assertFalse(PersonApiKeyEvent.objects.filter(pk=old_event.pk).exists())
+        self.assertTrue(PersonApiKeyEvent.objects.filter(pk=young_event.pk).exists())
+        self.assertTrue(mock_log.called)
+        self.assertIn("Deleted 1", mock_log.call_args[0][0])

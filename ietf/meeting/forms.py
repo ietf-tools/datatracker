@@ -28,7 +28,13 @@ from ietf.meeting.helpers import is_interim_meeting_approved, get_next_agenda_na
 from ietf.message.models import Message
 from ietf.name.models import TimeSlotTypeName, SessionPurposeName
 from ietf.person.models import Person
-from ietf.utils.fields import DatepickerDateField, DurationField, MultiEmailField, DatepickerSplitDateTimeWidget
+from ietf.utils.fields import (
+    DatepickerDateField,
+    DatepickerSplitDateTimeWidget,
+    DurationField,
+    ModelMultipleChoiceField,
+    MultiEmailField,
+)
 from ietf.utils.validators import ( validate_file_size, validate_mime_type,
     validate_file_extension, validate_no_html_frame)
 
@@ -551,7 +557,7 @@ class SwapTimeslotsForm(forms.Form):
         queryset=TimeSlot.objects.none(),  # default to none, fill in when we have a meeting
         widget=forms.TextInput,
     )
-    rooms = forms.ModelMultipleChoiceField(
+    rooms = ModelMultipleChoiceField(
         required=True,
         queryset=Room.objects.none(),  # default to none, fill in when we have a meeting
         widget=CsvModelPkInput,
@@ -617,7 +623,7 @@ class TimeSlotCreateForm(forms.Form):
     )
     duration = TimeSlotDurationField()
     show_location = forms.BooleanField(required=False, initial=True)
-    locations = forms.ModelMultipleChoiceField(
+    locations = ModelMultipleChoiceField(
         queryset=Room.objects.none(),
         widget=forms.CheckboxSelectMultiple,
     )
