@@ -39,7 +39,11 @@
                                 <a href="{% url 'ietf.meeting.views.session_details' num=meeting.number acronym=meeting.responsible_group.acronym %}">{{ meeting.number }}</a>
                                 {% if meeting.interim_meeting_cancelled %}<span class="badge rounded-pill text-bg-warning">Cancelled</span>{% endif %}
                             {% else %}
-                                <a href="{% url 'agenda' num=meeting.number %}">IETF-{{ meeting.number }}</a>
+                                {% if meeting.get_number > 28 %}
+                                    <a href="{% url 'agenda' num=meeting.number %}">IETF-{{ meeting.number }}</a>
+                                {% else %}
+                                    <a href="https://www.ietf.org/proceedings/{{meeting.get_number|stringformat:'02d'}}.pdf">IETF-{{ meeting.number }}</a>
+                                {% endif %}
                             {% endif %}
                         </td>
                         <td class="d-none d-sm-table-cell">
