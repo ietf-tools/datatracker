@@ -313,7 +313,7 @@ def active_wgs(request):
             if group.list_subscribe.startswith('http'):
                 group.list_subscribe_url = group.list_subscribe
             elif group.list_email.endswith('@ietf.org'):
-                group.list_subscribe_url = MAILING_LIST_INFO_URL % {'list_addr':group.list_email.split('@')[0]}
+                group.list_subscribe_url = MAILING_LIST_INFO_URL % {'list_addr':group.list_email.split('@')[0].lower(),'domain':'ietf.org'}
             else:
                 group.list_subscribe_url = "mailto:"+group.list_subscribe
 

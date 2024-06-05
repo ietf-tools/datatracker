@@ -38,7 +38,9 @@ class MailingListTests(TestCase):
         url = urlreverse("ietf.mailinglists.views.nonwg")
 
         r = self.client.get(url)
+        q = PyQuery(r.content)
         for l in lists:
                 self.assertContains(r, l.name)
                 self.assertContains(r, l.description)
+                self.assertNotEqual(q(f"a[href=\"{l.info_url()}\"]"), [])
 
