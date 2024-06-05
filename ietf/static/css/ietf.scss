@@ -1184,10 +1184,7 @@ td.position-empty {
     }
 }
 
-/* For formatting dynamic HTML blobs */
-.richtext {
-    blockquote {
-        padding-left: 1rem;
-        border-left: solid 1px var(--bs-card-cap-color);
-    }
+blockquote {
+    padding-left: 1rem;
+    border-left: solid 1px var(--bs-body-color);
 }
