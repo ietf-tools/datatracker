@@ -1183,3 +1183,8 @@ td.position-empty {
         }
     }
 }
+
+blockquote {
+    padding-left: 1rem;
+    border-left: solid 1px var(--bs-body-color);
+}
