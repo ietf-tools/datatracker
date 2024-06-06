@@ -392,9 +392,12 @@ def agenda_documents(request):
         fill_in_agenda_docs(date, sections, docs_by_date[date])
         pages = telechat_page_count(docs=docs_by_date[date]).for_approval
 
+        print(telechat_page_count(docs=docs_by_date[date]))
+
         telechats.append({
                 "date":     date,
                 "pages":    pages,
+                "ad_pages_left": "zool",
                 "sections": sorted((num, section) for num, section in sections.items()
                                    if "2" <= num < "5")
                 })

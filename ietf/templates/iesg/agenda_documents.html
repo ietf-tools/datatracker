@@ -23,6 +23,11 @@
                 <br>
                 <small class="text-body-secondary">{{ t.pages }} page{{ t.pages|pluralize }}</small>
             </h2>
+            {% if t.ad_pages_left %}
+                <h3>
+                    {{ t.ad_pages_left }} pages left to ballot on
+                </h3>
+            {% endif %}
             <div class="buttonlist">
                 <a class="btn btn-primary" role="button" href="{% url 'ietf.iesg.views.agenda' %}">
                     <i class="bi bi-list"></i>

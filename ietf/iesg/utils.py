@@ -7,11 +7,11 @@ from ietf.doc.utils_search import fill_in_telechat_date
 from ietf.iesg.agenda import get_doc_section
 
 
-TelechatPageCount = namedtuple('TelechatPageCount',['for_approval','for_action','related'])
+TelechatPageCount = namedtuple('TelechatPageCount',['for_approval','for_action','related','ad_pages_left'])
 
 def telechat_page_count(date=None, docs=None):
     if not date and not docs:
-        return TelechatPageCount(0, 0, 0)
+        return TelechatPageCount(0, 0, 0, 0)
 
     if not docs:
         candidates = Document.objects.filter(docevent__telechatdocevent__telechat_date=date).distinct() 
@@ -25,6 +25,8 @@ def telechat_page_count(date=None, docs=None):
     drafts = [d for d in for_approval if d.type_id == 'draft']
 
     pages_for_approval = sum([d.pages or 0 for d in drafts])
+
+    ad_pages_left = 0
 
     pages_for_action = 0
     for d in for_action:
@@ -53,4 +55,5 @@ def telechat_page_count(date=None, docs=None):
     
     return TelechatPageCount(for_approval=pages_for_approval,
                              for_action=pages_for_action,
-                             related=related_pages)
+                             related=related_pages
+                             ad_pages_left=ad_pages_left)

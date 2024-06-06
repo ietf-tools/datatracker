@@ -1,0 +1,797 @@
+1716938905916	geckodriver	INFO	Listening on 127.0.0.1:34435
+1716938905957	mozrunner::runner	INFO	Running command: MOZ_CRASHREPORTER="1" MOZ_CRASHREPORTER_NO_REPORT="1" MOZ_CRASHREPORTER_SHUTDOWN="1" MOZ_NO_REMOTE="1" "/usr/bin/firefox" "--marionette" "--headless" "--remote-debugging-port" "47009" "--remote-allow-hosts" "localhost" "-no-remote" "-profile" "/tmp/rust_mozprofileV5QFzN"
+*** You are running in headless mode.
+[GFX1-]: glxtest: libpci missing
+[GFX1-]: glxtest: Unable to open a connection to the X server
+[GFX1-]: No GPUs detected via PCI
+
+1716938906307	Marionette	INFO	Marionette enabled
+1716938906385	Marionette	INFO	Listening on port 38081
+WebDriver BiDi listening on ws://127.0.0.1:47009
+Read port: 38081
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+1716938906569	RemoteAgent	WARN	TLS certificate errors will be ignored for this session
+[GFX1-]: RenderCompositorSWGL failed mapping default framebuffer, no dt
+console.error: ({})
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+DevTools listening on ws://127.0.0.1:47009/devtools/browser/0daab002-03dc-4889-adcc-90ac1f3620a9
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new TypeError("linkMap is undefined", "resource://gre/modules/NewTabUtils.sys.mjs", 2003))
+console.warn: LoginRecipes: "Falling back to a synchronous message for: http://localhost:38401."
+console.warn: LoginRecipes: "Falling back to a synchronous message for: http://localhost:38401."
+1716938910372	Marionette	WARN	TimedPromise timed out after 500 ms: stacktrace:
+TimedPromise/<@chrome://remote/content/marionette/sync.sys.mjs:221:24
+TimedPromise@chrome://remote/content/marionette/sync.sys.mjs:205:10
+interaction.flushEventLoop@chrome://remote/content/marionette/interaction.sys.mjs:431:10
+webdriverClickElement@chrome://remote/content/marionette/interaction.sys.mjs:180:31
+1716938912367	Marionette	WARN	TimedPromise timed out after 500 ms: stacktrace:
+TimedPromise/<@chrome://remote/content/marionette/sync.sys.mjs:221:24
+TimedPromise@chrome://remote/content/marionette/sync.sys.mjs:205:10
+interaction.flushEventLoop@chrome://remote/content/marionette/interaction.sys.mjs:431:10
+webdriverClickElement@chrome://remote/content/marionette/interaction.sys.mjs:180:31
+1716938913535	Marionette	INFO	Stopped listening on port 38081
+1716938917767	geckodriver	INFO	Listening on 127.0.0.1:39465
+1716938917806	mozrunner::runner	INFO	Running command: MOZ_CRASHREPORTER="1" MOZ_CRASHREPORTER_NO_REPORT="1" MOZ_CRASHREPORTER_SHUTDOWN="1" MOZ_NO_REMOTE="1" "/usr/bin/firefox" "--marionette" "--headless" "--remote-debugging-port" "33303" "--remote-allow-hosts" "localhost" "-no-remote" "-profile" "/tmp/rust_mozprofilefW1vTb"
+*** You are running in headless mode.
+[GFX1-]: glxtest: libpci missing
+[GFX1-]: glxtest: Unable to open a connection to the X server
+[GFX1-]: No GPUs detected via PCI
+
+1716938917997	Marionette	INFO	Marionette enabled
+1716938918050	Marionette	INFO	Listening on port 36847
+WebDriver BiDi listening on ws://127.0.0.1:33303
+Read port: 36847
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+1716938918213	RemoteAgent	WARN	TLS certificate errors will be ignored for this session
+[GFX1-]: RenderCompositorSWGL failed mapping default framebuffer, no dt
+console.error: ({})
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+DevTools listening on ws://127.0.0.1:33303/devtools/browser/331b3af0-a6ee-48a2-a6f0-1a0b6b7550ad
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.warn: LoginRecipes: "Falling back to a synchronous message for: http://localhost:32831."
+console.warn: LoginRecipes: "Falling back to a synchronous message for: http://localhost:32831."
+1716938921995	Marionette	WARN	TimedPromise timed out after 500 ms: stacktrace:
+TimedPromise/<@chrome://remote/content/marionette/sync.sys.mjs:221:24
+TimedPromise@chrome://remote/content/marionette/sync.sys.mjs:205:10
+interaction.flushEventLoop@chrome://remote/content/marionette/interaction.sys.mjs:431:10
+webdriverClickElement@chrome://remote/content/marionette/interaction.sys.mjs:180:31
+1716938923372	Marionette	INFO	Stopped listening on port 36847
+1716938927235	geckodriver	INFO	Listening on 127.0.0.1:54727
+1716938927264	mozrunner::runner	INFO	Running command: MOZ_CRASHREPORTER="1" MOZ_CRASHREPORTER_NO_REPORT="1" MOZ_CRASHREPORTER_SHUTDOWN="1" MOZ_NO_REMOTE="1" "/usr/bin/firefox" "--marionette" "--headless" "--remote-debugging-port" "41933" "--remote-allow-hosts" "localhost" "-no-remote" "-profile" "/tmp/rust_mozprofilevmOt9q"
+*** You are running in headless mode.
+[GFX1-]: glxtest: libpci missing
+[GFX1-]: glxtest: Unable to open a connection to the X server
+[GFX1-]: No GPUs detected via PCI
+
+1716938927457	Marionette	INFO	Marionette enabled
+1716938927510	Marionette	INFO	Listening on port 43193
+WebDriver BiDi listening on ws://127.0.0.1:41933
+Read port: 43193
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+1716938927669	RemoteAgent	WARN	TLS certificate errors will be ignored for this session
+[GFX1-]: RenderCompositorSWGL failed mapping default framebuffer, no dt
+console.error: ({})
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+DevTools listening on ws://127.0.0.1:41933/devtools/browser/85a49130-177d-4075-b27f-525952d55ea5
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.warn: LoginRecipes: "Falling back to a synchronous message for: http://localhost:32831."
+console.warn: LoginRecipes: "Falling back to a synchronous message for: http://localhost:32831."
+1716938931481	Marionette	WARN	TimedPromise timed out after 500 ms: stacktrace:
+TimedPromise/<@chrome://remote/content/marionette/sync.sys.mjs:221:24
+TimedPromise@chrome://remote/content/marionette/sync.sys.mjs:205:10
+interaction.flushEventLoop@chrome://remote/content/marionette/interaction.sys.mjs:431:10
+webdriverClickElement@chrome://remote/content/marionette/interaction.sys.mjs:180:31
+1716938932729	Marionette	INFO	Stopped listening on port 43193
+1716938936977	geckodriver	INFO	Listening on 127.0.0.1:34681
+1716938937015	mozrunner::runner	INFO	Running command: MOZ_CRASHREPORTER="1" MOZ_CRASHREPORTER_NO_REPORT="1" MOZ_CRASHREPORTER_SHUTDOWN="1" MOZ_NO_REMOTE="1" "/usr/bin/firefox" "--marionette" "--headless" "--remote-debugging-port" "38697" "--remote-allow-hosts" "localhost" "-no-remote" "-profile" "/tmp/rust_mozprofileUX0Vcc"
+*** You are running in headless mode.
+[GFX1-]: glxtest: libpci missing
+[GFX1-]: glxtest: Unable to open a connection to the X server
+[GFX1-]: No GPUs detected via PCI
+
+1716938937208	Marionette	INFO	Marionette enabled
+1716938937259	Marionette	INFO	Listening on port 42773
+WebDriver BiDi listening on ws://127.0.0.1:38697
+Read port: 42773
+1716938937417	RemoteAgent	WARN	TLS certificate errors will be ignored for this session
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+[GFX1-]: RenderCompositorSWGL failed mapping default framebuffer, no dt
+console.error: ({})
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+DevTools listening on ws://127.0.0.1:38697/devtools/browser/16c7309b-b31e-4785-90c1-2681adbc38f1
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new TypeError("linkMap is undefined", "resource://gre/modules/NewTabUtils.sys.mjs", 2003))
+console.warn: LoginRecipes: "Falling back to a synchronous message for: http://localhost:39359."
+console.warn: LoginRecipes: "Falling back to a synchronous message for: http://localhost:39359."
+console.warn: LoginRecipes: "Falling back to a synchronous message for: http://localhost:39359."
+1716938947263	Marionette	INFO	Stopped listening on port 42773
+1716938951219	geckodriver	INFO	Listening on 127.0.0.1:55203
+1716938951258	mozrunner::runner	INFO	Running command: MOZ_CRASHREPORTER="1" MOZ_CRASHREPORTER_NO_REPORT="1" MOZ_CRASHREPORTER_SHUTDOWN="1" MOZ_NO_REMOTE="1" "/usr/bin/firefox" "--marionette" "--headless" "--remote-debugging-port" "53485" "--remote-allow-hosts" "localhost" "-no-remote" "-profile" "/tmp/rust_mozprofilekedQep"
+*** You are running in headless mode.
+[GFX1-]: glxtest: libpci missing
+[GFX1-]: glxtest: Unable to open a connection to the X server
+[GFX1-]: No GPUs detected via PCI
+
+1716938951452	Marionette	INFO	Marionette enabled
+1716938951505	Marionette	INFO	Listening on port 36429
+WebDriver BiDi listening on ws://127.0.0.1:53485
+Read port: 36429
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+1716938951667	RemoteAgent	WARN	TLS certificate errors will be ignored for this session
+[GFX1-]: RenderCompositorSWGL failed mapping default framebuffer, no dt
+console.error: ({})
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+DevTools listening on ws://127.0.0.1:53485/devtools/browser/1d8106c3-3865-4d6c-b0c2-3fb0f4664aee
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.warn: LoginRecipes: "Falling back to a synchronous message for: http://localhost:39359."
+console.warn: LoginRecipes: "Falling back to a synchronous message for: http://localhost:39359."
+1716938954425	Marionette	INFO	Stopped listening on port 36429
+1716938958365	geckodriver	INFO	Listening on 127.0.0.1:33075
+1716938958405	mozrunner::runner	INFO	Running command: MOZ_CRASHREPORTER="1" MOZ_CRASHREPORTER_NO_REPORT="1" MOZ_CRASHREPORTER_SHUTDOWN="1" MOZ_NO_REMOTE="1" "/usr/bin/firefox" "--marionette" "--headless" "--remote-debugging-port" "52647" "--remote-allow-hosts" "localhost" "-no-remote" "-profile" "/tmp/rust_mozprofilemaTnfr"
+*** You are running in headless mode.
+[GFX1-]: glxtest: libpci missing
+[GFX1-]: glxtest: Unable to open a connection to the X server
+[GFX1-]: No GPUs detected via PCI
+
+1716938958600	Marionette	INFO	Marionette enabled
+1716938958653	Marionette	INFO	Listening on port 32987
+WebDriver BiDi listening on ws://127.0.0.1:52647
+Read port: 32987
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+1716938958811	RemoteAgent	WARN	TLS certificate errors will be ignored for this session
+[GFX1-]: RenderCompositorSWGL failed mapping default framebuffer, no dt
+console.error: ({})
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+DevTools listening on ws://127.0.0.1:52647/devtools/browser/45a795db-f59d-4cc0-92a2-3f5dc750768c
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.warn: LoginRecipes: "Falling back to a synchronous message for: http://localhost:39359."
+console.warn: LoginRecipes: "Falling back to a synchronous message for: http://localhost:39359."
+1716938961622	Marionette	INFO	Stopped listening on port 32987
+1716938965530	geckodriver	INFO	Listening on 127.0.0.1:52887
+1716938965569	mozrunner::runner	INFO	Running command: MOZ_CRASHREPORTER="1" MOZ_CRASHREPORTER_NO_REPORT="1" MOZ_CRASHREPORTER_SHUTDOWN="1" MOZ_NO_REMOTE="1" "/usr/bin/firefox" "--marionette" "--headless" "--remote-debugging-port" "60127" "--remote-allow-hosts" "localhost" "-no-remote" "-profile" "/tmp/rust_mozprofile40cLmf"
+*** You are running in headless mode.
+[GFX1-]: glxtest: libpci missing
+[GFX1-]: glxtest: Unable to open a connection to the X server
+[GFX1-]: No GPUs detected via PCI
+
+1716938965763	Marionette	INFO	Marionette enabled
+1716938965816	Marionette	INFO	Listening on port 44369
+WebDriver BiDi listening on ws://127.0.0.1:60127
+Read port: 44369
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+1716938965975	RemoteAgent	WARN	TLS certificate errors will be ignored for this session
+[GFX1-]: RenderCompositorSWGL failed mapping default framebuffer, no dt
+console.error: ({})
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+DevTools listening on ws://127.0.0.1:60127/devtools/browser/5be770eb-4b12-4aca-9770-b92b2fdf20f9
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.warn: LoginRecipes: "Falling back to a synchronous message for: http://localhost:39359."
+console.warn: LoginRecipes: "Falling back to a synchronous message for: http://localhost:39359."
+1716938968427	Marionette	INFO	Stopped listening on port 44369
+1716938972539	geckodriver	INFO	Listening on 127.0.0.1:46307
+1716938972578	mozrunner::runner	INFO	Running command: MOZ_CRASHREPORTER="1" MOZ_CRASHREPORTER_NO_REPORT="1" MOZ_CRASHREPORTER_SHUTDOWN="1" MOZ_NO_REMOTE="1" "/usr/bin/firefox" "--marionette" "--headless" "--remote-debugging-port" "58077" "--remote-allow-hosts" "localhost" "-no-remote" "-profile" "/tmp/rust_mozprofilefnqyJQ"
+*** You are running in headless mode.
+[GFX1-]: glxtest: libpci missing
+[GFX1-]: glxtest: Unable to open a connection to the X server
+[GFX1-]: No GPUs detected via PCI
+
+1716938972771	Marionette	INFO	Marionette enabled
+1716938972824	Marionette	INFO	Listening on port 37671
+WebDriver BiDi listening on ws://127.0.0.1:58077
+Read port: 37671
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+1716938972984	RemoteAgent	WARN	TLS certificate errors will be ignored for this session
+[GFX1-]: RenderCompositorSWGL failed mapping default framebuffer, no dt
+console.error: ({})
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+DevTools listening on ws://127.0.0.1:58077/devtools/browser/c97a3fe9-1151-40a0-bd88-5d9c9a109b16
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.warn: LoginRecipes: "Falling back to a synchronous message for: http://localhost:39359."
+console.warn: LoginRecipes: "Falling back to a synchronous message for: http://localhost:39359."
+1716938975755	Marionette	INFO	Stopped listening on port 37671
+1716938979715	geckodriver	INFO	Listening on 127.0.0.1:46895
+1716938979743	mozrunner::runner	INFO	Running command: MOZ_CRASHREPORTER="1" MOZ_CRASHREPORTER_NO_REPORT="1" MOZ_CRASHREPORTER_SHUTDOWN="1" MOZ_NO_REMOTE="1" "/usr/bin/firefox" "--marionette" "--headless" "--remote-debugging-port" "60429" "--remote-allow-hosts" "localhost" "-no-remote" "-profile" "/tmp/rust_mozprofile2xUnWx"
+*** You are running in headless mode.
+[GFX1-]: glxtest: libpci missing
+[GFX1-]: glxtest: Unable to open a connection to the X server
+[GFX1-]: No GPUs detected via PCI
+
+1716938979939	Marionette	INFO	Marionette enabled
+1716938979992	Marionette	INFO	Listening on port 36391
+WebDriver BiDi listening on ws://127.0.0.1:60429
+Read port: 36391
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+1716938980151	RemoteAgent	WARN	TLS certificate errors will be ignored for this session
+[GFX1-]: RenderCompositorSWGL failed mapping default framebuffer, no dt
+console.error: ({})
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+DevTools listening on ws://127.0.0.1:60429/devtools/browser/e5cc7d4d-a901-487e-91e7-ce478b210291
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.warn: LoginRecipes: "Falling back to a synchronous message for: http://localhost:39359."
+console.warn: LoginRecipes: "Falling back to a synchronous message for: http://localhost:39359."
+1716938982838	Marionette	INFO	Stopped listening on port 36391
+1716938986914	geckodriver	INFO	Listening on 127.0.0.1:58933
+1716938986953	mozrunner::runner	INFO	Running command: MOZ_CRASHREPORTER="1" MOZ_CRASHREPORTER_NO_REPORT="1" MOZ_CRASHREPORTER_SHUTDOWN="1" MOZ_NO_REMOTE="1" "/usr/bin/firefox" "--marionette" "--headless" "--remote-debugging-port" "57981" "--remote-allow-hosts" "localhost" "-no-remote" "-profile" "/tmp/rust_mozprofileX3fRNv"
+*** You are running in headless mode.
+[GFX1-]: glxtest: libpci missing
+[GFX1-]: glxtest: Unable to open a connection to the X server
+[GFX1-]: No GPUs detected via PCI
+
+1716938987149	Marionette	INFO	Marionette enabled
+1716938987203	Marionette	INFO	Listening on port 39435
+WebDriver BiDi listening on ws://127.0.0.1:57981
+Read port: 39435
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+1716938987367	RemoteAgent	WARN	TLS certificate errors will be ignored for this session
+[GFX1-]: RenderCompositorSWGL failed mapping default framebuffer, no dt
+console.error: ({})
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+DevTools listening on ws://127.0.0.1:57981/devtools/browser/b1d2c32e-3931-4530-b5d7-2575c1a8e077
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.warn: LoginRecipes: "Falling back to a synchronous message for: http://localhost:39359."
+console.warn: LoginRecipes: "Falling back to a synchronous message for: http://localhost:39359."
+1716938990910	Marionette	INFO	Stopped listening on port 39435
+1716938995097	geckodriver	INFO	Listening on 127.0.0.1:43891
+1716938995135	mozrunner::runner	INFO	Running command: MOZ_CRASHREPORTER="1" MOZ_CRASHREPORTER_NO_REPORT="1" MOZ_CRASHREPORTER_SHUTDOWN="1" MOZ_NO_REMOTE="1" "/usr/bin/firefox" "--marionette" "--headless" "--remote-debugging-port" "52565" "--remote-allow-hosts" "localhost" "-no-remote" "-profile" "/tmp/rust_mozprofile2aytu2"
+*** You are running in headless mode.
+[GFX1-]: glxtest: libpci missing
+[GFX1-]: glxtest: Unable to open a connection to the X server
+[GFX1-]: No GPUs detected via PCI
+
+1716938995328	Marionette	INFO	Marionette enabled
+1716938995382	Marionette	INFO	Listening on port 43465
+WebDriver BiDi listening on ws://127.0.0.1:52565
+Read port: 43465
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+1716938995542	RemoteAgent	WARN	TLS certificate errors will be ignored for this session
+[GFX1-]: RenderCompositorSWGL failed mapping default framebuffer, no dt
+console.error: ({})
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+DevTools listening on ws://127.0.0.1:52565/devtools/browser/50c6474e-51bd-4621-a655-8e4810c03afc
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new TypeError("linkMap is undefined", "resource://gre/modules/NewTabUtils.sys.mjs", 2003))
+console.warn: LoginRecipes: "Falling back to a synchronous message for: http://localhost:48837."
+console.warn: LoginRecipes: "Falling back to a synchronous message for: http://localhost:48837."
+1716938998354	Marionette	INFO	Stopped listening on port 43465
+1716939002394	geckodriver	INFO	Listening on 127.0.0.1:40981
+1716939002432	mozrunner::runner	INFO	Running command: MOZ_CRASHREPORTER="1" MOZ_CRASHREPORTER_NO_REPORT="1" MOZ_CRASHREPORTER_SHUTDOWN="1" MOZ_NO_REMOTE="1" "/usr/bin/firefox" "--marionette" "--headless" "--remote-debugging-port" "47921" "--remote-allow-hosts" "localhost" "-no-remote" "-profile" "/tmp/rust_mozprofileMRBtc7"
+*** You are running in headless mode.
+[GFX1-]: glxtest: libpci missing
+[GFX1-]: glxtest: Unable to open a connection to the X server
+[GFX1-]: No GPUs detected via PCI
+
+1716939002623	Marionette	INFO	Marionette enabled
+1716939002676	Marionette	INFO	Listening on port 42005
+WebDriver BiDi listening on ws://127.0.0.1:47921
+Read port: 42005
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+1716939002834	RemoteAgent	WARN	TLS certificate errors will be ignored for this session
+[GFX1-]: RenderCompositorSWGL failed mapping default framebuffer, no dt
+console.error: ({})
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+DevTools listening on ws://127.0.0.1:47921/devtools/browser/54c84f49-c8f1-4288-ae29-203b5f567856
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new TypeError("linkMap is undefined", "resource://gre/modules/NewTabUtils.sys.mjs", 2003))
+console.warn: LoginRecipes: "Falling back to a synchronous message for: http://localhost:48837."
+console.warn: LoginRecipes: "Falling back to a synchronous message for: http://localhost:48837."
+1716939005703	Marionette	INFO	Stopped listening on port 42005
+1716939009785	geckodriver	INFO	Listening on 127.0.0.1:46375
+1716939009825	mozrunner::runner	INFO	Running command: MOZ_CRASHREPORTER="1" MOZ_CRASHREPORTER_NO_REPORT="1" MOZ_CRASHREPORTER_SHUTDOWN="1" MOZ_NO_REMOTE="1" "/usr/bin/firefox" "--marionette" "--headless" "--remote-debugging-port" "57689" "--remote-allow-hosts" "localhost" "-no-remote" "-profile" "/tmp/rust_mozprofileiiwNmw"
+*** You are running in headless mode.
+[GFX1-]: glxtest: libpci missing
+[GFX1-]: glxtest: Unable to open a connection to the X server
+[GFX1-]: No GPUs detected via PCI
+
+1716939010016	Marionette	INFO	Marionette enabled
+1716939010069	Marionette	INFO	Listening on port 36251
+WebDriver BiDi listening on ws://127.0.0.1:57689
+Read port: 36251
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+1716939010229	RemoteAgent	WARN	TLS certificate errors will be ignored for this session
+[GFX1-]: RenderCompositorSWGL failed mapping default framebuffer, no dt
+console.error: ({})
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+DevTools listening on ws://127.0.0.1:57689/devtools/browser/dd082593-2833-445f-9104-50f80984ba45
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.warn: LoginRecipes: "Falling back to a synchronous message for: http://localhost:48837."
+console.warn: LoginRecipes: "Falling back to a synchronous message for: http://localhost:48837."
+1716939012895	Marionette	INFO	Stopped listening on port 36251
+1716939016926	geckodriver	INFO	Listening on 127.0.0.1:47393
+1716939016955	mozrunner::runner	INFO	Running command: MOZ_CRASHREPORTER="1" MOZ_CRASHREPORTER_NO_REPORT="1" MOZ_CRASHREPORTER_SHUTDOWN="1" MOZ_NO_REMOTE="1" "/usr/bin/firefox" "--marionette" "--headless" "--remote-debugging-port" "53043" "--remote-allow-hosts" "localhost" "-no-remote" "-profile" "/tmp/rust_mozprofileNiIyuO"
+*** You are running in headless mode.
+[GFX1-]: glxtest: libpci missing
+[GFX1-]: glxtest: Unable to open a connection to the X server
+[GFX1-]: No GPUs detected via PCI
+
+1716939017147	Marionette	INFO	Marionette enabled
+1716939017201	Marionette	INFO	Listening on port 39665
+WebDriver BiDi listening on ws://127.0.0.1:53043
+Read port: 39665
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+1716939017359	RemoteAgent	WARN	TLS certificate errors will be ignored for this session
+[GFX1-]: RenderCompositorSWGL failed mapping default framebuffer, no dt
+console.error: ({})
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+DevTools listening on ws://127.0.0.1:53043/devtools/browser/6332ceec-be19-443b-ba55-40b6f77a50b8
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.warn: LoginRecipes: "Falling back to a synchronous message for: http://localhost:48837."
+console.warn: LoginRecipes: "Falling back to a synchronous message for: http://localhost:48837."
+1716939020161	Marionette	INFO	Stopped listening on port 39665
+1716939023802	geckodriver	INFO	Listening on 127.0.0.1:44095
+1716939023840	mozrunner::runner	INFO	Running command: MOZ_CRASHREPORTER="1" MOZ_CRASHREPORTER_NO_REPORT="1" MOZ_CRASHREPORTER_SHUTDOWN="1" MOZ_NO_REMOTE="1" "/usr/bin/firefox" "--marionette" "--headless" "--remote-debugging-port" "35509" "--remote-allow-hosts" "localhost" "-no-remote" "-profile" "/tmp/rust_mozprofile2tDrvD"
+*** You are running in headless mode.
+[GFX1-]: glxtest: libpci missing
+[GFX1-]: glxtest: Unable to open a connection to the X server
+[GFX1-]: No GPUs detected via PCI
+
+1716939024036	Marionette	INFO	Marionette enabled
+1716939024088	Marionette	INFO	Listening on port 41019
+WebDriver BiDi listening on ws://127.0.0.1:35509
+Read port: 41019
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+1716939024246	RemoteAgent	WARN	TLS certificate errors will be ignored for this session
+[GFX1-]: RenderCompositorSWGL failed mapping default framebuffer, no dt
+console.error: ({})
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+DevTools listening on ws://127.0.0.1:35509/devtools/browser/3dabef9e-e405-4721-b5e2-53f7dfea737f
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.warn: LoginRecipes: "Falling back to a synchronous message for: http://localhost:48837."
+console.warn: LoginRecipes: "Falling back to a synchronous message for: http://localhost:48837."
+1716939026832	Marionette	INFO	Stopped listening on port 41019
+1716939030466	geckodriver	INFO	Listening on 127.0.0.1:60321
+1716939030505	mozrunner::runner	INFO	Running command: MOZ_CRASHREPORTER="1" MOZ_CRASHREPORTER_NO_REPORT="1" MOZ_CRASHREPORTER_SHUTDOWN="1" MOZ_NO_REMOTE="1" "/usr/bin/firefox" "--marionette" "--headless" "--remote-debugging-port" "42081" "--remote-allow-hosts" "localhost" "-no-remote" "-profile" "/tmp/rust_mozprofileYsn7tG"
+*** You are running in headless mode.
+[GFX1-]: glxtest: libpci missing
+[GFX1-]: glxtest: Unable to open a connection to the X server
+[GFX1-]: No GPUs detected via PCI
+
+1716939030702	Marionette	INFO	Marionette enabled
+1716939030755	Marionette	INFO	Listening on port 44955
+WebDriver BiDi listening on ws://127.0.0.1:42081
+Read port: 44955
+1716939030915	RemoteAgent	WARN	TLS certificate errors will be ignored for this session
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+[GFX1-]: RenderCompositorSWGL failed mapping default framebuffer, no dt
+console.error: ({})
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+DevTools listening on ws://127.0.0.1:42081/devtools/browser/9abea5f6-6ad1-42e1-9cde-30b8686c9ea6
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new TypeError("linkMap is undefined", "resource://gre/modules/NewTabUtils.sys.mjs", 2003))
+console.warn: LoginRecipes: "Falling back to a synchronous message for: http://localhost:48837."
+console.warn: LoginRecipes: "Falling back to a synchronous message for: http://localhost:48837."
+1716939033464	Marionette	INFO	Stopped listening on port 44955
+1716939037376	geckodriver	INFO	Listening on 127.0.0.1:51193
+1716939037416	mozrunner::runner	INFO	Running command: MOZ_CRASHREPORTER="1" MOZ_CRASHREPORTER_NO_REPORT="1" MOZ_CRASHREPORTER_SHUTDOWN="1" MOZ_NO_REMOTE="1" "/usr/bin/firefox" "--marionette" "--headless" "--remote-debugging-port" "39051" "--remote-allow-hosts" "localhost" "-no-remote" "-profile" "/tmp/rust_mozprofileRiARBk"
+*** You are running in headless mode.
+[GFX1-]: glxtest: libpci missing
+[GFX1-]: glxtest: Unable to open a connection to the X server
+[GFX1-]: No GPUs detected via PCI
+
+1716939037609	Marionette	INFO	Marionette enabled
+1716939037661	Marionette	INFO	Listening on port 37739
+WebDriver BiDi listening on ws://127.0.0.1:39051
+Read port: 37739
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+1716939037819	RemoteAgent	WARN	TLS certificate errors will be ignored for this session
+[GFX1-]: RenderCompositorSWGL failed mapping default framebuffer, no dt
+console.error: ({})
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+DevTools listening on ws://127.0.0.1:39051/devtools/browser/577e93e7-8eef-45d2-bcca-54e7e2a77110
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+1716939041281	Marionette	INFO	Stopped listening on port 37739
+1716939045048	geckodriver	INFO	Listening on 127.0.0.1:52919
+1716939045087	mozrunner::runner	INFO	Running command: MOZ_CRASHREPORTER="1" MOZ_CRASHREPORTER_NO_REPORT="1" MOZ_CRASHREPORTER_SHUTDOWN="1" MOZ_NO_REMOTE="1" "/usr/bin/firefox" "--marionette" "--headless" "--remote-debugging-port" "44531" "--remote-allow-hosts" "localhost" "-no-remote" "-profile" "/tmp/rust_mozprofileZmZLrZ"
+*** You are running in headless mode.
+[GFX1-]: glxtest: libpci missing
+[GFX1-]: glxtest: Unable to open a connection to the X server
+[GFX1-]: No GPUs detected via PCI
+
+1716939045281	Marionette	INFO	Marionette enabled
+1716939045335	Marionette	INFO	Listening on port 36769
+WebDriver BiDi listening on ws://127.0.0.1:44531
+Read port: 36769
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+1716939045498	RemoteAgent	WARN	TLS certificate errors will be ignored for this session
+[GFX1-]: RenderCompositorSWGL failed mapping default framebuffer, no dt
+console.error: ({})
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+DevTools listening on ws://127.0.0.1:44531/devtools/browser/77483a50-9174-4a7d-9e88-3e67202b879e
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.warn: LoginRecipes: "Falling back to a synchronous message for: http://localhost:46115."
+console.warn: LoginRecipes: "Falling back to a synchronous message for: http://localhost:46115."
+1716939050013	Marionette	INFO	Stopped listening on port 36769
+1716939053516	geckodriver	INFO	Listening on 127.0.0.1:34737
+1716939053557	mozrunner::runner	INFO	Running command: MOZ_CRASHREPORTER="1" MOZ_CRASHREPORTER_NO_REPORT="1" MOZ_CRASHREPORTER_SHUTDOWN="1" MOZ_NO_REMOTE="1" "/usr/bin/firefox" "--marionette" "--headless" "--remote-debugging-port" "35783" "--remote-allow-hosts" "localhost" "-no-remote" "-profile" "/tmp/rust_mozprofile9cEfzk"
+*** You are running in headless mode.
+[GFX1-]: glxtest: libpci missing
+[GFX1-]: glxtest: Unable to open a connection to the X server
+[GFX1-]: No GPUs detected via PCI
+
+1716939053748	Marionette	INFO	Marionette enabled
+1716939053802	Marionette	INFO	Listening on port 38611
+WebDriver BiDi listening on ws://127.0.0.1:35783
+Read port: 38611
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+1716939053960	RemoteAgent	WARN	TLS certificate errors will be ignored for this session
+[GFX1-]: RenderCompositorSWGL failed mapping default framebuffer, no dt
+console.error: ({})
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+DevTools listening on ws://127.0.0.1:35783/devtools/browser/21c2ae8e-832f-4015-a3e7-4471a7683795
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new TypeError("linkMap is undefined", "resource://gre/modules/NewTabUtils.sys.mjs", 2003))
+console.warn: LoginRecipes: "Falling back to a synchronous message for: http://localhost:46115."
+console.warn: LoginRecipes: "Falling back to a synchronous message for: http://localhost:46115."
+console.warn: LoginRecipes: "Falling back to a synchronous message for: http://localhost:46115."
+console.warn: LoginRecipes: "Falling back to a synchronous message for: http://localhost:46115."
+console.warn: LoginRecipes: "Falling back to a synchronous message for: http://localhost:46115."
+console.warn: LoginRecipes: "Falling back to a synchronous message for: http://localhost:46115."
+1716939067229	Marionette	INFO	Stopped listening on port 38611
+1716939070841	geckodriver	INFO	Listening on 127.0.0.1:47117
+1716939070880	mozrunner::runner	INFO	Running command: MOZ_CRASHREPORTER="1" MOZ_CRASHREPORTER_NO_REPORT="1" MOZ_CRASHREPORTER_SHUTDOWN="1" MOZ_NO_REMOTE="1" "/usr/bin/firefox" "--marionette" "--headless" "--remote-debugging-port" "41167" "--remote-allow-hosts" "localhost" "-no-remote" "-profile" "/tmp/rust_mozprofile0msSli"
+*** You are running in headless mode.
+[GFX1-]: glxtest: libpci missing
+[GFX1-]: glxtest: Unable to open a connection to the X server
+[GFX1-]: No GPUs detected via PCI
+
+1716939071074	Marionette	INFO	Marionette enabled
+1716939071128	Marionette	INFO	Listening on port 45871
+WebDriver BiDi listening on ws://127.0.0.1:41167
+Read port: 45871
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+1716939071290	RemoteAgent	WARN	TLS certificate errors will be ignored for this session
+[GFX1-]: RenderCompositorSWGL failed mapping default framebuffer, no dt
+console.error: ({})
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+DevTools listening on ws://127.0.0.1:41167/devtools/browser/a4e60ffd-bb13-4ebb-a964-1f55887ce4a6
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.warn: LoginRecipes: "Falling back to a synchronous message for: http://localhost:46115."
+console.warn: LoginRecipes: "Falling back to a synchronous message for: http://localhost:46115."
+console.warn: LoginRecipes: "Falling back to a synchronous message for: http://localhost:46115."
+console.warn: LoginRecipes: "Falling back to a synchronous message for: http://localhost:46115."
+console.warn: LoginRecipes: "Falling back to a synchronous message for: http://localhost:46115."
+1716939082535	Marionette	INFO	Stopped listening on port 45871
+1716939086124	geckodriver	INFO	Listening on 127.0.0.1:58243
+1716939086164	mozrunner::runner	INFO	Running command: MOZ_CRASHREPORTER="1" MOZ_CRASHREPORTER_NO_REPORT="1" MOZ_CRASHREPORTER_SHUTDOWN="1" MOZ_NO_REMOTE="1" "/usr/bin/firefox" "--marionette" "--headless" "--remote-debugging-port" "36393" "--remote-allow-hosts" "localhost" "-no-remote" "-profile" "/tmp/rust_mozprofileWDymvr"
+*** You are running in headless mode.
+[GFX1-]: glxtest: libpci missing
+[GFX1-]: glxtest: Unable to open a connection to the X server
+[GFX1-]: No GPUs detected via PCI
+
+1716939086358	Marionette	INFO	Marionette enabled
+1716939086410	Marionette	INFO	Listening on port 38387
+WebDriver BiDi listening on ws://127.0.0.1:36393
+Read port: 38387
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+1716939086569	RemoteAgent	WARN	TLS certificate errors will be ignored for this session
+[GFX1-]: RenderCompositorSWGL failed mapping default framebuffer, no dt
+console.error: ({})
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+DevTools listening on ws://127.0.0.1:36393/devtools/browser/280dfbf3-2429-4f9c-b906-4c32910117ce
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.warn: LoginRecipes: "Falling back to a synchronous message for: http://localhost:46115."
+console.warn: LoginRecipes: "Falling back to a synchronous message for: http://localhost:46115."
+console.warn: LoginRecipes: "Falling back to a synchronous message for: http://localhost:46115."
+console.warn: LoginRecipes: "Falling back to a synchronous message for: http://localhost:46115."
+console.warn: LoginRecipes: "Falling back to a synchronous message for: http://localhost:46115."
+1716939098021	Marionette	INFO	Stopped listening on port 38387
+1716939101504	geckodriver	INFO	Listening on 127.0.0.1:33259
+1716939101543	mozrunner::runner	INFO	Running command: MOZ_CRASHREPORTER="1" MOZ_CRASHREPORTER_NO_REPORT="1" MOZ_CRASHREPORTER_SHUTDOWN="1" MOZ_NO_REMOTE="1" "/usr/bin/firefox" "--marionette" "--headless" "--remote-debugging-port" "55499" "--remote-allow-hosts" "localhost" "-no-remote" "-profile" "/tmp/rust_mozprofileDQqz61"
+*** You are running in headless mode.
+[GFX1-]: glxtest: libpci missing
+[GFX1-]: glxtest: Unable to open a connection to the X server
+[GFX1-]: No GPUs detected via PCI
+
+1716939101737	Marionette	INFO	Marionette enabled
+1716939101792	Marionette	INFO	Listening on port 33515
+WebDriver BiDi listening on ws://127.0.0.1:55499
+Read port: 33515
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+1716939101957	RemoteAgent	WARN	TLS certificate errors will be ignored for this session
+[GFX1-]: RenderCompositorSWGL failed mapping default framebuffer, no dt
+console.error: ({})
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+DevTools listening on ws://127.0.0.1:55499/devtools/browser/b3caf822-0586-4f00-b90b-11d28b59a403
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new TypeError("linkMap is undefined", "resource://gre/modules/NewTabUtils.sys.mjs", 2003))
+console.warn: LoginRecipes: "Falling back to a synchronous message for: http://localhost:46115."
+console.warn: LoginRecipes: "Falling back to a synchronous message for: http://localhost:46115."
+1716939106591	Marionette	INFO	Stopped listening on port 33515
+1716939110160	geckodriver	INFO	Listening on 127.0.0.1:53379
+1716939110200	mozrunner::runner	INFO	Running command: MOZ_CRASHREPORTER="1" MOZ_CRASHREPORTER_NO_REPORT="1" MOZ_CRASHREPORTER_SHUTDOWN="1" MOZ_NO_REMOTE="1" "/usr/bin/firefox" "--marionette" "--headless" "--remote-debugging-port" "54645" "--remote-allow-hosts" "localhost" "-no-remote" "-profile" "/tmp/rust_mozprofilev7Yy1a"
+*** You are running in headless mode.
+[GFX1-]: glxtest: libpci missing
+[GFX1-]: glxtest: Unable to open a connection to the X server
+[GFX1-]: No GPUs detected via PCI
+
+1716939110395	Marionette	INFO	Marionette enabled
+1716939110448	Marionette	INFO	Listening on port 34245
+WebDriver BiDi listening on ws://127.0.0.1:54645
+Read port: 34245
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+1716939110608	RemoteAgent	WARN	TLS certificate errors will be ignored for this session
+[GFX1-]: RenderCompositorSWGL failed mapping default framebuffer, no dt
+console.error: ({})
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+DevTools listening on ws://127.0.0.1:54645/devtools/browser/181e00f4-f5db-490b-a443-af03983faf68
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.warn: LoginRecipes: "Falling back to a synchronous message for: http://localhost:46115."
+console.warn: LoginRecipes: "Falling back to a synchronous message for: http://localhost:46115."
+console.warn: LoginRecipes: "Falling back to a synchronous message for: http://localhost:46115."
+console.warn: LoginRecipes: "Falling back to a synchronous message for: http://localhost:46115."
+console.warn: LoginRecipes: "Falling back to a synchronous message for: http://localhost:46115."
+1716939122029	Marionette	INFO	Stopped listening on port 34245
+1716939125492	geckodriver	INFO	Listening on 127.0.0.1:44023
+1716939125531	mozrunner::runner	INFO	Running command: MOZ_CRASHREPORTER="1" MOZ_CRASHREPORTER_NO_REPORT="1" MOZ_CRASHREPORTER_SHUTDOWN="1" MOZ_NO_REMOTE="1" "/usr/bin/firefox" "--marionette" "--headless" "--remote-debugging-port" "42223" "--remote-allow-hosts" "localhost" "-no-remote" "-profile" "/tmp/rust_mozprofileyZ610N"
+*** You are running in headless mode.
+[GFX1-]: glxtest: libpci missing
+[GFX1-]: glxtest: Unable to open a connection to the X server
+[GFX1-]: No GPUs detected via PCI
+
+1716939125728	Marionette	INFO	Marionette enabled
+1716939125781	Marionette	INFO	Listening on port 42065
+WebDriver BiDi listening on ws://127.0.0.1:42223
+Read port: 42065
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+1716939125943	RemoteAgent	WARN	TLS certificate errors will be ignored for this session
+[GFX1-]: RenderCompositorSWGL failed mapping default framebuffer, no dt
+console.error: ({})
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+DevTools listening on ws://127.0.0.1:42223/devtools/browser/05195190-e507-45ae-909f-32a033e18b9c
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.warn: LoginRecipes: "Falling back to a synchronous message for: http://localhost:46115."
+console.warn: LoginRecipes: "Falling back to a synchronous message for: http://localhost:46115."
+1716939130406	Marionette	INFO	Stopped listening on port 42065
+1716939133932	geckodriver	INFO	Listening on 127.0.0.1:34899
+1716939133970	mozrunner::runner	INFO	Running command: MOZ_CRASHREPORTER="1" MOZ_CRASHREPORTER_NO_REPORT="1" MOZ_CRASHREPORTER_SHUTDOWN="1" MOZ_NO_REMOTE="1" "/usr/bin/firefox" "--marionette" "--headless" "--remote-debugging-port" "56537" "--remote-allow-hosts" "localhost" "-no-remote" "-profile" "/tmp/rust_mozprofilepE1xAs"
+*** You are running in headless mode.
+[GFX1-]: glxtest: libpci missing
+[GFX1-]: glxtest: Unable to open a connection to the X server
+[GFX1-]: No GPUs detected via PCI
+
+1716939134165	Marionette	INFO	Marionette enabled
+1716939134218	Marionette	INFO	Listening on port 43285
+WebDriver BiDi listening on ws://127.0.0.1:56537
+Read port: 43285
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+1716939134380	RemoteAgent	WARN	TLS certificate errors will be ignored for this session
+[GFX1-]: RenderCompositorSWGL failed mapping default framebuffer, no dt
+console.error: ({})
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+DevTools listening on ws://127.0.0.1:56537/devtools/browser/6460214d-f98f-4cc9-b501-6b57d845e845
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new TypeError("linkMap is undefined", "resource://gre/modules/NewTabUtils.sys.mjs", 2003))
+console.warn: LoginRecipes: "Falling back to a synchronous message for: http://localhost:46115."
+console.warn: LoginRecipes: "Falling back to a synchronous message for: http://localhost:46115."
+1716939138695	Marionette	INFO	Stopped listening on port 43285
+1716939142284	geckodriver	INFO	Listening on 127.0.0.1:37617
+1716939142312	mozrunner::runner	INFO	Running command: MOZ_CRASHREPORTER="1" MOZ_CRASHREPORTER_NO_REPORT="1" MOZ_CRASHREPORTER_SHUTDOWN="1" MOZ_NO_REMOTE="1" "/usr/bin/firefox" "--marionette" "--headless" "--remote-debugging-port" "52457" "--remote-allow-hosts" "localhost" "-no-remote" "-profile" "/tmp/rust_mozprofileNtBL5H"
+*** You are running in headless mode.
+[GFX1-]: glxtest: libpci missing
+[GFX1-]: glxtest: Unable to open a connection to the X server
+[GFX1-]: No GPUs detected via PCI
+
+1716939142508	Marionette	INFO	Marionette enabled
+1716939142561	Marionette	INFO	Listening on port 39333
+WebDriver BiDi listening on ws://127.0.0.1:52457
+Read port: 39333
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+1716939142724	RemoteAgent	WARN	TLS certificate errors will be ignored for this session
+[GFX1-]: RenderCompositorSWGL failed mapping default framebuffer, no dt
+console.error: ({})
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+DevTools listening on ws://127.0.0.1:52457/devtools/browser/3f7426d1-5918-41f3-8102-b8b253c0c9ce
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.warn: LoginRecipes: "Falling back to a synchronous message for: http://localhost:46115."
+console.warn: LoginRecipes: "Falling back to a synchronous message for: http://localhost:46115."
+1716939147131	Marionette	INFO	Stopped listening on port 39333
+1716939150753	geckodriver	INFO	Listening on 127.0.0.1:47387
+1716939150792	mozrunner::runner	INFO	Running command: MOZ_CRASHREPORTER="1" MOZ_CRASHREPORTER_NO_REPORT="1" MOZ_CRASHREPORTER_SHUTDOWN="1" MOZ_NO_REMOTE="1" "/usr/bin/firefox" "--marionette" "--headless" "--remote-debugging-port" "34827" "--remote-allow-hosts" "localhost" "-no-remote" "-profile" "/tmp/rust_mozprofileqHq9YF"
+*** You are running in headless mode.
+[GFX1-]: glxtest: libpci missing
+[GFX1-]: glxtest: Unable to open a connection to the X server
+[GFX1-]: No GPUs detected via PCI
+
+1716939150988	Marionette	INFO	Marionette enabled
+1716939151042	Marionette	INFO	Listening on port 46371
+WebDriver BiDi listening on ws://127.0.0.1:34827
+Read port: 46371
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+1716939151204	RemoteAgent	WARN	TLS certificate errors will be ignored for this session
+[GFX1-]: RenderCompositorSWGL failed mapping default framebuffer, no dt
+console.error: ({})
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+DevTools listening on ws://127.0.0.1:34827/devtools/browser/6e7f301b-5ebc-4499-837f-20c2df71c7cc
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+1716939155634	Marionette	WARN	TimedPromise timed out after 500 ms: stacktrace:
+TimedPromise/<@chrome://remote/content/marionette/sync.sys.mjs:221:24
+TimedPromise@chrome://remote/content/marionette/sync.sys.mjs:205:10
+interaction.flushEventLoop@chrome://remote/content/marionette/interaction.sys.mjs:431:10
+webdriverClickElement@chrome://remote/content/marionette/interaction.sys.mjs:180:31
+1716939157487	Marionette	WARN	TimedPromise timed out after 500 ms: stacktrace:
+TimedPromise/<@chrome://remote/content/marionette/sync.sys.mjs:221:24
+TimedPromise@chrome://remote/content/marionette/sync.sys.mjs:205:10
+interaction.flushEventLoop@chrome://remote/content/marionette/interaction.sys.mjs:431:10
+webdriverClickElement@chrome://remote/content/marionette/interaction.sys.mjs:180:31
+1716939157836	Marionette	INFO	Stopped listening on port 46371
+1716939161867	geckodriver	INFO	Listening on 127.0.0.1:51691
+1716939161906	mozrunner::runner	INFO	Running command: MOZ_CRASHREPORTER="1" MOZ_CRASHREPORTER_NO_REPORT="1" MOZ_CRASHREPORTER_SHUTDOWN="1" MOZ_NO_REMOTE="1" "/usr/bin/firefox" "--marionette" "--headless" "--remote-debugging-port" "58479" "--remote-allow-hosts" "localhost" "-no-remote" "-profile" "/tmp/rust_mozprofileI4mEhH"
+*** You are running in headless mode.
+[GFX1-]: glxtest: libpci missing
+[GFX1-]: glxtest: Unable to open a connection to the X server
+[GFX1-]: No GPUs detected via PCI
+
+1716939162099	Marionette	INFO	Marionette enabled
+1716939162152	Marionette	INFO	Listening on port 42091
+WebDriver BiDi listening on ws://127.0.0.1:58479
+Read port: 42091
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+1716939162314	RemoteAgent	WARN	TLS certificate errors will be ignored for this session
+[GFX1-]: RenderCompositorSWGL failed mapping default framebuffer, no dt
+console.error: ({})
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+DevTools listening on ws://127.0.0.1:58479/devtools/browser/c9c0a933-6a15-4521-97ef-a20d4fdb07c7
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new TypeError("linkMap is undefined", "resource://gre/modules/NewTabUtils.sys.mjs", 2003))
+console.warn: LoginRecipes: "Falling back to a synchronous message for: http://localhost:40773."
+console.warn: LoginRecipes: "Falling back to a synchronous message for: http://localhost:40773."
+1716939164979	Marionette	INFO	Stopped listening on port 42091
+1716939168593	geckodriver	INFO	Listening on 127.0.0.1:37183
+1716939168632	mozrunner::runner	INFO	Running command: MOZ_CRASHREPORTER="1" MOZ_CRASHREPORTER_NO_REPORT="1" MOZ_CRASHREPORTER_SHUTDOWN="1" MOZ_NO_REMOTE="1" "/usr/bin/firefox" "--marionette" "--headless" "--remote-debugging-port" "57639" "--remote-allow-hosts" "localhost" "-no-remote" "-profile" "/tmp/rust_mozprofilecQupAx"
+*** You are running in headless mode.
+[GFX1-]: glxtest: libpci missing
+[GFX1-]: glxtest: Unable to open a connection to the X server
+[GFX1-]: No GPUs detected via PCI
+
+1716939168828	Marionette	INFO	Marionette enabled
+1716939168882	Marionette	INFO	Listening on port 35473
+WebDriver BiDi listening on ws://127.0.0.1:57639
+Read port: 35473
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+1716939169048	RemoteAgent	WARN	TLS certificate errors will be ignored for this session
+[GFX1-]: RenderCompositorSWGL failed mapping default framebuffer, no dt
+console.error: ({})
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+DevTools listening on ws://127.0.0.1:57639/devtools/browser/9b834914-e73f-44f5-978b-668f069f7811
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new TypeError("linkMap is undefined", "resource://gre/modules/NewTabUtils.sys.mjs", 2003))
+console.warn: LoginRecipes: "Falling back to a synchronous message for: http://localhost:40773."
+console.warn: LoginRecipes: "Falling back to a synchronous message for: http://localhost:40773."
+1716939171712	Marionette	INFO	Stopped listening on port 35473
+1716939175647	geckodriver	INFO	Listening on 127.0.0.1:58623
+1716939175687	mozrunner::runner	INFO	Running command: MOZ_CRASHREPORTER="1" MOZ_CRASHREPORTER_NO_REPORT="1" MOZ_CRASHREPORTER_SHUTDOWN="1" MOZ_NO_REMOTE="1" "/usr/bin/firefox" "--marionette" "--headless" "--remote-debugging-port" "35859" "--remote-allow-hosts" "localhost" "-no-remote" "-profile" "/tmp/rust_mozprofile5YZrj5"
+*** You are running in headless mode.
+[GFX1-]: glxtest: libpci missing
+[GFX1-]: glxtest: Unable to open a connection to the X server
+[GFX1-]: No GPUs detected via PCI
+
+1716939175882	Marionette	INFO	Marionette enabled
+1716939175938	Marionette	INFO	Listening on port 39175
+WebDriver BiDi listening on ws://127.0.0.1:35859
+Read port: 39175
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+1716939176100	RemoteAgent	WARN	TLS certificate errors will be ignored for this session
+[GFX1-]: RenderCompositorSWGL failed mapping default framebuffer, no dt
+console.error: ({})
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+console.error: (new Error("Unexpected content-type \"text/plain;charset=US-ASCII\"", "resource://services-settings/Utils.sys.mjs", 399))
+DevTools listening on ws://127.0.0.1:35859/devtools/browser/d8fd4a20-d671-416b-8451-80a795a02f7a
+1716939177317	Marionette	INFO	Stopped listening on port 39175
