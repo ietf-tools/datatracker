@@ -1,7 +1,7 @@
 {% autoescape off %}{% filter wordwrap:78 %}Internet-Draft {{ submission.name }}-{{ submission.rev }}.txt is now available.{% if submission.group %} It is a work item of the {{ submission.group.name }} ({{ submission.group.acronym|upper }}){% if submission.group.type.name %} {{ submission.group.type.name }}{% endif %} of the {% if submission.group.type_id == "rg" %}IRTF{% else %}IETF{% endif %}.{% endif %}{% endfilter %}
 
    Title:   {{ submission.title }}
-   Author{{ submission.authors|pluralize:",s" }}: {% if submission.authors|length == 1 %} {% endif %}{% for author in submission.authors %}{{ author.name }}{% if not forloop.last %}
+   Author{{ submission.authors|pluralize:",s" }}: {% if submission.authors|length == 1 %} {% endif %}{% for author in submission.authors %}{% firstof author.name author.affiliation "Unknown" %}{% if not forloop.last %}
             {% endif %}{% endfor %}
    Name:    {{ submission.name }}-{{ submission.rev }}.txt
    Pages:   {{ submission.pages }}
