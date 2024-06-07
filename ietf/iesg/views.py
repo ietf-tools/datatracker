@@ -360,6 +360,38 @@ def handle_reschedule_form(request, doc, dates, status):
     form.show_clear = doc.returning_item()
     return form
 
+def agenda_documents2():
+    ad_pages_left_to_ballot_on = 0
+    dates = list(TelechatDate.objects.active().order_by('date').values_list("date", flat=True)[:4])
+
+    docs_by_date = dict((d, []) for d in dates)
+    docs = Document.objects.filter(docevent__telechatdocevent__telechat_date__in=dates).distinct()
+    docs = docs.select_related("ad", "std_level", "intended_std_level", "group", "stream", "shepherd", )
+
+    # placeholder user
+    ad = docs[0].ad
+
+    # derived from ballot_icon
+    def sort_key(t):
+        _, pos = t
+        if not pos:
+            return (2, 0)
+        elif pos.pos.blocking:
+            return (0, pos.pos.order)
+        else:
+            return (1, pos.pos.order)
+
+    fill_in_telechat_date(docs)
+    for doc in docs:
+        ballot = doc.ballot if hasattr(doc, 'ballot') else doc.active_ballot()
+        if ballot:
+            positions = list(ballot.active_balloter_positions().items())
+            positions.sort(key=sort_key)
+            ad_positions = filter(lambda position: position[0] == ad, positions)
+            print("ad_positions", list(ad_positions))
+            
+    return docs
+
 def agenda_documents(request):
     dates = list(TelechatDate.objects.active().order_by('date').values_list("date", flat=True)[:4])
 
@@ -390,14 +422,13 @@ def agenda_documents(request):
         # the search_result_row view to display them (which expects them)
         fill_in_document_table_attributes(docs_by_date[date], have_telechat_date=True)
         fill_in_agenda_docs(date, sections, docs_by_date[date])
-        pages = telechat_page_count(docs=docs_by_date[date]).for_approval
-
-        print(telechat_page_count(docs=docs_by_date[date]))
+        page_count = telechat_page_count(docs=docs_by_date[date])
+        pages = page_count.for_approval
 
         telechats.append({
                 "date":     date,
                 "pages":    pages,
-                "ad_pages_left": "zool",
+                "ad_pages_left": page_count.ad_pages_left_to_ballot_on,
                 "sections": sorted((num, section) for num, section in sections.items()
                                    if "2" <= num < "5")
                 })
