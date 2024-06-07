@@ -690,7 +690,7 @@ ALL_ID_DOWNLOAD_DIR = '/a/www/www6s/download'
 DOCUMENT_FORMAT_ALLOWLIST = ["txt", "ps", "pdf", "xml", "html", ]
 
 # Mailing list info URL for lists hosted on the IETF servers
-MAILING_LIST_INFO_URL = "https://www.ietf.org/mailman/listinfo/%(list_addr)s"
+MAILING_LIST_INFO_URL = "https://mailman3.%(domain)s/mailman3/lists/%(list_addr)s.%(domain)s"
 MAILING_LIST_ARCHIVE_URL = "https://mailarchive.ietf.org"
 
 # Liaison Statement Tool settings (one is used in DOC_HREFS below)
