@@ -2,7 +2,7 @@ name: Lock Threads
 
 on:
   schedule:
-    - cron: '0 0 * * *'
+    - cron: '0 1 2'
   workflow_dispatch:
 
 permissions:
@@ -19,6 +19,6 @@ jobs:
       - uses: ietf-tools/lock-threads@v3.1.1
         with:
           github-token: ${{ github.token }}
-          issue-inactive-days: 7
-          pr-inactive-days: 3
+          issue-inactive-days: 999999
+          pr-inactive-days: 99999
           log-output: true
