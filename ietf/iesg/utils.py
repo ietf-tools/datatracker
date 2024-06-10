@@ -9,7 +9,7 @@ from ietf.iesg.agenda import get_doc_section
 
 TelechatPageCount = namedtuple('TelechatPageCount',['for_approval','for_action','related','ad_pages_left_to_ballot_on'])
 
-def telechat_page_count(date=None, docs=None):
+def telechat_page_count(date=None, docs=None, ad=None):
     if not date and not docs:
         return TelechatPageCount(0, 0, 0, 0)
 
@@ -26,7 +26,32 @@ def telechat_page_count(date=None, docs=None):
 
     pages_for_approval = sum([d.pages or 0 for d in drafts])
 
-    ad_pages_left_to_ballot_on = 0
+    # from ballot_icon
+    def sort_positions(t):
+        _, pos = t
+        if not pos:
+            return (2, 0)
+        elif pos.pos.blocking:
+            return (0, pos.pos.order)
+        else:
+            return (1, pos.pos.order)
+
+    ad_pages_left_to_ballot_on = None
+    if ad:
+        ad_pages_left_to_ballot_on = 0
+        for doc in docs:
+            ballot = doc.ballot if hasattr(doc, 'ballot') else doc.active_ballot()
+            if ballot:
+                positions = list(ballot.active_balloter_positions().items())
+                positions.sort(key=sort_positions)
+                ad_positions = list(filter(lambda position: position[0] == ad, positions))
+                if len(ad_positions) == 0:
+                    ad_pages_left_to_ballot_on += doc.pages or 0
+                else:
+                    latest_ad_position = ad_positions[0]
+                    ballot_event = latest_ad_position[1]
+                    if ballot_event: #FIXME: only count pages AD hasn't balloted on
+                        ad_pages_left_to_ballot_on += doc.pages or 0
 
     pages_for_action = 0
     for d in for_action:
