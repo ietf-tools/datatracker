@@ -536,7 +536,7 @@ _response_email_json_validator = jsonschema.Draft202012Validator(
                 "enum": [
                     "iana-review",
                     "ipr-response",
-                    "nomcom-feedback",
+                    "nomcom-feedback-2024",
                 ]
             },
             "message": {
@@ -544,21 +544,6 @@ _response_email_json_validator = jsonschema.Draft202012Validator(
             },
         },
         "required": ["dest", "message"],
-        "if": {
-            # If dest == "nomcom-feedback"...
-            "properties": {
-                "dest": {"const": "nomcom-feedback"},
-            }
-        },
-        "then": {
-            # ... then also require year, an integer, be present
-            "properties": {
-                "year": {
-                    "type": "integer",
-                },
-            },
-            "required": ["year"],
-        },
     }
 )
 
@@ -662,9 +647,8 @@ def ingest_email(request):
             iana_ingest_review_email(message)
         elif dest == "ipr-response":
             ipr_ingest_response_email(message)
-        elif dest == "nomcom-feedback":
-            year = payload["year"]
-            nomcom_ingest_feedback_email(message, year)
+        elif dest == "nomcom-feedback-2024":
+            nomcom_ingest_feedback_email(message, 2024)
         else:
             # Should never get here - json schema validation should enforce the enum
             log.unreachable(date="2024-04-04")
