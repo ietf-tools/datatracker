@@ -647,8 +647,11 @@ def ingest_email(request):
             iana_ingest_review_email(message)
         elif dest == "ipr-response":
             ipr_ingest_response_email(message)
-        elif dest == "nomcom-feedback-2024":
-            nomcom_ingest_feedback_email(message, 2024)
+        elif dest.startswith("nomcom-feedback-"):
+            maybe_year = dest[len("nomcom-feedback-"):]
+            if maybe_year.isdecimal():
+                year = int(maybe_year)
+            nomcom_ingest_feedback_email(message, year)
         else:
             # Should never get here - json schema validation should enforce the enum
             log.unreachable(date="2024-04-04")
