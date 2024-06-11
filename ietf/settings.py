@@ -38,7 +38,7 @@ sys.path.append(os.path.abspath(BASE_DIR + "/.."))
 from ietf import __version__
 import debug
 
-DEBUG = False
+DEBUG = True
 debug.debug = DEBUG
 
 DEBUG_AGENDA = False
