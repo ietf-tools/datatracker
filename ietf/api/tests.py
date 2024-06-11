@@ -1072,8 +1072,18 @@ class CustomApiTests(TestCase):
         self.assertEqual(r.status_code, 400)
         self.assertFalse(any(m.called for m in mocks))
 
-        # test that valid requests call handlers appropriately
+        # bad destination
         message_b64 = base64.b64encode(b"This is a message").decode()
+        r = self.client.post(
+            url,
+            {"dest": "not-a-destination", "message": message_b64},
+            content_type="application/json",
+            headers={"X-Api-Key": "valid-token"},
+        )
+        self.assertEqual(r.status_code, 400)
+        self.assertFalse(any(m.called for m in mocks))
+
+        # test that valid requests call handlers appropriately
         r = self.client.post(
             url,
             {"dest": "iana-review", "message": message_b64},
@@ -1098,6 +1108,23 @@ class CustomApiTests(TestCase):
         self.assertFalse(any(m.called for m in (mocks - {mock_ipr_ingest})))
         mock_ipr_ingest.reset_mock()
 
+        # bad nomcom-feedback dest
+        for bad_nomcom_dest in [
+            "nomcom-feedback",  # no suffix
+            "nomcom-feedback-",  # no year
+            "nomcom-feedback-squid",  # not a year,
+            "nomcom-feedback-2024-2025",  # also not a year
+        ]:
+            r = self.client.post(
+                url,
+                {"dest": bad_nomcom_dest, "message": message_b64},
+                content_type="application/json",
+                headers={"X-Api-Key": "valid-token"},
+            )
+            self.assertEqual(r.status_code, 400)
+            self.assertFalse(any(m.called for m in mocks))
+
+        # good nomcom-feedback dest
         r = self.client.post(
             url,
             {"dest": "nomcom-feedback-2024", "message": message_b64},
