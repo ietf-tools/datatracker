@@ -1100,7 +1100,7 @@ class CustomApiTests(TestCase):
 
         r = self.client.post(
             url,
-            {"dest": "nomcom-feedback", "message": message_b64, "year": 2024},  # arbitrary year
+            {"dest": "nomcom-feedback-2024", "message": message_b64},
             content_type="application/json",
             headers={"X-Api-Key": "valid-token"},
         )
