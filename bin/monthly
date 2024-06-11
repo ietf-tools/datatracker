@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Weekly datatracker jobs.
+# Monthly datatracker jobs.
 # 
 # This script is expected to be triggered by cron from
 # /etc/cron.d/datatracker
