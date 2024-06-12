@@ -533,11 +533,7 @@ _response_email_json_validator = jsonschema.Draft202012Validator(
         "type": "object",
         "properties": {
             "dest": {
-                "enum": [
-                    "iana-review",
-                    "ipr-response",
-                    "nomcom-feedback-2024",
-                ]
+                "type": "string",
             },
             "message": {
                 "type": "string",  # base64-encoded mail message
@@ -642,24 +638,26 @@ def ingest_email(request):
         return _err(400, "Invalid message: bad base64 encoding")
 
     dest = payload["dest"]
+    valid_dest = False
     try:
         if dest == "iana-review":
+            valid_dest = True
             iana_ingest_review_email(message)
         elif dest == "ipr-response":
+            valid_dest = True
             ipr_ingest_response_email(message)
         elif dest.startswith("nomcom-feedback-"):
             maybe_year = dest[len("nomcom-feedback-"):]
             if maybe_year.isdecimal():
-                year = int(maybe_year)
-            nomcom_ingest_feedback_email(message, year)
-        else:
-            # Should never get here - json schema validation should enforce the enum
-            log.unreachable(date="2024-04-04")
-            return _err(400, "Invalid dest")  # return something reasonable if we got here unexpectedly
+                valid_dest = True
+                nomcom_ingest_feedback_email(message, int(maybe_year))
     except EmailIngestionError as err:
         error_email = err.as_emailmessage()
         if error_email is not None:
             send_smtp(error_email)
         return _err(400, err.msg)
+
+    if not valid_dest:
+        return _err(400, "Invalid dest")
 
     return HttpResponse(status=200)
