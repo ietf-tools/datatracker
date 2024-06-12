@@ -611,31 +611,40 @@ class EmailIngestionError(Exception):
 @requires_api_token
 @csrf_exempt
 def ingest_email(request):
+    """Ingest incoming email
+    
+    Returns a 4xx or 5xx status code if the HTTP request was invalid or something went
+    wrong while processing it. If the request was valid, returns a 200. This may or may
+    not indicate that the message was accepted.
+    """
 
-    def _err(code, text):
+    def _http_err(code, text):
         return HttpResponse(text, status=code, content_type="text/plain")
 
+    def _api_response(result):
+        return JsonResponse(data={"result": result})
+
     if request.method != "POST":
-        return _err(405, "Method not allowed")
+        return _http_err(405, "Method not allowed")
 
     if request.content_type != "application/json":
-        return _err(415, "Content-Type must be application/json")
+        return _http_err(415, "Content-Type must be application/json")
 
     # Validate
     try:
         payload = json.loads(request.body)
         _response_email_json_validator.validate(payload)
     except json.decoder.JSONDecodeError as err:
-        return _err(400, f"JSON parse error at line {err.lineno} col {err.colno}: {err.msg}")
+        return _http_err(400, f"JSON parse error at line {err.lineno} col {err.colno}: {err.msg}")
     except jsonschema.exceptions.ValidationError as err:
-        return _err(400, f"JSON schema error at {err.json_path}: {err.message}")
+        return _http_err(400, f"JSON schema error at {err.json_path}: {err.message}")
     except Exception:
-        return _err(400, "Invalid request format")
+        return _http_err(400, "Invalid request format")
 
     try:
         message = base64.b64decode(payload["message"], validate=True)
     except binascii.Error:
-        return _err(400, "Invalid message: bad base64 encoding")
+        return _http_err(400, "Invalid message: bad base64 encoding")
 
     dest = payload["dest"]
     valid_dest = False
@@ -655,9 +664,9 @@ def ingest_email(request):
         error_email = err.as_emailmessage()
         if error_email is not None:
             send_smtp(error_email)
-        return _err(400, err.msg)
+        return _api_response("bad_msg")
 
     if not valid_dest:
-        return _err(400, "Invalid dest")
+        return _api_response("bad_dest")
 
-    return HttpResponse(status=200)
+    return _api_response("ok")
