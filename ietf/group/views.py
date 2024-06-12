@@ -178,23 +178,13 @@ def wg_summary_acronym(request, group_type):
 def wg_charters(request, group_type):
     if group_type != "wg":
         raise Http404
-    fpath = Path(settings.CHARTER_PATH) / "1wg-charters.txt" 
-    try:
-        content = fpath.read_bytes()
-    except IOError:
-        raise Http404
-    return HttpResponse(content, content_type="text/plain; charset=UTF-8")
+    return http_response_from_file(Path(settings.CHARTER_PATH) / "1wg-charters.txt") 
 
 
 def wg_charters_by_acronym(request, group_type):
     if group_type != "wg":
         raise Http404
-    fpath = Path(settings.CHARTER_PATH) / "1wg-charters-by-acronym.txt" 
-    try:
-        content = fpath.read_bytes()
-    except IOError:
-        raise Http404
-    return HttpResponse(content, content_type="text/plain; charset=UTF-8")
+    return http_response_from_file(Path(settings.CHARTER_PATH) / "1wg-charters-by-acronym.txt") 
 
 
 def active_groups(request, group_type=None):
