@@ -262,3 +262,9 @@ CACHES = {
 _csrf_trusted_origins_str = os.environ.get("DATATRACKER_CSRF_TRUSTED_ORIGINS")
 if _csrf_trusted_origins_str is not None:
     CSRF_TRUSTED_ORIGINS = _multiline_to_list(_csrf_trusted_origins_str)
+
+# Send logs to console instead of debug_console when running in kubernetes
+LOGGING["loggers"]["django"]["handlers"] = ["console", "mail_admins"]
+LOGGING["loggers"]["django.security"]["handlers"] = ["console"]
+LOGGING["loggers"]["datatracker"]["handlers"] = ["console"]
+LOGGING["loggers"]["celery"]["handlers"] = ["console"]
