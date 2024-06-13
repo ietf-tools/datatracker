@@ -287,6 +287,30 @@ class GroupPagesTests(TestCase):
         )
         self.assertEqual(not_a_dir.read_text(), "Not a dir")
 
+    def test_generate_wg_summary_files_task(self):
+        group = CharterFactory(group__type_id='wg',group__parent=GroupFactory(type_id='area')).group
+        RoleFactory(group=group,name_id='chair',person=PersonFactory())
+        RoleFactory(group=group,name_id='ad',person=PersonFactory())
+
+        chair = Email.objects.filter(role__group=group, role__name="chair")[0]
+
+        generate_wg_summary_files_task()
+
+        summary_by_area_contents = (
+            Path(settings.GROUP_SUMMARY_PATH) / "1wg-summary.txt"
+        ).read_text(encoding="utf8")
+        self.assertIn(group.parent.name, summary_by_area_contents)
+        self.assertIn(group.acronym, summary_by_area_contents)
+        self.assertIn(group.name, summary_by_area_contents)
+        self.assertIn(chair.address, summary_by_area_contents)
+
+        summary_by_acronym_contents = (
+            Path(settings.GROUP_SUMMARY_PATH) / "1wg-summary-by-acronym.txt"
+        ).read_text(encoding="utf8")
+        self.assertIn(group.acronym, summary_by_acronym_contents)
+        self.assertIn(group.name, summary_by_acronym_contents)
+        self.assertIn(chair.address, summary_by_acronym_contents)
+
     def test_chartering_groups(self):
         group = CharterFactory(group__type_id='wg',group__parent=GroupFactory(type_id='area'),states=[('charter','intrev')]).group
 
