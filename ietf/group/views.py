@@ -52,7 +52,7 @@ from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.db.models import Count, F, OuterRef, Prefetch, Q, Subquery, TextField, Value
 from django.db.models.functions import Coalesce
-from django.http import HttpResponse, HttpResponseRedirect, Http404, JsonResponse
+from django.http import HttpResponse, HttpResponseRedirect, Http404, JsonResponse, FileResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.template.loader import render_to_string
 from django.urls import reverse as urlreverse
@@ -152,13 +152,12 @@ def check_group_email_aliases():
     return False
 
 
-def http_response_from_file(fpath: Path) -> HttpResponse:
+def response_from_file(fpath: Path) -> FileResponse:
     """Helper to shovel a file back in an HttpResponse"""
     try:
-        content = fpath.read_bytes()
+        return FileResponse(fpath.open("rb"), content_type="text/plain; charset=utf-8")
     except IOError:
         raise Http404
-    return HttpResponse(content, content_type="text/plain; charset=UTF-8")
 
 
 # --- View functions ---------------------------------------------------
@@ -166,25 +165,25 @@ def http_response_from_file(fpath: Path) -> HttpResponse:
 def wg_summary_area(request, group_type):
     if group_type != "wg":
         raise Http404
-    return http_response_from_file(Path(settings.GROUP_SUMMARY_PATH) / "1wg-summary.txt")
+    return response_from_file(Path(settings.GROUP_SUMMARY_PATH) / "1wg-summary.txt")
 
 
 def wg_summary_acronym(request, group_type):
     if group_type != "wg":
         raise Http404
-    return http_response_from_file(Path(settings.GROUP_SUMMARY_PATH) / "1wg-summary-by-acronym.txt")
+    return response_from_file(Path(settings.GROUP_SUMMARY_PATH) / "1wg-summary-by-acronym.txt")
 
 
 def wg_charters(request, group_type):
     if group_type != "wg":
         raise Http404
-    return http_response_from_file(Path(settings.CHARTER_PATH) / "1wg-charters.txt") 
+    return response_from_file(Path(settings.CHARTER_PATH) / "1wg-charters.txt") 
 
 
 def wg_charters_by_acronym(request, group_type):
     if group_type != "wg":
         raise Http404
-    return http_response_from_file(Path(settings.CHARTER_PATH) / "1wg-charters-by-acronym.txt") 
+    return response_from_file(Path(settings.CHARTER_PATH) / "1wg-charters-by-acronym.txt") 
 
 
 def active_groups(request, group_type=None):
