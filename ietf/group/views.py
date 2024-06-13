@@ -52,7 +52,7 @@ from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.db.models import Count, F, OuterRef, Prefetch, Q, Subquery, TextField, Value
 from django.db.models.functions import Coalesce
-from django.http import HttpResponse, HttpResponseRedirect, Http404, JsonResponse, FileResponse
+from django.http import HttpResponse, HttpResponseRedirect, Http404, JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.template.loader import render_to_string
 from django.urls import reverse as urlreverse
@@ -152,12 +152,13 @@ def check_group_email_aliases():
     return False
 
 
-def response_from_file(fpath: Path) -> FileResponse:
+def response_from_file(fpath: Path) -> HttpResponse:
     """Helper to shovel a file back in an HttpResponse"""
     try:
-        return FileResponse(fpath.open("rb"), content_type="text/plain; charset=utf-8")
+        content = fpath.read_bytes()
     except IOError:
         raise Http404
+    return HttpResponse(content, content_type="text/plain; charset=utf-8")
 
 
 # --- View functions ---------------------------------------------------
