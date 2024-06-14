@@ -26,6 +26,8 @@ gunicorn \
           --timeout "${DATATRACKER_GUNICORN_TIMEOUT:-180}" \
           --bind :8000 \
           --log-level "${DATATRACKER_GUNICORN_LOG_LEVEL:-info}" \
+          --capture-output \
+          --access-logfile -\
           ${DATATRACKER_GUNICORN_EXTRA_ARGS} \
           ietf.wsgi:application &
 gunicorn_pid=$!
