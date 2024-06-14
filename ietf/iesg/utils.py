@@ -24,34 +24,16 @@ def telechat_page_count(date=None, docs=None, ad=None):
 
     drafts = [d for d in for_approval if d.type_id == 'draft']
 
-    pages_for_approval = sum([d.pages or 0 for d in drafts])
-
-    # from ballot_icon
-    def sort_positions(t):
-        _, pos = t
-        if not pos:
-            return (2, 0)
-        elif pos.pos.blocking:
-            return (0, pos.pos.order)
-        else:
-            return (1, pos.pos.order)
-
-    ad_pages_left_to_ballot_on = None
-    if ad:
-        ad_pages_left_to_ballot_on = 0
-        for doc in docs:
-            ballot = doc.ballot if hasattr(doc, 'ballot') else doc.active_ballot()
-            if ballot:
-                positions = list(ballot.active_balloter_positions().items())
-                positions.sort(key=sort_positions)
-                ad_positions = list(filter(lambda position: position[0] == ad, positions))
-                if len(ad_positions) == 0:
-                    ad_pages_left_to_ballot_on += doc.pages or 0
-                else:
-                    latest_ad_position = ad_positions[0]
-                    ballot_event = latest_ad_position[1]
-                    if ballot_event: #FIXME: only count pages AD hasn't balloted on
-                        ad_pages_left_to_ballot_on += doc.pages or 0
+    ad_pages_left_to_ballot_on = 0
+    pages_for_approval = 0
+    for draft in drafts:
+        pages_for_approval += draft.pages or 0
+        if ad:
+            ad_pages_left_to_ballot_on += draft.pages or 0
+            docevents = list(draft.docevent_set.filter(type="changed_state"))
+            ad_docevents = list(filter(lambda docevent: docevent.by == ad, docevents))
+            if len(ad_docevents) > 0:
+                ad_pages_left_to_ballot_on -= draft.pages or 0
 
     pages_for_action = 0
     for d in for_action:

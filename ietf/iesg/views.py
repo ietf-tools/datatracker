@@ -398,7 +398,7 @@ def agenda_documents(request):
         telechats.append({
                 "date":     date,
                 "pages":    pages,
-                "ad_pages_left": page_count.ad_pages_left_to_ballot_on,
+                "ad_pages_left_to_ballot_on": page_count.ad_pages_left_to_ballot_on,
                 "sections": sorted((num, section) for num, section in sections.items()
                                    if "2" <= num < "5")
                 })

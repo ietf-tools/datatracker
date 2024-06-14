@@ -30,7 +30,6 @@ from ietf.utils.test_utils import TestCase, login_testing_unauthorized, uniconte
 from ietf.iesg.factories import IESGMgmtItemFactory, TelechatAgendaContentFactory
 from ietf.utils.timezone import date_today, DEADLINE_TZINFO
 
-
 class IESGTests(TestCase):
     def test_feed(self):
         draft = WgDraftFactory(states=[('draft','active'),('draft-iesg','iesg-eva')],ad=Person.objects.get(user__username='ad'))
@@ -167,7 +166,7 @@ class IESGAgendaTests(TestCase):
             "conflrev": Document.objects.get(name="conflict-review-imaginary-irtf-submission"),
             "statchg": Document.objects.get(name="status-change-imaginary-mid-review"),
             "charter": Document.objects.filter(type="charter")[0],
-            }
+            } 
 
         by = Person.objects.get(name="Areað Irector")
         date = get_agenda_date()
@@ -500,12 +499,35 @@ class IESGAgendaTests(TestCase):
     def test_agenda_documents(self):
         url = urlreverse("ietf.iesg.views.agenda_documents")
         r = self.client.get(url)
+        
         self.assertEqual(r.status_code, 200)
 
         for k, d in self.telechat_docs.items():
             self.assertContains(r, d.name, msg_prefix="%s '%s' not in response" % (k, d.name, ))
-            self.assertContains(r, d.title, msg_prefix="%s '%s' title not in response" % (k, d.title, ))
+            self.assertContains(r, d.title, msg_prefix="%s '%s' not in response" % (k, d.title, ))
 
+        for telechat in r.context["telechats"]:
+            # non-AD users should be 0
+            self.assertEqual(telechat["ad_pages_left_to_ballot_on"], 0, "%s ad_pages_left_to_ballot_on not in response" % (telechat["ad_pages_left_to_ballot_on"]))
+
+        username = "ad"
+        can_login = self.client.login(username=username, password="%s+password" % username)
+        self.assertTrue(can_login)
+        loggedInRequest = self.client.get(url)
+        telechats = loggedInRequest.context["telechats"]
+        for index, telechat in enumerate(telechats):
+            pages = telechat["pages"]
+            ad_pages_left_to_ballot_on = telechat["ad_pages_left_to_ballot_on"]
+            print("ad: ad_pages_left_to_ballot_on", ad_pages_left_to_ballot_on)
+            previousPages = r.context["telechats"][index]["pages"]
+            self.assertEqual(previousPages, pages, "Expected same page count as previous request but was %s vs %s" % (previousPages, pages))
+            self.assertGreaterEqual(pages, 0, "%s pages not in response" % (pages))
+            self.assertGreaterEqual(ad_pages_left_to_ballot_on, 0, "%s ad_pages_left_to_ballot_on not in response" % (ad_pages_left_to_ballot_on))
+            # `ad_pages_left_to_ballot_on` should never exceed `pages`
+            self.assertGreaterEqual(pages, ad_pages_left_to_ballot_on, "pages < ad_pages_left_to_ballot_on")
+
+        self.client.logout()
+    
     def test_past_documents(self):
         url = urlreverse("ietf.iesg.views.past_documents")
         # We haven't put any documents on past telechats, so this should be empty
