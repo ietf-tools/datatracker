@@ -8,7 +8,7 @@ import datetime
 import io
 import bleach
 
-from unittest.mock import patch
+from unittest.mock import call, patch
 from pathlib import Path
 from pyquery import PyQuery
 from tempfile import NamedTemporaryFile
@@ -16,6 +16,7 @@ from tempfile import NamedTemporaryFile
 import debug                            # pyflakes:ignore
 
 from django.conf import settings
+from django.http import Http404, HttpResponse
 from django.test import RequestFactory
 from django.test.utils import override_settings
 from django.urls import reverse as urlreverse
@@ -35,7 +36,8 @@ from ietf.group.factories import (GroupFactory, RoleFactory, GroupEventFactory,
     DatedGroupMilestoneFactory, DatelessGroupMilestoneFactory)
 from ietf.group.forms import GroupForm
 from ietf.group.models import Group, GroupEvent, GroupMilestone, GroupStateTransitions, Role
-from ietf.group.tasks import generate_wg_charters_files_task
+from ietf.group.tasks import generate_wg_charters_files_task, generate_wg_summary_files_task
+from ietf.group.views import response_from_file
 from ietf.group.utils import save_group_in_history, setup_default_community_list_for_group
 from ietf.meeting.factories import SessionFactory
 from ietf.name.models import DocTagName, GroupStateName, GroupTypeName, ExtResourceName, RoleName
@@ -58,7 +60,11 @@ def pklist(docs):
     return [ str(doc.pk) for doc in docs.all() ]
 
 class GroupPagesTests(TestCase):
-    settings_temp_path_overrides = TestCase.settings_temp_path_overrides + ['CHARTER_PATH', 'CHARTER_COPY_PATH']
+    settings_temp_path_overrides = TestCase.settings_temp_path_overrides + [
+        "CHARTER_PATH",
+        "CHARTER_COPY_PATH",
+        "GROUP_SUMMARY_PATH",
+    ]
 
     def test_active_groups(self):
         area = GroupFactory.create(type_id='area')
@@ -112,63 +118,90 @@ class GroupPagesTests(TestCase):
             self.assertContains(r, draft.name)
             self.assertContains(r, draft.title)
 
-    def test_wg_summaries(self):
-        group = CharterFactory(group__type_id='wg',group__parent=GroupFactory(type_id='area')).group
-        RoleFactory(group=group,name_id='chair',person=PersonFactory())
-        RoleFactory(group=group,name_id='ad',person=PersonFactory())
-
-        chair = Email.objects.filter(role__group=group, role__name="chair")[0]
-
-        url = urlreverse('ietf.group.views.wg_summary_area', kwargs=dict(group_type="wg"))
-        r = self.client.get(url)
+    def test_response_from_file(self):
+        # n.b., GROUP_SUMMARY_PATH is a temp dir that will be cleaned up automatically
+        fp = Path(settings.GROUP_SUMMARY_PATH) / "some-file.txt"
+        fp.write_text("This is a charters file with an é")
+        r = response_from_file(fp)
         self.assertEqual(r.status_code, 200)
-        self.assertContains(r, group.parent.name)
-        self.assertContains(r, group.acronym)
-        self.assertContains(r, group.name)
-        self.assertContains(r, chair.address)
-
-        url = urlreverse('ietf.group.views.wg_summary_acronym', kwargs=dict(group_type="wg"))
-        r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
-        self.assertContains(r, group.acronym)
-        self.assertContains(r, group.name)
-        self.assertContains(r, chair.address)
-        
-    def test_wg_charters(self):
-        # file does not exist = 404
-        url = urlreverse("ietf.group.views.wg_charters", kwargs=dict(group_type="wg"))
-        r = self.client.get(url)
-        self.assertEqual(r.status_code, 404)
-
-        # should return expected file with expected encoding
-        wg_path = Path(settings.CHARTER_PATH) / "1wg-charters.txt"
-        wg_path.write_text("This is a charters file with an é")
-        r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
-        self.assertEqual(r.charset, "UTF-8")
+        self.assertEqual(r.headers["Content-Type"], "text/plain; charset=utf-8")
         self.assertEqual(r.content.decode("utf8"), "This is a charters file with an é")
+        # now try with a nonexistent file
+        fp.unlink()
+        with self.assertRaises(Http404):
+            response_from_file(fp)
 
-        # non-wg request = 404 even if the file exists
-        url = urlreverse("ietf.group.views.wg_charters", kwargs=dict(group_type="rg"))
-        r = self.client.get(url)
+    @patch("ietf.group.views.response_from_file")
+    def test_wg_summary_area(self, mock):
+        r = self.client.get(
+            urlreverse("ietf.group.views.wg_summary_area", kwargs={"group_type": "rg"})
+        )  # not wg
         self.assertEqual(r.status_code, 404)
-
-    def test_wg_charters_by_acronym(self):
-        url = urlreverse("ietf.group.views.wg_charters_by_acronym", kwargs=dict(group_type="wg"))
-        r = self.client.get(url)
-        self.assertEqual(r.status_code, 404)
-
-        wg_path = Path(settings.CHARTER_PATH) / "1wg-charters-by-acronym.txt"
-        wg_path.write_text("This is a charters file with an é")
-        r = self.client.get(url)
+        self.assertFalse(mock.called)
+        mock.return_value = HttpResponse("yay")
+        r = self.client.get(
+            urlreverse("ietf.group.views.wg_summary_area", kwargs={"group_type": "wg"})
+        )
         self.assertEqual(r.status_code, 200)
-        self.assertEqual(r.charset, "UTF-8")
-        self.assertEqual(r.content.decode("utf8"), "This is a charters file with an é")
+        self.assertEqual(r.content.decode(), "yay")
+        self.assertEqual(mock.call_args, call(Path(settings.GROUP_SUMMARY_PATH) / "1wg-summary.txt"))
 
-        # non-wg request = 404 even if the file exists
-        url = urlreverse("ietf.group.views.wg_charters_by_acronym", kwargs=dict(group_type="rg"))
-        r = self.client.get(url)
+    @patch("ietf.group.views.response_from_file")
+    def test_wg_summary_acronym(self, mock):
+        r = self.client.get(
+            urlreverse(
+                "ietf.group.views.wg_summary_acronym", kwargs={"group_type": "rg"}
+            )
+        )  # not wg
         self.assertEqual(r.status_code, 404)
+        self.assertFalse(mock.called)
+        mock.return_value = HttpResponse("yay")
+        r = self.client.get(
+            urlreverse(
+                "ietf.group.views.wg_summary_acronym", kwargs={"group_type": "wg"}
+            )
+        )
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.content.decode(), "yay")
+        self.assertEqual(
+            mock.call_args, call(Path(settings.GROUP_SUMMARY_PATH) / "1wg-summary-by-acronym.txt")
+        )
+
+    @patch("ietf.group.views.response_from_file")
+    def test_wg_charters(self, mock):
+        r = self.client.get(
+            urlreverse("ietf.group.views.wg_charters", kwargs={"group_type": "rg"})
+        )  # not wg
+        self.assertEqual(r.status_code, 404)
+        self.assertFalse(mock.called)
+        mock.return_value = HttpResponse("yay")
+        r = self.client.get(
+            urlreverse("ietf.group.views.wg_charters", kwargs={"group_type": "wg"})
+        )
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.content.decode(), "yay")
+        self.assertEqual(mock.call_args, call(Path(settings.CHARTER_PATH) / "1wg-charters.txt"))
+
+    @patch("ietf.group.views.response_from_file")
+    def test_wg_charters_by_acronym(self, mock):
+        r = self.client.get(
+            urlreverse(
+                "ietf.group.views.wg_charters_by_acronym", kwargs={"group_type": "rg"}
+            )
+        )  # not wg
+        self.assertEqual(r.status_code, 404)
+        self.assertFalse(mock.called)
+        mock.return_value = HttpResponse("yay")
+        r = self.client.get(
+            urlreverse(
+                "ietf.group.views.wg_charters_by_acronym", kwargs={"group_type": "wg"}
+            )
+        )
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.content.decode(), "yay")
+        self.assertEqual(
+            mock.call_args, call(Path(settings.CHARTER_PATH) / "1wg-charters-by-acronym.txt")
+        )
 
     def test_generate_wg_charters_files_task(self):
         group = CharterFactory(
@@ -253,6 +286,30 @@ class GroupPagesTests(TestCase):
             (Path(settings.CHARTER_COPY_PATH) / "1wg-charters-by-acronym.txt").exists()
         )
         self.assertEqual(not_a_dir.read_text(), "Not a dir")
+
+    def test_generate_wg_summary_files_task(self):
+        group = CharterFactory(group__type_id='wg',group__parent=GroupFactory(type_id='area')).group
+        RoleFactory(group=group,name_id='chair',person=PersonFactory())
+        RoleFactory(group=group,name_id='ad',person=PersonFactory())
+
+        chair = Email.objects.filter(role__group=group, role__name="chair")[0]
+
+        generate_wg_summary_files_task()
+
+        summary_by_area_contents = (
+            Path(settings.GROUP_SUMMARY_PATH) / "1wg-summary.txt"
+        ).read_text(encoding="utf8")
+        self.assertIn(group.parent.name, summary_by_area_contents)
+        self.assertIn(group.acronym, summary_by_area_contents)
+        self.assertIn(group.name, summary_by_area_contents)
+        self.assertIn(chair.address, summary_by_area_contents)
+
+        summary_by_acronym_contents = (
+            Path(settings.GROUP_SUMMARY_PATH) / "1wg-summary-by-acronym.txt"
+        ).read_text(encoding="utf8")
+        self.assertIn(group.acronym, summary_by_acronym_contents)
+        self.assertIn(group.name, summary_by_acronym_contents)
+        self.assertIn(chair.address, summary_by_acronym_contents)
 
     def test_chartering_groups(self):
         group = CharterFactory(group__type_id='wg',group__parent=GroupFactory(type_id='area'),states=[('charter','intrev')]).group
