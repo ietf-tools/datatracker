@@ -2,6 +2,8 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: celery
+  labels:
+    deleteBeforeUpgrade: yes
 spec:
   replicas: 1
   revisionHistoryLimit: 2
@@ -77,4 +79,4 @@ spec:
             name: files-cfgmap
       dnsPolicy: ClusterFirst
       restartPolicy: Always
-      terminationGracePeriodSeconds: 30
+      terminationGracePeriodSeconds: 600
