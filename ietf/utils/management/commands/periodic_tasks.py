@@ -232,6 +232,16 @@ class Command(BaseCommand):
         )
 
         PeriodicTask.objects.get_or_create(
+            name="Generate WG summary files",
+            task="ietf.group.tasks.generate_wg_summary_files_task",
+            defaults=dict(
+                enabled=False,
+                crontab=self.crontabs["hourly"],
+                description="Update 1wg-summary.txt and 1wg-summary-by-acronym.txt",
+            ),
+        )
+
+        PeriodicTask.objects.get_or_create(
             name="Generate I-D bibxml files",
             task="ietf.doc.tasks.generate_draft_bibxml_files_task",
             defaults=dict(

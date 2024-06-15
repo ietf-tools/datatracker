@@ -24,6 +24,15 @@ spec:
         - name: scoutapm
           image: "scoutapp/scoutapm:version-1.4.0"
           imagePullPolicy: IfNotPresent
+          # Replace command with one that will shut down on a TERM signal
+          # The ./core-agent start command line is from the scoutapm docker image
+          command:
+            - "sh"
+            - "-c"
+            - >-
+              trap './core-agent shutdown --tcp 0.0.0.0:6590' TERM;
+              ./core-agent start --daemonize false --log-level debug --tcp 0.0.0.0:6590 &
+              wait $!
           livenessProbe:
             exec:
               command:
@@ -77,7 +86,7 @@ spec:
             name: files-cfgmap
       dnsPolicy: ClusterFirst
       restartPolicy: Always
-      terminationGracePeriodSeconds: 30
+      terminationGracePeriodSeconds: 60
 ---
 apiVersion: v1
 kind: Service

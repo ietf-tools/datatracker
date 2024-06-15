@@ -671,6 +671,7 @@ INTERNET_DRAFT_PDF_PATH = '/a/www/ietf-datatracker/pdf/'
 RFC_PATH = '/a/www/ietf-ftp/rfc/'
 CHARTER_PATH = '/a/ietfdata/doc/charter/'
 CHARTER_COPY_PATH = '/a/www/ietf-ftp/ietf'  # copy 1wg-charters files here if set
+GROUP_SUMMARY_PATH = '/a/www/ietf-ftp/ietf'
 BOFREQ_PATH = '/a/ietfdata/doc/bofreq/'
 CONFLICT_REVIEW_PATH = '/a/ietfdata/doc/conflict-review'
 STATUS_CHANGE_PATH = '/a/ietfdata/doc/status-change'

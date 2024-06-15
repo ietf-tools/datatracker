@@ -152,56 +152,39 @@ def check_group_email_aliases():
     return False
 
 
+def response_from_file(fpath: Path) -> HttpResponse:
+    """Helper to shovel a file back in an HttpResponse"""
+    try:
+        content = fpath.read_bytes()
+    except IOError:
+        raise Http404
+    return HttpResponse(content, content_type="text/plain; charset=utf-8")
+
+
 # --- View functions ---------------------------------------------------
 
 def wg_summary_area(request, group_type):
     if group_type != "wg":
         raise Http404
-    areas = Group.objects.filter(type="area", state="active").order_by("name")
-    for area in areas:
-        area.groups = Group.objects.filter(parent=area, type="wg", state="active").order_by("acronym")
-        for group in area.groups:
-            group.chairs = sorted(roles(group, "chair"), key=extract_last_name)
+    return response_from_file(Path(settings.GROUP_SUMMARY_PATH) / "1wg-summary.txt")
 
-    areas = [a for a in areas if a.groups]
-
-    return render(request, 'group/1wg-summary.txt',
-                  { 'areas': areas },
-                  content_type='text/plain; charset=UTF-8')
 
 def wg_summary_acronym(request, group_type):
     if group_type != "wg":
         raise Http404
-    areas = Group.objects.filter(type="area", state="active").order_by("name")
-    groups = Group.objects.filter(type="wg", state="active").order_by("acronym").select_related("parent")
-    for group in groups:
-        group.chairs = sorted(roles(group, "chair"), key=extract_last_name)
-    return render(request, 'group/1wg-summary-by-acronym.txt',
-                  { 'areas': areas,
-                    'groups': groups },
-                  content_type='text/plain; charset=UTF-8')
+    return response_from_file(Path(settings.GROUP_SUMMARY_PATH) / "1wg-summary-by-acronym.txt")
 
 
 def wg_charters(request, group_type):
     if group_type != "wg":
         raise Http404
-    fpath = Path(settings.CHARTER_PATH) / "1wg-charters.txt" 
-    try:
-        content = fpath.read_bytes()
-    except IOError:
-        raise Http404
-    return HttpResponse(content, content_type="text/plain; charset=UTF-8")
+    return response_from_file(Path(settings.CHARTER_PATH) / "1wg-charters.txt") 
 
 
 def wg_charters_by_acronym(request, group_type):
     if group_type != "wg":
         raise Http404
-    fpath = Path(settings.CHARTER_PATH) / "1wg-charters-by-acronym.txt" 
-    try:
-        content = fpath.read_bytes()
-    except IOError:
-        raise Http404
-    return HttpResponse(content, content_type="text/plain; charset=UTF-8")
+    return response_from_file(Path(settings.CHARTER_PATH) / "1wg-charters-by-acronym.txt") 
 
 
 def active_groups(request, group_type=None):
