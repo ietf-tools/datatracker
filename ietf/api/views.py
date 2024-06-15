@@ -663,7 +663,10 @@ def ingest_email(request):
     except EmailIngestionError as err:
         error_email = err.as_emailmessage()
         if error_email is not None:
-            send_smtp(error_email)
+            try:
+                send_smtp(error_email)
+            except Exception as err:
+                pass  # send_smtp logs its own exception, ignore it here
         return _api_response("bad_msg")
 
     if not valid_dest:
