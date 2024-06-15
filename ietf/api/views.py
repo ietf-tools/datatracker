@@ -8,6 +8,7 @@ import jsonschema
 import pytz
 import re
 
+from contextlib import suppress
 from django.conf import settings
 from django.contrib.auth import authenticate
 from django.contrib.auth.decorators import login_required
@@ -663,10 +664,8 @@ def ingest_email(request):
     except EmailIngestionError as err:
         error_email = err.as_emailmessage()
         if error_email is not None:
-            try:
+            with suppress(Exception): # send_smtp logs its own exceptions, ignore them here
                 send_smtp(error_email)
-            except Exception as err:
-                pass  # send_smtp logs its own exception, ignore it here
         return _api_response("bad_msg")
 
     if not valid_dest:
