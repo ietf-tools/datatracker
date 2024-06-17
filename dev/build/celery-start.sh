@@ -5,6 +5,14 @@
 echo "Running Datatracker checks..."
 ./ietf/manage.py check
 
+if ! ietf/manage.py migrate --skip-checks --check ; then
+    echo "Unapplied migrations found, waiting to start..."
+    sleep 5
+    while ! ietf/manage.py migrate --skip-checks --check ; do 
+        sleep 5
+    done
+fi
+
 cleanup () {
   # Cleanly terminate the celery app by sending it a TERM, then waiting for it to exit.
   if [[ -n "${celery_pid}" ]]; then
