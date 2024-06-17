@@ -22,14 +22,13 @@ from ietf.doc.factories import WgDraftFactory, IndividualDraftFactory, ConflictR
 from ietf.doc.utils import create_ballot_if_not_open
 from ietf.group.factories import RoleFactory, GroupFactory, DatedGroupMilestoneFactory, DatelessGroupMilestoneFactory
 from ietf.group.models import Group, GroupMilestone, Role
-from ietf.iesg.agenda import get_agenda_date, agenda_data, fill_in_agenda_administrivia, agenda_sections, fill_in_agenda_docs
+from ietf.iesg.agenda import get_agenda_date, agenda_data, fill_in_agenda_administrivia, agenda_sections
 from ietf.iesg.models import TelechatDate, TelechatAgendaContent
 from ietf.name.models import StreamName, TelechatAgendaSectionName
 from ietf.person.models import Person
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized, unicontent
 from ietf.iesg.factories import IESGMgmtItemFactory, TelechatAgendaContentFactory
 from ietf.utils.timezone import date_today, DEADLINE_TZINFO
-from ietf.doc.utils_search import fill_in_document_table_attributes
 
 class IESGTests(TestCase):
     def test_feed(self):
@@ -498,18 +497,18 @@ class IESGAgendaTests(TestCase):
             self.assertContains(r, d.name, msg_prefix="%s '%s' not in response" % (k, d.name, ))
 
     def test_agenda_documents(self):
+        url = urlreverse("ietf.iesg.views.agenda_documents")
+        r = self.client.get(url)
+
         dates = list(TelechatDate.objects.order_by('date').values_list("date", flat=True)[:4])
         docs_by_date = dict((d, []) for d in dates)
         docs = Document.objects.distinct()
         for doc in docs:
             d = doc.telechat_date()
             if d in docs_by_date:
-                # Set some states that affect ad_pages_left_to_ballot_on
+                # Set some states that affect the returned ad_pages_left_to_ballot_on
                 doc.set_state(State.objects.get(used=True, type="draft-iesg", slug="pub"))
 
-        url = urlreverse("ietf.iesg.views.agenda_documents")
-        r = self.client.get(url)
-        
         self.assertEqual(r.status_code, 200)
 
         for k, d in self.telechat_docs.items():
@@ -525,7 +524,6 @@ class IESGAgendaTests(TestCase):
         self.assertTrue(can_login)
         logged_in_request = self.client.get(url)
         telechats = logged_in_request.context["telechats"]
-
         self.assertGreater(len(telechats), 0, "Expected multiple telechats but received %d" % (len(telechats)))
         self.assertEqual(telechats[0]["ad_pages_left_to_ballot_on"], 383, "Expected a specific number of pages left to ballot on for this AD '%s'" % (username))
 
