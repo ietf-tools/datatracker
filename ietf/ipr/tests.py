@@ -789,12 +789,7 @@ Subject: test
         
         mock_process_response_email.side_effect = None
         mock_process_response_email.return_value = None  # rejected message
-        with self.assertRaises(EmailIngestionError) as context:
-            ingest_response_email(message)
-        self.assertIsNone(context.exception.email_recipients)  # default recipients
-        self.assertIsNotNone(context.exception.email_body)  # body set
-        self.assertIsNotNone(context.exception.email_original_message)  # original message attached
-        self.assertEqual(context.exception.email_attach_traceback, True)
+        ingest_response_email(message)  # should _not_ send an exception email on a clean rejection
         self.assertTrue(mock_process_response_email.called)
         self.assertEqual(mock_process_response_email.call_args, mock.call(message))
         mock_process_response_email.reset_mock()
