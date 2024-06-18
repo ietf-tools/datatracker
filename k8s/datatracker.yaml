@@ -64,6 +64,9 @@ spec:
           env:
             - name: "CONTAINER_ROLE"
               value: "datatracker"
+            # ensures the pod gets recreated on every deploy:
+            - name: "DEPLOY_UID"
+              value: "$DEPLOY_UID"
           envFrom:
             - configMapRef:
                 name: django-config
