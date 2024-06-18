@@ -41,6 +41,7 @@ import os
 import re
 
 from pathlib import Path
+from typing import Optional
 
 from django.db.models import Max
 from django.http import HttpResponse, Http404
@@ -64,7 +65,7 @@ from ietf.doc.utils import (augment_events_with_revision,
     add_events_message_info, get_unicode_document_content,
     augment_docs_and_person_with_person_info, irsg_needed_ballot_positions, add_action_holder_change_event,
     build_file_urls, update_documentauthors, fuzzy_find_documents,
-    bibxml_for_draft)
+    bibxml_for_draft, DraftAliasGenerator)
 from ietf.doc.utils_bofreq import bofreq_editors, bofreq_responsible
 from ietf.group.models import Role, Group
 from ietf.group.utils import can_manage_all_groups_of_type, can_manage_materials, group_features_role_filter
@@ -1085,18 +1086,19 @@ def check_doc_email_aliases():
                 return True
     return False
 
-def get_doc_email_aliases(name):
-    if name:
-        pattern = re.compile(r'^expand-(%s)(\..*?)?@.*? +(.*)$'%name)
-    else:
-        pattern = re.compile(r'^expand-(.*?)(\..*?)?@.*? +(.*)$')
+def get_doc_email_aliases(name: Optional[str]):
     aliases = []
-    with io.open(settings.DRAFT_VIRTUAL_PATH,"r") as virtual_file:
-        for line in virtual_file.readlines():
-            m = pattern.match(line)
-            if m:
-                aliases.append({'doc_name':m.group(1),'alias_type':m.group(2),'expansion':m.group(3)})
-    return aliases
+    for (alias, alist) in DraftAliasGenerator(
+        Document.objects.filter(type_id="draft", name=name) if name else None
+    ):
+        # alias is draft-name.alias_type
+        doc_name, _dot, alias_type = alias.partition(".")
+        aliases.append({
+            "doc_name": doc_name,
+            "alias_type": f".{alias_type}" if alias_type else "",
+            "expansion": ", ".join(sorted(alist)),
+        })
+    return sorted(aliases, key=lambda a: (a["doc_name"]))
 
 def document_email(request,name):
     doc = get_object_or_404(Document, name=name)

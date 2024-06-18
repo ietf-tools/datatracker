@@ -1265,6 +1265,12 @@ def bibxml_for_draft(doc, rev=None):
 class DraftAliasGenerator:
     days = 2 * 365
 
+    def __init__(self, draft_queryset=None):
+        if draft_queryset is not None:
+            self.draft_queryset = draft_queryset.filter(type_id="draft")  # only drafts allowed
+        else:
+            self.draft_queryset = Document.objects.filter(type_id="draft")
+
     def get_draft_ad_emails(self, doc):
         """Get AD email addresses for the given draft, if any."""
         from ietf.group.utils import get_group_ad_emails  # avoid circular import
@@ -1333,7 +1339,7 @@ class DraftAliasGenerator:
     def __iter__(self) -> Iterator[tuple[str, list[str]]]:
         # Internet-Drafts with active status or expired within self.days
         show_since = timezone.now() - datetime.timedelta(days=self.days)
-        drafts = Document.objects.filter(type_id="draft")
+        drafts = self.draft_queryset
         active_drafts = drafts.filter(states__slug='active')
         inactive_recent_drafts = drafts.exclude(states__slug='active').filter(expires__gte=show_since)
         interesting_drafts = active_drafts | inactive_recent_drafts
