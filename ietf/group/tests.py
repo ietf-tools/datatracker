@@ -1,13 +1,9 @@
 # Copyright The IETF Trust 2013-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
-import os
 import datetime
 import json
 
-from tempfile import NamedTemporaryFile
-
-from django.conf import settings
 from django.urls import reverse as urlreverse
 from django.db.models import Q
 from django.test import Client
@@ -132,24 +128,6 @@ class GroupDocDependencyTests(TestCase):
 
 
 class GenerateGroupAliasesTests(TestCase):
-    def setUp(self):
-        super().setUp()
-        self.doc_aliases_file = NamedTemporaryFile(delete=False, mode='w+')
-        self.doc_aliases_file.close()
-        self.doc_virtual_file = NamedTemporaryFile(delete=False, mode='w+')
-        self.doc_virtual_file.close()
-        self.saved_draft_aliases_path = settings.GROUP_ALIASES_PATH
-        self.saved_draft_virtual_path = settings.GROUP_VIRTUAL_PATH
-        settings.GROUP_ALIASES_PATH = self.doc_aliases_file.name
-        settings.GROUP_VIRTUAL_PATH = self.doc_virtual_file.name
-        
-    def tearDown(self):
-        settings.GROUP_ALIASES_PATH = self.saved_draft_aliases_path
-        settings.GROUP_VIRTUAL_PATH = self.saved_draft_virtual_path
-        os.unlink(self.doc_aliases_file.name)
-        os.unlink(self.doc_virtual_file.name)
-        super().tearDown()
-
     def test_generator_class(self):
         """The GroupAliasGenerator should generate the same lists as the old mgmt cmd"""
         # clean out test fixture group roles we don't need for this test

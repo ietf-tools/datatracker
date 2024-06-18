@@ -1070,10 +1070,6 @@ DRAFT_ALIASES_PATH = os.path.join(TEST_DATA_DIR, "draft-aliases")
 DRAFT_VIRTUAL_PATH = os.path.join(TEST_DATA_DIR, "draft-virtual")
 DRAFT_VIRTUAL_DOMAIN = "virtual.ietf.org"
 
-GROUP_ALIASES_PATH = os.path.join(TEST_DATA_DIR, "group-aliases")
-GROUP_VIRTUAL_PATH = os.path.join(TEST_DATA_DIR, "group-virtual")
-GROUP_VIRTUAL_DOMAIN = "virtual.ietf.org"
-
 POSTCONFIRM_PATH   = "/a/postconfirm/wrapper"
 
 USER_PREFERENCE_DEFAULTS = {

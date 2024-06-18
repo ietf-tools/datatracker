@@ -195,8 +195,6 @@ if _SCOUT_KEY is not None:
 # Path to the email alias lists.  Used by ietf.utils.aliases
 DRAFT_ALIASES_PATH = "/a/postfix/draft-aliases"
 DRAFT_VIRTUAL_PATH = "/a/postfix/draft-virtual"
-GROUP_ALIASES_PATH = "/a/postfix/group-aliases"
-GROUP_VIRTUAL_PATH = "/a/postfix/group-virtual"
 
 STATIC_URL = os.environ.get("DATATRACKER_STATIC_URL", None)
 if STATIC_URL is None:
