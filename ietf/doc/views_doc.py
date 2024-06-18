@@ -43,6 +43,7 @@ import re
 from pathlib import Path
 from typing import Optional
 
+from django.core.cache import caches
 from django.db.models import Max
 from django.http import HttpResponse, Http404
 from django.shortcuts import render, get_object_or_404, redirect
@@ -50,6 +51,7 @@ from django.template.loader import render_to_string
 from django.urls import reverse as urlreverse
 from django.conf import settings
 from django import forms
+from django.contrib.auth.decorators import login_required
 from django.contrib.staticfiles import finders
 
 import debug                            # pyflakes:ignore
@@ -1086,7 +1088,7 @@ def check_doc_email_aliases():
                 return True
     return False
 
-def get_doc_email_aliases(name: Optional[str]):
+def get_doc_email_aliases(name: Optional[str] = None):
     aliases = []
     for (alias, alist) in DraftAliasGenerator(
         Document.objects.filter(type_id="draft", name=name) if name else None
@@ -2023,16 +2025,26 @@ def remind_action_holders(request, name):
     )
 
 
-def email_aliases(request,name=''):
-    doc = get_object_or_404(Document, name=name) if name else None
-    if not name:
-        # require login for the overview page, but not for the
-        # document-specific pages 
-        if not request.user.is_authenticated:
-                return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
-    aliases = get_doc_email_aliases(name)
-
-    return render(request,'doc/email_aliases.html',{'aliases':aliases,'ietf_domain':settings.IETF_DOMAIN,'doc':doc})
+@login_required
+def email_aliases(request):
+    """List of all email aliases
+    
+    This is currently slow except when cached
+    """
+    slowcache = caches["slowpages"]
+    cache_key = "emailaliasesview"
+    aliases = slowcache.get(cache_key)
+    if not aliases:
+        aliases = get_doc_email_aliases()  # gets all aliases
+        slowcache.set(cache_key, aliases, 3600)
+    return render(
+        request,
+        "doc/email_aliases.html",
+        {
+            "aliases": aliases,
+            "ietf_domain": settings.IETF_DOMAIN,
+        },
+    )
 
 class VersionForm(forms.Form):
 
