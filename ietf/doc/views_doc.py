@@ -35,13 +35,13 @@
 
 
 import glob
-import io
 import json
 import os
 import re
 
 from pathlib import Path
 
+from django.core.cache import caches
 from django.db.models import Max
 from django.http import HttpResponse, Http404
 from django.shortcuts import render, get_object_or_404, redirect
@@ -49,6 +49,7 @@ from django.template.loader import render_to_string
 from django.urls import reverse as urlreverse
 from django.conf import settings
 from django import forms
+from django.contrib.auth.decorators import login_required
 from django.contrib.staticfiles import finders
 
 import debug                            # pyflakes:ignore
@@ -64,7 +65,7 @@ from ietf.doc.utils import (augment_events_with_revision,
     add_events_message_info, get_unicode_document_content,
     augment_docs_and_person_with_person_info, irsg_needed_ballot_positions, add_action_holder_change_event,
     build_file_urls, update_documentauthors, fuzzy_find_documents,
-    bibxml_for_draft)
+    bibxml_for_draft, get_doc_email_aliases)
 from ietf.doc.utils_bofreq import bofreq_editors, bofreq_responsible
 from ietf.group.models import Role, Group
 from ietf.group.utils import can_manage_all_groups_of_type, can_manage_materials, group_features_role_filter
@@ -1071,32 +1072,6 @@ def document_pdfized(request, name, rev=None, ext=None):
     else:
         raise Http404
 
-def check_doc_email_aliases():
-    pattern = re.compile(r'^expand-(.*?)(\..*?)?@.*? +(.*)$')
-    good_count = 0
-    tot_count = 0
-    with io.open(settings.DRAFT_VIRTUAL_PATH,"r") as virtual_file:
-        for line in virtual_file.readlines():
-            m = pattern.match(line)
-            tot_count += 1
-            if m:
-                good_count += 1
-            if good_count > 50 and tot_count < 3*good_count:
-                return True
-    return False
-
-def get_doc_email_aliases(name):
-    if name:
-        pattern = re.compile(r'^expand-(%s)(\..*?)?@.*? +(.*)$'%name)
-    else:
-        pattern = re.compile(r'^expand-(.*?)(\..*?)?@.*? +(.*)$')
-    aliases = []
-    with io.open(settings.DRAFT_VIRTUAL_PATH,"r") as virtual_file:
-        for line in virtual_file.readlines():
-            m = pattern.match(line)
-            if m:
-                aliases.append({'doc_name':m.group(1),'alias_type':m.group(2),'expansion':m.group(3)})
-    return aliases
 
 def document_email(request,name):
     doc = get_object_or_404(Document, name=name)
@@ -2021,16 +1996,26 @@ def remind_action_holders(request, name):
     )
 
 
-def email_aliases(request,name=''):
-    doc = get_object_or_404(Document, name=name) if name else None
-    if not name:
-        # require login for the overview page, but not for the
-        # document-specific pages 
-        if not request.user.is_authenticated:
-                return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
-    aliases = get_doc_email_aliases(name)
-
-    return render(request,'doc/email_aliases.html',{'aliases':aliases,'ietf_domain':settings.IETF_DOMAIN,'doc':doc})
+@login_required
+def email_aliases(request):
+    """List of all email aliases
+    
+    This is currently slow except when cached
+    """
+    slowcache = caches["slowpages"]
+    cache_key = "emailaliasesview"
+    aliases = slowcache.get(cache_key)
+    if not aliases:
+        aliases = get_doc_email_aliases()  # gets all aliases
+        slowcache.set(cache_key, aliases, 3600)
+    return render(
+        request,
+        "doc/email_aliases.html",
+        {
+            "aliases": aliases,
+            "ietf_domain": settings.IETF_DOMAIN,
+        },
+    )
 
 class VersionForm(forms.Form):
 
