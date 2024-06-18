@@ -36,6 +36,8 @@ jobs:
 
     - name: Docker Build & Push
       uses: docker/build-push-action@v6
+      env:
+        DOCKER_BUILD_NO_SUMMARY: true
       with:
         context: .
         file: dev/celery/Dockerfile
