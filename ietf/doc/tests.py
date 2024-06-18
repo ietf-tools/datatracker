@@ -2319,17 +2319,17 @@ class EmailAliasesTests(TestCase):
         RoleFactory(group__type_id='review', group__acronym='yangdoctors', name_id='secr')
 
 
-    @mock.patch("ietf.doc.views_doc.DraftAliasGenerator")
-    def testAliases(self, mock_alias_generator_cls):
-        mock_alias_generator_cls.return_value = [
-            ("draft-ietf-mars-test", ["mars-author@example.mars", "mars-collaborator@example.mars"]),
-            ("draft-ietf-mars-test.authors", ["mars-author@example.mars", "mars-collaborator@example.mars"]),
-            ("draft-ietf-mars-test.chairs", ["mars-chair@example.mars"]),
-            ("draft-ietf-mars-test.all", ["mars-author@example.mars", "mars-collaborator@example.mars", "mars-chair@example.mars"]),
-            ("draft-ietf-ames-test", ["ames-author@example.ames", "ames-collaborator@example.ames"]),
-            ("draft-ietf-ames-test.authors", ["ames-author@example.ames", "ames-collaborator@example.ames"]),
-            ("draft-ietf-ames-test.chairs", ["ames-chair@example.ames"]),
-            ("draft-ietf-ames-test.all", ["ames-author@example.ames", "ames-collaborator@example.ames", "ames-chair@example.ames"]),
+    @mock.patch("ietf.doc.views_doc.get_doc_email_aliases")
+    def testAliases(self, mock_get_aliases):
+        mock_get_aliases.return_value = [
+            {"doc_name": "draft-ietf-mars-test", "alias_type": "", "expansion": "mars-author@example.mars, mars-collaborator@example.mars"},
+            {"doc_name": "draft-ietf-mars-test", "alias_type": ".authors", "expansion": "mars-author@example.mars, mars-collaborator@example.mars"},
+            {"doc_name": "draft-ietf-mars-test", "alias_type": ".chairs", "expansion": "mars-chair@example.mars"},
+            {"doc_name": "draft-ietf-mars-test", "alias_type": ".all", "expansion": "mars-author@example.mars, mars-collaborator@example.mars, mars-chair@example.mars"},
+            {"doc_name": "draft-ietf-ames-test", "alias_type": "", "expansion": "ames-author@example.ames, ames-collaborator@example.ames"},
+            {"doc_name": "draft-ietf-ames-test", "alias_type": ".authors", "expansion": "ames-author@example.ames, ames-collaborator@example.ames"},
+            {"doc_name": "draft-ietf-ames-test", "alias_type": ".chairs", "expansion": "ames-chair@example.ames"},
+            {"doc_name": "draft-ietf-ames-test", "alias_type": ".all", "expansion": "ames-author@example.ames, ames-collaborator@example.ames, ames-chair@example.ames"},
         ]
         PersonFactory(user__username='plain')
         url = urlreverse('ietf.doc.urls.redirect.document_email', kwargs=dict(name="draft-ietf-mars-test"))
@@ -2340,23 +2340,22 @@ class EmailAliasesTests(TestCase):
         login_testing_unauthorized(self, "plain", url)
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-        self.assertEqual(mock_alias_generator_cls.call_args, mock.call(None))
+        self.assertEqual(mock_get_aliases.call_args, mock.call())
         self.assertTrue(all([x in unicontent(r) for x in ['mars-test@','mars-test.authors@','mars-test.chairs@']]))
         self.assertTrue(all([x in unicontent(r) for x in ['ames-test@','ames-test.authors@','ames-test.chairs@']]))
 
 
-    @mock.patch("ietf.doc.views_doc.DraftAliasGenerator")
-    def testExpansions(self, mock_alias_generator_cls):
-        mock_alias_generator_cls.return_value = [
-            ("draft-ietf-mars-test", ["mars-author@example.mars", "mars-collaborator@example.mars"]),
-            ("draft-ietf-mars-test.authors", ["mars-author@example.mars", "mars-collaborator@example.mars"]),
-            ("draft-ietf-mars-test.chairs", ["mars-chair@example.mars"]),
-            ("draft-ietf-mars-test.all", ["mars-author@example.mars", "mars-collaborator@example.mars", "mars-chair@example.mars"]),
+    @mock.patch("ietf.doc.views_doc.get_doc_email_aliases")
+    def testExpansions(self, mock_get_aliases):
+        mock_get_aliases.return_value = [
+            {"doc_name": "draft-ietf-mars-test", "alias_type": "", "expansion": "mars-author@example.mars, mars-collaborator@example.mars"},
+            {"doc_name": "draft-ietf-mars-test", "alias_type": ".authors", "expansion": "mars-author@example.mars, mars-collaborator@example.mars"},
+            {"doc_name": "draft-ietf-mars-test", "alias_type": ".chairs", "expansion": "mars-chair@example.mars"},
+            {"doc_name": "draft-ietf-mars-test", "alias_type": ".all", "expansion": "mars-author@example.mars, mars-collaborator@example.mars, mars-chair@example.mars"},
         ]
         url = urlreverse('ietf.doc.views_doc.document_email', kwargs=dict(name="draft-ietf-mars-test"))
         r = self.client.get(url)
-        draft_alias_generator_arg = mock_alias_generator_cls.call_args[0][0]
-        self.assertCountEqual(draft_alias_generator_arg, Document.objects.filter(name="draft-ietf-mars-test"))
+        self.assertEqual(mock_get_aliases.call_args, mock.call("draft-ietf-mars-test"))
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, 'draft-ietf-mars-test.all@ietf.org')
         self.assertContains(r, 'iesg_ballot_saved')
