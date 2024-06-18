@@ -5,7 +5,6 @@
 # This script is expected to be triggered by cron from
 # /etc/cron.d/datatracker
 export LANG=en_US.UTF-8
-export PYTHONIOENCODING=utf-8
 
 # Make sure we stop if something goes wrong:
 program=${0##*/}
@@ -17,10 +16,6 @@ cd $DTDIR/
 
 logger -p user.info -t cron "Running $DTDIR/bin/daily"
 
-# Set up the virtual environment
-source $DTDIR/env/bin/activate
-
-
 # Get IANA-registered yang models
 #YANG_IANA_DIR=$(python -c 'import ietf.settings; print ietf.settings.SUBMIT_YANG_IANA_MODEL_DIR')
 # Hardcode the rsync target to avoid any unwanted deletes:
@@ -30,9 +25,3 @@ rsync -avzq --delete /a/www/ietf-ftp/iana/yang-parameters/ /a/www/ietf-ftp/yang/
 # Get Yang models from Yangcatalog.
 #rsync -avzq rsync://rsync.yangcatalog.org:10873/yangdeps /a/www/ietf-ftp/yang/catalogmod/
 /a/www/ietf-datatracker/scripts/sync_to_yangcatalog
-
-# Populate the yang repositories
-$DTDIR/ietf/manage.py populate_yang_model_dirs -v0
-
-# Re-run yang checks on active documents
-$DTDIR/ietf/manage.py run_yang_model_checks -v0

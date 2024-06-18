@@ -10,7 +10,8 @@ from django.utils import timezone
 
 from ietf.submit.models import Submission
 from ietf.submit.utils import (cancel_submission, create_submission_event, process_uploaded_submission,
-                               process_and_accept_uploaded_submission)
+                               process_and_accept_uploaded_submission, run_all_yang_model_checks,
+                               populate_yang_model_dirs)
 from ietf.utils import log
 
 
@@ -66,6 +67,12 @@ def cancel_stale_submissions():
         create_submission_event(None, subm, 'Submission canceled: expired without being posted')
 
 
+@shared_task
+def run_yang_model_checks_task():
+    populate_yang_model_dirs()
+    run_all_yang_model_checks()
+
+    
 @shared_task(bind=True)
 def poke(self):
     log.log(f'Poked {self.name}, request id {self.request.id}')
