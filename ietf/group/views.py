@@ -138,21 +138,6 @@ def extract_last_name(role):
     return role.person.name_parts()[3]
 
 
-def check_group_email_aliases():
-    pattern = re.compile(r'expand-(.*?)(-\w+)@.*? +(.*)$')
-    tot_count = 0
-    good_count = 0
-    with io.open(settings.GROUP_VIRTUAL_PATH,"r") as virtual_file:
-        for line in virtual_file.readlines():
-            m = pattern.match(line)
-            tot_count += 1
-            if m:
-                good_count += 1
-            if good_count > 50 and tot_count < 3*good_count:
-                return True
-    return False
-
-
 def response_from_file(fpath: Path) -> HttpResponse:
     """Helper to shovel a file back in an HttpResponse"""
     try:
