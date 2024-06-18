@@ -50,6 +50,7 @@ from ietf.doc.utils import (
     DraftAliasGenerator,
     generate_idnits2_rfc_status,
     generate_idnits2_rfcs_obsoleted,
+    get_doc_email_aliases,
 )
 from ietf.group.models import Group, Role
 from ietf.group.factories import GroupFactory, RoleFactory
@@ -2267,6 +2268,28 @@ class GenerateDraftAliasesTests(TestCase):
             {k: sorted(v) for k, v in expected_dict.items()},
         )
 
+        # check single name
+        output = [(alias, alist) for alias, alist in DraftAliasGenerator(Document.objects.filter(name=doc1.name))]
+        alias_dict = dict(output)
+        self.assertEqual(len(alias_dict), len(output))  # no duplicate aliases
+        expected_dict = {
+            doc1.name: [author1.email_address()],
+            doc1.name + ".ad": [ad.email_address()],
+            doc1.name + ".authors": [author1.email_address()],
+            doc1.name + ".shepherd": [shepherd.email_address()],
+            doc1.name
+            + ".all": [
+                author1.email_address(),
+                ad.email_address(),
+                shepherd.email_address(),
+            ],
+        }
+        # Sort lists for comparison
+        self.assertEqual(
+            {k: sorted(v) for k, v in alias_dict.items()},
+            {k: sorted(v) for k, v in expected_dict.items()},
+        )
+
     @override_settings(TOOLS_SERVER="tools.example.org", DRAFT_ALIAS_DOMAIN="draft.example.org")
     def test_get_draft_notify_emails(self):
         ad = PersonFactory()
@@ -2359,8 +2382,51 @@ class EmailAliasesTests(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, 'draft-ietf-mars-test.all@ietf.org')
         self.assertContains(r, 'iesg_ballot_saved')
+    
+    @mock.patch("ietf.doc.utils.DraftAliasGenerator")
+    def test_get_doc_email_aliases(self, mock_alias_gen_cls):
+        mock_alias_gen_cls.return_value = [
+            ("draft-something-or-other.some-type", ["somebody@example.com"]),
+            ("draft-something-or-other", ["somebody@example.com"]),
+            ("draft-nothing-at-all", ["nobody@example.com"]),
+            ("draft-nothing-at-all.some-type", ["nobody@example.com"]),
+        ]
+        # order is important in the response - should be sorted by doc name and otherwise left
+        # in order
+        self.assertEqual(
+            get_doc_email_aliases(),
+            [
+                {
+                    "doc_name": "draft-nothing-at-all",
+                    "alias_type": "",
+                    "expansion": "nobody@example.com",
+                },
+                {
+                    "doc_name": "draft-nothing-at-all",
+                    "alias_type": ".some-type",
+                    "expansion": "nobody@example.com",
+                },
+                {
+                    "doc_name": "draft-something-or-other",
+                    "alias_type": ".some-type",
+                    "expansion": "somebody@example.com",
+                },
+                {
+                    "doc_name": "draft-something-or-other",
+                    "alias_type": "",
+                    "expansion": "somebody@example.com",
+                },
+            ],
+        )
+        self.assertEqual(mock_alias_gen_cls.call_args, mock.call(None))
 
-
+        # Repeat with a name, no need to re-test that the alias list is actually passed through, just
+        # check that the DraftAliasGenerator is called correctly
+        draft = WgDraftFactory()
+        get_doc_email_aliases(draft.name)
+        self.assertQuerySetEqual(mock_alias_gen_cls.call_args[0][0], Document.objects.filter(pk=draft.pk))
+        
+        
 class DocumentMeetingTests(TestCase):
 
     def setUp(self):
