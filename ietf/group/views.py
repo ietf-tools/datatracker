@@ -81,7 +81,8 @@ from ietf.group.utils import (can_manage_all_groups_of_type,
                               can_manage_materials, group_attribute_change_desc,
                               construct_group_menu_context, get_group_materials,
                               save_group_in_history, can_manage_group, update_role_set,
-                              get_group_or_404, setup_default_community_list_for_group, fill_in_charter_info)                              
+                              get_group_or_404, setup_default_community_list_for_group, fill_in_charter_info,
+                              GroupAliasGenerator)                              
 #
 from ietf.ietfauth.utils import has_role, is_authorized_in_group
 from ietf.mailtrigger.utils import gather_relevant_expansions
@@ -581,19 +582,21 @@ def group_about_status_edit(request, acronym, group_type=None):
                  )
 
 def get_group_email_aliases(acronym, group_type):
-    if acronym:
-        pattern = re.compile(r'expand-(%s)(-\w+)@.*? +(.*)$'%acronym)
-    else:
-        pattern = re.compile(r'expand-(.*?)(-\w+)@.*? +(.*)$')
-
     aliases = []
-    with io.open(settings.GROUP_VIRTUAL_PATH,"r") as virtual_file:
-        for line in virtual_file.readlines():
-            m = pattern.match(line)
-            if m:
-                if acronym or not group_type or Group.objects.filter(acronym=m.group(1),type__slug=group_type):
-                    aliases.append({'acronym':m.group(1),'alias_type':m.group(2),'expansion':m.group(3)})
-    return aliases
+    group_queryset = Group.objects.all()
+    if acronym:
+        group_queryset = group_queryset.filter(acronym=acronym)
+    if group_type:
+        group_queryset = group_queryset.filter(type__slug=group_type)
+    for (alias, domains, alist) in GroupAliasGenerator(group_queryset):
+        acro, _hyphen, alias_type = alias.partition("-")
+        expansion = ", ".join(sorted(alist))
+        aliases.append({
+            "acronym": acro,
+            "alias_type": f"-{alias_type}" if alias_type else "",
+            "expansion": expansion,
+        })
+    return sorted(aliases, key=lambda a: a["acronym"])
 
 def email(request, acronym, group_type=None):
     group = get_group_or_404(acronym, group_type)

@@ -373,6 +373,12 @@ class GroupAliasGenerator:
     ]  # This should become groupfeature driven...
     no_ad_group_types = ["rg", "rag", "team", "program", "rfcedtyp", "edappr", "edwg"]
 
+    def __init__(self, group_queryset=None):
+        if group_queryset is None:
+            self.group_queryset = Group.objects.all()
+        else:
+            self.group_queryset = group_queryset
+
     def __iter__(self):
         show_since = timezone.now() - datetime.timedelta(days=self.days)
 
@@ -384,7 +390,7 @@ class GroupAliasGenerator:
             if g == "program":
                 domains.append("iab")
 
-            entries = Group.objects.filter(type=g).all()
+            entries = self.group_queryset.filter(type=g).all()
             active_entries = entries.filter(state__in=self.active_states)
             inactive_recent_entries = entries.exclude(
                 state__in=self.active_states
@@ -405,7 +411,7 @@ class GroupAliasGenerator:
                     yield name + "-chairs", domains, list(chair_emails)
 
         # The area lists include every chair in active working groups in the area
-        areas = Group.objects.filter(type="area").all()
+        areas = self.group_queryset.filter(type="area").all()
         active_areas = areas.filter(state__in=self.active_states)
         for area in active_areas:
             name = area.acronym
@@ -418,7 +424,7 @@ class GroupAliasGenerator:
 
         # Other groups with chairs that require Internet-Draft submission approval
         gtypes = GroupTypeName.objects.values_list("slug", flat=True)
-        special_groups = Group.objects.filter(
+        special_groups = self.group_queryset.filter(
             type__features__req_subm_approval=True, acronym__in=gtypes, state="active"
         )
         for group in special_groups:
