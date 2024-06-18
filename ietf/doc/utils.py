@@ -14,7 +14,7 @@ import textwrap
 from collections import defaultdict, namedtuple, Counter
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterator, Union
+from typing import Iterator, Optional, Union
 from zoneinfo import ZoneInfo
 
 from django.conf import settings
@@ -1389,6 +1389,22 @@ class DraftAliasGenerator:
             # .all = everything from above
             if all:
                 yield alias + ".all", list(all)
+
+
+def get_doc_email_aliases(name: Optional[str] = None):
+    aliases = []
+    for (alias, alist) in DraftAliasGenerator(
+        Document.objects.filter(type_id="draft", name=name) if name else None
+    ):
+        # alias is draft-name.alias_type
+        doc_name, _dot, alias_type = alias.partition(".")
+        aliases.append({
+            "doc_name": doc_name,
+            "alias_type": f".{alias_type}" if alias_type else "",
+            "expansion": ", ".join(sorted(alist)),
+        })
+    return sorted(aliases, key=lambda a: (a["doc_name"]))
+
 
 def investigate_fragment(name_fragment):
     can_verify = set()
