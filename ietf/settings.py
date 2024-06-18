@@ -1065,9 +1065,6 @@ GROUP_ALIAS_DOMAIN = IETF_DOMAIN
 
 TEST_DATA_DIR = os.path.abspath(BASE_DIR + "/../test/data")
 
-GROUP_ALIASES_PATH = os.path.join(TEST_DATA_DIR, "group-aliases")
-GROUP_VIRTUAL_PATH = os.path.join(TEST_DATA_DIR, "group-virtual")
-GROUP_VIRTUAL_DOMAIN = "virtual.ietf.org"
 
 POSTCONFIRM_PATH   = "/a/postconfirm/wrapper"
 
