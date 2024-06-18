@@ -1074,19 +1074,6 @@ def document_pdfized(request, name, rev=None, ext=None):
     else:
         raise Http404
 
-def check_doc_email_aliases():
-    pattern = re.compile(r'^expand-(.*?)(\..*?)?@.*? +(.*)$')
-    good_count = 0
-    tot_count = 0
-    with io.open(settings.DRAFT_VIRTUAL_PATH,"r") as virtual_file:
-        for line in virtual_file.readlines():
-            m = pattern.match(line)
-            tot_count += 1
-            if m:
-                good_count += 1
-            if good_count > 50 and tot_count < 3*good_count:
-                return True
-    return False
 
 def get_doc_email_aliases(name: Optional[str] = None):
     aliases = []
@@ -1101,6 +1088,7 @@ def get_doc_email_aliases(name: Optional[str] = None):
             "expansion": ", ".join(sorted(alist)),
         })
     return sorted(aliases, key=lambda a: (a["doc_name"]))
+
 
 def document_email(request,name):
     doc = get_object_or_404(Document, name=name)
