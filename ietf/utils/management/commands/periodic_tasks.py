@@ -273,6 +273,16 @@ class Command(BaseCommand):
             ),
         )
 
+        PeriodicTask.objects.get_or_create(
+            name="Run Yang model checks",
+            task="ietf.submit.tasks.run_yang_model_checks_task",
+            defaults=dict(
+                enabled=False,
+                crontab=self.crontabs["daily"],
+                description="Re-run Yang model checks on all active drafts",
+            ),
+        )
+
     def show_tasks(self):
         for label, crontab in self.crontabs.items():
             tasks = PeriodicTask.objects.filter(crontab=crontab).order_by(
