@@ -571,7 +571,7 @@ def get_group_email_aliases(acronym, group_type):
         group_queryset = group_queryset.filter(acronym=acronym)
     if group_type:
         group_queryset = group_queryset.filter(type__slug=group_type)
-    for (alias, domains, alist) in GroupAliasGenerator(group_queryset):
+    for (alias, _, alist) in GroupAliasGenerator(group_queryset):
         acro, _hyphen, alias_type = alias.partition("-")
         expansion = ", ".join(sorted(alist))
         aliases.append({
