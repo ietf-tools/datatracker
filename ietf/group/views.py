@@ -80,7 +80,7 @@ from ietf.group.utils import (can_manage_all_groups_of_type,
                               construct_group_menu_context, get_group_materials,
                               save_group_in_history, can_manage_group, update_role_set,
                               get_group_or_404, setup_default_community_list_for_group, fill_in_charter_info,
-                              GroupAliasGenerator)                              
+                              get_group_email_aliases)                              
 #
 from ietf.ietfauth.utils import has_role, is_authorized_in_group
 from ietf.mailtrigger.utils import gather_relevant_expansions
@@ -563,23 +563,6 @@ def group_about_status_edit(request, acronym, group_type=None):
                     'group':group,
                   }
                  )
-
-def get_group_email_aliases(acronym, group_type):
-    aliases = []
-    group_queryset = Group.objects.all()
-    if acronym:
-        group_queryset = group_queryset.filter(acronym=acronym)
-    if group_type:
-        group_queryset = group_queryset.filter(type__slug=group_type)
-    for (alias, _, alist) in GroupAliasGenerator(group_queryset):
-        acro, _hyphen, alias_type = alias.partition("-")
-        expansion = ", ".join(sorted(alist))
-        aliases.append({
-            "acronym": acro,
-            "alias_type": f"-{alias_type}" if alias_type else "",
-            "expansion": expansion,
-        })
-    return sorted(aliases, key=lambda a: a["acronym"])
 
 def email(request, acronym, group_type=None):
     group = get_group_or_404(acronym, group_type)

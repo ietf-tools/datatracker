@@ -433,6 +433,24 @@ class GroupAliasGenerator:
                 yield group.acronym + "-chairs", ["ietf"], list(chair_emails)
 
 
+def get_group_email_aliases(acronym, group_type):
+    aliases = []
+    group_queryset = Group.objects.all()
+    if acronym:
+        group_queryset = group_queryset.filter(acronym=acronym)
+    if group_type:
+        group_queryset = group_queryset.filter(type__slug=group_type)
+    for (alias, _, alist) in GroupAliasGenerator(group_queryset):
+        acro, _hyphen, alias_type = alias.partition("-")
+        expansion = ", ".join(sorted(alist))
+        aliases.append({
+            "acronym": acro,
+            "alias_type": f"-{alias_type}" if alias_type else "",
+            "expansion": expansion,
+        })
+    return sorted(aliases, key=lambda a: a["acronym"])
+
+
 def role_holder_emails():
     """Get queryset of active Emails for group role holders"""
     group_types_of_interest = [
