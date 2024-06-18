@@ -2169,24 +2169,6 @@ class ReferencesTest(TestCase):
         self.assertContains(r, doc1.name)
 
 class GenerateDraftAliasesTests(TestCase):
-    def setUp(self):
-        super().setUp()
-        self.doc_aliases_file = NamedTemporaryFile(delete=False, mode="w+")
-        self.doc_aliases_file.close()
-        self.doc_virtual_file = NamedTemporaryFile(delete=False, mode="w+")
-        self.doc_virtual_file.close()
-        self.saved_draft_aliases_path = settings.DRAFT_ALIASES_PATH
-        self.saved_draft_virtual_path = settings.DRAFT_VIRTUAL_PATH
-        settings.DRAFT_ALIASES_PATH = self.doc_aliases_file.name
-        settings.DRAFT_VIRTUAL_PATH = self.doc_virtual_file.name
-
-    def tearDown(self):
-        settings.DRAFT_ALIASES_PATH = self.saved_draft_aliases_path
-        settings.DRAFT_VIRTUAL_PATH = self.saved_draft_virtual_path
-        os.unlink(self.doc_aliases_file.name)
-        os.unlink(self.doc_virtual_file.name)
-        super().tearDown()
-
     @override_settings(TOOLS_SERVER="tools.example.org", DRAFT_ALIAS_DOMAIN="draft.example.org")
     def test_generator_class(self):
         """The DraftAliasGenerator should generate the same lists as the old mgmt cmd"""
