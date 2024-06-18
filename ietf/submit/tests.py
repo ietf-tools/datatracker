@@ -49,6 +49,7 @@ from ietf.submit.factories import SubmissionFactory, SubmissionExtResourceFactor
 from ietf.submit.forms import SubmissionBaseUploadForm, SubmissionAutoUploadForm
 from ietf.submit.models import Submission, Preapproval, SubmissionExtResource
 from ietf.submit.tasks import cancel_stale_submissions, process_and_accept_uploaded_submission_task
+from ietf.submit.utils import apply_yang_checker_to_draft, run_all_yang_model_checks
 from ietf.utils import tool_version
 from ietf.utils.accesstoken import generate_access_token
 from ietf.utils.mail import outbox, get_payload_text
@@ -3487,3 +3488,28 @@ class SubmissionStatusTests(BaseSubmitTestCase):
                 "Your Internet-Draft failed at least one submission check.",
                 status_code=200,
             )
+
+
+class YangCheckerTests(TestCase):
+    @mock.patch("ietf.submit.utils.apply_yang_checker_to_draft")
+    def test_run_all_yang_model_checks(self, mock_apply):
+        active_drafts = WgDraftFactory.create_batch(3)
+        WgDraftFactory(states=[("draft", "expired")])
+        run_all_yang_model_checks()
+        self.assertEqual(mock_apply.call_count, 3)
+        self.assertCountEqual(
+            [args[0][1] for args in mock_apply.call_args_list],
+            active_drafts,
+        )
+
+    def test_apply_yang_checker_to_draft(self):
+        draft = WgDraftFactory()
+        submission = SubmissionFactory(name=draft.name, rev=draft.rev)
+        submission.checks.create(checker="my-checker")
+        checker = mock.Mock()
+        checker.name = "my-checker"
+        checker.symbol = "X"
+        checker.check_file_txt.return_value = (True, "whee", None, None, {})
+        apply_yang_checker_to_draft(checker, draft)
+        self.assertEqual(checker.check_file_txt.call_args, mock.call(draft.get_file_name()))
+
