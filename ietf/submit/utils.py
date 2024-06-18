@@ -4,9 +4,11 @@
 
 import datetime
 import io
+import json
 import os
 import pathlib
 import re
+import sys
 import time
 import traceback
 import xml2rfc
@@ -15,6 +17,7 @@ from pathlib import Path
 from shutil import move
 from typing import Optional, Union  # pyflakes:ignore
 from unidecode import unidecode
+from xym import xym
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
@@ -43,6 +46,7 @@ from ietf.person.models import Person, Email
 from ietf.community.utils import update_name_contains_indexes_with_new_doc
 from ietf.submit.mail import ( announce_to_lists, announce_new_version, announce_to_authors,
     send_approval_request, send_submission_confirmation, announce_new_wg_00, send_manual_post_request )
+from ietf.submit.checkers import DraftYangChecker
 from ietf.submit.models import ( Submission, SubmissionEvent, Preapproval, DraftSubmissionStateName,
     SubmissionCheck, SubmissionExtResource )
 from ietf.utils import log
@@ -1431,3 +1435,133 @@ def process_uploaded_submission(submission):
         submission.state_id = "uploaded"
         submission.save()
         create_submission_event(None, submission, desc="Completed submission validation checks")
+
+
+def apply_yang_checker_to_draft(checker, draft):
+    submission = Submission.objects.filter(name=draft.name, rev=draft.rev).order_by('-id').first()
+    if submission:
+        check = submission.checks.filter(checker=checker.name).order_by('-id').first()
+        if check:
+            result = checker.check_file_txt(draft.get_file_name())
+            passed, message, errors, warnings, items = result
+            items = json.loads(json.dumps(items))
+            new_res = (passed, errors, warnings, message)
+            old_res = (check.passed, check.errors, check.warnings, check.message) if check else ()
+            if new_res != old_res:
+                log.log(f"Saving new yang checker results for {draft.name}-{draft.rev}")
+                qs = submission.checks.filter(checker=checker.name).order_by('time')
+                submission.checks.filter(checker=checker.name).exclude(pk=qs.first().pk).delete()
+                submission.checks.create(submission=submission, checker=checker.name, passed=passed,
+                                         message=message, errors=errors, warnings=warnings, items=items,
+                                         symbol=checker.symbol)
+    else:
+        log.log(f"Could not run yang checker for {draft.name}-{draft.rev}: missing submission object")
+
+
+def run_all_yang_model_checks():
+    checker = DraftYangChecker()
+    for draft in Document.objects.filter(
+        type_id="draft",
+        states=State.objects.get(type="draft", slug="active"),
+    ):
+        apply_yang_checker_to_draft(checker, draft)
+
+
+def populate_yang_model_dirs():
+    """Update the yang model dirs
+
+     * All yang modules from published RFCs should be extracted and be
+       available in an rfc-yang repository.
+
+     * All valid yang modules from active, not replaced, Internet-Drafts
+       should be extracted and be available in a draft-valid-yang repository.
+
+     * All, valid and invalid, yang modules from active, not replaced,
+       Internet-Drafts should be available in a draft-all-yang repository.
+       (Actually, given precedence ordering, it would be enough to place
+       non-validating modules in a draft-invalid-yang repository instead).
+
+     * In all cases, example modules should be excluded.
+
+     * Precedence is established by the search order of the repository as
+       provided to pyang.
+
+     * As drafts expire, models should be removed in order to catch cases
+       where a module being worked on depends on one which has slipped out
+       of the work queue.
+
+    """
+    def extract_from(file, dir, strict=True):
+        saved_stdout = sys.stdout
+        saved_stderr = sys.stderr
+        xymerr = io.StringIO()
+        xymout = io.StringIO()
+        sys.stderr = xymerr
+        sys.stdout = xymout
+        model_list = []
+        try:
+            model_list = xym.xym(str(file), str(file.parent), str(dir), strict=strict, debug_level=-2)
+            for name in model_list:
+                modfile = moddir / name
+                mtime = file.stat().st_mtime
+                os.utime(str(modfile), (mtime, mtime))
+                if '"' in name:
+                    name = name.replace('"', '')
+                    modfile.rename(str(moddir / name))
+            model_list = [n.replace('"', '') for n in model_list]
+        except Exception as e:
+            log.log("Error when extracting from %s: %s" % (file, str(e)))
+        finally:
+            sys.stdout = saved_stdout
+            sys.stderr = saved_stderr
+        return model_list
+
+    # Extract from new RFCs
+
+    rfcdir = Path(settings.RFC_PATH)
+
+    moddir = Path(settings.SUBMIT_YANG_RFC_MODEL_DIR)
+    if not moddir.exists():
+        moddir.mkdir(parents=True)
+
+    latest = 0
+    for item in moddir.iterdir():
+        if item.stat().st_mtime > latest:
+            latest = item.stat().st_mtime
+
+    log.log(f"Extracting RFC Yang models to {moddir} ...")
+    for item in rfcdir.iterdir():
+        if item.is_file() and item.name.startswith('rfc') and item.name.endswith('.txt') and item.name[3:-4].isdigit():
+            if item.stat().st_mtime > latest:
+                model_list = extract_from(item, moddir)
+                for name in model_list:
+                    if not (name.startswith('ietf') or name.startswith('iana')):
+                        modfile = moddir / name
+                        modfile.unlink()
+
+    # Extract valid modules from drafts
+
+    six_months_ago = time.time() - 6 * 31 * 24 * 60 * 60
+
+    def active(dirent):
+        return dirent.stat().st_mtime > six_months_ago
+
+    draftdir = Path(settings.INTERNET_DRAFT_PATH)
+    moddir = Path(settings.SUBMIT_YANG_DRAFT_MODEL_DIR)
+    if not moddir.exists():
+        moddir.mkdir(parents=True)
+    log.log(f"Emptying {moddir} ...")
+    for item in moddir.iterdir():
+        item.unlink()
+
+    log.log(f"Extracting draft Yang models to {moddir} ...")
+    for item in draftdir.iterdir():
+        try:
+            if item.is_file() and item.name.startswith('draft') and item.name.endswith('.txt') and active(item):
+                model_list = extract_from(item, moddir, strict=False)
+                for name in model_list:
+                    if name.startswith('example'):
+                        modfile = moddir / name
+                        modfile.unlink()
+        except UnicodeDecodeError as e:
+            log.log(f"Error processing {item.name}: {e}")
