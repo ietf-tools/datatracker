@@ -3,6 +3,7 @@
 
 import datetime
 import json
+import mock
 
 from django.urls import reverse as urlreverse
 from django.db.models import Q
@@ -18,6 +19,7 @@ from ietf.group.utils import (
     get_group_role_emails,
     get_child_group_role_emails,
     get_group_ad_emails,
+    get_group_email_aliases,
     GroupAliasGenerator,
     role_holder_emails,
 )
@@ -184,6 +186,66 @@ class GenerateGroupAliasesTests(TestCase):
         self.assertEqual(
             {k: (sorted(doms), sorted(addrs)) for k, (doms, addrs) in alias_dict.items()},
             {k: (sorted(doms), sorted(addrs)) for k, (doms, addrs) in expected_dict.items()},
+        )
+
+    @mock.patch("ietf.group.utils.GroupAliasGenerator")
+    def test_get_group_email_aliases(self, mock_alias_gen_cls):
+        GroupFactory(name="agroup", type_id="rg")
+        GroupFactory(name="bgroup")
+        GroupFactory(name="cgroup", type_id="rg")
+        GroupFactory(name="dgroup")
+
+        mock_alias_gen_cls.return_value = [
+            ("bgroup-chairs", ["ietf"], ["c1@example.com", "c2@example.com"]),
+            ("agroup-ads", ["ietf", "irtf"], ["ad@example.com"]),
+            ("bgroup-ads", ["ietf"], ["ad@example.com"]),
+        ]
+        # order is important - should be by acronym, otherwise left in order returned by generator
+        self.assertEqual(
+            get_group_email_aliases(None, None),
+            [
+                {
+                    "acronym": "agroup",
+                    "alias_type": "-ads",
+                    "expansion": "ad@example.com",
+                },
+                {
+                    "acronym": "bgroup",
+                    "alias_type": "-chairs",
+                    "expansion": "c1@example.com, c2@example.com",
+                },
+                {
+                    "acronym": "bgroup",
+                    "alias_type": "-ads",
+                    "expansion": "ad@example.com",
+                },
+            ],
+        )
+        self.assertQuerySetEqual(
+            mock_alias_gen_cls.call_args[0][0],
+            Group.objects.all(),
+            ordered=False,
+        )
+
+        # test other parameter combinations but we already checked that the alias generator's
+        # output will be passed through, so don't re-test the processing
+        get_group_email_aliases("agroup", None)
+        self.assertQuerySetEqual(
+            mock_alias_gen_cls.call_args[0][0],
+            Group.objects.filter(acronym="agroup"),
+            ordered=False,
+        )
+        get_group_email_aliases(None, "wg")
+        self.assertQuerySetEqual(
+            mock_alias_gen_cls.call_args[0][0],
+            Group.objects.filter(type_id="wg"),
+            ordered=False,
+        )
+        get_group_email_aliases("agroup", "wg")
+        self.assertQuerySetEqual(
+            mock_alias_gen_cls.call_args[0][0],
+            Group.objects.none(),
+            ordered=False,
         )
 
 
