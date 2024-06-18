@@ -4,6 +4,7 @@
 
 import datetime
 import io
+import json
 import os
 import pathlib
 import re
@@ -43,6 +44,7 @@ from ietf.person.models import Person, Email
 from ietf.community.utils import update_name_contains_indexes_with_new_doc
 from ietf.submit.mail import ( announce_to_lists, announce_new_version, announce_to_authors,
     send_approval_request, send_submission_confirmation, announce_new_wg_00, send_manual_post_request )
+from ietf.submit.checkers import DraftYangChecker
 from ietf.submit.models import ( Submission, SubmissionEvent, Preapproval, DraftSubmissionStateName,
     SubmissionCheck, SubmissionExtResource )
 from ietf.utils import log
@@ -1431,3 +1433,33 @@ def process_uploaded_submission(submission):
         submission.state_id = "uploaded"
         submission.save()
         create_submission_event(None, submission, desc="Completed submission validation checks")
+
+
+def apply_yang_checker_to_draft(checker, draft):
+    submission = Submission.objects.filter(name=draft.name, rev=draft.rev).order_by('-id').first()
+    if submission:
+        check = submission.checks.filter(checker=checker.name).order_by('-id').first()
+        if check:
+            result = checker.check_file_txt(draft.get_file_name())
+            passed, message, errors, warnings, items = result
+            items = json.loads(json.dumps(items))
+            new_res = (passed, errors, warnings, message)
+            old_res = (check.passed, check.errors, check.warnings, check.message) if check else ()
+            if new_res != old_res:
+                log.log(f"Saving new yang checker results for {draft.name}-{draft.rev}")
+                qs = submission.checks.filter(checker=checker.name).order_by('time')
+                submission.checks.filter(checker=checker.name).exclude(pk=qs.first().pk).delete()
+                submission.checks.create(submission=submission, checker=checker.name, passed=passed,
+                                         message=message, errors=errors, warnings=warnings, items=items,
+                                         symbol=checker.symbol)
+    else:
+        log.log(f"Could not run yang checker for {draft.name}-{draft.rev}: missing submission object")
+
+
+def run_all_yang_model_checks():
+    checker = DraftYangChecker()
+    for draft in Document.objects.filter(
+        type_id="draft",
+        states=State.objects.get(type="draft", slug="active"),
+    ):
+        apply_yang_checker_to_draft(checker, draft)
