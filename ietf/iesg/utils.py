@@ -26,14 +26,16 @@ def telechat_page_count(date=None, docs=None, ad=None):
 
     ad_pages_left_to_ballot_on = 0
     pages_for_approval = 0
+    
     for draft in drafts:
         pages_for_approval += draft.pages or 0
         if ad:
-            ad_pages_left_to_ballot_on += draft.pages or 0
-            docevents = list(draft.docevent_set.filter(type="changed_state"))
-            ad_docevents = list(filter(lambda docevent: docevent.by == ad, docevents))
-            if len(ad_docevents) > 0:
-                ad_pages_left_to_ballot_on -= draft.pages or 0
+            ballot = draft.active_ballot()
+            if ballot:
+                positions = ballot.active_balloter_positions()
+                ad_position = positions[ad]
+                if ad_position is None or ad_position == "norecord":
+                    ad_pages_left_to_ballot_on += draft.pages or 0
 
     pages_for_action = 0
     for d in for_action:

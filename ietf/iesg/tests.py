@@ -500,44 +500,11 @@ class IESGAgendaTests(TestCase):
         url = urlreverse("ietf.iesg.views.agenda_documents")
         r = self.client.get(url)
 
-        dates = list(TelechatDate.objects.order_by('date').values_list("date", flat=True)[:4])
-        docs_by_date = dict((d, []) for d in dates)
-        docs = Document.objects.distinct()
-        for doc in docs:
-            d = doc.telechat_date()
-            if d in docs_by_date:
-                # Set some states that affect the returned ad_pages_left_to_ballot_on
-                doc.set_state(State.objects.get(used=True, type="draft-iesg", slug="pub"))
-
         self.assertEqual(r.status_code, 200)
 
         for k, d in self.telechat_docs.items():
             self.assertContains(r, d.name, msg_prefix="%s '%s' not in response" % (k, d.name, ))
             self.assertContains(r, d.title, msg_prefix="%s '%s' not in response" % (k, d.title, ))
-
-        for telechat in r.context["telechats"]:
-            # non-AD users should be 0
-            self.assertEqual(telechat["ad_pages_left_to_ballot_on"], 0, "%s ad_pages_left_to_ballot_on not in response" % (telechat["ad_pages_left_to_ballot_on"]))
-
-        username = "ad"
-        can_login = self.client.login(username=username, password="%s+password" % username)
-        self.assertTrue(can_login)
-        logged_in_request = self.client.get(url)
-        telechats = logged_in_request.context["telechats"]
-        self.assertGreater(len(telechats), 0, "Expected multiple telechats but received %d" % (len(telechats)))
-        self.assertEqual(telechats[0]["ad_pages_left_to_ballot_on"], 383, "Expected a specific number of pages left to ballot on for this AD '%s'" % (username))
-
-        for index, telechat in enumerate(telechats):
-            pages = telechat["pages"]
-            ad_pages_left_to_ballot_on = telechat["ad_pages_left_to_ballot_on"]
-            previous_pages = r.context["telechats"][index]["pages"]
-            self.assertEqual(previous_pages, pages, "Expected same page count as previous request but was %s vs %s" % (previous_pages, pages))
-            self.assertGreaterEqual(pages, 0, "%s pages not in response" % (pages))
-            self.assertGreaterEqual(ad_pages_left_to_ballot_on, 0, "%s ad_pages_left_to_ballot_on not in response" % (ad_pages_left_to_ballot_on))
-            # `ad_pages_left_to_ballot_on` should never exceed `pages`
-            self.assertGreaterEqual(pages, ad_pages_left_to_ballot_on, "pages < ad_pages_left_to_ballot_on")
-
-        self.client.logout()
     
     def test_past_documents(self):
         url = urlreverse("ietf.iesg.views.past_documents")
@@ -612,6 +579,126 @@ class IESGAgendaTests(TestCase):
         self.assertRedirects(r, urlreverse('admin:iesg_telechatdate_changelist'))
         draft = Document.objects.get(name="draft-ietf-mars-test")
         self.assertEqual(draft.telechat_date(),today)
+
+class IESGAgendaTelechatPagesTests(TestCase):
+    def setUp(self):
+        super().setUp()
+
+        # ad = Person.objects.get(user__username="ad")
+
+        by = Person.objects.get(name="Areað Irector")
+
+        mars = GroupFactory(acronym='mars',parent=Group.objects.get(acronym='farfut'))
+
+        agenda_date = get_agenda_date()
+
+        mars = GroupFactory(acronym='mars',parent=Group.objects.get(acronym='farfut'))
+        wgdraft = WgDraftFactory(name='draft-ietf-mars-test', group=mars, intended_std_level_id='ps')
+        rfc = IndividualRfcFactory.create(stream_id='irtf', rfc_number=6666, std_level_id='inf', )
+        wgdraft.relateddocument_set.create(target=rfc, relationship_id='refnorm')
+        ise_draft = IndividualDraftFactory(name='draft-imaginary-independent-submission')
+        ise_draft.stream = StreamName.objects.get(slug="ise")
+        ise_draft.save_with_history([DocEvent(doc=ise_draft, rev=ise_draft.rev, type="changed_stream", by=Person.objects.get(user__username="secretary"), desc="Test")])
+
+        date = date_today(settings.TIME_ZONE) + datetime.timedelta(days=50)
+        TelechatDate.objects.create(date=date)
+
+        telechat_event = TelechatDocEvent.objects.create(
+            type="scheduled_for_telechat",
+            doc=wgdraft,
+            rev=wgdraft.rev,
+            by=by,
+            telechat_date=date,
+            returning_item=True)
+        telechat_event.save()
+
+        ConflictReviewFactory(name='conflict-review-imaginary-irtf-submission', review_of=ise_draft)
+        BaseDocumentFactory(type_id='statchg',name='status-change-imaginary-mid-review')
+        WgRfcFactory(std_level_id='inf')
+        WgRfcFactory(std_level_id='ps')
+        CharterFactory(states=[('charter','iesgrev')])
+
+        self.telechat_docs = {
+            "ietf_draft": Document.objects.get(name="draft-ietf-mars-test"),
+            "ise_draft": ise_draft,
+            "conflrev": Document.objects.get(name="conflict-review-imaginary-irtf-submission"),
+            "statchg": Document.objects.get(name="status-change-imaginary-mid-review"),
+            "charter": Document.objects.filter(type="charter")[0],
+            } 
+
+        by = Person.objects.get(name="Areað Irector")
+        date = get_agenda_date()
+
+        for d in list(self.telechat_docs.values()):
+            TelechatDocEvent.objects.create(type="scheduled_for_telechat",
+                                            doc=d,
+                                            rev=d.rev,
+                                            by=by,
+                                            telechat_date=date,
+                                            returning_item=True)
+
+        # mars = GroupFactory(acronym='mars',parent=Group.objects.get(acronym='farfut'))
+        dates = list(TelechatDate.objects.order_by('date').values_list("date", flat=True)[:4])
+        for index, date in enumerate(dates):
+            for n in range(10):
+                # candidates = Document.objects.filter(
+                #   docevent__telechatdocevent__telechat_date=date
+                # ).distinct() 
+                draft = WgDraftFactory(
+                    name='draft-ietf-test-%s-%i' % (date, n),
+                    # time=date,
+                    group=mars,
+                    intended_std_level_id='ps',
+                    pages=20 * (index + 1)
+                )
+                TelechatDocEvent.objects.create(type="scheduled_for_telechat",
+                                            doc=draft,
+                                            rev=draft.rev,
+                                            by=by,
+                                            telechat_date=agenda_date,
+                                            returning_item=True)
+                # update_telechat(None, draft, ad, date)
+                # ballot = create_ballot_if_not_open(None, draft, ad, 'approve')
+                # pos = BallotPositionDocEvent()
+                # pos.ballot = ballot
+                # pos.pos_id = "discuss"
+                # pos.type = "changed_ballot_position"
+                # pos.doc = draft
+                # pos.rev = draft.rev
+                # pos.balloter = pos.by = ad
+                # pos.save()
+        
+
+    def test_ad_pages_left_to_ballot_on(self):
+        url = urlreverse("ietf.iesg.views.agenda_documents")
+
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+
+        logged_in_request = self.client.get(url)
+
+        username = "ad"
+        can_login = self.client.login(username=username, password="%s+password" % username)
+        self.assertTrue(can_login)
+
+        telechats = logged_in_request.context["telechats"]
+        for telechat in telechats:
+            print("actual", telechat["pages"], telechat["ad_pages_left_to_ballot_on"])
+        self.assertGreater(len(telechats), 0, "Expected multiple telechats but received %d" % (len(telechats)))
+        self.assertEqual(telechats[0]["ad_pages_left_to_ballot_on"], 383, "Expected a specific number of pages left to ballot on for this AD '%s'" % (username))
+
+        for index, telechat in enumerate(telechats):
+            pages = telechat["pages"]
+            ad_pages_left_to_ballot_on = telechat["ad_pages_left_to_ballot_on"]
+            previous_pages = r.context["telechats"][index]["pages"]
+            self.assertEqual(previous_pages, pages, "Expected same page count as previous request but was %s vs %s" % (previous_pages, pages))
+            self.assertGreaterEqual(pages, 0, "%s pages not in response" % (pages))
+            self.assertGreaterEqual(ad_pages_left_to_ballot_on, 0, "%s ad_pages_left_to_ballot_on not in response" % (ad_pages_left_to_ballot_on))
+            # `ad_pages_left_to_ballot_on` should never exceed `pages`
+            self.assertGreaterEqual(pages, ad_pages_left_to_ballot_on, "pages < ad_pages_left_to_ballot_on")
+
+        self.client.logout()
+
 
 class RescheduleOnAgendaTests(TestCase):
     def test_reschedule(self):
