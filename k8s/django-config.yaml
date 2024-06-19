@@ -57,6 +57,8 @@ data:
     yeUc2Ykkwemt3U0IKcXZOVStxUldpK1lYcklUc2duOTIvZ1Z4WDVBb0swbitzNUx4
     N2ZwanhrQVJWaTY2U0Y2elRKblgKLS0tLS1FTkQgUFJJVkFURSBLRVktLS0tLQo=
 
+  #DATATRACKER_REGISTRATION_API_KEY: "some-key"  # secret"
+
   # DATATRACKER_MEETECHO_API_BASE: "https://meetings.conf.meetecho.com/api/v1/"
   DATATRACKER_MEETECHO_CLIENT_ID: "this-is-the-meetecho-client-id"  # secret
   DATATRACKER_MEETECHO_CLIENT_SECRET: "this-is-the-meetecho-client-secret"  # secret
