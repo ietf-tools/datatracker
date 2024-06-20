@@ -60,6 +60,8 @@ spec:
               mountPath: /a
             - name: dt-tmp
               mountPath: /tmp
+            - name: dt-xml2rfc-cache
+              mountPath: /var/cache/xml2rfc
             - name: dt-cfg
               mountPath: /workspace/ietf/settings_local.py
               subPath: settings_local.py
@@ -81,6 +83,9 @@ spec:
         # To be overriden with the actual shared volume
         - name: dt-vol
         - name: dt-tmp
+          emptyDir:
+            sizeLimit: "2Gi"
+        - name: dt-xml2rfc-cache
           emptyDir:
             sizeLimit: "2Gi"
         - name: dt-cfg
