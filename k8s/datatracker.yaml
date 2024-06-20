@@ -58,6 +58,8 @@ spec:
               mountPath: /a
             - name: dt-tmp
               mountPath: /tmp
+            - name: dt-home
+              mountPath: /home/datatracker
             - name: dt-xml2rfc-cache
               mountPath: /var/cache/xml2rfc
             - name: dt-cfg
@@ -87,6 +89,9 @@ spec:
           emptyDir:
             sizeLimit: "2Gi"
         - name: dt-xml2rfc-cache
+          emptyDir:
+            sizeLimit: "2Gi"
+        - name: dt-home
           emptyDir:
             sizeLimit: "2Gi"
         - name: dt-cfg
