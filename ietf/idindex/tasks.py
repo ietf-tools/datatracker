@@ -57,7 +57,7 @@ def idindex_update_task():
     ftp_path = Path(settings.FTP_DIR) / "internet-drafts"
     all_archive_path = Path(settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR)
 
-    with TempFileManager("/a/tmp") as tmp_mgr:
+    with TempFileManager() as tmp_mgr:
         # Generate copies of new contents
         all_id_content = all_id_txt()
         all_id_tmpfile = tmp_mgr.make_temp_file(all_id_content)
