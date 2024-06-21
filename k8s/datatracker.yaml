@@ -58,12 +58,19 @@ spec:
               mountPath: /a
             - name: dt-tmp
               mountPath: /tmp
+            - name: dt-home
+              mountPath: /home/datatracker
+            - name: dt-xml2rfc-cache
+              mountPath: /var/cache/xml2rfc
             - name: dt-cfg
               mountPath: /workspace/ietf/settings_local.py
               subPath: settings_local.py
           env:
             - name: "CONTAINER_ROLE"
               value: "datatracker"
+            # ensures the pod gets recreated on every deploy:
+            - name: "DEPLOY_UID"
+              value: "$DEPLOY_UID"
           envFrom:
             - configMapRef:
                 name: django-config
@@ -79,6 +86,12 @@ spec:
         # To be overriden with the actual shared volume
         - name: dt-vol
         - name: dt-tmp
+          emptyDir:
+            sizeLimit: "2Gi"
+        - name: dt-xml2rfc-cache
+          emptyDir:
+            sizeLimit: "2Gi"
+        - name: dt-home
           emptyDir:
             sizeLimit: "2Gi"
         - name: dt-cfg

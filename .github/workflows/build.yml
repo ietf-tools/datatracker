@@ -240,7 +240,9 @@ jobs:
         password: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Build Release Docker Image
-      uses: docker/build-push-action@v5
+      uses: docker/build-push-action@v6
+      env:
+        DOCKER_BUILD_NO_SUMMARY: true
       with:
         context: .
         file: dev/build/Dockerfile
