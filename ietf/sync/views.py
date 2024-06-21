@@ -52,9 +52,6 @@ def notify(request, org, notification):
     password = request.POST.get("password") or request.GET.get("password")
 
     if username != None and password != None:
-        if settings.SERVER_MODE == "production" and not request.is_secure():
-            permission_denied(request, "You must use HTTPS when sending username/password.")
-
         if not user.is_authenticated:
             try:
                 user = User.objects.get(username__iexact=username)
