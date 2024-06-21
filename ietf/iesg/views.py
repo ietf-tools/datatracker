@@ -361,7 +361,6 @@ def handle_reschedule_form(request, doc, dates, status):
     return form
 
 def agenda_documents(request):
-    print("route agenda_documents")
     ad = request.user.person if has_role(request.user, "Area Director") else None
 
     dates = list(TelechatDate.objects.active().order_by('date').values_list("date", flat=True)[:4])
@@ -396,8 +395,6 @@ def agenda_documents(request):
         page_count = telechat_page_count(docs=docs_by_date[date], ad=ad)
         pages = page_count.for_approval
         
-        print("date", date)
-
         telechats.append({
                 "date":     date,
                 "pages":    pages,
