@@ -482,6 +482,7 @@ INSTALLED_APPS = [
     'ietf.release',
     'ietf.review',
     'ietf.stats',
+    'ietf.status',
     'ietf.submit',
     'ietf.sync',
     'ietf.utils',

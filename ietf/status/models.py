@@ -3,6 +3,7 @@
 
 
 from django.db import models
+from django.db.models import ForeignKey
 
 import debug                            # pyflakes:ignore
 
@@ -13,7 +14,7 @@ class Status(models.Model):
 
     date = models.DateField()
     active = models.BooleanField(default=True, help_text="Only active messages will be shown")
-    by = ForeignKey(Person)
+    by = ForeignKey(Person, on_delete=models.CASCADE)
     message = models.CharField(max_length=255, help_text="Your status message.", unique=False)
     url = models.URLField()
 
