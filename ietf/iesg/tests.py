@@ -166,7 +166,7 @@ class IESGAgendaTests(TestCase):
             "conflrev": Document.objects.get(name="conflict-review-imaginary-irtf-submission"),
             "statchg": Document.objects.get(name="status-change-imaginary-mid-review"),
             "charter": Document.objects.filter(type="charter")[0],
-            } 
+            }
 
         by = Person.objects.get(name="Areað Irector")
         date = get_agenda_date()
