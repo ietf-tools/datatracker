@@ -29,12 +29,13 @@
         {% vite_asset 'client/embedded.js' %}
         {% include "base/icons.html" %}
         <script src="{% static 'ietf/js/ietf.js' %}"></script>
+        <script src="{% static 'ietf/js/status.js' %}"></script>
         {% analytical_head_bottom %}
     </head>
     <body {% block bodyAttrs %}{% endblock %} class="navbar-offset position-relative"
           data-group-menu-data-url="{% url 'ietf.group.views.group_menu_data' %}">
         {% analytical_body_top %}
-        <iframe allowtransparency="true" style="background-color:transparent;border:none;width:100%;height:3em" src="/status"></iframe>
+        <noscript><iframe allowtransparency="true" style="background-color:transparent;border:none;width:100%;height:3em" src="/status"></iframe></noscript>
         <a class="visually-hidden visually-hidden-focusable" href="#content">Skip to main content</a>
         <nav class="navbar navbar-expand-lg fixed-top {% if server_mode and server_mode != "production" %}bg-danger-subtle{% else %}bg-secondary-subtle{% endif %}">
             <div class="container-fluid">

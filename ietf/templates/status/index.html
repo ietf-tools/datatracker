@@ -1,4 +1,6 @@
 {% load origin %}
 {% load ietf_filters static %}
 {% origin %}
-<h1>STATUS</h1>
+{% if message %}
+    <p>{{ message }} <a href="{{ url }}">read more</a> {{ by }} {{ date }}</p>
+{% endif %}
