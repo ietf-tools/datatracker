@@ -18,7 +18,7 @@ import debug                            # pyflakes:ignore
 
 from ietf.doc.models import DocEvent, BallotPositionDocEvent, TelechatDocEvent
 from ietf.doc.models import Document, State, RelatedDocument
-from ietf.doc.factories import WgDraftFactory, IndividualDraftFactory, ConflictReviewFactory, BaseDocumentFactory, CharterFactory, WgRfcFactory, IndividualRfcFactory
+from ietf.doc.factories import BallotDocEventFactory, BallotPositionDocEventFactory, TelechatDocEventFactory, WgDraftFactory, IndividualDraftFactory, ConflictReviewFactory, BaseDocumentFactory, CharterFactory, WgRfcFactory, IndividualRfcFactory
 from ietf.doc.utils import create_ballot_if_not_open
 from ietf.group.factories import RoleFactory, GroupFactory, DatedGroupMilestoneFactory, DatelessGroupMilestoneFactory
 from ietf.group.models import Group, GroupMilestone, Role
@@ -581,35 +581,63 @@ class IESGAgendaTests(TestCase):
         self.assertEqual(draft.telechat_date(),today)
 
 class IESGAgendaTelechatPagesTests(TestCase):
+    def setUp(self):
+        super().setUp()
+        # make_immutable_test_data made a set of future telechats - only need one
+        # We'll take the "next" one
+        self.telechat_date = get_agenda_date()
+        # make_immutable_test_data made and area with only one ad - give it another
+        ad = Person.objects.get(user__username="ad")
+        adrole = Role.objects.get(person=ad, name="ad")
+        ad2 = RoleFactory(group=adrole.group, name_id="ad").person
+        self.ads=[ad,ad2]
         
+        # Make some drafts
+        docs = [
+            WgDraftFactory(pages=2, states=[('draft-iesg','iesg-eva'),]),
+            IndividualDraftFactory(pages=20, states=[('draft-iesg','iesg-eva'),]),
+            WgDraftFactory(pages=200, states=[('draft-iesg','iesg-eva'),]),
+        ]
+        # Put them on the telechat
+        for doc in docs:
+            TelechatDocEventFactory(doc=doc, telechat_date=self.telechat_date)
+        # Give them ballots
+        ballots = [BallotDocEventFactory(doc=doc) for doc in docs]
+
+        # Give the "ad" Area-Director a discuss on one 
+        BallotPositionDocEventFactory(balloter=ad, doc=docs[0], pos_id="discuss", ballot=ballots[0])
+        # and a "norecord" position on another
+        BallotPositionDocEventFactory(balloter=ad, doc=docs[1], pos_id="norecord", ballot=ballots[1])
+        # Now "ad" should have 220 pages left to ballot on.
+        # Every other ad should have 222 pages left to ballot on.
+
     def test_ad_pages_left_to_ballot_on(self):
         url = urlreverse("ietf.iesg.views.agenda_documents")
 
-        username = "ad"
-        can_login = self.client.login(username=username, password="%s+password" % username)
-        self.assertTrue(can_login)
+        # A non-AD user won't get "pages left"
+        response = self.client.get(url)
+        telechat = response.context["telechats"][0]
+        self.assertEqual(telechat["date"], self.telechat_date)
+        self.assertEqual(telechat["ad_pages_left_to_ballot_on"],0)
+        self.assertNotContains(response,"pages left to ballot on")
+
+        username=self.ads[0].user.username
+        self.assertTrue(self.client.login(username=username, password=f"{username}+password"))
 
         response = self.client.get(url)
-
-
-        telechats = response.context["telechats"]
-        return 0
-        for telechat in telechats:
-            print("actual", telechat["pages"], telechat["ad_pages_left_to_ballot_on"])
-        self.assertGreater(len(telechats), 0, "Expected multiple telechats but received %d" % (len(telechats)))
-        self.assertEqual(telechats[0]["ad_pages_left_to_ballot_on"], 383, "Expected a specific number of pages left to ballot on for this AD '%s'" % (username))
-
-        for index, telechat in enumerate(telechats):
-            pages = telechat["pages"]
-            ad_pages_left_to_ballot_on = telechat["ad_pages_left_to_ballot_on"]
-            previous_pages = r.context["telechats"][index]["pages"]
-            self.assertEqual(previous_pages, pages, "Expected same page count as previous request but was %s vs %s" % (previous_pages, pages))
-            self.assertGreaterEqual(pages, 0, "%s pages not in response" % (pages))
-            self.assertGreaterEqual(ad_pages_left_to_ballot_on, 0, "%s ad_pages_left_to_ballot_on not in response" % (ad_pages_left_to_ballot_on))
-            # `ad_pages_left_to_ballot_on` should never exceed `pages`
-            self.assertGreaterEqual(pages, ad_pages_left_to_ballot_on, "pages < ad_pages_left_to_ballot_on")
+        telechat = response.context["telechats"][0]
+        self.assertEqual(telechat["ad_pages_left_to_ballot_on"],220)
+        self.assertContains(response,"220 pages left to ballot on")
 
         self.client.logout()
+        username=self.ads[1].user.username
+        self.assertTrue(self.client.login(username=username, password=f"{username}+password"))
+
+        response = self.client.get(url)
+        telechat = response.context["telechats"][0]
+        self.assertEqual(telechat["ad_pages_left_to_ballot_on"],222)
+
+
 
 
 class RescheduleOnAgendaTests(TestCase):
