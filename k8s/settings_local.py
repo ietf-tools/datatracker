@@ -260,3 +260,6 @@ CACHES = {
 _csrf_trusted_origins_str = os.environ.get("DATATRACKER_CSRF_TRUSTED_ORIGINS")
 if _csrf_trusted_origins_str is not None:
     CSRF_TRUSTED_ORIGINS = _multiline_to_list(_csrf_trusted_origins_str)
+
+# Console logs as JSON instead of plain when running in k8s
+LOGGING["handlers"]["console"]["formatter"] = "json"

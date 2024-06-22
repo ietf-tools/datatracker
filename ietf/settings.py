@@ -275,7 +275,7 @@ LOGGING = {
         'console': {
             'level': 'DEBUG',
             'class': 'logging.StreamHandler',
-            'formatter': 'json',
+            'formatter': 'plain',
         },
         'debug_console': {
             # Active only when DEBUG=True
