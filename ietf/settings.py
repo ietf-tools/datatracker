@@ -240,11 +240,11 @@ LOGGING = {
     #
     'loggers': {
         'django': {
-            'handlers': ['debug_console', 'mail_admins'],
+            'handlers': ['console', 'mail_admins'],
             'level': 'INFO',
         },
         'django.request': {
-            'handlers': ['debug_console'],
+            'handlers': ['console'],
             'level': 'ERROR',
         },
         'django.server': {
@@ -252,19 +252,19 @@ LOGGING = {
             'level': 'INFO',
         },
         'django.security': {
-            'handlers': ['debug_console', ],
+            'handlers': ['console', ],
             'level': 'INFO',
         },
         'oidc_provider': {
-            'handlers': ['debug_console', ],
+            'handlers': ['console', ],
             'level': 'DEBUG',
         },
         'datatracker': {
-            'handlers': ['debug_console'],
+            'handlers': ['console'],
             'level': 'INFO',
         },
         'celery': {
-            'handlers': ['debug_console'],
+            'handlers': ['console'],
             'level': 'INFO',
         },
     },
