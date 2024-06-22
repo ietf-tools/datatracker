@@ -18,7 +18,7 @@ import debug                            # pyflakes:ignore
 
 from ietf.doc.models import DocEvent, BallotPositionDocEvent, TelechatDocEvent
 from ietf.doc.models import Document, State, RelatedDocument
-from ietf.doc.factories import WgDraftFactory, IndividualDraftFactory, ConflictReviewFactory, BaseDocumentFactory, CharterFactory, WgRfcFactory, IndividualRfcFactory
+from ietf.doc.factories import BallotDocEventFactory, BallotPositionDocEventFactory, TelechatDocEventFactory, WgDraftFactory, IndividualDraftFactory, ConflictReviewFactory, BaseDocumentFactory, CharterFactory, WgRfcFactory, IndividualRfcFactory
 from ietf.doc.utils import create_ballot_if_not_open
 from ietf.group.factories import RoleFactory, GroupFactory, DatedGroupMilestoneFactory, DatelessGroupMilestoneFactory
 from ietf.group.models import Group, GroupMilestone, Role
@@ -166,7 +166,7 @@ class IESGAgendaTests(TestCase):
             "conflrev": Document.objects.get(name="conflict-review-imaginary-irtf-submission"),
             "statchg": Document.objects.get(name="status-change-imaginary-mid-review"),
             "charter": Document.objects.filter(type="charter")[0],
-            } 
+            }
 
         by = Person.objects.get(name="Areað Irector")
         date = get_agenda_date()
@@ -583,121 +583,61 @@ class IESGAgendaTests(TestCase):
 class IESGAgendaTelechatPagesTests(TestCase):
     def setUp(self):
         super().setUp()
-
-        # ad = Person.objects.get(user__username="ad")
-
-        by = Person.objects.get(name="Areað Irector")
-
-        mars = GroupFactory(acronym='mars',parent=Group.objects.get(acronym='farfut'))
-
-        agenda_date = get_agenda_date()
-
-        mars = GroupFactory(acronym='mars',parent=Group.objects.get(acronym='farfut'))
-        wgdraft = WgDraftFactory(name='draft-ietf-mars-test', group=mars, intended_std_level_id='ps')
-        rfc = IndividualRfcFactory.create(stream_id='irtf', rfc_number=6666, std_level_id='inf', )
-        wgdraft.relateddocument_set.create(target=rfc, relationship_id='refnorm')
-        ise_draft = IndividualDraftFactory(name='draft-imaginary-independent-submission')
-        ise_draft.stream = StreamName.objects.get(slug="ise")
-        ise_draft.save_with_history([DocEvent(doc=ise_draft, rev=ise_draft.rev, type="changed_stream", by=Person.objects.get(user__username="secretary"), desc="Test")])
-
-        date = date_today(settings.TIME_ZONE) + datetime.timedelta(days=50)
-        TelechatDate.objects.create(date=date)
-
-        telechat_event = TelechatDocEvent.objects.create(
-            type="scheduled_for_telechat",
-            doc=wgdraft,
-            rev=wgdraft.rev,
-            by=by,
-            telechat_date=date,
-            returning_item=True)
-        telechat_event.save()
-
-        ConflictReviewFactory(name='conflict-review-imaginary-irtf-submission', review_of=ise_draft)
-        BaseDocumentFactory(type_id='statchg',name='status-change-imaginary-mid-review')
-        WgRfcFactory(std_level_id='inf')
-        WgRfcFactory(std_level_id='ps')
-        CharterFactory(states=[('charter','iesgrev')])
-
-        self.telechat_docs = {
-            "ietf_draft": Document.objects.get(name="draft-ietf-mars-test"),
-            "ise_draft": ise_draft,
-            "conflrev": Document.objects.get(name="conflict-review-imaginary-irtf-submission"),
-            "statchg": Document.objects.get(name="status-change-imaginary-mid-review"),
-            "charter": Document.objects.filter(type="charter")[0],
-            } 
-
-        by = Person.objects.get(name="Areað Irector")
-        date = get_agenda_date()
-
-        for d in list(self.telechat_docs.values()):
-            TelechatDocEvent.objects.create(type="scheduled_for_telechat",
-                                            doc=d,
-                                            rev=d.rev,
-                                            by=by,
-                                            telechat_date=date,
-                                            returning_item=True)
-
-        # mars = GroupFactory(acronym='mars',parent=Group.objects.get(acronym='farfut'))
-        dates = list(TelechatDate.objects.order_by('date').values_list("date", flat=True)[:4])
-        for index, date in enumerate(dates):
-            for n in range(10):
-                # candidates = Document.objects.filter(
-                #   docevent__telechatdocevent__telechat_date=date
-                # ).distinct() 
-                draft = WgDraftFactory(
-                    name='draft-ietf-test-%s-%i' % (date, n),
-                    # time=date,
-                    group=mars,
-                    intended_std_level_id='ps',
-                    pages=20 * (index + 1)
-                )
-                TelechatDocEvent.objects.create(type="scheduled_for_telechat",
-                                            doc=draft,
-                                            rev=draft.rev,
-                                            by=by,
-                                            telechat_date=agenda_date,
-                                            returning_item=True)
-                # update_telechat(None, draft, ad, date)
-                # ballot = create_ballot_if_not_open(None, draft, ad, 'approve')
-                # pos = BallotPositionDocEvent()
-                # pos.ballot = ballot
-                # pos.pos_id = "discuss"
-                # pos.type = "changed_ballot_position"
-                # pos.doc = draft
-                # pos.rev = draft.rev
-                # pos.balloter = pos.by = ad
-                # pos.save()
+        # make_immutable_test_data made a set of future telechats - only need one
+        # We'll take the "next" one
+        self.telechat_date = get_agenda_date()
+        # make_immutable_test_data made and area with only one ad - give it another
+        ad = Person.objects.get(user__username="ad")
+        adrole = Role.objects.get(person=ad, name="ad")
+        ad2 = RoleFactory(group=adrole.group, name_id="ad").person
+        self.ads=[ad,ad2]
         
+        # Make some drafts
+        docs = [
+            WgDraftFactory(pages=2, states=[('draft-iesg','iesg-eva'),]),
+            IndividualDraftFactory(pages=20, states=[('draft-iesg','iesg-eva'),]),
+            WgDraftFactory(pages=200, states=[('draft-iesg','iesg-eva'),]),
+        ]
+        # Put them on the telechat
+        for doc in docs:
+            TelechatDocEventFactory(doc=doc, telechat_date=self.telechat_date)
+        # Give them ballots
+        ballots = [BallotDocEventFactory(doc=doc) for doc in docs]
+
+        # Give the "ad" Area-Director a discuss on one 
+        BallotPositionDocEventFactory(balloter=ad, doc=docs[0], pos_id="discuss", ballot=ballots[0])
+        # and a "norecord" position on another
+        BallotPositionDocEventFactory(balloter=ad, doc=docs[1], pos_id="norecord", ballot=ballots[1])
+        # Now "ad" should have 220 pages left to ballot on.
+        # Every other ad should have 222 pages left to ballot on.
 
     def test_ad_pages_left_to_ballot_on(self):
         url = urlreverse("ietf.iesg.views.agenda_documents")
 
-        r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
+        # A non-AD user won't get "pages left"
+        response = self.client.get(url)
+        telechat = response.context["telechats"][0]
+        self.assertEqual(telechat["date"], self.telechat_date)
+        self.assertEqual(telechat["ad_pages_left_to_ballot_on"],0)
+        self.assertNotContains(response,"pages left to ballot on")
 
-        logged_in_request = self.client.get(url)
+        username=self.ads[0].user.username
+        self.assertTrue(self.client.login(username=username, password=f"{username}+password"))
 
-        username = "ad"
-        can_login = self.client.login(username=username, password="%s+password" % username)
-        self.assertTrue(can_login)
-
-        telechats = logged_in_request.context["telechats"]
-        for telechat in telechats:
-            print("actual", telechat["pages"], telechat["ad_pages_left_to_ballot_on"])
-        self.assertGreater(len(telechats), 0, "Expected multiple telechats but received %d" % (len(telechats)))
-        self.assertEqual(telechats[0]["ad_pages_left_to_ballot_on"], 383, "Expected a specific number of pages left to ballot on for this AD '%s'" % (username))
-
-        for index, telechat in enumerate(telechats):
-            pages = telechat["pages"]
-            ad_pages_left_to_ballot_on = telechat["ad_pages_left_to_ballot_on"]
-            previous_pages = r.context["telechats"][index]["pages"]
-            self.assertEqual(previous_pages, pages, "Expected same page count as previous request but was %s vs %s" % (previous_pages, pages))
-            self.assertGreaterEqual(pages, 0, "%s pages not in response" % (pages))
-            self.assertGreaterEqual(ad_pages_left_to_ballot_on, 0, "%s ad_pages_left_to_ballot_on not in response" % (ad_pages_left_to_ballot_on))
-            # `ad_pages_left_to_ballot_on` should never exceed `pages`
-            self.assertGreaterEqual(pages, ad_pages_left_to_ballot_on, "pages < ad_pages_left_to_ballot_on")
+        response = self.client.get(url)
+        telechat = response.context["telechats"][0]
+        self.assertEqual(telechat["ad_pages_left_to_ballot_on"],220)
+        self.assertContains(response,"220 pages left to ballot on")
 
         self.client.logout()
+        username=self.ads[1].user.username
+        self.assertTrue(self.client.login(username=username, password=f"{username}+password"))
+
+        response = self.client.get(url)
+        telechat = response.context["telechats"][0]
+        self.assertEqual(telechat["ad_pages_left_to_ballot_on"],222)
+
+
 
 
 class RescheduleOnAgendaTests(TestCase):
