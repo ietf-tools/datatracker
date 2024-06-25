@@ -326,7 +326,9 @@ LOGGING = {
             'format': '{levelname}: {name}:{lineno}: {message}',
         },
         'json' : {
-            '()': 'pythonjsonlogger.jsonlogger.JsonFormatter'
+            "class": "ietf.utils.jsonlogger.DatatrackerJsonFormatter",
+            "style": "{",
+            "format": "{asctime}{levelname}{message}{name}{pathname}{filename}{lineno}{funcName}{thread}{threadName}{process}{processName}",
         }
     },
 }
