@@ -427,8 +427,12 @@ jobs:
       
     steps:
       - name: Deploy to staging
-        run: |
-          curl -X POST -H "Accept: application/vnd.github.v3+json" -H "Authorization: Bearer ${{ secrets.GH_INFRA_K8S_TOKEN }}" ${{ secrets.GHA_K8S_DEPLOY_API }} -d '{"ref":"main", "inputs": { "environment":"${{ secrets.GHA_K8S_CLUSTER }}", "app":"datatracker", "appVersion":"${{ env.PKG_VERSION }}" }}'
+        uses: the-actions-org/workflow-dispatch@v4
+        with:
+          workflow: deploy.yml
+          repo: ietf-tools/infra-k8s
+          token: ${{ secrets.GH_INFRA_K8S_TOKEN }}
+          inputs: '{"ref":"main", "inputs": { "environment":"${{ secrets.GHA_K8S_CLUSTER }}", "app":"datatracker", "appVersion":"${{ env.PKG_VERSION }}", "remoteRef":"${{ github.sha }}" }}'
 
   # -----------------------------------------------------------------
   # PROD
@@ -442,8 +446,12 @@ jobs:
       name: production
     env:
       PKG_VERSION: ${{needs.prepare.outputs.pkg_version}}
-      
+
     steps:
       - name: Deploy to production
-        run: |
-          curl -X POST -H "Accept: application/vnd.github.v3+json" -H "Authorization: Bearer ${{ secrets.GH_INFRA_K8S_TOKEN }}" ${{ secrets.GHA_K8S_DEPLOY_API }} -d '{"ref":"main", "inputs": { "environment":"${{ secrets.GHA_K8S_CLUSTER }}", "app":"datatracker", "appVersion":"${{ env.PKG_VERSION }}" }}'
+        uses: the-actions-org/workflow-dispatch@v4
+        with:
+          workflow: deploy.yml
+          repo: ietf-tools/infra-k8s
+          token: ${{ secrets.GH_INFRA_K8S_TOKEN }}
+          inputs: '{"ref":"main", "inputs": { "environment":"${{ secrets.GHA_K8S_CLUSTER }}", "app":"datatracker", "appVersion":"${{ env.PKG_VERSION }}", "remoteRef":"${{ github.sha }}" }}'
