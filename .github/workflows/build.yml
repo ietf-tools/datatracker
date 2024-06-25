@@ -7,28 +7,18 @@ on:
     
   workflow_dispatch:
     inputs:
-      summary:
-        description: 'Release Summary'
-        required: false
-        type: string
-        default: ''
-      sandbox:
-        description: 'Deploy to Sandbox'
-        default: true
-        required: true
-        type: boolean
       deploy:
         description: 'Deploy to K8S'
         default: 'Skip'
         required: true
         type: choice
         options:
-          - None
+          - Skip
           - Staging Only
           - Staging + Prod
-      deployProd:
-        description: 'Deploy to Prod'
-        default: false
+      sandbox:
+        description: 'Deploy to Sandbox'
+        default: true
         required: true
         type: boolean
       sandboxNoDbRefresh:
@@ -286,7 +276,7 @@ jobs:
         repoCommon: common
         version: ${{needs.prepare.outputs.pkg_version}}
         changelog: ${{ steps.changelog.outputs.changes }}
-        summary: ${{ github.event.inputs.summary }}
+        summary: ''
         coverageResultsPath: coverage.json
         histCoveragePath: historical-coverage.json
         
