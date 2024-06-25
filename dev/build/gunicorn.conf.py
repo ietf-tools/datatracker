@@ -4,6 +4,9 @@
 #
 # This is applied as an update to gunicorn's glogging.CONFIG_DEFAULTS.
 logconfig_dict = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "root": {"level": "INFO", "handlers": ["console"]},
     "loggers": {
         "gunicorn.error": {
             "level": "INFO",
@@ -14,7 +17,7 @@ logconfig_dict = {
 
         "gunicorn.access": {
             "level": "INFO",
-            "handlers": ["console"],
+            "handlers": ["access_console"],
             "propagate": False,
             "qualname": "gunicorn.access"
         }
@@ -25,10 +28,20 @@ logconfig_dict = {
             "formatter": "json",
             "stream": "ext://sys.stdout"
         },
+        "access_console": {
+            "class": "logging.StreamHandler",
+            "formatter": "access_json",
+            "stream": "ext://sys.stdout"
+        },
     },
     "formatters": {
         "json": {
             "class": "ietf.utils.jsonlogger.DatatrackerJsonFormatter",
+            "style": "{",
+            "format": "{asctime}{levelname}{message}{name}{process}",
+        },
+        "access_json": {
+            "class": "ietf.utils.jsonlogger.GunicornRequestJsonFormatter",
             "style": "{",
             "format": "{asctime}{levelname}{message}{name}{process}",
         }
