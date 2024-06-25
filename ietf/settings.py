@@ -328,7 +328,7 @@ LOGGING = {
         'json' : {
             "class": "ietf.utils.jsonlogger.DatatrackerJsonFormatter",
             "style": "{",
-            "format": "{asctime}{levelname}{message}{name}{pathname}{filename}{lineno}{funcName}{thread}{threadName}{process}{processName}",
+            "format": "{asctime}{levelname}{message}{name}{pathname}{lineno}{funcName}{process}",
         }
     },
 }
