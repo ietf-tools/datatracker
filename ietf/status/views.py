@@ -5,16 +5,20 @@ import json
 import datetime
 from django.http import HttpResponse
 from django.shortcuts import render
+from ietf.status.models import Status
 
 import debug                            # pyflakes:ignore
 
 def get_context_data():
-    # TODO: get latest status message from model
+    status = Status.objects.order_by("-date").first()
+    if status.active == False:
+        return None
+    # print(status.)
     context = {
-        "message": "what",
-        "url": "https://html5zombo.com/",
-        "date": datetime.datetime.now().isoformat(),
-        "by": "Joe Bob Briggs"
+        "message": status.message,
+        "url": status.url,
+        "date": status.date.isoformat(),
+        "by": status.by.name,
     }
     return context
 

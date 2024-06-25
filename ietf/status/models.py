@@ -9,12 +9,14 @@ import debug                            # pyflakes:ignore
 
 from ietf.person.models import Person
 
-class Status(models.Model):
-    """ Status messages """
 
-    date = models.DateField()
+
+class Status(models.Model):
+    name = 'Status'
+
+    date = models.DateTimeField(auto_now_add=True)
     active = models.BooleanField(default=True, help_text="Only active messages will be shown")
-    by = ForeignKey(Person, on_delete=models.CASCADE)
+    by = ForeignKey('person.Person', on_delete=models.CASCADE)
     message = models.CharField(max_length=255, help_text="Your status message.", unique=False)
     url = models.URLField()
 
