@@ -26,11 +26,6 @@ warnings.filterwarnings("ignore", message="The logout\\(\\) view is superseded b
 warnings.filterwarnings("ignore", message="Report.file_reporters will no longer be available in Coverage.py 4.2", module="coverage.report")
 warnings.filterwarnings("ignore", message="Using or importing the ABCs from 'collections' instead of from 'collections.abc' is deprecated", module="bleach")
 warnings.filterwarnings("ignore", message="HTTPResponse.getheader\\(\\) is deprecated", module='selenium.webdriver')
-try:
-    import syslog
-    syslog.openlog(str("datatracker"), syslog.LOG_PID, syslog.LOG_USER)
-except ImportError:
-    pass
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.abspath(BASE_DIR + "/.."))
