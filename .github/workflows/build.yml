@@ -18,7 +18,16 @@ on:
         required: true
         type: boolean
       deploy:
-        description: 'Deploy to Staging / Prod'
+        description: 'Deploy to K8S'
+        default: 'Skip'
+        required: true
+        type: choice
+        options:
+          - None
+          - Staging Only
+          - Staging + Prod
+      deployProd:
+        description: 'Deploy to Prod'
         default: false
         required: true
         type: boolean
@@ -417,7 +426,7 @@ jobs:
   # -----------------------------------------------------------------
   staging:
     name: Deploy to Staging
-    if: ${{ !failure() && !cancelled() && github.event.inputs.deploy == 'true' }}
+    if: ${{ !failure() && !cancelled() && (github.event.inputs.deploy == 'Staging Only' || github.event.inputs.deploy == 'Staging + Prod') }}
     needs: [prepare, release]
     runs-on: ubuntu-latest
     environment:
@@ -442,7 +451,7 @@ jobs:
   # -----------------------------------------------------------------
   prod:
     name: Deploy to Production
-    if: ${{ !failure() && !cancelled() && github.event.inputs.deploy == 'true' }}
+    if: ${{ !failure() && !cancelled() && github.event.inputs.deploy == 'Staging + Prod' }}
     needs: [staging]
     runs-on: ubuntu-latest
     environment:
