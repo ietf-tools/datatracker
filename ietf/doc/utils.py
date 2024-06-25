@@ -15,10 +15,14 @@ from collections import defaultdict, namedtuple, Counter
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterator, Optional, Union
+from weasyprint import HTML as wpHTML
+from weasyprint.text.fonts import FontConfiguration
 from zoneinfo import ZoneInfo
 
 from django.conf import settings
 from django.contrib import messages
+from django.contrib.staticfiles import finders
+from django.core.cache import caches
 from django.forms import ValidationError
 from django.http import Http404
 from django.template.loader import render_to_string
@@ -1452,3 +1456,41 @@ def update_or_create_draft_bibxml_file(doc, rev):
 
 def ensure_draft_bibxml_path_exists():
     (Path(settings.BIBXML_BASE_PATH) / "bibxml-ids").mkdir(exist_ok=True)
+
+
+def pdfize(doc):
+    text = doc.html_body(classes="rfchtml")
+    stylesheets = [finders.find("ietf/css/document_html_referenced.css")]
+    if text:
+        stylesheets.append(finders.find("ietf/css/document_html_txt.css"))
+    else:
+        text = doc.htmlized()
+    stylesheets.append(f'{settings.STATIC_IETF_ORG_INTERNAL}/fonts/noto-sans-mono/import.css')
+
+    pdf = None
+    try:
+        font_config = FontConfiguration()
+        pdf = wpHTML(
+            string=text, base_url=settings.IDTRACKER_BASE_URL
+        ).write_pdf(
+            stylesheets=stylesheets,
+            font_config=font_config,
+            presentational_hints=True,
+            optimize_images=True,
+        )
+    except AssertionError as e:
+        # Don't let explosions in weasyprint break things. Should flag this as a problematic
+        # draft but we don't have a way to do that yet
+        log.log(f"weasyprint assertion failed: {e}")
+    except Exception as e:
+        log.log(f"weasyprint failed: {e}")
+    return pdf
+
+
+def pdfize_with_caching(doc):
+    name = doc.get_base_name()
+    return caches["pdfized"].get_or_set(
+        key=name.split(".")[0],
+        default=lambda: pdfize(doc),  # only called if not already in cache
+        timeout=settings.PDFIZER_CACHE_TIME,
+    )

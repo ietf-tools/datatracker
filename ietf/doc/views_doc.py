@@ -65,7 +65,7 @@ from ietf.doc.utils import (augment_events_with_revision,
     add_events_message_info, get_unicode_document_content,
     augment_docs_and_person_with_person_info, irsg_needed_ballot_positions, add_action_holder_change_event,
     build_file_urls, update_documentauthors, fuzzy_find_documents,
-    bibxml_for_draft, get_doc_email_aliases)
+    bibxml_for_draft, get_doc_email_aliases, pdfize_with_caching)
 from ietf.doc.utils_bofreq import bofreq_editors, bofreq_responsible
 from ietf.group.models import Role, Group
 from ietf.group.utils import can_manage_all_groups_of_type, can_manage_materials, group_features_role_filter
@@ -1064,7 +1064,7 @@ def document_pdfized(request, name, rev=None, ext=None):
         raise Http404("File not found: %s" % doc.get_file_name())
 
     try:
-        pdf = doc.pdfized()
+        pdf = pdfize_with_caching(doc)
     except Exception:
         return render(request, "doc/weasyprint_failed.html")
     if pdf:
