@@ -1,8 +1,6 @@
 # Copyright The IETF Trust 2017-2019, All Rights Reserved
 # Copyright 2016 IETF Trust
 
-import syslog
-
 from django.core.management.base import BaseCommand, CommandError
 from django.utils import timezone
 
@@ -10,10 +8,8 @@ import debug                            # pyflakes:ignore
 
 from ietf.meeting.models import Meeting
 from ietf.stats.utils import fetch_attendance_from_meetings
+from ietf.utils import log
 
-logtag = __name__.split('.')[-1]
-logname = "user.log"
-syslog.openlog(str(logtag), syslog.LOG_PID, syslog.LOG_USER)
 
 class Command(BaseCommand):
     help = "Fetch meeting attendee figures from ietf.org/registration/attendees."
@@ -43,4 +39,4 @@ class Command(BaseCommand):
             if self.stdout.isatty():
                 self.stdout.write(msg+'\n') # make debugging a bit easier
             else:
-                syslog.syslog(msg)
+                log.log(msg)
