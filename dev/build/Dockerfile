@@ -18,6 +18,7 @@ COPY . .
 COPY ./dev/build/start.sh ./start.sh
 COPY ./dev/build/datatracker-start.sh ./datatracker-start.sh
 COPY ./dev/build/celery-start.sh ./celery-start.sh
+COPY ./dev/build/gunicorn.conf.py ./gunicorn.conf.py
 
 RUN pip3 --disable-pip-version-check --no-cache-dir install -r requirements.txt && \
     echo '# empty' > ietf/settings_local.py && \
