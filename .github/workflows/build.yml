@@ -416,7 +416,7 @@ jobs:
   # -----------------------------------------------------------------
   staging:
     name: Deploy to Staging
-    if: ${{ !failure() && !cancelled() && (github.event.inputs.deploy == 'Staging Only' || github.event.inputs.deploy == 'Staging + Prod') }}
+    if: ${{ !failure() && !cancelled() && (github.event.inputs.deploy == 'Staging Only' || github.event.inputs.deploy == 'Staging + Prod' || github.ref_name == 'release') }}
     needs: [prepare, release]
     runs-on: ubuntu-latest
     environment:
@@ -441,7 +441,7 @@ jobs:
   # -----------------------------------------------------------------
   prod:
     name: Deploy to Production
-    if: ${{ !failure() && !cancelled() && github.event.inputs.deploy == 'Staging + Prod' }}
+    if: ${{ !failure() && !cancelled() && (github.event.inputs.deploy == 'Staging + Prod' || github.ref_name == 'release') }}
     needs: [staging]
     runs-on: ubuntu-latest
     environment:
