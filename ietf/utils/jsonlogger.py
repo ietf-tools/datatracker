@@ -1,7 +1,4 @@
 # Copyright The IETF Trust 2024, All Rights Reserved
-import logging
-from typing import Dict, Any
-
 from pythonjsonlogger import jsonlogger
 import time
 
@@ -12,7 +9,8 @@ class DatatrackerJsonFormatter(jsonlogger.JsonFormatter):
 
 
 class GunicornRequestJsonFormatter(DatatrackerJsonFormatter):
-    def add_fields(self, log_record: Dict[str, Any], record: logging.LogRecord, message_dict: Dict[str, Any]) -> None:
+    """Only works with Gunicorn's logging"""
+    def add_fields(self, log_record, record, message_dict):
         super().add_fields(log_record, record, message_dict)
         log_record.setdefault("method", record.args["m"])
         log_record.setdefault("proto", record.args["H"])
