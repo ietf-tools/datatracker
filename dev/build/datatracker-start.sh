@@ -21,6 +21,7 @@ trap 'trap "" TERM; cleanup' TERM
 
 # start gunicorn in the background so we can trap the TERM signal
 gunicorn \
+          -c /workspace/gunicorn.conf.py \
           --workers "${DATATRACKER_GUNICORN_WORKERS:-9}" \
           --max-requests "${DATATRACKER_GUNICORN_MAX_REQUESTS:-32768}" \
           --timeout "${DATATRACKER_GUNICORN_TIMEOUT:-180}" \
