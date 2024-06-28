@@ -31,6 +31,7 @@ from .utils import (
     generate_idnits2_rfcs_obsoleted,
     update_or_create_draft_bibxml_file,
     ensure_draft_bibxml_path_exists,
+    PdfizedDoc,
 )
 
 
@@ -117,3 +118,14 @@ def generate_draft_bibxml_files_task(days=7, process_all=False):
             update_or_create_draft_bibxml_file(event.doc, event.rev)
         except Exception as err:
             log.log(f"Error generating bibxml for {event.doc.name}-{event.rev}: {err}")
+
+
+@shared_task
+def pdfize_document_task(name, rev):
+    doc = Document.objects.filter(name=name).first()
+    if doc is None:
+        log.log(f"Failed to pdfize document {name} rev {rev}: Document does not exist")
+        return
+    if rev != doc.rev:
+        doc = doc.history_set.filter(rev=rev).first() or doc.fake_history_obj(rev)
+    PdfizedDoc(doc).update_cache()

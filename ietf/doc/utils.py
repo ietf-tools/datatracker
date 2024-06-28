@@ -1458,39 +1458,46 @@ def ensure_draft_bibxml_path_exists():
     (Path(settings.BIBXML_BASE_PATH) / "bibxml-ids").mkdir(exist_ok=True)
 
 
-def pdfize(doc):
-    text = doc.html_body(classes="rfchtml")
-    stylesheets = [finders.find("ietf/css/document_html_referenced.css")]
-    if text:
-        stylesheets.append(finders.find("ietf/css/document_html_txt.css"))
-    else:
-        text = doc.htmlized()
-    stylesheets.append(f'{settings.STATIC_IETF_ORG_INTERNAL}/fonts/noto-sans-mono/import.css')
+class PdfizedDoc:
+    def __init__(self, doc: Union[Document, DocHistory]):
+        self.doc = doc
+        self.cache_key = doc.name.split(".")[0]
+        self.cache = caches["pdfized"]
 
-    pdf = None
-    try:
-        font_config = FontConfiguration()
-        pdf = wpHTML(
-            string=text, base_url=settings.IDTRACKER_BASE_URL
-        ).write_pdf(
-            stylesheets=stylesheets,
-            font_config=font_config,
-            presentational_hints=True,
-            optimize_images=True,
+    def _pdfize(self):
+        text = self.doc.html_body(classes="rfchtml")
+        stylesheets = [finders.find("ietf/css/document_html_referenced.css")]
+        if text:
+            stylesheets.append(finders.find("ietf/css/document_html_txt.css"))
+        else:
+            text = self.doc.htmlized()
+        stylesheets.append(f'{settings.STATIC_IETF_ORG_INTERNAL}/fonts/noto-sans-mono/import.css')
+    
+        pdf = None
+        try:
+            font_config = FontConfiguration()
+            pdf = wpHTML(
+                string=text, base_url=settings.IDTRACKER_BASE_URL
+            ).write_pdf(
+                stylesheets=stylesheets,
+                font_config=font_config,
+                presentational_hints=True,
+                optimize_images=True,
+            )
+        except AssertionError as e:
+            # Don't let explosions in weasyprint break things. Should flag this as a problematic
+            # draft but we don't have a way to do that yet
+            log.log(f"weasyprint assertion failed: {e}")
+        except Exception as e:
+            log.log(f"weasyprint failed: {e}")
+        return pdf
+
+    def update_cache(self):
+        return self.cache.set(
+            key=self.cache_key,
+            value=self._pdfize(),
+            timeout=settings.PDFIZER_CACHE_TIME,
         )
-    except AssertionError as e:
-        # Don't let explosions in weasyprint break things. Should flag this as a problematic
-        # draft but we don't have a way to do that yet
-        log.log(f"weasyprint assertion failed: {e}")
-    except Exception as e:
-        log.log(f"weasyprint failed: {e}")
-    return pdf
 
-
-def pdfize_with_caching(doc):
-    name = doc.get_base_name()
-    return caches["pdfized"].get_or_set(
-        key=name.split(".")[0],
-        default=lambda: pdfize(doc),  # only called if not already in cache
-        timeout=settings.PDFIZER_CACHE_TIME,
-    )
+    def get(self):
+        return self.cache.get(key=self.cache_key)
