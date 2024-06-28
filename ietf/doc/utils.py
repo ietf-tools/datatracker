@@ -1305,7 +1305,7 @@ class DraftAliasGenerator:
         for email in Email.objects.filter(documentauthor__document=doc):
             if email.active:
                 author_emails.add(email.address)
-            else:
+            elif email.person:
                 person_email = email.person.email_address()
                 if person_email:
                     author_emails.add(person_email)
