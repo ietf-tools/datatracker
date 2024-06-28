@@ -19,6 +19,7 @@ from zoneinfo import ZoneInfo
 
 from django.conf import settings
 from django.contrib import messages
+from django.db.models import OuterRef
 from django.forms import ValidationError
 from django.http import Http404
 from django.template.loader import render_to_string
@@ -1346,11 +1347,17 @@ class DraftAliasGenerator:
             drafts.exclude(states=active_state)
             .filter(expires__gte=show_since)
         )
-        interesting_drafts = active_drafts | inactive_recent_drafts
+        
+        interesting_drafts = (active_drafts | inactive_recent_drafts).annotate(
+            draft_state_slug=Document.states.through.objects.filter(
+                document__pk=OuterRef("pk"),
+                state__type_id="draft"
+            ).values("state__slug"),
+        )
 
-        for this_draft in interesting_drafts.distinct().iterator():
+        for this_draft in interesting_drafts.distinct():
             # Omit drafts that became RFCs, unless they were published in the last DEFAULT_YEARS
-            if this_draft.get_state_slug() == "rfc":
+            if this_draft.draft_state_slug == "rfc":
                 rfc = this_draft.became_rfc()
                 log.assertion("rfc is not None")
                 if rfc.latest_event(type='published_rfc').time < show_since:
