@@ -443,7 +443,7 @@ jobs:
   prod:
     name: Deploy to Production
     if: ${{ !failure() && !cancelled() && (github.event.inputs.deploy == 'Staging + Prod' || github.ref_name == 'release') }}
-    needs: [staging]
+    needs: [prepare, staging]
     runs-on: ubuntu-latest
     environment:
       name: production
