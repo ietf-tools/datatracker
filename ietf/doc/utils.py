@@ -1340,8 +1340,12 @@ class DraftAliasGenerator:
         # Internet-Drafts with active status or expired within self.days
         show_since = timezone.now() - datetime.timedelta(days=self.days)
         drafts = self.draft_queryset
-        active_drafts = drafts.filter(states__slug='active')
-        inactive_recent_drafts = drafts.exclude(states__slug='active').filter(expires__gte=show_since)
+        active_state = State.objects.get(type_id="draft", slug="active")
+        active_drafts = drafts.filter(states=active_state)
+        inactive_recent_drafts = (
+            drafts.exclude(states=active_state)
+            .filter(expires__gte=show_since)
+        )
         interesting_drafts = active_drafts | inactive_recent_drafts
 
         for this_draft in interesting_drafts.distinct().iterator():
