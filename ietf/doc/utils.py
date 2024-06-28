@@ -1337,69 +1337,80 @@ class DraftAliasGenerator:
                     notify_emails.add(email)
         return notify_emails
 
+    def _yield_aliases_for_draft(self, doc)-> Iterator[tuple[str, list[str]]]:
+        alias = doc.name
+        all = set()
+
+        # no suffix and .authors are the same list
+        emails = self.get_draft_authors_emails(doc)
+        all.update(emails)
+        if emails:
+            yield alias, list(emails)
+            yield alias + ".authors", list(emails)
+
+        # .chairs = group chairs
+        emails = self.get_draft_chair_emails(doc)
+        if emails:
+            all.update(emails)
+            yield alias + ".chairs", list(emails)
+
+        # .ad = sponsoring AD / WG AD (WG document)
+        emails = self.get_draft_ad_emails(doc)
+        if emails:
+            all.update(emails)
+            yield alias + ".ad", list(emails)
+
+        # .notify = notify email list from the Document
+        emails = self.get_draft_notify_emails(doc)
+        if emails:
+            all.update(emails)
+            yield alias + ".notify", list(emails)
+
+        # .shepherd = shepherd email from the Document
+        emails = self.get_draft_shepherd_email(doc)
+        if emails:
+            all.update(emails)
+            yield alias + ".shepherd", list(emails)
+
+        # .all = everything from above
+        if all:
+            yield alias + ".all", list(all)
+
     def __iter__(self) -> Iterator[tuple[str, list[str]]]:
         # Internet-Drafts with active status or expired within self.days
         show_since = timezone.now() - datetime.timedelta(days=self.days)
         drafts = self.draft_queryset
+
+        # Look up the draft-active state properly. Doing this with
+        # states__type_id, states__slug directly in the `filter()`
+        # works, but it does not work as expected in `exclude()`.
         active_state = State.objects.get(type_id="draft", slug="active")
         active_drafts = drafts.filter(states=active_state)
+        for this_draft in active_drafts:
+            for alias, addresses in self._yield_aliases_for_draft(this_draft):
+                yield alias, addresses
+
+        # Annotate with the draft state slug so we can check for drafts that
+        # have become RFCs
         inactive_recent_drafts = (
             drafts.exclude(states=active_state)
             .filter(expires__gte=show_since)
+            .annotate(
+                draft_state_slug=Document.states.through.objects.filter(
+                    document__pk=OuterRef("pk"),
+                    state__type_id="draft"
+                ).values("state__slug"),
+            )
         )
-        
-        interesting_drafts = (active_drafts | inactive_recent_drafts).annotate(
-            draft_state_slug=Document.states.through.objects.filter(
-                document__pk=OuterRef("pk"),
-                state__type_id="draft"
-            ).values("state__slug"),
-        )
-
-        for this_draft in interesting_drafts.distinct():
+        for this_draft in inactive_recent_drafts:
             # Omit drafts that became RFCs, unless they were published in the last DEFAULT_YEARS
             if this_draft.draft_state_slug == "rfc":
                 rfc = this_draft.became_rfc()
                 log.assertion("rfc is not None")
                 if rfc.latest_event(type='published_rfc').time < show_since:
                     continue
-
-            alias = this_draft.name
-            all = set()
-
-            # no suffix and .authors are the same list
-            emails = self.get_draft_authors_emails(this_draft)
-            all.update(emails)
-            if emails:
-                yield alias, list(emails)
-                yield alias + ".authors", list(emails)
-
-            # .chairs = group chairs
-            emails = self.get_draft_chair_emails(this_draft)
-            if emails:
-                all.update(emails)
-                yield alias + ".chairs", list(emails)
-
-            # .ad = sponsoring AD / WG AD (WG document)
-            emails = self.get_draft_ad_emails(this_draft)
-            if emails:
-                all.update(emails)
-                yield alias + ".ad", list(emails)
-
-            # .notify = notify email list from the Document
-            emails = self.get_draft_notify_emails(this_draft)
-            if emails:
-                all.update(emails)
-                yield alias + ".notify", list(emails)
-
-            # .shepherd = shepherd email from the Document
-            emails = self.get_draft_shepherd_email(this_draft)
-            if emails:
-                all.update(emails)
-                yield alias + ".shepherd", list(emails)
-
-            # .all = everything from above
-            if all:
-                yield alias + ".all", list(all)
+            for alias, addresses in self._yield_aliases_for_draft(this_draft):
+                yield alias, addresses
 
 
 def get_doc_email_aliases(name: Optional[str] = None):
