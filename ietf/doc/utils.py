@@ -40,7 +40,7 @@ from ietf.doc.models import TelechatDocEvent, DocumentActionHolder, EditedAuthor
 from ietf.name.models import DocReminderTypeName, DocRelationshipName
 from ietf.group.models import Role, Group, GroupFeatures
 from ietf.ietfauth.utils import has_role, is_authorized_in_doc_stream, is_individual_draft_author, is_bofreq_editor
-from ietf.person.models import Person
+from ietf.person.models import Email, Person
 from ietf.review.models import ReviewWish
 from ietf.utils import draft, log
 from ietf.utils.mail import parseaddr, send_mail
@@ -1302,9 +1302,13 @@ class DraftAliasGenerator:
     def get_draft_authors_emails(self, doc):
         """Get list of authors for the given draft."""
         author_emails = set()
-        for author in doc.documentauthor_set.all():
-            if author.email and author.email.email_address():
-                author_emails.add(author.email.email_address())
+        for email in Email.objects.filter(documentauthor__document=doc):
+            if email.active:
+                author_emails.add(email.address)
+            else:
+                person_email = email.person.email_address()
+                if person_email:
+                    author_emails.add(person_email)
         return author_emails
 
     def get_draft_notify_emails(self, doc):
