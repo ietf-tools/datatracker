@@ -1396,7 +1396,9 @@ class DraftAliasGenerator:
             drafts.exclude(states=active_state)
             .filter(expires__gte=show_since)
             .annotate(
-                draft_state_slug=Document.states.through.objects.filter(
+                # Why _default_manager instead of objects? See:
+                # https://docs.djangoproject.com/en/4.2/topics/db/managers/#django.db.models.Model._default_manager
+                draft_state_slug=Document.states.through._default_manager.filter(
                     document__pk=OuterRef("pk"),
                     state__type_id="draft"
                 ).values("state__slug"),
