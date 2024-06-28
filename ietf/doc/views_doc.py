@@ -1040,8 +1040,8 @@ def document_html(request, name, rev=None):
         document_html=True,
     )
 
-def document_pdfized(request, name, rev=None, ext=None):
 
+def document_pdfized(request, name, rev=None, ext=None):
     found = fuzzy_find_documents(name, rev)
     num_found = found.documents.count()
     if num_found == 0:
@@ -1049,12 +1049,12 @@ def document_pdfized(request, name, rev=None, ext=None):
     if num_found > 1:
         raise Http404("Multiple documents matched: %s" % name)
 
-    if found.matched_name.startswith('rfc') and name != found.matched_name:
-         return redirect('ietf.doc.views_doc.document_pdfized', name=found.matched_name)
+    if found.matched_name.startswith("rfc") and name != found.matched_name:
+        return redirect("ietf.doc.views_doc.document_pdfized", name=found.matched_name)
 
     doc = found.documents.get()
 
-    if found.matched_rev or found.matched_name.startswith('rfc'):
+    if found.matched_rev or found.matched_name.startswith("rfc"):
         rev = found.matched_rev
     else:
         rev = doc.rev
@@ -1066,10 +1066,11 @@ def document_pdfized(request, name, rev=None, ext=None):
 
     pdf = PdfizedDoc(doc).get()
     if pdf:
-        return HttpResponse(pdf, content_type='application/pdf')
+        return HttpResponse(pdf, content_type="application/pdf")
     else:
         pdfize_document_task.delay(name=doc.name, rev=doc.rev)
         return HttpResponse(b"Not ready yet...")
+
 
 def document_email(request,name):
     doc = get_object_or_404(Document, name=name)
