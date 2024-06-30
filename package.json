@@ -147,7 +147,6 @@
         "ietf/static/js/session_details_form.js",
         "ietf/static/js/sortable.js",
         "ietf/static/js/stats.js",
-        "ietf/static/js/status.js",
         "ietf/static/js/status-change-edit-relations.js",
         "ietf/static/js/theme.js",
         "ietf/static/js/timeslot_edit.js",

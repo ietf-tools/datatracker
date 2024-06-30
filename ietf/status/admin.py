@@ -4,7 +4,7 @@ from .models import Status
 
 
 class StatusAdmin(admin.ModelAdmin):
-    list_display = ['message', 'url', 'active']
+    list_display = ['title', 'body', 'date', 'by', 'page', 'active']
     raw_id_fields = ['by']
 
     # def save_model(self, request, obj, form, change):
