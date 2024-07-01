@@ -1,20 +1,10 @@
 from django.contrib import admin
-
+from django.db import models
+from django import forms
 from .models import Status
 
 class StatusAdmin(admin.ModelAdmin):
     list_display = ['title', 'body', 'active', 'date', 'by', 'page']
     raw_id_fields = ['by']
-    exclude = ('slug', )
-
-    # def save_model(self, request, obj, form, change):
-    #     e = DocEvent.objects.create(
-    #             doc=obj,
-    #             rev=obj.rev,
-    #             by=request.user.person,
-    #             type='changed_document',
-    #             desc=form.cleaned_data.get('comment_about_changes'),
-    #         )
-    #     obj.save_with_history([e])
-
+    
 admin.site.register(Status, StatusAdmin)
