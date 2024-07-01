@@ -5,8 +5,6 @@ import Embedded from './Embedded.vue'
 
 // Initialize store (Pinia)
 
-console.log("test")
-
 const pinia = createPinia()
 pinia.use(piniaPersist)
 

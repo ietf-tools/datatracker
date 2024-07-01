@@ -19,8 +19,6 @@ const availableComponents = {
   Status: defineAsyncComponent(() => import('./components/Status.vue')),
 }
 
-console.log("sdfsdf??")
-
 // PROPS
 
 const props = defineProps({

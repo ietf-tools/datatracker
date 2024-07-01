@@ -1,48 +1,78 @@
 <script>
-  import { h, onMounted, reactive, defineComponent } from 'vue'
-  import { useNotification, NButton, Link } from 'naive-ui'
-  
-  // STATE
-  const state = reactive({
-    message: "",
-  })
-  
-  export default defineComponent({
-    setup() {
-      const notification = useNotification()
+  import { h, defineComponent } from 'vue'
+  import { useNotification } from 'naive-ui'
+  import { localStorageWrapper } from '../shared/local-storage-wrapper';
+  import { JSONWrapper } from '../shared/json-wrapper';
 
-      fetch('/status/latest.json')
+  const STORAGE_KEY = "status-dismissed"
+
+  const getDismissedStatuses = () => {
+    const jsonString = localStorageWrapper.getItem(STORAGE_KEY)
+    const jsonValue = JSONWrapper.parse(jsonString, [])
+    if(Array.isArray(jsonValue)) {
+      return jsonValue;
+    }
+    return [];
+  }
+
+  const dismissStatus = (id) => {
+    const dissmissed = [id, ...getDismissedStatuses()];
+    localStorageWrapper.setItem(STORAGE_KEY, JSONWrapper.stringify(dissmissed));
+    return true;
+  }
+
+  let timer;
+  let notificationInstance;
+
+  const pollNotification = (notification) => {
+    if (timer) {
+      clearTimeout(timer)
+    }
+
+    fetch('/status/latest.json')
         .then(resp => resp.json())
-        .then(data => {
-            if(data === null || data.hasMessage === false) {
+        .then(status => {
+            if(status === null || status.hasMessage === false) {
                 console.info("No status message")
                 return
             }
-            console.info("status message", data)
+            const dismissedStatuses = getDismissedStatuses();
+            if(dismissedStatuses.includes(status.id)) {
+              console.info(`Not showing site status ${status.id} because it was already dismissed. Dismissed Ids:`, dismissedStatuses)
+              return;
+            }
+
+            console.log(status, status.date);
             
-            const n = notification.create({
-              title: 'Satisfaction',
-              content: `wgat`,
-              meta: '2019-5-27 15:11',
+            notificationInstance = notification.create({
+              title: status.title,
+              content: status.body,
+              meta: `${status.date}`,
               action: () =>
                 h(
                   'a',
                   {
-                    href: "https://zombo.com",
+                    href: status.url,
                   },
                   "Read more"
                 ),
               onClose: () => {
-                if (!markAsRead) {
-                  message.warning('Please mark as read')
-                  return false
-                }
+                return dismissStatus(status.id)
               }
             })
         })
         .catch(e => {
             console.error(e)
-        }) 
+        })
+    
+    timer = setTimeout(pollNotification, 60 * 1000)
+  }
+  
+  
+  export default defineComponent({
+    setup() {
+      const notification = useNotification()
+      pollNotification(notification);
     }
   })
 </script>

@@ -14,13 +14,15 @@ def get_context_data():
     if status is None or status.active == False:
         return { "hasMessage": False }
 
+
+    print("what", dir(status))
     context = {
         "hasMessage": True,
-        "id": status.status_id,
+        "id": status.id,
         "slug": status.slug,
-        "title": status.message_title,
-        "body": status.message,
-        "url": status.url, # TODO derive this        
+        "title": status.title,
+        "body": status.body,
+        "url": "/status/%s" % status.slug,
         "date": status.date.isoformat(),
         "by": status.by.name,
     }

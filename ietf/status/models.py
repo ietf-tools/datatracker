@@ -26,6 +26,5 @@ class Status(models.Model):
 
     def save(self):
         self.date = self.date or datetime.now()
-        print(dir(self.date))
-        self.slug = slugify("%s%s" % (self.date.year, self.title))
-        super(Status,self).save()
+        self.slug = slugify("%s-%s-%s-%s" % (self.date.year, self.date.month, self.date.day, self.title))
+        super(Status, self).save()
