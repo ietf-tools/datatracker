@@ -9,5 +9,6 @@ from ietf.utils.urls import url
 
 urlpatterns = [
     url(r"^$", views.status_index),
-    url(r"^latest.json$", views.status_index_json),
+    url(r"^latest.html$", views.status_latest_html),
+    url(r"^latest.json$", views.status_latest_json),
 ]

@@ -2,10 +2,10 @@ from django.contrib import admin
 
 from .models import Status
 
-
 class StatusAdmin(admin.ModelAdmin):
-    list_display = ['title', 'body', 'date', 'by', 'page', 'active']
+    list_display = ['title', 'body', 'active', 'date', 'by', 'page']
     raw_id_fields = ['by']
+    exclude = ('slug', )
 
     # def save_model(self, request, obj, form, change):
     #     e = DocEvent.objects.create(

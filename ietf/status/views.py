@@ -11,7 +11,7 @@ import debug                            # pyflakes:ignore
 
 def get_context_data():
     status = Status.objects.order_by("-date").first()
-    if status.active == False:
+    if status is None or status.active == False:
         return { "hasMessage": False }
 
     context = {
@@ -27,7 +27,10 @@ def get_context_data():
     return context
 
 def status_index(request):
+    return render(request, "status/index.html", context=get_context_data())
+
+def status_latest_html(request):
     return render(request, "status/latest.html", context=get_context_data())
 
-def status_index_json(request):
+def status_latest_json(request):
     return HttpResponse(json.dumps(get_context_data()), status=200, content_type='application/json')
