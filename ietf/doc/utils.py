@@ -1488,8 +1488,10 @@ class PdfizedDoc:
             # Don't let explosions in weasyprint break things. Should flag this as a problematic
             # draft but we don't have a way to do that yet
             log.log(f"weasyprint assertion failed: {e}")
+            raise
         except Exception as e:
             log.log(f"weasyprint failed: {e}")
+            raise
         return pdf
 
     def update_cache(self):
