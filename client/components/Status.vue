@@ -21,10 +21,12 @@
     return true;
   }
 
-  let timer;
-  let notificationInstance;
+  let timer
+  let notificationInstances = {} // keyed by status.id
+  let notification
 
-  const pollStatusAPI = (notification) => {
+
+  const pollStatusAPI = () => {
     if (timer) {
       clearTimeout(timer)
     }
@@ -49,7 +51,12 @@
               return
             }
 
-            notificationInstance = notification.create({
+            if(notificationInstances[status.id]) {
+              console.info(`Not showing site status ${status.id} because it's already been displayed`)
+              return
+            }
+
+            notificationInstances[status.id] = notification.create({
               title: status.title,
               content: status.body,
               meta: `${status.date}`,
@@ -76,7 +83,7 @@
   
   export default defineComponent({
     setup() {
-      const notification = useNotification()
+      notification = useNotification()
       pollStatusAPI(notification)
     }
   })
