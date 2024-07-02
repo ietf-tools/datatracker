@@ -24,7 +24,7 @@
   let timer;
   let notificationInstance;
 
-  const pollNotification = (notification) => {
+  const pollStatusAPI = (notification) => {
     if (timer) {
       clearTimeout(timer)
     }
@@ -36,14 +36,19 @@
                 console.info("No status message")
                 return
             }
-            const dismissedStatuses = getDismissedStatuses();
+            const dismissedStatuses = getDismissedStatuses()
             if(dismissedStatuses.includes(status.id)) {
               console.info(`Not showing site status ${status.id} because it was already dismissed. Dismissed Ids:`, dismissedStatuses)
-              return;
+              return
             }
 
-            console.log(status, status.date);
-            
+            const isSameStatusPage = Boolean(document.querySelector(`[data-status-id="${status.id}"]`))
+
+            if(isSameStatusPage) {
+              console.info(`Not showing site status ${status.id} because we're on the target page`)
+              return
+            }
+
             notificationInstance = notification.create({
               title: status.title,
               content: status.body,
@@ -65,14 +70,14 @@
             console.error(e)
         })
     
-    timer = setTimeout(pollNotification, 60 * 1000)
+    timer = setTimeout(pollStatusAPI, 60 * 1000)
   }
   
   
   export default defineComponent({
     setup() {
       const notification = useNotification()
-      pollNotification(notification);
+      pollStatusAPI(notification)
     }
   })
 </script>
