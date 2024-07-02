@@ -4,7 +4,8 @@
 import json
 import datetime
 from django.http import HttpResponse
-from django.shortcuts import render
+from ietf.utils import markdown
+from django.shortcuts import render, get_object_or_404
 from ietf.status.models import Status
 
 import debug                            # pyflakes:ignore
@@ -14,8 +15,6 @@ def get_context_data():
     if status is None or status.active == False:
         return { "hasMessage": False }
 
-
-    print("what", dir(status))
     context = {
         "hasMessage": True,
         "id": status.id,
@@ -33,6 +32,13 @@ def status_index(request):
 
 def status_latest_html(request):
     return render(request, "status/latest.html", context=get_context_data())
+
+def status_page(request, slug):
+    status = get_object_or_404(Status, slug=slug)
+    return render(request, "status/status.html", context={
+        'status': status,
+        'status_page_html': markdown.markdown(status.page),
+    })
 
 def status_latest_json(request):
     return HttpResponse(json.dumps(get_context_data()), status=200, content_type='application/json')

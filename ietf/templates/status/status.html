@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% load origin %}
+{% load ietf_filters static %}
+{% block content %}
+    {% origin %}
+    <h1>
+        {% block title %} {{ status.title }} {% endblock %}
+    </h1>
+    <div>
+        {{ status_page_html }}
+    </div>
+{% endblock %}
