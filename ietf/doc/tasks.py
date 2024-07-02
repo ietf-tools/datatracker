@@ -6,12 +6,14 @@ import datetime
 import debug  # pyflakes:ignore
 
 from celery import shared_task
+from celery.exceptions import SoftTimeLimitExceeded
 from pathlib import Path
 
 from django.conf import settings
 from django.utils import timezone
 
 from ietf.utils import log
+from ietf.utils.celery import celery_task_lock
 from ietf.utils.timezone import datetime_today
 
 from .expire import (
@@ -120,12 +122,21 @@ def generate_draft_bibxml_files_task(days=7, process_all=False):
             log.log(f"Error generating bibxml for {event.doc.name}-{event.rev}: {err}")
 
 
-@shared_task
-def pdfize_document_task(name, rev):
+@shared_task(bind=True, time_limit=30, soft_time_limit=28)
+def pdfize_document_task(self, name, rev):
     doc = Document.objects.filter(name=name).first()
     if doc is None:
         log.log(f"Failed to pdfize document {name} rev {rev}: Document does not exist")
         return
-    if rev != doc.rev:
-        doc = doc.history_set.filter(rev=rev).first() or doc.fake_history_obj(rev)
-    PdfizedDoc(doc).update_cache()
+    # There is a very slight race condition between the task time_limit and the lock expiration
+    # time. We can tolerate this task running twice if that unlikely timing ever works out.
+    with celery_task_lock(self, 30) as acquired:
+        if not acquired:
+            log.log(f"{self.name}({name}, {rev}) skipped because it's already running")
+            return
+        try:
+            if rev != doc.rev:
+                doc = doc.history_set.filter(rev=rev).first() or doc.fake_history_obj(rev)
+            PdfizedDoc(doc).update_cache()
+        except SoftTimeLimitExceeded:
+            log.log(f"Failed to pdfize document {name} rev {rev}: exceeded task time limit")
