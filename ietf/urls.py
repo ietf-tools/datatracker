@@ -19,8 +19,6 @@ from ietf.liaisons.sitemaps import LiaisonMap
 from ietf.utils.urls import url
 
 
-admin.autodiscover()
-
 # sometimes, this code gets called more than once, which is an
 # that seems impossible to work around.
 try:
