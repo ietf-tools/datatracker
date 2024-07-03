@@ -1,7 +1,7 @@
 {% extends 'admin/base.html' %}
 {% load static %}
 {% block extrastyle %}{{ block.super }}
-    {% if True and server_mode and server_mode != "production" %}
+    {% if server_mode and server_mode != "production" %}
         <style>
             {# grab colors that match bootstrap so we don't have to import the css #}
             html, :root{
