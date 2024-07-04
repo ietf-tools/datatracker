@@ -13,8 +13,6 @@ import rfc2html
 from pathlib import Path
 from lxml import etree
 from typing import Optional, TYPE_CHECKING
-from weasyprint import HTML as wpHTML
-from weasyprint.text.fonts import FontConfiguration
 
 from django.db import models
 from django.core import checks
@@ -26,7 +24,6 @@ from django.conf import settings
 from django.utils import timezone
 from django.utils.encoding import force_str
 from django.utils.html import mark_safe # type:ignore
-from django.contrib.staticfiles import finders
 
 import debug                            # pyflakes:ignore
 
@@ -618,42 +615,6 @@ class DocumentInfo(models.Model):
                 if html:
                     cache.set(cache_key, html, settings.HTMLIZER_CACHE_TIME)
         return html
-
-    def pdfized(self):
-        name = self.get_base_name()
-        text = self.html_body(classes="rfchtml")
-        stylesheets = [finders.find("ietf/css/document_html_referenced.css")]
-        if text:
-            stylesheets.append(finders.find("ietf/css/document_html_txt.css"))
-        else:
-            text = self.htmlized()
-        stylesheets.append(f'{settings.STATIC_IETF_ORG_INTERNAL}/fonts/noto-sans-mono/import.css')
-
-        cache = caches["pdfized"]
-        cache_key = name.split(".")[0]
-        try:
-            pdf = cache.get(cache_key)
-        except EOFError:
-            pdf = None
-        if not pdf:
-            try:
-                font_config = FontConfiguration()
-                pdf = wpHTML(
-                    string=text, base_url=settings.IDTRACKER_BASE_URL
-                ).write_pdf(
-                    stylesheets=stylesheets,
-                    font_config=font_config,
-                    presentational_hints=True,
-                    optimize_images=True,
-                )
-            except AssertionError:
-                pdf = None
-            except Exception as e:
-                log.log('weasyprint failed:'+str(e))
-                raise
-            if pdf:
-                cache.set(cache_key, pdf, settings.PDFIZER_CACHE_TIME)
-        return pdf
 
     def references(self):
         return self.relations_that_doc(('refnorm','refinfo','refunk','refold'))

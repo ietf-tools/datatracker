@@ -22,3 +22,6 @@ services:
         volumes:
             - .:/workspace
             - app-assets:/assets
+        environment:
+            - CELERY_UID=USER_UID
+            - CELERY_GID=USER_GID

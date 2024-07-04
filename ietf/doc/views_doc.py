@@ -65,7 +65,7 @@ from ietf.doc.utils import (augment_events_with_revision,
     add_events_message_info, get_unicode_document_content,
     augment_docs_and_person_with_person_info, irsg_needed_ballot_positions, add_action_holder_change_event,
     build_file_urls, update_documentauthors, fuzzy_find_documents,
-    bibxml_for_draft, get_doc_email_aliases)
+    bibxml_for_draft, get_doc_email_aliases, PdfizedDoc)
 from ietf.doc.utils_bofreq import bofreq_editors, bofreq_responsible
 from ietf.group.models import Role, Group
 from ietf.group.utils import can_manage_all_groups_of_type, can_manage_materials, group_features_role_filter
@@ -75,6 +75,7 @@ from ietf.name.models import StreamName, BallotPositionName
 from ietf.utils.history import find_history_active_at
 from ietf.doc.forms import InvestigateForm, TelechatForm, NotifyForm, ActionHoldersForm, DocAuthorForm, DocAuthorChangeBasisForm
 from ietf.doc.mails import email_comment, email_remind_action_holders
+from ietf.doc.tasks import pdfize_document_task
 from ietf.mailtrigger.utils import gather_relevant_expansions
 from ietf.meeting.models import Session, SessionPresentation
 from ietf.meeting.utils import group_sessions, get_upcoming_manageable_sessions, sort_sessions, add_event_info_to_session_qs
@@ -1039,8 +1040,8 @@ def document_html(request, name, rev=None):
         document_html=True,
     )
 
-def document_pdfized(request, name, rev=None, ext=None):
 
+def document_pdfized(request, name, rev=None, ext=None):
     found = fuzzy_find_documents(name, rev)
     num_found = found.documents.count()
     if num_found == 0:
@@ -1048,12 +1049,12 @@ def document_pdfized(request, name, rev=None, ext=None):
     if num_found > 1:
         raise Http404("Multiple documents matched: %s" % name)
 
-    if found.matched_name.startswith('rfc') and name != found.matched_name:
-         return redirect('ietf.doc.views_doc.document_pdfized', name=found.matched_name)
+    if found.matched_name.startswith("rfc") and name != found.matched_name:
+        return redirect("ietf.doc.views_doc.document_pdfized", name=found.matched_name)
 
     doc = found.documents.get()
 
-    if found.matched_rev or found.matched_name.startswith('rfc'):
+    if found.matched_rev or found.matched_name.startswith("rfc"):
         rev = found.matched_rev
     else:
         rev = doc.rev
@@ -1063,14 +1064,12 @@ def document_pdfized(request, name, rev=None, ext=None):
     if not os.path.exists(doc.get_file_name()):
         raise Http404("File not found: %s" % doc.get_file_name())
 
-    try:
-        pdf = doc.pdfized()
-    except Exception:
-        return render(request, "doc/weasyprint_failed.html")
+    pdf = PdfizedDoc(doc).get()
     if pdf:
-        return HttpResponse(pdf,content_type='application/pdf')
+        return HttpResponse(pdf, content_type="application/pdf")
     else:
-        raise Http404
+        pdfize_document_task.delay(name=doc.name, rev=doc.rev)
+        return HttpResponse(b"Not ready yet...")
 
 
 def document_email(request,name):

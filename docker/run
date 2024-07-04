@@ -49,12 +49,6 @@ fi
 # Remove mounted temp directories
 rm -rf .parcel-cache __pycache__
 
-# Create extended docker-compose definition
-sed -e "s/CUSTOM_PORT/$CUSTOM_PORT/" \
-	<docker-compose.extend.yml \
-	>docker-compose.extend-custom.yml
-cd ..
-
 # Set UID/GID mappings
 NEW_UID=$(id -u)
 NEW_GID=$(id -g)
@@ -68,6 +62,13 @@ else
     NEW_UID=1000
     NEW_GID=1000
 fi
+
+# Create extended docker-compose definition
+sed -e "s/CUSTOM_PORT/$CUSTOM_PORT/" -e "s/USER_UID/$NEW_UID/" -e "s/USER_GID/$NEW_GID/"\
+	<docker-compose.extend.yml \
+	>docker-compose.extend-custom.yml
+cd ..
+
 
 # Build / Rebuild Containers
 if [ $FORCE_REBUILD ==  1 ]; then
