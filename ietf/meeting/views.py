@@ -5009,18 +5009,25 @@ def approve_proposed_slides(request, slidesubmission_id, num):
                           )
                 doc.states.add(State.objects.get(type_id='slides',slug='active'))
                 doc.states.add(State.objects.get(type_id='reuse_policy',slug='single'))
+                added_presentations = []
+                revised_presentations = []
                 if submission.session.presentations.filter(document=doc).exists():
                     sp = submission.session.presentations.get(document=doc)
                     sp.rev = doc.rev
                     sp.save()
+                    revised_presentations.append(sp)
                 else:
                     max_order = submission.session.presentations.filter(document__type='slides').aggregate(Max('order'))['order__max'] or 0
-                    submission.session.presentations.create(document=doc,rev=doc.rev,order=max_order+1)
+                    added_presentations.append(
+                        submission.session.presentations.create(document=doc,rev=doc.rev,order=max_order+1)
+                    )
                 if apply_to_all:
                     for other_session in sessions:
                         if other_session != submission.session and not other_session.presentations.filter(document=doc).exists():
                             max_order = other_session.presentations.filter(document__type='slides').aggregate(Max('order'))['order__max'] or 0
-                            other_session.presentations.create(document=doc,rev=doc.rev,order=max_order+1)
+                            added_presentations.append(
+                                other_session.presentations.create(document=doc,rev=doc.rev,order=max_order+1)
+                            )
                 sub_name, sub_ext = os.path.splitext(submission.filename)
                 target_filename = '%s-%s%s' % (sub_name[:sub_name.rfind('-ss')],doc.rev,sub_ext)
                 doc.uploaded_filename = target_filename
@@ -5032,6 +5039,20 @@ def approve_proposed_slides(request, slidesubmission_id, num):
                 shutil.move(submission.staged_filepath(), os.path.join(path, target_filename))
                 post_process(doc)
                 DocEvent.objects.create(type="approved_slides", doc=doc, rev=doc.rev, by=request.user.person, desc="Slides approved")
+
+                # update meetecho slide info if configured
+                if hasattr(settings, "MEETECHO_API_CONFIG"):
+                    sm = SlidesManager(api_config=settings.MEETECHO_API_CONFIG)
+                    for sp in added_presentations:
+                        try:
+                            sm.add(session=sp.session, slides=doc, order=sp.order)
+                        except MeetechoAPIError as err:
+                            log(f"Error in SlidesManager.add(): {err}")
+                    for sp in revised_presentations:
+                        try:
+                            sm.revise(session=sp.session, slides=doc)
+                        except MeetechoAPIError as err:
+                            log(f"Error in SlidesManager.revise(): {err}")
 
                 acronym = submission.session.group.acronym
                 submission.status = SlideSubmissionStatusName.objects.get(slug='approved')
