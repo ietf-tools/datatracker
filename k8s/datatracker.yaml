@@ -44,15 +44,33 @@ spec:
             runAsUser: 65534 # "nobody" user by default
             runAsGroup: 65534  # "nogroup" group by default
         # -----------------------------------------------------
+        # Nginx Container
+        # -----------------------------------------------------
+        - name: nginx
+          image: "ghcr.io/nginxinc/nginx-unprivileged:1.27"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+              name: http
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              port: 8080
+              path: /health/nginx
+          securityContext:
+            readOnlyRootFilesystem: true
+          volumeMounts:
+            - name: nginx-tmp
+              mountPath: /tmp
+            - name: dt-cfg
+              mountPath: /etc/nginx/conf.d/datatracker.conf
+              subPath: nginx.conf
+        # -----------------------------------------------------
         # Datatracker Container
         # -----------------------------------------------------
         - name: datatracker
           image: "ghcr.io/ietf-tools/datatracker:$APP_IMAGE_TAG"
           imagePullPolicy: Always
-          ports:
-            - containerPort: 8000
-              name: http
-              protocol: TCP
           volumeMounts:
             - name: dt-vol
               mountPath: /a
@@ -126,6 +144,9 @@ spec:
         - name: dt-cfg
           configMap:
             name: files-cfgmap
+        - name: nginx-tmp
+          emptyDir:
+            sizeLimit: "500Mi"
       dnsPolicy: ClusterFirst
       restartPolicy: Always
       terminationGracePeriodSeconds: 60
