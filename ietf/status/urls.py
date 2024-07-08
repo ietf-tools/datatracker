@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 
-from django.conf import settings
 from django.urls import path
 from ietf.status import views
 from ietf.utils.urls import url

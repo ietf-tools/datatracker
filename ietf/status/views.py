@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 import json
-import datetime
 from django.http import HttpResponse
 from ietf.utils import markdown
 from django.shortcuts import render, get_object_or_404

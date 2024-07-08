@@ -8,8 +8,6 @@ from django.template.defaultfilters import slugify
 
 import debug                            # pyflakes:ignore
 
-from ietf.person.models import Person
-
 class Status(models.Model):
     name = 'Status'
     
@@ -24,7 +22,8 @@ class Status(models.Model):
     def __str__(self):
         return "{} {} {} {}".format(self.date, self.active, self.by, self.title)
 
-    def save(self):
+    def save(self, *args, **kwargs):
+        super(Status, self).save(*args, **kwargs)
         self.date = self.date or datetime.now()
         self.slug = slugify("%s-%s-%s-%s" % (self.date.year, self.date.month, self.date.day, self.title))
-        super(Status, self).save()
+

@@ -9,6 +9,6 @@
         window.top.location = "/";
     }
 </script>
-{% if message %}
-    <p>{{ message }} <a href="{{ url }}" target="_top">read more</a> {{ by }} {{ date }}</p>
+{% if title %}
+    <p>{{ title }} {{ body }} <a href="{{ url }}" target="_top">read more</a> {{ by }} {{ date }}</p>
 {% endif %}
