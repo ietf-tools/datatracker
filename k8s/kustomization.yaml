@@ -5,6 +5,7 @@ configMapGenerator:
     files:
       - settings_local.py
 resources:
+  - auth.yaml
   - beat.yaml
   - celery.yaml
   - datatracker.yaml
