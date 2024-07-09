@@ -26,11 +26,6 @@ warnings.filterwarnings("ignore", message="The logout\\(\\) view is superseded b
 warnings.filterwarnings("ignore", message="Report.file_reporters will no longer be available in Coverage.py 4.2", module="coverage.report")
 warnings.filterwarnings("ignore", message="Using or importing the ABCs from 'collections' instead of from 'collections.abc' is deprecated", module="bleach")
 warnings.filterwarnings("ignore", message="HTTPResponse.getheader\\(\\) is deprecated", module='selenium.webdriver')
-try:
-    import syslog
-    syslog.openlog(str("datatracker"), syslog.LOG_PID, syslog.LOG_USER)
-except ImportError:
-    pass
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.abspath(BASE_DIR + "/.."))
@@ -240,11 +235,11 @@ LOGGING = {
     #
     'loggers': {
         'django': {
-            'handlers': ['debug_console', 'mail_admins'],
+            'handlers': ['console', 'mail_admins'],
             'level': 'INFO',
         },
         'django.request': {
-            'handlers': ['debug_console'],
+            'handlers': ['console'],
             'level': 'ERROR',
         },
         'django.server': {
@@ -252,19 +247,19 @@ LOGGING = {
             'level': 'INFO',
         },
         'django.security': {
-            'handlers': ['debug_console', ],
+            'handlers': ['console', ],
             'level': 'INFO',
         },
         'oidc_provider': {
-            'handlers': ['debug_console', ],
+            'handlers': ['console', ],
             'level': 'DEBUG',
         },
         'datatracker': {
-            'handlers': ['debug_console'],
+            'handlers': ['console'],
             'level': 'INFO',
         },
         'celery': {
-            'handlers': ['debug_console'],
+            'handlers': ['console'],
             'level': 'INFO',
         },
     },
@@ -275,7 +270,7 @@ LOGGING = {
         'console': {
             'level': 'DEBUG',
             'class': 'logging.StreamHandler',
-            'formatter': 'json',
+            'formatter': 'plain',
         },
         'debug_console': {
             # Active only when DEBUG=True
@@ -331,7 +326,9 @@ LOGGING = {
             'format': '{levelname}: {name}:{lineno}: {message}',
         },
         'json' : {
-            '()': 'pythonjsonlogger.jsonlogger.JsonFormatter'
+            "class": "ietf.utils.jsonlogger.DatatrackerJsonFormatter",
+            "style": "{",
+            "format": "{asctime}{levelname}{message}{name}{pathname}{lineno}{funcName}{process}",
         }
     },
 }
@@ -822,8 +819,6 @@ IDSUBMIT_MAX_VALIDATION_TIME = datetime.timedelta(minutes=20)
 # Age at which a submission expires if not posted
 IDSUBMIT_EXPIRATION_AGE = datetime.timedelta(days=14)
 
-IDSUBMIT_MANUAL_STAGING_DIR = '/tmp/'
-
 IDSUBMIT_FILE_TYPES = (
     'txt',
     'html',
@@ -982,8 +977,6 @@ DE_GFM_BINARY = '/usr/bin/de-gfm.ruby2.5'
 # Account settings
 DAYS_TO_EXPIRE_REGISTRATION_LINK = 3
 MINUTES_TO_EXPIRE_RESET_PASSWORD_LINK = 60
-HTPASSWD_COMMAND = "/usr/bin/htpasswd"
-HTPASSWD_FILE = "/a/www/htpasswd"
 
 # Generation of pdf files
 GHOSTSCRIPT_COMMAND = "/usr/bin/gs"
