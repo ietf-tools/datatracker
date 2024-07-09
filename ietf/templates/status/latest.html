@@ -1,0 +1,14 @@
+{% load origin %}
+{% load ietf_filters static %}
+{% origin %}
+<meta name="color-scheme" content="light dark">
+<style type="text/css">body{background:transparent}</style>
+<!-- This page is intended to be iframed, and is only for non-JavaScript browsers. -->
+<script>
+    if (window.location === window.top.location) {
+        window.top.location = "/";
+    }
+</script>
+{% if title %}
+    <p>{{ title }} {{ body }} <a href="{{ url }}" target="_top">read more</a> {{ by }} {{ date }}</p>
+{% endif %}

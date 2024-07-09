@@ -1,4 +1,12 @@
 {% load origin %}
 {% load ietf_filters static %}
 {% origin %}
-<h1>STATUS</h1>
+<!-- TODO  -->
+<script>
+    if (window.location === window.top.location) {
+        window.top.location = "/";
+    }
+</script>
+{% if message %}
+    <p>{{ message }} <a href="{{ url }}" target="_top">read more</a> {{ by }} {{ date }}</p>
+{% endif %}
