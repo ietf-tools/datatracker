@@ -13,6 +13,8 @@ if ! ietf/manage.py migrate --skip-checks --check ; then
     done
 fi
 
+echo "Starting Celery..."
+
 cleanup () {
   # Cleanly terminate the celery app by sending it a TERM, then waiting for it to exit.
   if [[ -n "${celery_pid}" ]]; then
