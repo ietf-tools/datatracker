@@ -5,14 +5,20 @@
 #  CONTAINER_ROLE - datatracker, celery, or beat (defaults to datatracker)
 #
 case "${CONTAINER_ROLE:-datatracker}" in
-    datatracker)
+    auth)
         exec ./datatracker-start.sh
+        ;;
+    beat)
+        exec ./celery-start.sh --app=ietf beat
         ;;
     celery)
         exec ./celery-start.sh --app=ietf worker
         ;;
-    beat)
-        exec ./celery-start.sh --app=ietf beat
+    datatracker)
+        exec ./datatracker-start.sh
+        ;;
+    migrations)
+        exec ./migration-start.sh
         ;;
     *)
         echo "Unknown role '${CONTAINER_ROLE}'"
