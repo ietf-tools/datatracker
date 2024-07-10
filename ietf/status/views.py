@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import json
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseRedirect, HttpResponseNotFound
 from ietf.utils import markdown
 from django.core.exceptions import FieldError
 from django.shortcuts import render, get_object_or_404
@@ -42,3 +42,9 @@ def status_page(request, slug):
 
 def status_latest_json(request):
     return HttpResponse(json.dumps(get_context_data()), status=200, content_type='application/json')
+
+def status_latest_redirect(request):
+    context = get_context_data()
+    if context["hasMessage"]:
+        return HttpResponseRedirect(context["url"])
+    return HttpResponseNotFound()
