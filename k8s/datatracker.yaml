@@ -82,6 +82,35 @@ spec:
             readOnlyRootFilesystem: true
             runAsUser: 1000
             runAsGroup: 1000
+      initContainers:
+        - name: migration
+          image: "ghcr.io/ietf-tools/datatracker:$APP_IMAGE_TAG"
+          env:
+            - name: "CONTAINER_ROLE"
+              value: "migrations"
+          envFrom:
+            - configMapRef:
+                name: django-config
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            readOnlyRootFilesystem: true
+            runAsUser: 1000
+            runAsGroup: 1000
+          volumeMounts:
+            - name: dt-vol
+              mountPath: /a
+            - name: dt-tmp
+              mountPath: /tmp
+            - name: dt-home
+              mountPath: /home/datatracker
+            - name: dt-xml2rfc-cache
+              mountPath: /var/cache/xml2rfc
+            - name: dt-cfg
+              mountPath: /workspace/ietf/settings_local.py
+              subPath: settings_local.py
       volumes:
         # To be overriden with the actual shared volume
         - name: dt-vol
