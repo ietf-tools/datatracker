@@ -1389,15 +1389,17 @@ class DraftAliasGenerator:
         # states__type_id, states__slug directly in the `filter()`
         # works, but it does not work as expected in `exclude()`.
         active_state = State.objects.get(type_id="draft", slug="active")
+        active_pks = []  # build a static list of the drafts we actually returned as "active"
         active_drafts = drafts.filter(states=active_state)
         for this_draft in active_drafts:
+            active_pks.append(this_draft.pk)
             for alias, addresses in self._yield_aliases_for_draft(this_draft):
                 yield alias, addresses
 
         # Annotate with the draft state slug so we can check for drafts that
         # have become RFCs
         inactive_recent_drafts = (
-            drafts.exclude(states=active_state)
+            drafts.exclude(pk__in=active_pks)  # don't re-filter by state, states may have changed during the run!
             .filter(expires__gte=show_since)
             .annotate(
                 # Why _default_manager instead of objects? See:

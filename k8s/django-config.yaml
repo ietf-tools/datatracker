@@ -20,6 +20,8 @@ data:
   # DATATRACKER_DB_NAME: "datatracker"
   # DATATRACKER_DB_USER: "django"  # secret
   # DATATRACKER_DB_PASS: "RkTkDPFnKpko"  # secret
+  # DATATRACKER_DB_CONN_MAX_AGE: "0"  # connection per request if not set, no limit if set to "None"
+  # DATATRACKER_DB_CONN_HEALTH_CHECKS: "false"
   
   DATATRACKER_DJANGO_SECRET_KEY: "PDwXboUq!=hPjnrtG2=ge#N$Dwy+wn@uivrugwpic8mxyPfHk"  # secret
 
