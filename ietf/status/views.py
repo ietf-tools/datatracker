@@ -16,7 +16,7 @@ def get_context_data():
         return { "hasMessage": False }
 
     if status.slug is None:
-        raise FieldError(f"No slug generated. This shouldn't happen.")
+        raise FieldError("No slug generated. This shouldn't happen.")
 
     context = {
         "hasMessage": True,
@@ -29,9 +29,6 @@ def get_context_data():
         "by": status.by.name,
     }
     return context
-
-def status_index(request):
-    return render(request, "status/index.html", context=get_context_data())
 
 def status_latest_html(request):
     return render(request, "status/latest.html", context=get_context_data())

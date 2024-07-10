@@ -15,6 +15,7 @@ class StatusTests(TestCase):
             body = "my body 1",
             active = True,
             by = Person.objects.get(user__username='ad'),
+            slug = "2024-1-1-my-title-1"
         )
         status.save()
 
@@ -43,6 +44,7 @@ class StatusTests(TestCase):
             body = "my body 1",
             active = True,
             by = Person.objects.get(user__username='ad'),
+            slug = "2024-1-1-my-title-1"
         )
         status.save()
 
@@ -52,8 +54,8 @@ class StatusTests(TestCase):
         self.assertTrue(data["hasMessage"])
         self.assertEqual(data["title"], "my title 1")
         self.assertEqual(data["body"], "my body 1")
-        self.assertEqual(data["slug"], '2024-7-8-my-title-1')
-        self.assertEqual(data["url"], '/status/2024-7-8-my-title-1')
+        self.assertEqual(data["slug"], '2024-1-1-my-title-1')
+        self.assertEqual(data["url"], '/status/2024-1-1-my-title-1')
         self.assertEqual(data["by"], 'Areað Irector')
 
         status.delete()
