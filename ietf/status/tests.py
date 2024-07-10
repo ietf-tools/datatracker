@@ -9,7 +9,7 @@ from ietf.person.models import Person
 from ietf.status.models import Status
 
 class StatusTests(TestCase):
-    def test_status_index(self):
+    def test_status_latest_html(self):
         status = Status.objects.create(
             title = "my title 1",
             body = "my body 1",
@@ -32,7 +32,7 @@ class StatusTests(TestCase):
         self.assertNotContains(r, 'my title 1')
         self.assertNotContains(r, 'my body 1')
 
-    def test_no_status_json(self):
+    def test_status_latest_json(self):
         url = urlreverse('ietf.status.views.status_latest_json')
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
@@ -58,4 +58,47 @@ class StatusTests(TestCase):
         self.assertEqual(data["url"], '/status/2024-1-1-my-title-1')
         self.assertEqual(data["by"], 'Areað Irector')
 
+        status.delete()
+
+    def test_status_latest_redirect(self):
+        url = urlreverse('ietf.status.views.status_latest_redirect')
+        r = self.client.get(url)
+        # without a Status it should return Not Found
+        self.assertEqual(r.status_code, 404)
+
+        status = Status.objects.create(
+            title = "my title 1",
+            body = "my body 1",
+            active = True,
+            by = Person.objects.get(user__username='ad'),
+            slug = "2024-1-1-my-title-1"
+        )
+        status.save()
+
+        r = self.client.get(url)
+        # with a Status it should redirect
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(r.headers["Location"], "/status/2024-1-1-my-title-1")
+        
+        status.delete()
+
+    def test_status_page(self):
+        slug = "2024-1-1-my-title-1"
+        r = self.client.get(f'/status/{slug}')
+        # without a Status it should return Not Found
+        self.assertEqual(r.status_code, 404)
+
+        status = Status.objects.create(
+            title = "my title 1",
+            body = "my body 1",
+            active = True,
+            by = Person.objects.get(user__username='ad'),
+            slug = slug
+        )
+        status.save()
+
+        r = self.client.get(f'/status/{slug}')
+        # with a Status it should redirect
+        self.assertEqual(r.status_code, 200)
+        
         status.delete()
