@@ -35,10 +35,9 @@ def status_latest_html(request):
 
 def status_page(request, slug):
     status = get_object_or_404(Status, slug=slug)
-    print("status", status)
     return render(request, "status/status.html", context={
         'status': status,
-        'status_page_html': markdown.markdown(status.page),
+        'status_page_html': markdown.markdown(status.page or ""),
     })
 
 def status_latest_json(request):

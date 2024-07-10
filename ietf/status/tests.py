@@ -83,11 +83,12 @@ class StatusTests(TestCase):
         status.delete()
 
     def test_status_page(self):
-        slug = "2024-1-1-my-title-1"
-        r = self.client.get(f'/status/{slug}')
+        slug = "2024-1-1-my-unique-slug"
+        r = self.client.get(f'/status/{slug}/')
         # without a Status it should return Not Found
         self.assertEqual(r.status_code, 404)
 
+        # status without `page` markdown should still 200
         status = Status.objects.create(
             title = "my title 1",
             body = "my body 1",
@@ -97,8 +98,27 @@ class StatusTests(TestCase):
         )
         status.save()
 
-        r = self.client.get(f'/status/{slug}')
+        r = self.client.get(f'/status/{slug}/')
         # with a Status it should redirect
         self.assertEqual(r.status_code, 200)
         
         status.delete()
+
+        test_string = 'a string that'
+        status = Status.objects.create(
+            title = "my title 1",
+            body = "my body 1",
+            active = True,
+            by = Person.objects.get(user__username='ad'),
+            slug = slug,
+            page = f"# {test_string}"
+        )
+        status.save()
+
+        r = self.client.get(f'/status/{slug}/')
+        # with a Status it should redirect
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, test_string)
+        
+        status.delete()
+
