@@ -1067,9 +1067,21 @@ def document_pdfized(request, name, rev=None, ext=None):
     pdf = PdfizedDoc(doc).get()
     if pdf:
         return HttpResponse(pdf, content_type="application/pdf")
-    else:
-        pdfize_document_task.delay(name=doc.name, rev=doc.rev)
-        return HttpResponse(b"Not ready yet...")
+    
+    pdfize_document_task.delay(name=doc.name, rev=doc.rev)
+    refresh_time_seconds = 5
+    path=request.path
+    response = render(
+        request,
+        "doc/pdf_redirect_loop.html",
+        dict(
+            refresh_time_seconds=refresh_time_seconds,
+            path=path,
+        ),
+        status=503
+    )
+    response.headers["Refresh"] = f"{refresh_time_seconds}; url={path}"
+    return response
 
 
 def document_email(request,name):
