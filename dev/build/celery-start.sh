@@ -5,10 +5,10 @@
 echo "Running Datatracker checks..."
 ./ietf/manage.py check
 
-if ! ietf/manage.py migrate --skip-checks --check ; then
+if ! ietf/manage.py migrate --check ; then
     echo "Unapplied migrations found, waiting to start..."
     sleep 5
-    while ! ietf/manage.py migrate --skip-checks --check ; do
+    while ! ietf/manage.py migrate --check ; do
         echo "... still waiting for migrations..."
         sleep 5
     done
