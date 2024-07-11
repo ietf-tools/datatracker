@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -e
 
 echo "Running Datatracker checks..."
 ./ietf/manage.py check
