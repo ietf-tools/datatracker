@@ -11,6 +11,9 @@ from ietf.group.models import Group
 from ietf.person.models import Person, Email
 from ietf.utils.models import ForeignKey
 
+from .tasks import notify_event_to_subscribers_task
+
+
 class CommunityList(models.Model):
     person = ForeignKey(Person, blank=True, null=True)
     group = ForeignKey(Group, blank=True, null=True)
@@ -106,8 +109,7 @@ def notify_events(sender, instance, **kwargs):
     if getattr(instance, "skip_community_list_notification", False):
         return
 
-    from ietf.community.utils import notify_event_to_subscribers
-    notify_event_to_subscribers(instance)
+    notify_event_to_subscribers_task.delay(event_id=instance.pk)
 
 
 signals.post_save.connect(notify_events)
