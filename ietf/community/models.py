@@ -113,10 +113,7 @@ def notify_events(sender, instance, **kwargs):
     # kludge alert: queuing a celery task in response to a signal can cause unexpected attempts to
     # start a Celery task during tests. To prevent this, don't queue a celery task if we're running
     # tests.
-    if settings.SERVER_MODE == "test":
-        from .utils import notify_event_to_subscribers
-        notify_event_to_subscribers(instance)
-    else:
+    if settings.SERVER_MODE != "test":
         notify_event_to_subscribers_task.delay(event_id=instance.pk)
 
 
