@@ -2,6 +2,12 @@
 
 WORKSPACEDIR="/workspace"
 
+# Handle Linux host mounting the workspace dir as root
+if [ ! -O "${WORKSPACEDIR}/ietf" ]; then
+    sudo chown -R dev:dev $WORKSPACEDIR
+fi
+
+# Start rsyslog service
 sudo service rsyslog start &>/dev/null
 
 # Add /workspace as a safe git directory

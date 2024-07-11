@@ -39,6 +39,7 @@ from ietf.submit.parsers.plain_parser import PlainParser
 from ietf.submit.parsers.xml_parser import XMLParser
 from ietf.utils import log
 from ietf.utils.draft import PlaintextDraft
+from ietf.utils.fields import ModelMultipleChoiceField
 from ietf.utils.text import normalize_text
 from ietf.utils.timezone import date_today
 from ietf.utils.xmldraft import InvalidXMLError, XMLDraft, XMLParseError
@@ -793,7 +794,7 @@ class EditSubmissionForm(forms.ModelForm):
     rev = forms.CharField(label='Revision', max_length=2, required=True)
     document_date = forms.DateField(required=True)
     pages = forms.IntegerField(required=True)
-    formal_languages = forms.ModelMultipleChoiceField(queryset=FormalLanguageName.objects.filter(used=True), widget=forms.CheckboxSelectMultiple, required=False)
+    formal_languages = ModelMultipleChoiceField(queryset=FormalLanguageName.objects.filter(used=True), widget=forms.CheckboxSelectMultiple, required=False)
     abstract = forms.CharField(widget=forms.Textarea, required=True, strip=False)
 
     note = forms.CharField(label=mark_safe('Comment to the Secretariat'), widget=forms.Textarea, required=False, strip=False)

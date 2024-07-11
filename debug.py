@@ -3,15 +3,7 @@ import os
 import sys
 import time as timeutils
 import inspect
-from typing import Callable
 
-try:
-    import syslog
-    logger = syslog.syslog              # type: Callable
-except ImportError:                     # import syslog will fail on Windows boxes
-    import logging
-    logging.basicConfig(filename='tracker.log',level=logging.INFO)
-    logger = logging.info
 
 try:
     from pprint import pformat
@@ -154,13 +146,6 @@ def showpos(name):
         value = eval(name, frame.f_globals, frame.f_locals)
         indent = ' ' * (_report_indent[0])
         sys.stderr.write("%s%s:%s: %s: '%s'\n" % (indent, fn, line, name, value))
-
-def log(name):
-    if debug:
-        frame = inspect.stack()[1][0]
-        value = eval(name, frame.f_globals, frame.f_locals)
-        indent = ' ' * (_report_indent[0])
-        logger("%s%s: %s" % (indent, name, value))
 
 def pprint(name):
     if debug:

@@ -24,6 +24,7 @@ from django.utils.encoding import force_str
 
 import debug                            # pyflakes:ignore
 
+from ietf.api.views import EmailIngestionError
 from ietf.dbtemplate.factories import DBTemplateFactory
 from ietf.dbtemplate.models import DBTemplate
 from ietf.doc.factories import DocEventFactory, WgDocumentAuthorFactory, \
@@ -37,15 +38,16 @@ from ietf.nomcom.test_data import nomcom_test_data, generate_cert, check_comment
                                   MEMBER_USER, SECRETARIAT_USER, EMAIL_DOMAIN, NOMCOM_YEAR
 from ietf.nomcom.models import NomineePosition, Position, Nominee, \
                                NomineePositionStateName, Feedback, FeedbackTypeName, \
-                               Nomination, FeedbackLastSeen, TopicFeedbackLastSeen, ReminderDates
-from ietf.nomcom.management.commands.send_reminders import Command, is_time_to_send
+                               Nomination, FeedbackLastSeen, TopicFeedbackLastSeen, ReminderDates, \
+                               NomCom
 from ietf.nomcom.factories import NomComFactory, FeedbackFactory, TopicFactory, \
                                   nomcom_kwargs_for_year, provide_private_key_to_test_client, \
                                   key
+from ietf.nomcom.tasks import send_nomcom_reminders_task
 from ietf.nomcom.utils import get_nomcom_by_year, make_nomineeposition, \
                               get_hash_nominee_position, is_eligible, list_eligible, \
-                              get_eligibility_date, suggest_affiliation, \
-                              decorate_volunteers_with_qualifications
+                              get_eligibility_date, suggest_affiliation, ingest_feedback_email, \
+                              decorate_volunteers_with_qualifications, send_reminders, _is_time_to_send_reminder
 from ietf.person.factories import PersonFactory, EmailFactory
 from ietf.person.models import Email, Person
 from ietf.stats.models import MeetingRegistration
@@ -1114,6 +1116,47 @@ class FeedbackTest(TestCase):
         self.assertNotEqual(feedback.comments, comment_text)
         self.assertEqual(check_comments(feedback.comments, comment_text, self.privatekey_file), True)
 
+    @mock.patch("ietf.nomcom.utils.create_feedback_email")
+    def test_ingest_feedback_email(self, mock_create_feedback_email):
+        message = b"This is nomcom feedback"
+        no_nomcom_year = date_today().year + 10  # a guess at a year with no nomcoms
+        while NomCom.objects.filter(group__acronym__icontains=no_nomcom_year).exists():
+            no_nomcom_year += 1
+        inactive_nomcom = NomComFactory(group__state_id="conclude", group__acronym=f"nomcom{no_nomcom_year + 1}")
+
+        # cases where the nomcom does not exist, so admins are notified
+        for bad_year in (no_nomcom_year, inactive_nomcom.year()):
+            with self.assertRaises(EmailIngestionError) as context:
+                ingest_feedback_email(message, bad_year)
+            self.assertIn("does not exist", context.exception.msg)
+            self.assertIsNotNone(context.exception.email_body)  # error message to be sent
+            self.assertIsNone(context.exception.email_recipients)  # default recipients (i.e., admin)
+            self.assertIsNone(context.exception.email_original_message)  # no original message
+            self.assertFalse(context.exception.email_attach_traceback)  # no traceback
+            self.assertFalse(mock_create_feedback_email.called)
+        
+        # nomcom exists but an error occurs, so feedback goes to the nomcom chair
+        active_nomcom = NomComFactory(group__acronym=f"nomcom{no_nomcom_year + 2}")
+        mock_create_feedback_email.side_effect = ValueError("ouch!")
+        with self.assertRaises(EmailIngestionError) as context:
+            ingest_feedback_email(message, active_nomcom.year())
+        self.assertIn(f"Error ingesting nomcom {active_nomcom.year()}", context.exception.msg)
+        self.assertIsNotNone(context.exception.email_body)  # error message to be sent
+        self.assertEqual(context.exception.email_recipients, active_nomcom.chair_emails())
+        self.assertEqual(context.exception.email_original_message, message)
+        self.assertFalse(context.exception.email_attach_traceback)  # no traceback
+        self.assertTrue(mock_create_feedback_email.called)
+        self.assertEqual(mock_create_feedback_email.call_args, mock.call(active_nomcom, message))
+        mock_create_feedback_email.reset_mock()
+
+        # and, finally, success
+        mock_create_feedback_email.side_effect = None
+        mock_create_feedback_email.return_value = FeedbackFactory(author="someone@example.com")
+        ingest_feedback_email(message, active_nomcom.year())
+        self.assertTrue(mock_create_feedback_email.called)
+        self.assertEqual(mock_create_feedback_email.call_args, mock.call(active_nomcom, message))
+
+
 class ReminderTest(TestCase):
 
     def setUp(self):
@@ -1164,36 +1207,41 @@ class ReminderTest(TestCase):
         teardown_test_public_keys_dir(self)
         super().tearDown()
 
-    def test_is_time_to_send(self):
+    def test_is_time_to_send_reminder(self):
         self.nomcom.reminder_interval = 4
         today = date_today()
-        self.assertTrue(is_time_to_send(self.nomcom,today+datetime.timedelta(days=4),today))
+        self.assertTrue(
+            _is_time_to_send_reminder(self.nomcom, today + datetime.timedelta(days=4), today)
+        )
         for delta in range(4):
-            self.assertFalse(is_time_to_send(self.nomcom,today+datetime.timedelta(days=delta),today))
+            self.assertFalse(
+                _is_time_to_send_reminder(
+                    self.nomcom, today + datetime.timedelta(days=delta), today
+                )
+            )
         self.nomcom.reminder_interval = None
-        self.assertFalse(is_time_to_send(self.nomcom,today,today))
+        self.assertFalse(_is_time_to_send_reminder(self.nomcom, today, today))
         self.nomcom.reminderdates_set.create(date=today)
-        self.assertTrue(is_time_to_send(self.nomcom,today,today))
+        self.assertTrue(_is_time_to_send_reminder(self.nomcom, today, today))
 
-    def test_command(self):
-        c = Command()
-        messages_before=len(outbox)
+    def test_send_reminders(self):
+        messages_before = len(outbox)
         self.nomcom.reminder_interval = 3
         self.nomcom.save()
-        c.handle(None,None)
+        send_reminders()
         self.assertEqual(len(outbox), messages_before + 2)
         self.assertIn('nominee1@example.org', outbox[-1]['To'])
         self.assertIn('please complete', outbox[-1]['Subject'])
         self.assertIn('nominee1@example.org', outbox[-2]['To'])
         self.assertIn('please accept', outbox[-2]['Subject'])
-        messages_before=len(outbox)
+        messages_before = len(outbox)
         self.nomcom.reminder_interval = 4
         self.nomcom.save()
-        c.handle(None,None)
+        send_reminders()
         self.assertEqual(len(outbox), messages_before + 1)
         self.assertIn('nominee2@example.org', outbox[-1]['To'])
         self.assertIn('please accept', outbox[-1]['Subject'])
-     
+
     def test_remind_accept_view(self):
         url = reverse('ietf.nomcom.views.send_reminder_mail', kwargs={'year': NOMCOM_YEAR,'type':'accept'})
         login_testing_unauthorized(self, CHAIR_USER, url)
@@ -3005,3 +3053,10 @@ class ReclassifyFeedbackTests(TestCase):
         self.assertEqual(fb.type_id, 'junk')
         self.assertEqual(Feedback.objects.filter(type='read').count(), 0)
         self.assertEqual(Feedback.objects.filter(type='junk').count(), 1)
+
+
+class TaskTests(TestCase):
+    @mock.patch("ietf.nomcom.tasks.send_reminders")
+    def test_send_nomcom_reminders_task(self, mock_send):
+        send_nomcom_reminders_task()
+        self.assertEqual(mock_send.call_count, 1)

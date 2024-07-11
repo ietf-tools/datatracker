@@ -34,7 +34,9 @@ jobs:
         password: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Docker Build & Push
-      uses: docker/build-push-action@v5
+      uses: docker/build-push-action@v6
+      env:
+        DOCKER_BUILD_NO_SUMMARY: true
       with:
         context: .
         file: docker/base.Dockerfile

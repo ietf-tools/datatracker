@@ -35,7 +35,7 @@ outputs:
   changelog:
     description: Changelog with headers prepended and coverage stats + chart appended
 runs:
-  using: 'node16'
+  using: 'node20'
   main: 'index.js'
 branding:
   icon: layers

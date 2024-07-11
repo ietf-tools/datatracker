@@ -11,6 +11,7 @@ class NonWgMailingListFactory(factory.django.DjangoModelFactory):
         model = NonWgMailingList
 
     name = factory.Sequence(lambda n: "list-name-%s" % n)
+    domain = factory.Sequence(lambda n: "domain-%s.org" % n)
     description = factory.Faker('sentence', nb_words=10)
 
     

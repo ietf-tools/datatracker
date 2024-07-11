@@ -1,9 +1,7 @@
 # Copyright The IETF Trust 2012-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
-
 import datetime
-import subprocess
 import os
 import json
 
@@ -54,9 +52,8 @@ def notify(request, org, notification):
     password = request.POST.get("password") or request.GET.get("password")
 
     if username != None and password != None:
-        if settings.SERVER_MODE == "production" and not request.is_secure():
-            permission_denied(request, "You must use HTTPS when sending username/password.")
-
+        # Used to reject non-https traffic here, but that's now enforced by a domain-wide upgrade
+        # from http to https. Django's request.is_secure() is always False now.
         if not user.is_authenticated:
             try:
                 user = User.objects.get(username__iexact=username)
@@ -80,30 +77,18 @@ def notify(request, org, notification):
         raise Http404
 
     if request.method == "POST":
-        def runscript(name):
-            python = os.path.join(os.path.dirname(settings.BASE_DIR), "env", "bin", "python")
-            cmd = [python, os.path.join(SYNC_BIN_PATH, name)]
-            cmdstring = " ".join(cmd)
-            p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            out, err = p.communicate()
-            out = out.decode('utf-8')
-            err = err.decode('utf-8')
-            if p.returncode:
-                log("Subprocess error %s when running '%s': %s %s" % (p.returncode, cmd, err, out))
-                raise subprocess.CalledProcessError(p.returncode, cmdstring, "\n".join([err, out]))
-
         if notification == "index":
             log("Queuing RFC Editor index sync from notify view POST")
             tasks.rfc_editor_index_update_task.delay()
+        elif notification == "queue":
+            log("Queuing RFC Editor queue sync from notify view POST")
+            tasks.rfc_editor_queue_updates_task.delay()
         elif notification == "changes":
             log("Queuing IANA changes sync from notify view POST")
             tasks.iana_changes_update_task.delay()
         elif notification == "protocols":
             log("Queuing IANA protocols sync from notify view POST")
             tasks.iana_protocols_update_task.delay()
-        elif notification == "queue":
-            log("Running sync script from notify view POST")
-            runscript("rfc-editor-queue-updates")
 
         return HttpResponse("OK", content_type="text/plain; charset=%s"%settings.DEFAULT_CHARSET)
 

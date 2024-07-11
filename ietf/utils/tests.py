@@ -486,6 +486,51 @@ class XMLDraftTests(TestCase):
             ("-01", None),
         )
 
+    def test_render_author_name(self):
+        self.assertEqual(
+            XMLDraft.render_author_name(lxml.etree.Element("author", fullname="Joanna Q. Public")),
+            "Joanna Q. Public",
+        )
+        self.assertEqual(
+            XMLDraft.render_author_name(lxml.etree.Element(
+                "author",
+                fullname="Joanna Q. Public",
+                asciiFullname="Not the Same at All",
+            )),
+            "Joanna Q. Public",
+        )
+        self.assertEqual(
+            XMLDraft.render_author_name(lxml.etree.Element(
+                "author",
+                fullname="Joanna Q. Public",
+                initials="J. Q.",
+                surname="Public-Private",
+            )),
+            "Joanna Q. Public",
+        )
+        self.assertEqual(
+            XMLDraft.render_author_name(lxml.etree.Element(
+                "author",
+                initials="J. Q.",
+                surname="Public",
+            )),
+            "J. Q. Public",
+        )
+        self.assertEqual(
+            XMLDraft.render_author_name(lxml.etree.Element(
+                "author",
+                surname="Public",
+            )),
+            "Public",
+        )
+        self.assertEqual(
+            XMLDraft.render_author_name(lxml.etree.Element(
+                "author",
+                initials="J. Q.",
+            )),
+            "J. Q.",
+        )
+
 
 class NameTests(TestCase):
 

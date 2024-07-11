@@ -42,16 +42,17 @@ from ietf.group.models import Group
 from ietf.group.utils import setup_default_community_list_for_group
 from ietf.meeting.models import Meeting
 from ietf.meeting.factories import MeetingFactory
-from ietf.name.models import FormalLanguageName
+from ietf.name.models import DraftSubmissionStateName, FormalLanguageName
 from ietf.person.models import Person
 from ietf.person.factories import UserFactory, PersonFactory, EmailFactory
 from ietf.submit.factories import SubmissionFactory, SubmissionExtResourceFactory
 from ietf.submit.forms import SubmissionBaseUploadForm, SubmissionAutoUploadForm
 from ietf.submit.models import Submission, Preapproval, SubmissionExtResource
 from ietf.submit.tasks import cancel_stale_submissions, process_and_accept_uploaded_submission_task
+from ietf.submit.utils import apply_yang_checker_to_draft, run_all_yang_model_checks
+from ietf.utils import tool_version
 from ietf.utils.accesstoken import generate_access_token
 from ietf.utils.mail import outbox, get_payload_text
-from ietf.utils.models import VersionInfo
 from ietf.utils.test_utils import login_testing_unauthorized, TestCase
 from ietf.utils.timezone import date_today
 from ietf.utils.draft import PlaintextDraft
@@ -221,6 +222,7 @@ class ManualSubmissionTests(TestCase):
 class SubmitTests(BaseSubmitTestCase):
     def setUp(self):
         super().setUp()
+        (Path(settings.FTP_DIR) / "internet-drafts").mkdir()
         # Submit views assume there is a "next" IETF to look for cutoff dates against
         MeetingFactory(type_id='ietf', date=date_today()+datetime.timedelta(days=180))
 
@@ -953,6 +955,24 @@ class SubmitTests(BaseSubmitTestCase):
         self.assertEqual(new_revision.type, "new_revision")
         self.assertEqual(new_revision.by.name, "Submitter Name")
         self.verify_bibxml_ids_creation(draft)
+
+        repository_path = Path(draft.get_file_name())
+        self.assertTrue(repository_path.exists()) # Note that this doesn't check that it has the right _content_
+        ftp_path = Path(settings.FTP_DIR) / "internet-drafts" / repository_path.name
+        self.assertTrue(repository_path.samefile(ftp_path))
+        all_archive_path = Path(settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR) / repository_path.name
+        self.assertTrue(repository_path.samefile(all_archive_path))
+        for ext in settings.IDSUBMIT_FILE_TYPES:
+            if ext == "txt":
+                continue
+            variant_path = repository_path.parent / f"{repository_path.stem}.{ext}"
+            if variant_path.exists():
+                variant_ftp_path = Path(settings.FTP_DIR) / "internet-drafts" / variant_path.name
+                self.assertTrue(variant_path.samefile(variant_ftp_path))
+                variant_all_archive_path = Path(settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR) / variant_path.name
+                self.assertTrue(variant_path.samefile(variant_all_archive_path))
+
+
 
     def test_submit_new_individual_txt(self):
         self.submit_new_individual(["txt"])
@@ -1835,7 +1855,7 @@ class SubmitTests(BaseSubmitTestCase):
         #
         m = q('#yang-validation-message').text()
         for command in ['xym', 'pyang', 'yanglint']:
-            version = VersionInfo.objects.get(command=command).version
+            version = tool_version[command]
             if command != 'yanglint' or (settings.SUBMIT_YANGLINT_COMMAND and os.path.exists(settings.YANGLINT_BINARY)):
                 self.assertIn(version, m)
         self.assertIn("draft-yang-testing-invalid-00.txt", m)
@@ -3117,28 +3137,59 @@ class AsyncSubmissionTests(BaseSubmitTestCase):
         self.assertContains(r, s.name)
         self.assertContains(r, 'This submission is being processed and validated.', status_code=200)
 
-    @override_settings(IDSUBMIT_MAX_VALIDATION_TIME=datetime.timedelta(minutes=30))
+    @override_settings(
+        IDSUBMIT_MAX_VALIDATION_TIME=datetime.timedelta(minutes=30),
+        IDSUBMIT_EXPIRATION_AGE=datetime.timedelta(minutes=90),
+    )
     def test_cancel_stale_submissions(self):
+        # these will be lists of (Submission, "state_id") pairs
+        submissions_to_skip = []
+        submissions_to_cancel = []
+
+        # submissions in the validating state
         fresh_submission = SubmissionFactory(state_id='validating')
         fresh_submission.submissionevent_set.create(
             desc='fake created event',
             time=timezone.now() - datetime.timedelta(minutes=15),
         )
+        submissions_to_skip.append((fresh_submission, "validating"))
+
         stale_submission = SubmissionFactory(state_id='validating')
         stale_submission.submissionevent_set.create(
             desc='fake created event',
             time=timezone.now() - datetime.timedelta(minutes=30, seconds=1),
         )
+        submissions_to_cancel.append((stale_submission, "validating"))
+        
+        # submissions in other states
+        for state in DraftSubmissionStateName.objects.filter(used=True).exclude(slug="validating"):
+            to_skip = SubmissionFactory(state_id=state.pk)
+            to_skip.submissionevent_set.create(
+                desc="fake created event",
+                time=timezone.now() - datetime.timedelta(minutes=45),  # would be canceled if it were "validating"
+            )
+            submissions_to_skip.append((to_skip, state.pk))
+            to_expire = SubmissionFactory(state_id=state.pk)
+            to_expire.submissionevent_set.create(
+                desc="fake created event",
+                time=timezone.now() - datetime.timedelta(minutes=90, seconds=1),
+            )
+            if state.pk in ["posted", "cancel"]:
+                submissions_to_skip.append((to_expire, state.pk))  # these ones should not be expired regardless of age
+            else:
+                submissions_to_cancel.append(((to_expire, state.pk)))
 
         cancel_stale_submissions()
 
-        fresh_submission = Submission.objects.get(pk=fresh_submission.pk)
-        self.assertEqual(fresh_submission.state_id, 'validating')
-        self.assertEqual(fresh_submission.submissionevent_set.count(), 1)
+        for _subm, original_state_id in submissions_to_skip:
+            subm = Submission.objects.get(pk=_subm.pk)
+            self.assertEqual(subm.state_id, original_state_id)
+            self.assertEqual(subm.submissionevent_set.count(), 1)
 
-        stale_submission = Submission.objects.get(pk=stale_submission.pk)
-        self.assertEqual(stale_submission.state_id, 'cancel')
-        self.assertEqual(stale_submission.submissionevent_set.count(), 2)
+        for _subm, _ in submissions_to_cancel:
+            subm = Submission.objects.get(pk=_subm.pk)
+            self.assertEqual(subm.state_id, "cancel")
+            self.assertEqual(subm.submissionevent_set.count(), 2)
 
 
 class ApiSubmitTests(BaseSubmitTestCase):
@@ -3437,3 +3488,28 @@ class SubmissionStatusTests(BaseSubmitTestCase):
                 "Your Internet-Draft failed at least one submission check.",
                 status_code=200,
             )
+
+
+class YangCheckerTests(TestCase):
+    @mock.patch("ietf.submit.utils.apply_yang_checker_to_draft")
+    def test_run_all_yang_model_checks(self, mock_apply):
+        active_drafts = WgDraftFactory.create_batch(3)
+        WgDraftFactory(states=[("draft", "expired")])
+        run_all_yang_model_checks()
+        self.assertEqual(mock_apply.call_count, 3)
+        self.assertCountEqual(
+            [args[0][1] for args in mock_apply.call_args_list],
+            active_drafts,
+        )
+
+    def test_apply_yang_checker_to_draft(self):
+        draft = WgDraftFactory()
+        submission = SubmissionFactory(name=draft.name, rev=draft.rev)
+        submission.checks.create(checker="my-checker")
+        checker = mock.Mock()
+        checker.name = "my-checker"
+        checker.symbol = "X"
+        checker.check_file_txt.return_value = (True, "whee", None, None, {})
+        apply_yang_checker_to_draft(checker, draft)
+        self.assertEqual(checker.check_file_txt.call_args, mock.call(draft.get_file_name()))
+

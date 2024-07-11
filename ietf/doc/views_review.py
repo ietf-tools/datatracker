@@ -2,11 +2,11 @@
 # -*- coding: utf-8 -*-
 
 
-import io
 import itertools
 import json
 import os
 import datetime
+from pathlib import Path
 import requests
 import email.utils
 
@@ -52,7 +52,7 @@ from ietf.utils.text import strip_prefix, xslugify
 from ietf.utils.textupload import get_cleaned_text_file_content
 from ietf.utils.mail import send_mail_message
 from ietf.mailtrigger.utils import gather_address_lists
-from ietf.utils.fields import MultiEmailField
+from ietf.utils.fields import ModelMultipleChoiceField, MultiEmailField
 from ietf.utils.http import is_ajax
 from ietf.utils.response import permission_denied
 from ietf.utils.timezone import date_today, DEADLINE_TZINFO
@@ -68,7 +68,7 @@ def clean_doc_revision(doc, rev):
     return rev
 
 class RequestReviewForm(forms.ModelForm):
-    team = forms.ModelMultipleChoiceField(queryset=Group.objects.all(), widget=forms.CheckboxSelectMultiple)
+    team = ModelMultipleChoiceField(queryset=Group.objects.all(), widget=forms.CheckboxSelectMultiple)
     deadline = DatepickerDateField(date_format="yyyy-mm-dd", picker_settings={ "autoclose": "1", "start-date": "+0d" })
 
     class Meta:
@@ -803,9 +803,13 @@ def complete_review(request, name, assignment_id=None, acronym=None):
             else:
                 content = form.cleaned_data['review_content']
 
-            filename = os.path.join(review.get_file_path(), '{}.txt'.format(review.name))
-            with io.open(filename, 'w', encoding='utf-8') as destination:
-                destination.write(content)
+            review_path = Path(review.get_file_path()) / f"{review.name}.txt"
+            review_path.write_text(content)
+            review_ftp_path = Path(settings.FTP_DIR) / "review" / review_path.name
+            # See https://github.com/ietf-tools/datatracker/issues/6941 - when that's
+            # addressed, making this link should not be conditional
+            if not review_ftp_path.exists():
+                os.link(review_path, review_ftp_path) # switch this to Path.hardlink when python>=3.10 is available
 
             completion_datetime = timezone.now()
             if "completion_date" in form.cleaned_data:

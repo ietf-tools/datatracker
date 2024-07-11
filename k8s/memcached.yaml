@@ -1,0 +1,74 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: memcached
+spec:
+  replicas: 1
+  revisionHistoryLimit: 2
+  selector:
+    matchLabels:
+      app: memcached
+  template:
+    metadata:
+      labels:
+        app: memcached
+    spec:
+      securityContext:
+        runAsNonRoot: true
+      containers:
+        - image: "quay.io/prometheus/memcached-exporter:v0.14.3"
+          imagePullPolicy: IfNotPresent
+          name: memcached-exporter
+          ports:
+            - name: metrics
+              containerPort: 9150
+              protocol: TCP
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
+            runAsUser: 65534  # nobody
+            runAsGroup: 65534  # nobody
+        - image: "memcached:1.6-alpine"
+          imagePullPolicy: IfNotPresent
+          args: ["-m", "1024"]
+          name: memcached
+          ports:
+            - name: memcached
+              containerPort: 11211
+              protocol: TCP
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
+            # memcached image sets up uid/gid 11211
+            runAsUser: 11211
+            runAsGroup: 11211
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: memcached
+  annotations:
+    k8s.grafana.com/scrape: "true"  # this is not a bool
+    k8s.grafana.com/metrics.portName: "metrics"
+spec:
+  type: ClusterIP
+  ports:
+    - port: 11211
+      targetPort: memcached
+      protocol: TCP
+      name: memcached
+    - port: 9150
+      targetPort: metrics
+      protocol: TCP
+      name: metrics
+  selector:
+    app: memcached

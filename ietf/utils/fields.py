@@ -14,7 +14,7 @@ from typing import Optional, Type # pyflakes:ignore
 
 from django import forms
 from django.db import models # pyflakes:ignore
-from django.core.validators import validate_email
+from django.core.validators import ProhibitNullCharactersValidator, validate_email
 from django.core.exceptions import ValidationError
 from django.utils.dateparse import parse_duration
 
@@ -353,3 +353,20 @@ class MissingOkImageField(models.ImageField):
             super().update_dimension_fields(*args, **kwargs)
         except FileNotFoundError:
             pass  # don't do anything if the file has gone missing
+
+
+class ModelMultipleChoiceField(forms.ModelMultipleChoiceField):
+    """ModelMultipleChoiceField that rejects null characters cleanly"""
+    validate_no_nulls = ProhibitNullCharactersValidator()
+
+    def clean(self, value):
+        try:
+            for item in value:
+                self.validate_no_nulls(item)
+        except TypeError:
+            # A TypeError probably means value is not iterable, which most commonly comes up
+            # with None as a value. If it's something more exotic, we don't know how to test
+            # for null characters anyway. Either way, trust the superclass clean() method to 
+            # handle it.
+            pass
+        return super().clean(value)
