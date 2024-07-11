@@ -2,8 +2,10 @@
 # -*- coding: utf-8 -*-
 
 
+import mock
 from pyquery import PyQuery
 
+from django.test.utils import override_settings
 from django.urls import reverse as urlreverse
 
 import debug                            # pyflakes:ignore
@@ -18,8 +20,7 @@ from ietf.doc.models import State
 from ietf.doc.utils import add_state_change_event
 from ietf.person.models import Person, Email, Alias
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized
-from ietf.utils.mail import outbox
-from ietf.doc.factories import WgDraftFactory
+from ietf.doc.factories import DocEventFactory, WgDraftFactory
 from ietf.group.factories import GroupFactory, RoleFactory
 from ietf.person.factories import PersonFactory, EmailFactory, AliasFactory
 
@@ -423,6 +424,47 @@ class CommunityListTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
 
+    @mock.patch("ietf.community.models.notify_event_to_subscribers_task")
+    def test_notification_signal(self, mock_notify):
+        """Saving a DocEvent should notify subscribers
+        
+        This implicitly tests that notify_events is hooked up to the post_save signal.
+        """
+        # Arbitrary model that's not a DocEvent
+        p = PersonFactory()
+        mock_notify.reset_mock()  # clear any calls that resulted from the factories
+        # be careful overriding SERVER_MODE - we do it here because the method
+        # under test does not make this call when in "test" mode
+        with override_settings(SERVER_MODE="not-test"):
+            p.save()
+        self.assertFalse(mock_notify.delay.called)
+        
+        d = DocEventFactory()
+        mock_notify.reset_mock()  # clear any calls that resulted from the factories
+        # be careful overriding SERVER_MODE - we do it here because the method
+        # under test does not make this call when in "test" mode
+        with override_settings(SERVER_MODE="not-test"):
+            d.save()
+        self.assertEqual(mock_notify.delay.call_count, 1)
+        self.assertEqual(mock_notify.delay.call_args, mock.call(event_id = d.pk))
+        
+        mock_notify.reset_mock()
+        d.skip_community_list_notification = True
+        # be careful overriding SERVER_MODE - we do it here because the method
+        # under test does not make this call when in "test" mode
+        with override_settings(SERVER_MODE="not-test"):
+            d.save()
+        self.assertFalse(mock_notify.delay.called)
+
+        del(d.skip_community_list_notification)
+        d.doc.update(type_id="rfc")  # not "draft"
+        # be careful overriding SERVER_MODE - we do it here because the method
+        # under test does not make this call when in "test" mode
+        with override_settings(SERVER_MODE="not-test"):
+            d.save()
+        self.assertFalse(mock_notify.delay.called)
+
+        
     def test_notification(self):
         person = PersonFactory(user__username='plain')
         draft = WgDraftFactory()
