@@ -121,4 +121,3 @@ class StatusTests(TestCase):
         self.assertContains(r, test_string)
         
         status.delete()
-
