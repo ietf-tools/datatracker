@@ -44,9 +44,9 @@ spec:
             runAsUser: 65534 # "nobody" user by default
             runAsGroup: 65534  # "nogroup" group by default
         # -----------------------------------------------------
-        # Datatracker Container
+        # Auth Container
         # -----------------------------------------------------
-        - name: datatracker
+        - name: auth
           image: "ghcr.io/ietf-tools/datatracker:$APP_IMAGE_TAG"
           imagePullPolicy: Always
           volumeMounts:
@@ -106,7 +106,7 @@ spec:
             - name: nginx-tmp
               mountPath: /tmp
             - name: dt-cfg
-              mountPath: /etc/nginx/conf.d/datatracker.conf
+              mountPath: /etc/nginx/conf.d/auth.conf
               subPath: nginx-auth.conf
       volumes:
         # To be overriden with the actual shared volume
