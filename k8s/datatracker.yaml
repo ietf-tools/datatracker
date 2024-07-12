@@ -44,28 +44,6 @@ spec:
             runAsUser: 65534 # "nobody" user by default
             runAsGroup: 65534  # "nogroup" group by default
         # -----------------------------------------------------
-        # Nginx Container
-        # -----------------------------------------------------
-        - name: nginx
-          image: "ghcr.io/nginxinc/nginx-unprivileged:1.27"
-          imagePullPolicy: IfNotPresent
-          ports:
-            - containerPort: 8080
-              name: http
-              protocol: TCP
-          livenessProbe:
-            httpGet:
-              port: 8080
-              path: /health/nginx
-          securityContext:
-            readOnlyRootFilesystem: true
-          volumeMounts:
-            - name: nginx-tmp
-              mountPath: /tmp
-            - name: dt-cfg
-              mountPath: /etc/nginx/conf.d/datatracker.conf
-              subPath: nginx.conf
-        # -----------------------------------------------------
         # Datatracker Container
         # -----------------------------------------------------
         - name: datatracker
@@ -92,6 +70,13 @@ spec:
           envFrom:
             - configMapRef:
                 name: django-config
+          startupProbe:
+            httpGet:
+              port: 8000
+              path: /health/
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            failureThreshold: 30
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
@@ -100,6 +85,28 @@ spec:
             readOnlyRootFilesystem: true
             runAsUser: 1000
             runAsGroup: 1000
+        # -----------------------------------------------------
+        # Nginx Container
+        # -----------------------------------------------------
+        - name: nginx
+          image: "ghcr.io/nginxinc/nginx-unprivileged:1.27"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+              name: http
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              port: 8080
+              path: /health/nginx
+          securityContext:
+            readOnlyRootFilesystem: true
+          volumeMounts:
+            - name: nginx-tmp
+              mountPath: /tmp
+            - name: dt-cfg
+              mountPath: /etc/nginx/conf.d/datatracker.conf
+              subPath: nginx.conf
       initContainers:
         - name: migration
           image: "ghcr.io/ietf-tools/datatracker:$APP_IMAGE_TAG"
