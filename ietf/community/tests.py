@@ -426,7 +426,7 @@ class CommunityListTests(TestCase):
         self.assertEqual(r.status_code, 200)
 
     @mock.patch("ietf.community.models.notify_event_to_subscribers_task")
-    def test_notification_signal(self, mock_notify_task):
+    def test_notification_signal_receiver(self, mock_notify_task):
         """Saving a DocEvent should notify subscribers
         
         This implicitly tests that notify_events is hooked up to the post_save signal.
