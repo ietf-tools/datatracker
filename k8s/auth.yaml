@@ -49,10 +49,6 @@ spec:
         - name: datatracker
           image: "ghcr.io/ietf-tools/datatracker:$APP_IMAGE_TAG"
           imagePullPolicy: Always
-          ports:
-            - containerPort: 8000
-              name: http
-              protocol: TCP
           volumeMounts:
             - name: dt-vol
               mountPath: /a
@@ -74,6 +70,14 @@ spec:
           envFrom:
             - configMapRef:
                 name: django-config
+          startupProbe:
+            httpGet:
+              port: 8000
+              path: /health/
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            failureThreshold: 30
+            timeoutSeconds: 3
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
@@ -82,6 +86,28 @@ spec:
             readOnlyRootFilesystem: true
             runAsUser: 1000
             runAsGroup: 1000
+        # -----------------------------------------------------
+        # Nginx Container
+        # -----------------------------------------------------
+        - name: nginx
+          image: "ghcr.io/nginxinc/nginx-unprivileged:1.27"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+              name: http
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              port: 8080
+              path: /health/nginx
+          securityContext:
+            readOnlyRootFilesystem: true
+          volumeMounts:
+            - name: nginx-tmp
+              mountPath: /tmp
+            - name: dt-cfg
+              mountPath: /etc/nginx/conf.d/datatracker.conf
+              subPath: nginx.conf
       volumes:
         # To be overriden with the actual shared volume
         - name: dt-vol
@@ -97,6 +123,9 @@ spec:
         - name: dt-cfg
           configMap:
             name: files-cfgmap
+        - name: nginx-tmp
+          emptyDir:
+            sizeLimit: "500Mi"
       dnsPolicy: ClusterFirst
       restartPolicy: Always
       terminationGracePeriodSeconds: 60
