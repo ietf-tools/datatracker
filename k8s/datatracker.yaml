@@ -107,7 +107,7 @@ spec:
               mountPath: /tmp
             - name: dt-cfg
               mountPath: /etc/nginx/conf.d/datatracker.conf
-              subPath: nginx.conf
+              subPath: nginx-datatracker.conf
       initContainers:
         - name: migration
           image: "ghcr.io/ietf-tools/datatracker:$APP_IMAGE_TAG"
