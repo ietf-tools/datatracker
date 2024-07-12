@@ -12,7 +12,7 @@ import debug                            # pyflakes:ignore
 
 from ietf.community.models import CommunityList, SearchRule, EmailSubscription
 from ietf.community.utils import docs_matching_community_list_rule, community_list_rules_matching_doc
-from ietf.community.utils import reset_name_contains_index_for_rule
+from ietf.community.utils import reset_name_contains_index_for_rule, notify_event_to_subscribers
 from ietf.community.tasks import notify_event_to_subscribers_task
 import ietf.community.views
 from ietf.group.models import Group
@@ -465,8 +465,8 @@ class CommunityListTests(TestCase):
             d.save()
         self.assertFalse(mock_notify_task.delay.called)
 
-    # todo refactor to directly test notify_event_to_subscribers
-    def test_notification(self):
+    @mock.patch("ietf.community.utils.send_mail")
+    def test_notify_event_to_subscribers(self, mock_send_mail):
         person = PersonFactory(user__username='plain')
         draft = WgDraftFactory()
 
@@ -474,19 +474,40 @@ class CommunityListTests(TestCase):
         if not draft in clist.added_docs.all():
             clist.added_docs.add(draft)
 
-        EmailSubscription.objects.create(community_list=clist, email=Email.objects.filter(person__user__username="plain").first(), notify_on="significant")
+        sub_to_significant = EmailSubscription.objects.create(
+            community_list=clist,
+            email=Email.objects.filter(person__user__username="plain").first(),
+            notify_on="significant",
+        )
+        sub_to_all = EmailSubscription.objects.create(
+            community_list=clist,
+            email=Email.objects.filter(person__user__username="plain").first(),
+            notify_on="all",
+        )
 
-        mailbox_before = len(outbox)
         active_state = State.objects.get(type="draft", slug="active")
         system = Person.objects.get(name="(System)")
-        add_state_change_event(draft, system, None, active_state)
-        self.assertEqual(len(outbox), mailbox_before)
+        event = add_state_change_event(draft, system, None, active_state)
+        notify_event_to_subscribers(event)
+        self.assertEqual(mock_send_mail.call_count, 1)
+        address = mock_send_mail.call_args[0][1]
+        subject = mock_send_mail.call_args[0][3]
+        self.assertEqual(address, sub_to_all.email.address)
+        self.assertIn(draft.name, subject)
 
-        mailbox_before = len(outbox)
         rfc_state = State.objects.get(type="draft", slug="rfc")
-        add_state_change_event(draft, system, active_state, rfc_state)
-        self.assertEqual(len(outbox), mailbox_before + 1)
-        self.assertTrue(draft.name in outbox[-1]["Subject"])
+        event = add_state_change_event(draft, system, active_state, rfc_state)
+        mock_send_mail.reset_mock()
+        notify_event_to_subscribers(event)
+        self.assertEqual(mock_send_mail.call_count, 2)
+        addresses = [call_args[0][1] for call_args in mock_send_mail.call_args_list]
+        subjects = {call_args[0][3] for call_args in mock_send_mail.call_args_list}
+        self.assertCountEqual(
+            addresses, 
+            [sub_to_significant.email.address, sub_to_all.email.address],
+        )
+        self.assertEqual(len(subjects), 1)
+        self.assertIn(draft.name, subjects.pop())
 
     @mock.patch("ietf.community.utils.notify_event_to_subscribers")
     def test_notify_event_to_subscribers_task(self, mock_notify):
