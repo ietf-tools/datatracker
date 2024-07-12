@@ -403,7 +403,7 @@ def clear_ballot(request, name, ballot_type_slug):
         by = request.user.person
         if close_ballot(doc, by, ballot_type_slug):
             create_ballot_if_not_open(request, doc, by, ballot_type_slug)
-        if doc.get_state('draft-iesg').slug == 'defer':
+        if doc.get_state("statchg").slug == "defer":
             do_undefer_ballot(request,doc)
         return redirect("ietf.doc.views_doc.document_main", name=doc.name)
 
