@@ -487,5 +487,16 @@ class CommunityListTests(TestCase):
         add_state_change_event(draft, system, active_state, rfc_state)
         self.assertEqual(len(outbox), mailbox_before + 1)
         self.assertTrue(draft.name in outbox[-1]["Subject"])
-        
-        
+
+    @mock.patch("ietf.community.utils.notify_event_to_subscribers")
+    def test_notify_event_to_subscribers_task(self, mock_notify):
+        d = DocEventFactory()
+        notify_event_to_subscribers_task(event_id=d.pk)
+        self.assertEqual(mock_notify.call_count, 1)
+        self.assertEqual(mock_notify.call_args, mock.call(d))
+        mock_notify.reset_mock()
+
+        d.delete()
+        notify_event_to_subscribers_task(event_id=d.pk)
+        self.assertFalse(mock_notify.called)
+
