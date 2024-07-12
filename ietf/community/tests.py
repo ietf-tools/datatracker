@@ -2,15 +2,18 @@
 # -*- coding: utf-8 -*-
 
 
+import mock
 from pyquery import PyQuery
 
+from django.test.utils import override_settings
 from django.urls import reverse as urlreverse
 
 import debug                            # pyflakes:ignore
 
 from ietf.community.models import CommunityList, SearchRule, EmailSubscription
 from ietf.community.utils import docs_matching_community_list_rule, community_list_rules_matching_doc
-from ietf.community.utils import reset_name_contains_index_for_rule
+from ietf.community.utils import reset_name_contains_index_for_rule, notify_event_to_subscribers
+from ietf.community.tasks import notify_event_to_subscribers_task
 import ietf.community.views
 from ietf.group.models import Group
 from ietf.group.utils import setup_default_community_list_for_group
@@ -18,8 +21,7 @@ from ietf.doc.models import State
 from ietf.doc.utils import add_state_change_event
 from ietf.person.models import Person, Email, Alias
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized
-from ietf.utils.mail import outbox
-from ietf.doc.factories import WgDraftFactory
+from ietf.doc.factories import DocEventFactory, WgDraftFactory
 from ietf.group.factories import GroupFactory, RoleFactory
 from ietf.person.factories import PersonFactory, EmailFactory, AliasFactory
 
@@ -423,7 +425,49 @@ class CommunityListTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
 
-    def test_notification(self):
+    @mock.patch("ietf.community.models.notify_event_to_subscribers_task")
+    def test_notification_signal_receiver(self, mock_notify_task):
+        """Saving a DocEvent should notify subscribers
+        
+        This implicitly tests that notify_events is hooked up to the post_save signal.
+        """
+        # Arbitrary model that's not a DocEvent
+        p = PersonFactory()
+        mock_notify_task.reset_mock()  # clear any calls that resulted from the factories
+        # be careful overriding SERVER_MODE - we do it here because the method
+        # under test does not make this call when in "test" mode
+        with override_settings(SERVER_MODE="not-test"):
+            p.save()
+        self.assertFalse(mock_notify_task.delay.called)
+        
+        d = DocEventFactory()
+        mock_notify_task.reset_mock()  # clear any calls that resulted from the factories
+        # be careful overriding SERVER_MODE - we do it here because the method
+        # under test does not make this call when in "test" mode
+        with override_settings(SERVER_MODE="not-test"):
+            d.save()
+        self.assertEqual(mock_notify_task.delay.call_count, 1)
+        self.assertEqual(mock_notify_task.delay.call_args, mock.call(event_id = d.pk))
+        
+        mock_notify_task.reset_mock()
+        d.skip_community_list_notification = True
+        # be careful overriding SERVER_MODE - we do it here because the method
+        # under test does not make this call when in "test" mode
+        with override_settings(SERVER_MODE="not-test"):
+            d.save()
+        self.assertFalse(mock_notify_task.delay.called)
+
+        del(d.skip_community_list_notification)
+        d.doc.type_id="rfc"  # not "draft"
+        d.doc.save()
+        # be careful overriding SERVER_MODE - we do it here because the method
+        # under test does not make this call when in "test" mode
+        with override_settings(SERVER_MODE="not-test"):
+            d.save()
+        self.assertFalse(mock_notify_task.delay.called)
+
+    @mock.patch("ietf.utils.mail.send_mail_text")
+    def test_notify_event_to_subscribers(self, mock_send_mail_text):
         person = PersonFactory(user__username='plain')
         draft = WgDraftFactory()
 
@@ -431,18 +475,55 @@ class CommunityListTests(TestCase):
         if not draft in clist.added_docs.all():
             clist.added_docs.add(draft)
 
-        EmailSubscription.objects.create(community_list=clist, email=Email.objects.filter(person__user__username="plain").first(), notify_on="significant")
+        sub_to_significant = EmailSubscription.objects.create(
+            community_list=clist,
+            email=Email.objects.filter(person__user__username="plain").first(),
+            notify_on="significant",
+        )
+        sub_to_all = EmailSubscription.objects.create(
+            community_list=clist,
+            email=Email.objects.filter(person__user__username="plain").first(),
+            notify_on="all",
+        )
 
-        mailbox_before = len(outbox)
         active_state = State.objects.get(type="draft", slug="active")
         system = Person.objects.get(name="(System)")
-        add_state_change_event(draft, system, None, active_state)
-        self.assertEqual(len(outbox), mailbox_before)
+        event = add_state_change_event(draft, system, None, active_state)
+        notify_event_to_subscribers(event)
+        self.assertEqual(mock_send_mail_text.call_count, 1)
+        address = mock_send_mail_text.call_args[0][1]
+        subject = mock_send_mail_text.call_args[0][3]
+        content = mock_send_mail_text.call_args[0][4]
+        self.assertEqual(address, sub_to_all.email.address)
+        self.assertIn(draft.name, subject)
+        self.assertIn(clist.long_name(), content)
 
-        mailbox_before = len(outbox)
         rfc_state = State.objects.get(type="draft", slug="rfc")
-        add_state_change_event(draft, system, active_state, rfc_state)
-        self.assertEqual(len(outbox), mailbox_before + 1)
-        self.assertTrue(draft.name in outbox[-1]["Subject"])
-        
-        
+        event = add_state_change_event(draft, system, active_state, rfc_state)
+        mock_send_mail_text.reset_mock()
+        notify_event_to_subscribers(event)
+        self.assertEqual(mock_send_mail_text.call_count, 2)
+        addresses = [call_args[0][1] for call_args in mock_send_mail_text.call_args_list]
+        subjects = {call_args[0][3] for call_args in mock_send_mail_text.call_args_list}
+        contents = {call_args[0][4] for call_args in mock_send_mail_text.call_args_list}
+        self.assertCountEqual(
+            addresses, 
+            [sub_to_significant.email.address, sub_to_all.email.address],
+        )
+        self.assertEqual(len(subjects), 1)
+        self.assertIn(draft.name, subjects.pop())
+        self.assertEqual(len(contents), 1)
+        self.assertIn(clist.long_name(), contents.pop())
+
+    @mock.patch("ietf.community.utils.notify_event_to_subscribers")
+    def test_notify_event_to_subscribers_task(self, mock_notify):
+        d = DocEventFactory()
+        notify_event_to_subscribers_task(event_id=d.pk)
+        self.assertEqual(mock_notify.call_count, 1)
+        self.assertEqual(mock_notify.call_args, mock.call(d))
+        mock_notify.reset_mock()
+
+        d.delete()
+        notify_event_to_subscribers_task(event_id=d.pk)
+        self.assertFalse(mock_notify.called)
+
