@@ -11,4 +11,5 @@ def notify_event_to_subscribers_task(event_id):
     event = DocEvent.objects.filter(pk=event_id).first()
     if event is None:
         log(f"Unable to send subscriber notifications because DocEvent {event_id} was not found")
-    notify_event_to_subscribers(event)
+    else:
+        notify_event_to_subscribers(event)
