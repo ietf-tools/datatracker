@@ -13,6 +13,7 @@ import debug                            # pyflakes:ignore
 from ietf.community.models import CommunityList, SearchRule, EmailSubscription
 from ietf.community.utils import docs_matching_community_list_rule, community_list_rules_matching_doc
 from ietf.community.utils import reset_name_contains_index_for_rule
+from ietf.community.tasks import notify_event_to_subscribers_task
 import ietf.community.views
 from ietf.group.models import Group
 from ietf.group.utils import setup_default_community_list_for_group
@@ -425,36 +426,36 @@ class CommunityListTests(TestCase):
         self.assertEqual(r.status_code, 200)
 
     @mock.patch("ietf.community.models.notify_event_to_subscribers_task")
-    def test_notification_signal(self, mock_notify):
+    def test_notification_signal(self, mock_notify_task):
         """Saving a DocEvent should notify subscribers
         
         This implicitly tests that notify_events is hooked up to the post_save signal.
         """
         # Arbitrary model that's not a DocEvent
         p = PersonFactory()
-        mock_notify.reset_mock()  # clear any calls that resulted from the factories
+        mock_notify_task.reset_mock()  # clear any calls that resulted from the factories
         # be careful overriding SERVER_MODE - we do it here because the method
         # under test does not make this call when in "test" mode
         with override_settings(SERVER_MODE="not-test"):
             p.save()
-        self.assertFalse(mock_notify.delay.called)
+        self.assertFalse(mock_notify_task.delay.called)
         
         d = DocEventFactory()
-        mock_notify.reset_mock()  # clear any calls that resulted from the factories
+        mock_notify_task.reset_mock()  # clear any calls that resulted from the factories
         # be careful overriding SERVER_MODE - we do it here because the method
         # under test does not make this call when in "test" mode
         with override_settings(SERVER_MODE="not-test"):
             d.save()
-        self.assertEqual(mock_notify.delay.call_count, 1)
-        self.assertEqual(mock_notify.delay.call_args, mock.call(event_id = d.pk))
+        self.assertEqual(mock_notify_task.delay.call_count, 1)
+        self.assertEqual(mock_notify_task.delay.call_args, mock.call(event_id = d.pk))
         
-        mock_notify.reset_mock()
+        mock_notify_task.reset_mock()
         d.skip_community_list_notification = True
         # be careful overriding SERVER_MODE - we do it here because the method
         # under test does not make this call when in "test" mode
         with override_settings(SERVER_MODE="not-test"):
             d.save()
-        self.assertFalse(mock_notify.delay.called)
+        self.assertFalse(mock_notify_task.delay.called)
 
         del(d.skip_community_list_notification)
         d.doc.update(type_id="rfc")  # not "draft"
@@ -462,9 +463,9 @@ class CommunityListTests(TestCase):
         # under test does not make this call when in "test" mode
         with override_settings(SERVER_MODE="not-test"):
             d.save()
-        self.assertFalse(mock_notify.delay.called)
+        self.assertFalse(mock_notify_task.delay.called)
 
-        
+    # todo refactor to directly test notify_event_to_subscribers
     def test_notification(self):
         person = PersonFactory(user__username='plain')
         draft = WgDraftFactory()
