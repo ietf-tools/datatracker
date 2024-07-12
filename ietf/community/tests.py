@@ -458,7 +458,8 @@ class CommunityListTests(TestCase):
         self.assertFalse(mock_notify_task.delay.called)
 
         del(d.skip_community_list_notification)
-        d.doc.update(type_id="rfc")  # not "draft"
+        d.doc.type_id="rfc"  # not "draft"
+        d.doc.save()
         # be careful overriding SERVER_MODE - we do it here because the method
         # under test does not make this call when in "test" mode
         with override_settings(SERVER_MODE="not-test"):
