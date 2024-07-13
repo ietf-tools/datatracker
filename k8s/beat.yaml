@@ -20,6 +20,9 @@ spec:
       securityContext:
         runAsNonRoot: true
       containers:
+        # -----------------------------------------------------
+        # Beat Container
+        # -----------------------------------------------------
         - name: beat
           image: "ghcr.io/ietf-tools/datatracker:$APP_IMAGE_TAG"
           imagePullPolicy: Always
@@ -39,8 +42,8 @@ spec:
             - name: "CONTAINER_ROLE"
               value: "beat"
           envFrom:
-            - configMapRef:
-                name: django-config
+            - secretRef:
+                name: dt-secrets-env
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
