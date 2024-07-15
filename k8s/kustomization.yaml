@@ -11,6 +11,5 @@ resources:
   - beat.yaml
   - celery.yaml
   - datatracker.yaml
-  - django-config.yaml
   - memcached.yaml
   - rabbitmq.yaml

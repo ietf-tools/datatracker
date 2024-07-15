@@ -16,21 +16,9 @@ spec:
       securityContext:
         runAsNonRoot: true
       containers:
-        - image: "quay.io/prometheus/memcached-exporter:v0.14.3"
-          imagePullPolicy: IfNotPresent
-          name: memcached-exporter
-          ports:
-            - name: metrics
-              containerPort: 9150
-              protocol: TCP
-          securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-                - ALL
-            readOnlyRootFilesystem: true
-            runAsUser: 65534  # nobody
-            runAsGroup: 65534  # nobody
+        # -----------------------------------------------------
+        # Memcached
+        # -----------------------------------------------------
         - image: "memcached:1.6-alpine"
           imagePullPolicy: IfNotPresent
           args: ["-m", "1024"]
@@ -48,6 +36,24 @@ spec:
             # memcached image sets up uid/gid 11211
             runAsUser: 11211
             runAsGroup: 11211
+        # -----------------------------------------------------
+        # Memcached Exporter for Prometheus
+        # -----------------------------------------------------
+        - image: "quay.io/prometheus/memcached-exporter:v0.14.3"
+          imagePullPolicy: IfNotPresent
+          name: memcached-exporter
+          ports:
+            - name: metrics
+              containerPort: 9150
+              protocol: TCP
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
+            runAsUser: 65534  # nobody
+            runAsGroup: 65534  # nobody
       dnsPolicy: ClusterFirst
       restartPolicy: Always
       terminationGracePeriodSeconds: 30
