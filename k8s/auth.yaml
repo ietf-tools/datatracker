@@ -19,34 +19,9 @@ spec:
         runAsNonRoot: true
       containers:
         # -----------------------------------------------------
-        # ScoutAPM Container
+        # Auth Container
         # -----------------------------------------------------
-        - name: scoutapm
-          image: "scoutapp/scoutapm:version-1.4.0"
-          imagePullPolicy: IfNotPresent
-          # Replace command with one that will shut down on a TERM signal
-          # The ./core-agent start command line is from the scoutapm docker image
-          command:
-            - "sh"
-            - "-c"
-            - >-
-              trap './core-agent shutdown --tcp 0.0.0.0:6590' TERM;
-              ./core-agent start --daemonize false --log-level debug --tcp 0.0.0.0:6590 &
-              wait $!
-          livenessProbe:
-            exec:
-              command:
-                - "sh"
-                - "-c"
-                - "./core-agent probe --tcp 0.0.0.0:6590 | grep -q 'Agent found'"
-          securityContext:
-            readOnlyRootFilesystem: true
-            runAsUser: 65534 # "nobody" user by default
-            runAsGroup: 65534  # "nogroup" group by default
-        # -----------------------------------------------------
-        # Datatracker Container
-        # -----------------------------------------------------
-        - name: datatracker
+        - name: auth
           image: "ghcr.io/ietf-tools/datatracker:$APP_IMAGE_TAG"
           imagePullPolicy: Always
           ports:
@@ -72,8 +47,8 @@ spec:
             - name: "DEPLOY_UID"
               value: "$DEPLOY_UID"
           envFrom:
-            - configMapRef:
-                name: django-config
+            - secretRef:
+                name: dt-secrets-env
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
@@ -82,6 +57,31 @@ spec:
             readOnlyRootFilesystem: true
             runAsUser: 1000
             runAsGroup: 1000
+        # -----------------------------------------------------
+        # ScoutAPM Container
+        # -----------------------------------------------------
+        - name: scoutapm
+          image: "scoutapp/scoutapm:version-1.4.0"
+          imagePullPolicy: IfNotPresent
+          # Replace command with one that will shut down on a TERM signal
+          # The ./core-agent start command line is from the scoutapm docker image
+          command:
+            - "sh"
+            - "-c"
+            - >-
+              trap './core-agent shutdown --tcp 0.0.0.0:6590' TERM;
+              ./core-agent start --daemonize false --log-level debug --tcp 0.0.0.0:6590 &
+              wait $!
+          livenessProbe:
+            exec:
+              command:
+                - "sh"
+                - "-c"
+                - "./core-agent probe --tcp 0.0.0.0:6590 | grep -q 'Agent found'"
+          securityContext:
+            readOnlyRootFilesystem: true
+            runAsUser: 65534 # "nobody" user by default
+            runAsGroup: 65534  # "nogroup" group by default
       volumes:
         # To be overriden with the actual shared volume
         - name: dt-vol
