@@ -806,7 +806,7 @@ class ApproveBallotTests(TestCase):
         ballot = create_ballot_if_not_open(None, draft, ad, 'approve')
         old_ballot_id = ballot.id
         draft.set_state(State.objects.get(used=True, type="draft-iesg", slug="iesg-eva")) 
-        url = urlreverse('ietf.doc.views_ballot.clear_ballot', kwargs=dict(name=draft.name,ballot_type_slug=draft.ballot_open('approve').ballot_type.slug))
+        url = urlreverse('ietf.doc.views_ballot.clear_ballot', kwargs=dict(name=draft.name,ballot_type_slug="approve"))
         login_testing_unauthorized(self, "secretary", url)
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
@@ -816,6 +816,11 @@ class ApproveBallotTests(TestCase):
         self.assertIsNotNone(ballot)
         self.assertEqual(ballot.ballotpositiondocevent_set.count(),0)
         self.assertNotEqual(old_ballot_id, ballot.id)
+        # It's not valid to clear a ballot of a type where there's no matching state
+        url = urlreverse('ietf.doc.views_ballot.clear_ballot', kwargs=dict(name=draft.name,ballot_type_slug="statchg"))
+        r = self.client.post(url,{})
+        self.assertEqual(r.status_code, 404)
+ 
 
     def test_ballot_downref_approve(self):
         ad = Person.objects.get(name="Areað Irector")

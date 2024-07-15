@@ -1,5 +1,11 @@
 #!/bin/bash
 
+if test $(basename $PWD ) != "docker"
+then
+    echo "Run this from the docker directory" 1>&2
+    exit 1
+fi
+
 cd ..
 echo "Shutting down any instance still running..."
 docker compose down
@@ -9,5 +15,5 @@ docker volume rm -f "${PROJNAME}_postgresdb-data"
 echo "Rebuilding the DB image..."
 docker compose pull db
 docker compose build --no-cache db
-cd docker
+
 echo "Done!"

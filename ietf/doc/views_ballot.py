@@ -399,11 +399,22 @@ def send_ballot_comment(request, name, ballot_id):
 def clear_ballot(request, name, ballot_type_slug):
     """Clear all positions and discusses on every open ballot for a document."""
     doc = get_object_or_404(Document, name=name)
+    # If there's no appropriate ballot type state, clearing would be an invalid action.
+    # This will need to be updated if we ever allow defering IRTF ballots
+    if ballot_type_slug == "approve":
+        state_machine = "draft-iesg"
+    elif ballot_type_slug in ["statchg","conflrev"]:
+        state_machine = ballot_type_slug
+    else:
+        state_machine = None
+    state_slug = state_machine and doc.get_state_slug(state_machine)
+    if state_machine is None or state_slug is None:
+        raise Http404
     if request.method == 'POST':
         by = request.user.person
         if close_ballot(doc, by, ballot_type_slug):
             create_ballot_if_not_open(request, doc, by, ballot_type_slug)
-        if doc.get_state('draft-iesg').slug == 'defer':
+        if state_slug == "defer":
             do_undefer_ballot(request,doc)
         return redirect("ietf.doc.views_doc.document_main", name=doc.name)
 
