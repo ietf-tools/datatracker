@@ -1,0 +1,14 @@
+namespace: datatracker
+namePrefix: dt-
+configMapGenerator:
+  - name: files-cfgmap
+    files:
+      - settings_local.py
+resources:
+  - auth.yaml
+  - beat.yaml
+  - celery.yaml
+  - datatracker.yaml
+  - django-config.yaml
+  - memcached.yaml
+  - rabbitmq.yaml

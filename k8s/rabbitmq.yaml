@@ -1,0 +1,175 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: rabbitmq
+spec:
+  replicas: 1
+  revisionHistoryLimit: 2
+  selector:
+    matchLabels:
+      app: rabbitmq
+  template:
+    metadata:
+      labels:
+        app: rabbitmq
+    spec:
+      securityContext:
+        runAsNonRoot: true
+      initContainers:
+        # -----------------------------------------------------
+        # Init RabbitMQ data
+        # -----------------------------------------------------
+        - name: init-rabbitmq
+          image: busybox:stable
+          command:
+            - "sh"
+            - "-c"
+            - "mkdir -p -m700 /mnt/rabbitmq && chown 100:101 /mnt/rabbitmq"
+          securityContext:
+            runAsNonRoot: false
+            runAsUser: 0
+            readOnlyRootFilesystem: true
+          volumeMounts:
+            - name: "rabbitmq-data"
+              mountPath: "/mnt"
+      containers:
+        # -----------------------------------------------------
+        # RabbitMQ Container
+        # -----------------------------------------------------
+        - image: "ghcr.io/ietf-tools/datatracker-mq:3.12-alpine"
+          imagePullPolicy: Always
+          name: rabbitmq
+          ports:
+            - name: amqp
+              containerPort: 5672
+              protocol: TCP
+          volumeMounts:
+            - name: rabbitmq-data
+              mountPath: /var/lib/rabbitmq
+              subPath: "rabbitmq"
+            - name: rabbitmq-tmp
+              mountPath: /tmp
+            - name: rabbitmq-config
+              mountPath: "/etc/rabbitmq"
+          env:
+            - name: "CELERY_PASSWORD"
+              value: "this-is-a-secret"
+          livenessProbe:
+            exec:
+              command: ["rabbitmq-diagnostics", "-q", "ping"]
+            periodSeconds: 30
+            timeoutSeconds: 5
+          startupProbe:
+            initialDelaySeconds: 15
+            periodSeconds: 5
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 60
+            exec:
+              command: ["rabbitmq-diagnostics", "-q", "ping"]
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
+            # rabbitmq image sets up uid/gid 100/101
+            runAsUser: 100
+            runAsGroup: 101
+      volumes:
+        - name: rabbitmq-tmp
+          emptyDir:
+            sizeLimit: "50Mi"
+        - name: rabbitmq-config
+          configMap:
+            name: "rabbitmq-configmap"
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+  volumeClaimTemplates:
+  - metadata:
+      name: rabbitmq-data
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      resources:
+        requests:
+          storage: 8Gi
+      # storageClassName: ""
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: rabbitmq-configmap
+data:
+  definitions.json: |-
+    {
+      "permissions": [
+        {
+          "configure": ".*",
+          "read": ".*",
+          "user": "datatracker",
+          "vhost": "dt",
+          "write": ".*"
+        }
+      ],
+      "users": [
+        {
+          "hashing_algorithm": "rabbit_password_hashing_sha256",
+          "limits": {},
+          "name": "datatracker",
+          "password_hash": "HJxcItcpXtBN+R/CH7dUelfKBOvdUs3AWo82SBw2yLMSguzb",
+          "tags": []
+        }
+      ],
+      "vhosts": [
+        {
+          "limits": [],
+          "metadata": {
+            "description": "",
+            "tags": []
+          },
+          "name": "dt"
+        }
+      ]
+    }
+  rabbitmq.conf: |-
+    # prevent guest from logging in over tcp
+    loopback_users.guest = true
+    
+    # load saved definitions
+    load_definitions = /etc/rabbitmq/definitions.json
+    
+    # Ensure that enough disk is available to flush to disk. To do this, need to limit the
+    # memory available to the container to something reasonable. See
+    # https://www.rabbitmq.com/production-checklist.html#monitoring-and-resource-usage
+    # for recommendations.
+    
+    # 1-1.5 times the memory available to the container is adequate for disk limit
+    disk_free_limit.absolute = 6000MB
+    
+    # This should be ~40% of the memory available to the container. Use an
+    # absolute number because relative will be proprtional to the full machine
+    # memory.
+    vm_memory_high_watermark.absolute = 1600MB
+    
+    # Logging
+    log.file = false
+    log.console = true
+    log.console.level = info
+    log.console.formatter = json
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rabbitmq
+spec:
+  type: ClusterIP
+  clusterIP: None  # headless service
+  ports:
+    - port: 5672
+      targetPort: amqp
+      protocol: TCP
+      name: amqp
+  selector:
+    app: rabbitmq

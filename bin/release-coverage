@@ -1,2 +1,0 @@
-#!/bin/bash
-zcat release-coverage.json.gz | jq 'to_entries[] | [.value.time, .key, .value.code.coverage, .value.template.coverage, .value.url.coverage] ' 2>/dev/null | tr "\n][" "	 \n" | tr -d ' "Z' | tr ",T" " " | sort -n | cut -c 2- | sed -n '/2015-03-10/,$p'

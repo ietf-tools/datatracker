@@ -285,7 +285,7 @@
                 <tr>
                     <th scope="row">Author {{ forloop.counter }}</th>
                     <td>
-                        {{ author.name }}
+                        {% if author.name %}{{ author.name }}{% endif %}
                         {% if author.email %}&lt;{{ author.email|linkify }}&gt;{% endif %}
                         <br>
                         {% if author.affiliation %}
@@ -520,14 +520,6 @@
             </button>
         </form>
     {% endif %}
-    {% if user|has_role:"Secretariat" %}
-        <a id="send{{ submission.pk }}"
-           class="btn btn-primary mt-3"
-           href="{% url "ietf.submit.views.send_submission_email" submission_id=submission.pk %}"
-           title="Email submitter">
-            <i class="bi bi-envelope" aria-hidden="true"></i> Send Email
-        </a>
-    {% endif %}
     {% if show_send_full_url %}
         <div class="alert alert-info my-3">
             <p>
@@ -584,39 +576,10 @@
                             {% endif %}
 
                         </td>
-                        {%  if e.desc|startswith:"Received message" or e.desc|startswith:"Sent message" %}
-                            {%  with m=e.submissionemailevent.message %}
-                                {% if user.is_authenticated %}
-                                    <td>
-                                        {% if  e.desc|startswith:"Received message" and user|has_role:"Secretariat" %}
-                                            <a id="reply{{ submission.pk }}"
-                                               class="btn btn-primary btn-sm"
-                                               href="{% url "ietf.submit.views.send_submission_email" submission_id=submission.pk message_id=e.submissionemailevent.pk %}"
-                                               title="Reply">
-                                                <i class="bi bi-envelope" aria-hidden="true"></i> Reply
-                                            </a>
-                                        {% endif %}
-                                        Email:
-                                        <a id="aw{{ submission.pk }}-{{ m.pk }}"
-                                           href="{% url "ietf.submit.views.show_submission_email_message" submission_id=submission.pk message_id=e.submissionemailevent.pk access_token=submission.access_token %}">
-                                            {{ e.desc }}
-                                        </a>
-                                    </td>
-                                {% else %}
-                                    <td>
-                                        Email:
-                                        <a id="aw{{ submission.pk }}-{{ m.pk }}"
-                                           href="{% url "ietf.submit.views.show_submission_email_message" submission_id=submission.pk message_id=e.submissionemailevent.pk %}">
-                                            {{ e.desc }}
-                                        </a>
-                                    </td>
-                                {% endif %}
-                            {% endwith %}
-                        {%  else %}
-                            <td>
-                                {{ e.desc|urlize_ietf_docs|linkify }}
-                            </td>
-                        {%  endif %}
+
+                        <td>
+                            {{ e.desc|urlize_ietf_docs|linkify }}
+                        </td>
                     </tr>
                 {% endfor %}
             </tbody>

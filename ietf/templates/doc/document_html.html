@@ -172,9 +172,10 @@
             </div>
             <div class="d-print-none col-md-3 bg-light-subtle collapse{% if request.COOKIES.sidebar != 'off'%} show{% endif %}" id="sidebar">
                 <div class="position-fixed border-start sidebar overflow-scroll overscroll-none no-scrollbar">
-                    <div class="pt-2 pt-lg-3 px-md-2 px-lg-3">
-                        <a class="btn btn-primary btn-sm" href="{% url 'ietf.doc.views_doc.document_main' name=doc.name %}">Datatracker</a>
-                        <p class="fw-bold pt-2">
+                    <div class="d-flex flex-column vh-100 pt-2 pt-lg-3 ps-3 pl-md-2 pl-lg-3">
+                        <div>
+                            <a class="btn btn-primary btn-sm" href="{% url 'ietf.doc.views_doc.document_main' name=doc.name %}">Datatracker</a>
+                            <p class="fw-bold pt-2">
                                 {% if doc.type_id == "rfc" %}
                                     RFC {{ doc.rfc_number }}
                                 {% else %}
@@ -188,8 +189,8 @@
                                         Internet-Draft
                                     {% endif %}
                                 </span>
-
-                        </p>
+                            </p>
+                        </div>
                         {% if request.COOKIES.htmlconf and request.COOKIES.htmlconf != 'html' and html %}
                         <div class="alert alert-info small">
                             You are viewing the legacy <code><a class="text-decoration-none text-reset" href="https://github.com/ietf-tools/rfc2html">rfc2html</a></code>
@@ -204,7 +205,7 @@
                             HTML is available for this document.
                         </div>
                         {% endif %}
-                        <ul class="nav nav-tabs nav-fill small" role="tablist">
+                        <ul class="nav nav-tabs nav-fill small me-2" role="tablist">
                             <li class="nav-item" role="presentation" title="Document information">
                                 <button class="nav-link px-2"
                                         id="docinfo-tab"
@@ -242,7 +243,7 @@
                                 </button>
                             </li>
                         </ul>
-                        <div class="tab-content pt-2">
+                        <div class="overflow-auto tab-content pt-2 me-2">
                             <div class="tab-pane"
                                  id="docinfo-tab-pane"
                                  role="tabpanel"

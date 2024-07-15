@@ -6650,7 +6650,9 @@ class MaterialsTests(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertRegex(r.content.decode(), r"These\s+slides\s+have\s+already\s+been\s+rejected")
 
-    def test_approve_proposed_slides(self):
+    @override_settings(MEETECHO_API_CONFIG="fake settings")  # enough to trigger API calls
+    @patch("ietf.meeting.views.SlidesManager")
+    def test_approve_proposed_slides(self, mock_slides_manager_cls):
         submission = SlideSubmissionFactory()
         session = submission.session
         session.meeting.importantdate_set.create(name_id='revsub',date=date_today() + datetime.timedelta(days=20))
@@ -6666,19 +6668,30 @@ class MaterialsTests(TestCase):
         self.assertEqual(r.status_code,302)
         self.assertEqual(SlideSubmission.objects.filter(status__slug = 'pending').count(), 0)
         self.assertEqual(SlideSubmission.objects.filter(status__slug = 'approved').count(), 1)
-        submission = SlideSubmission.objects.get(id = submission.id)
+        submission.refresh_from_db()
         self.assertEqual(submission.status_id, 'approved')
         self.assertIsNotNone(submission.doc)
         self.assertEqual(session.presentations.count(),1)
         self.assertEqual(session.presentations.first().document.title,'different title')
+        self.assertEqual(mock_slides_manager_cls.call_count, 1)
+        self.assertEqual(mock_slides_manager_cls.call_args, call(api_config="fake settings"))
+        self.assertEqual(mock_slides_manager_cls.return_value.add.call_count, 1)
+        self.assertEqual(
+            mock_slides_manager_cls.return_value.add.call_args,
+            call(session=session, slides=submission.doc, order=1),
+        )
+        mock_slides_manager_cls.reset_mock()
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         self.assertRegex(r.content.decode(), r"These\s+slides\s+have\s+already\s+been\s+approved")
+        self.assertFalse(mock_slides_manager_cls.called)
         self.assertEqual(len(outbox), 1)
         self.assertIn(submission.submitter.email_address(), outbox[0]['To'])
         self.assertIn('Slides approved', outbox[0]['Subject'])
 
-    def test_approve_proposed_slides_multisession_apply_one(self):
+    @override_settings(MEETECHO_API_CONFIG="fake settings")  # enough to trigger API calls
+    @patch("ietf.meeting.views.SlidesManager")
+    def test_approve_proposed_slides_multisession_apply_one(self, mock_slides_manager_cls):
         submission = SlideSubmissionFactory(session__meeting__type_id='ietf')
         session1 = submission.session
         session2 = SessionFactory(group=submission.session.group, meeting=submission.session.meeting)
@@ -6691,11 +6704,22 @@ class MaterialsTests(TestCase):
         q = PyQuery(r.content)
         self.assertTrue(q('#id_apply_to_all'))
         r = self.client.post(url,dict(title='yet another title',approve='approve'))
+        submission.refresh_from_db()
+        self.assertIsNotNone(submission.doc)
         self.assertEqual(r.status_code,302)
         self.assertEqual(session1.presentations.count(),1)
         self.assertEqual(session2.presentations.count(),0)
+        self.assertEqual(mock_slides_manager_cls.call_count, 1)
+        self.assertEqual(mock_slides_manager_cls.call_args, call(api_config="fake settings"))
+        self.assertEqual(mock_slides_manager_cls.return_value.add.call_count, 1)
+        self.assertEqual(
+            mock_slides_manager_cls.return_value.add.call_args,
+            call(session=session1, slides=submission.doc, order=1),
+        )
 
-    def test_approve_proposed_slides_multisession_apply_all(self):
+    @override_settings(MEETECHO_API_CONFIG="fake settings")  # enough to trigger API calls
+    @patch("ietf.meeting.views.SlidesManager")
+    def test_approve_proposed_slides_multisession_apply_all(self, mock_slides_manager_cls):
         submission = SlideSubmissionFactory(session__meeting__type_id='ietf')
         session1 = submission.session
         session2 = SessionFactory(group=submission.session.group, meeting=submission.session.meeting)
@@ -6706,11 +6730,24 @@ class MaterialsTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code,200)
         r = self.client.post(url,dict(title='yet another title',apply_to_all=1,approve='approve'))
+        submission.refresh_from_db()
         self.assertEqual(r.status_code,302)
         self.assertEqual(session1.presentations.count(),1)
         self.assertEqual(session2.presentations.count(),1)
+        self.assertEqual(mock_slides_manager_cls.call_count, 1)
+        self.assertEqual(mock_slides_manager_cls.call_args, call(api_config="fake settings"))
+        self.assertEqual(mock_slides_manager_cls.return_value.add.call_count, 2)
+        self.assertCountEqual(
+            mock_slides_manager_cls.return_value.add.call_args_list,
+            [
+                call(session=session1, slides=submission.doc, order=1),
+                call(session=session2, slides=submission.doc, order=1),
+            ]
+        )
 
-    def test_submit_and_approve_multiple_versions(self):
+    @override_settings(MEETECHO_API_CONFIG="fake settings")  # enough to trigger API calls
+    @patch("ietf.meeting.views.SlidesManager")
+    def test_submit_and_approve_multiple_versions(self, mock_slides_manager_cls):
         session = SessionFactory(meeting__type_id='ietf')
         chair = RoleFactory(group=session.group,name_id='chair').person
         session.meeting.importantdate_set.create(name_id='revsub',date=date_today()+datetime.timedelta(days=20))
@@ -6725,14 +6762,23 @@ class MaterialsTests(TestCase):
         self.assertEqual(r.status_code, 302)
         self.client.logout()
 
-        submission = SlideSubmission.objects.get(session = session)
+        submission = SlideSubmission.objects.get(session=session)
 
         approve_url = urlreverse('ietf.meeting.views.approve_proposed_slides', kwargs={'slidesubmission_id':submission.pk,'num':submission.session.meeting.number})
         login_testing_unauthorized(self, chair.user.username, approve_url)
         r = self.client.post(approve_url,dict(title=submission.title,approve='approve'))
+        submission.refresh_from_db()
         self.assertEqual(r.status_code,302)
         self.client.logout()
-
+        self.assertEqual(mock_slides_manager_cls.call_count, 1)
+        self.assertEqual(mock_slides_manager_cls.call_args, call(api_config="fake settings"))
+        self.assertEqual(mock_slides_manager_cls.return_value.add.call_count, 1)
+        self.assertEqual(
+            mock_slides_manager_cls.return_value.add.call_args,
+            call(session=session, slides=submission.doc, order=1),
+        )
+        mock_slides_manager_cls.reset_mock()
+        
         self.assertEqual(session.presentations.first().document.rev,'00')
 
         login_testing_unauthorized(self,newperson.user.username,propose_url)
@@ -6752,12 +6798,24 @@ class MaterialsTests(TestCase):
         approve_url = urlreverse('ietf.meeting.views.approve_proposed_slides', kwargs={'slidesubmission_id':second_submission.pk,'num':second_submission.session.meeting.number})
         login_testing_unauthorized(self, chair.user.username, approve_url)
         r = self.client.post(approve_url,dict(title=submission.title,approve='approve'))
+        first_submission.refresh_from_db()
+        second_submission.refresh_from_db()
         self.assertEqual(r.status_code,302)
+        self.assertEqual(mock_slides_manager_cls.call_count, 1)
+        self.assertEqual(mock_slides_manager_cls.call_args, call(api_config="fake settings"))
+        self.assertEqual(mock_slides_manager_cls.return_value.add.call_count, 0)
+        self.assertEqual(mock_slides_manager_cls.return_value.revise.call_count, 1)
+        self.assertEqual(
+            mock_slides_manager_cls.return_value.revise.call_args,
+            call(session=session, slides=second_submission.doc),
+        )
+        mock_slides_manager_cls.reset_mock()
 
         disapprove_url = urlreverse('ietf.meeting.views.approve_proposed_slides', kwargs={'slidesubmission_id':first_submission.pk,'num':first_submission.session.meeting.number})
         r = self.client.post(disapprove_url,dict(title='some title',disapprove="disapprove"))
         self.assertEqual(r.status_code,302)
         self.client.logout()
+        self.assertFalse(mock_slides_manager_cls.called)
 
         self.assertEqual(SlideSubmission.objects.filter(status__slug = 'pending').count(),0)
         self.assertEqual(SlideSubmission.objects.filter(status__slug = 'rejected').count(),1)
@@ -8598,7 +8656,7 @@ class ProceedingsTests(BaseMeetingTestCase):
         self.assertEqual(r.status_code, 200)  
         self.assertContains(r, '3 attendees')
         for person in persons:
-            self.assertContains(r, person.name)
+            self.assertContains(r, person.plain_name())
 
         # Test for the "I was there" button.
         def _test_button(person, expected):
@@ -8618,14 +8676,14 @@ class ProceedingsTests(BaseMeetingTestCase):
         # attempt to POST anyway is ignored
         r = self.client.post(attendance_url)
         self.assertEqual(r.status_code, 200)
-        self.assertNotContains(r, persons[3].name)
+        self.assertNotContains(r, persons[3].plain_name())
         self.assertEqual(session.attended_set.count(), 3)
         # button is shown, and POST is accepted
         meeting.importantdate_set.update(name_id='revsub',date=date_today() + datetime.timedelta(days=20))
         _test_button(persons[3], True)
         r = self.client.post(attendance_url)
         self.assertEqual(r.status_code, 200)
-        self.assertContains(r, persons[3].name)
+        self.assertContains(r, persons[3].plain_name())
         self.assertEqual(session.attended_set.count(), 4)
 
         # When the meeting is finalized, a bluesheet file is generated,
@@ -8639,7 +8697,7 @@ class ProceedingsTests(BaseMeetingTestCase):
         text = doc.text()
         self.assertIn('4 attendees', text)
         for person in persons:
-            self.assertIn(person.name, text)
+            self.assertIn(person.plain_name(), text)
         r = self.client.get(session_url)
         self.assertContains(r, doc.get_href())
         self.assertNotContains(r, attendance_url)

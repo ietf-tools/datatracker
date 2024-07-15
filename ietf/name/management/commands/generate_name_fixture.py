@@ -77,7 +77,6 @@ class Command(BaseCommand):
         from ietf.mailtrigger.models import MailTrigger, Recipient
         from ietf.meeting.models import BusinessConstraint
         from ietf.stats.models import CountryAlias
-        from ietf.utils.models import VersionInfo
 
         # Grab all ietf.name.models
         for n in dir(ietf.name.models):
@@ -87,7 +86,7 @@ class Command(BaseCommand):
                     model_objects[model_name(item)] = list(item.objects.all().order_by('pk'))
 
         for m in ( BallotType, State, StateType, GroupFeatures, MailTrigger, Recipient,
-                    CountryAlias, VersionInfo, BusinessConstraint ):
+                    CountryAlias, BusinessConstraint ):
             model_objects[model_name(m)] = list(m.objects.all().order_by('pk'))
 
         for m in ( DBTemplate, ):

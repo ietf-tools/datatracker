@@ -81,7 +81,7 @@
                             <small class="text-body-secondary">{{ form.nominee.email.person.name }} for {{ form.position.name }}</small>
                         </h2>
                         <p class="mt-3">
-                            Provide feedback about {% person_link form.nominee.person %}
+                            Provide feedback about {% person_link form.nominee.person with_email=False %}
                             for the <b>{{ form.position.name }}</b> position.
                         </p>
                     {% elif form.topic %}
@@ -97,8 +97,8 @@
                     {% endif %}
                     <p>
                         This feedback will only be available to
-                        <a href="{% url 'ietf.nomcom.views.year_index' year=year %}">NomCom {{ year }}</a>.
-                        You may have the feedback mailed back to you by selecting the option below.
+                        <a href="{% url 'ietf.nomcom.views.year_index' year=year %}">the current NomCom</a>.
+                        You can have the feedback mailed back to you by selecting the option below.
                     </p>
                     <form class="float-start" id="feedbackform" method="post">
                         {% csrf_token %}

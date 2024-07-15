@@ -137,8 +137,8 @@
                             <tr data-name="{{ pres.document.name }}">
                                 {% url 'ietf.doc.views_doc.document_main' name=pres.document.name as url %}
                                 <td>
-                                    <a href="{{ pres.document.get_href }}">{{ pres.document.title }}</a>
-                                    <a href="{{ url }}">({{ pres.document.name }})</a>
+                                    <a href="{{ url }}">{{ pres.document.title }}</a>
+                                    <a href="{{ pres.document.get_href }}">( as json )</a>
                                 </td>
                             </tr>
                         {% endfor %}

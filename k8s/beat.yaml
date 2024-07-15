@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: beat
+  labels:
+    deleteBeforeUpgrade: yes
+spec:
+  replicas: 1
+  revisionHistoryLimit: 2
+  selector:
+    matchLabels:
+      app: beat
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: beat
+    spec:
+      securityContext:
+        runAsNonRoot: true
+      containers:
+        - name: beat
+          image: "ghcr.io/ietf-tools/datatracker:$APP_IMAGE_TAG"
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8000
+              name: http
+              protocol: TCP
+          volumeMounts:
+            - name: dt-vol
+              mountPath: /a
+            - name: dt-tmp
+              mountPath: /tmp
+            - name: dt-cfg
+              mountPath: /workspace/ietf/settings_local.py
+              subPath: settings_local.py
+          env:
+            - name: "CONTAINER_ROLE"
+              value: "beat"
+          envFrom:
+            - configMapRef:
+                name: django-config
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            readOnlyRootFilesystem: true
+            runAsUser: 1000
+            runAsGroup: 1000
+      volumes:
+        # To be overriden with the actual shared volume
+        - name: dt-vol
+        - name: dt-tmp
+          emptyDir:
+            sizeLimit: "2Gi"
+        - name: dt-cfg
+          configMap:
+            name: files-cfgmap
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 600
