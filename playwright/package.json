@@ -7,14 +7,14 @@
     "test:debug": "playwright test --debug"
   },
   "devDependencies": {
-    "@playwright/test": "1.42.1",
-    "eslint": "8.57.0",
+    "@playwright/test": "1.45.1",
+    "eslint": "9.7.0",
     "eslint-config-standard": "17.1.0",
     "eslint-plugin-import": "2.29.1",
-    "eslint-plugin-n": "16.6.2",
+    "eslint-plugin-n": "17.9.0",
     "eslint-plugin-node": "11.1.0",
-    "eslint-plugin-promise": "6.1.1",
-    "npm-check-updates": "16.14.18"
+    "eslint-plugin-promise": "6.4.0",
+    "npm-check-updates": "16.14.20"
   },
   "dependencies": {
     "@faker-js/faker": "8.4.1",
