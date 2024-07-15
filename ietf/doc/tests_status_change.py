@@ -495,10 +495,14 @@ class StatusChangeTests(TestCase):
         doc.relateddocument_set.create(target=Document.objects.get(name='rfc9998'),relationship_id='tohist')
         create_ballot_if_not_open(None, doc, Person.objects.get(user__username="secretary"), "statchg")
         doc.set_state(State.objects.get(slug='iesgeval',type='statchg'))
+        old_ballot = doc.ballot_open("statchg")
+        self.assertIsNotNone(old_ballot)
         
         r = self.client.post(url, dict())
         self.assertEqual(r.status_code,302)
-        self.assertTrue(doc.ballot_open("statchg"))
+        new_ballot = doc.ballot_open("statchg")
+        self.assertIsNotNone(new_ballot)
+        self.assertNotEqual(new_ballot, old_ballot)
         self.assertEqual(doc.get_state_slug("statchg"),"iesgeval")
 
     def test_clear_deferred_ballot(self):
@@ -511,10 +515,14 @@ class StatusChangeTests(TestCase):
         doc.relateddocument_set.create(target=Document.objects.get(name='rfc9998'),relationship_id='tohist')
         create_ballot_if_not_open(None, doc, Person.objects.get(user__username="secretary"), "statchg")
         doc.set_state(State.objects.get(slug='defer',type='statchg'))
+        old_ballot = doc.ballot_open("statchg")
+        self.assertIsNotNone(old_ballot)
         
         r = self.client.post(url, dict())
         self.assertEqual(r.status_code,302)
-        self.assertTrue(doc.ballot_open("statchg"))
+        new_ballot = doc.ballot_open("statchg")
+        self.assertIsNotNone(new_ballot)
+        self.assertNotEqual(new_ballot, old_ballot)
         self.assertEqual(doc.get_state_slug("statchg"),"iesgeval")
 
     def setUp(self):
