@@ -1228,18 +1228,6 @@ def fuzzy_find_documents(name, rev=None):
     FoundDocuments = namedtuple('FoundDocuments', 'documents matched_name matched_rev')
     return FoundDocuments(docs, name, rev)
 
-def write_bibxml_file_if_changed(filepath, content):
-    # normalize new content
-    content = re.sub(r'\r\n?', r'\n', content)
-    try:
-        with io.open(filepath, encoding='utf-8') as f:
-            old = f.read()
-    except IOError:
-        old = ""
-    if old.strip() != content.strip():
-        with io.open(filepath, "w", encoding='utf-8') as f:
-            f.write(content)
-
 
 def bibxml_for_draft(doc, rev=None):
 
@@ -1274,32 +1262,6 @@ def bibxml_for_draft(doc, rev=None):
         raise Http404()
         
     return render_to_string('doc/bibxml.xml', {'name':name, 'doc':doc, 'doc_bibtype':'I-D', 'settings':settings})
-
-
-def bibxml_for_all_drafts(bibxmldir):
-    doc_events = NewRevisionDocEvent.objects.filter(type='new_revision', doc__type_id='draft').order_by('time')
-    for e in doc_events:
-        try:
-            bibxml = bibxml_for_draft(e.doc, e.rev)
-            ref_rev_file_name = os.path.join(bibxmldir, 'reference.I-D.%s-%s.xml' % (e.doc.name, e.rev))
-            write_bibxml_file_if_changed(ref_rev_file_name, bibxml)
-        except Exception as ee:
-            log.log('\n%s-%s: %s\n' % (e.doc.name, e.doc.rev, str(ee)))
-
-
-def bibxml_for_recent_drafts(bibxmldir, days=7):
-    if days < 1:
-        raise ValueError()
-    start = timezone.now() - datetime.timedelta(days=days)
-    doc_events = NewRevisionDocEvent.objects.filter(type='new_revision', doc__type_id='draft', time__gte=start).order_by('time')
-    for e in doc_events:
-        try:
-            bibxml = bibxml_for_draft(e.doc, e.rev)
-            ref_rev_file_name = os.path.join(bibxmldir, 'reference.I-D.%s-%s.xml' % (e.doc.name, e.rev))
-            write_bibxml_file_if_changed(ref_rev_file_name, bibxml)
-        except Exception as ee:
-            log.log('\n%s-%s: %s\n' % (e.doc.name, e.doc.rev, str(ee)))
-            raise ee
 
 
 class DraftAliasGenerator:
