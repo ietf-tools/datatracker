@@ -11,12 +11,9 @@ from ietf.status.models import Status
 import debug                            # pyflakes:ignore
 
 def get_context_data():
-    status = Status.objects.order_by("-date").first()
-    if status is None or status.active == False:
+    status = Status.objects.filter(active=True).order_by("-date").first()
+    if status is None:
         return { "hasMessage": False }
-
-    if status.slug is None:
-        raise FieldError("No slug generated. This shouldn't happen.")
 
     context = {
         "hasMessage": True,
@@ -25,8 +22,7 @@ def get_context_data():
         "title": status.title,
         "body": status.body,
         "url": f"/status/{status.slug}",
-        "date": status.date.isoformat(),
-        "by": status.by.name,
+        "date": status.date.isoformat()
     }
     return context
 
@@ -45,6 +41,6 @@ def status_latest_json(request):
 
 def status_latest_redirect(request):
     context = get_context_data()
-    if context["hasMessage"]:
+    if context["hasMessage"] == True:
         return HttpResponseRedirect(context["url"])
     return HttpResponseNotFound()
