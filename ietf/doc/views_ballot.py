@@ -403,8 +403,8 @@ def clear_ballot(request, name, ballot_type_slug):
     # This will need to be updated if we ever allow defering IRTF ballots
     if ballot_type_slug == "approve":
         state_machine = "draft-iesg"
-    elif ballot_type_slug == "statchg":
-        state_machine = "statchg"
+    elif ballot_type_slug in ["statchg","conflrev"]:
+        state_machine = ballot_type_slug
     else:
         state_machine = None
     state_slug = state_machine and doc.get_state_slug(state_machine)
