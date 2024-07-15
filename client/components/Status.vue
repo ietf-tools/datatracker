@@ -3,11 +3,10 @@
   import { useNotification } from 'naive-ui'
   import { localStorageWrapper } from '../shared/local-storage-wrapper';
   import { JSONWrapper } from '../shared/json-wrapper';
-
-  const STORAGE_KEY = "status-dismissed"
+  import { STATUS_STORAGE_KEY, generateStatusTestId } from '../shared/status-common'
 
   const getDismissedStatuses = () => {
-    const jsonString = localStorageWrapper.getItem(STORAGE_KEY)
+    const jsonString = localStorageWrapper.getItem(STATUS_STORAGE_KEY)
     const jsonValue = JSONWrapper.parse(jsonString, [])
     if(Array.isArray(jsonValue)) {
       return jsonValue;
@@ -17,7 +16,7 @@
 
   const dismissStatus = (id) => {
     const dissmissed = [id, ...getDismissedStatuses()];
-    localStorageWrapper.setItem(STORAGE_KEY, JSONWrapper.stringify(dissmissed));
+    localStorageWrapper.setItem(STATUS_STORAGE_KEY, JSONWrapper.stringify(dissmissed));
     return true;
   }
 
@@ -58,6 +57,7 @@
                 h(
                   'a',
                   {
+                    'data-testid': generateStatusTestId(status.id),
                     href: status.url,
                     'aria-label': `Read more about ${status.title}`
                   },
