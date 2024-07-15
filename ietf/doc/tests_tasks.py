@@ -1,7 +1,6 @@
 # Copyright The IETF Trust 2024, All Rights Reserved
 import datetime
 import mock
-import os
 
 from pathlib import Path
 
@@ -210,8 +209,6 @@ class BIBXMLSupportTests(TestCase):
     @mock.patch("ietf.doc.tasks.ensure_draft_bibxml_path_exists")
     @mock.patch("ietf.doc.tasks.update_or_create_draft_bibxml_file")
     def test_generate_bibxml_files_for_recent_drafts_task_with_bad_value(self, mock_create, mock_ensure_path):
-        bibxmldir = os.path.join(settings.BIBXML_BASE_PATH, 'bibxml-ids')
-        os.mkdir(bibxmldir)
         with self.assertRaises(ValueError):
             generate_draft_bibxml_files_task(days=0)
         self.assertFalse(mock_create.called)
