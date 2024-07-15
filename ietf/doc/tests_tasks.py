@@ -1,20 +1,17 @@
 # Copyright The IETF Trust 2024, All Rights Reserved
 import datetime
-import io
 import mock
 import os
 
 from pathlib import Path
 
 from django.conf import settings
-from django.urls import reverse as urlreverse
 from django.utils import timezone
 
 from ietf.utils.test_utils import TestCase
 from ietf.utils.timezone import datetime_today
-from ietf.utils.test_utils import unicontent
 
-from .factories import DocumentFactory, IndividualDraftFactory, NewRevisionDocEventFactory, WgRfcFactory
+from .factories import DocumentFactory, NewRevisionDocEventFactory
 from .models import Document, NewRevisionDocEvent
 from .tasks import (
     expire_ids_task,
@@ -26,8 +23,6 @@ from .tasks import (
 )
 
 class TaskTests(TestCase):
-    settings_temp_path_overrides = TestCase.settings_temp_path_overrides + ["DERIVED_DIR"]
-
     @mock.patch("ietf.doc.tasks.in_draft_expire_freeze")
     @mock.patch("ietf.doc.tasks.get_expired_drafts")
     @mock.patch("ietf.doc.tasks.expirable_drafts")
@@ -102,16 +97,10 @@ class TaskTests(TestCase):
         self.assertEqual(mock_expire.call_args_list[1], mock.call(docs[1]))
         self.assertEqual(mock_expire.call_args_list[2], mock.call(docs[2]))
 
-    @mock.patch("ietf.doc.tasks.generate_idnits2_rfc_status")
-    def test_generate_idnits2_rfc_status_task(self, mock_generate):
-        mock_generate.return_value = "dåtå"
-        generate_idnits2_rfc_status_task()
-        self.assertEqual(mock_generate.call_count, 1)
-        self.assertEqual(
-            "dåtå".encode("utf8"),
-            (Path(settings.DERIVED_DIR) / "idnits2-rfc-status").read_bytes(),
-        )
-    
+
+class Idnits2SupportTests(TestCase):
+    settings_temp_path_overrides = TestCase.settings_temp_path_overrides + ['DERIVED_DIR']
+
     @mock.patch("ietf.doc.tasks.generate_idnits2_rfcs_obsoleted")
     def test_generate_idnits2_rfcs_obsoleted_task(self, mock_generate):
         mock_generate.return_value = "dåtå"
@@ -122,17 +111,28 @@ class TaskTests(TestCase):
             (Path(settings.DERIVED_DIR) / "idnits2-rfcs-obsoleted").read_bytes(),
         )
 
-    @mock.patch("ietf.doc.tasks.ensure_draft_bibxml_path_exists")
-    @mock.patch("ietf.doc.tasks.update_or_create_draft_bibxml_file")
-    def test_generate_draft_bibxml_files_task(self, mock_create, mock_ensure_path):
+    @mock.patch("ietf.doc.tasks.generate_idnits2_rfc_status")
+    def test_generate_idnits2_rfc_status_task(self, mock_generate):
+        mock_generate.return_value = "dåtå"
+        generate_idnits2_rfc_status_task()
+        self.assertEqual(mock_generate.call_count, 1)
+        self.assertEqual(
+            "dåtå".encode("utf8"),
+            (Path(settings.DERIVED_DIR) / "idnits2-rfc-status").read_bytes(),
+        )
+
+
+class BIBXMLSupportTests(TestCase):
+    def setUp(self):
+        super().setUp()
         now = timezone.now()
-        very_old_event = NewRevisionDocEventFactory(
+        self.very_old_event = NewRevisionDocEventFactory(
             time=now - datetime.timedelta(days=1000), rev="17"
         )
-        old_event = NewRevisionDocEventFactory(
+        self.old_event = NewRevisionDocEventFactory(
             time=now - datetime.timedelta(days=8), rev="03"
         )
-        young_event = NewRevisionDocEventFactory(
+        self.young_event = NewRevisionDocEventFactory(
             time=now - datetime.timedelta(days=6), rev="06"
         )
         # a couple that should always be ignored
@@ -145,53 +145,25 @@ class TaskTests(TestCase):
             rev="09",
             doc__type_id="rfc",
         )
-    
         # Get rid of the "00" events created by the factories -- they're just noise for this test
         NewRevisionDocEvent.objects.filter(rev="00").delete()
-    
-        # default args - look back 7 days
-        generate_draft_bibxml_files_task()
-        self.assertTrue(mock_ensure_path.called)
-        self.assertCountEqual(
-            mock_create.call_args_list, [mock.call(young_event.doc, young_event.rev)]
-        )
-        mock_create.reset_mock()
-        mock_ensure_path.reset_mock()
-    
-        # shorter lookback
-        generate_draft_bibxml_files_task(days=5)
-        self.assertTrue(mock_ensure_path.called)
-        self.assertCountEqual(mock_create.call_args_list, [])
-        mock_create.reset_mock()
-        mock_ensure_path.reset_mock()
-    
-        # longer lookback
-        generate_draft_bibxml_files_task(days=9)
-        self.assertTrue(mock_ensure_path.called)
-        self.assertCountEqual(
-            mock_create.call_args_list,
-            [
-                mock.call(young_event.doc, young_event.rev),
-                mock.call(old_event.doc, old_event.rev),
-            ],
-        )
-        mock_create.reset_mock()
-        mock_ensure_path.reset_mock()
-    
-        # everything
+
+    @mock.patch("ietf.doc.tasks.ensure_draft_bibxml_path_exists")
+    @mock.patch("ietf.doc.tasks.update_or_create_draft_bibxml_file")
+    def test_generate_bibxml_files_for_all_drafts_task(self, mock_create, mock_ensure_path):
         generate_draft_bibxml_files_task(process_all=True)
         self.assertTrue(mock_ensure_path.called)
         self.assertCountEqual(
             mock_create.call_args_list,
             [
-                mock.call(young_event.doc, young_event.rev),
-                mock.call(old_event.doc, old_event.rev),
-                mock.call(very_old_event.doc, very_old_event.rev),
+                mock.call(self.young_event.doc, self.young_event.rev),
+                mock.call(self.old_event.doc, self.old_event.rev),
+                mock.call(self.very_old_event.doc, self.very_old_event.rev),
             ],
         )
         mock_create.reset_mock()
         mock_ensure_path.reset_mock()
-    
+
         # everything should still be tried, even if there's an exception
         mock_create.side_effect = RuntimeError
         generate_draft_bibxml_files_task(process_all=True)
@@ -199,71 +171,48 @@ class TaskTests(TestCase):
         self.assertCountEqual(
             mock_create.call_args_list,
             [
-                mock.call(young_event.doc, young_event.rev),
-                mock.call(old_event.doc, old_event.rev),
-                mock.call(very_old_event.doc, very_old_event.rev),
+                mock.call(self.young_event.doc, self.young_event.rev),
+                mock.call(self.old_event.doc, self.old_event.rev),
+                mock.call(self.very_old_event.doc, self.very_old_event.rev),
             ],
         )
 
+    @mock.patch("ietf.doc.tasks.ensure_draft_bibxml_path_exists")
+    @mock.patch("ietf.doc.tasks.update_or_create_draft_bibxml_file")
+    def test_generate_bibxml_files_for_recent_drafts_task(self, mock_create, mock_ensure_path):
+        # default args - look back 7 days
+        generate_draft_bibxml_files_task()
+        self.assertTrue(mock_ensure_path.called)
+        self.assertCountEqual(
+            mock_create.call_args_list, [mock.call(self.young_event.doc, self.young_event.rev)]
+        )
+        mock_create.reset_mock()
+        mock_ensure_path.reset_mock()
 
-class Idnits2SupportTests(TestCase):
-    settings_temp_path_overrides = TestCase.settings_temp_path_overrides + ['DERIVED_DIR']
+        # shorter lookback
+        generate_draft_bibxml_files_task(days=5)
+        self.assertTrue(mock_ensure_path.called)
+        self.assertCountEqual(mock_create.call_args_list, [])
+        mock_create.reset_mock()
+        mock_ensure_path.reset_mock()
 
-    def test_generate_idnits2_rfcs_obsoleted_task(self):
-        rfc = WgRfcFactory(rfc_number=1001)
-        WgRfcFactory(rfc_number=1003,relations=[('obs',rfc)])
-        rfc = WgRfcFactory(rfc_number=1005)
-        WgRfcFactory(rfc_number=1007,relations=[('obs',rfc)])
-        url = urlreverse('ietf.doc.views_doc.idnits2_rfcs_obsoleted')
-        r = self.client.get(url)
-        self.assertEqual(r.status_code, 404)
-        generate_idnits2_rfcs_obsoleted_task()
-        r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
-        self.assertEqual(r.content, b'1001 1003\n1005 1007\n')
-        
-    def test_generate_idnits2_rfc_status_task(self):
-        for slug in ('bcp', 'ds', 'exp', 'hist', 'inf', 'std', 'ps', 'unkn'):
-            WgRfcFactory(std_level_id=slug)
-        url = urlreverse('ietf.doc.views_doc.idnits2_rfc_status')
-        r = self.client.get(url)
-        self.assertEqual(r.status_code,404)
-        generate_idnits2_rfc_status_task()
-        r = self.client.get(url)
-        self.assertEqual(r.status_code,200)
-        blob = unicontent(r).replace('\n','')
-        self.assertEqual(blob[6312-1],'O')
+        # longer lookback
+        generate_draft_bibxml_files_task(days=9)
+        self.assertTrue(mock_ensure_path.called)
+        self.assertCountEqual(
+            mock_create.call_args_list,
+            [
+                mock.call(self.young_event.doc, self.young_event.rev),
+                mock.call(self.old_event.doc, self.old_event.rev),
+            ],
+        )
 
-
-class BIBXMLSupportTests(TestCase):
-    def test_generate_bibxml_files_for_all_drafts_task(self):
-        draft = IndividualDraftFactory.create()
-        filename = 'reference.I-D.%s-%s.xml' % (draft.name, draft.rev)
-        bibxmldir = os.path.join(settings.BIBXML_BASE_PATH, 'bibxml-ids')
-        os.mkdir(bibxmldir)
-        filepath = os.path.join(bibxmldir, filename)
-        self.assertFalse(os.path.exists(filepath))
-        generate_draft_bibxml_files_task(process_all=True)
-        self.assertTrue(os.path.exists(filepath))
-        with io.open(filepath, encoding='utf-8') as f:
-            content = f.read()
-        self.assertIn(draft.title, content)
-
-    def test_generate_bibxml_files_for_recent_drafts_task(self):
-        draft = IndividualDraftFactory.create()
-        filename = 'reference.I-D.%s-%s.xml' % (draft.name, draft.rev)
-        bibxmldir = os.path.join(settings.BIBXML_BASE_PATH, 'bibxml-ids')
-        os.mkdir(bibxmldir)
-        filepath = os.path.join(bibxmldir, filename)
-        self.assertFalse(os.path.exists(filepath))
-        generate_draft_bibxml_files_task(days=7)
-        self.assertTrue(os.path.exists(filepath))
-        with io.open(filepath, encoding='utf-8') as f:
-            content = f.read()
-        self.assertIn(draft.title, content)
-
-    def test_generate_bibxml_files_for_recent_drafts_task_with_bad_value(self):
+    @mock.patch("ietf.doc.tasks.ensure_draft_bibxml_path_exists")
+    @mock.patch("ietf.doc.tasks.update_or_create_draft_bibxml_file")
+    def test_generate_bibxml_files_for_recent_drafts_task_with_bad_value(self, mock_create, mock_ensure_path):
         bibxmldir = os.path.join(settings.BIBXML_BASE_PATH, 'bibxml-ids')
         os.mkdir(bibxmldir)
         with self.assertRaises(ValueError):
             generate_draft_bibxml_files_task(days=0)
+        self.assertFalse(mock_create.called)
+        self.assertFalse(mock_ensure_path.called)
