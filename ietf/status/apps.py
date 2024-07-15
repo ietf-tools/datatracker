@@ -1,3 +1,6 @@
+# Copyright The IETF Trust 2017-2024, All Rights Reserved
+# -*- coding: utf-8 -*-
+
 from django.apps import AppConfig
 
 

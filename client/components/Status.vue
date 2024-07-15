@@ -1,23 +1,23 @@
-<script>
-  import { h, defineComponent } from 'vue'
+<script setup>
+  import { h, onMounted } from 'vue'
   import { useNotification } from 'naive-ui'
-  import { localStorageWrapper } from '../shared/local-storage-wrapper';
-  import { JSONWrapper } from '../shared/json-wrapper';
+  import { localStorageWrapper } from '../shared/local-storage-wrapper'
+  import { JSONWrapper } from '../shared/json-wrapper'
   import { STATUS_STORAGE_KEY, generateStatusTestId } from '../shared/status-common'
 
   const getDismissedStatuses = () => {
     const jsonString = localStorageWrapper.getItem(STATUS_STORAGE_KEY)
     const jsonValue = JSONWrapper.parse(jsonString, [])
     if(Array.isArray(jsonValue)) {
-      return jsonValue;
+      return jsonValue
     }
-    return [];
+    return []
   }
 
   const dismissStatus = (id) => {
-    const dissmissed = [id, ...getDismissedStatuses()];
-    localStorageWrapper.setItem(STATUS_STORAGE_KEY, JSONWrapper.stringify(dissmissed));
-    return true;
+    const dissmissed = [id, ...getDismissedStatuses()]
+    localStorageWrapper.setItem(STATUS_STORAGE_KEY, JSONWrapper.stringify(dissmissed))
+    return true
   }
 
   let notificationInstances = {} // keyed by status.id
@@ -28,24 +28,24 @@
         .then(resp => resp.json())
         .then(status => {
             if(status === null || status.hasMessage === false) {
-                console.info("No status message")
+                console.debug("No status message")
                 return
             }
             const dismissedStatuses = getDismissedStatuses()
             if(dismissedStatuses.includes(status.id)) {
-              console.info(`Not showing site status ${status.id} because it was already dismissed. Dismissed Ids:`, dismissedStatuses)
+              console.debug(`Not showing site status ${status.id} because it was already dismissed. Dismissed Ids:`, dismissedStatuses)
               return
             }
 
             const isSameStatusPage = Boolean(document.querySelector(`[data-status-id="${status.id}"]`))
 
             if(isSameStatusPage) {
-              console.info(`Not showing site status ${status.id} because we're on the target page`)
+              console.debug(`Not showing site status ${status.id} because we're on the target page`)
               return
             }
 
             if(notificationInstances[status.id]) {
-              console.info(`Not showing site status ${status.id} because it's already been displayed`)
+              console.debug(`Not showing site status ${status.id} because it's already been displayed`)
               return
             }
 
@@ -73,11 +73,8 @@
         })
   }
   
-  
-  export default defineComponent({
-    setup() {
+  onMounted(() => {
       notification = useNotification()
       pollStatusAPI(notification)
-    }
   })
 </script>

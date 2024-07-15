@@ -1,6 +1,8 @@
 export const JSONWrapper = {
   parse(jsonString, defaultValue) {
-    if(typeof jsonString !== "string") return defaultValue
+    if(typeof jsonString !== "string") {
+      return defaultValue
+    }
     try {
       return JSON.parse(jsonString);
     } catch (e) {

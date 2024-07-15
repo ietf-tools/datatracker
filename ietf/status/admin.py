@@ -1,3 +1,6 @@
+# Copyright The IETF Trust 2017-2024, All Rights Reserved
+# -*- coding: utf-8 -*-
+
 from datetime import datetime
 from django.contrib import admin
 from django.template.defaultfilters import slugify
