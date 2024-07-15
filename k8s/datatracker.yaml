@@ -89,8 +89,8 @@ spec:
             - name: "CONTAINER_ROLE"
               value: "migrations"
           envFrom:
-            - configMapRef:
-                name: django-config
+            - secretRef:
+                name: dt-secrets-env
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
