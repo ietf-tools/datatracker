@@ -17,7 +17,7 @@ from ietf.doc.utils import add_state_change_event, update_action_holders
 from ietf.person.models import Person
 from ietf.doc.lastcall import request_last_call
 from ietf.doc.mails import email_state_changed
-from ietf.iesg.models import TelechatDate, TelechatAgendaItem, Telechat
+from ietf.iesg.models import TelechatDate, TelechatAgendaItem
 from ietf.iesg.agenda import agenda_data, get_doc_section
 from ietf.ietfauth.utils import role_required
 from ietf.secr.telechat.forms import BallotForm, ChangeStateForm, DateSelectForm, TELECHAT_TAGS
@@ -419,18 +419,6 @@ def minutes(request, date):
         'da_docs': da_docs},
     )
 
-@role_required('Secretariat')
-def new(request):
-    '''
-    This view creates a new telechat agenda and redirects to the default view
-    '''
-    if request.method == 'POST':
-        date = request.POST['date']
-        # create legacy telechat record
-        Telechat.objects.create(telechat_date=date)
-
-        messages.success(request,'New Telechat Agenda created')
-        return redirect('ietf.secr.telechat.views.doc', date=date)
 
 @role_required('Secretariat')
 def roll_call(request, date):

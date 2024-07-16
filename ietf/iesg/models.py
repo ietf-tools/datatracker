@@ -59,20 +59,6 @@ class TelechatAgendaItem(models.Model):
         type_name = self.TYPE_CHOICES_DICT.get(self.type, str(self.type))
         return "%s: %s" % (type_name, self.title or "")
 
-class Telechat(models.Model):
-    telechat_id = models.IntegerField(primary_key=True)
-    telechat_date = models.DateField(null=True, blank=True)
-    minute_approved = models.IntegerField(null=True, blank=True)
-    wg_news_txt = models.TextField(blank=True)
-    iab_news_txt = models.TextField(blank=True)
-    management_issue = models.TextField(blank=True)
-    frozen = models.IntegerField(null=True, blank=True)
-    mi_frozen = models.IntegerField(null=True, blank=True)
-
-    class Meta:
-        db_table = 'telechat'
-
-
 def next_telechat_date():
     dates = TelechatDate.objects.order_by("-date")
     if dates:

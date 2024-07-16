@@ -62,7 +62,7 @@
         {% endif %}
         <h3 class="mt-4">Agenda, Minutes, and Bluesheets</h3>
         <table class="table table-sm table-striped">
-            {% if session.filtered_artifacts %}
+            {% if session.filtered_artifacts or session.bluesheet_title %}
                 <tbody>
                     {% for pres in session.filtered_artifacts %}
                         <tr>
@@ -73,6 +73,8 @@
                                 {% if user|has_role:"Secretariat" or can_manage_materials %}
                                     {% if pres.document.type.slug == 'minutes' %}
                                         {% url 'ietf.meeting.views.upload_session_minutes' session_id=session.pk num=session.meeting.number as upload_url %}
+                                    {% elif pres.document.type.slug == 'narrativeminutes' %}
+                                        {% url 'ietf.meeting.views.upload_session_narrativeminutes' session_id=session.pk num=session.meeting.number as upload_url %}
                                     {% elif pres.document.type.slug == 'agenda' %}
                                         {% url 'ietf.meeting.views.upload_session_agenda' session_id=session.pk num=session.meeting.number as upload_url %}
                                     {% else %}
@@ -89,6 +91,13 @@
                             </td>
                         </tr>
                     {% endfor %}
+                    {% if session.bluesheet_title %}
+                        <tr><td>
+                            <a href="{% url 'ietf.meeting.views.session_attendance' session_id=session.pk num=session.meeting.number %}">
+                                {{ session.bluesheet_title }}
+                            </a>
+                        </td></tr>
+                    {% endif %}
                 </tbody>
             {% endif %}
         </table>
@@ -106,6 +115,12 @@
                     Upload minutes
                 </a>
             {% endif %}
+            {% if not session.type_counter.narrativeminutes and session.group.acronym == "iesg" %}
+                <a class="btn btn-primary"
+                href="{% url 'ietf.meeting.views.upload_session_narrativeminutes' session_id=session.pk num=session.meeting.number %}">
+                    Upload narrative minutes
+                </a>
+        {% endif %}           
         {% endif %}
         {% if user|has_role:"Secretariat" and not session.type_counter.bluesheets or meeting.type.slug == 'interim' and can_manage_materials and not session.type_counter.bluesheets %}
             <a class="btn btn-primary"
@@ -122,8 +137,8 @@
                             <tr data-name="{{ pres.document.name }}">
                                 {% url 'ietf.doc.views_doc.document_main' name=pres.document.name as url %}
                                 <td>
-                                    <a href="{{ pres.document.get_href }}">{{ pres.document.title }}</a>
-                                    <a href="{{ url }}">({{ pres.document.name }})</a>
+                                    <a href="{{ url }}">{{ pres.document.title }}</a>
+                                    <a href="{{ pres.document.get_href }}">( as json )</a>
                                 </td>
                             </tr>
                         {% endfor %}
@@ -344,7 +359,7 @@
                 {% if session.video_stream_url %}
                     <tr>
                         <td>
-                            <a href="https://www.meetecho.com/ietf{{ meeting.number }}/recordings#{{ group.acronym.upper }}">
+                            <a href="{{ session.session_recording_url }}">
                                 <i class="bi bi-file-slides"></i> Session recording
                             </a>
                         </td>

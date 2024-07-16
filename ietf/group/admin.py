@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2010-2020, All Rights Reserved
+# Copyright The IETF Trust 2010-2024, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 import re
@@ -71,6 +71,12 @@ class GroupForm(forms.ModelForm):
                 error_msg = (
                     'Acronym is invalid. For groups that create documents, the acronym must be at least '
                     'two characters and only contain lowercase letters and numbers starting with a letter.'
+                )
+            elif self.cleaned_data['type'].pk == 'sdo':
+                valid_re = r'^[a-z0-9][a-z0-9-]*[a-z0-9]$'
+                error_msg = (
+                    'Acronym is invalid. It must be at least two characters and only contain lowercase '
+                    'letters and numbers. It may contain hyphens, but that is discouraged.'
                 )
             else:
                 valid_re = r'^[a-z][a-z0-9-]*[a-z0-9]$'

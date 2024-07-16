@@ -2,8 +2,10 @@
 import datetime
 import debug  # pyflakes:ignore
 
-from unittest.mock import patch
+from pathlib import Path
+from unittest.mock import call, patch
 
+from django.conf import settings
 from django.db import IntegrityError
 from django.test.utils import override_settings
 from django.utils import timezone
@@ -16,7 +18,8 @@ from ietf.person.models import Person
 from ietf.doc.factories import DocumentFactory, WgRfcFactory, WgDraftFactory
 from ietf.doc.models import State, DocumentActionHolder, DocumentAuthor
 from ietf.doc.utils import (update_action_holders, add_state_change_event, update_documentauthors,
-                            fuzzy_find_documents, rebuild_reference_relations, build_file_urls)
+                            fuzzy_find_documents, rebuild_reference_relations, build_file_urls,
+                            ensure_draft_bibxml_path_exists, update_or_create_draft_bibxml_file)
 from ietf.utils.draft import Draft, PlaintextDraft
 from ietf.utils.xmldraft import XMLDraft
 
@@ -484,3 +487,49 @@ class RebuildReferenceRelationsTests(TestCase):
                 (self.updated.name, 'updates'),
             ]
         )
+
+
+class DraftBibxmlTests(TestCase):
+    settings_temp_path_overrides = TestCase.settings_temp_path_overrides + ["BIBXML_BASE_PATH"]
+
+    def test_ensure_draft_bibxml_path_exists(self):
+        expected = Path(settings.BIBXML_BASE_PATH) / "bibxml-ids"
+        self.assertFalse(expected.exists())
+        ensure_draft_bibxml_path_exists()
+        self.assertTrue(expected.is_dir())  # false if does not exist or is not dir
+
+    @patch("ietf.doc.utils.bibxml_for_draft", return_value="This\ris\nmy\r\nbibxml")
+    def test_create_draft_bibxml_file(self, mock):
+        bibxml_path = Path(settings.BIBXML_BASE_PATH) / "bibxml-ids"
+        bibxml_path.mkdir(exist_ok=False)  # expect to start with a clean slate
+        
+        doc = DocumentFactory()
+        ref_path = bibxml_path / f"reference.I-D.{doc.name}-26.xml"  # we're pretending it's rev 26
+        
+        update_or_create_draft_bibxml_file(doc, "26")
+        self.assertEqual(mock.call_count, 1)
+        self.assertEqual(mock.call_args, call(doc, "26"))
+        self.assertEqual(ref_path.read_text(), "This\nis\nmy\nbibxml")
+
+    @patch("ietf.doc.utils.bibxml_for_draft", return_value="This\ris\nmy\r\nbibxml")
+    def test_update_draft_bibxml_file(self, mock):
+        bibxml_path = Path(settings.BIBXML_BASE_PATH) / "bibxml-ids"
+        bibxml_path.mkdir(exist_ok=False)  # expect to start with a clean slate
+        
+        doc = DocumentFactory()
+        ref_path = bibxml_path / f"reference.I-D.{doc.name}-26.xml"  # we're pretending it's rev 26
+        ref_path.write_text("Old data")
+
+        # should replace it
+        update_or_create_draft_bibxml_file(doc, "26")
+        self.assertEqual(mock.call_count, 1)
+        self.assertEqual(mock.call_args, call(doc, "26"))
+        self.assertEqual(ref_path.read_text(), "This\nis\nmy\nbibxml")
+
+        # should leave it alone if it differs only by leading/trailing whitespace
+        mock.reset_mock()
+        mock.return_value = "   \n  This\nis\nmy\nbibxml  "
+        update_or_create_draft_bibxml_file(doc, "26")
+        self.assertEqual(mock.call_count, 1)
+        self.assertEqual(mock.call_args, call(doc, "26"))
+        self.assertEqual(ref_path.read_text(), "This\nis\nmy\nbibxml")

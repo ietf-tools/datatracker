@@ -38,6 +38,7 @@ from ietf.mailtrigger.forms import CcSelectForm
 from ietf.message.utils import infer_message
 from ietf.name.models import BallotPositionName, DocTypeName
 from ietf.person.models import Person
+from ietf.utils.fields import ModelMultipleChoiceField
 from ietf.utils.mail import send_mail_text, send_mail_preformatted
 from ietf.utils.decorators import require_api_key
 from ietf.utils.response import permission_denied
@@ -398,11 +399,22 @@ def send_ballot_comment(request, name, ballot_id):
 def clear_ballot(request, name, ballot_type_slug):
     """Clear all positions and discusses on every open ballot for a document."""
     doc = get_object_or_404(Document, name=name)
+    # If there's no appropriate ballot type state, clearing would be an invalid action.
+    # This will need to be updated if we ever allow defering IRTF ballots
+    if ballot_type_slug == "approve":
+        state_machine = "draft-iesg"
+    elif ballot_type_slug in ["statchg","conflrev"]:
+        state_machine = ballot_type_slug
+    else:
+        state_machine = None
+    state_slug = state_machine and doc.get_state_slug(state_machine)
+    if state_machine is None or state_slug is None:
+        raise Http404
     if request.method == 'POST':
         by = request.user.person
         if close_ballot(doc, by, ballot_type_slug):
             create_ballot_if_not_open(request, doc, by, ballot_type_slug)
-        if doc.get_state('draft-iesg').slug == 'defer':
+        if state_slug == "defer":
             do_undefer_ballot(request,doc)
         return redirect("ietf.doc.views_doc.document_main", name=doc.name)
 
@@ -686,7 +698,8 @@ def ballot_writeupnotes(request, name):
                               dict(doc=doc,
                                    back_url=doc.get_absolute_url(),
                                    ballot_issued=bool(doc.latest_event(type="sent_ballot_announcement")),
-                                   ballot_issue_danger=bool(prev_state.slug in ['ad-eval', 'lc']),
+                                   warn_lc = not doc.docevent_set.filter(lastcalldocevent__expires__date__lt=date_today(DEADLINE_TZINFO)).exists(),
+                                   warn_unexpected_state= prev_state if bool(prev_state.slug in ['watching', 'ad-eval', 'lc']) else None,
                                    ballot_writeup_form=form,
                                    need_intended_status=need_intended_status,
                                    ))
@@ -931,7 +944,7 @@ def approve_ballot(request, name):
 
 
 class ApproveDownrefsForm(forms.Form):
-    checkboxes = forms.ModelMultipleChoiceField(
+    checkboxes = ModelMultipleChoiceField(
         widget = forms.CheckboxSelectMultiple,
         queryset =  RelatedDocument.objects.none(), )
 

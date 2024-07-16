@@ -20,7 +20,7 @@ from django.utils.html import escape
 import debug                            # pyflakes:ignore
 
 from ietf.doc.expire import get_expired_drafts, send_expire_notice_for_draft, expire_draft
-from ietf.doc.factories import IndividualDraftFactory, WgDraftFactory, RgDraftFactory, DocEventFactory
+from ietf.doc.factories import EditorialDraftFactory, IndividualDraftFactory, WgDraftFactory, RgDraftFactory, DocEventFactory
 from ietf.doc.models import ( Document, DocReminder, DocEvent,
     ConsensusDocEvent, LastCallDocEvent, RelatedDocument, State, TelechatDocEvent, 
     WriteupDocEvent, DocRelationshipName, IanaExpertDocEvent )
@@ -2161,3 +2161,13 @@ class ShepherdWriteupTests(TestCase):
         self.assertContains(r, "for Group Documents", status_code=200)
         r = self.client.post(url,dict(reset_text=''))
         self.assertContains(r, "for Group Documents", status_code=200)
+
+class EditorialDraftMetadataTests(TestCase):
+    def test_editorial_metadata(self):
+        draft = EditorialDraftFactory()
+        url = urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name))
+        r = self.client.get(url)
+        q = PyQuery(r.content)
+        top_level_metadata_headings = q("tbody>tr>th:first-child").text()
+        self.assertNotIn("IESG", top_level_metadata_headings)
+        self.assertNotIn("IANA", top_level_metadata_headings)

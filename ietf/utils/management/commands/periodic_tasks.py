@@ -12,6 +12,7 @@ CRONTAB_DEFS = {
         "day_of_month": "*",
         "month_of_year": "*",
         "day_of_week": "0",
+        "timezone": "America/Los_Angeles",
     },
     "daily": {
         "minute": "5",
@@ -19,6 +20,7 @@ CRONTAB_DEFS = {
         "day_of_month": "*",
         "month_of_year": "*",
         "day_of_week": "*",
+        "timezone": "America/Los_Angeles",
     },
     "hourly": {
         "minute": "5",
@@ -33,6 +35,14 @@ CRONTAB_DEFS = {
         "day_of_month": "*",
         "month_of_year": "*",
         "day_of_week": "*",
+    },
+    "every_15m_except_midnight": {
+        "minute": "*/15",
+        "hour": "1-23",
+        "day_of_month": "*",
+        "month_of_year": "*",
+        "day_of_week": "*",
+        "timezone": "America/Los_Angeles",
     },
 }
 
@@ -79,7 +89,7 @@ class Command(BaseCommand):
             kwargs=json.dumps(dict(full_index=False)),
             defaults=dict(
                 enabled=False,
-                crontab=self.crontabs["every_15m"],
+                crontab=self.crontabs["every_15m_except_midnight"],  # don't collide with full sync
                 description=(
                     "Reparse the last _year_ of RFC index entries until "
                     "https://github.com/ietf-tools/datatracker/issues/3734 is addressed. "
@@ -132,6 +142,16 @@ class Command(BaseCommand):
         )
 
         PeriodicTask.objects.get_or_create(
+            name="Expire Last Calls",
+            task="ietf.doc.tasks.expire_last_calls_task",
+            defaults=dict(
+                enabled=False,
+                crontab=self.crontabs["daily"],
+                description="Move docs whose last call has expired to their next states",
+            ),
+        )
+
+        PeriodicTask.objects.get_or_create(
             name="Sync with IANA changes",
             task="ietf.sync.tasks.iana_changes_update_task",
             defaults=dict(
@@ -143,7 +163,7 @@ class Command(BaseCommand):
 
         PeriodicTask.objects.get_or_create(
             name="Sync with IANA protocols page",
-            task="ietf.sync.tasks.iana_changes_update_task",
+            task="ietf.sync.tasks.iana_protocols_update_task",
             defaults=dict(
                 enabled=False,
                 crontab=self.crontabs["hourly"],
@@ -169,6 +189,98 @@ class Command(BaseCommand):
                 crontab=self.crontabs["weekly"],
                 description="Send notifications about I-Ds that will expire in the next 14 days",
             )
+        )
+
+        PeriodicTask.objects.get_or_create(
+            name="Generate idnits2 rfcs-obsoleted blob",
+            task="ietf.doc.tasks.generate_idnits2_rfcs_obsoleted_task",
+            defaults=dict(
+                enabled=False,
+                crontab=self.crontabs["hourly"],
+                description="Generate the rfcs-obsoleted file used by idnits",
+            ),
+        )
+
+        PeriodicTask.objects.get_or_create(
+            name="Generate idnits2 rfc-status blob",
+            task="ietf.doc.tasks.generate_idnits2_rfc_status_task",
+            defaults=dict(
+                enabled=False,
+                crontab=self.crontabs["hourly"],
+                description="Generate the rfc_status blob used by idnits",
+            ),
+        )
+
+        PeriodicTask.objects.get_or_create(
+            name="Send NomCom reminders",
+            task="ietf.nomcom.tasks.send_nomcom_reminders_task",
+            defaults=dict(
+                enabled=False,
+                crontab=self.crontabs["daily"],
+                description="Send acceptance and questionnaire reminders to nominees",
+            ),
+        )
+
+        PeriodicTask.objects.get_or_create(
+            name="Generate WG charter files",
+            task="ietf.group.tasks.generate_wg_charters_files_task",
+            defaults=dict(
+                enabled=False,
+                crontab=self.crontabs["hourly"],
+                description="Update 1wg-charters.txt and 1wg-charters-by-acronym.txt",
+            ),
+        )
+
+        PeriodicTask.objects.get_or_create(
+            name="Generate WG summary files",
+            task="ietf.group.tasks.generate_wg_summary_files_task",
+            defaults=dict(
+                enabled=False,
+                crontab=self.crontabs["hourly"],
+                description="Update 1wg-summary.txt and 1wg-summary-by-acronym.txt",
+            ),
+        )
+
+        PeriodicTask.objects.get_or_create(
+            name="Generate I-D bibxml files",
+            task="ietf.doc.tasks.generate_draft_bibxml_files_task",
+            defaults=dict(
+                enabled=False,
+                crontab=self.crontabs["hourly"],
+                description="Generate draft bibxml files for the last week's drafts",
+            ),
+        )
+
+        PeriodicTask.objects.get_or_create(
+            name="Send personal API key usage emails",
+            task="ietf.person.tasks.send_apikey_usage_emails_task",
+            kwargs=json.dumps(dict(days=7)),
+            defaults=dict(
+                enabled=False,
+                crontab=self.crontabs["weekly"],
+                description="Send personal API key usage summary emails for the past week",
+            ),
+        )
+        
+        PeriodicTask.objects.get_or_create(
+            name="Purge old personal API key events",
+            task="ietf.person.tasks.purge_personal_api_key_events_task",
+            kwargs=json.dumps(dict(keep_days=14)),
+            defaults=dict(
+                enabled=False,
+                crontab=self.crontabs["daily"],
+                description="Purge PersonApiKeyEvent instances older than 14 days",
+            ),
+        )
+
+        PeriodicTask.objects.get_or_create(
+            name="Run Yang model checks",
+            task="ietf.submit.tasks.run_yang_model_checks_task",
+            defaults=dict(
+                enabled=False,
+                crontab=self.crontabs["daily"],
+                description="Re-run Yang model checks on all active drafts",
+            ),
         )
 
     def show_tasks(self):

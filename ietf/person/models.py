@@ -37,8 +37,12 @@ from ietf.utils.models import ForeignKey, OneToOneField
 
 
 def name_character_validator(value):
-    if '/' in value:
-        raise ValidationError('Name cannot contain "/" character.')
+    disallowed = "@:/"
+    found = set(disallowed).intersection(value)
+    if len(found) > 0:
+        raise ValidationError(
+            f"This name cannot contain the characters {', '.join(disallowed)}"
+        )
 
 
 class Person(models.Model):
@@ -48,11 +52,11 @@ class Person(models.Model):
     # The normal unicode form of the name.  This must be
     # set to the same value as the ascii-form if equal.
     name = models.CharField("Full Name (Unicode)", max_length=255, db_index=True, help_text="Preferred long form of name.", validators=[name_character_validator])
-    plain = models.CharField("Plain Name correction (Unicode)", max_length=64, default='', blank=True, help_text="Use this if you have a Spanish double surname.  Don't use this for nicknames, and don't use it unless you've actually observed that the datatracker shows your name incorrectly.")
+    plain = models.CharField("Plain Name correction (Unicode)", max_length=64, default='', blank=True, help_text="Use this if you have a Spanish double surname.  Don't use this for nicknames, and don't use it unless you've actually observed that the datatracker shows your name incorrectly.", validators=[name_character_validator])
     # The normal ascii-form of the name.
-    ascii = models.CharField("Full Name (ASCII)", max_length=255, help_text="Name as rendered in ASCII (Latin, unaccented) characters.")
+    ascii = models.CharField("Full Name (ASCII)", max_length=255, help_text="Name as rendered in ASCII (Latin, unaccented) characters.", validators=[name_character_validator])
     # The short ascii-form of the name.  Also in alias table if non-null
-    ascii_short = models.CharField("Abbreviated Name (ASCII)", max_length=32, null=True, blank=True, help_text="Example: A. Nonymous.  Fill in this with initials and surname only if taking the initials and surname of the ASCII name above produces an incorrect initials-only form. (Blank is OK).")
+    ascii_short = models.CharField("Abbreviated Name (ASCII)", max_length=32, null=True, blank=True, help_text="Example: A. Nonymous.  Fill in this with initials and surname only if taking the initials and surname of the ASCII name above produces an incorrect initials-only form. (Blank is OK).", validators=[name_character_validator])
     pronouns_selectable = jsonfield.JSONCharField("Pronouns", max_length=120, blank=True, null=True, default=list )
     pronouns_freetext = models.CharField(" ", max_length=30, null=True, blank=True, help_text="Optionally provide your personal pronouns. These will be displayed on your public profile page and alongside your name in Meetecho and, in future, other systems. Select any number of the checkboxes OR provide a custom string up to 30 characters.")
     biography = models.TextField(blank=True, help_text="Short biography for use on leadership pages. Use plain text or reStructuredText markup.")

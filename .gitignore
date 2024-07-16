@@ -26,6 +26,7 @@ datatracker.sublime-workspace
 /static
 /tmp-*
 /.testresult
+*.swp
 *.pyc
 __pycache__
 .yarn/*

@@ -8,6 +8,7 @@ import os
 import re
 
 from django import forms
+from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.http import Http404
 from django.shortcuts import render, get_object_or_404, redirect
@@ -21,7 +22,9 @@ from ietf.doc.models import NewRevisionDocEvent
 from ietf.doc.utils import add_state_change_event, check_common_doc_name_rules
 from ietf.group.models import Group
 from ietf.group.utils import can_manage_materials
+from ietf.utils import log
 from ietf.utils.decorators import ignore_view_kwargs
+from ietf.utils.meetecho import MeetechoAPIError, SlidesManager
 from ietf.utils.response import permission_denied
 
 @login_required
@@ -113,6 +116,8 @@ def edit_material(request, name=None, acronym=None, action=None, doc_type=None):
     valid_doctypes = ['procmaterials']
     if group is not None:
         valid_doctypes.extend(['minutes','agenda','bluesheets'])
+        if group.acronym=="iesg":
+            valid_doctypes.append("narrativeminutes")
         valid_doctypes.extend(group.features.material_types)
 
     if document_type.slug not in valid_doctypes:
@@ -120,6 +125,8 @@ def edit_material(request, name=None, acronym=None, action=None, doc_type=None):
 
     if not can_manage_materials(request.user, group):
         permission_denied(request, "You don't have permission to access this view")
+
+    sessions_with_slide_title_updates = set()
 
     if request.method == 'POST':
         form = UploadMaterialForm(document_type, action, group, doc, request.POST, request.FILES)
@@ -173,6 +180,9 @@ def edit_material(request, name=None, acronym=None, action=None, doc_type=None):
                     e.desc += " from %s" % prev_title
                 e.save()
                 events.append(e)
+                if doc.type_id == "slides":
+                    for sp in doc.presentations.all():
+                        sessions_with_slide_title_updates.add(sp.session)
 
             if prev_abstract != doc.abstract:
                 e = DocEvent(doc=doc, rev=doc.rev, by=request.user.person, type='changed_document')
@@ -189,6 +199,16 @@ def edit_material(request, name=None, acronym=None, action=None, doc_type=None):
 
             if events:
                 doc.save_with_history(events)
+
+            # Call Meetecho API if any session slides titles changed 
+            if sessions_with_slide_title_updates and hasattr(settings, "MEETECHO_API_CONFIG"):
+                sm = SlidesManager(api_config=settings.MEETECHO_API_CONFIG)
+                for session in sessions_with_slide_title_updates:
+                    try:
+                        # SessionPresentations are unique over (session, document) so there will be no duplicates
+                        sm.send_update(session)
+                    except MeetechoAPIError as err:
+                        log.log(f"Error in SlidesManager.send_update(): {err}")
 
             return redirect("ietf.doc.views_doc.document_main", name=doc.name)
     else:

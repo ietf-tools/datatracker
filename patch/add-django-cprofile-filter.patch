@@ -1,15 +1,9 @@
---- django_cprofile_middleware/middleware.py.old	2018-04-04 06:32:29.282187502 -0700
-+++ django_cprofile_middleware/middleware.py	2018-04-06 10:11:18.936855634 -0700
-@@ -1,4 +1,5 @@
- import pstats
-+import re
- 
- try:
-     import cProfile as profile
-@@ -14,6 +15,15 @@
- from django.utils.deprecation import MiddlewareMixin
- 
- 
+--- django_cprofile_middleware/middleware.py.old	2024-06-27 21:03:56.975128007 +0000
++++ django_cprofile_middleware/middleware.py	2024-06-27 23:45:59.421683008 +0000
+@@ -19,6 +19,16 @@
+     from django_cprofile_middleware.utils import MiddlewareMixin
+
+
 +class Stats(pstats.Stats):
 +    def filter_stats(self, regex):
 +        oldstats = self.stats
@@ -19,16 +13,63 @@
 +            if filter.search(pstats.func_std_string(func)):
 +                newstats[func] = (cc, nc, tt, ct, callers)
 +
++
  class ProfilerMiddleware(MiddlewareMixin):
      """
      Simple profile middleware to profile django views. To run it, add ?prof to
-@@ -62,8 +72,13 @@
+@@ -38,9 +48,11 @@
+     ?download => Download profile file suitable for visualization. For example
+         in snakeviz or RunSnakeRun
+
+-    This is adapted from an example found here:
+-    http://www.slideshare.net/zeeg/django-con-high-performance-django-presentation.
++    Patched with https://github.com/omarish/django-cprofile-middleware/pull/23
++    for operation with Django 4.2.5+
+     """
++    PROFILER_REQUEST_ATTR_NAME = '_django_cprofile_middleware_profiler'
++
+     def can(self, request):
+         requires_staff = getattr(
+             settings, "DJANGO_CPROFILE_MIDDLEWARE_REQUIRE_STAFF", True)
+@@ -52,10 +64,11 @@
+
+     def process_view(self, request, callback, callback_args, callback_kwargs):
+         if self.can(request):
+-            self.profiler = profile.Profile()
++            profiler = profile.Profile()
++            setattr(request, self.PROFILER_REQUEST_ATTR_NAME, profiler)
+             args = (request,) + callback_args
+             try:
+-                return self.profiler.runcall(
++                return profiler.runcall(
+                     callback, *args, **callback_kwargs)
+             except Exception:
+                 # we want the process_exception middleware to fire
+@@ -63,12 +76,13 @@
+                 return
+
+     def process_response(self, request, response):
+-        if self.can(request):
+-            self.profiler.create_stats()
++        if hasattr(request, self.PROFILER_REQUEST_ATTR_NAME):
++            profiler = getattr(request, self.PROFILER_REQUEST_ATTR_NAME)
++            profiler.create_stats()
+             if 'download' in request.GET:
+                 import marshal
+
+-                output = marshal.dumps(self.profiler.stats)
++                output = marshal.dumps(profiler.stats)
+                 response = HttpResponse(
+                     output, content_type='application/octet-stream')
+                 response['Content-Disposition'] = 'attachment;' \
+@@ -76,9 +90,14 @@
                  response['Content-Length'] = len(output)
              else:
                  io = StringIO()
 -                stats = pstats.Stats(self.profiler, stream=io)
++                stats = Stats(profiler, stream=io)
+
 -                stats.strip_dirs().sort_stats(request.GET.get('sort', 'time'))
-+                stats = Stats(self.profiler, stream=io)
 +                if request.GET.get('stripdirs', False):
 +                    stats = stats.strip_dirs()
 +                filter = request.GET.get('filter', None)
@@ -36,5 +77,5 @@
 +                    stats.filter_stats(filter)
 +                stats.sort_stats(request.GET.get('psort') or 'time')
                  stats.print_stats(int(request.GET.get('count', 100)))
+
                  response = HttpResponse('<pre>%s</pre>' % io.getvalue())
-         return response

@@ -41,6 +41,7 @@ class NonWgMailingListResource(ModelResource):
         filtering = { 
             "id": ALL,
             "name": ALL,
+            "domain": ALL,
             "description": ALL,
         }
 api.mailinglists.register(NonWgMailingListResource())

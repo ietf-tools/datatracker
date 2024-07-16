@@ -24,10 +24,14 @@ urlpatterns = [
     # --- Custom API endpoints, sorted alphabetically ---
     # Email alias information for drafts
     url(r'^doc/draft-aliases/$', api_views.draft_aliases),
-    # GPRD: export of personal information for the logged-in person
+    # email ingestor
+    url(r'email/$', api_views.ingest_email),
+    # GDPR: export of personal information for the logged-in person
     url(r'^export/personal-information/$', api_views.PersonalInformationExportView.as_view()),
     # Email alias information for groups
     url(r'^group/group-aliases/$', api_views.group_aliases),
+    # Email addresses belonging to role holders
+    url(r'^group/role-holder-addresses/$', api_views.role_holder_addresses),
     # Let IESG members set positions programmatically
     url(r'^iesg/position', views_ballot.api_set_position),
     # Let Meetecho set session video URLs
@@ -49,6 +53,8 @@ urlpatterns = [
     # OpenID authentication provider
     url(r'^openid/$', TemplateView.as_view(template_name='api/openid-issuer.html'), name='ietf.api.urls.oidc_issuer'),
     url(r'^openid/', include('oidc_provider.urls', namespace='oidc_provider')),
+    # Email alias listing
+    url(r'^person/email/$', api_views.active_email_list),
     # Draft submission API
     url(r'^submit/?$', submit_views.api_submit),
     # Draft upload API

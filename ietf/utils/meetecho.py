@@ -1,9 +1,10 @@
-# Copyright The IETF Trust 2021, All Rights Reserved
+# Copyright The IETF Trust 2021-2024, All Rights Reserved
 #
 """Meetecho interim meeting scheduling API
 
 Implements the v1 API described in email from alex@meetecho.com
-on 2021-12-09.
+on 2021-12-09, plus additional slide management API discussed via
+IM in 2024 Feb.
 
 API methods return Python objects equivalent to the JSON structures
 specified in the API documentation. Times and durations are represented
@@ -13,29 +14,36 @@ import requests
 
 import debug  # pyflakes: ignore
 
-from datetime import datetime, timedelta
+import datetime
 from json import JSONDecodeError
-from pytz import utc
-from typing import Dict, Sequence, Union
+from pprint import pformat
+from typing import Sequence, TypedDict, TYPE_CHECKING, Union
 from urllib.parse import urljoin
+
+# Guard against hypothetical cyclical import problems
+if TYPE_CHECKING:
+    from ietf.doc.models import Document
+    from ietf.meeting.models import Session
 
 
 class MeetechoAPI:
-    timezone = utc
+    timezone = datetime.timezone.utc
 
-    def __init__(self, api_base: str, client_id: str, client_secret: str, request_timeout=3.01):
+    def __init__(
+        self, api_base: str, client_id: str, client_secret: str, request_timeout=3.01
+    ):
         self.client_id = client_id
         self.client_secret = client_secret
         self.request_timeout = request_timeout  # python-requests doc recommend slightly > a multiple of 3 seconds
         self._session = requests.Session()
         # if needed, add a trailing slash so urljoin won't eat the trailing path component
-        self.api_base = api_base if api_base.endswith('/') else f'{api_base}/'
+        self.api_base = api_base if api_base.endswith("/") else f"{api_base}/"
 
     def _request(self, method, url, api_token=None, json=None):
         """Execute an API request"""
-        headers = {'Accept': 'application/json'}
+        headers = {"Accept": "application/json"}
         if api_token is not None:
-            headers['Authorization'] = f'bearer {api_token}'
+            headers["Authorization"] = f"bearer {api_token}"
 
         try:
             response = self._session.request(
@@ -47,28 +55,31 @@ class MeetechoAPI:
             )
         except requests.RequestException as err:
             raise MeetechoAPIError(str(err)) from err
-        if response.status_code != 200:
-            raise MeetechoAPIError(f'API request failed (HTTP status code = {response.status_code})')
+        if response.status_code not in (200, 202):
+            # Could be more selective about status codes, but not seeing an immediate need
+            raise MeetechoAPIError(
+                f"API request failed (HTTP status code = {response.status_code})"
+            )
 
         # try parsing the result as JSON in case the server failed to set the Content-Type header
         try:
             return response.json()
         except JSONDecodeError as err:
-            if response.headers['Content-Type'].startswith('application/json'):
+            if response.headers.get("Content-Type", "").startswith("application/json"):
                 # complain if server told us to expect JSON and it was invalid
-                raise MeetechoAPIError('Error decoding response as JSON') from err
+                raise MeetechoAPIError("Error decoding response as JSON") from err
         return None
 
-    def _deserialize_time(self, s: str) -> datetime:
-        return self.timezone.localize(datetime.strptime(s, '%Y-%m-%d %H:%M:%S'))
+    def _deserialize_time(self, s: str) -> datetime.datetime:
+        return datetime.datetime.strptime(s, "%Y-%m-%d %H:%M:%S").replace(tzinfo=self.timezone)
 
-    def _serialize_time(self, dt: datetime) -> str:
-        return dt.astimezone(self.timezone).strftime('%Y-%m-%d %H:%M:%S')
+    def _serialize_time(self, dt: datetime.datetime) -> str:
+        return dt.astimezone(self.timezone).strftime("%Y-%m-%d %H:%M:%S")
 
-    def _deserialize_duration(self, minutes: int) -> timedelta:
-        return timedelta(minutes=minutes)
+    def _deserialize_duration(self, minutes: int) -> datetime.timedelta:
+        return datetime.timedelta(minutes=minutes)
 
-    def _serialize_duration(self, td: timedelta) -> int:
+    def _serialize_duration(self, td: datetime.timedelta) -> int:
         return int(td.total_seconds() // 60)
 
     def _deserialize_meetings_response(self, response):
@@ -76,30 +87,42 @@ class MeetechoAPI:
 
         Deserializes data in the structure where needed (currently, that's time-related structures)
         """
-        for session_data in response['rooms'].values():
-            session_data['room']['start_time'] = self._deserialize_time(session_data['room']['start_time'])
-            session_data['room']['duration'] = self._deserialize_duration(session_data['room']['duration'])
+        for session_data in response["rooms"].values():
+            session_data["room"]["start_time"] = self._deserialize_time(
+                session_data["room"]["start_time"]
+            )
+            session_data["room"]["duration"] = self._deserialize_duration(
+                session_data["room"]["duration"]
+            )
         return response
 
     def retrieve_wg_tokens(self, acronyms: Union[str, Sequence[str]]):
         """Retrieve API tokens for one or more WGs
 
-        :param acronyms: list of WG acronyms for which tokens are requested 
+        :param acronyms: list of WG acronyms for which tokens are requested
         :return: {'tokens': {acronym0: token0, acronym1: token1, ...}}
         """
         return self._request(
-            'POST', 'auth/ietfservice/tokens',
+            "POST",
+            "auth/ietfservice/tokens",
             json={
-                'client': self.client_id,
-                'secret': self.client_secret,
-                'wgs': [acronyms] if isinstance(acronyms, str) else acronyms,
-            }
+                "client": self.client_id,
+                "secret": self.client_secret,
+                "wgs": [acronyms] if isinstance(acronyms, str) else acronyms,
+            },
         )
 
-    def schedule_meeting(self, wg_token: str, description: str, start_time: datetime, duration: timedelta,
-                         extrainfo=''):
+    def schedule_meeting(
+        self,
+        wg_token: str,
+        room_id: int,
+        description: str,
+        start_time: datetime.datetime,
+        duration: datetime.timedelta,
+        extrainfo="",
+    ):
         """Schedule a meeting session
-        
+
         Return structure is:
           {
             "rooms": {
@@ -115,8 +138,9 @@ class MeetechoAPI:
               }
             }
           }
-              
-        :param wg_token: token retrieved via retrieve_wg_tokens() 
+
+        :param wg_token: token retrieved via retrieve_wg_tokens()
+        :param room_id: int id to identify the room (will be echoed as room.id) 
         :param description: str describing the meeting
         :param start_time: starting time as a datetime
         :param duration: duration as a timedelta
@@ -125,13 +149,15 @@ class MeetechoAPI:
         """
         return self._deserialize_meetings_response(
             self._request(
-                'POST', 'meeting/interim/createRoom',
+                "POST",
+                "meeting/interim/createRoom",
                 api_token=wg_token,
                 json={
-                    'description': description,
-                    'start_time': self._serialize_time(start_time),
-                    'duration': self._serialize_duration(duration),
-                    'extrainfo': extrainfo,
+                    "room_id": room_id,
+                    "description": description,
+                    "start_time": self._serialize_time(start_time),
+                    "duration": self._serialize_duration(duration),
+                    "extrainfo": extrainfo,
                 },
             )
         )
@@ -154,7 +180,7 @@ class MeetechoAPI:
               }
             }
           }
-          
+
         As of 2022-01-31, the return structure also includes a 'group' key whose
         value is the group acronym. This is not shown in the documentation.
 
@@ -162,7 +188,7 @@ class MeetechoAPI:
         :return: meeting data dict
         """
         return self._deserialize_meetings_response(
-            self._request('GET', 'meeting/interim/fetchRooms', api_token=wg_token)
+            self._request("GET", "meeting/interim/fetchRooms", api_token=wg_token)
         )
 
     def delete_meeting(self, deletion_token: str):
@@ -171,7 +197,166 @@ class MeetechoAPI:
         :param deletion_token: deletion_key from fetch_meetings() or schedule_meeting() return data
         :return: {}
         """
-        return self._request('POST', 'meeting/interim/deleteRoom', api_token=deletion_token)
+        return self._request(
+            "POST", "meeting/interim/deleteRoom", api_token=deletion_token
+        )
+
+    class SlideDeckDict(TypedDict):
+        id: int
+        title: str
+        url: str
+        rev: str
+        order: int
+
+    def add_slide_deck(
+        self, 
+        wg_token: str,
+        session: str,  # unique identifier
+        deck: SlideDeckDict,
+    ):
+        """Add a slide deck for the specified session
+        
+        API spec:
+       ⠀POST /materials
+        + Authentication -> same as interim scheduler
+        + content application/json
+        + body
+            {
+                "session": String, // Unique session identifier
+                "title": String,
+                "id": Number,
+                "url": String,
+                "rev": String,
+                "order": Number
+            }
+         
+        + Results 
+            202 Accepted 
+            {4xx}
+        """
+        self._request(
+            "POST",
+            "materials",
+            api_token=wg_token,
+            json={
+                "session": session,
+                "title": deck["title"],
+                "id": deck["id"],
+                "url": deck["url"],
+                "rev": deck["rev"],
+                "order": deck["order"],
+            },
+        )
+
+    def delete_slide_deck(
+        self,
+        wg_token: str,
+        session: str, # unique identifier
+        id: int, 
+    ):
+        """Delete a slide deck from the specified session
+
+        API spec:
+        DELETE /materials
+        + Authentication -> same as interim scheduler
+        + content application/json
+        + body
+            {
+                "session": String,
+                "id": Number
+            }
+         
+        + Results 
+            202 Accepted
+            {4xx}
+        """
+        self._request(
+            "DELETE",
+            "materials",
+            api_token=wg_token,
+            json={
+                "session": session,
+                "id": id,
+            },
+        )
+
+    def update_slide_decks(
+        self,
+        wg_token: str,
+        session: str,  # unique id
+        decks: list[SlideDeckDict],
+    ):
+        """Update/reorder decks for specified session
+
+        PUT /materials
+        + Authentication -> same as interim scheduler
+        + content application/json
+        + body
+            {
+                "session": String,
+                "decks": [
+                    {
+                        "id": Number,
+                        "title": String,
+                        "url": String,
+                        "rev": String,
+                        "order": Number
+                    },
+                    {
+                        "id": Number,
+                        "title": String,
+                        "url": String,
+                        "rev": String,
+                        "order": Number
+                    },
+                    ...
+                ]
+            }
+         
+        + Results 
+            202 Accepted
+        """
+        self._request(
+            "PUT",
+            "materials",
+            api_token=wg_token,
+            json={
+                "session": session,
+                "decks": decks,
+            }
+        )
+
+
+class DebugMeetechoAPI(MeetechoAPI):
+    """Meetecho API stand-in that writes to stdout instead of making requests"""
+    def _request(self, method, url, api_token=None, json=None):
+        json_lines = pformat(json, width=60).split("\n")
+        debug.say(
+            "\n" +
+            "\n".join(
+                [
+                    f">> MeetechoAPI: request(method={method},",
+                    f">> MeetechoAPI:         url={url},",
+                    f">> MeetechoAPI:         api_token={api_token},",
+                    ">> MeetechoAPI:         json=" + json_lines[0],
+                    (
+                        ">> MeetechoAPI:              " +
+                        "\n>> MeetechoAPI:              ".join(l for l in json_lines[1:])
+                    ),
+                    ">> MeetechoAPI: )"
+                ]
+            )
+        )
+
+    def retrieve_wg_tokens(self, acronyms: Union[str, Sequence[str]]):
+        super().retrieve_wg_tokens(acronyms)  # so that we capture the outgoing request
+        acronyms = [acronyms] if isinstance(acronyms, str) else acronyms
+        return {
+            "tokens": {
+                acro: f"{acro}-token"
+                for acro in acronyms
+            }
+        }    
 
 
 class MeetechoAPIError(Exception):
@@ -180,7 +365,18 @@ class MeetechoAPIError(Exception):
 
 class Conference:
     """Scheduled session/room representation"""
-    def __init__(self, manager, id, public_id, description, start_time, duration, url, deletion_token):
+
+    def __init__(
+        self,
+        manager,
+        id,
+        public_id,
+        description,
+        start_time,
+        duration,
+        url,
+        deletion_token,
+    ):
         self._manager = manager
         self.id = id  # Meetecho system ID
         self.public_id = public_id  # public session UUID
@@ -195,22 +391,23 @@ class Conference:
         # Returns a list of Conferences
         return [
             cls(
-                **val['room'],
+                **val["room"],
                 public_id=public_id,
-                url=val['url'],
-                deletion_token=val['deletion_token'],
+                url=val["url"],
+                deletion_token=val["deletion_token"],
                 manager=manager,
-            ) for public_id, val in api_dict.items()
+            )
+            for public_id, val in api_dict.items()
         ]
 
     def __str__(self):
-        return f'Meetecho conference {self.description}'
+        return f"Meetecho conference {self.description}"
 
     def __repr__(self):
         props = [
             f'description="{self.description}"',
-            f'start_time={repr(self.start_time)}',
-            f'duration={repr(self.duration)}',
+            f"start_time={repr(self.start_time)}",
+            f"duration={repr(self.duration)}",
         ]
         return f'Conference({", ".join(props)})'
 
@@ -218,8 +415,13 @@ class Conference:
         return isinstance(other, type(self)) and all(
             getattr(self, attr) == getattr(other, attr)
             for attr in [
-                'id', 'public_id', 'description', 'start_time',
-                'duration', 'url', 'deletion_token'
+                "id",
+                "public_id",
+                "description",
+                "start_time",
+                "duration",
+                "url",
+                "deletion_token",
             ]
         )
 
@@ -227,33 +429,46 @@ class Conference:
         self._manager.delete_conference(self)
 
 
-class ConferenceManager:
-    def __init__(self, api_config: dict):
-        self.api = MeetechoAPI(**api_config)
-        self.wg_tokens: Dict[str, str] = {}
-        
+class Manager:
+    def __init__(self, api_config):
+        api_kwargs = dict(
+            api_base=api_config["api_base"],
+            client_id=api_config["client_id"],
+            client_secret=api_config["client_secret"],
+        )
+        if "request_timeout" in api_config:
+            api_kwargs["request_timeout"] = api_config["request_timeout"]
+        if api_config.get("debug", False):
+            self.api = DebugMeetechoAPI(**api_kwargs)
+        else:
+            self.api = MeetechoAPI(**api_kwargs)
+        self.wg_tokens = {}
+
     def wg_token(self, group):
-        group_acronym = group.acronym if hasattr(group, 'acronym') else group
+        group_acronym = group.acronym if hasattr(group, "acronym") else group
         if group_acronym not in self.wg_tokens:
-            self.wg_tokens[group_acronym] = self.api.retrieve_wg_tokens(
-                group_acronym
-            )['tokens'][group_acronym]
+            self.wg_tokens[group_acronym] = self.api.retrieve_wg_tokens(group_acronym)[
+                "tokens"
+            ][group_acronym]
         return self.wg_tokens[group_acronym]
 
+
+class ConferenceManager(Manager):
     def fetch(self, group):
         response = self.api.fetch_meetings(self.wg_token(group))
-        return Conference.from_api_dict(self, response['rooms'])
+        return Conference.from_api_dict(self, response["rooms"])
 
-    def create(self, group, description, start_time, duration, extrainfo=''):
+    def create(self, group, session_id, description, start_time, duration, extrainfo=""):
         response = self.api.schedule_meeting(
             wg_token=self.wg_token(group),
+            room_id=int(session_id),
             description=description,
             start_time=start_time,
             duration=duration,
             extrainfo=extrainfo,
         )
-        return Conference.from_api_dict(self, response['rooms'])
-    
+        return Conference.from_api_dict(self, response["rooms"])
+
     def delete_by_url(self, group, url):
         for conf in self.fetch(group):
             if conf.url == url:
@@ -261,3 +476,109 @@ class ConferenceManager:
 
     def delete_conference(self, conf: Conference):
         self.api.delete_meeting(conf.deletion_token)
+
+
+class SlidesManager(Manager):
+    """Interface between Datatracker models and Meetecho API
+    
+    Note: The URL we send comes from get_versionless_href(). This should match what we use as the
+    URL in api_get_session_materials(). Additionally, it _must_ give the right result for a Document
+    instance that has not yet been persisted to the database. This is because upload_session_slides()
+    (as of 2024-03-07) SessionPresentations before saving its updated Documents. This means, for
+    example, using get_absolute_url() will cause bugs. (We should refactor upload_session_slides() to
+    avoid this requirement.) 
+    """
+
+    def __init__(self, api_config):
+        super().__init__(api_config)
+        slides_notify_time = api_config.get("slides_notify_time", 15)
+        if slides_notify_time is None:
+            self.slides_notify_time = None
+        else:
+            self.slides_notify_time = datetime.timedelta(minutes=slides_notify_time)
+
+    def _should_send_update(self, session):
+        if self.slides_notify_time is None:
+            return False
+        timeslot = session.official_timeslotassignment().timeslot
+        if timeslot is None:
+            return False
+        if self.slides_notify_time < datetime.timedelta(0):
+            return True  # < 0 means "always" for a scheduled session
+        else:
+            now = datetime.datetime.now(tz=datetime.timezone.utc)
+            return (timeslot.time - self.slides_notify_time) < now < (timeslot.end_time() + self.slides_notify_time)
+
+    def add(self, session: "Session", slides: "Document", order: int):
+        if not self._should_send_update(session):
+            return
+
+        # Would like to confirm that session.presentations includes the slides Document, but we can't
+        # (same problem regarding unsaved Documents discussed in the docstring)
+        self.api.add_slide_deck(
+            wg_token=self.wg_token(session.group),
+            session=str(session.pk),
+            deck={
+                "id": slides.pk,
+                "title": slides.title,
+                "url": slides.get_versionless_href(),  # see above note re: get_versionless_href()
+                "rev": slides.rev,
+                "order": order,
+            }
+        )
+
+    def delete(self, session: "Session", slides: "Document"):
+        """Delete a slide deck from the session"""
+        if not self._should_send_update(session):
+            return
+
+        if session.presentations.filter(document=slides).exists():
+            # "order" problems are very likely to result if we delete slides that are actually still
+            # linked to the session
+            raise MeetechoAPIError(
+                f"Slides {slides.pk} are still linked to session {session.pk}."
+            )
+        # remove, leaving a hole
+        self.api.delete_slide_deck(
+            wg_token=self.wg_token(session.group),
+            session=str(session.pk),
+            id=slides.pk,
+        )
+        if session.presentations.filter(document__type_id="slides").exists():
+            self.send_update(session)  # adjust order to fill in the hole        
+    
+    def revise(self, session: "Session", slides: "Document"):
+        """Replace existing deck with its current state"""
+        if not self._should_send_update(session):
+            return
+
+        sp = session.presentations.filter(document=slides).first()
+        if sp is None:
+            raise MeetechoAPIError(f"Slides {slides.pk} not in session {session.pk}")
+        order = sp.order
+        # remove, leaving a hole in the order on Meetecho's side
+        self.api.delete_slide_deck(
+            wg_token=self.wg_token(session.group),
+            session=str(session.pk),
+            id=slides.pk,
+        )
+        self.add(session, slides, order)  # fill in the hole
+        
+    def send_update(self, session: "Session"):
+        if not self._should_send_update(session):
+            return
+
+        self.api.update_slide_decks(
+            wg_token=self.wg_token(session.group),
+            session=str(session.pk),
+            decks=[
+                {
+                    "id": deck.document.pk,
+                    "title": deck.document.title,
+                    "url": deck.document.get_versionless_href(),  # see note above re: get_versionless_href()
+                    "rev": deck.document.rev,
+                    "order": deck.order,
+                }
+                for deck in session.presentations.filter(document__type="slides")
+            ]
+        )

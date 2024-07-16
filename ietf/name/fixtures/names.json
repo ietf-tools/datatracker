@@ -2580,6 +2580,45 @@
   },
   {
     "fields": {
+      "desc": "",
+      "name": "Active",
+      "next_states": [],
+      "order": 0,
+      "slug": "active",
+      "type": "narrativeminutes",
+      "used": true
+    },
+    "model": "doc.state",
+    "pk": 178
+  },
+  {
+    "fields": {
+      "desc": "",
+      "name": "Deleted",
+      "next_states": [],
+      "order": 1,
+      "slug": "deleted",
+      "type": "narrativeminutes",
+      "used": true
+    },
+    "model": "doc.state",
+    "pk": 179
+  },
+  {
+    "fields": {
+      "desc": "The editorial stream processing of this document is complete and it has been sent to the RFC Editor for publication. The document may be in the RFC Editor's queue, or it may have been published as an RFC; this state doesn't distinguish between different states occurring after the document has left the RSAB.",
+      "name": "Sent to the RFC Editor",
+      "next_states": [],
+      "order": 10,
+      "slug": "rfc-edit",
+      "type": "draft-stream-editorial",
+      "used": true
+    },
+    "model": "doc.state",
+    "pk": 180
+  },
+  {
+    "fields": {
       "label": "State"
     },
     "model": "doc.statetype",
@@ -2633,13 +2672,6 @@
     },
     "model": "doc.statetype",
     "pk": "draft"
-  },
-  {
-    "fields": {
-      "label": "IANA state"
-    },
-    "model": "doc.statetype",
-    "pk": "draft-iana"
   },
   {
     "fields": {
@@ -2738,6 +2770,13 @@
     },
     "model": "doc.statetype",
     "pk": "minutes"
+  },
+  {
+    "fields": {
+      "label": "State"
+    },
+    "model": "doc.statetype",
+    "pk": "narrativeminutes"
   },
   {
     "fields": {
@@ -10766,6 +10805,17 @@
   {
     "fields": {
       "desc": "",
+      "name": "Narrative Minutes",
+      "order": 0,
+      "prefix": "narrative-minutes",
+      "used": true
+    },
+    "model": "name.doctypename",
+    "pk": "narrativeminutes"
+  },
+  {
+    "fields": {
+      "desc": "",
       "name": "Polls",
       "order": 0,
       "prefix": "polls",
@@ -11242,8 +11292,8 @@
   },
   {
     "fields": {
-      "desc": "Issuer Tracker",
-      "name": "Issuer Tracker",
+      "desc": "Issue Tracker",
+      "name": "Issue Tracker",
       "order": 0,
       "type": "url",
       "used": true
@@ -13323,6 +13373,16 @@
     },
     "model": "name.rolename",
     "pk": "lead"
+  },
+  {
+    "fields": {
+      "desc": "",
+      "name": "Lead Maintainer",
+      "order": 0,
+      "used": true
+    },
+    "model": "name.rolename",
+    "pk": "leadmaintainer"
   },
   {
     "fields": {
@@ -16729,49 +16789,5 @@
     },
     "model": "stats.countryalias",
     "pk": 303
-  },
-  {
-    "fields": {
-      "command": "xym",
-      "switch": "--version",
-      "time": "2023-11-21T08:09:45.989Z",
-      "used": true,
-      "version": "xym 0.7.0"
-    },
-    "model": "utils.versioninfo",
-    "pk": 1
-  },
-  {
-    "fields": {
-      "command": "pyang",
-      "switch": "--version",
-      "time": "2023-11-21T08:09:46.322Z",
-      "used": true,
-      "version": "pyang 2.6.0"
-    },
-    "model": "utils.versioninfo",
-    "pk": 2
-  },
-  {
-    "fields": {
-      "command": "yanglint",
-      "switch": "--version",
-      "time": "2023-11-21T08:09:46.338Z",
-      "used": true,
-      "version": "yanglint SO 1.9.2"
-    },
-    "model": "utils.versioninfo",
-    "pk": 3
-  },
-  {
-    "fields": {
-      "command": "xml2rfc",
-      "switch": "--version",
-      "time": "2023-11-21T08:09:47.251Z",
-      "used": true,
-      "version": "xml2rfc 3.18.2"
-    },
-    "model": "utils.versioninfo",
-    "pk": 4
   }
 ]

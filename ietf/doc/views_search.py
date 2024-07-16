@@ -69,6 +69,7 @@ from ietf.name.models import DocTagName, DocTypeName, StreamName
 from ietf.person.models import Person
 from ietf.person.utils import get_active_ads
 from ietf.utils.draft_search import normalize_draftname
+from ietf.utils.fields import ModelMultipleChoiceField
 from ietf.utils.log import log
 from ietf.doc.utils_search import prepare_document_table, doc_type, doc_state, doc_type_name, AD_WORKLOAD
 from ietf.ietfauth.utils import has_role
@@ -100,7 +101,7 @@ class SearchForm(forms.Form):
             ("ad", "AD"), ("-ad", "AD (desc)"), ),
         required=False, widget=forms.HiddenInput)
 
-    doctypes = forms.ModelMultipleChoiceField(queryset=DocTypeName.objects.filter(used=True).exclude(slug__in=('draft', 'rfc', 'bcp', 'std', 'fyi', 'liai-att')).order_by('name'), required=False)
+    doctypes = ModelMultipleChoiceField(queryset=DocTypeName.objects.filter(used=True).exclude(slug__in=('draft', 'rfc', 'bcp', 'std', 'fyi', 'liai-att')).order_by('name'), required=False)
 
     def __init__(self, *args, **kwargs):
         super(SearchForm, self).__init__(*args, **kwargs)

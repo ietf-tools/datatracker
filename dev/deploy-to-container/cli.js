@@ -3,7 +3,7 @@
 import Docker from 'dockerode'
 import path from 'path'
 import fs from 'fs-extra'
-import tar from 'tar'
+import * as tar from 'tar'
 import yargs from 'yargs/yargs'
 import { hideBin } from 'yargs/helpers'
 import slugify from 'slugify'
@@ -67,6 +67,7 @@ async function main () {
       .replace('__DBHOST__', `dt-db-${branch}`)
       .replace('__SECRETKEY__', nanoid(36))
       .replace('__MQCONNSTR__', `amqp://datatracker:${mqKey}@dt-mq-${branch}/dt`)
+      .replace('__HOSTNAME__', hostname)
   )
   await fs.copy(path.join(basePath, 'docker/scripts/app-create-dirs.sh'), path.join(releasePath, 'app-create-dirs.sh'))
   await fs.copy(path.join(basePath, 'dev/deploy-to-container/start.sh'), path.join(releasePath, 'start.sh'))

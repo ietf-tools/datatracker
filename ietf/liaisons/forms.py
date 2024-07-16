@@ -32,7 +32,7 @@ from ietf.group.models import Group
 from ietf.person.models import Email
 from ietf.person.fields import SearchableEmailField
 from ietf.doc.models import Document
-from ietf.utils.fields import DatepickerDateField
+from ietf.utils.fields import DatepickerDateField, ModelMultipleChoiceField
 from ietf.utils.timezone import date_today, datetime_from_date, DEADLINE_TZINFO
 from functools import reduce
 
@@ -200,7 +200,7 @@ class SearchLiaisonForm(forms.Form):
         return results
 
 
-class CustomModelMultipleChoiceField(forms.ModelMultipleChoiceField):
+class CustomModelMultipleChoiceField(ModelMultipleChoiceField):
     '''If value is a QuerySet, return it as is (for use in widget.render)'''
     def prepare_value(self, value):
         if isinstance(value, QuerySetAny):
@@ -215,12 +215,12 @@ class CustomModelMultipleChoiceField(forms.ModelMultipleChoiceField):
 class LiaisonModelForm(forms.ModelForm):
     '''Specify fields which require a custom widget or that are not part of the model.
     '''
-    from_groups = forms.ModelMultipleChoiceField(queryset=Group.objects.all(),label='Groups',required=False)
+    from_groups = ModelMultipleChoiceField(queryset=Group.objects.all(),label='Groups',required=False)
     from_groups.widget.attrs["class"] = "select2-field"
     from_groups.widget.attrs['data-minimum-input-length'] = 0
     from_contact = forms.EmailField()   # type: Union[forms.EmailField, SearchableEmailField]
     to_contacts = forms.CharField(label="Contacts", widget=forms.Textarea(attrs={'rows':'3', }), strip=False)
-    to_groups = forms.ModelMultipleChoiceField(queryset=Group.objects,label='Groups',required=False)
+    to_groups = ModelMultipleChoiceField(queryset=Group.objects,label='Groups',required=False)
     to_groups.widget.attrs["class"] = "select2-field"
     to_groups.widget.attrs['data-minimum-input-length'] = 0
     deadline = DatepickerDateField(date_format="yyyy-mm-dd", picker_settings={"autoclose": "1" }, label='Deadline', required=True)
