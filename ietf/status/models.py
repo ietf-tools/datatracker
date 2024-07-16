@@ -20,3 +20,5 @@ class Status(models.Model):
 
     def __str__(self):
         return "{} {} {} {}".format(self.date, self.active, self.by, self.title)
+    class Meta:
+        verbose_name_plural = "statuses"
