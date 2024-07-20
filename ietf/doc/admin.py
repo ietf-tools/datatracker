@@ -162,7 +162,6 @@ admin.site.register(BallotDocEvent, DocEventAdmin)
 admin.site.register(WriteupDocEvent, DocEventAdmin)
 admin.site.register(LastCallDocEvent, DocEventAdmin)
 admin.site.register(TelechatDocEvent, DocEventAdmin)
-admin.site.register(ReviewRequestDocEvent, DocEventAdmin)
 admin.site.register(ReviewAssignmentDocEvent, DocEventAdmin)
 admin.site.register(InitialReviewDocEvent, DocEventAdmin)
 admin.site.register(AddedMessageEvent, DocEventAdmin)
@@ -192,6 +191,10 @@ class BofreqResponsibleDocEventAdmin(DocEventAdmin):
     raw_id_fields = ["doc", "by", "responsible" ]
 admin.site.register(BofreqResponsibleDocEvent, BofreqResponsibleDocEventAdmin)
     
+class ReviewRequestDocEventAdmin(DocEventAdmin):
+    raw_id_fields = DocEventAdmin.raw_id_fields + ["review_request"]
+admin.site.register(ReviewRequestDocEvent, ReviewRequestDocEventAdmin)
+
 class DocumentUrlAdmin(admin.ModelAdmin):
     list_display = ['id', 'doc', 'tag', 'url', 'desc', ]
     search_fields = ['doc__name', 'url', ]
