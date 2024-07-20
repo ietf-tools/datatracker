@@ -163,7 +163,6 @@ admin.site.register(WriteupDocEvent, DocEventAdmin)
 admin.site.register(LastCallDocEvent, DocEventAdmin)
 admin.site.register(TelechatDocEvent, DocEventAdmin)
 admin.site.register(InitialReviewDocEvent, DocEventAdmin)
-admin.site.register(AddedMessageEvent, DocEventAdmin)
 admin.site.register(SubmissionDocEvent, DocEventAdmin)
 admin.site.register(EditedAuthorsDocEvent, DocEventAdmin)
 admin.site.register(IanaExpertDocEvent, DocEventAdmin)
@@ -197,6 +196,10 @@ admin.site.register(ReviewRequestDocEvent, ReviewRequestDocEventAdmin)
 class ReviewAssignmentDocEventAdmin(DocEventAdmin):
     raw_id_fields = DocEventAdmin.raw_id_fields + ["review_assignment"]
 admin.site.register(ReviewAssignmentDocEvent, ReviewAssignmentDocEventAdmin)
+
+class AddedMessageEventAdmin(DocEventAdmin):
+    raw_id_fields = DocEventAdmin.raw_id_fields + ["message"]
+admin.site.register(AddedMessageEvent, AddedMessageEventAdmin)
 
 class DocumentUrlAdmin(admin.ModelAdmin):
     list_display = ['id', 'doc', 'tag', 'url', 'desc', ]
