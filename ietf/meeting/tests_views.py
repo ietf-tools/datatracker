@@ -6246,6 +6246,12 @@ class MaterialsTests(TestCase):
             q = PyQuery(r.content)
             self.assertTrue(q('form input[type="checkbox"]'))
     
+            # test not submitting a file
+            r = self.client.post(url, dict(submission_method="upload"))
+            self.assertEqual(r.status_code, 200)
+            q = PyQuery(r.content)
+            self.assertTrue(q("form .is-invalid"))
+    
             test_file = BytesIO(b'this is some text for a test')
             test_file.name = "not_really.json"
             r = self.client.post(url,dict(submission_method="upload",file=test_file))
