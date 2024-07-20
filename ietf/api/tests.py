@@ -936,11 +936,14 @@ class CustomApiTests(TestCase):
         r = self.client.get(url)
         data = r.json()
         self.assertEqual(data['version'], ietf.__version__+ietf.__patch__)
+        self.assertEqual(data['other']['xml2rfc'], ietf.__version_extra__['xml2rfc'])
+        self.assertEqual(data['other']['weasyprint'], ietf.__version_extra__['weasyprint'])
         self.assertEqual(data['dumptime'], "2022-08-31 07:10:01 +0000")
         DumpInfo.objects.update(tz='PST8PDT')
         r = self.client.get(url)
         data = r.json()        
         self.assertEqual(data['dumptime'], "2022-08-31 07:10:01 -0700")
+
 
 
     def test_api_appauth(self):
