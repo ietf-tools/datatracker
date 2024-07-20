@@ -54,14 +54,14 @@ class IetfSeleniumTestCase(IetfLiveServerTestCase):
         super(IetfSeleniumTestCase, self).setUp()
         self.driver = start_web_driver()
         self.driver.set_window_size(1024,768)
-
+    
     def tearDown(self):
         super(IetfSeleniumTestCase, self).tearDown()
         self.driver.close()
 
     def absreverse(self,*args,**kwargs):
         return '%s%s'%(self.live_server_url, urlreverse(*args, **kwargs))
-
+    
     def debug_snapshot(self,filename='debug_this.png'):
         self.driver.execute_script("document.body.bgColor = 'white';")
         self.driver.save_screenshot(filename)
