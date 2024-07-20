@@ -294,6 +294,8 @@ class MeetingTests(BaseMeetingTestCase):
             (slot.time + slot.duration).astimezone(meeting.tz()).strftime("%H%M"),
         ))
         self.assertContains(r, f"shown in the {meeting.tz()} time zone")
+        updated = meeting.updated().astimezone(meeting.tz()).strftime("%Y-%m-%d %H:%M:%S %Z")
+        self.assertContains(r, f"Updated {updated}")
 
         # text, UTC
         r = self.client.get(urlreverse(
@@ -309,6 +311,8 @@ class MeetingTests(BaseMeetingTestCase):
             (slot.time + slot.duration).astimezone(datetime.timezone.utc).strftime("%H%M"),
         ))
         self.assertContains(r, "shown in UTC")
+        updated = meeting.updated().astimezone(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%S %Z")
+        self.assertContains(r, f"Updated {updated}")
 
         # future meeting, no agenda
         r = self.client.get(urlreverse("ietf.meeting.views.agenda_plain", kwargs=dict(num=future_meeting.number, ext=".txt")))
@@ -332,6 +336,7 @@ class MeetingTests(BaseMeetingTestCase):
         self.assertContains(r, session.materials.get(type='agenda').uploaded_filename)
         self.assertContains(r, session.materials.filter(type='slides').exclude(states__type__slug='slides',states__slug='deleted').first().uploaded_filename)
         self.assertNotContains(r, session.materials.filter(type='slides',states__type__slug='slides',states__slug='deleted').first().uploaded_filename)
+        self.assertNotContains(r, "Updated ")  # Updated not used in CSV version
 
         # CSV, utc
         r = self.client.get(urlreverse(
@@ -353,6 +358,7 @@ class MeetingTests(BaseMeetingTestCase):
         self.assertContains(r, session.materials.get(type='agenda').uploaded_filename)
         self.assertContains(r, session.materials.filter(type='slides').exclude(states__type__slug='slides',states__slug='deleted').first().uploaded_filename)
         self.assertNotContains(r, session.materials.filter(type='slides',states__type__slug='slides',states__slug='deleted').first().uploaded_filename)
+        self.assertNotContains(r, "Updated ")  # Updated not used in CSV version
 
         # iCal, no session filtering
         ical_url = urlreverse("ietf.meeting.views.agenda_ical", kwargs=dict(num=meeting.number))
