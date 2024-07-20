@@ -2790,7 +2790,8 @@ class UploadOrEnterAgendaForm(UploadAgendaForm):
     def clean_file(self):
         submission_method = self.cleaned_data.get("submission_method")
         if submission_method == "upload":
-            return super().clean_file()
+            if self.cleaned_data.get("file", None) is not None:
+                return super().clean_file()
         return None
 
     def clean(self):
