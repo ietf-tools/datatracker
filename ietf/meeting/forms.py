@@ -489,6 +489,7 @@ class UploadAgendaForm(ApplyToAllFileUploadForm):
 class UploadSlidesForm(ApplyToAllFileUploadForm):
     doc_type = 'slides'
     title = forms.CharField(max_length=255)
+    approved = forms.BooleanField(initial=True)
 
     def __init__(self, session, *args, **kwargs):
         super().__init__(*args, **kwargs)

@@ -3152,6 +3152,7 @@ def propose_session_slides(request, session_id, num):
                   {'session': session,
                    'session_number': session_number,
                    'form': form,
+                   'manage': session.can_manage_materials(request.user),
                   })
 
 
