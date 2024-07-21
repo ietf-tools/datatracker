@@ -5,6 +5,7 @@ from django.conf.urls.static import static as static_url
 from django.contrib import admin
 from django.contrib.sitemaps import views as sitemap_views
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
+from django.http import HttpResponse
 from django.urls import include, path
 from django.views import static as static_view
 from django.views.generic import TemplateView
@@ -35,6 +36,7 @@ sitemaps = {
 
 urlpatterns = [
     url(r'^$', views_search.frontpage),
+    url(r'^health/', lambda _: HttpResponse()),
     url(r'^accounts/', include('ietf.ietfauth.urls')),
     url(r'^admin/', admin.site.urls),
     url(r'^admin/docs/', include('django.contrib.admindocs.urls')),

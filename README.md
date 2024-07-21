@@ -8,7 +8,7 @@
 [![Python Version](https://img.shields.io/badge/python-3.9-blue?logo=python&logoColor=white)](#prerequisites)
 [![Django Version](https://img.shields.io/badge/django-4.x-51be95?logo=django&logoColor=white)](#prerequisites)
 [![Node Version](https://img.shields.io/badge/node.js-16.x-green?logo=node.js&logoColor=white)](#prerequisites)
-[![MariaDB Version](https://img.shields.io/badge/postgres-14-blue?logo=postgresql&logoColor=white)](#prerequisites)
+[![MariaDB Version](https://img.shields.io/badge/postgres-16-blue?logo=postgresql&logoColor=white)](#prerequisites)
 
 ##### The day-to-day front-end to the IETF database for people who work on IETF standards.
 
@@ -289,6 +289,7 @@ npm run install-deps
 ```sh
 npm run test:legacy
 ```
+
 
 ### Diff Tool
 

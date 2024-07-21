@@ -679,3 +679,12 @@ class SearchableFieldTests(TestCase):
         self.assertTrue(changed_form.has_changed())
         unchanged_form = TestForm(initial={'test_field': [1]}, data={'test_field': [1]})
         self.assertFalse(unchanged_form.has_changed())
+
+
+class HealthTests(TestCase):
+    def test_health(self):
+        self.assertEqual(
+            self.client.get("/health/").status_code,
+            200,
+        )
+            
