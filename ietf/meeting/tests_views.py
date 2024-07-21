@@ -314,6 +314,39 @@ class MeetingTests(BaseMeetingTestCase):
         updated = meeting.updated().astimezone(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%S %Z")
         self.assertContains(r, f"Updated {updated}")
 
+        # text, invalid updated (1)
+        with patch(
+            "ietf.meeting.models.Meeting.updated",
+            return_value=pytz.utc.localize(datetime.datetime(1970, 1, 1, 0, 0, 0)),
+        ):
+            r = self.client.get(urlreverse(
+                "ietf.meeting.views.agenda_plain",
+                kwargs=dict(num=meeting.number, ext=".txt", utc="-utc"),
+            ))
+            self.assertNotContains(r, "Updated ")
+
+        # text, invalid updated (2)
+        with patch(
+            "ietf.meeting.models.Meeting.updated",
+            return_value=pytz.utc.localize(datetime.datetime(1979, 12, 31, 23, 59, 59)),
+        ):
+            r = self.client.get(urlreverse(
+                "ietf.meeting.views.agenda_plain",
+                kwargs=dict(num=meeting.number, ext=".txt", utc="-utc"),
+            ))
+            self.assertNotContains(r, "Updated ")
+
+        # text, valid updated
+        with patch(
+            "ietf.meeting.models.Meeting.updated",
+            return_value=pytz.utc.localize(datetime.datetime(1980, 1, 1, 0, 0, 0)),
+        ):
+            r = self.client.get(urlreverse(
+                "ietf.meeting.views.agenda_plain",
+                kwargs=dict(num=meeting.number, ext=".txt", utc="-utc"),
+            ))
+            self.assertContains(r, "Updated 1980-01-01 00:00:00 UTC")
+
         # future meeting, no agenda
         r = self.client.get(urlreverse("ietf.meeting.views.agenda_plain", kwargs=dict(num=future_meeting.number, ext=".txt")))
         self.assertContains(r, "There is no agenda available yet.")
