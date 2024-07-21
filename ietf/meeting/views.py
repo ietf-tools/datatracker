@@ -33,6 +33,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.validators import URLValidator
 from django.urls import reverse,reverse_lazy
 from django.db.models import F, Max, Q
@@ -2804,6 +2805,17 @@ class UploadOrEnterAgendaForm(UploadAgendaForm):
         elif submission_method == "enter":
             require_field("content")
 
+    def get_file(self):
+        """Get content as a file-like object"""
+        if self.cleaned_data.get("submission_method") == "upload":
+            return self.cleaned_data["file"]
+        else:
+            return SimpleUploadedFile(
+                name="uploaded.md",
+                content=self.cleaned_data["content"].encode("utf-8"),
+                content_type="text/markdown;charset=utf-8",
+            )
+
 def upload_session_agenda(request, session_id, num):
     # num is redundant, but we're dragging it along an artifact of where we are in the current URL structure
     session = get_object_or_404(Session,pk=session_id)
@@ -2824,21 +2836,8 @@ def upload_session_agenda(request, session_id, num):
     if request.method == 'POST':
         form = UploadOrEnterAgendaForm(show_apply_to_all_checkbox,request.POST,request.FILES)
         if form.is_valid():
-            submission_method = form.cleaned_data['submission_method']
-            if submission_method == "upload":
-                file = request.FILES['file']
-                _, ext = os.path.splitext(file.name)
-            else:
-                if agenda_sp:
-                    doc = agenda_sp.document
-                    _, ext = os.path.splitext(doc.uploaded_filename)
-                else:
-                    ext = ".md"
-                fd, name = tempfile.mkstemp(suffix=ext, text=True)
-                os.close(fd)
-                with open(name, "w") as file:
-                    file.write(form.cleaned_data['content'])
-                file = open(name, "rb")
+            file = form.get_file()
+            _, ext = os.path.splitext(file.name)
             apply_to_all = session.type.slug == 'regular'
             if show_apply_to_all_checkbox:
                 apply_to_all = form.cleaned_data['apply_to_all']
