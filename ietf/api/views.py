@@ -141,95 +141,131 @@ class ApiV2PersonExportView(DetailView, JsonExportMixin):
 #     else:
 #         return HttpResponse(status=405)
 
+
+_new_registration_json_validator = jsonschema.Draft202012Validator(
+    schema={
+        "type": "array",
+        "items": {
+            "type": "object",
+            "properties": {
+                "meeting": {"type": "integer"},
+                "first_name": {"type": "string"},
+                "last_name": {"type": "string"},
+                "affiliation": {"type": "string"},
+                "country_code": {"type": "string"},
+                "email": {"type": "string"},
+                "reg_type": {"type": "string"},
+                "ticket_type": {"type": "string"},
+                "checked_in": {"type": "boolean"},
+                "is_nomcom_volunteer": {"type": "boolean"},
+                "cancelled": {"type": "boolean"},
+            },
+            "required": ["meeting", "first_name", "last_name", "affiliation", "country_code", "email", "reg_type", "ticket_type", "checked_in", "is_nomcom_volunteer", "cancelled"],
+            "additionalProperties": "false"
+        }
+    }
+)
+
+
 @require_api_key
 @role_required('Robot')
 @csrf_exempt
 def api_new_meeting_registration(request):
     '''REST API to notify the datatracker about a new meeting registration'''
-    def err(code, text):
-        return HttpResponse(text, status=code, content_type='text/plain')
-    required_fields = [ 'meeting', 'first_name', 'last_name', 'affiliation', 'country_code',
-                        'email', 'reg_type', 'ticket_type', 'checkedin', 'is_nomcom_volunteer']
-    fields = required_fields + []
-    if request.method == 'POST':
-        # parameters:
-        #   apikey:
-        #   meeting
-        #   name
-        #   email
-        #   reg_type (In Person, Remote, Hackathon Only)
-        #   ticket_type (full_week, one_day, student)
-        #   
-        data = {'attended': False, }
-        missing_fields = []
-        for item in fields:
-            value = request.POST.get(item, None)
-            if value is None and item in required_fields:
-                missing_fields.append(item)
-            data[item] = value
-        if missing_fields:
-            return err(400, "Missing parameters: %s" % ', '.join(missing_fields))
-        number = data['meeting']
-        try:
-            meeting = Meeting.objects.get(number=number)
-        except Meeting.DoesNotExist:
-            return err(400, "Invalid meeting value: '%s'" % (number, ))
-        reg_type = data['reg_type']
-        email = data['email']
-        try:
-            validate_email(email)
-        except ValidationError:
-            return err(400, "Invalid email value: '%s'" % (email, ))
-        if request.POST.get('cancelled', 'false') == 'true':
-            MeetingRegistration.objects.filter(
-                meeting_id=meeting.pk,
-                email=email,
-                reg_type=reg_type).delete()
-            return HttpResponse('OK', status=200, content_type='text/plain')
-        else:
-            object, created = MeetingRegistration.objects.get_or_create(
-                meeting_id=meeting.pk,
-                email=email,
-                reg_type=reg_type)
-            try:
-                # Update attributes
-                for key in set(data.keys())-set(['attended', 'apikey', 'meeting', 'email']):
-                    if key == 'checkedin':
-                        new = bool(data.get(key).lower() == 'true')
-                    else:
-                        new = data.get(key)
-                    setattr(object, key, new)
-                person = Person.objects.filter(email__address=email)
-                if person.exists():
-                    object.person = person.first()
-                object.save()
-            except ValueError as e:
-                return err(400, "Unexpected POST data: %s" % e)
-            response = "Accepted, New registration" if created else "Accepted, Updated registration"
-            if User.objects.filter(username__iexact=email).exists() or Email.objects.filter(address=email).exists():
-                pass
-            else:
-                send_account_creation_email(request, email)
-                response += ", Email sent"
 
-            # handle nomcom volunteer
-            if request.POST.get('is_nomcom_volunteer', 'false').lower() == 'true' and object.person:
-                try:
-                    nomcom = NomCom.objects.get(is_accepting_volunteers=True)
-                except (NomCom.DoesNotExist, NomCom.MultipleObjectsReturned):
-                    nomcom = None
-                if nomcom:
-                    Volunteer.objects.get_or_create(
-                        nomcom=nomcom,
-                        person=object.person,
-                        defaults={
-                            "affiliation": data["affiliation"],
-                            "origin": "registration"
-                        }
-                    )
-            return HttpResponse(response, status=202, content_type='text/plain')
-    else:
-        return HttpResponse(status=405)
+    def _http_err(code, text):
+        return HttpResponse(text, status=code, content_type="text/plain")
+
+    def _api_response(result):
+        return JsonResponse(data={"result": result})
+
+    if request.method != "POST":
+        return _http_err(405, "Method not allowed")
+
+    if request.content_type != "application/json":
+        return _http_err(415, "Content-Type must be application/json")
+
+    # Validate
+    try:
+        payload = json.loads(request.body)
+        _new_registration_json_validator.validate(payload)
+    except json.decoder.JSONDecodeError as err:
+        return _http_err(400, f"JSON parse error at line {err.lineno} col {err.colno}: {err.msg}")
+    except jsonschema.exceptions.ValidationError as err:
+        return _http_err(400, f"JSON schema error at {err.json_path}: {err.message}")
+    except Exception:
+        return _http_err(400, "Invalid request format")
+
+    # Validate consistency
+    # - if receive multiple records they should be for same meeting, same person (email)
+    if len(payload) > 1:
+        if len(set([r['meeting'] for r in payload])) != 1:
+            return _http_err(400, "Different meeting values")
+        if len(set([r['email'] for r in payload])) != 1:
+            return _http_err(400, "Different email values")
+
+    # Validate meeting
+    number = payload[0]['meeting']
+    try:
+        meeting = Meeting.objects.get(number=number)
+    except Meeting.DoesNotExist:
+        return _http_err(400, "Invalid meeting value: '%s'" % (number, ))
+
+    # Validate email
+    email = payload[0]['email']
+    try:
+        validate_email(email)
+    except ValidationError:
+        return _http_err(400, "Invalid email value: '%s'" % (email, ))
+
+    # get person
+    person = Person.objects.filter(email__address=email).first()
+    if not person:
+        # no log level?
+        log.log(f"api_new_meeting_registration no Person found for {email}")
+
+    # delete existing records
+    MeetingRegistration.objects.filter(meeting__number=number, email=email).delete()
+
+    for registration in payload:
+        # handle cancelled
+        if registration['cancelled']:
+            # no-op
+            continue
+
+        # handle regular
+        MeetingRegistration.objects.create(
+            meeting_id=meeting.pk,
+            email=email,
+            first_name=registration['first_name'],
+            last_name=registration['last_name'],
+            affiliation=registration['affiliation'],
+            country_code=registration['country_code'],
+            reg_type=registration['reg_type'],
+            ticket_type=registration['ticket_type'],
+            checked_in=registration['checked_in'],
+            is_nomcom_volunteer=registration['is_nomcom_volunteer'],
+            cancelled=registration['cancelled'])
+
+        # removed account creation email. Registration requires Datatracker account
+
+        # handle nomcom volunteer
+        if registration['is_nomcom_volunteer'] and person:
+            try:
+                nomcom = NomCom.objects.get(is_accepting_volunteers=True)
+            except (NomCom.DoesNotExist, NomCom.MultipleObjectsReturned):
+                nomcom = None
+            if nomcom:
+                Volunteer.objects.get_or_create(
+                    nomcom=nomcom,
+                    person=person,
+                    defaults={
+                        "affiliation": registration["affiliation"],
+                        "origin": "registration"
+                    }
+                )
+
+    return HttpResponse('Success', status=202, content_type='text/plain')
 
 
 def version(request):
