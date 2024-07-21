@@ -456,10 +456,9 @@ def directauth(request):
         if user_count == 1 and authenticate(username = user_query.first().username, password = password):
             user = user_query.get()
             if user_query.filter(person__isnull=True).count() == 1: # Can't inspect user.person direclty here
-                log.log(f"Direct auth of personless user {user.pk}:{user.username}")
+                log.log(f"Direct auth success (personless user): {user.pk}:{user.username}")
             else:
-                log.log(f"Direct auth: {user.pk}:{user.person.plain_name()}")
-            log.log(f"Direct auth success: {username}")
+                log.log(f"Direct auth success: {user.pk}:{user.person.plain_name()}")
             return HttpResponse(json.dumps(dict(result="success")), content_type='application/json')
 
         log.log(f"Direct auth failure: {username} ({user_count} user(s) found)")
