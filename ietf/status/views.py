@@ -4,7 +4,6 @@
 import json
 from django.http import HttpResponse, HttpResponseRedirect, HttpResponseNotFound
 from ietf.utils import markdown
-from django.core.exceptions import FieldError
 from django.shortcuts import render, get_object_or_404
 from ietf.status.models import Status
 
