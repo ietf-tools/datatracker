@@ -29,7 +29,8 @@ def status_latest_html(request):
     return render(request, "status/latest.html", context=get_context_data())
 
 def status_page(request, slug):
-    status = get_object_or_404(Status, slug=slug)
+    sanitised_slug = slug.rstrip("/")
+    status = get_object_or_404(Status, slug=sanitised_slug)
     return render(request, "status/status.html", context={
         'status': status,
         'status_page_html': markdown.markdown(status.page or ""),
