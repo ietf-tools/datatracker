@@ -92,6 +92,16 @@ DATABASES = {
     },
 }
 
+# Configure persistent connections. A setting of 0 is Django's default.
+_conn_max_age = os.environ.get("DATATRACKER_DB_CONN_MAX_AGE", "0")
+# A string "none" means unlimited age.
+DATABASES["default"]["CONN_MAX_AGE"] = None if _conn_max_age.lower() == "none" else int(_conn_max_age)
+# Enable connection health checks if DATATRACKER_DB_CONN_HEALTH_CHECK is the string "true"
+_conn_health_checks = bool(
+    os.environ.get("DATATRACKER_DB_CONN_HEALTH_CHECKS", "false").lower() == "true"
+)
+DATABASES["default"]["CONN_HEALTH_CHECKS"] = _conn_health_checks
+
 # DATATRACKER_ADMINS is a newline-delimited list of addresses parseable by email.utils.parseaddr
 _admins_str = os.environ.get("DATATRACKER_ADMINS", None)
 if _admins_str is not None:

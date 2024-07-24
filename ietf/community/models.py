@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 
+from django.conf import settings
 from django.db import models
 from django.db.models import signals
 from django.urls import reverse as urlreverse
@@ -10,6 +11,9 @@ from ietf.doc.models import Document, DocEvent, State
 from ietf.group.models import Group
 from ietf.person.models import Person, Email
 from ietf.utils.models import ForeignKey
+
+from .tasks import notify_event_to_subscribers_task
+
 
 class CommunityList(models.Model):
     person = ForeignKey(Person, blank=True, null=True)
@@ -106,8 +110,11 @@ def notify_events(sender, instance, **kwargs):
     if getattr(instance, "skip_community_list_notification", False):
         return
 
-    from ietf.community.utils import notify_event_to_subscribers
-    notify_event_to_subscribers(instance)
+    # kludge alert: queuing a celery task in response to a signal can cause unexpected attempts to
+    # start a Celery task during tests. To prevent this, don't queue a celery task if we're running
+    # tests.
+    if settings.SERVER_MODE != "test":
+        notify_event_to_subscribers_task.delay(event_id=instance.pk)
 
 
 signals.post_save.connect(notify_events)
