@@ -122,7 +122,7 @@ def generate_draft_bibxml_files_task(days=7, process_all=False):
             log.log(f"Error generating bibxml for {event.doc.name}-{event.rev}: {err}")
 
 
-@shared_task(bind=True, time_limit=30, soft_time_limit=28)
+@shared_task(bind=True, time_limit=32, soft_time_limit=30)
 def pdfize_document_task(self, name, rev):
     doc = Document.objects.filter(name=name).first()
     if doc is None:
@@ -130,7 +130,7 @@ def pdfize_document_task(self, name, rev):
         return
     # There is a very slight race condition between the task time_limit and the lock expiration
     # time. We can tolerate this task running twice if that unlikely timing ever works out.
-    with celery_task_lock(self, 30) as acquired:
+    with celery_task_lock(self, 32) as acquired:
         if not acquired:
             log.log(f"{self.name}({name}, {rev}) skipped because it's already running")
             return
