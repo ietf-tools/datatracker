@@ -39,7 +39,6 @@ from ietf.api.serializer import JsonExportMixin
 from ietf.doc.utils import DraftAliasGenerator, fuzzy_find_documents
 from ietf.group.utils import GroupAliasGenerator, role_holder_emails
 from ietf.ietfauth.utils import role_required
-from ietf.ietfauth.views import send_account_creation_email
 from ietf.ipr.utils import ingest_response_email as ipr_ingest_response_email
 from ietf.meeting.models import Meeting
 from ietf.nomcom.models import Volunteer, NomCom
@@ -173,6 +172,12 @@ _new_registration_json_validator = jsonschema.Draft202012Validator(
 def api_new_meeting_registration(request):
     '''REST API to notify the datatracker about a new meeting registration'''
 
+    def _safe_pop(lst):
+        if lst:
+            return lst.pop()
+        else:
+            return None
+
     def _http_err(code, text):
         return HttpResponse(text, status=code, content_type="text/plain")
 
@@ -218,34 +223,43 @@ def api_new_meeting_registration(request):
     except ValidationError:
         return _http_err(400, "Invalid email value: '%s'" % (email, ))
 
+    # handle cancelled. there will be only one record
+    if payload[0]['cancelled']:
+        reg = MeetingRegistration.objects.filter(
+            meeting__number=number,
+            email=email,
+            reg_type=payload[0]['reg_type'],
+            ticket_type=payload[0]['ticket_type']).first()
+        if reg:
+            reg.delete()
+        return HttpResponse('Success', status=202, content_type='text/plain')
+
     # get person
     person = Person.objects.filter(email__address=email).first()
     if not person:
         # no log level?
         log.log(f"api_new_meeting_registration no Person found for {email}")
 
-    # delete existing records
-    MeetingRegistration.objects.filter(meeting__number=number, email=email).delete()
+    # get existing records if any
+    regs = MeetingRegistration.objects.filter(meeting__number=number, email=email)
+    pks = [r.pk for r in regs]
 
     for registration in payload:
-        # handle cancelled
-        if registration['cancelled']:
-            # no-op
-            continue
-
-        # handle regular
-        MeetingRegistration.objects.create(
-            meeting_id=meeting.pk,
-            email=email,
+        new_reg = MeetingRegistration(
+            meeting=meeting,
             first_name=registration['first_name'],
             last_name=registration['last_name'],
             affiliation=registration['affiliation'],
             country_code=registration['country_code'],
+            person=person,
+            email=email,
             reg_type=registration['reg_type'],
             ticket_type=registration['ticket_type'],
-            checked_in=registration['checked_in'],
-            is_nomcom_volunteer=registration['is_nomcom_volunteer'],
-            cancelled=registration['cancelled'])
+            checkedin=registration['checked_in'])
+
+        # update any existing records if there are any
+        new_reg.pk = _safe_pop(pks)
+        new_reg.save()
 
         # removed account creation email. Registration requires Datatracker account
 
@@ -264,6 +278,10 @@ def api_new_meeting_registration(request):
                         "origin": "registration"
                     }
                 )
+
+    # delete any remaining records
+    if pks:
+        MeetingRegistration.objects.filter(pk__in=pks).delete()
 
     return HttpResponse('Success', status=202, content_type='text/plain')
 
