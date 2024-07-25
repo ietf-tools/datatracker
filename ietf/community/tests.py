@@ -110,7 +110,6 @@ class CommunityListTests(TestCase):
         draft = WgDraftFactory()
         # without list
         for id in self.email_or_name_set(person):
-            debug.show("id")
             url = urlreverse(ietf.community.views.view_list, kwargs={ "email_or_name": id })
             r = self.client.get(url)
             self.assertEqual(r.status_code, 200, msg=f"id='{id}', url='{url}'")
