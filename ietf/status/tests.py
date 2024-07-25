@@ -98,7 +98,6 @@ class StatusTests(TestCase):
         status.save()
 
         r = self.client.get(f'/status/{slug}/')
-        # with a Status it should redirect
         self.assertEqual(r.status_code, 200)
         
         status.delete()
@@ -115,7 +114,6 @@ class StatusTests(TestCase):
         status.save()
 
         r = self.client.get(f'/status/{slug}/')
-        # with a Status it should redirect
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, test_string)
         

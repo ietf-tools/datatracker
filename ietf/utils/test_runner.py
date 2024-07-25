@@ -566,6 +566,14 @@ class CoverageTest(unittest.TestCase):
                         covered.add(regex)
                         break
 
+            uncovered = set()
+            for regex, compiled, obj in patterns:
+                if regex not in covered:
+                    uncovered.add(regex)
+
+            if(len(uncovered) > 0):
+                print("Uncovered URLs", uncovered)
+
             self.runner.coverage_data["url"] = {
                 "coverage": 1.0*len(covered)/len(patterns),
                 "covered": dict( (k, (o.lookup_str, k in covered)) for k,p,o in patterns ),
