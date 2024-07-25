@@ -12,6 +12,7 @@ from pathlib import Path
 from django.conf import settings
 from django.utils import timezone
 
+from ietf.doc.models import UnprocessableDocument
 from ietf.utils import log
 from ietf.utils.celery import celery_task_lock
 from ietf.utils.timezone import datetime_today
@@ -140,3 +141,11 @@ def pdfize_document_task(self, name, rev):
             PdfizedDoc(doc).update_cache()
         except SoftTimeLimitExceeded:
             log.log(f"Failed to pdfize document {name} rev {rev}: exceeded task time limit")
+            UnprocessableDocument.objects.update_or_create(
+                document=doc,
+                rev=doc.rev,
+                proc_type=UnprocessableDocument.ProcTypes.PDFIZE,
+                defaults={
+                    "time": timezone.now(),
+                },
+            )
