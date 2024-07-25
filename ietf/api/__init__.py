@@ -19,9 +19,13 @@ from tastypie.bundle import Bundle
 from tastypie.exceptions import ApiFieldError
 from tastypie.fields import ApiField
 
+OMITTED_APPS_APIS = ["ietf.status"]
+
+valid_apps = list(set(settings.INSTALLED_APPS).difference(set(OMITTED_APPS_APIS)))
+
 _api_list = []
 
-for _app in settings.INSTALLED_APPS:
+for _app in valid_apps:
     _module_dict = globals()
     if '.' in _app:
         _root, _name = _app.split('.', 1)
