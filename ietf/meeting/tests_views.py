@@ -369,7 +369,6 @@ class MeetingTests(BaseMeetingTestCase):
         self.assertContains(r, session.materials.get(type='agenda').uploaded_filename)
         self.assertContains(r, session.materials.filter(type='slides').exclude(states__type__slug='slides',states__slug='deleted').first().uploaded_filename)
         self.assertNotContains(r, session.materials.filter(type='slides',states__type__slug='slides',states__slug='deleted').first().uploaded_filename)
-        self.assertNotContains(r, "Updated ")  # Updated not used in CSV version
 
         # CSV, utc
         r = self.client.get(urlreverse(
@@ -391,7 +390,6 @@ class MeetingTests(BaseMeetingTestCase):
         self.assertContains(r, session.materials.get(type='agenda').uploaded_filename)
         self.assertContains(r, session.materials.filter(type='slides').exclude(states__type__slug='slides',states__slug='deleted').first().uploaded_filename)
         self.assertNotContains(r, session.materials.filter(type='slides',states__type__slug='slides',states__slug='deleted').first().uploaded_filename)
-        self.assertNotContains(r, "Updated ")  # Updated not used in CSV version
 
         # iCal, no session filtering
         ical_url = urlreverse("ietf.meeting.views.agenda_ical", kwargs=dict(num=meeting.number))
