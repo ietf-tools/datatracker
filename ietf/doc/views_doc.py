@@ -57,7 +57,7 @@ import debug                            # pyflakes:ignore
 from ietf.doc.models import ( Document, DocHistory, DocEvent, BallotDocEvent, BallotType,
     ConsensusDocEvent, NewRevisionDocEvent, TelechatDocEvent, WriteupDocEvent, IanaExpertDocEvent,
     IESG_BALLOT_ACTIVE_STATES, STATUSCHANGE_RELATIONS, DocumentActionHolder, DocumentAuthor,
-    RelatedDocument, RelatedDocHistory)
+    RelatedDocument, RelatedDocHistory, UnprocessableDocument)
 from ietf.doc.utils import (augment_events_with_revision,
     can_adopt_draft, can_unadopt_draft, get_chartering_type, get_tags_for_stream_id, investigate_fragment,
     needed_ballot_positions, nice_consensus, update_telechat, has_same_ballot,
@@ -1067,7 +1067,11 @@ def document_pdfized(request, name, rev=None, ext=None):
     pdf = PdfizedDoc(doc).get()
     if pdf:
         return HttpResponse(pdf, content_type="application/pdf")
-    
+    elif UnprocessableDocument.objects.filter(
+        document=doc, rev=doc.rev, proc_type=UnprocessableDocument.ProcTypes.PDFIZE
+    ).exists():
+        return Http404()
+
     pdfize_document_task.delay(name=doc.name, rev=doc.rev)
     refresh_time_seconds = 5
     path=request.path

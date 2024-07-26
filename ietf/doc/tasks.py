@@ -12,6 +12,7 @@ from pathlib import Path
 from django.conf import settings
 from django.utils import timezone
 
+from ietf.doc.models import UnprocessableDocument
 from ietf.utils import log
 from ietf.utils.celery import celery_task_lock
 from ietf.utils.timezone import datetime_today
@@ -122,7 +123,7 @@ def generate_draft_bibxml_files_task(days=7, process_all=False):
             log.log(f"Error generating bibxml for {event.doc.name}-{event.rev}: {err}")
 
 
-@shared_task(bind=True, time_limit=30, soft_time_limit=28)
+@shared_task(bind=True, time_limit=32, soft_time_limit=30)
 def pdfize_document_task(self, name, rev):
     doc = Document.objects.filter(name=name).first()
     if doc is None:
@@ -130,7 +131,7 @@ def pdfize_document_task(self, name, rev):
         return
     # There is a very slight race condition between the task time_limit and the lock expiration
     # time. We can tolerate this task running twice if that unlikely timing ever works out.
-    with celery_task_lock(self, 30) as acquired:
+    with celery_task_lock(self, 32) as acquired:
         if not acquired:
             log.log(f"{self.name}({name}, {rev}) skipped because it's already running")
             return
@@ -140,3 +141,11 @@ def pdfize_document_task(self, name, rev):
             PdfizedDoc(doc).update_cache()
         except SoftTimeLimitExceeded:
             log.log(f"Failed to pdfize document {name} rev {rev}: exceeded task time limit")
+            UnprocessableDocument.objects.update_or_create(
+                document=doc,
+                rev=doc.rev,
+                proc_type=UnprocessableDocument.ProcTypes.PDFIZE,
+                defaults={
+                    "time": timezone.now(),
+                },
+            )

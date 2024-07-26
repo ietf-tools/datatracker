@@ -1483,3 +1483,23 @@ class BofreqEditorDocEvent(DocEvent):
 class BofreqResponsibleDocEvent(DocEvent):
     """ Capture the responsible leadership (IAB and IESG members) for a BOF Request """
     responsible = models.ManyToManyField('person.Person', blank=True)
+
+
+
+class UnprocessableDocument(models.Model):
+    """Document """
+    class ProcTypes(models.TextChoices):
+        PDFIZE = "pdfize"
+
+    document = ForeignKey(Document)
+    rev = models.CharField(
+        verbose_name="revision",
+        max_length=16,
+        blank=False,
+    )
+    proc_type = models.CharField(
+        max_length=16,
+        choices=ProcTypes.choices,
+        help_text="type of processing that fails for this document",
+    )
+    time = models.DateTimeField(default=timezone.now)
