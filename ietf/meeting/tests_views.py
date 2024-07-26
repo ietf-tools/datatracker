@@ -314,38 +314,13 @@ class MeetingTests(BaseMeetingTestCase):
         updated = meeting.updated().astimezone(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%S %Z")
         self.assertContains(r, f"Updated {updated}")
 
-        # text, invalid updated (1)
-        with patch(
-            "ietf.meeting.models.Meeting.updated",
-            return_value=pytz.utc.localize(datetime.datetime(1970, 1, 1, 0, 0, 0)),
-        ):
+        # text, invalid updated (none)
+        with patch("ietf.meeting.models.Meeting.updated", return_value=None):
             r = self.client.get(urlreverse(
                 "ietf.meeting.views.agenda_plain",
                 kwargs=dict(num=meeting.number, ext=".txt", utc="-utc"),
             ))
             self.assertNotContains(r, "Updated ")
-
-        # text, invalid updated (2)
-        with patch(
-            "ietf.meeting.models.Meeting.updated",
-            return_value=pytz.utc.localize(datetime.datetime(1979, 12, 31, 23, 59, 59)),
-        ):
-            r = self.client.get(urlreverse(
-                "ietf.meeting.views.agenda_plain",
-                kwargs=dict(num=meeting.number, ext=".txt", utc="-utc"),
-            ))
-            self.assertNotContains(r, "Updated ")
-
-        # text, valid updated
-        with patch(
-            "ietf.meeting.models.Meeting.updated",
-            return_value=pytz.utc.localize(datetime.datetime(1980, 1, 1, 0, 0, 0)),
-        ):
-            r = self.client.get(urlreverse(
-                "ietf.meeting.views.agenda_plain",
-                kwargs=dict(num=meeting.number, ext=".txt", utc="-utc"),
-            ))
-            self.assertContains(r, "Updated 1980-01-01 00:00:00 UTC")
 
         # future meeting, no agenda
         r = self.client.get(urlreverse("ietf.meeting.views.agenda_plain", kwargs=dict(num=future_meeting.number, ext=".txt")))
@@ -895,6 +870,24 @@ class MeetingTests(BaseMeetingTestCase):
         r = self.client.get(url)
         for d in meeting.importantdate_set.all():
             self.assertContains(r, d.date.isoformat())
+
+        updated = meeting.updated()
+        self.assertIsNotNone(updated)
+        expected_updated = updated.astimezone(datetime.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+        self.assertContains(r, f"DTSTAMP:{expected_updated}")
+        dtstamps_count = r.content.decode("utf-8").count(f"DTSTAMP:{expected_updated}")
+        self.assertEqual(dtstamps_count, meeting.importantdate_set.count())
+
+        # With default cached_updated, 1970-01-01
+        with patch("ietf.meeting.models.Meeting.updated", return_value=None):
+            r = self.client.get(url)
+            for d in meeting.importantdate_set.all():
+                self.assertContains(r, d.date.isoformat())
+
+            expected_updated = "19700101T000000Z"
+            self.assertContains(r, f"DTSTAMP:{expected_updated}")
+            dtstamps_count = r.content.decode("utf-8").count(f"DTSTAMP:{expected_updated}")
+            self.assertEqual(dtstamps_count, meeting.importantdate_set.count())
 
     def test_group_ical(self):
         meeting = make_meeting_test_data()
@@ -4989,7 +4982,23 @@ class InterimTests(TestCase):
                                       expected_event_count=len(expected_event_summaries))
         self.assertNotContains(r, 'Remote instructions:')
 
-    def test_upcoming_ical_filter(self):
+        updated = meeting.updated()
+        self.assertIsNotNone(updated)
+        expected_updated = updated.astimezone(datetime.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+        self.assertContains(r, f"DTSTAMP:{expected_updated}")
+
+        # With default cached_updated, 1970-01-01
+        with patch("ietf.meeting.models.Meeting.updated", return_value=None):
+            r = self.client.get(url)
+            self.assertEqual(r.status_code, 200)
+
+            self.assertEqual(meeting.type_id, "ietf")
+
+            expected_updated = "19700101T000000Z"
+            self.assertEqual(1, r.content.decode("utf-8").count(f"DTSTAMP:{expected_updated}"))
+
+    @patch("ietf.meeting.utils.preprocess_meeting_important_dates")
+    def test_upcoming_ical_filter(self, mock_preprocess_meeting_important_dates):
         # Just a quick check of functionality - details tested by test_js.InterimTests
         make_meeting_test_data(create_interims=True)
         url = urlreverse("ietf.meeting.views.upcoming_ical")
@@ -5011,6 +5020,8 @@ class InterimTests(TestCase):
                                       ],
                                       expected_event_count=2)
 
+        # Verify preprocess_meeting_important_dates isn't being called
+        mock_preprocess_meeting_important_dates.assert_not_called()
 
     def test_upcoming_json(self):
         make_meeting_test_data(create_interims=True)
