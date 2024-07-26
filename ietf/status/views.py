@@ -20,7 +20,7 @@ def get_last_active_status():
         "slug": status.slug,
         "title": status.title,
         "body": status.body,
-        "url": urlreverse('ietf.status.views.status_page', kwargs={ 'slug': status.slug }),
+        "url": urlreverse("ietf.status.views.status_page", kwargs={ "slug": status.slug }),
         "date": status.date.isoformat()
     }
     return context
