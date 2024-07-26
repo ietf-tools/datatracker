@@ -375,9 +375,8 @@ class Meeting(models.Model):
         if self.schedule:
             assignments_updated = SchedTimeSessAssignment.objects.filter(schedule__in=[self.schedule, self.schedule.base if self.schedule else None]).aggregate(Max('modified'))["modified__max"]
         dts = [timeslots_updated, sessions_updated, assignments_updated]
-        if valid_only := [dt for dt in dts if dt is not None]:
-            return max(valid_only)
-        return None
+        valid_only = [dt for dt in dts if dt is not None]
+        return max(valid_only) if valid_only else None
 
     @memoize
     def previous_meeting(self):
