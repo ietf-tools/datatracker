@@ -20,6 +20,8 @@ SERVER_MODE = os.environ.get("DATATRACKER_SERVER_MODE", "development")
 # Use X-Forwarded-Proto to determine request.is_secure(). This relies on CloudFlare overwriting the
 # value of the header if an incoming request sets it, which it does:
 # https://developers.cloudflare.com/fundamentals/reference/http-request-headers/#x-forwarded-proto
+# See also, especially the warnings:
+# https://docs.djangoproject.com/en/dev/ref/settings/#secure-proxy-ssl-header
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 # Secrets
