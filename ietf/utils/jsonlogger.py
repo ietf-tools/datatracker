@@ -28,6 +28,7 @@ class GunicornRequestJsonFormatter(DatatrackerJsonFormatter):
         log_record.setdefault("x_request_start", record.args["{x-request-start}i"])
         log_record.setdefault("x_real_ip", record.args["{x-real-ip}i"])
         log_record.setdefault("x_forwarded_for", record.args["{x-forwarded-for}i"])
+        log_record.setdefault("x_forwarded_proto", record.args["{x-forwarded-proto}i"])
         log_record.setdefault("cf_connecting_ip", record.args["{cf-connecting-ip}i"])
         log_record.setdefault("cf_connecting_ipv6", record.args["{cf-connecting-ipv6}i"])
         log_record.setdefault("cf_ray", record.args["{cf-ray}i"])
