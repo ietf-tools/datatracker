@@ -385,17 +385,19 @@ class Meeting(models.Model):
         if self.type_id != 'ietf':
             return True
         num = self.get_number()
-        return num != None and num >= 108
+        return num is not None and num >= 108
 
     def has_recordings(self):
         if self.type_id != 'ietf':
             return True
         num = self.get_number()
-        return num != None and num >= 80
+        return num is not None and num >= 80
 
     def has_chat_logs(self):
+        if self.type_id != 'ietf':
+            return True;
         num = self.get_number()
-        return num != None and num >= 60
+        return num is not None and num >= 60
 
     def meeting_start(self):
         """Meeting-local midnight at the start of the meeting date"""
