@@ -355,15 +355,24 @@ def concluded_groups(request):
         for g in groups:
             g.start_date = g.conclude_date = None
 
+        # Some older BOFs were created in the "active" state, so consider both "active" and "bof"
+        # ChangeStateGroupEvents when finding the start date. A group with _both_ "active" and "bof"
+        # events should not be in the "bof-conc" state so this shouldn't cause a problem (if it does,
+        # we'll need to clean up the data)
         for e in ChangeStateGroupEvent.objects.filter(
             group__in=groups, 
-            state="bof" if name == "BOFs" else "active",
+            state__in=["active", "bof"] if name == "BOFs" else ["active"],
         ).order_by("-time"):
             d[e.group_id].start_date = e.time
 
+        # Similarly, some older BOFs were concluded into the "conclude" state and the event was never
+        # fixed, so consider both "conclude" and "bof-conc" ChangeStateGroupEvents when finding the
+        # concluded date. A group with _both_ "conclude" and "bof-conc" events should not be in the
+        # "bof-conc" state so this shouldn't cause a problem (if it does, we'll need to clean up the
+        # data)
         for e in ChangeStateGroupEvent.objects.filter(
             group__in=groups,
-            state="bof-conc" if name == "BOFs" else "conclude",
+            state__in=["bof-conc", "conclude"] if name == "BOFs" else ["conclude"],
         ).order_by("time"):
             d[e.group_id].conclude_date = e.time
 
