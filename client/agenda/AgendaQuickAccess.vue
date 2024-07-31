@@ -206,8 +206,6 @@ function scrollToDay (dayId, ev) {
 }
 
 function scrollToNow (ev) {
-  ev.preventDefault()
-
   const lastEventId = agendaStore.findCurrentEventId()
 
   if (lastEventId) {
@@ -216,6 +214,20 @@ function scrollToNow (ev) {
     message.warning('There is no event happening right now.')
   }
 }
+
+/**
+ * Scrolls to now on page load when browser location hash is "#now"
+ */
+ (function scrollToNowHashInit() {
+  if (window.location.hash !== "#now") return
+  const unsubscribe = agendaStore.$subscribe((mutation, agendaStoreState) => {
+    if (agendaStoreState.schedule.length === 0) {
+      return
+    }
+    scrollToNow()
+    unsubscribe() // we only need to scroll once, so unsubscribe from future updates
+  })
+})()
 
 </script>
 
