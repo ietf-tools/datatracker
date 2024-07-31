@@ -355,10 +355,16 @@ def concluded_groups(request):
         for g in groups:
             g.start_date = g.conclude_date = None
 
-        for e in ChangeStateGroupEvent.objects.filter(group__in=groups, state="active").order_by("-time"):
+        for e in ChangeStateGroupEvent.objects.filter(
+            group__in=groups, 
+            state="bof" if name == "BOFs" else "active",
+        ).order_by("-time"):
             d[e.group_id].start_date = e.time
 
-        for e in ChangeStateGroupEvent.objects.filter(group__in=groups, state="conclude").order_by("time"):
+        for e in ChangeStateGroupEvent.objects.filter(
+            group__in=groups,
+            state="bof-conc" if name == "BOFs" else "conclude",
+        ).order_by("time"):
             d[e.group_id].conclude_date = e.time
 
     return render(request, 'group/concluded_groups.html',
