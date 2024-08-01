@@ -265,6 +265,8 @@ def document_main(request, name, rev=None, document_html=False):
         can_change_stream = bool(can_edit or roles)
 
         file_urls, found_types = build_file_urls(doc)
+        if not request.user.is_authenticated:
+            file_urls = [fu for fu in file_urls if fu[0] != "pdfized"]
         content = doc.text_or_error() # pyflakes:ignore
         content = markup_txt.markup(maybe_split(content, split=split_content))
 
@@ -406,6 +408,8 @@ def document_main(request, name, rev=None, document_html=False):
         latest_revision = None
 
         file_urls, found_types = build_file_urls(doc)
+        if not request.user.is_authenticated:
+            file_urls = [fu for fu in file_urls if fu[0] != "pdfized"]
         content = doc.text_or_error() # pyflakes:ignore
         content = markup_txt.markup(maybe_split(content, split=split_content))
 
