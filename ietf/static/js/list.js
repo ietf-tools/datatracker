@@ -5,8 +5,10 @@ import {
 function text_sort(a, b, options) {
 
     function prep(e, options) {
-        return $($.parseHTML(e.values()[options.valueName]))
-            .text()
+        const el = $($.parseHTML(e.values()[options.valueName]));
+        const cell_el = e.elm.querySelector(`.${options.valueName}`)
+        const sort_by_number = cell_el?.getAttribute('data-sort-number')
+        return sort_by_number ?? el.text()
             .trim()
             .replaceAll(/\s+/g, ' ');
     }
