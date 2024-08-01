@@ -30,7 +30,7 @@ if skip_selenium:
     print("     "+skip_message)
 
 def start_web_driver():
-    service = Service(log_output=f"{executable_name}.log", service_args=['--log-no-truncate'])
+    service = Service(executable_path=f"/usr/bin/{executable_name}", log_output=f"{executable_name}.log", service_args=['--log-no-truncate'])
     options = Options()
     options.add_argument("--headless")
     os.environ["MOZ_REMOTE_SETTINGS_DEVTOOLS"] = "1"
