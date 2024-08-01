@@ -3013,6 +3013,13 @@ class PdfizedTests(TestCase):
             with (Path(dir) / f'{draft.name}-{r:02d}.txt').open('w') as f:
                 f.write('text content')
 
+        self.assertTrue(
+            login_testing_unauthorized(
+                self,
+                PersonFactory().user.username,
+                urlreverse(self.view, kwargs={"name": draft.name}),
+            )
+        )
         self.should_succeed(dict(name=rfc.name))
         self.should_succeed(dict(name=draft.name))
         for r in range(0,2):
