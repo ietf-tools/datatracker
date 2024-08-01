@@ -1039,6 +1039,8 @@ def document_html(request, name, rev=None):
         document_html=True,
     )
 
+
+@login_required
 def document_pdfized(request, name, rev=None, ext=None):
 
     found = fuzzy_find_documents(name, rev)
