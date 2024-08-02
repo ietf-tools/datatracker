@@ -1690,7 +1690,7 @@ def api_get_agenda_data (request, num=None):
         },
         "categories": filter_organizer.get_filter_categories(),
         "isCurrentMeeting": is_current_meeting,
-        "uses_notes": meeting.uses_notes(),
+        "usesNotes": meeting.uses_notes(),
         "schedule": list(map(agenda_extract_schedule, filtered_assignments)),
         "floors": list(map(agenda_extract_floorplan, floors))
     })

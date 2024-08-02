@@ -255,11 +255,11 @@ class MeetingTests(BaseMeetingTestCase):
                     "updated": rjson.get("meeting").get("updated"), # Just expect the value to exist
                     "timezone": meeting.time_zone,
                     "infoNote": meeting.agenda_info_note,
-                    "warningNote": meeting.agenda_warning_note,
-                    "uses_notes": False
+                    "warningNote": meeting.agenda_warning_note
                 },
                 "categories": rjson.get("categories"), # Just expect the value to exist
                 "isCurrentMeeting": True,
+                "usesNotes": False,
                 "schedule": rjson.get("schedule"), # Just expect the value to exist
                 "floors": []
             }

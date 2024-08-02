@@ -630,7 +630,7 @@ module.exports = {
       },
       categories,
       isCurrentMeeting: dateMode !== 'past',
-      uses_notes: true,
+      usesNotes: true,
       schedule,
       floors
     }
