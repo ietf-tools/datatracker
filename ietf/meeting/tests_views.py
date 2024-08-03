@@ -6591,7 +6591,7 @@ class MaterialsTests(TestCase):
             newperson = PersonFactory()
             
             session_overview_url = urlreverse('ietf.meeting.views.session_details',kwargs={'num':session.meeting.number,'acronym':session.group.acronym})
-            propose_url = urlreverse('ietf.meeting.views.propose_session_slides', kwargs={'session_id':session.pk, 'num': session.meeting.number})    
+            propose_url = urlreverse('ietf.meeting.views.upload_session_slides', kwargs={'session_id':session.pk, 'num': session.meeting.number})    
 
             r = self.client.get(session_overview_url)
             self.assertEqual(r.status_code,200)
@@ -6612,7 +6612,7 @@ class MaterialsTests(TestCase):
             test_file = BytesIO(b'this is not really a slide')
             test_file.name = 'not_really.txt'
             empty_outbox()
-            r = self.client.post(propose_url,dict(file=test_file,title='a test slide file',apply_to_all=True))
+            r = self.client.post(propose_url,dict(file=test_file,title='a test slide file',apply_to_all=True,approved=False))
             self.assertEqual(r.status_code, 302)
             session = Session.objects.get(pk=session.pk)
             self.assertEqual(session.slidesubmission_set.count(),1)
@@ -6632,6 +6632,25 @@ class MaterialsTests(TestCase):
             q = PyQuery(r.content)
             self.assertEqual(len(q('.proposedslidelist p')), 2)
             self.client.logout()
+
+            login_testing_unauthorized(self,chair.user.username,propose_url)
+            r = self.client.get(propose_url)
+            self.assertEqual(r.status_code,200)
+            test_file = BytesIO(b'this is not really a slide either')
+            test_file.name = 'not_really.txt'
+            empty_outbox()
+            r = self.client.post(propose_url,dict(file=test_file,title='a selfapproved test slide file',apply_to_all=True,approved=True))
+            self.assertEqual(r.status_code, 302)
+            self.client.logout()
+
+            self.client.login(username=chair.user.username, password=chair.user.username+"+password")
+            r = self.client.get(session_overview_url)
+            self.assertEqual(r.status_code, 200)
+            q = PyQuery(r.content)
+            self.assertEqual(len(q('.uploadslidelist p')), 42)
+            self.client.logout()
+
+
 
     def test_disapprove_proposed_slides(self):
         submission = SlideSubmissionFactory()
@@ -6753,12 +6772,12 @@ class MaterialsTests(TestCase):
         session.meeting.importantdate_set.create(name_id='revsub',date=date_today()+datetime.timedelta(days=20))
         newperson = PersonFactory()
         
-        propose_url = urlreverse('ietf.meeting.views.propose_session_slides', kwargs={'session_id':session.pk, 'num': session.meeting.number})          
+        propose_url = urlreverse('ietf.meeting.views.upload_session_slides', kwargs={'session_id':session.pk, 'num': session.meeting.number})          
         
         login_testing_unauthorized(self,newperson.user.username,propose_url)
         test_file = BytesIO(b'this is not really a slide')
         test_file.name = 'not_really.txt'
-        r = self.client.post(propose_url,dict(file=test_file,title='a test slide file',apply_to_all=True))
+        r = self.client.post(propose_url,dict(file=test_file,title='a test slide file',apply_to_all=True,approved=False))
         self.assertEqual(r.status_code, 302)
         self.client.logout()
 
@@ -6827,6 +6846,8 @@ class MaterialsTests(TestCase):
         contents = fd.read()
         fd.close()
         self.assertIn('third version', contents)
+
+
 
 
 @override_settings(IETF_NOTES_URL='https://notes.ietf.org/')
