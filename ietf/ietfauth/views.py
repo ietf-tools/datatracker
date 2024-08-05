@@ -495,8 +495,15 @@ def password_reset(request):
                     if email.person.user:
                         user = email.person.user
                     else: 
-                        send_account_creation_email(request, email.email_address())
-
+                        # Create a User record with this (conditioned by way of Email) username
+                        # Don't bother setting the name or email fields on User - rely on the
+                        # Person pointer.
+                        user = User.objects.create(
+                            username=email.address.lower(), 
+                            is_active=True,
+                        )
+                        email.person.user = user
+                        email.person.save()
             if user and user.person.email_set.filter(active=True).exists():
                 data = {
                     'username': user.username,

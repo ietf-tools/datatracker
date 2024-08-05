@@ -542,8 +542,8 @@ class IetfAuthTests(TestCase):
         self.assertEqual(len(outbox), 1)
         lastReceivedEmail = outbox[-1]
         self.assertIn(email.address, lastReceivedEmail.get('To'))
-        self.assertTrue(lastReceivedEmail.get('Subject').startswith('Confirm registration at'))
-        self.assertContains(r, 'We have sent you an email with instructions', status_code=200)
+        self.assertTrue(lastReceivedEmail.get('Subject').startswith("Confirm password reset"))
+        self.assertContains(r, "Your password reset request has been successfully received", status_code=200)
 
     def test_review_overview(self):
         review_req = ReviewRequestFactory()
