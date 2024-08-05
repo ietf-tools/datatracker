@@ -2909,6 +2909,7 @@ def upload_session_agenda(request, session_id, num):
                   })
 
 
+@login_required
 def upload_session_slides(request, session_id, num, name=None):
     """Upload new or replacement slides for a session
     
@@ -3110,6 +3111,7 @@ def upload_session_slides(request, session_id, num, name=None):
         {
             "session": session,
             "session_number": session_number,
+            "slides_sp": session.presentations.filter(document=doc).first() if doc else None,
             "manage": session.can_manage_materials(request.user),
             "form": form,
         },
@@ -5026,6 +5028,7 @@ def approve_proposed_slides(request, slidesubmission_id, num):
                     "cc": cc,
                     "submission": submission,
                     "settings": settings,
+                    "approver": request.user.person
                 })
                 send_mail_text(request, to, None, subject, body, cc=cc)
                 return redirect('ietf.meeting.views.session_details',num=num,acronym=acronym)

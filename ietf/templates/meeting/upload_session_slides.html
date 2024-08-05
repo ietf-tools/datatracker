@@ -1,12 +1,23 @@
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin static django_bootstrap5 tz %}
-{% block title %}Upload Slides for {{ session.meeting }} : {{ session.group.acronym }}{% endblock %}
+{% block title %}
+    {% if slides_sp %}
+        Revise
+    {% else %}
+        Upload new
+    {% endif %}
+    slides for {{ session.meeting }} : {{ session.group.acronym }}
+{% endblock %}
 {% block content %}
     {% origin %}
     <h1>
-        Upload slides for {{ session.meeting }}
-        <br>
+        {% if slides_sp %}
+            Revise
+        {% else %}
+            Upload new
+        {% endif %}
+        slides for {{ session.meeting }}        <br>
         <small class="text-body-secondary">
             {{ session.group.acronym }}
             {% if session.name %}: {{ session.name }}{% endif %}
@@ -22,6 +33,7 @@
         This form will allow you to propose a slide deck to the session chairs. After you upload your proposal, mail will be sent to the session chairs asking for their approval.
     </p>
     {% endif %}
+    {% if slides_sp %}<h3>{{ slides_sp.document.name }}</h3>{% endif %}
     <form class="my-3" enctype="multipart/form-data" method="post">
         {% csrf_token %}
         {% bootstrap_form form %}
