@@ -6854,8 +6854,6 @@ class MaterialsTests(TestCase):
         self.assertIn('third version', contents)
 
 
-
-
 @override_settings(IETF_NOTES_URL='https://notes.ietf.org/')
 class ImportNotesTests(TestCase):
     settings_temp_path_overrides = TestCase.settings_temp_path_overrides + ['AGENDA_PATH']
