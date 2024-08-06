@@ -50,7 +50,7 @@ export const useAgendaStore = defineStore('agenda', {
     selectedCatSubs: [],
     settingsShown: false,
     timezone: DateTime.local().zoneName,
-    useNotes: false,
+    usesNotes: false,
     visibleDays: []
   }),
   getters: {
@@ -160,7 +160,7 @@ export const useAgendaStore = defineStore('agenda', {
         this.isCurrentMeeting = agendaData.isCurrentMeeting
         this.meeting = agendaData.meeting
         this.schedule = agendaData.schedule
-        this.useNotes = agendaData.useNotes
+        this.usesNotes = agendaData.usesNotes
 
         // -> Compute current info note hash
         this.infoNoteHash = murmur(agendaData.meeting.infoNote, 0).toString()
