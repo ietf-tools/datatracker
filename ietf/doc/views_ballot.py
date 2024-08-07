@@ -190,8 +190,6 @@ def edit_position(request, name, ballot_id):
     return_to_url = request.GET.get("ballot_edit_return_point")
 
     if return_to_url is None:
-        print("*** DEFAULT return_to_url *********** ")
-        raise ValueError("ballot_edit_return_point is required param")
         return_to_url = urlreverse("ietf.doc.views_doc.document_ballot", kwargs=dict(name=doc.name, ballot_id=ballot_id))
 
     # if we're in the Secretariat, we can select a balloter to act as stand-in for
