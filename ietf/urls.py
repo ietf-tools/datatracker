@@ -61,6 +61,7 @@ urlpatterns = [
     url(r'^sitemap-(?P<section>.+).xml$', sitemap_views.sitemap, {'sitemaps': sitemaps}),
     url(r'^sitemap.xml$', sitemap_views.index, { 'sitemaps': sitemaps}),
     url(r'^stats/', include('ietf.stats.urls')),
+    url(r'^status/', include('ietf.status.urls')),
     url(r'^stream/', include(stream_urls)),
     url(r'^submit/', include('ietf.submit.urls')),
     url(r'^sync/', include('ietf.sync.urls')),

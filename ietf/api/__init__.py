@@ -21,14 +21,14 @@ from tastypie.bundle import Bundle
 from tastypie.exceptions import ApiFieldError
 from tastypie.fields import ApiField
 
-
 _api_list = []
 
+OMITTED_APPS_APIS = ["ietf.status"]
 
 def populate_api_list():
+    _module_dict = globals()
     for app_config in django_apps.get_app_configs():
-        _module_dict = globals()
-        if '.' in app_config.name:
+        if '.' in app_config.name and app_config.name not in OMITTED_APPS_APIS:
             _root, _name = app_config.name.split('.', 1)
             if _root == 'ietf':
                 if not '.' in _name:
