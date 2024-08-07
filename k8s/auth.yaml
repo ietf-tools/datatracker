@@ -144,9 +144,5 @@ spec:
       targetPort: http
       protocol: TCP
       name: http
-    - port: 8080
-      targetPort: http
-      protocol: TCP
-      name: http-old
   selector:
     app: auth
