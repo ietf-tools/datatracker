@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2007-2020, All Rights Reserved
+# Copyright The IETF Trust 2007-2024, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -27,7 +27,7 @@ class IESGAgendaFeed(Feed):
     def item_categories(self, doc):
         return [ str(doc.latest_telechat_event.time.date()) ]
 
-    def item_pubdate(self, doc):
+    def item_updateddate(self, doc):
         return doc.latest_telechat_event.time
         
     def item_author_name(self, doc):
