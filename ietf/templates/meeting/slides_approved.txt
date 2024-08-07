@@ -1,4 +1,4 @@
-{% load ietf_filters %}{% autoescape off %}Your proposed slides have been approved for {{ submission.session.meeting }} : {{ submission.session.group.acronym }}{% if submission.session.name %} : {{submission.session.name}}{% endif %}
+{% load ietf_filters %}{% autoescape off %}Your proposed slides have been approved for {{ submission.session.meeting }} : {{ submission.session.group.acronym }}{% if submission.session.name %} : {{submission.session.name}}{% endif %} by {{approver}}
 
 Title: {{submission.title}}
 

@@ -81,7 +81,7 @@ Many developers are using [VS Code](https://code.visualstudio.com/) and taking a
 
 If VS Code is not available to you, in your clone, type `cd docker; ./run`
 
-Once the containers are started, run the tests to make sure your checkout is a good place to start from (all tests should pass - if any fail, ask for help at tools-develop@). Inside the app container's shell type:
+Once the containers are started, run the tests to make sure your checkout is a good place to start from (all tests should pass - if any fail, ask for help at tools-help@). Inside the app container's shell type:
 ```sh
 ietf/manage.py test --settings=settings_test
 ```

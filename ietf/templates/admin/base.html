@@ -1,0 +1,27 @@
+{% extends 'admin/base.html' %}
+{% load static %}
+{% block extrastyle %}{{ block.super }}
+    {% if server_mode and server_mode != "production" %}
+        <style>
+            {# grab colors that match bootstrap so we don't have to import the css #}
+            html, :root{
+                --bs-danger-bg-subtle: #F8D7DAFF; 
+                --bs-danger-text-emphasis: #58151CFF;
+                --bs-danger: #DC3545FF;
+                --bs-secondary: #6C757DFF;
+                --bs-primary-text-emphasis: #052C65FF;
+            }
+            html[data-theme="light"], :root {
+                --primary: var(--bs-danger-bg-subtle);
+                --secondary: var(--bs-danger-bg-subtle);
+                --accent: var(--bs-danger-text-emphasis);
+                --primary-fg: var(--bs-primary-text-emphasis);
+                --link-fg: var(--bs-danger-text-emphasis);
+                --header-color: var(--bs-secondary);
+                --breadcrumbs-fg: var(--bs-secondary);
+                --breadcrumbs-link-fg: var(--link-fg);
+            }
+            span.text-danger { color: var(--bs-danger); }
+        </style>
+    {% endif %}
+{% endblock %}
