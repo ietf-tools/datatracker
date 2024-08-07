@@ -609,7 +609,8 @@ def bulk_create_timeslots(meeting, times, locations, other_props):
 
 def preprocess_meeting_important_dates(meetings):
     for m in meetings:
-        m.cached_updated = m.updated()
+        # cached_updated must be present, set it to 1970-01-01 if necessary
+        m.cached_updated = m.updated() or pytz.utc.localize(datetime.datetime(1970, 1, 1, 0, 0, 0))
         m.important_dates = m.importantdate_set.prefetch_related("name")
         for d in m.important_dates:
             d.midnight_cutoff = "UTC 23:59" in d.name.name
