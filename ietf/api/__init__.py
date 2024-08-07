@@ -21,10 +21,6 @@ from tastypie.bundle import Bundle
 from tastypie.exceptions import ApiFieldError
 from tastypie.fields import ApiField
 
-OMITTED_APPS_APIS = ["ietf.status"]
-
-valid_apps = list(set(settings.INSTALLED_APPS).difference(set(OMITTED_APPS_APIS)))
-
 _api_list = []
 
 def populate_api_list():
