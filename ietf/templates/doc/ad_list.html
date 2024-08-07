@@ -115,7 +115,7 @@
                     renderTo: element,
                     panning: { enabled: false },
                     spacing: [4, 0, 5, 0],
-                    height: "45%",
+                    height: "45%"
                 },
                 scrollbar: { enabled: false },
                 tooltip: { enabled: false },
@@ -127,7 +127,7 @@
                     title: { text: undefined},
                     labels: { enabled: false },
                     zoomEnabled: false,
-                    tickLength: 0,
+                    tickLength: 0
                 },
                 yAxis: {
                     title: { text: undefined},
@@ -136,7 +136,7 @@
                     labels: { x: -3 },
                     min: 0,
                     max: ymax,
-                    tickInterval: ymax,
+                    tickInterval: ymax
                 },
                 plotOptions: {
                     series: {
@@ -152,9 +152,9 @@
                                 // value
                                 if (this.point.index + 1 ==
                                     this.series.points.length) {
-                                    return this.y;
+                                    return this.y
                                 }
-                                return undefined;
+                                return undefined
                             }
                         }
                     }
@@ -162,8 +162,8 @@
                 series: [{
                     name: undefined,
                     data: series,
-                    enableMouseTracking: false,
-                }],
+                    enableMouseTracking: false
+                }]
             }
         }
     </script>
@@ -190,10 +190,10 @@
                     const key = cell.dataset.sum
                     const value = safeParseFloat(cell.textContent)
                     if(key && !isNaN(value)) {
-                        sumsAccumulator[key] = (sumsAccumulator[key] || 0) + (value || 0);
+                        sumsAccumulator[key] = (sumsAccumulator[key] || 0) + (value || 0)
                     }
-                    return sumsAccumulator;
-                }, {});
+                    return sumsAccumulator
+                }, {})
 
                 Array.from(table.querySelectorAll('[data-sum-result]')).forEach(result => {
                     const key = result.dataset.sumResult
@@ -208,49 +208,47 @@
                     const endValue = safeParseFloat(element.innerText)
                     if(isNaN(endValue)) throw Error("Can't render Highcharts chart with non-numerical " + element.innerText)
 
-                    const ymax = Math.max(1, endValue + GRAPH_BUFFER);
+                    const ymax = Math.max(1, endValue + GRAPH_BUFFER)
 
                     Highcharts.chart(
                         highchartsConfigFactory({
                             element,
                             ymax,
-                            series: [endValue],
+                            series: [endValue]
                         })
                     )
                 })
             })
     </script>
     <script>
-        const data = JSON.parse(document.getElementById("data").textContent);
+        const data = JSON.parse(document.getElementById("data").textContent)
 
         Object.entries(data).forEach(([dt, ads]) => {
-            max = {};
+            max = {}
             Object.entries(ads).forEach(([ad, states]) => {
                 Object.entries(states).forEach(([state, buckets]) => {
-                    buckets.series = buckets.map((x) => x.length);
+                    buckets.series = buckets.map((x) => x.length)
                     if (ad != "sum") {
-                        max[state] = Math.max(...buckets.series,
-                                              max[state] ? max[state] : 0);
+                        max[state] = Math.max(...buckets.series, max[state] ? max[state] : 0)
                     }
-                });
-            });
+                })
+            })
 
             Object.entries(ads).forEach(([ad, states]) => {
                 Object.entries(states).forEach(([state, buckets]) => {
-                    const cell = `chart-${dt}-${ad}-${state}`;
+                    const cell = `chart-${dt}-${ad}-${state}`
 
                     // if there is only a single datapoint in the
                     // bucket, display it without a graph
                     if (buckets.series.length == 1) {
-                        document.getElementById(cell).innerHTML =
-                            buckets.series[0];
-                        return;
+                        document.getElementById(cell).innerHTML = buckets.series[0]
+                        return
                     }
 
                     // if a bucket has all zeroes, fake a Highcharts
                     // plot with HTML, to reduce the number of plot
                     // objects on the page
-                    if (buckets.series.every((x) => x == 0)) {
+                    if (buckets.series.every((x) => x === 0)) {
                         // document.getElementById(cell).innerHTML = `
                         //     <div class="position-relative">
                         //         <div class="position-absolute bottom-0 start-0">
@@ -261,20 +259,20 @@
                         //         </div>
                         //     </div>
                         // `;
-                        return;
+                        return
                     }
 
                     // else actually create a graph
-                    const ymax = Math.max(1, ad != "sum" ? max[state] : Math.max(...buckets.series));
+                    const ymax = Math.max(1, ad !== "sum" ? max[state] : Math.max(...buckets.series))
                     Highcharts.chart(
                         highchartsConfigFactory({
                             element: cell,
                             ymax,
-                            series: buckets.series,
+                            series: buckets.series
                         })
-                    );
-                });
-            });
-        });
+                    )
+                })
+            })
+        })
     </script>
 {% endblock %}
