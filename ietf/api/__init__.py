@@ -27,16 +27,6 @@ valid_apps = list(set(settings.INSTALLED_APPS).difference(set(OMITTED_APPS_APIS)
 
 _api_list = []
 
-for _app in valid_apps:
-    _module_dict = globals()
-    if '.' in _app:
-        _root, _name = _app.split('.', 1)
-        if _root == 'ietf':
-            if not '.' in _name:
-                _api = Api(api_name=_name)
-                _module_dict[_name] = _api
-                _api_list.append((_name, _api))
-
 def populate_api_list():
     for app_config in django_apps.get_app_configs():
         _module_dict = globals()
