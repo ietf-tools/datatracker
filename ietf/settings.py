@@ -436,7 +436,7 @@ STATICFILES_DIRS = (
 
 INSTALLED_APPS = [
     # Django apps
-    'django.contrib.admin',
+    'ietf.admin',  # replaces django.contrib.admin
     'django.contrib.admindocs',
     'django.contrib.auth',
     'django.contrib.contenttypes',

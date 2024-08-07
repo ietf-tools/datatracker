@@ -265,6 +265,8 @@ def document_main(request, name, rev=None, document_html=False):
         can_change_stream = bool(can_edit or roles)
 
         file_urls, found_types = build_file_urls(doc)
+        if not request.user.is_authenticated:
+            file_urls = [fu for fu in file_urls if fu[0] != "pdfized"]
         content = doc.text_or_error() # pyflakes:ignore
         content = markup_txt.markup(maybe_split(content, split=split_content))
 
@@ -406,6 +408,8 @@ def document_main(request, name, rev=None, document_html=False):
         latest_revision = None
 
         file_urls, found_types = build_file_urls(doc)
+        if not request.user.is_authenticated:
+            file_urls = [fu for fu in file_urls if fu[0] != "pdfized"]
         content = doc.text_or_error() # pyflakes:ignore
         content = markup_txt.markup(maybe_split(content, split=split_content))
 
@@ -603,12 +607,7 @@ def document_main(request, name, rev=None, document_html=False):
         additional_urls = doc.documenturl_set.exclude(tag_id='auth48')
 
         # Stream description and name passing test
-        if doc.stream != None:
-            stream_desc = doc.stream.desc
-            stream = "draft-stream-" + doc.stream.slug
-        else:
-            stream_desc = "(None)"
-            stream = "(None)"
+        stream = ("draft-stream-" + doc.stream.slug) if doc.stream != None else "(None)"
 
         html = None
         js = None
@@ -647,7 +646,6 @@ def document_main(request, name, rev=None, document_html=False):
                                        revisions=simple_diff_revisions if document_html else revisions,
                                        snapshot=snapshot,
                                        stream=stream,
-                                       stream_desc=stream_desc,
                                        latest_revision=latest_revision,
                                        latest_rev=latest_rev,
                                        can_edit=can_edit,
@@ -1039,6 +1037,8 @@ def document_html(request, name, rev=None):
         document_html=True,
     )
 
+
+@login_required
 def document_pdfized(request, name, rev=None, ext=None):
 
     found = fuzzy_find_documents(name, rev)

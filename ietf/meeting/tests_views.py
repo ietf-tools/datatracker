@@ -294,6 +294,8 @@ class MeetingTests(BaseMeetingTestCase):
             (slot.time + slot.duration).astimezone(meeting.tz()).strftime("%H%M"),
         ))
         self.assertContains(r, f"shown in the {meeting.tz()} time zone")
+        updated = meeting.updated().astimezone(meeting.tz()).strftime("%Y-%m-%d %H:%M:%S %Z")
+        self.assertContains(r, f"Updated {updated}")
 
         # text, UTC
         r = self.client.get(urlreverse(
@@ -309,6 +311,16 @@ class MeetingTests(BaseMeetingTestCase):
             (slot.time + slot.duration).astimezone(datetime.timezone.utc).strftime("%H%M"),
         ))
         self.assertContains(r, "shown in UTC")
+        updated = meeting.updated().astimezone(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%S %Z")
+        self.assertContains(r, f"Updated {updated}")
+
+        # text, invalid updated (none)
+        with patch("ietf.meeting.models.Meeting.updated", return_value=None):
+            r = self.client.get(urlreverse(
+                "ietf.meeting.views.agenda_plain",
+                kwargs=dict(num=meeting.number, ext=".txt", utc="-utc"),
+            ))
+            self.assertNotContains(r, "Updated ")
 
         # future meeting, no agenda
         r = self.client.get(urlreverse("ietf.meeting.views.agenda_plain", kwargs=dict(num=future_meeting.number, ext=".txt")))
@@ -858,6 +870,24 @@ class MeetingTests(BaseMeetingTestCase):
         r = self.client.get(url)
         for d in meeting.importantdate_set.all():
             self.assertContains(r, d.date.isoformat())
+
+        updated = meeting.updated()
+        self.assertIsNotNone(updated)
+        expected_updated = updated.astimezone(datetime.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+        self.assertContains(r, f"DTSTAMP:{expected_updated}")
+        dtstamps_count = r.content.decode("utf-8").count(f"DTSTAMP:{expected_updated}")
+        self.assertEqual(dtstamps_count, meeting.importantdate_set.count())
+
+        # With default cached_updated, 1970-01-01
+        with patch("ietf.meeting.models.Meeting.updated", return_value=None):
+            r = self.client.get(url)
+            for d in meeting.importantdate_set.all():
+                self.assertContains(r, d.date.isoformat())
+
+            expected_updated = "19700101T000000Z"
+            self.assertContains(r, f"DTSTAMP:{expected_updated}")
+            dtstamps_count = r.content.decode("utf-8").count(f"DTSTAMP:{expected_updated}")
+            self.assertEqual(dtstamps_count, meeting.importantdate_set.count())
 
     def test_group_ical(self):
         meeting = make_meeting_test_data()
@@ -4952,7 +4982,23 @@ class InterimTests(TestCase):
                                       expected_event_count=len(expected_event_summaries))
         self.assertNotContains(r, 'Remote instructions:')
 
-    def test_upcoming_ical_filter(self):
+        updated = meeting.updated()
+        self.assertIsNotNone(updated)
+        expected_updated = updated.astimezone(datetime.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+        self.assertContains(r, f"DTSTAMP:{expected_updated}")
+
+        # With default cached_updated, 1970-01-01
+        with patch("ietf.meeting.models.Meeting.updated", return_value=None):
+            r = self.client.get(url)
+            self.assertEqual(r.status_code, 200)
+
+            self.assertEqual(meeting.type_id, "ietf")
+
+            expected_updated = "19700101T000000Z"
+            self.assertEqual(1, r.content.decode("utf-8").count(f"DTSTAMP:{expected_updated}"))
+
+    @patch("ietf.meeting.utils.preprocess_meeting_important_dates")
+    def test_upcoming_ical_filter(self, mock_preprocess_meeting_important_dates):
         # Just a quick check of functionality - details tested by test_js.InterimTests
         make_meeting_test_data(create_interims=True)
         url = urlreverse("ietf.meeting.views.upcoming_ical")
@@ -4974,6 +5020,8 @@ class InterimTests(TestCase):
                                       ],
                                       expected_event_count=2)
 
+        # Verify preprocess_meeting_important_dates isn't being called
+        mock_preprocess_meeting_important_dates.assert_not_called()
 
     def test_upcoming_json(self):
         make_meeting_test_data(create_interims=True)
@@ -6454,7 +6502,7 @@ class MaterialsTests(TestCase):
         self.assertFalse(session1.presentations.filter(document__type_id='slides'))
         test_file = BytesIO(b'this is not really a slide')
         test_file.name = 'not_really.txt'
-        r = self.client.post(url,dict(file=test_file,title='a test slide file',apply_to_all=True))
+        r = self.client.post(url,dict(file=test_file,title='a test slide file',apply_to_all=True,approved=True))
         self.assertEqual(r.status_code, 302)
         self.assertEqual(session1.presentations.count(),1) 
         self.assertEqual(session2.presentations.count(),1) 
@@ -6477,7 +6525,7 @@ class MaterialsTests(TestCase):
         url = urlreverse('ietf.meeting.views.upload_session_slides',kwargs={'num':session2.meeting.number,'session_id':session2.id})
         test_file = BytesIO(b'some other thing still not slidelike')
         test_file.name = 'also_not_really.txt'
-        r = self.client.post(url,dict(file=test_file,title='a different slide file',apply_to_all=False))
+        r = self.client.post(url,dict(file=test_file,title='a different slide file',apply_to_all=False,approved=True))
         self.assertEqual(r.status_code, 302)
         self.assertEqual(session1.presentations.count(),1)
         self.assertEqual(session2.presentations.count(),2)
@@ -6501,7 +6549,7 @@ class MaterialsTests(TestCase):
         self.assertIn('Revise', str(q("title")))
         test_file = BytesIO(b'new content for the second slide deck')
         test_file.name = 'doesnotmatter.txt'
-        r = self.client.post(url,dict(file=test_file,title='rename the presentation',apply_to_all=False))
+        r = self.client.post(url,dict(file=test_file,title='rename the presentation',apply_to_all=False, approved=True))
         self.assertEqual(r.status_code, 302)
         self.assertEqual(session1.presentations.count(),1)
         self.assertEqual(session2.presentations.count(),2)
@@ -6597,7 +6645,7 @@ class MaterialsTests(TestCase):
             newperson = PersonFactory()
             
             session_overview_url = urlreverse('ietf.meeting.views.session_details',kwargs={'num':session.meeting.number,'acronym':session.group.acronym})
-            propose_url = urlreverse('ietf.meeting.views.propose_session_slides', kwargs={'session_id':session.pk, 'num': session.meeting.number})    
+            upload_url = urlreverse('ietf.meeting.views.upload_session_slides', kwargs={'session_id':session.pk, 'num': session.meeting.number})    
 
             r = self.client.get(session_overview_url)
             self.assertEqual(r.status_code,200)
@@ -6612,13 +6660,13 @@ class MaterialsTests(TestCase):
             self.assertTrue(q('.proposeslides'))
             self.client.logout()
 
-            login_testing_unauthorized(self,newperson.user.username,propose_url)
-            r = self.client.get(propose_url)
+            login_testing_unauthorized(self,newperson.user.username,upload_url)
+            r = self.client.get(upload_url)
             self.assertEqual(r.status_code,200)
             test_file = BytesIO(b'this is not really a slide')
             test_file.name = 'not_really.txt'
             empty_outbox()
-            r = self.client.post(propose_url,dict(file=test_file,title='a test slide file',apply_to_all=True))
+            r = self.client.post(upload_url,dict(file=test_file,title='a test slide file',apply_to_all=True,approved=False))
             self.assertEqual(r.status_code, 302)
             session = Session.objects.get(pk=session.pk)
             self.assertEqual(session.slidesubmission_set.count(),1)
@@ -6637,6 +6685,25 @@ class MaterialsTests(TestCase):
             self.assertEqual(r.status_code, 200)
             q = PyQuery(r.content)
             self.assertEqual(len(q('.proposedslidelist p')), 2)
+            self.client.logout()
+
+            login_testing_unauthorized(self,chair.user.username,upload_url)
+            r = self.client.get(upload_url)
+            self.assertEqual(r.status_code,200)
+            test_file = BytesIO(b'this is not really a slide either')
+            test_file.name = 'again_not_really.txt'
+            empty_outbox()
+            r = self.client.post(upload_url,dict(file=test_file,title='a selfapproved test slide file',apply_to_all=True,approved=True))
+            self.assertEqual(r.status_code, 302)
+            self.assertEqual(len(outbox),0)
+            self.assertEqual(session.slidesubmission_set.count(),2)
+            self.client.logout()
+
+            self.client.login(username=chair.user.username, password=chair.user.username+"+password")
+            r = self.client.get(session_overview_url)
+            self.assertEqual(r.status_code, 200)
+            q = PyQuery(r.content)
+            self.assertEqual(len(q('.uploadslidelist p')), 0)
             self.client.logout()
 
     def test_disapprove_proposed_slides(self):
@@ -6759,12 +6826,12 @@ class MaterialsTests(TestCase):
         session.meeting.importantdate_set.create(name_id='revsub',date=date_today()+datetime.timedelta(days=20))
         newperson = PersonFactory()
         
-        propose_url = urlreverse('ietf.meeting.views.propose_session_slides', kwargs={'session_id':session.pk, 'num': session.meeting.number})          
+        upload_url = urlreverse('ietf.meeting.views.upload_session_slides', kwargs={'session_id':session.pk, 'num': session.meeting.number})          
         
-        login_testing_unauthorized(self,newperson.user.username,propose_url)
+        login_testing_unauthorized(self,newperson.user.username,upload_url)
         test_file = BytesIO(b'this is not really a slide')
         test_file.name = 'not_really.txt'
-        r = self.client.post(propose_url,dict(file=test_file,title='a test slide file',apply_to_all=True))
+        r = self.client.post(upload_url,dict(file=test_file,title='a test slide file',apply_to_all=True,approved=False))
         self.assertEqual(r.status_code, 302)
         self.client.logout()
 
@@ -6787,15 +6854,15 @@ class MaterialsTests(TestCase):
         
         self.assertEqual(session.presentations.first().document.rev,'00')
 
-        login_testing_unauthorized(self,newperson.user.username,propose_url)
+        login_testing_unauthorized(self,newperson.user.username,upload_url)
         test_file = BytesIO(b'this is not really a slide, but it is another version of it')
         test_file.name = 'not_really.txt'
-        r = self.client.post(propose_url,dict(file=test_file,title='a test slide file',apply_to_all=True))
+        r = self.client.post(upload_url,dict(file=test_file,title='a test slide file',apply_to_all=True))
         self.assertEqual(r.status_code, 302)
 
         test_file = BytesIO(b'this is not really a slide, but it is third version of it')
         test_file.name = 'not_really.txt'
-        r = self.client.post(propose_url,dict(file=test_file,title='a test slide file',apply_to_all=True))
+        r = self.client.post(upload_url,dict(file=test_file,title='a test slide file',apply_to_all=True))
         self.assertEqual(r.status_code, 302)
         self.client.logout()       
 

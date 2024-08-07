@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2011-2020, All Rights Reserved
+# Copyright The IETF Trust 2011-2024, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -1227,6 +1227,7 @@ def fuzzy_find_documents(name, rev=None):
 
     FoundDocuments = namedtuple('FoundDocuments', 'documents matched_name matched_rev')
     return FoundDocuments(docs, name, rev)
+
 
 def bibxml_for_draft(doc, rev=None):
 
