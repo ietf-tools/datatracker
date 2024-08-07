@@ -996,7 +996,7 @@ def document_raw_id(request, name, rev=None, ext=None):
     for t in possible_types:
         if os.path.exists(base_path + t):
             found_types[t]=base_path+t
-    if ext == None:
+    if ext is None:
         ext = 'txt'
     if not ext in found_types:
         raise Http404('dont have the file for that extension')
@@ -1227,7 +1227,7 @@ def document_bibtex(request, name, rev=None):
         raise Http404()
 
     # Make sure URL_REGEXPS did not grab too much for the rev number
-    if rev != None and len(rev) != 2:
+    if rev is not None and len(rev) != 2:
         mo = re.search(r"^(?P<m>[0-9]{1,2})-(?P<n>[0-9]{2})$", rev)
         if mo:
             name = name+"-"+mo.group(1)
@@ -1250,7 +1250,7 @@ def document_bibtex(request, name, rev=None):
         replaced_by = [d.name for d in doc.related_that("replaces")]
         draft_became_rfc = doc.became_rfc()
 
-        if rev != None and rev != doc.rev:
+        if rev is not None and rev != doc.rev:
             # find the entry in the history
             for h in doc.history_set.order_by("-time"):
                 if rev == h.rev:
@@ -1291,7 +1291,7 @@ def document_bibxml(request, name, rev=None):
         raise Http404()
 
     # Make sure URL_REGEXPS did not grab too much for the rev number
-    if rev != None and len(rev) != 2:
+    if rev is not None and len(rev) != 2:
         mo = re.search(r"^(?P<m>[0-9]{1,2})-(?P<n>[0-9]{2})$", rev)
         if mo:
             name = name+"-"+mo.group(1)
@@ -1439,7 +1439,7 @@ def document_referenced_by(request, name):
     if doc.type_id in ["bcp","std","fyi"]:
         for rfc in doc.contains():
             refs |= rfc.referenced_by()
-    full = ( request.GET.get('full') != None )
+    full = ( request.GET.get('full') is not None )
     numdocs = refs.count()
     if not full and numdocs>250:
        refs=refs[:250]
@@ -1459,7 +1459,7 @@ def document_ballot_content(request, doc, ballot_id, editable=True):
     augment_events_with_revision(doc, all_ballots)
 
     ballot = None
-    if ballot_id != None:
+    if ballot_id is not None:
         ballot_id = int(ballot_id)
         for b in all_ballots:
             if b.id == ballot_id:
@@ -1661,7 +1661,7 @@ def add_comment(request, name):
 
     login = request.user.person
 
-    if doc.type_id == "draft" and doc.group != None:
+    if doc.type_id == "draft" and doc.group is not None:
         can_add_comment = bool(has_role(request.user, ("Area Director", "Secretariat", "IRTF Chair", "IANA", "RFC Editor")) or (
             request.user.is_authenticated and
             Role.objects.filter(name__in=("chair", "secr"),

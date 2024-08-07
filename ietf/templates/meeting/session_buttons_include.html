@@ -41,7 +41,7 @@
                     </a>
                 {% endif %}
                 {# Notes #}
-                {% if use_notes %}
+                {% if meeting.uses_notes %}
                     <a class="btn btn-outline-primary"
                         role="button"
                         href="{{ session.notes_url }}"
@@ -126,7 +126,7 @@
                     </a>
                 {% else %}
                     {# chat logs #}
-                    {% if meeting.number|add:"0" >= 60 %}
+                    {% if meeting.has_chat_logs %}
                         <a class="btn btn-outline-primary"
                             role="button"
                             href="{{session.chat_archive_url}}"
@@ -136,7 +136,7 @@
                         </a>
                     {% endif %}
                     {# Recordings #}
-                    {% if meeting.number|add:"0" >= 80 %}
+		    {% if meeting.has_recordings %}
                         {% with session.recordings as recordings %}
                             {% if recordings %}
                                 {# There's no guaranteed order, so this is a bit messy: #}
@@ -229,7 +229,7 @@
                         </li>
                     {% endif %}
                     {# Notes #}
-                    {% if use_notes %}
+                    {% if meeting.uses_notes %}
                         <li>
                             <a class="dropdown-item" href="{{ session.notes_url }}">
                                 <i class="bi bi-journal-text"></i> Notepad for note-takers
@@ -303,7 +303,7 @@
                         </li>
                     {% else %}
                         {# chat logs #}
-                        {% if meeting.number|add:"0" >= 60 %}
+			{% if meeting.has_chat_logs %}
                             <li>
                                 <a class="dropdown-item"
                                     href="session.chat_room_url">
@@ -312,7 +312,7 @@
                             </li>
                         {% endif %}
                         {# Recordings #}
-                        {% if meeting.number|add:"0" >= 80 %}
+                        {% if meeting.has_recordings %}
                             {% with session.recordings as recordings %}
                                 {% if recordings %}
                                     {# There's no guaranteed order, so this is a bit messy: #}
