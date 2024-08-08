@@ -12,11 +12,11 @@ from django.http import HttpResponse, HttpResponseRedirect, Http404
 from django.shortcuts import render, get_object_or_404, redirect
 from django.template.defaultfilters import striptags
 from django.template.loader import render_to_string
-from django.urls import reverse as urlreverse, resolve as urlresolve, Resolver404
+from django.urls import reverse as urlreverse
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.html import escape
 from urllib.parse import urlencode as urllib_urlencode
-
+from .return_to_url import parse_ballot_edit_return_point
 
 import debug                            # pyflakes:ignore
 
@@ -187,11 +187,8 @@ def edit_position(request, name, ballot_id):
 
     balloter = login = request.user.person
 
-    return_to_url = request.GET.get("ballot_edit_return_point")
-
-    if return_to_url is None:
-        return_to_url = urlreverse("ietf.doc.views_doc.document_ballot", kwargs=dict(name=doc.name, ballot_id=ballot_id))
-
+    return_to_url = parse_ballot_edit_return_point(request.GET.get('ballot_edit_return_point'), doc.name, ballot_id)
+    
     # if we're in the Secretariat, we can select a balloter to act as stand-in for
     if has_role(request.user, "Secretariat"):
         balloter_id = request.GET.get('balloter')
@@ -211,7 +208,7 @@ def edit_position(request, name, ballot_id):
             save_position(form, doc, ballot, balloter, login, send_mail)
 
             if send_mail:
-                query=dict()
+                query = {}
                 if request.GET.get('balloter'):
                     query['balloter'] = request.GET.get('balloter')
                 if request.GET.get('ballot_edit_return_point'):
@@ -344,24 +341,8 @@ def send_ballot_comment(request, name, ballot_id):
 
     balloter = request.user.person
 
-    return_to_url = request.GET.get('ballot_edit_return_point')
+    return_to_url = parse_ballot_edit_return_point(request.GET.get('ballot_edit_return_point'), doc.name, ballot_id)
 
-    if return_to_url is not None:
-        # we need to ensure return_to_url isn't used for phishing attacks.
-        # return_to_url is used in HttpResponseRedirect() which could redirect to Datatracker or offsite.
-        # Eg http://datatracker.ietf.org/?ballot_edit_return_point=https://example.com/phishing-attack
-        # offsite links could be phishing attempts so let's reject them all, and require valid Datatracker
-        # routes
-        try:
-            urlresolve(return_to_url)
-            # if it doesn't throw then it's a valid route
-            pass
-        except Resolver404:
-            raise ValueError(f"Invalid ballot_edit_return_point doesn't match a route: {return_to_url}")
-
-    if return_to_url is None:
-        return_to_url = urlreverse("ietf.doc.views_doc.document_ballot", kwargs=dict(name=doc.name, ballot_id=ballot_id))
-    
     if 'HTTP_REFERER' in request.META:
         back_url = request.META['HTTP_REFERER']
     else:
