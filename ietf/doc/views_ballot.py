@@ -16,7 +16,6 @@ from django.urls import reverse as urlreverse
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.html import escape
 from urllib.parse import urlencode as urllib_urlencode
-from .return_to_url import parse_ballot_edit_return_point
 
 import debug                            # pyflakes:ignore
 
@@ -41,6 +40,7 @@ from ietf.message.utils import infer_message
 from ietf.name.models import BallotPositionName, DocTypeName
 from ietf.person.models import Person
 from ietf.utils.fields import ModelMultipleChoiceField
+from ietf.utils.http import validate_return_to_path
 from ietf.utils.mail import send_mail_text, send_mail_preformatted
 from ietf.utils.decorators import require_api_key
 from ietf.utils.response import permission_denied
@@ -1303,3 +1303,15 @@ def rsab_ballot_status(request):
     # Possible TODO: add a menu item to show this? Maybe only if you're in rsab or an rswg chair?
     # There will be so few of these that the general community would follow them from the rswg docs page.
     # Maybe the view isn't actually needed at all...
+
+
+def parse_ballot_edit_return_point(path, doc_name, ballot_id):
+    get_default_path = lambda: urlreverse("ietf.doc.views_doc.document_ballot", kwargs=dict(name=doc_name, ballot_id=ballot_id))
+    allowed_path_handlers = {
+        "ietf.doc.views_doc.document_ballot",
+        "ietf.doc.views_doc.document_irsg_ballot",
+        "ietf.doc.views_doc.document_rsab_ballot",
+        "ietf.iesg.views.agenda",
+        "ietf.iesg.views.agenda_documents",
+    }
+    return validate_return_to_path(path, get_default_path, allowed_path_handlers)
