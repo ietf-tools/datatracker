@@ -190,7 +190,7 @@ def edit_position(request, name, ballot_id):
     try:
         return_to_url = parse_ballot_edit_return_point(request.GET.get('ballot_edit_return_point'), doc.name, ballot_id)
     except ValueError:
-        raise HttpResponseBadRequest('ballot_edit_return_point is invalid')
+        return HttpResponseBadRequest('ballot_edit_return_point is invalid')
     
     # if we're in the Secretariat, we can select a balloter to act as stand-in for
     if has_role(request.user, "Secretariat"):
@@ -347,7 +347,7 @@ def send_ballot_comment(request, name, ballot_id):
     try:
         return_to_url = parse_ballot_edit_return_point(request.GET.get('ballot_edit_return_point'), doc.name, ballot_id)
     except ValueError:
-        raise HttpResponseBadRequest('ballot_edit_return_point is invalid')
+        return HttpResponseBadRequest('ballot_edit_return_point is invalid')
     
     if 'HTTP_REFERER' in request.META:
         back_url = request.META['HTTP_REFERER']
