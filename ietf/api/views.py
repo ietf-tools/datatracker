@@ -243,6 +243,7 @@ def version(request):
     return HttpResponse(
             json.dumps({
                         'version': ietf.__version__+ietf.__patch__,
+                        'other': ietf.__version_extra__,
                         'dumptime': dumptime,
                     }),
                 content_type='application/json',
