@@ -20,6 +20,7 @@ from ietf.doc.factories import (DocumentFactory, IndividualDraftFactory, Individ
                                 BallotPositionDocEventFactory, BallotDocEventFactory, IRSGBallotDocEventFactory)
 from ietf.doc.templatetags.ietf_filters import can_defer
 from ietf.doc.utils import create_ballot_if_not_open
+from ietf.doc.views_ballot import parse_ballot_edit_return_point
 from ietf.doc.views_doc import document_ballot_content
 from ietf.group.models import Group, Role
 from ietf.group.factories import GroupFactory, RoleFactory, ReviewTeamFactory
@@ -1451,3 +1452,32 @@ class BallotContentTests(TestCase):
         self._assertBallotMessage(q, balloters[0], 'No discuss send log available')
         self._assertBallotMessage(q, balloters[1], 'No comment send log available')
         self._assertBallotMessage(q, old_balloter, 'No ballot position send log available')
+
+class ReturnToUrlTests(TestCase):
+    def test_invalid_return_to_url(self):
+        self.assertRaises(
+            Exception,
+            lambda: parse_ballot_edit_return_point('/doc/', 'draft-ietf-opsawg-ipfix-tcpo-v6eh', '998718'),
+        )
+        self.assertRaises(
+            Exception,
+            lambda: parse_ballot_edit_return_point('/a-route-that-does-not-exist/', 'draft-ietf-opsawg-ipfix-tcpo-v6eh', '998718'),
+        )
+        self.assertRaises(
+            Exception,
+            lambda: parse_ballot_edit_return_point('https://example.com/phishing', 'draft-ietf-opsawg-ipfix-tcpo-v6eh', '998718'),
+        )
+
+    def test_valid_default_return_to_url(self):
+        self.assertEqual(parse_ballot_edit_return_point(
+            None,
+            'draft-ietf-opsawg-ipfix-tcpo-v6eh',
+            '998718'
+        ), '/doc/draft-ietf-opsawg-ipfix-tcpo-v6eh/ballot/998718/')
+        
+    def test_valid_return_to_url(self):
+        self.assertEqual(parse_ballot_edit_return_point(
+            '/doc/draft-ietf-opsawg-ipfix-tcpo-v6eh/ballot/998718/',
+            'draft-ietf-opsawg-ipfix-tcpo-v6eh',
+            '998718'
+        ), '/doc/draft-ietf-opsawg-ipfix-tcpo-v6eh/ballot/998718/')
