@@ -173,7 +173,14 @@ def rfc_original_stream(request):
     response = {"original_stream": []}
     for rfc in rfcs:
         response["original_stream"].append(
-            {"rfc_number": rfc.rfc_number, "stream": rfc.orig_stream_id}
+            {
+                "rfc_number": rfc.rfc_number,
+                "stream": (
+                    rfc.orig_stream_id
+                    if rfc.orig_stream_id is not None
+                    else rfc.stream_id
+                ),
+            }
         )
     return JsonResponse(response)
 
