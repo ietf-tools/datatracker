@@ -26,9 +26,9 @@ def validate_return_to_path(path, get_default_path, allowed_path_handlers):
         # further restrict by whether it's in the list of valid routes to prevent
         # (eg) redirecting to logout
         if match.url_name not in allowed_path_handlers:
-            raise ValueError(f"Invalid return to path not among valid matches: {match.url_name} not in {allowed_path_handlers}")
+            raise ValueError("Invalid return to path not among valid matches")
         pass
     except Resolver404:
-        raise ValueError(f"Invalid return to path doesn't match a route: {path}")
+        raise ValueError("Invalid return to path doesn't match a route")
 
     return path
