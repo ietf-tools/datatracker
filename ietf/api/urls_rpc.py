@@ -9,6 +9,7 @@ urlpatterns = [
     url(r"^doc/drafts/(?P<doc_id>[0-9]+)$", views_rpc.rpc_draft),
     url(r"^doc/drafts_by_names/", views_rpc.drafts_by_names),
     url(r"^doc/submitted_to_rpc/$", views_rpc.submitted_to_rpc),
+    url(r"^doc/rfc/original_stream/$", views_rpc.rfc_original_stream),
     url(r"^person/create_demo_person/$", views_rpc.create_demo_person),
     url(r"^person/(?P<person_id>[0-9]+)$", views_rpc.rpc_person),
     url(r"^persons/$", views_rpc.rpc_persons),

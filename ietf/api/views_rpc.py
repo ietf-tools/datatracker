@@ -2,7 +2,7 @@
 
 import json
 
-from django.db.models import Q
+from django.db.models import OuterRef, Subquery, Q
 from django.http import (
     HttpResponse,
     HttpResponseBadRequest,
@@ -16,7 +16,7 @@ from django.contrib.auth.models import User
 
 from ietf.api.ietf_utils import requires_api_token
 from ietf.doc.factories import WgDraftFactory # DO NOT MERGE INTO MAIN
-from ietf.doc.models import Document
+from ietf.doc.models import Document, DocHistory
 from ietf.person.factories import PersonFactory # DO NOT MERGE INTO MAIN
 from ietf.person.models import Person
 
@@ -128,6 +128,15 @@ def submitted_to_rpc(request):
 
     return JsonResponse(response)
 
+@csrf_exempt
+@requires_api_token("ietf.api.views_rpc")
+def rfc_original_stream(request):
+    """ Return the stream that an rfc was first published into for all rfcs """
+    rfcs = Document.objects.filter(type="rfc").annotate(orig_stream_id=Subquery(DocHistory.objects.filter(doc=OuterRef("pk")).exclude(stream__isnull=True).order_by("time").values_list("stream_id",flat=True)[:1]))
+    response = {"original_stream": []}
+    for rfc in rfcs:
+        response["original_stream"].append({"rfc_number":rfc.rfc_number, "stream": rfc.orig_stream_id})
+    return JsonResponse(response)
 
 @csrf_exempt
 @requires_api_token("ietf.api.views_rpc")
