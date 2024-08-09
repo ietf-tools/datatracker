@@ -17,6 +17,7 @@ datatracker.sublime-workspace
 /docker/docker-compose.extend-custom.yml
 /env
 /ghostdriver.log
+/geckodriver.log
 /htmlcov
 /ietf/static/dist-neue
 /latest-coverage.json

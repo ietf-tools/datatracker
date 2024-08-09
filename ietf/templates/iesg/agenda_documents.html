@@ -21,7 +21,12 @@
             <h2>
                 IESG telechat {{ t.date }}
                 <br>
-                <small class="text-body-secondary">{{ t.pages }} page{{ t.pages|pluralize }}</small>
+                <small class="text-body-secondary">
+                    {{ t.pages }} page{{ t.pages|pluralize }}
+                    {% if t.ad_pages_left_to_ballot_on %}
+                        ({{ t.ad_pages_left_to_ballot_on }} pages left to ballot on)
+                    {% endif %}
+                </small>
             </h2>
             <div class="buttonlist">
                 <a class="btn btn-primary" role="button" href="{% url 'ietf.iesg.views.agenda' %}">
