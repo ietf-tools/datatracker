@@ -136,7 +136,7 @@ def submitted_to_rpc(request):
         response["submitted_to_rpc"].append(
             {
                 "name": doc.name,
-                "pk": doc.pk,
+                "id": doc.pk,
                 "stream": doc.stream_id,
                 "submitted": f"{doc.sent_to_rfc_editor_event().time.isoformat()}",
             }

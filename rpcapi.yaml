@@ -206,8 +206,8 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/ErrorResponse'
 
-components: 
-    schemas: 
+components:
+    schemas:
         Person:
             type: object
             properties:
@@ -228,7 +228,7 @@ components:
                         properties:
                             name: 
                               type: string
-                            pk: 
+                            id: 
                               type: integer
                             stream: 
                               type: string
