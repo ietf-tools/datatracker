@@ -234,7 +234,7 @@ components:
                               type: string
                             submitted: 
                                 type: string
-                                format: date
+                                format: date-time
         
         ErrorResponse:
             type: object

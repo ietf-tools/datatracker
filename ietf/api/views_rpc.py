@@ -138,9 +138,9 @@ def submitted_to_rpc(request):
                 "name": doc.name,
                 "pk": doc.pk,
                 "stream": doc.stream_id,
-                "submitted": f"{doc.sent_to_rfc_editor_event().time:%Y-%m-%d}",
+                "submitted": f"{doc.sent_to_rfc_editor_event().time.isoformat()}",
             }
-        )  # TODO reconcile timezone
+        )
 
     return JsonResponse(response)
 
