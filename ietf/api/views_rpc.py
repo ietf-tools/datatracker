@@ -114,17 +114,33 @@ def drafts_by_names(request):
 @csrf_exempt
 @requires_api_token("ietf.api.views_rpc")
 def submitted_to_rpc(request):
-    """ Return documents in datatracker that have been submitted to the RPC but are not yet in the queue
-    
+    """Return documents in datatracker that have been submitted to the RPC but are not yet in the queue
+
     Those queries overreturn - there may be things, particularly not from the IETF stream that are already in the queue.
     """
-    ietf_docs = Q(states__type_id="draft-iesg",states__slug__in=["ann"])
-    irtf_iab_ise_docs = Q(states__type_id__in=["draft-stream-iab","draft-stream-irtf","draft-stream-ise"],states__slug__in=["rfc-edit"])
-    #TODO: Need a way to talk about editorial stream docs
-    docs = Document.objects.filter(type_id="draft").filter(ietf_docs|irtf_iab_ise_docs)
+    ietf_docs = Q(states__type_id="draft-iesg", states__slug__in=["ann"])
+    irtf_iab_ise_docs = Q(
+        states__type_id__in=[
+            "draft-stream-iab",
+            "draft-stream-irtf",
+            "draft-stream-ise",
+        ],
+        states__slug__in=["rfc-edit"],
+    )
+    # TODO: Need a way to talk about editorial stream docs
+    docs = Document.objects.filter(type_id="draft").filter(
+        ietf_docs | irtf_iab_ise_docs
+    )
     response = {"submitted_to_rpc": []}
     for doc in docs:
-        response["submitted_to_rpc"].append({"name":doc.name, "pk": doc.pk, "stream": doc.stream_id, "submitted": f"{doc.sent_to_rfc_editor_event().time:%Y-%m-%d}"}) #TODO reconcile timezone
+        response["submitted_to_rpc"].append(
+            {
+                "name": doc.name,
+                "pk": doc.pk,
+                "stream": doc.stream_id,
+                "submitted": f"{doc.sent_to_rfc_editor_event().time:%Y-%m-%d}",
+            }
+        )  # TODO reconcile timezone
 
     return JsonResponse(response)
 
