@@ -10,6 +10,7 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.contrib.auth.models import User
+from django.contrib.auth.validators import ASCIIUsernameValidator
 
 import debug                            # pyflakes:ignore
 
@@ -20,16 +21,35 @@ from ietf.utils.text import isascii
 from .widgets import PasswordStrengthInput, PasswordConfirmationInput
 
 
-class RegistrationForm(forms.Form):
-    email = forms.EmailField(label="Your email (lowercase)")
+class UsernameEmailValidator(ASCIIUsernameValidator):
+    message=(
+        'This value may contain only unaccented lowercase letters (a-z), '
+        'digits (0-9), and the special characters "@", ".", "+", "-", and "_".'
+    )
 
-    def clean_email(self):
-        email = self.cleaned_data.get('email', '')
-        if not email:
-            return email
-        if email.lower() != email:
-            raise forms.ValidationError('The supplied address contained uppercase letters.  Please use a lowercase email address.')
-        return email
+    def __call__(self, value):
+        if value.lower() != value:
+            raise forms.ValidationError(
+                (
+                    "The supplied address contained uppercase letters.  "
+                    "Please use a lowercase email address."
+                ), 
+                code="invalid_case",
+                params={"value": value},
+            )
+        super().__call__(value)
+
+
+validate_username_email = UsernameEmailValidator()
+
+
+class UsernameEmailField(forms.EmailField):
+    """Email that is suitable for a username"""
+    default_validators = forms.EmailField.default_validators + [validate_username_email]
+
+
+class RegistrationForm(forms.Form):
+    email = UsernameEmailField(label="Your email (lowercase)")
 
 
 class PasswordForm(forms.Form):
@@ -230,9 +250,18 @@ class ChangeUsernameForm(forms.Form):
         assert isinstance(user, User)
         super(ChangeUsernameForm, self).__init__(*args, **kwargs)
         self.user = user
-        emails = user.person.email_set.filter(active=True)
-        choices = [ (email.address, email.address) for email in emails ]
+        choices = [(email.address, email.address) for email in self._allowed_emails(user)]
         self.fields['username'] = forms.ChoiceField(choices=choices)
+
+    @staticmethod
+    def _allowed_emails(user):
+        for email in user.person.email_set.filter(active=True):
+            try:
+                validate_username_email(email.address)
+            except ValidationError:
+                pass
+            else:
+                yield email
 
     def clean_password(self):
         password = self.cleaned_data['password']
