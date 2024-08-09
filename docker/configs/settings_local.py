@@ -8,7 +8,7 @@ ALLOWED_HOSTS = ['*']
 from ietf.settings_postgresqldb import DATABASES   # pyflakes:ignore
 
 IDSUBMIT_IDNITS_BINARY = "/usr/local/bin/idnits"
-IDSUBMIT_STAGING_PATH = "test/staging/"
+IDSUBMIT_STAGING_PATH = "/assets/www6s/staging/"
 
 AGENDA_PATH = '/assets/www6s/proceedings/'
 MEETINGHOST_LOGO_PATH = AGENDA_PATH
@@ -53,7 +53,7 @@ IDSUBMIT_REPOSITORY_PATH = INTERNET_DRAFT_PATH
 FTP_DIR = '/assets/ftp'
 
 NOMCOM_PUBLIC_KEYS_DIR = 'data/nomcom_keys/public_keys/'
-SLIDE_STAGING_PATH = 'test/staging/'
+SLIDE_STAGING_PATH = '/assets/www6s/staging/'
 
 DE_GFM_BINARY = '/usr/local/bin/de-gfm'
 
