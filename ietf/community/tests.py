@@ -108,10 +108,8 @@ class CommunityListTests(TestCase):
         return [e for e in Email.objects.filter(person=person)] + \
                [a for a in Alias.objects.filter(person=person)]
 
-    def test_view_list(self):
-        person = self.complex_person(user__username='plain')
+    def do_view_list_test(self, person):
         draft = WgDraftFactory()
-
         # without list
         for id in self.email_or_name_set(person):
             url = urlreverse(ietf.community.views.view_list, kwargs={ "email_or_name": id })
@@ -133,6 +131,15 @@ class CommunityListTests(TestCase):
             r = self.client.get(url)
             self.assertEqual(r.status_code, 200, msg=f"id='{id}', url='{url}'")
             self.assertContains(r, draft.name)
+
+    def test_view_list(self):
+        person = self.complex_person(user__username='plain')
+        self.do_view_list_test(person)
+        
+    def test_view_list_without_active_email(self):
+        person = self.complex_person(user__username='plain')
+        person.email_set.update(active=False)
+        self.do_view_list_test(person)
 
     def test_manage_personal_list(self):
         person = self.complex_person(user__username='plain')
