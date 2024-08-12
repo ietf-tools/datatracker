@@ -1,12 +1,13 @@
 <template lang="pug">
 n-theme
-  n-message-provider
-    component(:is='currentComponent', :component-id='props.componentId')
+  n-notification-provider
+    n-message-provider
+      component(:is='currentComponent', :component-id='props.componentId')
 </template>
 
 <script setup>
 import { defineAsyncComponent, markRaw, onMounted, ref } from 'vue'
-import { NMessageProvider } from 'naive-ui'
+import { NMessageProvider, NNotificationProvider } from 'naive-ui'
 
 import NTheme from './components/n-theme.vue'
 
@@ -15,6 +16,7 @@ import NTheme from './components/n-theme.vue'
 const availableComponents = {
   ChatLog: defineAsyncComponent(() => import('./components/ChatLog.vue')),
   Polls: defineAsyncComponent(() => import('./components/Polls.vue')),
+  Status: defineAsyncComponent(() => import('./components/Status.vue'))
 }
 
 // PROPS

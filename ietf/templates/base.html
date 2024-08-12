@@ -34,6 +34,7 @@
     <body {% block bodyAttrs %}{% endblock %} class="navbar-offset position-relative"
           data-group-menu-data-url="{% url 'ietf.group.views.group_menu_data' %}">
         {% analytical_body_top %}
+        {% include "base/status.html" %}
         <a class="visually-hidden visually-hidden-focusable" href="#content">Skip to main content</a>
         <nav class="navbar navbar-expand-lg fixed-top {% if server_mode and server_mode != "production" %}bg-danger-subtle{% else %}bg-secondary-subtle{% endif %}">
             <div class="container-fluid">
@@ -85,7 +86,7 @@
             </div>
         </nav>
         {% block precontent %}{% endblock %}
-        <div class="pt-3 container-fluid">
+        <main class="pt-3 container-fluid" id="main">
             <div class="row">
                 {% if request.COOKIES.left_menu == "on" and not hide_menu %}
                     <div class="d-none d-md-block bg-light-subtle py-3 leftmenu small">
@@ -114,7 +115,7 @@
                     {% block content_end %}{% endblock %}
                 </div>
             </div>
-        </div>
+        </main>
         {% block footer %}
             <footer class="col-md-12 col-sm-12 border-top mt-5 py-5 bg-light-subtle text-center position-sticky">
                 <a href="https://www.ietf.org/" class="p-3">IETF</a>

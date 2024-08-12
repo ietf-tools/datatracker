@@ -3,6 +3,7 @@
     "install-deps": "playwright install --with-deps",
     "test": "playwright test",
     "test:legacy": "playwright test -c playwright-legacy.config.js",
+    "test:legacy:visual": "playwright test -c playwright-legacy.config.js --headed --workers=1",
     "test:visual": "playwright test --headed --workers=1",
     "test:debug": "playwright test --debug"
   },
