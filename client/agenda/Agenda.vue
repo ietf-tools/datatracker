@@ -323,7 +323,7 @@ const meetingUpdated = computed(() => {
   if (!agendaStore.meeting.updated) { return false }
   
   const updatedDatetime = DateTime.fromISO(agendaStore.meeting.updated).setZone(agendaStore.timezone)
-  if (!updatedDatetime.isValid || updatedDatetime < DateTime.fromISO('1980-01-01')) {
+  if (!updatedDatetime.isValid) {
     return false
   }
   

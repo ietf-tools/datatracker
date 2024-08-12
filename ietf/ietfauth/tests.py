@@ -527,6 +527,24 @@ class IetfAuthTests(TestCase):
         self.assertIn(secondary_address, to)
         self.assertNotIn(inactive_secondary_address, to)
 
+    def test_reset_password_without_user(self):
+        """Reset password using email address for person without a user account"""
+        url = urlreverse('ietf.ietfauth.views.password_reset')
+        email = EmailFactory()
+        person = email.person
+        # Remove the user object from the person to get a Email/Person without User:
+        person.user = None
+        person.save()
+        # Remove the remaining User record, since reset_password looks for that by username:
+        User.objects.filter(username__iexact=email.address).delete()
+        empty_outbox()
+        r = self.client.post(url, { 'username': email.address })
+        self.assertEqual(len(outbox), 1)
+        lastReceivedEmail = outbox[-1]
+        self.assertIn(email.address, lastReceivedEmail.get('To'))
+        self.assertTrue(lastReceivedEmail.get('Subject').startswith("Confirm password reset"))
+        self.assertContains(r, "Your password reset request has been successfully received", status_code=200)
+
     def test_review_overview(self):
         review_req = ReviewRequestFactory()
         assignment = ReviewAssignmentFactory(review_request=review_req,reviewer=EmailFactory(person__user__username='reviewer'))
