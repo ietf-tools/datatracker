@@ -257,6 +257,13 @@ components:
                     type: string
                 pages:
                     type: integer
+                source_format:
+                    type: string
+                    enum:
+                        - unknown
+                        - txt
+                        - xml-v2
+                        - xml-v3
                 authors:
                     type: array
                     items:

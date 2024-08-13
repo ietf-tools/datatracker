@@ -58,6 +58,21 @@ def rpc_persons(request):
         response[str(p.pk)] = p.plain_name()
     return JsonResponse(response)
 
+
+def _document_source_format(doc):
+    submission = doc.submission()
+    if submission is None:
+        raise NotImplementedError()
+    if ".xml" in submission.file_types:
+        if submission.xml_version == "3":
+            return "xml-v3"
+        else:
+            return "xml-v2"
+    elif ".txt" in submission.file_types:
+        return "txt"
+    return "unknown"
+
+    
 @csrf_exempt
 @requires_api_token("ietf.api.views_rpc")
 def rpc_draft(request, doc_id):
@@ -75,6 +90,7 @@ def rpc_draft(request, doc_id):
         "stream": d.stream.slug,
         "title": d.title,
         "pages": d.pages,
+        "source_format": _document_source_format(d),
         "authors": [
             {
                 "id": p.pk,
@@ -102,6 +118,7 @@ def drafts_by_names(request):
             "stream": doc.stream.slug,
             "title": doc.title,
             "pages": doc.pages,
+            "source_format": _document_source_format(d),
             "authors": [
                 {
                     "id": p.pk,
