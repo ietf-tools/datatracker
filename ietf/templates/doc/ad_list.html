@@ -58,7 +58,9 @@
                             <td
                                 class="col-1 align-bottom"
                                 data-sum="pre-pubreq"
-                                data-series-graph
+                                {% if user|has_role:"Area Director,Secretariat" %}
+                                    data-series-graph
+                                {% endif %}
                             >
                                 {{ ad.pre_pubreq }}
                             </td>
@@ -77,7 +79,12 @@
                     <th scope="row">Sum</th>
                     {% if dt.type.1 == "Internet-Draft" %}
                         <td class="align-bottom">
-                            <div data-sum-result="pre-pubreq" data-series-graph></div>
+                            <div
+                                data-sum-result="pre-pubreq"
+                                {% if user|has_role:"Area Director,Secretariat" %}
+                                    data-series-graph
+                                {% endif %}
+                            ></div>
                         </td>
                     {% endif %}
                     {% for state, state_name in dt.states %}
