@@ -97,8 +97,8 @@ def rpc_draft(request, doc_id):
                 "plain_name": p.person.plain_name(),
             } for p in d.documentauthor_set.all()
         ],
-        "shepherd": d.shepherd.formatted_ascii_email() if d.shepherd else None,
-        "intended_std_level": d.intended_std_level.slug if d.intended_std_level else None,
+        "shepherd": d.shepherd.formatted_ascii_email() if d.shepherd else "",
+        "intended_std_level": d.intended_std_level.slug if d.intended_std_level else "",
     })
 
 @csrf_exempt
