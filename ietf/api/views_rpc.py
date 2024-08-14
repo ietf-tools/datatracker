@@ -96,7 +96,8 @@ def rpc_draft(request, doc_id):
                 "id": p.pk,
                 "plain_name": p.person.plain_name(),
             } for p in d.documentauthor_set.all()
-        ]
+        ],
+        "shepherd": d.shepherd.formatted_ascii_email() if d.shepherd else None,
     })
 
 @csrf_exempt
