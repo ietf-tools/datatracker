@@ -98,6 +98,7 @@ def rpc_draft(request, doc_id):
             } for p in d.documentauthor_set.all()
         ],
         "shepherd": d.shepherd.formatted_ascii_email() if d.shepherd else None,
+        "intended_std_level": d.intended_std_level.slug if d.intended_std_level else None,
     })
 
 @csrf_exempt

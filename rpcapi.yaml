@@ -272,6 +272,9 @@ components:
                     type: string
                     nullable: true
                     format: email
+                intended_std_level:
+                    type: string
+                    nullable: true
 
     securitySchemes: 
         ApiKeyAuth:
