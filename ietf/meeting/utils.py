@@ -609,7 +609,8 @@ def bulk_create_timeslots(meeting, times, locations, other_props):
 
 def preprocess_meeting_important_dates(meetings):
     for m in meetings:
-        m.cached_updated = m.updated()
+        # cached_updated must be present, set it to 1970-01-01 if necessary
+        m.cached_updated = m.updated() or pytz.utc.localize(datetime.datetime(1970, 1, 1, 0, 0, 0))
         m.important_dates = m.importantdate_set.prefetch_related("name")
         for d in m.important_dates:
             d.midnight_cutoff = "UTC 23:59" in d.name.name
@@ -726,7 +727,7 @@ def save_session_minutes_revision(session, file, ext, request, encoding=None, ap
 def handle_upload_file(file, filename, meeting, subdir, request=None, encoding=None):
     """Accept an uploaded materials file
 
-    This function takes a file object, a filename and a meeting object and subdir as string.
+    This function takes a _binary mode_ file object, a filename and a meeting object and subdir as string.
     It saves the file to the appropriate directory, get_materials_path() + subdir.
     If the file is a zip file, it creates a new directory in 'slides', which is the basename of the
     zip file and unzips the file in the new directory.
@@ -748,9 +749,18 @@ def handle_upload_file(file, filename, meeting, subdir, request=None, encoding=N
                 pass  # if the file is already gone, so be it
 
     with (path / filename).open('wb+') as destination:
+        # prep file for reading
+        if hasattr(file, "chunks"):
+            chunks = file.chunks()
+        else:
+            try:
+                file.seek(0)
+            except AttributeError:
+                pass
+            chunks = [file.read()]  # pretend we have chunks
+
         if filename.suffix in settings.MEETING_VALID_MIME_TYPE_EXTENSIONS['text/html']:
-            file.open()
-            text = file.read()
+            text = b"".join(chunks)
             if encoding:
                 try:
                     text = text.decode(encoding)
@@ -777,11 +787,8 @@ def handle_upload_file(file, filename, meeting, subdir, request=None, encoding=N
                                      f"please check the resulting content.  "
                                  ))
         else:
-            if hasattr(file, 'chunks'):
-                for chunk in file.chunks():
-                    destination.write(chunk)
-            else:
-                destination.write(file.read())
+            for chunk in chunks:
+                destination.write(chunk)
 
     # unzip zipfile
     if is_zipfile:

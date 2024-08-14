@@ -60,7 +60,7 @@
             </a>
             {% if user|can_ballot:doc %}
                 <a class="btn btn-primary"
-                   href="{% url "ietf.doc.views_ballot.edit_position" name=doc.name ballot_id=ballot.pk %}">
+                   href="{% url "ietf.doc.views_ballot.edit_position" name=doc.name ballot_id=ballot.pk %}?ballot_edit_return_point={{ request.path|urlencode }}">
                     Edit position
                 </a>
             {% endif %}

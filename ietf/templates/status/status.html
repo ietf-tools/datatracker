@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% load origin %}
+{% load ietf_filters static %}
+{% block content %}
+    {% origin %}
+    <h1 data-status-id="{{ status.id }}">
+        {% block title %} {{ status.title }} {% endblock %}
+        {% if status.active == False %}
+            <span class="badge bg-secondary">inactive</span>
+        {% endif %}
+    </h1>
+    <div>
+        {{ status_page_html }}
+    </div>
+{% endblock %}

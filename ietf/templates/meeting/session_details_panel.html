@@ -9,7 +9,7 @@
                     {% if meeting.type.slug == 'interim' %}
                         {% include "meeting/interim_session_buttons.html" with show_agenda=False show_empty=False %}
                     {% else %}
-                        {% include "meeting/session_buttons_include.html" with show_agenda=False item=session.official_timeslotassignment use_notes=session.meeting.use_notes %}
+                        {% include "meeting/session_buttons_include.html" with show_agenda=False item=session.official_timeslotassignment %}
                     {% endif %}
                 </div>
             {% endif %}
@@ -187,7 +187,7 @@
             </a>
         {% elif request.user.is_authenticated and not session.is_material_submission_cutoff %}
             <a class="btn btn-primary proposeslides"
-               href="{% url 'ietf.meeting.views.propose_session_slides' session_id=session.pk num=session.meeting.number %}">
+               href="{% url 'ietf.meeting.views.upload_session_slides' session_id=session.pk num=session.meeting.number %}">
                 Propose slides
             </a>
         {% endif %}
@@ -230,7 +230,7 @@
         <table class="table table-sm table-striped meeting-tools"
                id="meeting_tools_{{ session.pk }}">
             <tbody>
-            {% if use_notes %}
+            {% if meeting.uses_notes %}
                 <tr>
                     <td>
                         <a href="{{ session.notes_url }}">
@@ -310,7 +310,7 @@
         <table class="table table-sm table-striped meeting-tools"
                id="notes_and_recordings_{{ session.pk }}">
             <tbody>
-            {% if use_notes %}
+            {% if session.uses_notes %}
                 <tr>
                     <td>
                         <a href="{{ session.notes_url }}">
@@ -320,7 +320,7 @@
                 </tr>
             {% endif %}
             {# Recordings #}
-            {% if meeting.number|add:"0" >= 80 %}
+            {% if session.has_recordings %}
                 {% with session.recordings as recordings %}
                     {% if recordings %}
                         {# There's no guaranteed order, so this is a bit messy: #}
