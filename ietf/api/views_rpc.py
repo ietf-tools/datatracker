@@ -62,7 +62,7 @@ def rpc_persons(request):
 def _document_source_format(doc):
     submission = doc.submission()
     if submission is None:
-        raise NotImplementedError()
+        return "unknown"
     if ".xml" in submission.file_types:
         if submission.xml_version == "3":
             return "xml-v3"
