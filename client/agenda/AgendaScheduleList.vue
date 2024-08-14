@@ -24,7 +24,7 @@
           )
           //- ROW - DAY HEADING -----------------------
           template(v-if='item.displayType === `day`')
-            td(:id='`agenda-day-` + item.id', :colspan='pickerModeActive ? 6 : 5') {{item.date}}
+            td(:id='item.slug', :colspan='pickerModeActive ? 6 : 5') {{item.date}}
           //- ROW - SESSION HEADING -------------------
           template(v-else-if='item.displayType === `session-head`')
             td.agenda-table-cell-check(v-if='pickerModeActive') &nbsp;
@@ -200,7 +200,7 @@ import {
 
 import AgendaDetailsModal from './AgendaDetailsModal.vue'
 
-import { useAgendaStore } from './store'
+import { useAgendaStore, daySlug } from './store'
 import { useSiteStore } from '../shared/store'
 import { getUrl } from '../shared/urls'
 
@@ -248,6 +248,7 @@ const meetingEvents = computed(() => {
     if (itemDate.toISODate() !== acc.lastDate) {
       acc.result.push({
         id: item.id,
+        slug: daySlug(item),
         key: `day-${itemDate.toISODate()}`,
         displayType: 'day',
         date: itemDate.toLocaleString(DateTime.DATE_HUGE),

@@ -121,7 +121,7 @@ export const useAgendaStore = defineStore('agenda', {
     meetingDays () {
       const siteStore = useSiteStore()
       return uniqBy(this.scheduleAdjusted, 'adjustedStartDate').sort().map(s => ({
-        slug: s.id.toString(),
+        slug: daySlug(s),
         ts: s.adjustedStartDate,
         label: siteStore.viewport < 1350 ? DateTime.fromISO(s.adjustedStartDate).toFormat('ccc LLL d') : DateTime.fromISO(s.adjustedStartDate).toLocaleString(DateTime.DATE_HUGE)
       }))
@@ -159,8 +159,8 @@ export const useAgendaStore = defineStore('agenda', {
         // such as the 'Now' button and red divider are available.
         // This should be commented out when not in 
         // (function(){
-        //   if (location.host !== "localhost") {
-        //     console.log("Not modifying `agendaData` because we're not on localhost")
+        //   if (location.hostname !== "localhost") {
+        //     console.log(`Not modifying \`agendaData\` because we're not on localhost: ${location.host}`)
         //     return
         //   }
         //   const originalStartDateMs = new Date(agendaData.meeting.startDate).getTime()
@@ -314,4 +314,9 @@ function findFirstConferenceUrl (txt) {
     }
   } catch (err) { }
   return null
+}
+
+export const daySlugPrefix = 'agenda-day-'
+export function daySlug(s) {
+  return `${daySlugPrefix}${s.adjustedStartDate}` // eg 'agenda-day-2024-08-13'
 }

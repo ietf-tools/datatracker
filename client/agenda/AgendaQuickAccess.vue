@@ -99,7 +99,7 @@
             li.nav-item(v-for='day of agendaStore.meetingDays')
               a.nav-link(
                 :class='agendaStore.dayIntersectId === day.slug ? `active` : ``'
-                :href='`#slot-` + day.slug'
+                :href='`#${day.slug}`'
                 @click='scrollToDay(day.slug, $event)'
                 )
                 i.bi.bi-arrow-right-short.d-none.d-xxl-inline.me-2
@@ -119,7 +119,7 @@ import {
   useMessage
 } from 'naive-ui'
 
-import { useAgendaStore } from './store'
+import { useAgendaStore, daySlugPrefix } from './store'
 import { useSiteStore } from '../shared/store'
 import { getUrl } from '../shared/urls'
 
@@ -216,16 +216,25 @@ function scrollToNow (ev) {
 }
 
 /**
- * Scrolls to now on page load when browser location hash is "#now"
+ * On page load when browser location hash contains '#now' or '#agenda-day-*' then scroll accordingly
  */
- (function scrollToNowHashInit() {
-  if (window.location.hash !== "#now") return
-  const unsubscribe = agendaStore.$subscribe((mutation, agendaStoreState) => {
+ (function scrollToHashInit() {
+  if (!window.location.hash) {
+    return
+  }
+  if (!(window.location.hash === "#now" || window.location.hash.startsWith(`#${daySlugPrefix}`))) {
+    return
+  }
+  const unsubscribe = agendaStore.$subscribe((_mutation, agendaStoreState) => {
     if (agendaStoreState.schedule.length === 0) {
       return
     }
-    scrollToNow()
     unsubscribe() // we only need to scroll once, so unsubscribe from future updates
+    if(window.location.hash === "#now") {
+      scrollToNow()
+    } else if(window.location.hash.startsWith(`#${daySlugPrefix}`)) {
+      document.getElementById(window.location.hash.substring(1))?.scrollIntoView(true)
+    }
   })
 })()
 
