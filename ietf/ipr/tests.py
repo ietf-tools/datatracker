@@ -28,9 +28,11 @@ from ietf.group.factories import RoleFactory
 from ietf.ipr.factories import (
     HolderIprDisclosureFactory,
     GenericIprDisclosureFactory,
+    IprDisclosureBaseFactory,
     IprDocRelFactory,
     IprEventFactory
 )
+from ietf.ipr.forms import DraftForm
 from ietf.ipr.mail import (process_response_email, get_reply_to, get_update_submitter_emails,
     get_pseudo_submitter, get_holders, get_update_cc_addrs)
 from ietf.ipr.models import (IprDisclosureBase,GenericIprDisclosure,HolderIprDisclosure,
@@ -934,4 +936,54 @@ Subject: test
         self.assertEqual(
             no_revisions_message(iprdocrel),
             "No revisions for this Internet-Draft were specified in this disclosure. However, there is only one revision of this Internet-Draft."
+        )
+
+
+class DraftFormTests(TestCase):
+    def setUp(self):
+        super().setUp()
+        self.disclosure = IprDisclosureBaseFactory()
+        self.draft = WgDraftFactory()
+        self.rfc = RfcFactory()
+
+    def test_revisions_valid(self):
+        post_data = {
+            "document": str(self.draft.pk),
+            "disclosure": str(self.disclosure.pk),
+        }
+        self.assertTrue(DraftForm(post_data | {"revisions": "00"}).is_valid())
+        self.assertTrue(DraftForm(post_data | {"revisions": "00-02"}).is_valid())
+        self.assertTrue(DraftForm(post_data | {"revisions": "not a num"}).is_valid())
+        self.assertTrue(DraftForm(post_data | {"revisions": "01,03, 05"}).is_valid())
+        # RFC instead of document - allow empty / missing revisions
+        post_data["document"] = str(self.rfc.pk)
+        self.assertTrue(DraftForm(post_data).is_valid())
+        self.assertTrue(DraftForm(post_data | {"revisions": ""}).is_valid())
+
+    def test_revisions_invalid(self):
+        missing_rev_error_msg = (
+            "Revisions of this Internet-Draft for which this disclosure is relevant must be specified."
+        )
+        null_char_error_msg = "Null characters are not allowed."
+        
+        post_data = {
+            "document": str(self.draft.pk),
+            "disclosure": str(self.disclosure.pk),
+        }
+        self.assertFormError(
+            DraftForm(post_data), "revisions", missing_rev_error_msg
+        )
+        self.assertFormError(
+            DraftForm(post_data | {"revisions": ""}), "revisions", missing_rev_error_msg
+        )
+        self.assertFormError(
+            DraftForm(post_data | {"revisions": "1\x00"}),
+            "revisions",
+            [null_char_error_msg, missing_rev_error_msg],
+        )
+        # RFC instead of document still validates the revisions field
+        self.assertFormError(
+            DraftForm(post_data | {"document": str(self.rfc.pk), "revisions": "1\x00"}),
+            "revisions",
+            null_char_error_msg,
         )
