@@ -160,7 +160,7 @@ export const useAgendaStore = defineStore('agenda', {
         // This should be commented out when not in 
         // (function(){
         //   if (location.hostname !== "localhost") {
-        //     console.log(`Not modifying \`agendaData\` because we're not on localhost: ${location.host}`)
+        //     console.log(`Not modifying \`agendaData\` because we're not on localhost: ${location.hostname}`)
         //     return
         //   }
         //   const originalStartDateMs = new Date(agendaData.meeting.startDate).getTime()
