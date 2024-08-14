@@ -959,7 +959,7 @@ class DraftFormTests(TestCase):
         self.assertTrue(DraftForm(post_data | {"revisions": "00-02"}).is_valid())
         self.assertTrue(DraftForm(post_data | {"revisions": "01,03, 05"}).is_valid())
         self.assertTrue(DraftForm(post_data | {"revisions": "all but 01"}).is_valid())
-        # RFC instead of document - allow empty / missing revisions
+        # RFC instead of draft - allow empty / missing revisions
         post_data["document"] = str(self.rfc.pk)
         self.assertTrue(DraftForm(post_data).is_valid())
         self.assertTrue(DraftForm(post_data | {"revisions": ""}).is_valid())
@@ -985,7 +985,7 @@ class DraftFormTests(TestCase):
             "revisions",
             [null_char_error_msg, missing_rev_error_msg],
         )
-        # RFC instead of document still validates the revisions field
+        # RFC instead of draft still validates the revisions field
         self.assertFormError(
             DraftForm(post_data | {"document": str(self.rfc.pk), "revisions": "1\x00"}),
             "revisions",
