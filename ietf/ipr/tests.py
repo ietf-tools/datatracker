@@ -951,10 +951,14 @@ class DraftFormTests(TestCase):
             "document": str(self.draft.pk),
             "disclosure": str(self.disclosure.pk),
         }
+        # The revisions field is just a char field that allows descriptions of the applicable
+        # document revisions. It's usually just a rev or "00-02", but the form allows anything
+        # not empty. The secretariat will review the value before the disclosure is posted so
+        # minimal validation is ok here.
         self.assertTrue(DraftForm(post_data | {"revisions": "00"}).is_valid())
         self.assertTrue(DraftForm(post_data | {"revisions": "00-02"}).is_valid())
-        self.assertTrue(DraftForm(post_data | {"revisions": "not a num"}).is_valid())
         self.assertTrue(DraftForm(post_data | {"revisions": "01,03, 05"}).is_valid())
+        self.assertTrue(DraftForm(post_data | {"revisions": "all but 01"}).is_valid())
         # RFC instead of document - allow empty / missing revisions
         post_data["document"] = str(self.rfc.pk)
         self.assertTrue(DraftForm(post_data).is_valid())
