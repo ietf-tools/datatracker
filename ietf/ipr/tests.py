@@ -948,7 +948,8 @@ class DraftFormTests(TestCase):
 
     def test_revisions_valid(self):
         post_data = {
-            # n.b., "document" is a multiple choice field, so its value must be an array of pks
+            # n.b., "document" is a SearchableDocumentField, which is a multiple choice field limited
+            # to a single choice. Its value must be an array of pks with one element.
             "document": [str(self.draft.pk)],
             "disclosure": str(self.disclosure.pk),
         }
@@ -972,7 +973,8 @@ class DraftFormTests(TestCase):
         null_char_error_msg = "Null characters are not allowed."
         
         post_data = {
-            # n.b., "document" is a multiple choice field, so its value must be an array of pks
+            # n.b., "document" is a SearchableDocumentField, which is a multiple choice field limited
+            # to a single choice. Its value must be an array of pks with one element.
             "document": [str(self.draft.pk)],
             "disclosure": str(self.disclosure.pk),
         }
