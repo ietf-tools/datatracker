@@ -112,7 +112,7 @@ class DraftForm(forms.ModelForm):
         if not document:
             self.add_error("document", "Identifying the Internet-Draft or RFC for this disclosure is required.")
         elif not document.name.startswith("rfc"):
-            if revisions.strip() == "":
+            if revisions is None or revisions.strip() == "":
                 self.add_error("revisions", "Revisions of this Internet-Draft for which this disclosure is relevant must be specified.")
         return cleaned_data
 
