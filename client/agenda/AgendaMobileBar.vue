@@ -51,21 +51,49 @@ const siteStore = useSiteStore()
 
 // Meeting Days
 
+function optionToLink(opts){
+  const { key, label, icon } = opts
+
+  return {
+    ...opts,
+    type: 'render',
+    render: () => h(
+      'a',
+      {
+        class: 'dropdown-link',
+        href: `#${key}`
+      },
+      [
+        h(
+          'span',
+          {},
+          [icon()]
+        ),
+        h(
+          'span',
+          {},
+          label
+        )
+      ]
+    )
+  }
+}
+
 const jumpToDayOptions = computed(() => {
   const days = []
   if (agendaStore.isMeetingLive) {
-    days.push({
-      label: 'Jump to Now',
+    days.push(optionToLink({
+      label: 'Jump to Now?',
       key: 'now',
-      icon: () => h('i', { class: 'bi bi-arrow-down-right-square text-red' })
-    })
+      icon: () => h('i', { class: 'bi bi-arrow-down-right-square text-red' }),
+    }))
   }
   for (const day of agendaStore.meetingDays) {
-    days.push({
-      label: `Jump to ${day.label}`,
+    days.push(optionToLink({
+      label: `Jump to ${day.label}?`,
       key: day.slug,
-      icon: () => h('i', { class: 'bi bi-arrow-down-right-square' })
-    })
+      icon: () => h('i', { class: 'bi bi-arrow-down-right-square' }),
+    }))
   }
   return days
 })
@@ -90,14 +118,13 @@ const downloadIcsOptions = [
 function jumpToDay (dayId) {
   if (dayId === 'now') {
     const lastEventId = agendaStore.findCurrentEventId()
-
     if (lastEventId) {
       document.getElementById(`agenda-rowid-${lastEventId}`)?.scrollIntoView(true)
     } else {
       message.warning('There is no event happening right now.')
     }
   } else {
-    document.getElementById(`agenda-day-${dayId}`)?.scrollIntoView(true)
+    document.getElementById(dayId)?.scrollIntoView(true)
   }
 }
 
@@ -162,4 +189,16 @@ function downloadIcs (key) {
     }
   }
 }
+
+.dropdown-link {
+  display: flex;
+  text-decoration:none;
+  gap: 0.2rem;
+
+  &:hover,
+  &:focus {
+    text-decoration: underline;
+  }
+}
+
 </style>

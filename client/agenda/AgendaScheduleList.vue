@@ -200,7 +200,7 @@ import {
 
 import AgendaDetailsModal from './AgendaDetailsModal.vue'
 
-import { useAgendaStore, daySlug } from './store'
+import { useAgendaStore, daySlugPrefix, daySlug } from './store'
 import { useSiteStore } from '../shared/store'
 import { getUrl } from '../shared/urls'
 
@@ -575,6 +575,30 @@ function recalculateRedLine () {
     state.redhandOffset = 0
   }
 }
+
+/**
+ * On page load when browser location hash contains '#now' or '#agenda-day-*' then scroll accordingly
+ */
+ (function scrollToHashInit() {
+  if (!window.location.hash) {
+    return
+  }
+  if (!(window.location.hash === "#now" || window.location.hash.startsWith(`#${daySlugPrefix}`))) {
+    return
+  }
+  const unsubscribe = agendaStore.$subscribe((_mutation, agendaStoreState) => {
+    if (agendaStoreState.schedule.length === 0) {
+      return
+    }
+    unsubscribe() // we only need to scroll once, so unsubscribe from future updates
+    if(window.location.hash === "#now") {
+      const lastEventId = agendaStore.findCurrentEventId()
+      document.getElementById(`agenda-rowid-${lastEventId}`)?.scrollIntoView(true)
+    } else if(window.location.hash.startsWith(`#${daySlugPrefix}`)) {
+      document.getElementById(window.location.hash.substring(1))?.scrollIntoView(true)
+    }
+  })
+})()
 
 // MOUNTED
 

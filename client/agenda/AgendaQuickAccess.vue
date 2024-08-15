@@ -109,7 +109,6 @@
 <script setup>
 import { computed, h } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { DateTime } from 'luxon'
 import {
   NAffix,
   NBadge,
@@ -119,7 +118,7 @@ import {
   useMessage
 } from 'naive-ui'
 
-import { useAgendaStore, daySlugPrefix } from './store'
+import { useAgendaStore } from './store'
 import { useSiteStore } from '../shared/store'
 import { getUrl } from '../shared/urls'
 
@@ -200,9 +199,8 @@ function pickerDiscard () {
   }
 }
 
-function scrollToDay (dayId, ev) {
-  ev.preventDefault()
-  document.getElementById(`agenda-day-${dayId}`)?.scrollIntoView(true)
+function scrollToDay (daySlug, ev) {
+  document.getElementById(daySlug)?.scrollIntoView(true)
 }
 
 function scrollToNow (ev) {
@@ -214,29 +212,6 @@ function scrollToNow (ev) {
     message.warning('There is no event happening right now.')
   }
 }
-
-/**
- * On page load when browser location hash contains '#now' or '#agenda-day-*' then scroll accordingly
- */
- (function scrollToHashInit() {
-  if (!window.location.hash) {
-    return
-  }
-  if (!(window.location.hash === "#now" || window.location.hash.startsWith(`#${daySlugPrefix}`))) {
-    return
-  }
-  const unsubscribe = agendaStore.$subscribe((_mutation, agendaStoreState) => {
-    if (agendaStoreState.schedule.length === 0) {
-      return
-    }
-    unsubscribe() // we only need to scroll once, so unsubscribe from future updates
-    if(window.location.hash === "#now") {
-      scrollToNow()
-    } else if(window.location.hash.startsWith(`#${daySlugPrefix}`)) {
-      document.getElementById(window.location.hash.substring(1))?.scrollIntoView(true)
-    }
-  })
-})()
 
 </script>
 
