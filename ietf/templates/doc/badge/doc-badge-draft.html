@@ -10,7 +10,7 @@
 {% elif snapshot and doc.rev != latest_rev  %}
     <div{% if document_html %} class="alert alert-warning small p-2 mt-2"{% endif %}>This is an older version of an Internet-Draft whose latest revision state is "{{ doc.doc.get_state }}".</div>
 {% else %}
-    <span class="{% if doc.get_state_slug == 'active' %}text-success{% elif doc.get_state_slug == 'expired' or doc.get_state_slug == 'repl' %}text-danger{% endif %}" style="border: dashed 3px green">{% if snapshot and doc.rev == latest_rev %}{{ doc.doc.get_state }}{% else %}{{ doc.get_state }}{% endif %} Internet-Draft</span>
+    <span class="{% if doc.get_state_slug == 'active' %}text-success{% elif doc.get_state_slug == 'expired' or doc.get_state_slug == 'repl' %}text-danger{% endif %}">{% if snapshot and doc.rev == latest_rev %}{{ doc.doc.get_state }}{% else %}{{ doc.get_state }}{% endif %} Internet-Draft</span>
     {% if submission %}({{ submission|safe }}){% endif %}
     {% if resurrected_by %}- resurrect requested by {{ resurrected_by }}{% endif %}
 {% endif %}
