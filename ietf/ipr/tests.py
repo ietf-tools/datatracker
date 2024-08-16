@@ -943,12 +943,14 @@ class DraftFormTests(TestCase):
     def setUp(self):
         super().setUp()
         self.disclosure = IprDisclosureBaseFactory()
-        self.draft = WgDraftFactory()
+        self.draft = WgDraftFactory.create_batch(10)[-1]
         self.rfc = RfcFactory()
 
     def test_revisions_valid(self):
         post_data = {
-            "document": str(self.draft.pk),
+            # n.b., "document" is a SearchableDocumentField, which is a multiple choice field limited
+            # to a single choice. Its value must be an array of pks with one element.
+            "document": [str(self.draft.pk)],
             "disclosure": str(self.disclosure.pk),
         }
         # The revisions field is just a char field that allows descriptions of the applicable
@@ -960,7 +962,7 @@ class DraftFormTests(TestCase):
         self.assertTrue(DraftForm(post_data | {"revisions": "01,03, 05"}).is_valid())
         self.assertTrue(DraftForm(post_data | {"revisions": "all but 01"}).is_valid())
         # RFC instead of draft - allow empty / missing revisions
-        post_data["document"] = str(self.rfc.pk)
+        post_data["document"] = [str(self.rfc.pk)]
         self.assertTrue(DraftForm(post_data).is_valid())
         self.assertTrue(DraftForm(post_data | {"revisions": ""}).is_valid())
 
@@ -971,7 +973,9 @@ class DraftFormTests(TestCase):
         null_char_error_msg = "Null characters are not allowed."
         
         post_data = {
-            "document": str(self.draft.pk),
+            # n.b., "document" is a SearchableDocumentField, which is a multiple choice field limited
+            # to a single choice. Its value must be an array of pks with one element.
+            "document": [str(self.draft.pk)],
             "disclosure": str(self.disclosure.pk),
         }
         self.assertFormError(
@@ -987,7 +991,7 @@ class DraftFormTests(TestCase):
         )
         # RFC instead of draft still validates the revisions field
         self.assertFormError(
-            DraftForm(post_data | {"document": str(self.rfc.pk), "revisions": "1\x00"}),
+            DraftForm(post_data | {"document": [str(self.rfc.pk)], "revisions": "1\x00"}),
             "revisions",
             null_char_error_msg,
         )
