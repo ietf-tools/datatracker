@@ -13,18 +13,18 @@ register = template.Library()
 
 @register.simple_tag
 def document_type_badge(doc, snapshot):
-    if doc.type == "rfc":
+    if doc.type_id == "rfc":
         return render_to_string(
             "doc/badge/doc-badge-rfc.html",
             {"doc": doc, "snapshot": snapshot},
         )
-    elif doc.type == "draft":
+    elif doc.type_id == "draft":
         return render_to_string(
             "doc/badge/doc-badge-draft.html",
             {"doc": doc, "snapshot": snapshot},
         )
     else:
-        error_message = f"Unsupported document type {doc.type}."
+        error_message = f"Unsupported document type {doc.type_id}."
         if settings.SERVER_MODE != 'production':
             raise ValueError(error_message)
         else:
