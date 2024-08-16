@@ -269,7 +269,6 @@ class SchedTimeSessAssignmentResource(ModelResource):
         filtering = { 
             "id": ALL,
             "modified": ALL,
-            "notes": ALL,
             "badness": ALL,
             "pinned": ALL,
             "timeslot": ALL_WITH_RELATIONS,
