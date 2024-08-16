@@ -689,7 +689,14 @@ def search(request):
                 if len(start) == 1:
                     first = start[0]
                     doc = first
-                    docs = related_docs(first)
+                    docs_related = related_docs(first, reverse_relationship=())
+                    drafts_related = [
+                        d2
+                        for d1 in docs_related
+                        for d2 in related_docs(d1, relationship=())
+                        if d2 is not None
+                    ]
+                    docs = list(set(docs_related + drafts_related))
                     iprs = iprs_from_docs(docs,states=states)
                     template = "ipr/search_doc_result.html"
                     updated_docs = related_docs(first, ('updates',))
