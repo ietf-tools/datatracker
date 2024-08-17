@@ -2,6 +2,8 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: beat
+  labels:
+    deleteBeforeUpgrade: yes
 spec:
   replicas: 1
   revisionHistoryLimit: 2
@@ -18,6 +20,9 @@ spec:
       securityContext:
         runAsNonRoot: true
       containers:
+        # -----------------------------------------------------
+        # Beat Container
+        # -----------------------------------------------------
         - name: beat
           image: "ghcr.io/ietf-tools/datatracker:$APP_IMAGE_TAG"
           imagePullPolicy: Always
@@ -37,8 +42,8 @@ spec:
             - name: "CONTAINER_ROLE"
               value: "beat"
           envFrom:
-            - configMapRef:
-                name: django-config
+            - secretRef:
+                name: dt-secrets-env
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
@@ -58,4 +63,4 @@ spec:
             name: files-cfgmap
       dnsPolicy: ClusterFirst
       restartPolicy: Always
-      terminationGracePeriodSeconds: 30
+      terminationGracePeriodSeconds: 600

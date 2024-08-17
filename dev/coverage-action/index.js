@@ -5,20 +5,20 @@ const find = require('lodash/find')
 const round = require('lodash/round')
 const fs = require('fs/promises')
 const { DateTime } = require('luxon')
-const isPlainObject = require('lodash/isPlainObject')
+// const isPlainObject = require('lodash/isPlainObject')
 
 const dec = new TextDecoder()
 
 async function main () {
   const token = core.getInput('token')
-  const tokenCommon = core.getInput('tokenCommon')
+  // const tokenCommon = core.getInput('tokenCommon')
   const inputCovPath = core.getInput('coverageResultsPath') // 'data/coverage-raw.json'
   const outputCovPath = core.getInput('coverageResultsPath') // 'data/coverage.json'
   const outputHistPath = core.getInput('histCoveragePath') // 'data/historical-coverage.json'
   const relVersionRaw = core.getInput('version') // 'v7.47.0'
   const relVersion = relVersionRaw.indexOf('v') === 0 ? relVersionRaw.substring(1) : relVersionRaw
   const gh = github.getOctokit(token)
-  const ghCommon = github.getOctokit(tokenCommon)
+  // const ghCommon = github.getOctokit(tokenCommon)
   const owner = github.context.repo.owner // 'ietf-tools'
   const repo = github.context.repo.repo // 'datatracker'
   const sender = github.context.payload.sender.login // 'rjsparks'
@@ -116,137 +116,137 @@ async function main () {
   }
 
   // -> Coverage Chart
-  if (chartsDirListing.some(c => c.name === `${newRelease.id}.svg`)) {
-    console.info(`Chart SVG already exists for ${newRelease.name}, skipping...`)
-  } else {
-    console.info(`Generating chart SVG for ${newRelease.name}...`)
+  // if (chartsDirListing.some(c => c.name === `${newRelease.id}.svg`)) {
+  //   console.info(`Chart SVG already exists for ${newRelease.name}, skipping...`)
+  // } else {
+  //   console.info(`Generating chart SVG for ${newRelease.name}...`)
 
-    const { ChartJSNodeCanvas } = require('chartjs-node-canvas')
-    const chartJSNodeCanvas = new ChartJSNodeCanvas({ type: 'svg', width: 850, height: 300, backgroundColour: '#FFFFFF' })
+  //   const { ChartJSNodeCanvas } = require('chartjs-node-canvas')
+  //   const chartJSNodeCanvas = new ChartJSNodeCanvas({ type: 'svg', width: 850, height: 300, backgroundColour: '#FFFFFF' })
 
-    // -> Reorder versions
-    const versions = []
-    for (const [key, value] of Object.entries(covData)) {
-      if (isPlainObject(value)) {
-        const vRel = find(releases, r => r.tag_name === key || r.tag_name === `v${key}`)
-        if (!vRel) {
-          continue
-        }
-        versions.push({
-          tag: key,
-          time: vRel.created_at,
-          stats: {
-            code: round(value.code * 100, 2),
-            template: round(value.template * 100, 2),
-            url: round(value.url * 100, 2)
-          }
-        })
-      }
-    }
-    const roVersions = orderBy(versions, ['time', 'tag'], ['asc', 'asc'])
+  //   // -> Reorder versions
+  //   const versions = []
+  //   for (const [key, value] of Object.entries(covData)) {
+  //     if (isPlainObject(value)) {
+  //       const vRel = find(releases, r => r.tag_name === key || r.tag_name === `v${key}`)
+  //       if (!vRel) {
+  //         continue
+  //       }
+  //       versions.push({
+  //         tag: key,
+  //         time: vRel.created_at,
+  //         stats: {
+  //           code: round(value.code * 100, 2),
+  //           template: round(value.template * 100, 2),
+  //           url: round(value.url * 100, 2)
+  //         }
+  //       })
+  //     }
+  //   }
+  //   const roVersions = orderBy(versions, ['time', 'tag'], ['asc', 'asc'])
 
-    // -> Fill axis + data points
-    const labels = []
-    const datasetCode = []
-    const datasetTemplate = []
-    const datasetUrl = []
+  //   // -> Fill axis + data points
+  //   const labels = []
+  //   const datasetCode = []
+  //   const datasetTemplate = []
+  //   const datasetUrl = []
 
-    for (const ver of roVersions) {
-      labels.push(ver.tag)
-      datasetCode.push(ver.stats.code)
-      datasetTemplate.push(ver.stats.template)
-      datasetUrl.push(ver.stats.url)
-    }
+  //   for (const ver of roVersions) {
+  //     labels.push(ver.tag)
+  //     datasetCode.push(ver.stats.code)
+  //     datasetTemplate.push(ver.stats.template)
+  //     datasetUrl.push(ver.stats.url)
+  //   }
 
-    // -> Generate chart SVG
-    const outputStream = chartJSNodeCanvas.renderToBufferSync({
-      type: 'line',
-      options: {
-        borderColor: '#CCC',
-        layout: {
-          padding: 20
-        },
-        plugins: {
-          legend: {
-            position: 'bottom',
-            labels: {
-              font: {
-                size: 11
-              }
-            }
-          }
-        },
-        scales: {
-          x: {
-            ticks: {
-              font: {
-                size: 10
-              }
-            }
-          },
-          y: {
-            ticks: {
-              callback: (value) => {
-                return `${value}%`
-              },
-              font: {
-                size: 10
-              }
-            }
-          }
-        }
-      },
-      data: {
-        labels,
-        datasets: [
-          {
-            label: 'Code',
-            data: datasetCode,
-            borderWidth: 2,
-            borderColor: '#E53935',
-            backgroundColor: '#C6282833',
-            fill: false,
-            cubicInterpolationMode: 'monotone',
-            tension: 0.4,
-            pointRadius: 0
-          },
-          {
-            label: 'Templates',
-            data: datasetTemplate,
-            borderWidth: 2,
-            borderColor: '#039BE5',
-            backgroundColor: '#0277BD33',
-            fill: false,
-            cubicInterpolationMode: 'monotone',
-            tension: 0.4,
-            pointRadius: 0
-          },
-          {
-            label: 'URLs',
-            data: datasetUrl,
-            borderWidth: 2,
-            borderColor: '#7CB342',
-            backgroundColor: '#558B2F33',
-            fill: false,
-            cubicInterpolationMode: 'monotone',
-            tension: 0.4,
-            pointRadius: 0
-          }
-        ]
-      }
-    }, 'image/svg+xml')
-    const svg = Buffer.from(outputStream).toString('base64')
+  //   // -> Generate chart SVG
+  //   const outputStream = chartJSNodeCanvas.renderToBufferSync({
+  //     type: 'line',
+  //     options: {
+  //       borderColor: '#CCC',
+  //       layout: {
+  //         padding: 20
+  //       },
+  //       plugins: {
+  //         legend: {
+  //           position: 'bottom',
+  //           labels: {
+  //             font: {
+  //               size: 11
+  //             }
+  //           }
+  //         }
+  //       },
+  //       scales: {
+  //         x: {
+  //           ticks: {
+  //             font: {
+  //               size: 10
+  //             }
+  //           }
+  //         },
+  //         y: {
+  //           ticks: {
+  //             callback: (value) => {
+  //               return `${value}%`
+  //             },
+  //             font: {
+  //               size: 10
+  //             }
+  //           }
+  //         }
+  //       }
+  //     },
+  //     data: {
+  //       labels,
+  //       datasets: [
+  //         {
+  //           label: 'Code',
+  //           data: datasetCode,
+  //           borderWidth: 2,
+  //           borderColor: '#E53935',
+  //           backgroundColor: '#C6282833',
+  //           fill: false,
+  //           cubicInterpolationMode: 'monotone',
+  //           tension: 0.4,
+  //           pointRadius: 0
+  //         },
+  //         {
+  //           label: 'Templates',
+  //           data: datasetTemplate,
+  //           borderWidth: 2,
+  //           borderColor: '#039BE5',
+  //           backgroundColor: '#0277BD33',
+  //           fill: false,
+  //           cubicInterpolationMode: 'monotone',
+  //           tension: 0.4,
+  //           pointRadius: 0
+  //         },
+  //         {
+  //           label: 'URLs',
+  //           data: datasetUrl,
+  //           borderWidth: 2,
+  //           borderColor: '#7CB342',
+  //           backgroundColor: '#558B2F33',
+  //           fill: false,
+  //           cubicInterpolationMode: 'monotone',
+  //           tension: 0.4,
+  //           pointRadius: 0
+  //         }
+  //       ]
+  //     }
+  //   }, 'image/svg+xml')
+  //   const svg = Buffer.from(outputStream).toString('base64')
 
-    // -> Upload to common repo
-    console.info(`Uploading chart SVG for ${newRelease.name}...`)
-    await ghCommon.rest.repos.createOrUpdateFileContents({
-      owner,
-      repo: repoCommon,
-      path: `assets/graphs/datatracker/${newRelease.id}.svg`,
-      message: `chore: update datatracker release chart for release ${newRelease.name}`,
-      content: svg
-    })
-  }
+    // // -> Upload to common repo
+    // console.info(`Uploading chart SVG for ${newRelease.name}...`)
+    // await ghCommon.rest.repos.createOrUpdateFileContents({
+    //   owner,
+    //   repo: repoCommon,
+    //   path: `assets/graphs/datatracker/${newRelease.id}.svg`,
+    //   message: `chore: update datatracker release chart for release ${newRelease.name}`,
+    //   content: svg
+    // })
+  // }
 
   // -> Add to changelog body
   let formattedBody = ''
@@ -265,7 +265,7 @@ async function main () {
   formattedBody += `![](https://img.shields.io/badge/Code-${covInfo.code}%25-${getCoverageColor(covInfo.code)}?style=flat-square)`
   formattedBody += `![](https://img.shields.io/badge/Templates-${covInfo.template}%25-${getCoverageColor(covInfo.template)}?style=flat-square)`
   formattedBody += `![](https://img.shields.io/badge/URLs-${covInfo.url}%25-${getCoverageColor(covInfo.url)}?style=flat-square)\n\n`
-  formattedBody += `![chart](https://raw.githubusercontent.com/${owner}/${repoCommon}/main/assets/graphs/datatracker/${newRelease.id}.svg)`
+  // formattedBody += `![chart](https://raw.githubusercontent.com/${owner}/${repoCommon}/main/assets/graphs/datatracker/${newRelease.id}.svg)`
 
   core.setOutput('changelog', formattedBody)
 }

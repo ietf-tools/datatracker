@@ -1,5 +1,11 @@
 #!/bin/bash
 
+if test $(basename $PWD ) != "docker"
+then
+    echo "Run this from the docker directory" 1>&2
+    exit 1
+fi
+
 read -p "Stop and remove all containers, volumes and images for this project? [y/N] " -n 1 -r
 echo 
 if [[ $REPLY =~ ^[Yy]$ ]]
@@ -7,6 +13,5 @@ then
     cd ..
     echo "Shutting down any instance still running and purge images..."
     docker compose down -v --rmi all
-    cd docker
     echo "Done!"
 fi

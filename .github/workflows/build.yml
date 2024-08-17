@@ -7,19 +7,18 @@ on:
     
   workflow_dispatch:
     inputs:
-      summary:
-        description: 'Release Summary'
-        required: false
-        type: string
-        default: ''
+      deploy:
+        description: 'Deploy to K8S'
+        default: 'Skip'
+        required: true
+        type: choice
+        options:
+          - Skip
+          - Staging Only
+          - Staging + Prod
       sandbox:
         description: 'Deploy to Sandbox'
         default: true
-        required: true
-        type: boolean
-      deploy:
-        description: 'Deploy to Staging / Prod'
-        default: false
         required: true
         type: boolean
       sandboxNoDbRefresh:
@@ -29,6 +28,11 @@ on:
         type: boolean
       skiptests:
         description: 'Skip Tests'
+        default: false
+        required: true
+        type: boolean
+      skiparm:
+        description: 'Skip ARM64 Build'
         default: false
         required: true
         type: boolean
@@ -42,6 +46,10 @@ on:
         default: false
         required: true
         type: boolean
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   # -----------------------------------------------------------------
@@ -161,7 +169,7 @@ jobs:
         
     - name: Download a Coverage Results
       if: ${{ github.event.inputs.skiptests == 'false' || github.ref_name == 'release' }}
-      uses: actions/download-artifact@v4.1.7
+      uses: actions/download-artifact@v4.1.8
       with:
         name: coverage
 
@@ -240,11 +248,13 @@ jobs:
         password: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Build Release Docker Image
-      uses: docker/build-push-action@v5
+      uses: docker/build-push-action@v6
+      env:
+        DOCKER_BUILD_SUMMARY: false
       with:
         context: .
         file: dev/build/Dockerfile
-        platforms: linux/amd64,linux/arm64
+        platforms: ${{ github.event.inputs.skiparm == 'true' && 'linux/amd64' || 'linux/amd64,linux/arm64' }}
         push: true
         tags: ghcr.io/ietf-tools/datatracker:${{ env.PKG_VERSION }}
         cache-from: type=gha
@@ -275,7 +285,7 @@ jobs:
         repoCommon: common
         version: ${{needs.prepare.outputs.pkg_version}}
         changelog: ${{ steps.changelog.outputs.changes }}
-        summary: ${{ github.event.inputs.summary }}
+        summary: ''
         coverageResultsPath: coverage.json
         histCoveragePath: historical-coverage.json
         
@@ -387,7 +397,7 @@ jobs:
     - uses: actions/checkout@v4
         
     - name: Download a Release Artifact
-      uses: actions/download-artifact@v4.1.7
+      uses: actions/download-artifact@v4.1.8
       with:
         name: release-${{ env.PKG_VERSION }}
         
@@ -415,7 +425,7 @@ jobs:
   # -----------------------------------------------------------------
   staging:
     name: Deploy to Staging
-    if: ${{ !failure() && !cancelled() && github.event.inputs.deploy == 'true' }}
+    if: ${{ !failure() && !cancelled() && (github.event.inputs.deploy == 'Staging Only' || github.event.inputs.deploy == 'Staging + Prod' || github.ref_name == 'release') }}
     needs: [prepare, release]
     runs-on: ubuntu-latest
     environment:
@@ -425,23 +435,41 @@ jobs:
       
     steps:
       - name: Deploy to staging
-        run: |
-          curl -X POST -H "Accept: application/vnd.github.v3+json" -H "Authorization: Bearer ${{ secrets.GH_INFRA_K8S_TOKEN }}" ${{ secrets.GHA_K8S_DEPLOY_API }} -d '{"ref":"main", "inputs": { "environment":"${{ secrets.GHA_K8S_CLUSTER }}", "app":"datatracker", "appVersion":"${{ env.PKG_VERSION }}" }}'
+        uses: the-actions-org/workflow-dispatch@v4
+        with:
+          workflow: deploy.yml
+          repo: ietf-tools/infra-k8s
+          ref: main
+          token: ${{ secrets.GH_INFRA_K8S_TOKEN }}
+          inputs: '{ "environment":"${{ secrets.GHA_K8S_CLUSTER }}", "app":"datatracker", "appVersion":"${{ env.PKG_VERSION }}", "remoteRef":"${{ github.sha }}" }'
+          wait-for-completion: true
+          wait-for-completion-timeout: 10m
+          wait-for-completion-interval: 30s
+          display-workflow-run-url: false
 
   # -----------------------------------------------------------------
   # PROD
   # -----------------------------------------------------------------
   prod:
     name: Deploy to Production
-    if: ${{ !failure() && !cancelled() && github.event.inputs.deploy == 'true' }}
-    needs: [staging]
+    if: ${{ !failure() && !cancelled() && (github.event.inputs.deploy == 'Staging + Prod' || github.ref_name == 'release') }}
+    needs: [prepare, staging]
     runs-on: ubuntu-latest
     environment:
       name: production
     env:
       PKG_VERSION: ${{needs.prepare.outputs.pkg_version}}
-      
+
     steps:
       - name: Deploy to production
-        run: |
-          curl -X POST -H "Accept: application/vnd.github.v3+json" -H "Authorization: Bearer ${{ secrets.GH_INFRA_K8S_TOKEN }}" ${{ secrets.GHA_K8S_DEPLOY_API }} -d '{"ref":"main", "inputs": { "environment":"${{ secrets.GHA_K8S_CLUSTER }}", "app":"datatracker", "appVersion":"${{ env.PKG_VERSION }}" }}'
+        uses: the-actions-org/workflow-dispatch@v4
+        with:
+          workflow: deploy.yml
+          repo: ietf-tools/infra-k8s
+          ref: main
+          token: ${{ secrets.GH_INFRA_K8S_TOKEN }}
+          inputs: '{ "environment":"${{ secrets.GHA_K8S_CLUSTER }}", "app":"datatracker", "appVersion":"${{ env.PKG_VERSION }}", "remoteRef":"${{ github.sha }}" }'
+          wait-for-completion: true
+          wait-for-completion-timeout: 10m
+          wait-for-completion-interval: 30s
+          display-workflow-run-url: false

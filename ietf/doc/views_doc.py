@@ -35,13 +35,13 @@
 
 
 import glob
-import io
 import json
 import os
 import re
 
 from pathlib import Path
 
+from django.core.cache import caches
 from django.db.models import Max
 from django.http import HttpResponse, Http404
 from django.shortcuts import render, get_object_or_404, redirect
@@ -49,6 +49,7 @@ from django.template.loader import render_to_string
 from django.urls import reverse as urlreverse
 from django.conf import settings
 from django import forms
+from django.contrib.auth.decorators import login_required
 from django.contrib.staticfiles import finders
 
 import debug                            # pyflakes:ignore
@@ -64,7 +65,7 @@ from ietf.doc.utils import (augment_events_with_revision,
     add_events_message_info, get_unicode_document_content,
     augment_docs_and_person_with_person_info, irsg_needed_ballot_positions, add_action_holder_change_event,
     build_file_urls, update_documentauthors, fuzzy_find_documents,
-    bibxml_for_draft)
+    bibxml_for_draft, get_doc_email_aliases)
 from ietf.doc.utils_bofreq import bofreq_editors, bofreq_responsible
 from ietf.group.models import Role, Group
 from ietf.group.utils import can_manage_all_groups_of_type, can_manage_materials, group_features_role_filter
@@ -264,6 +265,8 @@ def document_main(request, name, rev=None, document_html=False):
         can_change_stream = bool(can_edit or roles)
 
         file_urls, found_types = build_file_urls(doc)
+        if not request.user.is_authenticated:
+            file_urls = [fu for fu in file_urls if fu[0] != "pdfized"]
         content = doc.text_or_error() # pyflakes:ignore
         content = markup_txt.markup(maybe_split(content, split=split_content))
 
@@ -405,6 +408,8 @@ def document_main(request, name, rev=None, document_html=False):
         latest_revision = None
 
         file_urls, found_types = build_file_urls(doc)
+        if not request.user.is_authenticated:
+            file_urls = [fu for fu in file_urls if fu[0] != "pdfized"]
         content = doc.text_or_error() # pyflakes:ignore
         content = markup_txt.markup(maybe_split(content, split=split_content))
 
@@ -602,12 +607,7 @@ def document_main(request, name, rev=None, document_html=False):
         additional_urls = doc.documenturl_set.exclude(tag_id='auth48')
 
         # Stream description and name passing test
-        if doc.stream != None:
-            stream_desc = doc.stream.desc
-            stream = "draft-stream-" + doc.stream.slug
-        else:
-            stream_desc = "(None)"
-            stream = "(None)"
+        stream = ("draft-stream-" + doc.stream.slug) if doc.stream != None else "(None)"
 
         html = None
         js = None
@@ -646,7 +646,6 @@ def document_main(request, name, rev=None, document_html=False):
                                        revisions=simple_diff_revisions if document_html else revisions,
                                        snapshot=snapshot,
                                        stream=stream,
-                                       stream_desc=stream_desc,
                                        latest_revision=latest_revision,
                                        latest_rev=latest_rev,
                                        can_edit=can_edit,
@@ -997,7 +996,7 @@ def document_raw_id(request, name, rev=None, ext=None):
     for t in possible_types:
         if os.path.exists(base_path + t):
             found_types[t]=base_path+t
-    if ext == None:
+    if ext is None:
         ext = 'txt'
     if not ext in found_types:
         raise Http404('dont have the file for that extension')
@@ -1038,6 +1037,8 @@ def document_html(request, name, rev=None):
         document_html=True,
     )
 
+
+@login_required
 def document_pdfized(request, name, rev=None, ext=None):
 
     found = fuzzy_find_documents(name, rev)
@@ -1071,32 +1072,6 @@ def document_pdfized(request, name, rev=None, ext=None):
     else:
         raise Http404
 
-def check_doc_email_aliases():
-    pattern = re.compile(r'^expand-(.*?)(\..*?)?@.*? +(.*)$')
-    good_count = 0
-    tot_count = 0
-    with io.open(settings.DRAFT_VIRTUAL_PATH,"r") as virtual_file:
-        for line in virtual_file.readlines():
-            m = pattern.match(line)
-            tot_count += 1
-            if m:
-                good_count += 1
-            if good_count > 50 and tot_count < 3*good_count:
-                return True
-    return False
-
-def get_doc_email_aliases(name):
-    if name:
-        pattern = re.compile(r'^expand-(%s)(\..*?)?@.*? +(.*)$'%name)
-    else:
-        pattern = re.compile(r'^expand-(.*?)(\..*?)?@.*? +(.*)$')
-    aliases = []
-    with io.open(settings.DRAFT_VIRTUAL_PATH,"r") as virtual_file:
-        for line in virtual_file.readlines():
-            m = pattern.match(line)
-            if m:
-                aliases.append({'doc_name':m.group(1),'alias_type':m.group(2),'expansion':m.group(3)})
-    return aliases
 
 def document_email(request,name):
     doc = get_object_or_404(Document, name=name)
@@ -1252,7 +1227,7 @@ def document_bibtex(request, name, rev=None):
         raise Http404()
 
     # Make sure URL_REGEXPS did not grab too much for the rev number
-    if rev != None and len(rev) != 2:
+    if rev is not None and len(rev) != 2:
         mo = re.search(r"^(?P<m>[0-9]{1,2})-(?P<n>[0-9]{2})$", rev)
         if mo:
             name = name+"-"+mo.group(1)
@@ -1275,7 +1250,7 @@ def document_bibtex(request, name, rev=None):
         replaced_by = [d.name for d in doc.related_that("replaces")]
         draft_became_rfc = doc.became_rfc()
 
-        if rev != None and rev != doc.rev:
+        if rev is not None and rev != doc.rev:
             # find the entry in the history
             for h in doc.history_set.order_by("-time"):
                 if rev == h.rev:
@@ -1316,7 +1291,7 @@ def document_bibxml(request, name, rev=None):
         raise Http404()
 
     # Make sure URL_REGEXPS did not grab too much for the rev number
-    if rev != None and len(rev) != 2:
+    if rev is not None and len(rev) != 2:
         mo = re.search(r"^(?P<m>[0-9]{1,2})-(?P<n>[0-9]{2})$", rev)
         if mo:
             name = name+"-"+mo.group(1)
@@ -1464,7 +1439,7 @@ def document_referenced_by(request, name):
     if doc.type_id in ["bcp","std","fyi"]:
         for rfc in doc.contains():
             refs |= rfc.referenced_by()
-    full = ( request.GET.get('full') != None )
+    full = ( request.GET.get('full') is not None )
     numdocs = refs.count()
     if not full and numdocs>250:
        refs=refs[:250]
@@ -1484,7 +1459,7 @@ def document_ballot_content(request, doc, ballot_id, editable=True):
     augment_events_with_revision(doc, all_ballots)
 
     ballot = None
-    if ballot_id != None:
+    if ballot_id is not None:
         ballot_id = int(ballot_id)
         for b in all_ballots:
             if b.id == ballot_id:
@@ -1563,7 +1538,6 @@ def document_ballot(request, name, ballot_id=None):
     top = render_document_top(request, doc, ballot_tab, name)
 
     c = document_ballot_content(request, doc, ballot.id, editable=True)
-    request.session['ballot_edit_return_point'] = request.path_info
 
     return render(request, "doc/document_ballot.html",
                               dict(doc=doc,
@@ -1581,8 +1555,6 @@ def document_irsg_ballot(request, name, ballot_id=None):
 
     c = document_ballot_content(request, doc, ballot_id, editable=True)
 
-    request.session['ballot_edit_return_point'] = request.path_info
-
     return render(request, "doc/document_ballot.html",
                               dict(doc=doc,
                                    top=top,
@@ -1599,8 +1571,6 @@ def document_rsab_ballot(request, name, ballot_id=None):
             ballot_id = ballot.id
 
     c = document_ballot_content(request, doc, ballot_id, editable=True)
-
-    request.session['ballot_edit_return_point'] = request.path_info
 
     return render(
         request,
@@ -1686,7 +1656,7 @@ def add_comment(request, name):
 
     login = request.user.person
 
-    if doc.type_id == "draft" and doc.group != None:
+    if doc.type_id == "draft" and doc.group is not None:
         can_add_comment = bool(has_role(request.user, ("Area Director", "Secretariat", "IRTF Chair", "IANA", "RFC Editor")) or (
             request.user.is_authenticated and
             Role.objects.filter(name__in=("chair", "secr"),
@@ -2021,16 +1991,26 @@ def remind_action_holders(request, name):
     )
 
 
-def email_aliases(request,name=''):
-    doc = get_object_or_404(Document, name=name) if name else None
-    if not name:
-        # require login for the overview page, but not for the
-        # document-specific pages 
-        if not request.user.is_authenticated:
-                return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
-    aliases = get_doc_email_aliases(name)
-
-    return render(request,'doc/email_aliases.html',{'aliases':aliases,'ietf_domain':settings.IETF_DOMAIN,'doc':doc})
+@login_required
+def email_aliases(request):
+    """List of all email aliases
+    
+    This is currently slow except when cached
+    """
+    slowcache = caches["slowpages"]
+    cache_key = "emailaliasesview"
+    aliases = slowcache.get(cache_key)
+    if not aliases:
+        aliases = get_doc_email_aliases()  # gets all aliases
+        slowcache.set(cache_key, aliases, 3600)
+    return render(
+        request,
+        "doc/email_aliases.html",
+        {
+            "aliases": aliases,
+            "ietf_domain": settings.IETF_DOMAIN,
+        },
+    )
 
 class VersionForm(forms.Form):
 

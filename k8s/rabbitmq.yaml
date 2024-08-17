@@ -15,23 +15,6 @@ spec:
     spec:
       securityContext:
         runAsNonRoot: true
-      initContainers:
-        # -----------------------------------------------------
-        # Init RabbitMQ data
-        # -----------------------------------------------------
-        - name: init-rabbitmq
-          image: busybox:stable
-          command:
-            - "sh"
-            - "-c"
-            - "mkdir -p -m700 /mnt/rabbitmq && chown 100:101 /mnt/rabbitmq"
-          securityContext:
-            runAsNonRoot: false
-            runAsUser: 0
-            readOnlyRootFilesystem: true
-          volumeMounts:
-            - name: "rabbitmq-data"
-              mountPath: "/mnt"
       containers:
         # -----------------------------------------------------
         # RabbitMQ Container
@@ -52,8 +35,11 @@ spec:
             - name: rabbitmq-config
               mountPath: "/etc/rabbitmq"
           env:
-            - name: "CELERY_PASSWORD"
-              value: "this-is-a-secret"
+            - name: CELERY_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: dt-secrets-env
+                  key: CELERY_PASSWORD
           livenessProbe:
             exec:
               command: ["rabbitmq-diagnostics", "-q", "ping"]
@@ -76,6 +62,23 @@ spec:
             # rabbitmq image sets up uid/gid 100/101
             runAsUser: 100
             runAsGroup: 101
+      initContainers:
+        # -----------------------------------------------------
+        # Init RabbitMQ data
+        # -----------------------------------------------------
+        - name: init-rabbitmq
+          image: busybox:stable
+          command:
+            - "sh"
+            - "-c"
+            - "mkdir -p -m700 /mnt/rabbitmq && chown 100:101 /mnt/rabbitmq"
+          securityContext:
+            runAsNonRoot: false
+            runAsUser: 0
+            readOnlyRootFilesystem: true
+          volumeMounts:
+            - name: "rabbitmq-data"
+              mountPath: "/mnt"
       volumes:
         - name: rabbitmq-tmp
           emptyDir:

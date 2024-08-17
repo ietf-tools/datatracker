@@ -17,7 +17,9 @@ RUN echo "deb http://deb.debian.org/debian bullseye-backports main" > /etc/apt/s
 COPY . .
 COPY ./dev/build/start.sh ./start.sh
 COPY ./dev/build/datatracker-start.sh ./datatracker-start.sh
+COPY ./dev/build/migration-start.sh ./migration-start.sh
 COPY ./dev/build/celery-start.sh ./celery-start.sh
+COPY ./dev/build/gunicorn.conf.py ./gunicorn.conf.py
 
 RUN pip3 --disable-pip-version-check --no-cache-dir install -r requirements.txt && \
     echo '# empty' > ietf/settings_local.py && \
@@ -26,6 +28,7 @@ RUN pip3 --disable-pip-version-check --no-cache-dir install -r requirements.txt 
 
 RUN chmod +x start.sh && \
     chmod +x datatracker-start.sh && \
+    chmod +x migration-start.sh && \
     chmod +x celery-start.sh && \
     chmod +x docker/scripts/app-create-dirs.sh && \
     sh ./docker/scripts/app-create-dirs.sh

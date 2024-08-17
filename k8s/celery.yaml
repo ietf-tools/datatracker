@@ -2,6 +2,8 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: celery
+  labels:
+    deleteBeforeUpgrade: yes
 spec:
   replicas: 1
   revisionHistoryLimit: 2
@@ -19,22 +21,6 @@ spec:
         runAsNonRoot: true
       containers:
         # -----------------------------------------------------
-        # ScoutAPM Container
-        # -----------------------------------------------------
-        - name: scoutapm
-          image: "scoutapp/scoutapm:version-1.4.0"
-          imagePullPolicy: IfNotPresent
-          livenessProbe:
-            exec:
-              command:
-                - "sh"
-                - "-c"
-                - "./core-agent probe --tcp 0.0.0.0:6590 | grep -q 'Agent found'"
-          securityContext:
-            readOnlyRootFilesystem: true
-            runAsUser: 65534 # "nobody" user by default
-            runAsGroup: 65534  # "nogroup" group by default
-        # -----------------------------------------------------
         # Celery Container
         # -----------------------------------------------------
         - name: celery
@@ -49,6 +35,10 @@ spec:
               mountPath: /a
             - name: dt-tmp
               mountPath: /tmp
+            - name: dt-home
+              mountPath: /home/datatracker
+            - name: dt-xml2rfc-cache
+              mountPath: /var/cache/xml2rfc
             - name: dt-cfg
               mountPath: /workspace/ietf/settings_local.py
               subPath: settings_local.py
@@ -56,8 +46,8 @@ spec:
             - name: "CONTAINER_ROLE"
               value: "celery"
           envFrom:
-            - configMapRef:
-                name: django-config
+            - secretRef:
+                name: dt-secrets-env
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
@@ -66,10 +56,41 @@ spec:
             readOnlyRootFilesystem: true
             runAsUser: 1000
             runAsGroup: 1000
+        # -----------------------------------------------------
+        # ScoutAPM Container
+        # -----------------------------------------------------
+        - name: scoutapm
+          image: "scoutapp/scoutapm:version-1.4.0"
+          imagePullPolicy: IfNotPresent
+          # Replace command with one that will shut down on a TERM signal
+          # The ./core-agent start command line is from the scoutapm docker image
+          command:
+            - "sh"
+            - "-c"
+            - >-
+              trap './core-agent shutdown --tcp 0.0.0.0:6590' TERM;
+              ./core-agent start --daemonize false --log-level debug --tcp 0.0.0.0:6590 &
+              wait $!
+          livenessProbe:
+            exec:
+              command:
+                - "sh"
+                - "-c"
+                - "./core-agent probe --tcp 0.0.0.0:6590 | grep -q 'Agent found'"
+          securityContext:
+            readOnlyRootFilesystem: true
+            runAsUser: 65534 # "nobody" user by default
+            runAsGroup: 65534  # "nogroup" group by default
       volumes:
         # To be overriden with the actual shared volume
         - name: dt-vol
         - name: dt-tmp
+          emptyDir:
+            sizeLimit: "2Gi"
+        - name: dt-xml2rfc-cache
+          emptyDir:
+            sizeLimit: "2Gi"
+        - name: dt-home
           emptyDir:
             sizeLimit: "2Gi"
         - name: dt-cfg
@@ -77,4 +98,4 @@ spec:
             name: files-cfgmap
       dnsPolicy: ClusterFirst
       restartPolicy: Always
-      terminationGracePeriodSeconds: 30
+      terminationGracePeriodSeconds: 600

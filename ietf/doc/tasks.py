@@ -105,6 +105,8 @@ def generate_draft_bibxml_files_task(days=7, process_all=False):
     If process_all is False (the default), processes only docs with new revisions
     in the last specified number of days.
     """
+    if not process_all and days < 1:
+        raise ValueError("Must call with days >= 1 or process_all=True")
     ensure_draft_bibxml_path_exists()
     doc_events = NewRevisionDocEvent.objects.filter(
         type="new_revision",

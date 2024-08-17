@@ -232,12 +232,54 @@ class Command(BaseCommand):
         )
 
         PeriodicTask.objects.get_or_create(
+            name="Generate WG summary files",
+            task="ietf.group.tasks.generate_wg_summary_files_task",
+            defaults=dict(
+                enabled=False,
+                crontab=self.crontabs["hourly"],
+                description="Update 1wg-summary.txt and 1wg-summary-by-acronym.txt",
+            ),
+        )
+
+        PeriodicTask.objects.get_or_create(
             name="Generate I-D bibxml files",
             task="ietf.doc.tasks.generate_draft_bibxml_files_task",
             defaults=dict(
                 enabled=False,
                 crontab=self.crontabs["hourly"],
                 description="Generate draft bibxml files for the last week's drafts",
+            ),
+        )
+
+        PeriodicTask.objects.get_or_create(
+            name="Send personal API key usage emails",
+            task="ietf.person.tasks.send_apikey_usage_emails_task",
+            kwargs=json.dumps(dict(days=7)),
+            defaults=dict(
+                enabled=False,
+                crontab=self.crontabs["weekly"],
+                description="Send personal API key usage summary emails for the past week",
+            ),
+        )
+        
+        PeriodicTask.objects.get_or_create(
+            name="Purge old personal API key events",
+            task="ietf.person.tasks.purge_personal_api_key_events_task",
+            kwargs=json.dumps(dict(keep_days=14)),
+            defaults=dict(
+                enabled=False,
+                crontab=self.crontabs["daily"],
+                description="Purge PersonApiKeyEvent instances older than 14 days",
+            ),
+        )
+
+        PeriodicTask.objects.get_or_create(
+            name="Run Yang model checks",
+            task="ietf.submit.tasks.run_yang_model_checks_task",
+            defaults=dict(
+                enabled=False,
+                crontab=self.crontabs["daily"],
+                description="Re-run Yang model checks on all active drafts",
             ),
         )
 

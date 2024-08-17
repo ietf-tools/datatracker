@@ -33,6 +33,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.validators import URLValidator
 from django.urls import reverse,reverse_lazy
 from django.db.models import F, Max, Q
@@ -1616,7 +1617,6 @@ def agenda_plain(request, num=None, name=None, base=None, ext=None, owner=None, 
                 "now": timezone.now().astimezone(meeting.tz()),
                 "display_timezone": display_timezone,
                 "is_current_meeting": is_current_meeting,
-                "use_notes": meeting.uses_notes(),
                 "cache_time": 150 if is_current_meeting else 3600,
             },
             content_type=mimetype[ext],
@@ -1691,7 +1691,7 @@ def api_get_agenda_data (request, num=None):
         },
         "categories": filter_organizer.get_filter_categories(),
         "isCurrentMeeting": is_current_meeting,
-        "useNotes": meeting.uses_notes(),
+        "usesNotes": meeting.uses_notes(),
         "schedule": list(map(agenda_extract_schedule, filtered_assignments)),
         "floors": list(map(agenda_extract_floorplan, floors))
     })
@@ -1702,22 +1702,12 @@ def api_get_session_materials(request, session_id=None):
 
     minutes = session.minutes()
     slides_actions = []
-    if can_manage_session_materials(request.user, session.group, session):
+    if can_manage_session_materials(request.user, session.group, session) or not session.is_material_submission_cutoff():
         slides_actions.append(
             {
                 "label": "Upload slides",
                 "url": reverse(
                     "ietf.meeting.views.upload_session_slides",
-                    kwargs={"num": session.meeting.number, "session_id": session.pk},
-                ),
-            }
-        )
-    elif not session.is_material_submission_cutoff():
-        slides_actions.append(
-            {
-                "label": "Propose slides",
-                "url": reverse(
-                    "ietf.meeting.views.propose_session_slides",
                     kwargs={"num": session.meeting.number, "session_id": session.pk},
                 ),
             }
@@ -2498,7 +2488,6 @@ def session_details(request, num, acronym):
                     'can_manage_materials' : can_manage,
                     'can_view_request': can_view_request,
                     'thisweek': datetime_today()-datetime.timedelta(days=7),
-                    'use_notes': meeting.uses_notes(),
                   })
 
 class SessionDraftsForm(forms.Form):
@@ -2790,7 +2779,8 @@ class UploadOrEnterAgendaForm(UploadAgendaForm):
     def clean_file(self):
         submission_method = self.cleaned_data.get("submission_method")
         if submission_method == "upload":
-            return super().clean_file()
+            if self.cleaned_data.get("file", None) is not None:
+                return super().clean_file()
         return None
 
     def clean(self):
@@ -2803,6 +2793,17 @@ class UploadOrEnterAgendaForm(UploadAgendaForm):
             require_field("file")
         elif submission_method == "enter":
             require_field("content")
+
+    def get_file(self):
+        """Get content as a file-like object"""
+        if self.cleaned_data.get("submission_method") == "upload":
+            return self.cleaned_data["file"]
+        else:
+            return SimpleUploadedFile(
+                name="uploaded.md",
+                content=self.cleaned_data["content"].encode("utf-8"),
+                content_type="text/markdown;charset=utf-8",
+            )
 
 def upload_session_agenda(request, session_id, num):
     # num is redundant, but we're dragging it along an artifact of where we are in the current URL structure
@@ -2824,21 +2825,8 @@ def upload_session_agenda(request, session_id, num):
     if request.method == 'POST':
         form = UploadOrEnterAgendaForm(show_apply_to_all_checkbox,request.POST,request.FILES)
         if form.is_valid():
-            submission_method = form.cleaned_data['submission_method']
-            if submission_method == "upload":
-                file = request.FILES['file']
-                _, ext = os.path.splitext(file.name)
-            else:
-                if agenda_sp:
-                    doc = agenda_sp.document
-                    _, ext = os.path.splitext(doc.uploaded_filename)
-                else:
-                    ext = ".md"
-                fd, name = tempfile.mkstemp(suffix=ext, text=True)
-                os.close(fd)
-                with open(name, "w") as file:
-                    file.write(form.cleaned_data['content'])
-                file = open(name, "rb")
+            file = form.get_file()
+            _, ext = os.path.splitext(file.name)
             apply_to_all = session.type.slug == 'regular'
             if show_apply_to_all_checkbox:
                 apply_to_all = form.cleaned_data['apply_to_all']
@@ -2919,6 +2907,7 @@ def upload_session_agenda(request, session_id, num):
                   })
 
 
+@login_required
 def upload_session_slides(request, session_id, num, name=None):
     """Upload new or replacement slides for a session
     
@@ -2926,10 +2915,7 @@ def upload_session_slides(request, session_id, num, name=None):
     """
     # num is redundant, but we're dragging it along an artifact of where we are in the current URL structure
     session = get_object_or_404(Session, pk=session_id)
-    if not session.can_manage_materials(request.user):
-        permission_denied(
-            request, "You don't have permission to upload slides for this session."
-        )
+    can_manage = session.can_manage_materials(request.user)
     if session.is_material_submission_cutoff() and not has_role(
         request.user, "Secretariat"
     ):
@@ -2954,7 +2940,7 @@ def upload_session_slides(request, session_id, num, name=None):
 
     if request.method == "POST":
         form = UploadSlidesForm(
-            session, show_apply_to_all_checkbox, request.POST, request.FILES
+            session, show_apply_to_all_checkbox, can_manage, request.POST, request.FILES
         )
         if form.is_valid():
             file = request.FILES["file"]
@@ -2962,6 +2948,46 @@ def upload_session_slides(request, session_id, num, name=None):
             apply_to_all = session.type_id == "regular"
             if show_apply_to_all_checkbox:
                 apply_to_all = form.cleaned_data["apply_to_all"]
+            if can_manage:
+                approved = form.cleaned_data["approved"]
+            else:
+                approved = False
+
+            # Propose slides if not auto-approved
+            if not approved:
+                title = form.cleaned_data['title']
+                submission = SlideSubmission.objects.create(session = session, title = title, filename = '', apply_to_all = apply_to_all, submitter=request.user.person)
+
+                if session.meeting.type_id=='ietf':
+                    name = 'slides-%s-%s' % (session.meeting.number, 
+                                         session.group.acronym) 
+                    if not apply_to_all:
+                        name += '-%s' % (session.docname_token(),)
+                else:
+                    name = 'slides-%s-%s' % (session.meeting.number, session.docname_token())
+                name = name + '-' + slugify(title).replace('_', '-')[:128]
+                filename = '%s-ss%d%s'% (name, submission.id, ext)
+                destination = io.open(os.path.join(settings.SLIDE_STAGING_PATH, filename),'wb+')
+                for chunk in file.chunks():
+                    destination.write(chunk)
+                destination.close()
+
+                submission.filename = filename
+                submission.save()
+
+                (to, cc) = gather_address_lists('slides_proposed', group=session.group, proposer=request.user.person).as_strings()
+                msg_txt = render_to_string("meeting/slides_proposed.txt", {
+                        "to": to,
+                        "cc": cc,
+                        "submission": submission,
+                        "settings": settings,
+                     })
+                msg = infer_message(msg_txt)
+                msg.by = request.user.person
+                msg.save()
+                send_mail_message(request, msg)
+                messages.success(request, 'Successfully submitted proposed slides.')
+                return redirect('ietf.meeting.views.session_details',num=num,acronym=session.group.acronym)
 
             # Handle creation / update of the Document (but do not save yet)
             if doc is not None:
@@ -3075,7 +3101,7 @@ def upload_session_slides(request, session_id, num, name=None):
         initial = {}
         if doc is not None:
             initial = {"title": doc.title}
-        form = UploadSlidesForm(session, show_apply_to_all_checkbox, initial=initial)
+        form = UploadSlidesForm(session, show_apply_to_all_checkbox, can_manage, initial=initial)
 
     return render(
         request,
@@ -3084,75 +3110,10 @@ def upload_session_slides(request, session_id, num, name=None):
             "session": session,
             "session_number": session_number,
             "slides_sp": session.presentations.filter(document=doc).first() if doc else None,
+            "manage": session.can_manage_materials(request.user),
             "form": form,
         },
     )
-
-
-@login_required
-def propose_session_slides(request, session_id, num):
-    session = get_object_or_404(Session,pk=session_id)
-    if session.is_material_submission_cutoff() and not has_role(request.user, "Secretariat"):
-        permission_denied(request, "The materials cutoff for this session has passed. Contact the secretariat for further action.")
-
-    session_number = None
-    sessions = get_sessions(session.meeting.number,session.group.acronym)
-    show_apply_to_all_checkbox = len(sessions) > 1 if session.type_id == 'regular' else False
-    if len(sessions) > 1:
-       session_number = 1 + sessions.index(session)
-
-    
-    if request.method == 'POST':
-        form = UploadSlidesForm(session, show_apply_to_all_checkbox,request.POST,request.FILES)
-        if form.is_valid():
-            file = request.FILES['file']
-            _, ext = os.path.splitext(file.name)
-            apply_to_all = session.type_id == 'regular'
-            if show_apply_to_all_checkbox:
-                apply_to_all = form.cleaned_data['apply_to_all']
-            title = form.cleaned_data['title']
-
-            submission = SlideSubmission.objects.create(session = session, title = title, filename = '', apply_to_all = apply_to_all, submitter=request.user.person)
-
-            if session.meeting.type_id=='ietf':
-                name = 'slides-%s-%s' % (session.meeting.number, 
-                                         session.group.acronym) 
-                if not apply_to_all:
-                    name += '-%s' % (session.docname_token(),)
-            else:
-                name = 'slides-%s-%s' % (session.meeting.number, session.docname_token())
-            name = name + '-' + slugify(title).replace('_', '-')[:128]
-            filename = '%s-ss%d%s'% (name, submission.id, ext)
-            destination = io.open(os.path.join(settings.SLIDE_STAGING_PATH, filename),'wb+')
-            for chunk in file.chunks():
-                destination.write(chunk)
-            destination.close()
-
-            submission.filename = filename
-            submission.save()
-
-            (to, cc) = gather_address_lists('slides_proposed', group=session.group, proposer=request.user.person).as_strings()
-            msg_txt = render_to_string("meeting/slides_proposed.txt", {
-                    "to": to,
-                    "cc": cc,
-                    "submission": submission,
-                    "settings": settings,
-                 })
-            msg = infer_message(msg_txt)
-            msg.by = request.user.person
-            msg.save()
-            send_mail_message(request, msg)
-            messages.success(request, 'Successfully submitted proposed slides.')
-            return redirect('ietf.meeting.views.session_details',num=num,acronym=session.group.acronym)
-    else: 
-        initial = {}
-        form = UploadSlidesForm(session, show_apply_to_all_checkbox, initial=initial)
-
-    return render(request, "meeting/propose_session_slides.html", 
-                  {'session': session,
-                   'session_number': session_number,
-                   'form': form,
-                  })
 
 
 def remove_sessionpresentation(request, session_id, num, name):
@@ -4130,6 +4091,13 @@ def organize_proceedings_sessions(sessions):
 
 def proceedings(request, num=None):
 
+    def area_and_group_acronyms_from_session(s):
+        area = s.group_parent_at_the_time()
+        if area == None:
+            area = s.group.parent
+        group = s.group_at_the_time()
+        return (area.acronym, group.acronym)
+
     meeting = get_meeting(num)
 
     # Early proceedings were hosted on www.ietf.org rather than the datatracker
@@ -4180,12 +4148,11 @@ def proceedings(request, num=None):
         .exclude(current_status='notmeet')
     )
 
-    ietf = sessions.filter(group__parent__type__slug = 'area').exclude(group__acronym='edu').order_by('group__parent__acronym', 'group__acronym')
+    ietf = sessions.filter(group__parent__type__slug = 'area').exclude(group__acronym__in=['edu','iepg','tools'])
+    ietf = list(ietf)
+    ietf.sort(key=lambda s: area_and_group_acronyms_from_session(s))
     ietf_areas = []
-    for area, area_sessions in itertools.groupby(
-            ietf,
-            key=lambda s: s.group.parent
-    ):
+    for area, area_sessions in itertools.groupby(ietf, key=lambda s: s.group_parent_at_the_time()):
         meeting_groups, not_meeting_groups = organize_proceedings_sessions(area_sessions)
         ietf_areas.append((area, meeting_groups, not_meeting_groups))
 
@@ -5009,18 +4976,25 @@ def approve_proposed_slides(request, slidesubmission_id, num):
                           )
                 doc.states.add(State.objects.get(type_id='slides',slug='active'))
                 doc.states.add(State.objects.get(type_id='reuse_policy',slug='single'))
+                added_presentations = []
+                revised_presentations = []
                 if submission.session.presentations.filter(document=doc).exists():
                     sp = submission.session.presentations.get(document=doc)
                     sp.rev = doc.rev
                     sp.save()
+                    revised_presentations.append(sp)
                 else:
                     max_order = submission.session.presentations.filter(document__type='slides').aggregate(Max('order'))['order__max'] or 0
-                    submission.session.presentations.create(document=doc,rev=doc.rev,order=max_order+1)
+                    added_presentations.append(
+                        submission.session.presentations.create(document=doc,rev=doc.rev,order=max_order+1)
+                    )
                 if apply_to_all:
                     for other_session in sessions:
                         if other_session != submission.session and not other_session.presentations.filter(document=doc).exists():
                             max_order = other_session.presentations.filter(document__type='slides').aggregate(Max('order'))['order__max'] or 0
-                            other_session.presentations.create(document=doc,rev=doc.rev,order=max_order+1)
+                            added_presentations.append(
+                                other_session.presentations.create(document=doc,rev=doc.rev,order=max_order+1)
+                            )
                 sub_name, sub_ext = os.path.splitext(submission.filename)
                 target_filename = '%s-%s%s' % (sub_name[:sub_name.rfind('-ss')],doc.rev,sub_ext)
                 doc.uploaded_filename = target_filename
@@ -5033,6 +5007,20 @@ def approve_proposed_slides(request, slidesubmission_id, num):
                 post_process(doc)
                 DocEvent.objects.create(type="approved_slides", doc=doc, rev=doc.rev, by=request.user.person, desc="Slides approved")
 
+                # update meetecho slide info if configured
+                if hasattr(settings, "MEETECHO_API_CONFIG"):
+                    sm = SlidesManager(api_config=settings.MEETECHO_API_CONFIG)
+                    for sp in added_presentations:
+                        try:
+                            sm.add(session=sp.session, slides=doc, order=sp.order)
+                        except MeetechoAPIError as err:
+                            log(f"Error in SlidesManager.add(): {err}")
+                    for sp in revised_presentations:
+                        try:
+                            sm.revise(session=sp.session, slides=doc)
+                        except MeetechoAPIError as err:
+                            log(f"Error in SlidesManager.revise(): {err}")
+
                 acronym = submission.session.group.acronym
                 submission.status = SlideSubmissionStatusName.objects.get(slug='approved')
                 submission.doc = doc
@@ -5044,6 +5032,7 @@ def approve_proposed_slides(request, slidesubmission_id, num):
                     "cc": cc,
                     "submission": submission,
                     "settings": settings,
+                    "approver": request.user.person
                 })
                 send_mail_text(request, to, None, subject, body, cc=cc)
                 return redirect('ietf.meeting.views.session_details',num=num,acronym=acronym)
