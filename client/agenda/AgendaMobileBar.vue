@@ -61,17 +61,16 @@ function optionToLink(opts){
       'a',
       {
         class: 'dropdown-link',
+        'data-testid': 'mobile-link',
         href: `#${key}`
       },
       [
         h(
           'span',
-          {},
-          [icon()]
+          icon()
         ),
         h(
           'span',
-          {},
           label
         )
       ]
@@ -193,10 +192,13 @@ function downloadIcs (key) {
 .dropdown-link {
   display: flex;
   text-decoration:none;
-  gap: 0.2rem;
-
+  gap: 0.2rem 0.5rem;
+  padding: 0.5em;
+  color: var(--bs-body-color);
+  
   &:hover,
   &:focus {
+    background-color: var(--bs-dark-bg-subtle);
     text-decoration: underline;
   }
 }
