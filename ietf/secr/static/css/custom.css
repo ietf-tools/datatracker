@@ -319,11 +319,6 @@ input.draft-file-input {
     width: 4em;
 }
 
-.draft-container #id_internal_comments {
-    height: 4em;
-    width: 40em;
-}
-
 .draft-container #id_abstract {
     height: 15em;
     width: 40em;
