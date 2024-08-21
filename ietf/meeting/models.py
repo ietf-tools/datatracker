@@ -788,7 +788,6 @@ class SchedTimeSessAssignment(models.Model):
     schedule = ForeignKey('Schedule', null=False, blank=False, related_name='assignments')
     extendedfrom = ForeignKey('self', null=True, default=None, help_text="Timeslot this session is an extension of.")
     modified = models.DateTimeField(auto_now=True)
-    notes    = models.TextField(blank=True)
     badness  = models.IntegerField(default=0, blank=True, null=True)
     pinned   = models.BooleanField(default=False, help_text="Do not move session during automatic placement.")
 
@@ -1423,7 +1422,7 @@ class MeetingHost(models.Model):
                 validate_file_extension,
                 settings.MEETING_VALID_UPLOAD_EXTENSIONS['meetinghostlogo'],
             ),
-            WrappedValidator(
+   WrappedValidator(
                 validate_mime_type,
                 settings.MEETING_VALID_UPLOAD_MIME_TYPES['meetinghostlogo'],
                 True,
