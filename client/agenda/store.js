@@ -154,29 +154,6 @@ export const useAgendaStore = defineStore('agenda', {
           this.timezone = agendaData.meeting.timezone
         }
 
-        // The following is for developers to modify `agendaData` dates to match
-        // your current system time so that features depending on an overlap of times
-        // such as the 'Now' button and red divider are available.
-        // This should be commented out when not in 
-        // (function(){
-        //   if (location.hostname !== "localhost") {
-        //     console.log(`Not modifying \`agendaData\` because we're not on localhost: ${location.hostname}`)
-        //     return
-        //   }
-        //   const originalStartDateMs = new Date(agendaData.meeting.startDate).getTime()
-        //   const oneDayInMilliseconds = 24 * 60 * 60 * 1000
-        //   const startDate = new Date(Date.now() - (2 * oneDayInMilliseconds))
-        //   agendaData.meeting.startDate = `${startDate.getFullYear()}-${("00" + (startDate.getMonth() + 1)).slice (-2)}-${startDate.getDate()}`
-        //   const startDateDifferenceMs = new Date(agendaData.meeting.startDate).getTime() - originalStartDateMs
-        //   const endDate = new Date(Date.now() + (5 * oneDayInMilliseconds))
-        //   agendaData.meeting.endDate = `${endDate.getFullYear()}-${("00" + (endDate.getMonth() + 1)).slice (-2)}-${endDate.getDate()}`
-        //   agendaData.schedule = agendaData.schedule.map(schedule => ({
-        //     ...schedule,
-        //     startDateTime: new Date(new Date(schedule.startDateTime).getTime() + startDateDifferenceMs).toISOString()
-        //   }))
-        //   console.log("Server `agendaData` has dates modified for your system time. This should not be done in prod.", agendaData)
-        // }())
-
         // -> Load meeting data
         this.categories = agendaData.categories
         this.floors = agendaData.floors
