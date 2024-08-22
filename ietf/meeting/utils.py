@@ -167,7 +167,6 @@ def bluesheet_data(session):
         .order_by("time")
     )
 
-    meeting = session.meeting
     return [
         {
             "name": attended.person.plain_name(),
