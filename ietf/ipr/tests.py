@@ -28,9 +28,11 @@ from ietf.group.factories import RoleFactory
 from ietf.ipr.factories import (
     HolderIprDisclosureFactory,
     GenericIprDisclosureFactory,
+    IprDisclosureBaseFactory,
     IprDocRelFactory,
     IprEventFactory
 )
+from ietf.ipr.forms import DraftForm
 from ietf.ipr.mail import (process_response_email, get_reply_to, get_update_submitter_emails,
     get_pseudo_submitter, get_holders, get_update_cc_addrs)
 from ietf.ipr.models import (IprDisclosureBase,GenericIprDisclosure,HolderIprDisclosure,
@@ -934,4 +936,62 @@ Subject: test
         self.assertEqual(
             no_revisions_message(iprdocrel),
             "No revisions for this Internet-Draft were specified in this disclosure. However, there is only one revision of this Internet-Draft."
+        )
+
+
+class DraftFormTests(TestCase):
+    def setUp(self):
+        super().setUp()
+        self.disclosure = IprDisclosureBaseFactory()
+        self.draft = WgDraftFactory.create_batch(10)[-1]
+        self.rfc = RfcFactory()
+
+    def test_revisions_valid(self):
+        post_data = {
+            # n.b., "document" is a SearchableDocumentField, which is a multiple choice field limited
+            # to a single choice. Its value must be an array of pks with one element.
+            "document": [str(self.draft.pk)],
+            "disclosure": str(self.disclosure.pk),
+        }
+        # The revisions field is just a char field that allows descriptions of the applicable
+        # document revisions. It's usually just a rev or "00-02", but the form allows anything
+        # not empty. The secretariat will review the value before the disclosure is posted so
+        # minimal validation is ok here.
+        self.assertTrue(DraftForm(post_data | {"revisions": "00"}).is_valid())
+        self.assertTrue(DraftForm(post_data | {"revisions": "00-02"}).is_valid())
+        self.assertTrue(DraftForm(post_data | {"revisions": "01,03, 05"}).is_valid())
+        self.assertTrue(DraftForm(post_data | {"revisions": "all but 01"}).is_valid())
+        # RFC instead of draft - allow empty / missing revisions
+        post_data["document"] = [str(self.rfc.pk)]
+        self.assertTrue(DraftForm(post_data).is_valid())
+        self.assertTrue(DraftForm(post_data | {"revisions": ""}).is_valid())
+
+    def test_revisions_invalid(self):
+        missing_rev_error_msg = (
+            "Revisions of this Internet-Draft for which this disclosure is relevant must be specified."
+        )
+        null_char_error_msg = "Null characters are not allowed."
+        
+        post_data = {
+            # n.b., "document" is a SearchableDocumentField, which is a multiple choice field limited
+            # to a single choice. Its value must be an array of pks with one element.
+            "document": [str(self.draft.pk)],
+            "disclosure": str(self.disclosure.pk),
+        }
+        self.assertFormError(
+            DraftForm(post_data), "revisions", missing_rev_error_msg
+        )
+        self.assertFormError(
+            DraftForm(post_data | {"revisions": ""}), "revisions", missing_rev_error_msg
+        )
+        self.assertFormError(
+            DraftForm(post_data | {"revisions": "1\x00"}),
+            "revisions",
+            [null_char_error_msg, missing_rev_error_msg],
+        )
+        # RFC instead of draft still validates the revisions field
+        self.assertFormError(
+            DraftForm(post_data | {"document": [str(self.rfc.pk)], "revisions": "1\x00"}),
+            "revisions",
+            null_char_error_msg,
         )

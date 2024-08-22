@@ -1538,7 +1538,6 @@ def document_ballot(request, name, ballot_id=None):
     top = render_document_top(request, doc, ballot_tab, name)
 
     c = document_ballot_content(request, doc, ballot.id, editable=True)
-    request.session['ballot_edit_return_point'] = request.path_info
 
     return render(request, "doc/document_ballot.html",
                               dict(doc=doc,
@@ -1556,8 +1555,6 @@ def document_irsg_ballot(request, name, ballot_id=None):
 
     c = document_ballot_content(request, doc, ballot_id, editable=True)
 
-    request.session['ballot_edit_return_point'] = request.path_info
-
     return render(request, "doc/document_ballot.html",
                               dict(doc=doc,
                                    top=top,
@@ -1574,8 +1571,6 @@ def document_rsab_ballot(request, name, ballot_id=None):
             ballot_id = ballot.id
 
     c = document_ballot_content(request, doc, ballot_id, editable=True)
-
-    request.session['ballot_edit_return_point'] = request.path_info
 
     return render(
         request,
