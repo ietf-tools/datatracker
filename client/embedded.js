@@ -1,11 +1,11 @@
 import { createApp } from 'vue'
-import { createPinia } from 'pinia'
 import piniaPersist from 'pinia-plugin-persist'
 import Embedded from './Embedded.vue'
+import { createPiniaSingleton } from './shared/create-pinia-singleton'
 
 // Initialize store (Pinia)
 
-const pinia = createPinia()
+const pinia = createPiniaSingleton()
 pinia.use(piniaPersist)
 
 // Mount App

@@ -12,7 +12,8 @@ from pathlib import Path
 
 from django.conf import settings
 from django.contrib import messages
-from django.db.models import Q
+from django.db.models import OuterRef, Subquery, TextField, Q, Value
+from django.db.models.functions import Coalesce
 from django.template.loader import render_to_string
 from django.utils import timezone
 from django.utils.encoding import smart_str
@@ -149,19 +150,27 @@ def create_proceedings_templates(meeting):
 
 
 def bluesheet_data(session):
-    def affiliation(meeting, person):
-        # from OidcExtraScopeClaims.scope_registration()
-        email_list = person.email_set.values_list("address")
-        q = Q(person=person, meeting=meeting) | Q(email__in=email_list, meeting=meeting)
-        reg = MeetingRegistration.objects.filter(q).exclude(affiliation="").first()
-        return reg.affiliation if reg else ""
+    attendance = (
+        Attended.objects.filter(session=session)
+        .annotate(
+            affiliation=Coalesce(
+                Subquery(
+                    MeetingRegistration.objects.filter(
+                        Q(meeting=session.meeting),
+                        Q(person=OuterRef("person")) | Q(email=OuterRef("person__email")),
+                    ).values("affiliation")[:1]
+                ),
+                Value(""),
+                output_field=TextField(),
+            )
+        ).distinct()
+        .order_by("time")
+    )
 
-    attendance = Attended.objects.filter(session=session).order_by("time")
-    meeting = session.meeting
     return [
         {
             "name": attended.person.plain_name(),
-            "affiliation": affiliation(meeting, attended.person),
+            "affiliation": attended.affiliation,
         }
         for attended in attendance
     ]
