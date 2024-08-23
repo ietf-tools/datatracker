@@ -81,6 +81,9 @@ spec:
             - name: nginx-tmp
               mountPath: /tmp
             - name: dt-cfg
+              mountPath: /etc/nginx/conf.d/00logging.conf
+              subPath: nginx-logging.conf
+            - name: dt-cfg
               mountPath: /etc/nginx/conf.d/datatracker.conf
               subPath: nginx-datatracker.conf
         # -----------------------------------------------------

@@ -12,7 +12,8 @@ from pathlib import Path
 
 from django.conf import settings
 from django.contrib import messages
-from django.db.models import Q
+from django.db.models import OuterRef, Subquery, TextField, Q, Value
+from django.db.models.functions import Coalesce
 from django.template.loader import render_to_string
 from django.utils import timezone
 from django.utils.encoding import smart_str
@@ -149,19 +150,27 @@ def create_proceedings_templates(meeting):
 
 
 def bluesheet_data(session):
-    def affiliation(meeting, person):
-        # from OidcExtraScopeClaims.scope_registration()
-        email_list = person.email_set.values_list("address")
-        q = Q(person=person, meeting=meeting) | Q(email__in=email_list, meeting=meeting)
-        reg = MeetingRegistration.objects.filter(q).exclude(affiliation="").first()
-        return reg.affiliation if reg else ""
+    attendance = (
+        Attended.objects.filter(session=session)
+        .annotate(
+            affiliation=Coalesce(
+                Subquery(
+                    MeetingRegistration.objects.filter(
+                        Q(meeting=session.meeting),
+                        Q(person=OuterRef("person")) | Q(email=OuterRef("person__email")),
+                    ).values("affiliation")[:1]
+                ),
+                Value(""),
+                output_field=TextField(),
+            )
+        ).distinct()
+        .order_by("time")
+    )
 
-    attendance = Attended.objects.filter(session=session).order_by("time")
-    meeting = session.meeting
     return [
         {
             "name": attended.person.plain_name(),
-            "affiliation": affiliation(meeting, attended.person),
+            "affiliation": attended.affiliation,
         }
         for attended in attendance
     ]
@@ -609,7 +618,8 @@ def bulk_create_timeslots(meeting, times, locations, other_props):
 
 def preprocess_meeting_important_dates(meetings):
     for m in meetings:
-        m.cached_updated = m.updated()
+        # cached_updated must be present, set it to 1970-01-01 if necessary
+        m.cached_updated = m.updated() or pytz.utc.localize(datetime.datetime(1970, 1, 1, 0, 0, 0))
         m.important_dates = m.importantdate_set.prefetch_related("name")
         for d in m.important_dates:
             d.midnight_cutoff = "UTC 23:59" in d.name.name
@@ -726,7 +736,7 @@ def save_session_minutes_revision(session, file, ext, request, encoding=None, ap
 def handle_upload_file(file, filename, meeting, subdir, request=None, encoding=None):
     """Accept an uploaded materials file
 
-    This function takes a file object, a filename and a meeting object and subdir as string.
+    This function takes a _binary mode_ file object, a filename and a meeting object and subdir as string.
     It saves the file to the appropriate directory, get_materials_path() + subdir.
     If the file is a zip file, it creates a new directory in 'slides', which is the basename of the
     zip file and unzips the file in the new directory.
@@ -748,9 +758,18 @@ def handle_upload_file(file, filename, meeting, subdir, request=None, encoding=N
                 pass  # if the file is already gone, so be it
 
     with (path / filename).open('wb+') as destination:
+        # prep file for reading
+        if hasattr(file, "chunks"):
+            chunks = file.chunks()
+        else:
+            try:
+                file.seek(0)
+            except AttributeError:
+                pass
+            chunks = [file.read()]  # pretend we have chunks
+
         if filename.suffix in settings.MEETING_VALID_MIME_TYPE_EXTENSIONS['text/html']:
-            file.open()
-            text = file.read()
+            text = b"".join(chunks)
             if encoding:
                 try:
                     text = text.decode(encoding)
@@ -777,11 +796,8 @@ def handle_upload_file(file, filename, meeting, subdir, request=None, encoding=N
                                      f"please check the resulting content.  "
                                  ))
         else:
-            if hasattr(file, 'chunks'):
-                for chunk in file.chunks():
-                    destination.write(chunk)
-            else:
-                destination.write(file.read())
+            for chunk in chunks:
+                destination.write(chunk)
 
     # unzip zipfile
     if is_zipfile:

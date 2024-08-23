@@ -42,8 +42,11 @@ def get_from_choices(user):
     nomcom_choices = get_nomcom_choices(user)
     if nomcom_choices:
         addresses = list(addresses) + nomcom_choices
-    
-    return list(zip(addresses, addresses))
+
+    choices = list(zip(addresses, addresses))
+    if len(choices) > 1:
+        choices.insert(0, ('', '(Choose an option)'))
+    return choices
 
 
 def get_nomcom_choices(user):

@@ -3,6 +3,7 @@ namePrefix: dt-
 configMapGenerator:
   - name: files-cfgmap
     files:
+      - nginx-logging.conf
       - nginx-auth.conf
       - nginx-datatracker.conf
       - settings_local.py
