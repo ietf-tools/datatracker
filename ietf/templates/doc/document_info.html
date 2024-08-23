@@ -12,7 +12,7 @@
         <th scope="row">{% if document_html %}Document type{% else %}Type{% endif %}</th>
         <td class="edit"></td>
         <td>
-            {% document_type_badge doc snapshot%}
+            {% document_type_badge doc snapshot submission resurrected_by %}
             {% if doc.type_id == "rfc" %}
                 {% if doc.pub_date %}
                     {% if document_html %}<br>{% else %}({% endif %}{{ doc.pub_date|date:"F Y" }}{% if not document_html %}){% endif %}
