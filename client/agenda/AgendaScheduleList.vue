@@ -579,7 +579,7 @@ function recalculateRedLine () {
 /**
  * On page load when browser location hash contains '#now' or '#agenda-day-*' then scroll accordingly
  */
- (function scrollToHashInit() {
+;(function scrollToHashInit() {
   if (!window.location.hash) {
     return
   }
