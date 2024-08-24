@@ -29,7 +29,6 @@
 
 <script setup>
 import { computed, h } from 'vue'
-
 import {
   NBadge,
   NDropdown,
@@ -84,14 +83,14 @@ const jumpToDayOptions = computed(() => {
     days.push(optionToLink({
       label: 'Jump to Now',
       key: 'now',
-      icon: () => h('i', { class: 'bi bi-arrow-down-right-square text-red' }),
+      icon: () => h('i', { class: 'bi bi-arrow-down-right-square text-red' })
     }))
   }
   for (const day of agendaStore.meetingDays) {
     days.push(optionToLink({
       label: `Jump to ${day.label}`,
       key: day.slug,
-      icon: () => h('i', { class: 'bi bi-arrow-down-right-square' }),
+      icon: () => h('i', { class: 'bi bi-arrow-down-right-square' })
     }))
   }
   return days
