@@ -187,7 +187,7 @@
                                     {{ doc.name }}-{{ doc.rev }}
                                 {% endif %}
                                 <br>
-                                {% document_type_badge doc snapshot%}
+                                {% document_type_badge doc snapshot submission resurrected_by %}
                             </p>
                         </div>
                         {% if request.COOKIES.htmlconf and request.COOKIES.htmlconf != 'html' and html %}
