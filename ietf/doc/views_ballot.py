@@ -1317,7 +1317,10 @@ def parse_ballot_edit_return_point(path, doc_name, ballot_id):
         "ietf.doc.views_doc.document_ballot",
         "ietf.doc.views_doc.document_irsg_ballot",
         "ietf.doc.views_doc.document_rsab_ballot",
+        "ietf.doc.views_doc.ballot_popup",
         "ietf.iesg.views.agenda",
         "ietf.iesg.views.agenda_documents",
     }
     return validate_return_to_path(path, get_default_path, allowed_path_handlers)
+
+

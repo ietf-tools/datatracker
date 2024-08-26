@@ -1481,3 +1481,11 @@ class ReturnToUrlTests(TestCase):
             'draft-ietf-opsawg-ipfix-tcpo-v6eh',
             '998718'
         ), '/doc/draft-ietf-opsawg-ipfix-tcpo-v6eh/ballot/998718/')
+
+        self.assertEqual(parse_ballot_edit_return_point(
+            '/doc/draft-ietf-opsawg-ipfix-tcpo-v6eh/ballotpopup/998718/',
+            'draft-ietf-opsawg-ipfix-tcpo-v6eh',
+            '998718'
+        ), '/doc/draft-ietf-opsawg-ipfix-tcpo-v6eh/ballotpopup/998718/')
+
+
