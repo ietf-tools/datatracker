@@ -2,11 +2,7 @@
 from django import template
 from django.conf import settings
 from django.template.loader import render_to_string
-
-from warnings import warn
-
-# from ietf.group.models import Group
-# from ietf.name.models import GroupTypeName
+from ietf.utils.log import log
 
 register = template.Library()
 
@@ -29,5 +25,5 @@ def document_type_badge(doc, snapshot, submission, resurrected_by):
         if settings.SERVER_MODE != 'production':
             raise ValueError(error_message)
         else:
-            warn(error_message)
+            log(error_message)
         return ""
