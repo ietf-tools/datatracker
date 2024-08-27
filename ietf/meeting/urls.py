@@ -22,7 +22,6 @@ safe_for_all_meeting_types = [
     url(r'^session/(?P<session_id>\d+)/narrativeminutes$', views.upload_session_narrativeminutes),
     url(r'^session/(?P<session_id>\d+)/agenda$', views.upload_session_agenda),
     url(r'^session/(?P<session_id>\d+)/import/minutes$', views.import_session_minutes),
-    url(r'^session/(?P<session_id>\d+)/propose_slides$', views.propose_session_slides),
     url(r'^session/(?P<session_id>\d+)/slides(?:/%(name)s)?$' % settings.URL_REGEXPS, views.upload_session_slides),
     url(r'^session/(?P<session_id>\d+)/add_to_session$', views.ajax_add_slides_to_session),
     url(r'^session/(?P<session_id>\d+)/remove_from_session$', views.ajax_remove_slides_from_session),

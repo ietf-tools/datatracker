@@ -1188,3 +1188,27 @@ blockquote {
     padding-left: 1rem;
     border-left: solid 1px var(--bs-body-color);
 }
+
+iframe.status {
+    background-color:transparent;
+    border:none;
+    width:100%;
+    height:3.5em;
+}
+
+.overflow-shadows {
+    transition: box-shadow 0.5s;
+}
+
+.overflow-shadows--both {
+    box-shadow: inset 0px 21px 18px -20px var(--bs-body-color),
+                inset 0px -21px 18px -20px var(--bs-body-color);
+}
+
+.overflow-shadows--top-only {
+    box-shadow: inset 0px 21px 18px -20px var(--bs-body-color);
+}
+
+.overflow-shadows--bottom-only {
+    box-shadow: inset 0px -21px 18px -20px var(--bs-body-color);
+}

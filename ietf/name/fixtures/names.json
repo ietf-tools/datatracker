@@ -3464,7 +3464,7 @@
       "parent_types": [],
       "req_subm_approval": true,
       "role_order": "[\n    \"chair\",\n    \"delegate\"\n]",
-      "session_purposes": "[\n    \"officehours\"\n]",
+      "session_purposes": "[\n    \"officehours\",\n    \"regular\"\n]",
       "show_on_agenda": true
     },
     "model": "group.groupfeatures",
@@ -14058,7 +14058,7 @@
   },
   {
     "fields": {
-      "desc": "Legacy stream",
+      "desc": "Legacy",
       "name": "Legacy",
       "order": 6,
       "used": true

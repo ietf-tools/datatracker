@@ -11,6 +11,7 @@ from ietf.meeting import views as meeting_views
 from ietf.submit import views as submit_views
 from ietf.utils.urls import url
 
+
 api.autodiscover()
 
 urlpatterns = [

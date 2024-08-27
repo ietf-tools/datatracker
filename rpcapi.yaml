@@ -172,7 +172,20 @@ paths:
                             schema:
                                 type: object
                                 additionalProperties:
-                                    $ref:'#/components/schemas/Draft'          
+                                    $ref:'#/components/schemas/Draft'
+
+    /doc/rfc/original_stream/:
+        get:
+            operationId: get_rfc_original_streams
+            summary: Get the streams rfcs were originally published into
+            description: returns a list of dicts associating an rfc with its originally published stream
+            responses:
+                '200':
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/OriginalStream'   
 
     /subject/{subjectId}/person:
         get:
@@ -273,6 +286,18 @@ components:
                     format: email
                 intended_std_level:
                     type: string
+
+        OriginalStream:
+            type: object
+            properties:
+                original_stream:
+                    type: list
+                    items:
+                        properties:
+                            rfc_number:
+                                type: integer
+                            stream:
+                                type: string
 
     securitySchemes: 
         ApiKeyAuth:

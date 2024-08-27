@@ -52,6 +52,15 @@ class IESGTests(TestCase):
         self.assertContains(r, draft.name)
         self.assertContains(r, escape(pos.balloter.plain_name()))
 
+        # Mark draft as replaced
+        draft.set_state(State.objects.get(type="draft", slug="repl"))
+
+        r = self.client.get(urlreverse("ietf.iesg.views.discusses"))
+        self.assertEqual(r.status_code, 200)
+
+        self.assertNotContains(r, draft.name)
+        self.assertNotContains(r, escape(pos.balloter.plain_name()))
+
     def test_milestones_needing_review(self):
         draft = WgDraftFactory()
         RoleFactory(name_id='ad',group=draft.group,person=Person.objects.get(user__username='ad'))
