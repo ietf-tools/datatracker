@@ -97,11 +97,11 @@ def ballot_icon(context, doc):
     positions.sort(key=sort_key)
 
     request = context.get("request")
-    ballot_edit_return_point_param = f"?ballot_edit_return_point={request.path}"
+    ballot_edit_return_point_param = f"ballot_edit_return_point={request.path}"
 
     right_click_string = ''
     if has_role(user, "Area Director"):
-        right_click_string = 'oncontextmenu="window.location.href=\'%s%s\';return false;"' % (
+        right_click_string = 'oncontextmenu="window.location.href=\'{}?{}\';return false;"'.format(
             urlreverse('ietf.doc.views_ballot.edit_position', kwargs=dict(name=doc.name, ballot_id=ballot.pk)),
             ballot_edit_return_point_param)
 
@@ -119,7 +119,7 @@ def ballot_icon(context, doc):
     else:
         typename = "IESG"
     
-    modal_url = '%s%s' % (
+    modal_url = "{}?{}".format(
         urlreverse("ietf.doc.views_doc.ballot_popup", kwargs=dict(name=doc.name, ballot_id=ballot.pk)),
         ballot_edit_return_point_param)
 
