@@ -110,7 +110,7 @@ def drafts_by_names(request):
             "id": doc.pk,
             "name": doc.name,
             "rev": doc.rev,
-            "stream": doc.stream.slug,
+            "stream": doc.stream.slug if doc.stream else "none",
             "title": doc.title,
             "pages": doc.pages,
             "authors": [
