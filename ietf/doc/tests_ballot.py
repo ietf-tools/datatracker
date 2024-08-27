@@ -1457,7 +1457,7 @@ class ReturnToUrlTests(TestCase):
     def test_invalid_return_to_url(self):
         self.assertRaises(
             Exception,
-            lambda: parse_ballot_edit_return_point('/doc/', 'draft-ietf-opsawg-ipfix-tcpo-v6eh', '998718'),
+            lambda: parse_ballot_edit_return_point('/', 'draft-ietf-opsawg-ipfix-tcpo-v6eh', '998718'),
         )
         self.assertRaises(
             Exception,
