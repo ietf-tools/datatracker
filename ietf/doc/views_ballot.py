@@ -323,6 +323,8 @@ def build_position_email(balloter, doc, pos):
 
     if doc.stream_id == "irtf":
         addrs = gather_address_lists('irsg_ballot_saved',doc=doc)
+    elif doc.stream_id == "editorial":
+        addrs = gather_address_lists('rsab_ballot_saved',doc=doc)
     else:
         addrs = gather_address_lists('iesg_ballot_saved',doc=doc)
 
