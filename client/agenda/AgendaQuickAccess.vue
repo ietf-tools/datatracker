@@ -99,7 +99,7 @@
             li.nav-item(v-for='day of agendaStore.meetingDays')
               a.nav-link(
                 :class='agendaStore.dayIntersectId === day.slug ? `active` : ``'
-                :href='`#slot-` + day.slug'
+                :href='`#${day.slug}`'
                 @click='scrollToDay(day.slug, $event)'
                 )
                 i.bi.bi-arrow-right-short.d-none.d-xxl-inline.me-2
@@ -109,7 +109,6 @@
 <script setup>
 import { computed, h } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { DateTime } from 'luxon'
 import {
   NAffix,
   NBadge,
@@ -200,14 +199,11 @@ function pickerDiscard () {
   }
 }
 
-function scrollToDay (dayId, ev) {
-  ev.preventDefault()
-  document.getElementById(`agenda-day-${dayId}`)?.scrollIntoView(true)
+function scrollToDay (daySlug, ev) {
+  document.getElementById(daySlug)?.scrollIntoView(true)
 }
 
 function scrollToNow (ev) {
-  ev.preventDefault()
-
   const lastEventId = agendaStore.findCurrentEventId()
 
   if (lastEventId) {

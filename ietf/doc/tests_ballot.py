@@ -230,6 +230,9 @@ class EditPositionTests(TestCase):
         r = self.client.post(url, dict(position="discuss", discuss="Test discuss text"))
         self.assertEqual(r.status_code, 403)
         
+    # N.B. This test needs to be rewritten to exercise all types of ballots (iesg, irsg, rsab)
+    # and test against the output of the mailtriggers instead of looking for hardcoded values
+    # in the To and CC results. See #7864
     def test_send_ballot_comment(self):
         ad = Person.objects.get(user__username="ad")
         draft = WgDraftFactory(ad=ad,group__acronym='mars')
@@ -1455,18 +1458,14 @@ class BallotContentTests(TestCase):
 
 class ReturnToUrlTests(TestCase):
     def test_invalid_return_to_url(self):
-        self.assertRaises(
-            Exception,
-            lambda: parse_ballot_edit_return_point('/doc/', 'draft-ietf-opsawg-ipfix-tcpo-v6eh', '998718'),
-        )
-        self.assertRaises(
-            Exception,
-            lambda: parse_ballot_edit_return_point('/a-route-that-does-not-exist/', 'draft-ietf-opsawg-ipfix-tcpo-v6eh', '998718'),
-        )
-        self.assertRaises(
-            Exception,
-            lambda: parse_ballot_edit_return_point('https://example.com/phishing', 'draft-ietf-opsawg-ipfix-tcpo-v6eh', '998718'),
-        )
+        with self.assertRaises(ValueError):
+            parse_ballot_edit_return_point('/', 'draft-ietf-opsawg-ipfix-tcpo-v6eh', '998718')
+
+        with self.assertRaises(ValueError):
+            parse_ballot_edit_return_point('/a-route-that-does-not-exist/', 'draft-ietf-opsawg-ipfix-tcpo-v6eh', '998718')
+
+        with self.assertRaises(ValueError):
+            parse_ballot_edit_return_point('https://example.com/phishing', 'draft-ietf-opsawg-ipfix-tcpo-v6eh', '998718')
 
     def test_valid_default_return_to_url(self):
         self.assertEqual(parse_ballot_edit_return_point(

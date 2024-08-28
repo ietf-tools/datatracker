@@ -121,7 +121,7 @@ export const useAgendaStore = defineStore('agenda', {
     meetingDays () {
       const siteStore = useSiteStore()
       return uniqBy(this.scheduleAdjusted, 'adjustedStartDate').sort().map(s => ({
-        slug: s.id.toString(),
+        slug: daySlug(s),
         ts: s.adjustedStartDate,
         label: siteStore.viewport < 1350 ? DateTime.fromISO(s.adjustedStartDate).toFormat('ccc LLL d') : DateTime.fromISO(s.adjustedStartDate).toLocaleString(DateTime.DATE_HUGE)
       }))
@@ -291,4 +291,9 @@ function findFirstConferenceUrl (txt) {
     }
   } catch (err) { }
   return null
+}
+
+export const daySlugPrefix = 'agenda-day-'
+export function daySlug(s) {
+  return `${daySlugPrefix}${s.adjustedStartDate}` // eg 'agenda-day-2024-08-13'
 }
