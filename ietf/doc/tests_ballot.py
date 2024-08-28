@@ -230,6 +230,9 @@ class EditPositionTests(TestCase):
         r = self.client.post(url, dict(position="discuss", discuss="Test discuss text"))
         self.assertEqual(r.status_code, 403)
         
+    # N.B. This test needs to be rewritten to exercise all types of ballots (iesg, irsg, rsab)
+    # and test against the output of the mailtriggers instead of looking for hardcoded values
+    # in the To and CC results. See #7864
     def test_send_ballot_comment(self):
         ad = Person.objects.get(user__username="ad")
         draft = WgDraftFactory(ad=ad,group__acronym='mars')
