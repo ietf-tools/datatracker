@@ -146,15 +146,16 @@
                             {% endif %}
                         {% endwith %}
                     {% endfor %}
-                {% elif session.video_stream_url %}
+                {% elif show_empty  %}
+                    {# <i class="bi"></i> #}
+                {% endif %}
+                {% if session.session_recording_url %}
                     <a class="btn btn-outline-primary"
                        href="{{ session.session_recording_url }}"
                        aria-label="Meetecho session recording"
                        title="Meetecho session recording">
                         <i class="bi bi-file-slides"></i>
                     </a>
-                {% elif show_empty  %}
-                    {# <i class="bi"></i> #}
                 {% endif %}
             {% endwith %}
         {% endif %}
