@@ -1323,8 +1323,8 @@ class Session(models.Model):
     def session_recording_url(self):
         url = getattr(settings, "MEETECHO_SESSION_RECORDING_URL", "")
         if self.meeting.type.slug == "ietf" and self.has_onsite_tool and url:
-            self.group.acronym_upper = self.group.acronym.upper()
-            return url.format(session=self)
+            session_label = f"IETF{self.meeting.number}-{self.group.acronym.upper()}-{self.official_timeslotassignment().timeslot.time.strftime('%Y%m%d-%H%M')}"
+            return url.format(session_label=session_label)
         return None
 
 

@@ -1174,7 +1174,7 @@ CELERY_TASK_IGNORE_RESULT = True  # ignore results unless specifically enabled f
 MEETECHO_ONSITE_TOOL_URL = "https://meetings.conf.meetecho.com/onsite{session.meeting.number}/?session={session.pk}"
 MEETECHO_VIDEO_STREAM_URL = "https://meetings.conf.meetecho.com/ietf{session.meeting.number}/?session={session.pk}"
 MEETECHO_AUDIO_STREAM_URL = "https://mp3.conf.meetecho.com/ietf{session.meeting.number}/{session.pk}.m3u"
-MEETECHO_SESSION_RECORDING_URL = "https://www.meetecho.com/ietf{session.meeting.number}/recordings#{session.group.acronym_upper}"
+MEETECHO_SESSION_RECORDING_URL = "https://meetecho-player.ietf.org/playout/?session={session_label}"
 
 # Put the production SECRET_KEY in settings_local.py, and also any other
 # sensitive or site-specific changes.  DO NOT commit settings_local.py to svn.
