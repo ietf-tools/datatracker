@@ -168,7 +168,7 @@ def send_notifications(meeting, groups, person):
 
         context['session_lengths'] = [s.requested_duration for s in sessions]
 
-        outbound_conflicts: list[str] = [
+        outbound_conflicts = [
             ConstraintName.objects.get(slug=k.removeprefix('constraint_')).name + ": " + v
             for k, v in context['session'].items()
             if k.startswith('constraint_')
