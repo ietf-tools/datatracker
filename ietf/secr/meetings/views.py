@@ -20,7 +20,7 @@ from ietf.meeting.forms import duration_string
 from ietf.meeting.helpers import get_meeting, make_materials_directories, populate_important_dates
 from ietf.meeting.models import Meeting, Session, Room, TimeSlot, SchedTimeSessAssignment, Schedule, SchedulingEvent
 from ietf.meeting.utils import add_event_info_to_session_qs
-from ietf.name.models import SessionStatusName
+from ietf.name.models import SessionStatusName, ConstraintName
 from ietf.group.models import Group, GroupEvent
 from ietf.secr.meetings.forms import ( BaseMeetingRoomFormSet, MeetingModelForm, MeetingSelectForm,
     MeetingRoomForm, MiscSessionForm, TimeSlotForm, RegularSessionEditForm,
@@ -165,6 +165,15 @@ def send_notifications(meeting, groups, person):
         context['session'] = get_initial_session(sessions)
         context['group'] = group
         context['login'] = requested_by
+
+        context['session_lengths'] = [s.requested_duration for s in sessions]
+
+        outbound_conflicts: list[str] = [
+            ConstraintName.objects.get(slug=k.removeprefix('constraint_')).name + ": " + v
+            for k, v in context['session'].items()
+            if k.startswith('constraint_')
+        ]
+        context['session']['outbound_conflicts'] = outbound_conflicts
 
         send_mail(None,
                   addrs.to,
