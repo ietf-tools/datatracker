@@ -23,7 +23,7 @@ class GunicornRequestJsonFormatter(DatatrackerJsonFormatter):
         log_record.setdefault("referer", record.args["f"])
         log_record.setdefault("user_agent", record.args["a"])
         log_record.setdefault("len_bytes", record.args["B"])
-        log_record.setdefault("duration_ms", record.args["M"])
+        log_record.setdefault("duration_s", record.args["L"])  # decimal seconds
         log_record.setdefault("host", record.args["{host}i"])
         log_record.setdefault("x_request_start", record.args["{x-request-start}i"])
         log_record.setdefault("x_real_ip", record.args["{x-real-ip}i"])
