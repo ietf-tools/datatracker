@@ -1046,6 +1046,8 @@ def build_file_urls(doc: Union[Document, DocHistory]):
 
         file_urls = []
         for t in found_types:
+            if t == "ps": # Postscript might have been submitted but should not be displayed in the list of URLs
+                continue
             label = "plain text" if t == "txt" else t
             file_urls.append((label, base + doc.name + "." + t))
 
