@@ -154,6 +154,7 @@ class SessionTests(TestCase):
 
         # IETF meeting
         session = SessionFactory(
+            meeting__type_id='ietf',
             meeting__date=meeting_date,
             group__acronym=group_acronym,
             meeting__number=meeting_number,
@@ -173,8 +174,8 @@ class SessionTests(TestCase):
 
         # interim meeting
         session = SessionFactory(
-            meeting__date=meeting_date,
             meeting__type_id='interim',
+            meeting__date=meeting_date,
             group__acronym=group_acronym,
         )
         with override_settings():
