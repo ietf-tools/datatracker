@@ -418,7 +418,8 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     #"csp.middleware.CSPMiddleware",
-    "ietf.middleware.unicode_nfkc_normalization_middleware"
+    "ietf.middleware.unicode_nfkc_normalization_middleware",
+    "ietf.middleware.is_authenticated_header_middleware",
 ]
 
 ROOT_URLCONF = 'ietf.urls'

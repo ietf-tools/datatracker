@@ -89,3 +89,13 @@ def unicode_nfkc_normalization_middleware(get_response):
         return response
 
     return unicode_nfkc_normalization
+
+
+def is_authenticated_header_middleware(get_response):
+    """Middleware to add an is-authenticated header to the response"""
+    def add_header(request):
+        response = get_response(request)
+        response["X-Datatracker-Is-Authenticated"] = "yes" if request.user.is_authenticated else "no"
+        return response
+
+    return add_header
