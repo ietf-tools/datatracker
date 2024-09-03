@@ -146,3 +146,46 @@ class SessionTests(TestCase):
         self.assertEqual(session.chat_room_name(), 'plenary')
         session.chat_room = 'fnord'
         self.assertEqual(session.chat_room_name(), 'fnord')
+
+    def test_session_recording_url(self):
+        group_acronym = "foobar"
+        meeting_date = datetime.date.today()
+        meeting_number = 123
+
+        # IETF meeting
+        session = SessionFactory(
+            meeting__date=meeting_date,
+            group__acronym=group_acronym,
+            meeting__number=meeting_number,
+        )
+        with override_settings():
+            if hasattr(settings, "MEETECHO_SESSION_RECORDING_URL"):
+                del settings.MEETECHO_SESSION_RECORDING_URL
+            self.assertIsNone(session.session_recording_url())
+
+            settings.MEETECHO_SESSION_RECORDING_URL = "http://player.example.com"
+            self.assertEqual(session.session_recording_url(), "http://player.example.com")
+
+            settings.MEETECHO_SESSION_RECORDING_URL = "http://player.example.com?{session_label}"
+            self.assertIn(f"IETF{meeting_number}-{group_acronym.upper()}", session.session_recording_url())
+            self.assertIn(f"{meeting_date.strftime('%Y%m%d')}", session.session_recording_url())
+            self.assertTrue(session.session_recording_url().startswith("http://player.example.com"))
+
+        # interim meeting
+        session = SessionFactory(
+            meeting__date=meeting_date,
+            meeting__type_id='interim',
+            group__acronym=group_acronym,
+        )
+        with override_settings():
+            if hasattr(settings, "MEETECHO_SESSION_RECORDING_URL"):
+                del settings.MEETECHO_SESSION_RECORDING_URL
+            self.assertIsNone(session.session_recording_url())
+
+            settings.MEETECHO_SESSION_RECORDING_URL = "http://player.example.com"
+            self.assertEqual(session.session_recording_url(), "http://player.example.com")
+
+            settings.MEETECHO_SESSION_RECORDING_URL = "http://player.example.com?{session_label}"
+            self.assertIn(f"IETF-{group_acronym.upper()}", session.session_recording_url())
+            self.assertIn(f"{meeting_date.strftime('%Y%m%d')}", session.session_recording_url())
+            self.assertTrue(session.session_recording_url().startswith("http://player.example.com"))
