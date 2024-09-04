@@ -15,13 +15,13 @@ import debug                            # pyflakes:ignore
 
 from ietf.community.models import CommunityList, SearchRule
 from ietf.community.utils import reset_name_contains_index_for_rule, can_manage_community_list
-from ietf.doc.models import Document, State
+from ietf.doc.models import Document, State, RelatedDocument
 from ietf.group.models import Group, RoleHistory, Role, GroupFeatures, GroupEvent
 from ietf.ietfauth.utils import has_role
 from ietf.name.models import GroupTypeName, RoleName
 from ietf.person.models import Email
 from ietf.review.utils import can_manage_review_requests_for_team
-from ietf.utils import log
+from ietf.utils import log, markdown
 from ietf.utils.history import get_history_object_for, copy_many_to_many_for_history
 from ietf.doc.templatetags.ietf_filters import is_valid_url
 from functools import reduce
@@ -373,6 +373,12 @@ class GroupAliasGenerator:
     ]  # This should become groupfeature driven...
     no_ad_group_types = ["rg", "rag", "team", "program", "rfcedtyp", "edappr", "edwg"]
 
+    def __init__(self, group_queryset=None):
+        if group_queryset is None:
+            self.group_queryset = Group.objects.all()
+        else:
+            self.group_queryset = group_queryset
+
     def __iter__(self):
         show_since = timezone.now() - datetime.timedelta(days=self.days)
 
@@ -384,7 +390,7 @@ class GroupAliasGenerator:
             if g == "program":
                 domains.append("iab")
 
-            entries = Group.objects.filter(type=g).all()
+            entries = self.group_queryset.filter(type=g).all()
             active_entries = entries.filter(state__in=self.active_states)
             inactive_recent_entries = entries.exclude(
                 state__in=self.active_states
@@ -405,7 +411,7 @@ class GroupAliasGenerator:
                     yield name + "-chairs", domains, list(chair_emails)
 
         # The area lists include every chair in active working groups in the area
-        areas = Group.objects.filter(type="area").all()
+        areas = self.group_queryset.filter(type="area").all()
         active_areas = areas.filter(state__in=self.active_states)
         for area in active_areas:
             name = area.acronym
@@ -418,10 +424,118 @@ class GroupAliasGenerator:
 
         # Other groups with chairs that require Internet-Draft submission approval
         gtypes = GroupTypeName.objects.values_list("slug", flat=True)
-        special_groups = Group.objects.filter(
+        special_groups = self.group_queryset.filter(
             type__features__req_subm_approval=True, acronym__in=gtypes, state="active"
         )
         for group in special_groups:
             chair_emails = get_group_role_emails(group, ["chair", "delegate"])
             if chair_emails:
                 yield group.acronym + "-chairs", ["ietf"], list(chair_emails)
+
+
+def get_group_email_aliases(acronym, group_type):
+    aliases = []
+    group_queryset = Group.objects.all()
+    if acronym:
+        group_queryset = group_queryset.filter(acronym=acronym)
+    if group_type:
+        group_queryset = group_queryset.filter(type__slug=group_type)
+    for (alias, _, alist) in GroupAliasGenerator(group_queryset):
+        acro, _hyphen, alias_type = alias.partition("-")
+        expansion = ", ".join(sorted(alist))
+        aliases.append({
+            "acronym": acro,
+            "alias_type": f"-{alias_type}" if alias_type else "",
+            "expansion": expansion,
+        })
+    return sorted(aliases, key=lambda a: a["acronym"])
+
+
+def role_holder_emails():
+    """Get queryset of active Emails for group role holders"""
+    group_types_of_interest = [
+        "ag",
+        "area",
+        "dir",
+        "iab",
+        "ietf",
+        "irtf",
+        "nomcom",
+        "rg",
+        "team",
+        "wg",
+        "rag",
+    ]
+    roles = Role.objects.filter(
+        group__state__slug="active",
+        group__type__in=group_types_of_interest,
+    )
+    emails = Email.objects.filter(active=True).exclude(
+        address__startswith="unknown-email-"
+    )
+    return emails.filter(person__role__in=roles).distinct()
+
+
+def fill_in_charter_info(group, include_drafts=False):
+    group.areadirector = getattr(group.ad_role(),'email',None)
+
+    personnel = {}
+    for r in Role.objects.filter(group=group).order_by('person__name').select_related("email", "person", "name"):
+        if r.name_id not in personnel:
+            personnel[r.name_id] = []
+        personnel[r.name_id].append(r)
+
+    if group.parent and group.parent.type_id == "area" and group.ad_role() and "ad" not in personnel:
+        ad_roles = list(Role.objects.filter(group=group.parent, name="ad", person=group.ad_role().person))
+        if ad_roles:
+            personnel["ad"] = ad_roles
+
+    group.personnel = []
+    for role_name_slug, roles in personnel.items():
+        label = roles[0].name.name
+        if len(roles) > 1:
+            if label.endswith("y"):
+                label = label[:-1] + "ies"
+            else:
+                label += "s"
+
+        group.personnel.append((role_name_slug, label, roles))
+
+    group.personnel.sort(key=lambda t: t[2][0].name.order)
+
+    milestone_state = "charter" if group.state_id == "proposed" else "active"
+    group.milestones = group.groupmilestone_set.filter(state=milestone_state)
+    if group.uses_milestone_dates:
+        group.milestones = group.milestones.order_by('resolved', 'due')
+    else:
+        group.milestones = group.milestones.order_by('resolved', 'order')
+
+    if group.charter:
+        group.charter_text = get_charter_text(group)
+    else:
+        group.charter_text = "Not chartered yet."
+    group.charter_html = markdown.markdown(group.charter_text)
+
+
+def fill_in_wg_roles(group):
+    def get_roles(slug, default):
+        for role_slug, label, roles in group.personnel:
+            if slug == role_slug:
+                return roles
+        return default
+
+    group.chairs = get_roles("chair", [])
+    ads = get_roles("ad", [])
+    group.areadirector = ads[0] if ads else None
+    group.techadvisors = get_roles("techadv", [])
+    group.editors = get_roles("editor", [])
+    group.secretaries = get_roles("secr", [])
+
+
+def fill_in_wg_drafts(group):
+    group.drafts = Document.objects.filter(type_id="draft", group=group).order_by("name")
+    group.rfcs = Document.objects.filter(type_id="rfc", group=group).order_by("rfc_number")
+    for rfc in group.rfcs:
+        # TODO: remote_field?
+        rfc.remote_field = RelatedDocument.objects.filter(source=rfc,relationship_id__in=['obs','updates']).distinct()
+        rfc.invrel = RelatedDocument.objects.filter(target=rfc,relationship_id__in=['obs','updates']).distinct()

@@ -16,6 +16,7 @@ from email.errors import HeaderParseError
 from email.header import decode_header
 from email.iterators import typed_subpart_iterator
 from email.utils import parseaddr
+from textwrap import dedent
 
 from django.db.models import Q, Count
 from django.conf import settings
@@ -715,3 +716,58 @@ def extract_volunteers(year):
     decorate_volunteers_with_qualifications(volunteers,nomcom=nomcom)
     volunteers = sorted(volunteers,key=lambda v:(not v.eligible,v.person.last_name()))
     return nomcom, volunteers
+
+
+def ingest_feedback_email(message: bytes, year: int):
+    from ietf.api.views import EmailIngestionError  # avoid circular import
+    from .models import NomCom
+    try:
+        nomcom = NomCom.objects.get(group__acronym__icontains=str(year),
+                                         group__state__slug='active')
+    except NomCom.DoesNotExist:
+        raise EmailIngestionError(
+            f"Error ingesting nomcom email: nomcom {year} does not exist or is not active",
+            email_body=dedent(f"""\
+                An email for nomcom {year} was posted to ingest_feedback_email, but no
+                active nomcom exists for that year.
+                """),
+        )
+
+    try:
+        feedback = create_feedback_email(nomcom, message)
+    except Exception as err:
+        raise EmailIngestionError(
+            f"Error ingesting nomcom {year} feedback email",
+            email_recipients=nomcom.chair_emails(),
+            email_body=dedent(f"""\
+                An error occurred while ingesting feedback email for nomcom {year}.
+                
+                {{error_summary}}
+                """),
+            email_original_message=message,
+        ) from err
+    log("Received nomcom email from %s" % feedback.author)
+
+
+def _is_time_to_send_reminder(nomcom, send_date, nomination_date):
+    if nomcom.reminder_interval:
+        days_passed = (send_date - nomination_date).days
+        return days_passed > 0 and days_passed % nomcom.reminder_interval == 0
+    else:
+        return bool(nomcom.reminderdates_set.filter(date=send_date))
+
+
+def send_reminders():
+    from .models import NomCom, NomineePosition
+    for nomcom in NomCom.objects.filter(group__state__slug="active"):
+        nps = NomineePosition.objects.filter(
+            nominee__nomcom=nomcom, nominee__duplicated__isnull=True
+        )
+        for nominee_position in nps.pending():
+            if _is_time_to_send_reminder(nomcom, date_today(), nominee_position.time.date()):
+                send_accept_reminder_to_nominee(nominee_position)
+                log(f"Sent accept reminder to {nominee_position.nominee.email.address}")
+        for nominee_position in nps.accepted().without_questionnaire_response():
+            if _is_time_to_send_reminder(nomcom, date_today(), nominee_position.time.date()):
+                send_questionnaire_reminder_to_nominee(nominee_position)
+                log(f"Sent questionnaire reminder to {nominee_position.nominee.email.address}")

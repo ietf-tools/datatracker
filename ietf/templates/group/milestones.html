@@ -49,7 +49,7 @@
                     <td>{{ milestone.desc|urlize_ietf_docs }}</td>
                     <td>
                         {% for d in milestone.docs.all %}
-                            <a href="{% url "ietf.doc.views_doc.document_main" name=d.name %}">{{ d.name }}</a>
+                            <a href="{% url "ietf.doc.views_doc.document_main" name=d.name %}">{% if d.became_rfc %}{{ d.became_rfc }} (was {% endif %}{{ d.name }}{% if d.became_rfc %}){% endif %}</a>
                             <br>
                         {% endfor %}
                     </td>

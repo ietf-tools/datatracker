@@ -122,7 +122,6 @@ class DocumentInfo(models.Model):
     external_url = models.URLField(blank=True)
     uploaded_filename = models.TextField(blank=True)
     note = models.TextField(blank=True)
-    internal_comments = models.TextField(blank=True)
     rfc_number = models.PositiveIntegerField(blank=True, null=True)  # only valid for type="rfc"
 
     def file_extension(self):
@@ -142,6 +141,7 @@ class DocumentInfo(models.Model):
                 if self.is_dochistory():
                     self._cached_file_path = settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR
                 else:
+                    # This could be simplified since anything in INTERNET_DRAFT_PATH is also already in INTERNET_ALL_DRAFTS_ARCHIVE_DIR
                     draft_state = self.get_state('draft')
                     if draft_state and draft_state.slug == 'active':
                         self._cached_file_path = settings.INTERNET_DRAFT_PATH

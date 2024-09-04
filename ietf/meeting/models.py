@@ -369,20 +369,36 @@ class Meeting(models.Model):
 
     def updated(self):
         # should be Meeting.modified, but we don't have that
-        min_time = pytz.utc.localize(datetime.datetime(1970, 1, 1, 0, 0, 0))
-        timeslots_updated = self.timeslot_set.aggregate(Max('modified'))["modified__max"] or min_time
-        sessions_updated = self.session_set.aggregate(Max('modified'))["modified__max"] or min_time
-        assignments_updated = min_time
+        timeslots_updated = self.timeslot_set.aggregate(Max('modified'))["modified__max"]
+        sessions_updated = self.session_set.aggregate(Max('modified'))["modified__max"]
+        assignments_updated = None
         if self.schedule:
-            assignments_updated = SchedTimeSessAssignment.objects.filter(schedule__in=[self.schedule, self.schedule.base if self.schedule else None]).aggregate(Max('modified'))["modified__max"] or min_time
-        return max(timeslots_updated, sessions_updated, assignments_updated)
+            assignments_updated = SchedTimeSessAssignment.objects.filter(schedule__in=[self.schedule, self.schedule.base if self.schedule else None]).aggregate(Max('modified'))["modified__max"]
+        dts = [timeslots_updated, sessions_updated, assignments_updated]
+        valid_only = [dt for dt in dts if dt is not None]
+        return max(valid_only) if valid_only else None
 
     @memoize
     def previous_meeting(self):
         return Meeting.objects.filter(type_id=self.type_id,date__lt=self.date).order_by('-date').first()
 
     def uses_notes(self):
-        return self.date>=datetime.date(2020,7,6)
+        if self.type_id != 'ietf':
+            return True
+        num = self.get_number()
+        return num is not None and num >= 108
+
+    def has_recordings(self):
+        if self.type_id != 'ietf':
+            return True
+        num = self.get_number()
+        return num is not None and num >= 80
+
+    def has_chat_logs(self):
+        if self.type_id != 'ietf':
+            return True;
+        num = self.get_number()
+        return num is not None and num >= 60
 
     def meeting_start(self):
         """Meeting-local midnight at the start of the meeting date"""
@@ -772,7 +788,6 @@ class SchedTimeSessAssignment(models.Model):
     schedule = ForeignKey('Schedule', null=False, blank=False, related_name='assignments')
     extendedfrom = ForeignKey('self', null=True, default=None, help_text="Timeslot this session is an extension of.")
     modified = models.DateTimeField(auto_now=True)
-    notes    = models.TextField(blank=True)
     badness  = models.IntegerField(default=0, blank=True, null=True)
     pinned   = models.BooleanField(default=False, help_text="Do not move session during automatic placement.")
 
@@ -1147,7 +1162,6 @@ class Session(models.Model):
         return can_manage_materials(user,self.group)
 
     def is_material_submission_cutoff(self):
-        debug.say("is_material_submission_cutoff got called")
         return date_today(datetime.timezone.utc) > self.meeting.get_submission_correction_date()
     
     def joint_with_groups_acronyms(self):
@@ -1307,11 +1321,16 @@ class Session(models.Model):
         return None
 
     def session_recording_url(self):
-        url = getattr(settings, "MEETECHO_SESSION_RECORDING_URL", "")
-        if self.meeting.type.slug == "ietf" and self.has_onsite_tool and url:
-            self.group.acronym_upper = self.group.acronym.upper()
-            return url.format(session=self)
-        return None
+        url_formatter = getattr(settings, "MEETECHO_SESSION_RECORDING_URL", "")
+        url = None
+        if url_formatter and self.video_stream_url:
+            if self.meeting.type.slug == "ietf" and self.has_onsite_tool:
+                session_label = f"IETF{self.meeting.number}-{self.group.acronym.upper()}-{self.official_timeslotassignment().timeslot.time.strftime('%Y%m%d-%H%M')}"
+            else:
+                session_label = f"IETF-{self.group.acronym.upper()}-{self.official_timeslotassignment().timeslot.time.strftime('%Y%m%d-%H%M')}"
+            url = url_formatter.format(session_label=session_label)
+
+        return url
 
 
 class SchedulingEvent(models.Model):
@@ -1408,7 +1427,7 @@ class MeetingHost(models.Model):
                 validate_file_extension,
                 settings.MEETING_VALID_UPLOAD_EXTENSIONS['meetinghostlogo'],
             ),
-            WrappedValidator(
+   WrappedValidator(
                 validate_mime_type,
                 settings.MEETING_VALID_UPLOAD_MIME_TYPES['meetinghostlogo'],
                 True,
@@ -1427,6 +1446,8 @@ class MeetingHost(models.Model):
 class Attended(models.Model):
     person = ForeignKey(Person)
     session = ForeignKey(Session)
+    time = models.DateTimeField(default=timezone.now, null=True, blank=True)
+    origin = models.CharField(max_length=32, default='datatracker')
 
     class Meta:
         unique_together = (('person', 'session'),)

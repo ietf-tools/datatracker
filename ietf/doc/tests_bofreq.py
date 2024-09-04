@@ -54,8 +54,8 @@ This test section has some text.
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         for state in states:
-            self.assertEqual(len(q(f'#bofreqs-{state.slug}')), 1)
-            self.assertEqual(len(q(f'#bofreqs-{state.slug} tbody tr')), 3)
+            self.assertEqual(len(q(f'#bofreqs-{state.slug}')), 1 if state.slug!="spam" else 0)
+            self.assertEqual(len(q(f'#bofreqs-{state.slug} tbody tr')), 3 if state.slug!="spam" else 0)
         self.assertFalse(q('#start_button'))
         PersonFactory(user__username='nobody')
         self.client.login(username='nobody', password='nobody+password')
@@ -63,6 +63,13 @@ This test section has some text.
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertTrue(q('#start_button'))
+        self.client.logout()
+        self.client.login(username='secretary', password='secretary+password')
+        r = self.client.get(url)
+        q = PyQuery(r.content)
+        for state in states:
+            self.assertEqual(len(q(f'#bofreqs-{state.slug}')), 1)
+            self.assertEqual(len(q(f'#bofreqs-{state.slug} tbody tr')), 3)
 
 
     def test_bofreq_main_page(self):

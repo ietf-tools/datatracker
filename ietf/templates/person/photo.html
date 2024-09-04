@@ -2,7 +2,7 @@
 {% load origin static person_filters %}
 <div class="card shadow-sm mb-3 text-center photo">
     {% if name or email %}
-        <a title="Datatracker profile of {{ person.name }}."
+        <a title="Datatracker profile of {{ person.name }}"
            href="{% if name %}{% url 'ietf.person.views.profile' email_or_name=name %}{% else %}{% url 'ietf.person.views.profile' email_or_name=email %}{% endif %}">
     {% endif %}
     {% if person.photo_thumb %}

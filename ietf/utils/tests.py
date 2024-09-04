@@ -36,6 +36,7 @@ from django.urls import reverse as urlreverse
 
 import debug                            # pyflakes:ignore
 
+from ietf.admin.sites import AdminSite
 from ietf.person.name import name_parts, unidecode_name
 from ietf.submit.tests import submission_file
 from ietf.utils.draft import PlaintextDraft, getmeta
@@ -325,7 +326,7 @@ class AdminTestCase(TestCase):
         User.objects.create_superuser('admin', 'admin@example.org', 'admin+password')
         self.client.login(username='admin', password='admin+password')
         rtop = self.client.get("/admin/")
-        self.assertContains(rtop, 'Django administration')
+        self.assertContains(rtop, AdminSite.site_header())
         for name in self.apps:
             app_name = self.apps[name]
             self.assertContains(rtop, name)
@@ -486,6 +487,51 @@ class XMLDraftTests(TestCase):
             ("-01", None),
         )
 
+    def test_render_author_name(self):
+        self.assertEqual(
+            XMLDraft.render_author_name(lxml.etree.Element("author", fullname="Joanna Q. Public")),
+            "Joanna Q. Public",
+        )
+        self.assertEqual(
+            XMLDraft.render_author_name(lxml.etree.Element(
+                "author",
+                fullname="Joanna Q. Public",
+                asciiFullname="Not the Same at All",
+            )),
+            "Joanna Q. Public",
+        )
+        self.assertEqual(
+            XMLDraft.render_author_name(lxml.etree.Element(
+                "author",
+                fullname="Joanna Q. Public",
+                initials="J. Q.",
+                surname="Public-Private",
+            )),
+            "Joanna Q. Public",
+        )
+        self.assertEqual(
+            XMLDraft.render_author_name(lxml.etree.Element(
+                "author",
+                initials="J. Q.",
+                surname="Public",
+            )),
+            "J. Q. Public",
+        )
+        self.assertEqual(
+            XMLDraft.render_author_name(lxml.etree.Element(
+                "author",
+                surname="Public",
+            )),
+            "Public",
+        )
+        self.assertEqual(
+            XMLDraft.render_author_name(lxml.etree.Element(
+                "author",
+                initials="J. Q.",
+            )),
+            "J. Q.",
+        )
+
 
 class NameTests(TestCase):
 
@@ -634,3 +680,12 @@ class SearchableFieldTests(TestCase):
         self.assertTrue(changed_form.has_changed())
         unchanged_form = TestForm(initial={'test_field': [1]}, data={'test_field': [1]})
         self.assertFalse(unchanged_form.has_changed())
+
+
+class HealthTests(TestCase):
+    def test_health(self):
+        self.assertEqual(
+            self.client.get("/health/").status_code,
+            200,
+        )
+            

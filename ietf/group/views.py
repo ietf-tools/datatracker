@@ -37,13 +37,12 @@
 import copy
 import datetime
 import itertools
-import io
 import math
-import re
 import json
+import types
 
 from collections import OrderedDict, defaultdict
-import types
+from pathlib import Path
 from simple_history.utils import update_change_reason
 
 from django import forms
@@ -75,12 +74,13 @@ from ietf.group.forms import (GroupForm, StatusUpdateForm, ConcludeGroupForm, St
 from ietf.group.mails import email_admin_re_charter, email_personnel_change, email_comment
 from ietf.group.models import ( Group, Role, GroupEvent, GroupStateTransitions,
                               ChangeStateGroupEvent, GroupFeatures, AppealArtifact )
-from ietf.group.utils import (get_charter_text, can_manage_all_groups_of_type, 
+from ietf.group.utils import (can_manage_all_groups_of_type,
                               milestone_reviewer_for_group_type, can_provide_status_update,
                               can_manage_materials, group_attribute_change_desc,
                               construct_group_menu_context, get_group_materials,
                               save_group_in_history, can_manage_group, update_role_set,
-                              get_group_or_404, setup_default_community_list_for_group, )                              
+                              get_group_or_404, setup_default_community_list_for_group, fill_in_charter_info,
+                              get_group_email_aliases)                              
 #
 from ietf.ietfauth.utils import has_role, is_authorized_in_group
 from ietf.mailtrigger.utils import gather_relevant_expansions
@@ -132,84 +132,17 @@ def roles(group, role_name):
     return Role.objects.filter(group=group, name=role_name).select_related("email", "person")
 
 
-def fill_in_charter_info(group, include_drafts=False):
-    group.areadirector = getattr(group.ad_role(),'email',None)
-
-    personnel = {}
-    for r in Role.objects.filter(group=group).order_by('person__name').select_related("email", "person", "name"):
-        if r.name_id not in personnel:
-            personnel[r.name_id] = []
-        personnel[r.name_id].append(r)
-
-    if group.parent and group.parent.type_id == "area" and group.ad_role() and "ad" not in personnel:
-        ad_roles = list(Role.objects.filter(group=group.parent, name="ad", person=group.ad_role().person))
-        if ad_roles:
-            personnel["ad"] = ad_roles
-
-    group.personnel = []
-    for role_name_slug, roles in personnel.items():
-        label = roles[0].name.name
-        if len(roles) > 1:
-            if label.endswith("y"):
-                label = label[:-1] + "ies"
-            else:
-                label += "s"
-
-        group.personnel.append((role_name_slug, label, roles))
-
-    group.personnel.sort(key=lambda t: t[2][0].name.order)
-
-    milestone_state = "charter" if group.state_id == "proposed" else "active"
-    group.milestones = group.groupmilestone_set.filter(state=milestone_state)
-    if group.uses_milestone_dates:
-        group.milestones = group.milestones.order_by('resolved', 'due')
-    else:
-        group.milestones = group.milestones.order_by('resolved', 'order')
-
-    if group.charter:
-        group.charter_text = get_charter_text(group)
-    else:
-        group.charter_text = "Not chartered yet."
-    group.charter_html = markdown.markdown(group.charter_text)
-
 def extract_last_name(role):
     return role.person.name_parts()[3]
 
-def fill_in_wg_roles(group):
-    def get_roles(slug, default):
-        for role_slug, label, roles in group.personnel:
-            if slug == role_slug:
-                return roles
-        return default
 
-    group.chairs = get_roles("chair", [])
-    ads = get_roles("ad", [])
-    group.areadirector = ads[0] if ads else None
-    group.techadvisors = get_roles("techadv", [])
-    group.editors = get_roles("editor", [])
-    group.secretaries = get_roles("secr", [])
-
-def fill_in_wg_drafts(group):
-    group.drafts = Document.objects.filter(type_id="draft", group=group).order_by("name")
-    group.rfcs = Document.objects.filter(type_id="rfc", group=group).order_by("rfc_number")
-    for rfc in group.rfcs:
-        # TODO: remote_field?
-        rfc.remote_field = RelatedDocument.objects.filter(source=rfc,relationship_id__in=['obs','updates']).distinct()
-        rfc.invrel = RelatedDocument.objects.filter(target=rfc,relationship_id__in=['obs','updates']).distinct()
-
-def check_group_email_aliases():
-    pattern = re.compile(r'expand-(.*?)(-\w+)@.*? +(.*)$')
-    tot_count = 0
-    good_count = 0
-    with io.open(settings.GROUP_VIRTUAL_PATH,"r") as virtual_file:
-        for line in virtual_file.readlines():
-            m = pattern.match(line)
-            tot_count += 1
-            if m:
-                good_count += 1
-            if good_count > 50 and tot_count < 3*good_count:
-                return True
-    return False
+def response_from_file(fpath: Path) -> HttpResponse:
+    """Helper to shovel a file back in an HttpResponse"""
+    try:
+        content = fpath.read_bytes()
+    except IOError:
+        raise Http404
+    return HttpResponse(content, content_type="text/plain; charset=utf-8")
 
 
 # --- View functions ---------------------------------------------------
@@ -217,58 +150,26 @@ def check_group_email_aliases():
 def wg_summary_area(request, group_type):
     if group_type != "wg":
         raise Http404
-    areas = Group.objects.filter(type="area", state="active").order_by("name")
-    for area in areas:
-        area.groups = Group.objects.filter(parent=area, type="wg", state="active").order_by("acronym")
-        for group in area.groups:
-            group.chairs = sorted(roles(group, "chair"), key=extract_last_name)
+    return response_from_file(Path(settings.GROUP_SUMMARY_PATH) / "1wg-summary.txt")
 
-    areas = [a for a in areas if a.groups]
-
-    return render(request, 'group/1wg-summary.txt',
-                  { 'areas': areas },
-                  content_type='text/plain; charset=UTF-8')
 
 def wg_summary_acronym(request, group_type):
     if group_type != "wg":
         raise Http404
-    areas = Group.objects.filter(type="area", state="active").order_by("name")
-    groups = Group.objects.filter(type="wg", state="active").order_by("acronym").select_related("parent")
-    for group in groups:
-        group.chairs = sorted(roles(group, "chair"), key=extract_last_name)
-    return render(request, 'group/1wg-summary-by-acronym.txt',
-                  { 'areas': areas,
-                    'groups': groups },
-                  content_type='text/plain; charset=UTF-8')
+    return response_from_file(Path(settings.GROUP_SUMMARY_PATH) / "1wg-summary-by-acronym.txt")
 
-@cache_page ( 60 * 60, cache="slowpages" )
+
 def wg_charters(request, group_type):
     if group_type != "wg":
         raise Http404
-    areas = Group.objects.filter(type="area", state="active").order_by("name")
-    for area in areas:
-        area.groups = Group.objects.filter(parent=area, type="wg", state="active").order_by("name")
-        for group in area.groups:
-            fill_in_charter_info(group)
-            fill_in_wg_roles(group)
-            fill_in_wg_drafts(group)
-    return render(request, 'group/1wg-charters.txt',
-                  { 'areas': areas },
-                  content_type='text/plain; charset=UTF-8')
+    return response_from_file(Path(settings.CHARTER_PATH) / "1wg-charters.txt") 
 
-@cache_page ( 60 * 60, cache="slowpages" )
+
 def wg_charters_by_acronym(request, group_type):
     if group_type != "wg":
         raise Http404
+    return response_from_file(Path(settings.CHARTER_PATH) / "1wg-charters-by-acronym.txt") 
 
-    groups = Group.objects.filter(type="wg", state="active").exclude(parent=None).order_by("acronym")
-    for group in groups:
-        fill_in_charter_info(group)
-        fill_in_wg_roles(group)
-        fill_in_wg_drafts(group)
-    return render(request, 'group/1wg-charters-by-acronym.txt',
-                  { 'groups': groups },
-                  content_type='text/plain; charset=UTF-8')
 
 def active_groups(request, group_type=None):
 
@@ -379,7 +280,7 @@ def active_wgs(request):
             if group.list_subscribe.startswith('http'):
                 group.list_subscribe_url = group.list_subscribe
             elif group.list_email.endswith('@ietf.org'):
-                group.list_subscribe_url = MAILING_LIST_INFO_URL % {'list_addr':group.list_email.split('@')[0]}
+                group.list_subscribe_url = MAILING_LIST_INFO_URL % {'list_addr':group.list_email.split('@')[0].lower(),'domain':'ietf.org'}
             else:
                 group.list_subscribe_url = "mailto:"+group.list_subscribe
 
@@ -433,35 +334,86 @@ def chartering_groups(request):
                   dict(charter_states=charter_states,
                        group_types=group_types))
 
+
 def concluded_groups(request):
     sections = OrderedDict()
 
-    sections['WGs'] = Group.objects.filter(type='wg', state="conclude").select_related("state", "charter").order_by("parent__name","acronym")
-    sections['RGs'] = Group.objects.filter(type='rg', state="conclude").select_related("state", "charter").order_by("parent__name","acronym")
-    sections['BOFs'] = Group.objects.filter(type='wg', state="bof-conc").select_related("state", "charter").order_by("parent__name","acronym")
-    sections['AGs'] = Group.objects.filter(type='ag', state="conclude").select_related("state", "charter").order_by("parent__name","acronym")
-    sections['RAGs'] = Group.objects.filter(type='rag', state="conclude").select_related("state", "charter").order_by("parent__name","acronym")
-    sections['Directorates'] = Group.objects.filter(type='dir', state="conclude").select_related("state", "charter").order_by("parent__name","acronym")
-    sections['Review teams'] = Group.objects.filter(type='review', state="conclude").select_related("state", "charter").order_by("parent__name","acronym")
-    sections['Teams'] = Group.objects.filter(type='team', state="conclude").select_related("state", "charter").order_by("parent__name","acronym")
-    sections['Programs'] = Group.objects.filter(type='program', state="conclude").select_related("state", "charter").order_by("parent__name","acronym")
+    sections["WGs"] = (
+        Group.objects.filter(type="wg", state="conclude")
+        .select_related("state", "charter")
+        .order_by("parent__name", "acronym")
+    )
+    sections["RGs"] = (
+        Group.objects.filter(type="rg", state="conclude")
+        .select_related("state", "charter")
+        .order_by("parent__name", "acronym")
+    )
+    sections["BOFs"] = (
+        Group.objects.filter(type="wg", state="bof-conc")
+        .select_related("state", "charter")
+        .order_by("parent__name", "acronym")
+    )
+    sections["AGs"] = (
+        Group.objects.filter(type="ag", state="conclude")
+        .select_related("state", "charter")
+        .order_by("parent__name", "acronym")
+    )
+    sections["RAGs"] = (
+        Group.objects.filter(type="rag", state="conclude")
+        .select_related("state", "charter")
+        .order_by("parent__name", "acronym")
+    )
+    sections["Directorates"] = (
+        Group.objects.filter(type="dir", state="conclude")
+        .select_related("state", "charter")
+        .order_by("parent__name", "acronym")
+    )
+    sections["Review teams"] = (
+        Group.objects.filter(type="review", state="conclude")
+        .select_related("state", "charter")
+        .order_by("parent__name", "acronym")
+    )
+    sections["Teams"] = (
+        Group.objects.filter(type="team", state="conclude")
+        .select_related("state", "charter")
+        .order_by("parent__name", "acronym")
+    )
+    sections["Programs"] = (
+        Group.objects.filter(type="program", state="conclude")
+        .select_related("state", "charter")
+        .order_by("parent__name", "acronym")
+    )
 
     for name, groups in sections.items():
-        
         # add start/conclusion date
         d = dict((g.pk, g) for g in groups)
 
         for g in groups:
             g.start_date = g.conclude_date = None
 
-        for e in ChangeStateGroupEvent.objects.filter(group__in=groups, state="active").order_by("-time"):
+        # Some older BOFs were created in the "active" state, so consider both "active" and "bof"
+        # ChangeStateGroupEvents when finding the start date. A group with _both_ "active" and "bof"
+        # events should not be in the "bof-conc" state so this shouldn't cause a problem (if it does,
+        # we'll need to clean up the data)
+        for e in ChangeStateGroupEvent.objects.filter(
+            group__in=groups,
+            state__in=["active", "bof"] if name == "BOFs" else ["active"],
+        ).order_by("-time"):
             d[e.group_id].start_date = e.time
 
-        for e in ChangeStateGroupEvent.objects.filter(group__in=groups, state="conclude").order_by("time"):
+        # Similarly, some older BOFs were concluded into the "conclude" state and the event was never
+        # fixed, so consider both "conclude" and "bof-conc" ChangeStateGroupEvents when finding the
+        # concluded date. A group with _both_ "conclude" and "bof-conc" events should not be in the
+        # "bof-conc" state so this shouldn't cause a problem (if it does, we'll need to clean up the
+        # data)
+        for e in ChangeStateGroupEvent.objects.filter(
+            group__in=groups,
+            state__in=["bof-conc", "conclude"] if name == "BOFs" else ["conclude"],
+        ).order_by("time"):
             d[e.group_id].conclude_date = e.time
 
-    return render(request, 'group/concluded_groups.html',
-                  dict(sections=sections))
+    return render(request, "group/concluded_groups.html", dict(sections=sections))
+
 
 def prepare_group_documents(request, group, clist):
     found_docs, meta = prepare_document_table(request, docs_tracked_by_community_list(clist), request.GET, max_results=500)
@@ -662,21 +614,6 @@ def group_about_status_edit(request, acronym, group_type=None):
                     'group':group,
                   }
                  )
-
-def get_group_email_aliases(acronym, group_type):
-    if acronym:
-        pattern = re.compile(r'expand-(%s)(-\w+)@.*? +(.*)$'%acronym)
-    else:
-        pattern = re.compile(r'expand-(.*?)(-\w+)@.*? +(.*)$')
-
-    aliases = []
-    with io.open(settings.GROUP_VIRTUAL_PATH,"r") as virtual_file:
-        for line in virtual_file.readlines():
-            m = pattern.match(line)
-            if m:
-                if acronym or not group_type or Group.objects.filter(acronym=m.group(1),type__slug=group_type):
-                    aliases.append({'acronym':m.group(1),'alias_type':m.group(2),'expansion':m.group(3)})
-    return aliases
 
 def email(request, acronym, group_type=None):
     group = get_group_or_404(acronym, group_type)

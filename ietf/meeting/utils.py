@@ -1,17 +1,20 @@
-# Copyright The IETF Trust 2016-2020, All Rights Reserved
+# Copyright The IETF Trust 2016-2024, All Rights Reserved
 # -*- coding: utf-8 -*-
 import datetime
 import itertools
 import os
 import pytz
 import subprocess
+import tempfile
 
 from collections import defaultdict
 from pathlib import Path
 
 from django.conf import settings
 from django.contrib import messages
-from django.db.models import Q
+from django.db.models import OuterRef, Subquery, TextField, Q, Value
+from django.db.models.functions import Coalesce
+from django.template.loader import render_to_string
 from django.utils import timezone
 from django.utils.encoding import smart_str
 
@@ -26,6 +29,7 @@ from ietf.group.models import Group
 from ietf.group.utils import can_manage_materials
 from ietf.name.models import SessionStatusName, ConstraintName, DocTypeName
 from ietf.person.models import Person
+from ietf.stats.models import MeetingRegistration
 from ietf.utils.html import sanitize_document
 from ietf.utils.log import log
 from ietf.utils.timezone import date_today
@@ -144,7 +148,92 @@ def create_proceedings_templates(meeting):
         meeting.overview = template
         meeting.save()
 
-def finalize(meeting):
+
+def bluesheet_data(session):
+    attendance = (
+        Attended.objects.filter(session=session)
+        .annotate(
+            affiliation=Coalesce(
+                Subquery(
+                    MeetingRegistration.objects.filter(
+                        Q(meeting=session.meeting),
+                        Q(person=OuterRef("person")) | Q(email=OuterRef("person__email")),
+                    ).values("affiliation")[:1]
+                ),
+                Value(""),
+                output_field=TextField(),
+            )
+        ).distinct()
+        .order_by("time")
+    )
+
+    return [
+        {
+            "name": attended.person.plain_name(),
+            "affiliation": attended.affiliation,
+        }
+        for attended in attendance
+    ]
+
+
+def save_bluesheet(request, session, file, encoding='utf-8'):
+    bluesheet_sp = session.presentations.filter(document__type='bluesheets').first()
+    _, ext = os.path.splitext(file.name)
+
+    if bluesheet_sp:
+        doc = bluesheet_sp.document
+        doc.rev = '%02d' % (int(doc.rev)+1)
+        bluesheet_sp.rev = doc.rev
+        bluesheet_sp.save()
+    else:
+        ota = session.official_timeslotassignment()
+        sess_time = ota and ota.timeslot.time
+
+        if session.meeting.type_id=='ietf':
+            name = 'bluesheets-%s-%s-%s' % (session.meeting.number, 
+                                            session.group.acronym, 
+                                            sess_time.strftime("%Y%m%d%H%M"))
+            title = 'Bluesheets IETF%s: %s : %s' % (session.meeting.number, 
+                                                    session.group.acronym, 
+                                                    sess_time.strftime("%a %H:%M"))
+        else:
+            name = 'bluesheets-%s-%s' % (session.meeting.number, sess_time.strftime("%Y%m%d%H%M"))
+            title = 'Bluesheets %s: %s' % (session.meeting.number, sess_time.strftime("%a %H:%M"))
+        doc = Document.objects.create(
+                  name = name,
+                  type_id = 'bluesheets',
+                  title = title,
+                  group = session.group,
+                  rev = '00',
+              )
+        doc.states.add(State.objects.get(type_id='bluesheets',slug='active'))
+        session.presentations.create(document=doc,rev='00')
+    filename = '%s-%s%s'% ( doc.name, doc.rev, ext)
+    doc.uploaded_filename = filename
+    e = NewRevisionDocEvent.objects.create(doc=doc, rev=doc.rev, by=request.user.person, type='new_revision', desc='New revision available: %s'%doc.rev)
+    save_error = handle_upload_file(file, filename, session.meeting, 'bluesheets', request=request, encoding=encoding)
+    if not save_error:
+        doc.save_with_history([e])
+    return save_error
+
+
+def generate_bluesheet(request, session):
+    data = bluesheet_data(session)
+    if not data:
+        return
+    text = render_to_string('meeting/bluesheet.txt', {
+            'session': session,
+            'data': data,
+        })
+    fd, name = tempfile.mkstemp(suffix=".txt", text=True)
+    os.close(fd)
+    with open(name, "w") as file:
+        file.write(text)
+    with open(name, "br") as file:
+        return save_bluesheet(request, session, file)
+
+
+def finalize(request, meeting):
     end_date = meeting.end_date()
     end_time = meeting.tz().localize(
         datetime.datetime.combine(
@@ -160,6 +249,12 @@ def finalize(meeting):
             else:
                 sp.rev = '00'
             sp.save()
+
+        # Don't try to generate a bluesheet if it's before we had Attended records.
+        if int(meeting.number) >= 108:
+            save_error = generate_bluesheet(request, session)
+            if save_error:
+                messages.error(request, save_error)
     
     create_proceedings_templates(meeting)
     meeting.proceedings_final = True
@@ -523,7 +618,8 @@ def bulk_create_timeslots(meeting, times, locations, other_props):
 
 def preprocess_meeting_important_dates(meetings):
     for m in meetings:
-        m.cached_updated = m.updated()
+        # cached_updated must be present, set it to 1970-01-01 if necessary
+        m.cached_updated = m.updated() or pytz.utc.localize(datetime.datetime(1970, 1, 1, 0, 0, 0))
         m.important_dates = m.importantdate_set.prefetch_related("name")
         for d in m.important_dates:
             d.midnight_cutoff = "UTC 23:59" in d.name.name
@@ -555,7 +651,7 @@ class SaveMaterialsError(Exception):
     pass
 
 
-def save_session_minutes_revision(session, file, ext, request, encoding=None, apply_to_all=False):
+def save_session_minutes_revision(session, file, ext, request, encoding=None, apply_to_all=False, narrative=False):
     """Creates or updates session minutes records
 
     This updates the database models to reflect a new version. It does not handle
@@ -568,7 +664,8 @@ def save_session_minutes_revision(session, file, ext, request, encoding=None, ap
     Returns (Document, [DocEvents]), which should be passed to doc.save_with_history()
     if the file contents are stored successfully.
     """
-    minutes_sp = session.presentations.filter(document__type='minutes').first()
+    document_type = DocTypeName.objects.get(slug= 'narrativeminutes' if narrative else 'minutes')
+    minutes_sp = session.presentations.filter(document__type=document_type).first()
     if minutes_sp:
         doc = minutes_sp.document
         doc.rev = '%02d' % (int(doc.rev)+1)
@@ -580,28 +677,26 @@ def save_session_minutes_revision(session, file, ext, request, encoding=None, ap
         if not sess_time:
             raise SessionNotScheduledError
         if session.meeting.type_id=='ietf':
-            name = 'minutes-%s-%s' % (session.meeting.number,
-                                      session.group.acronym)
-            title = 'Minutes IETF%s: %s' % (session.meeting.number,
-                                            session.group.acronym)
+            name = f"{document_type.prefix}-{session.meeting.number}-{session.group.acronym}"
+            title = f"{document_type.name} IETF{session.meeting.number}: {session.group.acronym}"
             if not apply_to_all:
                 name += '-%s' % (sess_time.strftime("%Y%m%d%H%M"),)
                 title += ': %s' % (sess_time.strftime("%a %H:%M"),)
         else:
-            name = 'minutes-%s-%s' % (session.meeting.number, sess_time.strftime("%Y%m%d%H%M"))
-            title = 'Minutes %s: %s' % (session.meeting.number, sess_time.strftime("%a %H:%M"))
+            name =f"{document_type.prefix}-{session.meeting.number}-{sess_time.strftime('%Y%m%d%H%M')}"
+            title = f"{document_type.name} {session.meeting.number}: {sess_time.strftime('%a %H:%M')}"
         if Document.objects.filter(name=name).exists():
             doc = Document.objects.get(name=name)
             doc.rev = '%02d' % (int(doc.rev)+1)
         else:
             doc = Document.objects.create(
                 name = name,
-                type_id = 'minutes',
+                type = document_type,
                 title = title,
                 group = session.group,
                 rev = '00',
             )
-        doc.states.add(State.objects.get(type_id='minutes',slug='active'))
+        doc.states.add(State.objects.get(type_id=document_type.slug,slug='active'))
         if session.presentations.filter(document=doc).exists():
             sp = session.presentations.get(document=doc)
             sp.rev = doc.rev
@@ -611,7 +706,7 @@ def save_session_minutes_revision(session, file, ext, request, encoding=None, ap
     if apply_to_all:
         for other_session in get_meeting_sessions(session.meeting.number, session.group.acronym):
             if other_session != session:
-                other_session.presentations.filter(document__type='minutes').delete()
+                other_session.presentations.filter(document__type=document_type).delete()
                 other_session.presentations.create(document=doc,rev=doc.rev)
     filename = f'{doc.name}-{doc.rev}{ext}'
     doc.uploaded_filename = filename
@@ -628,7 +723,7 @@ def save_session_minutes_revision(session, file, ext, request, encoding=None, ap
         file=file,
         filename=doc.uploaded_filename,
         meeting=session.meeting,
-        subdir='minutes',
+        subdir=document_type.slug,
         request=request,
         encoding=encoding,
     )
@@ -641,7 +736,7 @@ def save_session_minutes_revision(session, file, ext, request, encoding=None, ap
 def handle_upload_file(file, filename, meeting, subdir, request=None, encoding=None):
     """Accept an uploaded materials file
 
-    This function takes a file object, a filename and a meeting object and subdir as string.
+    This function takes a _binary mode_ file object, a filename and a meeting object and subdir as string.
     It saves the file to the appropriate directory, get_materials_path() + subdir.
     If the file is a zip file, it creates a new directory in 'slides', which is the basename of the
     zip file and unzips the file in the new directory.
@@ -663,9 +758,18 @@ def handle_upload_file(file, filename, meeting, subdir, request=None, encoding=N
                 pass  # if the file is already gone, so be it
 
     with (path / filename).open('wb+') as destination:
+        # prep file for reading
+        if hasattr(file, "chunks"):
+            chunks = file.chunks()
+        else:
+            try:
+                file.seek(0)
+            except AttributeError:
+                pass
+            chunks = [file.read()]  # pretend we have chunks
+
         if filename.suffix in settings.MEETING_VALID_MIME_TYPE_EXTENSIONS['text/html']:
-            file.open()
-            text = file.read()
+            text = b"".join(chunks)
             if encoding:
                 try:
                     text = text.decode(encoding)
@@ -692,11 +796,8 @@ def handle_upload_file(file, filename, meeting, subdir, request=None, encoding=N
                                      f"please check the resulting content.  "
                                  ))
         else:
-            if hasattr(file, 'chunks'):
-                for chunk in file.chunks():
-                    destination.write(chunk)
-            else:
-                destination.write(file.read())
+            for chunk in chunks:
+                destination.write(chunk)
 
     # unzip zipfile
     if is_zipfile:
@@ -864,9 +965,9 @@ def post_process(doc):
     Does post processing on uploaded file.
     - Convert PPT to PDF
     '''
-    if is_powerpoint(doc) and hasattr(settings, 'SECR_PPT2PDF_COMMAND'):
+    if is_powerpoint(doc) and hasattr(settings, 'PPT2PDF_COMMAND'):
         try:
-            cmd = list(settings.SECR_PPT2PDF_COMMAND)   # Don't operate on the list actually in settings
+            cmd = list(settings.PPT2PDF_COMMAND)   # Don't operate on the list actually in settings
             cmd.append(doc.get_file_path())                                 # outdir
             cmd.append(os.path.join(doc.get_file_path(), doc.uploaded_filename))  # filename
             subprocess.check_call(cmd)

@@ -3,15 +3,7 @@ import os
 import sys
 import time as timeutils
 import inspect
-from typing import Callable
 
-try:
-    import syslog
-    logger = syslog.syslog              # type: Callable
-except ImportError:                     # import syslog will fail on Windows boxes
-    import logging
-    logging.basicConfig(filename='tracker.log',level=logging.INFO)
-    logger = logging.info
 
 try:
     from pprint import pformat
@@ -55,7 +47,7 @@ def trace(fn):                 # renamed from 'report' by henrik 16 Jun 2011
         if len(s) > n+3:
             s = s[:n]+"..."
         return s
-    def wrap(fn, *params,**kwargs):
+    def wrap(*params,**kwargs):
         call = wrap.callcount = wrap.callcount + 1
 
         indent = ' ' * _report_indent[0]
@@ -81,8 +73,8 @@ def trace(fn):                 # renamed from 'report' by henrik 16 Jun 2011
         return ret
     wrap.callcount = 0
     if debug:
-        from decorator import decorator
-        return decorator(wrap, fn)
+        from functools import update_wrapper
+        return update_wrapper(wrap, fn)
     else:
         return fn
 
@@ -119,7 +111,7 @@ def clock(s):
 def time(fn):
     """Decorator to print timing information about a function call.
     """
-    def wrap(fn, *params,**kwargs):
+    def wrap(*params,**kwargs):
 
         indent = ' ' * _report_indent[0]
         fc = "%s.%s()" % (fn.__module__, fn.__name__,)
@@ -132,8 +124,8 @@ def time(fn):
         return ret
     wrap.callcount = 0
     if debug:
-        from decorator import decorator
-        return decorator(wrap, fn)
+        from functools import update_wrapper
+        return update_wrapper(wrap, fn)
     else:
         return fn
 
@@ -154,13 +146,6 @@ def showpos(name):
         value = eval(name, frame.f_globals, frame.f_locals)
         indent = ' ' * (_report_indent[0])
         sys.stderr.write("%s%s:%s: %s: '%s'\n" % (indent, fn, line, name, value))
-
-def log(name):
-    if debug:
-        frame = inspect.stack()[1][0]
-        value = eval(name, frame.f_globals, frame.f_locals)
-        indent = ' ' * (_report_indent[0])
-        logger("%s%s: %s" % (indent, name, value))
 
 def pprint(name):
     if debug:
@@ -190,7 +175,7 @@ def type(name):
         value = eval(name, frame.f_globals, frame.f_locals)
         indent = ' ' * (_report_indent[0])
         sys.stderr.write("%s%s: %s\n" % (indent, name, value))
-            
+
 def say(s):
     if debug:
         indent = ' ' * (_report_indent[0])
@@ -205,11 +190,11 @@ def profile(fn):
         prof.dump_stats(datafn)
         return retval
     if debug:
-        from decorator import decorator
-        return decorator(wrapper, fn)
+        from functools import update_wrapper
+        return update_wrapper(wrapper, fn)
     else:
         return fn
-    
+
 def traceback(levels=None):
     if debug:
         indent = ' ' * (_report_indent[0])

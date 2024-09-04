@@ -58,14 +58,17 @@
             n-button(
               :type='agendaStore.isTimezoneMeeting ? `primary` : `default`'
               @click='setTimezone(`meeting`)'
+              :text-color='agendaStore.isTimezoneMeeting ? `#FFF` : null'
               ) Meeting
             n-button(
               :type='agendaStore.isTimezoneLocal ? `primary` : `default`'
               @click='setTimezone(`local`)'
+              :text-color='agendaStore.isTimezoneLocal ? `#FFF` : null'
               ) Local
             n-button(
               :type='agendaStore.timezone === `UTC` ? `primary` : `default`'
               @click='setTimezone(`UTC`)'
+              :text-color='agendaStore.timezone === `UTC` ? `#FFF` : null'
               ) UTC
           n-select.agenda-timezone-ddn(
             v-if='siteStore.viewport > 1250'
@@ -320,7 +323,7 @@ const meetingUpdated = computed(() => {
   if (!agendaStore.meeting.updated) { return false }
   
   const updatedDatetime = DateTime.fromISO(agendaStore.meeting.updated).setZone(agendaStore.timezone)
-  if (!updatedDatetime.isValid || updatedDatetime < DateTime.fromISO('1980-01-01')) {
+  if (!updatedDatetime.isValid) {
     return false
   }
   
@@ -431,7 +434,7 @@ function reconnectScrollObservers () {
   scrollObserver.disconnect()
   visibleDays.length = 0
   for (const mDay of agendaStore.meetingDays) {
-    const el = document.getElementById(`agenda-day-${mDay.slug}`)
+    const el = document.getElementById(mDay.slug)
     el.dataset.dayId = mDay.slug.toString()
     el.dataset.dayTs = mDay.ts
     scrollObserver.observe(el)
