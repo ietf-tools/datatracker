@@ -1205,19 +1205,30 @@ class Session(models.Model):
         else:
             return ""
 
+    @staticmethod
+    def _alpha_str(n: int):
+        """Convert integer to string of a-z characters (a, b, c, ..., aa, ab, ...)"""
+        chars = []
+        while True:
+            chars.append(string.ascii_lowercase[n % 26])
+            n //= 26
+            # for 2nd letter and beyond, 0 means end the string
+            if n == 0:
+                break
+            # beyond the first letter, no need to represent a 0, so decrement
+            n -= 1
+        return "".join(chars[::-1])
+
     def docname_token(self):
         sess_mtg = Session.objects.filter(meeting=self.meeting, group=self.group).order_by('pk')
         index = list(sess_mtg).index(self)
-        return 'sess%s' % (string.ascii_lowercase[index])
+        return f"sess{self._alpha_str(index)}"
 
     def docname_token_only_for_multiple(self):
         sess_mtg = Session.objects.filter(meeting=self.meeting, group=self.group).order_by('pk')
         if len(list(sess_mtg)) > 1:
             index = list(sess_mtg).index(self)
-            if index < 26:
-                token = 'sess%s' % (string.ascii_lowercase[index])
-            else:
-                token = 'sess%s%s' % (string.ascii_lowercase[index//26],string.ascii_lowercase[index%26])
+            token = f"sess{self._alpha_str(index)}"
             return token
         return None
         

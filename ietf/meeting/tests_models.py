@@ -10,6 +10,7 @@ from django.test import override_settings
 
 from ietf.group.factories import GroupFactory, GroupHistoryFactory
 from ietf.meeting.factories import MeetingFactory, SessionFactory, AttendedFactory, SessionPresentationFactory
+from ietf.meeting.models import Session
 from ietf.stats.factories import MeetingRegistrationFactory
 from ietf.utils.test_utils import TestCase
 from ietf.utils.timezone import date_today, datetime_today
@@ -146,6 +147,14 @@ class SessionTests(TestCase):
         self.assertEqual(session.chat_room_name(), 'plenary')
         session.chat_room = 'fnord'
         self.assertEqual(session.chat_room_name(), 'fnord')
+
+    def test_alpha_str(self):
+        self.assertEqual(Session._alpha_str(0), "a")
+        self.assertEqual(Session._alpha_str(1), "b")
+        self.assertEqual(Session._alpha_str(25), "z")
+        self.assertEqual(Session._alpha_str(26), "aa")
+        self.assertEqual(Session._alpha_str(27 * 26 - 1), "zz")
+        self.assertEqual(Session._alpha_str(27 * 26), "aaa")
 
     def test_session_recording_url(self):
         group_acronym = "foobar"
