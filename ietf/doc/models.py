@@ -122,7 +122,6 @@ class DocumentInfo(models.Model):
     external_url = models.URLField(blank=True)
     uploaded_filename = models.TextField(blank=True)
     note = models.TextField(blank=True)
-    internal_comments = models.TextField(blank=True)
     rfc_number = models.PositiveIntegerField(blank=True, null=True)  # only valid for type="rfc"
 
     def file_extension(self):

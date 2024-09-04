@@ -3,13 +3,10 @@
 
 
 import datetime
-import io
 import logging                          # pyflakes:ignore
-import os
 import re
 import requests
 import requests_mock
-import shutil
 import time
 import urllib
 
@@ -21,7 +18,6 @@ from oic.oic.message import RegistrationResponse, AuthorizationResponse
 from oic.utils.authn.client import CLIENT_AUTHN_METHOD
 from oidc_provider.models import RSAKey
 from pyquery import PyQuery
-from unittest import skipIf
 from urllib.parse import urlsplit
 
 import django.core.signing
@@ -35,7 +31,6 @@ import debug                            # pyflakes:ignore
 
 from ietf.group.factories import GroupFactory, RoleFactory
 from ietf.group.models import Group, Role, RoleName
-from ietf.ietfauth.htpasswd import update_htpasswd_file
 from ietf.ietfauth.utils import has_role
 from ietf.meeting.factories import MeetingFactory
 from ietf.nomcom.factories import NomComFactory
@@ -45,41 +40,12 @@ from ietf.person.tasks import send_apikey_usage_emails_task
 from ietf.review.factories import ReviewRequestFactory, ReviewAssignmentFactory
 from ietf.review.models import ReviewWish, UnavailablePeriod
 from ietf.stats.models import MeetingRegistration
-from ietf.utils.decorators import skip_coverage
 from ietf.utils.mail import outbox, empty_outbox, get_payload_text
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized
 from ietf.utils.timezone import date_today
 
 
-if os.path.exists(settings.HTPASSWD_COMMAND):
-    skip_htpasswd_command = False
-    skip_message = ""
-else:
-    skip_htpasswd_command = True
-    skip_message = ("Skipping htpasswd test: The binary for htpasswd wasn't found in the\n       "
-                    "location indicated in settings.py.")
-    print("     "+skip_message)
-
 class IetfAuthTests(TestCase):
-    def setUp(self):
-        super().setUp()
-        self.saved_use_python_htdigest = getattr(settings, "USE_PYTHON_HTDIGEST", None)
-        settings.USE_PYTHON_HTDIGEST = True
-
-        self.saved_htpasswd_file = settings.HTPASSWD_FILE
-        self.htpasswd_dir = self.tempdir('htpasswd')
-        settings.HTPASSWD_FILE = os.path.join(self.htpasswd_dir, "htpasswd")
-        io.open(settings.HTPASSWD_FILE, 'a').close() # create empty file
-
-        self.saved_htdigest_realm = getattr(settings, "HTDIGEST_REALM", None)
-        settings.HTDIGEST_REALM = "test-realm"
-
-    def tearDown(self):
-        shutil.rmtree(self.htpasswd_dir)
-        settings.USE_PYTHON_HTDIGEST = self.saved_use_python_htdigest
-        settings.HTPASSWD_FILE = self.saved_htpasswd_file
-        settings.HTDIGEST_REALM = self.saved_htdigest_realm
-        super().tearDown()
 
     def test_index(self):
         self.assertEqual(self.client.get(urlreverse("ietf.ietfauth.views.index")).status_code, 200)
@@ -162,15 +128,6 @@ class IetfAuthTests(TestCase):
 
         return confirm_url
 
-    def username_in_htpasswd_file(self, username):
-        with io.open(settings.HTPASSWD_FILE) as f:
-            for l in f:
-                if l.startswith(username + ":"):
-                    return True
-        with io.open(settings.HTPASSWD_FILE) as f:
-            print(f.read())
-
-        return False
 
 # For the lowered barrier to account creation period, we are disabling this kind of failure
     # def test_create_account_failure(self):
@@ -222,8 +179,6 @@ class IetfAuthTests(TestCase):
         self.assertEqual(User.objects.filter(username=email).count(), 1)
         self.assertEqual(Person.objects.filter(user__username=email).count(), 1)
         self.assertEqual(Email.objects.filter(person__user__username=email).count(), 1)
-
-        self.assertTrue(self.username_in_htpasswd_file(email))
 
         
     # This also tests new account creation.
@@ -490,7 +445,6 @@ class IetfAuthTests(TestCase):
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertEqual(len(q("form .is-invalid")), 0)
-        self.assertTrue(self.username_in_htpasswd_file(user.username))
 
         # reuse reset url
         r = self.client.get(confirm_url)
@@ -573,6 +527,24 @@ class IetfAuthTests(TestCase):
         self.assertIn(secondary_address, to)
         self.assertNotIn(inactive_secondary_address, to)
 
+    def test_reset_password_without_user(self):
+        """Reset password using email address for person without a user account"""
+        url = urlreverse('ietf.ietfauth.views.password_reset')
+        email = EmailFactory()
+        person = email.person
+        # Remove the user object from the person to get a Email/Person without User:
+        person.user = None
+        person.save()
+        # Remove the remaining User record, since reset_password looks for that by username:
+        User.objects.filter(username__iexact=email.address).delete()
+        empty_outbox()
+        r = self.client.post(url, { 'username': email.address })
+        self.assertEqual(len(outbox), 1)
+        lastReceivedEmail = outbox[-1]
+        self.assertIn(email.address, lastReceivedEmail.get('To'))
+        self.assertTrue(lastReceivedEmail.get('Subject').startswith("Confirm password reset"))
+        self.assertContains(r, "Your password reset request has been successfully received", status_code=200)
+
     def test_review_overview(self):
         review_req = ReviewRequestFactory()
         assignment = ReviewAssignmentFactory(review_request=review_req,reviewer=EmailFactory(person__user__username='reviewer'))
@@ -613,23 +585,6 @@ class IetfAuthTests(TestCase):
         })
         self.assertEqual(r.status_code, 302)
         self.assertEqual(ReviewWish.objects.filter(doc=doc, team=review_req.team).count(), 0)
-
-    def test_htpasswd_file_with_python(self):
-        # make sure we test both Python and call-out to binary
-        settings.USE_PYTHON_HTDIGEST = True
-
-        update_htpasswd_file("foo", "passwd")
-        self.assertTrue(self.username_in_htpasswd_file("foo"))
-
-    @skipIf(skip_htpasswd_command, skip_message)
-    @skip_coverage
-    def test_htpasswd_file_with_htpasswd_binary(self):
-        # make sure we test both Python and call-out to binary
-        settings.USE_PYTHON_HTDIGEST = False
-
-        update_htpasswd_file("foo", "passwd")
-        self.assertTrue(self.username_in_htpasswd_file("foo"))
-        
 
     def test_change_password(self):
         chpw_url = urlreverse("ietf.ietfauth.views.change_password")

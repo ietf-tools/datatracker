@@ -17,6 +17,13 @@ def _multiline_to_list(s):
 # Default to "development". Production _must_ set DATATRACKER_SERVER_MODE="production" in the env!
 SERVER_MODE = os.environ.get("DATATRACKER_SERVER_MODE", "development")
 
+# Use X-Forwarded-Proto to determine request.is_secure(). This relies on CloudFlare overwriting the
+# value of the header if an incoming request sets it, which it does:
+# https://developers.cloudflare.com/fundamentals/reference/http-request-headers/#x-forwarded-proto
+# See also, especially the warnings:
+# https://docs.djangoproject.com/en/dev/ref/settings/#secure-proxy-ssl-header
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
 # Secrets
 _SECRET_KEY = os.environ.get("DATATRACKER_DJANGO_SECRET_KEY", None)
 if _SECRET_KEY is not None:
@@ -91,6 +98,16 @@ DATABASES = {
         "OPTIONS": json.loads(os.environ.get("DATATRACKER_DB_OPTS_JSON", "{}")),
     },
 }
+
+# Configure persistent connections. A setting of 0 is Django's default.
+_conn_max_age = os.environ.get("DATATRACKER_DB_CONN_MAX_AGE", "0")
+# A string "none" means unlimited age.
+DATABASES["default"]["CONN_MAX_AGE"] = None if _conn_max_age.lower() == "none" else int(_conn_max_age)
+# Enable connection health checks if DATATRACKER_DB_CONN_HEALTH_CHECK is the string "true"
+_conn_health_checks = bool(
+    os.environ.get("DATATRACKER_DB_CONN_HEALTH_CHECKS", "false").lower() == "true"
+)
+DATABASES["default"]["CONN_HEALTH_CHECKS"] = _conn_health_checks
 
 # DATATRACKER_ADMINS is a newline-delimited list of addresses parseable by email.utils.parseaddr
 _admins_str = os.environ.get("DATATRACKER_ADMINS", None)
@@ -261,8 +278,5 @@ _csrf_trusted_origins_str = os.environ.get("DATATRACKER_CSRF_TRUSTED_ORIGINS")
 if _csrf_trusted_origins_str is not None:
     CSRF_TRUSTED_ORIGINS = _multiline_to_list(_csrf_trusted_origins_str)
 
-# Send logs to console instead of debug_console when running in kubernetes
-LOGGING["loggers"]["django"]["handlers"] = ["console", "mail_admins"]
-LOGGING["loggers"]["django.security"]["handlers"] = ["console"]
-LOGGING["loggers"]["datatracker"]["handlers"] = ["console"]
-LOGGING["loggers"]["celery"]["handlers"] = ["console"]
+# Console logs as JSON instead of plain when running in k8s
+LOGGING["handlers"]["console"]["formatter"] = "json"

@@ -48,6 +48,7 @@ OMITTED_APPS = (
     'ietf.secr.meetings',
     'ietf.secr.proceedings',
     'ietf.ipr',
+    'ietf.status',
 )
 
 class CustomApiTests(TestCase):

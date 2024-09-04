@@ -20,6 +20,7 @@ from ietf.doc.factories import (DocumentFactory, IndividualDraftFactory, Individ
                                 BallotPositionDocEventFactory, BallotDocEventFactory, IRSGBallotDocEventFactory)
 from ietf.doc.templatetags.ietf_filters import can_defer
 from ietf.doc.utils import create_ballot_if_not_open
+from ietf.doc.views_ballot import parse_ballot_edit_return_point
 from ietf.doc.views_doc import document_ballot_content
 from ietf.group.models import Group, Role
 from ietf.group.factories import GroupFactory, RoleFactory, ReviewTeamFactory
@@ -229,6 +230,9 @@ class EditPositionTests(TestCase):
         r = self.client.post(url, dict(position="discuss", discuss="Test discuss text"))
         self.assertEqual(r.status_code, 403)
         
+    # N.B. This test needs to be rewritten to exercise all types of ballots (iesg, irsg, rsab)
+    # and test against the output of the mailtriggers instead of looking for hardcoded values
+    # in the To and CC results. See #7864
     def test_send_ballot_comment(self):
         ad = Person.objects.get(user__username="ad")
         draft = WgDraftFactory(ad=ad,group__acronym='mars')
@@ -806,7 +810,7 @@ class ApproveBallotTests(TestCase):
         ballot = create_ballot_if_not_open(None, draft, ad, 'approve')
         old_ballot_id = ballot.id
         draft.set_state(State.objects.get(used=True, type="draft-iesg", slug="iesg-eva")) 
-        url = urlreverse('ietf.doc.views_ballot.clear_ballot', kwargs=dict(name=draft.name,ballot_type_slug=draft.ballot_open('approve').ballot_type.slug))
+        url = urlreverse('ietf.doc.views_ballot.clear_ballot', kwargs=dict(name=draft.name,ballot_type_slug="approve"))
         login_testing_unauthorized(self, "secretary", url)
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
@@ -816,6 +820,11 @@ class ApproveBallotTests(TestCase):
         self.assertIsNotNone(ballot)
         self.assertEqual(ballot.ballotpositiondocevent_set.count(),0)
         self.assertNotEqual(old_ballot_id, ballot.id)
+        # It's not valid to clear a ballot of a type where there's no matching state
+        url = urlreverse('ietf.doc.views_ballot.clear_ballot', kwargs=dict(name=draft.name,ballot_type_slug="statchg"))
+        r = self.client.post(url,{})
+        self.assertEqual(r.status_code, 404)
+ 
 
     def test_ballot_downref_approve(self):
         ad = Person.objects.get(name="Areað Irector")
@@ -1446,3 +1455,28 @@ class BallotContentTests(TestCase):
         self._assertBallotMessage(q, balloters[0], 'No discuss send log available')
         self._assertBallotMessage(q, balloters[1], 'No comment send log available')
         self._assertBallotMessage(q, old_balloter, 'No ballot position send log available')
+
+class ReturnToUrlTests(TestCase):
+    def test_invalid_return_to_url(self):
+        with self.assertRaises(ValueError):
+            parse_ballot_edit_return_point('/', 'draft-ietf-opsawg-ipfix-tcpo-v6eh', '998718')
+
+        with self.assertRaises(ValueError):
+            parse_ballot_edit_return_point('/a-route-that-does-not-exist/', 'draft-ietf-opsawg-ipfix-tcpo-v6eh', '998718')
+
+        with self.assertRaises(ValueError):
+            parse_ballot_edit_return_point('https://example.com/phishing', 'draft-ietf-opsawg-ipfix-tcpo-v6eh', '998718')
+
+    def test_valid_default_return_to_url(self):
+        self.assertEqual(parse_ballot_edit_return_point(
+            None,
+            'draft-ietf-opsawg-ipfix-tcpo-v6eh',
+            '998718'
+        ), '/doc/draft-ietf-opsawg-ipfix-tcpo-v6eh/ballot/998718/')
+        
+    def test_valid_return_to_url(self):
+        self.assertEqual(parse_ballot_edit_return_point(
+            '/doc/draft-ietf-opsawg-ipfix-tcpo-v6eh/ballot/998718/',
+            'draft-ietf-opsawg-ipfix-tcpo-v6eh',
+            '998718'
+        ), '/doc/draft-ietf-opsawg-ipfix-tcpo-v6eh/ballot/998718/')

@@ -484,7 +484,47 @@ class StatusChangeTests(TestCase):
         verify_relations(doc,'rfc9998','tobcp' )
         verify_relations(doc,'rfc14'  ,'tohist')
         self.assertTrue(doc.latest_event(DocEvent,type="added_comment").desc.startswith('Affected RFC list changed.'))       
+
+    def test_clear_ballot(self):
+        doc = Document.objects.get(name='status-change-imaginary-mid-review')
+        url = urlreverse('ietf.doc.views_ballot.clear_ballot',kwargs=dict(name=doc.name, ballot_type_slug="statchg"))
+        login_testing_unauthorized(self, "secretary", url)
         
+        # Some additional setup
+        doc.relateddocument_set.create(target=Document.objects.get(name='rfc9999'),relationship_id='tois')
+        doc.relateddocument_set.create(target=Document.objects.get(name='rfc9998'),relationship_id='tohist')
+        create_ballot_if_not_open(None, doc, Person.objects.get(user__username="secretary"), "statchg")
+        doc.set_state(State.objects.get(slug='iesgeval',type='statchg'))
+        old_ballot = doc.ballot_open("statchg")
+        self.assertIsNotNone(old_ballot)
+        
+        r = self.client.post(url, dict())
+        self.assertEqual(r.status_code,302)
+        new_ballot = doc.ballot_open("statchg")
+        self.assertIsNotNone(new_ballot)
+        self.assertNotEqual(new_ballot, old_ballot)
+        self.assertEqual(doc.get_state_slug("statchg"),"iesgeval")
+
+    def test_clear_deferred_ballot(self):
+        doc = Document.objects.get(name='status-change-imaginary-mid-review')
+        url = urlreverse('ietf.doc.views_ballot.clear_ballot',kwargs=dict(name=doc.name, ballot_type_slug="statchg"))
+        login_testing_unauthorized(self, "secretary", url)
+        
+        # Some additional setup
+        doc.relateddocument_set.create(target=Document.objects.get(name='rfc9999'),relationship_id='tois')
+        doc.relateddocument_set.create(target=Document.objects.get(name='rfc9998'),relationship_id='tohist')
+        create_ballot_if_not_open(None, doc, Person.objects.get(user__username="secretary"), "statchg")
+        doc.set_state(State.objects.get(slug='defer',type='statchg'))
+        old_ballot = doc.ballot_open("statchg")
+        self.assertIsNotNone(old_ballot)
+        
+        r = self.client.post(url, dict())
+        self.assertEqual(r.status_code,302)
+        new_ballot = doc.ballot_open("statchg")
+        self.assertIsNotNone(new_ballot)
+        self.assertNotEqual(new_ballot, old_ballot)
+        self.assertEqual(doc.get_state_slug("statchg"),"iesgeval")
+
     def setUp(self):
         super().setUp()
         IndividualRfcFactory(rfc_number=14,std_level_id='unkn') # draft was never issued

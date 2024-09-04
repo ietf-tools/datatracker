@@ -429,6 +429,7 @@ def directauth(request):
                 data = None
 
         if raw_data is None or data is None:
+            log.log("Request body is either missing or invalid")
             return HttpResponse(json.dumps(dict(result="failure",reason="invalid post")), content_type='application/json')
 
         authtoken = data.get('authtoken', None)
@@ -436,9 +437,11 @@ def directauth(request):
         password = data.get('password', None)
 
         if any([item is None for item in (authtoken, username, password)]):
+            log.log("One or more mandatory fields are missing: authtoken, username, password")
             return HttpResponse(json.dumps(dict(result="failure",reason="invalid post")), content_type='application/json')
 
         if not is_valid_token("ietf.api.views.directauth", authtoken):
+            log.log("Auth token provided is invalid")
             return HttpResponse(json.dumps(dict(result="failure",reason="invalid authtoken")), content_type='application/json')
         
         user_query = User.objects.filter(username__iexact=username)
@@ -449,18 +452,20 @@ def directauth(request):
 
 
         # Note well that we are using user.username, not what was passed to the API.
-        if user_query.count() == 1 and authenticate(username = user_query.first().username, password = password):
+        user_count = user_query.count()
+        if user_count == 1 and authenticate(username = user_query.first().username, password = password):
             user = user_query.get()
             if user_query.filter(person__isnull=True).count() == 1: # Can't inspect user.person direclty here
-                log.log(f"Direct auth of personless user {user.pk}:{user.username}")
+                log.log(f"Direct auth success (personless user): {user.pk}:{user.username}")
             else:
-                log.log(f"Direct auth: {user.pk}:{user.person.plain_name()}")
+                log.log(f"Direct auth success: {user.pk}:{user.person.plain_name()}")
             return HttpResponse(json.dumps(dict(result="success")), content_type='application/json')
 
-        log.log(f"Direct auth failure: {username}")
+        log.log(f"Direct auth failure: {username} ({user_count} user(s) found)")
         return HttpResponse(json.dumps(dict(result="failure", reason="authentication failed")), content_type='application/json') 
 
     else:
+        log.log(f"Request must be POST: {request.method} received")
         return HttpResponse(status=405)
 
 

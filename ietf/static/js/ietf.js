@@ -91,6 +91,27 @@ $(document)
         //     });
     });
 
+function overflowShadows(el) {
+    function handleScroll(){
+        const canScrollUp = el.scrollTop > 0
+        const canScrollDown = el.offsetHeight + el.scrollTop < el.scrollHeight
+        el.classList.toggle("overflow-shadows--both", canScrollUp && canScrollDown)
+        el.classList.toggle("overflow-shadows--top-only", canScrollUp && !canScrollDown)
+        el.classList.toggle("overflow-shadows--bottom-only", !canScrollUp && canScrollDown)
+    }
+
+    el.addEventListener("scroll", handleScroll, {passive: true})
+    handleScroll()
+
+    const observer = new IntersectionObserver(handleScroll)
+    observer.observe(el) // el won't have scrollTop etc when hidden, so we need to recalculate when it's revealed
+
+    return () => {
+        el.removeEventListener("scroll", handleScroll)
+        observer.unobserve(el)
+    }
+}
+
 $(document)
     .ready(function () {
         // load data for the menu
@@ -108,7 +129,7 @@ $(document)
                     }
                     attachTo.find(".dropdown-menu")
                         .remove();
-                    var menu = ['<ul class="dropdown-menu ms-n1 mt-n1">'];
+                    var menu = ['<ul class="dropdown-menu ms-n1 mt-n1 overflow-shadows">'];
                     var groups = data[parentId];
                     var gtype = "";
                     for (var i = 0; i < groups.length; ++i) {
@@ -127,6 +148,8 @@ $(document)
                         attachTo.closest(".dropdown-menu");
                     }
                     attachTo.append(menu.join(""));
+
+                    attachTo.find(".overflow-shadows").each(function(){ overflowShadows(this)})
                 }
             }
         });

@@ -65,7 +65,6 @@ from ietf.group.models import Role, Group
 from ietf.ietfauth.forms import ( RegistrationForm, PasswordForm, ResetPasswordForm, TestEmailForm,
                                 ChangePasswordForm, get_person_form, RoleEmailForm,
                                 NewEmailForm, ChangeUsernameForm, PersonPasswordForm)
-from ietf.ietfauth.htpasswd import update_htpasswd_file
 from ietf.ietfauth.utils import has_role
 from ietf.name.models import ExtResourceName
 from ietf.nomcom.models import NomCom
@@ -222,8 +221,6 @@ def confirm_account(request, auth):
             user = User.objects.create(username=email, email=email)
             user.set_password(password)
             user.save()
-            # password is also stored in htpasswd file
-            update_htpasswd_file(email, password)
 
             # make sure the rest of the person infrastructure is
             # well-connected
@@ -494,9 +491,19 @@ def password_reset(request):
             if not user:
                 # try to find user ID from the email address
                 email = Email.objects.filter(address=submitted_username).first()
-                if email and email.person and email.person.user:
-                    user = email.person.user
-
+                if email and email.person:
+                    if email.person.user:
+                        user = email.person.user
+                    else: 
+                        # Create a User record with this (conditioned by way of Email) username
+                        # Don't bother setting the name or email fields on User - rely on the
+                        # Person pointer.
+                        user = User.objects.create(
+                            username=email.address.lower(), 
+                            is_active=True,
+                        )
+                        email.person.user = user
+                        email.person.save()
             if user and user.person.email_set.filter(active=True).exists():
                 data = {
                     'username': user.username,
@@ -552,8 +559,6 @@ def confirm_password_reset(request, auth):
 
             user.set_password(password)
             user.save()
-            # password is also stored in htpasswd file
-            update_htpasswd_file(user.username, password)
 
             success = True
     else:
@@ -693,8 +698,6 @@ def change_password(request):
             
             user.set_password(new_password)
             user.save()
-            # password is also stored in htpasswd file
-            update_htpasswd_file(user.username, new_password)
             # keep the session
             update_session_auth_hash(request, user)
 
@@ -731,13 +734,10 @@ def change_username(request):
         form = ChangeUsernameForm(user, request.POST)
         if form.is_valid():
             new_username = form.cleaned_data["username"]
-            password = form.cleaned_data["password"]
             assert new_username in emails
 
             user.username = new_username.lower()
             user.save()
-            # password is also stored in htpasswd file
-            update_htpasswd_file(user.username, password)
             # keep the session
             update_session_auth_hash(request, user)
 

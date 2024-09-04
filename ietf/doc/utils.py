@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2011-2020, All Rights Reserved
+# Copyright The IETF Trust 2011-2024, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -19,6 +19,7 @@ from zoneinfo import ZoneInfo
 
 from django.conf import settings
 from django.contrib import messages
+from django.db.models import OuterRef
 from django.forms import ValidationError
 from django.http import Http404
 from django.template.loader import render_to_string
@@ -39,7 +40,7 @@ from ietf.doc.models import TelechatDocEvent, DocumentActionHolder, EditedAuthor
 from ietf.name.models import DocReminderTypeName, DocRelationshipName
 from ietf.group.models import Role, Group, GroupFeatures
 from ietf.ietfauth.utils import has_role, is_authorized_in_doc_stream, is_individual_draft_author, is_bofreq_editor
-from ietf.person.models import Person
+from ietf.person.models import Email, Person
 from ietf.review.models import ReviewWish
 from ietf.utils import draft, log
 from ietf.utils.mail import parseaddr, send_mail
@@ -1045,6 +1046,8 @@ def build_file_urls(doc: Union[Document, DocHistory]):
 
         file_urls = []
         for t in found_types:
+            if t == "ps": # Postscript might have been submitted but should not be displayed in the list of URLs
+                continue
             label = "plain text" if t == "txt" else t
             file_urls.append((label, base + doc.name + "." + t))
 
@@ -1227,6 +1230,7 @@ def fuzzy_find_documents(name, rev=None):
     FoundDocuments = namedtuple('FoundDocuments', 'documents matched_name matched_rev')
     return FoundDocuments(docs, name, rev)
 
+
 def bibxml_for_draft(doc, rev=None):
 
     if rev is not None and rev != doc.rev:
@@ -1301,9 +1305,13 @@ class DraftAliasGenerator:
     def get_draft_authors_emails(self, doc):
         """Get list of authors for the given draft."""
         author_emails = set()
-        for author in doc.documentauthor_set.all():
-            if author.email and author.email.email_address():
-                author_emails.add(author.email.email_address())
+        for email in Email.objects.filter(documentauthor__document=doc):
+            if email.active:
+                author_emails.add(email.address)
+            elif email.person:
+                person_email = email.person.email_address()
+                if person_email:
+                    author_emails.add(person_email)
         return author_emails
 
     def get_draft_notify_emails(self, doc):
@@ -1336,59 +1344,84 @@ class DraftAliasGenerator:
                     notify_emails.add(email)
         return notify_emails
 
+    def _yield_aliases_for_draft(self, doc)-> Iterator[tuple[str, list[str]]]:
+        alias = doc.name
+        all = set()
+
+        # no suffix and .authors are the same list
+        emails = self.get_draft_authors_emails(doc)
+        all.update(emails)
+        if emails:
+            yield alias, list(emails)
+            yield alias + ".authors", list(emails)
+
+        # .chairs = group chairs
+        emails = self.get_draft_chair_emails(doc)
+        if emails:
+            all.update(emails)
+            yield alias + ".chairs", list(emails)
+
+        # .ad = sponsoring AD / WG AD (WG document)
+        emails = self.get_draft_ad_emails(doc)
+        if emails:
+            all.update(emails)
+            yield alias + ".ad", list(emails)
+
+        # .notify = notify email list from the Document
+        emails = self.get_draft_notify_emails(doc)
+        if emails:
+            all.update(emails)
+            yield alias + ".notify", list(emails)
+
+        # .shepherd = shepherd email from the Document
+        emails = self.get_draft_shepherd_email(doc)
+        if emails:
+            all.update(emails)
+            yield alias + ".shepherd", list(emails)
+
+        # .all = everything from above
+        if all:
+            yield alias + ".all", list(all)
+
     def __iter__(self) -> Iterator[tuple[str, list[str]]]:
         # Internet-Drafts with active status or expired within self.days
         show_since = timezone.now() - datetime.timedelta(days=self.days)
         drafts = self.draft_queryset
-        active_drafts = drafts.filter(states__slug='active')
-        inactive_recent_drafts = drafts.exclude(states__slug='active').filter(expires__gte=show_since)
-        interesting_drafts = active_drafts | inactive_recent_drafts
 
-        for this_draft in interesting_drafts.distinct().iterator():
+        # Look up the draft-active state properly. Doing this with
+        # states__type_id, states__slug directly in the `filter()`
+        # works, but it does not work as expected in `exclude()`.
+        active_state = State.objects.get(type_id="draft", slug="active")
+        active_pks = []  # build a static list of the drafts we actually returned as "active"
+        active_drafts = drafts.filter(states=active_state)
+        for this_draft in active_drafts:
+            active_pks.append(this_draft.pk)
+            for alias, addresses in self._yield_aliases_for_draft(this_draft):
+                yield alias, addresses
+
+        # Annotate with the draft state slug so we can check for drafts that
+        # have become RFCs
+        inactive_recent_drafts = (
+            drafts.exclude(pk__in=active_pks)  # don't re-filter by state, states may have changed during the run!
+            .filter(expires__gte=show_since)
+            .annotate(
+                # Why _default_manager instead of objects? See:
+                # https://docs.djangoproject.com/en/4.2/topics/db/managers/#django.db.models.Model._default_manager
+                draft_state_slug=Document.states.through._default_manager.filter(
+                    document__pk=OuterRef("pk"),
+                    state__type_id="draft"
+                ).values("state__slug"),
+            )
+        )
+        for this_draft in inactive_recent_drafts:
             # Omit drafts that became RFCs, unless they were published in the last DEFAULT_YEARS
-            if this_draft.get_state_slug() == "rfc":
+            if this_draft.draft_state_slug == "rfc":
                 rfc = this_draft.became_rfc()
                 log.assertion("rfc is not None")
                 if rfc.latest_event(type='published_rfc').time < show_since:
                     continue
-
-            alias = this_draft.name
-            all = set()
-
-            # no suffix and .authors are the same list
-            emails = self.get_draft_authors_emails(this_draft)
-            all.update(emails)
-            if emails:
-                yield alias, list(emails)
-                yield alias + ".authors", list(emails)
-
-            # .chairs = group chairs
-            emails = self.get_draft_chair_emails(this_draft)
-            if emails:
-                all.update(emails)
-                yield alias + ".chairs", list(emails)
-
-            # .ad = sponsoring AD / WG AD (WG document)
-            emails = self.get_draft_ad_emails(this_draft)
-            if emails:
-                all.update(emails)
-                yield alias + ".ad", list(emails)
-
-            # .notify = notify email list from the Document
-            emails = self.get_draft_notify_emails(this_draft)
-            if emails:
-                all.update(emails)
-                yield alias + ".notify", list(emails)
-
-            # .shepherd = shepherd email from the Document
-            emails = self.get_draft_shepherd_email(this_draft)
-            if emails:
-                all.update(emails)
-                yield alias + ".shepherd", list(emails)
-
-            # .all = everything from above
-            if all:
-                yield alias + ".all", list(all)
+            for alias, addresses in self._yield_aliases_for_draft(this_draft):
+                yield alias, addresses
 
 
 def get_doc_email_aliases(name: Optional[str] = None):

@@ -4,6 +4,8 @@
 {% load origin %}
 {% load static %}
 {% load ietf_filters textfilters %}
+{% load document_type_badge %}
+{% load django_vite %}
 {% origin %}
 <html data-bs-theme="auto" lang="en">
     <head>
@@ -28,6 +30,7 @@
             {% if html %}
                 <link rel="stylesheet" href="{% static 'ietf/css/document_html_txt.css' %}">
             {% endif %}
+            {% vite_asset 'client/embedded.js' %}
             <script src="{% static 'ietf/js/document_html.js' %}"></script>
             <script src="{% static 'ietf/js/theme.js' %}"></script>
         {% endif %}
@@ -51,6 +54,7 @@
     </head>
     <body>
         {% analytical_body_top %}
+        {% include "base/status.html" %}
         <div class="btn-toolbar sidebar-toolbar position-fixed top-0 end-0 m-2 m-lg-3 d-print-none">
             <div class="dropdown">
                 <button class="btn btn-outline-secondary btn-sm me-1 dropdown-toggle d-flex align-items-center"
@@ -104,6 +108,7 @@
                     {{ doc.name }}-{{ doc.rev }}
                 {% endif %}
                 <br class="d-sm-none">
+
                 <span class="ms-sm-3 badge rounded-pill badge-{% if not snapshot %}{{ doc|std_level_to_label_format }}{% else %}draft{% endif %}">
                     {% if not snapshot %}
                         {{ doc.std_level }}
@@ -182,13 +187,7 @@
                                     {{ doc.name }}-{{ doc.rev }}
                                 {% endif %}
                                 <br>
-                                <span class="badge rounded-pill badge-{% if not snapshot %}{{ doc|std_level_to_label_format }}{% else %}draft{% endif %}">
-                                    {% if not snapshot %}
-                                        {{ doc.std_level }}
-                                    {% else %}
-                                        Internet-Draft
-                                    {% endif %}
-                                </span>
+                                {% document_type_badge doc snapshot submission resurrected_by %}
                             </p>
                         </div>
                         {% if request.COOKIES.htmlconf and request.COOKIES.htmlconf != 'html' and html %}

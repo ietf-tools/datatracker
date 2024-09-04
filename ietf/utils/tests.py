@@ -36,6 +36,7 @@ from django.urls import reverse as urlreverse
 
 import debug                            # pyflakes:ignore
 
+from ietf.admin.sites import AdminSite
 from ietf.person.name import name_parts, unidecode_name
 from ietf.submit.tests import submission_file
 from ietf.utils.draft import PlaintextDraft, getmeta
@@ -325,7 +326,7 @@ class AdminTestCase(TestCase):
         User.objects.create_superuser('admin', 'admin@example.org', 'admin+password')
         self.client.login(username='admin', password='admin+password')
         rtop = self.client.get("/admin/")
-        self.assertContains(rtop, 'Django administration')
+        self.assertContains(rtop, AdminSite.site_header())
         for name in self.apps:
             app_name = self.apps[name]
             self.assertContains(rtop, name)
@@ -679,3 +680,12 @@ class SearchableFieldTests(TestCase):
         self.assertTrue(changed_form.has_changed())
         unchanged_form = TestForm(initial={'test_field': [1]}, data={'test_field': [1]})
         self.assertFalse(unchanged_form.has_changed())
+
+
+class HealthTests(TestCase):
+    def test_health(self):
+        self.assertEqual(
+            self.client.get("/health/").status_code,
+            200,
+        )
+            

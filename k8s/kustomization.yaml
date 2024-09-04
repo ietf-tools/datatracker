@@ -3,11 +3,14 @@ namePrefix: dt-
 configMapGenerator:
   - name: files-cfgmap
     files:
+      - nginx-logging.conf
+      - nginx-auth.conf
+      - nginx-datatracker.conf
       - settings_local.py
 resources:
+  - auth.yaml
   - beat.yaml
   - celery.yaml
   - datatracker.yaml
-  - django-config.yaml
   - memcached.yaml
   - rabbitmq.yaml

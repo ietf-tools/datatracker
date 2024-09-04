@@ -1,0 +1,18 @@
+{% load origin %}
+{% load ietf_filters static %}
+{% origin %}
+<meta name="color-scheme" content="light dark">
+<style type="text/css">
+    {# this template doesn't inherit from base.html so it has its own styles #}
+    body {background:transparent;font-family:sans-serif}
+    h1{font-size:18px;display:inline}
+    p{font-size:14px;display:inline}
+    .unimportant{opacity:0.6}
+</style>
+<!-- This page is intended to be iframed, and is only for non-JavaScript browsers. -->
+{% if title %}
+    <h1>{{ title }}</h1>
+    <p>{{ body }} <a href="{{ url }}" target="_top" aria-label="read more about {{title}}">read more</a><br /><span class="unimportant">{{ date }}</span></p>
+{% else %}
+    <p class="unimportant">No site status message.</p>
+{% endif %}

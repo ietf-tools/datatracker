@@ -856,10 +856,10 @@ def badgeify(blob):
     Add an appropriate bootstrap badge around "text", based on its contents.
     """
     config = [
-        (r"rejected|not ready", "danger", "x-lg"),
+        (r"rejected|not ready|serious issues", "danger", "x-lg"),
         (r"complete|accepted|ready", "success", ""),
         (r"has nits|almost ready", "info", "info-lg"),
-        (r"has issues", "warning", "exclamation-lg"),
+        (r"has issues|on the right track", "warning", "exclamation-lg"),
         (r"assigned", "info", "person-plus-fill"),
         (r"will not review|overtaken by events|withdrawn", "secondary", "dash-lg"),
         (r"no response", "warning", "question-lg"),
