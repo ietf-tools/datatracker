@@ -104,7 +104,7 @@ def preprocess_assignments_for_agenda(assignments_queryset, meeting, extra_prefe
                 queryset=add_event_info_to_session_qs(Session.objects.all().prefetch_related(
                     'group', 'group__charter', 'group__charter__group',
                     Prefetch('materials',
-                             queryset=Document.objects.exclude(states__type=F("type"), states__slug='deleted').order_by('sessionpresentation__order').prefetch_related('states'),
+                             queryset=Document.objects.exclude(states__type=F("type"), states__slug='deleted').order_by('presentations__order').prefetch_related('states'),
                              to_attr='prefetched_active_materials'
                     )
                 ))
@@ -317,10 +317,21 @@ class AgendaFilterOrganizer(AgendaKeywordTool):
         groups = set(self._get_group(s) for s in self.sessions
                      if s
                      and self._get_group(s))
-        log.assertion('len(groups) == len(set(g.acronym for g in groups))')  # no repeated acros
+        # Verify that we're not using the same acronym for more than one distinct group, accounting for
+        # the possibility that some groups are GroupHistory instances. This assertion will fail if a Group
+        # and GroupHistory for the same group have a different acronym - in that event, the filter will
+        # not match the meeting display, so we should be alerted that this has actually occurred.
+        log.assertion(
+            "len(set(getattr(g, 'group_id', g.id) for g in groups)) "
+            "== len(set(g.acronym for g in groups))"
+        )
 
         group_parents = set(self._get_group_parent(g) for g in groups if self._get_group_parent(g))
-        log.assertion('len(group_parents) == len(set(gp.acronym for gp in group_parents))')  # no repeated acros
+        # See above for explanation of this assertion
+        log.assertion(
+            "len(set(getattr(gp, 'group_id', gp.id) for gp in group_parents)) "
+            "== len(set(gp.acronym for gp in group_parents))"
+        )
 
         all_groups = groups.union(group_parents)
         all_groups.difference_update([g for g in all_groups if g.acronym in self.exclude_acronyms])
@@ -879,7 +890,7 @@ def make_materials_directories(meeting):
     # was merged with the regular datatracker code; then in secr/proceedings/views.py
     # in make_directories())
     saved_umask = os.umask(0)   
-    for leaf in ('slides','agenda','minutes','id','rfc','bluesheets'):
+    for leaf in ('slides','agenda','minutes', 'narrativeminutes', 'id','rfc','bluesheets'):
         target = os.path.join(path,leaf)
         if not os.path.exists(target):
             os.makedirs(target)
@@ -1088,6 +1099,7 @@ def create_interim_session_conferences(sessions):
             try:
                 confs = meetecho_manager.create(
                     group=session.group,
+                    session_id=session.pk,
                     description=str(session),
                     start_time=ts.utc_start_time(),
                     duration=ts.duration,

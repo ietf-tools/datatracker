@@ -2,8 +2,10 @@
 import datetime
 import debug  # pyflakes:ignore
 
-from unittest.mock import patch
+from pathlib import Path
+from unittest.mock import call, patch
 
+from django.conf import settings
 from django.db import IntegrityError
 from django.test.utils import override_settings
 from django.utils import timezone
@@ -11,12 +13,13 @@ from django.utils import timezone
 from ietf.group.factories import GroupFactory, RoleFactory
 from ietf.name.models import DocTagName
 from ietf.person.factories import PersonFactory
-from ietf.utils.test_utils import TestCase, name_of_file_containing
+from ietf.utils.test_utils import TestCase, name_of_file_containing, reload_db_objects
 from ietf.person.models import Person
 from ietf.doc.factories import DocumentFactory, WgRfcFactory, WgDraftFactory
-from ietf.doc.models import State, DocumentActionHolder, DocumentAuthor, Document
+from ietf.doc.models import State, DocumentActionHolder, DocumentAuthor
 from ietf.doc.utils import (update_action_holders, add_state_change_event, update_documentauthors,
-                            fuzzy_find_documents, rebuild_reference_relations, build_file_urls)
+                            fuzzy_find_documents, rebuild_reference_relations, build_file_urls,
+                            ensure_draft_bibxml_path_exists, update_or_create_draft_bibxml_file)
 from ietf.utils.draft import Draft, PlaintextDraft
 from ietf.utils.xmldraft import XMLDraft
 
@@ -272,41 +275,49 @@ class MiscTests(TestCase):
         self.assertEqual(docauth.country, '')
 
     def do_fuzzy_find_documents_rfc_test(self, name):
-        rfc = WgRfcFactory(name=name, create_revisions=(0, 1, 2))
-        rfc = Document.objects.get(pk=rfc.pk)  # clear out any cached values
+        draft = WgDraftFactory(name=name, create_revisions=(0, 1, 2))
+        rfc = WgRfcFactory()
+        draft.relateddocument_set.create(relationship_id="became_rfc", target=rfc)
+        draft, rfc = reload_db_objects(draft, rfc)
 
         # by canonical name
-        found = fuzzy_find_documents(rfc.canonical_name(), None)
-        self.assertCountEqual(found.documents, [rfc])
-        self.assertEqual(found.matched_rev, None)
-        self.assertEqual(found.matched_name, rfc.canonical_name())
-
-        # by draft name, no rev
         found = fuzzy_find_documents(rfc.name, None)
         self.assertCountEqual(found.documents, [rfc])
         self.assertEqual(found.matched_rev, None)
         self.assertEqual(found.matched_name, rfc.name)
 
+        # by draft name, no rev
+        found = fuzzy_find_documents(draft.name, None)
+        self.assertCountEqual(found.documents, [draft])
+        self.assertEqual(found.matched_rev, None)
+        self.assertEqual(found.matched_name, draft.name)
+
         # by draft name, latest rev
-        found = fuzzy_find_documents(rfc.name, '02')
-        self.assertCountEqual(found.documents, [rfc])
+        found = fuzzy_find_documents(draft.name, '02')
+        self.assertCountEqual(found.documents, [draft])
         self.assertEqual(found.matched_rev, '02')
-        self.assertEqual(found.matched_name, rfc.name)
+        self.assertEqual(found.matched_name, draft.name)
 
         # by draft name, earlier rev
-        found = fuzzy_find_documents(rfc.name, '01')
-        self.assertCountEqual(found.documents, [rfc])
+        found = fuzzy_find_documents(draft.name, '01')
+        self.assertCountEqual(found.documents, [draft])
         self.assertEqual(found.matched_rev, '01')
-        self.assertEqual(found.matched_name, rfc.name)
+        self.assertEqual(found.matched_name, draft.name)
 
         # wrong name or revision
-        found = fuzzy_find_documents(rfc.name + '-incorrect')
+        found = fuzzy_find_documents(draft.name + '-incorrect')
         self.assertCountEqual(found.documents, [], 'Should not find document that does not match')
-        found = fuzzy_find_documents(rfc.name + '-incorrect', '02')
+        found = fuzzy_find_documents(draft.name + '-incorrect', '02')
         self.assertCountEqual(found.documents, [], 'Still should not find document, even with a version')
-        found = fuzzy_find_documents(rfc.name, '22')
-        self.assertCountEqual(found.documents, [rfc],
+        found = fuzzy_find_documents(draft.name, '22')
+        self.assertCountEqual(found.documents, [draft],
                               'Should find document even if rev does not exist')
+        
+        # by rfc name mistakenly trying to provide a revision
+        found = fuzzy_find_documents(rfc.name+"-22")
+        self.assertCountEqual(found.documents, [rfc], "Should ignore versions when fuzzyfinding RFCs" )
+        found = fuzzy_find_documents(rfc.name,"22")
+        self.assertCountEqual(found.documents, [rfc], "Should ignore versions when fuzzyfinding RFCs" )
 
 
     def test_fuzzy_find_documents(self):
@@ -346,29 +357,29 @@ class RebuildReferenceRelationsTests(TestCase):
         super().setUp()
         self.doc = WgDraftFactory()  # document under test
         # Other documents that should be found by rebuild_reference_relations
-        self.normative, self.informative, self.unknown = WgRfcFactory.create_batch(3)
+        self.normative, self.informative, self.unknown = WgRfcFactory.create_batch(3) # AMHERE - these need to have rfc names.
         for relationship in ['refnorm', 'refinfo', 'refunk', 'refold']:
             self.doc.relateddocument_set.create(
-                target=WgRfcFactory().docalias.first(),
+                target=WgRfcFactory(),
                 relationship_id=relationship,
             )
         self.updated = WgRfcFactory()  # related document that should be left alone
-        self.doc.relateddocument_set.create(target=self.updated.docalias.first(), relationship_id='updates')
+        self.doc.relateddocument_set.create(target=self.updated, relationship_id='updates')
         self.assertCountEqual(self.doc.relateddocument_set.values_list('relationship__slug', flat=True),
                               ['refnorm', 'refinfo', 'refold', 'refunk', 'updates'],
                               'Test conditions set up incorrectly: wrong prior document relationships')
         for other_doc in [self.normative, self.informative, self.unknown]:
             self.assertEqual(
-                self.doc.relateddocument_set.filter(target__name=other_doc.canonical_name()).count(),
+                self.doc.relateddocument_set.filter(target__name=other_doc.name).count(),
                 0,
                 'Test conditions set up incorrectly: new documents already related',
             )
 
     def _get_refs_return_value(self):
         return {
-            self.normative.canonical_name(): Draft.REF_TYPE_NORMATIVE,
-            self.informative.canonical_name(): Draft.REF_TYPE_INFORMATIVE,
-            self.unknown.canonical_name(): Draft.REF_TYPE_UNKNOWN,
+            self.normative.name: Draft.REF_TYPE_NORMATIVE,
+            self.informative.name: Draft.REF_TYPE_INFORMATIVE,
+            self.unknown.name: Draft.REF_TYPE_UNKNOWN,
             'draft-not-found': Draft.REF_TYPE_NORMATIVE,
         }
 
@@ -399,7 +410,7 @@ class RebuildReferenceRelationsTests(TestCase):
         self.assertEqual(
             result,
             {
-                'warnings': ['There were 1 references with no matching DocAlias'],
+                'warnings': ['There were 1 references with no matching Document'],
                 'unfound': ['draft-not-found'],
             }
         )
@@ -407,10 +418,10 @@ class RebuildReferenceRelationsTests(TestCase):
         self.assertCountEqual(
             self.doc.relateddocument_set.values_list('target__name', 'relationship__slug'),
             [
-                (self.normative.canonical_name(), 'refnorm'),
-                (self.informative.canonical_name(), 'refinfo'),
-                (self.unknown.canonical_name(), 'refunk'),
-                (self.updated.docalias.first().name, 'updates'),
+                (self.normative.name, 'refnorm'),
+                (self.informative.name, 'refinfo'),
+                (self.unknown.name, 'refunk'),
+                (self.updated.name, 'updates'),
             ]
         )
 
@@ -430,7 +441,7 @@ class RebuildReferenceRelationsTests(TestCase):
         self.assertEqual(
             result,
             {
-                'warnings': ['There were 1 references with no matching DocAlias'],
+                'warnings': ['There were 1 references with no matching Document'],
                 'unfound': ['draft-not-found'],
             }
         )
@@ -438,10 +449,10 @@ class RebuildReferenceRelationsTests(TestCase):
         self.assertCountEqual(
             self.doc.relateddocument_set.values_list('target__name', 'relationship__slug'),
             [
-                (self.normative.canonical_name(), 'refnorm'),
-                (self.informative.canonical_name(), 'refinfo'),
-                (self.unknown.canonical_name(), 'refunk'),
-                (self.updated.docalias.first().name, 'updates'),
+                (self.normative.name, 'refnorm'),
+                (self.informative.name, 'refinfo'),
+                (self.unknown.name, 'refunk'),
+                (self.updated.name, 'updates'),
             ]
         )
 
@@ -462,7 +473,7 @@ class RebuildReferenceRelationsTests(TestCase):
         self.assertEqual(
             result,
             {
-                'warnings': ['There were 1 references with no matching DocAlias'],
+                'warnings': ['There were 1 references with no matching Document'],
                 'unfound': ['draft-not-found'],
             }
         )
@@ -470,9 +481,55 @@ class RebuildReferenceRelationsTests(TestCase):
         self.assertCountEqual(
             self.doc.relateddocument_set.values_list('target__name', 'relationship__slug'),
             [
-                (self.normative.canonical_name(), 'refnorm'),
-                (self.informative.canonical_name(), 'refinfo'),
-                (self.unknown.canonical_name(), 'refunk'),
-                (self.updated.docalias.first().name, 'updates'),
+                (self.normative.name, 'refnorm'),
+                (self.informative.name, 'refinfo'),
+                (self.unknown.name, 'refunk'),
+                (self.updated.name, 'updates'),
             ]
         )
+
+
+class DraftBibxmlTests(TestCase):
+    settings_temp_path_overrides = TestCase.settings_temp_path_overrides + ["BIBXML_BASE_PATH"]
+
+    def test_ensure_draft_bibxml_path_exists(self):
+        expected = Path(settings.BIBXML_BASE_PATH) / "bibxml-ids"
+        self.assertFalse(expected.exists())
+        ensure_draft_bibxml_path_exists()
+        self.assertTrue(expected.is_dir())  # false if does not exist or is not dir
+
+    @patch("ietf.doc.utils.bibxml_for_draft", return_value="This\ris\nmy\r\nbibxml")
+    def test_create_draft_bibxml_file(self, mock):
+        bibxml_path = Path(settings.BIBXML_BASE_PATH) / "bibxml-ids"
+        bibxml_path.mkdir(exist_ok=False)  # expect to start with a clean slate
+        
+        doc = DocumentFactory()
+        ref_path = bibxml_path / f"reference.I-D.{doc.name}-26.xml"  # we're pretending it's rev 26
+        
+        update_or_create_draft_bibxml_file(doc, "26")
+        self.assertEqual(mock.call_count, 1)
+        self.assertEqual(mock.call_args, call(doc, "26"))
+        self.assertEqual(ref_path.read_text(), "This\nis\nmy\nbibxml")
+
+    @patch("ietf.doc.utils.bibxml_for_draft", return_value="This\ris\nmy\r\nbibxml")
+    def test_update_draft_bibxml_file(self, mock):
+        bibxml_path = Path(settings.BIBXML_BASE_PATH) / "bibxml-ids"
+        bibxml_path.mkdir(exist_ok=False)  # expect to start with a clean slate
+        
+        doc = DocumentFactory()
+        ref_path = bibxml_path / f"reference.I-D.{doc.name}-26.xml"  # we're pretending it's rev 26
+        ref_path.write_text("Old data")
+
+        # should replace it
+        update_or_create_draft_bibxml_file(doc, "26")
+        self.assertEqual(mock.call_count, 1)
+        self.assertEqual(mock.call_args, call(doc, "26"))
+        self.assertEqual(ref_path.read_text(), "This\nis\nmy\nbibxml")
+
+        # should leave it alone if it differs only by leading/trailing whitespace
+        mock.reset_mock()
+        mock.return_value = "   \n  This\nis\nmy\nbibxml  "
+        update_or_create_draft_bibxml_file(doc, "26")
+        self.assertEqual(mock.call_count, 1)
+        self.assertEqual(mock.call_args, call(doc, "26"))
+        self.assertEqual(ref_path.read_text(), "This\nis\nmy\nbibxml")

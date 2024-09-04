@@ -3,7 +3,6 @@
 
 
 import re
-import base64
 import datetime
 
 from typing import Optional, cast         # pyflakes:ignore
@@ -22,31 +21,30 @@ from django.views.decorators.csrf import csrf_exempt
 
 import debug                            # pyflakes:ignore
 
-from ietf.doc.models import Document, DocAlias, AddedMessageEvent
+from ietf.doc.models import Document
 from ietf.doc.forms import ExtResourceForm
 from ietf.group.models import Group
 from ietf.group.utils import group_features_group_filter
 from ietf.ietfauth.utils import has_role, role_required
 from ietf.mailtrigger.utils import gather_address_lists
-from ietf.message.models import Message, MessageAttachment
 from ietf.person.models import Email
 from ietf.submit.forms import (SubmissionAutoUploadForm, AuthorForm, SubmitterForm, EditSubmissionForm,
-                               PreapprovalForm, ReplacesForm, SubmissionEmailForm, MessageModelForm,
+                               PreapprovalForm, ReplacesForm,
                                DeprecatedSubmissionAutoUploadForm, SubmissionManualUploadForm)
-from ietf.submit.mail import send_full_url, send_manual_post_request, add_submission_email, get_reply_to
+from ietf.submit.mail import send_full_url, send_manual_post_request
 from ietf.submit.models import (Submission, Preapproval, SubmissionExtResource,
-    DraftSubmissionStateName, SubmissionEmailEvent )
+    DraftSubmissionStateName )
 from ietf.submit.tasks import process_uploaded_submission_task, process_and_accept_uploaded_submission_task, poke
 from ietf.submit.utils import ( approvable_submissions_for_user, preapprovals_for_user,
     recently_approved_by_user, validate_submission, create_submission_event, docevent_from_submission,
     post_submission, cancel_submission, rename_submission_files, remove_submission_files, get_draft_meta,
     get_submission, fill_in_submission, apply_checkers, save_files, clear_existing_files,
     check_submission_revision_consistency, accept_submission, accept_submission_requires_group_approval,
-    accept_submission_requires_prev_auth_approval, update_submission_external_resources, remote_ip )
+    accept_submission_requires_prev_auth_approval, update_submission_external_resources)
 from ietf.stats.utils import clean_country_name
 from ietf.utils.accesstoken import generate_access_token
 from ietf.utils.log import log
-from ietf.utils.mail import parseaddr, send_mail_message
+from ietf.utils.mail import parseaddr
 from ietf.utils.response import permission_denied
 from ietf.utils.timezone import date_today
 
@@ -429,7 +427,7 @@ def submission_status(request, submission_id, access_token=None):
         )
 
     submitter_form = SubmitterForm(initial=submission.submitter_parsed(), prefix="submitter")
-    replaces_form = ReplacesForm(name=submission.name,initial=DocAlias.objects.filter(name__in=submission.replaces.split(",")))
+    replaces_form = ReplacesForm(name=submission.name,initial=Document.objects.filter(name__in=submission.replaces.split(",")))
     extresources_form = ExtResourceForm(
         initial=dict(resources=[er['res'] for er in external_resources]),
         extresource_model=SubmissionExtResource,
@@ -646,7 +644,7 @@ def edit_submission(request, submission_id, access_token=None):
     else:
         edit_form = EditSubmissionForm(instance=submission, prefix="edit")
         submitter_form = SubmitterForm(initial=submission.submitter_parsed(), prefix="submitter")
-        replaces_form = ReplacesForm(name=submission.name,initial=DocAlias.objects.filter(name__in=submission.replaces.split(",")))
+        replaces_form = ReplacesForm(name=submission.name, initial=Document.objects.filter(name__in=submission.replaces.split(",")))
         author_forms = [ AuthorForm(initial=author, prefix="authors-%s" % i)
                          for i, author in enumerate(submission.authors) ]
 
@@ -780,243 +778,14 @@ def manualpost(request):
         s.passes_checks = all([ c.passed!=False for c in s.checks.all() ])
         s.errors = validate_submission(s)
 
-    waiting_for_draft = Submission.objects.filter(state_id = "waiting-for-draft").distinct()
-
-    return render(request, 'submit/manual_post.html',
-                  {'manual': manual,
-                   'selected': 'manual_posts',
-                   'waiting_for_draft': waiting_for_draft})
-
-
-def cancel_waiting_for_draft(request):
-    if request.method == 'POST':
-        can_cancel = has_role(request.user, "Secretariat")
-
-        if not can_cancel:
-            permission_denied(request, 'You do not have permission to perform this action.')
-
-        submission_id = request.POST.get('submission_id', '')
-        access_token = request.POST.get('access_token', '')
-
-        submission = get_submission_or_404(submission_id, access_token = access_token)
-        cancel_submission(submission)
-
-        create_submission_event(request, submission, "Cancelled submission")
-        if (submission.rev != "00"):
-            # Add a doc event
-            docevent_from_submission(submission, "Cancelled submission for rev {}".format(submission.rev))
-
-    return redirect("ietf.submit.views.manualpost")
-
-
-@role_required('Secretariat',)
-def add_manualpost_email(request, submission_id=None, access_token=None):
-    """Add email to submission history"""
-
-    if request.method == 'POST':
-        try:
-            button_text = request.POST.get('submit', '')
-            if button_text == 'Cancel':
-                return redirect("submit/manual_post.html")
-
-            form = SubmissionEmailForm(request.POST)
-            if form.is_valid():
-                submission_pk = form.cleaned_data['submission_pk']
-                message = form.cleaned_data['message']
-                #in_reply_to = form.cleaned_data['in_reply_to']
-                # create Message
-
-                if form.cleaned_data['direction'] == 'incoming':
-                    msgtype = 'msgin'
-                else:
-                    msgtype = 'msgout'
-
-                submission, submission_email_event = (
-                    add_submission_email(request=request,
-                                         remote_ip=remote_ip(request),
-                                         name = form.draft_name,
-                                         rev=form.revision,
-                                         submission_pk = submission_pk,
-                                         message = message,
-                                         by = request.user.person,
-                                         msgtype = msgtype) )
-
-                messages.success(request, 'Email added.')
-
-                try:
-                    draft = Document.objects.get(name=submission.name)
-                except Document.DoesNotExist:
-                    # Assume this is revision 00 - we'll do this later
-                    draft = None
-
-                if (draft != None):
-                    e = AddedMessageEvent(type="added_message", doc=draft)
-                    e.message = submission_email_event.submissionemailevent.message
-                    e.msgtype = submission_email_event.submissionemailevent.msgtype
-                    e.in_reply_to = submission_email_event.submissionemailevent.in_reply_to
-                    e.by = request.user.person
-                    e.desc = submission_email_event.desc
-                    e.time = submission_email_event.time
-                    e.save()
-
-                return redirect("ietf.submit.views.manualpost")
-        except ValidationError as e:
-            form = SubmissionEmailForm(request.POST)
-            form._errors = {}
-            form._errors["__all__"] = form.error_class(["There was a failure uploading your message. (%s)" % e.message])
-    else:
-        initial = {
+    return render(
+        request, 
+        'submit/manual_post.html',
+        {
+            'manual': manual,
+            'selected': 'manual_posts'
         }
-
-        if (submission_id != None):
-            submission = get_submission_or_404(submission_id, access_token)
-            initial['name'] = "{}-{}".format(submission.name, submission.rev)
-            initial['direction'] = 'incoming'
-            initial['submission_pk'] = submission.pk
-        else:
-            initial['direction'] = 'incoming'
-
-        form = SubmissionEmailForm(initial=initial)
-
-    return render(request, 'submit/add_submit_email.html',dict(form=form))
-
-
-@role_required('Secretariat',)
-def send_submission_email(request, submission_id, message_id=None):
-    """Send an email related to a submission"""
-    submission = get_submission_or_404(submission_id, access_token = None)
-
-    if request.method == 'POST':
-        button_text = request.POST.get('submit', '')
-        if button_text == 'Cancel':
-            return redirect('ietf.submit.views.submission_status',
-                            submission_id=submission.id,
-                            access_token=submission.access_token())
-
-        form = MessageModelForm(request.POST)
-        if form.is_valid():
-            # create Message
-            msg = Message.objects.create(
-                    by = request.user.person,
-                    subject = form.cleaned_data['subject'],
-                    frm = form.cleaned_data['frm'],
-                    to = form.cleaned_data['to'],
-                    cc = form.cleaned_data['cc'],
-                    bcc = form.cleaned_data['bcc'],
-                    reply_to = form.cleaned_data['reply_to'],
-                    body = form.cleaned_data['body']
-            )
-
-            in_reply_to_id = form.cleaned_data['in_reply_to_id']
-            in_reply_to = None
-            rp = ""
-
-            if in_reply_to_id:
-                rp = " reply"
-                try:
-                    in_reply_to = Message.objects.get(id=in_reply_to_id)
-                except Message.DoesNotExist:
-                    log("Unable to retrieve in_reply_to message: %s" % in_reply_to_id)
-
-            desc = "Sent message {} - manual post - {}-{}".format(rp,
-                                                                  submission.name,
-                                                                  submission.rev)
-            SubmissionEmailEvent.objects.create(
-                    submission = submission,
-                    desc = desc,
-                    msgtype = 'msgout',
-                    by = request.user.person,
-                    message = msg,
-                    in_reply_to = in_reply_to)
-
-            # send email
-            send_mail_message(None,msg)
-
-            messages.success(request, 'Email sent.')
-            return redirect('ietf.submit.views.submission_status',
-                            submission_id=submission.id,
-                            access_token=submission.access_token())
-
-    else:
-        reply_to = get_reply_to()
-        msg = None
-
-        if not message_id:
-            addrs = gather_address_lists('sub_confirmation_requested',submission=submission).as_strings(compact=False)
-            to_email = addrs.to
-            cc = addrs.cc
-            subject = 'Regarding {}'.format(submission.name)
-        else:
-            try:
-                submitEmail = SubmissionEmailEvent.objects.get(id=message_id)
-                msg = submitEmail.message
-
-                if msg:
-                    to_email = msg.frm
-                    cc = msg.cc
-                    subject = 'Re:{}'.format(msg.subject)
-                else:
-                    to_email = None
-                    cc = None
-                    subject = 'Regarding {}'.format(submission.name)
-            except Message.DoesNotExist:
-                to_email = None
-                cc = None
-                subject = 'Regarding {}'.format(submission.name)
-
-        initial = {
-            'to': to_email,
-            'cc': cc,
-            'frm': settings.IDSUBMIT_FROM_EMAIL,
-            'subject': subject,
-            'reply_to': reply_to,
-        }
-
-        if msg:
-            initial['in_reply_to_id'] = msg.id
-
-        form = MessageModelForm(initial=initial)
-
-    return render(request, "submit/email.html",  {
-        'submission': submission,
-        'access_token': submission.access_token(),
-        'form':form})
-
-
-def show_submission_email_message(request, submission_id, message_id, access_token=None):
-    submission = get_submission_or_404(submission_id, access_token)
-
-    submitEmail = get_object_or_404(SubmissionEmailEvent, pk=message_id)
-    attachments = submitEmail.message.messageattachment_set.all()
-
-    return render(request, 'submit/submission_email.html',
-                  {'submission': submission,
-                   'message': submitEmail,
-                   'attachments': attachments})
-
-def show_submission_email_attachment(request, submission_id, message_id, filename, access_token=None):
-    get_submission_or_404(submission_id, access_token)
-
-    message = get_object_or_404(SubmissionEmailEvent, pk=message_id)
-
-    attach = get_object_or_404(MessageAttachment,
-                               message=message.message,
-                               filename=filename)
-
-    if attach.encoding == "base64":
-        body = base64.b64decode(attach.body)
-    else:
-        body = attach.body.encode('utf-8')
-
-    if attach.content_type is None:
-        content_type='text/plain'
-    else:
-        content_type=attach.content_type
-
-    response = HttpResponse(body, content_type=content_type)
-    response['Content-Disposition'] = 'attachment; filename=%s' % attach.filename
-    response['Content-Length'] = len(body)
-    return response
+    )
 
 
 def get_submission_or_404(submission_id, access_token=None):

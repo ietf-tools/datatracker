@@ -8,13 +8,14 @@ import datetime, json
 
 from django import forms
 from django.conf import settings
-from django.http import HttpResponse, HttpResponseRedirect, Http404
+from django.http import HttpResponse, HttpResponseRedirect, Http404, HttpResponseBadRequest
 from django.shortcuts import render, get_object_or_404, redirect
 from django.template.defaultfilters import striptags
 from django.template.loader import render_to_string
 from django.urls import reverse as urlreverse
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.html import escape
+from urllib.parse import urlencode as urllib_urlencode
 
 import debug                            # pyflakes:ignore
 
@@ -38,6 +39,8 @@ from ietf.mailtrigger.forms import CcSelectForm
 from ietf.message.utils import infer_message
 from ietf.name.models import BallotPositionName, DocTypeName
 from ietf.person.models import Person
+from ietf.utils.fields import ModelMultipleChoiceField
+from ietf.utils.http import validate_return_to_path
 from ietf.utils.mail import send_mail_text, send_mail_preformatted
 from ietf.utils.decorators import require_api_key
 from ietf.utils.response import permission_denied
@@ -179,16 +182,16 @@ def save_position(form, doc, ballot, balloter, login=None, send_email=False):
 @role_required("Area Director", "Secretariat", "IRSG Member", "RSAB Member")
 def edit_position(request, name, ballot_id):
     """Vote and edit discuss and comment on document"""
-    doc = get_object_or_404(Document, docalias__name=name)
+    doc = get_object_or_404(Document, name=name)
     ballot = get_object_or_404(BallotDocEvent, type="created_ballot", pk=ballot_id, doc=doc)
 
     balloter = login = request.user.person
 
-    if 'ballot_edit_return_point' in request.session:
-        return_to_url = request.session['ballot_edit_return_point']
-    else:
-        return_to_url = urlreverse("ietf.doc.views_doc.document_ballot", kwargs=dict(name=doc.name, ballot_id=ballot_id))
-
+    try:
+        return_to_url = parse_ballot_edit_return_point(request.GET.get('ballot_edit_return_point'), doc.name, ballot_id)
+    except ValueError:
+        return HttpResponseBadRequest('ballot_edit_return_point is invalid')
+    
     # if we're in the Secretariat, we can select a balloter to act as stand-in for
     if has_role(request.user, "Secretariat"):
         balloter_id = request.GET.get('balloter')
@@ -208,9 +211,14 @@ def edit_position(request, name, ballot_id):
             save_position(form, doc, ballot, balloter, login, send_mail)
 
             if send_mail:
-                qstr=""
+                query = {}
                 if request.GET.get('balloter'):
-                    qstr += "?balloter=%s" % request.GET.get('balloter')
+                    query['balloter'] = request.GET.get('balloter')
+                if request.GET.get('ballot_edit_return_point'):
+                    query['ballot_edit_return_point'] = request.GET.get('ballot_edit_return_point')
+                qstr = ""
+                if len(query) > 0:
+                    qstr = "?" + urllib_urlencode(query, safe='/')
                 return HttpResponseRedirect(urlreverse('ietf.doc.views_ballot.send_ballot_comment', kwargs=dict(name=doc.name, ballot_id=ballot_id)) + qstr)
             elif request.POST.get("Defer") and doc.stream.slug != "irtf":
                 return redirect('ietf.doc.views_ballot.defer_ballot', name=doc)
@@ -256,7 +264,7 @@ def api_set_position(request):
         if not name:
             return err(400, "Missing document name")
         try:
-            doc = Document.objects.get(docalias__name=name)
+            doc = Document.objects.get(name=name)
         except Document.DoesNotExist:
             return err(400, "Document not found")
         position_names = BallotPositionName.objects.values_list('slug', flat=True)
@@ -315,6 +323,8 @@ def build_position_email(balloter, doc, pos):
 
     if doc.stream_id == "irtf":
         addrs = gather_address_lists('irsg_ballot_saved',doc=doc)
+    elif doc.stream_id == "editorial":
+        addrs = gather_address_lists('rsab_ballot_saved',doc=doc)
     else:
         addrs = gather_address_lists('iesg_ballot_saved',doc=doc)
 
@@ -323,7 +333,7 @@ def build_position_email(balloter, doc, pos):
 @role_required('Area Director','Secretariat','IRSG Member', 'RSAB Member')
 def send_ballot_comment(request, name, ballot_id):
     """Email document ballot position discuss/comment for Area Director."""
-    doc = get_object_or_404(Document, docalias__name=name)
+    doc = get_object_or_404(Document, name=name)
     ballot = get_object_or_404(BallotDocEvent, type="created_ballot", pk=ballot_id, doc=doc)
 
     if not has_role(request.user, 'Secretariat'):
@@ -336,11 +346,11 @@ def send_ballot_comment(request, name, ballot_id):
 
     balloter = request.user.person
 
-    if 'ballot_edit_return_point' in request.session:
-        return_to_url = request.session['ballot_edit_return_point']
-    else:
-        return_to_url = urlreverse("ietf.doc.views_doc.document_ballot", kwargs=dict(name=doc.name, ballot_id=ballot_id))
-
+    try:
+        return_to_url = parse_ballot_edit_return_point(request.GET.get('ballot_edit_return_point'), doc.name, ballot_id)
+    except ValueError:
+        return HttpResponseBadRequest('ballot_edit_return_point is invalid')
+    
     if 'HTTP_REFERER' in request.META:
         back_url = request.META['HTTP_REFERER']
     else:
@@ -398,11 +408,22 @@ def send_ballot_comment(request, name, ballot_id):
 def clear_ballot(request, name, ballot_type_slug):
     """Clear all positions and discusses on every open ballot for a document."""
     doc = get_object_or_404(Document, name=name)
+    # If there's no appropriate ballot type state, clearing would be an invalid action.
+    # This will need to be updated if we ever allow defering IRTF ballots
+    if ballot_type_slug == "approve":
+        state_machine = "draft-iesg"
+    elif ballot_type_slug in ["statchg","conflrev"]:
+        state_machine = ballot_type_slug
+    else:
+        state_machine = None
+    state_slug = state_machine and doc.get_state_slug(state_machine)
+    if state_machine is None or state_slug is None:
+        raise Http404
     if request.method == 'POST':
         by = request.user.person
         if close_ballot(doc, by, ballot_type_slug):
             create_ballot_if_not_open(request, doc, by, ballot_type_slug)
-        if doc.get_state('draft-iesg').slug == 'defer':
+        if state_slug == "defer":
             do_undefer_ballot(request,doc)
         return redirect("ietf.doc.views_doc.document_main", name=doc.name)
 
@@ -413,7 +434,7 @@ def clear_ballot(request, name, ballot_type_slug):
 @role_required('Area Director','Secretariat')
 def defer_ballot(request, name):
     """Signal post-pone of ballot, notifying relevant parties."""
-    doc = get_object_or_404(Document, docalias__name=name)
+    doc = get_object_or_404(Document, name=name)
     if doc.type_id not in ('draft','conflrev','statchg'):
         raise Http404
     interesting_state = dict(draft='draft-iesg',conflrev='conflrev',statchg='statchg')
@@ -467,7 +488,7 @@ def defer_ballot(request, name):
 @role_required('Area Director','Secretariat')
 def undefer_ballot(request, name):
     """undo deferral of ballot ballot."""
-    doc = get_object_or_404(Document, docalias__name=name)
+    doc = get_object_or_404(Document, name=name)
     if doc.type_id not in ('draft','conflrev','statchg'):
         raise Http404
     if doc.type_id == 'draft' and not doc.get_state("draft-iesg"):
@@ -503,7 +524,7 @@ class LastCallTextForm(forms.Form):
 @role_required('Area Director','Secretariat')
 def lastcalltext(request, name):
     """Editing of the last call text"""
-    doc = get_object_or_404(Document, docalias__name=name)
+    doc = get_object_or_404(Document, name=name)
     if not doc.get_state("draft-iesg"):
         raise Http404
 
@@ -589,7 +610,7 @@ class BallotWriteupForm(forms.Form):
 @role_required('Area Director','Secretariat')
 def ballot_writeupnotes(request, name):
     """Editing of ballot write-up and notes"""
-    doc = get_object_or_404(Document, docalias__name=name)
+    doc = get_object_or_404(Document, name=name)
     prev_state = doc.get_state("draft-iesg")
 
     login = request.user.person
@@ -686,7 +707,8 @@ def ballot_writeupnotes(request, name):
                               dict(doc=doc,
                                    back_url=doc.get_absolute_url(),
                                    ballot_issued=bool(doc.latest_event(type="sent_ballot_announcement")),
-                                   ballot_issue_danger=bool(prev_state.slug in ['ad-eval', 'lc']),
+                                   warn_lc = not doc.docevent_set.filter(lastcalldocevent__expires__date__lt=date_today(DEADLINE_TZINFO)).exists(),
+                                   warn_unexpected_state= prev_state if bool(prev_state.slug in ['watching', 'ad-eval', 'lc']) else None,
                                    ballot_writeup_form=form,
                                    need_intended_status=need_intended_status,
                                    ))
@@ -700,7 +722,7 @@ class BallotRfcEditorNoteForm(forms.Form):
 @role_required('Area Director','Secretariat','IAB Chair','IRTF Chair','ISE')
 def ballot_rfceditornote(request, name):
     """Editing of RFC Editor Note"""
-    doc = get_object_or_404(Document, docalias__name=name)
+    doc = get_object_or_404(Document, name=name)
 
     if not is_authorized_in_doc_stream(request.user, doc):
         permission_denied(request, "You do not have the necessary permissions to change the RFC Editor Note for this document")
@@ -765,7 +787,7 @@ class ApprovalTextForm(forms.Form):
 @role_required('Area Director','Secretariat')
 def ballot_approvaltext(request, name):
     """Editing of approval text"""
-    doc = get_object_or_404(Document, docalias__name=name)
+    doc = get_object_or_404(Document, name=name)
     if not doc.get_state("draft-iesg"):
         raise Http404
 
@@ -816,7 +838,7 @@ def ballot_approvaltext(request, name):
 @role_required('Secretariat')
 def approve_ballot(request, name):
     """Approve ballot, sending out announcement, changing state."""
-    doc = get_object_or_404(Document, docalias__name=name)
+    doc = get_object_or_404(Document, name=name)
     if not doc.get_state("draft-iesg"):
         raise Http404
 
@@ -931,7 +953,7 @@ def approve_ballot(request, name):
 
 
 class ApproveDownrefsForm(forms.Form):
-    checkboxes = forms.ModelMultipleChoiceField(
+    checkboxes = ModelMultipleChoiceField(
         widget = forms.CheckboxSelectMultiple,
         queryset =  RelatedDocument.objects.none(), )
 
@@ -947,13 +969,19 @@ class ApproveDownrefsForm(forms.Form):
 @role_required('Secretariat')
 def approve_downrefs(request, name):
     """Document ballot was just approved; add the checked downwared references to the downref registry."""
-    doc = get_object_or_404(Document, docalias__name=name)
+    doc = get_object_or_404(Document, name=name)
     if not doc.get_state("draft-iesg"):
         raise Http404
 
     login = request.user.person
 
-    downrefs_to_rfc = [rel for rel in doc.relateddocument_set.all() if rel.is_downref() and not rel.is_approved_downref() and rel.target.document.is_rfc()]
+    downrefs_to_rfc = [
+        rel
+        for rel in doc.relateddocument_set.all()
+        if rel.is_downref()
+        and not rel.is_approved_downref()
+        and rel.target.type_id == "rfc"
+    ]
 
     downrefs_to_rfc_qs = RelatedDocument.objects.filter(pk__in=[r.pk for r in downrefs_to_rfc])        
 
@@ -968,12 +996,12 @@ def approve_downrefs(request, name):
                 c = DocEvent(type="downref_approved", doc=rel.source,
                         rev=rel.source.rev, by=login)
                 c.desc = "Downref to RFC %s approved by Last Call for %s-%s" % (
-                        rel.target.document.rfc_number(), rel.source, rel.source.rev)
+                    rel.target.rfc_number, rel.source, rel.source.rev)
                 c.save()
-                c = DocEvent(type="downref_approved", doc=rel.target.document,
-                        rev=rel.target.document.rev, by=login)
+                c = DocEvent(type="downref_approved", doc=rel.target,
+                        rev=rel.target.rev, by=login)
                 c.desc = "Downref to RFC %s approved by Last Call for %s-%s" % (
-                        rel.target.document.rfc_number(), rel.source, rel.source.rev)
+                    rel.target.rfc_number, rel.source, rel.source.rev)
                 c.save()
 
             return HttpResponseRedirect(doc.get_absolute_url())
@@ -995,7 +1023,7 @@ class MakeLastCallForm(forms.Form):
 @role_required('Secretariat')
 def make_last_call(request, name):
     """Make last call for Internet-Draft, sending out announcement."""
-    doc = get_object_or_404(Document, docalias__name=name)
+    doc = get_object_or_404(Document, name=name)
     if not (doc.get_state("draft-iesg") or doc.get_state("statchg")):
         raise Http404
 
@@ -1103,7 +1131,7 @@ def make_last_call(request, name):
 
 @role_required('Secretariat', 'IRTF Chair')
 def issue_irsg_ballot(request, name):
-    doc = get_object_or_404(Document, docalias__name=name)
+    doc = get_object_or_404(Document, name=name)
     if doc.stream.slug != "irtf" or doc.type != DocTypeName.objects.get(slug="draft"):
         raise Http404
 
@@ -1158,7 +1186,7 @@ def issue_irsg_ballot(request, name):
 
 @role_required('Secretariat', 'IRTF Chair')
 def close_irsg_ballot(request, name):
-    doc = get_object_or_404(Document, docalias__name=name)
+    doc = get_object_or_404(Document, name=name)
     if doc.stream.slug != "irtf" or doc.type != DocTypeName.objects.get(slug="draft"):
         raise Http404
 
@@ -1199,7 +1227,7 @@ def irsg_ballot_status(request):
 
 @role_required('Secretariat', 'RSAB Chair')
 def issue_rsab_ballot(request, name):
-    doc = get_object_or_404(Document, docalias__name=name)
+    doc = get_object_or_404(Document, name=name)
     if doc.stream.slug != "editorial" or doc.type != DocTypeName.objects.get(slug="draft"):
         raise Http404
 
@@ -1248,7 +1276,7 @@ def issue_rsab_ballot(request, name):
 
 @role_required('Secretariat', 'RSAB Chair')
 def close_rsab_ballot(request, name):
-    doc = get_object_or_404(Document, docalias__name=name)
+    doc = get_object_or_404(Document, name=name)
     if doc.stream.slug != "editorial" or doc.type_id != "draft":
         raise Http404
 
@@ -1283,3 +1311,28 @@ def rsab_ballot_status(request):
     # Possible TODO: add a menu item to show this? Maybe only if you're in rsab or an rswg chair?
     # There will be so few of these that the general community would follow them from the rswg docs page.
     # Maybe the view isn't actually needed at all...
+
+
+def parse_ballot_edit_return_point(path, doc_name, ballot_id):
+    get_default_path = lambda: urlreverse("ietf.doc.views_doc.document_ballot", kwargs=dict(name=doc_name, ballot_id=ballot_id))
+    allowed_path_handlers = {
+        "ietf.community.views.view_list",
+        "ietf.doc.views_doc.document_ballot",
+        "ietf.doc.views_doc.document_irsg_ballot",
+        "ietf.doc.views_doc.document_rsab_ballot",
+        "ietf.doc.views_ballot.irsg_ballot_status",
+        "ietf.doc.views_ballot.rsab_ballot_status",
+        "ietf.doc.views_search.search",
+        "ietf.doc.views_search.docs_for_ad",
+        "ietf.doc.views_search.drafts_in_last_call",
+        "ietf.doc.views_search.recent_drafts",
+        "ietf.group.views.chartering_groups",
+        "ietf.group.views.group_documents",
+        "ietf.group.views.stream_documents",
+        "ietf.iesg.views.agenda",
+        "ietf.iesg.views.agenda_documents",
+        "ietf.iesg.views.discusses",
+        "ietf.iesg.views.past_documents",
+    }
+    return validate_return_to_path(path, get_default_path, allowed_path_handlers)
+

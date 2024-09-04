@@ -3,13 +3,24 @@
 from django.conf import settings
 
 from ietf.doc.factories import (
-    WgDraftFactory,
+    WgRfcFactory,
     IndividualDraftFactory,
     CharterFactory,
     NewRevisionDocEventFactory,
+    StatusChangeFactory,
+    RgDraftFactory,
+    EditorialDraftFactory,
+    WgDraftFactory,
+    ConflictReviewFactory,
+    BofreqFactory,
+    StatementFactory,
 )
-from ietf.doc.models import State, DocEvent, DocAlias
-from ietf.doc.templatetags.ietf_filters import urlize_ietf_docs, is_valid_url
+from ietf.doc.models import DocEvent
+from ietf.doc.templatetags.ietf_filters import (
+    urlize_ietf_docs,
+    is_valid_url,
+    is_in_stream,
+)
 from ietf.person.models import Person
 from ietf.utils.test_utils import TestCase
 
@@ -19,29 +30,42 @@ import debug  # pyflakes: ignore
 
 
 class IetfFiltersTests(TestCase):
+    def test_is_in_stream(self):
+        for draft in [
+            IndividualDraftFactory(),
+            CharterFactory(),
+            StatusChangeFactory(),
+            ConflictReviewFactory(),
+            StatementFactory(),
+            BofreqFactory(),
+        ]:
+            self.assertFalse(is_in_stream(draft))
+        for draft in [RgDraftFactory(), WgDraftFactory(), EditorialDraftFactory()]:
+            self.assertTrue(is_in_stream(draft))
+        for stream in ["iab", "ietf", "irtf", "ise", "editorial"]:
+            self.assertTrue(is_in_stream(IndividualDraftFactory(stream_id=stream)))
+
     def test_is_valid_url(self):
         cases = [(settings.IDTRACKER_BASE_URL, True), ("not valid", False)]
         for url, result in cases:
             self.assertEqual(is_valid_url(url), result)
 
     def test_urlize_ietf_docs(self):
-        wg_id = WgDraftFactory()
-        wg_id.set_state(State.objects.get(type="draft", slug="rfc"))
-        wg_id.std_level_id = "bcp"
-        wg_id.save_with_history(
+        rfc = WgRfcFactory(rfc_number=123456, std_level_id="bcp")
+        rfc.save_with_history(
             [
                 DocEvent.objects.create(
-                    doc=wg_id,
-                    rev=wg_id.rev,
+                    doc=rfc,
+                    rev=rfc.rev,
                     type="published_rfc",
                     by=Person.objects.get(name="(System)"),
                 )
             ]
         )
-        DocAlias.objects.create(name="rfc123456").docs.add(wg_id)
-        DocAlias.objects.create(name="bcp123456").docs.add(wg_id)
-        DocAlias.objects.create(name="std123456").docs.add(wg_id)
-        DocAlias.objects.create(name="fyi123456").docs.add(wg_id)
+        # TODO - bring these into existance when subseries are well modeled
+        # DocAlias.objects.create(name="bcp123456").docs.add(rfc)
+        # DocAlias.objects.create(name="std123456").docs.add(rfc)
+        # DocAlias.objects.create(name="fyi123456").docs.add(rfc)
 
         id = IndividualDraftFactory(name="draft-me-rfc123456bis")
         id_num = IndividualDraftFactory(name="draft-rosen-rfcefdp-update-2026")
@@ -59,15 +83,16 @@ class IetfFiltersTests(TestCase):
 
         cases = [
             ("no change", "no change"),
-            ("bCp123456", '<a href="/doc/bcp123456/">bCp123456</a>'),
-            ("Std 00123456", '<a href="/doc/std123456/">Std 00123456</a>'),
-            (
-                "FyI  0123456 changes std 00123456",
-                '<a href="/doc/fyi123456/">FyI  0123456</a> changes <a href="/doc/std123456/">std 00123456</a>',
-            ),
+            # TODO: rework subseries when we add them
+            # ("bCp123456", '<a href="/doc/bcp123456/">bCp123456</a>'),
+            # ("Std 00123456", '<a href="/doc/std123456/">Std 00123456</a>'),
+            # (
+            #     "FyI  0123456 changes std 00123456",
+            #     '<a href="/doc/fyi123456/">FyI  0123456</a> changes <a href="/doc/std123456/">std 00123456</a>',
+            # ),
             ("rfc123456", '<a href="/doc/rfc123456/">rfc123456</a>'),
             ("Rfc 0123456", '<a href="/doc/rfc123456/">Rfc 0123456</a>'),
-            (wg_id.name, f'<a href="/doc/{wg_id.name}/">{wg_id.name}</a>'),
+            (rfc.name, f'<a href="/doc/{rfc.name}/">{rfc.name}</a>'),
             (
                 f"{id.name}-{id.rev}.txt",
                 f'<a href="/doc/{id.name}/{id.rev}/">{id.name}-{id.rev}.txt</a>',

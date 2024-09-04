@@ -369,7 +369,7 @@ def edit_milestones(request, acronym, group_type=None, milestone_set="current"):
                     email_milestones_changed(request, group, changes, states)
 
                 if milestone_set == "charter":
-                    return redirect('ietf.doc.views_doc.document_main', name=group.charter.canonical_name())
+                    return redirect('ietf.doc.views_doc.document_main', name=group.charter.name)
                 else:
                     return HttpResponseRedirect(group.about_url())
     else:
@@ -399,7 +399,7 @@ def edit_milestones(request, acronym, group_type=None, milestone_set="current"):
                        can_change_uses_milestone_dates=can_change_uses_milestone_dates))
 
 @login_required
-def reset_charter_milestones(request, group_type, acronym):
+def reset_charter_milestones(request, acronym, group_type=None):
     """Reset charter milestones to the currently in-use milestones."""
     group = get_group_or_404(acronym, group_type)
     if not group.features.has_milestones:

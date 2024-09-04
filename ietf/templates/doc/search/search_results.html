@@ -55,7 +55,7 @@
     </tbody>
     <tbody>
         {% for doc in doc_group.list %}
-            {% include "doc/search/search_result_row.html" %}
+            {% include "doc/search/search_result_row.html" with show_ad_and_shepherd=meta.show_ad_and_shepherd %}
         {% endfor %}
     </tbody>
 {% endfor %}

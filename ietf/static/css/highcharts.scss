@@ -1,1 +1,6 @@
 @import "npm:highcharts/css/highcharts.css";
+@import "custom-bs-import";
+
+.highcharts-container {
+    font-family: $font-family-sans-serif;
+}

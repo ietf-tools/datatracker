@@ -1,4 +1,4 @@
-{# Copyright The IETF Trust 2015-2022, All Rights Reserved #}
+{# Copyright The IETF Trust 2015-2023, All Rights Reserved #}
 <!DOCTYPE html>
 {% load analytical %}
 {% load ietf_filters static %}
@@ -34,6 +34,7 @@
     <body {% block bodyAttrs %}{% endblock %} class="navbar-offset position-relative"
           data-group-menu-data-url="{% url 'ietf.group.views.group_menu_data' %}">
         {% analytical_body_top %}
+        {% include "base/status.html" %}
         <a class="visually-hidden visually-hidden-focusable" href="#content">Skip to main content</a>
         <nav class="navbar navbar-expand-lg fixed-top {% if server_mode and server_mode != "production" %}bg-danger-subtle{% else %}bg-secondary-subtle{% endif %}">
             <div class="container-fluid">
@@ -60,7 +61,7 @@
                     {% if not user.is_authenticated %}
                         <a class="btn me-1 {% if server_mode and server_mode == "production" %} btn-warning {% else %} btn-info {% endif %} d-none d-sm-block"
                            rel="nofollow"
-                           href="{% url 'ietf.ietfauth.views.login' %}?next={{ request.get_full_path|removesuffix:'accounts/logout/'|urlencode }}">
+                           href="{% url 'ietf.ietfauth.views.login' %}?next={{ request.get_full_path|removeprefix:'/accounts/logout'|removeprefix:'/accounts/login/?next='|urlencode }}">
                             Sign in
                         </a>
                     {% endif %}
@@ -68,7 +69,7 @@
                     <label class="d-none d-md-block" aria-label="Document search">
                     <input class="form-control select2-field search-select"
                            id="navbar-doc-search"
-                           data-select2-ajax-url="{% url 'ietf.doc.views_search.ajax_select2_search_docs' model_name='docalias' doc_type='draft' %}"
+                           data-select2-ajax-url="{% url 'ietf.doc.views_search.ajax_select2_search_docs' model_name='document' doc_type='all' %}"
                            type="text"
                            data-placeholder="Document search">
                    </label>
@@ -85,7 +86,7 @@
             </div>
         </nav>
         {% block precontent %}{% endblock %}
-        <div class="pt-3 container-fluid">
+        <main class="pt-3 container-fluid" id="main">
             <div class="row">
                 {% if request.COOKIES.left_menu == "on" and not hide_menu %}
                     <div class="d-none d-md-block bg-light-subtle py-3 leftmenu small">
@@ -114,7 +115,7 @@
                     {% block content_end %}{% endblock %}
                 </div>
             </div>
-        </div>
+        </main>
         {% block footer %}
             <footer class="col-md-12 col-sm-12 border-top mt-5 py-5 bg-light-subtle text-center position-sticky">
                 <a href="https://www.ietf.org/" class="p-3">IETF</a>
@@ -140,6 +141,7 @@
                             {% endif %}
                         </span>
                     {% endif %}
+                    <a class="mx-2" href="https://status.ietf.org" target="_blank">System Status</a>
                     <span class="mx-2 text-danger">
                         <i class="bi bi-bug"></i>
                         Report a bug:

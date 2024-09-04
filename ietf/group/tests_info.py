@@ -1,22 +1,23 @@
-# Copyright The IETF Trust 2009-2022, All Rights Reserved
+# Copyright The IETF Trust 2009-2024, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
-import os
 import calendar
 import datetime
 import io
 import bleach
+import mock
 
-from unittest.mock import patch
+from unittest.mock import call, patch
 from pathlib import Path
 from pyquery import PyQuery
-from tempfile import NamedTemporaryFile
 
 import debug                            # pyflakes:ignore
 
 from django.conf import settings
+from django.http import Http404, HttpResponse
 from django.test import RequestFactory
+from django.test.utils import override_settings
 from django.urls import reverse as urlreverse
 from django.urls import NoReverseMatch
 from django.utils import timezone
@@ -27,13 +28,15 @@ from django.utils.html import escape
 from ietf.community.models import CommunityList
 from ietf.community.utils import reset_name_contains_index_for_rule
 from ietf.doc.factories import WgDraftFactory, IndividualDraftFactory, CharterFactory, BallotDocEventFactory
-from ietf.doc.models import Document, DocAlias, DocEvent, State
+from ietf.doc.models import Document, DocEvent, State
 from ietf.doc.utils_charter import charter_name_for_group
 from ietf.group.admin import GroupForm as AdminGroupForm
 from ietf.group.factories import (GroupFactory, RoleFactory, GroupEventFactory, 
     DatedGroupMilestoneFactory, DatelessGroupMilestoneFactory)
 from ietf.group.forms import GroupForm
 from ietf.group.models import Group, GroupEvent, GroupMilestone, GroupStateTransitions, Role
+from ietf.group.tasks import generate_wg_charters_files_task, generate_wg_summary_files_task
+from ietf.group.views import response_from_file
 from ietf.group.utils import save_group_in_history, setup_default_community_list_for_group
 from ietf.meeting.factories import SessionFactory
 from ietf.name.models import DocTagName, GroupStateName, GroupTypeName, ExtResourceName, RoleName
@@ -56,7 +59,11 @@ def pklist(docs):
     return [ str(doc.pk) for doc in docs.all() ]
 
 class GroupPagesTests(TestCase):
-    settings_temp_path_overrides = TestCase.settings_temp_path_overrides + ['CHARTER_PATH']
+    settings_temp_path_overrides = TestCase.settings_temp_path_overrides + [
+        "CHARTER_PATH",
+        "CHARTER_COPY_PATH",
+        "GROUP_SUMMARY_PATH",
+    ]
 
     def test_active_groups(self):
         area = GroupFactory.create(type_id='area')
@@ -71,7 +78,7 @@ class GroupPagesTests(TestCase):
         self.assertContains(r, group.name)
         self.assertContains(r, escape(group.ad_role().person.name))
 
-        for t in ('rg','area','ag', 'rag', 'dir','review','team','program','iabasg','adm','rfcedtyp'): # See issue 5120
+        for t in ('rg','area','ag', 'rag', 'dir','review','team','program','iabasg','iabworkshop','adm','rfcedtyp'): # See issue 5120
             g = GroupFactory.create(type_id=t,state_id='active') 
             if t in ['dir','review']:
                 g.parent = GroupFactory.create(type_id='area',state_id='active')
@@ -87,7 +94,7 @@ class GroupPagesTests(TestCase):
         self.assertContains(r, "Directorate")
         self.assertContains(r, "AG")
 
-        for slug in GroupTypeName.objects.exclude(slug__in=['wg','rg','ag','rag','area','dir','review','team','program','adhoc','ise','adm','iabasg','rfcedtyp', 'edwg', 'edappr']).values_list('slug',flat=True):
+        for slug in GroupTypeName.objects.exclude(slug__in=['wg','rg','ag','rag','area','dir','review','team','program','adhoc','ise','adm','iabasg','iabworkshop','rfcedtyp', 'edwg', 'edappr']).values_list('slug',flat=True):
             with self.assertRaises(NoReverseMatch):
                 url=urlreverse('ietf.group.views.active_groups', kwargs=dict(group_type=slug))
 
@@ -110,48 +117,198 @@ class GroupPagesTests(TestCase):
             self.assertContains(r, draft.name)
             self.assertContains(r, draft.title)
 
-    def test_wg_summaries(self):
+    def test_response_from_file(self):
+        # n.b., GROUP_SUMMARY_PATH is a temp dir that will be cleaned up automatically
+        fp = Path(settings.GROUP_SUMMARY_PATH) / "some-file.txt"
+        fp.write_text("This is a charters file with an é")
+        r = response_from_file(fp)
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.headers["Content-Type"], "text/plain; charset=utf-8")
+        self.assertEqual(r.content.decode("utf8"), "This is a charters file with an é")
+        # now try with a nonexistent file
+        fp.unlink()
+        with self.assertRaises(Http404):
+            response_from_file(fp)
+
+    @patch("ietf.group.views.response_from_file")
+    def test_wg_summary_area(self, mock):
+        r = self.client.get(
+            urlreverse("ietf.group.views.wg_summary_area", kwargs={"group_type": "rg"})
+        )  # not wg
+        self.assertEqual(r.status_code, 404)
+        self.assertFalse(mock.called)
+        mock.return_value = HttpResponse("yay")
+        r = self.client.get(
+            urlreverse("ietf.group.views.wg_summary_area", kwargs={"group_type": "wg"})
+        )
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.content.decode(), "yay")
+        self.assertEqual(mock.call_args, call(Path(settings.GROUP_SUMMARY_PATH) / "1wg-summary.txt"))
+
+    @patch("ietf.group.views.response_from_file")
+    def test_wg_summary_acronym(self, mock):
+        r = self.client.get(
+            urlreverse(
+                "ietf.group.views.wg_summary_acronym", kwargs={"group_type": "rg"}
+            )
+        )  # not wg
+        self.assertEqual(r.status_code, 404)
+        self.assertFalse(mock.called)
+        mock.return_value = HttpResponse("yay")
+        r = self.client.get(
+            urlreverse(
+                "ietf.group.views.wg_summary_acronym", kwargs={"group_type": "wg"}
+            )
+        )
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.content.decode(), "yay")
+        self.assertEqual(
+            mock.call_args, call(Path(settings.GROUP_SUMMARY_PATH) / "1wg-summary-by-acronym.txt")
+        )
+
+    @patch("ietf.group.views.response_from_file")
+    def test_wg_charters(self, mock):
+        r = self.client.get(
+            urlreverse("ietf.group.views.wg_charters", kwargs={"group_type": "rg"})
+        )  # not wg
+        self.assertEqual(r.status_code, 404)
+        self.assertFalse(mock.called)
+        mock.return_value = HttpResponse("yay")
+        r = self.client.get(
+            urlreverse("ietf.group.views.wg_charters", kwargs={"group_type": "wg"})
+        )
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.content.decode(), "yay")
+        self.assertEqual(mock.call_args, call(Path(settings.CHARTER_PATH) / "1wg-charters.txt"))
+
+    @patch("ietf.group.views.response_from_file")
+    def test_wg_charters_by_acronym(self, mock):
+        r = self.client.get(
+            urlreverse(
+                "ietf.group.views.wg_charters_by_acronym", kwargs={"group_type": "rg"}
+            )
+        )  # not wg
+        self.assertEqual(r.status_code, 404)
+        self.assertFalse(mock.called)
+        mock.return_value = HttpResponse("yay")
+        r = self.client.get(
+            urlreverse(
+                "ietf.group.views.wg_charters_by_acronym", kwargs={"group_type": "wg"}
+            )
+        )
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.content.decode(), "yay")
+        self.assertEqual(
+            mock.call_args, call(Path(settings.CHARTER_PATH) / "1wg-charters-by-acronym.txt")
+        )
+
+    def test_generate_wg_charters_files_task(self):
+        group = CharterFactory(
+            group__type_id="wg", group__parent=GroupFactory(type_id="area")
+        ).group
+        RoleFactory(group=group, name_id="chair", person=PersonFactory())
+        RoleFactory(group=group, name_id="ad", person=PersonFactory())
+        chair = Email.objects.filter(role__group=group, role__name="chair")[0]
+        (
+            Path(settings.CHARTER_PATH) / f"{group.charter.name}-{group.charter.rev}.txt"
+        ).write_text("This is a charter.")
+
+        generate_wg_charters_files_task()
+        wg_charters_contents = (Path(settings.CHARTER_PATH) / "1wg-charters.txt").read_text(
+            encoding="utf8"
+        )
+        self.assertIn(group.acronym, wg_charters_contents)
+        self.assertIn(group.name, wg_charters_contents)
+        self.assertIn(group.ad_role().person.plain_name(), wg_charters_contents)
+        self.assertIn(chair.address, wg_charters_contents)
+        self.assertIn("This is a charter.", wg_charters_contents)
+        wg_charters_copy = (
+            Path(settings.CHARTER_COPY_PATH) / "1wg-charters.txt"
+        ).read_text(encoding="utf8")
+        self.assertEqual(wg_charters_copy, wg_charters_contents)
+
+        wg_charters_by_acronym_contents = (
+            Path(settings.CHARTER_PATH) / "1wg-charters-by-acronym.txt"
+        ).read_text(encoding="utf8")
+        self.assertIn(group.acronym, wg_charters_by_acronym_contents)
+        self.assertIn(group.name, wg_charters_by_acronym_contents)
+        self.assertIn(group.ad_role().person.plain_name(), wg_charters_by_acronym_contents)
+        self.assertIn(chair.address, wg_charters_by_acronym_contents)
+        self.assertIn("This is a charter.", wg_charters_by_acronym_contents)
+        wg_charters_by_acronymcopy = (
+            Path(settings.CHARTER_COPY_PATH) / "1wg-charters-by-acronym.txt"
+        ).read_text(encoding="utf8")
+        self.assertEqual(wg_charters_by_acronymcopy, wg_charters_by_acronym_contents)
+
+    def test_generate_wg_charters_files_task_without_copy(self):
+        """Test disabling charter file copying
+
+        Note that these tests mostly check that errors are not encountered. Because they unset
+        the CHARTER_COPY_PATH or set it to a non-directory destination, it's not clear where to
+        look to see whether the files were (incorrectly) copied somewhere.
+        """
+        group = CharterFactory(
+            group__type_id="wg", group__parent=GroupFactory(type_id="area")
+        ).group
+        (
+            Path(settings.CHARTER_PATH) / f"{group.charter.name}-{group.charter.rev}.txt"
+        ).write_text("This is a charter.")
+
+        # No directory set
+        with override_settings():
+            del settings.CHARTER_COPY_PATH
+            generate_wg_charters_files_task()
+        # n.b., CHARTER_COPY_PATH is set again outside the with block
+        self.assertTrue((Path(settings.CHARTER_PATH) / "1wg-charters.txt").exists())
+        self.assertFalse((Path(settings.CHARTER_COPY_PATH) / "1wg-charters.txt").exists())
+        self.assertTrue(
+            (Path(settings.CHARTER_PATH) / "1wg-charters-by-acronym.txt").exists()
+        )
+        self.assertFalse(
+            (Path(settings.CHARTER_COPY_PATH) / "1wg-charters-by-acronym.txt").exists()
+        )
+        (Path(settings.CHARTER_PATH) / "1wg-charters.txt").unlink()
+        (Path(settings.CHARTER_PATH) / "1wg-charters-by-acronym.txt").unlink()
+
+        # Set to a file, not a directory
+        not_a_dir = Path(settings.CHARTER_COPY_PATH) / "not-a-dir.txt"
+        not_a_dir.write_text("Not a dir")
+        with override_settings(CHARTER_COPY_PATH=str(not_a_dir)):
+            generate_wg_charters_files_task()
+        # n.b., CHARTER_COPY_PATH is set again outside the with block
+        self.assertTrue((Path(settings.CHARTER_PATH) / "1wg-charters.txt").exists())
+        self.assertFalse((Path(settings.CHARTER_COPY_PATH) / "1wg-charters.txt").exists())
+        self.assertTrue(
+            (Path(settings.CHARTER_PATH) / "1wg-charters-by-acronym.txt").exists()
+        )
+        self.assertFalse(
+            (Path(settings.CHARTER_COPY_PATH) / "1wg-charters-by-acronym.txt").exists()
+        )
+        self.assertEqual(not_a_dir.read_text(), "Not a dir")
+
+    def test_generate_wg_summary_files_task(self):
         group = CharterFactory(group__type_id='wg',group__parent=GroupFactory(type_id='area')).group
         RoleFactory(group=group,name_id='chair',person=PersonFactory())
         RoleFactory(group=group,name_id='ad',person=PersonFactory())
 
         chair = Email.objects.filter(role__group=group, role__name="chair")[0]
 
-        with (Path(settings.CHARTER_PATH) / ("%s-%s.txt" % (group.charter.canonical_name(), group.charter.rev))).open("w") as f:
-            f.write("This is a charter.")
+        generate_wg_summary_files_task()
 
-        url = urlreverse('ietf.group.views.wg_summary_area', kwargs=dict(group_type="wg"))
-        r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
-        self.assertContains(r, group.parent.name)
-        self.assertContains(r, group.acronym)
-        self.assertContains(r, group.name)
-        self.assertContains(r, chair.address)
+        summary_by_area_contents = (
+            Path(settings.GROUP_SUMMARY_PATH) / "1wg-summary.txt"
+        ).read_text(encoding="utf8")
+        self.assertIn(group.parent.name, summary_by_area_contents)
+        self.assertIn(group.acronym, summary_by_area_contents)
+        self.assertIn(group.name, summary_by_area_contents)
+        self.assertIn(chair.address, summary_by_area_contents)
 
-        url = urlreverse('ietf.group.views.wg_summary_acronym', kwargs=dict(group_type="wg"))
-        r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
-        self.assertContains(r, group.acronym)
-        self.assertContains(r, group.name)
-        self.assertContains(r, chair.address)
-        
-        url = urlreverse('ietf.group.views.wg_charters', kwargs=dict(group_type="wg"))
-        r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
-        self.assertContains(r, group.acronym)
-        self.assertContains(r, group.name)
-        self.assertContains(r, group.ad_role().person.plain_name())
-        self.assertContains(r, chair.address)
-        self.assertContains(r, "This is a charter.")
-
-        url = urlreverse('ietf.group.views.wg_charters_by_acronym', kwargs=dict(group_type="wg"))
-        r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
-        self.assertContains(r, group.acronym)
-        self.assertContains(r, group.name)
-        self.assertContains(r, group.ad_role().person.plain_name())
-        self.assertContains(r, chair.address)
-        self.assertContains(r, "This is a charter.")
+        summary_by_acronym_contents = (
+            Path(settings.GROUP_SUMMARY_PATH) / "1wg-summary-by-acronym.txt"
+        ).read_text(encoding="utf8")
+        self.assertIn(group.acronym, summary_by_acronym_contents)
+        self.assertIn(group.name, summary_by_acronym_contents)
+        self.assertIn(chair.address, summary_by_acronym_contents)
 
     def test_chartering_groups(self):
         group = CharterFactory(group__type_id='wg',group__parent=GroupFactory(type_id='area'),states=[('charter','intrev')]).group
@@ -264,8 +421,9 @@ class GroupPagesTests(TestCase):
         group = CharterFactory().group
         draft = WgDraftFactory(group=group)
 
-        with (Path(settings.CHARTER_PATH) / ("%s-%s.txt" % (group.charter.canonical_name(), group.charter.rev))).open("w") as f:
-            f.write("This is a charter.")
+        (
+            Path(settings.CHARTER_PATH) / f"{group.charter.name}-{group.charter.rev}.txt"
+        ).write_text("This is a charter.")
 
         milestone = GroupMilestone.objects.create(
             group=group,
@@ -385,7 +543,6 @@ class GroupPagesTests(TestCase):
             type_id="slides",
         )
         doc.set_state(State.objects.get(type="slides", slug="active"))
-        DocAlias.objects.create(name=doc.name).docs.add(doc)
 
         for url in group_urlreverse_list(group, 'ietf.group.views.materials'):
             r = self.client.get(url)
@@ -668,8 +825,9 @@ class GroupEditTests(TestCase):
         self.assertTrue(len(q('form .is-invalid')) > 0)
         
         # edit info
-        with (Path(settings.CHARTER_PATH) / ("%s-%s.txt" % (group.charter.canonical_name(), group.charter.rev))).open("w") as f:
-            f.write("This is a charter.")
+        (
+            Path(settings.CHARTER_PATH) / f"{group.charter.name}-{group.charter.rev}.txt"
+        ).write_text("This is a charter.")
         area = group.parent
         ad = Person.objects.get(name="Areað Irector")
         state = GroupStateName.objects.get(slug="bof")
@@ -711,7 +869,9 @@ class GroupEditTests(TestCase):
         self.assertEqual(group.list_archive, "archive.mars")
         self.assertEqual(group.description, '')
 
-        self.assertTrue((Path(settings.CHARTER_PATH) / ("%s-%s.txt" % (group.charter.canonical_name(), group.charter.rev))).exists())
+        self.assertTrue(
+            (Path(settings.CHARTER_PATH) / f"{group.charter.name}-{group.charter.rev}.txt").exists()
+        )
         self.assertEqual(len(outbox), 2)
         self.assertTrue('Personnel change' in outbox[0]['Subject'])
         for prefix in ['ad1','ad2','aread','marschairman','marsdelegate']:
@@ -946,9 +1106,87 @@ class GroupEditTests(TestCase):
             r = self.client.post(url, {
                 'description': 'Ignored description',
             })
-        self.assertEqual(r.status_code, 302)
+        self.assertEqual(r.status_code, 403)
         group = Group.objects.get(pk=group.pk)  # refresh
         self.assertEqual(group.description, 'Updated description')
+
+    def test_edit_parent(self):
+        group = GroupFactory.create(type_id='wg', parent=GroupFactory.create(type_id='area'))
+        chair = RoleFactory(group=group, name_id='chair').person
+        url = urlreverse('ietf.group.views.edit', kwargs=dict(group_type=group.type_id, acronym=group.acronym, action='edit'))
+
+        # parent is not shown to group chair
+        login_testing_unauthorized(self, chair.user.username, url)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q('form select[name=parent]')), 0)
+
+        # view ignores attempt to change parent
+        old_parent = group.parent
+        new_parent = GroupFactory(type_id='area')
+        self.assertNotEqual(new_parent.acronym, group.parent.acronym)
+        r = self.client.post(url, dict(
+            name=group.name,
+            acronym=group.acronym,
+            state=group.state_id,
+            parent=new_parent.pk))
+        self.assertEqual(r.status_code, 302)
+        group = Group.objects.get(pk=group.pk)
+        self.assertNotEqual(group.parent, new_parent)
+        self.assertEqual(group.parent, old_parent)
+
+        # parent is shown to AD and Secretariat
+        for priv_user in ('ad', 'secretary'):
+            self.client.logout()
+            login_testing_unauthorized(self, priv_user, url)
+            r = self.client.get(url)
+            self.assertEqual(r.status_code, 200)
+            q = PyQuery(r.content)
+            self.assertEqual(len(q('form select[name=parent]')), 1)
+
+            new_parent = GroupFactory(type_id='area')
+            self.assertNotEqual(new_parent.acronym, group.parent.acronym)
+            r = self.client.post(url, dict(
+                name=group.name,
+                acronym=group.acronym,
+                state=group.state_id,
+                parent=new_parent.pk))
+            self.assertEqual(r.status_code, 302)
+            group = Group.objects.get(pk=group.pk)
+            self.assertEqual(group.parent, new_parent)
+
+    def test_edit_parent_field(self):
+        group = GroupFactory.create(type_id='wg', parent=GroupFactory.create(type_id='area'))
+        chair = RoleFactory(group=group, name_id='chair').person
+        url = urlreverse('ietf.group.views.edit', kwargs=dict(group_type=group.type_id, acronym=group.acronym, action='edit', field='parent'))
+
+        # parent is not shown to group chair
+        login_testing_unauthorized(self, chair.user.username, url)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 403)
+
+        # chair is not allowed to change parent
+        new_parent = GroupFactory(type_id='area')
+        self.assertNotEqual(new_parent.acronym, group.parent.acronym)
+        r = self.client.post(url, dict(parent=new_parent.pk))
+        self.assertEqual(r.status_code, 403)
+
+        # parent is shown to AD and Secretariat
+        for priv_user in ('ad', 'secretary'):
+            self.client.logout()
+            login_testing_unauthorized(self, priv_user, url)
+            r = self.client.get(url)
+            self.assertEqual(r.status_code, 200)
+            q = PyQuery(r.content)
+            self.assertEqual(len(q('form select[name=parent]')), 1)
+
+            new_parent = GroupFactory(type_id='area')
+            self.assertNotEqual(new_parent.acronym, group.parent.acronym)
+            r = self.client.post(url, dict(parent=new_parent.pk))
+            self.assertEqual(r.status_code, 302)
+            group = Group.objects.get(pk=group.pk)
+            self.assertEqual(group.parent, new_parent)
 
     def test_conclude(self):
         group = GroupFactory(acronym="mars")
@@ -1686,58 +1924,72 @@ class EmailAliasesTests(TestCase):
         PersonFactory(user__username='plain')
         GroupFactory(acronym='mars',parent=GroupFactory(type_id='area'))
         GroupFactory(acronym='ames',parent=GroupFactory(type_id='area'))
-        self.group_alias_file = NamedTemporaryFile(delete=False)
-        self.group_alias_file.write(b"""# Generated by hand at 2015-02-12_16:30:52
-virtual.ietf.org anything
-mars-ads@ietf.org                                                xfilter-mars-ads
-expand-mars-ads@virtual.ietf.org                                 aread@example.org
-mars-chairs@ietf.org                                             xfilter-mars-chairs
-expand-mars-chairs@virtual.ietf.org                              mars_chair@ietf.org
-ames-ads@ietf.org                                                xfilter-mars-ads
-expand-ames-ads@virtual.ietf.org                                 aread@example.org
-ames-chairs@ietf.org                                             xfilter-mars-chairs
-expand-ames-chairs@virtual.ietf.org                              mars_chair@ietf.org
-""")
-        self.group_alias_file.close()
-        self.saved_group_virtual_path = settings.GROUP_VIRTUAL_PATH
-        settings.GROUP_VIRTUAL_PATH = self.group_alias_file.name
 
-    def tearDown(self):
-        settings.GROUP_VIRTUAL_PATH = self.saved_group_virtual_path
-        os.unlink(self.group_alias_file.name)
-        super().tearDown()
-
-    def testAliases(self):
+    @mock.patch("ietf.group.views.get_group_email_aliases")
+    def testAliases(self, mock_get_aliases):
         url = urlreverse('ietf.group.urls_info_details.redirect.email', kwargs=dict(acronym="mars"))
         r = self.client.get(url)
         self.assertEqual(r.status_code, 302)
 
+        mock_get_aliases.return_value = [
+            {"acronym": "mars", "alias_type": "-ads", "expansion": "aread@example.org"},
+            {"acronym": "mars", "alias_type": "-chairs", "expansion": "mars_chair@ietf.org"},
+        ]
         for testdict in [dict(acronym="mars"),dict(acronym="mars",group_type="wg")]:
             url = urlreverse('ietf.group.urls_info_details.redirect.email', kwargs=testdict)
             r = self.client.get(url,follow=True)
+            self.assertEqual(
+                mock_get_aliases.call_args,
+                mock.call(testdict.get("acronym", None), testdict.get("group_type", None)),
+            )
             self.assertTrue(all([x in unicontent(r) for x in ['mars-ads@','mars-chairs@']]))
             self.assertFalse(any([x in unicontent(r) for x in ['ames-ads@','ames-chairs@']]))
 
         url = urlreverse('ietf.group.views.email_aliases', kwargs=dict())
         login_testing_unauthorized(self, "plain", url)
+
+        mock_get_aliases.return_value = [
+            {"acronym": "mars", "alias_type": "-ads", "expansion": "aread@example.org"},
+            {"acronym": "mars", "alias_type": "-chairs", "expansion": "mars_chair@ietf.org"},
+            {"acronym": "ames", "alias_type": "-ads", "expansion": "aread@example.org"},
+            {"acronym": "ames", "alias_type": "-chairs", "expansion": "mars_chair@ietf.org"},
+        ]
         r = self.client.get(url)
         self.assertTrue(r.status_code,200)
+        self.assertEqual(mock_get_aliases.call_args, mock.call(None, None))
         self.assertTrue(all([x in unicontent(r) for x in ['mars-ads@','mars-chairs@','ames-ads@','ames-chairs@']]))
 
         url = urlreverse('ietf.group.views.email_aliases', kwargs=dict(group_type="wg"))
+        mock_get_aliases.return_value = [
+            {"acronym": "mars", "alias_type": "-ads", "expansion": "aread@example.org"},
+            {"acronym": "mars", "alias_type": "-chairs", "expansion": "mars_chair@ietf.org"},
+            {"acronym": "ames", "alias_type": "-ads", "expansion": "aread@example.org"},
+            {"acronym": "ames", "alias_type": "-chairs", "expansion": "mars_chair@ietf.org"},
+        ]
         r = self.client.get(url)
         self.assertEqual(r.status_code,200)
+        self.assertEqual(mock_get_aliases.call_args, mock.call(None, "wg"))
         self.assertContains(r, 'mars-ads@')
 
         url = urlreverse('ietf.group.views.email_aliases', kwargs=dict(group_type="rg"))
+        mock_get_aliases.return_value = []
         r = self.client.get(url)
         self.assertEqual(r.status_code,200)
+        self.assertEqual(mock_get_aliases.call_args, mock.call(None, "rg"))
         self.assertNotContains(r, 'mars-ads@')
 
-    def testExpansions(self):
+    @mock.patch("ietf.group.views.get_group_email_aliases")
+    def testExpansions(self, mock_get_aliases):
+        mock_get_aliases.return_value = [
+            {"acronym": "mars", "alias_type": "-ads", "expansion": "aread@example.org"},
+            {"acronym": "mars", "alias_type": "-chairs", "expansion": "mars_chair@ietf.org"},
+            {"acronym": "ames", "alias_type": "-ads", "expansion": "aread@example.org"},
+            {"acronym": "ames", "alias_type": "-chairs", "expansion": "mars_chair@ietf.org"},
+        ]
         url = urlreverse('ietf.group.views.email', kwargs=dict(acronym="mars"))
         r = self.client.get(url)
         self.assertEqual(r.status_code,200)
+        self.assertEqual(mock_get_aliases.call_args, mock.call("mars", None))
         self.assertContains(r, 'Email aliases')
         self.assertContains(r, 'mars-ads@ietf.org')
         self.assertContains(r, 'group_personnel_change')
@@ -1962,7 +2214,16 @@ class AcronymValidationTests(TestCase):
         self.assertTrue(form.is_valid())
         form = AdminGroupForm({'acronym':'shouldfail-','name':'should fail','type':'wg','state':'active','used_roles':'[]','time':now})
         self.assertIn('acronym',form.errors)
+        form = AdminGroupForm({'acronym':'shouldfail-','name':'should fail','type':'sdo','state':'active','used_roles':'[]','time':now})
+        self.assertIn('acronym',form.errors)
         form = AdminGroupForm({'acronym':'-shouldfail','name':'should fail','type':'wg','state':'active','used_roles':'[]','time':now})
+        self.assertIn('acronym',form.errors)
+        form = AdminGroupForm({'acronym':'-shouldfail','name':'should fail','type':'sdo','state':'active','used_roles':'[]','time':now})
+        self.assertIn('acronym',form.errors)
+        # SDO groups (and only SDO groups) can have a leading number
+        form = AdminGroupForm({'acronym':'3gpp-should-pass','name':'should pass','type':'sdo','state':'active','used_roles':'[]','time':now})
+        self.assertTrue(form.is_valid())
+        form = AdminGroupForm({'acronym':'123shouldfail','name':'should fail','type':'wg','state':'active','used_roles':'[]','time':now})
         self.assertIn('acronym',form.errors)
 
         wg = GroupFactory(acronym='bad-idea', type_id='wg') # There are some existing wg and programs with hyphens in their acronyms.

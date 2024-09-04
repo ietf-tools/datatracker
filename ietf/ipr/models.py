@@ -7,7 +7,7 @@ from django.db import models
 from django.urls import reverse
 from django.utils import timezone
 
-from ietf.doc.models import DocAlias, DocEvent
+from ietf.doc.models import Document, DocEvent
 from ietf.name.models import DocRelationshipName,IprDisclosureStateName,IprLicenseTypeName,IprEventTypeName
 from ietf.person.models import Person
 from ietf.message.models import Message
@@ -16,11 +16,11 @@ from ietf.utils.models import ForeignKey
 class IprDisclosureBase(models.Model):
     by                  = ForeignKey(Person) # who was logged in, or System if nobody was logged in
     compliant           = models.BooleanField("Complies to RFC3979", default=True)
-    docs                = models.ManyToManyField(DocAlias, through='IprDocRel')
+    docs                = models.ManyToManyField(Document, through='ipr.IprDocRel')
     holder_legal_name   = models.CharField(max_length=255)
     notes               = models.TextField("Additional notes", blank=True)
     other_designations  = models.CharField("Designations for other contributions", blank=True, max_length=255)
-    rel                 = models.ManyToManyField('self', through='RelatedIpr', symmetrical=False)
+    rel                 = models.ManyToManyField('self', through='ipr.RelatedIpr', symmetrical=False)
     state               = ForeignKey(IprDisclosureStateName)
     submitter_name      = models.CharField(max_length=255,blank=True)
     submitter_email     = models.EmailField(blank=True)
@@ -160,9 +160,10 @@ class GenericIprDisclosure(IprDisclosureBase):
 
 class IprDocRel(models.Model):
     disclosure = ForeignKey(IprDisclosureBase)
-    document   = ForeignKey(DocAlias)
+    document   = ForeignKey(Document)
     sections   = models.TextField(blank=True)
     revisions  = models.CharField(max_length=16,blank=True) # allows strings like 01-07
+    originaldocumentaliasname = models.CharField(max_length=255, null=True, blank=True)
 
     def doc_type(self):
         name = self.document.name
@@ -175,7 +176,7 @@ class IprDocRel(models.Model):
 
     def formatted_name(self):
         name = self.document.name
-        if name.startswith("rfc"):
+        if len(name) >= 3 and name[:3] in ("rfc", "bcp", "fyi", "std"):
             return name.upper()
         #elif self.revisions:
         #    return "%s-%s" % (name, self.revisions)
@@ -234,10 +235,7 @@ class IprEvent(models.Model):
             'removed_objfalse': 'removed_objfalse_related_ipr',
         }
         if self.type_id in event_type_map:
-            related_docs = set()  # related docs, no duplicates
-            for alias in self.disclosure.docs.all():
-                related_docs.update(alias.docs.all())
-            for doc in related_docs:
+            for doc in self.disclosure.docs.distinct():
                 DocEvent.objects.create(
                     type=event_type_map[self.type_id],
                     time=self.time,

@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 
+from pathlib import Path
 import datetime, os, shutil
 import io
 import tarfile, tempfile, mailbox
@@ -47,6 +48,7 @@ class ReviewTests(TestCase):
         self.review_dir = self.tempdir('review')
         self.old_document_path_pattern = settings.DOCUMENT_PATH_PATTERN
         settings.DOCUMENT_PATH_PATTERN = self.review_dir + "/{doc.type_id}/"
+        (Path(settings.FTP_DIR) / "review").mkdir()
 
         self.review_subdir = os.path.join(self.review_dir, "review")
         if not os.path.exists(self.review_subdir):
@@ -56,6 +58,13 @@ class ReviewTests(TestCase):
         shutil.rmtree(self.review_dir)
         settings.DOCUMENT_PATH_PATTERN = self.old_document_path_pattern
         super().tearDown()
+
+    def verify_review_files_were_written(self, assignment, expected_content = "This is a review\nwith two lines"):
+        review_file = Path(self.review_subdir) / f"{assignment.review.name}.txt"
+        content = review_file.read_text()
+        self.assertEqual(content, expected_content)
+        review_ftp_file = Path(settings.FTP_DIR) / "review" / review_file.name
+        self.assertTrue(review_file.samefile(review_ftp_file))
 
     def test_request_review(self):
         doc = WgDraftFactory(group__acronym='mars',rev='01')
@@ -137,9 +146,17 @@ class ReviewTests(TestCase):
         url = urlreverse('ietf.doc.views_review.request_review', kwargs={ "name": doc.name })
         login_testing_unauthorized(self, "ad", url)
 
-        # get should fail
+        # get should fail - all non draft types 404
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 404)
+
+        # Can only request reviews on active draft documents
+        doc = WgDraftFactory(states=[("draft","rfc")])
+        url = urlreverse('ietf.doc.views_review.request_review', kwargs={ "name": doc.name })
         r = self.client.get(url)
         self.assertEqual(r.status_code, 403)
+
+
 
     def test_doc_page(self):
 
@@ -153,8 +170,8 @@ class ReviewTests(TestCase):
         # check we can fish it out
         old_doc = WgDraftFactory(name="draft-foo-mars-test")
         older_doc = WgDraftFactory(name="draft-older")
-        RelatedDocument.objects.create(source=old_doc, target=older_doc.docalias.first(), relationship_id='replaces')
-        RelatedDocument.objects.create(source=doc, target=old_doc.docalias.first(), relationship_id='replaces')
+        RelatedDocument.objects.create(source=old_doc, target=older_doc, relationship_id='replaces')
+        RelatedDocument.objects.create(source=doc, target=old_doc, relationship_id='replaces')
         review_req.doc = older_doc
         review_req.save()
 
@@ -371,6 +388,25 @@ class ReviewTests(TestCase):
         q = PyQuery(r.content)
         reviewer_label = q("option[value=\"{}\"]".format(reviewer_email.address)).text().lower()
         self.assertIn("rejected review of document before", reviewer_label)
+
+    def test_assign_reviewer_after_withdraw(self):
+        doc = WgDraftFactory()
+        review_team = ReviewTeamFactory()
+        rev_role = RoleFactory(group=review_team,person__user__username='reviewer',person__user__email='reviewer@example.com',name_id='reviewer')
+        RoleFactory(group=review_team,person__user__username='reviewsecretary',name_id='secr')
+        review_req = ReviewRequestFactory(team=review_team,doc=doc)
+        reviewer = rev_role.person.email_set.first()
+        ReviewAssignmentFactory(review_request=review_req, state_id='withdrawn', reviewer=reviewer)
+        req_url = urlreverse('ietf.doc.views_review.review_request', kwargs={ "name": doc.name, "request_id": review_req.pk })
+        assign_url = urlreverse('ietf.doc.views_review.assign_reviewer', kwargs={ "name": doc.name, "request_id": review_req.pk })
+
+        login_testing_unauthorized(self, "reviewsecretary", assign_url)
+        r = self.client.post(assign_url, { "action": "assign", "reviewer": reviewer.pk })
+        self.assertRedirects(r, req_url)
+        review_req = reload_db_objects(review_req)
+        assignment = review_req.reviewassignment_set.last()
+        self.assertEqual(assignment.state, ReviewAssignmentStateName.objects.get(slug='assigned'))
+        self.assertEqual(review_req.state, ReviewRequestStateName.objects.get(slug='assigned'))
 
     def test_previously_reviewed_replaced_doc(self):
         review_team = ReviewTeamFactory(acronym="reviewteam", name="Review Team", type_id="review", list_email="reviewteam@ietf.org", parent=Group.objects.get(acronym="farfut"))
@@ -803,8 +839,7 @@ class ReviewTests(TestCase):
         self.assertTrue(assignment.review_request.team.acronym.lower() in assignment.review.name)
         self.assertTrue(assignment.review_request.doc.rev in assignment.review.name)
 
-        with io.open(os.path.join(self.review_subdir, assignment.review.name + ".txt")) as f:
-            self.assertEqual(f.read(), "This is a review\nwith two lines")
+        self.verify_review_files_were_written(assignment)
 
         self.assertEqual(len(outbox), 1)
         self.assertIn(assignment.review_request.team.list_email, outbox[0]["To"])
@@ -858,8 +893,7 @@ class ReviewTests(TestCase):
         completed_time_diff = timezone.now() - assignment.completed_on
         self.assertLess(completed_time_diff, datetime.timedelta(seconds=10))
 
-        with io.open(os.path.join(self.review_subdir, assignment.review.name + ".txt")) as f:
-            self.assertEqual(f.read(), "This is a review\nwith two lines")
+        self.verify_review_files_were_written(assignment)
 
         self.assertEqual(len(outbox), 1)
         self.assertIn(assignment.review_request.team.list_email, outbox[0]["To"])
@@ -899,8 +933,7 @@ class ReviewTests(TestCase):
         self.assertLess(event0_time_diff, datetime.timedelta(seconds=10))
         self.assertEqual(events[1].time, datetime.datetime(2012, 12, 24, 12, 13, 14, tzinfo=DEADLINE_TZINFO))
         
-        with io.open(os.path.join(self.review_subdir, assignment.review.name + ".txt")) as f:
-            self.assertEqual(f.read(), "This is a review\nwith two lines")
+        self.verify_review_files_were_written(assignment)
 
         self.assertEqual(len(outbox), 1)
         self.assertIn(assignment.review_request.team.list_email, outbox[0]["To"])
@@ -986,8 +1019,7 @@ class ReviewTests(TestCase):
         assignment = reload_db_objects(assignment)
         self.assertEqual(assignment.state_id, "completed")
 
-        with io.open(os.path.join(self.review_subdir, assignment.review.name + ".txt")) as f:
-            self.assertEqual(f.read(), "This is a review\nwith two lines")
+        self.verify_review_files_were_written(assignment)
 
         self.assertEqual(len(outbox), 0)
         self.assertTrue("http://example.com" in assignment.review.external_url)
@@ -1036,8 +1068,7 @@ class ReviewTests(TestCase):
         self.assertEqual(assignment.reviewer, rev_role.person.role_email('reviewer'))
         self.assertEqual(assignment.state_id, "completed")
 
-        with io.open(os.path.join(self.review_subdir, assignment.review.name + ".txt")) as f:
-            self.assertEqual(f.read(), "This is a review\nwith two lines")
+        self.verify_review_files_were_written(assignment)
 
         self.assertEqual(len(outbox), 0)
         self.assertTrue("http://example.com" in assignment.review.external_url)
@@ -1145,8 +1176,9 @@ class ReviewTests(TestCase):
         self.assertLess(event_time_diff, datetime.timedelta(seconds=10))
         self.assertTrue('revised' in event1.desc.lower())
 
-        with io.open(os.path.join(self.review_subdir, assignment.review.name + ".txt")) as f:
-            self.assertEqual(f.read(), "This is a review\nwith two lines")
+        # See https://github.com/ietf-tools/datatracker/issues/6941
+        # These are _not_ getting written as a new version as intended.
+        self.verify_review_files_were_written(assignment)
 
         self.assertEqual(len(outbox), 0)
 
@@ -1172,6 +1204,8 @@ class ReviewTests(TestCase):
         self.assertLess(event_time_diff, datetime.timedelta(seconds=10))
         # Ensure that a new event was created for the new revision (#2590)
         self.assertNotEqual(event1.id, event2.id)
+
+        self.verify_review_files_were_written(assignment, "This is a revised review")
 
         self.assertEqual(len(outbox), 0)
         

@@ -9,13 +9,13 @@
 <tr {% if color_ad_position %}{% with doc|ballotposition:user as pos %}{% if pos %}class="position-{{ pos.slug }}-row"{% endif %}{% endwith %}{% endif %}>
     <td class="bg-transparent">
         {% if user.is_authenticated %}
-            <a href="{% url "ietf.community.views.untrack_document" username=request.user.username name=doc.name %}"
+            <a href="{% url "ietf.community.views.untrack_document" email_or_name=request.user.username name=doc.name %}"
                class="track-untrack-doc {% if not doc.tracked_in_personal_community_list %}d-none{% endif %}"
                aria-label="Remove from your personal I-D list"
                title="Remove from your personal I-D list">
                 <i class="bi bi-bookmark-check-fill"></i>
             </a>
-            <a href="{% url "ietf.community.views.track_document" username=request.user.username name=doc.name %}"
+            <a href="{% url "ietf.community.views.track_document" email_or_name=request.user.username name=doc.name %}"
                class="track-untrack-doc {% if doc.tracked_in_personal_community_list %}d-none{% endif %}"
                aria-label="Add to your personal I-D list"
                title="Add to your personal I-D list">
@@ -23,14 +23,14 @@
             </a>
             <br>
         {% endif %}
-        {% if user.review_teams %}
+        {% if user.person.review_teams %}
             <a class="review-wish-add-remove-doc ajax {% if not doc.has_review_wish %}d-none{% endif %}"
                href="{% url "ietf.doc.views_review.review_wishes_remove" name=doc.name %}?next={{ request.get_full_path|urlencode }}"
                aria-label="Remove from your review wishes for all teams"
                title="Remove from your review wishes for all teams">
                 <i class="bi bi-chat-left-heart-fill"></i>
             </a>
-            <a class="review-wish-add-remove-doc {% if user.review_teams|length_is:"1" %}ajax {% endif %} {% if doc.has_review_wish %}d-none{% endif %}"
+            <a class="review-wish-add-remove-doc {% if user.person.review_teams|length_is:"1" %}ajax {% endif %} {% if doc.has_review_wish %}d-none{% endif %}"
                href="{% url "ietf.doc.views_review.review_wish_add" name=doc.name %}?next={{ request.get_full_path|urlencode }}"
                aria-label="Add to your review wishes"
                title="Add to your review wishes">
@@ -49,13 +49,13 @@
         {% if doc.pages %}<small class="float-end text-body-secondary d-none d-sm-block">{{ doc.pages }} page{{ doc.pages|pluralize }}</small>{% endif %}
         <div>
             <a href="{{ doc.get_absolute_url }}">
-                {% if doc.get_state_slug == "rfc" %}
+                {% if doc.type_id == "rfc" %}
                     RFC {{ doc.rfc_number }}
                 {% else %}
                     {{ doc.name }}-{{ doc.rev }}
                 {% endif %}
             </a>
-            {% if doc.get_state_slug == "rfc" and "draft" in doc.name %}<i class="text-body-secondary">(was {{ doc.name }})</i>{% endif %}
+{#            {% if doc.type_id == "rfc" and "draft" in doc.name %}<i class="text-body-secondary">(was {{ doc.name }})</i>{% endif %} TODO drop this or look up the corresponding draft name#}
             <br>
             {% comment %}
             <div class="float-end">
@@ -106,19 +106,21 @@
         {% endif %}
     </td>
     <td class="bg-transparent">
-        {% if doc.latest_revision_date|timesince_days|new_enough:request and doc.get_state_slug != "rfc" %}
+        {% if doc.latest_revision_date|timesince_days|new_enough:request and doc.type_id != "rfc" %}
             {% if doc.rev != "00" %}
                 <a href="{{ rfcdiff_base_url }}?url2={{ doc.name }}-{{ doc.rev }}">
             {% elif doc.replaces %}
-                <a href="{{ rfcdiff_base_url }}?url1={{ doc.replaces_canonical_name }}&amp;url2={{ doc.name }}-{{ doc.rev }}">
+                {% with first_replaces=doc.replaces|first %}
+                    <a href="{{ rfcdiff_base_url }}?url1={{ first_replaces.name }}&amp;url2={{ doc.name }}-{{ doc.rev }}">
+                {% endwith %}
             {% endif %}
         {% endif %}
-        {% if doc.get_state_slug == "rfc" %}
+        {% if doc.type_id == "rfc" %}
             {{ doc.latest_revision_date|date:"Y-m" }}
         {% else %}
             {{ doc.latest_revision_date|date:"Y-m-d" }}
         {% endif %}
-        {% if doc.latest_revision_date|timesince_days|new_enough:request and doc.get_state_slug != "rfc" %}
+        {% if doc.latest_revision_date|timesince_days|new_enough:request and doc.type_id != "rfc" %}
             {% if doc.rev != "00" or doc.replaces %}</a>{% endif %}
         {% endif %}
         {% if doc.latest_revision_date|timesince_days|new_enough:request %}
@@ -140,7 +142,7 @@
             </a>
         {% endif %}
     </td>
-    {% if ad_name == None or ad_name != doc.ad.plain_name %}
+    {% if show_ad_and_shepherd %}
         <td class="d-none d-sm-table-cell bg-transparent">
             {% if doc.ad %}
                 {% person_link doc.ad title="Area Director" %}

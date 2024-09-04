@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 
-from django.contrib.auth.models import User
+from django.conf import settings
 from django.db import models
 from django.db.models import signals
 from django.urls import reverse as urlreverse
@@ -12,14 +12,17 @@ from ietf.group.models import Group
 from ietf.person.models import Person, Email
 from ietf.utils.models import ForeignKey
 
+from .tasks import notify_event_to_subscribers_task
+
+
 class CommunityList(models.Model):
-    user = ForeignKey(User, blank=True, null=True)
+    person = ForeignKey(Person, blank=True, null=True)
     group = ForeignKey(Group, blank=True, null=True)
     added_docs = models.ManyToManyField(Document)
 
     def long_name(self):
-        if self.user:
-            return 'Personal I-D list of %s' % self.user.username
+        if self.person:
+            return 'Personal I-D list of %s' % self.person.plain_name()
         elif self.group:
             return 'I-D list for %s' % self.group.name
         else:
@@ -30,8 +33,8 @@ class CommunityList(models.Model):
 
     def get_absolute_url(self):
         import ietf.community.views
-        if self.user:
-            return urlreverse(ietf.community.views.view_list, kwargs={ 'username': self.user.username })
+        if self.person:
+            return urlreverse(ietf.community.views.view_list, kwargs={ 'email_or_name': self.person.email() })
         elif self.group:
             return urlreverse("ietf.group.views.group_documents", kwargs={ 'acronym': self.group.acronym })
         return ""
@@ -107,8 +110,11 @@ def notify_events(sender, instance, **kwargs):
     if getattr(instance, "skip_community_list_notification", False):
         return
 
-    from ietf.community.utils import notify_event_to_subscribers
-    notify_event_to_subscribers(instance)
+    # kludge alert: queuing a celery task in response to a signal can cause unexpected attempts to
+    # start a Celery task during tests. To prevent this, don't queue a celery task if we're running
+    # tests.
+    if settings.SERVER_MODE != "test":
+        notify_event_to_subscribers_task.delay(event_id=instance.pk)
 
 
 signals.post_save.connect(notify_events)

@@ -2,6 +2,12 @@
 
 WORKSPACEDIR="/workspace"
 
+# Handle Linux host mounting the workspace dir as root
+if [ ! -O "${WORKSPACEDIR}/ietf" ]; then
+    sudo chown -R dev:dev $WORKSPACEDIR
+fi
+
+# Start rsyslog service
 sudo service rsyslog start &>/dev/null
 
 # Add /workspace as a safe git directory
@@ -17,9 +23,6 @@ sudo chown -R dev:dev "$WORKSPACEDIR/__pycache__"
 sudo chown -R dev:dev "$WORKSPACEDIR/.vite"
 sudo chown -R dev:dev "$WORKSPACEDIR/.yarn/unplugged"
 sudo chown dev:dev "/assets"
-
-echo "Fix chromedriver /dev/shm permissions..."
-sudo chmod 1777 /dev/shm
 
 # Run nginx
 echo "Starting nginx..."

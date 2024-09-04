@@ -17,7 +17,7 @@ from ietf.doc.utils import add_state_change_event, update_action_holders
 from ietf.person.models import Person
 from ietf.doc.lastcall import request_last_call
 from ietf.doc.mails import email_state_changed
-from ietf.iesg.models import TelechatDate, TelechatAgendaItem, Telechat
+from ietf.iesg.models import TelechatDate, TelechatAgendaItem
 from ietf.iesg.agenda import agenda_data, get_doc_section
 from ietf.ietfauth.utils import role_required
 from ietf.secr.telechat.forms import BallotForm, ChangeStateForm, DateSelectForm, TELECHAT_TAGS
@@ -175,7 +175,7 @@ def doc_detail(request, date, name):
     This view displays the ballot information for the document, and lets the user make
     changes to ballot positions and document state.
     '''
-    doc = get_object_or_404(Document, docalias__name=name)
+    doc = get_object_or_404(Document, name=name)
     if not is_doc_on_telechat(doc, date):
         messages.warning(request, 'Dcoument: {name} is not on the Telechat agenda for {date}'.format(
             name=doc.name,
@@ -313,7 +313,7 @@ def doc_detail(request, date, name):
 
         # if this is a conflict review document add referenced document
         if doc.type_id == 'conflrev':
-            conflictdoc = doc.relateddocument_set.get(relationship__slug='conflrev').target.document
+            conflictdoc = doc.relateddocument_set.get(relationship__slug='conflrev').target
         else:
             conflictdoc = None
 
@@ -342,7 +342,7 @@ def doc_navigate(request, date, name, nav):
     nav  - [next|previous] which direction the user wants to navigate in the list of docs
     The view retrieves the appropriate document and redirects to the doc view.
     '''
-    doc = get_object_or_404(Document, docalias__name=name)
+    doc = get_object_or_404(Document, name=name)
     agenda = agenda_data(date=date)
     target = name
 
@@ -419,18 +419,6 @@ def minutes(request, date):
         'da_docs': da_docs},
     )
 
-@role_required('Secretariat')
-def new(request):
-    '''
-    This view creates a new telechat agenda and redirects to the default view
-    '''
-    if request.method == 'POST':
-        date = request.POST['date']
-        # create legacy telechat record
-        Telechat.objects.create(telechat_date=date)
-
-        messages.success(request,'New Telechat Agenda created')
-        return redirect('ietf.secr.telechat.views.doc', date=date)
 
 @role_required('Secretariat')
 def roll_call(request, date):

@@ -143,6 +143,9 @@ def move_draft_files_to_archive(doc, rev):
 
         if os.path.exists(src):
             try:
+                # ghostlinkd would keep this in the combined all archive since it would
+                # be sourced from a different place. But when ghostlinkd is removed, nothing
+                # new is needed here - the file will already exist in the combined archive
                 shutil.move(src, dst)
             except IOError as e:
                 if "No such file or directory" in str(e):
@@ -217,6 +220,10 @@ def clean_up_draft_files():
             filename, revision = match.groups()
 
         def move_file_to(subdir):
+            # Similar to move_draft_files_to_archive
+            # ghostlinkd would keep this in the combined all archive since it would
+            # be sourced from a different place. But when ghostlinkd is removed, nothing
+            # new is needed here - the file will already exist in the combined archive
             shutil.move(path,
                         os.path.join(settings.INTERNET_DRAFT_ARCHIVE_DIR, subdir, basename))
 
@@ -233,4 +240,5 @@ def clean_up_draft_files():
                 move_file_to("")
 
         except Document.DoesNotExist:
+            # All uses of this past 2014 seem related to major system failures.
             move_file_to("unknown_ids")

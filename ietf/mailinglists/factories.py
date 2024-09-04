@@ -3,16 +3,15 @@
 
 
 import factory
-import random
 
-from ietf.mailinglists.models import List
+from ietf.mailinglists.models import NonWgMailingList
 
-class ListFactory(factory.django.DjangoModelFactory):
+class NonWgMailingListFactory(factory.django.DjangoModelFactory):
     class Meta:
-        model = List
+        model = NonWgMailingList
 
     name = factory.Sequence(lambda n: "list-name-%s" % n)
+    domain = factory.Sequence(lambda n: "domain-%s.org" % n)
     description = factory.Faker('sentence', nb_words=10)
-    advertised = factory.LazyAttribute(lambda obj: random.randint(0, 1))
 
     

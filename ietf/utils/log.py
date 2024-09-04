@@ -9,37 +9,10 @@ import inspect
 import os.path
 import traceback
 
-from typing import Callable         # pyflakes:ignore
-
-try:
-    import syslog
-    logfunc = syslog.syslog             # type: Callable
-except ImportError:                     # import syslog will fail on Windows boxes
-    logging.basicConfig(filename='tracker.log',level=logging.INFO)
-    logfunc = logging.info
-    pass
-
 from django.conf import settings
 
 import debug                            # pyflakes:ignore
 
-formatter = logging.Formatter('{levelname}: {name}:{lineno}: {message}', style='{')
-for name, level in settings.UTILS_LOGGER_LEVELS.items():
-    logger = logging.getLogger(name)
-    if not logger.hasHandlers():
-        debug.say(' Adding handlers to logger %s' % logger.name)
-        
-        handlers = [
-                logging.StreamHandler(),
-                logging.handlers.SysLogHandler(address='/dev/log',
-                    facility=logging.handlers.SysLogHandler.LOG_USER),
-            ]
-        for h in handlers:
-            h.setFormatter(formatter)
-            h.setLevel(level)
-            logger.addHandler(h)
-    debug.say(" Setting %s logging level to %s" % (logger.name, level))
-    logger.setLevel(level)
 
 def getclass(frame):
     cls = None
@@ -56,20 +29,9 @@ def getcaller():
     return (pmodule, pclass, pfunction, pfile, pline)
 
 def log(msg, e=None):
-    "Uses syslog by preference.  Logs the given calling point and message."
-    global logfunc
-    def _flushfunc():
-        pass
-    _logfunc = logfunc
-    if settings.SERVER_MODE == 'test':
-        if getattr(settings, 'show_logging', False) is True:
-            _logfunc = debug.say
-            _flushfunc = sys.stdout.flush   # pyflakes:ignore (intentional redefinition)
-        else:
+    "Logs the given calling point and message to the logging framework's datatracker handler at severity INFO"
+    if settings.SERVER_MODE == 'test' and not getattr(settings, 'show_logging',False):
             return
-    elif settings.DEBUG == True:
-        _logfunc = debug.say
-        _flushfunc = sys.stdout.flush   # pyflakes:ignore (intentional redefinition)
     if not isinstance(msg, str):
         msg = msg.encode('unicode_escape')
     try:
@@ -82,11 +44,8 @@ def log(msg, e=None):
             where = " in " + func + "()"
     except IndexError:
         file, line, where = "/<UNKNOWN>", 0, ""
-    _flushfunc()
-    _logfunc("ietf%s(%d)%s: %s" % (file, line, where, msg))
 
-logger = logging.getLogger('django')
-
+    logging.getLogger("datatracker").info(msg=msg, extra = {"file":file, "line":line, "where":where})
 
 
 def exc_parts():
@@ -124,6 +83,7 @@ def assertion(statement, state=True, note=None):
     This acts like an assertion.  It uses the django logger in order to send
     the failed assertion and a backtrace as for an internal server error.
     """
+    logger = logging.getLogger("django") # Note this is a change - before this would have gone to "django"
     frame = inspect.currentframe().f_back
     value = eval(statement, frame.f_globals, frame.f_locals)
     if bool(value) != bool(state):
@@ -148,6 +108,7 @@ def assertion(statement, state=True, note=None):
 
 def unreachable(date="(unknown)"):
     "Raises an assertion or sends traceback to admins if executed."
+    logger = logging.getLogger("django")
     frame = inspect.currentframe().f_back
     if settings.DEBUG is True or settings.SERVER_MODE == 'test':
         raise AssertionError("Arrived at code in %s() which was marked unreachable on %s." % (frame.f_code.co_name, date))

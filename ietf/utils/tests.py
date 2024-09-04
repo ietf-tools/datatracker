@@ -5,6 +5,7 @@
 import datetime
 import io
 import json
+import lxml.etree
 import os.path
 import pytz
 import shutil
@@ -35,6 +36,7 @@ from django.urls import reverse as urlreverse
 
 import debug                            # pyflakes:ignore
 
+from ietf.admin.sites import AdminSite
 from ietf.person.name import name_parts, unidecode_name
 from ietf.submit.tests import submission_file
 from ietf.utils.draft import PlaintextDraft, getmeta
@@ -324,7 +326,7 @@ class AdminTestCase(TestCase):
         User.objects.create_superuser('admin', 'admin@example.org', 'admin+password')
         self.client.login(username='admin', password='admin+password')
         rtop = self.client.get("/admin/")
-        self.assertContains(rtop, 'Django administration')
+        self.assertContains(rtop, AdminSite.site_header())
         for name in self.apps:
             app_name = self.apps[name]
             self.assertContains(rtop, name)
@@ -449,6 +451,86 @@ class XMLDraftTests(TestCase):
                 ),
                 datetime.date(today.year, 1 if today.month != 1 else 2, 15),
             )
+
+    def test_parse_docname(self):
+        with self.assertRaises(ValueError) as cm:
+            XMLDraft.parse_docname(lxml.etree.Element("xml"))  # no docName
+        self.assertIn("Missing docName attribute", str(cm.exception))
+
+        # There to be more invalid docNames, but we use XMLDraft in places where we don't
+        # actually care about the validation, so for now just test what has long been the
+        # implementation. 
+        with self.assertRaises(ValueError) as cm:
+            XMLDraft.parse_docname(lxml.etree.Element("xml", docName=""))  # not a valid docName
+        self.assertIn("Unable to parse docName", str(cm.exception))
+
+        self.assertEqual(
+            XMLDraft.parse_docname(lxml.etree.Element("xml", docName="draft-foo-bar-baz-01")),
+            ("draft-foo-bar-baz", "01"),
+        )
+
+        self.assertEqual(
+            XMLDraft.parse_docname(lxml.etree.Element("xml", docName="draft-foo-bar-baz")),
+            ("draft-foo-bar-baz", None),
+        )
+
+        self.assertEqual(
+            XMLDraft.parse_docname(lxml.etree.Element("xml", docName="draft-foo-bar-baz-")),
+            ("draft-foo-bar-baz-", None),
+        )
+
+        # This is awful, but is how we've been running for some time. The missing rev will trigger
+        # validation errors for submissions, so we're at least somewhat guarded against this
+        # property.
+        self.assertEqual(
+            XMLDraft.parse_docname(lxml.etree.Element("xml", docName="-01")),
+            ("-01", None),
+        )
+
+    def test_render_author_name(self):
+        self.assertEqual(
+            XMLDraft.render_author_name(lxml.etree.Element("author", fullname="Joanna Q. Public")),
+            "Joanna Q. Public",
+        )
+        self.assertEqual(
+            XMLDraft.render_author_name(lxml.etree.Element(
+                "author",
+                fullname="Joanna Q. Public",
+                asciiFullname="Not the Same at All",
+            )),
+            "Joanna Q. Public",
+        )
+        self.assertEqual(
+            XMLDraft.render_author_name(lxml.etree.Element(
+                "author",
+                fullname="Joanna Q. Public",
+                initials="J. Q.",
+                surname="Public-Private",
+            )),
+            "Joanna Q. Public",
+        )
+        self.assertEqual(
+            XMLDraft.render_author_name(lxml.etree.Element(
+                "author",
+                initials="J. Q.",
+                surname="Public",
+            )),
+            "J. Q. Public",
+        )
+        self.assertEqual(
+            XMLDraft.render_author_name(lxml.etree.Element(
+                "author",
+                surname="Public",
+            )),
+            "Public",
+        )
+        self.assertEqual(
+            XMLDraft.render_author_name(lxml.etree.Element(
+                "author",
+                initials="J. Q.",
+            )),
+            "J. Q.",
+        )
 
 
 class NameTests(TestCase):
@@ -598,3 +680,12 @@ class SearchableFieldTests(TestCase):
         self.assertTrue(changed_form.has_changed())
         unchanged_form = TestForm(initial={'test_field': [1]}, data={'test_field': [1]})
         self.assertFalse(unchanged_form.has_changed())
+
+
+class HealthTests(TestCase):
+    def test_health(self):
+        self.assertEqual(
+            self.client.get("/health/").status_code,
+            200,
+        )
+            

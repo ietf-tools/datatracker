@@ -7,7 +7,7 @@ from django.db import models
 from django import forms
 
 from .models import (StateType, State, RelatedDocument, DocumentAuthor, Document, RelatedDocHistory,
-    DocHistoryAuthor, DocHistory, DocAlias, DocReminder, DocEvent, NewRevisionDocEvent,
+    DocHistoryAuthor, DocHistory, DocReminder, DocEvent, NewRevisionDocEvent,
     StateDocEvent, ConsensusDocEvent, BallotType, BallotDocEvent, WriteupDocEvent, LastCallDocEvent,
     TelechatDocEvent, BallotPositionDocEvent, ReviewRequestDocEvent, InitialReviewDocEvent,
     AddedMessageEvent, SubmissionDocEvent, DeletedEvent, EditedAuthorsDocEvent, DocumentURL,
@@ -27,10 +27,6 @@ class StateAdmin(admin.ModelAdmin):
     filter_horizontal = ["next_states"]
 admin.site.register(State, StateAdmin)
 
-# class DocAliasInline(admin.TabularInline):
-#     model = DocAlias
-#     extra = 1
-
 class DocAuthorInline(admin.TabularInline):
     model = DocumentAuthor
     raw_id_fields = ['person', 'email']
@@ -43,8 +39,9 @@ class DocActionHolderInline(admin.TabularInline):
 
 class RelatedDocumentInline(admin.TabularInline):
     model = RelatedDocument
+    fk_name= 'source'
     def this(self, instance):
-        return instance.source.canonical_name()
+        return instance.source.name
     readonly_fields = ['this', ]
     fields = ['this', 'relationship', 'target', ]
     raw_id_fields = ['target']
@@ -70,7 +67,7 @@ class DocumentForm(forms.ModelForm):
 
 class DocumentAuthorAdmin(admin.ModelAdmin):
     list_display = ['id', 'document', 'person', 'email', 'affiliation', 'country', 'order']
-    search_fields = ['document__docalias__name', 'person__name', 'email__address', 'affiliation', 'country']
+    search_fields = ['document__name', 'person__name', 'email__address', 'affiliation', 'country']
     raw_id_fields = ["document", "person", "email"]
 admin.site.register(DocumentAuthor, DocumentAuthorAdmin)
     
@@ -108,14 +105,6 @@ class DocHistoryAdmin(admin.ModelAdmin):
 
 admin.site.register(DocHistory, DocHistoryAdmin)
 
-class DocAliasAdmin(admin.ModelAdmin):
-    list_display = ['name', 'targets']
-    search_fields = ['name', 'docs__name']
-    raw_id_fields = ['docs']
-    def targets(self, obj):
-        return ', '.join([o.name for o in obj.docs.all()])
-admin.site.register(DocAlias, DocAliasAdmin)
-
 class DocReminderAdmin(admin.ModelAdmin):
     list_display = ['id', 'event', 'type', 'due', 'active']
     list_filter = ['type', 'due', 'active']
@@ -125,7 +114,7 @@ admin.site.register(DocReminder, DocReminderAdmin)
 class RelatedDocumentAdmin(admin.ModelAdmin):
     list_display = ['source', 'target', 'relationship', ]
     list_filter = ['relationship', ]
-    search_fields = ['source__name', 'target__name', 'target__docs__name', ]
+    search_fields = ['source__name', 'target__name', ]
     raw_id_fields = ['source', 'target', ]
 admin.site.register(RelatedDocument, RelatedDocumentAdmin)
 
@@ -153,6 +142,13 @@ admin.site.register(DocumentActionHolder, DocumentActionHolderAdmin)
 
 # events
 
+class DeletedEventAdmin(admin.ModelAdmin):
+    list_display = ['id', 'content_type', 'json', 'by', 'time']
+    list_filter = ['time']
+    raw_id_fields = ['content_type', 'by']
+admin.site.register(DeletedEvent, DeletedEventAdmin)
+
+
 class DocEventAdmin(admin.ModelAdmin):
     def event_type(self, obj):
         return str(obj.type)
@@ -170,39 +166,42 @@ admin.site.register(NewRevisionDocEvent, DocEventAdmin)
 admin.site.register(StateDocEvent, DocEventAdmin)
 admin.site.register(ConsensusDocEvent, DocEventAdmin)
 admin.site.register(BallotDocEvent, DocEventAdmin)
+admin.site.register(IRSGBallotDocEvent, DocEventAdmin)
 admin.site.register(WriteupDocEvent, DocEventAdmin)
 admin.site.register(LastCallDocEvent, DocEventAdmin)
 admin.site.register(TelechatDocEvent, DocEventAdmin)
-admin.site.register(ReviewRequestDocEvent, DocEventAdmin)
-admin.site.register(ReviewAssignmentDocEvent, DocEventAdmin)
 admin.site.register(InitialReviewDocEvent, DocEventAdmin)
-admin.site.register(AddedMessageEvent, DocEventAdmin)
-admin.site.register(SubmissionDocEvent, DocEventAdmin)
 admin.site.register(EditedAuthorsDocEvent, DocEventAdmin)
 admin.site.register(IanaExpertDocEvent, DocEventAdmin)
 
-class DeletedEventAdmin(admin.ModelAdmin):
-    list_display = ['id', 'content_type', 'json', 'by', 'time']
-    list_filter = ['time']
-    raw_id_fields = ['content_type', 'by']
-admin.site.register(DeletedEvent, DeletedEventAdmin)
-
 class BallotPositionDocEventAdmin(DocEventAdmin):
-    raw_id_fields = ["doc", "by", "balloter", "ballot"]
+    raw_id_fields = DocEventAdmin.raw_id_fields + ["balloter", "ballot"]
 admin.site.register(BallotPositionDocEvent, BallotPositionDocEventAdmin)
- 
-class IRSGBallotDocEventAdmin(DocEventAdmin):
-    raw_id_fields = ["doc", "by"]
-admin.site.register(IRSGBallotDocEvent, IRSGBallotDocEventAdmin)
 
 class BofreqEditorDocEventAdmin(DocEventAdmin):
-    raw_id_fields = ["doc", "by", "editors" ]
+    raw_id_fields = DocEventAdmin.raw_id_fields + ["editors"]
 admin.site.register(BofreqEditorDocEvent, BofreqEditorDocEventAdmin)
     
 class BofreqResponsibleDocEventAdmin(DocEventAdmin):
-    raw_id_fields = ["doc", "by", "responsible" ]
+    raw_id_fields = DocEventAdmin.raw_id_fields + ["responsible"]
 admin.site.register(BofreqResponsibleDocEvent, BofreqResponsibleDocEventAdmin)
     
+class ReviewRequestDocEventAdmin(DocEventAdmin):
+    raw_id_fields = DocEventAdmin.raw_id_fields + ["review_request"]
+admin.site.register(ReviewRequestDocEvent, ReviewRequestDocEventAdmin)
+
+class ReviewAssignmentDocEventAdmin(DocEventAdmin):
+    raw_id_fields = DocEventAdmin.raw_id_fields + ["review_assignment"]
+admin.site.register(ReviewAssignmentDocEvent, ReviewAssignmentDocEventAdmin)
+
+class AddedMessageEventAdmin(DocEventAdmin):
+    raw_id_fields = DocEventAdmin.raw_id_fields + ["message"]
+admin.site.register(AddedMessageEvent, AddedMessageEventAdmin)
+
+class SubmissionDocEventAdmin(DocEventAdmin):
+    raw_id_fields = DocEventAdmin.raw_id_fields + ["submission"]
+admin.site.register(SubmissionDocEvent, SubmissionDocEventAdmin)
+
 class DocumentUrlAdmin(admin.ModelAdmin):
     list_display = ['id', 'doc', 'tag', 'url', 'desc', ]
     search_fields = ['doc__name', 'url', ]

@@ -48,7 +48,7 @@ class SecrAnnouncementTestCase(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertEqual(len(q('#id_frm option')),3)
+        self.assertEqual(len(q('#id_frm option')),4)
 
         # IAB Chair
         self.client.login(username="iab-chair", password="iab-chair+password")

@@ -37,18 +37,19 @@
 import copy
 import datetime
 import itertools
-import io
 import math
-import re
 import json
+import types
 
 from collections import OrderedDict, defaultdict
+from pathlib import Path
 from simple_history.utils import update_change_reason
 
 from django import forms
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
-from django.db.models import Q, Count, OuterRef, Subquery
+from django.db.models import Count, F, OuterRef, Prefetch, Q, Subquery, TextField, Value
+from django.db.models.functions import Coalesce
 from django.http import HttpResponse, HttpResponseRedirect, Http404, JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.template.loader import render_to_string
@@ -61,7 +62,7 @@ import debug                            # pyflakes:ignore
 
 from ietf.community.models import CommunityList, EmailSubscription
 from ietf.community.utils import docs_tracked_by_community_list
-from ietf.doc.models import DocTagName, State, DocAlias, RelatedDocument, Document, DocEvent
+from ietf.doc.models import DocTagName, State, RelatedDocument, Document, DocEvent
 from ietf.doc.templatetags.ietf_filters import clean_whitespace
 from ietf.doc.utils import get_chartering_type, get_tags_for_stream_id
 from ietf.doc.utils_charter import charter_name_for_group, replace_charter_of_replaced_group
@@ -73,16 +74,18 @@ from ietf.group.forms import (GroupForm, StatusUpdateForm, ConcludeGroupForm, St
 from ietf.group.mails import email_admin_re_charter, email_personnel_change, email_comment
 from ietf.group.models import ( Group, Role, GroupEvent, GroupStateTransitions,
                               ChangeStateGroupEvent, GroupFeatures, AppealArtifact )
-from ietf.group.utils import (get_charter_text, can_manage_all_groups_of_type, 
+from ietf.group.utils import (can_manage_all_groups_of_type,
                               milestone_reviewer_for_group_type, can_provide_status_update,
                               can_manage_materials, group_attribute_change_desc,
                               construct_group_menu_context, get_group_materials,
                               save_group_in_history, can_manage_group, update_role_set,
-                              get_group_or_404, setup_default_community_list_for_group, )                              
+                              get_group_or_404, setup_default_community_list_for_group, fill_in_charter_info,
+                              get_group_email_aliases)                              
 #
 from ietf.ietfauth.utils import has_role, is_authorized_in_group
 from ietf.mailtrigger.utils import gather_relevant_expansions
 from ietf.meeting.helpers import get_meeting
+from ietf.meeting.models import ImportantDate, SchedTimeSessAssignment, SchedulingEvent
 from ietf.meeting.utils import group_sessions
 from ietf.name.models import GroupTypeName, StreamName
 from ietf.person.models import Email, Person
@@ -116,6 +119,7 @@ from ietf.dbtemplate.models import DBTemplate
 from ietf.mailtrigger.utils import gather_address_lists
 from ietf.mailtrigger.models import Recipient
 from ietf.settings import MAILING_LIST_INFO_URL
+from ietf.utils.decorators import ignore_view_kwargs
 from ietf.utils.response import permission_denied
 from ietf.utils.text import strip_suffix
 from ietf.utils import markdown
@@ -128,89 +132,17 @@ def roles(group, role_name):
     return Role.objects.filter(group=group, name=role_name).select_related("email", "person")
 
 
-def fill_in_charter_info(group, include_drafts=False):
-    group.areadirector = getattr(group.ad_role(),'email',None)
-
-    personnel = {}
-    for r in Role.objects.filter(group=group).order_by('person__name').select_related("email", "person", "name"):
-        if r.name_id not in personnel:
-            personnel[r.name_id] = []
-        personnel[r.name_id].append(r)
-
-    if group.parent and group.parent.type_id == "area" and group.ad_role() and "ad" not in personnel:
-        ad_roles = list(Role.objects.filter(group=group.parent, name="ad", person=group.ad_role().person))
-        if ad_roles:
-            personnel["ad"] = ad_roles
-
-    group.personnel = []
-    for role_name_slug, roles in personnel.items():
-        label = roles[0].name.name
-        if len(roles) > 1:
-            if label.endswith("y"):
-                label = label[:-1] + "ies"
-            else:
-                label += "s"
-
-        group.personnel.append((role_name_slug, label, roles))
-
-    group.personnel.sort(key=lambda t: t[2][0].name.order)
-
-    milestone_state = "charter" if group.state_id == "proposed" else "active"
-    group.milestones = group.groupmilestone_set.filter(state=milestone_state)
-    if group.uses_milestone_dates:
-        group.milestones = group.milestones.order_by('resolved', 'due')
-    else:
-        group.milestones = group.milestones.order_by('resolved', 'order')
-
-    if group.charter:
-        group.charter_text = get_charter_text(group)
-    else:
-        group.charter_text = "Not chartered yet."
-    group.charter_html = markdown.markdown(group.charter_text)
-
 def extract_last_name(role):
     return role.person.name_parts()[3]
 
-def fill_in_wg_roles(group):
-    def get_roles(slug, default):
-        for role_slug, label, roles in group.personnel:
-            if slug == role_slug:
-                return roles
-        return default
 
-    group.chairs = get_roles("chair", [])
-    ads = get_roles("ad", [])
-    group.areadirector = ads[0] if ads else None
-    group.techadvisors = get_roles("techadv", [])
-    group.editors = get_roles("editor", [])
-    group.secretaries = get_roles("secr", [])
-
-def fill_in_wg_drafts(group):
-    aliases = DocAlias.objects.filter(docs__type="draft", docs__group=group).prefetch_related('docs').order_by("name")
-    group.drafts = []
-    group.rfcs = []
-    for a in aliases:
-        if a.name.startswith("draft"):
-            group.drafts.append(a)
-        else:
-            group.rfcs.append(a)
-            a.remote_field = RelatedDocument.objects.filter(source=a.document,relationship_id__in=['obs','updates']).distinct()
-            a.invrel = RelatedDocument.objects.filter(target=a,relationship_id__in=['obs','updates']).distinct()
-
-
-def check_group_email_aliases():
-    pattern = re.compile(r'expand-(.*?)(-\w+)@.*? +(.*)$')
-    tot_count = 0
-    good_count = 0
-    with io.open(settings.GROUP_VIRTUAL_PATH,"r") as virtual_file:
-        for line in virtual_file.readlines():
-            m = pattern.match(line)
-            tot_count += 1
-            if m:
-                good_count += 1
-            if good_count > 50 and tot_count < 3*good_count:
-                return True
-    return False
+def response_from_file(fpath: Path) -> HttpResponse:
+    """Helper to shovel a file back in an HttpResponse"""
+    try:
+        content = fpath.read_bytes()
+    except IOError:
+        raise Http404
+    return HttpResponse(content, content_type="text/plain; charset=utf-8")
 
 
 # --- View functions ---------------------------------------------------
@@ -218,58 +150,26 @@ def check_group_email_aliases():
 def wg_summary_area(request, group_type):
     if group_type != "wg":
         raise Http404
-    areas = Group.objects.filter(type="area", state="active").order_by("name")
-    for area in areas:
-        area.groups = Group.objects.filter(parent=area, type="wg", state="active").order_by("acronym")
-        for group in area.groups:
-            group.chairs = sorted(roles(group, "chair"), key=extract_last_name)
+    return response_from_file(Path(settings.GROUP_SUMMARY_PATH) / "1wg-summary.txt")
 
-    areas = [a for a in areas if a.groups]
-
-    return render(request, 'group/1wg-summary.txt',
-                  { 'areas': areas },
-                  content_type='text/plain; charset=UTF-8')
 
 def wg_summary_acronym(request, group_type):
     if group_type != "wg":
         raise Http404
-    areas = Group.objects.filter(type="area", state="active").order_by("name")
-    groups = Group.objects.filter(type="wg", state="active").order_by("acronym").select_related("parent")
-    for group in groups:
-        group.chairs = sorted(roles(group, "chair"), key=extract_last_name)
-    return render(request, 'group/1wg-summary-by-acronym.txt',
-                  { 'areas': areas,
-                    'groups': groups },
-                  content_type='text/plain; charset=UTF-8')
+    return response_from_file(Path(settings.GROUP_SUMMARY_PATH) / "1wg-summary-by-acronym.txt")
 
-@cache_page ( 60 * 60, cache="slowpages" )
+
 def wg_charters(request, group_type):
     if group_type != "wg":
         raise Http404
-    areas = Group.objects.filter(type="area", state="active").order_by("name")
-    for area in areas:
-        area.groups = Group.objects.filter(parent=area, type="wg", state="active").order_by("name")
-        for group in area.groups:
-            fill_in_charter_info(group)
-            fill_in_wg_roles(group)
-            fill_in_wg_drafts(group)
-    return render(request, 'group/1wg-charters.txt',
-                  { 'areas': areas },
-                  content_type='text/plain; charset=UTF-8')
+    return response_from_file(Path(settings.CHARTER_PATH) / "1wg-charters.txt") 
 
-@cache_page ( 60 * 60, cache="slowpages" )
+
 def wg_charters_by_acronym(request, group_type):
     if group_type != "wg":
         raise Http404
+    return response_from_file(Path(settings.CHARTER_PATH) / "1wg-charters-by-acronym.txt") 
 
-    groups = Group.objects.filter(type="wg", state="active").exclude(parent=None).order_by("acronym")
-    for group in groups:
-        fill_in_charter_info(group)
-        fill_in_wg_roles(group)
-        fill_in_wg_drafts(group)
-    return render(request, 'group/1wg-charters-by-acronym.txt',
-                  { 'groups': groups },
-                  content_type='text/plain; charset=UTF-8')
 
 def active_groups(request, group_type=None):
 
@@ -291,7 +191,7 @@ def active_groups(request, group_type=None):
         return active_dirs(request)
     elif group_type == "review":
         return active_review_dirs(request)
-    elif group_type in ("program", "iabasg"):
+    elif group_type in ("program", "iabasg","iabworkshop"):
         return active_iab(request)
     elif group_type == "adm":
         return active_adm(request)
@@ -314,6 +214,7 @@ def active_group_types(request):
                 "area",
                 "program",
                 "iabasg",
+                "iabworkshop"
                 "adm",
             ]
         )
@@ -344,7 +245,7 @@ def active_teams(request):
     return render(request, 'group/active_teams.html', {'teams' : teams })
 
 def active_iab(request):
-    iabgroups = Group.objects.filter(type__in=("program","iabasg"), state="active").order_by("-type_id","name")
+    iabgroups = Group.objects.filter(type__in=("program","iabasg","iabworkshop"), state="active").order_by("-type_id","name")
     for group in iabgroups:
         group.leads = sorted(roles(group, "lead"), key=extract_last_name)
     return render(request, 'group/active_iabgroups.html', {'iabgroups' : iabgroups })
@@ -379,7 +280,7 @@ def active_wgs(request):
             if group.list_subscribe.startswith('http'):
                 group.list_subscribe_url = group.list_subscribe
             elif group.list_email.endswith('@ietf.org'):
-                group.list_subscribe_url = MAILING_LIST_INFO_URL % {'list_addr':group.list_email.split('@')[0]}
+                group.list_subscribe_url = MAILING_LIST_INFO_URL % {'list_addr':group.list_email.split('@')[0].lower(),'domain':'ietf.org'}
             else:
                 group.list_subscribe_url = "mailto:"+group.list_subscribe
 
@@ -433,35 +334,86 @@ def chartering_groups(request):
                   dict(charter_states=charter_states,
                        group_types=group_types))
 
+
 def concluded_groups(request):
     sections = OrderedDict()
 
-    sections['WGs'] = Group.objects.filter(type='wg', state="conclude").select_related("state", "charter").order_by("parent__name","acronym")
-    sections['RGs'] = Group.objects.filter(type='rg', state="conclude").select_related("state", "charter").order_by("parent__name","acronym")
-    sections['BOFs'] = Group.objects.filter(type='wg', state="bof-conc").select_related("state", "charter").order_by("parent__name","acronym")
-    sections['AGs'] = Group.objects.filter(type='ag', state="conclude").select_related("state", "charter").order_by("parent__name","acronym")
-    sections['RAGs'] = Group.objects.filter(type='rag', state="conclude").select_related("state", "charter").order_by("parent__name","acronym")
-    sections['Directorates'] = Group.objects.filter(type='dir', state="conclude").select_related("state", "charter").order_by("parent__name","acronym")
-    sections['Review teams'] = Group.objects.filter(type='review', state="conclude").select_related("state", "charter").order_by("parent__name","acronym")
-    sections['Teams'] = Group.objects.filter(type='team', state="conclude").select_related("state", "charter").order_by("parent__name","acronym")
-    sections['Programs'] = Group.objects.filter(type='program', state="conclude").select_related("state", "charter").order_by("parent__name","acronym")
+    sections["WGs"] = (
+        Group.objects.filter(type="wg", state="conclude")
+        .select_related("state", "charter")
+        .order_by("parent__name", "acronym")
+    )
+    sections["RGs"] = (
+        Group.objects.filter(type="rg", state="conclude")
+        .select_related("state", "charter")
+        .order_by("parent__name", "acronym")
+    )
+    sections["BOFs"] = (
+        Group.objects.filter(type="wg", state="bof-conc")
+        .select_related("state", "charter")
+        .order_by("parent__name", "acronym")
+    )
+    sections["AGs"] = (
+        Group.objects.filter(type="ag", state="conclude")
+        .select_related("state", "charter")
+        .order_by("parent__name", "acronym")
+    )
+    sections["RAGs"] = (
+        Group.objects.filter(type="rag", state="conclude")
+        .select_related("state", "charter")
+        .order_by("parent__name", "acronym")
+    )
+    sections["Directorates"] = (
+        Group.objects.filter(type="dir", state="conclude")
+        .select_related("state", "charter")
+        .order_by("parent__name", "acronym")
+    )
+    sections["Review teams"] = (
+        Group.objects.filter(type="review", state="conclude")
+        .select_related("state", "charter")
+        .order_by("parent__name", "acronym")
+    )
+    sections["Teams"] = (
+        Group.objects.filter(type="team", state="conclude")
+        .select_related("state", "charter")
+        .order_by("parent__name", "acronym")
+    )
+    sections["Programs"] = (
+        Group.objects.filter(type="program", state="conclude")
+        .select_related("state", "charter")
+        .order_by("parent__name", "acronym")
+    )
 
     for name, groups in sections.items():
-        
         # add start/conclusion date
         d = dict((g.pk, g) for g in groups)
 
         for g in groups:
             g.start_date = g.conclude_date = None
 
-        for e in ChangeStateGroupEvent.objects.filter(group__in=groups, state="active").order_by("-time"):
+        # Some older BOFs were created in the "active" state, so consider both "active" and "bof"
+        # ChangeStateGroupEvents when finding the start date. A group with _both_ "active" and "bof"
+        # events should not be in the "bof-conc" state so this shouldn't cause a problem (if it does,
+        # we'll need to clean up the data)
+        for e in ChangeStateGroupEvent.objects.filter(
+            group__in=groups,
+            state__in=["active", "bof"] if name == "BOFs" else ["active"],
+        ).order_by("-time"):
             d[e.group_id].start_date = e.time
 
-        for e in ChangeStateGroupEvent.objects.filter(group__in=groups, state="conclude").order_by("time"):
+        # Similarly, some older BOFs were concluded into the "conclude" state and the event was never
+        # fixed, so consider both "conclude" and "bof-conc" ChangeStateGroupEvents when finding the
+        # concluded date. A group with _both_ "conclude" and "bof-conc" events should not be in the
+        # "bof-conc" state so this shouldn't cause a problem (if it does, we'll need to clean up the
+        # data)
+        for e in ChangeStateGroupEvent.objects.filter(
+            group__in=groups,
+            state__in=["bof-conc", "conclude"] if name == "BOFs" else ["conclude"],
+        ).order_by("time"):
             d[e.group_id].conclude_date = e.time
 
-    return render(request, 'group/concluded_groups.html',
-                  dict(sections=sections))
+    return render(request, "group/concluded_groups.html", dict(sections=sections))
+
 
 def prepare_group_documents(request, group, clist):
     found_docs, meta = prepare_document_table(request, docs_tracked_by_community_list(clist), request.GET, max_results=500)
@@ -474,8 +426,8 @@ def prepare_group_documents(request, group, clist):
         # non-WG drafts and call for WG adoption are considered related
         if (d.group != group
             or (d.stream_id and d.get_state_slug("draft-stream-%s" % d.stream_id) in ("c-adopt", "wg-cand"))):
-            if d.get_state_slug() != "expired":
-                d.search_heading = "Related Internet-Draft"
+            if (d.type_id == "draft" and d.get_state_slug() not in ["expired","rfc"]) or d.type_id == "rfc":
+                d.search_heading = "Related Internet-Drafts and RFCs"
                 docs_related.append(d)
         else:
             if not (d.get_state_slug('draft-iesg') == "dead" or (d.stream_id and d.get_state_slug("draft-stream-%s" % d.stream_id) == "dead")):
@@ -534,9 +486,8 @@ def group_documents_txt(request, acronym, group_type=None):
 
     rows = []
     for d in itertools.chain(docs, docs_related):
-        rfc_number = d.rfc_number()
-        if rfc_number != None:
-            name = rfc_number
+        if d.type_id == "rfc":
+            name = str(d.rfc_number)
         else:
             name = "%s-%s" % (d.name, d.rev)
 
@@ -664,21 +615,6 @@ def group_about_status_edit(request, acronym, group_type=None):
                   }
                  )
 
-def get_group_email_aliases(acronym, group_type):
-    if acronym:
-        pattern = re.compile(r'expand-(%s)(-\w+)@.*? +(.*)$'%acronym)
-    else:
-        pattern = re.compile(r'expand-(.*?)(-\w+)@.*? +(.*)$')
-
-    aliases = []
-    with io.open(settings.GROUP_VIRTUAL_PATH,"r") as virtual_file:
-        for line in virtual_file.readlines():
-            m = pattern.match(line)
-            if m:
-                if acronym or not group_type or Group.objects.filter(acronym=m.group(1),type__slug=group_type):
-                    aliases.append({'acronym':m.group(1),'alias_type':m.group(2),'expansion':m.group(3)})
-    return aliases
-
 def email(request, acronym, group_type=None):
     group = get_group_or_404(acronym, group_type)
 
@@ -745,14 +681,31 @@ def dependencies(request, acronym, group_type=None):
         source__type="draft",
         relationship__slug__startswith="ref",
     )
-
-    both_rfcs = Q(source__states__slug="rfc", target__docs__states__slug="rfc")
-    inactive = Q(source__states__slug__in=["expired", "repl"])
+    rfc_or_subseries = {"rfc", "bcp", "fyi", "std"}
+    both_rfcs = Q(source__type_id="rfc", target__type_id__in=rfc_or_subseries)
+    pre_rfc_draft_to_rfc = Q(
+        source__states__type="draft",
+        source__states__slug="rfc",
+        target__type_id__in=rfc_or_subseries,
+    )
+    both_pre_rfcs = Q(
+        source__states__type="draft",
+        source__states__slug="rfc",
+        target__type_id="draft",
+        target__states__type="draft",
+        target__states__slug="rfc",
+    )
+    inactive = Q(
+        source__states__type="draft",
+        source__states__slug__in=["expired", "repl"],
+    )
     attractor = Q(target__name__in=["rfc5000", "rfc5741"])
-    removed = Q(source__states__slug__in=["auth-rm", "ietf-rm"])
+    removed = Q(source__states__type="draft", source__states__slug__in=["auth-rm", "ietf-rm"])
     relations = (
         RelatedDocument.objects.filter(references)
         .exclude(both_rfcs)
+        .exclude(pre_rfc_draft_to_rfc)
+        .exclude(both_pre_rfcs)
         .exclude(inactive)
         .exclude(attractor)
         .exclude(removed)
@@ -760,29 +713,28 @@ def dependencies(request, acronym, group_type=None):
 
     links = set()
     for x in relations:
-        target_state = x.target.document.get_state_slug("draft")
-        if target_state != "rfc" or x.is_downref():
+        always_include = x.target.type_id not in rfc_or_subseries and x.target.get_state_slug("draft") != "rfc" 
+        if always_include or x.is_downref():
             links.add(x)
 
     replacements = RelatedDocument.objects.filter(
         relationship__slug="replaces",
-        target__docs__in=[x.target.document for x in links],
+        target__in=[x.target for x in links],
     )
 
     for x in replacements:
         links.add(x)
 
-    nodes = set([x.source for x in links]).union([x.target.document for x in links])
+    nodes = set([x.source for x in links]).union([x.target for x in links])
     graph = {
         "nodes": [
             {
-                "id": x.canonical_name(),
-                "rfc": x.get_state("draft").slug == "rfc",
-                "post-wg": not x.get_state("draft-iesg").slug
-                in ["idexists", "watching", "dead"],
-                "expired": x.get_state("draft").slug == "expired",
-                "replaced": x.get_state("draft").slug == "repl",
-                "group": x.group.acronym if x.group.acronym != "none" else "",
+                "id": x.became_rfc().name if x.became_rfc() else x.name,
+                "rfc": x.type_id == "rfc" or x.became_rfc() is not None,
+                "post-wg": x.get_state_slug("draft-iesg") not in ["idexists", "watching", "dead"],
+                "expired": x.get_state_slug("draft") == "expired",
+                "replaced": x.get_state_slug("draft") == "repl",
+                "group": x.group.acronym if x.group and x.group.acronym != "none" else "",
                 "url": x.get_absolute_url(),
                 "level": x.intended_std_level.name
                 if x.intended_std_level
@@ -794,8 +746,8 @@ def dependencies(request, acronym, group_type=None):
         ],
         "links": [
             {
-                "source": x.source.canonical_name(),
-                "target": x.target.document.canonical_name(),
+                "source": x.source.became_rfc().name if x.source.became_rfc() else x.source.name,
+                "target": x.target.became_rfc().name if x.target.became_rfc() else x.target.name,
                 "rel": "downref" if x.is_downref() else x.relationship.slug,
             }
             for x in links
@@ -823,21 +775,70 @@ def meetings(request, acronym, group_type=None):
 
     four_years_ago = timezone.now() - datetime.timedelta(days=4 * 365)
 
-    sessions = (
-        group.session_set.with_current_status()
-        .filter(
-            meeting__date__gt=four_years_ago
-            if group.acronym != "iab"
-            else datetime.date(1970, 1, 1),
-            type__in=["regular", "plenary", "other"],
-        )
-        .filter(
-            current_status__in=["sched", "schedw", "appr", "canceled"],
+    stsas = SchedTimeSessAssignment.objects.filter(
+        session__type__in=["regular", "plenary", "other"],
+        session__group=group)
+    if group.acronym not in ["iab", "iesg"]:
+        stsas = stsas.filter(session__meeting__date__gt=four_years_ago)
+    stsas = stsas.annotate(sessionstatus=Coalesce(
+                Subquery(
+                    SchedulingEvent.objects.filter(
+                        session=OuterRef("session__pk")
+                    ).order_by(
+                        '-time', '-id'
+                    ).values('status')[:1]),
+                Value(''), 
+                output_field=TextField())
+    ).filter(
+        sessionstatus__in=["sched", "schedw", "appr", "canceled"],
+        session__meeting__schedule=F("schedule")
+    ).distinct().select_related(
+        "session", "session__group", "session__group__parent", "session__meeting__type", "timeslot"
+    ).prefetch_related(
+        "session__materials",
+        "session__materials__states",
+        Prefetch("session__materials",
+            queryset=Document.objects.exclude(states__type=F("type"), states__slug='deleted').order_by('presentations__order').prefetch_related('states'),
+            to_attr="prefetched_active_materials"
+        ),
+    )
+
+    stsas = list(stsas)
+
+    for stsa in stsas:
+        stsa.session._otsa = stsa
+        stsa.session.official_timeslotassignment = types.MethodType(lambda self:self._otsa, stsa.session)
+        stsa.session.current_status = stsa.sessionstatus
+
+    sessions = sorted(
+        set([stsa.session for stsa in stsas]),
+        key=lambda x: (
+            x._otsa.timeslot.time,
+            x._otsa.timeslot.type_id,
+            x._otsa.session.group.parent.name if x._otsa.session.group.parent else None,
+            x._otsa.session.name
         )
     )
-    sessions = list(sessions)
+
+    meeting_seen = None
+    for s in sessions:
+        if s.meeting != meeting_seen:
+            meeting_seen = s.meeting
+            order = 1
+        s._oim = order
+        s.order_in_meeting = types.MethodType(lambda self:self._oim, s)
+        order += 1
+
+
+    revsub_dates_by_meeting = dict(ImportantDate.objects.filter(name_id="revsub", meeting__session__in=sessions).distinct().values_list("meeting_id","date"))
+
     for s in sessions:
         s.order_number = s.order_in_meeting()
+        if s.meeting.pk in revsub_dates_by_meeting:
+            cutoff_date = revsub_dates_by_meeting[s.meeting.pk]
+        else:
+            cutoff_date = s.meeting.date + datetime.timedelta(days=s.meeting.submission_correction_day_offset)
+        s.cached_is_cutoff = date_today(datetime.timezone.utc) > cutoff_date
 
     future, in_progress, recent, past = group_sessions(sessions)
 
@@ -845,7 +846,7 @@ def meetings(request, acronym, group_type=None):
     can_always_edit = has_role(request.user, ["Secretariat", "Area Director"])
 
     far_past = []
-    if group.acronym == "iab":
+    if group.acronym in ["iab", "iesg"]:
         recent_past = []
         for s in past:
             if s.time >= four_years_ago:
@@ -945,14 +946,17 @@ def edit(request, group_type=None, acronym=None, action="edit", field=None):
         if not (can_manage_group(request.user, group)
                 or group.has_role(request.user, group.features.groupman_roles)):
             permission_denied(request, "You don't have permission to access this view")
+        hide_parent = not has_role(request.user, ("Secretariat", "Area Director", "IRTF Chair"))
     else:
         # This allows ADs to create RG and the IRTF Chair to create WG, but we trust them not to
         if not has_role(request.user, ("Secretariat", "Area Director", "IRTF Chair")):
              permission_denied(request, "You don't have permission to access this view")
-                
+        hide_parent = False
 
     if request.method == 'POST':
-        form = GroupForm(request.POST, group=group, group_type=group_type, field=field)
+        form = GroupForm(request.POST, group=group, group_type=group_type, field=field, hide_parent=hide_parent)
+        if field and not form.fields:
+            permission_denied(request, "You don't have permission to edit this field")
         if form.is_valid():
             clean = form.cleaned_data
             if new_group:
@@ -1114,7 +1118,9 @@ def edit(request, group_type=None, acronym=None, action="edit", field=None):
 
         else:
             init = dict()
-        form = GroupForm(initial=init, group=group, group_type=group_type, field=field)
+        form = GroupForm(initial=init, group=group, group_type=group_type, field=field, hide_parent=hide_parent)
+        if field and not form.fields:
+            permission_denied(request, "You don't have permission to edit this field")
 
     return render(request, 'group/edit.html',
                   dict(group=group,
@@ -1277,7 +1283,10 @@ def stream_documents(request, acronym):
     editable = has_role(request.user, "Secretariat") or group.has_role(request.user, "chair")
     stream = StreamName.objects.get(slug=acronym)
 
-    qs = Document.objects.filter(states__type="draft", states__slug__in=["active", "rfc"], stream=acronym)
+    qs = Document.objects.filter(stream=acronym).filter(
+        Q(type_id="draft", states__type="draft", states__slug="active")
+        | Q(type_id="rfc")
+    ).distinct()
     docs, meta = prepare_document_table(request, qs, max_results=1000)
     return render(request, 'group/stream_documents.html', {'stream':stream, 'docs':docs, 'meta':meta, 'editable':editable } )
 
@@ -1327,16 +1336,36 @@ def stream_edit(request, acronym):
                 )
 
 
-@cache_control(public=True, max_age=30*60)
+@cache_control(public=True, max_age=30 * 60)
 @cache_page(30 * 60)
 def group_menu_data(request):
-    groups = Group.objects.filter(state="active", parent__state="active").filter(Q(type__features__acts_like_wg=True)|Q(type_id__in=['program','iabasg'])|Q(parent__acronym='ietfadminllc')|Q(parent__acronym='rfceditor')).order_by("-type_id","acronym")
+    groups = (
+        Group.objects.filter(state="active", parent__state="active")
+        .filter(
+            Q(type__features__acts_like_wg=True)
+            | Q(type_id__in=["program", "iabasg", "iabworkshop"])
+            | Q(parent__acronym="ietfadminllc")
+            | Q(parent__acronym="rfceditor")
+        )
+        .order_by("-type_id", "acronym")
+        .select_related("type")
+    )
 
     groups_by_parent = defaultdict(list)
     for g in groups:
-        url = urlreverse("ietf.group.views.group_home", kwargs={ 'group_type': g.type_id, 'acronym': g.acronym })
-#        groups_by_parent[g.parent_id].append({ 'acronym': g.acronym, 'name': escape(g.name), 'url': url })
-        groups_by_parent[g.parent_id].append({ 'acronym': g.acronym, 'name': escape(g.name), 'type': escape(g.type.verbose_name or g.type.name), 'url': url })
+        url = urlreverse(
+            "ietf.group.views.group_home",
+            kwargs={"group_type": g.type_id, "acronym": g.acronym},
+        )
+        #        groups_by_parent[g.parent_id].append({ 'acronym': g.acronym, 'name': escape(g.name), 'url': url })
+        groups_by_parent[g.parent_id].append(
+            {
+                "acronym": g.acronym,
+                "name": escape(g.name),
+                "type": escape(g.type.verbose_name or g.type.name),
+                "url": url,
+            }
+        )
 
     iab = Group.objects.get(acronym="iab")
     groups_by_parent[iab.pk].insert(
@@ -1345,10 +1374,13 @@ def group_menu_data(request):
             "acronym": iab.acronym,
             "name": iab.name,
             "type": "Top Level Group",
-            "url": urlreverse("ietf.group.views.group_home", kwargs={"acronym": iab.acronym})
-        }
+            "url": urlreverse(
+                "ietf.group.views.group_home", kwargs={"acronym": iab.acronym}
+            ),
+        },
     )
     return JsonResponse(groups_by_parent)
+
 
 
 @cache_control(public=True, max_age=30 * 60)
@@ -2096,14 +2128,24 @@ def statements(request, acronym, group_type=None):
     if not acronym in ["iab", "iesg"]:
         raise Http404
     group = get_group_or_404(acronym, group_type)
-    statements = group.document_set.filter(type_id="statement").annotate(
-        published=Subquery(
-            DocEvent.objects.filter(
-                doc=OuterRef("pk"),
-                type="published_statement"
-            ).order_by("-time").values("time")[:1]
+    statements = (
+        group.document_set.filter(type_id="statement")
+        .annotate(
+            published=Subquery(
+                DocEvent.objects.filter(doc=OuterRef("pk"), type="published_statement")
+                .order_by("-time")
+                .values("time")[:1]
+            )
         )
-    ).order_by("-published")
+        .annotate(
+            status=Subquery(
+                Document.states.through.objects.filter(
+                    document_id=OuterRef("pk"), state__type="statement"
+                ).values_list("state__slug", flat=True)[:1]
+            )
+        )
+        .order_by("-published")
+    )
     return render(
         request,
         "group/statements.html",
@@ -2139,7 +2181,8 @@ def appeals(request, acronym, group_type=None):
         ),
     )
 
-def appeal_artifact(request, acronym, artifact_id, group_type=None):
+@ignore_view_kwargs("group_type")
+def appeal_artifact(request, acronym, artifact_id):
     artifact = get_object_or_404(AppealArtifact, pk=artifact_id)
     if artifact.is_markdown():
         artifact_html = markdown.markdown(artifact.bits.tobytes().decode("utf-8"))
@@ -2158,7 +2201,8 @@ def appeal_artifact(request, acronym, artifact_id, group_type=None):
         )
     
 @role_required("Secretariat")
-def appeal_artifact_markdown(request, acronym, artifact_id, group_type=None):
+@ignore_view_kwargs("group_type")
+def appeal_artifact_markdown(request, acronym, artifact_id):
     artifact = get_object_or_404(AppealArtifact, pk=artifact_id)
     if artifact.is_markdown():
         return HttpResponse(artifact.bits, content_type=artifact.content_type)

@@ -50,7 +50,7 @@ export const useAgendaStore = defineStore('agenda', {
     selectedCatSubs: [],
     settingsShown: false,
     timezone: DateTime.local().zoneName,
-    useNotes: false,
+    usesNotes: false,
     visibleDays: []
   }),
   getters: {
@@ -121,7 +121,7 @@ export const useAgendaStore = defineStore('agenda', {
     meetingDays () {
       const siteStore = useSiteStore()
       return uniqBy(this.scheduleAdjusted, 'adjustedStartDate').sort().map(s => ({
-        slug: s.id.toString(),
+        slug: daySlug(s),
         ts: s.adjustedStartDate,
         label: siteStore.viewport < 1350 ? DateTime.fromISO(s.adjustedStartDate).toFormat('ccc LLL d') : DateTime.fromISO(s.adjustedStartDate).toLocaleString(DateTime.DATE_HUGE)
       }))
@@ -160,7 +160,7 @@ export const useAgendaStore = defineStore('agenda', {
         this.isCurrentMeeting = agendaData.isCurrentMeeting
         this.meeting = agendaData.meeting
         this.schedule = agendaData.schedule
-        this.useNotes = agendaData.useNotes
+        this.usesNotes = agendaData.usesNotes
 
         // -> Compute current info note hash
         this.infoNoteHash = murmur(agendaData.meeting.infoNote, 0).toString()
@@ -291,4 +291,9 @@ function findFirstConferenceUrl (txt) {
     }
   } catch (err) { }
   return null
+}
+
+export const daySlugPrefix = 'agenda-day-'
+export function daySlug(s) {
+  return `${daySlugPrefix}${s.adjustedStartDate}` // eg 'agenda-day-2024-08-13'
 }

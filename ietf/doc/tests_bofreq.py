@@ -18,7 +18,7 @@ from django.utils import timezone
 
 from ietf.group.factories import RoleFactory
 from ietf.doc.factories import BofreqFactory, NewRevisionDocEventFactory
-from ietf.doc.models import State, Document, DocAlias, NewRevisionDocEvent
+from ietf.doc.models import State, Document, NewRevisionDocEvent
 from ietf.doc.utils_bofreq import bofreq_editors, bofreq_responsible
 from ietf.ietfauth.utils import has_role
 from ietf.person.factories import PersonFactory
@@ -32,7 +32,7 @@ class BofreqTests(TestCase):
     settings_temp_path_overrides = TestCase.settings_temp_path_overrides + ['BOFREQ_PATH']
 
     def write_bofreq_file(self, bofreq):
-        fname = Path(settings.BOFREQ_PATH) / ("%s-%s.md" % (bofreq.canonical_name(), bofreq.rev))
+        fname = Path(settings.BOFREQ_PATH) / ("%s-%s.md" % (bofreq.name, bofreq.rev))
         with fname.open("w") as f:
             f.write(f"""# This is a test bofreq.
 Version: {bofreq.rev}
@@ -54,8 +54,8 @@ This test section has some text.
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         for state in states:
-            self.assertEqual(len(q(f'#bofreqs-{state.slug}')), 1)
-            self.assertEqual(len(q(f'#bofreqs-{state.slug} tbody tr')), 3)
+            self.assertEqual(len(q(f'#bofreqs-{state.slug}')), 1 if state.slug!="spam" else 0)
+            self.assertEqual(len(q(f'#bofreqs-{state.slug} tbody tr')), 3 if state.slug!="spam" else 0)
         self.assertFalse(q('#start_button'))
         PersonFactory(user__username='nobody')
         self.client.login(username='nobody', password='nobody+password')
@@ -63,6 +63,13 @@ This test section has some text.
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertTrue(q('#start_button'))
+        self.client.logout()
+        self.client.login(username='secretary', password='secretary+password')
+        r = self.client.get(url)
+        q = PyQuery(r.content)
+        for state in states:
+            self.assertEqual(len(q(f'#bofreqs-{state.slug}')), 1)
+            self.assertEqual(len(q(f'#bofreqs-{state.slug} tbody tr')), 3)
 
 
     def test_bofreq_main_page(self):
@@ -366,7 +373,6 @@ This test section has some text.
                     name = f"bofreq-{xslugify(nobody.last_name())[:64]}-{postdict['title']}".replace(' ','-')
                     bofreq = Document.objects.filter(name=name,type_id='bofreq').first()
                     self.assertIsNotNone(bofreq)
-                    self.assertIsNotNone(DocAlias.objects.filter(name=name).first())
                     self.assertEqual(bofreq.title, postdict['title'])
                     self.assertEqual(bofreq.rev, '00')
                     self.assertEqual(bofreq.get_state_slug(), 'proposed')

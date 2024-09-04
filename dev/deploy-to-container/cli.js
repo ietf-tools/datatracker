@@ -3,7 +3,7 @@
 import Docker from 'dockerode'
 import path from 'path'
 import fs from 'fs-extra'
-import tar from 'tar'
+import * as tar from 'tar'
 import yargs from 'yargs/yargs'
 import { hideBin } from 'yargs/helpers'
 import slugify from 'slugify'
@@ -23,7 +23,7 @@ async function main () {
     throw new Error('Missing --branch argument!')
   }
   if (branch.indexOf('/') >= 0) {
-    branch = branch.split('/')[1]
+    branch = branch.split('/').slice(1).join('-')
   }
   branch = slugify(branch, { lower: true, strict: true })
   if (branch.length < 1) {
@@ -67,6 +67,7 @@ async function main () {
       .replace('__DBHOST__', `dt-db-${branch}`)
       .replace('__SECRETKEY__', nanoid(36))
       .replace('__MQCONNSTR__', `amqp://datatracker:${mqKey}@dt-mq-${branch}/dt`)
+      .replace('__HOSTNAME__', hostname)
   )
   await fs.copy(path.join(basePath, 'docker/scripts/app-create-dirs.sh'), path.join(releasePath, 'app-create-dirs.sh'))
   await fs.copy(path.join(basePath, 'dev/deploy-to-container/start.sh'), path.join(releasePath, 'start.sh'))
@@ -175,6 +176,9 @@ async function main () {
     Image: 'ghcr.io/ietf-tools/datatracker-db:latest',
     name: `dt-db-${branch}`,
     Hostname: `dt-db-${branch}`,
+    Labels: {
+      ...argv.nodbrefresh === 'true' && { nodbrefresh: '1' }
+    },
     HostConfig: {
       NetworkMode: 'shared',
       RestartPolicy: {
@@ -194,6 +198,9 @@ async function main () {
     Env: [
       `CELERY_PASSWORD=${mqKey}`
     ],
+    Labels: {
+      ...argv.nodbrefresh === 'true' && { nodbrefresh: '1' }
+    },
     HostConfig: {
       Memory: 4 * (1024 ** 3), // in bytes
       NetworkMode: 'shared',
@@ -222,6 +229,9 @@ async function main () {
         `CELERY_ROLE=${conConf.role}`,
         'UPDATE_REQUIREMENTS_FROM=requirements.txt'
       ],
+      Labels: {
+        ...argv.nodbrefresh === 'true' && { nodbrefresh: '1' }
+      },
       HostConfig: {
         Binds: [
           'dt-assets:/assets',
@@ -245,7 +255,7 @@ async function main () {
     name: `dt-app-${branch}`,
     Hostname: `dt-app-${branch}`,
     Env: [
-      `LETSENCRYPT_HOST=${hostname}`,
+      // `LETSENCRYPT_HOST=${hostname}`,
       `VIRTUAL_HOST=${hostname}`,
       `VIRTUAL_PORT=8000`,
       `PGHOST=dt-db-${branch}`
@@ -254,7 +264,8 @@ async function main () {
       appversion: `${argv.appversion}` ?? '0.0.0',
       commit: `${argv.commit}` ?? 'unknown',
       ghrunid: `${argv.ghrunid}` ?? '0',
-      hostname
+      hostname,
+      ...argv.nodbrefresh === 'true' && { nodbrefresh: '1' }
     },
     HostConfig: {
       Binds: [

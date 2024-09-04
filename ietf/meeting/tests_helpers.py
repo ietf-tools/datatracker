@@ -487,7 +487,7 @@ class InterimTests(TestCase):
         mock.reset_mock()
         mock_conf_mgr.create.return_value = [
             Conference(
-                manager=mock_conf_mgr, id=1, public_id='some-uuid', description='desc',
+                manager=mock_conf_mgr, id=int(sessions[0].pk), public_id='some-uuid', description='desc',
                 start_time=timeslots[0].utc_start_time(), duration=timeslots[0].duration, url='fake-meetecho-url',
                 deletion_token='please-delete-me',
             ),
@@ -498,6 +498,7 @@ class InterimTests(TestCase):
             mock_conf_mgr.create.call_args[1],
             {
                 'group': sessions[0].group,
+                'session_id': sessions[0].id,
                 'description': str(sessions[0]),
                 'start_time': timeslots[0].utc_start_time(),
                 'duration': timeslots[0].duration,
@@ -512,12 +513,12 @@ class InterimTests(TestCase):
         mock.reset_mock()
         mock_conf_mgr.create.side_effect = [
             [Conference(
-                manager=mock_conf_mgr, id=1, public_id='some-uuid', description='desc',
+                manager=mock_conf_mgr, id=int(sessions[0].pk), public_id='some-uuid', description='desc',
                 start_time=timeslots[0].utc_start_time(), duration=timeslots[0].duration, url='different-fake-meetecho-url',
                 deletion_token='please-delete-me',
             )],
             [Conference(
-                manager=mock_conf_mgr, id=2, public_id='another-uuid', description='desc',
+                manager=mock_conf_mgr, id=int(sessions[1].pk), public_id='another-uuid', description='desc',
                 start_time=timeslots[1].utc_start_time(), duration=timeslots[1].duration, url='another-fake-meetecho-url',
                 deletion_token='please-delete-me-too',
             )],
@@ -528,16 +529,18 @@ class InterimTests(TestCase):
             mock_conf_mgr.create.call_args_list,
             [
                 ({
-                    'group': sessions[0].group,
-                    'description': str(sessions[0]),
-                    'start_time': timeslots[0].utc_start_time(),
-                    'duration': timeslots[0].duration,
+                     'group': sessions[0].group,
+                     'session_id': sessions[0].id,
+                     'description': str(sessions[0]),
+                     'start_time': timeslots[0].utc_start_time(),
+                     'duration': timeslots[0].duration,
                  },),
                 ({
-                    'group': sessions[1].group,
-                    'description': str(sessions[1]),
-                    'start_time': timeslots[1].utc_start_time(),
-                    'duration': timeslots[1].duration,
+                     'group': sessions[1].group,
+                     'session_id': sessions[1].id,
+                     'description': str(sessions[1]),
+                     'start_time': timeslots[1].utc_start_time(),
+                     'duration': timeslots[1].duration,
                  },),
             ]
         )

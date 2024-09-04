@@ -11,12 +11,14 @@
 </p>
 {% load ietf_filters %}
 {% for author in submission.authors %}
-    <button type="button"
-           class="author btn btn-primary mb-3"
-           data-name="{{ author.name }}"
-           data-email="{% if author.email %}{{ author.email }}{% endif %}">
-        {{ author.name }}
-    </button>
+    {% if author.name %}
+        <button type="button"
+                class="author btn btn-primary mb-3"
+                data-name="{{ author.name }}"
+                data-email="{% if author.email %}{{ author.email }}{% endif %}">
+            {{ author.name }}
+        </button>
+    {% endif %}
 {% endfor %}
 {% bootstrap_form_errors submitter_form %}
 {% bootstrap_field submitter_form.name %}

@@ -45,7 +45,7 @@ def update_rfc_log_from_protocol_page(rfc_names, rfc_must_published_later_than):
 
     updated = []
 
-    docs = Document.objects.filter(docalias__name__in=rfc_names).exclude(
+    docs = Document.objects.filter(name__in=rfc_names).exclude(
         docevent__type="rfc_in_iana_registry").filter(
         # only take those that were published after cutoff since we
         # have a big bunch of old RFCs that we unfortunately don't have data for
@@ -189,7 +189,7 @@ def update_history_with_changes(changes, send_email=True):
                                              state_type=state_type, state=state)
             if not e:
                 try:
-                    doc = Document.objects.get(docalias__name=docname)
+                    doc = Document.objects.get(name=docname)
                 except Document.DoesNotExist:
                     warnings.append("Document %s not found" % docname)
                     continue
@@ -304,3 +304,22 @@ def add_review_comment(doc_name, review_time, by, comment):
         e.by = by
 
         e.save()
+
+
+def ingest_review_email(message: bytes):
+    from ietf.api.views import EmailIngestionError  # avoid circular import
+    try:
+        doc_name, review_time, by, comment = parse_review_email(message)
+    except Exception as err:
+        raise EmailIngestionError("Unable to parse message as IANA review email") from err
+    log(f"Read IANA review email for {doc_name} at {review_time} by {by}")
+    if by.name == "(System)":
+        log("WARNING: person responsible for email does not have a IANA role")  # (sic)
+    try:
+        add_review_comment(doc_name, review_time, by, comment)
+    except Document.DoesNotExist:
+        log(f"ERROR: unknown document {doc_name}")
+        raise EmailIngestionError(f"Unknown document {doc_name}")
+    except Exception as err:
+        raise EmailIngestionError("Error ingesting IANA review email") from err
+    

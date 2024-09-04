@@ -25,7 +25,7 @@ SUMMARY:IETF {{ meeting.number }}{% if meeting.city %}
 LOCATION:{{ meeting.city }},{{ meeting.country }}{% endif %}
 CLASS:PUBLIC
 DTSTART;VALUE=DATE{% if meeting.time_zone %};TZID={{ meeting.time_zone|ics_esc }}{% endif %}:{{ meeting.date|date:"Ymd" }}
-DTEND;VALUE=DATE{% if meeting.time_zone %};TZID={{ meeting.time_zone|ics_esc }}{% endif %}:{{ meeting.end_date|date:"Ymd" }}
+DTEND;VALUE=DATE{% if meeting.time_zone %};TZID={{ meeting.time_zone|ics_esc }}{% endif %}:{{ meeting.end_date|next_day|date:"Ymd" }}
 DTSTAMP{% ics_date_time meeting.cached_updated|utc 'utc' %}
 URL:{{ request.scheme }}://{{ request.get_host }}{% url 'agenda' num=meeting.number %}
 END:VEVENT

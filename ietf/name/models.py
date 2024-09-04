@@ -42,8 +42,8 @@ class DocRelationshipName(NameModel):
 
 class DocTypeName(NameModel):
     """Draft, Agenda, Minutes, Charter, Discuss, Guideline, Email,
-    Review, Issue, Wiki"""
-    prefix =  models.CharField(max_length=16, default="")
+    Review, Issue, Wiki, RFC"""
+    prefix =  models.CharField(max_length=32, default="")
 class DocTagName(NameModel):
     """Waiting for Reference, IANA Coordination, Revised ID Needed,
     External Party, AD Followup, Point Raised - Writeup Needed, ..."""
@@ -101,7 +101,7 @@ class DraftSubmissionStateName(NameModel):
     """Uploaded, Awaiting Submitter Authentication, Awaiting Approval from
     Previous Version Authors, Awaiting Initial Version Approval, Awaiting
     Manual Post, Cancelled, Posted"""
-    next_states = models.ManyToManyField('DraftSubmissionStateName', related_name="previous_states", blank=True)
+    next_states = models.ManyToManyField('name.DraftSubmissionStateName', related_name="previous_states", blank=True)
 class RoomResourceName(NameModel):
     "Room resources: Audio Stream, Meetecho, . . ."
 class IprDisclosureStateName(NameModel):

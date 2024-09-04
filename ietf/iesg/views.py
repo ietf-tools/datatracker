@@ -122,7 +122,7 @@ def agenda_json(request, date=None):
 
             for doc in docs:
                 wginfo = {
-                    'docname': doc.canonical_name(),
+                    'docname': doc.name,
                     'rev': doc.rev,
                     'wgname': doc.group.name,
                     'acronym': doc.group.acronym,
@@ -137,7 +137,7 @@ def agenda_json(request, date=None):
 
             for doc in docs:
                 docinfo = {
-                    'docname':doc.canonical_name(),
+                    'docname':doc.name,
                     'title':doc.title,
                     'ad':doc.ad.name if doc.ad else None,
                     }
@@ -149,8 +149,8 @@ def agenda_json(request, date=None):
                 if doc.type_id == "draft":
                     docinfo['rev'] = doc.rev
                     docinfo['intended-std-level'] = str(doc.intended_std_level)
-                    if doc.rfc_number():
-                        docinfo['rfc-number'] = doc.rfc_number()
+                    if doc.type_id == "rfc":
+                        docinfo['rfc-number'] = doc.rfc_number
 
                     iana_state = doc.get_state("draft-iana-review")
                     if iana_state and iana_state.slug in ("not-ok", "changed", "need-rev"):
@@ -170,8 +170,8 @@ def agenda_json(request, date=None):
 
                 elif doc.type_id == 'conflrev':
                     docinfo['rev'] = doc.rev
-                    td = doc.relateddocument_set.get(relationship__slug='conflrev').target.document
-                    docinfo['target-docname'] = td.canonical_name()
+                    td = doc.relateddocument_set.get(relationship__slug='conflrev').target
+                    docinfo['target-docname'] = td.name
                     docinfo['target-title'] = td.title
                     docinfo['target-rev'] = td.rev
                     docinfo['intended-std-level'] = str(td.intended_std_level)
@@ -209,7 +209,6 @@ def agenda(request, date=None):
                 urlreverse("ietf.iesg.views.telechat_agenda_content_view", kwargs={"section": "minutes"})
             ))
 
-    request.session['ballot_edit_return_point'] = request.path_info
     return render(request, "iesg/agenda.html", {
             "date": data["date"],
             "sections": sorted(data["sections"].items(), key=lambda x:[int(p) for p in x[0].split('.')]),
@@ -398,7 +397,7 @@ def agenda_documents(request):
                 "sections": sorted((num, section) for num, section in sections.items()
                                    if "2" <= num < "5")
                 })
-    request.session['ballot_edit_return_point'] = request.path_info
+    
     return render(request, 'iesg/agenda_documents.html', { 'telechats': telechats })
 
 def past_documents(request):
@@ -483,6 +482,7 @@ def discusses(request):
                                             models.Q(states__type__in=("statchg", "conflrev"),
                                                      states__slug__in=("iesgeval", "defer")),
                                             docevent__ballotpositiondocevent__pos__blocking=True)
+    possible_docs = possible_docs.exclude(states__in=State.objects.filter(type="draft", slug="repl"))
     possible_docs = possible_docs.select_related("stream", "group", "ad").distinct()
 
     docs = []
@@ -526,7 +526,9 @@ def milestones_needing_review(request):
         ad_list.append(ad)
         ad.groups_needing_review = sorted(groups, key=lambda g: g.acronym)
         for g, milestones in groups.items():
-            g.milestones_needing_review = sorted(milestones, key=lambda m: m.due)
+            g.milestones_needing_review = sorted(
+                milestones, key=lambda m: m.due if m.group.uses_milestone_dates else m.order
+            )
 
     return render(request, 'iesg/milestones_needing_review.html',
                   dict(ads=sorted(ad_list, key=lambda ad: ad.plain_name()),))
