@@ -24,7 +24,7 @@ To approve the Internet-Draft, go to this URL (note: you need to login to be abl
 
 
   Authors:
-{% for author in submission.authors %}    {{ author.name }}{% if author.email %} <{{ author.email }}>{% endif%}
+{% for author in submission.authors %}    {% if author.name or author.affiliation %}{% firstof author.name author.affiliation %} {% endif %}{% if author.email %}<{{ author.email }}>{% endif %}
 {% endfor %}
 {% endautoescape %}
 

@@ -3,10 +3,8 @@
 
 
 import datetime
-import os
 import pprint 
 import sys
-import syslog
 
 from django.contrib import admin
 from django.core.cache import cache
@@ -17,14 +15,14 @@ from django.http import Http404
 import debug                            # pyflakes:ignore
 
 from ietf.person.models import Person, Alias, Email
+from ietf.utils import log
 from ietf.utils.mail import send_mail
 
 def merge_persons(request, source, target, file=sys.stdout, verbose=False):
     changes = []
 
     # write log
-    syslog.openlog(str(os.path.basename(__file__)), syslog.LOG_PID, syslog.LOG_USER)
-    syslog.syslog("Merging person records {} => {}".format(source.pk,target.pk))
+    log.log(f"Merging person records {source.pk} => {target.pk}")
     
     # handle primary emails
     for email in get_extra_primary(source,target):
@@ -118,7 +116,7 @@ def handle_users(source,target,check_only=False):
     if source.user and target.user:
         message = "DATATRACKER LOGIN ACTION: retaining login: {}, removing login: {}".format(target.user,source.user)
         if not check_only:
-            syslog.syslog('merge-person-records: deactivating user {}'.format(source.user.username))
+            log.log(f"merge-person-records: deactivating user {source.user.username}")
             user = source.user
             source.user = None
             source.save()

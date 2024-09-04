@@ -15,9 +15,14 @@
         {% bootstrap_form ballot_writeup_form %}
         <div class="form-text my-3">
             Technical summary, Working Group summary, document quality, personnel, IANA note. This text will be appended to all announcements and messages to the IRTF or RFC Editor.
-            {% if ballot_issue_danger %}
+            {% if warn_lc %}
                 <p class="text-danger">
                     This document has not completed IETF Last Call.  Please do not issue the ballot early without good reason.
+                </p>
+            {% endif %}
+            {% if warn_unexpected_state %}
+                <p class="text-danger">
+                    This document is in an IESG state of "{{warn_unexpected_state}}". It would be unexpected to issue a ballot while in this state.
                 </p>
             {% endif %}
         </div>

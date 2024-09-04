@@ -3,18 +3,20 @@
 
 
 import datetime
-
+import mock
 
 from pyquery import PyQuery
 from urllib.parse import quote, urlparse
 from zoneinfo import ZoneInfo
 
 from django.conf import settings
+from django.test.utils import override_settings
 from django.urls import reverse as urlreverse
 from django.utils import timezone
 
 import debug                            # pyflakes:ignore
 
+from ietf.api.views import EmailIngestionError
 from ietf.doc.factories import (
     DocumentFactory,
     WgDraftFactory,
@@ -26,16 +28,19 @@ from ietf.group.factories import RoleFactory
 from ietf.ipr.factories import (
     HolderIprDisclosureFactory,
     GenericIprDisclosureFactory,
+    IprDisclosureBaseFactory,
     IprDocRelFactory,
     IprEventFactory
 )
+from ietf.ipr.forms import DraftForm
 from ietf.ipr.mail import (process_response_email, get_reply_to, get_update_submitter_emails,
     get_pseudo_submitter, get_holders, get_update_cc_addrs)
 from ietf.ipr.models import (IprDisclosureBase,GenericIprDisclosure,HolderIprDisclosure,
     ThirdPartyIprDisclosure)
 from ietf.ipr.templatetags.ipr_filters import no_revisions_message
-from ietf.ipr.utils import get_genitive, get_ipr_summary
+from ietf.ipr.utils import get_genitive, get_ipr_summary, ingest_response_email
 from ietf.mailtrigger.utils import gather_address_lists
+from ietf.message.factories import MessageFactory
 from ietf.message.models import Message
 from ietf.utils.mail import outbox, empty_outbox, get_payload_text
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized
@@ -769,6 +774,36 @@ Subject: test
             result = process_response_email(message_bytes)
             self.assertIsNone(result)
 
+    @override_settings(ADMINS=(("Some Admin", "admin@example.com"),))
+    @mock.patch("ietf.ipr.utils.process_response_email")
+    def test_ingest_response_email(self, mock_process_response_email):
+        message = b"What a nice message"
+        mock_process_response_email.side_effect = ValueError("ouch!")
+        with self.assertRaises(EmailIngestionError) as context:
+            ingest_response_email(message)
+        self.assertIsNone(context.exception.email_recipients)  # default recipients
+        self.assertIsNotNone(context.exception.email_body)  # body set
+        self.assertIsNotNone(context.exception.email_original_message)  # original message attached
+        self.assertEqual(context.exception.email_attach_traceback, True)
+        self.assertTrue(mock_process_response_email.called)
+        self.assertEqual(mock_process_response_email.call_args, mock.call(message))
+        mock_process_response_email.reset_mock()
+        
+        mock_process_response_email.side_effect = None
+        mock_process_response_email.return_value = None  # rejected message
+        with self.assertRaises(EmailIngestionError) as context:
+            ingest_response_email(message)
+        self.assertIsNone(context.exception.as_emailmessage())  # should not send an email on a clean rejection
+        self.assertTrue(mock_process_response_email.called)
+        self.assertEqual(mock_process_response_email.call_args, mock.call(message))
+        mock_process_response_email.reset_mock()
+
+        # successful operation
+        mock_process_response_email.return_value = MessageFactory()
+        ingest_response_email(message)
+        self.assertTrue(mock_process_response_email.called)
+        self.assertEqual(mock_process_response_email.call_args, mock.call(message))
+
     def test_ajax_search(self):
         url = urlreverse('ietf.ipr.views.ajax_search')
         response=self.client.get(url+'?q=disclosure')
@@ -901,4 +936,62 @@ Subject: test
         self.assertEqual(
             no_revisions_message(iprdocrel),
             "No revisions for this Internet-Draft were specified in this disclosure. However, there is only one revision of this Internet-Draft."
+        )
+
+
+class DraftFormTests(TestCase):
+    def setUp(self):
+        super().setUp()
+        self.disclosure = IprDisclosureBaseFactory()
+        self.draft = WgDraftFactory.create_batch(10)[-1]
+        self.rfc = RfcFactory()
+
+    def test_revisions_valid(self):
+        post_data = {
+            # n.b., "document" is a SearchableDocumentField, which is a multiple choice field limited
+            # to a single choice. Its value must be an array of pks with one element.
+            "document": [str(self.draft.pk)],
+            "disclosure": str(self.disclosure.pk),
+        }
+        # The revisions field is just a char field that allows descriptions of the applicable
+        # document revisions. It's usually just a rev or "00-02", but the form allows anything
+        # not empty. The secretariat will review the value before the disclosure is posted so
+        # minimal validation is ok here.
+        self.assertTrue(DraftForm(post_data | {"revisions": "00"}).is_valid())
+        self.assertTrue(DraftForm(post_data | {"revisions": "00-02"}).is_valid())
+        self.assertTrue(DraftForm(post_data | {"revisions": "01,03, 05"}).is_valid())
+        self.assertTrue(DraftForm(post_data | {"revisions": "all but 01"}).is_valid())
+        # RFC instead of draft - allow empty / missing revisions
+        post_data["document"] = [str(self.rfc.pk)]
+        self.assertTrue(DraftForm(post_data).is_valid())
+        self.assertTrue(DraftForm(post_data | {"revisions": ""}).is_valid())
+
+    def test_revisions_invalid(self):
+        missing_rev_error_msg = (
+            "Revisions of this Internet-Draft for which this disclosure is relevant must be specified."
+        )
+        null_char_error_msg = "Null characters are not allowed."
+        
+        post_data = {
+            # n.b., "document" is a SearchableDocumentField, which is a multiple choice field limited
+            # to a single choice. Its value must be an array of pks with one element.
+            "document": [str(self.draft.pk)],
+            "disclosure": str(self.disclosure.pk),
+        }
+        self.assertFormError(
+            DraftForm(post_data), "revisions", missing_rev_error_msg
+        )
+        self.assertFormError(
+            DraftForm(post_data | {"revisions": ""}), "revisions", missing_rev_error_msg
+        )
+        self.assertFormError(
+            DraftForm(post_data | {"revisions": "1\x00"}),
+            "revisions",
+            [null_char_error_msg, missing_rev_error_msg],
+        )
+        # RFC instead of draft still validates the revisions field
+        self.assertFormError(
+            DraftForm(post_data | {"document": [str(self.rfc.pk)], "revisions": "1\x00"}),
+            "revisions",
+            null_char_error_msg,
         )

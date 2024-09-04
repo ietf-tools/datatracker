@@ -11,5 +11,4 @@ urlpatterns = [
     url(r'^(?P<date>[0-9\-]+)/management/$', views.management),
     url(r'^(?P<date>[0-9\-]+)/minutes/$', views.minutes),
     url(r'^(?P<date>[0-9\-]+)/roll-call/$', views.roll_call),
-    url(r'^new/$', views.new),
 ]

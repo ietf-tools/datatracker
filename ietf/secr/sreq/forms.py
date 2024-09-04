@@ -13,6 +13,7 @@ from ietf.meeting.forms import sessiondetailsformset_factory
 from ietf.meeting.models import ResourceAssociation, Constraint
 from ietf.person.fields import SearchablePersonsField
 from ietf.person.models import Person
+from ietf.utils.fields import ModelMultipleChoiceField
 from ietf.utils.html import clean_text_field
 from ietf.utils import log
 
@@ -57,7 +58,7 @@ class GroupSelectForm(forms.Form):
         self.fields['group'].widget.choices = choices
 
 
-class NameModelMultipleChoiceField(forms.ModelMultipleChoiceField):
+class NameModelMultipleChoiceField(ModelMultipleChoiceField):
     def label_from_instance(self, name):
         return name.desc
 
@@ -159,7 +160,7 @@ class SessionForm(forms.Form):
             self.fields['resources'].widget = forms.MultipleHiddenInput()
             self.fields['timeranges'].widget = forms.MultipleHiddenInput()
             # and entirely replace bethere - no need to support searching if input is hidden
-            self.fields['bethere'] = forms.ModelMultipleChoiceField(
+            self.fields['bethere'] = ModelMultipleChoiceField(
                 widget=forms.MultipleHiddenInput, required=False,
                 queryset=Person.objects.all(),
             )

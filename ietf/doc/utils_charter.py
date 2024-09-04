@@ -92,11 +92,31 @@ def change_group_state_after_charter_approval(group, by):
 def fix_charter_revision_after_approval(charter, by):
     # according to spec, 00-02 becomes 01, so copy file and record new revision
     try:
-        old = os.path.join(charter.get_file_path(), '%s-%s.txt' % (charter.name, charter.rev))
-        new = os.path.join(charter.get_file_path(), '%s-%s.txt' % (charter.name, next_approved_revision(charter.rev)))
+        old = os.path.join(
+            charter.get_file_path(), "%s-%s.txt" % (charter.name, charter.rev)
+        )
+        new = os.path.join(
+            charter.get_file_path(),
+            "%s-%s.txt" % (charter.name, next_approved_revision(charter.rev)),
+        )
         shutil.copy(old, new)
     except IOError:
         log("There was an error copying %s to %s" % (old, new))
+    # Also provide a copy to the legacy ftp source directory, which is served by rsync
+    # This replaces the hardlink copy that ghostlink has made in the past
+    # Still using a hardlink as long as these are on the same filesystem.
+    # Staying with os.path vs pathlib.Path until we get to python>=3.10.
+    charter_dir = os.path.join(settings.FTP_DIR, "charter")
+    ftp_filepath = os.path.join(
+        charter_dir, "%s-%s.txt" % (charter.name, next_approved_revision(charter.rev))
+    )
+    try:
+        os.link(new, ftp_filepath)
+    except IOError:
+        log(
+            "There was an error creating a harlink at %s pointing to %s"
+            % (ftp_filepath, new)
+        )
 
     events = []
     e = NewRevisionDocEvent(doc=charter, by=by, type="new_revision")
@@ -107,6 +127,7 @@ def fix_charter_revision_after_approval(charter, by):
 
     charter.rev = e.rev
     charter.save_with_history(events)
+
 
 def historic_milestones_for_charter(charter, rev):
     """Return GroupMilestone/GroupMilestoneHistory objects for charter

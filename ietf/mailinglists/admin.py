@@ -8,8 +8,8 @@ from ietf.mailinglists.models import NonWgMailingList, Allowlisted
 
 
 class NonWgMailingListAdmin(admin.ModelAdmin):
-    list_display = ('id', 'name', 'description')
-    search_fields = ('name',)
+    list_display = ('id', 'name', 'domain', 'description')
+    search_fields = ('name', 'domain')
 admin.site.register(NonWgMailingList, NonWgMailingListAdmin)
 
 

@@ -802,6 +802,10 @@ def post_approved_draft(url, name):
     the data from the Datatracker and start processing it. Returns
     response and error (empty string if no error)."""
 
+    if settings.SERVER_MODE != "production":
+        log(f"In production, would have posted RFC-Editor notification of approved I-D '{name}' to '{url}'")
+        return "", ""
+
     # HTTP basic auth
     username = "dtracksync"
     password = settings.RFC_EDITOR_SYNC_PASSWORD
