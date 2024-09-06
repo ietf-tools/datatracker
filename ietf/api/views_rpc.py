@@ -97,7 +97,7 @@ def rpc_draft(request, doc_id):
             "stream": d.stream.slug,
             "title": d.title,
             "pages": d.pages,
-        "source_format": _document_source_format(d),
+            "source_format": _document_source_format(d),
             "authors": [
                 {
                     "id": p.pk,
@@ -105,9 +105,12 @@ def rpc_draft(request, doc_id):
                 }
                 for p in d.documentauthor_set.all()
             ],
-        "shepherd": d.shepherd.formatted_ascii_email() if d.shepherd else "",
-        "intended_std_level": d.intended_std_level.slug if d.intended_std_level else "",
-    })
+            "shepherd": d.shepherd.formatted_ascii_email() if d.shepherd else "",
+            "intended_std_level": (
+                d.intended_std_level.slug if d.intended_std_level else ""
+            ),
+        }
+    )
 
 @csrf_exempt
 @requires_api_token("ietf.api.views_rpc")
