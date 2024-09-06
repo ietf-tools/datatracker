@@ -65,6 +65,20 @@ def rpc_persons(request):
     return JsonResponse(response)
 
 
+def _document_source_format(doc):
+    submission = doc.submission()
+    if submission is None:
+        return "unknown"
+    if ".xml" in submission.file_types:
+        if submission.xml_version == "3":
+            return "xml-v3"
+        else:
+            return "xml-v2"
+    elif ".txt" in submission.file_types:
+        return "txt"
+    return "unknown"
+
+    
 @csrf_exempt
 @requires_api_token("ietf.api.views_rpc")
 def rpc_draft(request, doc_id):
@@ -83,6 +97,7 @@ def rpc_draft(request, doc_id):
             "stream": d.stream.slug,
             "title": d.title,
             "pages": d.pages,
+            "source_format": _document_source_format(d),
             "authors": [
                 {
                     "id": p.pk,
@@ -90,9 +105,12 @@ def rpc_draft(request, doc_id):
                 }
                 for p in d.documentauthor_set.all()
             ],
+            "shepherd": d.shepherd.formatted_ascii_email() if d.shepherd else "",
+            "intended_std_level": (
+                d.intended_std_level.slug if d.intended_std_level else ""
+            ),
         }
     )
-
 
 @csrf_exempt
 @requires_api_token("ietf.api.views_rpc")
@@ -113,6 +131,7 @@ def drafts_by_names(request):
             "stream": doc.stream.slug if doc.stream else "none",
             "title": doc.title,
             "pages": doc.pages,
+            "source_format": _document_source_format(d),
             "authors": [
                 {
                     "id": p.pk,
@@ -149,12 +168,11 @@ def submitted_to_rpc(request):
         response["submitted_to_rpc"].append(
             {
                 "name": doc.name,
-                "pk": doc.pk,
+                "id": doc.pk,
                 "stream": doc.stream_id,
-                "submitted": f"{doc.sent_to_rfc_editor_event().time:%Y-%m-%d}",
+                "submitted": f"{doc.sent_to_rfc_editor_event().time.isoformat()}",
             }
-        )  # TODO reconcile timezone
-
+        )
     return JsonResponse(response)
 
 

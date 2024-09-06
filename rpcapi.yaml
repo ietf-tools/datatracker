@@ -219,8 +219,8 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/ErrorResponse'
 
-components: 
-    schemas: 
+components:
+    schemas:
         Person:
             type: object
             properties:
@@ -241,13 +241,13 @@ components:
                         properties:
                             name: 
                               type: string
-                            pk: 
+                            id: 
                               type: integer
                             stream: 
                               type: string
                             submitted: 
                                 type: string
-                                format: date
+                                format: date-time
         
         ErrorResponse:
             type: object
@@ -270,10 +270,22 @@ components:
                     type: string
                 pages:
                     type: integer
+                source_format:
+                    type: string
+                    enum:
+                        - unknown
+                        - txt
+                        - xml-v2
+                        - xml-v3
                 authors:
                     type: array
                     items:
                         $ref: '#/components/schemas/Person'
+                shepherd:
+                    type: string
+                    format: email
+                intended_std_level:
+                    type: string
 
         OriginalStream:
             type: object
