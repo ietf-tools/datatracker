@@ -266,3 +266,24 @@ class ExtResourceForm(forms.Form):
     @staticmethod
     def valid_resource_tags():
         return ExtResourceName.objects.all().order_by('slug').values_list('slug', flat=True)
+
+class InvestigateForm(forms.Form):
+    name_fragment = forms.CharField(
+        label="File name or fragment to investigate",
+        required=True,
+        help_text=(
+            "Enter a filename such as draft-ietf-some-draft-00.txt or a fragment like draft-ietf-some-draft using at least 8 characters. The search will also work for files that are not necessarily drafts."
+        ),
+        min_length=8,
+    )
+
+    def clean_name_fragment(self):
+        disallowed_characters = ["%", "/", "\\", "*"]
+        name_fragment = self.cleaned_data["name_fragment"]
+        # Manual inspection of the directories at the time of this writing shows
+        # looking for files with less than 8 characters in the name is not useful
+        # Requiring this will help protect against the secretariat unintentionally
+        # matching every draft.
+        if any(c in name_fragment for c in disallowed_characters):
+            raise ValidationError(f"The following characters are disallowed: {', '.join(disallowed_characters)}")
+        return name_fragment

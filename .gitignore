@@ -17,14 +17,17 @@ datatracker.sublime-workspace
 /docker/docker-compose.extend-custom.yml
 /env
 /ghostdriver.log
+/geckodriver.log
 /htmlcov
 /ietf/static/dist-neue
 /latest-coverage.json
 /media
 /node_modules
 /release-coverage.json
+/static
 /tmp-*
 /.testresult
+*.swp
 *.pyc
 __pycache__
 .yarn/*

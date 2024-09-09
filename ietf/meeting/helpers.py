@@ -104,7 +104,7 @@ def preprocess_assignments_for_agenda(assignments_queryset, meeting, extra_prefe
                 queryset=add_event_info_to_session_qs(Session.objects.all().prefetch_related(
                     'group', 'group__charter', 'group__charter__group',
                     Prefetch('materials',
-                             queryset=Document.objects.exclude(states__type=F("type"), states__slug='deleted').order_by('sessionpresentation__order').prefetch_related('states'),
+                             queryset=Document.objects.exclude(states__type=F("type"), states__slug='deleted').order_by('presentations__order').prefetch_related('states'),
                              to_attr='prefetched_active_materials'
                     )
                 ))
@@ -890,7 +890,7 @@ def make_materials_directories(meeting):
     # was merged with the regular datatracker code; then in secr/proceedings/views.py
     # in make_directories())
     saved_umask = os.umask(0)   
-    for leaf in ('slides','agenda','minutes','id','rfc','bluesheets'):
+    for leaf in ('slides','agenda','minutes', 'narrativeminutes', 'id','rfc','bluesheets'):
         target = os.path.join(path,leaf)
         if not os.path.exists(target):
             os.makedirs(target)
@@ -1099,6 +1099,7 @@ def create_interim_session_conferences(sessions):
             try:
                 confs = meetecho_manager.create(
                     group=session.group,
+                    session_id=session.pk,
                     description=str(session),
                     start_time=ts.utc_start_time(),
                     duration=ts.duration,

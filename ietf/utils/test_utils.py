@@ -211,6 +211,7 @@ class TestCase(django.test.TestCase):
         'INTERNET_DRAFT_ARCHIVE_DIR',
         'INTERNET_DRAFT_PATH',
         'BIBXML_BASE_PATH',
+        'FTP_DIR',
     ]
 
     parser = html5lib.HTMLParser(strict=True)

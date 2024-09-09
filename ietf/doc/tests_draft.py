@@ -20,7 +20,7 @@ from django.utils.html import escape
 import debug                            # pyflakes:ignore
 
 from ietf.doc.expire import get_expired_drafts, send_expire_notice_for_draft, expire_draft
-from ietf.doc.factories import IndividualDraftFactory, WgDraftFactory, RgDraftFactory, DocEventFactory
+from ietf.doc.factories import EditorialDraftFactory, IndividualDraftFactory, WgDraftFactory, RgDraftFactory, DocEventFactory
 from ietf.doc.models import ( Document, DocReminder, DocEvent,
     ConsensusDocEvent, LastCallDocEvent, RelatedDocument, State, TelechatDocEvent, 
     WriteupDocEvent, DocRelationshipName, IanaExpertDocEvent )
@@ -1483,6 +1483,42 @@ class SubmitToIesgTests(TestCase):
         self.assertTrue("aread@" in outbox[-1]['To'])
         self.assertTrue("iesg-secretary@" in outbox[-1]['Cc'])
 
+    def test_confirm_submission_no_doc_ad(self):
+        url = urlreverse('ietf.doc.views_draft.to_iesg', kwargs=dict(name=self.docname))
+        self.client.login(username="marschairman", password="marschairman+password")
+
+        doc = Document.objects.get(name=self.docname)
+        RoleFactory(name_id='ad', group=doc.group, person=doc.ad)
+        e = DocEvent(type="changed_document", by=doc.ad, doc=doc, rev=doc.rev, desc="Remove doc AD")
+        e.save()
+        doc.ad = None
+        doc.save_with_history([e])
+
+        docevents_pre = set(doc.docevent_set.all())
+        mailbox_before = len(outbox)
+
+        r = self.client.post(url, dict(confirm="1"))
+        self.assertEqual(r.status_code, 302)
+
+        doc = Document.objects.get(name=self.docname)
+        self.assertTrue(doc.get_state('draft-iesg').slug=='pub-req')
+        self.assertTrue(doc.get_state('draft-stream-ietf').slug=='sub-pub')
+
+        self.assertCountEqual(doc.action_holders.all(), [doc.ad])
+
+        new_docevents = set(doc.docevent_set.all()) - docevents_pre
+        self.assertEqual(len(new_docevents), 5)
+        new_docevent_type_count = Counter([e.type for e in new_docevents])
+        self.assertEqual(new_docevent_type_count['changed_state'],2)
+        self.assertEqual(new_docevent_type_count['started_iesg_process'],1)
+        self.assertEqual(new_docevent_type_count['changed_action_holders'], 1)
+        self.assertEqual(new_docevent_type_count['changed_document'], 1)
+
+        self.assertEqual(len(outbox), mailbox_before + 1)
+        self.assertTrue("Publication has been requested" in outbox[-1]['Subject'])
+        self.assertTrue("aread@" in outbox[-1]['To'])
+        self.assertTrue("iesg-secretary@" in outbox[-1]['Cc'])
+
 
 
 class RequestPublicationTests(TestCase):
@@ -2125,3 +2161,13 @@ class ShepherdWriteupTests(TestCase):
         self.assertContains(r, "for Group Documents", status_code=200)
         r = self.client.post(url,dict(reset_text=''))
         self.assertContains(r, "for Group Documents", status_code=200)
+
+class EditorialDraftMetadataTests(TestCase):
+    def test_editorial_metadata(self):
+        draft = EditorialDraftFactory()
+        url = urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name))
+        r = self.client.get(url)
+        q = PyQuery(r.content)
+        top_level_metadata_headings = q("tbody>tr>th:first-child").text()
+        self.assertNotIn("IESG", top_level_metadata_headings)
+        self.assertNotIn("IANA", top_level_metadata_headings)

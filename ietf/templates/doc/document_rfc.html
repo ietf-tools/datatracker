@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{# Copyright The IETF Trust 2016-2023, All Rights Reserved #}
+{# Copyright The IETF Trust 2016-2024, All Rights Reserved #}
 {% load origin %}
 {% load static %}
 {% load ietf_filters %}
@@ -22,6 +22,7 @@
 {% block content %}
     {% origin %}
     {{ top|safe }}
+    {% include "doc/disclaimer.html" with document_html=document_html %}
     <div id="doc-timeline"></div>
     <table class="table table-sm table-borderless">
         {% include "doc/document_info.html" %}
@@ -81,12 +82,14 @@
             {% endif %}
         </table>
         <div class="buttonlist">
-            <a class="btn btn-primary btn-sm"
-               href="mailto:{{ doc.name }}@ietf.org?subject=Mail%20regarding%20{{ doc.name }}">
-                <i class="bi bi-envelope">
-                </i>
-                Email authors
-            </a>
+            {% if mailto_name %}
+                <a class="btn btn-primary btn-sm"
+                   href="mailto:{{ mailto_name }}@ietf.org?subject=Mail%20regarding%20{{ doc.name }}">
+                    <i class="bi bi-envelope">
+                    </i>
+                    Email authors
+                </a>
+            {% endif %}
             {% if doc.group.type_id == "wg" or doc.group.type_id == "rg" %}
                 <a class="btn btn-primary btn-sm"
                    href="mailto:{{ doc.group.list_email }}?subject=Mail%20regarding%20{{ doc.name }}">
@@ -129,14 +132,14 @@
             </a>
             {% if user.is_authenticated %}
                 <a class="btn btn-primary btn-sm track-untrack-doc {% if not doc.tracked_in_personal_community_list %}hide{% endif %}"
-                   href="{% url "ietf.community.views.untrack_document" username=user.username name=doc.name %}"
+                   href="{% url "ietf.community.views.untrack_document" email_or_name=user.username name=doc.name %}"
                    title="Remove from your personal I-D list">
                     <i class="bi bi-bookmark-check-fill">
                     </i>
                     Untrack
                 </a>
                 <a class="btn btn-primary btn-sm track-untrack-doc {% if doc.tracked_in_personal_community_list %}hide{% endif %}"
-                   href="{% url "ietf.community.views.track_document" username=user.username name=doc.name %}"
+                   href="{% url "ietf.community.views.track_document" email_or_name=user.username name=doc.name %}"
                    title="Add to your personal I-D list">
                     <i class="bi bi-bookmark">
                     </i>

@@ -1,19 +1,15 @@
 # Copyright The IETF Trust 2017-2019, All Rights Reserved
 # Copyright 2016 IETF Trust
 
-import syslog
-
 from django.core.management.base import BaseCommand, CommandError
 from django.utils import timezone
 
 import debug                            # pyflakes:ignore
 
 from ietf.meeting.models import Meeting
-from ietf.stats.utils import get_meeting_registration_data
+from ietf.stats.utils import fetch_attendance_from_meetings
+from ietf.utils import log
 
-logtag = __name__.split('.')[-1]
-logname = "user.log"
-syslog.openlog(str(logtag), syslog.LOG_PID, syslog.LOG_USER)
 
 class Command(BaseCommand):
     help = "Fetch meeting attendee figures from ietf.org/registration/attendees."
@@ -36,11 +32,11 @@ class Command(BaseCommand):
         else:
             raise CommandError("Please use one of --meeting, --all or --latest")
 
-        for meeting in meetings:
-            added, processed, total = get_meeting_registration_data(meeting)
-            msg = "Fetched data for meeting %3s: %4d processed, %4d added, %4d in table" % (meeting.number, processed, added, total)
+        for meeting, stats in zip(meetings, fetch_attendance_from_meetings(meetings)):
+            msg = "Fetched data for meeting {:>3}: {:4d} processed, {:4d} added, {:4d} in table".format(
+                meeting.number, stats.processed, stats.added, stats.total
+            )
             if self.stdout.isatty():
                 self.stdout.write(msg+'\n') # make debugging a bit easier
             else:
-                syslog.syslog(msg)
-        
+                log.log(msg)

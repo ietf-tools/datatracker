@@ -9,7 +9,7 @@ from django.urls import reverse as urlreverse
 import debug                            # pyflakes:ignore
 
 from ietf.group.factories import GroupFactory
-from ietf.mailinglists.factories import ListFactory
+from ietf.mailinglists.factories import NonWgMailingListFactory
 from ietf.utils.test_utils import TestCase
 
 
@@ -32,23 +32,15 @@ class MailingListTests(TestCase):
 
 
     def test_nonwg(self):
-        groups = list()
-        groups.append(GroupFactory(type_id='wg', acronym='mars', list_archive='https://ietf.org/mars'))
-        groups.append(GroupFactory(type_id='wg', acronym='ames', state_id='conclude', list_archive='https://ietf.org/ames'))
-        groups.append(GroupFactory(type_id='wg', acronym='newstuff', state_id='bof', list_archive='https://ietf.org/newstuff'))
-        groups.append(GroupFactory(type_id='rg', acronym='research', list_archive='https://irtf.org/research'))
-        lists = ListFactory.create_batch(7)
+
+        lists = NonWgMailingListFactory.create_batch(7)
 
         url = urlreverse("ietf.mailinglists.views.nonwg")
 
         r = self.client.get(url)
+        q = PyQuery(r.content)
         for l in lists:
-            if l.advertised:
                 self.assertContains(r, l.name)
                 self.assertContains(r, l.description)
-            else:
-                self.assertNotContains(r, l.name, html=True)
-                self.assertNotContains(r, l.description, html=True)
+                self.assertNotEqual(q(f"a[href=\"{l.info_url()}\"]"), [])
 
-        for g in groups:
-            self.assertNotContains(r, g.acronym, html=True)

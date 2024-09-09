@@ -14,7 +14,7 @@ urlpatterns = [
         url(r'^confirmnewemail/(?P<auth>[^/]+)/$', views.confirm_new_email),
         url(r'^create/$', views.create_account),
         url(r'^create/confirm/(?P<auth>[^/]+)/$', views.confirm_account),
-        url(r'^login/$', views.login),
+        url(r'^login/$', views.AnyEmailLoginView.as_view(), name="ietf.ietfauth.views.login"),
         url(r'^logout/$', LogoutView.as_view(), name="django.contrib.auth.views.logout"),
         url(r'^password/$', views.change_password),
         url(r'^profile/$', views.profile),
@@ -24,5 +24,4 @@ urlpatterns = [
         url(r'^review/$', views.review_overview),
         url(r'^testemail/$', views.test_email),
         url(r'^username/$', views.change_username),
-        url(r'^allowlist/add/?$', views.add_account_allowlist),
 ]

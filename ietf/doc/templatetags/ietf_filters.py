@@ -4,6 +4,7 @@
 
 import datetime
 import re
+from pathlib import Path
 from urllib.parse import urljoin
 from zoneinfo import ZoneInfo
 
@@ -539,6 +540,10 @@ def ics_date_time(dt, tzname):
         return f':{timestamp}Z'
     else:
         return f';TZID={ics_esc(tzname)}:{timestamp}'
+    
+@register.filter
+def next_day(value):
+    return value + datetime.timedelta(days=1)
 
 
 @register.filter
@@ -851,10 +856,10 @@ def badgeify(blob):
     Add an appropriate bootstrap badge around "text", based on its contents.
     """
     config = [
-        (r"rejected|not ready", "danger", "x-lg"),
+        (r"rejected|not ready|serious issues", "danger", "x-lg"),
         (r"complete|accepted|ready", "success", ""),
         (r"has nits|almost ready", "info", "info-lg"),
-        (r"has issues", "warning", "exclamation-lg"),
+        (r"has issues|on the right track", "warning", "exclamation-lg"),
         (r"assigned", "info", "person-plus-fill"),
         (r"will not review|overtaken by events|withdrawn", "secondary", "dash-lg"),
         (r"no response", "warning", "question-lg"),
@@ -877,3 +882,79 @@ def badgeify(blob):
             )
 
     return text
+
+@register.filter
+def simple_history_delta_changes(history):
+    """Returns diff between given history and previous entry."""
+    prev = history.prev_record
+    if prev:
+        delta = history.diff_against(prev)
+        return delta.changes
+    return []
+
+@register.filter
+def simple_history_delta_change_cnt(history):
+    """Returns number of changes between given history and previous entry."""
+    prev = history.prev_record
+    if prev:
+        delta = history.diff_against(prev)
+        return len(delta.changes)
+    return 0
+
+@register.filter
+def mtime(path):
+    """Returns a datetime object representing mtime given a pathlib Path object"""
+    return datetime.datetime.fromtimestamp(path.stat().st_mtime).astimezone(ZoneInfo(settings.TIME_ZONE))
+
+@register.filter
+def mtime_is_epoch(path):
+    return path.stat().st_mtime == 0
+
+@register.filter
+def url_for_path(path):
+    """Consructs a 'best' URL for web access to the given pathlib Path object.
+
+    Assumes that the path is into the Internet-Draft archive or the proceedings.
+    """
+    if Path(settings.AGENDA_PATH) in path.parents:
+        return (
+            f"https://www.ietf.org/proceedings/{path.relative_to(settings.AGENDA_PATH)}"
+        )
+    elif any(
+        [
+            pathdir in path.parents
+            for pathdir in [
+                Path(settings.INTERNET_DRAFT_PATH),
+                Path(settings.INTERNET_DRAFT_ARCHIVE_DIR).parent,
+                Path(settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR),
+            ]
+        ]
+    ):
+        return f"{settings.IETF_ID_ARCHIVE_URL}{path.name}"
+    else:
+        return "#"
+
+
+@register.filter
+def is_in_stream(doc):
+    """
+    Check if the doc is in one of the states in it stream that
+    indicate that is actually adopted, i.e., part of the stream.
+    (There are various "candidate" states that necessitate this
+    filter.)
+    """
+    if not doc.stream:
+        return False
+    stream = doc.stream.slug
+    state = doc.get_state_slug(f"draft-stream-{doc.stream.slug}")
+    if not state:
+        return True
+    if stream == "ietf":
+        return state not in ["wg-cand", "c-adopt"]
+    elif stream == "irtf":
+        return state != "candidat"
+    elif stream == "iab":
+        return state not in ["candidat", "diff-org"]
+    elif stream == "editorial":
+        return True
+    return False

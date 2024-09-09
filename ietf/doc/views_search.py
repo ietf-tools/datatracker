@@ -39,7 +39,9 @@ import datetime
 import copy
 import operator
 
+from collections import defaultdict
 from functools import reduce
+
 from django import forms
 from django.conf import settings
 from django.core.cache import cache, caches
@@ -67,6 +69,7 @@ from ietf.name.models import DocTagName, DocTypeName, StreamName
 from ietf.person.models import Person
 from ietf.person.utils import get_active_ads
 from ietf.utils.draft_search import normalize_draftname
+from ietf.utils.fields import ModelMultipleChoiceField
 from ietf.utils.log import log
 from ietf.doc.utils_search import prepare_document_table, doc_type, doc_state, doc_type_name, AD_WORKLOAD
 from ietf.ietfauth.utils import has_role
@@ -98,7 +101,7 @@ class SearchForm(forms.Form):
             ("ad", "AD"), ("-ad", "AD (desc)"), ),
         required=False, widget=forms.HiddenInput)
 
-    doctypes = forms.ModelMultipleChoiceField(queryset=DocTypeName.objects.filter(used=True).exclude(slug__in=('draft', 'rfc', 'bcp', 'std', 'fyi', 'liai-att')).order_by('name'), required=False)
+    doctypes = ModelMultipleChoiceField(queryset=DocTypeName.objects.filter(used=True).exclude(slug__in=('draft', 'rfc', 'bcp', 'std', 'fyi', 'liai-att')).order_by('name'), required=False)
 
     def __init__(self, *args, **kwargs):
         super(SearchForm, self).__init__(*args, **kwargs)
@@ -360,32 +363,52 @@ def search_for_name(request, name):
     return cached_redirect(cache_key, urlreverse('ietf.doc.views_search.search') + search_args)
 
 
-def state_name(doc_type, state, shorten=True):
-    name = ""
-    # Note doc_type rfc here is _not_ necessarily Document.type - for some callers
-    # it is a type derived from draft... The ad_workload view needs more rework so that
-    # the code isn't having to shadow-box so much.
-    if doc_type == "rfc":
-        if state == "rfc":
-            name = "RFC"
-        if name == "":
-            s = State.objects.filter(type="rfc",slug=state).first()
-            if s:
-                name = s.name
-        if name == "":
-            name = State.objects.get(type__in=["draft", "draft-iesg"], slug=state).name
-    elif doc_type == "draft" and state not in ["rfc", "expired"]:
-        name = State.objects.get(type__in=["draft", "draft-iesg"], slug=state).name
-    elif doc_type == "draft" and state == "rfc":
-        name = "RFC"
-    elif doc_type == "conflrev" and state.startswith("appr"):
-        name = "Approved"
-    else:
-        name = State.objects.get(type=doc_type, slug=state).name
+def get_state_name_calculator():
+    """Get a function to calculate state names
+    
+    Queries the database once when called, then uses cached look-up table for name calculations.
+    """
+    # state_lut always has at least rfc, draft, and draft-iesg keys
+    state_lut = defaultdict(dict, **{"rfc": {}, "draft":{}, "draft-iesg": {}})
+    for state in State.objects.filter(used=True):
+        state_lut[state.type_id][state.slug] = state.name
+    state_lut = dict(state_lut)  # convert to dict to freeze key changes
 
-    if not shorten:
-        return name
+    def _get_state_name(doc_type, state_slug):
+        """Get display name for a doc type / state slug
+        
+        Note doc_type rfc here is _not_ necessarily Document.type - for some callers
+        it is a type derived from draft... The ad_workload view needs more rework so that
+        the code isn't having to shadow-box so much.
+        """
+        if doc_type == "rfc":
+            if state_slug == "rfc":
+                return "RFC"
+            elif state_slug in state_lut["rfc"]:
+                return state_lut["rfc"][state_slug]
+            else:
+                return state_lut["draft"].get(
+                    state_slug,
+                    state_lut["draft-iesg"][state_slug],
+                )
+        elif doc_type == "draft" and state_slug not in ["rfc", "expired"]:
+            return state_lut["draft"].get(
+                state_slug,
+                state_lut["draft-iesg"][state_slug],
+            )
+        elif doc_type == "draft" and state_slug == "rfc":
+            return "RFC"
+        elif doc_type == "conflrev" and state_slug.startswith("appr"):
+            return "Approved"
+        else:
+            return state_lut[doc_type][state_slug]
 
+    # return the function as a closure
+    return _get_state_name
+
+
+def shorten_state_name(name):
+    """Get abbreviated display name for a state"""
     for pat, sub in [
         (r" \(Internal Steering Group/IAB Review\)", ""),
         ("Writeup", "Write-up"),
@@ -412,24 +435,7 @@ def state_name(doc_type, state, shorten=True):
         (r"\(Message to Community, Selected by Secretariat\)", ""),
     ]:
         name = re.sub(pat, sub, name)
-
     return name.strip()
-
-
-STATE_SLUGS = {
-    dt: {state_name(dt, ds, shorten=False): ds for ds in AD_WORKLOAD[dt]}  # type: ignore
-    for dt in AD_WORKLOAD
-}
-
-
-def state_to_doc_type(state):
-    for dt in STATE_SLUGS:
-        if state in STATE_SLUGS[dt]:
-            return dt
-    return None
-
-
-IESG_STATES = State.objects.filter(type="draft-iesg").values_list("name", flat=True)
 
 
 def date_to_bucket(date, now, num_buckets):
@@ -437,6 +443,19 @@ def date_to_bucket(date, now, num_buckets):
 
 
 def ad_workload(request):
+    _calculate_state_name = get_state_name_calculator()
+    IESG_STATES = State.objects.filter(type="draft-iesg").values_list("name", flat=True)
+    STATE_SLUGS = {
+        dt: {_calculate_state_name(dt, ds): ds for ds in AD_WORKLOAD[dt]}  # type: ignore
+        for dt in AD_WORKLOAD.keys()
+    }
+
+    def _state_to_doc_type(state):
+        for dt in STATE_SLUGS:
+            if state in STATE_SLUGS[dt]:
+                return dt
+        return None
+
     # number of days (= buckets) to show in the graphs
     days = 120 if has_role(request.user, ["Area Director", "Secretariat"]) else 1
     now = timezone.now()
@@ -466,16 +485,39 @@ def ad_workload(request):
         )
         ad.buckets = copy.deepcopy(bucket_template)
 
+        # https://github.com/ietf-tools/datatracker/issues/4577
+        docs_via_group_ad = Document.objects.exclude(
+            group__acronym="none"
+        ).filter(
+            group__role__name="ad",
+            group__role__person=ad
+        ).filter(
+            states__type="draft-stream-ietf",
+            states__slug__in=["wg-doc","wg-lc","waiting-for-implementation","chair-w","writeupw"]
+        )
+
+        doc_for_ad = Document.objects.filter(ad=ad)
+
+        ad.pre_pubreq = (docs_via_group_ad | doc_for_ad).filter(
+            type="draft"
+        ).filter(
+            states__type="draft",
+            states__slug="active"
+        ).filter(
+            states__type="draft-iesg",
+            states__slug="idexists"
+        ).distinct().count()
+
         for doc in Document.objects.exclude(type_id="rfc").filter(ad=ad):
             dt = doc_type(doc)
             state = doc_state(doc)
 
             state_events = doc.docevent_set.filter(
-                Q(type="started_iesg_process")
-                | Q(type="changed_state")
-                | Q(type="published_rfc")
-                | Q(type="closed_ballot"),
-            ).order_by("-time")
+                type__in=["started_iesg_process", "changed_state", "closed_ballot"]
+            )
+            if doc.became_rfc():
+                state_events = state_events | doc.became_rfc().docevent_set.filter(type="published_rfc")
+            state_events = state_events.order_by("-time")
 
             # compute state history for drafts
             last = now
@@ -483,7 +525,7 @@ def ad_workload(request):
                 to_state = None
                 if dt == "charter":
                     if e.type == "closed_ballot":
-                        to_state = state_name(dt, state, shorten=False)
+                        to_state = _calculate_state_name(dt, state)
                     elif e.desc.endswith("has been replaced"):
                         # stop tracking
                         last = e.time
@@ -512,7 +554,7 @@ def ad_workload(request):
                     to_state = "RFC"
 
                 if dt == "rfc":
-                    new_dt = state_to_doc_type(to_state)
+                    new_dt = _state_to_doc_type(to_state)
                     if new_dt is not None and new_dt != dt:
                         dt = new_dt
 
@@ -549,7 +591,9 @@ def ad_workload(request):
     metadata = [
         {
             "type": (dt, doc_type_name(dt)),
-            "states": [(state, state_name(dt, state)) for state in ad.buckets[dt]],
+            "states": [
+                (state, shorten_state_name(_calculate_state_name(dt, state))) for state in ad.buckets[dt]
+            ],
             "ads": ads,
         }
         for dt in AD_WORKLOAD
@@ -591,9 +635,10 @@ def docs_for_ad(request, name):
     if not ad:
         raise Http404
 
-    results, meta = prepare_document_table(request, Document.objects.filter(ad=ad))
+    results, meta = prepare_document_table(
+        request, Document.objects.filter(ad=ad), max_results=500, show_ad_and_shepherd=False
+    )
     results.sort(key=lambda d: sort_key(d))
-    del meta["headers"][-1]
 
     # filter out some results
     results = [
@@ -611,13 +656,15 @@ def docs_for_ad(request, name):
             and (
                 r.get_state_slug("draft-iesg") == "dead"
                 or r.get_state_slug("draft") == "repl"
+                or r.get_state_slug("draft") == "rfc"
             )
         )
     ]
 
+    _calculate_state_name = get_state_name_calculator()
     for d in results:
         dt = d.type.slug
-        d.search_heading = state_name(dt, doc_state(d), shorten=False)
+        d.search_heading = _calculate_state_name(dt, doc_state(d))
         if d.search_heading != "RFC":
             d.search_heading += f" {doc_type_name(dt)}"
 
@@ -690,7 +737,7 @@ def docs_for_ad(request, name):
         {
             "docs": results,
             "meta": meta,
-            "ad_name": ad.name,
+            "ad": ad,
             "blocked_docs": blocked_docs,
             "not_balloted_docs": not_balloted_docs,
         },

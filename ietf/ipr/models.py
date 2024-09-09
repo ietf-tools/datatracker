@@ -16,11 +16,11 @@ from ietf.utils.models import ForeignKey
 class IprDisclosureBase(models.Model):
     by                  = ForeignKey(Person) # who was logged in, or System if nobody was logged in
     compliant           = models.BooleanField("Complies to RFC3979", default=True)
-    docs                = models.ManyToManyField(Document, through='IprDocRel')
+    docs                = models.ManyToManyField(Document, through='ipr.IprDocRel')
     holder_legal_name   = models.CharField(max_length=255)
     notes               = models.TextField("Additional notes", blank=True)
     other_designations  = models.CharField("Designations for other contributions", blank=True, max_length=255)
-    rel                 = models.ManyToManyField('self', through='RelatedIpr', symmetrical=False)
+    rel                 = models.ManyToManyField('self', through='ipr.RelatedIpr', symmetrical=False)
     state               = ForeignKey(IprDisclosureStateName)
     submitter_name      = models.CharField(max_length=255,blank=True)
     submitter_email     = models.EmailField(blank=True)

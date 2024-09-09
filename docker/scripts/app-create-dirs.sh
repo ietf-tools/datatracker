@@ -2,6 +2,8 @@
 
 for sub in \
     /assets/archive/id \
+    /assets/collection \
+    /assets/collection/draft-archive \
     /assets/ietf-ftp \
     /assets/ietf-ftp/bofreq \
     /assets/ietf-ftp/charter \
@@ -27,6 +29,10 @@ for sub in \
     /assets/www6/iesg \
     /assets/www6/iesg/evaluation \
     /assets/media/photo \
+    /assets/ftp \
+    /assets/ftp/charter \
+    /assets/ftp/internet-drafts \
+    /assets/ftp/review \
     ; do
     if [ ! -d "$sub"  ]; then
         echo "Creating dir $sub"

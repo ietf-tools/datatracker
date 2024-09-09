@@ -9,6 +9,18 @@ from ietf.doc.models import State, StateType, IESG_SUBSTATE_TAGS
 from ietf.name.models import DocRelationshipName,  DocTagName
 from ietf.doc.utils import get_tags_for_stream_id
 
+def state_index(request):
+    types = StateType.objects.all()
+    names = [ type.slug for type in types ]
+    for type in types:
+        if "-" in type.slug and type.slug.split('-',1)[0] in names:
+            type.stategroups = None
+        else:
+            groups = StateType.objects.filter(slug__startswith=type.slug)
+            type.stategroups =  [ g.slug[len(type.slug)+1:] for g in groups if not g == type ] or ""
+                
+    return render(request, 'doc/state_index.html', {"types": types})
+
 def state_help(request, type=None):
     slug, title = {
         "draft-iesg": ("draft-iesg", "IESG States for Internet-Drafts"),
@@ -26,7 +38,30 @@ def state_help(request, type=None):
         "status-change": ("statchg", "RFC Status Change States"),
         "bofreq": ("bofreq", "BOF Request States"),
         "procmaterials": ("procmaterials", "Proceedings Materials States"),
-        "statement": {"statement", "Statement States"}
+        "statement": ("statement", "Statement States"),
+        "slides": ("slides", "Slides States"),
+        "minutes": ("minutes", "Minutes States"),
+        "liai-att": ("liai-att", "Liaison Attachment States"),
+        "recording": ("recording", "Recording States"),
+        "bluesheets": ("bluesheets", "Bluesheets States"),
+        "reuse_policy": ("reuse_policy", "Reuse Policy States"),
+        "review": ("review", "Review States"),
+        "liaison": ("liaison", "Liaison States"),
+        "shepwrit": ("shepwrit", "Shapherd Writeup States"),
+        "bofreq": ("bofreq", "BOF Request States"),
+        "procmaterials": ("procmaterials", "Proceedings Materials States"),
+        "chatlog": ("chatlog", "Chat Log States"),
+        "polls": ("polls", "Polls States"),
+        "statement": ("statement", "Statement States"),
+        "rfc": ("rfc", "RFC States"),
+        "bcp": ("bcp", "BCP States"),
+        "std": ("std", "STD States"),
+        "fyi": ("fyi", "FYI States"),
+        "narrativeminutes": ("narrativeminutes", "Narrative Minutes States"),
+        "draft": ("draft", "Draft States"),
+        "statchg": ("statchg", "Status Change States"),
+        "agenda": ("agenda", "Agenda States"),
+        "conflrev": ("conflrev", "Conflict Review States")
         }.get(type, (None, None))
     state_type = get_object_or_404(StateType, slug=slug)
 

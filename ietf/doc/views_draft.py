@@ -52,6 +52,7 @@ from ietf.person.models import Person, Email
 from ietf.utils.mail import send_mail, send_mail_message, on_behalf_of
 from ietf.utils.textupload import get_cleaned_text_file_content
 from ietf.utils import log
+from ietf.utils.fields import ModelMultipleChoiceField
 from ietf.utils.response import permission_denied
 from ietf.utils.timezone import datetime_today, DEADLINE_TZINFO
 
@@ -390,9 +391,9 @@ def replaces(request, name):
                    ))
 
 class SuggestedReplacesForm(forms.Form):
-    replaces = forms.ModelMultipleChoiceField(queryset=Document.objects.all(),
-                                              label="Suggestions", required=False, widget=forms.CheckboxSelectMultiple,
-                                              help_text="Select only the documents that are replaced by this document")
+    replaces = ModelMultipleChoiceField(queryset=Document.objects.all(),
+                                        label="Suggestions", required=False, widget=forms.CheckboxSelectMultiple,
+                                        help_text="Select only the documents that are replaced by this document")
     comment = forms.CharField(label="Optional comment", widget=forms.Textarea, required=False, strip=False)
 
     def __init__(self, suggested, *args, **kwargs):
@@ -560,22 +561,19 @@ def to_iesg(request,name):
     if request.method == 'POST':
 
         if request.POST.get("confirm", ""): 
-
             by = request.user.person
 
             events = []
-
-            changes = []
+            def doc_event(type, by, doc, desc):
+                return DocEvent.objects.create(type=type, by=by, doc=doc, rev=doc.rev, desc=desc)
 
             if doc.get_state_slug("draft-iesg") == "idexists":
-                e = DocEvent()
-                e.type = "started_iesg_process"
-                e.by = by
-                e.doc = doc
-                e.rev = doc.rev
-                e.desc = "Document is now in IESG state <b>%s</b>" % target_state['iesg'].name
-                e.save()
-                events.append(e)
+                events.append(doc_event("started_iesg_process", by, doc, f"Document is now in IESG state <b>{target_state['iesg'].name}</b>"))
+
+            # do this first, so AD becomes action holder
+            if not doc.ad == ad :
+                doc.ad = ad
+                events.append(doc_event("changed_document", by, doc, f"Responsible AD changed to {doc.ad}"))
 
             for state_type in ['draft-iesg','draft-stream-ietf']:
                 prev_state=doc.get_state(state_type)
@@ -587,25 +585,14 @@ def to_iesg(request,name):
                         events.append(e)
                     events.append(add_state_change_event(doc=doc,by=by,prev_state=prev_state,new_state=new_state))
 
-            if not doc.ad == ad :
-                doc.ad = ad
-                changes.append("Responsible AD changed to %s" % doc.ad)
-
             if not doc.notify == notify :
                 doc.notify = notify
-                changes.append("State Change Notice email list changed to %s" % doc.notify)
+                events.append(doc_event("changed_document", by, doc, f"State Change Notice email list changed to {doc.notify}"))
 
             # Get the last available writeup
             previous_writeup = doc.latest_event(WriteupDocEvent,type="changed_protocol_writeup")
             if previous_writeup != None:
-                changes.append(previous_writeup.text)
-
-            for c in changes:
-                e = DocEvent(doc=doc, rev=doc.rev, by=by)
-                e.desc = c
-                e.type = "changed_document"
-                e.save()
-                events.append(e)
+                events.append(doc_event("changed_document", by, doc, previous_writeup.text))
 
             doc.save_with_history(events)
 
@@ -845,6 +832,9 @@ def restore_draft_file(request, draft):
     log.log("Resurrecting %s.  Moving files:" % draft.name)
     for file in files:
         try:
+            # ghostlinkd would keep this in the combined all archive since it would
+            # be sourced from a different place. But when ghostlinkd is removed, nothing
+            # new is needed here - the file will already exist in the combined archive
             shutil.move(file, settings.INTERNET_DRAFT_PATH)
             log.log("  Moved file %s to %s" % (file, settings.INTERNET_DRAFT_PATH))
         except shutil.Error as ex:
@@ -1612,7 +1602,7 @@ class ChangeStreamStateForm(forms.Form):
     new_state = forms.ModelChoiceField(queryset=State.objects.filter(used=True), label='State' )
     weeks = forms.IntegerField(label='Expected weeks in state',required=False)
     comment = forms.CharField(widget=forms.Textarea, required=False, help_text="Optional comment for the document history.", strip=False)
-    tags = forms.ModelMultipleChoiceField(queryset=DocTagName.objects.filter(used=True), widget=forms.CheckboxSelectMultiple, required=False)
+    tags = ModelMultipleChoiceField(queryset=DocTagName.objects.filter(used=True), widget=forms.CheckboxSelectMultiple, required=False)
 
     def __init__(self, *args, **kwargs):
         doc = kwargs.pop("doc")

@@ -28,7 +28,13 @@ from ietf.meeting.helpers import is_interim_meeting_approved, get_next_agenda_na
 from ietf.message.models import Message
 from ietf.name.models import TimeSlotTypeName, SessionPurposeName
 from ietf.person.models import Person
-from ietf.utils.fields import DatepickerDateField, DurationField, MultiEmailField, DatepickerSplitDateTimeWidget
+from ietf.utils.fields import (
+    DatepickerDateField,
+    DatepickerSplitDateTimeWidget,
+    DurationField,
+    ModelMultipleChoiceField,
+    MultiEmailField,
+)
 from ietf.utils.validators import ( validate_file_size, validate_mime_type,
     validate_file_extension, validate_no_html_frame)
 
@@ -341,7 +347,7 @@ class InterimSessionModelForm(forms.ModelForm):
                 # FIXME: What about agendas in html or markdown format?
                 uploaded_filename='{}-00.txt'.format(filename))
             doc.set_state(State.objects.get(type__slug=doc.type.slug, slug='active'))
-            self.instance.sessionpresentation_set.create(document=doc, rev=doc.rev)
+            self.instance.presentations.create(document=doc, rev=doc.rev)
             NewRevisionDocEvent.objects.create(
                 type='new_revision',
                 by=self.user.person,
@@ -380,7 +386,8 @@ class InterimAnnounceForm(forms.ModelForm):
 class InterimCancelForm(forms.Form):
     group = forms.CharField(max_length=255, required=False)
     date = forms.DateField(required=False)
-    comments = forms.CharField(required=False, widget=forms.Textarea(attrs={'placeholder': 'enter optional comments here'}), strip=False)
+    # max_length must match Session.agenda_note
+    comments = forms.CharField(max_length=512, required=False, widget=forms.Textarea(attrs={'placeholder': 'enter optional comments here'}), strip=False)
 
     def __init__(self, *args, **kwargs):
         super(InterimCancelForm, self).__init__(*args, **kwargs)
@@ -471,6 +478,9 @@ class ApplyToAllFileUploadForm(FileUploadForm):
 class UploadMinutesForm(ApplyToAllFileUploadForm):
     doc_type = 'minutes'
 
+class UploadNarrativeMinutesForm(ApplyToAllFileUploadForm):
+    doc_type = 'narrativeminutes'
+
 
 class UploadAgendaForm(ApplyToAllFileUploadForm):
     doc_type = 'agenda'
@@ -479,9 +489,12 @@ class UploadAgendaForm(ApplyToAllFileUploadForm):
 class UploadSlidesForm(ApplyToAllFileUploadForm):
     doc_type = 'slides'
     title = forms.CharField(max_length=255)
+    approved = forms.BooleanField(label='Auto-approve', initial=True, required=False)
 
-    def __init__(self, session, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, session, show_apply_to_all_checkbox, can_manage, *args, **kwargs):
+        super().__init__(show_apply_to_all_checkbox, *args, **kwargs)
+        if not can_manage:
+            self.fields.pop('approved')
         self.session = session
 
     def clean_title(self):
@@ -547,7 +560,7 @@ class SwapTimeslotsForm(forms.Form):
         queryset=TimeSlot.objects.none(),  # default to none, fill in when we have a meeting
         widget=forms.TextInput,
     )
-    rooms = forms.ModelMultipleChoiceField(
+    rooms = ModelMultipleChoiceField(
         required=True,
         queryset=Room.objects.none(),  # default to none, fill in when we have a meeting
         widget=CsvModelPkInput,
@@ -613,7 +626,7 @@ class TimeSlotCreateForm(forms.Form):
     )
     duration = TimeSlotDurationField()
     show_location = forms.BooleanField(required=False, initial=True)
-    locations = forms.ModelMultipleChoiceField(
+    locations = ModelMultipleChoiceField(
         queryset=Room.objects.none(),
         widget=forms.CheckboxSelectMultiple,
     )
