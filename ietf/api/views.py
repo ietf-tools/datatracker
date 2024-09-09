@@ -689,7 +689,7 @@ def ingest_email_handler(request, test_mode=False):
 def ingest_email(request):
     """Ingest incoming email
 
-    Hands off to ingest_email() with test_mode=False. This allows @requires_api_token to
+    Hands off to ingest_email_handler() with test_mode=False. This allows @requires_api_token to
     give the test endpoint a distinct token from the real one.
     """
     return ingest_email_handler(request, test_mode=False)
@@ -700,7 +700,7 @@ def ingest_email(request):
 def ingest_email_test(request):
     """Ingest incoming email test endpoint
     
-    Hands off to ingest_email() with test_mode=True. This allows @requires_api_token to
+    Hands off to ingest_email_handler() with test_mode=True. This allows @requires_api_token to
     give the test endpoint a distinct token from the real one.
     """
     return ingest_email_handler(request, test_mode=True)
