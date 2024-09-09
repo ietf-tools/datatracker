@@ -1022,7 +1022,9 @@ class CustomApiTests(TestCase):
             sorted(e.address for e in emails),
         )
 
-    @override_settings(APP_API_TOKENS={"ietf.api.views.ingest_email": "valid-token"})
+    @override_settings(
+        APP_API_TOKENS={"ietf.api.views.ingest_email": "valid-token", "ietf.api.views.ingest_email_test": "test-token"}
+    )
     @mock.patch("ietf.api.views.iana_ingest_review_email")
     @mock.patch("ietf.api.views.ipr_ingest_response_email")
     @mock.patch("ietf.api.views.nomcom_ingest_feedback_email")
@@ -1032,26 +1034,44 @@ class CustomApiTests(TestCase):
         mocks = {mock_nomcom_ingest, mock_ipr_ingest, mock_iana_ingest}
         empty_outbox()        
         url = urlreverse("ietf.api.views.ingest_email")
+        test_mode_url = urlreverse("ietf.api.views.ingest_email_test")
 
         # test various bad calls
         r = self.client.get(url)
+        self.assertEqual(r.status_code, 403)
+        self.assertFalse(any(m.called for m in mocks))
+        r = self.client.get(test_mode_url)
         self.assertEqual(r.status_code, 403)
         self.assertFalse(any(m.called for m in mocks))
 
         r = self.client.post(url)
         self.assertEqual(r.status_code, 403)
         self.assertFalse(any(m.called for m in mocks))
+        r = self.client.post(test_mode_url)
+        self.assertEqual(r.status_code, 403)
+        self.assertFalse(any(m.called for m in mocks))
 
         r = self.client.get(url, headers={"X-Api-Key": "valid-token"})
+        self.assertEqual(r.status_code, 405)
+        self.assertFalse(any(m.called for m in mocks))
+        r = self.client.get(test_mode_url, headers={"X-Api-Key": "test-token"})
         self.assertEqual(r.status_code, 405)
         self.assertFalse(any(m.called for m in mocks))
 
         r = self.client.post(url, headers={"X-Api-Key": "valid-token"})
         self.assertEqual(r.status_code, 415)
         self.assertFalse(any(m.called for m in mocks))
+        r = self.client.post(test_mode_url, headers={"X-Api-Key": "test-token"})
+        self.assertEqual(r.status_code, 415)
+        self.assertFalse(any(m.called for m in mocks))
 
         r = self.client.post(
             url, content_type="application/json", headers={"X-Api-Key": "valid-token"}
+        )
+        self.assertEqual(r.status_code, 400)
+        self.assertFalse(any(m.called for m in mocks))
+        r = self.client.post(
+            test_mode_url, content_type="application/json", headers={"X-Api-Key": "test-token"}
         )
         self.assertEqual(r.status_code, 400)
         self.assertFalse(any(m.called for m in mocks))
@@ -1064,12 +1084,28 @@ class CustomApiTests(TestCase):
         )
         self.assertEqual(r.status_code, 400)
         self.assertFalse(any(m.called for m in mocks))
+        r = self.client.post(
+            test_mode_url,
+            "this is not JSON!",
+            content_type="application/json",
+            headers={"X-Api-Key": "test-token"},
+        )
+        self.assertEqual(r.status_code, 400)
+        self.assertFalse(any(m.called for m in mocks))
 
         r = self.client.post(
             url,
             {"json": "yes", "valid_schema": False},
             content_type="application/json",
             headers={"X-Api-Key": "valid-token"},
+        )
+        self.assertEqual(r.status_code, 400)
+        self.assertFalse(any(m.called for m in mocks))
+        r = self.client.post(
+            test_mode_url,
+            {"json": "yes", "valid_schema": False},
+            content_type="application/json",
+            headers={"X-Api-Key": "test-token"},
         )
         self.assertEqual(r.status_code, 400)
         self.assertFalse(any(m.called for m in mocks))
@@ -1081,6 +1117,16 @@ class CustomApiTests(TestCase):
             {"dest": "not-a-destination", "message": message_b64},
             content_type="application/json",
             headers={"X-Api-Key": "valid-token"},
+        )
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.headers["Content-Type"], "application/json")
+        self.assertEqual(json.loads(r.content), {"result": "bad_dest"})
+        self.assertFalse(any(m.called for m in mocks))
+        r = self.client.post(
+            test_mode_url,
+            {"dest": "not-a-destination", "message": message_b64},
+            content_type="application/json",
+            headers={"X-Api-Key": "test-token"},
         )
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.headers["Content-Type"], "application/json")
@@ -1102,6 +1148,19 @@ class CustomApiTests(TestCase):
         self.assertFalse(any(m.called for m in (mocks - {mock_iana_ingest})))
         mock_iana_ingest.reset_mock()
         
+        # the test mode endpoint should _not_ call the handler
+        r = self.client.post(
+            test_mode_url,
+            {"dest": "iana-review", "message": message_b64},
+            content_type="application/json",
+            headers={"X-Api-Key": "test-token"},
+        )
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.headers["Content-Type"], "application/json")
+        self.assertEqual(json.loads(r.content), {"result": "ok"})
+        self.assertFalse(any(m.called for m in mocks))
+        mock_iana_ingest.reset_mock()
+        
         r = self.client.post(
             url,
             {"dest": "ipr-response", "message": message_b64},
@@ -1116,6 +1175,19 @@ class CustomApiTests(TestCase):
         self.assertFalse(any(m.called for m in (mocks - {mock_ipr_ingest})))
         mock_ipr_ingest.reset_mock()
 
+        # the test mode endpoint should _not_ call the handler
+        r = self.client.post(
+            test_mode_url,
+            {"dest": "ipr-response", "message": message_b64},
+            content_type="application/json",
+            headers={"X-Api-Key": "test-token"},
+        )
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.headers["Content-Type"], "application/json")
+        self.assertEqual(json.loads(r.content), {"result": "ok"})
+        self.assertFalse(any(m.called for m in mocks))
+        mock_ipr_ingest.reset_mock()
+
         # bad nomcom-feedback dest
         for bad_nomcom_dest in [
             "nomcom-feedback",  # no suffix
@@ -1128,6 +1200,16 @@ class CustomApiTests(TestCase):
                 {"dest": bad_nomcom_dest, "message": message_b64},
                 content_type="application/json",
                 headers={"X-Api-Key": "valid-token"},
+            )
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers["Content-Type"], "application/json")
+            self.assertEqual(json.loads(r.content), {"result": "bad_dest"})
+            self.assertFalse(any(m.called for m in mocks))
+            r = self.client.post(
+                test_mode_url,
+                {"dest": bad_nomcom_dest, "message": message_b64},
+                content_type="application/json",
+                headers={"X-Api-Key": "test-token"},
             )
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers["Content-Type"], "application/json")
@@ -1148,6 +1230,19 @@ class CustomApiTests(TestCase):
         self.assertTrue(mock_nomcom_ingest.called)
         self.assertEqual(mock_nomcom_ingest.call_args, mock.call(b"This is a message", random_year))
         self.assertFalse(any(m.called for m in (mocks - {mock_nomcom_ingest})))
+        mock_nomcom_ingest.reset_mock()
+
+        # the test mode endpoint should _not_ call the handler
+        r = self.client.post(
+            test_mode_url,
+            {"dest": f"nomcom-feedback-{random_year}", "message": message_b64},
+            content_type="application/json",
+            headers={"X-Api-Key": "test-token"},
+        )
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.headers["Content-Type"], "application/json")
+        self.assertEqual(json.loads(r.content), {"result": "ok"})
+        self.assertFalse(any(m.called for m in mocks))
         mock_nomcom_ingest.reset_mock()
 
         # test that exceptions lead to email being sent - assumes that iana-review handling is representative
