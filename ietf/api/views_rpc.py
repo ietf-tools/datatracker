@@ -131,7 +131,7 @@ def drafts_by_names(request):
             "stream": doc.stream.slug if doc.stream else "none",
             "title": doc.title,
             "pages": doc.pages,
-            "source_format": _document_source_format(d),
+            "source_format": _document_source_format(doc),
             "authors": [
                 {
                     "id": p.pk,
