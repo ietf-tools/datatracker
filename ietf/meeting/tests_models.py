@@ -158,7 +158,7 @@ class SessionTests(TestCase):
 
     def test_session_recording_url(self):
         group_acronym = "foobar"
-        meeting_date = datetime.date.today()
+        meeting_date = datetime_today()
         meeting_number = 123
 
         # IETF meeting
