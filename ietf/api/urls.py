@@ -27,6 +27,8 @@ urlpatterns = [
     url(r'^doc/draft-aliases/$', api_views.draft_aliases),
     # email ingestor
     url(r'email/$', api_views.ingest_email),
+    # email ingestor
+    url(r'email/test/$', api_views.ingest_email_test),
     # GDPR: export of personal information for the logged-in person
     url(r'^export/personal-information/$', api_views.PersonalInformationExportView.as_view()),
     # Email alias information for groups

@@ -614,14 +614,16 @@ class EmailIngestionError(Exception):
         return msg
 
 
-@requires_api_token
-@csrf_exempt
-def ingest_email(request):
-    """Ingest incoming email
+def ingest_email_handler(request, test_mode=False):
+    """Ingest incoming email - handler
     
     Returns a 4xx or 5xx status code if the HTTP request was invalid or something went
     wrong while processing it. If the request was valid, returns a 200. This may or may
     not indicate that the message was accepted.
+    
+    If test_mode is true, actual processing of a valid message will be skipped. In this
+    mode, a valid request with a valid destination will be treated as accepted. The
+    "bad_dest" error may still be returned.
     """
 
     def _http_err(code, text):
@@ -657,15 +659,18 @@ def ingest_email(request):
     try:
         if dest == "iana-review":
             valid_dest = True
-            iana_ingest_review_email(message)
+            if not test_mode:
+                iana_ingest_review_email(message)
         elif dest == "ipr-response":
             valid_dest = True
-            ipr_ingest_response_email(message)
+            if not test_mode:
+                ipr_ingest_response_email(message)
         elif dest.startswith("nomcom-feedback-"):
             maybe_year = dest[len("nomcom-feedback-"):]
             if maybe_year.isdecimal():
                 valid_dest = True
-                nomcom_ingest_feedback_email(message, int(maybe_year))
+                if not test_mode:
+                    nomcom_ingest_feedback_email(message, int(maybe_year))
     except EmailIngestionError as err:
         error_email = err.as_emailmessage()
         if error_email is not None:
@@ -677,3 +682,25 @@ def ingest_email(request):
         return _api_response("bad_dest")
 
     return _api_response("ok")
+
+
+@requires_api_token
+@csrf_exempt
+def ingest_email(request):
+    """Ingest incoming email
+
+    Hands off to ingest_email_handler() with test_mode=False. This allows @requires_api_token to
+    give the test endpoint a distinct token from the real one.
+    """
+    return ingest_email_handler(request, test_mode=False)
+
+
+@requires_api_token
+@csrf_exempt
+def ingest_email_test(request):
+    """Ingest incoming email test endpoint
+    
+    Hands off to ingest_email_handler() with test_mode=True. This allows @requires_api_token to
+    give the test endpoint a distinct token from the real one.
+    """
+    return ingest_email_handler(request, test_mode=True)

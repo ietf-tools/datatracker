@@ -10,6 +10,7 @@ from django.test import override_settings
 
 from ietf.group.factories import GroupFactory, GroupHistoryFactory
 from ietf.meeting.factories import MeetingFactory, SessionFactory, AttendedFactory, SessionPresentationFactory
+from ietf.meeting.models import Session
 from ietf.stats.factories import MeetingRegistrationFactory
 from ietf.utils.test_utils import TestCase
 from ietf.utils.timezone import date_today, datetime_today
@@ -146,3 +147,55 @@ class SessionTests(TestCase):
         self.assertEqual(session.chat_room_name(), 'plenary')
         session.chat_room = 'fnord'
         self.assertEqual(session.chat_room_name(), 'fnord')
+
+    def test_alpha_str(self):
+        self.assertEqual(Session._alpha_str(0), "a")
+        self.assertEqual(Session._alpha_str(1), "b")
+        self.assertEqual(Session._alpha_str(25), "z")
+        self.assertEqual(Session._alpha_str(26), "aa")
+        self.assertEqual(Session._alpha_str(27 * 26 - 1), "zz")
+        self.assertEqual(Session._alpha_str(27 * 26), "aaa")
+
+    def test_session_recording_url(self):
+        group_acronym = "foobar"
+        meeting_date = datetime.date.today()
+        meeting_number = 123
+
+        # IETF meeting
+        session = SessionFactory(
+            meeting__type_id='ietf',
+            meeting__date=meeting_date,
+            group__acronym=group_acronym,
+            meeting__number=meeting_number,
+        )
+        with override_settings():
+            if hasattr(settings, "MEETECHO_SESSION_RECORDING_URL"):
+                del settings.MEETECHO_SESSION_RECORDING_URL
+            self.assertIsNone(session.session_recording_url())
+
+            settings.MEETECHO_SESSION_RECORDING_URL = "http://player.example.com"
+            self.assertEqual(session.session_recording_url(), "http://player.example.com")
+
+            settings.MEETECHO_SESSION_RECORDING_URL = "http://player.example.com?{session_label}"
+            self.assertIn(f"IETF{meeting_number}-{group_acronym.upper()}", session.session_recording_url())
+            self.assertIn(f"{meeting_date.strftime('%Y%m%d')}", session.session_recording_url())
+            self.assertTrue(session.session_recording_url().startswith("http://player.example.com"))
+
+        # interim meeting
+        session = SessionFactory(
+            meeting__type_id='interim',
+            meeting__date=meeting_date,
+            group__acronym=group_acronym,
+        )
+        with override_settings():
+            if hasattr(settings, "MEETECHO_SESSION_RECORDING_URL"):
+                del settings.MEETECHO_SESSION_RECORDING_URL
+            self.assertIsNone(session.session_recording_url())
+
+            settings.MEETECHO_SESSION_RECORDING_URL = "http://player.example.com"
+            self.assertEqual(session.session_recording_url(), "http://player.example.com")
+
+            settings.MEETECHO_SESSION_RECORDING_URL = "http://player.example.com?{session_label}"
+            self.assertIn(f"IETF-{group_acronym.upper()}", session.session_recording_url())
+            self.assertIn(f"{meeting_date.strftime('%Y%m%d')}", session.session_recording_url())
+            self.assertTrue(session.session_recording_url().startswith("http://player.example.com"))

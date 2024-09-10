@@ -401,24 +401,25 @@ if DEBUG:
 
 
 MIDDLEWARE = [
-    'django.middleware.csrf.CsrfViewMiddleware',
-    'corsheaders.middleware.CorsMiddleware', # see docs on CORS_REPLACE_HTTPS_REFERER before using it
-    'django.middleware.common.CommonMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.http.ConditionalGetMiddleware',
-    'simple_history.middleware.HistoryRequestMiddleware',
+    "django.middleware.csrf.CsrfViewMiddleware",
+    "corsheaders.middleware.CorsMiddleware", # see docs on CORS_REPLACE_HTTPS_REFERER before using it
+    "django.middleware.common.CommonMiddleware",
+    "django.contrib.sessions.middleware.SessionMiddleware",
+    "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "django.contrib.messages.middleware.MessageMiddleware",
+    "django.middleware.http.ConditionalGetMiddleware",
+    "simple_history.middleware.HistoryRequestMiddleware",
     # comment in this to get logging of SQL insert and update statements:
-    #'ietf.middleware.sql_log_middleware',
-    'ietf.middleware.SMTPExceptionMiddleware',
-    'ietf.middleware.Utf8ExceptionMiddleware',
-    'ietf.middleware.redirect_trailing_period_middleware',
-    'django_referrer_policy.middleware.ReferrerPolicyMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'django.middleware.security.SecurityMiddleware',
- #   'csp.middleware.CSPMiddleware',
-    'ietf.middleware.unicode_nfkc_normalization_middleware',
+    #"ietf.middleware.sql_log_middleware",
+    "ietf.middleware.SMTPExceptionMiddleware",
+    "ietf.middleware.Utf8ExceptionMiddleware",
+    "ietf.middleware.redirect_trailing_period_middleware",
+    "django_referrer_policy.middleware.ReferrerPolicyMiddleware",
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "django.middleware.security.SecurityMiddleware",
+    #"csp.middleware.CSPMiddleware",
+    "ietf.middleware.unicode_nfkc_normalization_middleware",
+    "ietf.middleware.is_authenticated_header_middleware",
 ]
 
 ROOT_URLCONF = 'ietf.urls'
@@ -1174,7 +1175,7 @@ CELERY_TASK_IGNORE_RESULT = True  # ignore results unless specifically enabled f
 MEETECHO_ONSITE_TOOL_URL = "https://meetings.conf.meetecho.com/onsite{session.meeting.number}/?session={session.pk}"
 MEETECHO_VIDEO_STREAM_URL = "https://meetings.conf.meetecho.com/ietf{session.meeting.number}/?session={session.pk}"
 MEETECHO_AUDIO_STREAM_URL = "https://mp3.conf.meetecho.com/ietf{session.meeting.number}/{session.pk}.m3u"
-MEETECHO_SESSION_RECORDING_URL = "https://www.meetecho.com/ietf{session.meeting.number}/recordings#{session.group.acronym_upper}"
+MEETECHO_SESSION_RECORDING_URL = "https://meetecho-player.ietf.org/playout/?session={session_label}"
 
 # Put the production SECRET_KEY in settings_local.py, and also any other
 # sensitive or site-specific changes.  DO NOT commit settings_local.py to svn.
