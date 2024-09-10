@@ -58,7 +58,18 @@
             <tbody>
                 <tr>
                     <th scope="col" class="table-info" colspan="3">
-                        Results for {{ d.name|prettystdname|urlize_ietf_docs }} ("{{ d.title }}"){% if d != doc %}{% if d.related %}{% if d != d.related.source %}, which was {{ d.relation|lower }} {{ d.related.source|prettystdname|urlize_ietf_docs }} ("{{ d.related.source.title }}"){% else %}, which {{ d.relation|lower}} {{ d.related.target|prettystdname|urlize_ietf_docs }} ("{{ d.related.target.title }}"){% endif %}{% endif %}{% endif %}
+                        Results for {{ d.name|prettystdname|urlize_ietf_docs }}
+                        ("{{ d.title }}"){% if d != doc and d.related %}, which
+                            {% if d == d.related.source %}
+                                {{ d.relation|lower }}
+                                {{ d.related.target|prettystdname|urlize_ietf_docs }}
+                                ("{{ d.related.target.title }}")
+                            {% else %}
+                                was {{ d.relation|lower }}
+                                {{ d.related.source|prettystdname|urlize_ietf_docs }}
+                                ("{{ d.related.source.title }}")
+                            {% endif %}
+                        {% endif %}
                     </th>
                 </tr>
             </tbody>
