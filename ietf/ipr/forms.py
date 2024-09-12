@@ -338,7 +338,16 @@ class IprDisclosureFormBase(forms.ModelForm):
 
         return cleaned_data
 
+
 class HolderIprDisclosureForm(IprDisclosureFormBase):
+    is_blanket_disclosure = forms.BooleanField(
+        label="Blanket IPR Disclosure",
+        help_text="In satisfaction of its disclosure obligations, Patent Holder commits to license all of "
+        "IPR (as defined in RFC 8179) that would have required disclosure under RFC 8179 on a "
+        "royalty-free (and otherwise reasonable and non-discriminatory) basis. Patent Holder "
+        "confirms that all other terms and conditions are described in this IPR disclosure.",
+        required=False,
+    )
     licensing = CustomModelChoiceField(IprLicenseTypeName.objects.all(),
         widget=forms.RadioSelect,empty_label=None)
 
@@ -356,6 +365,15 @@ class HolderIprDisclosureForm(IprDisclosureFormBase):
         else:
             # entering new disclosure
             self.fields['licensing'].queryset = IprLicenseTypeName.objects.exclude(slug='none-selected')
+        
+        if self.data.get("is_blanket_disclosure", False):
+            # for a blanket disclosure, patent details are not required
+            self.fields["patent_number"].required = False
+            self.fields["patent_inventor"].required = False
+            self.fields["patent_title"].required = False
+            self.fields["patent_date"].required = False
+            # n.b., self.fields["patent_notes"] is never required
+
             
     def clean(self):
         cleaned_data = super(HolderIprDisclosureForm, self).clean()
