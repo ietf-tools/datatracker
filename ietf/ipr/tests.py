@@ -278,16 +278,16 @@ class IprTests(TestCase):
 
     def test_new_generic(self):
         """Ensure new-generic redirects to new-general"""
-        url = urlreverse("ietf.ipr.views.new", kwargs={ "type": "generic" })
+        url = urlreverse("ietf.ipr.views.new", kwargs={ "_type": "generic" })
         r = self.client.get(url)
         self.assertEqual(r.status_code,302)
-        self.assertEqual(urlparse(r["Location"]).path, urlreverse("ietf.ipr.views.new", kwargs={ "type": "general"}))
+        self.assertEqual(urlparse(r["Location"]).path, urlreverse("ietf.ipr.views.new", kwargs={ "_type": "general"}))
 
 
     def test_new_general(self):
         """Add a new general disclosure.  Note: submitter does not need to be logged in.
         """
-        url = urlreverse("ietf.ipr.views.new", kwargs={ "type": "general" })
+        url = urlreverse("ietf.ipr.views.new", kwargs={ "_type": "general" })
 
         # invalid post
         r = self.client.post(url, {
@@ -325,7 +325,7 @@ class IprTests(TestCase):
         """
         draft = WgDraftFactory()
         rfc = WgRfcFactory()
-        url = urlreverse("ietf.ipr.views.new", kwargs={ "type": "specific" })
+        url = urlreverse("ietf.ipr.views.new", kwargs={ "_type": "specific" })
 
         # successful post
         empty_outbox()
@@ -381,7 +381,7 @@ class IprTests(TestCase):
     def test_new_specific_no_revision(self):
         draft = WgDraftFactory()
         rfc = WgRfcFactory()
-        url = urlreverse("ietf.ipr.views.new", kwargs={ "type": "specific" })
+        url = urlreverse("ietf.ipr.views.new", kwargs={ "_type": "specific" })
 
         # successful post
         empty_outbox()
@@ -415,7 +415,7 @@ class IprTests(TestCase):
         """
         draft = WgDraftFactory()
         rfc = WgRfcFactory()
-        url = urlreverse("ietf.ipr.views.new", kwargs={ "type": "third-party" })
+        url = urlreverse("ietf.ipr.views.new", kwargs={ "_type": "third-party" })
 
         # successful post
         empty_outbox()
@@ -462,7 +462,7 @@ class IprTests(TestCase):
         r = self.client.get(url)
         self.assertContains(r, original_ipr.holder_legal_name)
 
-        #url = urlreverse("ietf.ipr.views.new", kwargs={ "type": "specific" })
+        #url = urlreverse("ietf.ipr.views.new", kwargs={ "_type": "specific" })
         # successful post
         empty_outbox()
         post_data = {
@@ -509,7 +509,7 @@ class IprTests(TestCase):
         r = self.client.get(url)
         self.assertContains(r, original_ipr.title)
 
-        #url = urlreverse("ietf.ipr.views.new", kwargs={ "type": "specific" })
+        #url = urlreverse("ietf.ipr.views.new", kwargs={ "_type": "specific" })
         # successful post
         empty_outbox()
         r = self.client.post(url, {
@@ -549,7 +549,7 @@ class IprTests(TestCase):
 
     def test_update_bad_post(self):
         draft = WgDraftFactory()
-        url = urlreverse("ietf.ipr.views.new", kwargs={ "type": "specific" })
+        url = urlreverse("ietf.ipr.views.new", kwargs={ "_type": "specific" })
 
         empty_outbox()
         r = self.client.post(url, {

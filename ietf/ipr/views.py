@@ -475,19 +475,19 @@ def by_draft_recursive_txt(request):
     return HttpResponse(content, content_type="text/plain; charset=%s"%settings.DEFAULT_CHARSET)
 
 
-def new(request, type, updates=None):
+def new(request, _type, updates=None):
     """Submit a new IPR Disclosure.  If the updates field != None, this disclosure
     updates one or more other disclosures."""
     # Note that URL patterns won't ever send updates - updates is only non-null when called from code
 
     # This odd construct flipping generic and general allows the URLs to say 'general' while having a minimal impact on the code.
     # A cleanup to change the code to switch on type 'general' should follow.
-    if type == 'generic' and updates: # Only happens when called directly from the updates view
+    if _type == 'generic' and updates: # Only happens when called directly from the updates view
         pass
-    elif type == 'generic':
-        return HttpResponseRedirect(urlreverse('ietf.ipr.views.new',kwargs=dict(type='general')))
-    elif type == 'general':
-        type = 'generic'
+    elif _type == 'generic':
+        return HttpResponseRedirect(urlreverse('ietf.ipr.views.new',kwargs=dict(_type='general')))
+    elif _type == 'general':
+        _type = 'generic'
     else:
         pass
 
@@ -495,8 +495,8 @@ def new(request, type, updates=None):
     DraftFormset = inlineformset_factory(IprDisclosureBase, IprDocRel, form=DraftForm, can_delete=False, extra=1 + 1)
 
     if request.method == 'POST':
-        form = ipr_form_mapping[type](request.POST)
-        if type != 'generic':
+        form = ipr_form_mapping[_type](request.POST)
+        if _type != 'generic':
             draft_formset = DraftFormset(request.POST, instance=IprDisclosureBase())
         else:
             draft_formset = None
@@ -507,7 +507,7 @@ def new(request, type, updates=None):
             person = request.user.person
             
         # check formset validity
-        if type != 'generic':
+        if _type != 'generic':
             valid_formsets = draft_formset.is_valid()
         else:
             valid_formsets = True
@@ -521,7 +521,7 @@ def new(request, type, updates=None):
             disclosure.state = IprDisclosureStateName.objects.get(slug='pending')
             disclosure.save()
             
-            if type != 'generic':
+            if _type != 'generic':
                 draft_formset = DraftFormset(request.POST, instance=disclosure)
                 draft_formset.save()
 
@@ -560,16 +560,16 @@ def new(request, type, updates=None):
             else:
                 patent_dict = {'patent_notes': initial.get('patent_info', '')}
             initial.update(patent_dict)
-            form = ipr_form_mapping[type](initial=initial)
+            form = ipr_form_mapping[_type](initial=initial)
         else:
-            form = ipr_form_mapping[type]()
+            form = ipr_form_mapping[_type]()
         disclosure = IprDisclosureBase()    # dummy disclosure for inlineformset
         draft_formset = DraftFormset(instance=disclosure)
 
     return render(request, "ipr/details_edit.html",  {
         'form': form,
         'draft_formset':draft_formset,
-        'type':type,
+        'type':_type,
     })
 
 @role_required('Secretariat',)
