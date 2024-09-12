@@ -137,6 +137,7 @@ class HolderIprDisclosure(IprDisclosureBase):
     licensing = ForeignKey(IprLicenseTypeName)
     licensing_comments = models.TextField(blank=True)
     submitter_claims_all_terms_disclosed = models.BooleanField(default=False)
+    is_blanket_disclosure = models.BooleanField(default=False)
 
 
 class ThirdPartyIprDisclosure(IprDisclosureBase):
