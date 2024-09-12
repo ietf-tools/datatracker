@@ -124,17 +124,20 @@ class IprDisclosureBase(models.Model):
 
 
 class HolderIprDisclosure(IprDisclosureBase):
-    ietfer_name              = models.CharField(max_length=255, blank=True) # "Whose Personal Belief Triggered..."
-    ietfer_contact_email     = models.EmailField(blank=True)
-    ietfer_contact_info      = models.TextField(blank=True)
-    patent_info              = models.TextField()
-    has_patent_pending       = models.BooleanField(default=False)
-    holder_contact_email     = models.EmailField()
-    holder_contact_name      = models.CharField(max_length=255)
-    holder_contact_info      = models.TextField(blank=True, help_text="Address, phone, etc.")
-    licensing                = ForeignKey(IprLicenseTypeName)
-    licensing_comments       = models.TextField(blank=True)
+    ietfer_name = models.CharField(
+        max_length=255, blank=True
+    )  # "Whose Personal Belief Triggered..."
+    ietfer_contact_email = models.EmailField(blank=True)
+    ietfer_contact_info = models.TextField(blank=True)
+    patent_info = models.TextField()
+    has_patent_pending = models.BooleanField(default=False)
+    holder_contact_email = models.EmailField()
+    holder_contact_name = models.CharField(max_length=255)
+    holder_contact_info = models.TextField(blank=True, help_text="Address, phone, etc.")
+    licensing = ForeignKey(IprLicenseTypeName)
+    licensing_comments = models.TextField(blank=True)
     submitter_claims_all_terms_disclosed = models.BooleanField(default=False)
+
 
 class ThirdPartyIprDisclosure(IprDisclosureBase):
     ietfer_name              = models.CharField(max_length=255) # "Whose Personal Belief Triggered..."
