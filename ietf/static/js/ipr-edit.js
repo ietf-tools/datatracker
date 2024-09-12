@@ -69,4 +69,40 @@ $(document)
             form.find(".draft-row")
                 .each(updateRevisions);
         }, 10);
+
+        // Manage "required" fields in section V - patent info is required unless it's a blanket disclosure
+        const blanketDisclosureCheckbox = document.getElementById('id_is_blanket_disclosure') 
+        if (blanketDisclosureCheckbox) {
+            const patentDetailInputs = [
+                // The ids are from the HolderIprDisclosureForm and its base form class,
+                // intentionally excluding patent_notes because it's never required
+                'id_patent_number',
+                'id_patent_inventor',
+                'id_patent_title',
+                'id_patent_date'
+            ].map((id) => document.getElementById(id))
+            const patentDetailRowDivs = patentDetailInputs.map(
+                (elt) => elt.closest('div.row')
+            )
+            const updateRequiredPatentDetails = () => {
+                const isBlanket = blanketDisclosureCheckbox.checked
+                for (elt of patentDetailInputs) {
+                    // disable the input element
+                    elt.required = !isBlanket
+                }
+                for (elt of patentDetailRowDivs) {
+                    // update the styling on the row that indicates required field
+                    if (isBlanket) {
+                        elt.classList.remove('required')
+                    } else {
+                        elt.classList.add('required')
+                    }
+                }
+            }
+            updateRequiredPatentDetails()
+            blanketDisclosureCheckbox.addEventListener(
+                'change', 
+                (evt) => updateRequiredPatentDetails()
+            )
+        }
     });
