@@ -341,7 +341,7 @@ class IprDisclosureFormBase(forms.ModelForm):
 
 class HolderIprDisclosureForm(IprDisclosureFormBase):
     is_blanket_disclosure = forms.BooleanField(
-        label="Blanket IPR Disclosure",
+        label="This is a blanket IPR disclosure",
         help_text="In satisfaction of its disclosure obligations, Patent Holder commits to license all of "
         "IPR (as defined in RFC 8179) that would have required disclosure under RFC 8179 on a "
         "royalty-free (and otherwise reasonable and non-discriminatory) basis. Patent Holder "

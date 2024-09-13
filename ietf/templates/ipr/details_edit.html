@@ -121,12 +121,11 @@
         {% endif %}
         {% if type != "generic" %}
             <h2 class="mt-4">{% cycle section %}. IETF document or other contribution to which this IPR disclosure relates</h2>
-            <p class="form-text">
+            <p>
                 If an Internet-Draft or RFC includes multiple parts and it is not
                 reasonably apparent which part of such Internet-Draft or RFC is alleged
-                to be covered by the patent information disclosed in Section
-                V(A) or V(B), please identify the sections of
-                the Internet-Draft or RFC that are alleged to be so
+                to be covered by the patent information disclosed in Section V,
+                please identify the sections of the Internet-Draft or RFC that are alleged to be so
                 covered.
             </p>
             {{ draft_formset.management_form }}
@@ -155,10 +154,14 @@
         </h2>
         {% if form.patent_number %}
             <p>
+                This IPR disclosure must either identify a specific patent or patents in sections V(A) and V(B)
+                below, or be made as a blanket IPR disclosure. 
+            </p>
+            {% bootstrap_field form.is_blanket_disclosure layout='horizontal' %}
+            <p>
                 A. For granted patents or published pending patent applications,
                 please provide the following information:
             </p>
-            {% bootstrap_field form.is_blanket_disclosure layout='horizontal' %}
             {% bootstrap_field form.patent_number layout='horizontal' %}
             {% bootstrap_field form.patent_inventor layout='horizontal' %}
             {% bootstrap_field form.patent_title layout='horizontal' %}
