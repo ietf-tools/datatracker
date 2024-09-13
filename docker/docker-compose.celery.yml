@@ -1,7 +1,3 @@
-version: '2.4'
-# Use version 2.4 for mem_limit setting. Version 3+ uses deploy.resources.limits.memory
-# instead, but that only works for swarm with docker-compose 1.25.1.
-
 services:
   mq:
     image: rabbitmq:3-alpine
