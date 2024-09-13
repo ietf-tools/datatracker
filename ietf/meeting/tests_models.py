@@ -175,7 +175,7 @@ class SessionTests(TestCase):
     def test_session_recording_url_label_ietf(self):
         session = SessionFactory(
             meeting__type_id='ietf',
-            meeting__date=datetime.date.today(),
+            meeting__date=date_today(),
             meeting__number="123",
             group__acronym="acro",
         )
@@ -187,7 +187,7 @@ class SessionTests(TestCase):
     def test_session_recording_url_label_interim(self):
         session = SessionFactory(
             meeting__type_id='interim',
-            meeting__date=datetime.date.today(),
+            meeting__date=date_today(),
             group__acronym="acro",
         )
         session_time = session.official_timeslotassignment().timeslot.time
