@@ -70,9 +70,9 @@ $(document)
                 .each(updateRevisions);
         }, 10);
 
-        // Manage "required" fields in section V - patent info is required unless it's a blanket disclosure
-        const blanketDisclosureCheckbox = document.getElementById('id_is_blanket_disclosure') 
-        if (blanketDisclosureCheckbox) {
+        // Manage fields that depend on the Blanket IPR Disclosure choice
+        const blanketCheckbox = document.getElementById('id_is_blanket_disclosure') 
+        if (blanketCheckbox) {
             const patentDetailInputs = [
                 // The ids are from the HolderIprDisclosureForm and its base form class,
                 // intentionally excluding patent_notes because it's never required
@@ -84,8 +84,17 @@ $(document)
             const patentDetailRowDivs = patentDetailInputs.map(
                 (elt) => elt.closest('div.row')
             )
-            const updateRequiredPatentDetails = () => {
-                const isBlanket = blanketDisclosureCheckbox.checked
+            const royaltyFreeLicensingRadio = document.querySelector(
+                '#id_licensing input[value="royalty-free"]'
+            )
+            let lastSelectedLicensingRadio
+            const otherLicensingRadios = document.querySelectorAll(
+                '#id_licensing input:not([value="royalty-free"])'
+            ) 
+            
+            const handleBlanketCheckboxChange = () => {
+                const isBlanket = blanketCheckbox.checked
+                // Update required fields
                 for (elt of patentDetailInputs) {
                     // disable the input element
                     elt.required = !isBlanket
@@ -98,11 +107,31 @@ $(document)
                         elt.classList.add('required')
                     }
                 }
+                // Update licensing selection
+                if (isBlanket) {
+                    lastSelectedLicensingRadio = document.querySelector(
+                        '#id_licensing input:checked'
+                    )
+                    royaltyFreeLicensingRadio.checked = true
+                    otherLicensingRadios
+                        .forEach(
+                            (elt) => elt.setAttribute('disabled', '')
+                        )
+                } else {
+                    royaltyFreeLicensingRadio.checked = false
+                    if (lastSelectedLicensingRadio) {
+                        lastSelectedLicensingRadio.checked = true
+                    }
+                    otherLicensingRadios
+                        .forEach(
+                            (elt) => elt.removeAttribute('disabled')
+                        )
+                }
             }
-            updateRequiredPatentDetails()
-            blanketDisclosureCheckbox.addEventListener(
+            handleBlanketCheckboxChange()
+            blanketCheckbox.addEventListener(
                 'change', 
-                (evt) => updateRequiredPatentDetails()
+                (evt) => handleBlanketCheckboxChange()
             )
         }
     });
