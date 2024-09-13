@@ -3,6 +3,7 @@
 
 
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.urls import reverse
 from django.utils import timezone
@@ -138,6 +139,15 @@ class HolderIprDisclosure(IprDisclosureBase):
     licensing_comments = models.TextField(blank=True)
     submitter_claims_all_terms_disclosed = models.BooleanField(default=False)
     is_blanket_disclosure = models.BooleanField(default=False)
+    
+    def clean(self):
+        if self.is_blanket_disclosure:
+            # If the IprLicenseTypeName does not exist, we have a serious problem and a 500 response is ok,
+            # so not handling failure of the `get()`
+            royalty_free_licensing = IprLicenseTypeName.objects.get(slug="royalty-free")
+            if self.licensing_id != royalty_free_licensing.pk:
+                raise ValidationError(
+                    f'Must select "{royalty_free_licensing.desc}" for a blanket IPR disclosure.')
 
 
 class ThirdPartyIprDisclosure(IprDisclosureBase):
