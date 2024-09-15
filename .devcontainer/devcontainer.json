@@ -1,6 +1,6 @@
 // For format details, see https://aka.ms/devcontainer.json. For config options, see the README at:
 // https://github.com/microsoft/vscode-dev-containers/tree/v0.202.5/containers/python-3
-{
+{ 
     "name": "IETF Datatracker",
     "dockerComposeFile": ["../docker-compose.yml", "docker-compose.extend.yml"],
     "service": "app",
