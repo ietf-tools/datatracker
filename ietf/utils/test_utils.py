@@ -302,7 +302,7 @@ class TestCase(django.test.TestCase):
 
         # Replace settings paths with temporary directories.
         self._ietf_temp_dirs = {}  # trashed during tearDown, DO NOT put paths you care about in this
-        for setting in self.settings_temp_path_overrides:
+        for setting in set(self.settings_temp_path_overrides):
             self._ietf_temp_dirs[setting] = self.tempdir(slugify(setting))
         self._ietf_saved_context = django.test.utils.override_settings(**self._ietf_temp_dirs)
         self._ietf_saved_context.enable()
