@@ -48,7 +48,8 @@ def has_role(user, role_names, extra_role_qs = None, *args, **kwargs):
     if not hasattr(user, "roles_check_cache"):
         user.roles_check_cache = {}
 
-    key = frozenset(role_names)
+    keynames = set(role_names).union(set(extra_role_qs.keys()))
+    key = frozenset(keynames)
     if key not in user.roles_check_cache:
         try:
             person = user.person
