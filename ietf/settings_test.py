@@ -10,9 +10,9 @@
 #
 
 import os 
-import tempfile
 from ietf.settings import *                                          # pyflakes:ignore
 from ietf.settings import TEST_CODE_COVERAGE_CHECKER
+from ietf.utils.test_utils import tempdir_with_cleanup
 import debug                            # pyflakes:ignore
 debug.debug = True
 
@@ -49,9 +49,9 @@ DATABASES = {
 if TEST_CODE_COVERAGE_CHECKER and not TEST_CODE_COVERAGE_CHECKER._started: # pyflakes:ignore
     TEST_CODE_COVERAGE_CHECKER.start()                          # pyflakes:ignore
 
-NOMCOM_PUBLIC_KEYS_DIR = tempfile.mkdtemp(suffix="-nomcom-public-keys-dir")
+NOMCOM_PUBLIC_KEYS_DIR = tempdir_with_cleanup(suffix="-nomcom-public-keys-dir")
 
-MEDIA_ROOT = tempfile.mkdtemp(suffix="-media")
+MEDIA_ROOT = tempdir_with_cleanup(suffix="-media")
 PHOTOS_DIRNAME = "photo"
 PHOTOS_DIR = os.path.join(MEDIA_ROOT, PHOTOS_DIRNAME)
 os.mkdir(PHOTOS_DIR)

@@ -34,6 +34,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
+import atexit
 import tempfile
 import re
 import email
@@ -308,7 +309,14 @@ class TestCase(django.test.TestCase):
 
     def tearDown(self):
         self._ietf_saved_context.disable()
+        debug.show("self._ietf_temp_dirs")
         for dir in self._ietf_temp_dirs.values():
             shutil.rmtree(dir)
         self.requests_mock.stop()
         super().tearDown()
+
+
+def tempdir_with_cleanup(**kwargs):
+    dir = tempfile.mkdtemp(**kwargs)
+    atexit.register(lambda d: shutil.rmtree(d), dir)
+    return dir
