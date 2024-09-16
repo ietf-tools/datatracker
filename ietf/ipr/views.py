@@ -689,11 +689,41 @@ def search(request):
                 if len(start) == 1:
                     first = start[0]
                     doc = first
-                    docs = related_docs(first)
-                    iprs = iprs_from_docs(docs,states=states)
+                    docs = set([first])
+                    docs.update(
+                        related_docs(
+                            first, relationship=("replaces", "obs"), reverse_relationship=()
+                        )
+                    )
+                    docs.update(
+                        set(
+                            [
+                                draft
+                                for drafts in [
+                                    related_docs(
+                                        d, relationship=(), reverse_relationship=("became_rfc",)
+                                    )
+                                    for d in docs
+                                ]
+                                for draft in drafts
+                            ]
+                        )
+                    )
+                    docs.discard(None)
+                    docs = sorted(
+                        docs,
+                        key=lambda d: (
+                            d.rfc_number if d.rfc_number is not None else 0,
+                            d.became_rfc().rfc_number if d.became_rfc() else 0,
+                        ),
+                        reverse=True,
+                    )
+                    iprs = iprs_from_docs(docs, states=states)
                     template = "ipr/search_doc_result.html"
-                    updated_docs = related_docs(first, ('updates',))
-                    related_iprs = list(set(iprs_from_docs(updated_docs, states=states)) - set(iprs))
+                    updated_docs = related_docs(first, ("updates",))
+                    related_iprs = list(
+                        set(iprs_from_docs(updated_docs, states=states)) - set(iprs)
+                    )
                 # multiple matches, select just one
                 elif start:
                     docs = start
