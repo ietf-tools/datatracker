@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 import datetime
 
+from itertools import chain
 from pathlib import Path
 
 from django.db.models import Q
@@ -157,13 +158,19 @@ def can_manage_session_materials(user, group, session):
 def can_manage_some_groups(user):
     if not user.is_authenticated:
         return False
+    authroles = set(list(chain.from_iterable(GroupFeatures.objects.values_list("groupman_authroles",flat=True))))
+    extra_role_qs = dict()
     for gf in GroupFeatures.objects.all():
-        for authrole in gf.groupman_authroles:
-            if has_role(user, authrole):
-                return True
-            if Role.objects.filter(name__in=gf.groupman_roles, group__type_id=gf.type_id, person__user=user).exists():
-                return True
-    return False          
+        extra_role_qs[f"{gf.type_id} groupman roles"] = Q(name__in=gf.groupman_roles, group__type_id=gf.type_id)
+    return has_role(user, authroles, extra_role_qs)
+
+    # for gf in GroupFeatures.objects.all():
+    #     for authrole in gf.groupman_authroles:
+    #         if has_role(user, authrole):
+    #             return True
+    #         if Role.objects.filter(name__in=gf.groupman_roles, group__type_id=gf.type_id, person__user=user).exists():
+    #             return True
+    # return False          
 
 def can_provide_status_update(user, group):
     if not group.features.acts_like_wg:

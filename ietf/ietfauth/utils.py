@@ -34,11 +34,11 @@ def user_is_person(user, person):
 
     return person.user_id == user.id
 
-def has_role(user, role_names, *args, **kwargs):
+def has_role(user, role_names, extra_role_qs = None, *args, **kwargs):
     """Determines whether user has any of the given standard roles
     given. Role names must be a list or, in case of a single value, a
     string."""
-    if not isinstance(role_names, (list, tuple)):
+    if not isinstance(role_names, (list, tuple, set)):
         role_names = [ role_names ]
     
     if not user or not user.is_authenticated:
@@ -56,50 +56,53 @@ def has_role(user, role_names, *args, **kwargs):
             return False
 
         role_qs = {
-            "Area Director": Q(person=person, name__in=("pre-ad", "ad"), group__type="area", group__state="active"),
-            "Secretariat": Q(person=person, name="secr", group__acronym="secretariat"),
-            "IAB" : Q(person=person, name="member", group__acronym="iab"),
-            "IANA": Q(person=person, name="auth", group__acronym="iana"),
-            "RFC Editor": Q(person=person, name="auth", group__acronym="rpc"),
-            "ISE" : Q(person=person, name="chair", group__acronym="ise"),
-            "IAD": Q(person=person, name="admdir", group__acronym="ietf"),
-            "IETF Chair": Q(person=person, name="chair", group__acronym="ietf"),
-            "IETF Trust Chair": Q(person=person, name="chair", group__acronym="ietf-trust"),
-            "IRTF Chair": Q(person=person, name="chair", group__acronym="irtf"),
-            "RSAB Chair": Q(person=person, name="chair", group__acronym="rsab"),
-            "IAB Chair": Q(person=person, name="chair", group__acronym="iab"),
-            "IAB Executive Director": Q(person=person, name="execdir", group__acronym="iab"),
-            "IAB Group Chair": Q(person=person, name="chair", group__type="iab", group__state="active"),
-            "IAOC Chair": Q(person=person, name="chair", group__acronym="iaoc"),
-            "WG Chair": Q(person=person,name="chair", group__type="wg", group__state__in=["active","bof", "proposed"]),
-            "WG Secretary": Q(person=person,name="secr", group__type="wg", group__state__in=["active","bof", "proposed"]),
-            "RG Chair": Q(person=person,name="chair", group__type="rg", group__state__in=["active","proposed"]),
-            "RG Secretary": Q(person=person,name="secr", group__type="rg", group__state__in=["active","proposed"]),
-            "AG Secretary": Q(person=person,name="secr", group__type="ag", group__state__in=["active"]),
-            "RAG Secretary": Q(person=person,name="secr", group__type="rag", group__state__in=["active"]),
-            "Team Chair": Q(person=person,name="chair", group__type="team", group__state="active"),
-            "Program Lead": Q(person=person,name="lead", group__type="program", group__state="active"),
-            "Program Secretary": Q(person=person,name="secr", group__type="program", group__state="active"),
-            "Program Chair": Q(person=person,name="chair", group__type="program", group__state="active"),
-            "EDWG Chair": Q(person=person, name="chair", group__type="edwg", group__state="active"),
-            "Nomcom Chair": Q(person=person, name="chair", group__type="nomcom", group__acronym__icontains=kwargs.get('year', '0000')),
-            "Nomcom Advisor": Q(person=person, name="advisor", group__type="nomcom", group__acronym__icontains=kwargs.get('year', '0000')),
-            "Nomcom": Q(person=person, group__type="nomcom", group__acronym__icontains=kwargs.get('year', '0000')),
-            "Liaison Manager": Q(person=person,name="liaiman",group__type="sdo",group__state="active", ),
-            "Authorized Individual": Q(person=person,name="auth",group__type="sdo",group__state="active", ),
-            "Recording Manager": Q(person=person,name="recman",group__type="ietf",group__state="active", ),
-            "Reviewer": Q(person=person, name="reviewer", group__state="active"),
-            "Review Team Secretary": Q(person=person, name="secr", group__reviewteamsettings__isnull=False,group__state="active", ),
-            "IRSG Member": (Q(person=person, name="member", group__acronym="irsg") | Q(person=person, name="chair", group__acronym="irtf") | Q(person=person, name="atlarge", group__acronym="irsg")),
-            "RSAB Member": Q(person=person, name="member", group__acronym="rsab"), 
-            "Robot": Q(person=person, name="robot", group__acronym="secretariat"),
+            "Area Director": Q(name__in=("pre-ad", "ad"), group__type="area", group__state="active"),
+            "Secretariat": Q(name="secr", group__acronym="secretariat"),
+            "IAB" : Q(name="member", group__acronym="iab"),
+            "IANA": Q(name="auth", group__acronym="iana"),
+            "RFC Editor": Q(name="auth", group__acronym="rpc"),
+            "ISE" : Q(name="chair", group__acronym="ise"),
+            "IAD": Q(name="admdir", group__acronym="ietf"),
+            "IETF Chair": Q(name="chair", group__acronym="ietf"),
+            "IETF Trust Chair": Q(name="chair", group__acronym="ietf-trust"),
+            "IRTF Chair": Q(name="chair", group__acronym="irtf"),
+            "RSAB Chair": Q(name="chair", group__acronym="rsab"),
+            "IAB Chair": Q(name="chair", group__acronym="iab"),
+            "IAB Executive Director": Q(name="execdir", group__acronym="iab"),
+            "IAB Group Chair": Q(name="chair", group__type="iab", group__state="active"),
+            "IAOC Chair": Q(name="chair", group__acronym="iaoc"),
+            "WG Chair": Q(name="chair", group__type="wg", group__state__in=["active","bof", "proposed"]),
+            "WG Secretary": Q(name="secr", group__type="wg", group__state__in=["active","bof", "proposed"]),
+            "RG Chair": Q(name="chair", group__type="rg", group__state__in=["active","proposed"]),
+            "RG Secretary": Q(name="secr", group__type="rg", group__state__in=["active","proposed"]),
+            "AG Secretary": Q(name="secr", group__type="ag", group__state__in=["active"]),
+            "RAG Secretary": Q(name="secr", group__type="rag", group__state__in=["active"]),
+            "Team Chair": Q(name="chair", group__type="team", group__state="active"),
+            "Program Lead": Q(name="lead", group__type="program", group__state="active"),
+            "Program Secretary": Q(name="secr", group__type="program", group__state="active"),
+            "Program Chair": Q(name="chair", group__type="program", group__state="active"),
+            "EDWG Chair": Q(name="chair", group__type="edwg", group__state="active"),
+            "Nomcom Chair": Q(name="chair", group__type="nomcom", group__acronym__icontains=kwargs.get('year', '0000')),
+            "Nomcom Advisor": Q(name="advisor", group__type="nomcom", group__acronym__icontains=kwargs.get('year', '0000')),
+            "Nomcom": Q(group__type="nomcom", group__acronym__icontains=kwargs.get('year', '0000')),
+            "Liaison Manager": Q(name="liaiman",group__type="sdo",group__state="active", ),
+            "Authorized Individual": Q(name="auth",group__type="sdo",group__state="active", ),
+            "Recording Manager": Q(name="recman",group__type="ietf",group__state="active", ),
+            "Reviewer": Q(name="reviewer", group__state="active"),
+            "Review Team Secretary": Q(name="secr", group__reviewteamsettings__isnull=False,group__state="active", ),
+            "IRSG Member": (Q(name="member", group__acronym="irsg") | Q(name="chair", group__acronym="irtf") | Q(name="atlarge", group__acronym="irsg")),
+            "RSAB Member": Q(name="member", group__acronym="rsab"), 
+            "Robot": Q( name="robot", group__acronym="secretariat"),
             }
 
         filter_expr = Q(pk__in=[])  # ensure empty set is returned if no other terms are added
         for r in role_names:
             filter_expr |= role_qs[r]
-
-        user.roles_check_cache[key] = bool(Role.objects.filter(filter_expr).exists())
+        if extra_role_qs:
+            for r in extra_role_qs:
+                filter_expr |= extra_role_qs[r]
+        
+        user.roles_check_cache[key] = bool(Role.objects.filter(person=person).filter(filter_expr).exists())
 
     return user.roles_check_cache[key]
 
