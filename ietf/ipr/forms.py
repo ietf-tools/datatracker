@@ -341,11 +341,14 @@ class IprDisclosureFormBase(forms.ModelForm):
 
 class HolderIprDisclosureForm(IprDisclosureFormBase):
     is_blanket_disclosure = forms.BooleanField(
-        label="This is a blanket IPR disclosure",
+        label=mark_safe(
+            'This is a blanket IPR disclosure '
+            '(see Section 5.4.3 of <a href="https://www.ietf.org/rfc/rfc8179.txt">RFC 8179</a>)'
+        ),
         help_text="In satisfaction of its disclosure obligations, Patent Holder commits to license all of "
-        "IPR (as defined in RFC 8179) that would have required disclosure under RFC 8179 on a "
-        "royalty-free (and otherwise reasonable and non-discriminatory) basis. Patent Holder "
-        "confirms that all other terms and conditions are described in this IPR disclosure.",
+                  "IPR (as defined in RFC 8179) that would have required disclosure under RFC 8179 on a "
+                  "royalty-free (and otherwise reasonable and non-discriminatory) basis. Patent Holder "
+                  "confirms that all other terms and conditions are described in this IPR disclosure.",
         required=False,
     )
     licensing = CustomModelChoiceField(IprLicenseTypeName.objects.all(),
