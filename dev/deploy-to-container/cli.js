@@ -3,7 +3,7 @@
 import Docker from 'dockerode'
 import path from 'path'
 import fs from 'fs-extra'
-import tar from 'tar'
+import * as tar from 'tar'
 import yargs from 'yargs/yargs'
 import { hideBin } from 'yargs/helpers'
 import slugify from 'slugify'

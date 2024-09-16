@@ -105,11 +105,17 @@
             {% if reviewersettings.history.all %}
                 <tbody>
                     {% for h in reviewersettings.history.all %}
+                        {% if h|simple_history_delta_change_cnt > 0 or h.history_change_reason != "skipped" and h.history_change_reason %}
                         <tr>
                             <td>{{ h.history_date|date }}</td>
                             <td>{% person_link h.history_user.person %}</td>
-                            <td>{{ h.history_change_reason }}</td>
+                            <td>{% if h.history_change_reason != "skipped" and h.history_change_reason %} {{ h.history_change_reason }}<br> {% endif %}
+                                {% for change in h|simple_history_delta_changes %}
+                                   {{ change.field }} changed from "{{change.old}}" to "{{change.new}}"<br>
+                                {% endfor %}
+                            </td>
                         </tr>
+                        {% endif %}
                     {% endfor %}
                 </tbody>
             {% endif %}

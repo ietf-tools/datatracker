@@ -27,7 +27,7 @@
             {% if editable and user|has_role:"Area Director,Secretariat,IRSG Member,RSAB Member" %}
                 {% if user|can_ballot:doc %}
                     <a class="btn btn-primary"
-                       href="{% url "ietf.doc.views_ballot.edit_position" name=doc.name ballot_id=ballot_id %}">
+                       href="{% url "ietf.doc.views_ballot.edit_position" name=doc.name ballot_id=ballot_id %}?ballot_edit_return_point={{ ballot_edit_return_point|urlencode }}">
                         Edit position
                     </a>
                 {% endif %}

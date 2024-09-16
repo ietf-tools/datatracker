@@ -7,7 +7,9 @@
 {% filter center:72 %}{{ schedule.meeting.agenda_info_note|striptags|wordwrap:72|safe }}{% endfilter %}
 {% endif %}
 {% filter center:72 %}{{ schedule.meeting.date|date:"F j" }}-{% if schedule.meeting.date.month != schedule.meeting.end_date.month %}{{ schedule.meeting.end_date|date:"F " }}{% endif %}{{ schedule.meeting.end_date|date:"j, Y" }}{% endfilter %}
+{% if updated %}
 {% filter center:72 %}Updated {{ updated|date:"Y-m-d H:i:s T" }}{% endfilter %}
+{% endif %}
 
 {% filter center:72 %}IETF agendas are subject to change, up to and during the meeting.{% endfilter %}
 {% filter center:72 %}Times are shown in {% if display_timezone.lower == "utc" %}UTC{% else %}the {{ display_timezone }} time zone{% endif %}.{% endfilter %}

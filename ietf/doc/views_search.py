@@ -69,6 +69,7 @@ from ietf.name.models import DocTagName, DocTypeName, StreamName
 from ietf.person.models import Person
 from ietf.person.utils import get_active_ads
 from ietf.utils.draft_search import normalize_draftname
+from ietf.utils.fields import ModelMultipleChoiceField
 from ietf.utils.log import log
 from ietf.doc.utils_search import prepare_document_table, doc_type, doc_state, doc_type_name, AD_WORKLOAD
 from ietf.ietfauth.utils import has_role
@@ -100,7 +101,7 @@ class SearchForm(forms.Form):
             ("ad", "AD"), ("-ad", "AD (desc)"), ),
         required=False, widget=forms.HiddenInput)
 
-    doctypes = forms.ModelMultipleChoiceField(queryset=DocTypeName.objects.filter(used=True).exclude(slug__in=('draft', 'rfc', 'bcp', 'std', 'fyi', 'liai-att')).order_by('name'), required=False)
+    doctypes = ModelMultipleChoiceField(queryset=DocTypeName.objects.filter(used=True).exclude(slug__in=('draft', 'rfc', 'bcp', 'std', 'fyi', 'liai-att')).order_by('name'), required=False)
 
     def __init__(self, *args, **kwargs):
         super(SearchForm, self).__init__(*args, **kwargs)
@@ -483,6 +484,29 @@ def ad_workload(request):
             "ietf.doc.views_search.docs_for_ad", kwargs=dict(name=ad.full_name_as_key())
         )
         ad.buckets = copy.deepcopy(bucket_template)
+
+        # https://github.com/ietf-tools/datatracker/issues/4577
+        docs_via_group_ad = Document.objects.exclude(
+            group__acronym="none"
+        ).filter(
+            group__role__name="ad",
+            group__role__person=ad
+        ).filter(
+            states__type="draft-stream-ietf",
+            states__slug__in=["wg-doc","wg-lc","waiting-for-implementation","chair-w","writeupw"]
+        )
+
+        doc_for_ad = Document.objects.filter(ad=ad)
+
+        ad.pre_pubreq = (docs_via_group_ad | doc_for_ad).filter(
+            type="draft"
+        ).filter(
+            states__type="draft",
+            states__slug="active"
+        ).filter(
+            states__type="draft-iesg",
+            states__slug="idexists"
+        ).distinct().count()
 
         for doc in Document.objects.exclude(type_id="rfc").filter(ad=ad):
             dt = doc_type(doc)

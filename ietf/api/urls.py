@@ -11,6 +11,7 @@ from ietf.meeting import views as meeting_views
 from ietf.submit import views as submit_views
 from ietf.utils.urls import url
 
+
 api.autodiscover()
 
 urlpatterns = [
@@ -24,10 +25,16 @@ urlpatterns = [
     # --- Custom API endpoints, sorted alphabetically ---
     # Email alias information for drafts
     url(r'^doc/draft-aliases/$', api_views.draft_aliases),
-    # GPRD: export of personal information for the logged-in person
+    # email ingestor
+    url(r'email/$', api_views.ingest_email),
+    # email ingestor
+    url(r'email/test/$', api_views.ingest_email_test),
+    # GDPR: export of personal information for the logged-in person
     url(r'^export/personal-information/$', api_views.PersonalInformationExportView.as_view()),
     # Email alias information for groups
     url(r'^group/group-aliases/$', api_views.group_aliases),
+    # Email addresses belonging to role holders
+    url(r'^group/role-holder-addresses/$', api_views.role_holder_addresses),
     # Let IESG members set positions programmatically
     url(r'^iesg/position', views_ballot.api_set_position),
     # Let Meetecho set session video URLs

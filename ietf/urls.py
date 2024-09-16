@@ -5,6 +5,7 @@ from django.conf.urls.static import static as static_url
 from django.contrib import admin
 from django.contrib.sitemaps import views as sitemap_views
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
+from django.http import HttpResponse
 from django.urls import include, path
 from django.views import static as static_view
 from django.views.generic import TemplateView
@@ -18,8 +19,6 @@ from ietf.ipr.sitemaps import IPRMap
 from ietf.liaisons.sitemaps import LiaisonMap
 from ietf.utils.urls import url
 
-
-admin.autodiscover()
 
 # sometimes, this code gets called more than once, which is an
 # that seems impossible to work around.
@@ -35,6 +34,7 @@ sitemaps = {
 
 urlpatterns = [
     url(r'^$', views_search.frontpage),
+    url(r'^health/', lambda _: HttpResponse()),
     url(r'^accounts/', include('ietf.ietfauth.urls')),
     url(r'^admin/', admin.site.urls),
     url(r'^admin/docs/', include('django.contrib.admindocs.urls')),
@@ -61,6 +61,7 @@ urlpatterns = [
     url(r'^sitemap-(?P<section>.+).xml$', sitemap_views.sitemap, {'sitemaps': sitemaps}),
     url(r'^sitemap.xml$', sitemap_views.index, { 'sitemaps': sitemaps}),
     url(r'^stats/', include('ietf.stats.urls')),
+    url(r'^status/', include('ietf.status.urls')),
     url(r'^stream/', include(stream_urls)),
     url(r'^submit/', include('ietf.submit.urls')),
     url(r'^sync/', include('ietf.sync.urls')),

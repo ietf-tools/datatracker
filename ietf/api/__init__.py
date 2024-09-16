@@ -7,8 +7,10 @@ import re
 
 from urllib.parse import urlencode
 
-from django.conf import settings
+from django.apps import apps as django_apps
 from django.core.exceptions import ObjectDoesNotExist
+from django.utils.module_loading import autodiscover_modules
+
 
 import debug                            # pyflakes:ignore
 
@@ -21,38 +23,27 @@ from tastypie.fields import ApiField
 
 _api_list = []
 
-for _app in settings.INSTALLED_APPS:
+OMITTED_APPS_APIS = ["ietf.status"]
+
+def populate_api_list():
     _module_dict = globals()
-    if '.' in _app:
-        _root, _name = _app.split('.', 1)
-        if _root == 'ietf':
-            if not '.' in _name:
-                _api = Api(api_name=_name)
-                _module_dict[_name] = _api
-                _api_list.append((_name, _api))
+    for app_config in django_apps.get_app_configs():
+        if '.' in app_config.name and app_config.name not in OMITTED_APPS_APIS:
+            _root, _name = app_config.name.split('.', 1)
+            if _root == 'ietf':
+                if not '.' in _name:
+                    _api = Api(api_name=_name)
+                    _module_dict[_name] = _api
+                    _api_list.append((_name, _api))
 
 def autodiscover():
     """
     Auto-discover INSTALLED_APPS resources.py modules and fail silently when
-    not present. This forces an import on them to register any admin bits they
+    not present. This forces an import on them to register any resources they
     may want.
     """
+    autodiscover_modules("resources")
 
-    from importlib import import_module
-    from django.conf import settings
-    from django.utils.module_loading import module_has_submodule
-
-    for app in settings.INSTALLED_APPS:
-        mod = import_module(app)
-        # Attempt to import the app's admin module.
-        try:
-            import_module('%s.resources' % (app, ))
-        except:
-            # Decide whether to bubble up this error. If the app just
-            # doesn't have an admin module, we can ignore the error
-            # attempting to import it, otherwise we want it to bubble up.
-            if module_has_submodule(mod, "resources"):
-                raise
 
 class ModelResource(tastypie.resources.ModelResource):
     def generate_cache_key(self, *args, **kwargs):

@@ -60,15 +60,22 @@ CHARTER_PATH = '/assets/ietf-ftp/charter/'
 BOFREQ_PATH = '/assets/ietf-ftp/bofreq/'
 CONFLICT_REVIEW_PATH = '/assets/ietf-ftp/conflict-reviews/'
 STATUS_CHANGE_PATH = '/assets/ietf-ftp/status-changes/'
-INTERNET_DRAFT_ARCHIVE_DIR = '/assets/archive/id'
+INTERNET_DRAFT_ARCHIVE_DIR = '/assets/collection/draft-archive'
 INTERNET_ALL_DRAFTS_ARCHIVE_DIR = '/assets/archive/id'
 BIBXML_BASE_PATH = '/assets/ietfdata/derived/bibxml'
 IDSUBMIT_REPOSITORY_PATH = INTERNET_DRAFT_PATH
+FTP_DIR = '/assets/ftp'
 
 NOMCOM_PUBLIC_KEYS_DIR = 'data/nomcom_keys/public_keys/'
 SLIDE_STAGING_PATH = '/test/staging/'
 
 DE_GFM_BINARY = '/usr/local/bin/de-gfm'
+
+# No real secrets here, these are public testing values _only_
+APP_API_TOKENS = {
+  "ietf.api.views.ingest_email_test": ["ingestion-test-token"]
+}
+
 
 # OIDC configuration
 SITE_URL = 'https://__HOSTNAME__'

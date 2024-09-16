@@ -1,0 +1,13 @@
+{% load origin %}
+{% load static %}
+{% load ietf_filters %}
+{% load person_filters %}
+{% origin %}
+
+<span class="text-success">RFC
+    {% if not document_html %}
+    - {{ doc.std_level }}
+    {% else %}
+        <span class="badge rounded-pill badge-{% if not snapshot %}{{ doc|std_level_to_label_format }}{% else %}generic{% endif %}">{{ doc.std_level }}</span>
+    {% endif %}
+</span>

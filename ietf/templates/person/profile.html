@@ -106,7 +106,7 @@
                             <td>
                                 <a class="text-nowrap" href="{{ doc.get_absolute_url }}">RFC {{ doc.rfc_number }}</a>
                             </td>
-                            <td>{{ doc.pub_date|date:"b Y"|title }}</td>
+                            <td data-sort-number="{{ doc.pub_date|date:"U" }}">{{ doc.pub_date|date:"b Y"|title }}</td>
                             <td>{{ doc.title|urlize_ietf_docs }}</td>
                             <td class="text-end">
                                 {% with doc.referenced_by_rfcs_as_rfc_or_draft.count as refbycount %}

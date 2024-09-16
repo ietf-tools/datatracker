@@ -3,6 +3,7 @@
     "install-deps": "playwright install --with-deps",
     "test": "playwright test",
     "test:legacy": "playwright test -c playwright-legacy.config.js",
+    "test:legacy:visual": "playwright test -c playwright-legacy.config.js --headed --workers=1",
     "test:visual": "playwright test --headed --workers=1",
     "test:debug": "playwright test --debug"
   },
@@ -14,7 +15,7 @@
     "eslint-plugin-n": "16.6.2",
     "eslint-plugin-node": "11.1.0",
     "eslint-plugin-promise": "6.1.1",
-    "npm-check-updates": "16.14.15"
+    "npm-check-updates": "16.14.18"
   },
   "dependencies": {
     "@faker-js/faker": "8.4.1",

@@ -209,7 +209,6 @@ def agenda(request, date=None):
                 urlreverse("ietf.iesg.views.telechat_agenda_content_view", kwargs={"section": "minutes"})
             ))
 
-    request.session['ballot_edit_return_point'] = request.path_info
     return render(request, "iesg/agenda.html", {
             "date": data["date"],
             "sections": sorted(data["sections"].items(), key=lambda x:[int(p) for p in x[0].split('.')]),
@@ -361,6 +360,8 @@ def handle_reschedule_form(request, doc, dates, status):
     return form
 
 def agenda_documents(request):
+    ad = request.user.person if has_role(request.user, "Area Director") else None
+
     dates = list(TelechatDate.objects.active().order_by('date').values_list("date", flat=True)[:4])
 
     docs_by_date = dict((d, []) for d in dates)
@@ -390,15 +391,17 @@ def agenda_documents(request):
         # the search_result_row view to display them (which expects them)
         fill_in_document_table_attributes(docs_by_date[date], have_telechat_date=True)
         fill_in_agenda_docs(date, sections, docs_by_date[date])
-        pages = telechat_page_count(docs=docs_by_date[date]).for_approval
-
+        page_count = telechat_page_count(docs=docs_by_date[date], ad=ad)
+        pages = page_count.for_approval
+        
         telechats.append({
                 "date":     date,
                 "pages":    pages,
+                "ad_pages_left_to_ballot_on": page_count.ad_pages_left_to_ballot_on,
                 "sections": sorted((num, section) for num, section in sections.items()
                                    if "2" <= num < "5")
                 })
-    request.session['ballot_edit_return_point'] = request.path_info
+    
     return render(request, 'iesg/agenda_documents.html', { 'telechats': telechats })
 
 def past_documents(request):
@@ -483,6 +486,7 @@ def discusses(request):
                                             models.Q(states__type__in=("statchg", "conflrev"),
                                                      states__slug__in=("iesgeval", "defer")),
                                             docevent__ballotpositiondocevent__pos__blocking=True)
+    possible_docs = possible_docs.exclude(states__in=State.objects.filter(type="draft", slug="repl"))
     possible_docs = possible_docs.select_related("stream", "group", "ad").distinct()
 
     docs = []

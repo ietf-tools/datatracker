@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2021 All Rights Reserved #}
 {% load origin %}
-{% load person_filters %}
+{% load person_filters ietf_filters %}
 {% load static %}
 {% block pagehead %}
     <link rel="stylesheet" href="{% static "ietf/css/list.css" %}">
@@ -26,40 +26,42 @@
     {% else %}
         {% regroup reqs by get_state_slug as grouped_reqs %}
         {% for req_group in grouped_reqs %}
-            <h2 class="mt-5">{{ req_group.grouper|capfirst }} BOF Requests</h2>
-            <table id="bofreqs-{{ req_group.grouper }}"
-                   class="table table-sm table-striped tablesorter">
-                <thead>
-                    <tr>
-                        <th scope="col" data-sort="name">Name</th>
-                        <th scope="col" class="d-none d-sm-table-cell" data-sort="date">Date</th>
-                        <th scope="col" data-sort="title">Title</th>
-                        <th scope="col" data-sort="responsible">Responsible</th>
-                        <th scope="col" data-sort="editors">Editors</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for req in req_group.list %}
+            {% if req_group.grouper != "spam" or request.user|has_role:"Secretariat" %}
+                <h2 class="mt-5">{{ req_group.grouper|capfirst }} BOF Requests</h2>
+                <table id="bofreqs-{{ req_group.grouper }}"
+                    class="table table-sm table-striped tablesorter">
+                    <thead>
                         <tr>
-                            <td>
-                                <a href="{% url 'ietf.doc.views_doc.document_main' name=req.name %}">{{ req.name }}-{{ req.rev }}</a>
-                            </td>
-                            <td class="d-none d-sm-table-cell">{{ req.latest_revision_event.time|date:"Y-m-d" }}</td>
-                            <td>{{ req.title }}</td>
-                            <td>
-                                {% for person in req.responsible %}
-                                    {% person_link person %}{% if not forloop.last %},{% endif %}
-                                {% endfor %}
-                            </td>
-                            <td>
-                                {% for person in req.editors %}
-                                    {% person_link person %}{% if not forloop.last %},{% endif %}
-                                {% endfor %}
-                            </td>
+                            <th scope="col" data-sort="name">Name</th>
+                            <th scope="col" class="d-none d-sm-table-cell" data-sort="date">Date</th>
+                            <th scope="col" data-sort="title">Title</th>
+                            <th scope="col" data-sort="responsible">Responsible</th>
+                            <th scope="col" data-sort="editors">Editors</th>
                         </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        {% for req in req_group.list %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'ietf.doc.views_doc.document_main' name=req.name %}">{{ req.name }}-{{ req.rev }}</a>
+                                </td>
+                                <td class="d-none d-sm-table-cell">{{ req.latest_revision_event.time|date:"Y-m-d" }}</td>
+                                <td>{{ req.title }}</td>
+                                <td>
+                                    {% for person in req.responsible %}
+                                        {% person_link person %}{% if not forloop.last %},{% endif %}
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    {% for person in req.editors %}
+                                        {% person_link person %}{% if not forloop.last %},{% endif %}
+                                    {% endfor %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% endif %}
         {% endfor %}
     {% endif %}
 {% endblock %}

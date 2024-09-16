@@ -18,7 +18,7 @@ import debug                            # pyflakes:ignore
 
 from ietf.doc.models import DocEvent, BallotPositionDocEvent, TelechatDocEvent
 from ietf.doc.models import Document, State, RelatedDocument
-from ietf.doc.factories import WgDraftFactory, IndividualDraftFactory, ConflictReviewFactory, BaseDocumentFactory, CharterFactory, WgRfcFactory, IndividualRfcFactory
+from ietf.doc.factories import BallotDocEventFactory, BallotPositionDocEventFactory, TelechatDocEventFactory, WgDraftFactory, IndividualDraftFactory, ConflictReviewFactory, BaseDocumentFactory, CharterFactory, WgRfcFactory, IndividualRfcFactory
 from ietf.doc.utils import create_ballot_if_not_open
 from ietf.group.factories import RoleFactory, GroupFactory, DatedGroupMilestoneFactory, DatelessGroupMilestoneFactory
 from ietf.group.models import Group, GroupMilestone, Role
@@ -29,7 +29,6 @@ from ietf.person.models import Person
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized, unicontent
 from ietf.iesg.factories import IESGMgmtItemFactory, TelechatAgendaContentFactory
 from ietf.utils.timezone import date_today, DEADLINE_TZINFO
-
 
 class IESGTests(TestCase):
     def test_feed(self):
@@ -51,6 +50,15 @@ class IESGTests(TestCase):
 
         self.assertContains(r, draft.name)
         self.assertContains(r, escape(pos.balloter.plain_name()))
+
+        # Mark draft as replaced
+        draft.set_state(State.objects.get(type="draft", slug="repl"))
+
+        r = self.client.get(urlreverse("ietf.iesg.views.discusses"))
+        self.assertEqual(r.status_code, 200)
+
+        self.assertNotContains(r, draft.name)
+        self.assertNotContains(r, escape(pos.balloter.plain_name()))
 
     def test_milestones_needing_review(self):
         draft = WgDraftFactory()
@@ -500,12 +508,13 @@ class IESGAgendaTests(TestCase):
     def test_agenda_documents(self):
         url = urlreverse("ietf.iesg.views.agenda_documents")
         r = self.client.get(url)
+
         self.assertEqual(r.status_code, 200)
 
         for k, d in self.telechat_docs.items():
             self.assertContains(r, d.name, msg_prefix="%s '%s' not in response" % (k, d.name, ))
-            self.assertContains(r, d.title, msg_prefix="%s '%s' title not in response" % (k, d.title, ))
-
+            self.assertContains(r, d.title, msg_prefix="%s '%s' not in response" % (k, d.title, ))
+    
     def test_past_documents(self):
         url = urlreverse("ietf.iesg.views.past_documents")
         # We haven't put any documents on past telechats, so this should be empty
@@ -579,6 +588,66 @@ class IESGAgendaTests(TestCase):
         self.assertRedirects(r, urlreverse('admin:iesg_telechatdate_changelist'))
         draft = Document.objects.get(name="draft-ietf-mars-test")
         self.assertEqual(draft.telechat_date(),today)
+
+class IESGAgendaTelechatPagesTests(TestCase):
+    def setUp(self):
+        super().setUp()
+        # make_immutable_test_data made a set of future telechats - only need one
+        # We'll take the "next" one
+        self.telechat_date = get_agenda_date()
+        # make_immutable_test_data made and area with only one ad - give it another
+        ad = Person.objects.get(user__username="ad")
+        adrole = Role.objects.get(person=ad, name="ad")
+        ad2 = RoleFactory(group=adrole.group, name_id="ad").person
+        self.ads=[ad,ad2]
+        
+        # Make some drafts
+        docs = [
+            WgDraftFactory(pages=2, states=[('draft-iesg','iesg-eva'),]),
+            IndividualDraftFactory(pages=20, states=[('draft-iesg','iesg-eva'),]),
+            WgDraftFactory(pages=200, states=[('draft-iesg','iesg-eva'),]),
+        ]
+        # Put them on the telechat
+        for doc in docs:
+            TelechatDocEventFactory(doc=doc, telechat_date=self.telechat_date)
+        # Give them ballots
+        ballots = [BallotDocEventFactory(doc=doc) for doc in docs]
+
+        # Give the "ad" Area-Director a discuss on one 
+        BallotPositionDocEventFactory(balloter=ad, doc=docs[0], pos_id="discuss", ballot=ballots[0])
+        # and a "norecord" position on another
+        BallotPositionDocEventFactory(balloter=ad, doc=docs[1], pos_id="norecord", ballot=ballots[1])
+        # Now "ad" should have 220 pages left to ballot on.
+        # Every other ad should have 222 pages left to ballot on.
+
+    def test_ad_pages_left_to_ballot_on(self):
+        url = urlreverse("ietf.iesg.views.agenda_documents")
+
+        # A non-AD user won't get "pages left"
+        response = self.client.get(url)
+        telechat = response.context["telechats"][0]
+        self.assertEqual(telechat["date"], self.telechat_date)
+        self.assertEqual(telechat["ad_pages_left_to_ballot_on"],0)
+        self.assertNotContains(response,"pages left to ballot on")
+
+        username=self.ads[0].user.username
+        self.assertTrue(self.client.login(username=username, password=f"{username}+password"))
+
+        response = self.client.get(url)
+        telechat = response.context["telechats"][0]
+        self.assertEqual(telechat["ad_pages_left_to_ballot_on"],220)
+        self.assertContains(response,"220 pages left to ballot on")
+
+        self.client.logout()
+        username=self.ads[1].user.username
+        self.assertTrue(self.client.login(username=username, password=f"{username}+password"))
+
+        response = self.client.get(url)
+        telechat = response.context["telechats"][0]
+        self.assertEqual(telechat["ad_pages_left_to_ballot_on"],222)
+
+
+
 
 class RescheduleOnAgendaTests(TestCase):
     def test_reschedule(self):

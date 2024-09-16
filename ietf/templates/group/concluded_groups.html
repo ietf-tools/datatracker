@@ -40,8 +40,8 @@
                         <tr>
                             <th scope="col" data-sort="group">Group</th>
                             <th scope="col" data-sort="name">Name</th>
-                            <th scope="col" data-sort="date">Start</th>
-                            <th scope="col" data-sort="date">Concluded</th>
+                            <th scope="col" data-sort="date-start">Start</th>
+                            <th scope="col" data-sort="date-concluded">Concluded</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -51,8 +51,8 @@
                                     <a href="{{ g.about_url }}">{{ g.acronym }}</a>
                                 </td>
                                 <td>{{ g.name }}</td>
-                                <td>{{ g.start_date|date:"Y-m" }}</td>
-                                <td>{{ g.conclude_date|date:"Y-m" }}</td>
+                                <td data-sort-number="{{ g.start_date|date:"U" }}">{{ g.start_date|date:"Y-m" }}</td>
+                                <td data-sort-number="{{ g.conclude_date|date:"U" }}">{{ g.conclude_date|date:"Y-m" }}</td>
                             </tr>
                         {% endfor %}
                     </tbody>

@@ -1,10 +1,14 @@
 # Copyright The IETF Trust 2017-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
+import base64
+import binascii
 import json
+import jsonschema
+import pytz
 import re
 
-import pytz
+from contextlib import suppress
 from django.conf import settings
 from django.contrib.auth import authenticate
 from django.contrib.auth.decorators import login_required
@@ -18,26 +22,34 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.gzip import gzip_page
 from django.views.generic.detail import DetailView
+from email.message import EmailMessage
 from jwcrypto.jwk import JWK
 from tastypie.exceptions import BadRequest
 from tastypie.serializers import Serializer
 from tastypie.utils import is_valid_jsonp_callback_value
 from tastypie.utils.mime import determine_format, build_content_type
+from textwrap import dedent
+from traceback import format_exception, extract_tb
+from typing import Iterable, Optional
 
 import ietf
 from ietf.api import _api_list
 from ietf.api.ietf_utils import is_valid_token, requires_api_token
 from ietf.api.serializer import JsonExportMixin
 from ietf.doc.utils import DraftAliasGenerator, fuzzy_find_documents
-from ietf.group.utils import GroupAliasGenerator
+from ietf.group.utils import GroupAliasGenerator, role_holder_emails
 from ietf.ietfauth.utils import role_required
 from ietf.ietfauth.views import send_account_creation_email
+from ietf.ipr.utils import ingest_response_email as ipr_ingest_response_email
 from ietf.meeting.models import Meeting
 from ietf.nomcom.models import Volunteer, NomCom
+from ietf.nomcom.utils import ingest_feedback_email as nomcom_ingest_feedback_email
 from ietf.person.models import Person, Email
 from ietf.stats.models import MeetingRegistration
+from ietf.sync.iana import ingest_review_email as iana_ingest_review_email
 from ietf.utils import log
 from ietf.utils.decorators import require_api_key
+from ietf.utils.mail import send_smtp
 from ietf.utils.models import DumpInfo
 
 
@@ -201,7 +213,7 @@ def api_new_meeting_registration(request):
                 response += ", Email sent"
 
             # handle nomcom volunteer
-            if data['is_nomcom_volunteer'] and object.person:
+            if request.POST.get('is_nomcom_volunteer', 'false').lower() == 'true' and object.person:
                 try:
                     nomcom = NomCom.objects.get(is_accepting_volunteers=True)
                 except (NomCom.DoesNotExist, NomCom.MultipleObjectsReturned):
@@ -417,6 +429,7 @@ def directauth(request):
                 data = None
 
         if raw_data is None or data is None:
+            log.log("Request body is either missing or invalid")
             return HttpResponse(json.dumps(dict(result="failure",reason="invalid post")), content_type='application/json')
 
         authtoken = data.get('authtoken', None)
@@ -424,9 +437,11 @@ def directauth(request):
         password = data.get('password', None)
 
         if any([item is None for item in (authtoken, username, password)]):
+            log.log("One or more mandatory fields are missing: authtoken, username, password")
             return HttpResponse(json.dumps(dict(result="failure",reason="invalid post")), content_type='application/json')
 
         if not is_valid_token("ietf.api.views.directauth", authtoken):
+            log.log("Auth token provided is invalid")
             return HttpResponse(json.dumps(dict(result="failure",reason="invalid authtoken")), content_type='application/json')
         
         user_query = User.objects.filter(username__iexact=username)
@@ -437,22 +452,24 @@ def directauth(request):
 
 
         # Note well that we are using user.username, not what was passed to the API.
-        if user_query.count() == 1 and authenticate(username = user_query.first().username, password = password):
+        user_count = user_query.count()
+        if user_count == 1 and authenticate(username = user_query.first().username, password = password):
             user = user_query.get()
             if user_query.filter(person__isnull=True).count() == 1: # Can't inspect user.person direclty here
-                log.log(f"Direct auth of personless user {user.pk}:{user.username}")
+                log.log(f"Direct auth success (personless user): {user.pk}:{user.username}")
             else:
-                log.log(f"Direct auth: {user.pk}:{user.person.plain_name()}")
+                log.log(f"Direct auth success: {user.pk}:{user.person.plain_name()}")
             return HttpResponse(json.dumps(dict(result="success")), content_type='application/json')
 
-        log.log(f"Direct auth failure: {username}")
+        log.log(f"Direct auth failure: {username} ({user_count} user(s) found)")
         return HttpResponse(json.dumps(dict(result="failure", reason="authentication failed")), content_type='application/json') 
 
     else:
+        log.log(f"Request must be POST: {request.method} received")
         return HttpResponse(status=405)
 
 
-@requires_api_token("ietf.api.views.email_aliases")
+@requires_api_token
 @csrf_exempt
 def draft_aliases(request):
     if request.method == "GET":
@@ -471,7 +488,7 @@ def draft_aliases(request):
     return HttpResponse(status=405)
 
 
-@requires_api_token("ietf.api.views.email_aliases")
+@requires_api_token
 @csrf_exempt
 def group_aliases(request):
     if request.method == "GET":
@@ -500,3 +517,190 @@ def active_email_list(request):
             }
         )
     return HttpResponse(status=405)
+
+
+@requires_api_token
+def role_holder_addresses(request):
+    if request.method == "GET":
+        return JsonResponse(
+            {
+                "addresses": list(
+                    role_holder_emails()
+                    .order_by("address")
+                    .values_list("address", flat=True)
+                )
+            }
+        )
+    return HttpResponse(status=405)
+
+
+_response_email_json_validator = jsonschema.Draft202012Validator(
+    schema={
+        "type": "object",
+        "properties": {
+            "dest": {
+                "type": "string",
+            },
+            "message": {
+                "type": "string",  # base64-encoded mail message
+            },
+        },
+        "required": ["dest", "message"],
+    }
+)
+
+
+class EmailIngestionError(Exception):
+    """Exception indicating ingestion failed"""
+    def __init__(
+        self,
+        msg="Message rejected",
+        *,
+        email_body: Optional[str] = None,
+        email_recipients: Optional[Iterable[str]] = None,
+        email_attach_traceback=False,
+        email_original_message: Optional[bytes]=None,
+    ):
+        self.msg = msg
+        self.email_body = email_body
+        self.email_subject = msg
+        self.email_recipients = email_recipients 
+        self.email_attach_traceback = email_attach_traceback
+        self.email_original_message = email_original_message
+        self.email_from = settings.SERVER_EMAIL
+            
+    @staticmethod
+    def _summarize_error(error):
+        frame = extract_tb(error.__traceback__)[-1]
+        return dedent(f"""\
+            Error details:
+              Exception type: {type(error).__module__}.{type(error).__name__}
+              File: {frame.filename}
+              Line: {frame.lineno}""")
+
+    def as_emailmessage(self) -> Optional[EmailMessage]:
+        """Generate an EmailMessage to report an error"""
+        if self.email_body is None:
+            return None  
+        error = self if self.__cause__ is None else self.__cause__
+        format_values = dict(
+            error=error,
+            error_summary=self._summarize_error(error),
+        )
+        msg = EmailMessage()
+        if self.email_recipients is None:
+            msg["To"] = tuple(adm[1] for adm in settings.ADMINS) 
+        else: 
+            msg["To"] = self.email_recipients
+        msg["From"] = self.email_from
+        msg["Subject"] = self.msg
+        msg.set_content(
+            self.email_body.format(**format_values)
+        )
+        if self.email_attach_traceback:
+            msg.add_attachment(
+                "".join(format_exception(None, error, error.__traceback__)),
+                filename="traceback.txt",
+            )
+        if self.email_original_message is not None:
+            # Attach incoming message if it was provided. Send as a generic media
+            # type because we don't know for sure that it was actually a valid
+            # message.
+            msg.add_attachment(
+                self.email_original_message,
+                'application', 'octet-stream',  # media type
+                filename='original-message',
+            )
+        return msg
+
+
+def ingest_email_handler(request, test_mode=False):
+    """Ingest incoming email - handler
+    
+    Returns a 4xx or 5xx status code if the HTTP request was invalid or something went
+    wrong while processing it. If the request was valid, returns a 200. This may or may
+    not indicate that the message was accepted.
+    
+    If test_mode is true, actual processing of a valid message will be skipped. In this
+    mode, a valid request with a valid destination will be treated as accepted. The
+    "bad_dest" error may still be returned.
+    """
+
+    def _http_err(code, text):
+        return HttpResponse(text, status=code, content_type="text/plain")
+
+    def _api_response(result):
+        return JsonResponse(data={"result": result})
+
+    if request.method != "POST":
+        return _http_err(405, "Method not allowed")
+
+    if request.content_type != "application/json":
+        return _http_err(415, "Content-Type must be application/json")
+
+    # Validate
+    try:
+        payload = json.loads(request.body)
+        _response_email_json_validator.validate(payload)
+    except json.decoder.JSONDecodeError as err:
+        return _http_err(400, f"JSON parse error at line {err.lineno} col {err.colno}: {err.msg}")
+    except jsonschema.exceptions.ValidationError as err:
+        return _http_err(400, f"JSON schema error at {err.json_path}: {err.message}")
+    except Exception:
+        return _http_err(400, "Invalid request format")
+
+    try:
+        message = base64.b64decode(payload["message"], validate=True)
+    except binascii.Error:
+        return _http_err(400, "Invalid message: bad base64 encoding")
+
+    dest = payload["dest"]
+    valid_dest = False
+    try:
+        if dest == "iana-review":
+            valid_dest = True
+            if not test_mode:
+                iana_ingest_review_email(message)
+        elif dest == "ipr-response":
+            valid_dest = True
+            if not test_mode:
+                ipr_ingest_response_email(message)
+        elif dest.startswith("nomcom-feedback-"):
+            maybe_year = dest[len("nomcom-feedback-"):]
+            if maybe_year.isdecimal():
+                valid_dest = True
+                if not test_mode:
+                    nomcom_ingest_feedback_email(message, int(maybe_year))
+    except EmailIngestionError as err:
+        error_email = err.as_emailmessage()
+        if error_email is not None:
+            with suppress(Exception): # send_smtp logs its own exceptions, ignore them here
+                send_smtp(error_email)
+        return _api_response("bad_msg")
+
+    if not valid_dest:
+        return _api_response("bad_dest")
+
+    return _api_response("ok")
+
+
+@requires_api_token
+@csrf_exempt
+def ingest_email(request):
+    """Ingest incoming email
+
+    Hands off to ingest_email_handler() with test_mode=False. This allows @requires_api_token to
+    give the test endpoint a distinct token from the real one.
+    """
+    return ingest_email_handler(request, test_mode=False)
+
+
+@requires_api_token
+@csrf_exempt
+def ingest_email_test(request):
+    """Ingest incoming email test endpoint
+    
+    Hands off to ingest_email_handler() with test_mode=True. This allows @requires_api_token to
+    give the test endpoint a distinct token from the real one.
+    """
+    return ingest_email_handler(request, test_mode=True)
