@@ -24,6 +24,7 @@ from ietf.doc.factories import (
     RfcFactory,
     NewRevisionDocEventFactory
 )
+from ietf.doc.utils import prettify_std_name
 from ietf.group.factories import RoleFactory
 from ietf.ipr.factories import (
     HolderIprDisclosureFactory,
@@ -191,6 +192,32 @@ class IprTests(TestCase):
         # find RFC
         r = self.client.get(url + "?submit=rfc&rfc=321")
         self.assertContains(r, ipr.title)
+
+        rfc_new = RfcFactory(rfc_number=322)
+        rfc_new.relateddocument_set.create(relationship_id="obs", target=rfc)
+
+        # find RFC 322 which obsoletes RFC 321 whose draft has IPR
+        r = self.client.get(url + "?submit=rfc&rfc=322")
+        self.assertContains(r, ipr.title)
+        self.assertContains(r, "Total number of IPR disclosures found: <b>1</b>")
+        self.assertContains(r, "Total number of documents searched: <b>3</b>.")
+        self.assertContains(
+            r,
+            f'Results for <a href="/doc/{rfc_new.name}/">{prettify_std_name(rfc_new.name)}</a> ("{rfc_new.title}")',
+            html=True,
+        )
+        self.assertContains(
+            r,
+            f'Results for <a href="/doc/{rfc.name}/">{prettify_std_name(rfc.name)}</a> ("{rfc.title}"), '
+            f'which was obsoleted by <a href="/doc/{rfc_new.name}/">{prettify_std_name(rfc_new.name)}</a> ("{rfc_new.title}")',
+            html=True,
+        )
+        self.assertContains(
+            r,
+            f'Results for <a href="/doc/{draft.name}/">{prettify_std_name(draft.name)}</a> ("{draft.title}"), '
+            f'which became rfc <a href="/doc/{rfc.name}/">{prettify_std_name(rfc.name)}</a> ("{rfc.title}")',
+            html=True,
+        )
 
         # find by patent owner
         r = self.client.get(url + "?submit=holder&holder=%s" % ipr.holder_legal_name)

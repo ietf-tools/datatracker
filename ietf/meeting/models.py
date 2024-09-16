@@ -1331,16 +1331,18 @@ class Session(models.Model):
             return url.format(session=self)
         return None
 
+    def _session_recording_url_label(self):
+        if self.meeting.type.slug == "ietf" and self.has_onsite_tool:
+            session_label = f"IETF{self.meeting.number}-{self.group.acronym.upper()}-{self.official_timeslotassignment().timeslot.time.strftime('%Y%m%d-%H%M')}"
+        else:
+            session_label = f"IETF-{self.group.acronym.upper()}-{self.official_timeslotassignment().timeslot.time.strftime('%Y%m%d-%H%M')}"
+        return session_label
+
     def session_recording_url(self):
         url_formatter = getattr(settings, "MEETECHO_SESSION_RECORDING_URL", "")
         url = None
         if url_formatter and self.video_stream_url:
-            if self.meeting.type.slug == "ietf" and self.has_onsite_tool:
-                session_label = f"IETF{self.meeting.number}-{self.group.acronym.upper()}-{self.official_timeslotassignment().timeslot.time.strftime('%Y%m%d-%H%M')}"
-            else:
-                session_label = f"IETF-{self.group.acronym.upper()}-{self.official_timeslotassignment().timeslot.time.strftime('%Y%m%d-%H%M')}"
-            url = url_formatter.format(session_label=session_label)
-
+            url = url_formatter.format(session_label=self._session_recording_url_label())
         return url
 
 
