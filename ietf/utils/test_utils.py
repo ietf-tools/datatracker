@@ -309,7 +309,6 @@ class TestCase(django.test.TestCase):
 
     def tearDown(self):
         self._ietf_saved_context.disable()
-        debug.show("self._ietf_temp_dirs")
         for dir in self._ietf_temp_dirs.values():
             shutil.rmtree(dir)
         self.requests_mock.stop()
