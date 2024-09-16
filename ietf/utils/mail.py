@@ -92,7 +92,17 @@ def send_smtp(msg, bcc=None):
     '''
     mark = time.time()
     add_headers(msg)
-    (fname, frm) = parseaddr(msg.get('From'))
+    # N.B. We have a disconnect with most of this code assuming a From header value will only
+    # have one address.
+    # The frm computed here is only used as the envelope from. 
+    # Previous code simply ran `parseaddr(msg.get('From'))`, getting lucky if the string returned
+    # from the get had more than one address in it. Python 3.9.20 changes the behavior of parseaddr
+    # and that erroneous use of the function no longer gets lucky.
+    # For the short term, to match behavior to date as closely as possible, if we get a message
+    # that has multiple addresses in the From header, we will use the first for the envelope from
+    from_tuples = getaddresses(msg.get_all('From', [settings.DEFAULT_FROM_EMAIL]))
+    assertion('len(from_tuples)==1', note=f"send_smtp received multiple From addresses: {from_tuples}")
+    _ , frm = from_tuples[0]
     addrlist = msg.get_all('To') + msg.get_all('Cc', [])
     if bcc:
         addrlist += [bcc]
@@ -446,6 +456,8 @@ def parse_preformatted(preformatted, extra=None, override=None):
         values = msg.get_all(key, [])
         if values:
             values = getaddresses(values)
+            if key=='From':
+                assertion('len(values)<2', note=f'parse_preformatted is constructing a From with multiple values: {values}')
             del msg[key]
             msg[key] = ',\n    '.join(formataddr(v) for v in values)
     for key in ['Subject', ]:
