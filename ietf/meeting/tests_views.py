@@ -39,7 +39,7 @@ from ietf.doc.models import Document, NewRevisionDocEvent
 from ietf.group.models import Group, Role, GroupFeatures
 from ietf.group.utils import can_manage_group
 from ietf.person.models import Person, PersonalApiKey
-from ietf.meeting.helpers import can_approve_interim_request, can_view_interim_request, preprocess_assignments_for_agenda
+from ietf.meeting.helpers import can_approve_interim_request, can_request_interim_meeting, can_view_interim_request, preprocess_assignments_for_agenda
 from ietf.meeting.helpers import send_interim_approval_request, AgendaKeywordTagger
 from ietf.meeting.helpers import send_interim_meeting_cancellation_notice, send_interim_session_cancellation_notice
 from ietf.meeting.helpers import send_interim_minutes_reminder, populate_important_dates, update_important_dates
@@ -7334,10 +7334,7 @@ class HasMeetingsTests(TestCase):
         for gf in GroupFeatures.objects.filter(has_meetings=True):
             for role_name in all_role_names - set(gf.groupman_roles):
                 role = RoleFactory(group__type_id=gf.type_id,name_id=role_name)
-                self.client.login(username=role.person.user.username, password=role.person.user.username+'+password')
-                r = self.client.get(url)
-                self.assertEqual(r.status_code, 403)
-                self.client.logout()
+                self.assertFalse(can_request_interim_meeting(role.person.user))
 
     def test_appears_on_upcoming(self):
         url = urlreverse('ietf.meeting.views.upcoming')
