@@ -9,10 +9,12 @@
 #   ./manage.py test --settings=settings_test doc.ChangeStateTestCase
 #
 
-import os 
+import atexit
+import os
+import shutil
+import tempfile
 from ietf.settings import *                                          # pyflakes:ignore
 from ietf.settings import TEST_CODE_COVERAGE_CHECKER
-from ietf.utils.test_utils import tempdir_with_cleanup
 import debug                            # pyflakes:ignore
 debug.debug = True
 
@@ -48,6 +50,14 @@ DATABASES = {
 
 if TEST_CODE_COVERAGE_CHECKER and not TEST_CODE_COVERAGE_CHECKER._started: # pyflakes:ignore
     TEST_CODE_COVERAGE_CHECKER.start()                          # pyflakes:ignore
+
+
+def tempdir_with_cleanup(**kwargs):
+    """Utility to create a temporary dir and arrange cleanup"""
+    _dir = tempfile.mkdtemp(**kwargs)
+    atexit.register(lambda d: shutil.rmtree(d), _dir)
+    return _dir
+
 
 NOMCOM_PUBLIC_KEYS_DIR = tempdir_with_cleanup(suffix="-nomcom-public-keys-dir")
 

@@ -34,7 +34,6 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-import atexit
 import tempfile
 import re
 import email
@@ -313,9 +312,3 @@ class TestCase(django.test.TestCase):
             shutil.rmtree(dir)
         self.requests_mock.stop()
         super().tearDown()
-
-
-def tempdir_with_cleanup(**kwargs):
-    dir = tempfile.mkdtemp(**kwargs)
-    atexit.register(lambda d: shutil.rmtree(d), dir)
-    return dir
