@@ -55,7 +55,7 @@ if TEST_CODE_COVERAGE_CHECKER and not TEST_CODE_COVERAGE_CHECKER._started: # pyf
 def tempdir_with_cleanup(**kwargs):
     """Utility to create a temporary dir and arrange cleanup"""
     _dir = tempfile.mkdtemp(**kwargs)
-    atexit.register(lambda d: shutil.rmtree(d), _dir)
+    atexit.register(shutil.rmtree, _dir)
     return _dir
 
 
