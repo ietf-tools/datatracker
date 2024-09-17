@@ -34,10 +34,11 @@ def user_is_person(user, person):
 
     return person.user_id == user.id
 
-def has_role(user, role_names, extra_role_qs = None, *args, **kwargs):
+def has_role(user, role_names, *args, **kwargs):
     """Determines whether user has any of the given standard roles
     given. Role names must be a list or, in case of a single value, a
     string."""
+    extra_role_qs = kwargs.get("extra_role_qs",None)
     if not isinstance(role_names, (list, tuple, set)):
         role_names = [ role_names ]
     
@@ -48,7 +49,12 @@ def has_role(user, role_names, extra_role_qs = None, *args, **kwargs):
     if not hasattr(user, "roles_check_cache"):
         user.roles_check_cache = {}
 
-    keynames = set(role_names).union(set(extra_role_qs.keys()))
+    keynames = set(role_names)
+    if extra_role_qs:
+        keynames.update(set(extra_role_qs.keys()))
+    year = kwargs.get('year', None)
+    if year is not None:
+        keynames.add(f"nomcomyear{year}")
     key = frozenset(keynames)
     if key not in user.roles_check_cache:
         try:

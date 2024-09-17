@@ -162,7 +162,7 @@ def can_manage_some_groups(user):
     extra_role_qs = dict()
     for gf in GroupFeatures.objects.all():
         extra_role_qs[f"{gf.type_id} groupman roles"] = Q(name__in=gf.groupman_roles, group__type_id=gf.type_id)
-    return has_role(user, authroles, extra_role_qs)
+    return has_role(user, authroles, extra_role_qs = extra_role_qs)
 
     # for gf in GroupFeatures.objects.all():
     #     for authrole in gf.groupman_authroles:
