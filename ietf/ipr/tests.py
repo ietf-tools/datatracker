@@ -203,26 +203,20 @@ class IprTests(TestCase):
         self.assertContains(r, "Total number of documents searched: <b>3</b>.")
         self.assertContains(
             r,
-            f"""Results for <a href="/doc/{rfc_new.name}/">{prettify_std_name(rfc_new.name)}</a>
-                        ("{rfc_new.title}")""",
+            f'Results for <a href="/doc/{rfc_new.name}/">{prettify_std_name(rfc_new.name)}</a> ("{rfc_new.title}")',
+            html=True,
         )
         self.assertContains(
             r,
-            f"""Results for <a href="/doc/{rfc.name}/">{prettify_std_name(rfc.name)}</a>
-                        ("{rfc.title}"), which
-                            
-                                was obsoleted by
-                                <a href="/doc/{rfc_new.name}/">{prettify_std_name(rfc_new.name)}</a>
-                                ("{rfc_new.title}")""",
+            f'Results for <a href="/doc/{rfc.name}/">{prettify_std_name(rfc.name)}</a> ("{rfc.title}"), '
+            f'which was obsoleted by <a href="/doc/{rfc_new.name}/">{prettify_std_name(rfc_new.name)}</a> ("{rfc_new.title}")',
+            html=True,
         )
         self.assertContains(
             r,
-            f"""Results for <a href="/doc/{draft.name}/">{prettify_std_name(draft.name)}</a>
-                        ("{draft.title}"), which
-                            
-                                became rfc
-                                <a href="/doc/{rfc.name}/">{prettify_std_name(rfc.name)}</a>
-                                ("{rfc.title}")""",
+            f'Results for <a href="/doc/{draft.name}/">{prettify_std_name(draft.name)}</a> ("{draft.title}"), '
+            f'which became rfc <a href="/doc/{rfc.name}/">{prettify_std_name(rfc.name)}</a> ("{rfc.title}")',
+            html=True,
         )
 
         # find by patent owner

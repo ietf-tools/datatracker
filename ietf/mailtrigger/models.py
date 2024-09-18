@@ -138,16 +138,16 @@ class Recipient(models.Model):
     def gather_stream_managers(self, **kwargs):
         addrs = []
         manager_map = dict(
-            ise  = '<rfc-ise@rfc-editor.org>',
-            irtf = '<irtf-chair@irtf.org>',
-            ietf = '<iesg@ietf.org>',
-            iab  = '<iab-chair@iab.org>',
+            ise  = ['<rfc-ise@rfc-editor.org>'],
+            irtf = ['<irtf-chair@irtf.org>'],
+            ietf = ['<iesg@ietf.org>'],
+            iab  = ['<iab-chair@iab.org>'],
             editorial = Role.objects.filter(group__acronym="rsab",name_id="chair").values_list("email__address", flat=True),
         )
         if 'streams' in kwargs:
             for stream in kwargs['streams']:
                 if stream in manager_map:
-                    addrs.append(manager_map[stream])
+                    addrs.extend(manager_map[stream])
         return addrs
 
     def gather_doc_stream_manager(self, **kwargs):
@@ -234,7 +234,7 @@ class Recipient(models.Model):
                 try:
                     submitter = Alias.objects.get(name=submission.submitter).person
                     if submitter and submitter.email():
-                        addrs.extend(["%s <%s>" % (submitter.name, submitter.email().address)])
+                        addrs.append(f"{submitter.name} <{submitter.email().address}>")
                 except (Alias.DoesNotExist, Alias.MultipleObjectsReturned):
                     pass
         return addrs

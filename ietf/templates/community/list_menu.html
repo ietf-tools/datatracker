@@ -3,18 +3,18 @@
     <div class="btn-group" role="group" aria-labelledby="list-feeds">
         <a class="btn btn-primary"
            title="Feed of all changes"
-           href="{% if clist.group %}{% url "ietf.community.views.feed" acronym=clist.group.acronym %}{% else %}{% url "ietf.community.views.feed" email_or_name=clist.person.email_address %}{% endif %}">
+           href="{% if clist.group %}{% url "ietf.community.views.feed" acronym=clist.group.acronym %}{% else %}{% url "ietf.community.views.feed" email_or_name=email_or_name %}{% endif %}">
             <i class="bi bi-rss"></i> All changes
         </a>
         <a class="btn btn-primary"
            title="Feed of only significant state changes"
-           href="{% if clist.group %}{% url "ietf.community.views.feed" acronym=clist.group.acronym %}{% else %}{% url "ietf.community.views.feed" email_or_name=clist.person.email_address %}{% endif %}?significant=1">
+           href="{% if clist.group %}{% url "ietf.community.views.feed" acronym=clist.group.acronym %}{% else %}{% url "ietf.community.views.feed" email_or_name=email_or_name %}{% endif %}?significant=1">
             <i class="bi bi-rss"></i> Significant
         </a>
     </div>
     {% if clist.pk != None %}
         <a class="btn btn-primary"
-           href="{% if clist.group %}{% url "ietf.community.views.subscription" acronym=clist.group.acronym %}{% else %}{% url "ietf.community.views.subscription" email_or_name=clist.person.email_address %}{% endif %}">
+           href="{% if clist.group %}{% url "ietf.community.views.subscription" acronym=clist.group.acronym %}{% else %}{% url "ietf.community.views.subscription" email_or_name=email_or_name %}{% endif %}">
             <i class="bi bi-envelope"></i>
             {% if subscribed %}
                 Change subscription
@@ -24,7 +24,7 @@
         </a>
     {% endif %}
     <a class="btn btn-primary"
-       href="{% if clist.group %}{% url "ietf.community.views.export_to_csv" acronym=clist.group.acronym %}{% else %}{% url "ietf.community.views.export_to_csv" email_or_name=clist.person.email_address %}{% endif %}">
+       href="{% if clist.group %}{% url "ietf.community.views.export_to_csv" acronym=clist.group.acronym %}{% else %}{% url "ietf.community.views.export_to_csv" email_or_name=email_or_name %}{% endif %}">
         <i class="bi bi-file-ruled"></i> Export as CSV
     </a>
 </div>
