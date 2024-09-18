@@ -104,12 +104,15 @@ def notify_events(sender, instance, **kwargs):
     if not isinstance(instance, DocEvent):
         return
 
+    if not kwargs.get("created", False):
+        return  # only notify on creation
+
     if instance.doc.type_id != 'draft':
         return
 
     if getattr(instance, "skip_community_list_notification", False):
         return
-
+    
     # kludge alert: queuing a celery task in response to a signal can cause unexpected attempts to
     # start a Celery task during tests. To prevent this, don't queue a celery task if we're running
     # tests.
