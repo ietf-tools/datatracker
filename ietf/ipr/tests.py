@@ -1063,3 +1063,20 @@ class HolderIprDisclosureFormTests(TestCase):
         self.assertFalse(HolderIprDisclosureForm(data=self.data).is_valid())       
         self.data["licensing"] = "royalty-free"
         self.assertTrue(HolderIprDisclosureForm(data=self.data).is_valid())       
+
+    def test_patent_details_required_unless_blanket(self):
+        self.assertTrue(HolderIprDisclosureForm(data=self.data).is_valid())
+        patent_fields = ["patent_number", "patent_inventor", "patent_title", "patent_date"]
+        # any of the fields being missing should invalidate the form
+        for pf in patent_fields:
+            val = self.data.pop(pf)
+            self.assertFalse(HolderIprDisclosureForm(data=self.data).is_valid())
+            self.data[pf] = val
+
+        # should be optional if is_blanket_disclosure is True
+        self.data["is_blanket_disclosure"] = "on"
+        self.data["licensing"] = "royalty-free"  # also needed for a blanket disclosure
+        for pf in patent_fields:
+            val = self.data.pop(pf)
+            self.assertTrue(HolderIprDisclosureForm(data=self.data).is_valid())
+            self.data[pf] = val
