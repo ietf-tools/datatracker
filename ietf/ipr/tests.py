@@ -33,7 +33,7 @@ from ietf.ipr.factories import (
     IprDocRelFactory,
     IprEventFactory
 )
-from ietf.ipr.forms import DraftForm
+from ietf.ipr.forms import DraftForm, HolderIprDisclosureForm
 from ietf.ipr.mail import (process_response_email, get_reply_to, get_update_submitter_emails,
     get_pseudo_submitter, get_holders, get_update_cc_addrs)
 from ietf.ipr.models import (IprDisclosureBase,GenericIprDisclosure,HolderIprDisclosure,
@@ -1028,3 +1028,43 @@ class DraftFormTests(TestCase):
             "revisions",
             null_char_error_msg,
         )
+
+
+class HolderIprDisclosureFormTests(TestCase):
+    def test_blanket_disclosure_licensing_restrictions(self):
+        """when is_blanket_disclosure is True only royalty-free licensing is valid
+        
+        Most of the form functionality is tested via the views in IprTests above. More thorough testing
+        of validation ought to move here so we don't have to exercise the whole Django plumbing repeatedly.
+        """
+        # Checkboxes that are False are left out of the Form data, not sent back at all. These are
+        # commented out - if they were checked, their value would be "on".
+        data = {
+            "holder_legal_name": "Test Legal",
+            "holder_contact_name": "Test Holder",
+            "holder_contact_email": "test@holder.com",
+            "holder_contact_info": "555-555-0100",
+            "ietfer_name": "Test Participant",
+            "ietfer_contact_info": "555-555-0101",
+            "iprdocrel_set-TOTAL_FORMS": 2,
+            "iprdocrel_set-INITIAL_FORMS": 0,
+            "iprdocrel_set-0-document": "1234",  # fake id - validates but won't save()
+            "iprdocrel_set-0-revisions": '00',
+            "iprdocrel_set-1-document": "4567",  # fake id - validates but won't save()
+            # "is_blanket_disclosure": "on", 
+            "patent_number": "SE12345678901",
+            "patent_inventor": "A. Nonymous",
+            "patent_title": "A method of transferring bits",
+            "patent_date": "2000-01-01",
+            # "has_patent_pending": "on",
+            "licensing": "reasonable",
+            "submitter_name": "Test Holder",
+            "submitter_email": "test@holder.com",
+        }
+        self.assertTrue(HolderIprDisclosureForm(data=data).is_valid())       
+        data["is_blanket_disclosure"] = "on"
+        self.assertFalse(HolderIprDisclosureForm(data=data).is_valid())       
+        data["licensing"] = "royalty-free"
+        self.assertTrue(HolderIprDisclosureForm(data=data).is_valid())       
+
+        
