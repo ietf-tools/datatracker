@@ -398,8 +398,12 @@ def get_unicode_document_content(key, filename, codec='utf-8', errors='ignore'):
 def tags_suffix(tags):
     return ("::" + "::".join(t.name for t in tags)) if tags else ""
 
-def add_state_change_event(doc, by, prev_state, new_state, prev_tags=None, new_tags=None, timestamp=None):
-    """Add doc event to explain that state change just happened."""
+
+def new_state_change_event(doc, by, prev_state, new_state, prev_tags=None, new_tags=None, timestamp=None):
+    """Create unsaved doc event to explain that state change just happened
+    
+    Returns None if no state change occurred.
+    """
     if prev_state and new_state:
         assert prev_state.type_id == new_state.type_id
 
@@ -419,7 +423,17 @@ def add_state_change_event(doc, by, prev_state, new_state, prev_tags=None, new_t
         e.desc += " from %s" % (prev_state.name + tags_suffix(prev_tags))
     if timestamp:
         e.time = timestamp
-    e.save()
+    return e  # not saved!
+
+
+def add_state_change_event(doc, by, prev_state, new_state, prev_tags=None, new_tags=None, timestamp=None):
+    """Add doc event to explain that state change just happened.
+    
+    Returns None if no state change occurred.
+    """
+    e = new_state_change_event(doc, by, prev_state, new_state, prev_tags, new_tags, timestamp)
+    if e is not None:
+        e.save()
     return e
 
 
