@@ -25,6 +25,6 @@ urlpatterns = [
     url(r'^(?P<id>\d+)/state/$', views.state),
     url(r'^update/$', RedirectView.as_view(url=reverse_lazy('ietf.ipr.views.showlist'), permanent=True)),
     url(r'^update/(?P<id>\d+)/$', views.update),
-    url(r'^new-(?P<type>(specific|generic|general|third-party))/$', views.new),
+    url(r'^new-(?P<_type>(specific|generic|general|third-party))/$', views.new),
     url(r'^search/$', views.search),
 ]
