@@ -430,6 +430,11 @@ def add_state_change_event(doc, by, prev_state, new_state, prev_tags=None, new_t
     """Add doc event to explain that state change just happened.
     
     Returns None if no state change occurred.
+    
+    Note: Creating a state change DocEvent will trigger notifications to be sent to people subscribed
+    to the doc via a CommunityList on its first save(). If you need to adjust the event (say, changing
+    its desc) before that notification is sent, use new_state_change_event() instead and save the
+    event after making your changes. 
     """
     e = new_state_change_event(doc, by, prev_state, new_state, prev_tags, new_tags, timestamp)
     if e is not None:
