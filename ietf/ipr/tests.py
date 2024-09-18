@@ -1025,15 +1025,11 @@ class DraftFormTests(TestCase):
 
 
 class HolderIprDisclosureFormTests(TestCase):
-    def test_blanket_disclosure_licensing_restrictions(self):
-        """when is_blanket_disclosure is True only royalty-free licensing is valid
-        
-        Most of the form functionality is tested via the views in IprTests above. More thorough testing
-        of validation ought to move here so we don't have to exercise the whole Django plumbing repeatedly.
-        """
+    def setUp(self):
+        super().setUp()
         # Checkboxes that are False are left out of the Form data, not sent back at all. These are
         # commented out - if they were checked, their value would be "on".
-        data = {
+        self.data = {
             "holder_legal_name": "Test Legal",
             "holder_contact_name": "Test Holder",
             "holder_contact_email": "test@holder.com",
@@ -1055,10 +1051,15 @@ class HolderIprDisclosureFormTests(TestCase):
             "submitter_name": "Test Holder",
             "submitter_email": "test@holder.com",
         }
-        self.assertTrue(HolderIprDisclosureForm(data=data).is_valid())       
-        data["is_blanket_disclosure"] = "on"
-        self.assertFalse(HolderIprDisclosureForm(data=data).is_valid())       
-        data["licensing"] = "royalty-free"
-        self.assertTrue(HolderIprDisclosureForm(data=data).is_valid())       
-
         
+    def test_blanket_disclosure_licensing_restrictions(self):
+        """when is_blanket_disclosure is True only royalty-free licensing is valid
+        
+        Most of the form functionality is tested via the views in IprTests above. More thorough testing
+        of validation ought to move here so we don't have to exercise the whole Django plumbing repeatedly.
+        """       
+        self.assertTrue(HolderIprDisclosureForm(data=self.data).is_valid())       
+        self.data["is_blanket_disclosure"] = "on"
+        self.assertFalse(HolderIprDisclosureForm(data=self.data).is_valid())       
+        self.data["licensing"] = "royalty-free"
+        self.assertTrue(HolderIprDisclosureForm(data=self.data).is_valid())       
