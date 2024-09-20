@@ -24,6 +24,7 @@ from ietf.doc.factories import (
     RfcFactory,
     NewRevisionDocEventFactory
 )
+from ietf.doc.utils import prettify_std_name
 from ietf.group.factories import RoleFactory
 from ietf.ipr.factories import (
     HolderIprDisclosureFactory,
@@ -32,7 +33,7 @@ from ietf.ipr.factories import (
     IprDocRelFactory,
     IprEventFactory
 )
-from ietf.ipr.forms import DraftForm
+from ietf.ipr.forms import DraftForm, HolderIprDisclosureForm
 from ietf.ipr.mail import (process_response_email, get_reply_to, get_update_submitter_emails,
     get_pseudo_submitter, get_holders, get_update_cc_addrs)
 from ietf.ipr.models import (IprDisclosureBase,GenericIprDisclosure,HolderIprDisclosure,
@@ -192,6 +193,32 @@ class IprTests(TestCase):
         r = self.client.get(url + "?submit=rfc&rfc=321")
         self.assertContains(r, ipr.title)
 
+        rfc_new = RfcFactory(rfc_number=322)
+        rfc_new.relateddocument_set.create(relationship_id="obs", target=rfc)
+
+        # find RFC 322 which obsoletes RFC 321 whose draft has IPR
+        r = self.client.get(url + "?submit=rfc&rfc=322")
+        self.assertContains(r, ipr.title)
+        self.assertContains(r, "Total number of IPR disclosures found: <b>1</b>")
+        self.assertContains(r, "Total number of documents searched: <b>3</b>.")
+        self.assertContains(
+            r,
+            f'Results for <a href="/doc/{rfc_new.name}/">{prettify_std_name(rfc_new.name)}</a> ("{rfc_new.title}")',
+            html=True,
+        )
+        self.assertContains(
+            r,
+            f'Results for <a href="/doc/{rfc.name}/">{prettify_std_name(rfc.name)}</a> ("{rfc.title}"), '
+            f'which was obsoleted by <a href="/doc/{rfc_new.name}/">{prettify_std_name(rfc_new.name)}</a> ("{rfc_new.title}")',
+            html=True,
+        )
+        self.assertContains(
+            r,
+            f'Results for <a href="/doc/{draft.name}/">{prettify_std_name(draft.name)}</a> ("{draft.title}"), '
+            f'which became rfc <a href="/doc/{rfc.name}/">{prettify_std_name(rfc.name)}</a> ("{rfc.title}")',
+            html=True,
+        )
+
         # find by patent owner
         r = self.client.get(url + "?submit=holder&holder=%s" % ipr.holder_legal_name)
         self.assertContains(r, ipr.title)
@@ -245,16 +272,16 @@ class IprTests(TestCase):
 
     def test_new_generic(self):
         """Ensure new-generic redirects to new-general"""
-        url = urlreverse("ietf.ipr.views.new", kwargs={ "type": "generic" })
+        url = urlreverse("ietf.ipr.views.new", kwargs={ "_type": "generic" })
         r = self.client.get(url)
         self.assertEqual(r.status_code,302)
-        self.assertEqual(urlparse(r["Location"]).path, urlreverse("ietf.ipr.views.new", kwargs={ "type": "general"}))
+        self.assertEqual(urlparse(r["Location"]).path, urlreverse("ietf.ipr.views.new", kwargs={ "_type": "general"}))
 
 
     def test_new_general(self):
         """Add a new general disclosure.  Note: submitter does not need to be logged in.
         """
-        url = urlreverse("ietf.ipr.views.new", kwargs={ "type": "general" })
+        url = urlreverse("ietf.ipr.views.new", kwargs={ "_type": "general" })
 
         # invalid post
         r = self.client.post(url, {
@@ -292,7 +319,7 @@ class IprTests(TestCase):
         """
         draft = WgDraftFactory()
         rfc = WgRfcFactory()
-        url = urlreverse("ietf.ipr.views.new", kwargs={ "type": "specific" })
+        url = urlreverse("ietf.ipr.views.new", kwargs={ "_type": "specific" })
 
         # successful post
         empty_outbox()
@@ -348,7 +375,7 @@ class IprTests(TestCase):
     def test_new_specific_no_revision(self):
         draft = WgDraftFactory()
         rfc = WgRfcFactory()
-        url = urlreverse("ietf.ipr.views.new", kwargs={ "type": "specific" })
+        url = urlreverse("ietf.ipr.views.new", kwargs={ "_type": "specific" })
 
         # successful post
         empty_outbox()
@@ -382,7 +409,7 @@ class IprTests(TestCase):
         """
         draft = WgDraftFactory()
         rfc = WgRfcFactory()
-        url = urlreverse("ietf.ipr.views.new", kwargs={ "type": "third-party" })
+        url = urlreverse("ietf.ipr.views.new", kwargs={ "_type": "third-party" })
 
         # successful post
         empty_outbox()
@@ -429,7 +456,7 @@ class IprTests(TestCase):
         r = self.client.get(url)
         self.assertContains(r, original_ipr.holder_legal_name)
 
-        #url = urlreverse("ietf.ipr.views.new", kwargs={ "type": "specific" })
+        #url = urlreverse("ietf.ipr.views.new", kwargs={ "_type": "specific" })
         # successful post
         empty_outbox()
         post_data = {
@@ -476,7 +503,7 @@ class IprTests(TestCase):
         r = self.client.get(url)
         self.assertContains(r, original_ipr.title)
 
-        #url = urlreverse("ietf.ipr.views.new", kwargs={ "type": "specific" })
+        #url = urlreverse("ietf.ipr.views.new", kwargs={ "_type": "specific" })
         # successful post
         empty_outbox()
         r = self.client.post(url, {
@@ -516,7 +543,7 @@ class IprTests(TestCase):
 
     def test_update_bad_post(self):
         draft = WgDraftFactory()
-        url = urlreverse("ietf.ipr.views.new", kwargs={ "type": "specific" })
+        url = urlreverse("ietf.ipr.views.new", kwargs={ "_type": "specific" })
 
         empty_outbox()
         r = self.client.post(url, {
@@ -995,3 +1022,61 @@ class DraftFormTests(TestCase):
             "revisions",
             null_char_error_msg,
         )
+
+
+class HolderIprDisclosureFormTests(TestCase):
+    def setUp(self):
+        super().setUp()
+        # Checkboxes that are False are left out of the Form data, not sent back at all. These are
+        # commented out - if they were checked, their value would be "on".
+        self.data = {
+            "holder_legal_name": "Test Legal",
+            "holder_contact_name": "Test Holder",
+            "holder_contact_email": "test@holder.com",
+            "holder_contact_info": "555-555-0100",
+            "ietfer_name": "Test Participant",
+            "ietfer_contact_info": "555-555-0101",
+            "iprdocrel_set-TOTAL_FORMS": 2,
+            "iprdocrel_set-INITIAL_FORMS": 0,
+            "iprdocrel_set-0-document": "1234",  # fake id - validates but won't save()
+            "iprdocrel_set-0-revisions": '00',
+            "iprdocrel_set-1-document": "4567",  # fake id - validates but won't save()
+            # "is_blanket_disclosure": "on", 
+            "patent_number": "SE12345678901",
+            "patent_inventor": "A. Nonymous",
+            "patent_title": "A method of transferring bits",
+            "patent_date": "2000-01-01",
+            # "has_patent_pending": "on",
+            "licensing": "reasonable",
+            "submitter_name": "Test Holder",
+            "submitter_email": "test@holder.com",
+        }
+        
+    def test_blanket_disclosure_licensing_restrictions(self):
+        """when is_blanket_disclosure is True only royalty-free licensing is valid
+        
+        Most of the form functionality is tested via the views in IprTests above. More thorough testing
+        of validation ought to move here so we don't have to exercise the whole Django plumbing repeatedly.
+        """       
+        self.assertTrue(HolderIprDisclosureForm(data=self.data).is_valid())       
+        self.data["is_blanket_disclosure"] = "on"
+        self.assertFalse(HolderIprDisclosureForm(data=self.data).is_valid())       
+        self.data["licensing"] = "royalty-free"
+        self.assertTrue(HolderIprDisclosureForm(data=self.data).is_valid())       
+
+    def test_patent_details_required_unless_blanket(self):
+        self.assertTrue(HolderIprDisclosureForm(data=self.data).is_valid())
+        patent_fields = ["patent_number", "patent_inventor", "patent_title", "patent_date"]
+        # any of the fields being missing should invalidate the form
+        for pf in patent_fields:
+            val = self.data.pop(pf)
+            self.assertFalse(HolderIprDisclosureForm(data=self.data).is_valid())
+            self.data[pf] = val
+
+        # should be optional if is_blanket_disclosure is True
+        self.data["is_blanket_disclosure"] = "on"
+        self.data["licensing"] = "royalty-free"  # also needed for a blanket disclosure
+        for pf in patent_fields:
+            val = self.data.pop(pf)
+            self.assertTrue(HolderIprDisclosureForm(data=self.data).is_valid())
+            self.data[pf] = val

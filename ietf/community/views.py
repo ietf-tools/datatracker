@@ -68,6 +68,7 @@ def view_list(request, email_or_name=None):
         'meta': meta,
         'can_manage_list': can_manage_community_list(request.user, clist),
         'subscribed': subscribed,
+        "email_or_name": email_or_name,
     })
 
 @login_required

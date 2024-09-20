@@ -475,28 +475,34 @@ def by_draft_recursive_txt(request):
     return HttpResponse(content, content_type="text/plain; charset=%s"%settings.DEFAULT_CHARSET)
 
 
-def new(request, type, updates=None):
+def new(request, _type, updates=None):
     """Submit a new IPR Disclosure.  If the updates field != None, this disclosure
     updates one or more other disclosures."""
     # Note that URL patterns won't ever send updates - updates is only non-null when called from code
 
     # This odd construct flipping generic and general allows the URLs to say 'general' while having a minimal impact on the code.
     # A cleanup to change the code to switch on type 'general' should follow.
-    if type == 'generic' and updates: # Only happens when called directly from the updates view
+    if (
+        _type == "generic" and updates
+    ):  # Only happens when called directly from the updates view
         pass
-    elif type == 'generic':
-        return HttpResponseRedirect(urlreverse('ietf.ipr.views.new',kwargs=dict(type='general')))
-    elif type == 'general':
-        type = 'generic'
+    elif _type == "generic":
+        return HttpResponseRedirect(
+            urlreverse("ietf.ipr.views.new", kwargs=dict(_type="general"))
+        )
+    elif _type == "general":
+        _type = "generic"
     else:
         pass
 
     # 1 to show initially + the template
-    DraftFormset = inlineformset_factory(IprDisclosureBase, IprDocRel, form=DraftForm, can_delete=False, extra=1 + 1)
+    DraftFormset = inlineformset_factory(
+        IprDisclosureBase, IprDocRel, form=DraftForm, can_delete=False, extra=1 + 1
+    )
 
-    if request.method == 'POST':
-        form = ipr_form_mapping[type](request.POST)
-        if type != 'generic':
+    if request.method == "POST":
+        form = ipr_form_mapping[_type](request.POST)
+        if _type != "generic":
             draft_formset = DraftFormset(request.POST, instance=IprDisclosureBase())
         else:
             draft_formset = None
@@ -505,72 +511,92 @@ def new(request, type, updates=None):
             person = Person.objects.get(name="(System)")
         else:
             person = request.user.person
-            
+
         # check formset validity
-        if type != 'generic':
+        if _type != "generic":
             valid_formsets = draft_formset.is_valid()
         else:
             valid_formsets = True
-            
+
         if form.is_valid() and valid_formsets:
-            if 'updates' in form.cleaned_data:
-                updates = form.cleaned_data['updates']
-                del form.cleaned_data['updates']
+            if "updates" in form.cleaned_data:
+                updates = form.cleaned_data["updates"]
+                del form.cleaned_data["updates"]
             disclosure = form.save(commit=False)
             disclosure.by = person
-            disclosure.state = IprDisclosureStateName.objects.get(slug='pending')
+            disclosure.state = IprDisclosureStateName.objects.get(slug="pending")
             disclosure.save()
-            
-            if type != 'generic':
+
+            if _type != "generic":
                 draft_formset = DraftFormset(request.POST, instance=disclosure)
                 draft_formset.save()
 
             set_disclosure_title(disclosure)
             disclosure.save()
-            
+
             if updates:
                 for ipr in updates:
-                    RelatedIpr.objects.create(source=disclosure,target=ipr,relationship_id='updates')
-                
+                    RelatedIpr.objects.create(
+                        source=disclosure, target=ipr, relationship_id="updates"
+                    )
+
             # create IprEvent
             IprEvent.objects.create(
-                type_id='submitted',
+                type_id="submitted",
                 by=person,
                 disclosure=disclosure,
-                desc="Disclosure Submitted")
+                desc="Disclosure Submitted",
+            )
 
             # send email notification
-            (to, cc) = gather_address_lists('ipr_disclosure_submitted')
-            send_mail(request, to, ('IPR Submitter App', 'ietf-ipr@ietf.org'),
-                'New IPR Submission Notification',
+            (to, cc) = gather_address_lists("ipr_disclosure_submitted")
+            send_mail(
+                request,
+                to,
+                ("IPR Submitter App", "ietf-ipr@ietf.org"),
+                "New IPR Submission Notification",
                 "ipr/new_update_email.txt",
-                {"ipr": disclosure,},
-                cc=cc)
-            
+                {
+                    "ipr": disclosure,
+                },
+                cc=cc,
+            )
+
             return render(request, "ipr/submitted.html")
 
     else:
         if updates:
             original = IprDisclosureBase(id=updates).get_child()
             initial = model_to_dict(original)
-            initial.update({'updates':str(updates), })
-            patent_info = text_to_dict(initial.get('patent_info', ''))
+            initial.update(
+                {
+                    "updates": str(updates),
+                }
+            )
+            patent_info = text_to_dict(initial.get("patent_info", ""))
             if list(patent_info.keys()):
-                patent_dict = dict([ ('patent_'+k.lower(), v) for k,v in list(patent_info.items()) ])
+                patent_dict = dict(
+                    [("patent_" + k.lower(), v) for k, v in list(patent_info.items())]
+                )
             else:
-                patent_dict = {'patent_notes': initial.get('patent_info', '')}
+                patent_dict = {"patent_notes": initial.get("patent_info", "")}
             initial.update(patent_dict)
-            form = ipr_form_mapping[type](initial=initial)
+            form = ipr_form_mapping[_type](initial=initial)
         else:
-            form = ipr_form_mapping[type]()
-        disclosure = IprDisclosureBase()    # dummy disclosure for inlineformset
+            form = ipr_form_mapping[_type]()
+        disclosure = IprDisclosureBase()  # dummy disclosure for inlineformset
         draft_formset = DraftFormset(instance=disclosure)
 
-    return render(request, "ipr/details_edit.html",  {
-        'form': form,
-        'draft_formset':draft_formset,
-        'type':type,
-    })
+    return render(
+        request,
+        "ipr/details_edit.html",
+        {
+            "form": form,
+            "draft_formset": draft_formset,
+            "type": _type,
+        },
+    )
+
 
 @role_required('Secretariat',)
 def notify(request, id, type):
@@ -689,11 +715,41 @@ def search(request):
                 if len(start) == 1:
                     first = start[0]
                     doc = first
-                    docs = related_docs(first)
-                    iprs = iprs_from_docs(docs,states=states)
+                    docs = set([first])
+                    docs.update(
+                        related_docs(
+                            first, relationship=("replaces", "obs"), reverse_relationship=()
+                        )
+                    )
+                    docs.update(
+                        set(
+                            [
+                                draft
+                                for drafts in [
+                                    related_docs(
+                                        d, relationship=(), reverse_relationship=("became_rfc",)
+                                    )
+                                    for d in docs
+                                ]
+                                for draft in drafts
+                            ]
+                        )
+                    )
+                    docs.discard(None)
+                    docs = sorted(
+                        docs,
+                        key=lambda d: (
+                            d.rfc_number if d.rfc_number is not None else 0,
+                            d.became_rfc().rfc_number if d.became_rfc() else 0,
+                        ),
+                        reverse=True,
+                    )
+                    iprs = iprs_from_docs(docs, states=states)
                     template = "ipr/search_doc_result.html"
-                    updated_docs = related_docs(first, ('updates',))
-                    related_iprs = list(set(iprs_from_docs(updated_docs, states=states)) - set(iprs))
+                    updated_docs = related_docs(first, ("updates",))
+                    related_iprs = list(
+                        set(iprs_from_docs(updated_docs, states=states)) - set(iprs)
+                    )
                 # multiple matches, select just one
                 elif start:
                     docs = start

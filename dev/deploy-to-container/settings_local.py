@@ -72,7 +72,8 @@ SLIDE_STAGING_PATH = '/test/staging/'
 DE_GFM_BINARY = '/usr/local/bin/de-gfm'
 
 APP_API_TOKENS = {
-    "ietf.api.views_rpc" : ["devtoken"],
+  "ietf.api.views.ingest_email_test": ["ingestion-test-token"],  # Not a real secret
+  "ietf.api.views_rpc" : ["devtoken"],  # For RPC dev work only, remove before merging to main!!!
 }
 
 # OIDC configuration

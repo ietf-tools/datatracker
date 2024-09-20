@@ -4,6 +4,7 @@
 {% load origin %}
 {% load static %}
 {% load ietf_filters textfilters %}
+{% load document_type_badge %}
 {% load django_vite %}
 {% origin %}
 <html data-bs-theme="auto" lang="en">
@@ -107,6 +108,7 @@
                     {{ doc.name }}-{{ doc.rev }}
                 {% endif %}
                 <br class="d-sm-none">
+
                 <span class="ms-sm-3 badge rounded-pill badge-{% if not snapshot %}{{ doc|std_level_to_label_format }}{% else %}draft{% endif %}">
                     {% if not snapshot %}
                         {{ doc.std_level }}
@@ -185,13 +187,7 @@
                                     {{ doc.name }}-{{ doc.rev }}
                                 {% endif %}
                                 <br>
-                                <span class="badge rounded-pill badge-{% if not snapshot %}{{ doc|std_level_to_label_format }}{% else %}draft{% endif %}">
-                                    {% if not snapshot %}
-                                        {{ doc.std_level }}
-                                    {% else %}
-                                        Internet-Draft
-                                    {% endif %}
-                                </span>
+                                {% document_type_badge doc snapshot submission resurrected_by %}
                             </p>
                         </div>
                         {% if request.COOKIES.htmlconf and request.COOKIES.htmlconf != 'html' and html %}

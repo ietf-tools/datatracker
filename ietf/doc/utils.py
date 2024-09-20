@@ -398,8 +398,12 @@ def get_unicode_document_content(key, filename, codec='utf-8', errors='ignore'):
 def tags_suffix(tags):
     return ("::" + "::".join(t.name for t in tags)) if tags else ""
 
-def add_state_change_event(doc, by, prev_state, new_state, prev_tags=None, new_tags=None, timestamp=None):
-    """Add doc event to explain that state change just happened."""
+
+def new_state_change_event(doc, by, prev_state, new_state, prev_tags=None, new_tags=None, timestamp=None):
+    """Create unsaved doc event to explain that state change just happened
+    
+    Returns None if no state change occurred.
+    """
     if prev_state and new_state:
         assert prev_state.type_id == new_state.type_id
 
@@ -419,7 +423,22 @@ def add_state_change_event(doc, by, prev_state, new_state, prev_tags=None, new_t
         e.desc += " from %s" % (prev_state.name + tags_suffix(prev_tags))
     if timestamp:
         e.time = timestamp
-    e.save()
+    return e  # not saved!
+
+
+def add_state_change_event(doc, by, prev_state, new_state, prev_tags=None, new_tags=None, timestamp=None):
+    """Add doc event to explain that state change just happened.
+    
+    Returns None if no state change occurred.
+    
+    Note: Creating a state change DocEvent will trigger notifications to be sent to people subscribed
+    to the doc via a CommunityList on its first save(). If you need to adjust the event (say, changing
+    its desc) before that notification is sent, use new_state_change_event() instead and save the
+    event after making your changes. 
+    """
+    e = new_state_change_event(doc, by, prev_state, new_state, prev_tags, new_tags, timestamp)
+    if e is not None:
+        e.save()
     return e
 
 
@@ -1046,6 +1065,8 @@ def build_file_urls(doc: Union[Document, DocHistory]):
 
         file_urls = []
         for t in found_types:
+            if t == "ps": # Postscript might have been submitted but should not be displayed in the list of URLs
+                continue
             label = "plain text" if t == "txt" else t
             file_urls.append((label, base + doc.name + "." + t))
 

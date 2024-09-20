@@ -43,7 +43,7 @@ from pathlib import Path
 
 from django.core.cache import caches
 from django.db.models import Max
-from django.http import HttpResponse, Http404
+from django.http import HttpResponse, Http404, HttpResponseBadRequest
 from django.shortcuts import render, get_object_or_404, redirect
 from django.template.loader import render_to_string
 from django.urls import reverse as urlreverse
@@ -73,6 +73,7 @@ from ietf.ietfauth.utils import ( has_role, is_authorized_in_doc_stream, user_is
     role_required, is_individual_draft_author, can_request_rfc_publication)
 from ietf.name.models import StreamName, BallotPositionName
 from ietf.utils.history import find_history_active_at
+from ietf.doc.views_ballot import parse_ballot_edit_return_point
 from ietf.doc.forms import InvestigateForm, TelechatForm, NotifyForm, ActionHoldersForm, DocAuthorForm, DocAuthorChangeBasisForm
 from ietf.doc.mails import email_comment, email_remind_action_holders
 from ietf.mailtrigger.utils import gather_relevant_expansions
@@ -1586,11 +1587,18 @@ def ballot_popup(request, name, ballot_id):
     doc = get_object_or_404(Document, name=name)
     c = document_ballot_content(request, doc, ballot_id=ballot_id, editable=False)
     ballot = get_object_or_404(BallotDocEvent,id=ballot_id)
+    
+    try:
+        return_to_url = parse_ballot_edit_return_point(request.GET.get('ballot_edit_return_point'), name, ballot_id)
+    except ValueError:
+        return HttpResponseBadRequest('ballot_edit_return_point is invalid')
+    
     return render(request, "doc/ballot_popup.html",
                               dict(doc=doc,
                                    ballot_content=c,
                                    ballot_id=ballot_id,
                                    ballot_type_slug=ballot.ballot_type.slug,
+                                   ballot_edit_return_point=return_to_url,
                                    editable=True,
                                    ))
 

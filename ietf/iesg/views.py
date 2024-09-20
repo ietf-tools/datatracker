@@ -360,6 +360,8 @@ def handle_reschedule_form(request, doc, dates, status):
     return form
 
 def agenda_documents(request):
+    ad = request.user.person if has_role(request.user, "Area Director") else None
+
     dates = list(TelechatDate.objects.active().order_by('date').values_list("date", flat=True)[:4])
 
     docs_by_date = dict((d, []) for d in dates)
@@ -389,11 +391,13 @@ def agenda_documents(request):
         # the search_result_row view to display them (which expects them)
         fill_in_document_table_attributes(docs_by_date[date], have_telechat_date=True)
         fill_in_agenda_docs(date, sections, docs_by_date[date])
-        pages = telechat_page_count(docs=docs_by_date[date]).for_approval
-
+        page_count = telechat_page_count(docs=docs_by_date[date], ad=ad)
+        pages = page_count.for_approval
+        
         telechats.append({
                 "date":     date,
                 "pages":    pages,
+                "ad_pages_left_to_ballot_on": page_count.ad_pages_left_to_ballot_on,
                 "sections": sorted((num, section) for num, section in sections.items()
                                    if "2" <= num < "5")
                 })
