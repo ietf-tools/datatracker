@@ -870,6 +870,12 @@ def document_main(request, name, rev=None, document_html=False):
                     and doc.group.features.has_nonsession_materials
                     and doc.type_id in doc.group.features.material_types
             )
+
+        session_statusid = None
+        if doc.session_set.count() == 1:
+            if doc.session_set.get().schedulingevent_set.exists():
+                session_statusid = doc.session_set.get().schedulingevent_set.order_by("-time").first().status_id
+
         return render(request, "doc/document_material.html",
                                   dict(doc=doc,
                                        top=top,
@@ -882,6 +888,7 @@ def document_main(request, name, rev=None, document_html=False):
                                        can_upload = can_upload,
                                        other_types=other_types,
                                        presentations=presentations,
+                                       session_statusid=session_statusid,
                                        ))
 
 

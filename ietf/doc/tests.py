@@ -1683,6 +1683,17 @@ class DocTestCase(TestCase):
 
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=doc.name)))
         self.assertEqual(r.status_code, 200)
+        self.assertNotContains(r, "The session for this document was cancelled.")
+
+        SchedulingEvent.objects.create(
+            session=session,
+            status_id='canceled',
+            by = Person.objects.get(user__username="marschairman"), 
+        )
+
+        r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=doc.name)))
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "The session for this document was cancelled.")
 
     def test_document_ballot(self):
         doc = IndividualDraftFactory()
