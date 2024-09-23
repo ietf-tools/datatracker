@@ -491,7 +491,6 @@ class EditInfoForm(forms.Form):
     intended_std_level = forms.ModelChoiceField(IntendedStdLevelName.objects.filter(used=True), empty_label="(None)", required=True, label="Intended RFC status")
     area = forms.ModelChoiceField(Group.objects.filter(type="area", state="active"), empty_label="(None - individual submission)", required=False, label="Assigned to area")
     ad = forms.ModelChoiceField(Person.objects.filter(role__name="ad", role__group__state="active",role__group__type='area').order_by('name'), label="Responsible AD", empty_label="(None)", required=True)
-    create_in_state = forms.ModelChoiceField(State.objects.filter(used=True, type="draft-iesg", slug__in=("pub-req", "watching")), empty_label=None, required=False)
     notify = forms.CharField(
         widget=forms.Textarea,
         max_length=1023,
@@ -642,26 +641,26 @@ def edit_info(request, name):
                                          telechat_date=initial_telechat_date))
         if form.is_valid():
             by = request.user.person
+            pubreq_state = State.objects.get(type="draft-iesg", slug="pub-req")
 
             r = form.cleaned_data
             events = []
 
             if new_document:
-                doc.set_state(r['create_in_state'])
+                doc.set_state(pubreq_state)
 
                 # Is setting the WG state here too much of a hidden side-effect?
-                if r['create_in_state'].slug=='pub-req':
-                    if doc.stream and doc.stream.slug=='ietf' and doc.group and doc.group.type_id == 'wg':
-                        submitted_state = State.objects.get(type='draft-stream-ietf',slug='sub-pub')
-                        doc.set_state(submitted_state)
-                        e = DocEvent()
-                        e.type = "changed_document"
-                        e.by = by
-                        e.doc = doc
-                        e.rev = doc.rev
-                        e.desc = "Working group state set to %s" % submitted_state.name
-                        e.save()
-                        events.append(e)
+                if doc.stream and doc.stream.slug=='ietf' and doc.group and doc.group.type_id == 'wg':
+                    submitted_state = State.objects.get(type='draft-stream-ietf', slug='sub-pub')
+                    doc.set_state(submitted_state)
+                    e = DocEvent()
+                    e.type = "changed_document"
+                    e.by = by
+                    e.doc = doc
+                    e.rev = doc.rev
+                    e.desc = "Working group state set to %s" % submitted_state.name
+                    e.save()
+                    events.append(e)
 
                 replaces = Document.objects.filter(targets_related__source=doc, targets_related__relationship="replaces")
                 if replaces:
@@ -722,7 +721,6 @@ def edit_info(request, name):
             # Todo - chase this
             e = update_telechat(request, doc, by,
                                 r['telechat_date'], r['returning_item'])
-
             if e:
                 events.append(e)
 
@@ -730,12 +728,12 @@ def edit_info(request, name):
 
             if new_document:
                 # If we created a new doc, update the action holders as though it
-                # started in idexists and moved to its create_in_state. Do this
+                # started in idexists and moved to pub-req. Do this
                 # after the doc has been updated so, e.g., doc.ad is set.
                 update_action_holders(
                     doc,
                     State.objects.get(type='draft-iesg', slug='idexists'),
-                    r['create_in_state']
+                    pubreq_state,
                 )
 
             if changes:
@@ -754,8 +752,6 @@ def edit_info(request, name):
         form = EditInfoForm(initial=init)
 
     # optionally filter out some fields
-    if not new_document:
-        form.standard_fields = [x for x in form.standard_fields if x.name != "create_in_state"]
     if doc.group.type_id not in ("individ", "area"):
         form.standard_fields = [x for x in form.standard_fields if x.name != "area"]
 
