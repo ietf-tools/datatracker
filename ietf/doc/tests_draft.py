@@ -471,42 +471,46 @@ class EditInfoTests(TestCase):
         self.assertIn("may not leave enough time", get_payload_text(outbox[-1]))
 
     def test_start_iesg_process_on_draft(self):
-
         draft = WgDraftFactory(
             name="draft-ietf-mars-test2",
-            group__acronym='mars',
+            group__acronym="mars",
             intended_std_level_id="ps",
-            authors=[Person.objects.get(user__username='ad')],
-            )
-        
-        url = urlreverse('ietf.doc.views_draft.edit_info', kwargs=dict(name=draft.name))
+            authors=[Person.objects.get(user__username="ad")],
+        )
+
+        url = urlreverse("ietf.doc.views_draft.edit_info", kwargs=dict(name=draft.name))
         login_testing_unauthorized(self, "secretary", url)
 
         # normal get
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertEqual(len(q('form select[name=intended_std_level]')), 1)
-        self.assertEqual("", q('form textarea[name=notify]')[0].value.strip())
+        self.assertEqual(len(q("form select[name=intended_std_level]")), 1)
+        self.assertEqual("", q("form textarea[name=notify]")[0].value.strip())
 
         events_before = list(draft.docevent_set.values_list("id", flat=True))
         mailbox_before = len(outbox)
 
         ad = Person.objects.get(name="Areað Irector")
 
-        r = self.client.post(url,
-                             dict(intended_std_level=str(draft.intended_std_level_id),
-                                  ad=ad.pk,
-                                  notify="test@example.com",
-                                  telechat_date="",
-                                  ))
+        r = self.client.post(
+            url,
+            dict(
+                intended_std_level=str(draft.intended_std_level_id),
+                ad=ad.pk,
+                notify="test@example.com",
+                telechat_date="",
+            ),
+        )
         self.assertEqual(r.status_code, 302)
 
         draft = Document.objects.get(name=draft.name)
-        self.assertEqual(draft.get_state_slug('draft-iesg'), 'pub-req')
-        self.assertEqual(draft.get_state_slug('draft-stream-ietf'),'sub-pub')
+        self.assertEqual(draft.get_state_slug("draft-iesg"), "pub-req")
+        self.assertEqual(draft.get_state_slug("draft-stream-ietf"), "sub-pub")
         self.assertEqual(draft.ad, ad)
-        self.assertTrue(not draft.latest_event(TelechatDocEvent, type="scheduled_for_telechat"))
+        self.assertTrue(
+            not draft.latest_event(TelechatDocEvent, type="scheduled_for_telechat")
+        )
         # check that the expected events were created (don't insist on ordering)
         self.assertCountEqual(
             draft.docevent_set.exclude(id__in=events_before).values_list("type", flat=True),
@@ -519,9 +523,9 @@ class EditInfoTests(TestCase):
             ],
         )
         self.assertCountEqual(draft.action_holders.all(), [draft.ad])
-        self.assertEqual(len(outbox), mailbox_before+1)
-        self.assertTrue('IESG processing' in outbox[-1]['Subject'])
-        self.assertTrue('draft-ietf-mars-test2@' in outbox[-1]['To']) 
+        self.assertEqual(len(outbox), mailbox_before + 1)
+        self.assertTrue("IESG processing" in outbox[-1]["Subject"])
+        self.assertTrue("draft-ietf-mars-test2@" in outbox[-1]["To"])
 
     def test_edit_consensus(self):
         draft = WgDraftFactory()
