@@ -18,7 +18,7 @@
                 <div class="badge rounded-pill text-bg-secondary">{{ s.current_status_name }}</div>
                 {% if s.current_status == "canceled" %}
                     {% with timeslot=s.official_timeslotassignment.timeslot %}
-                        <span class="text-decoration-line-through text-secondary session-time date me-3" data-start-utc="{{ timeslot.time|utc|date:'Y-m-d' }}" data-end-utc="{{ timeslot.end_time|utc|date:'Y-m-d' }}"></span>
+                        <span class="text-decoration-line-through text-secondary session-time date me-3" data-start-utc="{{ timeslot.time|utc|date:'Y-m-d H:i' }}" data-end-utc="{{ timeslot.end_time|utc|date:'Y-m-d H:i' }}"></span>
                     {% endwith %}
                 {% endif %}
             {% endif %}
