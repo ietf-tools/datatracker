@@ -69,9 +69,7 @@ def forward(apps, schema_editor):
         DocHistoryAuthor=apps.get_model("doc", "DocHistoryAuthor"),
     )
 
-    draft_state_type = StateType.objects.get(slug="draft")
     draft_iesg_state_type = StateType.objects.get(slug="draft-iesg")
-    dead_state = State.objects.get(type=draft_iesg_state_type, slug="dead")
     idexists_state = State.objects.get(type=draft_iesg_state_type, slug="idexists")
     watching_state = State.objects.get(type=draft_iesg_state_type, slug="watching")
     system_person = Person.objects.get(name="(System)")
@@ -79,20 +77,16 @@ def forward(apps, schema_editor):
     # Remove state from documents that currently have it
     for doc in Document.objects.filter(states=watching_state):
         assert doc.type_id == "draft"
-        draft_state = doc.states.filter(type=draft_state_type).first()
-        assert draft_state.slug in ["active", "expired", "repl"]
-        new_iesg_state = idexists_state if draft_state.slug == "active" else dead_state
-        
         doc.states.remove(watching_state)
-        doc.states.add(new_iesg_state)
+        doc.states.add(idexists_state)
         e = StateDocEvent.objects.create(
             type="changed_state",
             by=system_person,
             doc=doc,
             rev=doc.rev,
-            desc=f"{draft_iesg_state_type.label} changed to <b>{new_iesg_state.name}</b> from {watching_state.name}",
+            desc=f"{draft_iesg_state_type.label} changed to <b>{idexists_state.name}</b> from {watching_state.name}",
             state_type=draft_iesg_state_type,
-            state=new_iesg_state,
+            state=idexists_state,
         )
         doc.time = e.time
         doc.save()
