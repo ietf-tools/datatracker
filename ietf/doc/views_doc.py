@@ -872,9 +872,10 @@ def document_main(request, name, rev=None, document_html=False):
             )
 
         session_statusid = None
-        if doc.session_set.count() == 1:
-            if doc.session_set.get().schedulingevent_set.exists():
-                session_statusid = doc.session_set.get().schedulingevent_set.order_by("-time").first().status_id
+        actual_doc = doc if isinstance(doc,Document) else doc.doc
+        if actual_doc.session_set.count() == 1:
+            if actual_doc.session_set.get().schedulingevent_set.exists():
+                session_statusid = actual_doc.session_set.get().schedulingevent_set.order_by("-time").first().status_id
 
         return render(request, "doc/document_material.html",
                                   dict(doc=doc,
