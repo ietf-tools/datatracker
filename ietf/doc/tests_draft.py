@@ -26,7 +26,7 @@ from ietf.doc.models import ( Document, DocReminder, DocEvent,
     WriteupDocEvent, DocRelationshipName, IanaExpertDocEvent )
 from ietf.doc.utils import get_tags_for_stream_id, create_ballot_if_not_open
 from ietf.doc.views_draft import AdoptDraftForm
-from ietf.name.models import StreamName, DocTagName
+from ietf.name.models import StreamName, DocTagName, RoleName
 from ietf.group.factories import GroupFactory, RoleFactory
 from ietf.group.models import Group, Role
 from ietf.person.factories import PersonFactory, EmailFactory
@@ -1320,8 +1320,10 @@ class IndividualInfoFormsTests(TestCase):
         RoleFactory(name_id='techadv', person=PersonFactory(), group=doc.group)
         RoleFactory(name_id='editor', person=PersonFactory(), group=doc.group)
         RoleFactory(name_id='secr', person=PersonFactory(), group=doc.group)
-        
+        some_other_chair = RoleFactory(name_id="chair").person
+
         url = urlreverse('ietf.doc.views_doc.edit_action_holders', kwargs=dict(name=doc.name))
+        login_testing_unauthorized(self, some_other_chair.user.username, url)  # other chair can't edit action holders
         login_testing_unauthorized(self, username, url)
         
         r = self.client.get(url)
@@ -1364,9 +1366,13 @@ class IndividualInfoFormsTests(TestCase):
         _test_changing_ah(doc.authors(), 'authors can do it, too')
         _test_changing_ah([], 'clear it back out')
 
-    def test_doc_change_action_holders_as_chair(self):
-        chair = RoleFactory(group=self.doc_group, name_id="chair").person
-        self.do_doc_change_action_holders_test(chair.user.username)
+    def test_doc_change_action_holders_as_doc_manager(self):
+        # create a test RoleName and put it in the docman_roles for the document group
+        RoleName.objects.create(slug="wrangler", name="Wrangler", used=True)
+        self.doc_group.features.docman_roles.append("wrangler")
+        self.doc_group.features.save()
+        wrangler = RoleFactory(group=self.doc_group, name_id="wrangler").person
+        self.do_doc_change_action_holders_test(wrangler.user.username)
 
     def test_doc_change_action_holders_as_secretary(self):
         self.do_doc_change_action_holders_test('secretary')
@@ -1377,9 +1383,11 @@ class IndividualInfoFormsTests(TestCase):
     def do_doc_remind_action_holders_test(self, username):
         doc = Document.objects.get(name=self.docname)
         doc.action_holders.set(PersonFactory.create_batch(3))
-        
+        some_other_chair = RoleFactory(name_id="chair").person
+    
         url = urlreverse('ietf.doc.views_doc.remind_action_holders', kwargs=dict(name=doc.name))
         
+        login_testing_unauthorized(self, some_other_chair.user.username, url)  # other chair can't send reminder
         login_testing_unauthorized(self, username, url)
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
@@ -1406,9 +1414,13 @@ class IndividualInfoFormsTests(TestCase):
         self.client.post(url)
         self.assertEqual(len(outbox), 1)  # still 1
 
-    def test_doc_remind_action_holders_as_chair(self):
-        chair = RoleFactory(group=self.doc_group, name_id="chair").person
-        self.do_doc_remind_action_holders_test(chair.user.username)
+    def test_doc_remind_action_holders_as_doc_manager(self):
+        # create a test RoleName and put it in the docman_roles for the document group
+        RoleName.objects.create(slug="wrangler", name="Wrangler", used=True)
+        self.doc_group.features.docman_roles.append("wrangler")
+        self.doc_group.features.save()
+        wrangler = RoleFactory(group=self.doc_group, name_id="wrangler").person
+        self.do_doc_remind_action_holders_test(wrangler.user.username)
 
     def test_doc_remind_action_holders_as_ad(self):
         self.do_doc_remind_action_holders_test('ad')
