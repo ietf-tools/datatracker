@@ -26,7 +26,7 @@ from ietf.doc.models import ( Document, DocReminder, DocEvent,
     WriteupDocEvent, DocRelationshipName, IanaExpertDocEvent )
 from ietf.doc.utils import get_tags_for_stream_id, create_ballot_if_not_open
 from ietf.doc.views_draft import AdoptDraftForm
-from ietf.name.models import StreamName, DocTagName
+from ietf.name.models import DocTagName
 from ietf.group.factories import GroupFactory, RoleFactory
 from ietf.group.models import Group, Role
 from ietf.person.factories import PersonFactory, EmailFactory
