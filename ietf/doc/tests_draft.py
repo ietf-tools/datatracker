@@ -935,6 +935,7 @@ class IndividualInfoFormsTests(TestCase):
         super().setUp()
         doc = WgDraftFactory(group__acronym='mars',shepherd=PersonFactory(user__username='plain',name='Plain Man').email_set.first())
         self.docname = doc.name
+        self.doc_group = doc.group
 
     def test_doc_change_stream(self):
         url = urlreverse('ietf.doc.views_draft.change_stream', kwargs=dict(name=self.docname))
@@ -1363,6 +1364,10 @@ class IndividualInfoFormsTests(TestCase):
         _test_changing_ah(doc.authors(), 'authors can do it, too')
         _test_changing_ah([], 'clear it back out')
 
+    def test_doc_change_action_holders_as_chair(self):
+        chair = RoleFactory(group=self.doc_group, name_id="chair").person
+        self.do_doc_change_action_holders_test(chair.user.username)
+
     def test_doc_change_action_holders_as_secretary(self):
         self.do_doc_change_action_holders_test('secretary')
 
@@ -1400,6 +1405,10 @@ class IndividualInfoFormsTests(TestCase):
         doc.action_holders.clear()
         self.client.post(url)
         self.assertEqual(len(outbox), 1)  # still 1
+
+    def test_doc_remind_action_holders_as_chair(self):
+        chair = RoleFactory(group=self.doc_group, name_id="chair").person
+        self.do_doc_remind_action_holders_test(chair.user.username)
 
     def test_doc_remind_action_holders_as_ad(self):
         self.do_doc_remind_action_holders_test('ad')

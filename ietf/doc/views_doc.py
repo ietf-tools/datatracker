@@ -42,6 +42,7 @@ import re
 from pathlib import Path
 
 from django.core.cache import caches
+from django.core.exceptions import PermissionDenied
 from django.db.models import Max
 from django.http import HttpResponse, Http404, HttpResponseBadRequest
 from django.shortcuts import render, get_object_or_404, redirect
@@ -403,6 +404,10 @@ def document_main(request, name, rev=None, document_html=False):
 
         can_edit_replaces = has_role(request.user, ("Area Director", "Secretariat", "IRTF Chair", "WG Chair", "RG Chair", "WG Secretary", "RG Secretary"))
 
+        can_edit_action_holders = can_edit or (
+            request.user.is_authenticated and group.has_role(request.user, group.features.docman_roles)
+        )
+
         is_author = request.user.is_authenticated and doc.documentauthor_set.filter(person__user=request.user).exists()
         can_view_possibly_replaces = can_edit_replaces or is_author
 
@@ -660,6 +665,7 @@ def document_main(request, name, rev=None, document_html=False):
                                        can_edit_iana_state=can_edit_iana_state,
                                        can_edit_consensus=can_edit_consensus,
                                        can_edit_replaces=can_edit_replaces,
+                                       can_edit_action_holders=can_edit_action_holders,
                                        can_view_possibly_replaces=can_view_possibly_replaces,
                                        can_request_review=can_request_review,
                                        can_submit_unsolicited_review_for_teams=can_submit_unsolicited_review_for_teams,
@@ -1871,11 +1877,21 @@ def edit_authors(request, name):
         })
 
 
-@role_required('Area Director', 'Secretariat')
+@login_required
 def edit_action_holders(request, name):
     """Change the set of action holders for a doc"""
     doc = get_object_or_404(Document, name=name)
-    
+
+    can_edit = has_role(request.user, ("Area Director", "Secretariat")) or (
+        doc.group and doc.group.has_role(request.user, doc.group.features.docman_roles)
+    )
+    if not can_edit:
+        # Keep the list of roles in this message up-to-date with the can_edit logic
+        message = "Restricted to roles: Area Director, Secretariat"
+        if doc.group and doc.group.acronym != "none":
+            message += f", and document managers for the {doc.group.acronym} group"
+        raise PermissionDenied(message)
+
     if request.method == 'POST':
         form = ActionHoldersForm(request.POST)
         if form.is_valid():
@@ -1985,10 +2001,20 @@ class ReminderEmailForm(forms.Form):
         strip=True,
     )
 
-@role_required('Area Director', 'Secretariat')
+@login_required
 def remind_action_holders(request, name):
     doc = get_object_or_404(Document, name=name)
-    
+
+    can_edit = has_role(request.user, ("Area Director", "Secretariat")) or (
+        doc.group and doc.group.has_role(request.user, doc.group.features.docman_roles)
+    )
+    if not can_edit:
+        # Keep the list of roles in this message up-to-date with the can_edit logic
+        message = "Restricted to roles: Area Director, Secretariat"
+        if doc.group and doc.group.acronym != "none":
+            message += f", and document managers for the {doc.group.acronym} group"
+        raise PermissionDenied(message)
+
     if request.method == 'POST':
         form = ReminderEmailForm(request.POST)
         if form.is_valid():

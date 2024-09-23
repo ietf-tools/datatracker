@@ -1450,6 +1450,9 @@ Man                    Expires September 22, 2015               [Page 3]
         """Buttons for action holders should be shown when AD or secretary"""
         draft = WgDraftFactory()
         draft.action_holders.set([PersonFactory()])
+        other_group = GroupFactory()
+        chair = RoleFactory(group=draft.group, name_id="chair").person
+        chair_of_other_group = RoleFactory(group=other_group, name_id="chair").person
 
         url = urlreverse('ietf.doc.views_doc.document_main', kwargs=dict(name=draft.name))
         edit_ah_url = urlreverse('ietf.doc.views_doc.edit_action_holders', kwargs=dict(name=draft.name))
@@ -1482,6 +1485,8 @@ Man                    Expires September 22, 2015               [Page 3]
 
         _run_test(None, False)
         _run_test('plain', False)
+        _run_test(chair_of_other_group.user.username, False)
+        _run_test(chair.user.username, True)
         _run_test('ad', True)
         _run_test('secretary', True)
 
