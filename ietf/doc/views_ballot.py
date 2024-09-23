@@ -641,7 +641,7 @@ def ballot_writeupnotes(request, name):
                 existing.save()
 
             if "issue_ballot" in request.POST and not ballot_already_approved:
-                if prev_state.slug in ['watching', 'writeupw', 'goaheadw']:
+                if prev_state.slug in ['writeupw', 'goaheadw']:
                     new_state = State.objects.get(used=True, type="draft-iesg", slug='iesg-eva')
                     prev_tags = doc.tags.filter(slug__in=IESG_SUBSTATE_TAGS)
                     doc.set_state(new_state)
@@ -708,7 +708,7 @@ def ballot_writeupnotes(request, name):
                                    back_url=doc.get_absolute_url(),
                                    ballot_issued=bool(doc.latest_event(type="sent_ballot_announcement")),
                                    warn_lc = not doc.docevent_set.filter(lastcalldocevent__expires__date__lt=date_today(DEADLINE_TZINFO)).exists(),
-                                   warn_unexpected_state= prev_state if bool(prev_state.slug in ['watching', 'ad-eval', 'lc']) else None,
+                                   warn_unexpected_state= prev_state if bool(prev_state.slug in ['ad-eval', 'lc']) else None,
                                    ballot_writeup_form=form,
                                    need_intended_status=need_intended_status,
                                    ))

@@ -750,10 +750,6 @@ class ExpireIDsTests(DraftFileMixin, TestCase):
 
         self.assertEqual(len(list(get_expired_drafts())), 1)
 
-        draft.set_state(State.objects.get(used=True, type="draft-iesg", slug="watching"))
-
-        self.assertEqual(len(list(get_expired_drafts())), 1)
-
         draft.set_state(State.objects.get(used=True, type="draft-iesg", slug="iesg-eva"))
 
         self.assertEqual(len(list(get_expired_drafts())), 0)
