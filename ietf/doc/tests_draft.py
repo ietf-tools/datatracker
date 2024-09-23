@@ -489,8 +489,7 @@ class EditInfoTests(TestCase):
         self.assertEqual(len(q('form select[name=intended_std_level]')), 1)
         self.assertEqual("", q('form textarea[name=notify]')[0].value.strip())
 
-        # add
-        events_before = draft.docevent_set.count()
+        events_before = list(draft.docevent_set.values_list("id", flat=True))
         mailbox_before = len(outbox)
 
         ad = Person.objects.get(name="Areað Irector")
@@ -498,42 +497,31 @@ class EditInfoTests(TestCase):
         r = self.client.post(url,
                              dict(intended_std_level=str(draft.intended_std_level_id),
                                   ad=ad.pk,
-                                  create_in_state=State.objects.get(used=True, type="draft-iesg", slug="watching").pk,
                                   notify="test@example.com",
                                   telechat_date="",
                                   ))
         self.assertEqual(r.status_code, 302)
 
         draft = Document.objects.get(name=draft.name)
-        self.assertEqual(draft.get_state_slug("draft-iesg"), "watching")
+        self.assertEqual(draft.get_state_slug('draft-iesg'), 'pub-req')
+        self.assertEqual(draft.get_state_slug('draft-stream-ietf'),'sub-pub')
         self.assertEqual(draft.ad, ad)
         self.assertTrue(not draft.latest_event(TelechatDocEvent, type="scheduled_for_telechat"))
-        self.assertEqual(draft.docevent_set.count(), events_before + 4)
+        # check that the expected events were created (don't insist on ordering)
+        self.assertCountEqual(
+            draft.docevent_set.exclude(id__in=events_before).values_list("type", flat=True),
+            [
+                "changed_action_holders",  # action holders set to AD
+                "changed_document",  # WG state set to sub-pub
+                "changed_document",  # AD set
+                "changed_document",  # state change notice email set
+                "started_iesg_process",  # IESG state is now pub-req
+            ],
+        )
         self.assertCountEqual(draft.action_holders.all(), [draft.ad])
-        events = list(draft.docevent_set.order_by('time', 'id'))
-        self.assertEqual(events[-4].type, "started_iesg_process")
         self.assertEqual(len(outbox), mailbox_before+1)
         self.assertTrue('IESG processing' in outbox[-1]['Subject'])
         self.assertTrue('draft-ietf-mars-test2@' in outbox[-1]['To']) 
-
-        # Redo, starting in publication requested to make sure WG state is also set
-        draft.set_state(State.objects.get(type_id='draft-iesg', slug='idexists'))
-        draft.set_state(State.objects.get(type='draft-stream-ietf',slug='writeupw'))
-        draft.stream = StreamName.objects.get(slug='ietf')
-        draft.action_holders.clear()
-        draft.save_with_history([DocEvent.objects.create(doc=draft, rev=draft.rev, type="changed_stream", by=Person.objects.get(user__username="secretary"), desc="Test")])
-        r = self.client.post(url,
-                             dict(intended_std_level=str(draft.intended_std_level_id),
-                                  ad=ad.pk,
-                                  create_in_state=State.objects.get(used=True, type="draft-iesg", slug="pub-req").pk,
-                                  notify="test@example.com",
-                                  telechat_date="",
-                                  ))
-        self.assertEqual(r.status_code, 302)
-        draft = Document.objects.get(name=draft.name)
-        self.assertEqual(draft.get_state_slug('draft-iesg'),'pub-req')
-        self.assertEqual(draft.get_state_slug('draft-stream-ietf'),'sub-pub')
-        self.assertCountEqual(draft.action_holders.all(), [draft.ad])
 
     def test_edit_consensus(self):
         draft = WgDraftFactory()
