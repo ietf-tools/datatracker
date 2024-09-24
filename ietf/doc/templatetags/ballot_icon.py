@@ -184,7 +184,7 @@ def state_age_colored(doc):
         if not iesg_state:
             return ""
 
-        if iesg_state in ["dead", "watching", "pub", "idexists"]:
+        if iesg_state in ["dead", "pub", "idexists"]:
             return ""
         try:
             state_datetime = (

@@ -587,7 +587,7 @@ def document_main(request, name, rev=None, document_html=False):
         if doc.get_state_slug() not in ["rfc", "expired"] and doc.stream_id in ("ietf",) and not snapshot:
             if iesg_state_slug == 'idexists' and can_edit:
                 actions.append(("Begin IESG Processing", urlreverse('ietf.doc.views_draft.edit_info', kwargs=dict(name=doc.name)) + "?new=1"))
-            elif can_edit_stream_info and (iesg_state_slug in ('idexists','watching')):
+            elif can_edit_stream_info and (iesg_state_slug == 'idexists'):
                 actions.append(("Submit to IESG for Publication", urlreverse('ietf.doc.views_draft.to_iesg', kwargs=dict(name=doc.name))))
 
         if request.user.is_authenticated and hasattr(request.user, "person"):
