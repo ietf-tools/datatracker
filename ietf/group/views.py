@@ -731,7 +731,7 @@ def dependencies(request, acronym, group_type=None):
             {
                 "id": x.became_rfc().name if x.became_rfc() else x.name,
                 "rfc": x.type_id == "rfc" or x.became_rfc() is not None,
-                "post-wg": x.get_state_slug("draft-iesg") not in ["idexists", "watching", "dead"],
+                "post-wg": x.get_state_slug("draft-iesg") not in ["idexists", "dead"],
                 "expired": x.get_state_slug("draft") == "expired",
                 "replaced": x.get_state_slug("draft") == "repl",
                 "group": x.group.acronym if x.group and x.group.acronym != "none" else "",

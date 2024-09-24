@@ -312,7 +312,7 @@
       "order": 42,
       "slug": "watching",
       "type": "draft-iesg",
-      "used": true
+      "used": false
     },
     "model": "doc.state",
     "pk": 11

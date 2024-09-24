@@ -5,7 +5,7 @@
 import time
 import datetime
 import shutil
-import os
+import tempfile
 import re
 
 from django.utils import timezone
@@ -939,13 +939,8 @@ class InterimTests(IetfSeleniumTestCase):
     def tempdir(self, label):
         # Borrowed from  test_utils.TestCase
         slug = slugify(self.__class__.__name__.replace('.','-'))
-        dirname = "tmp-{label}-{slug}-dir".format(**locals())
-        if 'VIRTUAL_ENV' in os.environ:
-            dirname = os.path.join(os.environ['VIRTUAL_ENV'], dirname)
-        path = os.path.abspath(dirname)
-        if not os.path.exists(path):
-            os.mkdir(path)
-        return path
+        suffix = "-{label}-{slug}-dir".format(**locals())
+        return tempfile.mkdtemp(suffix=suffix)
 
     def displayed_interims(self, groups=None):
         sessions = add_event_info_to_session_qs(

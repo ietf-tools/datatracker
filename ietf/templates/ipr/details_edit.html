@@ -32,7 +32,7 @@
             regarding an IETF document or contribution when the person letting the
             IETF know about the patent has no relationship with the patent owners.
             Click
-            <a href="{% url 'ietf.ipr.views.new' type='specific' %}">here</a>
+            <a href="{% url 'ietf.ipr.views.new' 'specific' %}">here</a>
             if you want to disclose information about patents or patent
             applications where you do have a relationship to the patent owners or
             patent applicants.
@@ -121,12 +121,11 @@
         {% endif %}
         {% if type != "generic" %}
             <h2 class="mt-4">{% cycle section %}. IETF document or other contribution to which this IPR disclosure relates</h2>
-            <p class="form-text">
+            <p>
                 If an Internet-Draft or RFC includes multiple parts and it is not
                 reasonably apparent which part of such Internet-Draft or RFC is alleged
-                to be covered by the patent information disclosed in Section
-                V(A) or V(B), please identify the sections of
-                the Internet-Draft or RFC that are alleged to be so
+                to be covered by the patent information disclosed in Section V,
+                please identify the sections of the Internet-Draft or RFC that are alleged to be so
                 covered.
             </p>
             {{ draft_formset.management_form }}
@@ -154,6 +153,13 @@
             <small>i.e., patents or patent applications required to be disclosed by Section 5 of RFC8179</small>
         </h2>
         {% if form.patent_number %}
+            {% if form.is_blanket_disclosure %}
+                <p>
+                    This IPR disclosure must either identify a specific patent or patents in sections V(A) and V(B)
+                    below, or be made as a blanket IPR disclosure. 
+                </p>
+                {% bootstrap_field form.is_blanket_disclosure layout='horizontal' %}
+            {% endif %}
             <p>
                 A. For granted patents or published pending patent applications,
                 please provide the following information:
