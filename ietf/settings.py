@@ -1236,6 +1236,7 @@ if "CACHES" not in locals():
                 "OPTIONS": {
                     "MAX_ENTRIES": 5000,
                 },
+                "VERSION": __version__,
             },
         }
     else:
@@ -1274,6 +1275,7 @@ if "CACHES" not in locals():
                 "OPTIONS": {
                     "MAX_ENTRIES": 5000,
                 },
+                "VERSION": __version__,
             },
         }
 
