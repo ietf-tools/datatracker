@@ -28,6 +28,41 @@ paths:
                 '404':
                     description: Not found
 
+    /person/persons_by_email/:
+        post:
+            operationId: persons_by_email
+            summary: Get a batch of persons by email addresses
+            description: returns a list of objects with the email address and related person information
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: array
+                            items:
+                                type: string
+            responses:
+                '200':
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                type: array
+                                items:
+                                    type: object
+                                    properties:
+                                        email:
+                                            type: string
+                                        person_pk:
+                                            type: integer
+                                        name:
+                                            type: string
+                                        last_name:
+                                            type: string
+                                        initials:
+                                            type: string
+
+
     /persons/:
         post:
             operationId: get_persons
@@ -173,6 +208,49 @@ paths:
                                 type: object
                                 additionalProperties:
                                     $ref:'#/components/schemas/Draft'
+
+    /doc/rfc/authors/:
+        post:
+            operationId: get_rfc_authors
+            summary: Gather authors of the RFCs with the given numbers
+            description: returns a dict mapping rfc numbers to objects describing authors
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: array
+                            items:
+                                type: integer
+            responses:
+                '200':
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                type: array
+                                items:
+                                    type: object
+                                    properties:
+                                        rfc_number:
+                                            type: integer
+                                        authors:
+                                            type: array
+                                            items:
+                                                type: object
+                                                properties:
+                                                    person_pk:
+                                                        type: integer
+                                                    name:
+                                                        type: string
+                                                    last_name:
+                                                        type: string
+                                                    initials:
+                                                        type: string
+                                                    email_addresses:
+                                                        type: array
+                                                        items:
+                                                            type: string
 
     /doc/rfc/original_stream/:
         get:
