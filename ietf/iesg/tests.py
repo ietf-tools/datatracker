@@ -404,6 +404,8 @@ class IESGAgendaTests(TestCase):
 
         self.assertContains(r, action_items.text)
 
+        q = PyQuery(r.content)
+
         for k, d in self.telechat_docs.items():
             if d.type_id == "charter":
                 self.assertContains(r, d.group.name, msg_prefix="%s '%s' not in response" % (k, d.group.name))
@@ -415,18 +417,14 @@ class IESGAgendaTests(TestCase):
             if d.type_id in ["charter", "draft"]:
                 if d.group.parent is None:
                     continue
+                wg_url = urlreverse("ietf.group.views.active_groups", kwargs=dict(group_type="wg"))
+                href = f"{wg_url}#{d.group.parent.acronym.upper()}"
+                texts = [elem.text.strip() for elem in q(f'a[href="{href}"]')]
+                self.assertGreater(len(texts), 0)
                 if d.type_id == "charter":
-                    self.assertContains(
-                        r,
-                        f'<a href="/wg/#{d.group.parent.acronym.upper()}">{d.group.parent.acronym.upper()}</a>',
-                        html=True,
-                    )
+                    self.assertTrue(any(t == d.group.parent.acronym.upper() for t in texts))
                 elif d.type_id == "draft":
-                    self.assertContains(
-                        r,
-                        f'<a href="/wg/#{d.group.parent.acronym.upper()}">({d.group.parent.acronym.upper()})</a>',
-                        html=True,
-                    )
+                    self.assertTrue(any(t == f"({d.group.parent.acronym.upper()})" for t in texts))
 
         for i, mi in enumerate(self.mgmt_items, start=1):
             s = "6." + str(i)

@@ -88,11 +88,11 @@ class GroupPagesTests(TestCase):
             self.assertEqual(r.status_code, 200)
             self.assertContains(r, g.acronym)
             if t == "area":
-                self.assertContains(
-                    r,
-                    f'<a href="/wg/#{g.acronym.upper()}">({g.acronym.upper()})</a>',
-                    html=True,
-                )
+                q = PyQuery(r.content)
+                wg_url = urlreverse("ietf.group.views.active_groups", kwargs=dict(group_type="wg"))
+                href = f"{wg_url}#{g.acronym.upper()}"
+                self.assertEqual(q(f"h2#id-{g.acronym} a").attr("href"), href)
+                self.assertEqual(q(f'h2#id-{g.acronym} a[href="{href}"]').text(), f"({g.acronym.upper()})")
 
         url = urlreverse('ietf.group.views.active_groups', kwargs=dict())
         r = self.client.get(url)
