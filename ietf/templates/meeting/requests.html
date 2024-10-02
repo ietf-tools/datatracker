@@ -154,7 +154,7 @@
                             <a href="{% url "ietf.secr.sreq.views.edit" num=meeting.number acronym=session.group.acronym %}">
                                 {{ session.group.acronym }}
                             </a>
-                            {% if session.purpose_id != "regular" %}
+                            {% if session.purpose_id != "regular" and session.purpose_id != "none" %}
                                 <br><span class="badge rounded-pill text-bg-info">{{session.purpose}}</span>
                             {% endif %}
                             {% if session.joint_with_groups.count %}joint with {{ session.joint_with_groups_acronyms|join:' ' }}{% endif %}
