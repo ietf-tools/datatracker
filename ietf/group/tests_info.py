@@ -87,6 +87,12 @@ class GroupPagesTests(TestCase):
             r = self.client.get(url)
             self.assertEqual(r.status_code, 200)
             self.assertContains(r, g.acronym)
+            if t == "area":
+                self.assertContains(
+                    r,
+                    f'<a href="/wg/#{g.acronym.upper()}">({g.acronym.upper()})</a>',
+                    html=True,
+                )
 
         url = urlreverse('ietf.group.views.active_groups', kwargs=dict())
         r = self.client.get(url)

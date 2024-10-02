@@ -412,6 +412,22 @@ class IESGAgendaTests(TestCase):
                 self.assertContains(r, d.name, msg_prefix="%s '%s' not in response" % (k, d.name))
                 self.assertContains(r, d.title, msg_prefix="%s '%s' title not in response" % (k, d.title))
 
+            if d.type_id in ["charter", "draft"]:
+                if d.group.parent is None:
+                    continue
+                if d.type_id == "charter":
+                    self.assertContains(
+                        r,
+                        f'<a href="/wg/#{d.group.parent.acronym.upper()}">{d.group.parent.acronym.upper()}</a>',
+                        html=True,
+                    )
+                elif d.type_id == "draft":
+                    self.assertContains(
+                        r,
+                        f'<a href="/wg/#{d.group.parent.acronym.upper()}">({d.group.parent.acronym.upper()})</a>',
+                        html=True,
+                    )
+
         for i, mi in enumerate(self.mgmt_items, start=1):
             s = "6." + str(i)
             self.assertContains(r, s, msg_prefix="Section '%s' not in response" % s)
