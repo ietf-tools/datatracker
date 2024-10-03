@@ -87,9 +87,21 @@ class IESGTests(TestCase):
             group=dated_group,
             person=Person.objects.get(user__username='ad'),
         )
-        dated_milestones = DatedGroupMilestoneFactory.create_batch(
-            2, group=dated_group, state_id="review"
-        )
+        # For the test, milestone descs must be:
+        #   - distinct from each other / other strings in `<td>` tags on the rendered page
+        #   - free from the words "Next" or "Last"
+        dated_milestones = [
+            DatedGroupMilestoneFactory(
+                group=dated_group,
+                state_id="review",
+                desc="This is the description of one dated group milestone",
+            ),
+            DatedGroupMilestoneFactory(
+                group=dated_group,
+                state_id="review",
+                desc="This is the description of another dated group milestone",
+            ),
+        ]
         dated_milestones[0].due -= datetime.timedelta(days=1)  # make this one earlier
         dated_milestones[0].save()
 
@@ -99,9 +111,21 @@ class IESGTests(TestCase):
             group=dateless_group,
             person=Person.objects.get(user__username='ad'),
         )
-        dateless_milestones = DatelessGroupMilestoneFactory.create_batch(
-            2, group=dateless_group, state_id="review"
-        )
+        # For the test, milestone descs must be:
+        #   - distinct from each other / other strings in `<td>` tags on the rendered page
+        #   - free from the words "Next" or "Last"
+        dateless_milestones = [
+            DatelessGroupMilestoneFactory(
+                group=dateless_group,
+                state_id="review",
+                desc="This is the description of one dateless group milestone",
+            ),
+            DatelessGroupMilestoneFactory(
+                group=dateless_group,
+                state_id="review",
+                desc="This is the description of another dateless group milestone",
+            ),
+        ]
 
         url = urlreverse("ietf.iesg.views.milestones_needing_review")
         self.client.login(username="ad", password="ad+password")
