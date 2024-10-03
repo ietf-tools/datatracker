@@ -1317,7 +1317,7 @@ def process_submission_text(filename, revision):
 def process_and_validate_submission(submission):
     """Process and validate a submission
 
-    Raises SubmissionError if an error is encountered.
+    Raises SubmissionError or a subclass if an error is encountered.
     """
     if len(set(submission.file_types.split(",")).intersection({".xml", ".txt"})) == 0:
         raise SubmissionError("Require XML and/or text format to process an Internet-Draft submission.")
@@ -1386,11 +1386,11 @@ def process_and_validate_submission(submission):
             raise SubmissionError('Checks failed: ' + ' / '.join(errors))
     except SubmissionError:
         raise  # pass SubmissionErrors up the stack
-    except Exception:
+    except Exception as err:
         # convert other exceptions into SubmissionErrors
         log.log(f'Unexpected exception while processing submission {submission.pk}.')
         log.log(traceback.format_exc())
-        raise SubmissionError('A system error occurred while processing the submission.')
+        raise SubmissionError('A system error occurred while processing the submission.') from err
 
 
 def submitter_is_author(submission):
