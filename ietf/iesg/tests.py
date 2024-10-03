@@ -87,9 +87,6 @@ class IESGTests(TestCase):
             group=dated_group,
             person=Person.objects.get(user__username='ad'),
         )
-        # For the test, milestone descs must be:
-        #   - distinct from each other / other strings in `<td>` tags on the rendered page
-        #   - free from the words "Next" or "Last"
         dated_milestones = [
             DatedGroupMilestoneFactory(
                 group=dated_group,
@@ -111,9 +108,6 @@ class IESGTests(TestCase):
             group=dateless_group,
             person=Person.objects.get(user__username='ad'),
         )
-        # For the test, milestone descs must be:
-        #   - distinct from each other / other strings in `<td>` tags on the rendered page
-        #   - free from the words "Next" or "Last"
         dateless_milestones = [
             DatelessGroupMilestoneFactory(
                 group=dateless_group,
@@ -135,17 +129,29 @@ class IESGTests(TestCase):
         
         # check order-by-date
         dated_tbody = pq(f'td:contains("{dated_milestones[0].desc}")').closest("tbody")
-        next_td = dated_tbody.find('td:contains("Next")')
-        self.assertEqual(next_td.siblings()[0].text.strip(), dated_milestones[0].desc)
-        last_td = dated_tbody.find('td:contains("Last")')
-        self.assertEqual(last_td.siblings()[0].text.strip(), dated_milestones[1].desc)
+        rows = list(dated_tbody.items("tr"))  # keep as pyquery objects
+        self.assertTrue(rows[0].find('td:first:contains("Last")'))  # Last milestone shown first
+        self.assertFalse(rows[0].find('td:first:contains("Next")'))
+        self.assertTrue(rows[0].find(f'td:contains("{dated_milestones[1].desc}")'))
+        self.assertFalse(rows[0].find(f'td:contains("{dated_milestones[0].desc}")'))
+
+        self.assertFalse(rows[1].find('td:first:contains("Last")'))  # Last milestone shown first
+        self.assertTrue(rows[1].find('td:first:contains("Next")'))
+        self.assertFalse(rows[1].find(f'td:contains("{dated_milestones[1].desc}")'))
+        self.assertTrue(rows[1].find(f'td:contains("{dated_milestones[0].desc}")'))
 
         # check order-by-order
         dateless_tbody = pq(f'td:contains("{dateless_milestones[0].desc}")').closest("tbody")
-        next_td = dateless_tbody.find('td:contains("Next")')
-        self.assertEqual(next_td.siblings()[0].text.strip(), dateless_milestones[0].desc)
-        last_td = dateless_tbody.find('td:contains("Last")')
-        self.assertEqual(last_td.siblings()[0].text.strip(), dateless_milestones[1].desc)
+        rows = list(dateless_tbody.items("tr"))  # keep as pyquery objects
+        self.assertTrue(rows[0].find('td:first:contains("Last")'))  # Last milestone shown first
+        self.assertFalse(rows[0].find('td:first:contains("Next")'))
+        self.assertTrue(rows[0].find(f'td:contains("{dateless_milestones[1].desc}")'))
+        self.assertFalse(rows[0].find(f'td:contains("{dateless_milestones[0].desc}")'))
+
+        self.assertFalse(rows[1].find('td:first:contains("Last")'))  # Last milestone shown first
+        self.assertTrue(rows[1].find('td:first:contains("Next")'))
+        self.assertFalse(rows[1].find(f'td:contains("{dateless_milestones[1].desc}")'))
+        self.assertTrue(rows[1].find(f'td:contains("{dateless_milestones[0].desc}")'))
 
 
     def test_review_decisions(self):
