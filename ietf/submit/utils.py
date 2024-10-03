@@ -11,45 +11,44 @@ import re
 import sys
 import time
 import traceback
-import xml2rfc
-
 from pathlib import Path
 from shutil import move
 from typing import Optional, Union  # pyflakes:ignore
+
+import xml2rfc
+from django.conf import settings
+from django.contrib.auth.models import AnonymousUser
+from django.core.exceptions import ValidationError
+from django.core.validators import validate_email
+from django.db import transaction
+from django.http import HttpRequest  # pyflakes:ignore
+from django.utils import timezone
+from django.utils.module_loading import import_string
 from unidecode import unidecode
 from xml2rfc import RfcWriterError
 from xym import xym
 
-from django.conf import settings
-from django.core.exceptions import ValidationError
-from django.core.validators import validate_email 
-from django.db import transaction
-from django.http import HttpRequest     # pyflakes:ignore
-from django.utils.module_loading import import_string
-from django.contrib.auth.models import AnonymousUser
-from django.utils import timezone
-
-import debug                            # pyflakes:ignore
-
-from ietf.doc.models import ( Document, State, DocEvent, SubmissionDocEvent,
-    DocumentAuthor, AddedMessageEvent )
+from ietf.community.utils import update_name_contains_indexes_with_new_doc
+from ietf.doc.mails import send_review_possibly_replaces_request, send_external_resource_change_request
+from ietf.doc.models import (Document, State, DocEvent, SubmissionDocEvent,
+                             DocumentAuthor, AddedMessageEvent)
 from ietf.doc.models import NewRevisionDocEvent
 from ietf.doc.models import RelatedDocument, DocRelationshipName, DocExtResource
 from ietf.doc.utils import (add_state_change_event, rebuild_reference_relations,
-    set_replaces_for_document, prettify_std_name, update_doc_extresources, 
-    can_edit_docextresources, update_documentauthors, update_action_holders,
-    bibxml_for_draft )
-from ietf.doc.mails import send_review_possibly_replaces_request, send_external_resource_change_request
+                            set_replaces_for_document, prettify_std_name, update_doc_extresources,
+                            can_edit_docextresources, update_documentauthors, update_action_holders,
+                            bibxml_for_draft)
 from ietf.group.models import Group
 from ietf.ietfauth.utils import has_role
 from ietf.name.models import StreamName, FormalLanguageName
 from ietf.person.models import Person, Email
-from ietf.community.utils import update_name_contains_indexes_with_new_doc
-from ietf.submit.mail import ( announce_to_lists, announce_new_version, announce_to_authors,
-    send_approval_request, send_submission_confirmation, announce_new_wg_00, send_manual_post_request )
+from ietf.person.name import unidecode_name
 from ietf.submit.checkers import DraftYangChecker
-from ietf.submit.models import ( Submission, SubmissionEvent, Preapproval, DraftSubmissionStateName,
-    SubmissionCheck, SubmissionExtResource )
+from ietf.submit.mail import (announce_to_lists, announce_new_version, announce_to_authors,
+                              send_approval_request, send_submission_confirmation, announce_new_wg_00,
+                              send_manual_post_request)
+from ietf.submit.models import (Submission, SubmissionEvent, Preapproval, DraftSubmissionStateName,
+                                SubmissionCheck, SubmissionExtResource)
 from ietf.utils import log
 from ietf.utils.accesstoken import generate_random_key
 from ietf.utils.draft import PlaintextDraft
@@ -57,7 +56,6 @@ from ietf.utils.mail import is_valid_email
 from ietf.utils.text import parse_unicode, normalize_text
 from ietf.utils.timezone import date_today
 from ietf.utils.xmldraft import XMLDraft
-from ietf.person.name import unidecode_name
 
 
 def validate_submission(submission):
@@ -1010,8 +1008,8 @@ def render_missing_formats(submission):
         except Exception as err:
             raise XmlRfcError(
                 "Error generating text format from XML",
-            xml2rfc_stdout=xml2rfc_stdout.getvalue(),
-            xml2rfc_stderr=xml2rfc_stderr.getvalue(),
+                xml2rfc_stdout=xml2rfc_stdout.getvalue(),
+                xml2rfc_stderr=xml2rfc_stderr.getvalue(),
             ) from err
         log.log(
             'In %s: xml2rfc %s generated %s from %s (version %s)' % (
@@ -1327,7 +1325,16 @@ def process_and_validate_submission(submission):
         # Parse XML first, if we have it
         if ".xml" in submission.file_types:
             xml_metadata = process_submission_xml(submission.name, submission.rev)
-            render_missing_formats(submission)  # makes HTML and text, unless text was uploaded
+            try:
+                render_missing_formats(submission)  # makes HTML and text, unless text was uploaded
+            except XmlRfcError as err:
+                # log stdio/stderr
+                log.log(
+                    f"xml2rfc failure when rendering missing formats for {submission.name}-{submission.rev}:\n"
+                    f">> stdout:\n{err.xml2rfc_stdout}\n"
+                    f">> stderr:\n{err.xml2rfc_stderr}"
+                )
+                raise
         # Parse text, whether uploaded or generated from XML
         text_metadata = process_submission_text(submission.name, submission.rev)
 
@@ -1482,6 +1489,7 @@ def process_uploaded_submission(submission):
         create_submission_event(None, submission, desc="Uploaded submission (diverted to manual process)")
         send_manual_post_request(None, submission, errors=dict(consistency=str(consistency_error)))
     except SubmissionError as err:
+        # something generic went wrong
         submission.refresh_from_db()  # guard against incomplete changes in submission validation / processing
         cancel_submission(submission)  # changes Submission.state
         create_submission_event(None, submission, f"Submission rejected: {err}")
