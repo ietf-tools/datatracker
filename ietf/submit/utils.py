@@ -932,7 +932,7 @@ def staging_path(filename, revision, ext):
     return pathlib.Path(settings.IDSUBMIT_STAGING_PATH) / f'{filename}-{revision}{ext}'
 
 
-def render_missing_formats(submission):
+def render_missing_formats(submission: Submission):
     """Generate txt and html formats from xml draft
 
     If a txt file already exists, leaves it in place. Overwrites an existing html file
@@ -976,6 +976,13 @@ def render_missing_formats(submission):
                 xml_version,
             )
         )
+        _, created = submission.submissionfile_set.update_or_create(
+            filename=txt_path.name,
+            defaults={"time": timezone.now(), "generated": True},
+        )
+        if created:
+            # We don't expect a SubmissionFile to exist - log the event
+            log.log(f"Generated replacement for missing submission file: {txt_path.name}")
 
     # --- Convert to html ---
     html_path = staging_path(submission.name, submission.rev, '.html')
@@ -991,6 +998,13 @@ def render_missing_formats(submission):
             xml_version,
         )
     )
+    _, created = submission.submissionfile_set.update_or_create(
+        filename=html_path.name,
+        defaults={"time": timezone.now(), "generated": True},
+    )
+    if created:
+        # We don't expect a SubmissionFile to exist - log the event
+        log.log(f"Generated replacement for missing submission file: {html_path.name}")
 
 
 def accept_submission(submission: Submission, request: Optional[HttpRequest] = None, autopost=False):
