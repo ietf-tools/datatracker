@@ -49,6 +49,7 @@ from ietf.submit.mail import ( announce_to_lists, announce_new_version, announce
 from ietf.submit.checkers import DraftYangChecker
 from ietf.submit.models import ( Submission, SubmissionEvent, Preapproval, DraftSubmissionStateName,
     SubmissionCheck, SubmissionExtResource )
+from ietf.submit.tasks import move_files_to_repository_task
 from ietf.utils import log
 from ietf.utils.accesstoken import generate_random_key
 from ietf.utils.draft import PlaintextDraft
@@ -453,9 +454,9 @@ def post_submission(request, submission, approved_doc_desc, approved_subm_desc):
         from ietf.doc.expire import move_draft_files_to_archive
         move_draft_files_to_archive(draft, prev_rev)
 
-    move_files_to_repository(submission)
     submission.state = DraftSubmissionStateName.objects.get(slug="posted")
-    log.log(f"{submission.name}: moved files")
+    move_files_to_repository_task.delay(submission)
+    log.log(f"{submission.name}: queued task to move files")
 
     new_replaces, new_possibly_replaces = update_replaces_from_submission(request, submission, draft)
     update_name_contains_indexes_with_new_doc(draft)
@@ -653,20 +654,35 @@ def rename_submission_files(submission, prev_rev, new_rev):
 
 
 def move_files_to_repository(submission):
-    for ext in settings.IDSUBMIT_FILE_TYPES:
-        fname = f"{submission.name}-{submission.rev}.{ext}"
-        source = Path(settings.IDSUBMIT_STAGING_PATH) / fname
-        dest = Path(settings.IDSUBMIT_REPOSITORY_PATH) / fname
+    """Move staging files to the draft repository and create hard links
+    
+    If any of the expected files are missing and not already in place, raises FileNotFoundError
+    after moving as many files as it can.
+    """
+    files_to_move = [
+        Path(settings.IDSUBMIT_STAGING_PATH) / sf.filename
+        for sf in submission.submissionfile_set.all()
+    ]
+    any_missing = False
+    for source in files_to_move:
+        dest = Path(settings.IDSUBMIT_REPOSITORY_PATH) / source.name
         if source.exists():
             move(source, dest)
-            all_archive_dest = Path(settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR) / dest.name
-            ftp_dest = Path(settings.FTP_DIR) / "internet-drafts" / dest.name
+            all_archive_dest = Path(settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR) / source.name
+            ftp_dest = Path(settings.FTP_DIR) / "internet-drafts" / source.name
             os.link(dest, all_archive_dest)
             os.link(dest, ftp_dest)
+            log.log(f"Moved {source.name} from {source.parent} to {dest.parent} and created links.")
         elif dest.exists():
-            log.log("Intended to move '%s' to '%s', but found source missing while destination exists.")
-        elif f".{ext}" in submission.file_types.split(','):
-            raise ValueError("Intended to move '%s' to '%s', but found source and destination missing.")
+            log.log(
+                f"Intended to move {source.name} from {source.parent} to {dest.parent} "
+                "but found source missing while destination exists."
+            )
+        else:
+            log.log(f"Unable to move {source.name}: {source} not found.")
+            any_missing = True
+    if any_missing:
+        raise FileNotFoundError
 
 
 def remove_staging_files(name, rev, exts=None):

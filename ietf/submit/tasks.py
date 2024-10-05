@@ -14,7 +14,7 @@ from django.utils import timezone
 from ietf.submit.models import Submission
 from ietf.submit.utils import (cancel_submission, create_submission_event, process_uploaded_submission,
                                process_and_accept_uploaded_submission, run_all_yang_model_checks,
-                               populate_yang_model_dirs)
+                               populate_yang_model_dirs, move_files_to_repository)
 from ietf.utils import log
 
 
@@ -79,7 +79,24 @@ def run_yang_model_checks_task():
     populate_yang_model_dirs()
     run_all_yang_model_checks()
 
-    
+
+@shared_task(
+    bind=True,
+    autoretry_for=(FileNotFoundError,),
+    retry_backoff=5,  # exponential backoff starting with 5 seconds
+    retry_kwargs={"max_retries": 5},  # 5, 10, 20, 40, 80 second delays, then give up
+    retry_jitter=True,  # jitter, using retry time as max for a random delay
+)
+def move_files_to_repository_task(task, submission_id):
+    submission = get_submission(submission_id)
+    if submission is not None:
+        log.log(f"Moving files to repository for submission {submission.name}")
+        all_moved = move_files_to_repository(submission)
+        if not all_moved:
+            log.log(f"Unable to move all files for submission {submission}, requesting retry")
+            raise task.retry()  # retry if they did not all move successfully
+
+
 @shared_task(bind=True)
 def poke(self):
     log.log(f'Poked {self.name}, request id {self.request.id}')
