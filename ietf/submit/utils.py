@@ -49,7 +49,6 @@ from ietf.submit.mail import ( announce_to_lists, announce_new_version, announce
 from ietf.submit.checkers import DraftYangChecker
 from ietf.submit.models import ( Submission, SubmissionEvent, Preapproval, DraftSubmissionStateName,
     SubmissionCheck, SubmissionExtResource )
-from ietf.submit.tasks import move_files_to_repository_task
 from ietf.utils import log
 from ietf.utils.accesstoken import generate_random_key
 from ietf.utils.draft import PlaintextDraft

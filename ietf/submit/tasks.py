@@ -12,9 +12,6 @@ from django.conf import settings
 from django.utils import timezone
 
 from ietf.submit.models import Submission
-from ietf.submit.utils import (cancel_submission, create_submission_event, process_uploaded_submission,
-                               process_and_accept_uploaded_submission, run_all_yang_model_checks,
-                               populate_yang_model_dirs, move_files_to_repository)
 from ietf.utils import log
 
 
@@ -30,6 +27,8 @@ def get_submission(submission_id) -> Optional[Submission]:
 
 @shared_task
 def process_uploaded_submission_task(submission_id):
+    # avoid circular imports with ietf.submit.utils
+    from ietf.submit.utils import process_uploaded_submission
     submission = get_submission(submission_id)
     if submission is not None:
         process_uploaded_submission(submission)
@@ -37,6 +36,8 @@ def process_uploaded_submission_task(submission_id):
 
 @shared_task
 def process_and_accept_uploaded_submission_task(submission_id):
+    # avoid circular imports with ietf.submit.utils
+    from ietf.submit.utils import process_and_accept_uploaded_submission
     submission = get_submission(submission_id)
     if submission is not None:
         process_and_accept_uploaded_submission(submission)
@@ -44,6 +45,8 @@ def process_and_accept_uploaded_submission_task(submission_id):
 
 @shared_task
 def cancel_stale_submissions():
+    # avoid circular imports with ietf.submit.utils
+    from ietf.submit.utils import cancel_submission, create_submission_event
     now = timezone.now()
     # first check for submissions gone stale awaiting validation
     stale_unvalidated_submissions = Submission.objects.filter(
@@ -76,6 +79,8 @@ def cancel_stale_submissions():
 
 @shared_task
 def run_yang_model_checks_task():
+    # avoid circular imports with ietf.submit.utils
+    from ietf.submit.utils import run_all_yang_model_checks, populate_yang_model_dirs
     populate_yang_model_dirs()
     run_all_yang_model_checks()
 
@@ -88,6 +93,8 @@ def run_yang_model_checks_task():
     retry_jitter=True,  # jitter, using retry time as max for a random delay
 )
 def move_files_to_repository_task(task, submission_id):
+    # avoid circular imports with ietf.submit.utils
+    from ietf.submit.utils import move_files_to_repository
     submission = get_submission(submission_id)
     if submission is not None:
         log.log(f"Moving files to repository for submission {submission.name}")
