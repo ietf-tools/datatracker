@@ -86,22 +86,17 @@ def run_yang_model_checks_task():
 
 
 @shared_task(
-    bind=True,
     autoretry_for=(FileNotFoundError,),
     retry_backoff=5,  # exponential backoff starting with 5 seconds
     retry_kwargs={"max_retries": 5},  # 5, 10, 20, 40, 80 second delays, then give up
     retry_jitter=True,  # jitter, using retry time as max for a random delay
 )
-def move_files_to_repository_task(task, submission_id):
+def move_files_to_repository_task(submission_id):
     # avoid circular imports with ietf.submit.utils
     from ietf.submit.utils import move_files_to_repository
     submission = get_submission(submission_id)
     if submission is not None:
-        log.log(f"Moving files to repository for submission {submission.name}")
-        all_moved = move_files_to_repository(submission)
-        if not all_moved:
-            log.log(f"Unable to move all files for submission {submission}, requesting retry")
-            raise task.retry()  # retry if they did not all move successfully
+        move_files_to_repository(submission)
 
 
 @shared_task(bind=True)
