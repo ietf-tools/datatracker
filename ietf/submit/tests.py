@@ -44,7 +44,7 @@ from ietf.meeting.models import Meeting
 from ietf.meeting.factories import MeetingFactory
 from ietf.name.models import DraftSubmissionStateName, FormalLanguageName
 from ietf.person.models import Person
-from ietf.person.factories import UserFactory, PersonFactory, EmailFactory
+from ietf.person.factories import UserFactory, PersonFactory
 from ietf.submit.factories import SubmissionFactory, SubmissionExtResourceFactory
 from ietf.submit.forms import SubmissionBaseUploadForm, SubmissionAutoUploadForm
 from ietf.submit.models import Submission, Preapproval, SubmissionExtResource

@@ -1,6 +1,5 @@
 # Copyright The IETF Trust 2011-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
-import http.client
 import re
 import datetime
 
@@ -35,9 +34,8 @@ from ietf.submit.models import (Submission, Preapproval, SubmissionExtResource,
 from ietf.submit.tasks import process_uploaded_submission_task, process_and_accept_uploaded_submission_task, poke
 from ietf.submit.utils import ( approvable_submissions_for_user, preapprovals_for_user,
     recently_approved_by_user, validate_submission, create_submission_event, docevent_from_submission,
-    post_submission, cancel_submission, rename_submission_files, remove_submission_files, get_draft_meta,
-    get_submission, fill_in_submission, apply_checkers, save_files, clear_existing_files,
-    check_submission_revision_consistency, accept_submission, accept_submission_requires_group_approval,
+    post_submission, cancel_submission, rename_submission_files, remove_submission_files,
+    get_submission, save_files, clear_existing_files, accept_submission, accept_submission_requires_group_approval,
     accept_submission_requires_prev_auth_approval, update_submission_external_resources)
 from ietf.stats.utils import clean_country_name
 from ietf.utils.accesstoken import generate_access_token

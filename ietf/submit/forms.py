@@ -2,19 +2,16 @@
 # -*- coding: utf-8 -*-
 
 
-import io
 import os
 import re
 import datetime
 import email
 import sys
 import tempfile
-import xml2rfc
 from contextlib import ExitStack
 
 from email.utils import formataddr
 from typing import Tuple
-from unidecode import unidecode
 
 from django import forms
 from django.conf import settings
@@ -37,10 +34,8 @@ from ietf.submit.models import Submission, Preapproval
 from ietf.submit.utils import validate_submission_name, validate_submission_rev, validate_submission_document_date, remote_ip
 from ietf.submit.parsers.plain_parser import PlainParser
 from ietf.submit.parsers.xml_parser import XMLParser
-from ietf.utils import log
 from ietf.utils.draft import PlaintextDraft
 from ietf.utils.fields import ModelMultipleChoiceField
-from ietf.utils.text import normalize_text
 from ietf.utils.timezone import date_today
 from ietf.utils.xmldraft import InvalidXMLError, XMLDraft, XMLParseError
 
