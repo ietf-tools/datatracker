@@ -5,6 +5,7 @@
 import re
 import datetime
 
+from pathlib import Path
 from typing import Optional, cast         # pyflakes:ignore
 from urllib.parse import urljoin
 
@@ -62,7 +63,12 @@ def upload_submission(request):
             submission.submission_date = date_today()
             submission.save()
             clear_existing_files(form)
-            save_files(form)
+            files_by_ext = save_files(form)
+            for filename_with_path in files_by_ext.values():
+                submission.submissionfile_set.create(
+                    filename=Path(filename_with_path).name,  # drop the path
+                    generated=False,
+                )
             create_submission_event(request, submission, desc="Uploaded submission")
             # Wrap in on_commit so the delayed task cannot start until the view is done with the DB
             transaction.on_commit(
@@ -137,7 +143,12 @@ def api_submission(request):
                 submission.replaces = form.cleaned_data['replaces']
                 submission.save()
                 clear_existing_files(form)
-                save_files(form)
+                files_by_ext = save_files(form)
+                for filename_with_path in files_by_ext.values():
+                    submission.submissionfile_set.create(
+                        filename=Path(filename_with_path).name,  # drop the path
+                        generated=False,
+                    )
                 create_submission_event(request, submission, desc="Uploaded submission through API")
 
                 # Wrap in on_commit so the delayed task cannot start until the view is done with the DB
@@ -233,7 +244,13 @@ def api_submit(request):
                         raise ValidationError("Missing email address for author %s" % a)
 
                 submission = get_submission(form)
-                fill_in_submission(form, submission, authors, abstract, file_size)
+                fill_in_submission(form, submission, authors, abstract, file_size)  # saves submission
+                for ext, filename_with_path in saved_files.items():
+                    submission.submissionfile_set.create(
+                        filename=Path(filename_with_path).name,  # drop the path
+                        generated=False if ext == "xml" else True,  # only xml-only submissions are accepted
+                    )
+
                 apply_checkers(submission, file_name)
 
                 create_submission_event(request, submission, desc="Uploaded submission via api_submit")

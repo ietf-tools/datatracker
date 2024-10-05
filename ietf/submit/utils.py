@@ -753,6 +753,7 @@ def clear_existing_files(form):
 
 
 def save_files(form):
+    """Save files and return map from extension to filename with full path"""
     file_name = {}
     for ext in list(form.fields.keys()):
         if not ext in form.formats:
