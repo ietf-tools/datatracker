@@ -2,7 +2,10 @@
 #
 # Celery task definitions
 #
+import inspect
+
 from celery import shared_task
+from typing import Optional
 
 from django.db.models import Min
 from django.conf import settings
@@ -15,23 +18,27 @@ from ietf.submit.utils import (cancel_submission, create_submission_event, proce
 from ietf.utils import log
 
 
-@shared_task
-def process_uploaded_submission_task(submission_id):
+def get_submission(submission_id) -> Optional[Submission]:
     try:
         submission = Submission.objects.get(pk=submission_id)
     except Submission.DoesNotExist:
-        log.log(f'process_uploaded_submission_task called for missing submission_id={submission_id}')
-    else:
+        caller_frame = inspect.stack()[1]
+        log.log(f"{caller_frame.function} called for missing submission_id={submission_id}")
+        submission = None
+    return submission
+
+
+@shared_task
+def process_uploaded_submission_task(submission_id):
+    submission = get_submission(submission_id)
+    if submission is not None:
         process_uploaded_submission(submission)
 
 
 @shared_task
 def process_and_accept_uploaded_submission_task(submission_id):
-    try:
-        submission = Submission.objects.get(pk=submission_id)
-    except Submission.DoesNotExist:
-        log.log(f'process_uploaded_submission_task called for missing submission_id={submission_id}')
-    else:
+    submission = get_submission(submission_id)
+    if submission is not None:
         process_and_accept_uploaded_submission(submission)
 
 
