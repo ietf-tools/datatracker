@@ -2345,6 +2345,12 @@ class ApiSubmissionTests(BaseSubmitTestCase):
         super().setUp()
         MeetingFactory(type_id='ietf', date=date_today()+datetime.timedelta(days=60))
 
+    def test_api_submit_tombstone(self):
+        """Tombstone for obsolete API endpoint should return 410 Gone"""
+        url = urlreverse("ietf.submit.views.api_submit_tombstone")
+        self.assertEqual(self.client.get(url).status_code, 410)
+        self.assertEqual(self.client.post(url).status_code, 410)
+
     def test_upload_draft(self):
         """api_submission accepts a submission and queues it for processing"""
         url = urlreverse('ietf.submit.views.api_submission')
