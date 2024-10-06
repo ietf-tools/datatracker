@@ -107,6 +107,7 @@ def make_immutable_base_data():
     # one area
     area = create_group(name="Far Future", acronym="farfut", type_id="area", parent=ietf)
     create_person(area, "ad", name="Areað Irector", username="ad", email_address="aread@example.org")
+    create_person(area, "ad", name="James O'Rourke", username="ad_2", email_address="aread_2@example.org")
 
     # second area
     opsarea = create_group(name="Operations", acronym="ops", type_id="area", parent=ietf)
