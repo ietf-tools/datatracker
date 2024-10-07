@@ -13,6 +13,7 @@ from ietf.group.factories import GroupFactory, RoleFactory
 from ietf.meeting.models import Session, ResourceAssociation, SchedulingEvent, Constraint
 from ietf.meeting.factories import MeetingFactory, SessionFactory
 from ietf.name.models import ConstraintName, TimerangeName
+from ietf.person.factories import PersonFactory
 from ietf.person.models import Person
 from ietf.secr.sreq.forms import SessionForm
 from ietf.utils.mail import outbox, empty_outbox, get_payload_text, send_mail
@@ -82,7 +83,7 @@ class SessionRequestTestCase(TestCase):
         to = "<iesg-secretary@ietf.org>"
         subject = "Dummy subject"
         template = "sreq/session_cancel_notification.txt"
-        requester = Person.objects.get(user__username="ad_2")
+        requester = PersonFactory(name="James O'Rourke", user__username="jimorourke")
         context = {
             "meeting": MeetingFactory(type_id="ietf", date=date_today()),
             "requester": requester,
@@ -100,7 +101,7 @@ class SessionRequestTestCase(TestCase):
             cc=cc,
             bcc=bcc,
         )
-        self.assertIn("'", requester.name)  # James O'Rourke
+        self.assertEqual(requester.name, "James O'Rourke")  # note ' (single quote) in the name
         self.assertIn(
             f"A request to cancel a meeting session has just been submitted by {requester.name}.",
             get_payload_text(msg),
@@ -734,7 +735,7 @@ class SubmitRequestCase(TestCase):
         subject = "Dummy subject"
         template = "sreq/session_request_notification.txt"
         header = "A new"
-        requester = Person.objects.get(user__username="ad_2")
+        requester = PersonFactory(name="James O'Rourke", user__username="jimorourke")
         context = {
             "header": header,
             "meeting": MeetingFactory(type_id="ietf", date=date_today()),
@@ -753,7 +754,7 @@ class SubmitRequestCase(TestCase):
             cc=cc,
             bcc=bcc,
         )
-        self.assertIn("'", requester.name)  # James O'Rourke
+        self.assertEqual(requester.name, "James O'Rourke")  # note ' (single quote) in the name
         self.assertIn(
             f"{header} meeting session request has just been submitted by {requester.name}.",
             get_payload_text(msg),
