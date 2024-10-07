@@ -11,9 +11,9 @@
     "keypress": "^0.2.1",
     "listr2": "^6.6.1",
     "lodash-es": "^4.17.21",
-    "luxon": "^3.4.4",
+    "luxon": "^3.5.0",
     "pretty-bytes": "^6.1.1",
-    "tar": "^7.4.0",
+    "tar": "^7.4.3",
     "yargs": "^17.7.2"
   },
   "engines": {
