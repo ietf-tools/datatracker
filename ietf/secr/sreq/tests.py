@@ -83,11 +83,9 @@ class SessionRequestTestCase(TestCase):
         to = "<iesg-secretary@ietf.org>"
         subject = "Dummy subject"
         template = "sreq/session_cancel_notification.txt"
+        meeting = MeetingFactory(type_id="ietf", date=date_today())
         requester = PersonFactory(name="James O'Rourke", user__username="jimorourke")
-        context = {
-            "meeting": MeetingFactory(type_id="ietf", date=date_today()),
-            "requester": requester,
-        }
+        context = {"meeting": meeting, "requester": requester}
         cc = "cc.a@example.com, cc.b@example.com"
         bcc = "bcc@example.com"
 
@@ -735,12 +733,9 @@ class SubmitRequestCase(TestCase):
         subject = "Dummy subject"
         template = "sreq/session_request_notification.txt"
         header = "A new"
+        meeting = MeetingFactory(type_id="ietf", date=date_today())
         requester = PersonFactory(name="James O'Rourke", user__username="jimorourke")
-        context = {
-            "header": header,
-            "meeting": MeetingFactory(type_id="ietf", date=date_today()),
-            "requester": requester,
-        }
+        context = {"header": header, "meeting": meeting, "requester": requester}
         cc = "cc.a@example.com, cc.b@example.com"
         bcc = "bcc@example.com"
 
