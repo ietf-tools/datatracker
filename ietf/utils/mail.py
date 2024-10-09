@@ -19,11 +19,13 @@ from email.mime.multipart import MIMEMultipart
 from email.header import Header, decode_header
 from email import message_from_bytes, message_from_string
 from email import charset as Charset
+from typing import Optional
 
 from django.conf import settings
 from django.contrib import messages
 from django.core.exceptions import ImproperlyConfigured, ValidationError
 from django.core.validators import validate_email
+from django.http import HttpRequest
 from django.template.loader import render_to_string
 from django.template import Context,RequestContext
 from django.utils import timezone
@@ -330,7 +332,7 @@ def condition_message(to, frm, subject, msg, cc, extra):
         msg['Message-ID'] = make_msgid()
 
 
-def show_that_mail_was_sent(request, leadline, msg, bcc):
+def show_that_mail_was_sent(request: HttpRequest, leadline: str, msg: Message, bcc: Optional[str]):
     if request and request.user:
         from ietf.ietfauth.utils import has_role
 
