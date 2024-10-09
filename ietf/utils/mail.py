@@ -352,17 +352,13 @@ def show_that_mail_was_sent(request: HttpRequest, leadline: str, msg: Message, b
                 "RG Secretary",
             ],
         ):
-            info = "%s at %s %s\n" % (
-                leadline,
-                timezone.now().strftime("%Y-%m-%d %H:%M:%S"),
-                settings.TIME_ZONE,
-            )
-            info += "Subject: %s\n" % force_str(msg.get("Subject", "[no subject]"))
-            info += "To: %s\n" % msg.get("To", "[no to]")
+            info = f"{leadline} at {timezone.now().strftime('%Y-%m-%d %H:%M:%S')} {settings.TIME_ZONE}\n"
+            info += f"Subject: {force_str(msg.get('Subject', '[no subject]'))}\n"
+            info += f"To: {msg.get('To', '[no to]')}\n"
             if msg.get("Cc"):
-                info += "Cc: %s\n" % msg.get("Cc")
+                info += f"Cc: {msg.get('Cc')}\n"
             if bcc:
-                info += "Bcc: %s\n" % bcc
+                info += f"Bcc: {bcc}\n"
             messages.info(request, info, extra_tags="preformatted", fail_silently=True)
 
 
