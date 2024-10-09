@@ -330,18 +330,39 @@ def condition_message(to, frm, subject, msg, cc, extra):
         msg['Message-ID'] = make_msgid()
 
 
-def show_that_mail_was_sent(request,leadline,msg,bcc):
-        if request and request.user:
-            from ietf.ietfauth.utils import has_role
-            if has_role(request.user,['Area Director','Secretariat','IANA','RFC Editor','ISE','IAD','IRTF Chair','WG Chair','RG Chair','WG Secretary','RG Secretary']):
-                info =  "%s at %s %s\n" % (leadline,timezone.now().strftime("%Y-%m-%d %H:%M:%S"),settings.TIME_ZONE)
-                info += "Subject: %s\n" % force_str(msg.get('Subject','[no subject]'))
-                info += "To: %s\n" % msg.get('To','[no to]')
-                if msg.get('Cc'):
-                    info += "Cc: %s\n" % msg.get('Cc')
-                if bcc:
-                    info += "Bcc: %s\n" % bcc
-                messages.info(request,info,extra_tags='preformatted',fail_silently=True)
+def show_that_mail_was_sent(request, leadline, msg, bcc):
+    if request and request.user:
+        from ietf.ietfauth.utils import has_role
+
+        if has_role(
+            request.user,
+            [
+                "Area Director",
+                "Secretariat",
+                "IANA",
+                "RFC Editor",
+                "ISE",
+                "IAD",
+                "IRTF Chair",
+                "WG Chair",
+                "RG Chair",
+                "WG Secretary",
+                "RG Secretary",
+            ],
+        ):
+            info = "%s at %s %s\n" % (
+                leadline,
+                timezone.now().strftime("%Y-%m-%d %H:%M:%S"),
+                settings.TIME_ZONE,
+            )
+            info += "Subject: %s\n" % force_str(msg.get("Subject", "[no subject]"))
+            info += "To: %s\n" % msg.get("To", "[no to]")
+            if msg.get("Cc"):
+                info += "Cc: %s\n" % msg.get("Cc")
+            if bcc:
+                info += "Bcc: %s\n" % bcc
+            messages.info(request, info, extra_tags="preformatted", fail_silently=True)
+
 
 def save_as_message(request, msg, bcc):
     by = ((request and request.user and not request.user.is_anonymous and request.user.person)
