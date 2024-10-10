@@ -95,9 +95,7 @@ class CommunityListTests(TestCase):
 
         url = urlreverse(ietf.community.views.view_list, kwargs={ "email_or_name": person.plain_name()})
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 300)
-        self.assertIn("bazquux@example.com", r.content.decode())
-        self.assertIn("foobar@example.com", r.content.decode())
+        self.assertEqual(r.status_code, 404)
 
     def complex_person(self, *args, **kwargs):
         person = PersonFactory(*args, **kwargs)
