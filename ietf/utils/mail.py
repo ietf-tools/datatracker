@@ -66,6 +66,18 @@ def add_headers(msg):
         msg['From'] = settings.DEFAULT_FROM_EMAIL
     return msg
 
+
+def decode_header_value(value: str) -> str:
+    """Decode a header value
+    
+    Easier-to-use wrapper around email.message.decode_header()
+    """
+    return "".join(
+        part.decode(charset if charset else "utf-8") if isinstance(part, bytes) else part
+        for part, charset in decode_header(value)
+    )
+
+
 class SMTPSomeRefusedRecipients(smtplib.SMTPException):
 
     def __init__(self, message, original_msg, refusals):
@@ -253,8 +265,7 @@ def parseaddr(addr):
 
     """
 
-    addr = ''.join( [ ( s.decode(m) if m else s.decode()) if isinstance(s, bytes) else s for (s,m) in decode_header(addr) ] )
-    name, addr = simple_parseaddr(addr)
+    name, addr = simple_parseaddr(decode_header_value(addr))
     return name, addr
 
 def excludeaddrs(addrlist, exlist):
