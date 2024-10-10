@@ -363,14 +363,24 @@ def show_that_mail_was_sent(request: HttpRequest, leadline: str, msg: Message, b
                 "RG Secretary",
             ],
         ):
-            info = f"{leadline} at {timezone.now().strftime('%Y-%m-%d %H:%M:%S')} {settings.TIME_ZONE}\n"
-            info += f"Subject: {force_str(msg.get('Subject', '[no subject]'))}\n"
-            info += f"To: {msg.get('To', '[no to]')}\n"
-            if msg.get("Cc"):
-                info += f"Cc: {msg.get('Cc')}\n"
+            subject = decode_header_value(msg.get("Subject", "[no subject]"))
+            _to = decode_header_value(msg.get("To", "[no to]"))
+            info_lines = [
+                f"{leadline} at {timezone.now().strftime('%Y-%m-%d %H:%M:%S')} {settings.TIME_ZONE}",
+                f"Subject: {subject}",
+                f"To: {_to}",
+            ]
+            cc = msg.get("Cc", None)
+            if cc is not None:
+                info_lines.append(f"Cc: {decode_header_value(cc)}")
             if bcc:
-                info += f"Bcc: {bcc}\n"
-            messages.info(request, info, extra_tags="preformatted", fail_silently=True)
+                info_lines.append(f"Bcc: {decode_header_value(bcc)}")
+            messages.info(
+                request,
+                "\n".join(info_lines),
+                extra_tags="preformatted",
+                fail_silently=True,
+            )
 
 
 def save_as_message(request, msg, bcc):
