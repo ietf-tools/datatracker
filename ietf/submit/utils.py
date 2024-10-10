@@ -11,44 +11,44 @@ import re
 import sys
 import time
 import traceback
-import xml2rfc
-
 from pathlib import Path
 from shutil import move
 from typing import Optional, Union  # pyflakes:ignore
+
+import xml2rfc
+from django.conf import settings
+from django.contrib.auth.models import AnonymousUser
+from django.core.exceptions import ValidationError
+from django.core.validators import validate_email
+from django.db import transaction
+from django.http import HttpRequest  # pyflakes:ignore
+from django.utils import timezone
+from django.utils.module_loading import import_string
 from unidecode import unidecode
+from xml2rfc import RfcWriterError
 from xym import xym
 
-from django.conf import settings
-from django.core.exceptions import ValidationError
-from django.core.validators import validate_email 
-from django.db import transaction
-from django.http import HttpRequest     # pyflakes:ignore
-from django.utils.module_loading import import_string
-from django.contrib.auth.models import AnonymousUser
-from django.utils import timezone
-
-import debug                            # pyflakes:ignore
-
-from ietf.doc.models import ( Document, State, DocEvent, SubmissionDocEvent,
-    DocumentAuthor, AddedMessageEvent )
+from ietf.community.utils import update_name_contains_indexes_with_new_doc
+from ietf.doc.mails import send_review_possibly_replaces_request, send_external_resource_change_request
+from ietf.doc.models import (Document, State, DocEvent, SubmissionDocEvent,
+                             DocumentAuthor, AddedMessageEvent)
 from ietf.doc.models import NewRevisionDocEvent
 from ietf.doc.models import RelatedDocument, DocRelationshipName, DocExtResource
 from ietf.doc.utils import (add_state_change_event, rebuild_reference_relations,
-    set_replaces_for_document, prettify_std_name, update_doc_extresources, 
-    can_edit_docextresources, update_documentauthors, update_action_holders,
-    bibxml_for_draft )
-from ietf.doc.mails import send_review_possibly_replaces_request, send_external_resource_change_request
+                            set_replaces_for_document, prettify_std_name, update_doc_extresources,
+                            can_edit_docextresources, update_documentauthors, update_action_holders,
+                            bibxml_for_draft)
 from ietf.group.models import Group
 from ietf.ietfauth.utils import has_role
 from ietf.name.models import StreamName, FormalLanguageName
 from ietf.person.models import Person, Email
-from ietf.community.utils import update_name_contains_indexes_with_new_doc
-from ietf.submit.mail import ( announce_to_lists, announce_new_version, announce_to_authors,
-    send_approval_request, send_submission_confirmation, announce_new_wg_00, send_manual_post_request )
+from ietf.person.name import unidecode_name
 from ietf.submit.checkers import DraftYangChecker
-from ietf.submit.models import ( Submission, SubmissionEvent, Preapproval, DraftSubmissionStateName,
-    SubmissionCheck, SubmissionExtResource )
+from ietf.submit.mail import (announce_to_lists, announce_new_version, announce_to_authors,
+                              send_approval_request, send_submission_confirmation, announce_new_wg_00,
+                              send_manual_post_request)
+from ietf.submit.models import (Submission, SubmissionEvent, Preapproval, DraftSubmissionStateName,
+                                SubmissionCheck, SubmissionExtResource)
 from ietf.utils import log
 from ietf.utils.accesstoken import generate_random_key
 from ietf.utils.draft import PlaintextDraft
@@ -56,7 +56,6 @@ from ietf.utils.mail import is_valid_email
 from ietf.utils.text import parse_unicode, normalize_text
 from ietf.utils.timezone import date_today
 from ietf.utils.xmldraft import XMLDraft
-from ietf.person.name import unidecode_name
 
 
 def validate_submission(submission):
@@ -919,7 +918,18 @@ def accept_submission_requires_group_approval(submission):
 
 class SubmissionError(Exception):
     """Exception for errors during submission processing"""
-    pass
+
+
+class XmlRfcError(SubmissionError):
+    """SubmissionError caused by xml2rfc
+    
+    Includes the output from xml2rfc, if any, in xml2rfc_stdout / xml2rfc_stderr
+    """
+    def __init__(self, *args, xml2rfc_stdout: str, xml2rfc_stderr: str):
+        super().__init__(*args)
+        self.xml2rfc_stderr = xml2rfc_stderr
+        self.xml2rfc_stdout = xml2rfc_stdout
+
 
 class InconsistentRevisionError(SubmissionError):
     """SubmissionError caused by an inconsistent revision"""
@@ -937,27 +947,55 @@ def render_missing_formats(submission):
     If a txt file already exists, leaves it in place. Overwrites an existing html file
     if there is one.
     """
-    xml2rfc.log.write_out = io.StringIO()   # open(os.devnull, "w")
-    xml2rfc.log.write_err = io.StringIO()   # open(os.devnull, "w")
+    # Capture stdio/stdout from xml2rfc
+    xml2rfc_stdout = io.StringIO()
+    xml2rfc_stderr = io.StringIO()
+    xml2rfc.log.write_out = xml2rfc_stdout
+    xml2rfc.log.write_err = xml2rfc_stderr
     xml_path = staging_path(submission.name, submission.rev, '.xml')
     parser = xml2rfc.XmlRfcParser(str(xml_path), quiet=True)
-    # --- Parse the xml ---
-    xmltree = parser.parse(remove_comments=False)
+    try:
+        # --- Parse the xml ---
+        xmltree = parser.parse(remove_comments=False)
+    except Exception as err:
+        raise XmlRfcError(
+            "Error parsing XML",
+            xml2rfc_stdout=xml2rfc_stdout.getvalue(),
+            xml2rfc_stderr=xml2rfc_stderr.getvalue(),
+        ) from err
     # If we have v2, run it through v2v3. Keep track of the submitted version, though.
     xmlroot = xmltree.getroot()
     xml_version = xmlroot.get('version', '2')
     if xml_version == '2':
         v2v3 = xml2rfc.V2v3XmlWriter(xmltree)
-        xmltree.tree = v2v3.convert2to3()
+        try:
+            xmltree.tree = v2v3.convert2to3()
+        except Exception as err:
+            raise XmlRfcError(
+                "Error converting v2 XML to v3",
+                xml2rfc_stdout=xml2rfc_stdout.getvalue(),
+                xml2rfc_stderr=xml2rfc_stderr.getvalue(),
+            ) from err
 
     # --- Prep the xml ---
     today = date_today()
     prep = xml2rfc.PrepToolWriter(xmltree, quiet=True, liberal=True, keep_pis=[xml2rfc.V3_PI_TARGET])
     prep.options.accept_prepped = True
     prep.options.date = today
-    xmltree.tree = prep.prep()
-    if xmltree.tree == None:
-        raise SubmissionError(f'Error from xml2rfc (prep): {prep.errors}')
+    try:
+        xmltree.tree = prep.prep()
+    except RfcWriterError:
+        raise XmlRfcError(
+            f"Error during xml2rfc prep: {prep.errors}",
+            xml2rfc_stdout=xml2rfc_stdout.getvalue(),
+            xml2rfc_stderr=xml2rfc_stderr.getvalue(),
+        )
+    except Exception as err:
+        raise XmlRfcError(
+            "Unexpected error during xml2rfc prep",
+            xml2rfc_stdout=xml2rfc_stdout.getvalue(),
+            xml2rfc_stderr=xml2rfc_stderr.getvalue(),
+        ) from err
 
     # --- Convert to txt ---
     txt_path = staging_path(submission.name, submission.rev, '.txt')
@@ -965,7 +1003,14 @@ def render_missing_formats(submission):
         writer = xml2rfc.TextWriter(xmltree, quiet=True)
         writer.options.accept_prepped = True
         writer.options.date = today
-        writer.write(txt_path)
+        try:
+            writer.write(txt_path)
+        except Exception as err:
+            raise XmlRfcError(
+                "Error generating text format from XML",
+                xml2rfc_stdout=xml2rfc_stdout.getvalue(),
+                xml2rfc_stderr=xml2rfc_stderr.getvalue(),
+            ) from err
         log.log(
             'In %s: xml2rfc %s generated %s from %s (version %s)' % (
                 str(xml_path.parent),
@@ -980,7 +1025,14 @@ def render_missing_formats(submission):
     html_path = staging_path(submission.name, submission.rev, '.html')
     writer = xml2rfc.HtmlWriter(xmltree, quiet=True)
     writer.options.date = today
-    writer.write(str(html_path))
+    try:
+        writer.write(str(html_path))
+    except Exception as err:
+        raise XmlRfcError(
+            "Error generating HTML format from XML",
+            xml2rfc_stdout=xml2rfc_stdout.getvalue(),
+            xml2rfc_stderr=xml2rfc_stderr.getvalue(),
+        ) from err
     log.log(
         'In %s: xml2rfc %s generated %s from %s (version %s)' % (
             str(xml_path.parent),
@@ -1263,7 +1315,7 @@ def process_submission_text(filename, revision):
 def process_and_validate_submission(submission):
     """Process and validate a submission
 
-    Raises SubmissionError if an error is encountered.
+    Raises SubmissionError or a subclass if an error is encountered.
     """
     if len(set(submission.file_types.split(",")).intersection({".xml", ".txt"})) == 0:
         raise SubmissionError("Require XML and/or text format to process an Internet-Draft submission.")
@@ -1273,7 +1325,16 @@ def process_and_validate_submission(submission):
         # Parse XML first, if we have it
         if ".xml" in submission.file_types:
             xml_metadata = process_submission_xml(submission.name, submission.rev)
-            render_missing_formats(submission)  # makes HTML and text, unless text was uploaded
+            try:
+                render_missing_formats(submission)  # makes HTML and text, unless text was uploaded
+            except XmlRfcError as err:
+                # log stdio/stderr
+                log.log(
+                    f"xml2rfc failure when rendering missing formats for {submission.name}-{submission.rev}:\n"
+                    f">> stdout:\n{err.xml2rfc_stdout}\n"
+                    f">> stderr:\n{err.xml2rfc_stderr}"
+                )
+                raise
         # Parse text, whether uploaded or generated from XML
         text_metadata = process_submission_text(submission.name, submission.rev)
 
@@ -1332,11 +1393,11 @@ def process_and_validate_submission(submission):
             raise SubmissionError('Checks failed: ' + ' / '.join(errors))
     except SubmissionError:
         raise  # pass SubmissionErrors up the stack
-    except Exception:
+    except Exception as err:
         # convert other exceptions into SubmissionErrors
         log.log(f'Unexpected exception while processing submission {submission.pk}.')
         log.log(traceback.format_exc())
-        raise SubmissionError('A system error occurred while processing the submission.')
+        raise SubmissionError('A system error occurred while processing the submission.') from err
 
 
 def submitter_is_author(submission):
@@ -1428,6 +1489,7 @@ def process_uploaded_submission(submission):
         create_submission_event(None, submission, desc="Uploaded submission (diverted to manual process)")
         send_manual_post_request(None, submission, errors=dict(consistency=str(consistency_error)))
     except SubmissionError as err:
+        # something generic went wrong
         submission.refresh_from_db()  # guard against incomplete changes in submission validation / processing
         cancel_submission(submission)  # changes Submission.state
         create_submission_event(None, submission, f"Submission rejected: {err}")
