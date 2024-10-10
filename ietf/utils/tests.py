@@ -138,7 +138,8 @@ class MailUtilsTests(TestCase):
             "decodes a value with non-utf-8 encodings",
         )
 
-    @patch("ietf.utils.mail.decode_header_value", side_effect=lambda s: s.upper())
+    # Patch in a side_effect so we can distinguish values that came from decode_header_value.
+    @patch("ietf.utils.mail.decode_header_value", side_effect=lambda s: f"decoded-{s}")
     @patch("ietf.utils.mail.messages")
     def test_show_that_mail_was_sent(self, mock_messages, mock_decode_header_value):
         request = RequestFactory().get("/some/path")
@@ -146,19 +147,19 @@ class MailUtilsTests(TestCase):
         msg = Message()
         msg["To"] = "to-value"
         msg["Subject"] = "subject-value"
-        msg["Cc"] = "the-cc-value"  # the- prefix to distinguish from bcc
+        msg["Cc"] = "cc-value"
         with patch("ietf.ietfauth.utils.has_role", return_value=True):
             show_that_mail_was_sent(request, "mail was sent", msg, "bcc-value")
         self.assertCountEqual(
             mock_decode_header_value.call_args_list,
-            [call("to-value"), call("subject-value"), call("the-cc-value"), call("bcc-value")],
+            [call("to-value"), call("subject-value"), call("cc-value"), call("bcc-value")],
         )
         self.assertEqual(mock_messages.info.call_args[0][0], request)
         self.assertIn("mail was sent", mock_messages.info.call_args[0][1])
-        self.assertIn("SUBJECT-VALUE", mock_messages.info.call_args[0][1])
-        self.assertIn("TO-VALUE", mock_messages.info.call_args[0][1])
-        self.assertIn("THE-CC-VALUE", mock_messages.info.call_args[0][1])
-        self.assertIn("BCC-VALUE", mock_messages.info.call_args[0][1])
+        self.assertIn("decoded-subject-value", mock_messages.info.call_args[0][1])
+        self.assertIn("decoded-to-value", mock_messages.info.call_args[0][1])
+        self.assertIn("decoded-cc-value", mock_messages.info.call_args[0][1])
+        self.assertIn("decoded-bcc-value", mock_messages.info.call_args[0][1])
         mock_messages.reset_mock()
         mock_decode_header_value.reset_mock()
 
@@ -167,14 +168,16 @@ class MailUtilsTests(TestCase):
             show_that_mail_was_sent(request, "mail was sent", msg, None)
         self.assertCountEqual(
             mock_decode_header_value.call_args_list,
-            [call("to-value"), call("subject-value"), call("the-cc-value")],
+            [call("to-value"), call("subject-value"), call("cc-value")],
         )
         self.assertEqual(mock_messages.info.call_args[0][0], request)
         self.assertIn("mail was sent", mock_messages.info.call_args[0][1])
-        self.assertIn("SUBJECT-VALUE", mock_messages.info.call_args[0][1])
-        self.assertIn("TO-VALUE", mock_messages.info.call_args[0][1])
-        self.assertIn("THE-CC-VALUE", mock_messages.info.call_args[0][1])
-        self.assertNotIn("BCC-VALUE", mock_messages.info.call_args[0][1])
+        self.assertIn("decoded-subject-value", mock_messages.info.call_args[0][1])
+        self.assertIn("decoded-to-value", mock_messages.info.call_args[0][1])
+        self.assertIn("decoded-cc-value", mock_messages.info.call_args[0][1])
+        # Note: here and below - when using assertNotIn(), leaving off the "decoded-" prefix
+        # proves that neither the original value nor the decoded value appear.
+        self.assertNotIn("bcc-value", mock_messages.info.call_args[0][1])
         mock_messages.reset_mock()
         mock_decode_header_value.reset_mock()
 
@@ -188,10 +191,10 @@ class MailUtilsTests(TestCase):
         )
         self.assertEqual(mock_messages.info.call_args[0][0], request)
         self.assertIn("mail was sent", mock_messages.info.call_args[0][1])
-        self.assertIn("SUBJECT-VALUE", mock_messages.info.call_args[0][1])
-        self.assertIn("TO-VALUE", mock_messages.info.call_args[0][1])
-        self.assertNotIn("THE-CC-VALUE", mock_messages.info.call_args[0][1])
-        self.assertNotIn("BCC-VALUE", mock_messages.info.call_args[0][1])
+        self.assertIn("decoded-subject-value", mock_messages.info.call_args[0][1])
+        self.assertIn("decoded-to-value", mock_messages.info.call_args[0][1])
+        self.assertNotIn("cc-value", mock_messages.info.call_args[0][1])
+        self.assertNotIn("bcc-value", mock_messages.info.call_args[0][1])
         mock_messages.reset_mock()
         mock_decode_header_value.reset_mock()
 
@@ -205,11 +208,11 @@ class MailUtilsTests(TestCase):
         )
         self.assertEqual(mock_messages.info.call_args[0][0], request)
         self.assertIn("mail was sent", mock_messages.info.call_args[0][1])
-        self.assertIn("SUBJECT-VALUE", mock_messages.info.call_args[0][1])
-        self.assertIn("[NO TO]", mock_messages.info.call_args[0][1])
-        self.assertNotIn("TO-VALUE", mock_messages.info.call_args[0][1])
-        self.assertNotIn("THE-CC-VALUE", mock_messages.info.call_args[0][1])
-        self.assertNotIn("BCC-VALUE", mock_messages.info.call_args[0][1])
+        self.assertIn("decoded-subject-value", mock_messages.info.call_args[0][1])
+        self.assertIn("decoded-[no to]", mock_messages.info.call_args[0][1])
+        self.assertNotIn("to-value", mock_messages.info.call_args[0][1])
+        self.assertNotIn("cc-value", mock_messages.info.call_args[0][1])
+        self.assertNotIn("bcc-value", mock_messages.info.call_args[0][1])
         mock_messages.reset_mock()
         mock_decode_header_value.reset_mock()
 
@@ -223,12 +226,12 @@ class MailUtilsTests(TestCase):
         )
         self.assertEqual(mock_messages.info.call_args[0][0], request)
         self.assertIn("mail was sent", mock_messages.info.call_args[0][1])
-        self.assertIn("[NO SUBJECT]", mock_messages.info.call_args[0][1])
-        self.assertNotIn("SUBJECT-VALUE", mock_messages.info.call_args[0][1])
-        self.assertIn("[NO TO]", mock_messages.info.call_args[0][1])
-        self.assertNotIn("TO-VALUE", mock_messages.info.call_args[0][1])
-        self.assertNotIn("THE-CC-VALUE", mock_messages.info.call_args[0][1])
-        self.assertNotIn("BCC-VALUE", mock_messages.info.call_args[0][1])
+        self.assertIn("decoded-[no subject]", mock_messages.info.call_args[0][1])
+        self.assertNotIn("subject-value", mock_messages.info.call_args[0][1])
+        self.assertIn("decoded-[no to]", mock_messages.info.call_args[0][1])
+        self.assertNotIn("to-value", mock_messages.info.call_args[0][1])
+        self.assertNotIn("cc-value", mock_messages.info.call_args[0][1])
+        self.assertNotIn("bcc-value", mock_messages.info.call_args[0][1])
         mock_messages.reset_mock()
         mock_decode_header_value.reset_mock()
         
