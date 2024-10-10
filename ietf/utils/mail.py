@@ -371,7 +371,7 @@ def show_that_mail_was_sent(request: HttpRequest, leadline: str, msg: Message, b
                 f"To: {_to}",
             ]
             cc = msg.get("Cc", None)
-            if cc is not None:
+            if cc:
                 info_lines.append(f"Cc: {decode_header_value(cc)}")
             if bcc:
                 info_lines.append(f"Bcc: {decode_header_value(bcc)}")
