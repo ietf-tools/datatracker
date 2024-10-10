@@ -366,7 +366,7 @@ def show_that_mail_was_sent(request: HttpRequest, leadline: str, msg: Message, b
             subject = decode_header_value(msg.get("Subject", "[no subject]"))
             _to = decode_header_value(msg.get("To", "[no to]"))
             info_lines = [
-                f"{leadline} at {timezone.now().strftime('%Y-%m-%d %H:%M:%S')} {settings.TIME_ZONE}",
+                f"{leadline} at {timezone.now():%Y-%m-%d %H:%M:%S %Z}",
                 f"Subject: {subject}",
                 f"To: {_to}",
             ]
