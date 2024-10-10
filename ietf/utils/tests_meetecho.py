@@ -558,7 +558,7 @@ class SlidesManagerTests(TestCase):
                 deck={
                     "id": slides_doc.pk,
                     "title": slides_doc.title,
-                    "url": slides_doc.get_versionless_href(),
+                    "url": slides_doc.get_href(session.meeting),
                     "rev": slides_doc.rev,
                     "order": 13,
                 },
@@ -597,7 +597,7 @@ class SlidesManagerTests(TestCase):
                     {
                         "id": slides_doc.pk,
                         "title": slides_doc.title,
-                        "url": slides_doc.get_versionless_href(),
+                        "url": slides_doc.get_href(session.meeting),
                         "rev": slides_doc.rev,
                         "order": 1,
                     },
@@ -635,7 +635,7 @@ class SlidesManagerTests(TestCase):
                 deck={
                     "id": slides_doc.pk,
                     "title": slides_doc.title,
-                    "url": slides_doc.get_versionless_href(),
+                    "url": slides_doc.get_href(slides.session.meeting),
                     "rev": slides_doc.rev,
                     "order": 23,
                 },
@@ -660,7 +660,7 @@ class SlidesManagerTests(TestCase):
                     {
                         "id": slides.document_id,
                         "title": slides.document.title,
-                        "url": slides.document.get_versionless_href(),
+                        "url": slides.document.get_href(slides.session.meeting),
                         "rev": slides.document.rev,
                         "order": 0,
                     }
