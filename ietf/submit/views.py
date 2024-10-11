@@ -1,7 +1,5 @@
 # Copyright The IETF Trust 2011-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
-
-
 import re
 import datetime
 
@@ -29,17 +27,15 @@ from ietf.ietfauth.utils import has_role, role_required
 from ietf.mailtrigger.utils import gather_address_lists
 from ietf.person.models import Email
 from ietf.submit.forms import (SubmissionAutoUploadForm, AuthorForm, SubmitterForm, EditSubmissionForm,
-                               PreapprovalForm, ReplacesForm,
-                               DeprecatedSubmissionAutoUploadForm, SubmissionManualUploadForm)
+                               PreapprovalForm, ReplacesForm, SubmissionManualUploadForm)
 from ietf.submit.mail import send_full_url, send_manual_post_request
 from ietf.submit.models import (Submission, Preapproval, SubmissionExtResource,
     DraftSubmissionStateName )
 from ietf.submit.tasks import process_uploaded_submission_task, process_and_accept_uploaded_submission_task, poke
 from ietf.submit.utils import ( approvable_submissions_for_user, preapprovals_for_user,
     recently_approved_by_user, validate_submission, create_submission_event, docevent_from_submission,
-    post_submission, cancel_submission, rename_submission_files, remove_submission_files, get_draft_meta,
-    get_submission, fill_in_submission, apply_checkers, save_files, clear_existing_files,
-    check_submission_revision_consistency, accept_submission, accept_submission_requires_group_approval,
+    post_submission, cancel_submission, rename_submission_files, remove_submission_files,
+    get_submission, save_files, clear_existing_files, accept_submission, accept_submission_requires_group_approval,
     accept_submission_requires_prev_auth_approval, update_submission_external_resources)
 from ietf.stats.utils import clean_country_name
 from ietf.utils.accesstoken import generate_access_token
@@ -187,97 +183,14 @@ def api_submission_status(request, submission_id):
 
 
 @csrf_exempt
-def api_submit(request):
-    "Automated submission entrypoint"
-    submission = None
-    def err(code, text):
-        return HttpResponse(text, status=code, content_type='text/plain')
+def api_submit_tombstone(request):
+    """Tombstone for removed automated submission entrypoint"""
+    return render(
+        request, 
+        'submit/api_submit_info.html',
+        status=410,  # Gone
+    )
 
-    if request.method == 'GET':
-        return render(request, 'submit/api_submit_info.html')
-    elif request.method == 'POST':
-        exception = None
-        try:
-            form = DeprecatedSubmissionAutoUploadForm(request, data=request.POST, files=request.FILES)
-            if form.is_valid():
-                log('got valid submission form for %s' % form.filename)
-                username = form.cleaned_data['user']
-                user = User.objects.filter(username__iexact=username)
-                if user.count() == 0:
-                    # See if a secondary login was being used
-                    email = Email.objects.filter(address=username, active=True)
-                    # The error messages don't talk about 'email', as the field we're
-                    # looking at is still the 'username' field.
-                    if email.count() == 0:
-                        return err(400, "No such user: %s" % username)
-                    elif email.count() > 1:
-                        return err(500, "Multiple matching accounts for %s" % username)
-                    email = email.first()
-                    if not hasattr(email, 'person'):
-                        return err(400, "No person matches %s" % username)
-                    person = email.person
-                    if not hasattr(person, 'user'):
-                        return err(400, "No user matches: %s" % username)
-                    user = person.user
-                elif user.count() > 1:
-                    return err(500, "Multiple matching accounts for %s" % username)
-                else:
-                    user = user.first()
-                if not hasattr(user, 'person'):
-                    return err(400, "No person with username %s" % username)
-
-                saved_files = save_files(form)
-                authors, abstract, file_name, file_size = get_draft_meta(form, saved_files)
-                for a in authors:
-                    if not a['email']:
-                        raise ValidationError("Missing email address for author %s" % a)
-
-                submission = get_submission(form)
-                fill_in_submission(form, submission, authors, abstract, file_size)
-                apply_checkers(submission, file_name)
-
-                create_submission_event(request, submission, desc="Uploaded submission via api_submit")
-
-                errors = validate_submission(submission)
-                if errors:
-                    raise ValidationError(errors)
-
-                # must do this after validate_submission() or data needed for check may be invalid
-                if check_submission_revision_consistency(submission):
-                    return err( 409, "Submission failed due to a document revision inconsistency error "
-                                     "in the database. Please contact the secretariat for assistance.")
-
-                errors = [ c.message for c in submission.checks.all() if c.passed==False ]
-                if errors:
-                    raise ValidationError(errors)
-
-                if not username.lower() in [ a['email'].lower() for a in authors ]:
-                    raise ValidationError('Submitter %s is not one of the document authors' % user.username)
-
-                submission.submitter = user.person.formatted_email()
-                sent_to = accept_submission(submission, request)
-
-                return HttpResponse(
-                    "Upload of %s OK, confirmation requests sent to:\n  %s" % (submission.name, ',\n  '.join(sent_to)),
-                    content_type="text/plain")
-            else:
-                raise ValidationError(form.errors)
-        except IOError as e:
-            exception = e
-            return err(500, "IO Error: %s" % str(e))
-        except ValidationError as e:
-            exception = e
-            return err(400, "Validation Error: %s" % str(e))
-        except Exception as e:
-            exception = e
-            raise
-            return err(500, "Exception: %s" % str(e))
-        finally:
-            if exception and submission:
-                remove_submission_files(submission)
-                submission.delete()
-    else:
-        return err(405, "Method not allowed")
 
 def tool_instructions(request):
     return render(request, 'submit/tool_instructions.html', {'selected': 'instructions'})

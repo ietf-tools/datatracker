@@ -559,7 +559,7 @@ class BallotWriteupsTests(TestCase):
         q = PyQuery(r.content)
         self.assertFalse(q('[class=text-danger]:contains("not completed IETF Last Call")'))
 
-        for state_slug in ["lc", "watching", "ad-eval"]:
+        for state_slug in ["lc", "ad-eval"]:
             draft.set_state(State.objects.get(type="draft-iesg",slug=state_slug))
             r = self.client.get(url)
             self.assertEqual(r.status_code, 200)

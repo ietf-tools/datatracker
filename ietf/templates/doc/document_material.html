@@ -153,6 +153,9 @@
             </a>
         {% endif %}
     </p>
+    {% if session_statusid == "canceled" %}
+       <div class="alert alert-warning">The session for this document was cancelled.</div>
+    {% endif %}
     <div id="materials-content" class="card mt-5">
         <div class="card-header">{{ doc.name }}-{{ doc.rev }}</div>
         <div class="card-body{% if content_is_html %} text-break{% endif %}">

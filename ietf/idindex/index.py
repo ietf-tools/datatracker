@@ -51,7 +51,7 @@ def all_id_txt():
         res.append(f1 + "\t" + f2 + "\t" + f3 + "\t" + f4)
 
 
-    inactive_states = ["idexists", "pub", "watching", "dead"]
+    inactive_states = ["idexists", "pub", "dead"]
 
     excludes = list(State.objects.filter(type="draft", slug__in=["rfc","repl"]))
     includes = list(State.objects.filter(type="draft-iesg").exclude(slug__in=inactive_states))
