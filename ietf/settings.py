@@ -455,6 +455,8 @@ INSTALLED_APPS = [
     'corsheaders',
     'django_markup',
     'oidc_provider',
+    'drf_spectacular',
+    'rest_framework',
     'simple_history',
     'tastypie',
     'widget_tweaks',
@@ -549,6 +551,31 @@ INTERNAL_IPS = (
         '127.0.0.1',
         '::1',
 )
+
+# django-rest-framework configuration
+REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "ietf.api.authentication.ApiKeyAuthentication",
+    ],
+    "DEFAULT_PERMISSION_CLASSES": [
+        "ietf.api.permissions.ApiKeyEndpointPermissions",
+    ],
+    "DEFAULT_RENDERER_CLASSES": [
+        "rest_framework.renderers.JSONRenderer",
+    ],
+    "DEFAULT_PARSER_CLASSES": [
+        "rest_framework.parsers.JSONParser",
+    ],
+}
+
+# DRF OpenApi schema settings
+SPECTACULAR_SETTINGS = {
+    "TITLE": "Datatracker",
+    "DESCRIPTION": "Datatracker API",
+    "VERSION": "0.1",
+    "SCHEMA_PATH_PREFIX": "/api//",
+    "COMPONENT_NO_READ_ONLY_REQUIRED": True,
+}
 
 # no slash at end
 IDTRACKER_BASE_URL = "https://datatracker.ietf.org"
