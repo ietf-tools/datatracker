@@ -566,6 +566,7 @@ REST_FRAMEWORK = {
     "DEFAULT_PARSER_CLASSES": [
         "rest_framework.parsers.JSONParser",
     ],
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
 }
 
 # DRF OpenApi schema settings
@@ -573,8 +574,11 @@ SPECTACULAR_SETTINGS = {
     "TITLE": "Datatracker",
     "DESCRIPTION": "Datatracker API",
     "VERSION": "0.1",
-    "SCHEMA_PATH_PREFIX": "/api//",
+    "SCHEMA_PATH_PREFIX": "/api/rpc/",
     "COMPONENT_NO_READ_ONLY_REQUIRED": True,
+    "SERVERS": [
+        {"url": "http://localhost:8000", "description": "dev server"},
+    ],
 }
 
 # no slash at end

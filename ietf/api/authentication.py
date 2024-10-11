@@ -6,6 +6,7 @@ from django.contrib.auth.models import AnonymousUser
 
 class ApiKeyAuthentication(authentication.BaseAuthentication):
     """API-Key header authentication"""
+
     def authenticate(self, request):
         """Extract the authentication token, if present
         

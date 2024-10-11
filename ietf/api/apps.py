@@ -13,3 +13,5 @@ class ApiConfig(AppConfig):
         https://docs.djangoproject.com/en/4.2/ref/applications/#django.apps.AppConfig.ready
         """
         populate_api_list()
+        # Import drf-spectacular extensions 
+        import ietf.api.schema  # noqa
