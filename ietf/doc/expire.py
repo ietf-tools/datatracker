@@ -34,8 +34,8 @@ def expirable_drafts(queryset=None):
 
     # Populate this first time through (but after django has been set up)
     if nonexpirable_states is None:
-        # all IESG states except I-D Exists, AD Watching, and Dead block expiry
-        nonexpirable_states = list(State.objects.filter(used=True, type="draft-iesg").exclude(slug__in=("idexists","watching", "dead")))
+        # all IESG states except I-D Exists and Dead block expiry
+        nonexpirable_states = list(State.objects.filter(used=True, type="draft-iesg").exclude(slug__in=("idexists", "dead")))
         # sent to RFC Editor and RFC Published block expiry (the latter
         # shouldn't be possible for an active draft, though)
         nonexpirable_states += list(State.objects.filter(used=True, type__in=("draft-stream-iab", "draft-stream-irtf", "draft-stream-ise"), slug__in=("rfc-edit", "pub")))

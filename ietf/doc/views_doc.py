@@ -42,6 +42,7 @@ import re
 from pathlib import Path
 
 from django.core.cache import caches
+from django.core.exceptions import PermissionDenied
 from django.db.models import Max
 from django.http import HttpResponse, Http404, HttpResponseBadRequest
 from django.shortcuts import render, get_object_or_404, redirect
@@ -403,6 +404,10 @@ def document_main(request, name, rev=None, document_html=False):
 
         can_edit_replaces = has_role(request.user, ("Area Director", "Secretariat", "IRTF Chair", "WG Chair", "RG Chair", "WG Secretary", "RG Secretary"))
 
+        can_edit_action_holders = can_edit or (
+            request.user.is_authenticated and group.has_role(request.user, group.features.docman_roles)
+        )
+
         is_author = request.user.is_authenticated and doc.documentauthor_set.filter(person__user=request.user).exists()
         can_view_possibly_replaces = can_edit_replaces or is_author
 
@@ -582,7 +587,7 @@ def document_main(request, name, rev=None, document_html=False):
         if doc.get_state_slug() not in ["rfc", "expired"] and doc.stream_id in ("ietf",) and not snapshot:
             if iesg_state_slug == 'idexists' and can_edit:
                 actions.append(("Begin IESG Processing", urlreverse('ietf.doc.views_draft.edit_info', kwargs=dict(name=doc.name)) + "?new=1"))
-            elif can_edit_stream_info and (iesg_state_slug in ('idexists','watching')):
+            elif can_edit_stream_info and (iesg_state_slug == 'idexists'):
                 actions.append(("Submit to IESG for Publication", urlreverse('ietf.doc.views_draft.to_iesg', kwargs=dict(name=doc.name))))
 
         if request.user.is_authenticated and hasattr(request.user, "person"):
@@ -660,6 +665,7 @@ def document_main(request, name, rev=None, document_html=False):
                                        can_edit_iana_state=can_edit_iana_state,
                                        can_edit_consensus=can_edit_consensus,
                                        can_edit_replaces=can_edit_replaces,
+                                       can_edit_action_holders=can_edit_action_holders,
                                        can_view_possibly_replaces=can_view_possibly_replaces,
                                        can_request_review=can_request_review,
                                        can_submit_unsolicited_review_for_teams=can_submit_unsolicited_review_for_teams,
@@ -870,6 +876,13 @@ def document_main(request, name, rev=None, document_html=False):
                     and doc.group.features.has_nonsession_materials
                     and doc.type_id in doc.group.features.material_types
             )
+
+        session_statusid = None
+        actual_doc = doc if isinstance(doc,Document) else doc.doc
+        if actual_doc.session_set.count() == 1:
+            if actual_doc.session_set.get().schedulingevent_set.exists():
+                session_statusid = actual_doc.session_set.get().schedulingevent_set.order_by("-time").first().status_id
+
         return render(request, "doc/document_material.html",
                                   dict(doc=doc,
                                        top=top,
@@ -882,6 +895,7 @@ def document_main(request, name, rev=None, document_html=False):
                                        can_upload = can_upload,
                                        other_types=other_types,
                                        presentations=presentations,
+                                       session_statusid=session_statusid,
                                        ))
 
 
@@ -1863,11 +1877,21 @@ def edit_authors(request, name):
         })
 
 
-@role_required('Area Director', 'Secretariat')
+@login_required
 def edit_action_holders(request, name):
     """Change the set of action holders for a doc"""
     doc = get_object_or_404(Document, name=name)
-    
+
+    can_edit = has_role(request.user, ("Area Director", "Secretariat")) or (
+        doc.group and doc.group.has_role(request.user, doc.group.features.docman_roles)
+    )
+    if not can_edit:
+        # Keep the list of roles in this message up-to-date with the can_edit logic
+        message = "Restricted to roles: Area Director, Secretariat"
+        if doc.group and doc.group.acronym != "none":
+            message += f", and document managers for the {doc.group.acronym} group"
+        raise PermissionDenied(message)
+
     if request.method == 'POST':
         form = ActionHoldersForm(request.POST)
         if form.is_valid():
@@ -1977,10 +2001,20 @@ class ReminderEmailForm(forms.Form):
         strip=True,
     )
 
-@role_required('Area Director', 'Secretariat')
+@login_required
 def remind_action_holders(request, name):
     doc = get_object_or_404(Document, name=name)
-    
+
+    can_edit = has_role(request.user, ("Area Director", "Secretariat")) or (
+        doc.group and doc.group.has_role(request.user, doc.group.features.docman_roles)
+    )
+    if not can_edit:
+        # Keep the list of roles in this message up-to-date with the can_edit logic
+        message = "Restricted to roles: Area Director, Secretariat"
+        if doc.group and doc.group.acronym != "none":
+            message += f", and document managers for the {doc.group.acronym} group"
+        raise PermissionDenied(message)
+
     if request.method == 'POST':
         form = ReminderEmailForm(request.POST)
         if form.is_valid():

@@ -87,9 +87,18 @@ class IESGTests(TestCase):
             group=dated_group,
             person=Person.objects.get(user__username='ad'),
         )
-        dated_milestones = DatedGroupMilestoneFactory.create_batch(
-            2, group=dated_group, state_id="review"
-        )
+        dated_milestones = [
+            DatedGroupMilestoneFactory(
+                group=dated_group,
+                state_id="review",
+                desc="This is the description of one dated group milestone",
+            ),
+            DatedGroupMilestoneFactory(
+                group=dated_group,
+                state_id="review",
+                desc="This is the description of another dated group milestone",
+            ),
+        ]
         dated_milestones[0].due -= datetime.timedelta(days=1)  # make this one earlier
         dated_milestones[0].save()
 
@@ -99,9 +108,18 @@ class IESGTests(TestCase):
             group=dateless_group,
             person=Person.objects.get(user__username='ad'),
         )
-        dateless_milestones = DatelessGroupMilestoneFactory.create_batch(
-            2, group=dateless_group, state_id="review"
-        )
+        dateless_milestones = [
+            DatelessGroupMilestoneFactory(
+                group=dateless_group,
+                state_id="review",
+                desc="This is the description of one dateless group milestone",
+            ),
+            DatelessGroupMilestoneFactory(
+                group=dateless_group,
+                state_id="review",
+                desc="This is the description of another dateless group milestone",
+            ),
+        ]
 
         url = urlreverse("ietf.iesg.views.milestones_needing_review")
         self.client.login(username="ad", password="ad+password")
@@ -111,17 +129,29 @@ class IESGTests(TestCase):
         
         # check order-by-date
         dated_tbody = pq(f'td:contains("{dated_milestones[0].desc}")').closest("tbody")
-        next_td = dated_tbody.find('td:contains("Next")')
-        self.assertEqual(next_td.siblings()[0].text.strip(), dated_milestones[0].desc)
-        last_td = dated_tbody.find('td:contains("Last")')
-        self.assertEqual(last_td.siblings()[0].text.strip(), dated_milestones[1].desc)
+        rows = list(dated_tbody.items("tr"))  # keep as pyquery objects
+        self.assertTrue(rows[0].find('td:first:contains("Last")'))  # Last milestone shown first
+        self.assertFalse(rows[0].find('td:first:contains("Next")'))
+        self.assertTrue(rows[0].find(f'td:contains("{dated_milestones[1].desc}")'))
+        self.assertFalse(rows[0].find(f'td:contains("{dated_milestones[0].desc}")'))
+
+        self.assertFalse(rows[1].find('td:first:contains("Last")'))  # Last milestone shown first
+        self.assertTrue(rows[1].find('td:first:contains("Next")'))
+        self.assertFalse(rows[1].find(f'td:contains("{dated_milestones[1].desc}")'))
+        self.assertTrue(rows[1].find(f'td:contains("{dated_milestones[0].desc}")'))
 
         # check order-by-order
         dateless_tbody = pq(f'td:contains("{dateless_milestones[0].desc}")').closest("tbody")
-        next_td = dateless_tbody.find('td:contains("Next")')
-        self.assertEqual(next_td.siblings()[0].text.strip(), dateless_milestones[0].desc)
-        last_td = dateless_tbody.find('td:contains("Last")')
-        self.assertEqual(last_td.siblings()[0].text.strip(), dateless_milestones[1].desc)
+        rows = list(dateless_tbody.items("tr"))  # keep as pyquery objects
+        self.assertTrue(rows[0].find('td:first:contains("Last")'))  # Last milestone shown first
+        self.assertFalse(rows[0].find('td:first:contains("Next")'))
+        self.assertTrue(rows[0].find(f'td:contains("{dateless_milestones[1].desc}")'))
+        self.assertFalse(rows[0].find(f'td:contains("{dateless_milestones[0].desc}")'))
+
+        self.assertFalse(rows[1].find('td:first:contains("Last")'))  # Last milestone shown first
+        self.assertTrue(rows[1].find('td:first:contains("Next")'))
+        self.assertFalse(rows[1].find(f'td:contains("{dateless_milestones[1].desc}")'))
+        self.assertTrue(rows[1].find(f'td:contains("{dateless_milestones[0].desc}")'))
 
 
     def test_review_decisions(self):
@@ -404,6 +434,8 @@ class IESGAgendaTests(TestCase):
 
         self.assertContains(r, action_items.text)
 
+        q = PyQuery(r.content)
+
         for k, d in self.telechat_docs.items():
             if d.type_id == "charter":
                 self.assertContains(r, d.group.name, msg_prefix="%s '%s' not in response" % (k, d.group.name))
@@ -411,6 +443,18 @@ class IESGAgendaTests(TestCase):
             else:
                 self.assertContains(r, d.name, msg_prefix="%s '%s' not in response" % (k, d.name))
                 self.assertContains(r, d.title, msg_prefix="%s '%s' title not in response" % (k, d.title))
+
+            if d.type_id in ["charter", "draft"]:
+                if d.group.parent is None:
+                    continue
+                wg_url = urlreverse("ietf.group.views.active_groups", kwargs=dict(group_type="wg"))
+                href = f"{wg_url}#{d.group.parent.acronym.upper()}"
+                texts = [elem.text.strip() for elem in q(f'a[href="{href}"]')]
+                self.assertGreater(len(texts), 0)
+                if d.type_id == "charter":
+                    self.assertTrue(any(t == d.group.parent.acronym.upper() for t in texts))
+                elif d.type_id == "draft":
+                    self.assertTrue(any(t == f"({d.group.parent.acronym.upper()})" for t in texts))
 
         for i, mi in enumerate(self.mgmt_items, start=1):
             s = "6." + str(i)

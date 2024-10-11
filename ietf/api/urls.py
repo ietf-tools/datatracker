@@ -59,7 +59,7 @@ urlpatterns = [
     # Email alias listing
     url(r'^person/email/$', api_views.active_email_list),
     # Draft submission API
-    url(r'^submit/?$', submit_views.api_submit),
+    url(r'^submit/?$', submit_views.api_submit_tombstone),
     # Draft upload API
     url(r'^submission/?$', submit_views.api_submission),
     # Draft submission state API

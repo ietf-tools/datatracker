@@ -24,7 +24,7 @@
         <div class="row">
             <div class="col-3 text-end fw-bold">Area</div>
             <div class="col">
-                <a href="{% url 'ietf.group.views.active_groups' group_type='wg' %}#{{ doc.group.parent.acronym }}">
+                <a href="{% url 'ietf.group.views.active_groups' group_type='wg' %}#{{ doc.group.parent.acronym|upper }}">
                     {{ doc.group.parent.acronym|upper }}</a>
                 ({% person_link doc.ad %})
             </div>
