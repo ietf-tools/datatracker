@@ -1,9 +1,15 @@
-# Copyright The IETF Trust 2023-2024, All Rights Reserved
+# Copyright The IETF Trust 2023-2025, All Rights Reserved
+
+from rest_framework import routers
 
 from django.conf import settings
+from django.urls import include, path
 
 from ietf.api import views_rpc, views_rpc_demo
 from ietf.utils.urls import url
+
+router = routers.DefaultRouter()
+router.register(r"person", views_rpc.PersonViewSet)
 
 urlpatterns = [
     url(r"^doc/drafts/(?P<doc_id>[0-9]+)/$", views_rpc.rpc_draft),
@@ -14,10 +20,10 @@ urlpatterns = [
     url(r"^doc/rfc/authors/$", views_rpc.rfc_authors),
     url(r"^doc/draft/authors/$", views_rpc.draft_authors),
     url(r"^person/persons_by_email/$", views_rpc.persons_by_email),
-    url(r"^person/(?P<person_id>[0-9]+)/$", views_rpc.rpc_person),
     url(r"^persons/$", views_rpc.rpc_persons),
     url(r"^persons/search/", views_rpc.RpcPersonSearch.as_view()),
     url(r"^subject/(?P<subject_id>[0-9]+)/person/$", views_rpc.rpc_subject_person),
+    path("", include(router.urls)),
 ]
 
 if settings.SERVER_MODE not in {"production", "test"}:

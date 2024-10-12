@@ -2,6 +2,9 @@
 
 import json
 
+from drf_spectacular.utils import extend_schema_view, extend_schema
+from rest_framework import serializers, viewsets, mixins
+
 from django.db.models import OuterRef, Subquery, Q
 from django.http import (
     HttpResponseBadRequest,
@@ -9,7 +12,6 @@ from django.http import (
     HttpResponseNotAllowed,
     HttpResponseNotFound,
 )
-from django.shortcuts import get_object_or_404
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.models import User
 from drf_spectacular.utils import extend_schema_view, extend_schema
@@ -18,23 +20,24 @@ from rest_framework.fields import CharField
 from rest_framework.filters import SearchFilter
 from rest_framework.pagination import LimitOffsetPagination
 
-from ietf.api.ietf_utils import requires_api_token
 from ietf.api.serializers_rpc import PersonSerializer
 from ietf.doc.models import Document, DocHistory, RelatedDocument
 from ietf.person.models import Email, Person
+from .ietf_utils import requires_api_token
 
 
-@csrf_exempt
-@requires_api_token("ietf.api.views_rpc")
-def rpc_person(request, person_id):
-    person = get_object_or_404(Person, pk=person_id)
-    return JsonResponse(
-        {
-            "id": person.id,
-            "plain_name": person.plain_name(),
-            "picture": person.cdn_photo_url() or None,
-        }
-    )
+@extend_schema_view(
+    retrieve=extend_schema(
+        operation_id="get_person_by_id",
+        summary="Find person by ID",
+        description="Returns a single person",
+    ),
+)
+class PersonViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
+    queryset = Person.objects.all()
+    serializer_class = PersonSerializer
+    api_key_endpoint = "ietf.api.views_rpc"
+    lookup_url_kwarg = "personId"
 
 
 @csrf_exempt
