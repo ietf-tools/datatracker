@@ -2,8 +2,10 @@
 
 import json
 
-from drf_spectacular.utils import extend_schema_view, extend_schema
+from drf_spectacular.utils import extend_schema_view, extend_schema, OpenApiParameter
 from rest_framework import serializers, viewsets, mixins
+from rest_framework.views import APIView
+from rest_framework.response import Response
 
 from django.db.models import OuterRef, Subquery, Q
 from django.http import (
@@ -11,9 +13,9 @@ from django.http import (
     JsonResponse,
     HttpResponseNotAllowed,
     HttpResponseNotFound,
+    Http404,
 )
 from django.views.decorators.csrf import csrf_exempt
-from django.contrib.auth.models import User
 from drf_spectacular.utils import extend_schema_view, extend_schema
 from rest_framework import generics
 from rest_framework.fields import CharField
@@ -37,25 +39,35 @@ class PersonViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
     queryset = Person.objects.all()
     serializer_class = PersonSerializer
     api_key_endpoint = "ietf.api.views_rpc"
-    lookup_url_kwarg = "personId"
+    lookup_url_kwarg = "person_id"
 
 
-@csrf_exempt
-@requires_api_token("ietf.api.views_rpc")
-def rpc_subject_person(request, subject_id):
-    try:
-        user_id = int(subject_id)
-    except ValueError:
-        return JsonResponse({"error": "Invalid subject id"}, status=400)
-    try:
-        user = User.objects.get(pk=user_id)
-    except User.DoesNotExist:
-        return JsonResponse({"error": "Unknown subject"}, status=404)
-    if hasattr(
-        user, "person"
-    ):  # test this way to avoid exception on reverse OneToOneField
-        return rpc_person(request, person_id=user.person.pk)
-    return JsonResponse({"error": "Subject has no person"}, status=404)
+class SubjectPersonView(APIView):
+    api_key_endpoint = "ietf.api.views_rpc"
+
+    @extend_schema(
+        operation_id="get_subject_person_by_id",
+        summary="Find person for OIDC subject by ID",
+        description="Returns a single person",
+        responses=PersonSerializer,
+        parameters=[
+            OpenApiParameter(
+                name="subject_id",
+                type=str,
+                description="subject ID of person to return",
+                location="path",
+            ),
+        ],
+    )
+    def get(self, request, subject_id: str):
+        try:
+            user_id = int(subject_id)
+        except ValueError:
+            raise serializers.ValidationError({"subject_id": "This field must be an integer value."})
+        person = Person.objects.filter(user__pk=user_id).first()
+        if person:
+            return Response(PersonSerializer(person).data)
+        raise Http404
 
 
 @csrf_exempt

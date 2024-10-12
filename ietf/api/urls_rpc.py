@@ -22,7 +22,7 @@ urlpatterns = [
     url(r"^person/persons_by_email/$", views_rpc.persons_by_email),
     url(r"^persons/$", views_rpc.rpc_persons),
     url(r"^persons/search/", views_rpc.RpcPersonSearch.as_view()),
-    url(r"^subject/(?P<subject_id>[0-9]+)/person/$", views_rpc.rpc_subject_person),
+    path(r"subject/<str:subject_id>/person/", views_rpc.SubjectPersonView.as_view()),
     path("", include(router.urls)),
 ]
 
