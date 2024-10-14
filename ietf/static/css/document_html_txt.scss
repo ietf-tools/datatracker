@@ -344,7 +344,7 @@ div:is(.artwork, .sourcecode) pre {
   flex: 0 0 content;
   margin: 0;
   max-width: 72ch;
-  overflow: auto;
+  overflow: auto clip;
 }
 div:is(.artwork, .sourcecode) .pilcrow {
   flex: 0 0 1ch;
