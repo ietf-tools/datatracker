@@ -1840,7 +1840,7 @@ def agenda_extract_slide(item):
         "id": item.id,
         "title": item.title,
         "rev": item.rev,
-        "url": item.get_versionless_href(),
+        "url": item.get_href(),
         "ext": item.file_extension(),
     }
 
