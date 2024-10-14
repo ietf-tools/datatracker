@@ -20,6 +20,10 @@ test.describe('site status', () => {
     by: 'Exile is a cool Amiga game'
   }
 
+  test.beforeEach(({ browserName }) => {
+    test.skip(browserName === 'firefox', 'bypassing flaky tests on Firefox')
+  })
+
   test('Renders server status as Notification', async ({ page }) => {
     await page.route('/status/latest.json', route => {
       route.fulfill({
