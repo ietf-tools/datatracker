@@ -9,13 +9,13 @@ from ietf.api import views_rpc, views_rpc_demo
 from ietf.utils.urls import url
 
 router = routers.DefaultRouter()
-router.register(r"drafts", views_rpc.DraftViewSet)
+router.register(r"draft", views_rpc.DraftViewSet, basename="draft")
 router.register(r"person", views_rpc.PersonViewSet)
+router.register(r"rfc", views_rpc.RfcViewSet, basename="rfc")
 
 urlpatterns = [
     url(r"^doc/drafts/(?P<doc_id>[0-9]+)/references/$", views_rpc.rpc_draft_refs),
     url(r"^doc/drafts_by_names/", views_rpc.DraftsByNamesView.as_view()),
-    url(r"^doc/rfc/original_stream/$", views_rpc.rfc_original_stream),
     url(r"^doc/rfc/authors/$", views_rpc.rfc_authors),
     url(r"^doc/draft/authors/$", views_rpc.draft_authors),
     url(r"^person/persons_by_email/$", views_rpc.persons_by_email),

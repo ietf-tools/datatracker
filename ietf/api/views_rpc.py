@@ -1,8 +1,6 @@
 # Copyright The IETF Trust 2023-2025, All Rights Reserved
 
-import datetime
 import json
-from typing import Literal, Optional
 
 from drf_spectacular.utils import OpenApiParameter
 from rest_framework import serializers, viewsets, mixins
@@ -10,7 +8,8 @@ from rest_framework.decorators import action
 from rest_framework.views import APIView
 from rest_framework.response import Response
 
-from django.db.models import OuterRef, Subquery, Q
+from django.db.models import CharField, OuterRef, Subquery, Q
+from django.db.models.functions import Coalesce
 from django.http import (
     HttpResponseBadRequest,
     JsonResponse,
@@ -27,7 +26,7 @@ from rest_framework.pagination import LimitOffsetPagination
 from ietf.api.serializers_rpc import (
     PersonSerializer,
     FullDraftSerializer,
-    DraftSerializer,
+    DraftSerializer, SubmittedToQueueSerializer, OriginalStreamSerializer,
 )
 from ietf.doc.models import Document, DocHistory, RelatedDocument
 from ietf.person.models import Email, Person
@@ -130,25 +129,6 @@ class RpcPersonSearch(generics.ListAPIView):
     search_fields = ["name", "plain", "email__address"]
 
 
-
-class SubmittedToQueueSerializer(FullDraftSerializer):
-    submitted = serializers.SerializerMethodField()
-
-    class Meta:
-        model = Document
-        fields = [
-            "id",
-            "name",
-            "stream",
-            "submitted",
-        ]
-
-
-    def get_submitted(self, doc) -> Optional[datetime.datetime]:
-        event = doc.sent_to_rfc_editor_event()
-        return None if event is None else event.time
-
-
 @extend_schema_view(
     retrieve=extend_schema(
         operation_id="get_draft_by_id",
@@ -211,6 +191,36 @@ def rpc_draft_refs(request, doc_id):
     )
 
 
+@extend_schema_view(
+    rfc_original_stream=extend_schema(
+        operation_id="get_rfc_original_streams",
+        summary="Get the streams RFCs were originally published into",
+        description="returns a list of dicts associating an RFC with its originally published stream",
+        responses=OriginalStreamSerializer(many=True),
+    )
+)
+class RfcViewSet(viewsets.GenericViewSet):
+    queryset = Document.objects.filter(type_id="rfc")
+    api_key_endpoint = "ietf.api.views_rpc"
+
+    @action(detail=False, serializer_class=OriginalStreamSerializer)
+    def rfc_original_stream(self, request):
+        rfcs = self.get_queryset().annotate(
+            orig_stream_id=Coalesce(
+                Subquery(
+                    DocHistory.objects.filter(doc=OuterRef("pk"))
+                    .exclude(stream__isnull=True)
+                    .order_by("time")
+                    .values_list("stream_id", flat=True)[:1]
+                ),
+                "stream_id",
+                output_field=CharField(),
+            ),
+        )
+        serializer = self.get_serializer(rfcs, many=True)
+        return Response(serializer.data)
+        
+
 class DraftsByNamesView(APIView):
     api_key_endpoint = "ietf.api.views_rpc"
 
@@ -225,33 +235,6 @@ class DraftsByNamesView(APIView):
         names = request.data
         docs = Document.objects.filter(type_id="draft", name__in=names)
         return Response(DraftSerializer(docs, many=True).data)
-
-
-@csrf_exempt
-@requires_api_token("ietf.api.views_rpc")
-def rfc_original_stream(request):
-    """Return the stream that an rfc was first published into for all rfcs"""
-    rfcs = Document.objects.filter(type="rfc").annotate(
-        orig_stream_id=Subquery(
-            DocHistory.objects.filter(doc=OuterRef("pk"))
-            .exclude(stream__isnull=True)
-            .order_by("time")
-            .values_list("stream_id", flat=True)[:1]
-        )
-    )
-    response = {"original_stream": []}
-    for rfc in rfcs:
-        response["original_stream"].append(
-            {
-                "rfc_number": rfc.rfc_number,
-                "stream": (
-                    rfc.orig_stream_id
-                    if rfc.orig_stream_id is not None
-                    else rfc.stream_id
-                ),
-            }
-        )
-    return JsonResponse(response)
 
 
 @csrf_exempt
