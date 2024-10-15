@@ -4,6 +4,7 @@ import datetime
 import json
 from typing import Literal, Optional
 
+from django.db.models.functions import Coalesce
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema_view, extend_schema, OpenApiParameter, extend_schema_field
 from rest_framework import serializers, viewsets, mixins
@@ -11,7 +12,7 @@ from rest_framework.decorators import action
 from rest_framework.views import APIView
 from rest_framework.response import Response
 
-from django.db.models import OuterRef, Subquery, Q
+from django.db.models import OuterRef, Subquery, Q, CharField
 from django.http import (
     HttpResponse,
     JsonResponse,
@@ -241,6 +242,44 @@ class DraftViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
         return Response(serializer.data)
 
 
+class OriginalStreamSerializer(serializers.ModelSerializer):
+    stream = serializers.CharField(read_only=True, source="orig_stream_id")
+
+    class Meta:
+        model = Document
+        fields = ["rfc_number", "stream"]
+
+
+@extend_schema_view(
+    rfc_original_stream=extend_schema(
+        operation_id="get_rfc_original_streams",
+        summary="Get the streams RFCs were originally published into",
+        description="returns a list of dicts associating an RFC with its originally published stream",
+        responses=OriginalStreamSerializer(many=True),
+    )
+)
+class RfcViewSet(viewsets.GenericViewSet):
+    queryset = Document.objects.filter(type_id="rfc")
+    api_key_endpoint = "ietf.api.views_rpc"
+
+    @action(detail=False, serializer_class=OriginalStreamSerializer)
+    def rfc_original_stream(self, request):
+        rfcs = self.get_queryset().annotate(
+            orig_stream_id=Coalesce(
+                Subquery(
+                    DocHistory.objects.filter(doc=OuterRef("pk"))
+                    .exclude(stream__isnull=True)
+                    .order_by("time")
+                    .values_list("stream_id", flat=True)[:1]
+                ),
+                "stream_id",
+                output_field=CharField(),
+            ),
+        )
+        serializer = self.get_serializer(rfcs, many=True)
+        return Response(serializer.data)
+        
+
 class DraftsByNamesView(APIView):
     api_key_endpoint = "ietf.api.views_rpc"
 
@@ -255,33 +294,6 @@ class DraftsByNamesView(APIView):
         names = request.data
         docs = Document.objects.filter(type_id="draft", name__in=names)
         return Response(DraftSerializer(docs, many=True).data)
-
-
-@csrf_exempt
-@requires_api_token("ietf.api.views_rpc")
-def rfc_original_stream(request):
-    """Return the stream that an rfc was first published into for all rfcs"""
-    rfcs = Document.objects.filter(type="rfc").annotate(
-        orig_stream_id=Subquery(
-            DocHistory.objects.filter(doc=OuterRef("pk"))
-            .exclude(stream__isnull=True)
-            .order_by("time")
-            .values_list("stream_id", flat=True)[:1]
-        )
-    )
-    response = {"original_stream": []}
-    for rfc in rfcs:
-        response["original_stream"].append(
-            {
-                "rfc_number": rfc.rfc_number,
-                "stream": (
-                    rfc.orig_stream_id
-                    if rfc.orig_stream_id is not None
-                    else rfc.stream_id
-                ),
-            }
-        )
-    return JsonResponse(response)
 
 
 @csrf_exempt
