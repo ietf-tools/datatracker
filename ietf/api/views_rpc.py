@@ -1,8 +1,10 @@
 # Copyright The IETF Trust 2023-2025, All Rights Reserved
 
 import json
+from typing import Literal
 
-from drf_spectacular.utils import OpenApiParameter
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import OpenApiParameter, extend_schema_field
 from rest_framework import serializers, viewsets, mixins
 from rest_framework.decorators import action
 from rest_framework.views import APIView
@@ -13,7 +15,6 @@ from django.http import (
     HttpResponseBadRequest,
     JsonResponse,
     HttpResponseNotAllowed,
-    HttpResponseNotFound,
     Http404,
 )
 from django.views.decorators.csrf import csrf_exempt
@@ -125,52 +126,59 @@ class RpcPersonSearch(generics.ListAPIView):
     search_fields = ["name", "plain", "email__address"]
 
 
-def _document_source_format(doc):
-    submission = doc.submission()
-    if submission is None:
+class DraftSerializer(serializers.ModelSerializer):
+    source_format = serializers.SerializerMethodField()
+    authors = PersonSerializer(many=True, read_only=True, source="documentauthor_set")
+    shepherd = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Document
+        fields = [
+            "id",
+            "name",
+            "rev",
+            "stream",
+            "title",
+            "pages",
+            "source_format",
+            "authors",
+            "shepherd",
+            "intended_std_level",
+        ]
+
+    def get_source_format(self, doc: Document) -> Literal["unknown", "xml-v2", "xml-v3", "txt"]:
+        submission = doc.submission()
+        if submission is None:
+            return "unknown"
+        if ".xml" in submission.file_types:
+            if submission.xml_version == "3":
+                return "xml-v3"
+            else:
+                return "xml-v2"
+        elif ".txt" in submission.file_types:
+            return "txt"
         return "unknown"
-    if ".xml" in submission.file_types:
-        if submission.xml_version == "3":
-            return "xml-v3"
-        else:
-            return "xml-v2"
-    elif ".txt" in submission.file_types:
-        return "txt"
-    return "unknown"
+
+    @extend_schema_field(OpenApiTypes.EMAIL)
+    def get_shepherd(self, doc: Document) -> str:
+        if doc.shepherd:
+           return doc.shepherd.formatted_ascii_email()
+        return ""
 
 
-@csrf_exempt
-@requires_api_token("ietf.api.views_rpc")
-def rpc_draft(request, doc_id):
-    if request.method != "GET":
-        return HttpResponseNotAllowed(["GET"])
+@extend_schema_view(
+    retrieve=extend_schema(
+        operation_id="get_draft_by_id",
+        summary="Get a draft",
+        description="Returns the draft for the requested ID",
+    ),
+)
+class DraftViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
+    queryset = Document.objects.filter(type_id="draft")
+    serializer_class = DraftSerializer
+    api_key_endpoint = "ietf.api.views_rpc"
+    lookup_url_kwarg = "doc_id"
 
-    try:
-        d = Document.objects.get(pk=doc_id, type_id="draft")
-    except Document.DoesNotExist:
-        return HttpResponseNotFound()
-    return JsonResponse(
-        {
-            "id": d.pk,
-            "name": d.name,
-            "rev": d.rev,
-            "stream": d.stream.slug,
-            "title": d.title,
-            "pages": d.pages,
-            "source_format": _document_source_format(d),
-            "authors": [
-                {
-                    "id": p.pk,
-                    "plain_name": p.person.plain_name(),
-                }
-                for p in d.documentauthor_set.all()
-            ],
-            "shepherd": d.shepherd.formatted_ascii_email() if d.shepherd else "",
-            "intended_std_level": (
-                d.intended_std_level.slug if d.intended_std_level else ""
-            ),
-        }
-    )
 
 
 @csrf_exempt
@@ -211,7 +219,7 @@ def drafts_by_names(request):
             "stream": doc.stream.slug if doc.stream else "none",
             "title": doc.title,
             "pages": doc.pages,
-            "source_format": _document_source_format(doc),
+            "source_format": "bob",  # _document_source_format(doc),
             "authors": [
                 {
                     "id": p.pk,
