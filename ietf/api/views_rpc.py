@@ -1,6 +1,8 @@
 # Copyright The IETF Trust 2023-2025, All Rights Reserved
 
+import datetime
 import json
+from typing import Literal, Optional
 
 from drf_spectacular.utils import OpenApiParameter
 from rest_framework import serializers, viewsets, mixins
@@ -128,18 +130,65 @@ class RpcPersonSearch(generics.ListAPIView):
     search_fields = ["name", "plain", "email__address"]
 
 
+
+class SubmittedToQueueSerializer(FullDraftSerializer):
+    submitted = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Document
+        fields = [
+            "id",
+            "name",
+            "stream",
+            "submitted",
+        ]
+
+
+    def get_submitted(self, doc) -> Optional[datetime.datetime]:
+        event = doc.sent_to_rfc_editor_event()
+        return None if event is None else event.time
+
+
 @extend_schema_view(
     retrieve=extend_schema(
         operation_id="get_draft_by_id",
         summary="Get a draft",
         description="Returns the draft for the requested ID",
     ),
+    submitted_to_rpc=extend_schema(
+        operation_id="submitted_to_rpc",
+        summary="List documents ready to enter the RFC Editor Queue",
+        description="List documents ready to enter the RFC Editor Queue",
+        responses=SubmittedToQueueSerializer(many=True),
+    )
 )
 class DraftViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
     queryset = Document.objects.filter(type_id="draft")
     serializer_class = FullDraftSerializer
     api_key_endpoint = "ietf.api.views_rpc"
     lookup_url_kwarg = "doc_id"
+
+    @action(detail=False, serializer_class=SubmittedToQueueSerializer)
+    def submitted_to_rpc(self, request):
+        """Return documents in datatracker that have been submitted to the RPC but are not yet in the queue
+
+        Those queries overreturn - there may be things, particularly not from the IETF stream that are already in the queue.
+        """
+        ietf_docs = Q(states__type_id="draft-iesg", states__slug__in=["ann"])
+        irtf_iab_ise_docs = Q(
+            states__type_id__in=[
+                "draft-stream-iab",
+                "draft-stream-irtf",
+                "draft-stream-ise",
+            ],
+            states__slug__in=["rfc-edit"],
+        )
+        # TODO: Need a way to talk about editorial stream docs
+        docs = self.get_queryset().filter(type_id="draft").filter(
+            ietf_docs | irtf_iab_ise_docs
+        )
+        serializer = self.get_serializer(docs, many=True)
+        return Response(serializer.data)
 
 
 
@@ -176,39 +225,6 @@ class DraftsByNamesView(APIView):
         names = request.data
         docs = Document.objects.filter(type_id="draft", name__in=names)
         return Response(DraftSerializer(docs, many=True).data)
-
-
-@csrf_exempt
-@requires_api_token("ietf.api.views_rpc")
-def submitted_to_rpc(request):
-    """Return documents in datatracker that have been submitted to the RPC but are not yet in the queue
-
-    Those queries overreturn - there may be things, particularly not from the IETF stream that are already in the queue.
-    """
-    ietf_docs = Q(states__type_id="draft-iesg", states__slug__in=["ann"])
-    irtf_iab_ise_docs = Q(
-        states__type_id__in=[
-            "draft-stream-iab",
-            "draft-stream-irtf",
-            "draft-stream-ise",
-        ],
-        states__slug__in=["rfc-edit"],
-    )
-    # TODO: Need a way to talk about editorial stream docs
-    docs = Document.objects.filter(type_id="draft").filter(
-        ietf_docs | irtf_iab_ise_docs
-    )
-    response = {"submitted_to_rpc": []}
-    for doc in docs:
-        response["submitted_to_rpc"].append(
-            {
-                "name": doc.name,
-                "id": doc.pk,
-                "stream": doc.stream_id,
-                "submitted": f"{doc.sent_to_rfc_editor_event().time.isoformat()}",
-            }
-        )
-    return JsonResponse(response)
 
 
 @csrf_exempt
