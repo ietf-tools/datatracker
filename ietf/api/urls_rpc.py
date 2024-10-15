@@ -8,11 +8,11 @@ from ietf.api import views_rpc
 from ietf.utils.urls import url
 
 router = routers.DefaultRouter()
+router.register(r"drafts", views_rpc.DraftViewSet)
 router.register(r"person", views_rpc.PersonViewSet)
 
 urlpatterns = [
     url(r"^doc/create_demo_draft/$", views_rpc.create_demo_draft),
-    url(r"^doc/drafts/(?P<doc_id>[0-9]+)$", views_rpc.rpc_draft),
     url(r"^doc/drafts_by_names/", views_rpc.drafts_by_names),
     url(r"^doc/submitted_to_rpc/$", views_rpc.submitted_to_rpc),
     url(r"^doc/rfc/original_stream/$", views_rpc.rfc_original_stream),
