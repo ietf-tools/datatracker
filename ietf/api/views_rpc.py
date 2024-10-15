@@ -4,6 +4,7 @@ import datetime
 import json
 from typing import Literal, Optional
 
+from dill import extend
 from django.db.models.functions import Coalesce
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema_view, extend_schema, OpenApiParameter, extend_schema_field
@@ -296,17 +297,38 @@ class DraftsByNamesView(APIView):
         return Response(DraftSerializer(docs, many=True).data)
 
 
-@csrf_exempt
-@requires_api_token("ietf.api.views_rpc")
-def create_demo_person(request):
-    """Helper for creating rpc demo objects - SHOULD NOT MAKE IT INTO PRODUCTION"""
-    if request.method != "POST":
-        return HttpResponseNotAllowed(["POST"])
+class DemoPersonCreateSerializer(serializers.Serializer):
+    name = serializers.CharField(max_length=255)
 
-    request_params = json.loads(request.body)
-    name = request_params["name"]
-    person = Person.objects.filter(name=name).first() or PersonFactory(name=name)
-    return JsonResponse({"user_id": person.user.pk, "person_pk": person.pk})
+
+class DemoPersonSerializer(serializers.ModelSerializer):
+    person_pk = serializers.IntegerField(source="pk")
+
+    class Meta:
+        model = Person
+        fields = ["user_id", "person_pk"]
+
+
+@extend_schema_view(
+    create_demo_person=extend_schema(
+        operation_id="create_demo_person",
+        summary="Build a datatracker Person for RPC demo purposes",
+        description="returns a datatracker User id for a person created with the given name",
+        request=DemoPersonCreateSerializer,
+        responses=DemoPersonSerializer,
+    )
+)
+class DemoViewSet(viewsets.ViewSet):
+    """SHOULD NOT MAKE IT INTO PRODUCTION"""
+    api_key_endpoint = "ietf.api.views_rpc"
+    
+    @action(detail=False, methods=["post"])
+    def create_demo_person(self, request):
+        """Helper for creating rpc demo objects - SHOULD NOT MAKE IT INTO PRODUCTION"""
+        request_params = DemoPersonCreateSerializer(request.data)
+        name = request_params.data["name"]
+        person = Person.objects.filter(name=name).first() or PersonFactory(name=name)
+        return DemoPersonSerializer(person).data
 
 
 @csrf_exempt
