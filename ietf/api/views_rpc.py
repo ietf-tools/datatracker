@@ -4,6 +4,7 @@ import json
 
 from drf_spectacular.utils import extend_schema_view, extend_schema, OpenApiParameter
 from rest_framework import serializers, viewsets, mixins
+from rest_framework.decorators import action
 from rest_framework.views import APIView
 from rest_framework.response import Response
 
@@ -26,6 +27,7 @@ from .ietf_utils import requires_api_token
 
 
 class PersonSerializer(serializers.ModelSerializer):
+    """Serializer for a Person in a response"""
     plain_name = serializers.SerializerMethodField()
     
     class Meta:
@@ -34,6 +36,20 @@ class PersonSerializer(serializers.ModelSerializer):
     
     def get_plain_name(self, person) -> str:
         return person.plain_name()
+
+
+class PersonLookupSerializer(serializers.ModelSerializer):
+    """Serializer for a request looking up a person"""
+    class Meta:
+        model = Person
+        fields = ["id"]
+
+    def to_internal_value(self, data):
+        return super().to_internal_value(data)
+
+    def to_representation(self, instance):
+        # when serializing, use the regular PersonSerializer so we get full records
+        return PersonSerializer(context=self.context).to_representation(instance)
 
 
 @extend_schema_view(
@@ -78,18 +94,22 @@ class SubjectPersonView(APIView):
         raise Http404
 
 
-@csrf_exempt
-@requires_api_token("ietf.api.views_rpc")
-def rpc_persons(request):
-    """Get a batch of rpc person names"""
-    if request.method != "POST":
-        return HttpResponseNotAllowed(["POST"])
-
-    pks = json.loads(request.body)
-    response = dict()
-    for p in Person.objects.filter(pk__in=pks):
-        response[str(p.pk)] = p.plain_name()
-    return JsonResponse(response)
+class RpcPersonsView(APIView):
+    api_key_endpoint = "ietf.api.views_rpc"
+    @extend_schema(
+        operation_id="get_persons",
+        summary="Get a batch of persons",
+        description="returns a dict of person pks to person names",
+        request=list[int],
+        responses=dict[str, str],
+    )
+    def post(self, request):
+        """Get a batch of rpc person names"""
+        pks = json.loads(request.body)
+        response = dict()
+        for p in Person.objects.filter(pk__in=pks):
+            response[str(p.pk)] = p.plain_name()
+        return Response(response)
 
 
 def _document_source_format(doc):

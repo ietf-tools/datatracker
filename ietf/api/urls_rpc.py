@@ -17,7 +17,7 @@ urlpatterns = [
     url(r"^doc/submitted_to_rpc/$", views_rpc.submitted_to_rpc),
     url(r"^doc/rfc/original_stream/$", views_rpc.rfc_original_stream),
     url(r"^person/create_demo_person/$", views_rpc.create_demo_person),
-    url(r"^persons/$", views_rpc.rpc_persons),
+    url(r"^persons/$", views_rpc.RpcPersonsView.as_view()),
     path(r"subject/<str:subject_id>/person/", views_rpc.SubjectPersonView.as_view()),
     path("drf/", include(router.urls)),  # todo get rid of drf prefix when done converting
 ]
