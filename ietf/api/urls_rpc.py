@@ -20,7 +20,7 @@ urlpatterns = [
     url(r"^doc/rfc/authors/$", views_rpc.rfc_authors),
     url(r"^doc/draft/authors/$", views_rpc.draft_authors),
     url(r"^person/persons_by_email/$", views_rpc.persons_by_email),
-    url(r"^persons/$", views_rpc.rpc_persons),
+    url(r"^persons/$", views_rpc.RpcPersonsView.as_view()),
     url(r"^persons/search/", views_rpc.RpcPersonSearch.as_view()),
     path(r"subject/<str:subject_id>/person/", views_rpc.SubjectPersonView.as_view()),
     path("", include(router.urls)),

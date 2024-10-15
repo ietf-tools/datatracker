@@ -4,6 +4,7 @@ import json
 
 from drf_spectacular.utils import extend_schema_view, extend_schema, OpenApiParameter
 from rest_framework import serializers, viewsets, mixins
+from rest_framework.decorators import action
 from rest_framework.views import APIView
 from rest_framework.response import Response
 
@@ -70,18 +71,22 @@ class SubjectPersonView(APIView):
         raise Http404
 
 
-@csrf_exempt
-@requires_api_token("ietf.api.views_rpc")
-def rpc_persons(request):
-    """Get a batch of rpc person names"""
-    if request.method != "POST":
-        return HttpResponseNotAllowed(["POST"])
-
-    pks = json.loads(request.body)
-    response = dict()
-    for p in Person.objects.filter(pk__in=pks):
-        response[str(p.pk)] = p.plain_name()
-    return JsonResponse(response)
+class RpcPersonsView(APIView):
+    api_key_endpoint = "ietf.api.views_rpc"
+    @extend_schema(
+        operation_id="get_persons",
+        summary="Get a batch of persons",
+        description="returns a dict of person pks to person names",
+        request=list[int],
+        responses=dict[str, str],
+    )
+    def post(self, request):
+        """Get a batch of rpc person names"""
+        pks = json.loads(request.body)
+        response = dict()
+        for p in Person.objects.filter(pk__in=pks):
+            response[str(p.pk)] = p.plain_name()
+        return Response(response)
 
 
 class RpcLimitOffsetPagination(LimitOffsetPagination):
