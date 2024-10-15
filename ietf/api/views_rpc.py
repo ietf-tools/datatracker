@@ -12,7 +12,6 @@ from rest_framework.response import Response
 from django.db.models import OuterRef, Subquery, Q
 from django.http import (
     HttpResponse,
-    HttpResponseBadRequest,
     JsonResponse,
     HttpResponseNotAllowed,
     Http404,
@@ -20,9 +19,9 @@ from django.http import (
 from django.views.decorators.csrf import csrf_exempt
 
 from ietf.doc.factories import WgDraftFactory  # DO NOT MERGE INTO MAIN
-from ietf.doc.models import Document, DocHistory
+from ietf.doc.models import Document, DocHistory, DocumentAuthor
 from ietf.person.factories import PersonFactory  # DO NOT MERGE INTO MAIN
-from ietf.person.models import Email, Person
+from ietf.person.models import Person
 from .ietf_utils import requires_api_token
 
 
@@ -113,9 +112,21 @@ class RpcPersonsView(APIView):
         return Response(response)
 
 
-class DraftSerializer(serializers.ModelSerializer):
+class DocumentAuthorSerializer(serializers.ModelSerializer):
+    """Serializer for a Person in a response"""
+    plain_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = DocumentAuthor
+        fields = ["person", "plain_name"]
+
+    def get_plain_name(self, document_author: DocumentAuthor) -> str:
+        return document_author.person.plain_name()
+        
+
+class FullDraftSerializer(serializers.ModelSerializer):
     source_format = serializers.SerializerMethodField()
-    authors = PersonSerializer(many=True, read_only=True, source="documentauthor_set")
+    authors = DocumentAuthorSerializer(many=True, source="documentauthor_set")
     shepherd = serializers.SerializerMethodField()
 
     class Meta:
@@ -153,6 +164,20 @@ class DraftSerializer(serializers.ModelSerializer):
         return ""
 
 
+class DraftSerializer(FullDraftSerializer):
+    class Meta:
+        model = Document
+        fields = [
+            "id",
+            "name",
+            "rev",
+            "stream",
+            "title",
+            "pages",
+            "source_format",
+            "authors",
+        ]
+
 @extend_schema_view(
     retrieve=extend_schema(
         operation_id="get_draft_by_id",
@@ -162,40 +187,25 @@ class DraftSerializer(serializers.ModelSerializer):
 )
 class DraftViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
     queryset = Document.objects.filter(type_id="draft")
-    serializer_class = DraftSerializer
+    serializer_class = FullDraftSerializer
     api_key_endpoint = "ietf.api.views_rpc"
     lookup_url_kwarg = "doc_id"
 
 
-@csrf_exempt
-@requires_api_token("ietf.api.views_rpc")
-def drafts_by_names(request):
-    if request.method != "POST":
-        return HttpResponseNotAllowed(["POST"])
-    try:
-        names = json.loads(request.body)
-    except json.JSONDecodeError:
-        return HttpResponseBadRequest()
-    docs = Document.objects.filter(type_id="draft", name__in=names)
-    response = dict()
-    for doc in docs:
-        response[doc.name] = {
-            "id": doc.pk,
-            "name": doc.name,
-            "rev": doc.rev,
-            "stream": doc.stream.slug if doc.stream else "none",
-            "title": doc.title,
-            "pages": doc.pages,
-            "source_format": "bob",  # _document_source_format(doc),
-            "authors": [
-                {
-                    "id": p.pk,
-                    "plain_name": p.person.plain_name(),
-                }
-                for p in doc.documentauthor_set.all()
-            ],
-        }
-    return JsonResponse(response)
+class DraftsByNamesView(APIView):
+    api_key_endpoint = "ietf.api.views_rpc"
+
+    @extend_schema(
+        operation_id="get_drafts_by_names",
+        summary="Get a batch of drafts by draft names",
+        description="returns a list of drafts with matching names",
+        request=list[str],
+        responses=DraftSerializer(many=True)
+    )
+    def post(self, request):
+        names = request.data
+        docs = Document.objects.filter(type_id="draft", name__in=names)
+        return Response(DraftSerializer(docs, many=True).data)
 
 
 @csrf_exempt

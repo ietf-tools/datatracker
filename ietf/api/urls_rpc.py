@@ -13,7 +13,7 @@ router.register(r"person", views_rpc.PersonViewSet)
 
 urlpatterns = [
     url(r"^doc/create_demo_draft/$", views_rpc.create_demo_draft),
-    url(r"^doc/drafts_by_names/", views_rpc.drafts_by_names),
+    url(r"^doc/drafts_by_names/", views_rpc.DraftsByNamesView.as_view()),
     url(r"^doc/submitted_to_rpc/$", views_rpc.submitted_to_rpc),
     url(r"^doc/rfc/original_stream/$", views_rpc.rfc_original_stream),
     url(r"^person/create_demo_person/$", views_rpc.create_demo_person),
