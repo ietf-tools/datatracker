@@ -14,7 +14,7 @@ router.register(r"person", views_rpc.PersonViewSet)
 
 urlpatterns = [
     url(r"^doc/drafts/(?P<doc_id>[0-9]+)/references/$", views_rpc.rpc_draft_refs),
-    url(r"^doc/drafts_by_names/", views_rpc.drafts_by_names),
+    url(r"^doc/drafts_by_names/", views_rpc.DraftsByNamesView.as_view()),
     url(r"^doc/submitted_to_rpc/$", views_rpc.submitted_to_rpc),
     url(r"^doc/rfc/original_stream/$", views_rpc.rfc_original_stream),
     url(r"^doc/rfc/authors/$", views_rpc.rfc_authors),

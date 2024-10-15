@@ -1,10 +1,8 @@
 # Copyright The IETF Trust 2023-2025, All Rights Reserved
 
 import json
-from typing import Literal
 
-from drf_spectacular.types import OpenApiTypes
-from drf_spectacular.utils import OpenApiParameter, extend_schema_field
+from drf_spectacular.utils import OpenApiParameter
 from rest_framework import serializers, viewsets, mixins
 from rest_framework.decorators import action
 from rest_framework.views import APIView
@@ -24,7 +22,11 @@ from rest_framework.fields import CharField
 from rest_framework.filters import SearchFilter
 from rest_framework.pagination import LimitOffsetPagination
 
-from ietf.api.serializers_rpc import PersonSerializer
+from ietf.api.serializers_rpc import (
+    PersonSerializer,
+    FullDraftSerializer,
+    DraftSerializer,
+)
 from ietf.doc.models import Document, DocHistory, RelatedDocument
 from ietf.person.models import Email, Person
 from .ietf_utils import requires_api_token
@@ -126,46 +128,6 @@ class RpcPersonSearch(generics.ListAPIView):
     search_fields = ["name", "plain", "email__address"]
 
 
-class DraftSerializer(serializers.ModelSerializer):
-    source_format = serializers.SerializerMethodField()
-    authors = PersonSerializer(many=True, read_only=True, source="documentauthor_set")
-    shepherd = serializers.SerializerMethodField()
-
-    class Meta:
-        model = Document
-        fields = [
-            "id",
-            "name",
-            "rev",
-            "stream",
-            "title",
-            "pages",
-            "source_format",
-            "authors",
-            "shepherd",
-            "intended_std_level",
-        ]
-
-    def get_source_format(self, doc: Document) -> Literal["unknown", "xml-v2", "xml-v3", "txt"]:
-        submission = doc.submission()
-        if submission is None:
-            return "unknown"
-        if ".xml" in submission.file_types:
-            if submission.xml_version == "3":
-                return "xml-v3"
-            else:
-                return "xml-v2"
-        elif ".txt" in submission.file_types:
-            return "txt"
-        return "unknown"
-
-    @extend_schema_field(OpenApiTypes.EMAIL)
-    def get_shepherd(self, doc: Document) -> str:
-        if doc.shepherd:
-           return doc.shepherd.formatted_ascii_email()
-        return ""
-
-
 @extend_schema_view(
     retrieve=extend_schema(
         operation_id="get_draft_by_id",
@@ -175,7 +137,7 @@ class DraftSerializer(serializers.ModelSerializer):
 )
 class DraftViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
     queryset = Document.objects.filter(type_id="draft")
-    serializer_class = DraftSerializer
+    serializer_class = FullDraftSerializer
     api_key_endpoint = "ietf.api.views_rpc"
     lookup_url_kwarg = "doc_id"
 
@@ -200,35 +162,20 @@ def rpc_draft_refs(request, doc_id):
     )
 
 
-@csrf_exempt
-@requires_api_token("ietf.api.views_rpc")
-def drafts_by_names(request):
-    if request.method != "POST":
-        return HttpResponseNotAllowed(["POST"])
-    try:
-        names = json.loads(request.body)
-    except json.JSONDecodeError:
-        return HttpResponseBadRequest()
-    docs = Document.objects.filter(type_id="draft", name__in=names)
-    response = dict()
-    for doc in docs:
-        response[doc.name] = {
-            "id": doc.pk,
-            "name": doc.name,
-            "rev": doc.rev,
-            "stream": doc.stream.slug if doc.stream else "none",
-            "title": doc.title,
-            "pages": doc.pages,
-            "source_format": "bob",  # _document_source_format(doc),
-            "authors": [
-                {
-                    "id": p.pk,
-                    "plain_name": p.person.plain_name(),
-                }
-                for p in doc.documentauthor_set.all()
-            ],
-        }
-    return JsonResponse(response)
+class DraftsByNamesView(APIView):
+    api_key_endpoint = "ietf.api.views_rpc"
+
+    @extend_schema(
+        operation_id="get_drafts_by_names",
+        summary="Get a batch of drafts by draft names",
+        description="returns a list of drafts with matching names",
+        request=list[str],
+        responses=DraftSerializer(many=True)
+    )
+    def post(self, request):
+        names = request.data
+        docs = Document.objects.filter(type_id="draft", name__in=names)
+        return Response(DraftSerializer(docs, many=True).data)
 
 
 @csrf_exempt
