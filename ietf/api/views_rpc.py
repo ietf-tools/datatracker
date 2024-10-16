@@ -35,21 +35,6 @@ class PersonSerializer(serializers.ModelSerializer):
         return person.plain_name()
 
 
-class PersonLookupSerializer(serializers.ModelSerializer):
-    """Serializer for a request looking up a person"""
-
-    class Meta:
-        model = Person
-        fields = ["id"]
-
-    def to_internal_value(self, data):
-        return super().to_internal_value(data)
-
-    def to_representation(self, instance):
-        # when serializing, use the regular PersonSerializer so we get full records
-        return PersonSerializer(context=self.context).to_representation(instance)
-
-
 @extend_schema_view(
     retrieve=extend_schema(
         operation_id="get_person_by_id",
