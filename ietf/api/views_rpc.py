@@ -309,6 +309,20 @@ class DemoPersonSerializer(serializers.ModelSerializer):
         fields = ["user_id", "person_pk"]
 
 
+class DemoDraftCreateSerializer(serializers.Serializer):
+    name = serializers.CharField(max_length=255, required=True)
+    stream_id = serializers.CharField(default="ietf")
+    rev = serializers.CharField(default=None)
+    states = serializers.DictField(child=serializers.CharField(), default=None)
+
+
+class DemoDraftSerializer(serializers.ModelSerializer):
+    doc_id = serializers.IntegerField(source="pk")
+
+    class Meta:
+        model = Document
+        fields = ["doc_id", "name"]
+
 @extend_schema_view(
     create_demo_person=extend_schema(
         operation_id="create_demo_person",
@@ -316,7 +330,15 @@ class DemoPersonSerializer(serializers.ModelSerializer):
         description="returns a datatracker User id for a person created with the given name",
         request=DemoPersonCreateSerializer,
         responses=DemoPersonSerializer,
-    )
+    ),
+    create_demo_draft=extend_schema(
+        operation_id="create_demo_draft",
+        summary="Build a datatracker WG draft for RPC demo purposes",
+        description="returns a datatracker document id for a draft created with the provided name and states. "
+                    "The arguments, if present, are passed directly to the WgDraftFactory",
+        request=DemoDraftCreateSerializer,
+        responses=DemoDraftSerializer,
+    ),
 )
 class DemoViewSet(viewsets.ViewSet):
     """SHOULD NOT MAKE IT INTO PRODUCTION"""
@@ -330,37 +352,29 @@ class DemoViewSet(viewsets.ViewSet):
         person = Person.objects.filter(name=name).first() or PersonFactory(name=name)
         return DemoPersonSerializer(person).data
 
-
-@csrf_exempt
-@requires_api_token("ietf.api.views_rpc")
-def create_demo_draft(request):
-    """Helper for creating rpc demo objects - SHOULD NOT MAKE IT INTO PRODUCTION"""
-    if request.method != "POST":
-        return HttpResponseNotAllowed(["POST"])
-
-    request_params = json.loads(request.body)
-    name = request_params.get("name")
-    rev = request_params.get("rev")
-    states = request_params.get("states")
-    stream_id = request_params.get("stream_id", "ietf")
-    doc = None
-    if not name:
-        return HttpResponse(status=400, content="Name is required")
-    doc = Document.objects.filter(name=name).first()
-    if not doc:
-        kwargs = {"name": name, "stream_id": stream_id}
-        if states:
-            kwargs["states"] = states
-        if rev:
-            kwargs["rev"] = rev
-        doc = WgDraftFactory(
-            **kwargs
-        )  # Yes, things may be a little strange if the stream isn't IETF, but until we nned something different...
-        event_type = "iesg_approved" if stream_id == "ietf" else "requested_publication"
-        if not doc.docevent_set.filter(
-            type=event_type
-        ).exists():  # Not using get_or_create here on purpose - these are wobbly facades we're creating
-            doc.docevent_set.create(
-                type=event_type, by_id=1, desc="Sent off to the RPC"
-            )
-    return JsonResponse({"doc_id": doc.pk, "name": doc.name})
+    @action(detail=False, methods=["post"])
+    def create_demo_draft(self, request):
+        """Helper for creating rpc demo objects - SHOULD NOT MAKE IT INTO PRODUCTION"""
+        request_params = DemoDraftCreateSerializer(request.data)
+        name = request_params.data["name"]
+        rev = request_params.data["rev"]
+        stream_id = request_params.data["stream_id"]
+        states = request_params.data["states"]
+        doc = Document.objects.filter(name=name).first()
+        if not doc:
+            kwargs = {"name": name, "stream_id": stream_id}
+            if states:
+                kwargs["states"] = states
+            if rev:
+                kwargs["rev"] = rev
+            doc = WgDraftFactory(
+                **kwargs
+            )  # Yes, things may be a little strange if the stream isn't IETF, but until we need something different...
+            event_type = "iesg_approved" if stream_id == "ietf" else "requested_publication"
+            if not doc.docevent_set.filter(
+                type=event_type
+            ).exists():  # Not using get_or_create here on purpose - these are wobbly facades we're creating
+                doc.docevent_set.create(
+                    type=event_type, by_id=1, desc="Sent off to the RPC"
+                )
+        return Response(DemoDraftSerializer(doc).data)
