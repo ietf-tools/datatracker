@@ -8,9 +8,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 
 from django.db.models import OuterRef, Subquery, Q, CharField
-from django.http import (
-    Http404,
-)
+from django.http import Http404
 
 from ietf.doc.factories import WgDraftFactory  # DO NOT MERGE INTO MAIN
 from ietf.doc.models import Document, DocHistory
