@@ -68,19 +68,17 @@ class SubjectPersonView(APIView):
         parameters=[
             OpenApiParameter(
                 name="subject_id",
-                type=str,
+                type=int,
                 description="subject ID of person to return",
                 location="path",
             ),
         ],
     )
-    def get(self, request, subject_id: str):
+    def get(self, request, subject_id: int):
         try:
             user_id = int(subject_id)
         except ValueError:
-            raise serializers.ValidationError(
-                {"subject_id": "This field must be an integer value."}
-            )
+            raise Http404
         person = Person.objects.filter(user__pk=user_id).first()
         if person:
             return Response(PersonSerializer(person).data)

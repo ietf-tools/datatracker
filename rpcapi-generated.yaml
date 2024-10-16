@@ -268,7 +268,7 @@ paths:
       - in: path
         name: subject_id
         schema:
-          type: string
+          type: integer
         description: subject ID of person to return
         required: true
       tags:
