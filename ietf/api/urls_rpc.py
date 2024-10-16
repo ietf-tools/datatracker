@@ -14,8 +14,7 @@ router.register(r"person", views_rpc.PersonViewSet)
 router.register(r"rfc", views_rpc.RfcViewSet, basename="rfc")
 
 urlpatterns = [
-    url(r"^doc/drafts_by_names/", views_rpc.DraftsByNamesView.as_view()),
-    url(r"^persons/$", views_rpc.RpcPersonsView.as_view()),
+    url(r"^draft/by_names/", views_rpc.DraftsByNamesView.as_view()),
     path(r"subject/<str:subject_id>/person/", views_rpc.SubjectPersonView.as_view()),
-    path("drf/", include(router.urls)),  # todo get rid of drf prefix when done converting
+    path("", include(router.urls)),  # todo get rid of drf prefix when done converting
 ]
