@@ -61,12 +61,25 @@ class PersonLookupSerializer(serializers.ModelSerializer):
         summary="Find person by ID",
         description="Returns a single person",
     ),
+    batch=extend_schema(
+        operation_id="get_persons",
+        summary="Get a batch of persons",
+        description="returns a dict of person pks to person names",
+        request=list[int],
+        responses=PersonSerializer(many=True),
+    )
 )
 class PersonViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
     queryset = Person.objects.all()
     serializer_class = PersonSerializer
     api_key_endpoint = "ietf.api.views_rpc"
     lookup_url_kwarg = "person_id"
+
+    @action(detail=False, methods=["post"], serializer_class=PersonSerializer)
+    def batch(self, request):
+        """Get a batch of rpc person names"""
+        pks = json.loads(request.data)
+        return Response(self.get_serializer(Person.objects.filter(pk__in=pks), many=True).data)
 
 
 class SubjectPersonView(APIView):
@@ -95,25 +108,6 @@ class SubjectPersonView(APIView):
         if person:
             return Response(PersonSerializer(person).data)
         raise Http404
-
-
-class RpcPersonsView(APIView):
-    api_key_endpoint = "ietf.api.views_rpc"
-
-    @extend_schema(
-        operation_id="get_persons",
-        summary="Get a batch of persons",
-        description="returns a dict of person pks to person names",
-        request=list[int],
-        responses=dict[str, str],
-    )
-    def post(self, request):
-        """Get a batch of rpc person names"""
-        pks = json.loads(request.body)
-        response = dict()
-        for p in Person.objects.filter(pk__in=pks):
-            response[str(p.pk)] = p.plain_name()
-        return Response(response)
 
 
 class DocumentAuthorSerializer(serializers.ModelSerializer):
