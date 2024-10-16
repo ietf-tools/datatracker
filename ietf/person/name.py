@@ -59,7 +59,7 @@ def name_parts(name):
         last = parts[0]
     if len(parts) >= 2:
         # Handle reverse-order names with uppercase surname correctly
-        if len(first)>1 and re.search("^[A-Z-]+$", first):
+        if len(first)>1 and re.search("^[A-Z-]+$", first) and first != "JP":
             first, last = last, first.capitalize()
     # Handle exception for RFC Editor
     if (prefix, first, middle, last, suffix) == ('', 'Editor', '', 'Rfc', ''):

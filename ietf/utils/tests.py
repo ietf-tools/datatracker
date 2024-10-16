@@ -11,10 +11,11 @@ import pytz
 import shutil
 import types
 
-from mock import patch
+from mock import call, patch
 from pyquery import PyQuery
 from typing import Dict, List       # pyflakes:ignore
 
+from email.message import Message
 from email.mime.image import MIMEImage
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -32,6 +33,7 @@ from django.template import Template    # pyflakes:ignore
 from django.template.defaulttags import URLNode
 from django.template.loader import get_template, render_to_string
 from django.templatetags.static import StaticNode
+from django.test import RequestFactory
 from django.urls import reverse as urlreverse
 
 import debug                            # pyflakes:ignore
@@ -42,7 +44,15 @@ from ietf.submit.tests import submission_file
 from ietf.utils.draft import PlaintextDraft, getmeta
 from ietf.utils.fields import SearchableField
 from ietf.utils.log import unreachable, assertion
-from ietf.utils.mail import send_mail_preformatted, send_mail_text, send_mail_mime, outbox, get_payload_text
+from ietf.utils.mail import (
+    send_mail_preformatted,
+    send_mail_text,
+    send_mail_mime,
+    outbox,
+    get_payload_text,
+    decode_header_value,
+    show_that_mail_was_sent,
+)
 from ietf.utils.test_runner import get_template_paths, set_coverage_checking
 from ietf.utils.test_utils import TestCase, unicontent
 from ietf.utils.text import parse_unicode
@@ -108,6 +118,135 @@ body
         send_mail_preformatted(request=None, preformatted=msg, extra=extra, override={})
         recv = outbox[-1]
         self.assertEqual(recv['Fuzz'], 'bucket, monger')
+
+
+class MailUtilsTests(TestCase):
+    def test_decode_header_value(self):
+        self.assertEqual(
+            decode_header_value("cake"),
+            "cake",
+            "decodes simple string value",
+        )
+        self.assertEqual(
+            decode_header_value("=?utf-8?b?8J+Ogg==?="),
+            "\U0001f382",
+            "decodes single utf-8-encoded part",
+        )
+        self.assertEqual(
+            decode_header_value("=?utf-8?b?8J+Ogg==?= = =?macintosh?b?jYxrjg==?="),
+            "\U0001f382 = çåké",
+            "decodes a value with non-utf-8 encodings",
+        )
+
+    # Patch in a side_effect so we can distinguish values that came from decode_header_value.
+    @patch("ietf.utils.mail.decode_header_value", side_effect=lambda s: f"decoded-{s}")
+    @patch("ietf.utils.mail.messages")
+    def test_show_that_mail_was_sent(self, mock_messages, mock_decode_header_value):
+        request = RequestFactory().get("/some/path")
+        request.user = object()  # just needs to exist
+        msg = Message()
+        msg["To"] = "to-value"
+        msg["Subject"] = "subject-value"
+        msg["Cc"] = "cc-value"
+        with patch("ietf.ietfauth.utils.has_role", return_value=True):
+            show_that_mail_was_sent(request, "mail was sent", msg, "bcc-value")
+        self.assertCountEqual(
+            mock_decode_header_value.call_args_list,
+            [call("to-value"), call("subject-value"), call("cc-value"), call("bcc-value")],
+        )
+        self.assertEqual(mock_messages.info.call_args[0][0], request)
+        self.assertIn("mail was sent", mock_messages.info.call_args[0][1])
+        self.assertIn("decoded-subject-value", mock_messages.info.call_args[0][1])
+        self.assertIn("decoded-to-value", mock_messages.info.call_args[0][1])
+        self.assertIn("decoded-cc-value", mock_messages.info.call_args[0][1])
+        self.assertIn("decoded-bcc-value", mock_messages.info.call_args[0][1])
+        mock_messages.reset_mock()
+        mock_decode_header_value.reset_mock()
+
+        # no bcc
+        with patch("ietf.ietfauth.utils.has_role", return_value=True):
+            show_that_mail_was_sent(request, "mail was sent", msg, None)
+        self.assertCountEqual(
+            mock_decode_header_value.call_args_list,
+            [call("to-value"), call("subject-value"), call("cc-value")],
+        )
+        self.assertEqual(mock_messages.info.call_args[0][0], request)
+        self.assertIn("mail was sent", mock_messages.info.call_args[0][1])
+        self.assertIn("decoded-subject-value", mock_messages.info.call_args[0][1])
+        self.assertIn("decoded-to-value", mock_messages.info.call_args[0][1])
+        self.assertIn("decoded-cc-value", mock_messages.info.call_args[0][1])
+        # Note: here and below - when using assertNotIn(), leaving off the "decoded-" prefix
+        # proves that neither the original value nor the decoded value appear.
+        self.assertNotIn("bcc-value", mock_messages.info.call_args[0][1])
+        mock_messages.reset_mock()
+        mock_decode_header_value.reset_mock()
+
+        # no cc
+        del msg["Cc"]
+        with patch("ietf.ietfauth.utils.has_role", return_value=True):
+            show_that_mail_was_sent(request, "mail was sent", msg, None)
+        self.assertCountEqual(
+            mock_decode_header_value.call_args_list,
+            [call("to-value"), call("subject-value")],
+        )
+        self.assertEqual(mock_messages.info.call_args[0][0], request)
+        self.assertIn("mail was sent", mock_messages.info.call_args[0][1])
+        self.assertIn("decoded-subject-value", mock_messages.info.call_args[0][1])
+        self.assertIn("decoded-to-value", mock_messages.info.call_args[0][1])
+        self.assertNotIn("cc-value", mock_messages.info.call_args[0][1])
+        self.assertNotIn("bcc-value", mock_messages.info.call_args[0][1])
+        mock_messages.reset_mock()
+        mock_decode_header_value.reset_mock()
+
+        # no to
+        del msg["To"]
+        with patch("ietf.ietfauth.utils.has_role", return_value=True):
+            show_that_mail_was_sent(request, "mail was sent", msg, None)
+        self.assertCountEqual(
+            mock_decode_header_value.call_args_list,
+            [call("[no to]"), call("subject-value")],
+        )
+        self.assertEqual(mock_messages.info.call_args[0][0], request)
+        self.assertIn("mail was sent", mock_messages.info.call_args[0][1])
+        self.assertIn("decoded-subject-value", mock_messages.info.call_args[0][1])
+        self.assertIn("decoded-[no to]", mock_messages.info.call_args[0][1])
+        self.assertNotIn("to-value", mock_messages.info.call_args[0][1])
+        self.assertNotIn("cc-value", mock_messages.info.call_args[0][1])
+        self.assertNotIn("bcc-value", mock_messages.info.call_args[0][1])
+        mock_messages.reset_mock()
+        mock_decode_header_value.reset_mock()
+
+        # no subject
+        del msg["Subject"]
+        with patch("ietf.ietfauth.utils.has_role", return_value=True):
+            show_that_mail_was_sent(request, "mail was sent", msg, None)
+        self.assertCountEqual(
+            mock_decode_header_value.call_args_list,
+            [call("[no to]"), call("[no subject]")],
+        )
+        self.assertEqual(mock_messages.info.call_args[0][0], request)
+        self.assertIn("mail was sent", mock_messages.info.call_args[0][1])
+        self.assertIn("decoded-[no subject]", mock_messages.info.call_args[0][1])
+        self.assertNotIn("subject-value", mock_messages.info.call_args[0][1])
+        self.assertIn("decoded-[no to]", mock_messages.info.call_args[0][1])
+        self.assertNotIn("to-value", mock_messages.info.call_args[0][1])
+        self.assertNotIn("cc-value", mock_messages.info.call_args[0][1])
+        self.assertNotIn("bcc-value", mock_messages.info.call_args[0][1])
+        mock_messages.reset_mock()
+        mock_decode_header_value.reset_mock()
+        
+        # user does not have role
+        with patch("ietf.ietfauth.utils.has_role", return_value=False):
+            show_that_mail_was_sent(request, "mail was sent", msg, None)
+        self.assertFalse(mock_messages.called)
+        
+        # no user
+        request.user = None
+        with patch("ietf.ietfauth.utils.has_role", return_value=True) as mock_has_role:
+            show_that_mail_was_sent(request, "mail was sent", msg, None)
+        self.assertFalse(mock_messages.called)
+        self.assertFalse(mock_has_role.called)
+
 
 class TestSMTPServer(TestCase):
 

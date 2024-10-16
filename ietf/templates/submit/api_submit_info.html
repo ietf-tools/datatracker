@@ -1,56 +1,13 @@
 {% extends "base.html" %}
-{# Copyright The IETF Trust 2015-2022, All Rights Reserved #}
+{# Copyright The IETF Trust 2015-2024, All Rights Reserved #}
 {% load origin ietf_filters %}
-{% block title %}I-D submission API instructions{% endblock %}
+{% block title %}Obsolete I-D submission API notice{% endblock %}
 {% block content %}
     {% origin %}
-    <h1 class="mb-3">Internet-Draft submission API instructions</h1>
+    <h1 class="mb-3">Obsolete Internet-Draft submission API notice</h1>
     <p>
-        Note: API endpoint described here is known to have a slow response time or to fail
-        due to timeout for some Internet-Draft submissions, particularly those with large file sizes.
-        It is recommended to use the <a href="{% url 'ietf.submit.views.api_submission' %}">new API endpoint</a>
-        instead for increased reliability.
+        The API endpoint previously available here is obsolete and is no longer supported.
+        Please use the <a href="{% url 'ietf.submit.views.api_submission' %}">new API endpoint</a>
+        instead.
     </p>
-    <p>
-        A simplified Internet-Draft submission interface, intended for automation,
-        is available at <code>{% absurl 'ietf.submit.views.api_submit' %}</code>.
-    </p>
-    <p>
-        The interface accepts only XML uploads that can be processed on the server, and
-        requires the user to have a datatracker account.  A successful submit still requires
-        the same email confirmation round-trip as submissions done through the regular
-        <a href="{% url 'ietf.submit.views.upload_submission' %}">submission tool</a>.
-    </p>
-    <p>
-        This interface does not provide all the options which the regular submission tool does.
-        Some limitations:
-    </p>
-    <ul>
-        <li>Only XML-only uploads are supported, not text or combined.</li>
-        <li>Document replacement information cannot be supplied.</li>
-        <li>
-            The server expects <code>multipart/form-data</code>, supported by <code>curl</code> but <b>not</b> by <code>wget</code>.
-        </li>
-    </ul>
-    <p>
-        It takes two parameters:
-    </p>
-    <ul>
-        <li>
-            <code>user</code> which is the user login
-        </li>
-        <li>
-            <code>xml</code>, which is the submitted file
-        </li>
-    </ul>
-    <p>
-        It returns an appropriate http result code, and a brief explanatory text message.
-    </p>
-    <p>
-        Here is an example:
-    </p>
-    <pre class="border p-3">
-$ curl -S -F "user=user.name@example.com" -F "xml=@~/draft-user-example.xml" {% absurl 'ietf.submit.views.api_submit' %}
-Upload of draft-user-example OK, confirmation requests sent to:
-User Name &lt;user.name@example.com&gt;</pre>
 {% endblock %}

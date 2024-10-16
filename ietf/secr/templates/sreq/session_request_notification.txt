@@ -1,5 +1,5 @@
-{% load ams_filters %}
+{% autoescape off %}{% load ams_filters %}
 
 {% filter wordwrap:78 %}{{ header }} meeting session request has just been submitted by {{ requester }}.{% endfilter %}
 
-{% include "includes/session_info.txt" %}
+{% include "includes/session_info.txt" %}{% endautoescape %}
