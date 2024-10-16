@@ -1,0 +1,158 @@
+#! /usr/bin/env perl
+# Copyright The IETF Trust 2024. All Rights Reserved.
+
+use strict;
+use warnings;
+use Getopt::Std;
+
+# Number of errors found; exit status
+my $ERRORS = 0;
+
+# Getopt settings.
+our($opt_h, $opt_f);
+
+# Files we just skip
+my %skiplist = (
+    '.editorconfig' => 1,
+    '.gitignore' => 1,
+    '.pnp.cjs' => 1,
+    'dev/INSTALL' => 1,
+    'dev/build/Dockerfile' => 1,
+    'docker/base.Dockerfile' => 1,
+    'docker/cleanall' => 1,
+    'docker/cleandb' => 1,
+    'docker/db.Dockerfile' => 1,
+    'k8s/nginx-auth.conf' => 1,
+    'k8s/nginx-datatracker.conf' => 1,
+    'patch/add-django-cprofile-filter.patch' => 1,
+    'yarn.lock' => 1
+);
+
+# Filename pattern => (prefix, suffix) for copyright lines.
+my %patterns = (
+    '\.yml$'  => [ '#',     ''     ],
+    '\.yaml$' => [ '#',     ''     ],
+    '\.md$'   => [ '#',     ''     ],
+    '\.sh$'   => [ '#',     ''     ],
+    '\.py$'   => [ '#',     ''     ],
+    '\.txt$'  => [ '',      ''     ],
+    '\.vue$'  => [ '//',    ''     ],
+    '\.js$'   => [ '//',    ''     ],
+    '\.scss$' => [ '//',    ''     ],
+    '\.html$' => [ '<!-- ', ' -->' ],
+    '\.json$' => undef,
+    '\.ics$'  => undef
+);
+
+##  Print usage message and exit.
+sub
+usage()
+{
+    my $retcode = pop();
+
+    print STDERR "Options\n";
+    print STDERR "    -h  This help message\n";
+    print STDERR "    -f  Read filenames from argv\n";
+    exit $retcode;
+}
+
+##  Get list of files missing a copyright.
+sub
+collect_files
+{
+    open(my $FH, "-|", "perl ./ietf/check-copyright -m")
+        ||  die "Can't get list, $!";
+    my @FILES = ();
+    while ( <$FH> ) {
+        chop;
+        push(@FILES, $_);
+    }
+    close($FH);
+    return @FILES;
+}
+
+## Process a file; append copyright text if we know how to do it.
+sub
+process
+{
+    my $NAME = pop();
+    my $FH;
+
+    # Skip it?
+    return if $skiplist{$NAME};
+
+    # Check filename, look for match
+    my $found;
+    foreach my $k ( keys %patterns ) {
+        if ( $NAME =~ /$k/ ) {
+            $found = $k;
+            last;
+        }
+    }
+    if ( ! $found ) {
+        print "# NOTFOUND $NAME\n";
+        $ERRORS++;
+        return;
+    }
+
+    # Some filename pattersn can't handle comments (JSON e.g.)
+    return if ! $patterns{$found};
+
+    # Get first year of modification.
+    open($FH, "-|", "git log --pretty=format:%ai --reverse $NAME");
+    my $FIRST = <$FH>;
+    chop($FIRST);
+    close($FH);
+    $FIRST =~ s/-.*//;
+
+    # Get last year of modification.
+    open($FH, "-|", "git log --pretty=format:%ai $NAME");
+    my $LAST = <$FH>;
+    chop($LAST);
+    close($FH);
+    $LAST =~ s/-.*//;
+
+    # Build the copyright text.
+    my $copy = $patterns{$found}[0] . " Copyright The IETF Trust ";
+    if ( $FIRST == $LAST) {
+        $copy .= $FIRST;
+    } else {
+        $copy .= "$FIRST-$LAST";
+    }
+    $copy .= $patterns{$found}[1] . "\n";
+
+    # Append the copyright; must append (not optimal) because of
+    # the "#!" header lines in some files.
+    open($FH, '>>', $NAME) || die "Can't append-open $NAME, $!";
+    print $FH $copy;
+    close($FH) || die "Can't append-close $NAME, $!";
+
+#   open($FH, '<', $NAME) || die "Can't read $NAME, $!";
+#   my @LINES = <$FH>;
+#   close($FH) || die "Can't close $NAME, $!";
+#   open($FH, '>', $NAME) || die "Can't write-open $NAME, $!";
+#   print $FH $copy, "\n";
+#   foreach my $L ( @LINES ) {
+#       print $FH $L;
+#   }
+#   close($FH) || die "Can't write-close $NAME, $!";
+}
+
+
+##  Parse JCL.
+getopts("hf") || &usage(1);
+&usage(0) if $opt_h;
+
+##  Do the work.
+my @FILES = ();
+if ( defined($opt_f) ) {
+    @FILES = @ARGV;
+} else {
+    @FILES = &collect_files();
+}
+
+foreach my $F ( @FILES ) {
+    &process($F);
+}
+
+exit $ERRORS;
