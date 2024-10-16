@@ -1,10 +1,8 @@
 # Copyright The IETF Trust 2023, All Rights Reserved
 
 import datetime
-import json
 from typing import Literal, Optional
 
-from dill import extend
 from django.db.models.functions import Coalesce
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema_view, extend_schema, OpenApiParameter, extend_schema_field
@@ -15,18 +13,13 @@ from rest_framework.response import Response
 
 from django.db.models import OuterRef, Subquery, Q, CharField
 from django.http import (
-    HttpResponse,
-    JsonResponse,
-    HttpResponseNotAllowed,
     Http404,
 )
-from django.views.decorators.csrf import csrf_exempt
 
 from ietf.doc.factories import WgDraftFactory  # DO NOT MERGE INTO MAIN
 from ietf.doc.models import Document, DocHistory, DocumentAuthor
 from ietf.person.factories import PersonFactory  # DO NOT MERGE INTO MAIN
 from ietf.person.models import Person
-from .ietf_utils import requires_api_token
 
 
 class PersonSerializer(serializers.ModelSerializer):
