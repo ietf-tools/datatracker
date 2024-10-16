@@ -1,7 +1,6 @@
 # Copyright The IETF Trust 2023, All Rights Reserved
 
 import datetime
-import json
 from typing import Literal, Optional
 
 from django.db.models.functions import Coalesce
@@ -21,6 +20,10 @@ from ietf.doc.factories import WgDraftFactory  # DO NOT MERGE INTO MAIN
 from ietf.doc.models import Document, DocHistory, DocumentAuthor
 from ietf.person.factories import PersonFactory  # DO NOT MERGE INTO MAIN
 from ietf.person.models import Person
+
+
+class PersonBatchSerializer(serializers.Serializer):
+    person_ids = serializers.ListField(child=serializers.IntegerField())
 
 
 class PersonSerializer(serializers.ModelSerializer):
@@ -45,7 +48,7 @@ class PersonSerializer(serializers.ModelSerializer):
         operation_id="get_persons",
         summary="Get a batch of persons",
         description="returns a dict of person pks to person names",
-        request=list[int],
+        request=PersonBatchSerializer,
         responses=PersonSerializer(many=True),
     )
 )
@@ -58,7 +61,7 @@ class PersonViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
     @action(detail=False, methods=["post"], serializer_class=PersonSerializer)
     def batch(self, request):
         """Get a batch of rpc person names"""
-        pks = json.loads(request.data)
+        pks = PersonBatchSerializer(request.data).data["person_ids"]
         return Response(self.get_serializer(Person.objects.filter(pk__in=pks), many=True).data)
 
 
