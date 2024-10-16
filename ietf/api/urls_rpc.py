@@ -1,17 +1,20 @@
 # Copyright The IETF Trust 2023, All Rights Reserved
 
+from rest_framework import routers
+from django.urls import include, path
+
 from ietf.api import views_rpc
 
 from ietf.utils.urls import url
 
+router = routers.DefaultRouter()
+router.register(r"demo", views_rpc.DemoViewSet, basename="demo")
+router.register(r"draft", views_rpc.DraftViewSet, basename="draft")
+router.register(r"person", views_rpc.PersonViewSet)
+router.register(r"rfc", views_rpc.RfcViewSet, basename="rfc")
+
 urlpatterns = [
-    url(r"^doc/create_demo_draft/$", views_rpc.create_demo_draft),
-    url(r"^doc/drafts/(?P<doc_id>[0-9]+)$", views_rpc.rpc_draft),
-    url(r"^doc/drafts_by_names/", views_rpc.drafts_by_names),
-    url(r"^doc/submitted_to_rpc/$", views_rpc.submitted_to_rpc),
-    url(r"^doc/rfc/original_stream/$", views_rpc.rfc_original_stream),
-    url(r"^person/create_demo_person/$", views_rpc.create_demo_person),
-    url(r"^person/(?P<person_id>[0-9]+)$", views_rpc.rpc_person),
-    url(r"^persons/$", views_rpc.rpc_persons),
-    url(r"^subject/(?P<subject_id>[0-9]+)/person/$", views_rpc.rpc_subject_person),
+    url(r"^draft/by_names/", views_rpc.DraftsByNamesView.as_view()),
+    path(r"subject/<str:subject_id>/person/", views_rpc.SubjectPersonView.as_view()),
+    path("", include(router.urls)),  # todo get rid of drf prefix when done converting
 ]

@@ -1,0 +1,1017 @@
+openapi: 3.0.3
+info:
+  title: Datatracker RPC API
+  version: 1.0.0
+  description: Datatracker RPC API
+paths:
+  /api/rpc/demo/create_demo_draft/:
+    post:
+      operationId: create_demo_draft
+      description: returns a datatracker document id for a draft created with the
+        provided name and states. The arguments, if present, are passed directly to
+        the WgDraftFactory
+      summary: Build a datatracker WG draft for RPC demo purposes
+      tags:
+      - demo
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DemoDraftCreate'
+        required: true
+      security:
+      - apiKeyAuth: []
+      responses:
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateDemoDraftErrorResponse400'
+          description: ''
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DemoDraft'
+          description: ''
+  /api/rpc/demo/create_demo_person/:
+    post:
+      operationId: create_demo_person
+      description: returns a datatracker User id for a person created with the given
+        name
+      summary: Build a datatracker Person for RPC demo purposes
+      tags:
+      - demo
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DemoPersonCreate'
+        required: true
+      security:
+      - apiKeyAuth: []
+      responses:
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateDemoPersonErrorResponse400'
+          description: ''
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DemoPerson'
+          description: ''
+  /api/rpc/draft/{doc_id}/:
+    get:
+      operationId: get_draft_by_id
+      description: Returns the draft for the requested ID
+      summary: Get a draft
+      parameters:
+      - in: path
+        name: doc_id
+        schema:
+          type: integer
+        description: A unique integer value identifying this document.
+        required: true
+      tags:
+      - draft
+      security:
+      - apiKeyAuth: []
+      responses:
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetDraftByIdErrorResponse400'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse404'
+              examples:
+                NotFound:
+                  value:
+                    type: client_error
+                    errors:
+                    - code: not_found
+                      detail: Not found.
+                      attr: null
+          description: ''
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FullDraft'
+          description: ''
+  /api/rpc/draft/by_names/:
+    post:
+      operationId: get_drafts_by_names
+      description: returns a list of drafts with matching names
+      summary: Get a batch of drafts by draft names
+      tags:
+      - draft
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: string
+      security:
+      - apiKeyAuth: []
+      responses:
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetDraftsByNamesErrorResponse400'
+          description: ''
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Draft'
+          description: ''
+  /api/rpc/draft/submitted_to_rpc/:
+    get:
+      operationId: submitted_to_rpc
+      description: List documents ready to enter the RFC Editor Queue
+      summary: List documents ready to enter the RFC Editor Queue
+      tags:
+      - draft
+      security:
+      - apiKeyAuth: []
+      responses:
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubmittedToRpcErrorResponse400'
+          description: ''
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SubmittedToQueue'
+          description: ''
+  /api/rpc/person/{person_id}/:
+    get:
+      operationId: get_person_by_id
+      description: Returns a single person
+      summary: Find person by ID
+      parameters:
+      - in: path
+        name: person_id
+        schema:
+          type: integer
+        description: A unique integer value identifying this person.
+        required: true
+      tags:
+      - person
+      security:
+      - apiKeyAuth: []
+      responses:
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetPersonByIdErrorResponse400'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse404'
+              examples:
+                NotFound:
+                  value:
+                    type: client_error
+                    errors:
+                    - code: not_found
+                      detail: Not found.
+                      attr: null
+          description: ''
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Person'
+          description: ''
+  /api/rpc/person/batch/:
+    post:
+      operationId: get_persons
+      description: returns a dict of person pks to person names
+      summary: Get a batch of persons
+      tags:
+      - person
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PersonBatch'
+        required: true
+      security:
+      - apiKeyAuth: []
+      responses:
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetPersonsErrorResponse400'
+          description: ''
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Person'
+          description: ''
+  /api/rpc/rfc/rfc_original_stream/:
+    get:
+      operationId: get_rfc_original_streams
+      description: returns a list of dicts associating an RFC with its originally
+        published stream
+      summary: Get the streams RFCs were originally published into
+      tags:
+      - rfc
+      security:
+      - apiKeyAuth: []
+      responses:
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetRfcOriginalStreamsErrorResponse400'
+          description: ''
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/OriginalStream'
+          description: ''
+  /api/rpc/subject/{subject_id}/person/:
+    get:
+      operationId: get_subject_person_by_id
+      description: Returns a single person
+      summary: Find person for OIDC subject by ID
+      parameters:
+      - in: path
+        name: subject_id
+        schema:
+          type: integer
+        description: subject ID of person to return
+        required: true
+      tags:
+      - subject
+      security:
+      - apiKeyAuth: []
+      responses:
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetSubjectPersonByIdErrorResponse400'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse404'
+              examples:
+                NotFound:
+                  value:
+                    type: client_error
+                    errors:
+                    - code: not_found
+                      detail: Not found.
+                      attr: null
+          description: ''
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Person'
+          description: ''
+components:
+  schemas:
+    ClientErrorEnum:
+      enum:
+      - client_error
+      type: string
+      description: '* `client_error` - Client Error'
+    CreateDemoDraftError:
+      oneOf:
+      - $ref: '#/components/schemas/CreateDemoDraftNonFieldErrorsErrorComponent'
+      - $ref: '#/components/schemas/CreateDemoDraftNameErrorComponent'
+      - $ref: '#/components/schemas/CreateDemoDraftStreamIdErrorComponent'
+      - $ref: '#/components/schemas/CreateDemoDraftRevErrorComponent'
+      - $ref: '#/components/schemas/CreateDemoDraftStatesErrorComponent'
+      - $ref: '#/components/schemas/CreateDemoDraftStatesKEYErrorComponent'
+      discriminator:
+        propertyName: attr
+        mapping:
+          non_field_errors: '#/components/schemas/CreateDemoDraftNonFieldErrorsErrorComponent'
+          name: '#/components/schemas/CreateDemoDraftNameErrorComponent'
+          stream_id: '#/components/schemas/CreateDemoDraftStreamIdErrorComponent'
+          rev: '#/components/schemas/CreateDemoDraftRevErrorComponent'
+          states: '#/components/schemas/CreateDemoDraftStatesErrorComponent'
+          states.KEY: '#/components/schemas/CreateDemoDraftStatesKEYErrorComponent'
+    CreateDemoDraftErrorResponse400:
+      oneOf:
+      - $ref: '#/components/schemas/CreateDemoDraftValidationError'
+      - $ref: '#/components/schemas/ParseErrorResponse'
+      discriminator:
+        propertyName: type
+        mapping:
+          validation_error: '#/components/schemas/CreateDemoDraftValidationError'
+          client_error: '#/components/schemas/ParseErrorResponse'
+    CreateDemoDraftNameErrorComponent:
+      type: object
+      properties:
+        attr:
+          enum:
+          - name
+          type: string
+          description: '* `name` - name'
+        code:
+          enum:
+          - blank
+          - invalid
+          - max_length
+          - 'null'
+          - null_characters_not_allowed
+          - required
+          - surrogate_characters_not_allowed
+          type: string
+          description: |-
+            * `blank` - blank
+            * `invalid` - invalid
+            * `max_length` - max_length
+            * `null` - null
+            * `null_characters_not_allowed` - null_characters_not_allowed
+            * `required` - required
+            * `surrogate_characters_not_allowed` - surrogate_characters_not_allowed
+        detail:
+          type: string
+      required:
+      - attr
+      - code
+      - detail
+    CreateDemoDraftNonFieldErrorsErrorComponent:
+      type: object
+      properties:
+        attr:
+          enum:
+          - non_field_errors
+          type: string
+          description: '* `non_field_errors` - non_field_errors'
+        code:
+          enum:
+          - invalid
+          - 'null'
+          type: string
+          description: |-
+            * `invalid` - invalid
+            * `null` - null
+        detail:
+          type: string
+      required:
+      - attr
+      - code
+      - detail
+    CreateDemoDraftRevErrorComponent:
+      type: object
+      properties:
+        attr:
+          enum:
+          - rev
+          type: string
+          description: '* `rev` - rev'
+        code:
+          enum:
+          - blank
+          - invalid
+          - 'null'
+          - null_characters_not_allowed
+          - surrogate_characters_not_allowed
+          type: string
+          description: |-
+            * `blank` - blank
+            * `invalid` - invalid
+            * `null` - null
+            * `null_characters_not_allowed` - null_characters_not_allowed
+            * `surrogate_characters_not_allowed` - surrogate_characters_not_allowed
+        detail:
+          type: string
+      required:
+      - attr
+      - code
+      - detail
+    CreateDemoDraftStatesErrorComponent:
+      type: object
+      properties:
+        attr:
+          enum:
+          - states
+          type: string
+          description: '* `states` - states'
+        code:
+          enum:
+          - not_a_dict
+          - 'null'
+          type: string
+          description: |-
+            * `not_a_dict` - not_a_dict
+            * `null` - null
+        detail:
+          type: string
+      required:
+      - attr
+      - code
+      - detail
+    CreateDemoDraftStatesKEYErrorComponent:
+      type: object
+      properties:
+        attr:
+          enum:
+          - states.KEY
+          type: string
+          description: '* `states.KEY` - states.KEY'
+        code:
+          enum:
+          - blank
+          - invalid
+          - 'null'
+          - null_characters_not_allowed
+          - required
+          - surrogate_characters_not_allowed
+          type: string
+          description: |-
+            * `blank` - blank
+            * `invalid` - invalid
+            * `null` - null
+            * `null_characters_not_allowed` - null_characters_not_allowed
+            * `required` - required
+            * `surrogate_characters_not_allowed` - surrogate_characters_not_allowed
+        detail:
+          type: string
+      required:
+      - attr
+      - code
+      - detail
+    CreateDemoDraftStreamIdErrorComponent:
+      type: object
+      properties:
+        attr:
+          enum:
+          - stream_id
+          type: string
+          description: '* `stream_id` - stream_id'
+        code:
+          enum:
+          - blank
+          - invalid
+          - 'null'
+          - null_characters_not_allowed
+          - surrogate_characters_not_allowed
+          type: string
+          description: |-
+            * `blank` - blank
+            * `invalid` - invalid
+            * `null` - null
+            * `null_characters_not_allowed` - null_characters_not_allowed
+            * `surrogate_characters_not_allowed` - surrogate_characters_not_allowed
+        detail:
+          type: string
+      required:
+      - attr
+      - code
+      - detail
+    CreateDemoDraftValidationError:
+      type: object
+      properties:
+        type:
+          $ref: '#/components/schemas/ValidationErrorEnum'
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/CreateDemoDraftError'
+      required:
+      - errors
+      - type
+    CreateDemoPersonError:
+      oneOf:
+      - $ref: '#/components/schemas/CreateDemoPersonNonFieldErrorsErrorComponent'
+      - $ref: '#/components/schemas/CreateDemoPersonNameErrorComponent'
+      discriminator:
+        propertyName: attr
+        mapping:
+          non_field_errors: '#/components/schemas/CreateDemoPersonNonFieldErrorsErrorComponent'
+          name: '#/components/schemas/CreateDemoPersonNameErrorComponent'
+    CreateDemoPersonErrorResponse400:
+      oneOf:
+      - $ref: '#/components/schemas/CreateDemoPersonValidationError'
+      - $ref: '#/components/schemas/ParseErrorResponse'
+      discriminator:
+        propertyName: type
+        mapping:
+          validation_error: '#/components/schemas/CreateDemoPersonValidationError'
+          client_error: '#/components/schemas/ParseErrorResponse'
+    CreateDemoPersonNameErrorComponent:
+      type: object
+      properties:
+        attr:
+          enum:
+          - name
+          type: string
+          description: '* `name` - name'
+        code:
+          enum:
+          - blank
+          - invalid
+          - max_length
+          - 'null'
+          - null_characters_not_allowed
+          - required
+          - surrogate_characters_not_allowed
+          type: string
+          description: |-
+            * `blank` - blank
+            * `invalid` - invalid
+            * `max_length` - max_length
+            * `null` - null
+            * `null_characters_not_allowed` - null_characters_not_allowed
+            * `required` - required
+            * `surrogate_characters_not_allowed` - surrogate_characters_not_allowed
+        detail:
+          type: string
+      required:
+      - attr
+      - code
+      - detail
+    CreateDemoPersonNonFieldErrorsErrorComponent:
+      type: object
+      properties:
+        attr:
+          enum:
+          - non_field_errors
+          type: string
+          description: '* `non_field_errors` - non_field_errors'
+        code:
+          enum:
+          - invalid
+          - 'null'
+          type: string
+          description: |-
+            * `invalid` - invalid
+            * `null` - null
+        detail:
+          type: string
+      required:
+      - attr
+      - code
+      - detail
+    CreateDemoPersonValidationError:
+      type: object
+      properties:
+        type:
+          $ref: '#/components/schemas/ValidationErrorEnum'
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/CreateDemoPersonError'
+      required:
+      - errors
+      - type
+    DemoDraft:
+      type: object
+      properties:
+        doc_id:
+          type: integer
+        name:
+          type: string
+          pattern: ^[-a-z0-9]+$
+          maxLength: 255
+      required:
+      - doc_id
+      - name
+    DemoDraftCreate:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 255
+        stream_id:
+          type: string
+          default: ietf
+        rev:
+          type: string
+        states:
+          type: object
+          additionalProperties:
+            type: string
+      required:
+      - name
+    DemoPerson:
+      type: object
+      properties:
+        user_id:
+          type: integer
+          nullable: true
+          readOnly: true
+        person_pk:
+          type: integer
+      required:
+      - person_pk
+    DemoPersonCreate:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 255
+      required:
+      - name
+    DocumentAuthor:
+      type: object
+      description: Serializer for a Person in a response
+      properties:
+        person:
+          type: integer
+        plain_name:
+          type: string
+          readOnly: true
+      required:
+      - person
+    Draft:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          pattern: ^[-a-z0-9]+$
+          maxLength: 255
+        rev:
+          type: string
+          title: Revision
+          maxLength: 16
+        stream:
+          type: string
+          nullable: true
+        title:
+          type: string
+          pattern: "^[^\0-\x1F]*$"
+          maxLength: 255
+        pages:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+        source_format:
+          allOf:
+          - $ref: '#/components/schemas/SourceFormatEnum'
+          readOnly: true
+        authors:
+          type: array
+          items:
+            $ref: '#/components/schemas/DocumentAuthor'
+      required:
+      - authors
+      - name
+      - title
+    Error404:
+      type: object
+      properties:
+        code:
+          $ref: '#/components/schemas/ErrorCode404Enum'
+        detail:
+          type: string
+        attr:
+          type: string
+          nullable: true
+      required:
+      - attr
+      - code
+      - detail
+    ErrorCode404Enum:
+      enum:
+      - not_found
+      type: string
+      description: '* `not_found` - Not Found'
+    ErrorResponse404:
+      type: object
+      properties:
+        type:
+          $ref: '#/components/schemas/ClientErrorEnum'
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/Error404'
+      required:
+      - errors
+      - type
+    FullDraft:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          pattern: ^[-a-z0-9]+$
+          maxLength: 255
+        rev:
+          type: string
+          title: Revision
+          maxLength: 16
+        stream:
+          type: string
+          nullable: true
+        title:
+          type: string
+          pattern: "^[^\0-\x1F]*$"
+          maxLength: 255
+        pages:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+        source_format:
+          allOf:
+          - $ref: '#/components/schemas/SourceFormatEnum'
+          readOnly: true
+        authors:
+          type: array
+          items:
+            $ref: '#/components/schemas/DocumentAuthor'
+        shepherd:
+          type: string
+          format: email
+          readOnly: true
+        intended_std_level:
+          type: string
+          nullable: true
+          title: Intended standardization level
+      required:
+      - authors
+      - name
+      - title
+    GetDraftByIdErrorResponse400:
+      oneOf:
+      - $ref: '#/components/schemas/ParseErrorResponse'
+      discriminator:
+        propertyName: type
+        mapping:
+          client_error: '#/components/schemas/ParseErrorResponse'
+    GetDraftsByNamesErrorResponse400:
+      oneOf:
+      - $ref: '#/components/schemas/ParseErrorResponse'
+      discriminator:
+        propertyName: type
+        mapping:
+          client_error: '#/components/schemas/ParseErrorResponse'
+    GetPersonByIdErrorResponse400:
+      oneOf:
+      - $ref: '#/components/schemas/ParseErrorResponse'
+      discriminator:
+        propertyName: type
+        mapping:
+          client_error: '#/components/schemas/ParseErrorResponse'
+    GetPersonsError:
+      oneOf:
+      - $ref: '#/components/schemas/GetPersonsNonFieldErrorsErrorComponent'
+      - $ref: '#/components/schemas/GetPersonsPersonIdsErrorComponent'
+      - $ref: '#/components/schemas/GetPersonsPersonIdsINDEXErrorComponent'
+      discriminator:
+        propertyName: attr
+        mapping:
+          non_field_errors: '#/components/schemas/GetPersonsNonFieldErrorsErrorComponent'
+          person_ids: '#/components/schemas/GetPersonsPersonIdsErrorComponent'
+          person_ids.INDEX: '#/components/schemas/GetPersonsPersonIdsINDEXErrorComponent'
+    GetPersonsErrorResponse400:
+      oneOf:
+      - $ref: '#/components/schemas/GetPersonsValidationError'
+      - $ref: '#/components/schemas/ParseErrorResponse'
+      discriminator:
+        propertyName: type
+        mapping:
+          validation_error: '#/components/schemas/GetPersonsValidationError'
+          client_error: '#/components/schemas/ParseErrorResponse'
+    GetPersonsNonFieldErrorsErrorComponent:
+      type: object
+      properties:
+        attr:
+          enum:
+          - non_field_errors
+          type: string
+          description: '* `non_field_errors` - non_field_errors'
+        code:
+          enum:
+          - invalid
+          - 'null'
+          type: string
+          description: |-
+            * `invalid` - invalid
+            * `null` - null
+        detail:
+          type: string
+      required:
+      - attr
+      - code
+      - detail
+    GetPersonsPersonIdsErrorComponent:
+      type: object
+      properties:
+        attr:
+          enum:
+          - person_ids
+          type: string
+          description: '* `person_ids` - person_ids'
+        code:
+          enum:
+          - not_a_list
+          - 'null'
+          - required
+          type: string
+          description: |-
+            * `not_a_list` - not_a_list
+            * `null` - null
+            * `required` - required
+        detail:
+          type: string
+      required:
+      - attr
+      - code
+      - detail
+    GetPersonsPersonIdsINDEXErrorComponent:
+      type: object
+      properties:
+        attr:
+          enum:
+          - person_ids.INDEX
+          type: string
+          description: '* `person_ids.INDEX` - person_ids.INDEX'
+        code:
+          enum:
+          - invalid
+          - max_string_length
+          - 'null'
+          - required
+          type: string
+          description: |-
+            * `invalid` - invalid
+            * `max_string_length` - max_string_length
+            * `null` - null
+            * `required` - required
+        detail:
+          type: string
+      required:
+      - attr
+      - code
+      - detail
+    GetPersonsValidationError:
+      type: object
+      properties:
+        type:
+          $ref: '#/components/schemas/ValidationErrorEnum'
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/GetPersonsError'
+      required:
+      - errors
+      - type
+    GetRfcOriginalStreamsErrorResponse400:
+      oneOf:
+      - $ref: '#/components/schemas/ParseErrorResponse'
+      discriminator:
+        propertyName: type
+        mapping:
+          client_error: '#/components/schemas/ParseErrorResponse'
+    GetSubjectPersonByIdErrorResponse400:
+      oneOf:
+      - $ref: '#/components/schemas/ParseErrorResponse'
+      discriminator:
+        propertyName: type
+        mapping:
+          client_error: '#/components/schemas/ParseErrorResponse'
+    OriginalStream:
+      type: object
+      properties:
+        rfc_number:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          nullable: true
+        stream:
+          type: string
+          readOnly: true
+    ParseError:
+      type: object
+      properties:
+        code:
+          $ref: '#/components/schemas/ParseErrorCodeEnum'
+        detail:
+          type: string
+        attr:
+          type: string
+          nullable: true
+      required:
+      - attr
+      - code
+      - detail
+    ParseErrorCodeEnum:
+      enum:
+      - parse_error
+      type: string
+      description: '* `parse_error` - Parse Error'
+    ParseErrorResponse:
+      type: object
+      properties:
+        type:
+          $ref: '#/components/schemas/ClientErrorEnum'
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ParseError'
+      required:
+      - errors
+      - type
+    Person:
+      type: object
+      description: Serializer for a Person in a response
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        plain_name:
+          type: string
+          readOnly: true
+    PersonBatch:
+      type: object
+      properties:
+        person_ids:
+          type: array
+          items:
+            type: integer
+      required:
+      - person_ids
+    SourceFormatEnum:
+      enum:
+      - unknown
+      - xml-v2
+      - xml-v3
+      - txt
+      type: string
+    SubmittedToQueue:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          pattern: ^[-a-z0-9]+$
+          maxLength: 255
+        stream:
+          type: string
+          nullable: true
+        submitted:
+          type: string
+          format: date-time
+          nullable: true
+          readOnly: true
+      required:
+      - name
+    SubmittedToRpcErrorResponse400:
+      oneOf:
+      - $ref: '#/components/schemas/ParseErrorResponse'
+      discriminator:
+        propertyName: type
+        mapping:
+          client_error: '#/components/schemas/ParseErrorResponse'
+    ValidationErrorEnum:
+      enum:
+      - validation_error
+      type: string
+      description: '* `validation_error` - Validation Error'
+  securitySchemes:
+    apiKeyAuth:
+      type: apiKey
+      description: Shared secret in the X-Api-Key header
+      name: X-Api-Key
+      in: header
+servers:
+- url: http://localhost:8000
+  description: dev server
