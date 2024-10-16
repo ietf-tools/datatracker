@@ -573,9 +573,9 @@ REST_FRAMEWORK = {
 
 # DRF OpenApi schema settings
 SPECTACULAR_SETTINGS = {
-    "TITLE": "Datatracker",
-    "DESCRIPTION": "Datatracker API",
-    "VERSION": "0.1",
+    "TITLE": "Datatracker RPC API",
+    "DESCRIPTION": "Datatracker RPC API",
+    "VERSION": "1.0.0",
     "SCHEMA_PATH_PREFIX": "/api/rpc/",
     "COMPONENT_NO_READ_ONLY_REQUIRED": True,
     "SERVERS": [
