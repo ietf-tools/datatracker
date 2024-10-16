@@ -29,7 +29,7 @@ class PersonSerializer(serializers.ModelSerializer):
 
 
 class DocumentAuthorSerializer(serializers.ModelSerializer):
-    """Serializer for a Person in a response"""
+    """Serializer for a DocumentAuthor in a response"""
 
     plain_name = serializers.SerializerMethodField()
 
