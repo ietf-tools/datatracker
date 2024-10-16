@@ -16,4 +16,4 @@ class ApiKeyAuthentication(authentication.BaseAuthentication):
         token = request.META.get("HTTP_X_API_KEY", None)
         if token is None:
             return None
-        return AnonymousUser, token  # available as request.user and request.auth
+        return AnonymousUser(), token  # available as request.user and request.auth
