@@ -1,6 +1,7 @@
 # Copyright The IETF Trust 2023, All Rights Reserved
 
 import datetime
+import json
 from typing import Literal, Optional
 
 from django.db.models.functions import Coalesce
@@ -25,17 +26,18 @@ from ietf.person.models import Person
 class PersonSerializer(serializers.ModelSerializer):
     """Serializer for a Person in a response"""
     plain_name = serializers.SerializerMethodField()
-    
+
     class Meta:
         model = Person
         fields = ["id", "plain_name"]
-    
+
     def get_plain_name(self, person) -> str:
         return person.plain_name()
 
 
 class PersonLookupSerializer(serializers.ModelSerializer):
     """Serializer for a request looking up a person"""
+
     class Meta:
         model = Person
         fields = ["id"]
@@ -113,7 +115,7 @@ class DocumentAuthorSerializer(serializers.ModelSerializer):
 
     def get_plain_name(self, document_author: DocumentAuthor) -> str:
         return document_author.person.plain_name()
-        
+
 
 class FullDraftSerializer(serializers.ModelSerializer):
     source_format = serializers.SerializerMethodField()
@@ -151,7 +153,7 @@ class FullDraftSerializer(serializers.ModelSerializer):
     @extend_schema_field(OpenApiTypes.EMAIL)
     def get_shepherd(self, doc: Document) -> str:
         if doc.shepherd:
-           return doc.shepherd.formatted_ascii_email()
+            return doc.shepherd.formatted_ascii_email()
         return ""
 
 
@@ -181,7 +183,6 @@ class SubmittedToQueueSerializer(FullDraftSerializer):
             "stream",
             "submitted",
         ]
-
 
     def get_submitted(self, doc) -> Optional[datetime.datetime]:
         event = doc.sent_to_rfc_editor_event()
@@ -266,7 +267,7 @@ class RfcViewSet(viewsets.GenericViewSet):
         )
         serializer = self.get_serializer(rfcs, many=True)
         return Response(serializer.data)
-        
+
 
 class DraftsByNamesView(APIView):
     api_key_endpoint = "ietf.api.views_rpc"
@@ -310,6 +311,7 @@ class DemoDraftSerializer(serializers.ModelSerializer):
         model = Document
         fields = ["doc_id", "name"]
 
+
 @extend_schema_view(
     create_demo_person=extend_schema(
         operation_id="create_demo_person",
@@ -330,7 +332,7 @@ class DemoDraftSerializer(serializers.ModelSerializer):
 class DemoViewSet(viewsets.ViewSet):
     """SHOULD NOT MAKE IT INTO PRODUCTION"""
     api_key_endpoint = "ietf.api.views_rpc"
-    
+
     @action(detail=False, methods=["post"])
     def create_demo_person(self, request):
         """Helper for creating rpc demo objects - SHOULD NOT MAKE IT INTO PRODUCTION"""
