@@ -598,6 +598,28 @@ SPECTACULAR_SETTINGS = {
     "POSTPROCESSING_HOOKS": ["drf_standardized_errors.openapi_hooks.postprocess_schema_enums"],
 }
 
+# DRF Standardized Errors settings
+DRF_STANDARDIZED_ERRORS = {
+    # enable the standardized errors when DEBUG=True for unhandled exceptions.
+    # By default, this is set to False so you're able to view the traceback in
+    # the terminal and get more information about the exception.
+    "ENABLE_IN_DEBUG_FOR_UNHANDLED_EXCEPTIONS": False,
+    # ONLY the responses that correspond to these status codes will appear
+    # in the API schema.
+    "ALLOWED_ERROR_STATUS_CODES": [
+        "400",
+        # "401",
+        # "403",
+        "404",
+        # "405",
+        # "406",
+        # "415",
+        # "429",
+        # "500",
+    ],
+
+}
+
 # no slash at end
 IDTRACKER_BASE_URL = "https://datatracker.ietf.org"
 RFCDIFF_BASE_URL = "https://author-tools.ietf.org/iddiff"
