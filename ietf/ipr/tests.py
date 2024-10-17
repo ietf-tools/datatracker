@@ -41,7 +41,7 @@ from ietf.ipr.models import (IprDisclosureBase, GenericIprDisclosure, HolderIprD
                              ThirdPartyIprDisclosure, IprEvent)
 from ietf.ipr.templatetags.ipr_filters import no_revisions_message
 from ietf.ipr.utils import get_genitive, get_ipr_summary, ingest_response_email
-from ietf.mailtrigger.utils import gather_address_lists, get_base_ipr_request_address
+from ietf.mailtrigger.utils import gather_address_lists
 from ietf.message.factories import MessageFactory
 from ietf.message.models import Message
 from ietf.utils.mail import outbox, empty_outbox, get_payload_text
