@@ -3384,3 +3384,26 @@ class YangCheckerTests(TestCase):
         apply_yang_checker_to_draft(checker, draft)
         self.assertEqual(checker.check_file_txt.call_args, mock.call(draft.get_file_name()))
 
+
+@override_settings(IDSUBMIT_REPOSITORY_PATH="/some/path/", IDSUBMIT_STAGING_PATH="/some/other/path")
+class SubmissionErrorTests(TestCase):
+    def test_sanitize_message(self):
+        sanitized = SubmissionError.sanitize_message(
+            "This refers to /some/path/with-a-file\n"
+            "and also /some/other/path/with-a-different-file isn't that neat?\n"
+            "and has /some/path//////with-slashes"
+        )
+        self.assertEqual(
+            sanitized,
+            "This refers to **/with-a-file\n"
+            "and also **/with-a-different-file isn't that neat?\n"
+            "and has **/with-slashes"
+        )
+    
+    @mock.patch.object(SubmissionError, "sanitize_message")
+    def test_submissionerror(self, mock_sanitize_message):
+        SubmissionError()
+        self.assertFalse(mock_sanitize_message.called)
+        SubmissionError("hi")
+        self.assertTrue(mock_sanitize_message.called)
+        self.assertEqual(mock_sanitize_message.call_args, mock.call("hi"))
