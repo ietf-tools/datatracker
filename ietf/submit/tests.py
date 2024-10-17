@@ -3404,6 +3404,9 @@ class SubmissionErrorTests(TestCase):
     def test_submissionerror(self, mock_sanitize_message):
         SubmissionError()
         self.assertFalse(mock_sanitize_message.called)
-        SubmissionError("hi")
+        SubmissionError("hi", "there")
         self.assertTrue(mock_sanitize_message.called)
-        self.assertEqual(mock_sanitize_message.call_args, mock.call("hi"))
+        self.assertCountEqual(
+            mock_sanitize_message.call_args_list,
+            [mock.call("hi"), mock.call("there")],
+        )

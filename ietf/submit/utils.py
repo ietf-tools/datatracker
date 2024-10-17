@@ -925,7 +925,7 @@ class SubmissionError(Exception):
     """
     def __init__(self, *args):
         if len(args) > 0:
-            args = (self.sanitize_message(args[0]), *args[1:])
+            args = (self.sanitize_message(arg) for arg in args)
         super().__init__(*args)
 
     @staticmethod
