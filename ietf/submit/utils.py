@@ -951,7 +951,7 @@ class SubmissionError(Exception):
                 "/tmp/",
             ) if p is not None
         ]
-        return re.sub(fr"{'|'.join(paths)}/?", "**/", msg)
+        return re.sub(fr"({'|'.join(paths)})/*", "**/", msg)
 
 
 class XmlRfcError(SubmissionError):
