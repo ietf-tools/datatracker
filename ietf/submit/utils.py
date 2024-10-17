@@ -919,7 +919,39 @@ def accept_submission_requires_group_approval(submission):
 
 
 class SubmissionError(Exception):
-    """Exception for errors during submission processing"""
+    """Exception for errors during submission processing
+    
+    Sanitizes paths appearing in exception messages.
+    """
+    def __init__(self, *args):
+        if len(args) > 0:
+            args = (self.sanitize_message(args[0]), *args[1:])
+        super().__init__(*args)
+
+    @staticmethod
+    def sanitize_message(msg):
+        # Paths likely to appear in submission-related errors
+        paths = [
+            p for p in (
+                getattr(settings, "ALL_ID_DOWNLOAD_DIR", None),
+                getattr(settings, "BIBXML_BASE_PATH", None),
+                getattr(settings, "DERIVED_DIR", None),
+                getattr(settings, "FTP_DIR", None),
+                getattr(settings, "IDSUBMIT_REPOSITORY_PATH", None),
+                getattr(settings, "IDSUBMIT_STAGING_PATH", None),
+                getattr(settings, "INTERNET_ALL_DRAFTS_ARCHIVE_DIR", None),
+                getattr(settings, "INTERNET_DRAFT_PATH", None),
+                getattr(settings, "INTERNET_DRAFT_ARCHIVE_DIR", None),
+                getattr(settings, "INTERNET_DRAFT_PDF_PATH", None),
+                getattr(settings, "RFC_PATH", None),
+                getattr(settings, "SUBMIT_YANG_CATALOG_MODEL_DIR", None),
+                getattr(settings, "SUBMIT_YANG_DRAFT_MODEL_DIR", None),
+                getattr(settings, "SUBMIT_YANG_IANA_MODEL_DIR", None),
+                getattr(settings, "SUBMIT_YANG_RFC_MODEL_DIR", None),
+                "/tmp/",
+            ) if p is not None
+        ]
+        return re.sub(fr"{'|'.join(paths)}/?", "**/", msg)
 
 
 class XmlRfcError(SubmissionError):
