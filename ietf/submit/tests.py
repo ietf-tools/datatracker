@@ -27,11 +27,6 @@ from django.utils import timezone
 from django.utils.encoding import force_str
 import debug                            # pyflakes:ignore
 
-from ietf.submit.utils import (expirable_submissions, expire_submission, find_submission_filenames,
-                               post_submission, validate_submission_name, validate_submission_rev,
-                               process_and_accept_uploaded_submission, SubmissionError, process_submission_text,
-                               process_submission_xml, process_uploaded_submission, 
-                               process_and_validate_submission)
 from ietf.doc.factories import (DocumentFactory, WgDraftFactory, IndividualDraftFactory,
                                 ReviewFactory, WgRfcFactory)
 from ietf.doc.models import ( Document, DocEvent, State,
@@ -49,7 +44,12 @@ from ietf.submit.factories import SubmissionFactory, SubmissionExtResourceFactor
 from ietf.submit.forms import SubmissionBaseUploadForm, SubmissionAutoUploadForm
 from ietf.submit.models import Submission, Preapproval, SubmissionExtResource
 from ietf.submit.tasks import cancel_stale_submissions, process_and_accept_uploaded_submission_task
-from ietf.submit.utils import apply_yang_checker_to_draft, run_all_yang_model_checks
+from ietf.submit.utils import (expirable_submissions, expire_submission, find_submission_filenames,
+                               post_submission, validate_submission_name, validate_submission_rev,
+                               process_and_accept_uploaded_submission, SubmissionError, process_submission_text,
+                               process_submission_xml, process_uploaded_submission, 
+                               process_and_validate_submission, apply_yang_checker_to_draft, 
+                               run_all_yang_model_checks)
 from ietf.utils import tool_version
 from ietf.utils.accesstoken import generate_access_token
 from ietf.utils.mail import outbox, get_payload_text
