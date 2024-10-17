@@ -195,7 +195,7 @@ def process_response_email(msg):
     local, domain = get_base_ipr_request_address().split('@')
     if not re.match(r'^{}\+[a-zA-Z0-9_\-]{}@{}'.format(local,'{16}',domain),to):
         _from = message.get("From", "<unknown>")
-        log(f"Ignoring IPR email without a message identifier from {_from}")
+        log(f"Ignoring IPR email without a message identifier from {_from} to {to}")
         return
 
     try:
