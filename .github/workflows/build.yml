@@ -234,31 +234,116 @@ jobs:
         docker-compose.yml
         EOL
 
-    - name: Set up QEMU
-      uses: docker/setup-qemu-action@v3
-    
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
+    - name: Launch build VM
+      id: azlaunch
+      run: |
+        echo "Authenticating to Azure..."
+        az login --service-principal -u ${{ secrets.AZ_BUILD_APP_ID }} -p ${{ secrets.AZ_BUILD_PWD }} --tenant ${{ secrets.AZ_BUILD_TENANT_ID }}
+        echo "Creating VM..."
+        vminfo=$(az vm create \
+          --resource-group ghaDatatracker \
+          --name tmpGhaBuildVM \
+          --image Ubuntu2404 \
+          --admin-username azureuser \
+          --generate-ssh-keys \
+          --priority Spot \
+          --size Standard_D8as_v6 \
+          --max-price -1 \
+          --os-disk-size-gb 30 \
+          --eviction-policy Delete \
+          --nic-delete-option Delete \
+          --output tsv \
+          --query "publicIpAddress")
+        echo "ipaddr=$vminfo" >> "$GITHUB_OUTPUT"
+        echo "VM Public IP: $vminfo"
+        cat ~/.ssh/id_rsa > ${{ github.workspace }}/prvkey.key
+        ssh-keyscan -t rsa $vminfo >> ~/.ssh/known_hosts
 
-    - name: Login to GitHub Container Registry
-      uses: docker/login-action@v3
+    - name: Copy build files
+      uses: appleboy/scp-action@917f8b81dfc1ccd331fef9e2d61bdc6c8be94634
       with:
-        registry: ghcr.io
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
+        host: ${{ steps.azlaunch.outputs.ipaddr }}
+        port: 22
+        username: azureuser
+        key_path: ${{ github.workspace }}/prvkey.key
+        source: "${{ github.workspace }},!${{ github.workspace }}/.git,!${{ github.workspace }}/prvkey.key"
+        target: /workspace
 
-    - name: Build Release Docker Image
-      uses: docker/build-push-action@v6
+    - name: Remote SSH into Build VM
+      uses: appleboy/ssh-action@25ce8cbbcb08177468c7ff7ec5cbfa236f9341e1
       env:
-        DOCKER_BUILD_SUMMARY: false
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_ACTOR: ${{ github.actor }}
+        PKG_VERSION: ${{ env.PKG_VERSION }}
       with:
-        context: .
-        file: dev/build/Dockerfile
-        platforms: ${{ github.event.inputs.skiparm == 'true' && 'linux/amd64' || 'linux/amd64,linux/arm64' }}
-        push: true
-        tags: ghcr.io/ietf-tools/datatracker:${{ env.PKG_VERSION }}
-        cache-from: type=gha
-        cache-to: type=gha,mode=max
+        host: ${{ steps.azlaunch.outputs.ipaddr }}
+        port: 22
+        username: azureuser
+        command_timeout: 60m
+        key_path: ${{ github.workspace }}/prvkey.key
+        envs: GITHUB_TOKEN
+        script_stop: true
+        script: |
+          export DEBIAN_FRONTEND=noninteractive
+          lsb_release -a
+          sudo apt-get update
+          sudo apt-get upgrade -y
+          
+          echo "Installing Docker..."
+          curl -fsSL https://get.docker.com -o get-docker.sh
+          sudo sh get-docker.sh
+
+          echo "Login to ghcr.io..."
+          echo $GITHUB_TOKEN | docker login ghcr.io -u $GITHUB_ACTOR --password-stdin
+          
+          echo "Building Images..."
+          cd /workspace
+          ls
+
+    - name: Destroy Build VM + resources
+      if: always()
+      shell: pwsh
+      run: |
+        echo "Destroying VM..."        
+        az vm delete -g ghaDatatracker -n tmpGhaBuildVM --yes --force-deletion true
+
+        $resourceOrderRemovalOrder = [ordered]@{
+            "Microsoft.Compute/virtualMachines" = 0
+            "Microsoft.Compute/disks" = 1
+            "Microsoft.Network/networkInterfaces" = 2
+            "Microsoft.Network/publicIpAddresses" = 3
+            "Microsoft.Network/networkSecurityGroups" = 4
+            "Microsoft.Network/virtualNetworks" = 5
+        }
+        echo "Fetching remaining resources..."
+        $resources = az resource list --resource-group ghaDatatracker | ConvertFrom-Json
+
+        $orderedResources = $resources 
+            | Sort-Object @{
+                Expression = {$resourceOrderRemovalOrder[$_.type]}
+                Descending = $False
+            }
+
+        echo "Deleting remaining resources..."
+        $orderedResources | ForEach-Object {
+            az resource delete --resource-group ghaDatatracker --ids $_.id --verbose
+        }
+
+        echo "Logout from Azure..."
+        az logout
+
+    # - name: Build Release Docker Image
+    #   uses: docker/build-push-action@v6
+    #   env:
+    #     DOCKER_BUILD_SUMMARY: false
+    #   with:
+    #     context: .
+    #     file: dev/build/Dockerfile
+    #     platforms: ${{ github.event.inputs.skiparm == 'true' && 'linux/amd64' || 'linux/amd64,linux/arm64' }}
+    #     push: true
+    #     tags: ghcr.io/ietf-tools/datatracker:${{ env.PKG_VERSION }}
+    #     cache-from: type=gha
+    #     cache-to: type=gha,mode=max
         
     - name: Update CHANGELOG
       id: changelog
