@@ -170,9 +170,10 @@ jobs:
           --admin-username azureuser \
           --generate-ssh-keys \
           --priority Spot \
-          --size Standard_D8as_v5 \
+          --size Standard_D8ads_v5 \
           --max-price -1 \
-          --os-disk-size-gb 30 \
+          --ephemeral-os-disk \
+          --os-disk-size-gb 100 \
           --eviction-policy Delete \
           --nic-delete-option Delete \
           --output tsv \
