@@ -275,7 +275,7 @@ jobs:
           gh repo clone ietf-tools/datatracker -- --depth=1 --no-tags
           cd datatracker
 
-          if [ "$SHOULD_DEPLOY" = false ] || [ "$GITHUB_REF_NAME" = release ] ; then
+          if [ "$SHOULD_DEPLOY" = "false" ] || [ "$GITHUB_REF_NAME" = "release" ] ; then
             echo "=========================================================================="
             echo "Downloading coverage..."
             echo "=========================================================================="
@@ -299,7 +299,7 @@ jobs:
           sed -i -r -e "s|^__release_hash__ += '.*'$|__release_hash__ = '$GITHUB_SHA'|" ietf/__init__.py
           sed -i -r -e "s|^__release_branch__ += '.*'$|__release_branch__ = '$GITHUB_REF_NAME'|" ietf/__init__.py
 
-          if [ "$SHOULD_DEPLOY" = true ] ; then
+          if [ "$SHOULD_DEPLOY" = "true" ] ; then
             echo "=========================================================================="
             echo "Setting production flags in settings.py..."
             echo "=========================================================================="
