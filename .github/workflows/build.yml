@@ -219,6 +219,10 @@ jobs:
           echo "=========================================================================="
           curl -fsSL https://get.docker.com -o get-docker.sh
           sudo sh get-docker.sh
+          sudo docker buildx create \
+            --name container-builder \
+            --driver docker-container \
+            --bootstrap --use
 
           echo "=========================================================================="
           echo "Login to ghcr.io..."
