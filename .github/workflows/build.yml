@@ -222,15 +222,21 @@ jobs:
           lsb_release -a
           sudo apt-get update
           sudo apt-get upgrade -y
-          
+
+          echo "=========================================================================="
           echo "Installing Docker..."
+          echo "=========================================================================="
           curl -fsSL https://get.docker.com -o get-docker.sh
           sudo sh get-docker.sh
 
+          echo "=========================================================================="
           echo "Login to ghcr.io..."
-          echo $GITHUB_TOKEN | docker login ghcr.io -u $GITHUB_ACTOR --password-stdin
+          echo "=========================================================================="
+          echo $GITHUB_TOKEN | sudo docker login ghcr.io -u $GITHUB_ACTOR --password-stdin
 
+          echo "=========================================================================="
           echo "Installing GH CLI..."
+          echo "=========================================================================="
           (type -p wget >/dev/null || (sudo apt update && sudo apt-get install wget -y)) \
           	&& sudo mkdir -p -m 755 /etc/apt/keyrings \
           	&& wget -qO- https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo tee /etc/apt/keyrings/githubcli-archive-keyring.gpg > /dev/null \
@@ -239,22 +245,30 @@ jobs:
           	&& sudo apt update \
           	&& sudo apt install gh -y
 
+          echo "=========================================================================="
           echo "Installing AWS CLI..."
+          echo "=========================================================================="
           curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
           unzip awscliv2.zip
           sudo ./aws/install
 
+          echo "=========================================================================="
           echo "Install Node.js..."
+          echo "=========================================================================="
           curl -fsSL https://deb.nodesource.com/setup_22.x -o nodesource_setup.sh
           sudo bash nodesource_setup.sh
           sudo apt-get install -y nodejs
           sudo corepack enable
 
+          echo "=========================================================================="
           echo "Install Python 3.x..."
+          echo "=========================================================================="
           sudo apt-get install python3 python3-dev -y
           python3 --version
 
+          echo "=========================================================================="
           echo "Clone project..."
+          echo "=========================================================================="
           sudo mkdir -p /workspace
           sudo chown azureuser /workspace
           cd /workspace
@@ -262,11 +276,15 @@ jobs:
           cd datatracker
 
           if [ "$SHOULD_DEPLOY" = false ] || [ "$GITHUB_REF_NAME" = release ] ; then
+            echo "=========================================================================="
             echo "Downloading coverage..."
+            echo "=========================================================================="
             gh run download $GITHUB_RUN_ID -n coverage
           fi
 
+          echo "=========================================================================="
           echo "Building project..."
+          echo "=========================================================================="
           echo "PKG_VERSION: $PKG_VERSION"
           echo "GITHUB_SHA: $GITHUB_SHA"
           echo "GITHUB_REF_NAME: $GITHUB_REF_NAME"
@@ -282,23 +300,30 @@ jobs:
           sed -i -r -e "s|^__release_branch__ += '.*'$|__release_branch__ = '$GITHUB_REF_NAME'|" ietf/__init__.py
 
           if [ "$SHOULD_DEPLOY" = true ] ; then
+            echo "=========================================================================="
             echo "Setting production flags in settings.py..."
+            echo "=========================================================================="
             sed -i -r -e 's/^DEBUG *= *.*$/DEBUG = False/' -e "s/^SERVER_MODE *= *.*\$/SERVER_MODE = 'production'/" ietf/settings.py
           fi
 
+          echo "=========================================================================="
           echo "Build release tarball..."
+          echo "=========================================================================="
           mkdir -p /workspace/release
           tar -czf /workspace/release.tar.gz -X dev/build/exclude-patterns.txt .
 
+          echo "=========================================================================="
           echo "Collecting statics..."
+          echo "=========================================================================="
           docker run --rm --name collectstatics -v $(pwd):/workspace ghcr.io/ietf-tools/datatracker-app-base:latest sh dev/build/collectstatics.sh
-          
           echo "Pushing statics..."
           cd static
           aws s3 sync . s3://static/dt/$PKG_VERSION --only-show-errors
           cd ..
 
+          echo "=========================================================================="
           echo "Augment dockerignore for docker image build..."
+          echo "=========================================================================="
           cat >> .dockerignore <<EOL
           .devcontainer
           .github
@@ -308,8 +333,10 @@ jobs:
           svn-history
           docker-compose.yml
           EOL
-          
+
+          echo "=========================================================================="
           echo "Building Images..."
+          echo "=========================================================================="
           ls
           echo "Error!" 1>&2
           exit 64
