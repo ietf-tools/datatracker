@@ -1,4 +1,5 @@
 <span class="required">*</span> Required Field
+<!-- Copyright The IETF Trust 2024. All Rights Reserved. -->
 <form id="session-request-form" action="." method="post" name="form_post">{% csrf_token %}
     {{ form.session_forms.management_form }}
     {% if form.non_field_errors %}
