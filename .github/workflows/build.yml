@@ -258,7 +258,7 @@ jobs:
           curl -fsSL https://deb.nodesource.com/setup_22.x -o nodesource_setup.sh
           sudo bash nodesource_setup.sh
           sudo apt-get install -y nodejs
-          sudo corepack enable
+          corepack enable
 
           echo "=========================================================================="
           echo "Install Python 3.x..."
@@ -341,37 +341,37 @@ jobs:
           echo "Error!" 1>&2
           exit 64
 
-    - name: Destroy Build VM + resources
-      if: always()
-      shell: pwsh
-      run: |
-        echo "Destroying VM..."        
-        az vm delete -g ghaDatatracker -n tmpGhaBuildVM --yes --force-deletion true
+    # - name: Destroy Build VM + resources
+    #   if: always()
+    #   shell: pwsh
+    #   run: |
+    #     echo "Destroying VM..."        
+    #     az vm delete -g ghaDatatracker -n tmpGhaBuildVM --yes --force-deletion true
 
-        $resourceOrderRemovalOrder = [ordered]@{
-            "Microsoft.Compute/virtualMachines" = 0
-            "Microsoft.Compute/disks" = 1
-            "Microsoft.Network/networkInterfaces" = 2
-            "Microsoft.Network/publicIpAddresses" = 3
-            "Microsoft.Network/networkSecurityGroups" = 4
-            "Microsoft.Network/virtualNetworks" = 5
-        }
-        echo "Fetching remaining resources..."
-        $resources = az resource list --resource-group ghaDatatracker | ConvertFrom-Json
+    #     $resourceOrderRemovalOrder = [ordered]@{
+    #         "Microsoft.Compute/virtualMachines" = 0
+    #         "Microsoft.Compute/disks" = 1
+    #         "Microsoft.Network/networkInterfaces" = 2
+    #         "Microsoft.Network/publicIpAddresses" = 3
+    #         "Microsoft.Network/networkSecurityGroups" = 4
+    #         "Microsoft.Network/virtualNetworks" = 5
+    #     }
+    #     echo "Fetching remaining resources..."
+    #     $resources = az resource list --resource-group ghaDatatracker | ConvertFrom-Json
 
-        $orderedResources = $resources 
-            | Sort-Object @{
-                Expression = {$resourceOrderRemovalOrder[$_.type]}
-                Descending = $False
-            }
+    #     $orderedResources = $resources 
+    #         | Sort-Object @{
+    #             Expression = {$resourceOrderRemovalOrder[$_.type]}
+    #             Descending = $False
+    #         }
 
-        echo "Deleting remaining resources..."
-        $orderedResources | ForEach-Object {
-            az resource delete --resource-group ghaDatatracker --ids $_.id --verbose
-        }
+    #     echo "Deleting remaining resources..."
+    #     $orderedResources | ForEach-Object {
+    #         az resource delete --resource-group ghaDatatracker --ids $_.id --verbose
+    #     }
 
-        echo "Logout from Azure..."
-        az logout
+    #     echo "Logout from Azure..."
+    #     az logout
 
     # - name: Build Release Docker Image
     #   uses: docker/build-push-action@v6
