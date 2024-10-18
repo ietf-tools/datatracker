@@ -13,6 +13,9 @@
         email address, then please first
         <a href="{% url 'ietf.ietfauth.views.profile' %}">edit your profile</a>
         to add that email address to the active email addresses for your account.
+        Usernames are restricted to alphanumeric characters and the characters
+        "@", ".", "+", "-", and "_". Email addresses with other characters may
+        not be chosen as a username. 
     </div>
     <form method="post" class="my-3">
         {% csrf_token %}
