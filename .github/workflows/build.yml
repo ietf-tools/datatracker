@@ -215,7 +215,7 @@ jobs:
         username: azureuser
         command_timeout: 60m
         key_path: ${{ github.workspace }}/prvkey.key
-        envs: GITHUB_TOKEN
+        envs: GITHUB_TOKEN,GITHUB_ACTOR,GITHUB_SHA,GITHUB_REF_NAME,GITHUB_RUN_ID,AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY,AWS_DEFAULT_REGION,AWS_ENDPOINT_URL,PKG_VERSION,SHOULD_DEPLOY,SKIP_TESTS,DEBIAN_FRONTEND,BROWSERSLIST_IGNORE_OLD_DATA
         script_stop: true
         script: |
           export DEBIAN_FRONTEND=noninteractive
