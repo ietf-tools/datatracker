@@ -182,16 +182,6 @@ jobs:
         cat ~/.ssh/id_rsa > ${{ github.workspace }}/prvkey.key
         ssh-keyscan -t rsa $vminfo >> ~/.ssh/known_hosts
 
-    # - name: Copy build files
-    #   uses: appleboy/scp-action@917f8b81dfc1ccd331fef9e2d61bdc6c8be94634
-    #   with:
-    #     host: ${{ steps.azlaunch.outputs.ipaddr }}
-    #     port: 22
-    #     username: azureuser
-    #     key_path: ${{ github.workspace }}/prvkey.key
-    #     source: "${{ github.workspace }},!${{ github.workspace }}/.git,!${{ github.workspace }}/prvkey.key"
-    #     target: /workspace
-
     - name: Remote SSH into Build VM
       uses: appleboy/ssh-action@25ce8cbbcb08177468c7ff7ec5cbfa236f9341e1
       env:
@@ -337,9 +327,12 @@ jobs:
           echo "=========================================================================="
           echo "Building Images..."
           echo "=========================================================================="
-          ls
-          echo "Error!" 1>&2
-          exit 64
+          sudo docker buildx build --file dev/build/Dockerfile --platform linux/amd64,linux/arm64 --tag ghcr.io/ietf-tools/datatracker:$PKG_VERSION --push .
+
+    - name: Fetch release tarball
+      run: |
+        mkdir -p /home/runner/work/release
+        scp -i ${{ github.workspace }}/prvkey.key azureuser@${{ steps.azlaunch.outputs.ipaddr }}:/workspace/release.tar.gz /home/runner/work/release/release.tar.gz
 
     - name: Destroy Build VM + resources
       if: always()
@@ -372,19 +365,6 @@ jobs:
 
         echo "Logout from Azure..."
         az logout
-
-    # - name: Build Release Docker Image
-    #   uses: docker/build-push-action@v6
-    #   env:
-    #     DOCKER_BUILD_SUMMARY: false
-    #   with:
-    #     context: .
-    #     file: dev/build/Dockerfile
-    #     platforms: ${{ github.event.inputs.skiparm == 'true' && 'linux/amd64' || 'linux/amd64,linux/arm64' }}
-    #     push: true
-    #     tags: ghcr.io/ietf-tools/datatracker:${{ env.PKG_VERSION }}
-    #     cache-from: type=gha
-    #     cache-to: type=gha,mode=max
         
     - name: Update CHANGELOG
       id: changelog
@@ -395,6 +375,12 @@ jobs:
         fromTag: ${{ env.FROM_TAG }}
         toTag: ${{ env.TO_TAG }}
         writeToFile: false
+
+    - name: Download Coverage Results
+      if: ${{ github.event.inputs.skiptests == 'false' || github.ref_name == 'release' }}
+      uses: actions/download-artifact@v4.1.8
+      with:
+        name: coverage
 
     - name: Prepare Coverage Action
       if: ${{ github.event.inputs.skiptests == 'false' || github.ref_name == 'release' }}
