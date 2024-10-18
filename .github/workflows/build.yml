@@ -247,7 +247,7 @@ jobs:
           --admin-username azureuser \
           --generate-ssh-keys \
           --priority Spot \
-          --size Standard_D8as_v6 \
+          --size Standard_D8as_v5 \
           --max-price -1 \
           --os-disk-size-gb 30 \
           --eviction-policy Delete \
