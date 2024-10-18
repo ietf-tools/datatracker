@@ -275,7 +275,7 @@ jobs:
           gh repo clone ietf-tools/datatracker -- --depth=1 --no-tags
           cd datatracker
 
-          if [ "$SHOULD_DEPLOY" = "false" ] || [ "$GITHUB_REF_NAME" = "release" ] ; then
+          if [ "$SKIP_TESTS" = "false" ] || [ "$GITHUB_REF_NAME" = "release" ] ; then
             echo "=========================================================================="
             echo "Downloading coverage..."
             echo "=========================================================================="
