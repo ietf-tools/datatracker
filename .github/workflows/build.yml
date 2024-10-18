@@ -243,7 +243,7 @@ jobs:
         vminfo=$(az vm create \
           --resource-group ghaDatatracker \
           --name tmpGhaBuildVM \
-          --image Ubuntu2404 \
+          --image Ubuntu2204 \
           --admin-username azureuser \
           --generate-ssh-keys \
           --priority Spot \
