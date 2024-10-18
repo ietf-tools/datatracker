@@ -336,6 +336,7 @@ jobs:
     - name: Fetch release tarball
       run: |
         mkdir -p /home/runner/work/release
+        chmod 0600 ${{ github.workspace }}/prvkey.key
         scp -i ${{ github.workspace }}/prvkey.key azureuser@${{ steps.azlaunch.outputs.ipaddr }}:/workspace/release.tar.gz /home/runner/work/release/release.tar.gz
 
     - name: Destroy Build VM + resources
