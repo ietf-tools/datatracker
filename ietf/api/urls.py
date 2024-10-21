@@ -40,7 +40,7 @@ urlpatterns = [
     # Let Meetecho set session video URLs
     url(r'^meeting/session/video/url$', meeting_views.api_set_session_video_url),
     # Let Meetecho tell us the name of its recordings
-    url(r'meeting/session/recordingname$', meeting_views.api_set_meetecho_recording_name),
+    url(r'^meeting/session/recording-name$', meeting_views.api_set_meetecho_recording_name),
     # Meeting agenda + floorplan data
     url(r'^meeting/(?P<num>[A-Za-z0-9._+-]+)/agenda-data$', meeting_views.api_get_agenda_data),
     # Meeting session materials
