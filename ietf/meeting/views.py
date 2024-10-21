@@ -4270,6 +4270,45 @@ class OldUploadRedirect(RedirectView):
     def get_redirect_url(self, **kwargs):
         return reverse_lazy('ietf.meeting.views.session_details',kwargs=self.kwargs)
 
+
+@require_api_key
+@role_required("Recording Manager")
+@csrf_exempt
+def api_set_meetecho_recording_name(request):
+    """Set name for meetecho recording
+
+    parameters:
+        apikey: the poster's personal API key
+        session_id: id of the session to update
+        name: the name to use for the recording at meetecho player
+    """
+    def err(code, text):
+        return HttpResponse(text, status=code, content_type='text/plain')
+
+    if request.method != "POST":
+        return HttpResponseNotAllowed(
+            content="Method not allowed", content_type="text/plain", permitted_methods=('POST',)
+        )
+
+    session_id = request.POST.get('session_id', None)
+    if session_id is None:
+        return err(400, 'Missing session_id parameter')
+    name = request.POST.get('name', None)
+    if name is None:
+        return err(400, 'Missing name parameter')
+
+    try:
+        session = Session.objects.get(pk=session_id)
+    except Session.DoesNotExist:
+        return err(400, f"Session not found with session_id '{session_id}'")
+    except ValueError:
+        return err(400, "Invalid session_id: {session_id}")
+
+    session.meetecho_recording_name = name
+    session.save()
+
+    return HttpResponse("Done", status=200, content_type='text/plain')
+
 @require_api_key
 @role_required('Recording Manager')
 @csrf_exempt
