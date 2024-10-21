@@ -1348,7 +1348,7 @@ class Session(models.Model):
         name = self.meetecho_recording_name
         if name is None or name.strip() == "":
             name = self._session_recording_url_label()
-        if url_formatter.strip()!="" and name is not None:
+        if url_formatter.strip() != "" and name is not None:
             url = url_formatter.format(session_label=name)
         return url
 
