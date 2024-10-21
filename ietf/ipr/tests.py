@@ -4,6 +4,7 @@
 
 import datetime
 import mock
+import re
 
 from pyquery import PyQuery
 from urllib.parse import quote, urlparse
@@ -35,9 +36,9 @@ from ietf.ipr.factories import (
 )
 from ietf.ipr.forms import DraftForm, HolderIprDisclosureForm
 from ietf.ipr.mail import (process_response_email, get_reply_to, get_update_submitter_emails,
-    get_pseudo_submitter, get_holders, get_update_cc_addrs)
-from ietf.ipr.models import (IprDisclosureBase,GenericIprDisclosure,HolderIprDisclosure,
-    ThirdPartyIprDisclosure)
+                           get_pseudo_submitter, get_holders, get_update_cc_addrs, UndeliverableIprResponseError)
+from ietf.ipr.models import (IprDisclosureBase, GenericIprDisclosure, HolderIprDisclosure,
+                             ThirdPartyIprDisclosure, IprEvent)
 from ietf.ipr.templatetags.ipr_filters import no_revisions_message
 from ietf.ipr.utils import get_genitive, get_ipr_summary, ingest_response_email
 from ietf.mailtrigger.utils import gather_address_lists
@@ -712,7 +713,7 @@ I would like to revoke this declaration.
         )
         self.assertIn(f'{settings.IDTRACKER_BASE_URL}{urlreverse("ietf.ipr.views.showlist")}', get_payload_text(outbox[1]).replace('\n',' '))
 
-    def send_ipr_email_helper(self):
+    def send_ipr_email_helper(self) -> tuple[str, IprEvent, HolderIprDisclosure]:
         ipr = HolderIprDisclosureFactory()
         url = urlreverse('ietf.ipr.views.email',kwargs={ "id": ipr.id })
         self.client.login(username="secretary", password="secretary+password")
@@ -730,10 +731,11 @@ I would like to revoke this declaration.
         q = Message.objects.filter(reply_to=data['reply_to'])
         self.assertEqual(q.count(),1)
         event = q[0].msgevents.first()
+        assert event is not None
         self.assertTrue(event.response_past_due())
         self.assertEqual(len(outbox), 1)
         self.assertTrue('joe@test.com' in outbox[0]['To'])
-        return data['reply_to'], event
+        return data['reply_to'], event, ipr
 
     uninteresting_ipr_message_strings = [
         ("To: {to}\nCc: {cc}\nFrom: joe@test.com\nDate: {date}\nSubject: test\n"),
@@ -747,34 +749,46 @@ I would like to revoke this declaration.
 
     def test_process_response_email(self):
         # first send a mail
-        reply_to, event = self.send_ipr_email_helper()
+        reply_to, event, _ = self.send_ipr_email_helper()
 
         # test process response uninteresting messages
         addrs = gather_address_lists('ipr_disclosure_submitted').as_strings()
         for message_string in self.uninteresting_ipr_message_strings:
-            result = process_response_email(
+            process_response_email(
                 message_string.format(
                     to=addrs.to,
                     cc=addrs.cc,
                     date=timezone.now().ctime()
                 )
             )
-            self.assertIsNone(result)
-        
+
         # test process response
         message_string = """To: {}
 From: joe@test.com
 Date: {}
 Subject: test
 """.format(reply_to, timezone.now().ctime())
-        result = process_response_email(message_string)
-
-        self.assertIsInstance(result, Message)
+        process_response_email(message_string)
         self.assertFalse(event.response_past_due())
+
+        # test with an unmatchable message identifier
+        bad_reply_to = re.sub(
+            r"\+.{16}@",
+            '+0123456789abcdef@',
+            reply_to,
+        )
+        self.assertNotEqual(reply_to, bad_reply_to)
+        message_string = f"""To: {bad_reply_to}
+        From: joe@test.com
+        Date: {timezone.now().ctime()}
+        Subject: test
+        """
+        with self.assertRaises(UndeliverableIprResponseError):
+            process_response_email(message_string)
 
     def test_process_response_email_with_invalid_encoding(self):
         """Interesting emails with invalid encoding should be handled"""
-        reply_to, _ = self.send_ipr_email_helper()
+        reply_to, _, disclosure = self.send_ipr_email_helper()
         # test process response
         message_string = """To: {}
 From: joe@test.com
@@ -782,8 +796,8 @@ Date: {}
 Subject: test
 """.format(reply_to, timezone.now().ctime())
         message_bytes = message_string.encode('utf8') + b'\nInvalid stuff: \xfe\xff\n'
-        result = process_response_email(message_bytes)
-        self.assertIsInstance(result, Message)
+        process_response_email(message_bytes)
+        result = IprEvent.objects.filter(disclosure=disclosure).first().message  # newest
         # \ufffd is a rhombus character with an inverse ?, used to replace invalid characters
         self.assertEqual(result.body, 'Invalid stuff: \ufffd\ufffd\n\n',  # not sure where the extra \n is from
                          'Invalid characters should be replaced with \ufffd characters')
@@ -798,8 +812,7 @@ Subject: test
                                 cc=addrs.cc,
                                 date=timezone.now().ctime(),
             ).encode('utf8') + b'\nInvalid stuff: \xfe\xff\n'
-            result = process_response_email(message_bytes)
-            self.assertIsNone(result)
+            process_response_email(message_bytes)
 
     @override_settings(ADMINS=(("Some Admin", "admin@example.com"),))
     @mock.patch("ietf.ipr.utils.process_response_email")
@@ -816,11 +829,19 @@ Subject: test
         self.assertEqual(mock_process_response_email.call_args, mock.call(message))
         mock_process_response_email.reset_mock()
         
-        mock_process_response_email.side_effect = None
-        mock_process_response_email.return_value = None  # rejected message
+        mock_process_response_email.side_effect = UndeliverableIprResponseError
+        mock_process_response_email.return_value = None
         with self.assertRaises(EmailIngestionError) as context:
             ingest_response_email(message)
         self.assertIsNone(context.exception.as_emailmessage())  # should not send an email on a clean rejection
+        self.assertTrue(mock_process_response_email.called)
+        self.assertEqual(mock_process_response_email.call_args, mock.call(message))
+        mock_process_response_email.reset_mock()
+
+        mock_process_response_email.side_effect = None
+        mock_process_response_email.return_value = None  # ignored message
+        ingest_response_email(message)  # should not raise an exception
+        self.assertIsNone(context.exception.as_emailmessage())  # should not send an email on ignored message
         self.assertTrue(mock_process_response_email.called)
         self.assertEqual(mock_process_response_email.call_args, mock.call(message))
         mock_process_response_email.reset_mock()
