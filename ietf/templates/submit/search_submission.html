@@ -12,14 +12,8 @@
     <form method="post">
         {% csrf_token %}
         <div class="mb-3">
-            <label class="form-label" for="name">I-D name</label>
-            <input type="text" class="form-control" id="name" name="name" placeholder="draft-..." required>
+            {% bootstrap_form form %}
         </div>
-        {% if error %}
-            <p class="alert alert-danger my-3">
-                {{ error }}
-            </p>
-        {% endif %}
         <button class="btn btn-primary" type="submit">See status</button>
     </form>
 {% endblock %}
