@@ -15,7 +15,6 @@ from typing import Tuple
 
 from django import forms
 from django.conf import settings
-from django.forms.utils import ErrorList
 from django.utils.html import mark_safe, format_html # type:ignore
 from django.urls import reverse as urlreverse
 from django.utils import timezone
