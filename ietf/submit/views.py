@@ -27,7 +27,7 @@ from ietf.ietfauth.utils import has_role, role_required
 from ietf.mailtrigger.utils import gather_address_lists
 from ietf.person.models import Email
 from ietf.submit.forms import (SubmissionAutoUploadForm, AuthorForm, SubmitterForm, EditSubmissionForm,
-                               PreapprovalForm, ReplacesForm, SubmissionManualUploadForm)
+                               PreapprovalForm, ReplacesForm, SubmissionManualUploadForm, SubmissionSearchForm)
 from ietf.submit.mail import send_full_url, send_manual_post_request
 from ietf.submit.models import (Submission, Preapproval, SubmissionExtResource,
     DraftSubmissionStateName )
@@ -195,24 +195,29 @@ def api_submit_tombstone(request):
 def tool_instructions(request):
     return render(request, 'submit/tool_instructions.html', {'selected': 'instructions'})
 
+
 def search_submission(request):
-    error = None
-    name = None
     if request.method == 'POST':
-        name = request.POST.get('name', '')
-        submission = Submission.objects.filter(name=name).order_by('-pk').first()
-        if submission:
-            return redirect(submission_status, submission_id=submission.pk)
-        else:
-            if re.search(r'-\d\d$', name):
-                submission = Submission.objects.filter(name=name[:-3]).order_by('-pk').first()
-                if submission:
-                    return redirect(submission_status, submission_id=submission.pk)
-        error = 'No valid submission found for %s' % name
-    return render(request, 'submit/search_submission.html',
-                              {'selected': 'status',
-                               'error': error,
-                               'name': name})
+        form = SubmissionSearchForm(request.POST)
+        if form.is_valid():
+            name = form.cleaned_data["name"]
+            submission = Submission.objects.filter(name=name).order_by('-pk').first()
+            if submission:
+                return redirect(submission_status, submission_id=submission.pk)
+            else:
+                if re.search(r'-\d\d$', name):
+                    submission = Submission.objects.filter(name=name[:-3]).order_by('-pk').first()
+                    if submission:
+                        return redirect(submission_status, submission_id=submission.pk)
+            form.add_error(None, f"No valid submission found for {name}")
+    else:
+        form = SubmissionSearchForm()
+    return render(
+        request,
+        "submit/search_submission.html",
+        {"selected": "status", "form": form},
+    )
+
 
 def can_edit_submission(user, submission, access_token):
     key_matched = access_token and submission.access_token() == access_token
