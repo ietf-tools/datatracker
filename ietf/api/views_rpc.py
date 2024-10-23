@@ -1,251 +1,235 @@
 # Copyright The IETF Trust 2023, All Rights Reserved
 
-import json
+from django.db.models.functions import Coalesce
+from drf_spectacular.utils import extend_schema_view, extend_schema, OpenApiParameter
+from rest_framework import serializers, viewsets, mixins
+from rest_framework.decorators import action
+from rest_framework.views import APIView
+from rest_framework.response import Response
 
-from django.db.models import OuterRef, Subquery, Q
-from django.http import (
-    HttpResponse,
-    HttpResponseBadRequest,
-    JsonResponse,
-    HttpResponseNotAllowed,
-    HttpResponseNotFound,
-)
-from django.shortcuts import get_object_or_404
-from django.views.decorators.csrf import csrf_exempt
-from django.contrib.auth.models import User
+from django.db.models import OuterRef, Subquery, Q, CharField
+from django.http import Http404
 
-from ietf.api.ietf_utils import requires_api_token
 from ietf.doc.factories import WgDraftFactory  # DO NOT MERGE INTO MAIN
 from ietf.doc.models import Document, DocHistory
 from ietf.person.factories import PersonFactory  # DO NOT MERGE INTO MAIN
 from ietf.person.models import Person
+from .serializers_rpc import (
+    PersonBatchSerializer,
+    PersonSerializer,
+    FullDraftSerializer,
+    DraftSerializer,
+    SubmittedToQueueSerializer,
+    OriginalStreamSerializer,
+    DemoPersonCreateSerializer,
+    DemoPersonSerializer,
+    DemoDraftCreateSerializer,
+    DemoDraftSerializer,
+)
 
 
-@csrf_exempt
-@requires_api_token("ietf.api.views_rpc")
-def rpc_person(request, person_id):
-    person = get_object_or_404(Person, pk=person_id)
-    return JsonResponse(
-        {
-            "id": person.id,
-            "plain_name": person.plain_name(),
-        }
-    )
+@extend_schema_view(
+    retrieve=extend_schema(
+        operation_id="get_person_by_id",
+        summary="Find person by ID",
+        description="Returns a single person",
+    ),
+    batch=extend_schema(
+        operation_id="get_persons",
+        summary="Get a batch of persons",
+        description="returns a dict of person pks to person names",
+        request=PersonBatchSerializer,
+        responses=PersonSerializer(many=True),
+    ),
+)
+class PersonViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
+    queryset = Person.objects.all()
+    serializer_class = PersonSerializer
+    api_key_endpoint = "ietf.api.views_rpc"
+    lookup_url_kwarg = "person_id"
+
+    @action(detail=False, methods=["post"], serializer_class=PersonSerializer)
+    def batch(self, request):
+        """Get a batch of rpc person names"""
+        pks = PersonBatchSerializer(request.data).data["person_ids"]
+        return Response(
+            self.get_serializer(Person.objects.filter(pk__in=pks), many=True).data
+        )
 
 
-@csrf_exempt
-@requires_api_token("ietf.api.views_rpc")
-def rpc_subject_person(request, subject_id):
-    try:
-        user_id = int(subject_id)
-    except ValueError:
-        return JsonResponse({"error": "Invalid subject id"}, status=400)
-    try:
-        user = User.objects.get(pk=user_id)
-    except User.DoesNotExist:
-        return JsonResponse({"error": "Unknown subject"}, status=404)
-    if hasattr(
-        user, "person"
-    ):  # test this way to avoid exception on reverse OneToOneField
-        return rpc_person(request, person_id=user.person.pk)
-    return JsonResponse({"error": "Subject has no person"}, status=404)
+class SubjectPersonView(APIView):
+    api_key_endpoint = "ietf.api.views_rpc"
 
-
-@csrf_exempt
-@requires_api_token("ietf.api.views_rpc")
-def rpc_persons(request):
-    """Get a batch of rpc person names"""
-    if request.method != "POST":
-        return HttpResponseNotAllowed(["POST"])
-
-    pks = json.loads(request.body)
-    response = dict()
-    for p in Person.objects.filter(pk__in=pks):
-        response[str(p.pk)] = p.plain_name()
-    return JsonResponse(response)
-
-
-def _document_source_format(doc):
-    submission = doc.submission()
-    if submission is None:
-        return "unknown"
-    if ".xml" in submission.file_types:
-        if submission.xml_version == "3":
-            return "xml-v3"
-        else:
-            return "xml-v2"
-    elif ".txt" in submission.file_types:
-        return "txt"
-    return "unknown"
-
-    
-@csrf_exempt
-@requires_api_token("ietf.api.views_rpc")
-def rpc_draft(request, doc_id):
-    if request.method != "GET":
-        return HttpResponseNotAllowed(["GET"])
-
-    try:
-        d = Document.objects.get(pk=doc_id, type_id="draft")
-    except Document.DoesNotExist:
-        return HttpResponseNotFound()
-    return JsonResponse(
-        {
-            "id": d.pk,
-            "name": d.name,
-            "rev": d.rev,
-            "stream": d.stream.slug,
-            "title": d.title,
-            "pages": d.pages,
-            "source_format": _document_source_format(d),
-            "authors": [
-                {
-                    "id": p.pk,
-                    "plain_name": p.person.plain_name(),
-                }
-                for p in d.documentauthor_set.all()
-            ],
-            "shepherd": d.shepherd.formatted_ascii_email() if d.shepherd else "",
-            "intended_std_level": (
-                d.intended_std_level.slug if d.intended_std_level else ""
+    @extend_schema(
+        operation_id="get_subject_person_by_id",
+        summary="Find person for OIDC subject by ID",
+        description="Returns a single person",
+        responses=PersonSerializer,
+        parameters=[
+            OpenApiParameter(
+                name="subject_id",
+                type=int,
+                description="subject ID of person to return",
+                location="path",
             ),
-        }
-    )
-
-@csrf_exempt
-@requires_api_token("ietf.api.views_rpc")
-def drafts_by_names(request):
-    if request.method != "POST":
-        return HttpResponseNotAllowed(["POST"])
-    try:
-        names = json.loads(request.body)
-    except json.JSONDecodeError:
-        return HttpResponseBadRequest()
-    docs = Document.objects.filter(type_id="draft", name__in=names)
-    response = dict()
-    for doc in docs:
-        response[doc.name] = {
-            "id": doc.pk,
-            "name": doc.name,
-            "rev": doc.rev,
-            "stream": doc.stream.slug if doc.stream else "none",
-            "title": doc.title,
-            "pages": doc.pages,
-            "source_format": _document_source_format(doc),
-            "authors": [
-                {
-                    "id": p.pk,
-                    "plain_name": p.person.plain_name(),
-                }
-                for p in doc.documentauthor_set.all()
-            ],
-        }
-    return JsonResponse(response)
-
-
-@csrf_exempt
-@requires_api_token("ietf.api.views_rpc")
-def submitted_to_rpc(request):
-    """Return documents in datatracker that have been submitted to the RPC but are not yet in the queue
-
-    Those queries overreturn - there may be things, particularly not from the IETF stream that are already in the queue.
-    """
-    ietf_docs = Q(states__type_id="draft-iesg", states__slug__in=["ann"])
-    irtf_iab_ise_docs = Q(
-        states__type_id__in=[
-            "draft-stream-iab",
-            "draft-stream-irtf",
-            "draft-stream-ise",
         ],
-        states__slug__in=["rfc-edit"],
     )
-    # TODO: Need a way to talk about editorial stream docs
-    docs = Document.objects.filter(type_id="draft").filter(
-        ietf_docs | irtf_iab_ise_docs
-    )
-    response = {"submitted_to_rpc": []}
-    for doc in docs:
-        response["submitted_to_rpc"].append(
-            {
-                "name": doc.name,
-                "id": doc.pk,
-                "stream": doc.stream_id,
-                "submitted": f"{doc.sent_to_rfc_editor_event().time.isoformat()}",
-            }
-        )
-    return JsonResponse(response)
+    def get(self, request, subject_id: int):
+        try:
+            user_id = int(subject_id)
+        except ValueError:
+            raise Http404
+        person = Person.objects.filter(user__pk=user_id).first()
+        if person:
+            return Response(PersonSerializer(person).data)
+        raise Http404
 
 
-@csrf_exempt
-@requires_api_token("ietf.api.views_rpc")
-def rfc_original_stream(request):
-    """Return the stream that an rfc was first published into for all rfcs"""
-    rfcs = Document.objects.filter(type="rfc").annotate(
-        orig_stream_id=Subquery(
-            DocHistory.objects.filter(doc=OuterRef("pk"))
-            .exclude(stream__isnull=True)
-            .order_by("time")
-            .values_list("stream_id", flat=True)[:1]
+@extend_schema_view(
+    retrieve=extend_schema(
+        operation_id="get_draft_by_id",
+        summary="Get a draft",
+        description="Returns the draft for the requested ID",
+    ),
+    submitted_to_rpc=extend_schema(
+        operation_id="submitted_to_rpc",
+        summary="List documents ready to enter the RFC Editor Queue",
+        description="List documents ready to enter the RFC Editor Queue",
+        responses=SubmittedToQueueSerializer(many=True),
+    ),
+)
+class DraftViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
+    queryset = Document.objects.filter(type_id="draft")
+    serializer_class = FullDraftSerializer
+    api_key_endpoint = "ietf.api.views_rpc"
+    lookup_url_kwarg = "doc_id"
+
+    @action(detail=False, serializer_class=SubmittedToQueueSerializer)
+    def submitted_to_rpc(self, request):
+        """Return documents in datatracker that have been submitted to the RPC but are not yet in the queue
+
+        Those queries overreturn - there may be things, particularly not from the IETF stream that are already in the queue.
+        """
+        ietf_docs = Q(states__type_id="draft-iesg", states__slug__in=["ann"])
+        irtf_iab_ise_docs = Q(
+            states__type_id__in=[
+                "draft-stream-iab",
+                "draft-stream-irtf",
+                "draft-stream-ise",
+            ],
+            states__slug__in=["rfc-edit"],
         )
+        # TODO: Need a way to talk about editorial stream docs
+        docs = (
+            self.get_queryset()
+            .filter(type_id="draft")
+            .filter(ietf_docs | irtf_iab_ise_docs)
+        )
+        serializer = self.get_serializer(docs, many=True)
+        return Response(serializer.data)
+
+
+@extend_schema_view(
+    rfc_original_stream=extend_schema(
+        operation_id="get_rfc_original_streams",
+        summary="Get the streams RFCs were originally published into",
+        description="returns a list of dicts associating an RFC with its originally published stream",
+        responses=OriginalStreamSerializer(many=True),
     )
-    response = {"original_stream": []}
-    for rfc in rfcs:
-        response["original_stream"].append(
-            {
-                "rfc_number": rfc.rfc_number,
-                "stream": (
-                    rfc.orig_stream_id
-                    if rfc.orig_stream_id is not None
-                    else rfc.stream_id
+)
+class RfcViewSet(viewsets.GenericViewSet):
+    queryset = Document.objects.filter(type_id="rfc")
+    api_key_endpoint = "ietf.api.views_rpc"
+
+    @action(detail=False, serializer_class=OriginalStreamSerializer)
+    def rfc_original_stream(self, request):
+        rfcs = self.get_queryset().annotate(
+            orig_stream_id=Coalesce(
+                Subquery(
+                    DocHistory.objects.filter(doc=OuterRef("pk"))
+                    .exclude(stream__isnull=True)
+                    .order_by("time")
+                    .values_list("stream_id", flat=True)[:1]
                 ),
-            }
+                "stream_id",
+                output_field=CharField(),
+            ),
         )
-    return JsonResponse(response)
+        serializer = self.get_serializer(rfcs, many=True)
+        return Response(serializer.data)
 
 
-@csrf_exempt
-@requires_api_token("ietf.api.views_rpc")
-def create_demo_person(request):
-    """Helper for creating rpc demo objects - SHOULD NOT MAKE IT INTO PRODUCTION"""
-    if request.method != "POST":
-        return HttpResponseNotAllowed(["POST"])
+class DraftsByNamesView(APIView):
+    api_key_endpoint = "ietf.api.views_rpc"
 
-    request_params = json.loads(request.body)
-    name = request_params["name"]
-    person = Person.objects.filter(name=name).first() or PersonFactory(name=name)
-    return JsonResponse({"user_id": person.user.pk, "person_pk": person.pk})
+    @extend_schema(
+        operation_id="get_drafts_by_names",
+        summary="Get a batch of drafts by draft names",
+        description="returns a list of drafts with matching names",
+        request=list[str],
+        responses=DraftSerializer(many=True),
+    )
+    def post(self, request):
+        names = request.data
+        docs = Document.objects.filter(type_id="draft", name__in=names)
+        return Response(DraftSerializer(docs, many=True).data)
 
 
-@csrf_exempt
-@requires_api_token("ietf.api.views_rpc")
-def create_demo_draft(request):
-    """Helper for creating rpc demo objects - SHOULD NOT MAKE IT INTO PRODUCTION"""
-    if request.method != "POST":
-        return HttpResponseNotAllowed(["POST"])
+@extend_schema_view(
+    create_demo_person=extend_schema(
+        operation_id="create_demo_person",
+        summary="Build a datatracker Person for RPC demo purposes",
+        description="returns a datatracker User id for a person created with the given name",
+        request=DemoPersonCreateSerializer,
+        responses=DemoPersonSerializer,
+    ),
+    create_demo_draft=extend_schema(
+        operation_id="create_demo_draft",
+        summary="Build a datatracker WG draft for RPC demo purposes",
+        description="returns a datatracker document id for a draft created with the provided name and states. "
+        "The arguments, if present, are passed directly to the WgDraftFactory",
+        request=DemoDraftCreateSerializer,
+        responses=DemoDraftSerializer,
+    ),
+)
+class DemoViewSet(viewsets.ViewSet):
+    """SHOULD NOT MAKE IT INTO PRODUCTION"""
 
-    request_params = json.loads(request.body)
-    name = request_params.get("name")
-    rev = request_params.get("rev")
-    states = request_params.get("states")
-    stream_id = request_params.get("stream_id", "ietf")
-    doc = None
-    if not name:
-        return HttpResponse(status=400, content="Name is required")
-    doc = Document.objects.filter(name=name).first()
-    if not doc:
-        kwargs = {"name": name, "stream_id": stream_id}
-        if states:
-            kwargs["states"] = states
-        if rev:
-            kwargs["rev"] = rev
-        doc = WgDraftFactory(
-            **kwargs
-        )  # Yes, things may be a little strange if the stream isn't IETF, but until we nned something different...
-        event_type = "iesg_approved" if stream_id == "ietf" else "requested_publication"
-        if not doc.docevent_set.filter(
-            type=event_type
-        ).exists():  # Not using get_or_create here on purpose - these are wobbly facades we're creating
-            doc.docevent_set.create(
-                type=event_type, by_id=1, desc="Sent off to the RPC"
+    api_key_endpoint = "ietf.api.views_rpc"
+
+    @action(detail=False, methods=["post"])
+    def create_demo_person(self, request):
+        """Helper for creating rpc demo objects - SHOULD NOT MAKE IT INTO PRODUCTION"""
+        request_params = DemoPersonCreateSerializer(request.data)
+        name = request_params.data["name"]
+        person = Person.objects.filter(name=name).first() or PersonFactory(name=name)
+        return DemoPersonSerializer(person).data
+
+    @action(detail=False, methods=["post"])
+    def create_demo_draft(self, request):
+        """Helper for creating rpc demo objects - SHOULD NOT MAKE IT INTO PRODUCTION"""
+        request_params = DemoDraftCreateSerializer(request.data)
+        name = request_params.data["name"]
+        rev = request_params.data["rev"]
+        stream_id = request_params.data["stream_id"]
+        states = request_params.data["states"]
+        doc = Document.objects.filter(name=name).first()
+        if not doc:
+            kwargs = {"name": name, "stream_id": stream_id}
+            if states:
+                kwargs["states"] = states
+            if rev:
+                kwargs["rev"] = rev
+            doc = WgDraftFactory(
+                **kwargs
+            )  # Yes, things may be a little strange if the stream isn't IETF, but until we need something different...
+            event_type = (
+                "iesg_approved" if stream_id == "ietf" else "requested_publication"
             )
-    return JsonResponse({"doc_id": doc.pk, "name": doc.name})
+            if not doc.docevent_set.filter(
+                type=event_type
+            ).exists():  # Not using get_or_create here on purpose - these are wobbly facades we're creating
+                doc.docevent_set.create(
+                    type=event_type, by_id=1, desc="Sent off to the RPC"
+                )
+        return Response(DemoDraftSerializer(doc).data)
