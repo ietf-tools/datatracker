@@ -7173,6 +7173,20 @@ class SessionTests(TestCase):
             status_id='schedw',
             add_to_schedule=False,
         )
+        session_with_none_purpose = SessionFactory(
+            meeting=meeting,
+            group__parent=area,
+            purpose_id="none",
+            status_id="schedw",
+            add_to_schedule=False,
+        )
+        tutorial_session = SessionFactory(
+            meeting=meeting,
+            group__parent=area,
+            purpose_id="tutorial",
+            status_id="schedw",
+            add_to_schedule=False,
+        )
         def _sreq_edit_link(sess):
             return urlreverse(
                 'ietf.secr.sreq.views.edit',
@@ -7211,6 +7225,8 @@ class SessionTests(TestCase):
         self.assertContains(r, _sreq_edit_link(proposed_wg_session))  # link to the session request
         self.assertContains(r, rg_session.group.acronym)
         self.assertContains(r, _sreq_edit_link(rg_session))  # link to the session request
+        self.assertContains(r, session_with_none_purpose.group.acronym)
+        self.assertContains(r, tutorial_session.group.acronym)
         # check headings - note that the special types (has_meetings, etc) do not have a group parent
         # so they show up in 'other'
         q = PyQuery(r.content)
@@ -7218,6 +7234,22 @@ class SessionTests(TestCase):
         self.assertEqual(len(q('h2#other-groups')), 1)
         self.assertEqual(len(q('h2#irtf')), 1)  # rg group has irtf group as parent
 
+        # check rounded pills
+        self.assertNotContains(  # no rounded pill for sessions with regular purpose
+            r,
+            '<span class="badge rounded-pill text-bg-info">Regular</span>',
+            html=True,
+        )
+        self.assertNotContains(  # no rounded pill for session with no purpose specified
+            r,
+            '<span class="badge rounded-pill text-bg-info">None</span>',
+            html=True,
+        )
+        self.assertContains(  # rounded pill for session with non-regular purpose
+            r,
+            '<span class="badge rounded-pill text-bg-info">Tutorial</span>',
+            html=True,
+        )
 
     def test_request_minutes(self):
         meeting = MeetingFactory(type_id='ietf')

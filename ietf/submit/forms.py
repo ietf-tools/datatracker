@@ -2,19 +2,16 @@
 # -*- coding: utf-8 -*-
 
 
-import io
 import os
 import re
 import datetime
 import email
 import sys
 import tempfile
-import xml2rfc
 from contextlib import ExitStack
 
 from email.utils import formataddr
 from typing import Tuple
-from unidecode import unidecode
 
 from django import forms
 from django.conf import settings
@@ -37,10 +34,8 @@ from ietf.submit.models import Submission, Preapproval
 from ietf.submit.utils import validate_submission_name, validate_submission_rev, validate_submission_document_date, remote_ip
 from ietf.submit.parsers.plain_parser import PlainParser
 from ietf.submit.parsers.xml_parser import XMLParser
-from ietf.utils import log
 from ietf.utils.draft import PlaintextDraft
 from ietf.utils.fields import ModelMultipleChoiceField
-from ietf.utils.text import normalize_text
 from ietf.utils.timezone import date_today
 from ietf.utils.xmldraft import InvalidXMLError, XMLDraft, XMLParseError
 
@@ -371,273 +366,6 @@ class SubmissionBaseUploadForm(forms.Form):
             return None
 
 
-class DeprecatedSubmissionBaseUploadForm(SubmissionBaseUploadForm):
-    def clean(self):
-        def format_messages(where, e, log):
-            out = log.write_out.getvalue().splitlines()
-            err = log.write_err.getvalue().splitlines()
-            m = str(e)
-            if m:
-                m = [ m ]
-            else:
-                import traceback
-                typ, val, tb = sys.exc_info()
-                m = traceback.format_exception(typ, val, tb)
-                m = [ l.replace('\n ', ':\n ') for l in m ]
-            msgs = [s for s in (["Error from xml2rfc (%s):" % (where,)] + m + out +  err) if s]
-            return msgs
-
-        if self.shutdown and not has_role(self.request.user, "Secretariat"):
-            raise forms.ValidationError(self.cutoff_warning)
-
-        for ext in self.formats:
-            f = self.cleaned_data.get(ext, None)
-            if not f:
-                continue
-            self.file_types.append('.%s' % ext)
-        if not ('.txt' in self.file_types or '.xml' in self.file_types):
-            if not self.errors:
-                raise forms.ValidationError('Unexpected submission file types; found %s, but %s is required' % (', '.join(self.file_types), ' or '.join(self.base_formats)))
-
-        #debug.show('self.cleaned_data["xml"]')
-        if self.cleaned_data.get('xml'):
-            #if not self.cleaned_data.get('txt'):
-            xml_file = self.cleaned_data.get('xml')
-            file_name = {}
-            xml2rfc.log.write_out = io.StringIO()   # open(os.devnull, "w")
-            xml2rfc.log.write_err = io.StringIO()   # open(os.devnull, "w")
-            tfn = None
-            with ExitStack() as stack:
-                @stack.callback
-                def cleanup():  # called when context exited, even in case of exception
-                    if tfn is not None:
-                        os.unlink(tfn)
-
-                # We need to write the xml file to disk in order to hand it
-                # over to the xml parser.  XXX FIXME: investigate updating
-                # xml2rfc to be able to work with file handles to in-memory
-                # files.
-                name, ext = os.path.splitext(os.path.basename(xml_file.name))
-                with tempfile.NamedTemporaryFile(prefix=name+'-',
-                                                 suffix='.xml',
-                                                 mode='wb+',
-                                                 delete=False) as tf:
-                    tfn = tf.name
-                    for chunk in xml_file.chunks():
-                        tf.write(chunk)
-
-                parser = xml2rfc.XmlRfcParser(str(tfn), quiet=True)
-                # --- Parse the xml ---
-                try:
-                    self.xmltree = parser.parse(remove_comments=False)
-                    # If we have v2, run it through v2v3. Keep track of the submitted version, though.
-                    self.xmlroot = self.xmltree.getroot()
-                    self.xml_version = self.xmlroot.get('version', '2')
-                    if self.xml_version == '2':
-                        v2v3 = xml2rfc.V2v3XmlWriter(self.xmltree)
-                        self.xmltree.tree = v2v3.convert2to3()
-                        self.xmlroot = self.xmltree.getroot()  # update to the new root
-
-                    draftname = self.xmlroot.attrib.get('docName')
-                    if draftname is None:
-                        self.add_error('xml', "No docName attribute found in the xml root element")
-                    name_error = validate_submission_name(draftname)
-                    if name_error:
-                        self.add_error('xml', name_error) # This is a critical and immediate failure - do not proceed with other validation.
-                    else:
-                        revmatch = re.search("-[0-9][0-9]$", draftname)
-                        if revmatch:
-                            self.revision = draftname[-2:]
-                            self.filename = draftname[:-3]
-                        else:
-                            self.revision = None
-                            self.filename = draftname
-                        self.title = self.xmlroot.findtext('front/title').strip()
-                        if type(self.title) is str:
-                            self.title = unidecode(self.title)
-                        self.title = normalize_text(self.title)
-                        self.abstract = (self.xmlroot.findtext('front/abstract') or '').strip()
-                        if type(self.abstract) is str:
-                            self.abstract = unidecode(self.abstract)
-                        author_info = self.xmlroot.findall('front/author')
-                        for author in author_info:
-                            info = {
-                                "name": author.attrib.get('fullname'),
-                                "email": author.findtext('address/email'),
-                                "affiliation": author.findtext('organization'),
-                            }
-                            elem = author.find('address/postal/country')
-                            if elem != None:
-                                ascii_country = elem.get('ascii', None)
-                                info['country'] = ascii_country if ascii_country else elem.text
-
-                            for item in info:
-                                if info[item]:
-                                    info[item] = info[item].strip()
-                            self.authors.append(info)
-
-                        # --- Prep the xml ---
-                        file_name['xml'] = os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s%s' % (self.filename, self.revision, ext))
-                        try:
-                            prep = xml2rfc.PrepToolWriter(self.xmltree, quiet=True, liberal=True, keep_pis=[xml2rfc.V3_PI_TARGET])
-                            prep.options.accept_prepped = True
-                            self.xmltree.tree = prep.prep()
-                            if self.xmltree.tree == None:
-                                self.add_error('xml', "Error from xml2rfc (prep): %s" % prep.errors)
-                        except Exception as e:
-                                msgs = format_messages('prep', e, xml2rfc.log)
-                                self.add_error('xml', msgs)
-
-                        # --- Convert to txt ---
-                        if not ('txt' in self.cleaned_data and self.cleaned_data['txt']):
-                            file_name['txt'] = os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s.txt' % (self.filename, self.revision))
-                            try:
-                                writer = xml2rfc.TextWriter(self.xmltree, quiet=True)
-                                writer.options.accept_prepped = True
-                                writer.write(file_name['txt'])
-                                log.log("In %s: xml2rfc %s generated %s from %s (version %s)" %
-                                        (   os.path.dirname(file_name['xml']),
-                                            xml2rfc.__version__,
-                                            os.path.basename(file_name['txt']),
-                                            os.path.basename(file_name['xml']),
-                                            self.xml_version))
-                            except Exception as e:
-                                msgs = format_messages('txt', e, xml2rfc.log)
-                                log.log('\n'.join(msgs))
-                                self.add_error('xml', msgs)
-
-                        # --- Convert to html ---
-                        try:
-                            file_name['html'] = os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s.html' % (self.filename, self.revision))
-                            writer = xml2rfc.HtmlWriter(self.xmltree, quiet=True)
-                            writer.write(file_name['html'])
-                            self.file_types.append('.html')
-                            log.log("In %s: xml2rfc %s generated %s from %s (version %s)" %
-                                (   os.path.dirname(file_name['xml']),
-                                    xml2rfc.__version__,
-                                    os.path.basename(file_name['html']),
-                                    os.path.basename(file_name['xml']),
-                                    self.xml_version))
-                        except Exception as e:
-                            msgs = format_messages('html', e, xml2rfc.log)
-                            self.add_error('xml', msgs)
-
-                except Exception as e:
-                    try:
-                        msgs = format_messages('txt', e, xml2rfc.log)
-                        log.log('\n'.join(msgs))
-                        self.add_error('xml', msgs)
-                    except Exception:
-                        self.add_error('xml', "An exception occurred when trying to process the XML file: %s" % e)
-
-        # The following errors are likely noise if we have previous field
-        # errors:
-        if self.errors:
-            raise forms.ValidationError('')
-
-        if self.cleaned_data.get('txt'):
-            # try to parse it
-            txt_file = self.cleaned_data['txt']
-            txt_file.seek(0)
-            bytes = txt_file.read()
-            txt_file.seek(0)
-            try:
-                text = bytes.decode(PlainParser.encoding)
-                self.parsed_draft = PlaintextDraft(text, txt_file.name)
-                if self.filename == None:
-                    self.filename = self.parsed_draft.filename
-                elif self.filename != self.parsed_draft.filename:
-                    self.add_error('txt', "Inconsistent name information: xml:%s, txt:%s" % (self.filename, self.parsed_draft.filename))
-                if self.revision == None:
-                    self.revision = self.parsed_draft.revision
-                elif self.revision != self.parsed_draft.revision:
-                    self.add_error('txt', "Inconsistent revision information: xml:%s, txt:%s" % (self.revision, self.parsed_draft.revision))
-                if self.title == None:
-                    self.title = self.parsed_draft.get_title()
-                elif self.title != self.parsed_draft.get_title():
-                    self.add_error('txt', "Inconsistent title information: xml:%s, txt:%s" % (self.title, self.parsed_draft.get_title()))
-            except (UnicodeDecodeError, LookupError) as e:
-                self.add_error('txt', 'Failed decoding the uploaded file: "%s"' % str(e))
-
-        rev_error = validate_submission_rev(self.filename, self.revision)
-        if rev_error:
-            raise forms.ValidationError(rev_error)
-
-        # The following errors are likely noise if we have previous field
-        # errors:
-        if self.errors:
-            raise forms.ValidationError('')
-
-        if not self.filename:
-            raise forms.ValidationError("Could not extract a valid Internet-Draft name from the upload.  "
-                "To fix this in a text upload, please make sure that the full Internet-Draft name including "
-                "revision number appears centered on its own line below the document title on the "
-                "first page.  In an xml upload, please make sure that the top-level <rfc/> "
-                "element has a docName attribute which provides the full Internet-Draft name including "
-                "revision number.")
-
-        if not self.revision:
-            raise forms.ValidationError("Could not extract a valid Internet-Draft revision from the upload.  "
-                "To fix this in a text upload, please make sure that the full Internet-Draft name including "
-                "revision number appears centered on its own line below the document title on the "
-                "first page.  In an xml upload, please make sure that the top-level <rfc/> "
-                "element has a docName attribute which provides the full Internet-Draft name including "
-                "revision number.")
-
-        if not self.title:
-            raise forms.ValidationError("Could not extract a valid title from the upload")
-
-        if self.cleaned_data.get('txt') or self.cleaned_data.get('xml'):
-            # check group
-            self.group = self.deduce_group(self.filename)
-
-            # check existing
-            existing = Submission.objects.filter(name=self.filename, rev=self.revision).exclude(state__in=("posted", "cancel", "waiting-for-draft"))
-            if existing:
-                raise forms.ValidationError(mark_safe('A submission with same name and revision is currently being processed. <a href="%s">Check the status here.</a>' % urlreverse("ietf.submit.views.submission_status", kwargs={ 'submission_id': existing[0].pk })))
-
-            # cut-off
-            if self.revision == '00' and self.in_first_cut_off:
-                raise forms.ValidationError(mark_safe(self.cutoff_warning))
-
-            # check thresholds
-            today = date_today()
-
-            self.check_submissions_thresholds(
-                "for the Internet-Draft %s" % self.filename,
-                dict(name=self.filename, rev=self.revision, submission_date=today),
-                settings.IDSUBMIT_MAX_DAILY_SAME_DRAFT_NAME, settings.IDSUBMIT_MAX_DAILY_SAME_DRAFT_NAME_SIZE,
-            )
-            self.check_submissions_thresholds(
-                "for the same submitter",
-                dict(remote_ip=self.remote_ip, submission_date=today),
-                settings.IDSUBMIT_MAX_DAILY_SAME_SUBMITTER, settings.IDSUBMIT_MAX_DAILY_SAME_SUBMITTER_SIZE,
-            )
-            if self.group:
-                self.check_submissions_thresholds(
-                    "for the group \"%s\"" % (self.group.acronym),
-                    dict(group=self.group, submission_date=today),
-                    settings.IDSUBMIT_MAX_DAILY_SAME_GROUP, settings.IDSUBMIT_MAX_DAILY_SAME_GROUP_SIZE,
-                )
-            self.check_submissions_thresholds(
-                "across all submitters",
-                dict(submission_date=today),
-                settings.IDSUBMIT_MAX_DAILY_SUBMISSIONS, settings.IDSUBMIT_MAX_DAILY_SUBMISSIONS_SIZE,
-            )
-
-        return super().clean()
-
-
-class DeprecatedSubmissionAutoUploadForm(DeprecatedSubmissionBaseUploadForm):
-    """Full-service upload form, replaced by the asynchronous version"""
-    user = forms.EmailField(required=True)
-
-    def __init__(self, request, *args, **kwargs):
-        super(DeprecatedSubmissionAutoUploadForm, self).__init__(request, *args, **kwargs)
-        self.formats = ['xml', ]
-        self.base_formats = ['xml', ]
-
-
 class SubmissionManualUploadForm(SubmissionBaseUploadForm):
     txt = forms.FileField(label='.txt format', required=False)
     formats = SubmissionBaseUploadForm.formats + ('txt',)
@@ -675,6 +403,7 @@ class SubmissionManualUploadForm(SubmissionBaseUploadForm):
                     code="parse_error_revision",
                 )
         return txt_file
+
 
 class SubmissionAutoUploadForm(SubmissionBaseUploadForm):
     user = forms.EmailField(required=True)
@@ -930,3 +659,13 @@ class MessageModelForm(forms.ModelForm):
         self.fields['frm'].label='From'
         self.fields['frm'].widget.attrs['readonly'] = True
         self.fields['reply_to'].widget.attrs['readonly'] = True
+
+
+class SubmissionSearchForm(forms.Form):
+    """Form used for search_submission"""
+
+    name = forms.CharField(max_length=255, required=True, label="I-D name")
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["name"].widget.attrs["placeholder"] = "draft-..."

@@ -65,7 +65,7 @@
     {% for area in areas %}
         <h2 class="mt-5" id="id-{{ area.acronym|slugify }}">
             {{ area.name }}
-            <a href="{% url 'ietf.group.views.active_groups' group_type='wg' %}#{{ area.acronym }}">({{ area.acronym|upper }})</a>
+            <a href="{% url 'ietf.group.views.active_groups' group_type='wg' %}#{{ area.acronym|upper }}">({{ area.acronym|upper }})</a>
         </h2>
         {% if area.description %}
             <p>

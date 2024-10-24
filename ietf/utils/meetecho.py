@@ -481,12 +481,10 @@ class ConferenceManager(Manager):
 class SlidesManager(Manager):
     """Interface between Datatracker models and Meetecho API
     
-    Note: The URL we send comes from get_versionless_href(). This should match what we use as the
-    URL in api_get_session_materials(). Additionally, it _must_ give the right result for a Document
-    instance that has not yet been persisted to the database. This is because upload_session_slides()
-    (as of 2024-03-07) SessionPresentations before saving its updated Documents. This means, for
-    example, using get_absolute_url() will cause bugs. (We should refactor upload_session_slides() to
-    avoid this requirement.) 
+    Note: the URL sent for a slide deck comes from DocumentInfo.get_href() and includes the revision
+    of the slides being sent. Be sure that 1) the URL matches what api_get_session_materials() returns
+    for the slides; and 2) the URL is valid if it is fetched immediately - possibly even before the call
+    to SlidesManager.add() or send_update() returns.
     """
 
     def __init__(self, api_config):
@@ -521,7 +519,7 @@ class SlidesManager(Manager):
             deck={
                 "id": slides.pk,
                 "title": slides.title,
-                "url": slides.get_versionless_href(),  # see above note re: get_versionless_href()
+                "url": slides.get_href(),
                 "rev": slides.rev,
                 "order": order,
             }
@@ -575,7 +573,7 @@ class SlidesManager(Manager):
                 {
                     "id": deck.document.pk,
                     "title": deck.document.title,
-                    "url": deck.document.get_versionless_href(),  # see note above re: get_versionless_href()
+                    "url": deck.document.get_href(),
                     "rev": deck.document.rev,
                     "order": deck.order,
                 }
