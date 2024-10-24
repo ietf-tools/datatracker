@@ -3,6 +3,7 @@
 import re
 import datetime
 
+from pathlib import Path
 from typing import Optional, cast         # pyflakes:ignore
 from urllib.parse import urljoin
 
@@ -88,7 +89,12 @@ def upload_submission(request):
             submission.submission_date = date_today()
             submission.save()
             clear_existing_files(form)
-            save_files(form)
+            files_by_ext = save_files(form)
+            for filename_with_path in files_by_ext.values():
+                submission.submissionfile_set.create(
+                    filename=Path(filename_with_path).name,  # drop the path
+                    generated=False,
+                )
             create_submission_event(request, submission, desc="Uploaded submission")
             # Wrap in on_commit so the delayed task cannot start until the view is done with the DB
             transaction.on_commit(
@@ -163,7 +169,12 @@ def api_submission(request):
                 submission.replaces = form.cleaned_data['replaces']
                 submission.save()
                 clear_existing_files(form)
-                save_files(form)
+                files_by_ext = save_files(form)
+                for filename_with_path in files_by_ext.values():
+                    submission.submissionfile_set.create(
+                        filename=Path(filename_with_path).name,  # drop the path
+                        generated=False,
+                    )
                 create_submission_event(request, submission, desc="Uploaded submission through API")
 
                 # Wrap in on_commit so the delayed task cannot start until the view is done with the DB
