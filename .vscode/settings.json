@@ -48,13 +48,10 @@
         "**/.pnp.*": true
     },
     "eslint.nodePath": ".yarn/sdks",
-    "eslint.validate": [
-        "javascript",
-        "javascriptreact",
-        "vue"
-    ],
+    "eslint.validate": ["javascript", "javascriptreact", "vue"],
     "python.linting.pylintArgs": ["--load-plugins", "pylint_django"],
     "python.testing.pytestEnabled": false,
     "python.testing.unittestEnabled": false,
-    "python.linting.enabled": true
+    "python.linting.enabled": true,
+    "editor.formatOnSave": false
 }
