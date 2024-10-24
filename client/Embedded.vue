@@ -16,7 +16,8 @@ import NTheme from './components/n-theme.vue'
 const availableComponents = {
   ChatLog: defineAsyncComponent(() => import('./components/ChatLog.vue')),
   Polls: defineAsyncComponent(() => import('./components/Polls.vue')),
-  Status: defineAsyncComponent(() => import('./components/Status.vue'))
+  Status: defineAsyncComponent(() => import('./components/Status.vue')),
+  Emails: defineAsyncComponent(() => import('./components/Emails.vue'))
 }
 
 // PROPS

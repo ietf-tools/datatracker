@@ -61,6 +61,7 @@ from django.utils.encoding import force_bytes
 
 import debug                            # pyflakes:ignore
 
+from ietf.doc.templatetags.ietf_filters import urlize_ietf_docs
 from ietf.group.models import Role, Group
 from ietf.ietfauth.forms import ( RegistrationForm, PasswordForm, ResetPasswordForm, TestEmailForm,
                                 ChangePasswordForm, get_person_form, RoleEmailForm,
@@ -355,12 +356,16 @@ def profile(request):
             r.email_form = RoleEmailForm(r, prefix="role_%s" % r.pk)
 
         person_form = get_person_form(instance=person)
+    
+    emails_json_serializable = list(emails.values("pk", "address", "primary", "active", "origin"))
+    for email in emails_json_serializable:
+        email['urlize_origin_html'] = urlize_ietf_docs(email["origin"])
 
     return render(request, 'registration/edit_profile.html', {
         'person': person,
         'person_form': person_form,
         'roles': roles,
-        'emails': emails,
+        'emails': emails_json_serializable,
         'new_email_forms': new_email_forms,
         'nomcom': nc,
         'volunteer_status': volunteer_status,
