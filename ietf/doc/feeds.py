@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2007-2020, All Rights Reserved
+# Copyright The IETF Trust 2007-2024, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 import debug  # pyflakes:ignore
@@ -18,7 +18,7 @@ from django.template.defaultfilters import linebreaks  # type: ignore
 from django.utils import timezone
 from django.utils.html import strip_tags
 
-from ietf.doc.models import Document, State, LastCallDocEvent, DocEvent
+from ietf.doc.models import Document, State, LastCallDocEvent, DocEvent, NewRevisionDocEvent
 from ietf.doc.utils import augment_events_with_revision
 from ietf.doc.templatetags.ietf_filters import format_textarea
 from ietf.utils.timezone import RPC_TZINFO
@@ -76,7 +76,7 @@ class DocumentChangesFeed(Feed):
             truncatewords_html(format_textarea(item.desc), 20)
         )
 
-    def item_pubdate(self, item):
+    def item_updateddate(self, item):
         return item.time
 
     def item_author_name(self, item):
@@ -123,8 +123,32 @@ class InLastCallFeed(Feed):
     def item_description(self, item):
         return strip_control_characters(linebreaks(item.lc_event.desc))
 
-    def item_pubdate(self, item):
+    def item_updateddate(self, item):
         return item.lc_event.time
+
+
+class DraftFeed(Feed):
+    title = "Internet-Drafts"
+    feed_type = Atom1Feed
+    author_name = "IESG Secretary"
+    link ="/doc/recent/"
+
+    def items(self):
+        since = timezone.now() - datetime.timedelta(days=7)
+        state = State.objects.get(type='draft', slug='active')
+        events = NewRevisionDocEvent.objects.filter(time__gt=since)
+        names = [ e.doc.name for e in events ]
+        docs = Document.objects.filter(name__in=names, states=state).order_by("-time")
+        return docs
+
+    def item_title(self, item):
+        return "%s : %s" % (item.name, item.title)
+
+    def item_description(self, item):
+        return item.abstract
+
+    def item_updateddate(self, item):
+        return item.time
 
 
 class Rss201WithNamespacesFeed(Rss201rev2Feed):
