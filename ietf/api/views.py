@@ -30,7 +30,7 @@ from tastypie.utils import is_valid_jsonp_callback_value
 from tastypie.utils.mime import determine_format, build_content_type
 from textwrap import dedent
 from traceback import format_exception, extract_tb
-from typing import Iterable, Optional
+from typing import Iterable, Optional, Literal
 
 import ietf
 from ietf.api import _api_list
@@ -251,7 +251,7 @@ def version(request):
 
 @require_api_key
 @csrf_exempt
-def app_auth(request):
+def app_auth(request, app: Literal["authortools", "bibxml"]):
     return HttpResponse(
             json.dumps({'success': True}),
             content_type='application/json')

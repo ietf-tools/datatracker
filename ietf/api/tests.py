@@ -33,9 +33,8 @@ from ietf.meeting.factories import MeetingFactory, SessionFactory
 from ietf.meeting.models import Session
 from ietf.nomcom.models import Volunteer
 from ietf.nomcom.factories import NomComFactory, nomcom_kwargs_for_year
-from ietf.person.factories import PersonFactory, random_faker, EmailFactory
+from ietf.person.factories import PersonFactory, random_faker, EmailFactory, PersonalApiKeyFactory
 from ietf.person.models import Email, User
-from ietf.person.models import PersonalApiKey
 from ietf.stats.models import MeetingRegistration
 from ietf.utils.mail import empty_outbox, outbox, get_payload_text
 from ietf.utils.models import DumpInfo
@@ -71,7 +70,7 @@ class CustomApiTests(TestCase):
         meeting = MeetingFactory(type_id='ietf')
         session = SessionFactory(group__type_id='wg', meeting=meeting)
         group = session.group
-        apikey = PersonalApiKey.objects.create(endpoint=url, person=recman)
+        apikey = PersonalApiKeyFactory(endpoint=url, person=recman)
         video = 'https://foo.example.com/bar/beer/'
 
         # error cases
@@ -79,7 +78,7 @@ class CustomApiTests(TestCase):
         self.assertContains(r, "Missing apikey parameter", status_code=400)
 
         badrole  = RoleFactory(group__type_id='ietf', name_id='ad')
-        badapikey = PersonalApiKey.objects.create(endpoint=url, person=badrole.person)
+        badapikey = PersonalApiKeyFactory(endpoint=url, person=badrole.person)
         badrole.person.user.last_login = timezone.now()
         badrole.person.user.save()
         r = self.client.post(url, {'apikey': badapikey.hash()} )
@@ -151,7 +150,7 @@ class CustomApiTests(TestCase):
         recman = recmanrole.person
         meeting = MeetingFactory(type_id="ietf")
         session = SessionFactory(group__type_id="wg", meeting=meeting)
-        apikey = PersonalApiKey.objects.create(endpoint=url, person=recman)
+        apikey = PersonalApiKeyFactory(endpoint=url, person=recman)
         video = "https://foo.example.com/bar/beer/"
 
         # error cases
@@ -159,7 +158,7 @@ class CustomApiTests(TestCase):
         self.assertContains(r, "Missing apikey parameter", status_code=400)
 
         badrole = RoleFactory(group__type_id="ietf", name_id="ad")
-        badapikey = PersonalApiKey.objects.create(endpoint=url, person=badrole.person)
+        badapikey = PersonalApiKeyFactory(endpoint=url, person=badrole.person)
         badrole.person.user.last_login = timezone.now()
         badrole.person.user.save()
         r = self.client.post(url, {"apikey": badapikey.hash()})
@@ -228,7 +227,7 @@ class CustomApiTests(TestCase):
         recman = recmanrole.person
         meeting = MeetingFactory(type_id="ietf")
         session = SessionFactory(group__type_id="wg", meeting=meeting)
-        apikey = PersonalApiKey.objects.create(endpoint=url, person=recman)
+        apikey = PersonalApiKeyFactory(endpoint=url, person=recman)
         name = "testname"
 
         # error cases
@@ -236,7 +235,7 @@ class CustomApiTests(TestCase):
         self.assertContains(r, "Missing apikey parameter", status_code=400)
 
         badrole = RoleFactory(group__type_id="ietf", name_id="ad")
-        badapikey = PersonalApiKey.objects.create(endpoint=url, person=badrole.person)
+        badapikey = PersonalApiKeyFactory(endpoint=url, person=badrole.person)
         badrole.person.user.last_login = timezone.now()
         badrole.person.user.save()
         r = self.client.post(url, {"apikey": badapikey.hash()})
@@ -295,10 +294,10 @@ class CustomApiTests(TestCase):
         recman = recmanrole.person
         meeting = MeetingFactory(type_id='ietf')
         session = SessionFactory(group__type_id='wg', meeting=meeting)  
-        apikey = PersonalApiKey.objects.create(endpoint=url, person=recman)
+        apikey = PersonalApiKeyFactory(endpoint=url, person=recman)
 
         badrole  = RoleFactory(group__type_id='ietf', name_id='ad')
-        badapikey = PersonalApiKey.objects.create(endpoint=url, person=badrole.person)
+        badapikey = PersonalApiKeyFactory(endpoint=url, person=badrole.person)
         badrole.person.user.last_login = timezone.now()
         badrole.person.user.save()
 
@@ -361,10 +360,10 @@ class CustomApiTests(TestCase):
         recman = recmanrole.person
         meeting = MeetingFactory(type_id="ietf")
         session = SessionFactory(group__type_id="wg", meeting=meeting)
-        apikey = PersonalApiKey.objects.create(endpoint=url, person=recman)
+        apikey = PersonalApiKeyFactory(endpoint=url, person=recman)
 
         badrole = RoleFactory(group__type_id="ietf", name_id="ad")
-        badapikey = PersonalApiKey.objects.create(endpoint=url, person=badrole.person)
+        badapikey = PersonalApiKeyFactory(endpoint=url, person=badrole.person)
         badrole.person.user.last_login = timezone.now()
         badrole.person.user.save()
 
@@ -517,8 +516,8 @@ class CustomApiTests(TestCase):
             ),
         ):
             url = urlreverse(f"ietf.meeting.views.api_upload_{type_id}")
-            apikey = PersonalApiKey.objects.create(endpoint=url, person=recmanrole.person)
-            badapikey = PersonalApiKey.objects.create(endpoint=url, person=badrole.person)
+            apikey = PersonalApiKeyFactory(endpoint=url, person=recmanrole.person)
+            badapikey = PersonalApiKeyFactory(endpoint=url, person=badrole.person)
 
             r = self.client.post(url, {})
             self.assertContains(r, "Missing apikey parameter", status_code=400)
@@ -562,7 +561,7 @@ class CustomApiTests(TestCase):
         meeting = MeetingFactory(type_id='ietf')
         session = SessionFactory(group__type_id='wg', meeting=meeting)
         group = session.group
-        apikey = PersonalApiKey.objects.create(endpoint=url, person=recman)
+        apikey = PersonalApiKeyFactory(endpoint=url, person=recman)
 
         people = [
             {"name": "Andrea Andreotti", "affiliation": "Azienda"},
@@ -579,7 +578,7 @@ class CustomApiTests(TestCase):
         self.assertContains(r, "Missing apikey parameter", status_code=400)
 
         badrole = RoleFactory(group__type_id='ietf', name_id='ad')
-        badapikey = PersonalApiKey.objects.create(endpoint=url, person=badrole.person)
+        badapikey = PersonalApiKeyFactory(endpoint=url, person=badrole.person)
         badrole.person.user.last_login = timezone.now()
         badrole.person.user.save()
         r = self.client.post(url, {'apikey': badapikey.hash()})
@@ -654,7 +653,7 @@ class CustomApiTests(TestCase):
         meeting = MeetingFactory(type_id="ietf")
         session = SessionFactory(group__type_id="wg", meeting=meeting)
         group = session.group
-        apikey = PersonalApiKey.objects.create(endpoint=url, person=recman)
+        apikey = PersonalApiKeyFactory(endpoint=url, person=recman)
 
         people = [
             {"name": "Andrea Andreotti", "affiliation": "Azienda"},
@@ -671,7 +670,7 @@ class CustomApiTests(TestCase):
         self.assertContains(r, "Missing apikey parameter", status_code=400)
 
         badrole = RoleFactory(group__type_id="ietf", name_id="ad")
-        badapikey = PersonalApiKey.objects.create(endpoint=url, person=badrole.person)
+        badapikey = PersonalApiKeyFactory(endpoint=url, person=badrole.person)
         badrole.person.user.last_login = timezone.now()
         badrole.person.user.save()
         r = self.client.post(url, {"apikey": badapikey.hash()})
@@ -781,14 +780,14 @@ class CustomApiTests(TestCase):
         url = urlreverse('ietf.api.views.ApiV2PersonExportView')
         robot = PersonFactory(user__is_staff=True)
         RoleFactory(name_id='robot', person=robot, email=robot.email(), group__acronym='secretariat')
-        apikey = PersonalApiKey.objects.create(endpoint=url, person=robot)
+        apikey = PersonalApiKeyFactory(endpoint=url, person=robot)
 
         # error cases
         r = self.client.post(url, {})
         self.assertContains(r, "Missing apikey parameter", status_code=400)
 
         badrole = RoleFactory(group__type_id='ietf', name_id='ad')
-        badapikey = PersonalApiKey.objects.create(endpoint=url, person=badrole.person)
+        badapikey = PersonalApiKeyFactory(endpoint=url, person=badrole.person)
         badrole.person.user.last_login = timezone.now()
         badrole.person.user.save()
         r = self.client.post(url, {'apikey': badapikey.hash()})
@@ -827,7 +826,7 @@ class CustomApiTests(TestCase):
         oidcp = PersonFactory(user__is_staff=True)
         # Make sure 'oidcp' has an acceptable role
         RoleFactory(name_id='robot', person=oidcp, email=oidcp.email(), group__acronym='secretariat')
-        key = PersonalApiKey.objects.create(person=oidcp, endpoint=url)
+        key = PersonalApiKeyFactory(person=oidcp, endpoint=url)
         reg['apikey'] = key.hash()
         #
         # Test valid POST
@@ -911,7 +910,7 @@ class CustomApiTests(TestCase):
         oidcp = PersonFactory(user__is_staff=True)
         # Make sure 'oidcp' has an acceptable role
         RoleFactory(name_id='robot', person=oidcp, email=oidcp.email(), group__acronym='secretariat')
-        key = PersonalApiKey.objects.create(person=oidcp, endpoint=url)
+        key = PersonalApiKeyFactory(person=oidcp, endpoint=url)
         reg['apikey'] = key.hash()
 
         # first test is_nomcom_volunteer False
@@ -945,28 +944,30 @@ class CustomApiTests(TestCase):
 
 
     def test_api_appauth(self):
-        url = urlreverse('ietf.api.views.app_auth')
-        person = PersonFactory()
-        apikey = PersonalApiKey.objects.create(endpoint=url, person=person)
-
-        self.client.login(username=person.user.username,password=f'{person.user.username}+password')
-        self.client.logout()
-
-        # error cases
-        # missing apikey
-        r = self.client.post(url, {})
-        self.assertContains(r, 'Missing apikey parameter', status_code=400)
-
-        # invalid apikey
-        r = self.client.post(url, {'apikey': 'foobar'})
-        self.assertContains(r, 'Invalid apikey', status_code=403)
-
-        # working case
-        r = self.client.post(url, {'apikey': apikey.hash()})
-        self.assertEqual(r.status_code, 200)
-        jsondata = r.json()
-        self.assertEqual(jsondata['success'], True)
+        for app in ["authortools", "bibxml"]:
+            url = urlreverse('ietf.api.views.app_auth', kwargs={"app": app})
+            person = PersonFactory()
+            apikey = PersonalApiKeyFactory(endpoint=url, person=person)
     
+            self.client.login(username=person.user.username,password=f'{person.user.username}+password')
+            self.client.logout()
+    
+            # error cases
+            # missing apikey
+            r = self.client.post(url, {})
+            self.assertContains(r, 'Missing apikey parameter', status_code=400)
+    
+            # invalid apikey
+            r = self.client.post(url, {'apikey': 'foobar'})
+            self.assertContains(r, 'Invalid apikey', status_code=403)
+    
+            # working case
+            r = self.client.post(url, {'apikey': apikey.hash()})
+            self.assertEqual(r.status_code, 200)
+            jsondata = r.json()
+            self.assertEqual(jsondata['success'], True)
+            self.client.logout()
+
     def test_api_get_session_matherials_no_agenda_meeting_url(self):
         meeting = MeetingFactory(type_id='ietf')
         session = SessionFactory(meeting=meeting)
