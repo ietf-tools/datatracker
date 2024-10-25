@@ -788,7 +788,7 @@ class IetfAuthTests(TestCase):
             self.assertContains(r, 'Invalid apikey', status_code=403)
 
             # invalid apikey (invalidated api key)
-            unauthorized_url = urlreverse('ietf.api.views.app_auth')
+            unauthorized_url = urlreverse('ietf.api.views.app_auth', kwargs={'app': 'authortools'})
             invalidated_apikey = PersonalApiKey.objects.create(
                         endpoint=unauthorized_url, person=person, valid=False)
             r = self.client.post(unauthorized_url, {'apikey': invalidated_apikey.hash()})

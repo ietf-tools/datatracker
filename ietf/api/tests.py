@@ -945,28 +945,30 @@ class CustomApiTests(TestCase):
 
 
     def test_api_appauth(self):
-        url = urlreverse('ietf.api.views.app_auth')
-        person = PersonFactory()
-        apikey = PersonalApiKeyFactory(endpoint=url, person=person)
-
-        self.client.login(username=person.user.username,password=f'{person.user.username}+password')
-        self.client.logout()
-
-        # error cases
-        # missing apikey
-        r = self.client.post(url, {})
-        self.assertContains(r, 'Missing apikey parameter', status_code=400)
-
-        # invalid apikey
-        r = self.client.post(url, {'apikey': 'foobar'})
-        self.assertContains(r, 'Invalid apikey', status_code=403)
-
-        # working case
-        r = self.client.post(url, {'apikey': apikey.hash()})
-        self.assertEqual(r.status_code, 200)
-        jsondata = r.json()
-        self.assertEqual(jsondata['success'], True)
+        for app in ["authortools", "bibxml"]:
+            url = urlreverse('ietf.api.views.app_auth', kwargs={"app": app})
+            person = PersonFactory()
+            apikey = PersonalApiKeyFactory(endpoint=url, person=person)
     
+            self.client.login(username=person.user.username,password=f'{person.user.username}+password')
+            self.client.logout()
+    
+            # error cases
+            # missing apikey
+            r = self.client.post(url, {})
+            self.assertContains(r, 'Missing apikey parameter', status_code=400)
+    
+            # invalid apikey
+            r = self.client.post(url, {'apikey': 'foobar'})
+            self.assertContains(r, 'Invalid apikey', status_code=403)
+    
+            # working case
+            r = self.client.post(url, {'apikey': apikey.hash()})
+            self.assertEqual(r.status_code, 200)
+            jsondata = r.json()
+            self.assertEqual(jsondata['success'], True)
+            self.client.logout()
+
     def test_api_get_session_matherials_no_agenda_meeting_url(self):
         meeting = MeetingFactory(type_id='ietf')
         session = SessionFactory(meeting=meeting)

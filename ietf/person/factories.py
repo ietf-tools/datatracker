@@ -158,7 +158,7 @@ class EmailFactory(factory.django.DjangoModelFactory):
 
 class PersonalApiKeyFactory(factory.django.DjangoModelFactory):
     person = factory.SubFactory(PersonFactory)
-    endpoint = FuzzyChoice(PERSON_API_KEY_ENDPOINTS)
+    endpoint = FuzzyChoice(v for v, n in PERSON_API_KEY_ENDPOINTS)
     
     class Meta:
         model = PersonalApiKey
