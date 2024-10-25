@@ -1,7 +1,7 @@
 import { createFilter } from '@rollup/pluginutils'
-import template from 'lodash/template'
-import transform from 'lodash/transform'
-import fs from 'fs/promises'
+import template from 'lodash-es/template'
+import transform from 'lodash-es/transform'
+import fs from 'node:fs/promises'
 
 export default function precompileLodashTemplates(options = {}) {
   const filter = createFilter(options.include, options.exclude)
