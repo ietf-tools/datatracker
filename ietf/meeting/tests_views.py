@@ -38,7 +38,7 @@ import debug           # pyflakes:ignore
 from ietf.doc.models import Document, NewRevisionDocEvent
 from ietf.group.models import Group, Role, GroupFeatures
 from ietf.group.utils import can_manage_group
-from ietf.person.models import Person, PersonalApiKey
+from ietf.person.models import Person
 from ietf.meeting.helpers import can_approve_interim_request, can_request_interim_meeting, can_view_interim_request, preprocess_assignments_for_agenda
 from ietf.meeting.helpers import send_interim_approval_request, AgendaKeywordTagger
 from ietf.meeting.helpers import send_interim_meeting_cancellation_notice, send_interim_session_cancellation_notice
@@ -56,7 +56,7 @@ from ietf.utils.mail import outbox, empty_outbox, get_payload_text
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized, unicontent
 from ietf.utils.timezone import date_today, time_now
 
-from ietf.person.factories import PersonFactory
+from ietf.person.factories import PersonFactory, PersonalApiKeyFactory
 from ietf.group.factories import GroupFactory, GroupEventFactory, RoleFactory
 from ietf.meeting.factories import (SessionFactory, ScheduleFactory,
     SessionPresentationFactory, MeetingFactory, FloorPlanFactory,
@@ -8743,7 +8743,7 @@ class ProceedingsTests(BaseMeetingTestCase):
         add_attendees_url = urlreverse('ietf.meeting.views.api_add_session_attendees')
         recmanrole = RoleFactory(group__type_id='ietf', name_id='recman', person__user__last_login=timezone.now())
         recman = recmanrole.person
-        apikey = PersonalApiKey.objects.create(endpoint=add_attendees_url, person=recman)
+        apikey = PersonalApiKeyFactory(endpoint=add_attendees_url, person=recman)
         attendees = [person.user.pk for person in persons]
         self.client.login(username='recman', password='recman+password')
         r = self.client.post(add_attendees_url, {'apikey':apikey.hash(), 'attended':f'{{"session_id":{session.pk},"attendees":{attendees}}}'})

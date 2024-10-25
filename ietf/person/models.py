@@ -376,6 +376,7 @@ PERSON_API_KEY_VALUES = [
     ("/api/iesg/position", "/api/iesg/position", "Area Director"),
     ("/api/v2/person/person", "/api/v2/person/person", "Robot"),
     ("/api/meeting/session/video/url", "/api/meeting/session/video/url", "Recording Manager"),
+    ("/api/meeting/session/recording-name", "/api/meeting/session/recording-name", "Recording Manager"),
     ("/api/notify/meeting/registration", "/api/notify/meeting/registration", "Robot"),
     ("/api/notify/meeting/bluesheet", "/api/notify/meeting/bluesheet", "Recording Manager"),
     ("/api/notify/session/attendees", "/api/notify/session/attendees", "Recording Manager"),
