@@ -35,7 +35,7 @@ from ietf.ietfauth.utils import has_role
 from ietf.meeting.factories import MeetingFactory
 from ietf.nomcom.factories import NomComFactory
 from ietf.person.factories import PersonFactory, EmailFactory, UserFactory, PersonalApiKeyFactory
-from ietf.person.models import Person, Email, PersonalApiKey
+from ietf.person.models import Person, Email
 from ietf.person.tasks import send_apikey_usage_emails_task
 from ietf.review.factories import ReviewRequestFactory, ReviewAssignmentFactory
 from ietf.review.models import ReviewWish, UnavailablePeriod
