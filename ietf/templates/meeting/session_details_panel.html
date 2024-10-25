@@ -366,8 +366,76 @@
                     </tr>
                 {% endif %}
             {% endif %}
+
+            {% with session.recordings as recordings %}
+                {% if recordings %}
+                    {# There's no guaranteed order, so this is a bit messy: #}
+                    {# Audio #}
+                    {% for r in recordings %}
+                        {% with href=r.get_href %}
+                            {% if 'audio' in href %}
+                                <tr>
+                                    <td>
+                                        <a href="{{ href }}">
+                                            {{ r.title }}
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% endif %}
+                        {% endwith %}
+                    {% endfor %}
+                    {# YouTube #}
+                    {% for r in recordings %}
+                        {% with href=r.get_href %}
+                            {% if 'youtu' in href %}
+                                <tr>
+                                    <td>
+                                        <a href="{{ href }}">
+                                            {{ r.title }}
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% endif %}
+                        {% endwith %}
+                    {% endfor %}
+                    {# Any other recordings #}
+                    {% for r in recordings %}
+                        {% with href=r.get_href %}
+                            {% if not 'audio' in href and not 'youtu' in href %}
+                                <tr>
+                                    <td>
+                                        <a href="{{ href }}">
+                                            {{ r.title }}
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% endif %}
+                        {% endwith %}
+                    {% endfor %}
+                {% elif show_empty  %}
+                    {# <i class="bi"></i> #}
+                {% endif %}
+                {% if session.session_recording_url %}
+                    <tr>
+                        <td>
+                            <a href="{{ session.session_recording_url }}">
+                                Meetecho session recording
+                            </a>
+                        </td>
+                    </tr>
+                {% endif %}
+            {% endwith %}
+
             </tbody>
         </table>
+
+        {% if can_manage_materials %}
+            <a class="btn btn-primary"
+                href="{% url 'ietf.meeting.views.add_session_notes_and_recordings' session_id=session.pk num=session.meeting.number %}">
+                Link additional notes and recordings to session
+            </a>
+        {% endif %}
+
     {% endif %}
 {% endwith %}{% endwith %}
 {% endfor %}
