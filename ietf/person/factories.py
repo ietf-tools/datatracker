@@ -159,9 +159,17 @@ class EmailFactory(factory.django.DjangoModelFactory):
 class PersonalApiKeyFactory(factory.django.DjangoModelFactory):
     person = factory.SubFactory(PersonFactory)
     endpoint = FuzzyChoice(PERSON_API_KEY_ENDPOINTS)
-
+    
     class Meta:
         model = PersonalApiKey
+        skip_postgeneration_save = True
+
+    @factory.post_generation
+    def do_full_clean(obj, create, extracted, **kwargs):
+        do_clean =  True if extracted is None else extracted
+        if do_clean:
+            obj.full_clean()
+
 
 class PersonApiKeyEventFactory(factory.django.DjangoModelFactory):
     key = factory.SubFactory(PersonalApiKeyFactory)
