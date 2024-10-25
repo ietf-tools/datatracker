@@ -165,7 +165,11 @@ class PersonalApiKeyFactory(factory.django.DjangoModelFactory):
         skip_postgeneration_save = True
 
     @factory.post_generation
-    def do_full_clean(obj, create, extracted, **kwargs):
+    def validate_model(obj, create, extracted, **kwargs):
+        """Validate the model after creation
+        
+        Passing validate_model=False will disable the validation.
+        """
         do_clean =  True if extracted is None else extracted
         if do_clean:
             obj.full_clean()

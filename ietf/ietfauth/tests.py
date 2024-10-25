@@ -789,8 +789,7 @@ class IetfAuthTests(TestCase):
 
             # invalid apikey (invalidated api key)
             unauthorized_url = urlreverse('ietf.api.views.app_auth', kwargs={'app': 'authortools'})
-            invalidated_apikey = PersonalApiKey.objects.create(
-                        endpoint=unauthorized_url, person=person, valid=False)
+            invalidated_apikey = PersonalApiKeyFactory(endpoint=unauthorized_url, person=person, valid=False)
             r = self.client.post(unauthorized_url, {'apikey': invalidated_apikey.hash()})
             self.assertContains(r, 'Invalid apikey', status_code=403)
 
@@ -803,7 +802,11 @@ class IetfAuthTests(TestCase):
             person.user.save()
 
             # endpoint mismatch
-            key2 = PersonalApiKey.objects.create(person=person, endpoint='/')
+            key2 = PersonalApiKeyFactory(
+                person=person,
+                endpoint='/',
+                validate_model=False,  # allow invalid endpoint
+            )
             r = self.client.post(key.endpoint, {'apikey':key2.hash(), 'dummy':'dummy',})
             self.assertContains(r, 'Apikey endpoint mismatch', status_code=400)
             key2.delete()
