@@ -16,7 +16,7 @@ const isPnpLoaderEnabled = existsSync(absPnpLoaderPath);
 
 if (existsSync(absPnpApiPath)) {
   if (!process.versions.pnp) {
-    // Setup the environment to be able to require eslint
+    // Setup the environment to be able to require eslint/universal
     require(absPnpApiPath).setup();
     if (isPnpLoaderEnabled && register) {
       register(pathToFileURL(absPnpLoaderPath));
@@ -28,5 +28,5 @@ const wrapWithUserWrapper = existsSync(absUserWrapperPath)
   ? exports => absRequire(absUserWrapperPath)(exports)
   : exports => exports;
 
-// Defer to the real eslint your application uses
-module.exports = wrapWithUserWrapper(absRequire(`eslint`));
+// Defer to the real eslint/universal your application uses
+module.exports = wrapWithUserWrapper(absRequire(`eslint/universal`));

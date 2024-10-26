@@ -51,6 +51,8 @@
     "zxcvbn": "4.4.2"
   },
   "devDependencies": {
+    "@eslint/eslintrc": "3.1.0",
+    "@eslint/js": "9.13.0",
     "@parcel/optimizer-data-url": "2.12.0",
     "@parcel/transformer-inline-string": "2.12.0",
     "@parcel/transformer-sass": "2.12.0",
@@ -60,18 +62,18 @@
     "browserlist": "latest",
     "c8": "10.1.2",
     "eslint": "9.13.0",
-    "eslint-plugin-import": "2.31.0",
-    "eslint-plugin-n": "17.11.1",
-    "eslint-plugin-node": "11.1.0",
-    "eslint-plugin-promise": "7.1.0",
     "eslint-plugin-vue": "9.29.1",
+    "eslint-plugin-vue-pug": "0.6.2",
+    "globals": "15.11.0",
     "html-validate": "8.18.1",
     "jquery-migrate": "3.5.2",
+    "neostandard": "0.11.7",
     "parcel": "2.12.0",
     "pug": "3.0.3",
     "sass": "1.77.6",
     "seedrandom": "3.0.5",
-    "vite": "5.4.10"
+    "vite": "5.4.10",
+    "vue-eslint-parser": "9.4.3"
   },
   "targets": {
     "ietf": {

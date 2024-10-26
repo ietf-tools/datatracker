@@ -28,13 +28,16 @@ indent_size = 2
 # ---------------------------------------------------------
 # StandardJS Style
 
+[.vscode/**]
+indent_size = 2
+
 [client/**]
 indent_size = 2
 
 [dev/**.js]
 indent_size = 2
 
-[{package.json,.eslintrc.js,.yarnrc.yml,vite.config.mjs,jsconfig.json}]
+[{package.json,eslint.config.mjs,.yarnrc.yml,vite.config.mjs,jsconfig.json}]
 indent_size = 2
 
 # Settings for HTML templates
