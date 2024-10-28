@@ -173,9 +173,7 @@ class PersonTests(TestCase):
 
         url = urlreverse("ietf.person.views.photo", kwargs={ "email_or_name": person.plain_name()})
         r = self.client.get(url)
-        self.assertEqual(r.status_code, 300)
-        self.assertIn("bazquux@example.com", r.content.decode())
-        self.assertIn("foobar@example.com", r.content.decode())
+        self.assertEqual(r.status_code, 404)
 
     def test_name_methods(self):
         person = PersonFactory(name="Dr. Jens F. Möller", )

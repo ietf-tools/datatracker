@@ -6,9 +6,9 @@
   "author": "IETF Trust",
   "license": "BSD-3-Clause",
   "dependencies": {
-    "@actions/core": "1.10.1",
+    "@actions/core": "1.11.1",
     "@actions/github": "6.0.0",
     "lodash": "4.17.21",
-    "luxon": "3.4.4"
+    "luxon": "3.5.0"
   }
 }

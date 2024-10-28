@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2015-2020, All Rights Reserved
+# Copyright The IETF Trust 2015-2024, All Rights Reserved
 # -*- coding: utf-8 -*-
 import base64
 import datetime
@@ -221,6 +221,70 @@ class CustomApiTests(TestCase):
         self.assertEqual(doc.external_url, video)
         event = doc.latest_event()
         self.assertEqual(event.by, recman)
+
+    def test_api_set_meetecho_recording_name(self):
+        url = urlreverse("ietf.meeting.views.api_set_meetecho_recording_name")
+        recmanrole = RoleFactory(group__type_id="ietf", name_id="recman")
+        recman = recmanrole.person
+        meeting = MeetingFactory(type_id="ietf")
+        session = SessionFactory(group__type_id="wg", meeting=meeting)
+        apikey = PersonalApiKey.objects.create(endpoint=url, person=recman)
+        name = "testname"
+
+        # error cases
+        r = self.client.post(url, {})
+        self.assertContains(r, "Missing apikey parameter", status_code=400)
+
+        badrole = RoleFactory(group__type_id="ietf", name_id="ad")
+        badapikey = PersonalApiKey.objects.create(endpoint=url, person=badrole.person)
+        badrole.person.user.last_login = timezone.now()
+        badrole.person.user.save()
+        r = self.client.post(url, {"apikey": badapikey.hash()})
+        self.assertContains(r, "Restricted to role: Recording Manager", status_code=403)
+
+        r = self.client.post(url, {"apikey": apikey.hash()})
+        self.assertContains(r, "Too long since last regular login", status_code=400)
+        recman.user.last_login = timezone.now()
+        recman.user.save()
+
+        r = self.client.get(url, {"apikey": apikey.hash()})
+        self.assertContains(r, "Method not allowed", status_code=405)
+
+        r = self.client.post(url, {"apikey": apikey.hash()})
+        self.assertContains(r, "Missing session_id parameter", status_code=400)
+
+        r = self.client.post(url, {"apikey": apikey.hash(), "session_id": session.pk})
+        self.assertContains(r, "Missing name parameter", status_code=400)
+
+        bad_pk = int(Session.objects.order_by("-pk").first().pk) + 1
+        r = self.client.post(
+            url,
+            {
+                "apikey": apikey.hash(),
+                "session_id": bad_pk,
+                "name": name,
+            },
+        )
+        self.assertContains(r, "Session not found", status_code=400)
+
+        r = self.client.post(
+            url,
+            {
+                "apikey": apikey.hash(),
+                "session_id": "foo",
+                "name": name,
+            },
+        )
+        self.assertContains(r, "Invalid session_id", status_code=400)
+
+        r = self.client.post(
+            url, {"apikey": apikey.hash(), "session_id": session.pk, "name": name}
+        )
+        self.assertContains(r, "Done", status_code=200)
+
+        session.refresh_from_db()
+        self.assertEqual(session.meetecho_recording_name, name)
+
 
     def test_api_add_session_attendees_deprecated(self):
         # Deprecated test - should be removed when we stop accepting a simple list of user PKs in

@@ -28,11 +28,14 @@ from ietf.utils.decorators import ignore_view_kwargs
 from ietf.utils.http import is_ajax
 from ietf.utils.response import permission_denied
 
-class MultiplePersonError(Exception):
-    """More than one Person record matches the given email or name"""
-    pass
 
 def lookup_community_list(request, email_or_name=None, acronym=None):
+    """Finds a CommunityList for a person or group
+    
+    Instantiates an unsaved CommunityList if one is not found.
+    
+    If the person or group cannot be found and uniquely identified, raises an Http404 exception
+    """
     assert email_or_name or acronym
 
     if acronym:
@@ -44,19 +47,14 @@ def lookup_community_list(request, email_or_name=None, acronym=None):
             if hasattr(request.user, 'person') and request.user.person in persons:
                 person = request.user.person
             else:
-                raise MultiplePersonError("\r\n".join([p.user.username for p in persons]))
+                raise Http404(f"Unable to identify the CommunityList for {email_or_name}")
         else:
             person = persons[0]
         clist = CommunityList.objects.filter(person=person).first() or CommunityList(person=person)
-
     return clist
 
 def view_list(request, email_or_name=None):
-    try:
-        clist = lookup_community_list(request, email_or_name)
-    except MultiplePersonError as err:
-        return HttpResponse(str(err), status=300)
-
+    clist = lookup_community_list(request, email_or_name)  # may raise Http404
     docs = docs_tracked_by_community_list(clist)
     docs, meta = prepare_document_table(request, docs, request.GET)
 
@@ -76,10 +74,7 @@ def view_list(request, email_or_name=None):
 def manage_list(request, email_or_name=None, acronym=None):
     # we need to be a bit careful because clist may not exist in the
     # database so we can't call related stuff on it yet
-    try:
-        clist = lookup_community_list(request, email_or_name, acronym)
-    except MultiplePersonError as err:
-        return HttpResponse(str(err), status=300)
+    clist = lookup_community_list(request, email_or_name, acronym)  # may raise Http404
 
     if not can_manage_community_list(request.user, clist):
         permission_denied(request, "You do not have permission to access this view")
@@ -166,10 +161,7 @@ def track_document(request, name, email_or_name=None, acronym=None):
     doc = get_object_or_404(Document, name=name)
 
     if request.method == "POST":
-        try:
-            clist = lookup_community_list(request, email_or_name, acronym)
-        except MultiplePersonError as err:
-            return HttpResponse(str(err), status=300)
+        clist = lookup_community_list(request, email_or_name, acronym)  # may raise Http404
         if not can_manage_community_list(request.user, clist):
             permission_denied(request, "You do not have permission to access this view")
 
@@ -191,10 +183,7 @@ def track_document(request, name, email_or_name=None, acronym=None):
 @login_required
 def untrack_document(request, name, email_or_name=None, acronym=None):
     doc = get_object_or_404(Document, name=name)
-    try:
-        clist = lookup_community_list(request, email_or_name, acronym)
-    except MultiplePersonError as err:
-        return HttpResponse(str(err), status=300)
+    clist = lookup_community_list(request, email_or_name, acronym)  # may raise Http404
     if not can_manage_community_list(request.user, clist):
         permission_denied(request, "You do not have permission to access this view")
 
@@ -214,11 +203,7 @@ def untrack_document(request, name, email_or_name=None, acronym=None):
 
 @ignore_view_kwargs("group_type")
 def export_to_csv(request, email_or_name=None, acronym=None):
-    try:
-        clist = lookup_community_list(request, email_or_name, acronym)
-    except MultiplePersonError as err:
-        return HttpResponse(str(err), status=300)
-
+    clist = lookup_community_list(request, email_or_name, acronym)  # may raise Http404
     response = HttpResponse(content_type='text/csv')
 
     if clist.group:
@@ -259,11 +244,7 @@ def export_to_csv(request, email_or_name=None, acronym=None):
 
 @ignore_view_kwargs("group_type")
 def feed(request, email_or_name=None, acronym=None):
-    try:
-        clist = lookup_community_list(request, email_or_name, acronym)
-    except MultiplePersonError as err:
-        return HttpResponse(str(err), status=300)
-
+    clist = lookup_community_list(request, email_or_name, acronym)  # may raise Http404
     significant = request.GET.get('significant', '') == '1'
 
     documents = docs_tracked_by_community_list(clist).values_list('pk', flat=True)
@@ -299,12 +280,9 @@ def feed(request, email_or_name=None, acronym=None):
 @login_required
 @ignore_view_kwargs("group_type")
 def subscription(request, email_or_name=None, acronym=None):
-    try:
-        clist = lookup_community_list(request, email_or_name, acronym)
-        if clist.pk is None:
-            raise Http404
-    except MultiplePersonError as err:
-        return HttpResponse(str(err), status=300)
+    clist = lookup_community_list(request, email_or_name, acronym)  # may raise Http404
+    if clist.pk is None:
+        raise Http404
 
     person = request.user.person
 

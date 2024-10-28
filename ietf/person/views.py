@@ -76,7 +76,7 @@ def profile(request, email_or_name):
 def photo(request, email_or_name):
     persons = lookup_persons(email_or_name)
     if len(persons) > 1:
-        return HttpResponse(r"\r\n".join([p.user.username for p in persons]), status=300)
+        raise Http404("No photo found")
     person = persons[0]
     if not person.photo:
         raise Http404("No photo found")

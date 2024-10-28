@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2021, All Rights Reserved
+# Copyright The IETF Trust 2021-2024, All Rights Reserved
 # -*- coding: utf-8 -*-
 """Tests of models in the Meeting application"""
 import datetime
@@ -171,6 +171,10 @@ class SessionTests(TestCase):
     
                 settings.MEETECHO_SESSION_RECORDING_URL = "http://player.example.com?{session_label}"
                 self.assertEqual(session.session_recording_url(), "http://player.example.com?LABEL")
+
+                session.meetecho_recording_name="actualname"
+                session.save()
+                self.assertEqual(session.session_recording_url(), "http://player.example.com?actualname")
 
     def test_session_recording_url_label_ietf(self):
         session = SessionFactory(
