@@ -32,7 +32,8 @@ from ietf.ipr.factories import (
     GenericIprDisclosureFactory,
     IprDisclosureBaseFactory,
     IprDocRelFactory,
-    IprEventFactory
+    IprEventFactory,
+    ThirdPartyIprDisclosureFactory
 )
 from ietf.ipr.forms import DraftForm, HolderIprDisclosureForm
 from ietf.ipr.mail import (process_response_email, get_reply_to, get_update_submitter_emails,
@@ -104,9 +105,26 @@ class IprTests(TestCase):
         self.assertTrue(messages[0].startswith('To: %s' % ipr.submitter_email))
         
     def test_showlist(self):
-        ipr = HolderIprDisclosureFactory()
-        r = self.client.get(urlreverse("ietf.ipr.views.showlist"))
-        self.assertContains(r, ipr.title)
+        for disc_factory_type in (HolderIprDisclosureFactory, GenericIprDisclosureFactory, ThirdPartyIprDisclosureFactory):
+            ipr = disc_factory_type(state_id="removed")
+            r = self.client.get(urlreverse("ietf.ipr.views.showlist"))
+            self.assertContains(r, ipr.title)
+            self.assertContains(r, "removed at the request of the submitter")
+            self.assertNotContains(r, "removed as objectively false")
+            ipr.state_id="posted"
+            ipr.save()
+            r = self.client.get(urlreverse("ietf.ipr.views.showlist"))
+            self.assertContains(r, ipr.title)
+            self.assertNotContains(r, "removed at the request of the submitter")
+            self.assertNotContains(r, "removed as objectively false")
+            ipr.state_id="removed_objfalse"
+            ipr.save()
+            r = self.client.get(urlreverse("ietf.ipr.views.showlist"))
+            self.assertContains(r, ipr.title)
+            self.assertNotContains(r, "removed at the request of the submitter")
+            self.assertContains(r, "removed as objectively false")
+            ipr.delete()
+
 
     def test_show_posted(self):
         ipr = HolderIprDisclosureFactory()

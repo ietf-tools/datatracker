@@ -39,10 +39,13 @@
                                     </small>
                                 {% endif %}
                             {% endfor %}
-                        {% else %}
+                        {% elif ipr.state_id == 'removed' %}
                             <div>{{ ipr.title }}</div>
                             <small><i>This IPR disclosure was removed at the request of the submitter.</i></small>
-                        {% endif %}
+                        {% elif ipr.state_id == 'removed_objfalse' %}
+                            <div>{{ ipr.title }}</div>
+                            <small><i>This IPR disclosure was removed as objectively false.</i></small>
+                        {% endif %} {# Intentionally not emitting anything for any other states #}
                     </td>
                     {% if administrative_list == 'pending' %}
                         {% with ipr.get_latest_event_msgout as latest_msgout %}
