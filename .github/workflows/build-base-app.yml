@@ -23,7 +23,7 @@ jobs:
     - name: Set Version
       run: |
         printf -v CURDATE '%(%Y%m%d%H%M)' -1
-        echo "IMGVERSION=$CURDATE" >> $GITHUB_OUTPUT
+        echo "IMGVERSION=$CURDATE" >> $GITHUB_ENV
 
     - name: Set up QEMU
       uses: docker/setup-qemu-action@v3
@@ -54,10 +54,11 @@ jobs:
     - name: Update version references
       run: |
         sed -i "1s/.*/FROM ghcr.io/ietf-tools/datatracker-app-base:${{ env.IMGVERSION }}/" dev/build/Dockerfile
+        echo "${{ env.IMGVERSION }}" > dev/build/TARGET_BASE
 
     - name: Commit CHANGELOG.md
       uses: stefanzweifel/git-auto-commit-action@v5
       with:
         branch: main
         commit_message: 'ci: update base image target version to ${{ env.IMGVERSION }}'
-        file_pattern: dev/build/Dockerfile
+        file_pattern: dev/build/Dockerfile dev/build/TARGET_BASE

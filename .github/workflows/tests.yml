@@ -8,12 +8,17 @@ on:
         default: false
         required: true
         type: boolean
+      targetBaseVersion:
+        description: 'Target Base Image Version'
+        default: latest
+        required: true
+        type: string
 
 jobs:
   tests-python:
     name: Python Tests
     runs-on: ubuntu-latest
-    container: ghcr.io/ietf-tools/datatracker-app-base:latest
+    container: ghcr.io/ietf-tools/datatracker-app-base:${{ github.event.inputs.targetBaseVersion }}
     
     services:
       db:
@@ -114,7 +119,7 @@ jobs:
   tests-playwright-legacy:
     name: Playwright Legacy Tests
     runs-on: ubuntu-latest
-    container: ghcr.io/ietf-tools/datatracker-app-base:latest
+    container: ghcr.io/ietf-tools/datatracker-app-base:${{ github.event.inputs.targetBaseVersion }}
     strategy:
       fail-fast: false
       matrix:
