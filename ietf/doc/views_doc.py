@@ -84,7 +84,7 @@ from ietf.review.models import ReviewAssignment
 from ietf.review.utils import can_request_review_of_doc, review_assignments_to_list_for_docs, review_requests_to_list_for_docs
 from ietf.review.utils import no_review_from_teams_on_doc
 from ietf.utils import markup_txt, log, markdown
-from ietf.utils.draft import PlaintextDraft
+from ietf.utils.draft import PlaintextDraft, get_status_from_draft_text
 from ietf.utils.meetecho import MeetechoAPIError, SlidesManager
 from ietf.utils.response import permission_denied
 from ietf.utils.text import maybe_split
@@ -2263,10 +2263,7 @@ def idnits2_state(request, name, rev=None):
     else:
         text = doc.text()
         if text:
-            parsed_draft = PlaintextDraft(
-                text=doc.text(), source=name, name_from_source=False
-            )
-            doc.deststatus = parsed_draft.get_status()
+            doc.deststatus = get_status_from_draft_text(text)
         else:
             doc.deststatus = "Unknown"
     return render(
