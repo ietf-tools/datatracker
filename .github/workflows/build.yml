@@ -63,6 +63,7 @@ jobs:
       pkg_version: ${{ steps.buildvars.outputs.pkg_version }}
       from_tag: ${{ steps.semver.outputs.nextStrict }}
       to_tag: ${{ steps.semver.outputs.current }}
+      base_image_version: ${{ steps.baseimgversion.outputs.base_image_version }}
 
     steps:   
     - uses: actions/checkout@v4
@@ -122,6 +123,11 @@ jobs:
           echo "::notice::Non-production build ${{ steps.semverdev.outputs.nextMajorStrict }}.0.0-dev.$GITHUB_RUN_NUMBER created using branch $GITHUB_REF_NAME"
         fi
 
+    - name: Get Base Image Target Version
+      id: baseimgversion
+      run: |
+        echo "base_image_version=$(sed -n '1p' dev/build/TARGET_BASE)" >> $GITHUB_OUTPUT
+
   # -----------------------------------------------------------------
   # TESTS
   # -----------------------------------------------------------------
@@ -133,6 +139,7 @@ jobs:
     needs: [prepare]
     with:
       ignoreLowerCoverage: ${{ github.event.inputs.ignoreLowerCoverage == 'true' }}
+      targetBaseVersion: ${{ needs.prepare.outputs.base_image_version }}
 
   # -----------------------------------------------------------------
   # RELEASE
@@ -200,6 +207,7 @@ jobs:
         SKIP_TESTS: ${{ github.event.inputs.skiptests }}
         DEBIAN_FRONTEND: noninteractive
         BROWSERSLIST_IGNORE_OLD_DATA: 1
+        TARGETBASE: ${{ needs.prepare.outputs.base_image_version }}
       with:
         host: ${{ steps.azlaunch.outputs.ipaddr }}
         port: 22
@@ -310,7 +318,7 @@ jobs:
           echo "=========================================================================="
           echo "Collecting statics..."
           echo "=========================================================================="
-          sudo docker run --rm --name collectstatics -v $(pwd):/workspace ghcr.io/ietf-tools/datatracker-app-base:latest sh dev/build/collectstatics.sh
+          sudo docker run --rm --name collectstatics -v $(pwd):/workspace ghcr.io/ietf-tools/datatracker-app-base:$TARGETBASE sh dev/build/collectstatics.sh
           echo "Pushing statics..."
           cd static
           aws s3 sync . s3://static/dt/$PKG_VERSION --only-show-errors

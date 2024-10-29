@@ -131,6 +131,24 @@ def acronym_match(s, l):
     #_debug(" s:%s; l:%s => %s; %s" % (s, l, acronym, s==acronym)) 
     return s == acronym
 
+def get_status_from_draft_text(text):
+
+    # Take prefix to shortcut work over very large drafts
+    # 5000 is conservatively much more than a full page of characters and we
+    # only want the first 10 lines.
+    text = text.strip()[:5000] # Take prefix to shortcut work over very large drafts 
+    text = re.sub(".\x08", "", text)    # Get rid of inkribbon backspace-emphasis
+    text = text.replace("\r\n", "\n")   # Convert DOS to unix
+    text = text.replace("\r", "\n")     # Convert MAC to unix
+    lines = text.split("\n")[:10]
+    status = None
+    for line in lines:
+        status_match = re.search(r"^\s*Intended [Ss]tatus:\s*(.*?)   ", line)
+        if status_match:
+            status = status_match.group(1)
+            break
+    return status
+
 class Draft:
     """Base class for drafts
 
