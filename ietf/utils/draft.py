@@ -194,18 +194,20 @@ class Draft:
 
 class PlaintextDraft(Draft):
 
-    def __init__(self, text, source, name_from_source=False):
+    def __init__(self, text, source, name_from_source=False, max_line_width=100):
         """Initialize a Draft instance
 
         :param text: plaintext draft contents
         :param source: name of file containing the contents
         :param name_from_source: if True, fall back to source to determine draft name not found from text
+        :param max_line_width: (default 100) ignore contents of lines beyond this width
         """
         super().__init__()
         assert isinstance(text, str)
         self.source = str(source)
         self.rawtext = text
         self.name_from_source = name_from_source
+        self.max_line_width = max_line_width
 
         text = re.sub(".\x08", "", text)    # Get rid of inkribbon backspace-emphasis
         text = text.replace("\r\n", "\n")   # Convert DOS to unix
@@ -320,7 +322,7 @@ class PlaintextDraft(Draft):
             return pages, page, newpage
         for line in self.rawlines:
             linecount += 1
-            line = line.rstrip()
+            line = line.rstrip()[:self.max_line_width]  # source of lines used elsewhere in the class!
             if re.search(r"\[?page [0-9ivx]+\]?[ \t\f]*$", line, re.I):
                 pages, page, newpage = endpage(pages, page, newpage, line)
                 continue
