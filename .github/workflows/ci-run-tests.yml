@@ -17,3 +17,5 @@ jobs:
     uses: ./.github/workflows/tests.yml
     with:
       ignoreLowerCoverage: false
+      skipSelenium: false
+      targetBaseVersion: ${{ needs.prepare.outputs.base_image_version }}
