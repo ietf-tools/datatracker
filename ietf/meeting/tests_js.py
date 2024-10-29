@@ -35,6 +35,7 @@ from ietf.utils.jstest import ( IetfSeleniumTestCase, ifSeleniumEnabled, seleniu
 from ietf.utils.timezone import datetime_today, datetime_from_date, date_today, timezone_not_near_midnight
 
 if selenium_enabled():
+    print("selenium enabled")
     from selenium.webdriver.common.action_chains import ActionChains
     from selenium.webdriver.common.by import By
     from selenium.webdriver.support.ui import WebDriverWait
@@ -249,10 +250,15 @@ class EditMeetingScheduleTests(IetfSeleniumTestCase):
         self.assertTrue(s1_element.is_displayed())  # should still be displayed
         self.assertIn('hidden-parent', s1_element.get_attribute('class'),
                       'Session should be hidden when parent disabled')
+        print("before error")
+
+        print(" - navigator.userAgent", self.driver.execute_script("return navigator.userAgent"))
+        print(" - get_window_size()", self.driver.get_window_size())
+
         s1_element.click()  # try to select
         self.assertNotIn('selected', s1_element.get_attribute('class'),
                          'Session should not be selectable when parent disabled')
-
+        print("after error")
         self.driver.find_element(By.CSS_SELECTOR, ".session-parent-toggles [value=\"{}\"]".format(s1.group.parent.acronym)).click()
         self.assertTrue(s1_element.is_displayed())
         self.assertNotIn('hidden-parent', s1_element.get_attribute('class'),
