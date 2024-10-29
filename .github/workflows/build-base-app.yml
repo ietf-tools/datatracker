@@ -22,7 +22,7 @@ jobs:
 
     - name: Set Version
       run: |
-        printf -v CURDATE '%(%Y%m%d%H%M)' -1
+        printf -v CURDATE '%(%Y%m%dT%H%M)T' -1
         echo "IMGVERSION=$CURDATE" >> $GITHUB_ENV
 
     - name: Set up QEMU
