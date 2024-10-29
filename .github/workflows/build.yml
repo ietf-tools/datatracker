@@ -158,6 +158,7 @@ jobs:
       PKG_VERSION: ${{needs.prepare.outputs.pkg_version}}
       FROM_TAG: ${{needs.prepare.outputs.from_tag}}
       TO_TAG: ${{needs.prepare.outputs.to_tag}}
+      TARGET_BASE: ${{needs.prepare.outputs.base_image_version}}
 
     steps:
     - uses: actions/checkout@v4
@@ -218,7 +219,7 @@ jobs:
         SKIP_TESTS: ${{ github.event.inputs.skiptests }}
         DEBIAN_FRONTEND: noninteractive
         BROWSERSLIST_IGNORE_OLD_DATA: 1
-        TARGETBASE: ${{ needs.prepare.outputs.base_image_version }}
+        TARGET_BASE: ${{ env.TARGET_BASE }}
       with:
         host: ${{ steps.azlaunch.outputs.ipaddr }}
         port: 22
@@ -329,7 +330,7 @@ jobs:
           echo "=========================================================================="
           echo "Collecting statics..."
           echo "=========================================================================="
-          sudo docker run --rm --name collectstatics -v $(pwd):/workspace ghcr.io/ietf-tools/datatracker-app-base:$TARGETBASE sh dev/build/collectstatics.sh
+          sudo docker run --rm --name collectstatics -v $(pwd):/workspace ghcr.io/ietf-tools/datatracker-app-base:$TARGET_BASE sh dev/build/collectstatics.sh
           echo "Pushing statics..."
           cd static
           aws s3 sync . s3://static/dt/$PKG_VERSION --only-show-errors
