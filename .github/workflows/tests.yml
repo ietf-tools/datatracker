@@ -54,7 +54,7 @@ jobs:
         fi
         if [[ "x${{ inputs.skipSelenium }}" == "xtrue" ]]; then
           echo "Disable selenium tests..."
-          sudo rm /usr/bin/geckodriver
+          rm /usr/bin/geckodriver
         fi
         echo "Running tests..."
         if [[ "x${{ inputs.ignoreLowerCoverage }}" == "xtrue" ]]; then
