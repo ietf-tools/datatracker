@@ -2261,7 +2261,9 @@ def idnits2_state(request, name, rev=None):
     elif doc.intended_std_level:
         doc.deststatus = doc.intended_std_level.name
     else:
-        text = doc.text()
+         # 10000 is a conservative prefix on number of utf-8 encoded bytes to 
+         # cover at least the first 10 lines of characters
+        text = doc.text(size=10000)
         if text:
             doc.deststatus = get_status_from_draft_text(text)
         else:
