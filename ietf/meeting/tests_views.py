@@ -14,7 +14,7 @@ import requests_mock
 from unittest import skipIf
 from mock import call, patch, PropertyMock
 from pyquery import PyQuery
-from lxml.etree import tostring, HTML
+from lxml.etree import tostring
 from io import StringIO, BytesIO
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse, urlsplit
@@ -398,32 +398,39 @@ class MeetingTests(BaseMeetingTestCase):
         r = self.client.get(urlreverse('floor-plan', kwargs=dict(num=meeting.number)))
         self.assertEqual(r.status_code, 200)
 
-    def test_meeting_recordings(self):
-        meeting = make_meeting_test_data()
-        session = Session.objects.filter(meeting=meeting, group__acronym="mars").first()
-        r = self.client.get(urlreverse("ietf.meeting.views.session_details", kwargs=dict(num=meeting.number, acronym=session.group.acronym)))
-        self.assertContains(r, 'Scheduled Sessions')
-        self.assertContains(r, 'Unscheduled Sessions')
-        tree = HTML(r.content)
+    def test_session_recordings_via_factories(self):
+        session = SessionFactory(meeting__type_id="ietf")
+        self.assertEqual(session.meetecho_recording_name, "")
+        self.assertEqual(len(session.recordings()), 0)
+        url = urlreverse("ietf.meeting.views.session_details", kwargs=dict(num=session.meeting.number, acronym=session.group.acronym))
+        r = self.client.get(url)
+        q = PyQuery(r.content)
+        # debug.show("q('#notes_and_recordings_1')")
+        self.assertEqual(len(q("#notes_and_recordings_1 tr")), 1)
+        link = q("#notes_and_recordings_1 tr a")
+        self.assertEqual(len(link), 1)
+        self.assertEqual(link[0].attrib['href'], str(session.session_recording_url()))
 
-        def printEl(node):
-            return f"{node.tag}: {node.text}"
+        session.meetecho_recording_name = 'my_test_session_name'
+        session.save()
+        r = self.client.get(url)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q("#notes_and_recordings_1 tr")), 1)
+        links = q("#notes_and_recordings_1 tr a")
+        self.assertEqual(len(links), 1)
+        self.assertEqual(links[0].attrib['href'], session.session_recording_url())
 
-        # scheduledSesssions = tree.cssselect('h2:contains("Scheduled Sessions")')
-        scheduledSesssions = tree.xpath('.//h2[text()="Scheduled Sessions"]')
-        self.assertEqual(len(scheduledSesssions), 1)
-        print("scheduledSesssions", scheduledSesssions[0].getnext(), printEl(scheduledSesssions[0].getnext().getnext()), printEl(scheduledSesssions[0].getnext().getnext().getnext()))
-        unscheduledSesssions = tree.xpath('.//h2[text()="Unscheduled Sessions"]')
-        print("unscheduledSesssions", unscheduledSesssions[0].getnext(), printEl(unscheduledSesssions[0].getnext().getnext()), printEl(unscheduledSesssions[0].getnext().getnext().getnext()))
-        self.assertEqual(len(unscheduledSesssions), 1)
-        notesAndRecordingsXPathSelector = f'//*[@id="notes_and_recordings_{session.pk}"]'
-        notesAndRecordingsTable = tree.xpath(notesAndRecordingsXPathSelector)
-        print("notesAndRecordingsHeading", notesAndRecordingsXPathSelector, notesAndRecordingsTable)
-        notesAndRecordings = tree.xpath('.//h3[text()="Notes and recordings"]')
-        h3s = tree.xpath('.//h3')
-        for h3 in h3s:
-            print(printEl(h3))
-        print("notesAndRecordings", notesAndRecordings)
+        new_recording_url = "https://www.youtube.com/watch?v=jNQXAC9IVRw"
+        new_recording_title = "Me at the zoo"
+        create_recording(session, new_recording_url, new_recording_title)
+        r = self.client.get(url)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q("#notes_and_recordings_1 tr")), 2)
+        links = q("#notes_and_recordings_1 tr a")
+        self.assertEqual(len(links), 2)
+        self.assertEqual(links[0].attrib['href'], new_recording_url)
+        self.assertIn(new_recording_title, links[0].text_content())
+        #debug.show("q('#notes_and_recordings_1')")
 
     def test_agenda_ical_next_meeting_type(self):
         # start with no upcoming IETF meetings, just an interim

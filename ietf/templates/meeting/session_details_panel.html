@@ -359,16 +359,11 @@
                 <tr>
                     <td>
                         <a href="{{ session.session_recording_url }}">
-                            Meetecho session recording
-                        </a>
-                    </td>
-                </tr>
-            {% endif %}
-            {% if session.video_stream_url %}
-                <tr>
-                    <td>
-                        <a href="{{ session.session_recording_url }}">
-                            <i class="bi bi-file-slides"></i> Session recording
+                            <i class="bi bi-file-slides"></i>
+                            {% if 'https://meetecho-player.ietf.org/' in session.session_recording_url %}
+                                Meetecho
+                            {% endif %}
+                            Session recording
                         </a>
                     </td>
                 </tr>
