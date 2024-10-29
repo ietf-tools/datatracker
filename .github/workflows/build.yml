@@ -166,13 +166,15 @@ jobs:
 
     - name: Launch build VM
       id: azlaunch
+      timeout-minutes: 10
       run: |
         echo "Authenticating to Azure..."
         az login --service-principal -u ${{ secrets.AZ_BUILD_APP_ID }} -p ${{ secrets.AZ_BUILD_PWD }} --tenant ${{ secrets.AZ_BUILD_TENANT_ID }}
+        
         echo "Creating VM..."
         vminfo=$(az vm create \
           --resource-group ghaDatatracker \
-          --name tmpGhaBuildVM \
+          --name tmpGhaBuildVM-${{ github.run_number }} \
           --image Ubuntu2204 \
           --admin-username azureuser \
           --generate-ssh-keys \
@@ -183,11 +185,19 @@ jobs:
           --os-disk-size-gb 100 \
           --eviction-policy Delete \
           --nic-delete-option Delete \
+          --os-disk-delete-option Delete \
           --output tsv \
           --query "publicIpAddress")
         echo "ipaddr=$vminfo" >> "$GITHUB_OUTPUT"
         echo "VM Public IP: $vminfo"
         cat ~/.ssh/id_rsa > ${{ github.workspace }}/prvkey.key
+        
+        echo "Fetching SSH host public keys..."
+        until ssh-keyscan -t rsa $vminfo 2> /dev/null
+        do
+          echo "Will try again in 5 seconds..."
+          sleep 5
+        done
         ssh-keyscan -t rsa $vminfo >> ~/.ssh/known_hosts
 
     - name: Remote SSH into Build VM
@@ -353,29 +363,29 @@ jobs:
       shell: pwsh
       run: |
         echo "Destroying VM..."        
-        az vm delete -g ghaDatatracker -n tmpGhaBuildVM --yes --force-deletion true
+        az vm delete -g ghaDatatracker -n tmpGhaBuildVM-${{ github.run_number }} --yes --force-deletion true
 
-        $resourceOrderRemovalOrder = [ordered]@{
-            "Microsoft.Compute/virtualMachines" = 0
-            "Microsoft.Compute/disks" = 1
-            "Microsoft.Network/networkInterfaces" = 2
-            "Microsoft.Network/publicIpAddresses" = 3
-            "Microsoft.Network/networkSecurityGroups" = 4
-            "Microsoft.Network/virtualNetworks" = 5
-        }
-        echo "Fetching remaining resources..."
-        $resources = az resource list --resource-group ghaDatatracker | ConvertFrom-Json
+        # $resourceOrderRemovalOrder = [ordered]@{
+        #     "Microsoft.Compute/virtualMachines" = 0
+        #     "Microsoft.Compute/disks" = 1
+        #     "Microsoft.Network/networkInterfaces" = 2
+        #     "Microsoft.Network/publicIpAddresses" = 3
+        #     "Microsoft.Network/networkSecurityGroups" = 4
+        #     "Microsoft.Network/virtualNetworks" = 5
+        # }
+        # echo "Fetching remaining resources..."
+        # $resources = az resource list --resource-group ghaDatatracker | ConvertFrom-Json
 
-        $orderedResources = $resources 
-            | Sort-Object @{
-                Expression = {$resourceOrderRemovalOrder[$_.type]}
-                Descending = $False
-            }
+        # $orderedResources = $resources 
+        #     | Sort-Object @{
+        #         Expression = {$resourceOrderRemovalOrder[$_.type]}
+        #         Descending = $False
+        #     }
 
-        echo "Deleting remaining resources..."
-        $orderedResources | ForEach-Object {
-            az resource delete --resource-group ghaDatatracker --ids $_.id --verbose
-        }
+        # echo "Deleting remaining resources..."
+        # $orderedResources | ForEach-Object {
+        #     az resource delete --resource-group ghaDatatracker --ids $_.id --verbose
+        # }
 
         echo "Logout from Azure..."
         az logout
