@@ -19,6 +19,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GH_COMMON_TOKEN }}
 
     - name: Set Version
       run: |
