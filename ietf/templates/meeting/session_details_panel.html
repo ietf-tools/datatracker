@@ -354,16 +354,16 @@
                         {% endif %}
                     {% endfor %}
                 {% endif %}
-                {% if session.session_recording_url %}
-                    <tr>
-                        <td>
-                            <a href="{{ session.session_recording_url }}">
-                                Meetecho session recording
-                            </a>
-                        </td>
-                    </tr>
-                {% endif %}
             {% endwith %}
+            {% if session.session_recording_url %}
+                <tr>
+                    <td>
+                        <a href="{{ session.session_recording_url }}">
+                            Meetecho session recording
+                        </a>
+                    </td>
+                </tr>
+            {% endif %}
             {% if session.video_stream_url %}
                 <tr>
                     <td>

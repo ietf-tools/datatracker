@@ -14,7 +14,7 @@ import requests_mock
 from unittest import skipIf
 from mock import call, patch, PropertyMock
 from pyquery import PyQuery
-from lxml.etree import tostring
+from lxml.etree import tostring, HTML
 from io import StringIO, BytesIO
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse, urlsplit
@@ -397,6 +397,33 @@ class MeetingTests(BaseMeetingTestCase):
         # Floor Plan
         r = self.client.get(urlreverse('floor-plan', kwargs=dict(num=meeting.number)))
         self.assertEqual(r.status_code, 200)
+
+    def test_meeting_recordings(self):
+        meeting = make_meeting_test_data()
+        session = Session.objects.filter(meeting=meeting, group__acronym="mars").first()
+        r = self.client.get(urlreverse("ietf.meeting.views.session_details", kwargs=dict(num=meeting.number, acronym=session.group.acronym)))
+        self.assertContains(r, 'Scheduled Sessions')
+        self.assertContains(r, 'Unscheduled Sessions')
+        tree = HTML(r.content)
+
+        def printEl(node):
+            return f"{node.tag}: {node.text}"
+
+        # scheduledSesssions = tree.cssselect('h2:contains("Scheduled Sessions")')
+        scheduledSesssions = tree.xpath('.//h2[text()="Scheduled Sessions"]')
+        self.assertEqual(len(scheduledSesssions), 1)
+        print("scheduledSesssions", scheduledSesssions[0].getnext(), printEl(scheduledSesssions[0].getnext().getnext()), printEl(scheduledSesssions[0].getnext().getnext().getnext()))
+        unscheduledSesssions = tree.xpath('.//h2[text()="Unscheduled Sessions"]')
+        print("unscheduledSesssions", unscheduledSesssions[0].getnext(), printEl(unscheduledSesssions[0].getnext().getnext()), printEl(unscheduledSesssions[0].getnext().getnext().getnext()))
+        self.assertEqual(len(unscheduledSesssions), 1)
+        notesAndRecordingsXPathSelector = f'//*[@id="notes_and_recordings_{session.pk}"]'
+        notesAndRecordingsTable = tree.xpath(notesAndRecordingsXPathSelector)
+        print("notesAndRecordingsHeading", notesAndRecordingsXPathSelector, notesAndRecordingsTable)
+        notesAndRecordings = tree.xpath('.//h3[text()="Notes and recordings"]')
+        h3s = tree.xpath('.//h3')
+        for h3 in h3s:
+            print(printEl(h3))
+        print("notesAndRecordings", notesAndRecordings)
 
     def test_agenda_ical_next_meeting_type(self):
         # start with no upcoming IETF meetings, just an interim
