@@ -18,7 +18,7 @@ jobs:
   tests-python:
     name: Python Tests
     runs-on: ubuntu-latest
-    container: ghcr.io/ietf-tools/datatracker-app-base:${{ github.event.inputs.targetBaseVersion }}
+    container: ghcr.io/ietf-tools/datatracker-app-base:${{ inputs.targetBaseVersion }}
     
     services:
       db:
@@ -48,7 +48,7 @@ jobs:
           exit 1
         fi
         echo "Running tests..."
-        if [[ "x${{ github.event.inputs.ignoreLowerCoverage }}" == "xtrue" ]]; then
+        if [[ "x${{ inputs.ignoreLowerCoverage }}" == "xtrue" ]]; then
           echo "Lower coverage failures will be ignored."
           HOME=/root ./ietf/manage.py test -v2 --validate-html-harder --settings=settings_test --ignore-lower-coverage
         else
@@ -119,7 +119,7 @@ jobs:
   tests-playwright-legacy:
     name: Playwright Legacy Tests
     runs-on: ubuntu-latest
-    container: ghcr.io/ietf-tools/datatracker-app-base:${{ github.event.inputs.targetBaseVersion }}
+    container: ghcr.io/ietf-tools/datatracker-app-base:${{ inputs.targetBaseVersion }}
     strategy:
       fail-fast: false
       matrix:
