@@ -530,7 +530,7 @@ class DocumentInfo(models.Model):
     def replaced_by(self):
         return set([ r.document for r in self.related_that("replaces") ])
 
-    def text(self):
+    def text(self, size = -1):
         path = self.get_file_name()
         root, ext =  os.path.splitext(path)
         txtpath = root+'.txt'
@@ -538,14 +538,21 @@ class DocumentInfo(models.Model):
             path = txtpath
         try:
             with io.open(path, 'rb') as file:
-                raw = file.read()
+                raw = file.read(size)
         except IOError:
             return None
+        text = None
         try:
             text = raw.decode('utf-8')
         except UnicodeDecodeError:
-            text = raw.decode('latin-1')
-        #
+            for back in range(1,4):
+                try:
+                    text = raw[:-back].decode('utf-8')
+                    break
+                except UnicodeDecodeError:
+                    pass
+            if text is None:
+                text = raw.decode('latin-1')
         return text
 
     def text_or_error(self):
