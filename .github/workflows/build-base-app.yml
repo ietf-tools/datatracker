@@ -53,7 +53,7 @@ jobs:
 
     - name: Update version references
       run: |
-        sed -i "1s/.*/FROM ghcr.io/ietf-tools/datatracker-app-base:${{ env.IMGVERSION }}/" dev/build/Dockerfile
+        sed -i "1s/.*/FROM ghcr.io\/ietf-tools\/datatracker-app-base:${{ env.IMGVERSION }}/" dev/build/Dockerfile
         echo "${{ env.IMGVERSION }}" > dev/build/TARGET_BASE
 
     - name: Commit CHANGELOG.md
