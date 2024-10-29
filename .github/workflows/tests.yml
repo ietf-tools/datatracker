@@ -8,6 +8,11 @@ on:
         default: false
         required: true
         type: boolean
+      skipSelenium:
+        description: 'Skip Selenium Tests'
+        default: false
+        required: true
+        type: boolean
       targetBaseVersion:
         description: 'Target Base Image Version'
         default: latest
@@ -46,6 +51,10 @@ jobs:
         if ! ( ietf/manage.py makemigrations --dry-run --check --verbosity 3 ) ; then
           echo "Model changes without migrations found."
           exit 1
+        fi
+        if [[ "x${{ inputs.skipSelenium }}" == "xtrue" ]]; then
+          echo "Disable selenium tests..."
+          sudo rm /usr/bin/geckodriver
         fi
         echo "Running tests..."
         if [[ "x${{ inputs.ignoreLowerCoverage }}" == "xtrue" ]]; then

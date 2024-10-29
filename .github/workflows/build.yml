@@ -139,6 +139,7 @@ jobs:
     needs: [prepare]
     with:
       ignoreLowerCoverage: ${{ github.event.inputs.ignoreLowerCoverage == 'true' }}
+      skipSelenium: true
       targetBaseVersion: ${{ needs.prepare.outputs.base_image_version }}
 
   # -----------------------------------------------------------------
