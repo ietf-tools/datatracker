@@ -252,6 +252,49 @@ paths:
                                                         items:
                                                             type: string
 
+    /doc/draft/authors/:
+        post:
+            operationId: get_draft_authors
+            summary: Gather authors of the drafts with the given names
+            description: returns a dict mapping draft names to objects describing authors
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: array
+                            items:
+                                type: string
+            responses:
+                '200':
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                type: array
+                                items:
+                                    type: object
+                                    properties:
+                                        draft_name:
+                                            type: string
+                                        authors:
+                                            type: array
+                                            items:
+                                                type: object
+                                                properties:
+                                                    person_pk:
+                                                        type: integer
+                                                    name:
+                                                        type: string
+                                                    last_name:
+                                                        type: string
+                                                    initials:
+                                                        type: string
+                                                    email_addresses:
+                                                        type: array
+                                                        items:
+                                                            type: string
+
     /doc/rfc/original_stream/:
         get:
             operationId: get_rfc_original_streams

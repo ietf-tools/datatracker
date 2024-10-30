@@ -249,6 +249,29 @@ def rfc_authors(request):
         response.append(item)
     return JsonResponse(response, safe=False)
 
+@csrf_exempt
+@requires_api_token("ietf.api.views_rpc")
+def draft_authors(request):
+    """Gather authors of the RFCs with the given numbers"""
+    if request.method != "POST":
+        return HttpResponseNotAllowed(["POST"])
+    try:
+        draft_names = json.loads(request.body)
+    except json.JSONDecodeError:
+        return HttpResponseBadRequest()
+    response = []
+    for draft in Document.objects.filter(type="draft",name__in=draft_names):
+        item={"draft_name": draft.name, "authors": []}
+        for author in draft.authors():
+            item_author=dict()
+            item_author["person_pk"] = author.pk
+            item_author["name"] = author.name
+            item_author["last_name"] = author.last_name()
+            item_author["initials"] = author.initials()
+            item_author["email_addresses"] = [address.lower() for address in author.email_set.values_list("address", flat=True)]
+            item["authors"].append(item_author)
+        response.append(item)
+    return JsonResponse(response, safe=False)
 
 @csrf_exempt
 @requires_api_token("ietf.api.views_rpc")
