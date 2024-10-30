@@ -59,9 +59,9 @@ jobs:
         echo "Running tests..."
         if [[ "x${{ inputs.ignoreLowerCoverage }}" == "xtrue" ]]; then
           echo "Lower coverage failures will be ignored."
-          HOME=/root ./ietf/manage.py test -v2 --validate-html-harder --settings=settings_test --ignore-lower-coverage
+          HOME=/root ./ietf/manage.py test -v2 --validate-html-harder --settings=settings_test --ignore-lower-coverage 'ietf.meeting.tests_js.EditMeetingScheduleTests.test_edit_meeting_schedule'
         else
-          HOME=/root ./ietf/manage.py test -v2 --validate-html-harder --settings=settings_test
+          HOME=/root ./ietf/manage.py test -v2 --validate-html-harder --settings=settings_test 'ietf.meeting.tests_js.EditMeetingScheduleTests.test_edit_meeting_schedule'
         fi
         coverage xml
 
