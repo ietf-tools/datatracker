@@ -63,6 +63,7 @@ jobs:
       pkg_version: ${{ steps.buildvars.outputs.pkg_version }}
       from_tag: ${{ steps.semver.outputs.nextStrict }}
       to_tag: ${{ steps.semver.outputs.current }}
+      base_image_version: ${{ steps.baseimgversion.outputs.base_image_version }}
 
     steps:   
     - uses: actions/checkout@v4
@@ -122,6 +123,11 @@ jobs:
           echo "::notice::Non-production build ${{ steps.semverdev.outputs.nextMajorStrict }}.0.0-dev.$GITHUB_RUN_NUMBER created using branch $GITHUB_REF_NAME"
         fi
 
+    - name: Get Base Image Target Version
+      id: baseimgversion
+      run: |
+        echo "base_image_version=$(sed -n '1p' dev/build/TARGET_BASE)" >> $GITHUB_OUTPUT
+
   # -----------------------------------------------------------------
   # TESTS
   # -----------------------------------------------------------------
@@ -133,6 +139,8 @@ jobs:
     needs: [prepare]
     with:
       ignoreLowerCoverage: ${{ github.event.inputs.ignoreLowerCoverage == 'true' }}
+      skipSelenium: true
+      targetBaseVersion: ${{ needs.prepare.outputs.base_image_version }}
 
   # -----------------------------------------------------------------
   # RELEASE
@@ -150,6 +158,7 @@ jobs:
       PKG_VERSION: ${{needs.prepare.outputs.pkg_version}}
       FROM_TAG: ${{needs.prepare.outputs.from_tag}}
       TO_TAG: ${{needs.prepare.outputs.to_tag}}
+      TARGET_BASE: ${{needs.prepare.outputs.base_image_version}}
 
     steps:
     - uses: actions/checkout@v4
@@ -159,13 +168,15 @@ jobs:
 
     - name: Launch build VM
       id: azlaunch
+      timeout-minutes: 10
       run: |
         echo "Authenticating to Azure..."
         az login --service-principal -u ${{ secrets.AZ_BUILD_APP_ID }} -p ${{ secrets.AZ_BUILD_PWD }} --tenant ${{ secrets.AZ_BUILD_TENANT_ID }}
+        
         echo "Creating VM..."
         vminfo=$(az vm create \
           --resource-group ghaDatatracker \
-          --name tmpGhaBuildVM \
+          --name tmpGhaBuildVM-${{ github.run_number }} \
           --image Ubuntu2204 \
           --admin-username azureuser \
           --generate-ssh-keys \
@@ -176,11 +187,19 @@ jobs:
           --os-disk-size-gb 100 \
           --eviction-policy Delete \
           --nic-delete-option Delete \
+          --os-disk-delete-option Delete \
           --output tsv \
           --query "publicIpAddress")
         echo "ipaddr=$vminfo" >> "$GITHUB_OUTPUT"
         echo "VM Public IP: $vminfo"
         cat ~/.ssh/id_rsa > ${{ github.workspace }}/prvkey.key
+        
+        echo "Fetching SSH host public keys..."
+        until ssh-keyscan -t rsa $vminfo 2> /dev/null
+        do
+          echo "Will try again in 5 seconds..."
+          sleep 5
+        done
         ssh-keyscan -t rsa $vminfo >> ~/.ssh/known_hosts
 
     - name: Remote SSH into Build VM
@@ -200,6 +219,7 @@ jobs:
         SKIP_TESTS: ${{ github.event.inputs.skiptests }}
         DEBIAN_FRONTEND: noninteractive
         BROWSERSLIST_IGNORE_OLD_DATA: 1
+        TARGET_BASE: ${{ env.TARGET_BASE }}
       with:
         host: ${{ steps.azlaunch.outputs.ipaddr }}
         port: 22
@@ -310,7 +330,8 @@ jobs:
           echo "=========================================================================="
           echo "Collecting statics..."
           echo "=========================================================================="
-          sudo docker run --rm --name collectstatics -v $(pwd):/workspace ghcr.io/ietf-tools/datatracker-app-base:latest sh dev/build/collectstatics.sh
+          echo "Using ghcr.io/ietf-tools/datatracker-app-base:${{ env.TARGET_BASE }}"
+          sudo docker run --rm --name collectstatics -v $(pwd):/workspace ghcr.io/ietf-tools/datatracker-app-base:${{ env.TARGET_BASE }} sh dev/build/collectstatics.sh
           echo "Pushing statics..."
           cd static
           aws s3 sync . s3://static/dt/$PKG_VERSION --only-show-errors
@@ -342,33 +363,15 @@ jobs:
 
     - name: Destroy Build VM + resources
       if: always()
-      shell: pwsh
       run: |
-        echo "Destroying VM..."        
-        az vm delete -g ghaDatatracker -n tmpGhaBuildVM --yes --force-deletion true
-
-        $resourceOrderRemovalOrder = [ordered]@{
-            "Microsoft.Compute/virtualMachines" = 0
-            "Microsoft.Compute/disks" = 1
-            "Microsoft.Network/networkInterfaces" = 2
-            "Microsoft.Network/publicIpAddresses" = 3
-            "Microsoft.Network/networkSecurityGroups" = 4
-            "Microsoft.Network/virtualNetworks" = 5
-        }
-        echo "Fetching remaining resources..."
-        $resources = az resource list --resource-group ghaDatatracker | ConvertFrom-Json
-
-        $orderedResources = $resources 
-            | Sort-Object @{
-                Expression = {$resourceOrderRemovalOrder[$_.type]}
-                Descending = $False
-            }
-
-        echo "Deleting remaining resources..."
-        $orderedResources | ForEach-Object {
-            az resource delete --resource-group ghaDatatracker --ids $_.id --verbose
-        }
-
+        echo "Terminate VM..."        
+        az vm delete -g ghaDatatracker -n tmpGhaBuildVM-${{ github.run_number }} --yes --force-deletion true
+        echo "Delete Public IP..."
+        az resource delete -g ghaDatatracker -n tmpGhaBuildVM-${{ github.run_number }}PublicIP --resource-type "Microsoft.Network/publicIPAddresses"
+        echo "Delete Network Security Group..."
+        az resource delete -g ghaDatatracker -n tmpGhaBuildVM-${{ github.run_number }}NSG --resource-type "Microsoft.Network/networkSecurityGroups"
+        echo "Delete Virtual Network..."
+        az resource delete -g ghaDatatracker -n tmpGhaBuildVM-${{ github.run_number }}VNET --resource-type "Microsoft.Network/virtualNetworks"
         echo "Logout from Azure..."
         az logout
         

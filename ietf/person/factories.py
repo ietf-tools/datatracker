@@ -158,10 +158,22 @@ class EmailFactory(factory.django.DjangoModelFactory):
 
 class PersonalApiKeyFactory(factory.django.DjangoModelFactory):
     person = factory.SubFactory(PersonFactory)
-    endpoint = FuzzyChoice(PERSON_API_KEY_ENDPOINTS)
-
+    endpoint = FuzzyChoice(v for v, n in PERSON_API_KEY_ENDPOINTS)
+    
     class Meta:
         model = PersonalApiKey
+        skip_postgeneration_save = True
+
+    @factory.post_generation
+    def validate_model(obj, create, extracted, **kwargs):
+        """Validate the model after creation
+        
+        Passing validate_model=False will disable the validation.
+        """
+        do_clean =  True if extracted is None else extracted
+        if do_clean:
+            obj.full_clean()
+
 
 class PersonApiKeyEventFactory(factory.django.DjangoModelFactory):
     key = factory.SubFactory(PersonalApiKeyFactory)
