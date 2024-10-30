@@ -37,7 +37,7 @@
             <div class="col-3 text-end fw-bold">Token</div>
             <div class="col">
                 {% person_link doc.ad %}
-                <a href="{% url 'ietf.group.views.active_groups' group_type='wg' %}#{{ doc.group.parent.acronym }}">
+                <a href="{% url 'ietf.group.views.active_groups' group_type='wg' %}#{{ doc.group.parent.acronym|upper }}">
                     ({{ doc.group.parent.acronym|upper }})
                 </a>
             </div>

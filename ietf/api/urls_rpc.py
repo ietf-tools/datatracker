@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2023, All Rights Reserved
+# Copyright The IETF Trust 2023-2024, All Rights Reserved
 
 from rest_framework import routers
 from django.urls import include, path
@@ -15,6 +15,8 @@ router.register(r"rfc", views_rpc.RfcViewSet, basename="rfc")
 
 urlpatterns = [
     url(r"^draft/by_names/", views_rpc.DraftsByNamesView.as_view()),
+    url(r"^doc/rfc/authors/$", views_rpc.rfc_authors),
+    url(r"^person/persons_by_email/$", views_rpc.persons_by_email),
     path(r"subject/<str:subject_id>/person/", views_rpc.SubjectPersonView.as_view()),
     path("", include(router.urls)),  # todo get rid of drf prefix when done converting
 ]

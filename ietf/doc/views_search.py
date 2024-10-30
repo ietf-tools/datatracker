@@ -757,7 +757,7 @@ def drafts_in_last_call(request):
     })
 
 def drafts_in_iesg_process(request):
-    states = State.objects.filter(type="draft-iesg").exclude(slug__in=('idexists', 'pub', 'dead', 'watching', 'rfcqueue'))
+    states = State.objects.filter(type="draft-iesg").exclude(slug__in=('idexists', 'pub', 'dead', 'rfcqueue'))
     title = "Documents in IESG process"
 
     grouped_docs = []

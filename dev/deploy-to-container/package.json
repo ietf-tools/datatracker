@@ -7,7 +7,7 @@
     "nanoid": "5.0.7",
     "nanoid-dictionary": "5.0.0-beta.1",
     "slugify": "1.6.6",
-    "tar": "^7.4.0",
+    "tar": "^7.4.3",
     "yargs": "^17.7.2"
   },
   "engines": {

@@ -1,5 +1,7 @@
-# Copyright The IETF Trust 2023, All Rights Reserved
+# Copyright The IETF Trust 2023-2024, All Rights Reserved
 
+from collections import defaultdict
+import json
 from django.db.models.functions import Coalesce
 from drf_spectacular.utils import extend_schema_view, extend_schema, OpenApiParameter
 from rest_framework import serializers, viewsets, mixins
@@ -8,12 +10,23 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 
 from django.db.models import OuterRef, Subquery, Q, CharField
-from django.http import Http404
+from django.http import (
+    Http404,
+    HttpResponse,
+    HttpResponseBadRequest,
+    JsonResponse,
+    HttpResponseNotAllowed,
+    HttpResponseNotFound,
+)
+from django.shortcuts import get_object_or_404
+from django.views.decorators.csrf import csrf_exempt
+from django.contrib.auth.models import User
 
+from ietf.api.ietf_utils import requires_api_token
 from ietf.doc.factories import WgDraftFactory  # DO NOT MERGE INTO MAIN
 from ietf.doc.models import Document, DocHistory
 from ietf.person.factories import PersonFactory  # DO NOT MERGE INTO MAIN
-from ietf.person.models import Person
+from ietf.person.models import Email, Person
 from .serializers_rpc import (
     PersonBatchSerializer,
     PersonSerializer,
@@ -233,3 +246,48 @@ class DemoViewSet(viewsets.ViewSet):
                     type=event_type, by_id=1, desc="Sent off to the RPC"
                 )
         return Response(DemoDraftSerializer(doc).data)
+
+@csrf_exempt
+@requires_api_token("ietf.api.views_rpc")
+def persons_by_email(request):
+    if request.method != "POST":
+        return HttpResponseNotAllowed(["POST"])
+    try:
+        emails = json.loads(request.body)
+    except json.JSONDecodeError:
+        return HttpResponseBadRequest()
+    response = []
+    for email in Email.objects.filter(address__in=emails).exclude(person__isnull=True):
+        response.append({
+            "email": email.address,
+            "person_pk": email.person.pk,
+            "name": email.person.name,
+            "last_name": email.person.last_name(),
+            "initials": email.person.initials(),
+        })
+    return JsonResponse(response,safe=False)
+
+
+@csrf_exempt
+@requires_api_token("ietf.api.views_rpc")
+def rfc_authors(request):
+    """Gather authors of the RFCs with the given numbers"""
+    if request.method != "POST":
+        return HttpResponseNotAllowed(["POST"])
+    try:
+        rfc_numbers = json.loads(request.body)
+    except json.JSONDecodeError:
+        return HttpResponseBadRequest()
+    response = []
+    for rfc in Document.objects.filter(type="rfc",rfc_number__in=rfc_numbers):
+        item={"rfc_number": rfc.rfc_number, "authors": []}
+        for author in rfc.authors():
+            item_author=dict()
+            item_author["person_pk"] = author.pk
+            item_author["name"] = author.name
+            item_author["last_name"] = author.last_name()
+            item_author["initials"] = author.initials()
+            item_author["email_addresses"] = [address.lower() for address in author.email_set.values_list("address", flat=True)]
+            item["authors"].append(item_author)
+        response.append(item)
+    return JsonResponse(response, safe=False)

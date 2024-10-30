@@ -27,11 +27,6 @@ from django.utils import timezone
 from django.utils.encoding import force_str
 import debug                            # pyflakes:ignore
 
-from ietf.submit.utils import (expirable_submissions, expire_submission, find_submission_filenames,
-                               post_submission, validate_submission_name, validate_submission_rev,
-                               process_and_accept_uploaded_submission, SubmissionError, process_submission_text,
-                               process_submission_xml, process_uploaded_submission, 
-                               process_and_validate_submission)
 from ietf.doc.factories import (DocumentFactory, WgDraftFactory, IndividualDraftFactory,
                                 ReviewFactory, WgRfcFactory)
 from ietf.doc.models import ( Document, DocEvent, State,
@@ -44,12 +39,17 @@ from ietf.meeting.models import Meeting
 from ietf.meeting.factories import MeetingFactory
 from ietf.name.models import DraftSubmissionStateName, FormalLanguageName
 from ietf.person.models import Person
-from ietf.person.factories import UserFactory, PersonFactory, EmailFactory
+from ietf.person.factories import UserFactory, PersonFactory
 from ietf.submit.factories import SubmissionFactory, SubmissionExtResourceFactory
 from ietf.submit.forms import SubmissionBaseUploadForm, SubmissionAutoUploadForm
 from ietf.submit.models import Submission, Preapproval, SubmissionExtResource
 from ietf.submit.tasks import cancel_stale_submissions, process_and_accept_uploaded_submission_task
-from ietf.submit.utils import apply_yang_checker_to_draft, run_all_yang_model_checks
+from ietf.submit.utils import (expirable_submissions, expire_submission, find_submission_filenames,
+                               post_submission, validate_submission_name, validate_submission_rev,
+                               process_and_accept_uploaded_submission, SubmissionError, process_submission_text,
+                               process_submission_xml, process_uploaded_submission, 
+                               process_and_validate_submission, apply_yang_checker_to_draft, 
+                               run_all_yang_model_checks)
 from ietf.utils import tool_version
 from ietf.utils.accesstoken import generate_access_token
 from ietf.utils.mail import outbox, get_payload_text
@@ -2345,6 +2345,12 @@ class ApiSubmissionTests(BaseSubmitTestCase):
         super().setUp()
         MeetingFactory(type_id='ietf', date=date_today()+datetime.timedelta(days=60))
 
+    def test_api_submit_tombstone(self):
+        """Tombstone for obsolete API endpoint should return 410 Gone"""
+        url = urlreverse("ietf.submit.views.api_submit_tombstone")
+        self.assertEqual(self.client.get(url).status_code, 410)
+        self.assertEqual(self.client.post(url).status_code, 410)
+
     def test_upload_draft(self):
         """api_submission accepts a submission and queues it for processing"""
         url = urlreverse('ietf.submit.views.api_submission')
@@ -3191,141 +3197,6 @@ class AsyncSubmissionTests(BaseSubmitTestCase):
             self.assertEqual(subm.state_id, "cancel")
             self.assertEqual(subm.submissionevent_set.count(), 2)
 
-
-class ApiSubmitTests(BaseSubmitTestCase):
-    def setUp(self):
-        super().setUp()
-        # break early in case of missing configuration
-        self.assertTrue(os.path.exists(settings.IDSUBMIT_IDNITS_BINARY))
-        MeetingFactory(type_id='ietf', date=date_today()+datetime.timedelta(days=60))
-
-    def do_post_submission(self, rev, author=None, name=None, group=None, email=None, title=None, year=None):
-        url = urlreverse('ietf.submit.views.api_submit')
-        if author is None:
-            author = PersonFactory()
-        if name is None:
-            slug = re.sub('[^a-z0-9-]+', '', author.ascii_parts()[3].lower())
-            name = 'draft-%s-foo' % slug
-        if email is None:
-            email = author.user.username
-        # submit
-        data = {}
-        data['xml'], author = submission_file(f'{name}-{rev}', f'{name}-{rev}.xml', group, "test_submission.xml", author=author, email=email, title=title, year=year)
-        data['user'] = email
-        r = self.client.post(url, data)
-        return r, author, name
-
-    def test_api_submit_info(self):
-        url = urlreverse('ietf.submit.views.api_submit')
-        r = self.client.get(url)
-        expected = "A simplified Internet-Draft submission interface, intended for automation"
-        self.assertContains(r, expected, status_code=200)
-
-    def test_api_submit_bad_method(self):
-        url = urlreverse('ietf.submit.views.api_submit')
-        r = self.client.put(url)
-        self.assertEqual(r.status_code, 405)
-
-    def test_api_submit_ok(self):
-        r, author, name = self.do_post_submission('00')
-        expected = "Upload of %s OK, confirmation requests sent to:\n  %s" % (name, author.formatted_email().replace('\n',''))
-        self.assertContains(r, expected, status_code=200)
-
-    def test_api_submit_secondary_email_active(self):
-        person = PersonFactory()
-        email = EmailFactory(person=person)
-        r, author, name = self.do_post_submission('00', author=person, email=email.address)
-        for expected in [
-                "Upload of %s OK, confirmation requests sent to:" % (name, ),
-                author.formatted_email().replace('\n',''),
-            ]:
-            self.assertContains(r, expected, status_code=200)
-
-    def test_api_submit_secondary_email_inactive(self):
-        person = PersonFactory()
-        prim = person.email()
-        prim.primary = True
-        prim.save()
-        email = EmailFactory(person=person, active=False)
-        r, author, name = self.do_post_submission('00', author=person, email=email.address)
-        expected = "No such user: %s" % email.address
-        self.assertContains(r, expected, status_code=400)
-
-    def test_api_submit_no_user(self):
-        email='nonexistant.user@example.org'
-        r, author, name = self.do_post_submission('00', email=email)
-        expected = "No such user: %s" % email
-        self.assertContains(r, expected, status_code=400)
-
-    def test_api_submit_no_person(self):
-        user = UserFactory()
-        email = user.username
-        r, author, name = self.do_post_submission('00', email=email)
-        expected = "No person with username %s" % email
-        self.assertContains(r, expected, status_code=400)
-
-    def test_api_submit_wrong_revision(self):
-        r, author, name = self.do_post_submission('01')
-        expected = "Invalid revision (revision 00 is expected)"
-        self.assertContains(r, expected, status_code=400)
-
-    def test_api_submit_update_existing_submissiondocevent_rev(self):
-        draft, _ = create_draft_submission_with_rev_mismatch(rev='01')
-        r, _, __ = self.do_post_submission(rev='01', name=draft.name)
-        expected = "Submission failed"
-        self.assertContains(r, expected, status_code=409)
-
-    def test_api_submit_update_later_submissiondocevent_rev(self):
-        draft, _ = create_draft_submission_with_rev_mismatch(rev='02')
-        r, _, __ = self.do_post_submission(rev='01', name=draft.name)
-        expected = "Submission failed"
-        self.assertContains(r, expected, status_code=409)
-
-    def test_api_submit_pending_submission(self):
-        r, author, name = self.do_post_submission('00')
-        expected = "Upload of"
-        self.assertContains(r, expected, status_code=200)
-        r, author, name = self.do_post_submission('00', author=author, name=name)
-        expected = "A submission with same name and revision is currently being processed"
-        self.assertContains(r, expected, status_code=400)
-
-    def test_api_submit_no_title(self):
-        r, author, name = self.do_post_submission('00', title=" ")
-        expected = "Could not extract a valid title from the upload"
-        self.assertContains(r, expected, status_code=400)
-
-    def test_api_submit_failed_idnits(self):
-        # `year` on the next line must be leap year or this test will fail every Feb 29
-        r, author, name = self.do_post_submission('00', year="2012")
-        expected = "Document date must be within 3 days of submission date"
-        self.assertContains(r, expected, status_code=400)
-
-    def test_api_submit_keeps_extresources(self):
-        """API submit should not disturb doc external resources
-        
-        Tests that the submission inherits the existing doc's docextresource_set.
-        Relies on separate testing that Submission external_resources will be
-        handled appropriately.
-        """
-        draft = WgDraftFactory()
-
-        # add an external resource
-        self.assertEqual(draft.docextresource_set.count(), 0)
-        extres = draft.docextresource_set.create(
-            name_id='faq',
-            display_name='this is a display name',
-            value='https://example.com/faq-for-test.html',
-        )
-        
-        r, _, __ = self.do_post_submission('01', name=draft.name)
-        self.assertEqual(r.status_code, 200)
-        # draft = Document.objects.get(pk=draft.pk)  # update the draft
-        sub = Submission.objects.get(name=draft.name)
-        self.assertEqual(
-            [str(r) for r in sub.external_resources.all()],
-            [str(extres)],
-        )
-
         
 class RefsTests(BaseSubmitTestCase):
 
@@ -3513,3 +3384,29 @@ class YangCheckerTests(TestCase):
         apply_yang_checker_to_draft(checker, draft)
         self.assertEqual(checker.check_file_txt.call_args, mock.call(draft.get_file_name()))
 
+
+@override_settings(IDSUBMIT_REPOSITORY_PATH="/some/path/", IDSUBMIT_STAGING_PATH="/some/other/path")
+class SubmissionErrorTests(TestCase):
+    def test_sanitize_message(self):
+        sanitized = SubmissionError.sanitize_message(
+            "This refers to /some/path/with-a-file\n"
+            "and also /some/other/path/with-a-different-file isn't that neat?\n"
+            "and has /some/path//////with-slashes"
+        )
+        self.assertEqual(
+            sanitized,
+            "This refers to **/with-a-file\n"
+            "and also **/with-a-different-file isn't that neat?\n"
+            "and has **/with-slashes"
+        )
+    
+    @mock.patch.object(SubmissionError, "sanitize_message")
+    def test_submissionerror(self, mock_sanitize_message):
+        SubmissionError()
+        self.assertFalse(mock_sanitize_message.called)
+        SubmissionError("hi", "there")
+        self.assertTrue(mock_sanitize_message.called)
+        self.assertCountEqual(
+            mock_sanitize_message.call_args_list,
+            [mock.call("hi"), mock.call("there")],
+        )

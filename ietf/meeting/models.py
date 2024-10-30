@@ -1042,6 +1042,7 @@ class Session(models.Model):
     on_agenda = models.BooleanField(default=True, help_text='Is this session visible on the meeting agenda?')
     has_onsite_tool = models.BooleanField(default=False, help_text="Does this session use the officially supported onsite and remote tooling?")
     chat_room = models.CharField(blank=True, max_length=32, help_text='Name of Zulip stream, if different from group acronym')
+    meetecho_recording_name = models.CharField(blank=True, max_length=64, help_text="Name of the meetecho recording")
 
     tombstone_for = models.ForeignKey('Session', blank=True, null=True, help_text="This session is the tombstone for a session that was rescheduled", on_delete=models.CASCADE)
 
@@ -1332,17 +1333,23 @@ class Session(models.Model):
         return None
 
     def _session_recording_url_label(self):
+        otsa = self.official_timeslotassignment()
+        if otsa is None:
+            return None
         if self.meeting.type.slug == "ietf" and self.has_onsite_tool:
-            session_label = f"IETF{self.meeting.number}-{self.group.acronym.upper()}-{self.official_timeslotassignment().timeslot.time.strftime('%Y%m%d-%H%M')}"
+            session_label = f"IETF{self.meeting.number}-{self.group.acronym.upper()}-{otsa.timeslot.time.strftime('%Y%m%d-%H%M')}"
         else:
-            session_label = f"IETF-{self.group.acronym.upper()}-{self.official_timeslotassignment().timeslot.time.strftime('%Y%m%d-%H%M')}"
+            session_label = f"IETF-{self.group.acronym.upper()}-{otsa.timeslot.time.strftime('%Y%m%d-%H%M')}"
         return session_label
 
     def session_recording_url(self):
         url_formatter = getattr(settings, "MEETECHO_SESSION_RECORDING_URL", "")
         url = None
-        if url_formatter and self.video_stream_url:
-            url = url_formatter.format(session_label=self._session_recording_url_label())
+        name = self.meetecho_recording_name
+        if name is None or name.strip() == "":
+            name = self._session_recording_url_label()
+        if url_formatter.strip() != "" and name is not None:
+            url = url_formatter.format(session_label=name)
         return url
 
 

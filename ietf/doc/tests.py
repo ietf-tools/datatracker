@@ -59,7 +59,7 @@ from ietf.meeting.models import Meeting, SessionPresentation, SchedulingEvent
 from ietf.meeting.factories import ( MeetingFactory, SessionFactory, SessionPresentationFactory,
      ProceedingsMaterialFactory )
 
-from ietf.name.models import SessionStatusName, BallotPositionName, DocTypeName
+from ietf.name.models import SessionStatusName, BallotPositionName, DocTypeName, RoleName
 from ietf.person.models import Person
 from ietf.person.factories import PersonFactory, EmailFactory
 from ietf.utils.mail import outbox, empty_outbox
@@ -1450,6 +1450,14 @@ Man                    Expires September 22, 2015               [Page 3]
         """Buttons for action holders should be shown when AD or secretary"""
         draft = WgDraftFactory()
         draft.action_holders.set([PersonFactory()])
+        other_group = GroupFactory(type_id=draft.group.type_id)
+
+        # create a test RoleName and put it in the docman_roles for the document group
+        RoleName.objects.create(slug="wrangler", name="Wrangler", used=True)
+        draft.group.features.docman_roles.append("wrangler")
+        draft.group.features.save()
+        wrangler = RoleFactory(group=draft.group, name_id="wrangler").person
+        wrangler_of_other_group = RoleFactory(group=other_group, name_id="wrangler").person
 
         url = urlreverse('ietf.doc.views_doc.document_main', kwargs=dict(name=draft.name))
         edit_ah_url = urlreverse('ietf.doc.views_doc.edit_action_holders', kwargs=dict(name=draft.name))
@@ -1482,6 +1490,8 @@ Man                    Expires September 22, 2015               [Page 3]
 
         _run_test(None, False)
         _run_test('plain', False)
+        _run_test(wrangler_of_other_group.user.username, False)
+        _run_test(wrangler.user.username, True)
         _run_test('ad', True)
         _run_test('secretary', True)
 
@@ -1683,6 +1693,17 @@ class DocTestCase(TestCase):
 
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=doc.name)))
         self.assertEqual(r.status_code, 200)
+        self.assertNotContains(r, "The session for this document was cancelled.")
+
+        SchedulingEvent.objects.create(
+            session=session,
+            status_id='canceled',
+            by = Person.objects.get(user__username="marschairman"), 
+        )
+
+        r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=doc.name)))
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "The session for this document was cancelled.")
 
     def test_document_ballot(self):
         doc = IndividualDraftFactory()

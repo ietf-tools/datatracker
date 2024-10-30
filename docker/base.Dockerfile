@@ -125,6 +125,15 @@ ENV LC_ALL en_US.UTF-8
 ADD https://raw.githubusercontent.com/ietf-tools/idnits-mirror/main/idnits /usr/local/bin/
 RUN chmod +rx /usr/local/bin/idnits
 
+# Install required fonts
+RUN mkdir -p /tmp/fonts && \
+    wget -q -O /tmp/fonts.tar.gz https://github.com/ietf-tools/xml2rfc-fonts/archive/refs/tags/3.22.0.tar.gz && \
+    tar zxf /tmp/fonts.tar.gz -C /tmp/fonts && \
+    mv /tmp/fonts/*/noto/* /usr/local/share/fonts/ && \
+    mv /tmp/fonts/*/roboto_mono/* /usr/local/share/fonts/ && \
+    rm -rf /tmp/fonts.tar.gz /tmp/fonts/ && \
+    fc-cache -f
+
 # Turn off rsyslog kernel logging (doesn't work in Docker)
 RUN sed -i '/imklog/s/^/#/' /etc/rsyslog.conf
 

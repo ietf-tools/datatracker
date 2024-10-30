@@ -27,8 +27,8 @@ from ietf.group.factories import GroupFactory, RoleFactory, ReviewTeamFactory
 from ietf.ipr.factories import HolderIprDisclosureFactory
 from ietf.name.models import BallotPositionName
 from ietf.iesg.models import TelechatDate
-from ietf.person.models import Person, PersonalApiKey
-from ietf.person.factories import PersonFactory
+from ietf.person.models import Person
+from ietf.person.factories import PersonFactory, PersonalApiKeyFactory
 from ietf.person.utils import get_active_ads
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized
 from ietf.utils.mail import outbox, empty_outbox, get_payload_text
@@ -111,7 +111,7 @@ class EditPositionTests(TestCase):
         create_ballot_if_not_open(None, draft, ad, 'approve')
         ad.user.last_login = timezone.now()
         ad.user.save()
-        apikey = PersonalApiKey.objects.create(endpoint=url, person=ad)
+        apikey = PersonalApiKeyFactory(endpoint=url, person=ad)
 
         # vote
         events_before = draft.docevent_set.count()
@@ -559,7 +559,7 @@ class BallotWriteupsTests(TestCase):
         q = PyQuery(r.content)
         self.assertFalse(q('[class=text-danger]:contains("not completed IETF Last Call")'))
 
-        for state_slug in ["lc", "watching", "ad-eval"]:
+        for state_slug in ["lc", "ad-eval"]:
             draft.set_state(State.objects.get(type="draft-iesg",slug=state_slug))
             r = self.client.get(url)
             self.assertEqual(r.status_code, 200)
