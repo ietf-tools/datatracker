@@ -1,6 +1,9 @@
-# Copyright The IETF Trust 2018-2020, All Rights Reserved
+# Copyright The IETF Trust 2018-2024, All Rights Reserved
 # -*- coding: utf-8 -*-
+"""Serialization utilities
 
+This is _not_ for django-rest-framework!
+"""
 
 import hashlib
 import json
