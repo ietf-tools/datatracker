@@ -1,7 +1,9 @@
 # Copyright The IETF Trust 2017-2024, All Rights Reserved
 
+from rest_framework import routers
+
 from django.conf import settings
-from django.urls import include
+from django.urls import include, path
 from django.views.generic import TemplateView
 
 from ietf import api
@@ -11,6 +13,7 @@ from ietf.meeting import views as meeting_views
 from ietf.submit import views as submit_views
 from ietf.utils.urls import url
 
+router = routers.DefaultRouter()  # v3 api router
 
 api.autodiscover()
 
@@ -21,6 +24,8 @@ urlpatterns = [
     url(r'^v1/?$', api_views.top_level),
     # For mailarchive use, requires secretariat role
     url(r'^v2/person/person', api_views.ApiV2PersonExportView.as_view()),
+    # --- DRF API ---
+    path("v3/", include(router.urls)),
     #
     # --- Custom API endpoints, sorted alphabetically ---
     # Email alias information for drafts
