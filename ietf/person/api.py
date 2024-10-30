@@ -12,6 +12,7 @@ class PersonViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
     Mostly demo for now. Only allows retrieving single instances. Think hard about permissions before
     allowing write or list access.
     """
+    authentication_classes = []
     permission_classes = [permissions.AllowAny]
 
     queryset = Person.objects.all()
