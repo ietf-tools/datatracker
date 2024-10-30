@@ -10,10 +10,12 @@ from ietf import api
 from ietf.api import views as api_views
 from ietf.doc import views_ballot
 from ietf.meeting import views as meeting_views
+from ietf.person import api as person_api
 from ietf.submit import views as submit_views
 from ietf.utils.urls import url
 
 router = routers.DefaultRouter()  # v3 api router
+router.register("person", person_api.PersonViewSet)
 
 api.autodiscover()
 
