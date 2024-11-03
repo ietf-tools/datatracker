@@ -287,9 +287,7 @@ def materials_document(request, document, num=None, ext=None):
 
     old_proceedings_format = meeting.number.isdigit() and int(meeting.number) <= 96
     if settings.MEETING_MATERIALS_SERVE_LOCALLY or old_proceedings_format:
-        with io.open(filename, "rb") as file:
-            bytes = file.read()
-
+        bytes = filename.read_bytes()
         mtype, chset = get_mime_type(bytes)
         content_type = "%s; charset=%s" % (mtype, chset)
 
