@@ -653,14 +653,16 @@
                 </i>
                 Referenced by
             </a>
+            {% if nits_url %}
             <a class="btn btn-primary btn-sm"
-               href="{{ settings.IDNITS_BASE_URL }}?url=https://www.ietf.org/archive/id/{{ doc.filename_with_rev }}"
+               href="{{ nits_url }}"
                rel="nofollow"
                target="_blank">
                 <i class="bi bi-exclamation">
                 </i>
                 Nits
             </a>
+            {% endif %}
             <a class="btn btn-primary btn-sm"
                href="https://mailarchive.ietf.org/arch/search/?q=%22{{ doc.name }}%22"
                rel="nofollow"
