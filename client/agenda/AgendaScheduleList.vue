@@ -276,6 +276,7 @@ const meetingEvents = computed(() => {
     const purposesWithoutLinks = ['admin', 'closed_meeting', 'officehours', 'social']
     if (item.flags.showAgenda || (typesWithLinks.includes(item.type) && !purposesWithoutLinks.includes(item.purpose))) {
       if (item.flags.agenda) {
+        // -> Meeting Materials
         links.push({
           id: `lnk-${item.id}-tar`,
           label: 'Download meeting materials as .tar archive',
@@ -297,7 +298,18 @@ const meetingEvents = computed(() => {
           color: 'red'
         })
       }
-      if (agendaStore.usesNotes) {
+      // -> Point to Wiki for Hackathon sessions, HedgeDocs otherwise
+      if (item.name.toLowerCase().indexOf('hackathon') >= 0) {
+        links.push({
+          id: `lnk-${item.id}-wiki`,
+          label: 'Wiki',
+          icon: 'book',
+          href: getUrl('hackathonWiki', {
+            meetingNumber: agendaStore.meeting.number
+          }),
+          color: 'blue'
+        })
+      } else if (agendaStore.usesNotes) {
         links.push({
           id: `lnk-${item.id}-note`,
           label: 'Notepad for note-takers',
