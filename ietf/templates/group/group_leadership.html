@@ -8,11 +8,13 @@
 {% block content %}
     {% origin %}
     <h1>Group Leadership ({{ group_type }})</h1>
-    <div class="text-end">
-        <a class="btn btn-primary" href="{% url 'ietf.group.views.group_leadership_csv' group_type=group_type %}">
-        <i class="bi bi-file-ruled"></i> Export as CSV
-    </a>
-    </div>
+    {% if request.user.is_staff %}
+        <div class="text-end">
+            <a class="btn btn-primary" href="{% url 'ietf.group.views.group_leadership_csv' group_type=group_type %}">
+            <i class="bi bi-file-ruled"></i> Export as CSV
+            </a>
+        </div>
+    {% endif %}
     <table class="table table-sm table-striped">
         <thead>
             <tr>
