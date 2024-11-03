@@ -281,8 +281,8 @@ def materials_document(request, document, num=None, ext=None):
             if ".pdf" in ext_choices:
                 filename = ext_choices[".pdf"]
             else:
-                filename = ext_choices.values()[0]
-    if not filename.exists:
+                filename = list(ext_choices.values())[0]
+    if not filename.exists():
         raise Http404(f"File not found: {filename}")
 
     old_proceedings_format = meeting.number.isdigit() and int(meeting.number) <= 96
