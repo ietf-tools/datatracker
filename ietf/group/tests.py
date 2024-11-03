@@ -65,6 +65,29 @@ class StreamTests(TestCase):
         self.assertTrue(Role.objects.filter(name="delegate", group__acronym=stream_acronym, email__address="ad2@ietf.org"))
 
 
+class GroupLeadershipTests(TestCase):
+    def test_leadership_wg(self):
+        url = urlreverse("ietf.group.views.group_leadership", kwargs={'group_type': 'wg'})
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "Group Leadership")
+        self.assertContains(r, "Chairman, Sops")
+
+    def test_leadership_wg_csv(self):
+        url = urlreverse("ietf.group.views.group_leadership_csv", kwargs={'group_type': 'wg'})
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r['Content-Type'], 'text/csv')
+        self.assertContains(r, "Chairman, Sops")
+
+    def test_leadership_rg(self):
+        url = urlreverse("ietf.group.views.group_leadership", kwargs={'group_type': 'rg'})
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "Group Leadership")
+        self.assertNotContains(r, "Chairman, Sops")
+
+
 class GroupStatsTests(TestCase):
     def setUp(self):
         super().setUp()
