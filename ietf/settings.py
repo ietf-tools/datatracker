@@ -1279,6 +1279,8 @@ if "CACHES" not in locals():
 
 PUBLISH_IPR_STATES = ['posted', 'removed', 'removed_objfalse']
 
+IMPORTANT_LIBRARIES = ["django", "celery", "lxml", "markdown", "psycopg2", "pyang", "rfc2html", "weasyprint", "xml2rfc"]
+
 # We provide a secret key only for test and development modes.  It's
 # absolutely vital that django fails to start in production mode unless a
 # secret key has been provided elsewhere, not in this file which is

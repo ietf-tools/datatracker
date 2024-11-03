@@ -35,21 +35,6 @@ if __version__ == '1.0.0-dev' and __release_hash__ == '' and __release_branch__ 
     __release_branch__ = branch
     __release_hash__ = git_hash
 
-# important libraries
-__version_extra__ = {}
-# xml2rfc
-try:
-    import xml2rfc
-    __version_extra__['xml2rfc'] = xml2rfc.__version__
-except Exception:
-    pass
-
-# weasyprint
-try:
-    import weasyprint
-    __version_extra__['weasyprint'] = weasyprint.__version__
-except Exception:
-    pass
 
 # This will make sure the app is always imported when
 # Django starts so that shared_task will use this app.
