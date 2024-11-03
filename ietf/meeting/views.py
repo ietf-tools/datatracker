@@ -252,12 +252,12 @@ def _get_materials_doc(meeting, name):
 def materials_document(request, document, num=None, ext=None):
     """Materials document view
 
-    :param request: Django request 
+    :param request: Django request
     :param document: Name of document without an extension
     :param num: meeting number
     :param ext: extension including preceding '.'
     """
-    meeting=get_meeting(num,type_in=['ietf','interim'])
+    meeting = get_meeting(num, type_in=["ietf", "interim"])
     num = meeting.number
     try:
         doc, rev = _get_materials_doc(meeting=meeting, name=document)
@@ -287,9 +287,9 @@ def materials_document(request, document, num=None, ext=None):
 
     old_proceedings_format = meeting.number.isdigit() and int(meeting.number) <= 96
     if settings.MEETING_MATERIALS_SERVE_LOCALLY or old_proceedings_format:
-        with io.open(filename, 'rb') as file:
+        with io.open(filename, "rb") as file:
             bytes = file.read()
-        
+
         mtype, chset = get_mime_type(bytes)
         content_type = "%s; charset=%s" % (mtype, chset)
 
@@ -317,6 +317,7 @@ def materials_document(request, document, num=None, ext=None):
         return response
     else:
         return HttpResponseRedirect(redirect_to=doc.get_href(meeting=meeting))
+
 
 @login_required
 def materials_editable_groups(request, num=None):
