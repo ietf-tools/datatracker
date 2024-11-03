@@ -3,7 +3,7 @@
 
 from rest_framework import mixins, permissions, viewsets
 
-from .models import Person
+from .models import Email, Person
 from .serializers import PersonSerializer
 
 class PersonViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
