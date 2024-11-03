@@ -71,7 +71,7 @@ def main(request):
             'form': form},
         )
 
-    return render(request, 'announcement/main.html', { 'form': form} )
+    return render(request, 'announcement/index.html', { 'form': form} )
 
 @login_required
 @check_for_cancel('../')
