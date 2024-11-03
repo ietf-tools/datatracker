@@ -1,14 +1,14 @@
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
-{% load origin static person_filters %}
+{% load origin static person_filters ietf_filters %}
 {% block pagehead %}
-    <link rel="stylesheet" href="{% static "ietf/css/list.css" %}">
+    <link rel="stylesheet" href="{% static 'ietf/css/list.css' %}">
 {% endblock %}
 {% block title %}Group Leadership{% endblock %}
 {% block content %}
     {% origin %}
     <h1>Group Leadership ({{ group_type }})</h1>
-    {% if request.user.is_staff %}
+    {% if user|has_role:"Secretariat" %}
         <div class="text-end">
             <a class="btn btn-primary" href="{% url 'ietf.group.views.group_leadership_csv' group_type=group_type %}">
             <i class="bi bi-file-ruled"></i> Export as CSV
