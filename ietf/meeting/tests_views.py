@@ -26,6 +26,7 @@ from zoneinfo import ZoneInfo
 from django.urls import reverse as urlreverse
 from django.conf import settings
 from django.contrib.auth.models import User
+from django.core.serializers.json import DjangoJSONEncoder
 from django.test import Client, override_settings
 from django.db.models import F, Max
 from django.http import QueryDict, FileResponse
@@ -49,7 +50,7 @@ from ietf.meeting.utils import condition_slide_order
 from ietf.meeting.utils import add_event_info_to_session_qs, participants_for_meeting
 from ietf.meeting.utils import create_recording, get_next_sequence, bluesheet_data
 from ietf.meeting.views import session_draft_list, parse_agenda_filter_params, sessions_post_save, agenda_extract_schedule
-from ietf.meeting.views import get_summary_by_area, get_summary_by_type, get_summary_by_purpose
+from ietf.meeting.views import get_summary_by_area, get_summary_by_type, get_summary_by_purpose, generate_agenda_data
 from ietf.name.models import SessionStatusName, ImportantDateName, RoleName, ProceedingsMaterialTypeName
 from ietf.utils.decorators import skip_coverage
 from ietf.utils.mail import outbox, empty_outbox, get_payload_text
@@ -245,30 +246,34 @@ class MeetingTests(BaseMeetingTestCase):
 
         # Agenda API tests
         # -> Meeting data
-        r = self.client.get(urlreverse("ietf.meeting.views.api_get_agenda_data", kwargs=dict(num=meeting.number)))
-        self.assertEqual(r.status_code, 200)  
-        rjson = json.loads(r.content.decode("utf8"))
-        self.assertJSONEqual(
-            r.content.decode("utf8"),
+        # First, check that the generation function does the right thing
+        generated_data = generate_agenda_data(meeting.number)
+        self.assertEqual(
+            generated_data,
             {
                 "meeting": {
                     "number": meeting.number,
                     "city": meeting.city,
                     "startDate": meeting.date.isoformat(),
                     "endDate": meeting.end_date().isoformat(),
-                    "updated": rjson.get("meeting").get("updated"), # Just expect the value to exist
+                    "updated": generated_data.get("meeting").get("updated"),  # Just expect the value to exist
                     "timezone": meeting.time_zone,
                     "infoNote": meeting.agenda_info_note,
                     "warningNote": meeting.agenda_warning_note
                 },
-                "categories": rjson.get("categories"), # Just expect the value to exist
+                "categories": generated_data.get("categories"),  # Just expect the value to exist
                 "isCurrentMeeting": True,
-                "usesNotes": False, # make_meeting_test_data sets number=72
-                "schedule": rjson.get("schedule"), # Just expect the value to exist
+                "usesNotes": False,  # make_meeting_test_data sets number=72
+                "schedule": generated_data.get("schedule"),  # Just expect the value to exist
                 "floors": []
             }
         )
-        # -> Session Materials
+        with patch("ietf.meeting.views.generate_agenda_data", return_value=generated_data):
+            r = self.client.get(urlreverse("ietf.meeting.views.api_get_agenda_data", kwargs=dict(num=meeting.number)))
+        self.assertEqual(r.status_code, 200)  
+        # json.dumps using the DjangoJSONEncoder to handle timestamps consistently
+        self.assertJSONEqual(r.content.decode("utf8"), json.dumps(generated_data, cls=DjangoJSONEncoder))
+        # -> Session MaterialM
         r = self.client.get(urlreverse("ietf.meeting.views.api_get_session_materials", kwargs=dict(session_id=session.id)))
         self.assertEqual(r.status_code, 200)  
         rjson = json.loads(r.content.decode("utf8"))
