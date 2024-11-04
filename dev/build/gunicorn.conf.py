@@ -57,4 +57,8 @@ def pre_request(worker, req):
             client_ip = value
         elif header == "cf-ray":
             cf_ray = value
-    worker.log.info(f"gunicorn starting to process {req.method} {req.path} (client_ip={client_ip}, cf_ray={cf_ray})")
+    if req.query:
+        path = f"{req.path}?{req.query}"
+    else:
+        path = req.path
+    worker.log.info(f"gunicorn starting to process {req.method} {path} (client_ip={client_ip}, cf_ray={cf_ray})")
