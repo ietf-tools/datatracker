@@ -125,12 +125,8 @@ class BaseMeetingTestCase(TestCase):
         settings.MEETINGHOST_LOGO_PATH = self.saved_meetinghost_logo_path
         super().tearDown()
 
-    def write_materials_file(self, meeting, doc, content, charset="utf-8", with_ext=None):
-        if with_ext is None:
-            filename = doc.uploaded_filename
-        else:
-            filename = Path(doc.uploaded_filename).with_suffix(with_ext)
-        path = os.path.join(self.materials_dir, "%s/%s/%s" % (meeting.number, doc.type_id, filename))
+    def write_materials_file(self, meeting, doc, content, charset="utf-8"):
+        path = os.path.join(self.materials_dir, "%s/%s/%s" % (meeting.number, doc.type_id, doc.uploaded_filename))
 
         dirname = os.path.dirname(path)
         if not os.path.exists(dirname):
@@ -757,56 +753,7 @@ class MeetingTests(BaseMeetingTestCase):
         )
         self.assertEqual(len(q(f'a[href^="{edit_url}#session"]')), 1, f'Link to session_details page for {acro}')
 
-    def test_materials_document_extension_choice(self):
-        def _url(**kwargs):
-            return urlreverse("ietf.meeting.views.materials_document", kwargs=kwargs)
 
-        presentation = SessionPresentationFactory(
-            document__rev="00",
-            document__name="slides-whatever",
-            document__uploaded_filename="slides-whatever-00.txt",
-            document__type_id="slides",
-            document__states=(("reuse_policy", "single"),)
-        )
-        session = presentation.session
-        meeting = session.meeting
-        # This is not a realistic set of files to exist, but is useful for testing. Normally,
-        # we'd have _either_ txt, pdf, or pptx + pdf.
-        self.write_materials_file(meeting, presentation.document, "Hi I'm a txt", with_ext=".txt")
-        self.write_materials_file(meeting, presentation.document, "Hi I'm a pptx", with_ext=".pptx")
-
-        # with no rev, prefers the uploaded_filename
-        r = self.client.get(_url(document="slides-whatever", num=meeting.number))  # no rev
-        self.assertEqual(r.status_code, 200)
-        self.assertEqual(r.content.decode(), "Hi I'm a txt")
-        
-        # with a rev, prefers pptx because it comes first alphabetically
-        r = self.client.get(_url(document="slides-whatever-00", num=meeting.number))
-        self.assertEqual(r.status_code, 200)
-        self.assertEqual(r.content.decode(), "Hi I'm a pptx")
-
-        # now create a pdf
-        self.write_materials_file(meeting, presentation.document, "Hi I'm a pdf", with_ext=".pdf")
-
-        # with no rev, still prefers uploaded_filename
-        r = self.client.get(_url(document="slides-whatever", num=meeting.number))  # no rev
-        self.assertEqual(r.status_code, 200)
-        self.assertEqual(r.content.decode(), "Hi I'm a txt")
-
-        # pdf should be preferred with a rev
-        r = self.client.get(_url(document="slides-whatever-00", num=meeting.number))
-        self.assertEqual(r.status_code, 200)
-        self.assertEqual(r.content.decode(), "Hi I'm a pdf")
-        
-        # and explicit extensions should, of course, be respected
-        for ext in ["pdf", "pptx", "txt"]:
-            r = self.client.get(_url(document="slides-whatever-00", num=meeting.number, ext=f".{ext}"))
-            self.assertEqual(r.status_code, 200)
-            self.assertEqual(r.content.decode(), f"Hi I'm a {ext}")
-        
-        # and 404 should come up if the ext is not found
-        r = self.client.get(_url(document="slides-whatever-00", num=meeting.number, ext=".docx"))
-        self.assertEqual(r.status_code, 404)
 
     def test_materials_editable_groups(self):
         meeting = make_meeting_test_data()
