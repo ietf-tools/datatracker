@@ -12,6 +12,8 @@ try:
     from selenium import webdriver
     from selenium.webdriver.firefox.service import Service
     from selenium.webdriver.firefox.options import Options
+    from selenium.webdriver.support.ui import WebDriverWait
+    from selenium.webdriver.support import expected_conditions
     from selenium.webdriver.common.by import By
 except ImportError as e:
     skip_selenium = True
@@ -87,6 +89,44 @@ class IetfSeleniumTestCase(IetfLiveServerTestCase):
         # actions = ActionChains(self.driver)
         # actions.move_to_element(element).perform()
 
+    def scroll_and_click(self, element_locator, timeout_seconds=60):
+        """
+        Selenium has restrictions around clicking elements outside the viewport, so
+        this wrapper encapsulates the boilerplate of forcing scrolling and clicking.
+
+        :param element_selector: A two item tuple of a Selenium locator eg `(By.CSS_SELECTOR, '#something')`
+        """
+
+        # so that we can restore the state of the webpage after clicking
+        original_html_scroll_behaviour_to_restore = self.driver.execute_script('return document.documentElement.style.scrollBehavior')
+        original_html_overflow_to_restore = self.driver.execute_script('return document.documentElement.style.overflow')
+
+        original_body_scroll_behaviour_to_restore = self.driver.execute_script('return document.body.style.scrollBehavior')
+        original_body_overflow_to_restore = self.driver.execute_script('return document.body.style.overflow')
+
+        self.driver.execute_script('document.documentElement.style.scrollBehavior = "auto"')
+        self.driver.execute_script('document.documentElement.style.overflow = "auto"')
+
+        self.driver.execute_script('document.body.style.scrollBehavior = "auto"')
+        self.driver.execute_script('document.body.style.overflow = "auto"')
+
+        element = self.driver.find_element(element_locator[0], element_locator[1])
+        self.scroll_to_element(element)
+
+        # Selenium can deem an element_to_be_clickable despite not being clickable because it's outside the viewport
+        WebDriverWait(self.driver, timeout_seconds).until(expected_conditions.element_to_be_clickable(element_locator))
+
+        element.click()
+
+        if original_html_scroll_behaviour_to_restore:
+            self.driver.execute_script(f'document.documentElement.style.scrollBehavior = "{original_html_scroll_behaviour_to_restore}"')
+        if original_html_overflow_to_restore:
+            self.driver.execute_script(f'document.documentElement.style.overflow = "{original_html_overflow_to_restore}"')
+
+        if original_body_scroll_behaviour_to_restore:
+            self.driver.execute_script(f'document.body.style.scrollBehavior = "{original_body_scroll_behaviour_to_restore}"')
+        if original_body_overflow_to_restore:
+            self.driver.execute_script(f'document.body.style.overflow = "{original_body_overflow_to_restore}"')
 
 class presence_of_element_child_by_css_selector:
     """Wait for presence of a child of a WebElement matching a CSS selector
