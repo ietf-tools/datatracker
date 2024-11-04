@@ -1375,13 +1375,8 @@ class InterimTests(IetfSeleniumTestCase):
         self.assertFalse(modal_div.is_displayed())
 
         # Click the 'materials' button
-        open_modal_button = self.wait.until(
-            expected_conditions.element_to_be_clickable(
-                (By.CSS_SELECTOR, '[data-bs-target="#modal-%s"]' % slug)
-            ),
-            'Modal open button not found or not clickable',
-        )
-        open_modal_button.click()
+        open_modal_button_locator = (By.CSS_SELECTOR, '[data-bs-target="#modal-%s"]' % slug)
+        self.scroll_and_click(open_modal_button_locator)
         self.wait.until(
             expected_conditions.visibility_of(modal_div),
             'Modal did not become visible after clicking open button',
