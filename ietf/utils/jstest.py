@@ -89,7 +89,7 @@ class IetfSeleniumTestCase(IetfLiveServerTestCase):
         # actions = ActionChains(self.driver)
         # actions.move_to_element(element).perform()
 
-    def scroll_and_click(self, element_locator, timeout_seconds=60):
+    def scroll_and_click(self, element_locator, timeout_seconds=5):
         """
         Selenium has restrictions around clicking elements outside the viewport, so
         this wrapper encapsulates the boilerplate of forcing scrolling and clicking.
