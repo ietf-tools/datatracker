@@ -15,6 +15,7 @@ from ietf.submit import views as submit_views
 from ietf.utils.urls import url
 
 router = routers.DefaultRouter()  # v3 api router
+router.register("email", person_api.EmailViewSet)
 router.register("person", person_api.PersonViewSet)
 
 api.autodiscover()
