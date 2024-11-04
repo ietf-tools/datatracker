@@ -4,6 +4,7 @@
 
 import csv
 import datetime
+import glob
 import io
 import itertools
 import json
@@ -19,7 +20,6 @@ from calendar import timegm
 from collections import OrderedDict, Counter, deque, defaultdict, namedtuple
 from functools import partialmethod
 import jsonschema
-from pathlib import Path
 from urllib.parse import parse_qs, unquote, urlencode, urlsplit, urlunsplit
 from tempfile import mkstemp
 from wsgiref.handlers import format_date_time
@@ -250,14 +250,7 @@ def _get_materials_doc(meeting, name):
 
 @cache_page(1 * 60)
 def materials_document(request, document, num=None, ext=None):
-    """Materials document view
-
-    :param request: Django request
-    :param document: Name of document without an extension
-    :param num: meeting number
-    :param ext: extension including preceding '.'
-    """
-    meeting = get_meeting(num, type_in=["ietf", "interim"])
+    meeting=get_meeting(num,type_in=['ietf','interim'])
     num = meeting.number
     try:
         doc, rev = _get_materials_doc(meeting=meeting, name=document)
@@ -265,34 +258,32 @@ def materials_document(request, document, num=None, ext=None):
         raise Http404("No such document for meeting %s" % num)
 
     if not rev:
-        filename = Path(doc.get_file_name())
+        filename = doc.get_file_name()
     else:
-        filename = Path(doc.get_file_path()) / document
+        filename = os.path.join(doc.get_file_path(), document)
     if ext:
-        filename = filename.with_suffix(ext)
-    elif filename.suffix == "":
-        # If we don't already have an extension, try to add one
-        ext_choices = {
-            # Construct a map from suffix to full filename
-            fn.suffix: fn
-            for fn in sorted(filename.parent.glob(filename.stem + ".*"))
-        }
-        if len(ext_choices) > 0:
-            if ".pdf" in ext_choices:
-                filename = ext_choices[".pdf"]
-            else:
-                filename = list(ext_choices.values())[0]
-    if not filename.exists():
-        raise Http404(f"File not found: {filename}")
+        if not filename.endswith(ext):
+            name, _ = os.path.splitext(filename)
+            filename = name + ext
+    else:
+        filenames = glob.glob(filename+'.*')
+        if filenames:
+            filename = filenames[0]
+    _, basename = os.path.split(filename)
+    if not os.path.exists(filename):
+        raise Http404("File not found: %s" % filename)
 
     old_proceedings_format = meeting.number.isdigit() and int(meeting.number) <= 96
     if settings.MEETING_MATERIALS_SERVE_LOCALLY or old_proceedings_format:
-        bytes = filename.read_bytes()
+        with io.open(filename, 'rb') as file:
+            bytes = file.read()
+        
         mtype, chset = get_mime_type(bytes)
         content_type = "%s; charset=%s" % (mtype, chset)
 
-        if filename.suffix == ".md" and mtype == "text/plain":
-            sorted_accept = sort_accept_tuple(request.META.get("HTTP_ACCEPT"))
+        file_ext = os.path.splitext(filename)
+        if len(file_ext) == 2 and file_ext[1] == '.md' and mtype == 'text/plain':
+            sorted_accept = sort_accept_tuple(request.META.get('HTTP_ACCEPT'))
             for atype in sorted_accept:
                 if atype[0] == "text/markdown":
                     content_type = content_type.replace("plain", "markdown", 1)
@@ -302,7 +293,7 @@ def materials_document(request, document, num=None, ext=None):
                         "minimal.html",
                         {
                             "content": markdown.markdown(bytes.decode(encoding=chset)),
-                            "title": filename.name,
+                            "title": basename,
                         },
                     )
                     content_type = content_type.replace("plain", "html", 1)
@@ -311,11 +302,10 @@ def materials_document(request, document, num=None, ext=None):
                     break
 
         response = HttpResponse(bytes, content_type=content_type)
-        response["Content-Disposition"] = f'inline; filename="{filename.name}"'
+        response['Content-Disposition'] = 'inline; filename="%s"' % basename
         return response
     else:
         return HttpResponseRedirect(redirect_to=doc.get_href(meeting=meeting))
-
 
 @login_required
 def materials_editable_groups(request, num=None):
