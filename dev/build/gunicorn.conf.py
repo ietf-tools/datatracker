@@ -47,3 +47,14 @@ logconfig_dict = {
         }
     }
 }
+
+def pre_request(worker, req):
+    client_ip = "-"
+    cf_ray = "-"
+    for (header, value) in req.headers:
+        header = header.lower()
+        if header == "cf-connecting-ip":
+            client_ip = value
+        elif header == "cf-ray":
+            cf_ray = value
+    worker.log.info(f"gunicorn starting to process {req.method} {req.path} (client_ip={client_ip}, cf_ray={cf_ray})")
