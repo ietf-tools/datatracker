@@ -118,15 +118,10 @@ class IetfSeleniumTestCase(IetfLiveServerTestCase):
 
         element.click()
 
-        if original_html_scroll_behaviour_to_restore:
-            self.driver.execute_script(f'document.documentElement.style.scrollBehavior = "{original_html_scroll_behaviour_to_restore}"')
-        if original_html_overflow_to_restore:
-            self.driver.execute_script(f'document.documentElement.style.overflow = "{original_html_overflow_to_restore}"')
-
-        if original_body_scroll_behaviour_to_restore:
-            self.driver.execute_script(f'document.body.style.scrollBehavior = "{original_body_scroll_behaviour_to_restore}"')
-        if original_body_overflow_to_restore:
-            self.driver.execute_script(f'document.body.style.overflow = "{original_body_overflow_to_restore}"')
+        self.driver.execute_script(f'document.documentElement.style.scrollBehavior = "{original_html_scroll_behaviour_to_restore}"')
+        self.driver.execute_script(f'document.documentElement.style.overflow = "{original_html_overflow_to_restore}"')
+        self.driver.execute_script(f'document.body.style.scrollBehavior = "{original_body_scroll_behaviour_to_restore}"')
+        self.driver.execute_script(f'document.body.style.overflow = "{original_body_overflow_to_restore}"')
 
 class presence_of_element_child_by_css_selector:
     """Wait for presence of a child of a WebElement matching a CSS selector
