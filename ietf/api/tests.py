@@ -945,7 +945,6 @@ class CustomApiTests(TestCase):
         self.assertEqual(data['dumptime'], "2022-08-31 07:10:01 -0700")
 
 
-
     def test_api_appauth(self):
         for app in ["authortools", "bibxml"]:
             url = urlreverse('ietf.api.views.app_auth', kwargs={"app": app})
