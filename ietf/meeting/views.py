@@ -25,6 +25,7 @@ from tempfile import mkstemp
 from wsgiref.handlers import format_date_time
 
 from django import forms
+from django.core.cache import caches
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import (HttpResponse, HttpResponseRedirect, HttpResponseForbidden,
                          HttpResponseNotFound, Http404, HttpResponseBadRequest,
@@ -1657,8 +1658,16 @@ def agenda(request, num=None, name=None, base=None, ext=None, owner=None, utc=""
         }
     })
 
-@cache_page(5 * 60)
-def api_get_agenda_data (request, num=None):
+
+def generate_agenda_data(num=None, force_refresh=False):
+    """Generate data for the api_get_agenda_data endpoint
+    
+    :num: meeting number
+    :force_refresh: True to force a refresh of the cache
+    """
+    cache = caches["default"]
+    cache_timeout = 6 * 60
+
     meeting = get_ietf_meeting(num)
     if meeting is None:
         raise Http404("No such full IETF meeting")
@@ -1666,6 +1675,12 @@ def api_get_agenda_data (request, num=None):
         return Http404("Pre-IETF 64 meetings are not available through this API")
     else:
         pass
+
+    cache_key = f"generate_agenda_data_{meeting.number}"
+    if not force_refresh:
+        cached_value = cache.get(cache_key)
+        if cached_value is not None:
+            return cached_value
 
     # Select the schedule to show
     schedule = get_schedule(meeting, None)
@@ -1685,10 +1700,8 @@ def api_get_agenda_data (request, num=None):
 
     # Get Floor Plans
     floors = FloorPlan.objects.filter(meeting=meeting).order_by('order')
-
-    #debug.show('all([(item.acronym,item.session.order_number,item.session.order_in_meeting()) for item in filtered_assignments])')
-
-    return JsonResponse({
+    
+    result = {
         "meeting": {
             "number": schedule.meeting.number,
             "city": schedule.meeting.city,
@@ -1704,7 +1717,13 @@ def api_get_agenda_data (request, num=None):
         "usesNotes": meeting.uses_notes(),
         "schedule": list(map(agenda_extract_schedule, filtered_assignments)),
         "floors": list(map(agenda_extract_floorplan, floors))
-    })
+    }
+    cache.set(cache_key, result, timeout=cache_timeout)
+    return result
+
+
+def api_get_agenda_data(request, num=None):
+    return JsonResponse(generate_agenda_data(num, force_refresh=False))
 
 
 def api_get_session_materials(request, session_id=None):
