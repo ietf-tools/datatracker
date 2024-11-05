@@ -598,6 +598,7 @@ TEST_CODE_COVERAGE_EXCLUDE_FILES = [
     "ietf/review/import_from_review_tool.py",
     "ietf/utils/patch.py",
     "ietf/utils/test_data.py",
+    "ietf/utils/jstest.py",
 ]
 
 # These are code line regex patterns

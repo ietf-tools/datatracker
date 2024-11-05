@@ -11,12 +11,12 @@ on:
       skipSelenium:
         description: 'Skip Selenium Tests'
         default: false
-        required: true
+        required: false
         type: boolean
       targetBaseVersion:
         description: 'Target Base Image Version'
         default: latest
-        required: true
+        required: false
         type: string
 
 jobs:

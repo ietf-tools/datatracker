@@ -363,33 +363,15 @@ jobs:
 
     - name: Destroy Build VM + resources
       if: always()
-      shell: pwsh
       run: |
-        echo "Destroying VM..."        
+        echo "Terminate VM..."        
         az vm delete -g ghaDatatracker -n tmpGhaBuildVM-${{ github.run_number }} --yes --force-deletion true
-
-        # $resourceOrderRemovalOrder = [ordered]@{
-        #     "Microsoft.Compute/virtualMachines" = 0
-        #     "Microsoft.Compute/disks" = 1
-        #     "Microsoft.Network/networkInterfaces" = 2
-        #     "Microsoft.Network/publicIpAddresses" = 3
-        #     "Microsoft.Network/networkSecurityGroups" = 4
-        #     "Microsoft.Network/virtualNetworks" = 5
-        # }
-        # echo "Fetching remaining resources..."
-        # $resources = az resource list --resource-group ghaDatatracker | ConvertFrom-Json
-
-        # $orderedResources = $resources 
-        #     | Sort-Object @{
-        #         Expression = {$resourceOrderRemovalOrder[$_.type]}
-        #         Descending = $False
-        #     }
-
-        # echo "Deleting remaining resources..."
-        # $orderedResources | ForEach-Object {
-        #     az resource delete --resource-group ghaDatatracker --ids $_.id --verbose
-        # }
-
+        echo "Delete Public IP..."
+        az resource delete -g ghaDatatracker -n tmpGhaBuildVM-${{ github.run_number }}PublicIP --resource-type "Microsoft.Network/publicIPAddresses"
+        echo "Delete Network Security Group..."
+        az resource delete -g ghaDatatracker -n tmpGhaBuildVM-${{ github.run_number }}NSG --resource-type "Microsoft.Network/networkSecurityGroups"
+        echo "Delete Virtual Network..."
+        az resource delete -g ghaDatatracker -n tmpGhaBuildVM-${{ github.run_number }}VNET --resource-type "Microsoft.Network/virtualNetworks"
         echo "Logout from Azure..."
         az logout
         
