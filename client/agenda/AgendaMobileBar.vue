@@ -61,7 +61,8 @@ function optionToLink(opts){
       {
         class: 'dropdown-link',
         'data-testid': 'mobile-link',
-        href: `#${key}`
+        href: `#${key}`,
+        onClick: () => jumpToDay(key)
       },
       [
         h(
