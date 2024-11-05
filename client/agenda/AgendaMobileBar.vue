@@ -3,11 +3,13 @@
   n-dropdown(
     :options='jumpToDayOptions'
     size='huge'
+    :show='isDropdownOpenRef'
     :show-arrow='true'
     trigger='click'
     @select='jumpToDay'
+    @clickoutside='handleCloseDropdown'
     )
-    button
+    button(@click='handleOpenDropdown')
       i.bi.bi-arrow-down-circle
   button(@click='agendaStore.$patch({ filterShown: true })')
     i.bi.bi-funnel
@@ -28,7 +30,7 @@
 </template>
 
 <script setup>
-import { computed, h } from 'vue'
+import { computed, h, ref } from 'vue'
 import {
   NBadge,
   NDropdown,
@@ -78,6 +80,12 @@ function optionToLink(opts){
   }
 }
 
+const isDropdownOpenRef = ref(false)
+
+const handleOpenDropdown = () => isDropdownOpenRef.value = true
+
+const handleCloseDropdown = () => isDropdownOpenRef.value = false
+
 const jumpToDayOptions = computed(() => {
   const days = []
   if (agendaStore.isMeetingLive) {
@@ -125,6 +133,7 @@ function jumpToDay (dayId) {
   } else {
     document.getElementById(dayId)?.scrollIntoView(true)
   }
+  isDropdownOpenRef.value = false
 }
 
 function downloadIcs (key) {
