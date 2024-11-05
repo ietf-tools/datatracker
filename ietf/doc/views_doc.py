@@ -620,7 +620,7 @@ def document_main(request, name, rev=None, document_html=False):
         if 'xml' in found_types:
             nits_url = f"{settings.IDNITS3_BASE_URL}?url={[fu[1] for fu in file_urls if fu[0] == 'xml'][0]}"
         elif 'txt' in found_types:
-            nits_url = f"{settings.IDNITS_BASE_URL}?url={[fu[1] for fu in file_urls if fu[0] == 'txt'][0]}"
+            nits_url = f"{settings.IDNITS_BASE_URL}?url={[fu[1] for fu in file_urls if fu[0] == 'plain text'][0]}"
 
 
         html = None
