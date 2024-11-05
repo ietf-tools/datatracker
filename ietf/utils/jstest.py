@@ -94,7 +94,7 @@ class IetfSeleniumTestCase(IetfLiveServerTestCase):
         Selenium has restrictions around clicking elements outside the viewport, so
         this wrapper encapsulates the boilerplate of forcing scrolling and clicking.
 
-        :param element_selector: A two item tuple of a Selenium locator eg `(By.CSS_SELECTOR, '#something')`
+        :param element_locator: A two item tuple of a Selenium locator eg `(By.CSS_SELECTOR, '#something')`
         """
 
         # so that we can restore the state of the webpage after clicking
@@ -113,7 +113,11 @@ class IetfSeleniumTestCase(IetfLiveServerTestCase):
         element = self.driver.find_element(element_locator[0], element_locator[1])
         self.scroll_to_element(element)
 
-        # Selenium can deem an element_to_be_clickable despite not being clickable because it's outside the viewport
+        # Note that Selenium itself seems to have multiple definitions of 'clickable'.
+        # You might expect that the following wait for the 'element_to_be_clickable'
+        # would confirm that the following .click() would succeed but it doesn't.
+        # That's why the preceeding code attempts to force scrolling to bring the
+        # element into the viewport to allow clicking.
         WebDriverWait(self.driver, timeout_seconds).until(expected_conditions.element_to_be_clickable(element_locator))
 
         element.click()
