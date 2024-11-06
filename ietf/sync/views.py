@@ -8,6 +8,7 @@ import json
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
+from django.db import transaction
 from django.http import HttpResponse, HttpResponseRedirect, Http404
 from django.shortcuts import render
 from django.utils import timezone
@@ -79,16 +80,28 @@ def notify(request, org, notification):
     if request.method == "POST":
         if notification == "index":
             log("Queuing RFC Editor index sync from notify view POST")
-            tasks.rfc_editor_index_update_task.delay()
+            # Wrap in on_commit so the delayed task cannot start until the view is done with the DB
+            transaction.on_commit(
+                lambda: tasks.rfc_editor_index_update_task.delay()
+            )
         elif notification == "queue":
             log("Queuing RFC Editor queue sync from notify view POST")
-            tasks.rfc_editor_queue_updates_task.delay()
+            # Wrap in on_commit so the delayed task cannot start until the view is done with the DB
+            transaction.on_commit(
+                lambda: tasks.rfc_editor_queue_updates_task.delay()
+            )
         elif notification == "changes":
             log("Queuing IANA changes sync from notify view POST")
-            tasks.iana_changes_update_task.delay()
+            # Wrap in on_commit so the delayed task cannot start until the view is done with the DB
+            transaction.on_commit(
+                lambda: tasks.iana_changes_update_task.delay()
+            )
         elif notification == "protocols":
             log("Queuing IANA protocols sync from notify view POST")
-            tasks.iana_protocols_update_task.delay()
+            # Wrap in on_commit so the delayed task cannot start until the view is done with the DB
+            transaction.on_commit(
+                lambda: tasks.iana_protocols_update_task.delay()
+            )
 
         return HttpResponse("OK", content_type="text/plain; charset=%s"%settings.DEFAULT_CHARSET)
 
