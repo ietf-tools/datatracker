@@ -75,12 +75,15 @@ def get_to_choices():
 # ---------------------------------------------
 
 class AnnounceForm(forms.ModelForm):
-    nomcom = forms.ModelChoiceField(queryset=Group.objects.filter(acronym__startswith='nomcom',type='nomcom',state='active'),required=False)
+    nomcom = forms.ModelChoiceField(queryset=Group.objects.filter(acronym__startswith='nomcom', type='nomcom', state='active'), required=False)
     to_custom = MultiEmailField(required=False)
 
     class Meta:
         model = Message
-        fields = ('nomcom', 'to','to_custom','frm','cc','bcc','reply_to','subject','body')
+        fields = ('nomcom', 'to', 'to_custom', 'frm', 'cc', 'bcc', 'reply_to', 'subject', 'body')
+        labels = {'frm': 'From'}
+        help_texts = {'to': 'Select name OR select Other... and enter email below',
+                      'cc': 'Use comma separated lists for emails (Cc, Bcc, Reply To)'}
 
     def __init__(self, *args, **kwargs):
         if 'hidden' in kwargs:
@@ -91,19 +94,18 @@ class AnnounceForm(forms.ModelForm):
         person = user.person
         super(AnnounceForm, self).__init__(*args, **kwargs)
         self.fields['to'].widget = forms.Select(choices=get_to_choices())
-        self.fields['to'].help_text = 'Select name OR select Other... and enter email below'
-        self.fields['cc'].help_text = 'Use comma separated lists for emails (Cc, Bcc, Reply To)'
         self.fields['frm'].widget = forms.Select(choices=get_from_choices(user))
-        self.fields['frm'].label = 'From'
         self.fields['reply_to'].required = True
+        # nomcom field is defined declaratively so label and help_text must be set here
         self.fields['nomcom'].label = 'NomCom message:'
+        self.fields['nomcom'].help_text = 'If this is a NomCom announcement specifiy which NomCom group here'
         nomcom_roles = person.role_set.filter(group__in=self.fields['nomcom'].queryset,name='chair')
         secr_roles = person.role_set.filter(group__acronym='secretariat',name='secr')
         if nomcom_roles:
             self.initial['nomcom'] = nomcom_roles[0].group.pk
         if not nomcom_roles and not secr_roles:
             self.fields['nomcom'].widget = forms.HiddenInput()
-        
+
         if self.hidden:
             for key in list(self.fields.keys()):
                 self.fields[key].widget = forms.HiddenInput()

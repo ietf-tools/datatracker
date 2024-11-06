@@ -1,4 +1,4 @@
-{# Copyright The IETF Trust 2007, All Rights Reserved #}
+{# Copyright The IETF Trust 2024, All Rights Reserved #}
 {% extends "base.html" %}
 {% load static %}
 {% load ietf_filters %}
@@ -26,7 +26,7 @@ Subject: {{ message.subject }}
 
             {% bootstrap_form form %}
 
-            <div class="d-flex justify-content-evenly">
+            <div class="d-flex justify-content-around">
                 <button class="btn btn-primary" type="submit" name="submit" value="Send">Send</button>
                 <button class="btn btn-secondary" type="button" onclick="history.go(-1);return false">Back</button>
                 <button class="btn btn-danger" type="submit" name="submit" value="Cancel">Cancel</button>
