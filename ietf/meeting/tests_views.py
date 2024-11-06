@@ -414,9 +414,9 @@ class MeetingTests(BaseMeetingTestCase):
         url = urlreverse("ietf.meeting.views.session_details", kwargs=dict(num=session.meeting.number, acronym=session.group.acronym))
         r = self.client.get(url)
         q = PyQuery(r.content)
-        # debug.show("q('#notes_and_recordings_1')")
-        self.assertEqual(len(q("#notes_and_recordings_1 tr")), 1)
-        link = q("#notes_and_recordings_1 tr a")
+        # debug.show("q(f'#notes_and_recordings_{session.pk}')")
+        self.assertEqual(len(q(f"#notes_and_recordings_{session.pk} tr")), 1)
+        link = q(f"#notes_and_recordings_{session.pk} tr a")
         self.assertEqual(len(link), 1)
         self.assertEqual(link[0].attrib['href'], str(session.session_recording_url()))
 
@@ -424,8 +424,8 @@ class MeetingTests(BaseMeetingTestCase):
         session.save()
         r = self.client.get(url)
         q = PyQuery(r.content)
-        self.assertEqual(len(q("#notes_and_recordings_1 tr")), 1)
-        links = q("#notes_and_recordings_1 tr a")
+        self.assertEqual(len(q(f"#notes_and_recordings_{session.pk} tr")), 1)
+        links = q(f"#notes_and_recordings_{session.pk} tr a")
         self.assertEqual(len(links), 1)
         self.assertEqual(links[0].attrib['href'], session.session_recording_url())
 
@@ -434,12 +434,12 @@ class MeetingTests(BaseMeetingTestCase):
         create_recording(session, new_recording_url, new_recording_title)
         r = self.client.get(url)
         q = PyQuery(r.content)
-        self.assertEqual(len(q("#notes_and_recordings_1 tr")), 2)
-        links = q("#notes_and_recordings_1 tr a")
+        self.assertEqual(len(q(f"#notes_and_recordings_{session.pk} tr")), 2)
+        links = q(f"#notes_and_recordings_{session.pk} tr a")
         self.assertEqual(len(links), 2)
         self.assertEqual(links[0].attrib['href'], new_recording_url)
         self.assertIn(new_recording_title, links[0].text_content())
-        #debug.show("q('#notes_and_recordings_1')")
+        #debug.show("q(f'#notes_and_recordings_{session_pk}')")
 
     def test_agenda_ical_next_meeting_type(self):
         # start with no upcoming IETF meetings, just an interim
