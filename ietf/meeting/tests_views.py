@@ -408,7 +408,7 @@ class MeetingTests(BaseMeetingTestCase):
         self.assertEqual(r.status_code, 200)
 
     def test_session_recordings_via_factories(self):
-        session = SessionFactory(meeting__type_id="ietf")
+        session = SessionFactory(meeting__type_id="ietf", meeting__date=date_today()-datetime.timedelta(days=180))
         self.assertEqual(session.meetecho_recording_name, "")
         self.assertEqual(len(session.recordings()), 0)
         url = urlreverse("ietf.meeting.views.session_details", kwargs=dict(num=session.meeting.number, acronym=session.group.acronym))
