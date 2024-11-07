@@ -14,10 +14,9 @@ class EmailViewSet(mixins.UpdateModelMixin, viewsets.GenericViewSet):
     """
     authentication_classes = []
     permission_classes = [permissions.AllowAny]
-    
     queryset = Email.objects.all()
+    lookup_value_regex = '.+@.+'  # allow @-sign in the pk
     serializer_class = EmailSerializer
-
 
 class PersonViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
     """Person viewset

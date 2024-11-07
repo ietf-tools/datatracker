@@ -19,7 +19,7 @@ class EmailSerializer(serializers.ModelSerializer):
             "origin",
         ]
         
-        read_only_fields = ["person", "origin"]
+        read_only_fields = ["person", "address", "origin"]
 
 
 class PersonSerializer(serializers.ModelSerializer):
