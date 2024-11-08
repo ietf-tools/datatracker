@@ -577,6 +577,7 @@ SPECTACULAR_SETTINGS = {
     "DESCRIPTION": "Datatracker API",
     "VERSION": "1.0.0",
     "SCHEMA_PATH_PREFIX": "/api/",
+    "COMPONENT_SPLIT_REQUEST": True,
     "COMPONENT_NO_READ_ONLY_REQUIRED": True,
     "SERVERS": [
         {"url": "http://localhost:8000", "description": "local dev server"},

@@ -8,7 +8,7 @@ from .models import Email, Person
 
 class EmailSerializer(serializers.ModelSerializer):
     """Email serializer"""
-    address = serializers.EmailField()
+    address = serializers.EmailField(read_only=True)
 
     class Meta:
         model = Email
@@ -19,7 +19,6 @@ class EmailSerializer(serializers.ModelSerializer):
             "active",
             "origin",
         ]
-        
         read_only_fields = ["person", "address", "origin"]
 
 
