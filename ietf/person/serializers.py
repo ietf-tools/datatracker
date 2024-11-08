@@ -8,7 +8,8 @@ from .models import Email, Person
 
 class EmailSerializer(serializers.ModelSerializer):
     """Email serializer"""
-    
+    address = serializers.EmailField()
+
     class Meta:
         model = Email
         fields = [
