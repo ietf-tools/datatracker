@@ -117,7 +117,7 @@ def notify_events(sender, instance, **kwargs):
     # start a Celery task during tests. To prevent this, don't queue a celery task if we're running
     # tests.
     if settings.SERVER_MODE != "test":
-        # Wrap in on_commit so the delayed task cannot start until the view is done with the DB
+        # Wrap in on_commit in case a transaction is open
         transaction.on_commit(
             lambda: notify_event_to_subscribers_task.delay(event_id=instance.pk)
         )

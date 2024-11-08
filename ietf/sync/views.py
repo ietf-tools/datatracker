@@ -80,25 +80,29 @@ def notify(request, org, notification):
     if request.method == "POST":
         if notification == "index":
             log("Queuing RFC Editor index sync from notify view POST")
-            # Wrap in on_commit so the delayed task cannot start until the view is done with the DB
+            # Wrap in on_commit in case a transaction is open
+            # (As of 2024-11-08, this only runs in a transaction during tests)
             transaction.on_commit(
                 lambda: tasks.rfc_editor_index_update_task.delay()
             )
         elif notification == "queue":
             log("Queuing RFC Editor queue sync from notify view POST")
-            # Wrap in on_commit so the delayed task cannot start until the view is done with the DB
+            # Wrap in on_commit in case a transaction is open
+            # (As of 2024-11-08, this only runs in a transaction during tests)
             transaction.on_commit(
                 lambda: tasks.rfc_editor_queue_updates_task.delay()
             )
         elif notification == "changes":
             log("Queuing IANA changes sync from notify view POST")
-            # Wrap in on_commit so the delayed task cannot start until the view is done with the DB
+            # Wrap in on_commit in case a transaction is open
+            # (As of 2024-11-08, this only runs in a transaction during tests)
             transaction.on_commit(
                 lambda: tasks.iana_changes_update_task.delay()
             )
         elif notification == "protocols":
             log("Queuing IANA protocols sync from notify view POST")
-            # Wrap in on_commit so the delayed task cannot start until the view is done with the DB
+            # Wrap in on_commit in case a transaction is open
+            # (As of 2024-11-08, this only runs in a transaction during tests)
             transaction.on_commit(
                 lambda: tasks.iana_protocols_update_task.delay()
             )
