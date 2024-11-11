@@ -1,6 +1,7 @@
 # Copyright The IETF Trust 2017-2024, All Rights Reserved
-
+from drf_spectacular.views import SpectacularAPIView
 from rest_framework import routers
+
 
 from django.conf import settings
 from django.urls import include, path
@@ -29,6 +30,7 @@ urlpatterns = [
     url(r'^v2/person/person', api_views.ApiV2PersonExportView.as_view()),
     # --- DRF API ---
     path("v3/", include(router.urls)),
+    path("v3/schema/", SpectacularAPIView.as_view()),
     #
     # --- Custom API endpoints, sorted alphabetically ---
     # Email alias information for drafts
