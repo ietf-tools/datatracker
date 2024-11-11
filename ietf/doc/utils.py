@@ -3,9 +3,7 @@
 
 
 import datetime
-import hashlib
 import io
-import json
 import math
 import os
 import re
@@ -1047,12 +1045,8 @@ def make_rev_history(doc):
     return sorted(history, key=lambda x: x['published'])
 
 
-def get_search_cache_key(params):
-    from ietf.doc.views_search import SearchForm
-    fields = set(SearchForm.base_fields) - set(['sort',])
-    kwargs = dict([ (k,v) for (k,v) in list(params.items()) if k in fields ])
-    key = "doc:document:search:" + hashlib.sha512(json.dumps(kwargs, sort_keys=True).encode('utf-8')).hexdigest()
-    return key
+def get_search_cache_key(key_fragment):
+    return f"doc:document:search:{key_fragment}"
 
 
 def build_file_urls(doc: Union[Document, DocHistory]):

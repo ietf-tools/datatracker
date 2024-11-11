@@ -4,8 +4,9 @@
 {% load widget_tweaks %}
 {% load ietf_filters %}
 <form id="search_form"
-      class="form-horizontal"
-      action="{% url 'ietf.doc.views_search.search' %}">
+      method="post"
+      class="form-horizontal">
+    {% csrf_token %}
     <!-- [html-validate-disable-block input-missing-label -- labelled via aria-label] -->
     <div class="input-group search_field">
         {{ form.name|add_class:"form-control"|attr:"placeholder:Document name/title/RFC number"|attr:"aria-label:Document name/title/RFC number" }}

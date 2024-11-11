@@ -37,6 +37,8 @@
 import re
 import datetime
 import copy
+import hashlib
+import json
 import operator
 
 from collections import defaultdict
@@ -46,7 +48,7 @@ from django import forms
 from django.conf import settings
 from django.core.cache import cache, caches
 from django.urls import reverse as urlreverse
-from django.db.models import Q
+from django.db.models import Q, QuerySet
 from django.http import Http404, HttpResponseBadRequest, HttpResponse, HttpResponseRedirect, QueryDict
 from django.shortcuts import render
 from django.utils import timezone
@@ -144,6 +146,28 @@ class SearchForm(forms.Form):
         if q['by'] != 'irtfstate':
             q['irtfstate'] = None
         return q
+
+    def cache_key_fragment(self):
+        """Hash a bound form to get a value for use in a cache key
+        
+        Raises a ValueError if the form is not valid.
+        """
+        def _serialize_value(val):
+            if isinstance(val, QuerySet):
+                return [item.pk for item in val]
+            else:
+                return getattr(val, "pk", val)  # use pk if present, else value
+    
+        if not self.is_valid():
+            raise ValueError(f"SearchForm invalid: {self.errors}")
+        contents = {
+            field_name: _serialize_value(field_value)
+            for field_name, field_value in self.cleaned_data.items() 
+            if field_name != "sort" and field_value is not None
+        }
+        contents_json = json.dumps(contents, sort_keys=True)
+        return hashlib.sha512(contents_json.encode("utf-8")).hexdigest()
+
 
 def retrieve_search_results(form, all_types=False):
     """Takes a validated SearchForm and return the results."""
@@ -257,42 +281,58 @@ def retrieve_search_results(form, all_types=False):
     return docs
 
 def search(request):
-    if request.GET:
-        # backwards compatibility
-        get_params = request.GET.copy()
-        if 'activeDrafts' in request.GET:
-            get_params['activedrafts'] = request.GET['activeDrafts']
-        if 'oldDrafts' in request.GET:
-            get_params['olddrafts'] = request.GET['oldDrafts']
-        if 'subState' in request.GET:
-            get_params['substate'] = request.GET['subState']
-
-        form = SearchForm(get_params)
-        if not form.is_valid():
-            return HttpResponseBadRequest("form not valid: %s" % form.errors)
-
-        cache_key = get_search_cache_key(get_params)
-        cached_val = cache.get(cache_key)
-        if cached_val:
-            [results, meta] = cached_val
-        else:
-            results = retrieve_search_results(form)
-            results, meta = prepare_document_table(request, results, get_params)
-            cache.set(cache_key, [results, meta]) # for settings.CACHE_MIDDLEWARE_SECONDS
-            log(f"Search results computed for {get_params}")
-        meta['searching'] = True
+    """Search for a draft"""
+    if request.method == "POST":
+        form = SearchForm(data=request.POST)
+        if form.is_valid():
+            cache_key = get_search_cache_key(
+                form.cache_key_fragment()
+            )
+            cached_val = cache.get(cache_key)
+            if cached_val:
+                [results, meta] = cached_val
+            else:
+                results = retrieve_search_results(form)
+                results, meta = prepare_document_table(request, results, form.cleaned_data)
+                cache.set(cache_key, [results, meta])  # for settings.CACHE_MIDDLEWARE_SECONDS
+                log(f"Search results computed for {form.cleaned_data}")
+            meta['searching'] = True
     else:
+        if request.GET:
+            # backwards compatibility
+            # todo - move this to the form? eliminate it?
+            get_params = request.GET.copy()
+            if "activeDrafts" in request.GET:
+                get_params["activedrafts"] = request.GET["activeDrafts"]
+            if "oldDrafts" in request.GET:
+                get_params["olddrafts"] = request.GET["oldDrafts"]
+            if "subState" in request.GET:
+                get_params["substate"] = request.GET["subState"]
+            # todo redirect to the search
         form = SearchForm()
         results = []
-        meta = { 'by': None, 'searching': False }
-        get_params = QueryDict('')
+        meta = {
+            "by": None,
+            "searching": False,
+        }
 
-    return render(request, 'doc/search/search.html', {
-        'form':form, 'docs':results, 'meta':meta, 'queryargs':get_params.urlencode() },
+    return render(
+        request,
+        'doc/search/search.html', 
+        context={
+            "form": form,
+            "docs": results,
+            "meta": meta
+        },
     )
 
 def frontpage(request):
-    form = SearchForm()
+    if request.method == "POST":
+        form = SearchForm(data=request.POST)
+        if form.is_valid():
+            """do stuff"""
+    else:
+        form = SearchForm()
     return render(request, 'doc/frontpage.html', {'form':form})
 
 def search_for_name(request, name):
