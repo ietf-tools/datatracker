@@ -283,6 +283,10 @@ def retrieve_search_results(form, all_types=False):
 
 def search(request):
     """Search for a draft"""
+    # defaults for results / meta
+    results = []
+    meta = {"by": None, "searching": False}
+
     if request.method == "POST":
         form = SearchForm(data=request.POST)
         if form.is_valid():
@@ -319,11 +323,6 @@ def search(request):
             )
         else:
             form = SearchForm()
-        results = []
-        meta = {
-            "by": None,
-            "searching": False,
-        }
 
     return render(
         request,
