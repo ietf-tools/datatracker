@@ -124,14 +124,11 @@ def chart_newrevisiondocevent(request):
 
 #@cache_page(60*15)
 def chart_data_newrevisiondocevent(request):
-    queryargs = request.GET
-    if queryargs:
-        cache_key = get_search_cache_key(queryargs)
+    form = SearchForm(data=request.GET)
+    if form.is_valid():
+        cache_key = get_search_cache_key(form.cache_key_fragment())
         results = cache.get(cache_key)
         if not results:
-            form = SearchForm(queryargs)
-            if not form.is_valid():
-                return HttpResponseBadRequest("form not valid: %s" % form.errors)
             results = retrieve_search_results(form)
             if results.exists():
                 cache.set(cache_key, results)
@@ -140,7 +137,7 @@ def chart_data_newrevisiondocevent(request):
         else:
             data = []
     else:
-        data = []
+        return HttpResponseBadRequest("form not valid: %s" % form.errors)
     return JsonResponse(data, safe=False)
 
 
