@@ -46,6 +46,7 @@ from functools import reduce
 
 from django import forms
 from django.conf import settings
+from django.contrib import messages
 from django.core.cache import cache, caches
 from django.urls import reverse as urlreverse
 from django.db.models import Q, QuerySet
@@ -299,8 +300,7 @@ def search(request):
             meta['searching'] = True
     else:
         if request.GET:
-            # backwards compatibility
-            # todo - move this to the form? eliminate it?
+            # backwards compatibility - fill in the form
             get_params = request.GET.copy()
             if "activeDrafts" in request.GET:
                 get_params["activedrafts"] = request.GET["activeDrafts"]
@@ -308,8 +308,17 @@ def search(request):
                 get_params["olddrafts"] = request.GET["oldDrafts"]
             if "subState" in request.GET:
                 get_params["substate"] = request.GET["subState"]
-            # todo redirect to the search
-        form = SearchForm()
+            form = SearchForm(data=get_params)
+            messages.error(
+                request,
+                (
+                    'Searching via the URL query string is deprecated.'
+                    'The form below has been filled in with your search parameters.'
+                    'To execute your search, please click "Search".'
+                ),
+            )
+        else:
+            form = SearchForm()
         results = []
         meta = {
             "by": None,

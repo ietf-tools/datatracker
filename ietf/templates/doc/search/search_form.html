@@ -5,7 +5,8 @@
 {% load ietf_filters %}
 <form id="search_form"
       method="post"
-      class="form-horizontal">
+      class="form-horizontal"
+      action="{% url 'ietf.doc.views_search.search' %}">
     {% csrf_token %}
     <!-- [html-validate-disable-block input-missing-label -- labelled via aria-label] -->
     <div class="input-group search_field">
