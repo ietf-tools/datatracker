@@ -336,12 +336,7 @@ def search(request):
     )
 
 def frontpage(request):
-    if request.method == "POST":
-        form = SearchForm(data=request.POST)
-        if form.is_valid():
-            """do stuff"""
-    else:
-        form = SearchForm()
+    form = SearchForm()
     return render(request, 'doc/frontpage.html', {'form':form})
 
 def search_for_name(request, name):
