@@ -60,7 +60,7 @@
     },
     
     // Use 'forwardPorts' to make a list of ports inside the container available locally.
-    "forwardPorts": [3000, 5432, 8000],
+    "forwardPorts": [3000, 5432, 8000, 9000, 9001],
     
     "portsAttributes": {
         "3000": {
@@ -78,6 +78,14 @@
         "8001": {
             "label": "Datatracker",
             "onAutoForward": "ignore"
+        },
+        "9000": {
+            "label": "Minio",
+            "onAutoForward": "silent"
+        },
+        "9001": {
+            "label": "Minio Console",
+            "onAutoForward": "silent"
         }
     },
     
