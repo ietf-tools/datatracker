@@ -23,8 +23,6 @@ from ietf.utils.log import log
 from ietf.utils.response import permission_denied
 
 
-SYNC_BIN_PATH = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../bin"))
-
 #@role_required('Secretariat', 'IANA', 'RFC Editor')
 def discrepancies(request):
     sections = find_discrepancies()
