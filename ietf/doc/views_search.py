@@ -49,14 +49,14 @@ from django.conf import settings
 from django.contrib import messages
 from django.core.cache import cache, caches
 from django.urls import reverse as urlreverse
-from django.db.models import Q, QuerySet
-from django.http import Http404, HttpResponseBadRequest, HttpResponse, HttpResponseRedirect, QueryDict
+from django.db.models import Q
+from django.http import Http404, HttpResponseBadRequest, HttpResponse, HttpResponseRedirect
 from django.shortcuts import render
 from django.utils import timezone
 from django.utils.html import strip_tags
 from django.utils.cache import _generate_cache_key # type: ignore
 from django.utils.text import slugify
-
+from django_stubs_ext import QuerySetAny
 
 import debug                            # pyflakes:ignore
 
@@ -154,7 +154,8 @@ class SearchForm(forms.Form):
         Raises a ValueError if the form is not valid.
         """
         def _serialize_value(val):
-            if isinstance(val, QuerySet):
+            # Need QuerySetAny instead of QuerySet until django-stubs 5.0.1
+            if isinstance(val, QuerySetAny):
                 return [item.pk for item in val]
             else:
                 return getattr(val, "pk", val)  # use pk if present, else value
