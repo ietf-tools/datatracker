@@ -14,8 +14,8 @@ services:
             # - datatracker-vscode-ext:/root/.vscode-server/extensions
         # Runs app on the same network as the database container, allows "forwardPorts" in devcontainer.json function.
         network_mode: service:db
-    blobstore:
-        network_mode: service:db
+    #blobstore:
+    #    network_mode: service:db
 
 volumes:
     datatracker-vscode-ext:
