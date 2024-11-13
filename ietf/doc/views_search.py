@@ -282,6 +282,7 @@ def retrieve_search_results(form, all_types=False):
 
     return docs
 
+
 def search(request):
     """Search for a draft"""
     # defaults for results / meta
@@ -291,18 +292,20 @@ def search(request):
     if request.method == "POST":
         form = SearchForm(data=request.POST)
         if form.is_valid():
-            cache_key = get_search_cache_key(
-                form.cache_key_fragment()
-            )
+            cache_key = get_search_cache_key(form.cache_key_fragment())
             cached_val = cache.get(cache_key)
             if cached_val:
                 [results, meta] = cached_val
             else:
                 results = retrieve_search_results(form)
-                results, meta = prepare_document_table(request, results, form.cleaned_data)
-                cache.set(cache_key, [results, meta])  # for settings.CACHE_MIDDLEWARE_SECONDS
+                results, meta = prepare_document_table(
+                    request, results, form.cleaned_data
+                )
+                cache.set(
+                    cache_key, [results, meta]
+                )  # for settings.CACHE_MIDDLEWARE_SECONDS
                 log(f"Search results computed for {form.cleaned_data}")
-            meta['searching'] = True
+            meta["searching"] = True
     else:
         if request.GET:
             # backwards compatibility - fill in the form
@@ -317,8 +320,8 @@ def search(request):
             messages.error(
                 request,
                 (
-                    'Searching via the URL query string is no longer supported. '
-                    'The form below has been filled in with the parameters from your request. '
+                    "Searching via the URL query string is no longer supported. "
+                    "The form below has been filled in with the parameters from your request. "
                     'To execute your search, please click "Search".'
                 ),
             )
@@ -327,17 +330,15 @@ def search(request):
 
     return render(
         request,
-        'doc/search/search.html', 
-        context={
-            "form": form,
-            "docs": results,
-            "meta": meta
-        },
+        "doc/search/search.html",
+        context={"form": form, "docs": results, "meta": meta},
     )
+
 
 def frontpage(request):
     form = SearchForm()
     return render(request, 'doc/frontpage.html', {'form':form})
+
 
 def search_for_name(request, name):
     def find_unique(n):
