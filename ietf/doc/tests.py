@@ -236,15 +236,15 @@ class SearchTests(TestCase):
         rfc = WgRfcFactory()
         draft.set_state(State.objects.get(type="draft", slug="rfc"))
         draft.relateddocument_set.create(relationship_id="became_rfc", target=rfc)
-        base_url = urlreverse("ietf.doc.views_search.search")
+        url = urlreverse("ietf.doc.views_search.search")
 
         # find by RFC
-        r = self.client.get(base_url + f"?rfcs=on&name={rfc.name}")
+        r = self.client.post(url, {"rfcs": "on", "name": rfc.name})
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, rfc.title)
 
         # find by draft
-        r = self.client.get(base_url + f"?activedrafts=on&rfcs=on&name={draft.name}")
+        r = self.client.post(url, {"activedrafts": "on", "rfcs": "on", "name": draft.name})
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, rfc.title)
 
