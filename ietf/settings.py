@@ -1058,8 +1058,6 @@ GROUP_ALIAS_DOMAIN = IETF_DOMAIN
 TEST_DATA_DIR = os.path.abspath(BASE_DIR + "/../test/data")
 
 
-POSTCONFIRM_PATH   = "/a/postconfirm/wrapper"
-
 USER_PREFERENCE_DEFAULTS = {
     "expires_soon"  : "14",
     "new_enough"    : "14",
