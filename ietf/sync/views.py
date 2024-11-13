@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 import datetime
-import os
 import json
 
 from django.conf import settings
