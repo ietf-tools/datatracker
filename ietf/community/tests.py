@@ -431,8 +431,10 @@ class CommunityListTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
 
+    # Mock out the on_commit call so we can tell whether the task was actually queued
+    @mock.patch("ietf.submit.views.transaction.on_commit", side_effect=lambda x: x())
     @mock.patch("ietf.community.models.notify_event_to_subscribers_task")
-    def test_notification_signal_receiver(self, mock_notify_task):
+    def test_notification_signal_receiver(self, mock_notify_task, mock_on_commit):
         """Saving a DocEvent should notify subscribers
         
         This implicitly tests that notify_events is hooked up to the post_save signal.

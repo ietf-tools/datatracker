@@ -26,6 +26,7 @@ from zoneinfo import ZoneInfo
 from django.urls import reverse as urlreverse
 from django.conf import settings
 from django.contrib.auth.models import User
+from django.core.serializers.json import DjangoJSONEncoder
 from django.test import Client, override_settings
 from django.db.models import F, Max
 from django.http import QueryDict, FileResponse
@@ -49,7 +50,7 @@ from ietf.meeting.utils import condition_slide_order
 from ietf.meeting.utils import add_event_info_to_session_qs, participants_for_meeting
 from ietf.meeting.utils import create_recording, get_next_sequence, bluesheet_data
 from ietf.meeting.views import session_draft_list, parse_agenda_filter_params, sessions_post_save, agenda_extract_schedule
-from ietf.meeting.views import get_summary_by_area, get_summary_by_type, get_summary_by_purpose
+from ietf.meeting.views import get_summary_by_area, get_summary_by_type, get_summary_by_purpose, generate_agenda_data
 from ietf.name.models import SessionStatusName, ImportantDateName, RoleName, ProceedingsMaterialTypeName
 from ietf.utils.decorators import skip_coverage
 from ietf.utils.mail import outbox, empty_outbox, get_payload_text
@@ -125,8 +126,12 @@ class BaseMeetingTestCase(TestCase):
         settings.MEETINGHOST_LOGO_PATH = self.saved_meetinghost_logo_path
         super().tearDown()
 
-    def write_materials_file(self, meeting, doc, content, charset="utf-8"):
-        path = os.path.join(self.materials_dir, "%s/%s/%s" % (meeting.number, doc.type_id, doc.uploaded_filename))
+    def write_materials_file(self, meeting, doc, content, charset="utf-8", with_ext=None):
+        if with_ext is None:
+            filename = doc.uploaded_filename
+        else:
+            filename = Path(doc.uploaded_filename).with_suffix(with_ext)
+        path = os.path.join(self.materials_dir, "%s/%s/%s" % (meeting.number, doc.type_id, filename))
 
         dirname = os.path.dirname(path)
         if not os.path.exists(dirname):
@@ -241,30 +246,34 @@ class MeetingTests(BaseMeetingTestCase):
 
         # Agenda API tests
         # -> Meeting data
-        r = self.client.get(urlreverse("ietf.meeting.views.api_get_agenda_data", kwargs=dict(num=meeting.number)))
-        self.assertEqual(r.status_code, 200)  
-        rjson = json.loads(r.content.decode("utf8"))
-        self.assertJSONEqual(
-            r.content.decode("utf8"),
+        # First, check that the generation function does the right thing
+        generated_data = generate_agenda_data(meeting.number)
+        self.assertEqual(
+            generated_data,
             {
                 "meeting": {
                     "number": meeting.number,
                     "city": meeting.city,
                     "startDate": meeting.date.isoformat(),
                     "endDate": meeting.end_date().isoformat(),
-                    "updated": rjson.get("meeting").get("updated"), # Just expect the value to exist
+                    "updated": generated_data.get("meeting").get("updated"),  # Just expect the value to exist
                     "timezone": meeting.time_zone,
                     "infoNote": meeting.agenda_info_note,
                     "warningNote": meeting.agenda_warning_note
                 },
-                "categories": rjson.get("categories"), # Just expect the value to exist
+                "categories": generated_data.get("categories"),  # Just expect the value to exist
                 "isCurrentMeeting": True,
-                "usesNotes": False, # make_meeting_test_data sets number=72
-                "schedule": rjson.get("schedule"), # Just expect the value to exist
+                "usesNotes": False,  # make_meeting_test_data sets number=72
+                "schedule": generated_data.get("schedule"),  # Just expect the value to exist
                 "floors": []
             }
         )
-        # -> Session Materials
+        with patch("ietf.meeting.views.generate_agenda_data", return_value=generated_data):
+            r = self.client.get(urlreverse("ietf.meeting.views.api_get_agenda_data", kwargs=dict(num=meeting.number)))
+        self.assertEqual(r.status_code, 200)  
+        # json.dumps using the DjangoJSONEncoder to handle timestamps consistently
+        self.assertJSONEqual(r.content.decode("utf8"), json.dumps(generated_data, cls=DjangoJSONEncoder))
+        # -> Session MaterialM
         r = self.client.get(urlreverse("ietf.meeting.views.api_get_session_materials", kwargs=dict(session_id=session.id)))
         self.assertEqual(r.status_code, 200)  
         rjson = json.loads(r.content.decode("utf8"))
@@ -397,6 +406,40 @@ class MeetingTests(BaseMeetingTestCase):
         # Floor Plan
         r = self.client.get(urlreverse('floor-plan', kwargs=dict(num=meeting.number)))
         self.assertEqual(r.status_code, 200)
+
+    def test_session_recordings_via_factories(self):
+        session = SessionFactory(meeting__type_id="ietf", meeting__date=date_today()-datetime.timedelta(days=180))
+        self.assertEqual(session.meetecho_recording_name, "")
+        self.assertEqual(len(session.recordings()), 0)
+        url = urlreverse("ietf.meeting.views.session_details", kwargs=dict(num=session.meeting.number, acronym=session.group.acronym))
+        r = self.client.get(url)
+        q = PyQuery(r.content)
+        # debug.show("q(f'#notes_and_recordings_{session.pk}')")
+        self.assertEqual(len(q(f"#notes_and_recordings_{session.pk} tr")), 1)
+        link = q(f"#notes_and_recordings_{session.pk} tr a")
+        self.assertEqual(len(link), 1)
+        self.assertEqual(link[0].attrib['href'], str(session.session_recording_url()))
+
+        session.meetecho_recording_name = 'my_test_session_name'
+        session.save()
+        r = self.client.get(url)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q(f"#notes_and_recordings_{session.pk} tr")), 1)
+        links = q(f"#notes_and_recordings_{session.pk} tr a")
+        self.assertEqual(len(links), 1)
+        self.assertEqual(links[0].attrib['href'], session.session_recording_url())
+
+        new_recording_url = "https://www.youtube.com/watch?v=jNQXAC9IVRw"
+        new_recording_title = "Me at the zoo"
+        create_recording(session, new_recording_url, new_recording_title)
+        r = self.client.get(url)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q(f"#notes_and_recordings_{session.pk} tr")), 2)
+        links = q(f"#notes_and_recordings_{session.pk} tr a")
+        self.assertEqual(len(links), 2)
+        self.assertEqual(links[0].attrib['href'], new_recording_url)
+        self.assertIn(new_recording_title, links[0].text_content())
+        #debug.show("q(f'#notes_and_recordings_{session_pk}')")
 
     def test_agenda_ical_next_meeting_type(self):
         # start with no upcoming IETF meetings, just an interim
@@ -753,7 +796,56 @@ class MeetingTests(BaseMeetingTestCase):
         )
         self.assertEqual(len(q(f'a[href^="{edit_url}#session"]')), 1, f'Link to session_details page for {acro}')
 
+    def test_materials_document_extension_choice(self):
+        def _url(**kwargs):
+            return urlreverse("ietf.meeting.views.materials_document", kwargs=kwargs)
 
+        presentation = SessionPresentationFactory(
+            document__rev="00",
+            document__name="slides-whatever",
+            document__uploaded_filename="slides-whatever-00.txt",
+            document__type_id="slides",
+            document__states=(("reuse_policy", "single"),)
+        )
+        session = presentation.session
+        meeting = session.meeting
+        # This is not a realistic set of files to exist, but is useful for testing. Normally,
+        # we'd have _either_ txt, pdf, or pptx + pdf.
+        self.write_materials_file(meeting, presentation.document, "Hi I'm a txt", with_ext=".txt")
+        self.write_materials_file(meeting, presentation.document, "Hi I'm a pptx", with_ext=".pptx")
+
+        # with no rev, prefers the uploaded_filename
+        r = self.client.get(_url(document="slides-whatever", num=meeting.number))  # no rev
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.content.decode(), "Hi I'm a txt")
+        
+        # with a rev, prefers pptx because it comes first alphabetically
+        r = self.client.get(_url(document="slides-whatever-00", num=meeting.number))
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.content.decode(), "Hi I'm a pptx")
+
+        # now create a pdf
+        self.write_materials_file(meeting, presentation.document, "Hi I'm a pdf", with_ext=".pdf")
+
+        # with no rev, still prefers uploaded_filename
+        r = self.client.get(_url(document="slides-whatever", num=meeting.number))  # no rev
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.content.decode(), "Hi I'm a txt")
+
+        # pdf should be preferred with a rev
+        r = self.client.get(_url(document="slides-whatever-00", num=meeting.number))
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.content.decode(), "Hi I'm a pdf")
+        
+        # and explicit extensions should, of course, be respected
+        for ext in ["pdf", "pptx", "txt"]:
+            r = self.client.get(_url(document="slides-whatever-00", num=meeting.number, ext=f".{ext}"))
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.content.decode(), f"Hi I'm a {ext}")
+        
+        # and 404 should come up if the ext is not found
+        r = self.client.get(_url(document="slides-whatever-00", num=meeting.number, ext=".docx"))
+        self.assertEqual(r.status_code, 404)
 
     def test_materials_editable_groups(self):
         meeting = make_meeting_test_data()
