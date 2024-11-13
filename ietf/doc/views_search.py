@@ -316,8 +316,8 @@ def search(request):
             messages.error(
                 request,
                 (
-                    'Searching via the URL query string is deprecated.'
-                    'The form below has been filled in with your search parameters.'
+                    'Searching via the URL query string is no longer supported. '
+                    'The form below has been filled in with the parameters from your request. '
                     'To execute your search, please click "Search".'
                 ),
             )
