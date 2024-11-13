@@ -71,6 +71,38 @@ from ietf.doc.utils_search import AD_WORKLOAD
 
 
 class SearchTests(TestCase):
+    def test_search_handles_querystring_parameters(self):
+        """Search parameters via querystring should not actually search"""
+        url = urlreverse("ietf.doc.views_search.search")
+        r = self.client.get(url + "?name=some-document-name&oldDrafts=on")
+        # Check that we got a valid response and that the warning about query string parameters is shown.
+        self.assertContains(
+            r,
+            "Searching via the URL query string is no longer supported.",
+            status_code=200,
+        )
+        # Check that the form was filled in correctly (not an exhaustive check, but different from the
+        # form defaults)
+        pq = PyQuery(r.content)
+        self.assertEqual(
+            pq("form#search_form input#id_name").attr("value"),
+            "some-document-name",
+            "The name field should be set in the SearchForm",
+        )
+        self.assertEqual(
+            pq("form#search_form input#id_olddrafts").attr("checked"),
+            "checked",
+            "The old drafts checkbox should be selected in the SearchForm",
+        )
+        self.assertIsNone(
+            pq("form#search_form input#id_rfcs").attr("checked"),
+            "The RFCs checkbox should not be selected in the SearchForm",
+        )
+        self.assertIsNone(
+            pq("form#search_form input#id_activedrafts").attr("checked"),
+            "The active drafts checkbox should not be selected in the SearchForm",
+        )
+
     def test_search(self):
 
         draft = WgDraftFactory(name='draft-ietf-mars-test',group=GroupFactory(acronym='mars',parent=Group.objects.get(acronym='farfut')),authors=[PersonFactory()],ad=PersonFactory())
