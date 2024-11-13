@@ -106,9 +106,7 @@ class SearchTests(TestCase):
     def test_search(self):
         draft = WgDraftFactory(
             name="draft-ietf-mars-test",
-            group=GroupFactory(
-                acronym="mars", parent=Group.objects.get(acronym="farfut")
-            ),
+            group=GroupFactory(acronym="mars", parent=Group.objects.get(acronym="farfut")),
             authors=[PersonFactory()],
             ad=PersonFactory(),
         )
@@ -120,107 +118,115 @@ class SearchTests(TestCase):
             title="Optimizing Martian Network Topologies",
         )
         old_draft.set_state(State.objects.get(used=True, type="draft", slug="expired"))
-
-        base_url = urlreverse("ietf.doc.views_search.search")
-
+    
+        url = urlreverse("ietf.doc.views_search.search")
+    
         # only show form, no search yet
-        r = self.client.get(base_url)
+        r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-
+    
         # no match
-        r = self.client.get(base_url + "?activedrafts=on&name=thisisnotadocumentname")
+        r = self.client.post(url, {"activedrafts": "on", "name": "thisisnotadocumentname"})
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, "No documents match")
-
-        r = self.client.get(base_url + "?rfcs=on&name=xyzzy")
+    
+        r = self.client.post(url, {"rfcs": "on", "name": "xyzzy"})
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, "No documents match")
-
-        r = self.client.get(base_url + "?olddrafts=on&name=bar")
+    
+        r = self.client.post(url, {"olddrafts": "on", "name": "bar"})
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, "No documents match")
-
-        r = self.client.get(base_url + "?olddrafts=on&name=foo")
+    
+        r = self.client.post(url, {"olddrafts": "on", "name": "foo"})
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, "draft-foo-mars-test")
-
-        r = self.client.get(base_url + "?olddrafts=on&name=FoO")  # mixed case
+    
+        r = self.client.post(url, {"olddrafts": "on", "name": "FoO"})  # mixed case
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, "draft-foo-mars-test")
-
+    
         # find by RFC
-        r = self.client.get(base_url + "?rfcs=on&name=%s" % rfc.name)
+        r = self.client.post(url, {"rfcs": "on", "name": rfc.name})
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, rfc.title)
-
+    
         # find by active/inactive
-
+    
         draft.set_state(State.objects.get(type="draft", slug="active"))
-        r = self.client.get(base_url + "?activedrafts=on&name=%s" % draft.name)
+        r = self.client.post(url, {"activedrafts": "on", "name": draft.name})
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, draft.title)
-
+    
         draft.set_state(State.objects.get(type="draft", slug="expired"))
-        r = self.client.get(base_url + "?olddrafts=on&name=%s" % draft.name)
+        r = self.client.post(url, {"olddrafts": "on", "name": draft.name})
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, draft.title)
-
+    
         draft.set_state(State.objects.get(type="draft", slug="active"))
-
+    
         # find by title
-        r = self.client.get(
-            base_url + "?activedrafts=on&name=%s" % draft.title.split()[0]
-        )
+        r = self.client.post(url, {"activedrafts": "on", "name": draft.title.split()[0]})
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, draft.title)
-
+    
         # find by author
-        r = self.client.get(
-            base_url
-            + "?activedrafts=on&by=author&author=%s"
-            % draft.documentauthor_set.first().person.name_parts()[1]
+        r = self.client.post(
+            url,
+            {
+                "activedrafts": "on",
+                "by": "author",
+                "author": draft.documentauthor_set.first().person.name_parts()[1],
+            },
         )
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, draft.title)
-
+    
         # find by group
-        r = self.client.get(
-            base_url + "?activedrafts=on&by=group&group=%s" % draft.group.acronym
+        r = self.client.post(
+            url,
+            {"activedrafts": "on", "by": "group", "group": draft.group.acronym},
         )
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, draft.title)
-
-        r = self.client.get(
-            base_url
-            + "?activedrafts=on&by=group&group=%s" % draft.group.acronym.swapcase()
+    
+        r = self.client.post(
+            url,
+            {"activedrafts": "on", "by": "group", "group": draft.group.acronym.swapcase()},
         )
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, draft.title)
-
+    
         # find by area
-        r = self.client.get(
-            base_url + "?activedrafts=on&by=area&area=%s" % draft.group.parent_id
+        r = self.client.post(
+            url,
+            {"activedrafts": "on", "by": "area", "area": draft.group.parent_id},
         )
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, draft.title)
-
+    
         # find by area
-        r = self.client.get(
-            base_url + "?activedrafts=on&by=area&area=%s" % draft.group.parent_id
+        r = self.client.post(
+            url,
+            {"activedrafts": "on", "by": "area", "area": draft.group.parent_id},
         )
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, draft.title)
-
+    
         # find by AD
-        r = self.client.get(base_url + "?activedrafts=on&by=ad&ad=%s" % draft.ad_id)
+        r = self.client.post(url, {"activedrafts": "on", "by": "ad", "ad": draft.ad_id})
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, draft.title)
-
+    
         # find by IESG state
-        r = self.client.get(
-            base_url
-            + "?activedrafts=on&by=state&state=%s&substate="
-            % draft.get_state("draft-iesg").pk
+        r = self.client.post(
+            url,
+            {
+                "activedrafts": "on",
+                "by": "state",
+                "state": draft.get_state("draft-iesg").pk,
+                "substate": "",
+            },
         )
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, draft.title)
