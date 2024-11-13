@@ -346,6 +346,7 @@ def augment_events_with_revision(doc, events):
     """Take a set of events for doc and add a .rev attribute with the
     revision they refer to by checking NewRevisionDocEvents."""
 
+    # Need QuerySetAny instead of QuerySet until django-stubs 5.0.1
     if isinstance(events, QuerySetAny):
         qs = events.filter(newrevisiondocevent__isnull=False)
     else:

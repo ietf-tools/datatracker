@@ -203,6 +203,7 @@ class SearchLiaisonForm(forms.Form):
 class CustomModelMultipleChoiceField(ModelMultipleChoiceField):
     '''If value is a QuerySet, return it as is (for use in widget.render)'''
     def prepare_value(self, value):
+        # Need QuerySetAny instead of QuerySet until django-stubs 5.0.1
         if isinstance(value, QuerySetAny):
             return value
         if (hasattr(value, '__iter__') and
