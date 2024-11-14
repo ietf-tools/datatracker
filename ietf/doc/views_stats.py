@@ -4,20 +4,15 @@ import copy
 import datetime
 
 from django.conf import settings
-from django.core.cache import cache
-from django.urls import reverse as urlreverse
 from django.db.models.aggregates import Count
 from django.db.models.functions import TruncDate
-from django.http import JsonResponse, HttpResponseBadRequest
-from django.shortcuts import render
+from django.http import JsonResponse
 from django.views.decorators.cache import cache_page
 
 import debug                            # pyflakes:ignore
 
 from ietf.doc.models import DocEvent
 from ietf.doc.templatetags.ietf_filters import comma_separated_list
-from ietf.doc.utils import get_search_cache_key
-from ietf.doc.views_search import SearchForm, retrieve_search_results
 from ietf.name.models import DocTypeName
 from ietf.person.models import Person
 from ietf.utils.timezone import date_today
@@ -112,49 +107,6 @@ def make_title(queryargs):
     if name:
         title += ' with name matching "%s"' % name
     return title
-
-def chart_newrevisiondocevent(request):
-    return render(request, "doc/stats/highstock.html", {
-            "title": "Document Statistics",
-            "confurl": urlreverse("ietf.doc.views_stats.chart_conf_newrevisiondocevent"),
-            "dataurl": urlreverse("ietf.doc.views_stats.chart_data_newrevisiondocevent"),
-            "queryargs": request.GET.urlencode(),
-            }
-        )
-
-#@cache_page(60*15)
-def chart_data_newrevisiondocevent(request):
-    queryargs = request.GET
-    if queryargs:
-        cache_key = get_search_cache_key(queryargs)
-        results = cache.get(cache_key)
-        if not results:
-            form = SearchForm(queryargs)
-            if not form.is_valid():
-                return HttpResponseBadRequest("form not valid: %s" % form.errors)
-            results = retrieve_search_results(form)
-            if results.exists():
-                cache.set(cache_key, results)
-        if results.exists():
-            data = model_to_timeline_data(DocEvent, doc__in=results, type='new_revision')
-        else:
-            data = []
-    else:
-        data = []
-    return JsonResponse(data, safe=False)
-
-
-@cache_page(60*15)
-def chart_conf_newrevisiondocevent(request):
-    queryargs = request.GET
-    if queryargs:
-        conf = copy.deepcopy(settings.CHART_TYPE_COLUMN_OPTIONS)
-        conf['title']['text'] = make_title(queryargs)
-        conf['series'][0]['name'] = "Submitted %s" % get_doctypes(queryargs, pluralize=True).lower(),
-    else:
-        conf = {}
-    return JsonResponse(conf)
-
 
 @cache_page(60*15)
 def chart_conf_person_drafts(request, id):
