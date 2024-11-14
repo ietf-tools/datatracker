@@ -1786,6 +1786,7 @@ def agenda_extract_schedule (item):
         "type": item.session.type.slug,
         "purpose": item.session.purpose.slug,
         "isBoF": item.session.group_at_the_time().state_id == "bof",
+        "isProposed": item.session.group_at_the_time().state_id == "proposed",
         "filterKeywords": item.filter_keywords,
         "groupAcronym": item.session.group_at_the_time().acronym,
         "groupName": item.session.group_at_the_time().name,
