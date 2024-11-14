@@ -596,14 +596,17 @@ def document_stats(request, stats_type=None):
 
         elif any(stats_type == t[0] for t in possible_yearly_stats_types):
 
-            person_filters = Q(documentauthor__document__type="draft")
-
             # filter persons
             rfc_state = State.objects.get(type="rfc", slug="published")
             if document_type == "rfc":
+                person_filters = Q(documentauthor__document__type="rfc")
                 person_filters &= Q(documentauthor__document__states=rfc_state)
             elif document_type == "draft":
+                person_filters = Q(documentauthor__document__type="draft")
                 person_filters &= ~Q(documentauthor__document__states=rfc_state)
+            else:
+                person_filters = Q(documentauthor__document__type="rfc")
+                person_filters |= Q(documentauthor__document__type="draft")
 
             doc_years = defaultdict(set)
 
@@ -625,8 +628,8 @@ def document_stats(request, stats_type=None):
                         ).values_list("source", flat=True)[:1]
                     )
                 )
-                .values_list("draft", "time")
-                .order_by("draft")
+                .values_list("doc", "time")
+                .order_by("doc")
             )
 
             for doc_id, time in rfcevent_qs.iterator():
@@ -663,9 +666,11 @@ def document_stats(request, stats_type=None):
                 for name, affiliation, doc in name_affiliation_doc_set:
                     a = aliases.get(affiliation, affiliation)
                     if a:
-                        for year in doc_years.get(doc):
-                            if years_from <= year <= years_to:
-                                bins[(year, a)].add(name)
+                        years = doc_years.get(doc)
+                        if years:
+                            for year in years:
+                                if years_from <= year <= years_to:
+                                    bins[(year, a)].add(name)
 
                 add_labeled_top_series_from_bins(chart_data, bins, limit=8)
 
@@ -724,9 +729,11 @@ def document_stats(request, stats_type=None):
                     continent_name = country_to_continent.get(country_name, "")
 
                     if continent_name:
-                        for year in doc_years.get(doc):
-                            if years_from <= year <= years_to:
-                                bins[(year, continent_name)].add(name)
+                        years = doc_years.get(doc)
+                        if years:
+                            for year in years:
+                                if years_from <= year <= years_to:
+                                    bins[(year, continent_name)].add(name)
 
                 add_labeled_top_series_from_bins(chart_data, bins, limit=8)
 
