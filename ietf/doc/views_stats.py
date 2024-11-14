@@ -4,20 +4,15 @@ import copy
 import datetime
 
 from django.conf import settings
-from django.core.cache import cache
-from django.urls import reverse as urlreverse
 from django.db.models.aggregates import Count
 from django.db.models.functions import TruncDate
-from django.http import JsonResponse, HttpResponseBadRequest
-from django.shortcuts import render
+from django.http import JsonResponse
 from django.views.decorators.cache import cache_page
 
 import debug                            # pyflakes:ignore
 
 from ietf.doc.models import DocEvent
 from ietf.doc.templatetags.ietf_filters import comma_separated_list
-from ietf.doc.utils import get_search_cache_key
-from ietf.doc.views_search import SearchForm, retrieve_search_results
 from ietf.name.models import DocTypeName
 from ietf.person.models import Person
 from ietf.utils.timezone import date_today
