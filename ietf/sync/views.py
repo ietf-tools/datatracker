@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 import datetime
-import os
 import json
 
 from django.conf import settings
@@ -22,8 +21,6 @@ from ietf.utils.serialize import object_as_shallow_dict
 from ietf.utils.log import log
 from ietf.utils.response import permission_denied
 
-
-SYNC_BIN_PATH = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../bin"))
 
 #@role_required('Secretariat', 'IANA', 'RFC Editor')
 def discrepancies(request):

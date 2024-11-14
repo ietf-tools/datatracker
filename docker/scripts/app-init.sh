@@ -29,6 +29,7 @@ echo "Starting nginx..."
 sudo nginx
 
 # Build node packages that requrie native compilation
+export COREPACK_ENABLE_DOWNLOAD_PROMPT=0
 echo "Compiling native node packages..."
 yarn rebuild
 

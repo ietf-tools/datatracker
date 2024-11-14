@@ -102,11 +102,12 @@ jobs:
 
     - uses: actions/setup-node@v4
       with:
-        node-version: '18'
+        node-version: '22'
 
     - name: Run all tests
       run: |
         echo "Installing dependencies..."
+        corepack enable
         yarn
         echo "Installing Playwright..."
         cd playwright
@@ -166,6 +167,7 @@ jobs:
         HOME: ""
       run: |
         echo "Installing dependencies..."
+        corepack enable
         yarn
         echo "Installing Playwright..."
         cd playwright
