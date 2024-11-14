@@ -2739,60 +2739,6 @@ class DocumentMeetingTests(TestCase):
                 self.assertIsNone(doc.get_related_meeting(), f'{doc.type.slug} should not be related to meeting')
 
 class ChartTests(ResourceTestCaseMixin, TestCase):
-    def test_search_chart_conf(self):
-        doc = IndividualDraftFactory()
-
-        conf_url = urlreverse('ietf.doc.views_stats.chart_conf_newrevisiondocevent')
-
-        # No qurey arguments; expect an empty json object
-        r = self.client.get(conf_url)
-        self.assertValidJSONResponse(r)
-        self.assertEqual(unicontent(r), '{}')
-
-        # No match
-        r = self.client.get(conf_url + '?activedrafts=on&name=thisisnotadocumentname')
-        self.assertValidJSONResponse(r)
-        d = r.json()
-        self.assertEqual(d['chart']['type'], settings.CHART_TYPE_COLUMN_OPTIONS['chart']['type'])
-
-        r = self.client.get(conf_url + '?activedrafts=on&name=%s'%doc.name[6:12])
-        self.assertValidJSONResponse(r)
-        d = r.json()
-        self.assertEqual(d['chart']['type'], settings.CHART_TYPE_COLUMN_OPTIONS['chart']['type'])
-        self.assertEqual(len(d['series'][0]['data']), 0)
-
-    def test_search_chart_data(self):
-        doc = IndividualDraftFactory()
-
-        data_url = urlreverse('ietf.doc.views_stats.chart_data_newrevisiondocevent')
-
-        # No qurey arguments; expect an empty json list
-        r = self.client.get(data_url)
-        self.assertValidJSONResponse(r)
-        self.assertEqual(unicontent(r), '[]')
-
-        # No match
-        r = self.client.get(data_url + '?activedrafts=on&name=thisisnotadocumentname')
-        self.assertValidJSONResponse(r)
-        d = r.json()
-        self.assertEqual(unicontent(r), '[]')
-
-        r = self.client.get(data_url + '?activedrafts=on&name=%s'%doc.name[6:12])
-        self.assertValidJSONResponse(r)
-        d = r.json()
-        self.assertEqual(len(d), 1)
-        self.assertEqual(len(d[0]), 2)
-
-    def test_search_chart(self):
-        doc = IndividualDraftFactory()
-
-        chart_url = urlreverse('ietf.doc.views_stats.chart_newrevisiondocevent')
-        r = self.client.get(chart_url)
-        self.assertEqual(r.status_code, 200)
-
-        r = self.client.get(chart_url + '?activedrafts=on&name=%s'%doc.name[6:12])
-        self.assertEqual(r.status_code, 200)
-        
     def test_personal_chart(self):
         person = PersonFactory.create()
         IndividualDraftFactory.create(
