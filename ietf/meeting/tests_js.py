@@ -5,7 +5,7 @@
 import time
 import datetime
 import shutil
-import os
+import tempfile
 import re
 
 from django.utils import timezone
@@ -249,7 +249,9 @@ class EditMeetingScheduleTests(IetfSeleniumTestCase):
         self.assertTrue(s1_element.is_displayed())  # should still be displayed
         self.assertIn('hidden-parent', s1_element.get_attribute('class'),
                       'Session should be hidden when parent disabled')
-        s1_element.click()  # try to select
+        
+        self.scroll_and_click((By.CSS_SELECTOR, '#session{}'.format(s1.pk)))
+
         self.assertNotIn('selected', s1_element.get_attribute('class'),
                          'Session should not be selectable when parent disabled')
 
@@ -299,9 +301,9 @@ class EditMeetingScheduleTests(IetfSeleniumTestCase):
                         'Session s1 should have moved to second meeting day')
 
         # swap timeslot column - put session in a differently-timed timeslot
-        self.driver.find_element(By.CSS_SELECTOR,
+        self.scroll_and_click((By.CSS_SELECTOR,
             '.day .swap-timeslot-col[data-timeslot-pk="{}"]'.format(slot1b.pk)
-        ).click()  # open modal on the second timeslot for room1
+        ))  # open modal on the second timeslot for room1
         self.assertTrue(self.driver.find_element(By.CSS_SELECTOR, "#swap-timeslot-col-modal").is_displayed())
         self.driver.find_element(By.CSS_SELECTOR,
             '#swap-timeslot-col-modal input[name="target_timeslot"][value="{}"]'.format(slot4.pk)
@@ -939,13 +941,8 @@ class InterimTests(IetfSeleniumTestCase):
     def tempdir(self, label):
         # Borrowed from  test_utils.TestCase
         slug = slugify(self.__class__.__name__.replace('.','-'))
-        dirname = "tmp-{label}-{slug}-dir".format(**locals())
-        if 'VIRTUAL_ENV' in os.environ:
-            dirname = os.path.join(os.environ['VIRTUAL_ENV'], dirname)
-        path = os.path.abspath(dirname)
-        if not os.path.exists(path):
-            os.mkdir(path)
-        return path
+        suffix = "-{label}-{slug}-dir".format(**locals())
+        return tempfile.mkdtemp(suffix=suffix)
 
     def displayed_interims(self, groups=None):
         sessions = add_event_info_to_session_qs(
@@ -1378,13 +1375,8 @@ class InterimTests(IetfSeleniumTestCase):
         self.assertFalse(modal_div.is_displayed())
 
         # Click the 'materials' button
-        open_modal_button = self.wait.until(
-            expected_conditions.element_to_be_clickable(
-                (By.CSS_SELECTOR, '[data-bs-target="#modal-%s"]' % slug)
-            ),
-            'Modal open button not found or not clickable',
-        )
-        open_modal_button.click()
+        open_modal_button_locator = (By.CSS_SELECTOR, '[data-bs-target="#modal-%s"]' % slug)
+        self.scroll_and_click(open_modal_button_locator)
         self.wait.until(
             expected_conditions.visibility_of(modal_div),
             'Modal did not become visible after clicking open button',

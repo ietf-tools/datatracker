@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2017, All Rights Reserved
+# Copyright The IETF Trust 2017-2024, All Rights Reserved
 
 from django.conf import settings
 from django.urls import include
@@ -27,6 +27,8 @@ urlpatterns = [
     url(r'^doc/draft-aliases/$', api_views.draft_aliases),
     # email ingestor
     url(r'email/$', api_views.ingest_email),
+    # email ingestor
+    url(r'email/test/$', api_views.ingest_email_test),
     # GDPR: export of personal information for the logged-in person
     url(r'^export/personal-information/$', api_views.PersonalInformationExportView.as_view()),
     # Email alias information for groups
@@ -37,6 +39,8 @@ urlpatterns = [
     url(r'^iesg/position', views_ballot.api_set_position),
     # Let Meetecho set session video URLs
     url(r'^meeting/session/video/url$', meeting_views.api_set_session_video_url),
+    # Let Meetecho tell us the name of its recordings
+    url(r'^meeting/session/recording-name$', meeting_views.api_set_meetecho_recording_name),
     # Meeting agenda + floorplan data
     url(r'^meeting/(?P<num>[A-Za-z0-9._+-]+)/agenda-data$', meeting_views.api_get_agenda_data),
     # Meeting session materials
@@ -57,7 +61,7 @@ urlpatterns = [
     # Email alias listing
     url(r'^person/email/$', api_views.active_email_list),
     # Draft submission API
-    url(r'^submit/?$', submit_views.api_submit),
+    url(r'^submit/?$', submit_views.api_submit_tombstone),
     # Draft upload API
     url(r'^submission/?$', submit_views.api_submission),
     # Draft submission state API
@@ -65,7 +69,7 @@ urlpatterns = [
     # Datatracker version
     url(r'^version/?$', api_views.version),
     # Application authentication API key
-    url(r'^appauth/[authortools|bibxml]', api_views.app_auth),
+    url(r'^appauth/(?P<app>authortools|bibxml)$', api_views.app_auth),
     # latest versions
     url(r'^rfcdiff-latest-json/%(name)s(?:-%(rev)s)?(\.txt|\.html)?/?$' % settings.URL_REGEXPS, api_views.rfcdiff_latest_json),
     url(r'^rfcdiff-latest-json/(?P<name>[Rr][Ff][Cc] [0-9]+?)(\.txt|\.html)?/?$', api_views.rfcdiff_latest_json),

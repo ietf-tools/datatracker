@@ -35,9 +35,12 @@
             <thead class="wrap-anywhere">
                 <tr>
                     <th scope="col" data-sort="name">Area Director</th>
+                    {% if dt.type.1 == "Internet-Draft" %}
+                        <th scope="col" data-sort="pre-pubreq">Pre pubreq</th>
+                    {% endif %}                    
                     {% for state, state_name in dt.states %}
-                        <th scope="col" class="col-1" title=""
-                            data-sort="{{ state }}-num">
+                        <th scope="col" class="col-1" data-sort="{{ state }}-num"
+                        >
                             <a href="{% url 'ietf.doc.views_help.state_help' type='draft-iesg' %}#{{ state }}">
                                 {{ state_name|split:'/'|join:'/<wbr>' }}
                             </a>
@@ -51,6 +54,17 @@
                         <td>
                             <a href="{{ ad.dashboard }}">{{ ad.name }}</a>
                         </td>
+                        {% if dt.type.1 == "Internet-Draft" %}
+                            <td
+                                class="col-1 align-bottom"
+                                data-sum="pre-pubreq"
+                                {% if user|has_role:"Area Director,Secretariat" %}
+                                    data-series-graph
+                                {% endif %}
+                            >
+                                {{ ad.pre_pubreq }}
+                            </td>
+                        {% endif %}            
                         {% for state, state_name in dt.states %}
                         <td class="col-1 align-bottom"
                             id="{{ dt.type.0 }}-{{ ad|slugify }}-{{ state }}">
@@ -63,6 +77,16 @@
             <tfoot class="table-group-divider">
                 <tr>
                     <th scope="row">Sum</th>
+                    {% if dt.type.1 == "Internet-Draft" %}
+                        <td class="align-bottom">
+                            <div
+                                data-sum-result="pre-pubreq"
+                                {% if user|has_role:"Area Director,Secretariat" %}
+                                    data-series-graph
+                                {% endif %}
+                            ></div>
+                        </td>
+                    {% endif %}
                     {% for state, state_name in dt.states %}
                         <td class="align-bottom">
                             <div id="chart-{{ dt.type.0 }}-sum-{{ state }}"></div>
@@ -87,37 +111,151 @@
     </script>
     <script src="{% static "ietf/js/highcharts.js" %}"></script>
     {{ data|json_script:"data" }}
+
     <script>
-        const data = JSON.parse(document.getElementById("data").textContent);
+        function highchartsConfigFactory({ element, ymax, series }){
+            return {
+                title: { text: undefined },
+                chart: {
+                    type: "line",
+                    animation: false,
+                    renderTo: element,
+                    panning: { enabled: false },
+                    spacing: [4, 0, 5, 0],
+                    height: "45%"
+                },
+                scrollbar: { enabled: false },
+                tooltip: { enabled: false },
+                navigator: { enabled: false },
+                exporting: { enabled: false },
+                legend: { enabled: false },
+                credits: { enabled: false },
+                xAxis: {
+                    title: { text: undefined},
+                    labels: { enabled: false },
+                    zoomEnabled: false,
+                    tickLength: 0
+                },
+                yAxis: {
+                    title: { text: undefined},
+                    zoomEnabled: false,
+                    tickLength: 0,
+                    labels: { x: -3 },
+                    min: 0,
+                    max: ymax,
+                    tickInterval: ymax
+                },
+                plotOptions: {
+                    series: {
+                        animation: false,
+                        dataLabels: {
+                            enabled: true,
+                            inside: true,
+                            padding: 0,
+                            formatter: function() {
+                                // only label the last
+                                // (= current-day) point in
+                                // the curve with today's
+                                // value
+                                if (this.point.index + 1 ==
+                                    this.series.points.length) {
+                                    return this.y
+                                }
+                                return undefined
+                            }
+                        }
+                    }
+                },
+                series: [{
+                    name: undefined,
+                    data: series,
+                    enableMouseTracking: false
+                }]
+            }
+        }
+    </script>
+
+    <script>
+        const GRAPH_BUFFER = 2;
+
+        function safeParseFloat(text) {
+            const trimNumber = text.trim()
+            if(!trimNumber.match(/^[0-9.]+$/)) {
+                console.warn(`Unable to parse "${trimNumber}" as a number.`)
+                return Number.NaN
+            }
+            return parseFloat(text)
+        }
+
+        Array.from(document.querySelectorAll("table"))
+            .filter(table => Boolean(table.querySelector("[data-sum]")))
+            .forEach(table => {
+                const sums = Array.from(table.querySelectorAll("[data-sum]")).reduce((
+                    sumsAccumulator,
+                    cell
+                ) => {                    
+                    const key = cell.dataset.sum
+                    const value = safeParseFloat(cell.textContent)
+                    if(key && !isNaN(value)) {
+                        sumsAccumulator[key] = (sumsAccumulator[key] || 0) + (value || 0)
+                    }
+                    return sumsAccumulator
+                }, {})
+
+                Array.from(table.querySelectorAll('[data-sum-result]')).forEach(result => {
+                    const key = result.dataset.sumResult
+                    const value = sums[key]
+
+                    if(value) {
+                        result.innerText = value
+                    }
+                })
+
+                Array.from(table.querySelectorAll('[data-series-graph]')).forEach(element => {
+                    const endValue = safeParseFloat(element.innerText)
+                    if(isNaN(endValue)) throw Error("Can't render Highcharts chart with non-numerical " + element.innerText)
+
+                    const ymax = Math.max(1, endValue + GRAPH_BUFFER)
+
+                    Highcharts.chart(
+                        highchartsConfigFactory({
+                            element,
+                            ymax,
+                            series: [endValue]
+                        })
+                    )
+                })
+            })
+    </script>
+    <script>
+        const data = JSON.parse(document.getElementById("data").textContent)
 
         Object.entries(data).forEach(([dt, ads]) => {
-            max = {};
+            max = {}
             Object.entries(ads).forEach(([ad, states]) => {
                 Object.entries(states).forEach(([state, buckets]) => {
-                    buckets.series = buckets.map((x) => x.length);
+                    buckets.series = buckets.map((x) => x.length)
                     if (ad != "sum") {
-                        max[state] = Math.max(...buckets.series,
-                                              max[state] ? max[state] : 0);
+                        max[state] = Math.max(...buckets.series, max[state] ? max[state] : 0)
                     }
-                });
-            });
+                })
+            })
 
             Object.entries(ads).forEach(([ad, states]) => {
                 Object.entries(states).forEach(([state, buckets]) => {
-                    const cell = `chart-${dt}-${ad}-${state}`;
+                    const cell = `chart-${dt}-${ad}-${state}`
 
                     // if there is only a single datapoint in the
                     // bucket, display it without a graph
                     if (buckets.series.length == 1) {
-                        document.getElementById(cell).innerHTML =
-                            buckets.series[0];
-                        return;
+                        document.getElementById(cell).innerHTML = buckets.series[0]
+                        return
                     }
 
                     // if a bucket has all zeroes, fake a Highcharts
                     // plot with HTML, to reduce the number of plot
                     // objects on the page
-                    if (buckets.series.every((x) => x == 0)) {
+                    if (buckets.series.every((x) => x === 0)) {
                         // document.getElementById(cell).innerHTML = `
                         //     <div class="position-relative">
                         //         <div class="position-absolute bottom-0 start-0">
@@ -128,71 +266,20 @@
                         //         </div>
                         //     </div>
                         // `;
-                        return;
+                        return
                     }
 
                     // else actually create a graph
-                    const ymax = Math.max(1, ad != "sum" ? max[state] : Math.max(...buckets.series));
-                    Highcharts.chart({
-                        title: { text: undefined },
-                        chart: {
-                            type: "line",
-                            animation: false,
-                            renderTo: cell,
-                            panning: { enabled: false },
-                            spacing: [4, 0, 5, 0],
-                            height: "45%",
-                        },
-                        scrollbar: { enabled: false },
-                        tooltip: { enabled: false },
-                        navigator: { enabled: false },
-                        exporting: { enabled: false },
-                        legend: { enabled: false },
-                        credits: { enabled: false },
-                        xAxis: {
-                            title: { text: undefined},
-                            labels: { enabled: false },
-                            zoomEnabled: false,
-                            tickLength: 0,
-                        },
-                        yAxis: {
-                            title: { text: undefined},
-                            zoomEnabled: false,
-                            tickLength: 0,
-                            labels: { x: -3 },
-                            min: 0,
-                            max: ymax,
-                            tickInterval: ymax,
-                        },
-                        plotOptions: {
-                            series: {
-                                animation: false,
-                                dataLabels: {
-                                    enabled: true,
-                                    inside: true,
-                                    padding: 0,
-                                    formatter: function() {
-                                        // only label the last
-                                        // (= current-day) point in
-                                        // the curve with today's
-                                        // value
-                                        if (this.point.index + 1 ==
-                                            this.series.points.length) {
-                                            return this.y;
-                                        }
-                                        return undefined;
-                                    }
-                                }
-                            }
-                        },
-                        series: [{
-                            name: undefined,
-                            data: buckets.series,
-                            enableMouseTracking: false,
-                        }],
-                    });
-                });
-            });
-        });
+                    const ymax = Math.max(1, ad !== "sum" ? max[state] : Math.max(...buckets.series))
+                    Highcharts.chart(
+                        highchartsConfigFactory({
+                            element: cell,
+                            ymax,
+                            series: buckets.series
+                        })
+                    )
+                })
+            })
+        })
     </script>
 {% endblock %}

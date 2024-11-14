@@ -4,6 +4,7 @@
 
 import datetime
 import mock
+import re
 
 from pyquery import PyQuery
 from urllib.parse import quote, urlparse
@@ -24,19 +25,21 @@ from ietf.doc.factories import (
     RfcFactory,
     NewRevisionDocEventFactory
 )
+from ietf.doc.utils import prettify_std_name
 from ietf.group.factories import RoleFactory
 from ietf.ipr.factories import (
     HolderIprDisclosureFactory,
     GenericIprDisclosureFactory,
     IprDisclosureBaseFactory,
     IprDocRelFactory,
-    IprEventFactory
+    IprEventFactory,
+    ThirdPartyIprDisclosureFactory
 )
-from ietf.ipr.forms import DraftForm
+from ietf.ipr.forms import DraftForm, HolderIprDisclosureForm
 from ietf.ipr.mail import (process_response_email, get_reply_to, get_update_submitter_emails,
-    get_pseudo_submitter, get_holders, get_update_cc_addrs)
-from ietf.ipr.models import (IprDisclosureBase,GenericIprDisclosure,HolderIprDisclosure,
-    ThirdPartyIprDisclosure)
+                           get_pseudo_submitter, get_holders, get_update_cc_addrs, UndeliverableIprResponseError)
+from ietf.ipr.models import (IprDisclosureBase, GenericIprDisclosure, HolderIprDisclosure,
+                             ThirdPartyIprDisclosure, IprEvent)
 from ietf.ipr.templatetags.ipr_filters import no_revisions_message
 from ietf.ipr.utils import get_genitive, get_ipr_summary, ingest_response_email
 from ietf.mailtrigger.utils import gather_address_lists
@@ -102,9 +105,26 @@ class IprTests(TestCase):
         self.assertTrue(messages[0].startswith('To: %s' % ipr.submitter_email))
         
     def test_showlist(self):
-        ipr = HolderIprDisclosureFactory()
-        r = self.client.get(urlreverse("ietf.ipr.views.showlist"))
-        self.assertContains(r, ipr.title)
+        for disc_factory_type in (HolderIprDisclosureFactory, GenericIprDisclosureFactory, ThirdPartyIprDisclosureFactory):
+            ipr = disc_factory_type(state_id="removed")
+            r = self.client.get(urlreverse("ietf.ipr.views.showlist"))
+            self.assertContains(r, ipr.title)
+            self.assertContains(r, "removed at the request of the submitter")
+            self.assertNotContains(r, "removed as objectively false")
+            ipr.state_id="posted"
+            ipr.save()
+            r = self.client.get(urlreverse("ietf.ipr.views.showlist"))
+            self.assertContains(r, ipr.title)
+            self.assertNotContains(r, "removed at the request of the submitter")
+            self.assertNotContains(r, "removed as objectively false")
+            ipr.state_id="removed_objfalse"
+            ipr.save()
+            r = self.client.get(urlreverse("ietf.ipr.views.showlist"))
+            self.assertContains(r, ipr.title)
+            self.assertNotContains(r, "removed at the request of the submitter")
+            self.assertContains(r, "removed as objectively false")
+            ipr.delete()
+
 
     def test_show_posted(self):
         ipr = HolderIprDisclosureFactory()
@@ -192,6 +212,32 @@ class IprTests(TestCase):
         r = self.client.get(url + "?submit=rfc&rfc=321")
         self.assertContains(r, ipr.title)
 
+        rfc_new = RfcFactory(rfc_number=322)
+        rfc_new.relateddocument_set.create(relationship_id="obs", target=rfc)
+
+        # find RFC 322 which obsoletes RFC 321 whose draft has IPR
+        r = self.client.get(url + "?submit=rfc&rfc=322")
+        self.assertContains(r, ipr.title)
+        self.assertContains(r, "Total number of IPR disclosures found: <b>1</b>")
+        self.assertContains(r, "Total number of documents searched: <b>3</b>.")
+        self.assertContains(
+            r,
+            f'Results for <a href="/doc/{rfc_new.name}/">{prettify_std_name(rfc_new.name)}</a> ("{rfc_new.title}")',
+            html=True,
+        )
+        self.assertContains(
+            r,
+            f'Results for <a href="/doc/{rfc.name}/">{prettify_std_name(rfc.name)}</a> ("{rfc.title}"), '
+            f'which was obsoleted by <a href="/doc/{rfc_new.name}/">{prettify_std_name(rfc_new.name)}</a> ("{rfc_new.title}")',
+            html=True,
+        )
+        self.assertContains(
+            r,
+            f'Results for <a href="/doc/{draft.name}/">{prettify_std_name(draft.name)}</a> ("{draft.title}"), '
+            f'which became rfc <a href="/doc/{rfc.name}/">{prettify_std_name(rfc.name)}</a> ("{rfc.title}")',
+            html=True,
+        )
+
         # find by patent owner
         r = self.client.get(url + "?submit=holder&holder=%s" % ipr.holder_legal_name)
         self.assertContains(r, ipr.title)
@@ -245,16 +291,16 @@ class IprTests(TestCase):
 
     def test_new_generic(self):
         """Ensure new-generic redirects to new-general"""
-        url = urlreverse("ietf.ipr.views.new", kwargs={ "type": "generic" })
+        url = urlreverse("ietf.ipr.views.new", kwargs={ "_type": "generic" })
         r = self.client.get(url)
         self.assertEqual(r.status_code,302)
-        self.assertEqual(urlparse(r["Location"]).path, urlreverse("ietf.ipr.views.new", kwargs={ "type": "general"}))
+        self.assertEqual(urlparse(r["Location"]).path, urlreverse("ietf.ipr.views.new", kwargs={ "_type": "general"}))
 
 
     def test_new_general(self):
         """Add a new general disclosure.  Note: submitter does not need to be logged in.
         """
-        url = urlreverse("ietf.ipr.views.new", kwargs={ "type": "general" })
+        url = urlreverse("ietf.ipr.views.new", kwargs={ "_type": "general" })
 
         # invalid post
         r = self.client.post(url, {
@@ -292,7 +338,7 @@ class IprTests(TestCase):
         """
         draft = WgDraftFactory()
         rfc = WgRfcFactory()
-        url = urlreverse("ietf.ipr.views.new", kwargs={ "type": "specific" })
+        url = urlreverse("ietf.ipr.views.new", kwargs={ "_type": "specific" })
 
         # successful post
         empty_outbox()
@@ -348,7 +394,7 @@ class IprTests(TestCase):
     def test_new_specific_no_revision(self):
         draft = WgDraftFactory()
         rfc = WgRfcFactory()
-        url = urlreverse("ietf.ipr.views.new", kwargs={ "type": "specific" })
+        url = urlreverse("ietf.ipr.views.new", kwargs={ "_type": "specific" })
 
         # successful post
         empty_outbox()
@@ -382,7 +428,7 @@ class IprTests(TestCase):
         """
         draft = WgDraftFactory()
         rfc = WgRfcFactory()
-        url = urlreverse("ietf.ipr.views.new", kwargs={ "type": "third-party" })
+        url = urlreverse("ietf.ipr.views.new", kwargs={ "_type": "third-party" })
 
         # successful post
         empty_outbox()
@@ -429,7 +475,7 @@ class IprTests(TestCase):
         r = self.client.get(url)
         self.assertContains(r, original_ipr.holder_legal_name)
 
-        #url = urlreverse("ietf.ipr.views.new", kwargs={ "type": "specific" })
+        #url = urlreverse("ietf.ipr.views.new", kwargs={ "_type": "specific" })
         # successful post
         empty_outbox()
         post_data = {
@@ -476,7 +522,7 @@ class IprTests(TestCase):
         r = self.client.get(url)
         self.assertContains(r, original_ipr.title)
 
-        #url = urlreverse("ietf.ipr.views.new", kwargs={ "type": "specific" })
+        #url = urlreverse("ietf.ipr.views.new", kwargs={ "_type": "specific" })
         # successful post
         empty_outbox()
         r = self.client.post(url, {
@@ -516,7 +562,7 @@ class IprTests(TestCase):
 
     def test_update_bad_post(self):
         draft = WgDraftFactory()
-        url = urlreverse("ietf.ipr.views.new", kwargs={ "type": "specific" })
+        url = urlreverse("ietf.ipr.views.new", kwargs={ "_type": "specific" })
 
         empty_outbox()
         r = self.client.post(url, {
@@ -685,7 +731,7 @@ I would like to revoke this declaration.
         )
         self.assertIn(f'{settings.IDTRACKER_BASE_URL}{urlreverse("ietf.ipr.views.showlist")}', get_payload_text(outbox[1]).replace('\n',' '))
 
-    def send_ipr_email_helper(self):
+    def send_ipr_email_helper(self) -> tuple[str, IprEvent, HolderIprDisclosure]:
         ipr = HolderIprDisclosureFactory()
         url = urlreverse('ietf.ipr.views.email',kwargs={ "id": ipr.id })
         self.client.login(username="secretary", password="secretary+password")
@@ -703,10 +749,11 @@ I would like to revoke this declaration.
         q = Message.objects.filter(reply_to=data['reply_to'])
         self.assertEqual(q.count(),1)
         event = q[0].msgevents.first()
+        assert event is not None
         self.assertTrue(event.response_past_due())
         self.assertEqual(len(outbox), 1)
         self.assertTrue('joe@test.com' in outbox[0]['To'])
-        return data['reply_to'], event
+        return data['reply_to'], event, ipr
 
     uninteresting_ipr_message_strings = [
         ("To: {to}\nCc: {cc}\nFrom: joe@test.com\nDate: {date}\nSubject: test\n"),
@@ -720,34 +767,46 @@ I would like to revoke this declaration.
 
     def test_process_response_email(self):
         # first send a mail
-        reply_to, event = self.send_ipr_email_helper()
+        reply_to, event, _ = self.send_ipr_email_helper()
 
         # test process response uninteresting messages
         addrs = gather_address_lists('ipr_disclosure_submitted').as_strings()
         for message_string in self.uninteresting_ipr_message_strings:
-            result = process_response_email(
+            process_response_email(
                 message_string.format(
                     to=addrs.to,
                     cc=addrs.cc,
                     date=timezone.now().ctime()
                 )
             )
-            self.assertIsNone(result)
-        
+
         # test process response
         message_string = """To: {}
 From: joe@test.com
 Date: {}
 Subject: test
 """.format(reply_to, timezone.now().ctime())
-        result = process_response_email(message_string)
-
-        self.assertIsInstance(result, Message)
+        process_response_email(message_string)
         self.assertFalse(event.response_past_due())
+
+        # test with an unmatchable message identifier
+        bad_reply_to = re.sub(
+            r"\+.{16}@",
+            '+0123456789abcdef@',
+            reply_to,
+        )
+        self.assertNotEqual(reply_to, bad_reply_to)
+        message_string = f"""To: {bad_reply_to}
+        From: joe@test.com
+        Date: {timezone.now().ctime()}
+        Subject: test
+        """
+        with self.assertRaises(UndeliverableIprResponseError):
+            process_response_email(message_string)
 
     def test_process_response_email_with_invalid_encoding(self):
         """Interesting emails with invalid encoding should be handled"""
-        reply_to, _ = self.send_ipr_email_helper()
+        reply_to, _, disclosure = self.send_ipr_email_helper()
         # test process response
         message_string = """To: {}
 From: joe@test.com
@@ -755,8 +814,8 @@ Date: {}
 Subject: test
 """.format(reply_to, timezone.now().ctime())
         message_bytes = message_string.encode('utf8') + b'\nInvalid stuff: \xfe\xff\n'
-        result = process_response_email(message_bytes)
-        self.assertIsInstance(result, Message)
+        process_response_email(message_bytes)
+        result = IprEvent.objects.filter(disclosure=disclosure).first().message  # newest
         # \ufffd is a rhombus character with an inverse ?, used to replace invalid characters
         self.assertEqual(result.body, 'Invalid stuff: \ufffd\ufffd\n\n',  # not sure where the extra \n is from
                          'Invalid characters should be replaced with \ufffd characters')
@@ -771,8 +830,7 @@ Subject: test
                                 cc=addrs.cc,
                                 date=timezone.now().ctime(),
             ).encode('utf8') + b'\nInvalid stuff: \xfe\xff\n'
-            result = process_response_email(message_bytes)
-            self.assertIsNone(result)
+            process_response_email(message_bytes)
 
     @override_settings(ADMINS=(("Some Admin", "admin@example.com"),))
     @mock.patch("ietf.ipr.utils.process_response_email")
@@ -789,11 +847,19 @@ Subject: test
         self.assertEqual(mock_process_response_email.call_args, mock.call(message))
         mock_process_response_email.reset_mock()
         
-        mock_process_response_email.side_effect = None
-        mock_process_response_email.return_value = None  # rejected message
+        mock_process_response_email.side_effect = UndeliverableIprResponseError
+        mock_process_response_email.return_value = None
         with self.assertRaises(EmailIngestionError) as context:
             ingest_response_email(message)
         self.assertIsNone(context.exception.as_emailmessage())  # should not send an email on a clean rejection
+        self.assertTrue(mock_process_response_email.called)
+        self.assertEqual(mock_process_response_email.call_args, mock.call(message))
+        mock_process_response_email.reset_mock()
+
+        mock_process_response_email.side_effect = None
+        mock_process_response_email.return_value = None  # ignored message
+        ingest_response_email(message)  # should not raise an exception
+        self.assertIsNone(context.exception.as_emailmessage())  # should not send an email on ignored message
         self.assertTrue(mock_process_response_email.called)
         self.assertEqual(mock_process_response_email.call_args, mock.call(message))
         mock_process_response_email.reset_mock()
@@ -995,3 +1061,61 @@ class DraftFormTests(TestCase):
             "revisions",
             null_char_error_msg,
         )
+
+
+class HolderIprDisclosureFormTests(TestCase):
+    def setUp(self):
+        super().setUp()
+        # Checkboxes that are False are left out of the Form data, not sent back at all. These are
+        # commented out - if they were checked, their value would be "on".
+        self.data = {
+            "holder_legal_name": "Test Legal",
+            "holder_contact_name": "Test Holder",
+            "holder_contact_email": "test@holder.com",
+            "holder_contact_info": "555-555-0100",
+            "ietfer_name": "Test Participant",
+            "ietfer_contact_info": "555-555-0101",
+            "iprdocrel_set-TOTAL_FORMS": 2,
+            "iprdocrel_set-INITIAL_FORMS": 0,
+            "iprdocrel_set-0-document": "1234",  # fake id - validates but won't save()
+            "iprdocrel_set-0-revisions": '00',
+            "iprdocrel_set-1-document": "4567",  # fake id - validates but won't save()
+            # "is_blanket_disclosure": "on", 
+            "patent_number": "SE12345678901",
+            "patent_inventor": "A. Nonymous",
+            "patent_title": "A method of transferring bits",
+            "patent_date": "2000-01-01",
+            # "has_patent_pending": "on",
+            "licensing": "reasonable",
+            "submitter_name": "Test Holder",
+            "submitter_email": "test@holder.com",
+        }
+        
+    def test_blanket_disclosure_licensing_restrictions(self):
+        """when is_blanket_disclosure is True only royalty-free licensing is valid
+        
+        Most of the form functionality is tested via the views in IprTests above. More thorough testing
+        of validation ought to move here so we don't have to exercise the whole Django plumbing repeatedly.
+        """       
+        self.assertTrue(HolderIprDisclosureForm(data=self.data).is_valid())       
+        self.data["is_blanket_disclosure"] = "on"
+        self.assertFalse(HolderIprDisclosureForm(data=self.data).is_valid())       
+        self.data["licensing"] = "royalty-free"
+        self.assertTrue(HolderIprDisclosureForm(data=self.data).is_valid())       
+
+    def test_patent_details_required_unless_blanket(self):
+        self.assertTrue(HolderIprDisclosureForm(data=self.data).is_valid())
+        patent_fields = ["patent_number", "patent_inventor", "patent_title", "patent_date"]
+        # any of the fields being missing should invalidate the form
+        for pf in patent_fields:
+            val = self.data.pop(pf)
+            self.assertFalse(HolderIprDisclosureForm(data=self.data).is_valid())
+            self.data[pf] = val
+
+        # should be optional if is_blanket_disclosure is True
+        self.data["is_blanket_disclosure"] = "on"
+        self.data["licensing"] = "royalty-free"  # also needed for a blanket disclosure
+        for pf in patent_fields:
+            val = self.data.pop(pf)
+            self.assertTrue(HolderIprDisclosureForm(data=self.data).is_valid())
+            self.data[pf] = val

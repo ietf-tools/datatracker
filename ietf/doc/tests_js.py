@@ -92,10 +92,8 @@ class EditAuthorsTests(IetfSeleniumTestCase):
         self.assertEqual(len(author_forms), 1)
 
         # get the "add author" button so we can add blank author forms
-        add_author_button = self.driver.find_element(By.ID, 'add-author-button')
         for index, auth in enumerate(authors):
-            self.scroll_to_element(add_author_button)  # Can only click if it's in view!
-            add_author_button.click()  # Create a new form. Automatically scrolls to it.
+            self.scroll_and_click((By.ID, 'add-author-button'))  # Create new form. Automatically scrolls to it.
             author_forms = authors_list.find_elements(By.CLASS_NAME, 'author-panel')
             authors_added = index + 1
             self.assertEqual(len(author_forms), authors_added + 1)  # Started with 1 author, hence +1

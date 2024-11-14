@@ -19,11 +19,13 @@ from email.mime.multipart import MIMEMultipart
 from email.header import Header, decode_header
 from email import message_from_bytes, message_from_string
 from email import charset as Charset
+from typing import Optional
 
 from django.conf import settings
 from django.contrib import messages
 from django.core.exceptions import ImproperlyConfigured, ValidationError
 from django.core.validators import validate_email
+from django.http import HttpRequest
 from django.template.loader import render_to_string
 from django.template import Context,RequestContext
 from django.utils import timezone
@@ -64,6 +66,18 @@ def add_headers(msg):
         msg['From'] = settings.DEFAULT_FROM_EMAIL
     return msg
 
+
+def decode_header_value(value: str) -> str:
+    """Decode a header value
+    
+    Easier-to-use wrapper around email.message.decode_header()
+    """
+    return "".join(
+        part.decode(charset if charset else "utf-8") if isinstance(part, bytes) else part
+        for part, charset in decode_header(value)
+    )
+
+
 class SMTPSomeRefusedRecipients(smtplib.SMTPException):
 
     def __init__(self, message, original_msg, refusals):
@@ -92,7 +106,17 @@ def send_smtp(msg, bcc=None):
     '''
     mark = time.time()
     add_headers(msg)
-    (fname, frm) = parseaddr(msg.get('From'))
+    # N.B. We have a disconnect with most of this code assuming a From header value will only
+    # have one address.
+    # The frm computed here is only used as the envelope from. 
+    # Previous code simply ran `parseaddr(msg.get('From'))`, getting lucky if the string returned
+    # from the get had more than one address in it. Python 3.9.20 changes the behavior of parseaddr
+    # and that erroneous use of the function no longer gets lucky.
+    # For the short term, to match behavior to date as closely as possible, if we get a message
+    # that has multiple addresses in the From header, we will use the first for the envelope from
+    from_tuples = getaddresses(msg.get_all('From', [settings.DEFAULT_FROM_EMAIL]))
+    assertion('len(from_tuples)==1', note=f"send_smtp received multiple From addresses: {from_tuples}")
+    _ , frm = from_tuples[0]
     addrlist = msg.get_all('To') + msg.get_all('Cc', [])
     if bcc:
         addrlist += [bcc]
@@ -241,8 +265,7 @@ def parseaddr(addr):
 
     """
 
-    addr = ''.join( [ ( s.decode(m) if m else s.decode()) if isinstance(s, bytes) else s for (s,m) in decode_header(addr) ] )
-    name, addr = simple_parseaddr(addr)
+    name, addr = simple_parseaddr(decode_header_value(addr))
     return name, addr
 
 def excludeaddrs(addrlist, exlist):
@@ -320,18 +343,45 @@ def condition_message(to, frm, subject, msg, cc, extra):
         msg['Message-ID'] = make_msgid()
 
 
-def show_that_mail_was_sent(request,leadline,msg,bcc):
-        if request and request.user:
-            from ietf.ietfauth.utils import has_role
-            if has_role(request.user,['Area Director','Secretariat','IANA','RFC Editor','ISE','IAD','IRTF Chair','WG Chair','RG Chair','WG Secretary','RG Secretary']):
-                info =  "%s at %s %s\n" % (leadline,timezone.now().strftime("%Y-%m-%d %H:%M:%S"),settings.TIME_ZONE)
-                info += "Subject: %s\n" % force_str(msg.get('Subject','[no subject]'))
-                info += "To: %s\n" % msg.get('To','[no to]')
-                if msg.get('Cc'):
-                    info += "Cc: %s\n" % msg.get('Cc')
-                if bcc:
-                    info += "Bcc: %s\n" % bcc
-                messages.info(request,info,extra_tags='preformatted',fail_silently=True)
+def show_that_mail_was_sent(request: HttpRequest, leadline: str, msg: Message, bcc: Optional[str]):
+    if request and request.user:
+        from ietf.ietfauth.utils import has_role
+
+        if has_role(
+            request.user,
+            [
+                "Area Director",
+                "Secretariat",
+                "IANA",
+                "RFC Editor",
+                "ISE",
+                "IAD",
+                "IRTF Chair",
+                "WG Chair",
+                "RG Chair",
+                "WG Secretary",
+                "RG Secretary",
+            ],
+        ):
+            subject = decode_header_value(msg.get("Subject", "[no subject]"))
+            _to = decode_header_value(msg.get("To", "[no to]"))
+            info_lines = [
+                f"{leadline} at {timezone.now():%Y-%m-%d %H:%M:%S %Z}",
+                f"Subject: {subject}",
+                f"To: {_to}",
+            ]
+            cc = msg.get("Cc", None)
+            if cc:
+                info_lines.append(f"Cc: {decode_header_value(cc)}")
+            if bcc:
+                info_lines.append(f"Bcc: {decode_header_value(bcc)}")
+            messages.info(
+                request,
+                "\n".join(info_lines),
+                extra_tags="preformatted",
+                fail_silently=True,
+            )
+
 
 def save_as_message(request, msg, bcc):
     by = ((request and request.user and not request.user.is_anonymous and request.user.person)
@@ -446,6 +496,8 @@ def parse_preformatted(preformatted, extra=None, override=None):
         values = msg.get_all(key, [])
         if values:
             values = getaddresses(values)
+            if key=='From':
+                assertion('len(values)<2', note=f'parse_preformatted is constructing a From with multiple values: {values}')
             del msg[key]
             msg[key] = ',\n    '.join(formataddr(v) for v in values)
     for key in ['Subject', ]:

@@ -21,7 +21,7 @@ import debug                            # pyflakes:ignore
 from ietf.doc.models import ( Document, State, StateType, DocEvent, DocRelationshipName,
     DocTagName, RelatedDocument, RelatedDocHistory )
 from ietf.doc.expire import move_draft_files_to_archive
-from ietf.doc.utils import add_state_change_event, prettify_std_name, update_action_holders
+from ietf.doc.utils import add_state_change_event, new_state_change_event, prettify_std_name, update_action_holders
 from ietf.group.models import Group
 from ietf.ipr.models import IprDocRel
 from ietf.name.models import StdLevelName, StreamName
@@ -202,11 +202,14 @@ def update_drafts_from_queue(drafts):
         if prev_state != next_state:
             d.set_state(next_state)
 
-            e = add_state_change_event(d, system, prev_state, next_state)
+            e = new_state_change_event(d, system, prev_state, next_state)  # unsaved
+            if e:
+                if auth48:
+                    e.desc = re.sub(r"(<b>.*</b>)", "<a href=\"%s\">\\1</a>" % auth48, e.desc)
+                e.save()
+                events.append(e)
 
             if auth48:
-                e.desc = re.sub(r"(<b>.*</b>)", "<a href=\"%s\">\\1</a>" % auth48, e.desc)
-                e.save()
                 # Create or update the auth48 URL whether or not this is a state expected to have one.
                 d.documenturl_set.update_or_create(
                     tag_id='auth48',  # look up existing based on this field
@@ -215,8 +218,6 @@ def update_drafts_from_queue(drafts):
             else:
                 # Remove any existing auth48 URL when an update does not have one.
                 d.documenturl_set.filter(tag_id='auth48').delete()
-            if e:
-                events.append(e)
 
             changed.add(name)
 

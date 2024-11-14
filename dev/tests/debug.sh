@@ -3,7 +3,7 @@
 # This script recreate the same environment used during tests on GitHub Actions
 # and drops you into a terminal at the point where the actual tests would be run.
 #
-# Refer to https://github.com/ietf-tools/datatracker/blob/main/.github/workflows/build.yml#L141-L155
+# Refer to https://github.com/ietf-tools/datatracker/blob/main/.github/workflows/tests.yml#L47-L66
 # for the commands to run next.
 #
 # Simply type "exit" + ENTER to exit and shutdown this test environment.
