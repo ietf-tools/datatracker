@@ -2,7 +2,7 @@ FROM python:3.9-bullseye
 LABEL maintainer="IETF Tools Team <tools-discuss@ietf.org>"
 
 ENV DEBIAN_FRONTEND=noninteractive
-ENV NODE_MAJOR=22
+ENV NODE_MAJOR=16
 
 # Update system packages
 RUN apt-get update \
@@ -96,7 +96,6 @@ RUN GK_VERSION=$(if [ ${GECKODRIVER_VERSION:-latest} = "latest" ]; then echo "0.
   && ln -fs /opt/geckodriver-$GK_VERSION /usr/bin/geckodriver
 
 # Activate Yarn
-ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
 RUN corepack enable
 
 # Get rid of installation files we don't need in the image, to reduce size
@@ -107,11 +106,11 @@ RUN apt-get autoremove -y && apt-get clean -y && rm -rf /var/lib/apt/lists/* /va
 ENV DBUS_SESSION_BUS_ADDRESS=/dev/null
 
 # avoid million NPM install messages
-ENV npm_config_loglevel=warn
+ENV npm_config_loglevel warn
 # allow installing when the main user is root
-ENV npm_config_unsafe_perm=true
+ENV npm_config_unsafe_perm true
 # disable NPM funding messages
-ENV npm_config_fund=false
+ENV npm_config_fund false
 
 # Set locale to en_US.UTF-8
 RUN echo "LC_ALL=en_US.UTF-8" >> /etc/environment && \
@@ -120,7 +119,7 @@ RUN echo "LC_ALL=en_US.UTF-8" >> /etc/environment && \
     dpkg-reconfigure locales && \
     locale-gen en_US.UTF-8 && \
     update-locale LC_ALL en_US.UTF-8
-ENV LC_ALL=en_US.UTF-8
+ENV LC_ALL en_US.UTF-8
 
 # Install idnits
 ADD https://raw.githubusercontent.com/ietf-tools/idnits-mirror/main/idnits /usr/local/bin/
