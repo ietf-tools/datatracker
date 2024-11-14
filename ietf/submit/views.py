@@ -90,7 +90,8 @@ def upload_submission(request):
             clear_existing_files(form)
             save_files(form)
             create_submission_event(request, submission, desc="Uploaded submission")
-            # Wrap in on_commit so the delayed task cannot start until the view is done with the DB
+            # Wrap in on_commit in case a transaction is open
+            # (As of 2024-11-08, this only runs in a transaction during tests)
             transaction.on_commit(
                 lambda: process_uploaded_submission_task.delay(submission.pk)
             )
@@ -166,7 +167,8 @@ def api_submission(request):
                 save_files(form)
                 create_submission_event(request, submission, desc="Uploaded submission through API")
 
-                # Wrap in on_commit so the delayed task cannot start until the view is done with the DB
+                # Wrap in on_commit in case a transaction is open
+                # (As of 2024-11-08, this only runs in a transaction during tests)
                 transaction.on_commit(
                     lambda: process_and_accept_uploaded_submission_task.delay(submission.pk)
                 )
