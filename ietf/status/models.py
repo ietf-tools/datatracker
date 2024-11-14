@@ -8,7 +8,6 @@ from django.db.models import ForeignKey
 import debug                            # pyflakes:ignore
 
 class Status(models.Model):
-    name = 'Status'
     
     date = models.DateTimeField(default=timezone.now)
     slug = models.SlugField(blank=False, null=False, unique=True)
