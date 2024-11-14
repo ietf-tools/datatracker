@@ -2334,8 +2334,8 @@ class ApprovalsTestCase(BaseSubmitTestCase):
         self.assertEqual(len(Preapproval.objects.filter(name=preapproval.name)), 0)
 
 
-# Transaction.on_commit() requires use of TransactionTestCase, but that has a performance penalty. Replace it
-# with a no-op for testing purposes.
+# Transaction.on_commit() interacts badly with TestCase's transaction behavior. Replace it
+# with a pass-through for testing purposes.
 @mock.patch.object(transaction, 'on_commit', lambda x: x())
 @override_settings(IDTRACKER_BASE_URL='https://datatracker.example.com')
 class ApiSubmissionTests(BaseSubmitTestCase):

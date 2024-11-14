@@ -320,51 +320,50 @@
                 </tr>
             {% endif %}
             {# Recordings #}
-            {% if session.has_recordings %}
-                {% with session.recordings as recordings %}
-                    {% if recordings %}
-                        {# There's no guaranteed order, so this is a bit messy: #}
-                        {# First, the audio recordings, if any #}
-                        {% for r in recordings %}
-                            {% if r.get_href and 'audio' in r.get_href %}
-                                <tr>
-                                    <td>
-                                        <a href="{{ r.get_href }}"><i class="bi bi-file-play"></i> {{ r.title }}</a>
-                                    </td>
-                                </tr>
-                            {% endif %}
-                        {% endfor %}
-                        {# Then the youtube recordings #}
-                        {% for r in recordings %}
-                            {% if r.get_href and 'youtu' in r.get_href %}
-                                <tr>
-                                    <td>
-                                        <a href="{{ r.get_href }}"><i class="bi bi-file-slides"></i> {{ r.title }}</a>
-                                    </td>
-                                </tr>
-                            {% endif %}
-                        {% endfor %}
-                        {# Finally, any other recordings #}
-                        {% for r in recordings %}
-                            {% if r.get_href and not 'audio' in r.get_href and not 'youtu' in r.get_href %}
-                                <tr>
-                                    <td>
-                                        <a href="{{ r.get_href }}"><i class="bi bi-file-play"></i> {{ r.title }}</a>
-                                    </td>
-                                </tr>
-                            {% endif %}
-                        {% endfor %}
-                    {% endif %}
-                {% endwith %}
-                {% if session.video_stream_url %}
-                    <tr>
-                        <td>
-                            <a href="{{ session.session_recording_url }}">
-                                <i class="bi bi-file-slides"></i> Session recording
-                            </a>
-                        </td>
-                    </tr>
+            {% with session.recordings as recordings %}
+                {% if recordings %}
+                    {# There's no guaranteed order, so this is a bit messy: #}
+                    {# First, the audio recordings, if any #}
+                    {% for r in recordings %}
+                        {% if r.get_href and 'audio' in r.get_href %}
+                            <tr>
+                                <td>
+                                    <a href="{{ r.get_href }}"><i class="bi bi-file-play"></i> {{ r.title }}</a>
+                                </td>
+                            </tr>
+                        {% endif %}
+                    {% endfor %}
+                    {# Then the youtube recordings #}
+                    {% for r in recordings %}
+                        {% if r.get_href and 'youtu' in r.get_href %}
+                            <tr>
+                                <td>
+                                    <a href="{{ r.get_href }}"><i class="bi bi-file-slides"></i> {{ r.title }}</a>
+                                </td>
+                            </tr>
+                        {% endif %}
+                    {% endfor %}
+                    {# Finally, any other recordings #}
+                    {% for r in recordings %}
+                        {% if r.get_href and not 'audio' in r.get_href and not 'youtu' in r.get_href %}
+                            <tr>
+                                <td>
+                                    <a href="{{ r.get_href }}"><i class="bi bi-file-play"></i> {{ r.title }}</a>
+                                </td>
+                            </tr>
+                        {% endif %}
+                    {% endfor %}
                 {% endif %}
+            {% endwith %}
+            {% if session.session_recording_url %}
+                <tr>
+                    <td>
+                        <a href="{{ session.session_recording_url }}">
+                            <i class="bi bi-file-slides"></i>
+                            Meetecho session recording
+                        </a>
+                    </td>
+                </tr>
             {% endif %}
             </tbody>
         </table>
