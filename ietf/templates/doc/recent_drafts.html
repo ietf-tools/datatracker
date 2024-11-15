@@ -1,9 +1,10 @@
 {% extends "base.html" %}
-{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{# Copyright The IETF Trust 2015-2024, All Rights Reserved #}
 {% load origin static %}
 {% load cache %}
 {% block pagehead %}
     <link rel="stylesheet" href="{% static "ietf/css/list.css" %}">
+    <link rel="alternate" type="application/atom+xml" href="/feed/draft/" title="Internet-Drafts">
 {% endblock %}
 {% block title %}Internet-Drafts submitted during the last {{ days|default:7 }} days{% endblock %}
 {% block content %}
