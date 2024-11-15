@@ -557,9 +557,10 @@ INTERNAL_IPS = (
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "ietf.api.authentication.ApiKeyAuthentication",
+        "rest_framework.authentication.SessionAuthentication",
     ],
     "DEFAULT_PERMISSION_CLASSES": [
-        "ietf.api.permissions.ApiKeyEndpointPermissions",
+        "ietf.api.permissions.HasApiKey",
     ],
     "DEFAULT_RENDERER_CLASSES": [
         "rest_framework.renderers.JSONRenderer",

@@ -1,10 +1,10 @@
 # Copyright The IETF Trust 2024, All Rights Reserved
 #
-import rest_framework.permissions
+from rest_framework import permissions
 from ietf.api.ietf_utils import is_valid_token
 
 
-class ApiKeyEndpointPermissions(rest_framework.permissions.BasePermission):
+class HasApiKey(permissions.BasePermission):
     """Permissions class that validates a token using is_valid_token
     
     The view class must indicate the relevant endpoint by setting `api_key_endpoint`.
