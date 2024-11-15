@@ -367,6 +367,55 @@
             {% endif %}
             </tbody>
         </table>
+
+    </div>
+    <h2 class="mt-5">Notes and Recordings already linked to this session</h2>
+    <table class="table table-sm table-striped tablesorter">
+        <thead>
+            <tr>
+                <th scope="col" data-sort="num">Revision</th>
+                <th scope="col" data-sort="document">Document</th>
+            </tr>
+        </thead>
+        {% if already_linked %}
+            <tbody>
+                {% for sp in already_linked %}
+                    <tr>
+                        <td>
+                            {% if sp.rev %}
+                                -{{ sp.rev }}
+                            {% else %}
+                                (current)
+                            {% endif %}
+                        </td>
+                        <td><a href="{{ sp.external_url }}">{{ sp.title }}</a></td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        {% else %}
+            <tbody>
+                <tr>
+                    <td colspan="2" class="text-center font-italic">(none)</td>
+                </tr>
+            </tbody>
+        {% endif %}
+    </table>
+
+    <h2 class="mt-5">Add additional recordings to this session</h2>
+    <form method="post">
+        {% csrf_token %}
+        {% bootstrap_form form %}
+        <button class="btn btn-{% if session.is_material_submission_cutoff %}warning{% else %}primary{% endif %}"
+                type="submit">
+            Save
+        </button>
+        <a class="btn btn-secondary float-end"
+           href="{% url 'ietf.meeting.views.session_details' num=session.meeting.number acronym=session.group.acronym %}">
+            Back
+        </a>
+    </form>
+{% endblock %}
+{% block js %}{{ form.media.js }}{% endblock %}
     {% endif %}
 {% endwith %}{% endwith %}
 {% endfor %}

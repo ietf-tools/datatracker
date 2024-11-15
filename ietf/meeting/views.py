@@ -2568,6 +2568,63 @@ def add_session_drafts(request, session_id, num):
                     'form': form,
                   })
 
+class SessionNotesAndRecordingsForm(forms.Form):
+    title = forms.CharField(max_length=255)
+    url = forms.URLField(label="Link to recording (YouTube only)")
+
+    def __init__(self, *args, **kwargs):
+        self.already_linked = kwargs.pop('already_linked')
+        super(self.__class__, self).__init__(*args, **kwargs)
+
+    def clean(self):title = forms.CharField(max_length=255)
+    url = forms.URLField(label="Link to recording (YouTube only)")
+
+    def __init__(self, *args, **kwargs):
+        self.already_linked = kwargs.pop('already_linked')
+        super(self.__class__, self).__init__(*args, **kwargs)
+
+    def clean(self):
+        url = self.cleaned_data['url']
+        parsed_url = urlparse(url)
+        if parsed_url.hostname not in ['www.youtube.com', 'youtube.com', 'youtu.be', 'm.youtube.com', 'youtube-nocookie.com', 'www.youtube-nocookie.com']:
+            raise forms.ValidationError("Must be a YouTube URL")
+        problems = set(url).intersection(set(self.already_linked)) 
+        if problems:
+           raise forms.ValidationError("Already linked: %s" % ', '.join([d.name for d in problems]))
+        return self.cleaned_data
+
+
+def add_session_recordings(request, session_id, num):
+    # num is redundant, but we're dragging it along an artifact of where we are in the current URL structure
+    session = get_object_or_404(Session,pk=session_id)
+    if not session.can_manage_materials(request.user):
+        raise Http404
+    if session.is_material_submission_cutoff() and not has_role(request.user, "Secretariat"):
+        raise Http404
+
+    already_linked = [material.external_url for material in session.materials.filter(type="recording").exclude(states__type="recording", states__slug='deleted').order_by('presentations__order')]
+
+    session_number = None
+    sessions = get_sessions(session.meeting.number,session.group.acronym)
+    if len(sessions) > 1:
+       session_number = 1 + sessions.index(session)
+
+    if request.method == 'POST':
+        form = SessionNotesAndRecordingsForm(request.POST,already_linked=already_linked)
+        if form.is_valid():
+            title = form.cleaned_data['title']
+            url = form.cleaned_data['url']
+            create_recording(session, url, title=title, user=request.user.person)
+            return redirect('ietf.meeting.views.session_details', num=session.meeting.number, acronym=session.group.acronym)
+    else:
+        form = SessionNotesAndRecordingsForm(already_linked=already_linked)
+
+    return render(request, "meeting/add_session_recordings.html",
+                  { 'session': session,
+                    'session_number': session_number,
+                    'already_linked': session.materials.filter(type="recording").exclude(states__type="recording", states__slug='deleted').order_by('presentations__order'),
+                    'form': form,
+                  })
 
 def session_attendance(request, session_id, num):
     """Session attendance view
