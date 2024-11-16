@@ -7,7 +7,8 @@ from .models import Email, Person
 
 
 class EmailSerializer(serializers.ModelSerializer):
-    """Email serializer"""
+    """Email serializer for read/update"""
+
     address = serializers.EmailField(read_only=True)
 
     class Meta:
@@ -20,6 +21,23 @@ class EmailSerializer(serializers.ModelSerializer):
             "origin",
         ]
         read_only_fields = ["person", "address", "origin"]
+
+
+class EmailCreationSerializer(serializers.ModelSerializer):
+    """Email serializer for creation only"""
+    address = serializers.EmailField()
+
+    class Meta:
+        model = Email
+        fields = [
+            "address",
+            "primary",
+            "active",
+        ]
+        # Because address is the primary key, it's read-only by default.
+        # Use extra_kwargs to force it into the writeable parameter list.
+        # This can go away if we move to a surrogate primary key for Email.
+        extra_kwargs = {"address": {}}
 
 
 class PersonSerializer(serializers.ModelSerializer):

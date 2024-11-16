@@ -16,3 +16,24 @@ class HasApiKey(permissions.BasePermission):
         if endpoint is not None and auth_token is not None:
             return is_valid_token(endpoint, auth_token)
         return False
+
+
+class IsOwnPerson(permissions.BasePermission):
+    """Permission to access own Person object"""
+    def has_object_permission(self, request, view, obj):
+        if not (request.user.is_authenticated and hasattr(request.user, "person")):
+            return False
+        return obj == request.user.person
+
+
+class BelongsToOwnPerson(permissions.BasePermission):
+    """Permission to access objects associated with own Person
+    
+    Requires that the object have a "person" field that indicates ownership.
+    """
+    def has_object_permission(self, request, view, obj):
+        if not (request.user.is_authenticated and hasattr(request.user, "person")):
+            return False
+        return (
+            hasattr(obj, "person") and obj.person == request.user.person
+        )
