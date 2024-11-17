@@ -40,8 +40,6 @@
                                 {% else %}
                                     (current)
                                 {% endif %}
-
-                                {{ sp.pk }}
                             </td>
                             <td><a href="{{ sp.external_url }}">{{ sp.title }}</a></td>
                             <td><button type="submit" aria-label="Delete {{ sp.title }}" class="btn btn-danger" name="delete" value="{{ sp.pk }}">Delete</button></td>
