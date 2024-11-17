@@ -19,37 +19,44 @@
             The deadline for submission corrections has passed. This may affect published proceedings.
         </div>
     {% endif %}
-    <h2 class="mt-5">Recordings already linked to this session</h2>
-    <table class="table table-sm table-striped tablesorter">
-        <thead>
-            <tr>
-                <th scope="col" data-sort="num">Revision</th>
-                <th scope="col" data-sort="document">Document</th>
-            </tr>
-        </thead>
-        {% if already_linked %}
-            <tbody>
-                {% for sp in already_linked %}
-                    <tr>
-                        <td>
-                            {% if sp.rev %}
-                                -{{ sp.rev }}
-                            {% else %}
-                                (current)
-                            {% endif %}
-                        </td>
-                        <td><a href="{{ sp.external_url }}">{{ sp.title }}</a></td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        {% else %}
-            <tbody>
+    <form method="post">
+        {% csrf_token %}
+        <h2 class="mt-5">Recordings already linked to this session</h2>
+        <table class="table table-sm table-striped tablesorter">
+            <thead>
                 <tr>
-                    <td colspan="2" class="text-center font-italic">(none)</td>
+                    <th scope="col" data-sort="num">Revision</th>
+                    <th scope="col" data-sort="document">Document</th>
+                    <th scope="col">Delete</th>
                 </tr>
-            </tbody>
-        {% endif %}
-    </table>
+            </thead>
+            {% if already_linked %}
+                <tbody>
+                    {% for sp in already_linked %}
+                        <tr>
+                            <td>
+                                {% if sp.rev %}
+                                    -{{ sp.rev }}
+                                {% else %}
+                                    (current)
+                                {% endif %}
+
+                                {{ sp.pk }}
+                            </td>
+                            <td><a href="{{ sp.external_url }}">{{ sp.title }}</a></td>
+                            <td><button type="submit" aria-label="Delete {{ sp.title }}" class="btn btn-danger" name="delete" value="{{ sp.pk }}">Delete</button></td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            {% else %}
+                <tbody>
+                    <tr>
+                        <td colspan="3" class="text-center font-italic">(none)</td>
+                    </tr>
+                </tbody>
+            {% endif %}
+        </table>
+    </form>
     <h2 class="mt-5">Add additional recordings to this session</h2>
     <form method="post">
         {% csrf_token %}

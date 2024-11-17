@@ -86,7 +86,7 @@ from ietf.meeting.utils import diff_meeting_schedules, prefetch_schedule_diff_ob
 from ietf.meeting.utils import swap_meeting_schedule_timeslot_assignments, bulk_create_timeslots
 from ietf.meeting.utils import preprocess_meeting_important_dates
 from ietf.meeting.utils import new_doc_for_session, write_doc_for_session
-from ietf.meeting.utils import get_activity_stats, post_process, create_recording
+from ietf.meeting.utils import get_activity_stats, post_process, create_recording, delete_recording
 from ietf.meeting.utils import participants_for_meeting, generate_bluesheet, bluesheet_data, save_bluesheet
 from ietf.message.utils import infer_message
 from ietf.name.models import SlideSubmissionStatusName, ProceedingsMaterialTypeName, SessionPurposeName
@@ -2608,16 +2608,20 @@ def add_session_recordings(request, session_id, num):
        session_number = 1 + sessions.index(session)
 
     if request.method == 'POST':
-        form = SessionNotesAndRecordingsForm(request.POST,already_linked=already_linked)
-        if form.is_valid():
-            title = form.cleaned_data['title']
-            url = form.cleaned_data['url']
-            create_recording(session, url, title=title, user=request.user.person)
-            return redirect('ietf.meeting.views.session_details', num=session.meeting.number, acronym=session.group.acronym)
-    else:
-        today = datetime.datetime.now()
-        initial = {'title': f"Video recording for {session.group.acronym} on {today.strftime('%b-%d-%Y at %H:%M:%S')}"}
-        form = SessionNotesAndRecordingsForm(initial=initial, already_linked=already_linked)
+        delete = request.POST['delete']
+        if delete:
+            delete_recording(pk=delete, session=session)
+        else:
+            form = SessionNotesAndRecordingsForm(request.POST,already_linked=already_linked)
+            if form.is_valid():
+                title = form.cleaned_data['title']
+                url = form.cleaned_data['url']
+                create_recording(session, url, title=title, user=request.user.person)
+                return redirect('ietf.meeting.views.session_details', num=session.meeting.number, acronym=session.group.acronym)
+    
+    today = datetime.datetime.now()
+    initial = {'title': f"Video recording for {session.group.acronym} on {today.strftime('%b-%d-%Y at %H:%M:%S')}"}
+    form = SessionNotesAndRecordingsForm(initial=initial, already_linked=already_linked)
 
     return render(request, "meeting/add_session_recordings.html",
                   { 'session': session,
