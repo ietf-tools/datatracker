@@ -26,17 +26,47 @@ from ietf.group.utils import group_features_group_filter
 from ietf.ietfauth.utils import has_role, role_required
 from ietf.mailtrigger.utils import gather_address_lists
 from ietf.person.models import Email
-from ietf.submit.forms import (SubmissionAutoUploadForm, AuthorForm, SubmitterForm, EditSubmissionForm,
-                               PreapprovalForm, ReplacesForm, SubmissionManualUploadForm)
+from ietf.submit.forms import (
+    SubmissionAutoUploadForm,
+    AuthorForm,
+    SubmitterForm,
+    EditSubmissionForm,
+    PreapprovalForm,
+    ReplacesForm,
+    SubmissionManualUploadForm,
+    SubmissionSearchForm,
+)
 from ietf.submit.mail import send_full_url, send_manual_post_request
-from ietf.submit.models import (Submission, Preapproval, SubmissionExtResource,
-    DraftSubmissionStateName )
-from ietf.submit.tasks import process_uploaded_submission_task, process_and_accept_uploaded_submission_task, poke
-from ietf.submit.utils import ( approvable_submissions_for_user, preapprovals_for_user,
-    recently_approved_by_user, validate_submission, create_submission_event, docevent_from_submission,
-    post_submission, cancel_submission, rename_submission_files, remove_submission_files,
-    get_submission, save_files, clear_existing_files, accept_submission, accept_submission_requires_group_approval,
-    accept_submission_requires_prev_auth_approval, update_submission_external_resources)
+from ietf.submit.models import (
+    Submission,
+    Preapproval,
+    SubmissionExtResource,
+    DraftSubmissionStateName,
+)
+from ietf.submit.tasks import (
+    process_uploaded_submission_task,
+    process_and_accept_uploaded_submission_task,
+    poke,
+)
+from ietf.submit.utils import (
+    approvable_submissions_for_user,
+    preapprovals_for_user,
+    recently_approved_by_user,
+    validate_submission,
+    create_submission_event,
+    docevent_from_submission,
+    post_submission,
+    cancel_submission,
+    rename_submission_files,
+    remove_submission_files,
+    get_submission,
+    save_files,
+    clear_existing_files,
+    accept_submission,
+    accept_submission_requires_group_approval,
+    accept_submission_requires_prev_auth_approval,
+    update_submission_external_resources,
+)
 from ietf.stats.utils import clean_country_name
 from ietf.utils.accesstoken import generate_access_token
 from ietf.utils.log import log
@@ -60,7 +90,8 @@ def upload_submission(request):
             clear_existing_files(form)
             save_files(form)
             create_submission_event(request, submission, desc="Uploaded submission")
-            # Wrap in on_commit so the delayed task cannot start until the view is done with the DB
+            # Wrap in on_commit in case a transaction is open
+            # (As of 2024-11-08, this only runs in a transaction during tests)
             transaction.on_commit(
                 lambda: process_uploaded_submission_task.delay(submission.pk)
             )
@@ -136,7 +167,8 @@ def api_submission(request):
                 save_files(form)
                 create_submission_event(request, submission, desc="Uploaded submission through API")
 
-                # Wrap in on_commit so the delayed task cannot start until the view is done with the DB
+                # Wrap in on_commit in case a transaction is open
+                # (As of 2024-11-08, this only runs in a transaction during tests)
                 transaction.on_commit(
                     lambda: process_and_accept_uploaded_submission_task.delay(submission.pk)
                 )
@@ -195,24 +227,33 @@ def api_submit_tombstone(request):
 def tool_instructions(request):
     return render(request, 'submit/tool_instructions.html', {'selected': 'instructions'})
 
+
 def search_submission(request):
-    error = None
-    name = None
-    if request.method == 'POST':
-        name = request.POST.get('name', '')
-        submission = Submission.objects.filter(name=name).order_by('-pk').first()
-        if submission:
-            return redirect(submission_status, submission_id=submission.pk)
-        else:
-            if re.search(r'-\d\d$', name):
-                submission = Submission.objects.filter(name=name[:-3]).order_by('-pk').first()
-                if submission:
-                    return redirect(submission_status, submission_id=submission.pk)
-        error = 'No valid submission found for %s' % name
-    return render(request, 'submit/search_submission.html',
-                              {'selected': 'status',
-                               'error': error,
-                               'name': name})
+    if request.method == "POST":
+        form = SubmissionSearchForm(request.POST)
+        if form.is_valid():
+            name = form.cleaned_data["name"]
+            submission = Submission.objects.filter(name=name).order_by("-pk").first()
+            if submission:
+                return redirect(submission_status, submission_id=submission.pk)
+            else:
+                if re.search(r"-\d\d$", name):
+                    submission = (
+                        Submission.objects.filter(name=name[:-3])
+                        .order_by("-pk")
+                        .first()
+                    )
+                    if submission:
+                        return redirect(submission_status, submission_id=submission.pk)
+            form.add_error(None, f"No valid submission found for {name}")
+    else:
+        form = SubmissionSearchForm()
+    return render(
+        request,
+        "submit/search_submission.html",
+        {"selected": "status", "form": form},
+    )
+
 
 def can_edit_submission(user, submission, access_token):
     key_matched = access_token and submission.access_token() == access_token

@@ -659,3 +659,13 @@ class MessageModelForm(forms.ModelForm):
         self.fields['frm'].label='From'
         self.fields['frm'].widget.attrs['readonly'] = True
         self.fields['reply_to'].widget.attrs['readonly'] = True
+
+
+class SubmissionSearchForm(forms.Form):
+    """Form used for search_submission"""
+
+    name = forms.CharField(max_length=255, required=True, label="I-D name")
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["name"].widget.attrs["placeholder"] = "draft-..."

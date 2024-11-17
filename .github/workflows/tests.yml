@@ -8,12 +8,22 @@ on:
         default: false
         required: true
         type: boolean
+      skipSelenium:
+        description: 'Skip Selenium Tests'
+        default: false
+        required: false
+        type: boolean
+      targetBaseVersion:
+        description: 'Target Base Image Version'
+        default: latest
+        required: false
+        type: string
 
 jobs:
   tests-python:
     name: Python Tests
     runs-on: ubuntu-latest
-    container: ghcr.io/ietf-tools/datatracker-app-base:latest
+    container: ghcr.io/ietf-tools/datatracker-app-base:${{ inputs.targetBaseVersion }}
     
     services:
       db:
@@ -42,8 +52,12 @@ jobs:
           echo "Model changes without migrations found."
           exit 1
         fi
+        if [[ "x${{ inputs.skipSelenium }}" == "xtrue" ]]; then
+          echo "Disable selenium tests..."
+          rm /usr/bin/geckodriver
+        fi
         echo "Running tests..."
-        if [[ "x${{ github.event.inputs.ignoreLowerCoverage }}" == "xtrue" ]]; then
+        if [[ "x${{ inputs.ignoreLowerCoverage }}" == "xtrue" ]]; then
           echo "Lower coverage failures will be ignored."
           HOME=/root ./ietf/manage.py test -v2 --validate-html-harder --settings=settings_test --ignore-lower-coverage
         else
@@ -114,7 +128,7 @@ jobs:
   tests-playwright-legacy:
     name: Playwright Legacy Tests
     runs-on: ubuntu-latest
-    container: ghcr.io/ietf-tools/datatracker-app-base:latest
+    container: ghcr.io/ietf-tools/datatracker-app-base:${{ inputs.targetBaseVersion }}
     strategy:
       fail-fast: false
       matrix:
