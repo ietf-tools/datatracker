@@ -20,7 +20,7 @@ from collections import OrderedDict, Counter, deque, defaultdict, namedtuple
 from functools import partialmethod
 import jsonschema
 from pathlib import Path
-from urllib.parse import parse_qs, unquote, urlencode, urlsplit, urlunsplit
+from urllib.parse import parse_qs, unquote, urlencode, urlsplit, urlunsplit, urlparse
 from tempfile import mkstemp
 from wsgiref.handlers import format_date_time
 
@@ -103,6 +103,7 @@ from ietf.utils.pdf import pdf_pages
 from ietf.utils.response import permission_denied
 from ietf.utils.text import xslugify
 from ietf.utils.timezone import datetime_today, date_today
+from ietf.settings import YOUTUBE_DOMAINS
 
 from .forms import (InterimMeetingModelForm, InterimAnnounceForm, InterimSessionModelForm,
     InterimCancelForm, InterimSessionInlineFormSet, RequestMinutesForm,
@@ -2576,22 +2577,19 @@ class SessionNotesAndRecordingsForm(forms.Form):
         self.already_linked = kwargs.pop('already_linked')
         super(self.__class__, self).__init__(*args, **kwargs)
 
-    def clean(self):title = forms.CharField(max_length=255)
-    url = forms.URLField(label="Link to recording (YouTube only)")
-
     def __init__(self, *args, **kwargs):
         self.already_linked = kwargs.pop('already_linked')
         super(self.__class__, self).__init__(*args, **kwargs)
 
-    def clean(self):
+    def clean_url(self):
         url = self.cleaned_data['url']
         parsed_url = urlparse(url)
-        if parsed_url.hostname not in ['www.youtube.com', 'youtube.com', 'youtu.be', 'm.youtube.com', 'youtube-nocookie.com', 'www.youtube-nocookie.com']:
+        if parsed_url.hostname not in YOUTUBE_DOMAINS:
             raise forms.ValidationError("Must be a YouTube URL")
         problems = set(url).intersection(set(self.already_linked)) 
         if problems:
            raise forms.ValidationError("Already linked: %s" % ', '.join([d.name for d in problems]))
-        return self.cleaned_data
+        return url
 
 
 def add_session_recordings(request, session_id, num):
@@ -2617,7 +2615,9 @@ def add_session_recordings(request, session_id, num):
             create_recording(session, url, title=title, user=request.user.person)
             return redirect('ietf.meeting.views.session_details', num=session.meeting.number, acronym=session.group.acronym)
     else:
-        form = SessionNotesAndRecordingsForm(already_linked=already_linked)
+        today = datetime.datetime.now()
+        initial = {'title': f"Video recording for {session.group.acronym} on {today.strftime('%b-%d-%Y at %H:%M:%S')}"}
+        form = SessionNotesAndRecordingsForm(initial=initial, already_linked=already_linked)
 
     return render(request, "meeting/add_session_recordings.html",
                   { 'session': session,

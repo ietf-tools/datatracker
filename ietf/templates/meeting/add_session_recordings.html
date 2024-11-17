@@ -6,7 +6,7 @@
 {% block content %}
     {% origin %}
     <h1>
-        Add Notes and Recordings to  {{ session.meeting }}
+        Add Recordings to  {{ session.meeting }}
         {% if session_number %}: Session {{ session_number }}{% endif %}
         <br>
         <small class="text-body-secondary">{{ session.group.acronym }}
@@ -19,10 +19,7 @@
             The deadline for submission corrections has passed. This may affect published proceedings.
         </div>
     {% endif %}
-    <div class="alert alert-info my-3">
-        This form will link additional Notes and Recordings to this session with a revision of "Current at time of presentation". For more fine grained control of versions, or to remove Notes and Recordings from a session, adjust the sessions associated with an Internet-Draft from the Internet-Draft's main page.
-    </div>
-    <h2 class="mt-5">Notes and Recordings already linked to this session</h2>
+    <h2 class="mt-5">Recordings already linked to this session</h2>
     <table class="table table-sm table-striped tablesorter">
         <thead>
             <tr>
@@ -53,13 +50,13 @@
             </tbody>
         {% endif %}
     </table>
-    <h2 class="mt-5">Add additional Notes and Recordings to this session</h2>
+    <h2 class="mt-5">Add additional recordings to this session</h2>
     <form method="post">
         {% csrf_token %}
         {% bootstrap_form form %}
         <button class="btn btn-{% if session.is_material_submission_cutoff %}warning{% else %}primary{% endif %}"
                 type="submit">
-            Save
+            Add recording
         </button>
         <a class="btn btn-secondary float-end"
            href="{% url 'ietf.meeting.views.session_details' num=session.meeting.number acronym=session.group.acronym %}">
