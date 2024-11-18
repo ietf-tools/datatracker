@@ -73,7 +73,7 @@ jobs:
         path: geckodriver.log
 
     - name: Upload Coverage Results to Codecov
-      uses: codecov/codecov-action@v4.6.0
+      uses: codecov/codecov-action@v5.0.2
       with:
         files: coverage.xml
         
