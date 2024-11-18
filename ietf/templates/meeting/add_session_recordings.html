@@ -19,7 +19,7 @@
             The deadline for submission corrections has passed. This may affect published proceedings.
         </div>
     {% endif %}
-    <form method="post">
+    <form method="post" id="delete_recordings_form">
         {% csrf_token %}
         <h2 class="mt-5">Recordings already linked to this session</h2>
         <table class="table table-sm table-striped tablesorter">
@@ -55,6 +55,14 @@
             {% endif %}
         </table>
     </form>
+    <dialog id="delete_confirm_dialog">
+        <p>Really delete <a href="#" id="delete_confirm_link"></a>?</p>
+        <form method="post" class="d-flex justify-content-between">
+            {% csrf_token %}
+            <button class="btn btn-secondary" type="cancel" id="delete_confirm_cancel">Cancel</button>
+            <button class="btn btn-danger" name="delete" type="submit" id="delete_confirm_submit">OK</button>
+        </form>
+    </dialog>
     <h2 class="mt-5">Add additional recordings to this session</h2>
     <form method="post">
         {% csrf_token %}
@@ -69,4 +77,38 @@
         </a>
     </form>
 {% endblock %}
-{% block js %}{{ form.media.js }}{% endblock %}
+{% block js %}
+    {{ form.media.js }}
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const form = document.getElementById('delete_recordings_form')
+        const dialog = document.getElementById('delete_confirm_dialog')
+        const dialog_link = document.getElementById('delete_confirm_link')
+        const dialog_submit = document.getElementById('delete_confirm_submit')
+        const dialog_cancel = document.getElementById('delete_confirm_cancel')
+
+        form.addEventListener('submit', (e) => {
+            e.preventDefault()
+            console.log()
+            dialog_submit.value = e.submitter.value
+            const recording_link = e.submitter.closest('tr').querySelector('a')
+            dialog_link.setAttribute('href', recording_link.getAttribute('href'))
+            dialog_link.textContent = recording_link.textContent
+            dialog.showModal()
+        })
+
+        dialog_cancel.addEventListener('click', (e) => {
+            e.preventDefault()
+            dialog.close()
+        })
+
+        document.addEventListener('keydown', (e) => {
+            if (dialog.open && e.key === 'Escape') {
+                dialog.close()
+            }
+        })
+    });
+    </script>
+    
+{% endblock %}
