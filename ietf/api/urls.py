@@ -15,9 +15,10 @@ from ietf.person import api as person_api
 from ietf.submit import views as submit_views
 from ietf.utils.urls import url
 
-router = routers.DefaultRouter()  # v3 api router
-router.register("email", person_api.EmailViewSet)
-router.register("person", person_api.PersonViewSet)
+# DRF API routing
+core_router = routers.DefaultRouter()  # core api router
+core_router.register("email", person_api.EmailViewSet)
+core_router.register("person", person_api.PersonViewSet)
 
 api.autodiscover()
 
@@ -29,8 +30,8 @@ urlpatterns = [
     # For mailarchive use, requires secretariat role
     url(r'^v2/person/person', api_views.ApiV2PersonExportView.as_view()),
     # --- DRF API ---
-    path("v3/", include(router.urls)),
-    path("v3/schema/", SpectacularAPIView.as_view()),
+    path("core/", include(core_router.urls)),
+    path("schema/", SpectacularAPIView.as_view()),
     #
     # --- Custom API endpoints, sorted alphabetically ---
     # Email alias information for drafts

@@ -577,7 +577,7 @@ SPECTACULAR_SETTINGS = {
     "TITLE": "Datatracker API",
     "DESCRIPTION": "Datatracker API",
     "VERSION": "1.0.0",
-    "SCHEMA_PATH_PREFIX": "/api/v3/",
+    "SCHEMA_PATH_PREFIX": "/api/",
     "COMPONENT_SPLIT_REQUEST": True,
     "COMPONENT_NO_READ_ONLY_REQUIRED": True,
     "SERVERS": [
