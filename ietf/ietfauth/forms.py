@@ -67,6 +67,14 @@ def prevent_anonymous_name(name):
     if "anonymous" in name_without_spaces.lower():
         raise forms.ValidationError("Please pick another name - this name is reserved.")
 
+
+def is_valid_new_address(value):
+    """Validate that an address complies with datatracker requirements"""
+    for pat in settings.EXCLUDED_PERSONAL_EMAIL_REGEX_PATTERNS:
+        if re.search(pat, value):
+            raise ValidationError("This email address is not valid in a datatracker account")
+
+
 class PersonPasswordForm(forms.ModelForm, PasswordForm):
 
     class Meta:
@@ -156,15 +164,7 @@ def get_person_form(*args, **kwargs):
 
 
 class NewEmailForm(forms.Form):
-    new_email = forms.EmailField(label="New email address", required=False)
-
-    def clean_new_email(self):
-        email = self.cleaned_data.get("new_email", "")
-        for pat in settings.EXCLUDED_PERSONAL_EMAIL_REGEX_PATTERNS:
-            if re.search(pat, email):
-                raise ValidationError("This email address is not valid in a datatracker account")
-
-        return email
+    new_email = forms.EmailField(label="New email address", required=False, validators=[is_valid_new_address])
 
 
 class RoleEmailForm(forms.Form):
