@@ -6,17 +6,15 @@ import re
 from unidecode import unidecode
 
 from django import forms
-from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.contrib.auth.models import User
-
-import debug                            # pyflakes:ignore
 
 from ietf.person.models import Person, Email
 from ietf.mailinglists.models import Allowlisted
 from ietf.utils.text import isascii
 
+from .validators import prevent_at_symbol, prevent_system_name, prevent_anonymous_name, is_allowed_address
 from .widgets import PasswordStrengthInput, PasswordConfirmationInput
 
 
@@ -52,27 +50,6 @@ def ascii_cleaner(supposedly_ascii):
     if re.search(outside_printable_ascii_pattern, supposedly_ascii):
         raise forms.ValidationError("Only unaccented Latin characters are allowed.")
     return supposedly_ascii
-
-def prevent_at_symbol(name):
-    if "@" in name:
-        raise forms.ValidationError("Please fill in name - this looks like an email address (@ is not allowed in names).")
-
-def prevent_system_name(name):
-    name_without_spaces = name.replace(" ", "").replace("\t", "")
-    if "(system)" in name_without_spaces.lower():
-        raise forms.ValidationError("Please pick another name - this name is reserved.")
-
-def prevent_anonymous_name(name):
-    name_without_spaces = name.replace(" ", "").replace("\t", "")
-    if "anonymous" in name_without_spaces.lower():
-        raise forms.ValidationError("Please pick another name - this name is reserved.")
-
-
-def is_valid_new_address(value):
-    """Validate that an address complies with datatracker requirements"""
-    for pat in settings.EXCLUDED_PERSONAL_EMAIL_REGEX_PATTERNS:
-        if re.search(pat, value):
-            raise ValidationError("This email address is not valid in a datatracker account")
 
 
 class PersonPasswordForm(forms.ModelForm, PasswordForm):
@@ -164,7 +141,7 @@ def get_person_form(*args, **kwargs):
 
 
 class NewEmailForm(forms.Form):
-    new_email = forms.EmailField(label="New email address", required=False, validators=[is_valid_new_address])
+    new_email = forms.EmailField(label="New email address", required=False, validators=[is_allowed_address])
 
 
 class RoleEmailForm(forms.Form):
