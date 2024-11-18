@@ -874,7 +874,9 @@ def delete_recording(session, pk):
     '''
     Delete a session recording
     '''
-    Document.objects.get(pk=pk, group=session.group).delete()
+    document = Document.objects.get(pk=pk, group=session.group).first()
+    if document:
+        document.delete()
 
 def get_next_sequence(group, meeting, type):
     '''

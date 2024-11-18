@@ -2591,8 +2591,9 @@ def add_session_recordings(request, session_id, num):
 
     session_number = None
     sessions = get_sessions(session.meeting.number,session.group.acronym)
-    today = datetime.datetime.now()
-    initial = {'title': f"Video recording for {session.group.acronym} on {today.strftime('%b-%d-%Y at %H:%M:%S')}"}
+    initial = {
+        'title': f"Video recording for {session.group.acronym} on {session.meeting.date.strftime('%b-%d-%Y at %H:%M:%S')}"
+    }
     
     if len(sessions) > 1:
        session_number = 1 + sessions.index(session)
