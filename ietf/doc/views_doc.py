@@ -617,10 +617,11 @@ def document_main(request, name, rev=None, document_html=False):
 
         # Nits URL
         nits_url = ''
-        if 'xml' in found_types:
-            nits_url = f"{settings.IDNITS3_BASE_URL}?url={[fu[1] for fu in file_urls if fu[0] == 'xml'][0]}"
-        elif 'txt' in found_types:
+        nits3_url = ''
+        if 'txt' in found_types:
             nits_url = f"{settings.IDNITS_BASE_URL}?url={[fu[1] for fu in file_urls if fu[0] == 'plain text'][0]}"
+        if 'xml' in found_types:
+            nits3_url = f"{settings.IDNITS3_BASE_URL}?url={[fu[1] for fu in file_urls if fu[0] == 'xml'][0]}"
 
 
         html = None
@@ -720,7 +721,8 @@ def document_main(request, name, rev=None, document_html=False):
                                        no_review_from_teams=no_review_from_teams,
                                        due_date=due_date,
                                        diff_revisions=diff_revisions,
-                                       nits_url=nits_url
+                                       nits_url=nits_url,
+                                       nits3_url=nits3_url
                                        ))
 
     elif doc.type_id == "charter":

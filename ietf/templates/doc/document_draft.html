@@ -663,6 +663,16 @@
                 Nits
             </a>
             {% endif %}
+            {% if nits3_url %}
+            <a class="btn btn-primary btn-sm"
+               href="{{ nits3_url }}"
+               rel="nofollow"
+               target="_blank">
+                <i class="bi bi-exclamation">
+                </i>
+                Nits (v3)
+            </a>
+            {% endif %}
             <a class="btn btn-primary btn-sm"
                href="https://mailarchive.ietf.org/arch/search/?q=%22{{ doc.name }}%22"
                rel="nofollow"

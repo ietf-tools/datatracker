@@ -2997,7 +2997,7 @@ class RawIdTests(TestCase):
         self.should_404(dict(name=draft.name, rev='00',ext='html'))
 
     @override_settings(IDNITS3_BASE_URL="https://example.org/idnits3")
-    def test_nits_url(self):
+    def test_nits3_url(self):
         draft = WgDraftFactory(name="draft-ietf-moon-test",rev="01", create_revisions=range(0,2))
 
         dir = settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR
@@ -3006,7 +3006,7 @@ class RawIdTests(TestCase):
         self.assertContains(r, settings.IDNITS3_BASE_URL)
 
     @override_settings(IDNITS_BASE_URL="https://example.org/nits")
-    def test_nits_url_txt_only(self):
+    def test_nits_url(self):
         draft = WgDraftFactory(name="draft-ietf-moon-test",rev="01", create_revisions=range(0,2))
 
         dir = settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR
