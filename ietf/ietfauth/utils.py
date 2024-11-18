@@ -12,6 +12,8 @@ from urllib.parse import quote as urlquote
 
 from django.conf import settings
 from django.contrib.auth import REDIRECT_FIELD_NAME
+from django.contrib.sites.models import Site
+from django.core import signing
 from django.core.exceptions import PermissionDenied
 from django.db.models import Q
 from django.http import HttpResponseRedirect
@@ -20,9 +22,10 @@ from django.shortcuts import get_object_or_404
 import debug                            # pyflakes:ignore
 
 from ietf.group.models import Role, GroupFeatures
-from ietf.person.models import Person
+from ietf.person.models import Email, Person
 from ietf.person.utils import get_dots
 from ietf.doc.utils_bofreq import bofreq_editors
+from ietf.utils.mail import send_mail
 
 def user_is_person(user, person):
     """Test whether user is associated with person."""
@@ -394,3 +397,47 @@ def can_request_rfc_publication(user, doc):
         return False # See the docstring
     else:
         return False
+
+
+def send_new_email_confirmation_request(person: Person, address: str):
+    """Request confirmation of a new email address
+    
+    If the email address is already in use, sends an alert to it. If not, sends a confirmation request.
+    By design, does not indicate which was sent. This is intended to make it a bit harder to scrape addresses
+    with a mindless bot.
+    """
+    auth = signing.dumps([person.user.username, address], salt="add_email")
+    domain = Site.objects.get_current().domain
+    from_email = settings.DEFAULT_FROM_EMAIL
+
+    existing = Email.objects.filter(address=address).first()
+    if existing:
+        subject = f"Attempt to add your email address by {person.name}"
+        send_mail(
+            None,
+            address,
+            from_email,
+            subject,
+            "registration/add_email_exists_email.txt",
+            {
+                "domain": domain,
+                "email": address,
+                "person": person,
+            },
+        )
+    else:
+        subject = f"Confirm email address for {person.name}"
+        send_mail(
+            None,
+            address,
+            from_email,
+            subject,
+            "registration/add_email_email.txt",
+            {
+                "domain": domain,
+                "auth": auth,
+                "email": address,
+                "person": person,
+                "expire": settings.DAYS_TO_EXPIRE_REGISTRATION_LINK,
+            },
+        )
