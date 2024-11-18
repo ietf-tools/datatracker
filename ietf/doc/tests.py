@@ -5,6 +5,7 @@
 import os
 import datetime
 import io
+from django.http import HttpRequest
 import lxml
 import bibtexparser
 import mock
@@ -52,6 +53,7 @@ from ietf.doc.utils import (
     generate_idnits2_rfcs_obsoleted,
     get_doc_email_aliases,
 )
+from ietf.doc.views_doc import get_diff_revisions
 from ietf.group.models import Group, Role
 from ietf.group.factories import GroupFactory, RoleFactory
 from ietf.ipr.factories import HolderIprDisclosureFactory
@@ -1953,6 +1955,18 @@ class DocTestCase(TestCase):
         self.assertContains(r, appr.text)
         self.assertContains(r, notes.text)
         self.assertContains(r, rfced_note.text)
+
+    def test_diff_revisions(self):
+        ind_doc = IndividualDraftFactory(create_revisions=range(2))
+        wg_doc = WgDraftFactory(
+            relations=[("replaces", ind_doc)], create_revisions=range(2)
+        )
+        diff_revisions = get_diff_revisions(HttpRequest(), wg_doc.name, wg_doc)
+        self.assertEqual(len(diff_revisions), 4)
+        self.assertEqual(
+            [t[3] for t in diff_revisions],
+            [f"{n}-{v:02d}" for n in [wg_doc.name, ind_doc.name] for v in [1, 0]],
+        )
 
     def test_history(self):
         doc = IndividualDraftFactory()
