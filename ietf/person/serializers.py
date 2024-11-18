@@ -3,6 +3,8 @@
 
 from rest_framework import serializers
 
+from ietf.ietfauth.validators import is_allowed_address
+
 from .models import Email, Person
 
 
@@ -23,21 +25,9 @@ class EmailSerializer(serializers.ModelSerializer):
         read_only_fields = ["person", "address", "origin"]
 
 
-class EmailCreationSerializer(serializers.ModelSerializer):
-    """Email serializer for creation only"""
-    address = serializers.EmailField()
-
-    class Meta:
-        model = Email
-        fields = [
-            "address",
-            "primary",
-            "active",
-        ]
-        # Because address is the primary key, it's read-only by default.
-        # Use extra_kwargs to force it into the writeable parameter list.
-        # This can go away if we move to a surrogate primary key for Email.
-        extra_kwargs = {"address": {}}
+class NewEmailSerializer(serializers.Serializer):
+    """Serialize a new email address request"""
+    address = serializers.EmailField(validators=[is_allowed_address])
 
 
 class PersonSerializer(serializers.ModelSerializer):
