@@ -117,61 +117,16 @@
         <div class="row mb-3">
             <label class="col-sm-2 col-form-label fw-bold">Email addresses</label>
             <p class="col-sm-10">
-                You can optionally link more email addresses to your account, 
-                which will then ensure that all I-Ds you have published using 
-                different email addresses are all shown against your account.
+                <a class="btn btn-primary"
+                   href="{% url 'ietf.ietfauth.views.edit_subscriptions' %}">Manage subscriptions</a>
             </p>
         </div>
         <div class="row mb-3">
             <div class="col-sm-2"></div>
             <div class="col-sm-10 emails">
-                <table class="table table-sm">
-                    <thead>
-                        <tr>
-                            <th scope="col" class="text-center">Primary</th>
-                            <th scope="col" class="text-center">Active</th>
-                            <th scope="col">Address</th>
-                            <th scope="col">Origin</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                    <!-- [html-validate-disable-block input-missing-label -- labelled via aria-label] -->
-                    {% for email in emails %}
-                        <tr>
-                            <td class="text-center">
-                                <input class="form-check-input"
-                                       type="radio"
-                                       name="primary_email"
-                                       aria-label="Primary email"
-                                       value="{{ email.pk }}"
-                                       {% if email.primary %}checked{% endif %}>
-                            </td>
-                            <td class="text-center">
-                                <input class="form-check-input"
-                                       type="checkbox"
-                                       name="active_emails"
-                                       value="{{ email.pk }}"
-                                       aria-label="Active email"
-                                       {% if email.active %}checked{% endif %}>
-                            </td>
-                            <td>
-                                {{ email|linkify }}
-                            </td>
-                            <td>{{ email.origin|default:'(unknown)'|urlize_ietf_docs }}</td>
-                        </tr>
-                    {% endfor %}
-                    </tbody>
-                </table>
-                <p class="form-text">
-                    Note: Email addresses cannot be deleted in this form, only deactivated.
-                </p>
                 {% for f in new_email_forms %}
                     {% bootstrap_field f.new_email layout="horizontal" show_label=False %}
                 {% endfor %}
-                <div class="new-emails"></div>
-                <div>
-                    <button type="button" class="btn btn-primary add-email mt-3 mb-5">Add another email address</button>
-                </div>
                 {% for role in roles %}
                     {% bootstrap_field role.email_form.email  show_label=False %}
                 {% endfor %}
@@ -189,50 +144,4 @@
             you are logged in.
         </p>
     </div>
-{% endblock %}
-{% block js %}
-    <script>
-        $(document)
-            .ready(function () {
-            $("input[name=active_emails]")
-                .on("change keypress click", function () {
-                if (this.checked) {
-                    $(this)
-                        .parent()
-                        .next()
-                        .addClass("text-success");;
-                    $(this)
-                        .parent()
-                        .next()
-                        .removeClass("text-danger line-through");
-                } else {
-                    $(this)
-                        .parent()
-                        .next()
-                        .addClass("text-danger line-through");
-                    $(this)
-                        .parent()
-                        .next()
-                        .removeClass("text-success");
-                }
-            })
-                .trigger("change");
-
-            $(".add-email")
-                .on("click", function (e) {
-                e.preventDefault();
-
-                var container = $(this)
-                    .closest("form")
-                    .find(".new-emails");
-
-                $('<input class="form-control mb-1" name="new_email" placeholder="You will get a confirmation challenge. To add an address that cannot be confirmed this way, contact the secretariat.">')
-                    .appendTo(container)
-                    .trigger("focus");
-                $('<div class="float-end text-body-secondary small mb-3">Remember to submit the form for the new email challenge to be sent.</div>')
-                    .appendTo(container);
-            })
-        });
-
-    </script>
 {% endblock %}
