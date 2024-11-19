@@ -19,47 +19,54 @@
             The deadline for submission corrections has passed. This may affect published proceedings.
         </div>
     {% endif %}
-    <form method="post" id="delete_recordings_form">
-        {% csrf_token %}
-        <h2 class="mt-5">Recordings already linked to this session</h2>
-        <table class="table table-sm table-striped tablesorter">
-            <thead>
-                <tr>
-                    <th scope="col" data-sort="num">Revision</th>
-                    <th scope="col" data-sort="document">Document</th>
-                    <th scope="col">Delete</th>
-                </tr>
-            </thead>
-            {% if already_linked %}
-                <tbody>
-                    {% for sp in already_linked %}
-                        <tr>
-                            <td>
-                                {% if sp.rev %}
-                                    -{{ sp.rev }}
-                                {% else %}
-                                    (current)
-                                {% endif %}
-                            </td>
-                            <td><a href="{{ sp.external_url }}">{{ sp.title }}</a></td>
-                            <td><button type="submit" aria-label="Delete {{ sp.title }}" class="btn btn-danger" name="delete" value="{{ sp.pk }}">Delete</button></td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            {% else %}
-                <tbody>
+    {% if already_linked %}
+        <form method="post" id="delete_recordings_form">
+            {% csrf_token %}
+            <h2 class="mt-5">Recordings already linked to this session</h2>
+            <table class="table table-sm table-striped tablesorter">
+                <thead>
                     <tr>
-                        <td colspan="3" class="text-center font-italic">(none)</td>
+                        <th scope="col" data-sort="num">Revision</th>
+                        <th scope="col" data-sort="document">Document</th>
+                        <th scope="col">Delete</th>
                     </tr>
+                </thead>
+                <tbody>
+                        {% for sp in already_linked %}
+                            <tr>
+                                <td>
+                                    {% if sp.rev %}
+                                        -{{ sp.rev }}
+                                    {% else %}
+                                        (current)
+                                    {% endif %}
+                                </td>
+                                <td><a href="{{ sp.external_url }}">{{ sp.title }}</a></td>
+                                <td><button type="submit" aria-label="Delete {{ sp.title }}" class="btn btn-danger" name="delete" value="{{ sp.pk }}">Delete</button></td>
+                            </tr>
+                        {% endfor %}
                 </tbody>
-            {% endif %}
+            </table>
+        </form>
+    {% else %}
+        <table class="table table-sm table-striped">
+            <tbody>
+                <tr>
+                    <td colspan="3" class="text-center font-italic">(none)</td>
+                </tr>
+            </tbody>
         </table>
-    </form>
-    <dialog id="delete_confirm_dialog" style="max-width: 30em">
-        <p>Really delete the link to <a href="#" id="delete_confirm_link"></a>?</p>
+    {% endif %}
+    <style type="text/css">
+        #delete_confirm_dialog {
+            max-width: 30vw;
+        }
+    </style>
+    <dialog id="delete_confirm_dialog">
+        <p>Really delete the link to <a href="#" id="delete_confirm_link">(default)</a>?</p>
         <form method="post" class="d-flex justify-content-between">
             {% csrf_token %}
-            <button class="btn btn-secondary" type="cancel" id="delete_confirm_cancel">Cancel</button>
+            <button class="btn btn-secondary" type="button" id="delete_confirm_cancel">Cancel</button>
             <button class="btn btn-danger" type="submit" name="delete" id="delete_confirm_submit">Delete</button>
         </form>
     </dialog>
