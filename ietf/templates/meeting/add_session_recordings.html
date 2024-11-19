@@ -90,7 +90,6 @@
 
         form.addEventListener('submit', (e) => {
             e.preventDefault()
-            console.log()
             dialog_submit.value = e.submitter.value
             const recording_link = e.submitter.closest('tr').querySelector('a')
             dialog_link.setAttribute('href', recording_link.getAttribute('href'))
