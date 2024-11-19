@@ -59,7 +59,7 @@
     {% endif %}
     <style type="text/css">
         #delete_confirm_dialog {
-            max-width: 30vw;
+            
         }
     </style>
     <dialog id="delete_confirm_dialog">
@@ -95,6 +95,8 @@
         const dialog_submit = document.getElementById('delete_confirm_submit')
         const dialog_cancel = document.getElementById('delete_confirm_cancel')
 
+        dialog.style.maxWidth = '30vw';
+
         form.addEventListener('submit', (e) => {
             e.preventDefault()
             dialog_submit.value = e.submitter.value
@@ -114,7 +116,7 @@
                 dialog.close()
             }
         })
-    });
+    })
     </script>
     
 {% endblock %}
