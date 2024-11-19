@@ -16,4 +16,4 @@ class ApiConfig(AppConfig):
         populate_api_list()
 
         # Import drf-spectacular extensions 
-        import ietf.api.schema  # noqa
+        import ietf.api.schema  # pyflakes: ignore
