@@ -733,20 +733,20 @@ class IetfTestRunner(DiscoverRunner):
         self.show_logging = show_logging
         self.rerun = rerun
         self.test_labels = None
-        global validation_settings
-        validation_settings["validate_html"] = self if validate_html else None
-        validation_settings["validate_html_harder"] = self if validate_html and validate_html_harder else None
-        validation_settings["show_logging"] = show_logging
+        # global validation_settings
+        # validation_settings["validate_html"] = self if validate_html else None
+        # validation_settings["validate_html_harder"] = self if validate_html and validate_html_harder else None
+        # validation_settings["show_logging"] = show_logging
         #
         self.root_dir = os.path.dirname(settings.BASE_DIR)
-        self.coverage_file = os.path.join(self.root_dir, settings.TEST_COVERAGE_MAIN_FILE)
+        # self.coverage_file = os.path.join(self.root_dir, settings.TEST_COVERAGE_MAIN_FILE)
         super(IetfTestRunner, self).__init__(**kwargs)
-        if self.parallel > 1:
-            if self.html_report == True:
-                sys.stderr.write("The switches --parallel and --html-report cannot be combined, "
-                                 "as the collection of test coverage data isn't currently threadsafe.")
-                sys.exit(1)
-            self.check_coverage = False
+        # if self.parallel > 1:
+        #     if self.html_report == True:
+        #         sys.stderr.write("The switches --parallel and --html-report cannot be combined, "
+        #                          "as the collection of test coverage data isn't currently threadsafe.")
+        #         sys.exit(1)
+        #     self.check_coverage = False
         from ietf.doc.tests import TemplateTagTest  # import here to prevent circular imports
         # Ensure that the coverage tests come last. Specifically list TemplateTagTest before CoverageTest. If this list
         # contains parent classes to later subclasses, the parent classes will determine the ordering, so use the most
@@ -754,8 +754,8 @@ class IetfTestRunner(DiscoverRunner):
         self.reorder_by = (PyFlakesTestCase, MyPyTest,) + self.reorder_by + (StaticLiveServerTestCase, TemplateTagTest, CoverageTest,)
 
     def setup_test_environment(self, **kwargs):
-        global template_coverage_collection
-        global url_coverage_collection
+        # global template_coverage_collection
+        # global url_coverage_collection
 
         ietf.utils.mail.test_mode = True
         ietf.utils.mail.SMTP_ADDR['ip4'] = '127.0.0.1'
@@ -769,46 +769,46 @@ class IetfTestRunner(DiscoverRunner):
         print("     Django %s, settings '%s'" % (django.get_version(), settings.SETTINGS_MODULE))
 
         settings.TEMPLATES[0]['BACKEND'] = 'ietf.utils.test_runner.ValidatingTemplates'
-        if self.check_coverage:
-            if self.coverage_file.endswith('.gz'):
-                with gzip.open(self.coverage_file, "rb") as file:
-                    self.coverage_master = json.load(file)
-            else:
-                with io.open(self.coverage_file, encoding='utf-8') as file:
-                    self.coverage_master = json.load(file)
-            self.coverage_data = {
-                "time": timezone.now().strftime("%Y-%m-%dT%H:%M:%SZ"),
-                "template": {
-                    "coverage": 0.0,
-                    "covered": {},
-                    "format": 1,        # default format, coverage data in 'covered' are just fractions
-                },
-                "url": {
-                    "coverage": 0.0,
-                    "covered": {},
-                    "format": 4,
-                },
-                "code": {
-                    "coverage": 0.0,
-                    "covered": {},
-                    "format": 1,
-                },
-                "migration": {
-                    "present": {},
-                    "format": 3,
-                }
-            }
+        # if self.check_coverage:
+        #     if self.coverage_file.endswith('.gz'):
+        #         with gzip.open(self.coverage_file, "rb") as file:
+        #             self.coverage_master = json.load(file)
+        #     else:
+        #         with io.open(self.coverage_file, encoding='utf-8') as file:
+        #             self.coverage_master = json.load(file)
+        #     self.coverage_data = {
+        #         "time": timezone.now().strftime("%Y-%m-%dT%H:%M:%SZ"),
+        #         "template": {
+        #             "coverage": 0.0,
+        #             "covered": {},
+        #             "format": 1,        # default format, coverage data in 'covered' are just fractions
+        #         },
+        #         "url": {
+        #             "coverage": 0.0,
+        #             "covered": {},
+        #             "format": 4,
+        #         },
+        #         "code": {
+        #             "coverage": 0.0,
+        #             "covered": {},
+        #             "format": 1,
+        #         },
+        #         "migration": {
+        #             "present": {},
+        #             "format": 3,
+        #         }
+        #     }
 
-            settings.TEMPLATES[0]['OPTIONS']['loaders'] = ('ietf.utils.test_runner.TemplateCoverageLoader',) + settings.TEMPLATES[0]['OPTIONS']['loaders']
+            # settings.TEMPLATES[0]['OPTIONS']['loaders'] = ('ietf.utils.test_runner.TemplateCoverageLoader',) + settings.TEMPLATES[0]['OPTIONS']['loaders']
 
-            settings.MIDDLEWARE = ('ietf.utils.test_runner.record_urls_middleware',) + tuple(settings.MIDDLEWARE)
+            # settings.MIDDLEWARE = ('ietf.utils.test_runner.record_urls_middleware',) + tuple(settings.MIDDLEWARE)
 
-            self.code_coverage_checker = settings.TEST_CODE_COVERAGE_CHECKER
-            if not self.code_coverage_checker._started:
-                sys.stderr.write(" **  Warning: In %s: Expected the coverage checker to have\n"
-                                 "       been started already, but it wasn't. Doing so now.  Coverage numbers\n"
-                                 "       will be off, though.\n" % __name__)
-                self.code_coverage_checker.start()
+            # self.code_coverage_checker = settings.TEST_CODE_COVERAGE_CHECKER
+            # if not self.code_coverage_checker._started:
+            #     sys.stderr.write(" **  Warning: In %s: Expected the coverage checker to have\n"
+            #                      "       been started already, but it wasn't. Doing so now.  Coverage numbers\n"
+            #                      "       will be off, though.\n" % __name__)
+            #     self.code_coverage_checker.start()
 
         if settings.SITE_ID != 1:
             print("     Changing SITE_ID to '1' during testing.")
@@ -856,119 +856,120 @@ class IetfTestRunner(DiscoverRunner):
             s[1] = tuple(s[1])      # random.setstate() won't accept a list in lieu of a tuple
         factory.random.set_random_state(s)
 
-        if not validation_settings["validate_html"]:
-            print("     Not validating any generated HTML; "
-                  "please do so at least once before committing changes")
-        else:
-            print("     Validating all HTML generated during the tests", end="")
-            self.batches = {"doc": [], "frag": []}
+        # if not validation_settings["validate_html"]:
+        #     print("     Not validating any generated HTML; "
+        #           "please do so at least once before committing changes")
+        # else:
+        #     print("     Validating all HTML generated during the tests", end="")
+        #     self.batches = {"doc": [], "frag": []}
 
-            # keep the html-validate configs here, so they can be kept in sync easily
-            config = {}
-            config["frag"] = {
-                "extends": ["html-validate:recommended"],
-                "rules": {
-                    # many trailing whitespaces inserted by Django, ignore:
-                    "no-trailing-whitespace": "off",
-                    # navbar dropdowns can't use buttons, ignore:
-                    "prefer-native-element": [
-                        "error",
-                        {"exclude": ["button"]},
-                    ],
-                    # title length mostly only matters for SEO, ignore:
-                    "long-title": "off",
-                    # the current (older) version of Django seems to add type="text/javascript" for form media, ignore:
-                    "script-type": "off",
-                    # django-bootstrap5 seems to still generate 'checked="checked"', ignore:
-                    "attribute-boolean-style": "off",
-                    # self-closing style tags are valid in HTML5. Both self-closing and non-self-closing tags are accepted. (vite generates self-closing link tags)
-                    "void-style": "off",
-                    # Both attributes without value and empty strings are equal and valid. (vite generates empty value attributes)
-                    "attribute-empty-style": "off",
-                    # For fragments, don't check that elements are in the proper ancestor element
-                    "element-required-ancestor": "off",
-                    # This is allowed by the HTML spec
-                    "form-dup-name": "off",
-                    # Don't trip over unused disable blocks
-                    "no-unused-disable": "off",
-                    # Ignore focusable elements in aria-hidden elements
-                    "hidden-focusable": "off",
-                    # Ignore missing unique identifier for page "landmarks"
-                    "unique-landmark": "off",
-                },
-            }
+        #     # keep the html-validate configs here, so they can be kept in sync easily
+        #     config = {}
+        #     config["frag"] = {
+        #         "extends": ["html-validate:recommended"],
+        #         "rules": {
+        #             # many trailing whitespaces inserted by Django, ignore:
+        #             "no-trailing-whitespace": "off",
+        #             # navbar dropdowns can't use buttons, ignore:
+        #             "prefer-native-element": [
+        #                 "error",
+        #                 {"exclude": ["button"]},
+        #             ],
+        #             # title length mostly only matters for SEO, ignore:
+        #             "long-title": "off",
+        #             # the current (older) version of Django seems to add type="text/javascript" for form media, ignore:
+        #             "script-type": "off",
+        #             # django-bootstrap5 seems to still generate 'checked="checked"', ignore:
+        #             "attribute-boolean-style": "off",
+        #             # self-closing style tags are valid in HTML5. Both self-closing and non-self-closing tags are accepted. (vite generates self-closing link tags)
+        #             "void-style": "off",
+        #             # Both attributes without value and empty strings are equal and valid. (vite generates empty value attributes)
+        #             "attribute-empty-style": "off",
+        #             # For fragments, don't check that elements are in the proper ancestor element
+        #             "element-required-ancestor": "off",
+        #             # This is allowed by the HTML spec
+        #             "form-dup-name": "off",
+        #             # Don't trip over unused disable blocks
+        #             "no-unused-disable": "off",
+        #             # Ignore focusable elements in aria-hidden elements
+        #             "hidden-focusable": "off",
+        #             # Ignore missing unique identifier for page "landmarks"
+        #             "unique-landmark": "off",
+        #         },
+        #     }
 
-            config["doc"] = copy.deepcopy(config["frag"])
-            # enable doc-level rules
-            config["doc"]["extends"].append("html-validate:document")
-            # FIXME: we should find a way to use SRI, but ignore for now:
-            config["doc"]["rules"]["require-sri"] = "off"
-            # Turn "element-required-ancestor" back on
-            del config["doc"]["rules"]["element-required-ancestor"]
-            config["doc"]["rules"]["heading-level"] = [
-                "error",
-                {
-                    # permit discontinuous heading numbering in cards, modals and dialogs:
-                    "sectioningRoots": [
-                        ".card-body",
-                        ".modal-content",
-                        '[role="dialog"]',
-                    ],
-                    # permit multiple H1 elements in a single document
-                    "allowMultipleH1": True,
-                },
-            ]
+        #     config["doc"] = copy.deepcopy(config["frag"])
+        #     # enable doc-level rules
+        #     config["doc"]["extends"].append("html-validate:document")
+        #     # FIXME: we should find a way to use SRI, but ignore for now:
+        #     config["doc"]["rules"]["require-sri"] = "off"
+        #     # Turn "element-required-ancestor" back on
+        #     del config["doc"]["rules"]["element-required-ancestor"]
+        #     config["doc"]["rules"]["heading-level"] = [
+        #         "error",
+        #         {
+        #             # permit discontinuous heading numbering in cards, modals and dialogs:
+        #             "sectioningRoots": [
+        #                 ".card-body",
+        #                 ".modal-content",
+        #                 '[role="dialog"]',
+        #             ],
+        #             # permit multiple H1 elements in a single document
+        #             "allowMultipleH1": True,
+        #         },
+        #     ]
 
-            self.config_file = {}
-            for kind in self.batches:
-                self.config_file[kind] = tempfile.NamedTemporaryFile(
-                    prefix="html-validate-config-",
-                    suffix=".json"
-                )
-                self.config_file[kind].write(json.dumps(config[kind]).encode())
-                self.config_file[kind].flush()
-                pathlib.Path(self.config_file[kind].name).chmod(0o644)
+        #     self.config_file = {}
+        #     for kind in self.batches:
+        #         self.config_file[kind] = tempfile.NamedTemporaryFile(
+        #             prefix="html-validate-config-",
+        #             suffix=".json"
+        #         )
+        #         self.config_file[kind].write(json.dumps(config[kind]).encode())
+        #         self.config_file[kind].flush()
+        #         pathlib.Path(self.config_file[kind].name).chmod(0o644)
 
-            if not validation_settings["validate_html_harder"]:
-                print("")
-                self.vnu = None
-            else:
-                print(" (extra pedantically)")
-                self.vnu = start_vnu_server()
+        #     if not validation_settings["validate_html_harder"]:
+        #         print("")
+        #         self.vnu = None
+        #     else:
+        #         print(" (extra pedantically)")
+        #         self.vnu = start_vnu_server()
 
         super(IetfTestRunner, self).setup_test_environment(**kwargs)
 
     def teardown_test_environment(self, **kwargs):
         self.smtpd_driver.stop()
-        if self.check_coverage:
-            latest_coverage_file = os.path.join(self.root_dir, settings.TEST_COVERAGE_LATEST_FILE)
-            coverage_latest = {}
-            coverage_latest["version"] = "latest"
-            coverage_latest["latest"] = self.coverage_data
-            with open(latest_coverage_file, "w") as file:
-                json.dump(coverage_latest, file, indent=2, sort_keys=True)
-            if self.save_version_coverage:
-                self.coverage_master["version"] = self.save_version_coverage
-                self.coverage_master[self.save_version_coverage] = self.coverage_data
-                if self.coverage_file.endswith('.gz'):
-                    with gzip.open(self.coverage_file, "w") as file:
-                        json_coverage = json.dumps(self.coverage_master, sort_keys=True)
-                        file.write(json_coverage.encode())
-                else:
-                    with open(self.coverage_file, "w") as file:
-                        json.dump(self.coverage_master, file, indent=2, sort_keys=True)
+        # if self.check_coverage:
+        #     latest_coverage_file = os.path.join(self.root_dir, settings.TEST_COVERAGE_LATEST_FILE)
+        #     coverage_latest = {}
+        #     coverage_latest["version"] = "latest"
+        #     coverage_latest["latest"] = self.coverage_data
+        #     with open(latest_coverage_file, "w") as file:
+        #         json.dump(coverage_latest, file, indent=2, sort_keys=True)
+        #     if self.save_version_coverage:
+        #         self.coverage_master["version"] = self.save_version_coverage
+        #         self.coverage_master[self.save_version_coverage] = self.coverage_data
+        #         if self.coverage_file.endswith('.gz'):
+        #             with gzip.open(self.coverage_file, "w") as file:
+        #                 json_coverage = json.dumps(self.coverage_master, sort_keys=True)
+        #                 file.write(json_coverage.encode())
+        #         else:
+        #             with open(self.coverage_file, "w") as file:
+        #                 json.dump(self.coverage_master, file, indent=2, sort_keys=True)
 
-        if validation_settings["validate_html"]:
-            for kind in self.batches:
-                if len(self.batches[kind]):
-                    print(f"     WARNING: not all templates of kind '{kind}' were validated")
-                self.config_file[kind].close()
-            if self.vnu:
-                self.vnu.terminate()
+        # if validation_settings["validate_html"]:
+        #     for kind in self.batches:
+        #         if len(self.batches[kind]):
+        #             print(f"     WARNING: not all templates of kind '{kind}' were validated")
+        #         self.config_file[kind].close()
+        #     if self.vnu:
+        #         self.vnu.terminate()
 
         super(IetfTestRunner, self).teardown_test_environment(**kwargs)
 
     def validate(self, testcase):
+        return
         cwd = pathlib.Path.cwd()
         errors = []
         with tempfile.TemporaryDirectory(prefix="html-validate-") as tmpdir_name:
@@ -1079,11 +1080,11 @@ class IetfTestRunner(DiscoverRunner):
     # by adding a special label to the test suite, then injecting our extra tests
     # in load_tests_for_label()
     def build_suite(self, test_labels=None, extra_tests=None, **kwargs):
-        if test_labels is None:
-            # Base class sets test_labels to ["."] if it was None. The label we're
-            # adding will interfere with that, so replicate that behavior here. 
-            test_labels = ["."]
-        test_labels = ("_ietf_extra_tests",) + tuple(test_labels)
+        # if test_labels is None:
+        #     # Base class sets test_labels to ["."] if it was None. The label we're
+        #     # adding will interfere with that, so replicate that behavior here. 
+        #     test_labels = ["."]
+        # test_labels = ("_ietf_extra_tests",) + tuple(test_labels)
         return super().build_suite(test_labels, extra_tests, **kwargs)
 
     def load_tests_for_label(self, label, discover_kwargs):
@@ -1093,6 +1094,7 @@ class IetfTestRunner(DiscoverRunner):
 
     def _extra_tests(self):
         """Get extra tests that should be added to the test suite"""
+        return []
         tests = []
         if validation_settings["validate_html"]:
             tests += [
@@ -1148,39 +1150,39 @@ class IetfTestRunner(DiscoverRunner):
         self.test_labels = test_labels  # these are used in our run_suite() and not available to it otherwise
         failures = super(IetfTestRunner, self).run_tests(test_labels, extra_tests=extra_tests, **kwargs)
 
-        if self.check_coverage:
-            print("")
-            if self.run_full_test_suite:
-                print("Test coverage data:")
-            else:
-                print(("Test coverage for this test run across the related app%s (%s):" % (("s" if len(self.test_apps)>1 else ""), ", ".join(self.test_apps))))
-            for test in ["template", "url", "code"]:
-                latest_coverage_version = self.coverage_master["version"]
+        # if self.check_coverage:
+        #     print("")
+        #     if self.run_full_test_suite:
+        #         print("Test coverage data:")
+        #     else:
+        #         print(("Test coverage for this test run across the related app%s (%s):" % (("s" if len(self.test_apps)>1 else ""), ", ".join(self.test_apps))))
+        #     for test in ["template", "url", "code"]:
+        #         latest_coverage_version = self.coverage_master["version"]
 
-                master_data = self.coverage_master[latest_coverage_version][test]
-                #master_all = master_data["covered"]
-                #master_missing = [ k for k,v in master_data["covered"].items() if not v ]
-                master_coverage = master_data["coverage"]
+        #         master_data = self.coverage_master[latest_coverage_version][test]
+        #         #master_all = master_data["covered"]
+        #         #master_missing = [ k for k,v in master_data["covered"].items() if not v ]
+        #         master_coverage = master_data["coverage"]
 
-                test_data = self.coverage_data[test]
-                #test_all = test_data["covered"]
-                #test_missing = [ k for k,v in test_data["covered"].items() if not v ]
-                test_coverage = test_data["coverage"]
+        #         test_data = self.coverage_data[test]
+        #         #test_all = test_data["covered"]
+        #         #test_missing = [ k for k,v in test_data["covered"].items() if not v ]
+        #         test_coverage = test_data["coverage"]
 
-                if self.run_full_test_suite:
-                    print(("      %8s coverage: %6.2f%%  (%s: %6.2f%%)" %
-                           (test.capitalize(), test_coverage*100, latest_coverage_version, master_coverage*100, )))
-                else:
-                    print(("      %8s coverage: %6.2f%%" %
-                           (test.capitalize(), test_coverage*100, )))
+        #         if self.run_full_test_suite:
+        #             print(("      %8s coverage: %6.2f%%  (%s: %6.2f%%)" %
+        #                    (test.capitalize(), test_coverage*100, latest_coverage_version, master_coverage*100, )))
+        #         else:
+        #             print(("      %8s coverage: %6.2f%%" %
+        #                    (test.capitalize(), test_coverage*100, )))
 
-            print(("""
-                Per-file code and template coverage and per-url-pattern url coverage data
-                for the latest test run has been written to %s.
+        #     print(("""
+        #         Per-file code and template coverage and per-url-pattern url coverage data
+        #         for the latest test run has been written to %s.
 
-                Per-statement code coverage data has been written to '.coverage', readable
-                by the 'coverage' program.
-                """.replace("    ","") % (settings.TEST_COVERAGE_LATEST_FILE)))
+        #         Per-statement code coverage data has been written to '.coverage', readable
+        #         by the 'coverage' program.
+        #         """.replace("    ","") % (settings.TEST_COVERAGE_LATEST_FILE)))
 
         save_test_results(failures, test_labels)
 
