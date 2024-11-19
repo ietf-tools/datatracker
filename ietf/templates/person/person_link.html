@@ -1,3 +1,4 @@
+<!-- Copyright The IETF Trust 2024. All Rights Reserved. -->
 {% if email and email == "system@datatracker.ietf.org" or name and name == "(System)" %}<span class="text-body-secondary">(System)</span>{% else %}<span {% if class %}class="{{ class }}"
       {% endif %}>{% if email or name %}<a {% if class %}class="text-reset"{% endif %}
            title="{% if title %}{{ title }}{% else %}Datatracker profile of {{ name }}{% endif %}"

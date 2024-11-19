@@ -1,4 +1,5 @@
 # Kustomize deployment
+# Copyright The IETF Trust 2024. All Rights Reserved.
 
 ## Run locally
 
