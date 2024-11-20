@@ -350,50 +350,34 @@ jobs:
     steps:      
     - name: Notify on Slack (Success)
       if: ${{ !contains(join(needs.*.result, ','), 'failure') }}
-      uses: slackapi/slack-github-action@v1.27.0
+      uses: slackapi/slack-github-action@v2
       with:
-        channel-id: ${{ secrets.SLACK_GH_BUILDS_CHANNEL_ID }}
+        token: ${{ secrets.SLACK_GH_BOT }}
+        method: chat.postMessage
         payload: |
-          {
-            "text": "Datatracker Build <https://github.com/ietf-tools/datatracker/actions/runs/${{ github.run_id }}|${{ env.PKG_VERSION }}> by ${{ github.triggering_actor }} - <@${{ secrets.SLACK_UID_RJSPARKS }}>",
-            "attachments": [
-              {
-                "color": "28a745",
-                "fields": [
-                  {
-                    "title": "Status",
-                    "short": true,
-                    "value": "Completed"
-                  }
-                ]
-              }
-            ]
-          }
-      env:
-        SLACK_BOT_TOKEN: ${{ secrets.SLACK_GH_BOT }}
+          channel: ${{ secrets.SLACK_GH_BUILDS_CHANNEL_ID }}
+          text: "Datatracker Build <https://github.com/ietf-tools/datatracker/actions/runs/${{ github.run_id }}|${{ env.PKG_VERSION }}> by ${{ github.triggering_actor }}"
+          attachments:
+            - color: "28a745"
+              fields:
+                - title: "Status"
+                  short: true
+                  value: "Completed"
     - name: Notify on Slack (Failure)
       if: ${{ contains(join(needs.*.result, ','), 'failure') }}
-      uses: slackapi/slack-github-action@v1.27.0
+      uses: slackapi/slack-github-action@v2
       with:
-        channel-id: ${{ secrets.SLACK_GH_BUILDS_CHANNEL_ID }}
+        token: ${{ secrets.SLACK_GH_BOT }}
+        method: chat.postMessage
         payload: |
-          {
-            "text": "Datatracker Build <https://github.com/ietf-tools/datatracker/actions/runs/${{ github.run_id }}|${{ env.PKG_VERSION }}> by ${{ github.triggering_actor }} - <@${{ secrets.SLACK_UID_RJSPARKS }}>",
-            "attachments": [
-              {
-                "color": "a82929",
-                "fields": [
-                  {
-                    "title": "Status",
-                    "short": true,
-                    "value": "Failed"
-                  }
-                ]
-              }
-            ]
-          }
-      env:
-        SLACK_BOT_TOKEN: ${{ secrets.SLACK_GH_BOT }}
+          channel: ${{ secrets.SLACK_GH_BUILDS_CHANNEL_ID }}
+          text: "Datatracker Build <https://github.com/ietf-tools/datatracker/actions/runs/${{ github.run_id }}|${{ env.PKG_VERSION }}> by ${{ github.triggering_actor }}"
+          attachments:
+            - color: "a82929"
+              fields:
+                - title: "Status"
+                  short: true
+                  value: "Failed"
         
   # -----------------------------------------------------------------
   # SANDBOX
