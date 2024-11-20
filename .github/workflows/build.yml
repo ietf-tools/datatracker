@@ -137,6 +137,7 @@ jobs:
     uses: ./.github/workflows/tests.yml
     if: ${{ github.event.inputs.skiptests == 'false' || github.ref_name == 'release' }}
     needs: [prepare]
+    secrets: inherit
     with:
       ignoreLowerCoverage: ${{ github.event.inputs.ignoreLowerCoverage == 'true' }}
       skipSelenium: true
