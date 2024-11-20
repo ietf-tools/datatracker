@@ -1,16 +1,24 @@
 # Copyright The IETF Trust 2017-2024, All Rights Reserved
+from drf_spectacular.views import SpectacularAPIView
+from rest_framework import routers
+
 
 from django.conf import settings
-from django.urls import include
+from django.urls import include, path
 from django.views.generic import TemplateView
 
 from ietf import api
 from ietf.api import views as api_views
 from ietf.doc import views_ballot
 from ietf.meeting import views as meeting_views
+from ietf.person import api as person_api
 from ietf.submit import views as submit_views
 from ietf.utils.urls import url
 
+# DRF API routing
+core_router = routers.DefaultRouter()  # core api router
+core_router.register("email", person_api.EmailViewSet)
+core_router.register("person", person_api.PersonViewSet)
 
 api.autodiscover()
 
@@ -21,6 +29,9 @@ urlpatterns = [
     url(r'^v1/?$', api_views.top_level),
     # For mailarchive use, requires secretariat role
     url(r'^v2/person/person', api_views.ApiV2PersonExportView.as_view()),
+    # --- DRF API ---
+    path("core/", include(core_router.urls)),
+    path("schema/", SpectacularAPIView.as_view()),
     #
     # --- Custom API endpoints, sorted alphabetically ---
     # Email alias information for drafts

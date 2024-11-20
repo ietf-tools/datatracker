@@ -12,4 +12,8 @@ class ApiConfig(AppConfig):
         interact with the database. See        
         https://docs.djangoproject.com/en/4.2/ref/applications/#django.apps.AppConfig.ready
         """
+        # Populate our API list now that the app registry is set up
         populate_api_list()
+
+        # Import drf-spectacular extensions 
+        import ietf.api.schema  # pyflakes: ignore
