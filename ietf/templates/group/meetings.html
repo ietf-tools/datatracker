@@ -40,7 +40,7 @@
     {% if future %}
         <h2 class="mt-5" id="futuremeets">
             Future Meetings
-            <a class="float-end"
+            <a class="ms-2"
                aria-label="icalendar entry for all scheduled future {{ group.acronym }} meetings"
                title="icalendar entry for all scheduled future {{ group.acronym }} meetings"
                href="{% url 'ietf.meeting.views.upcoming_ical' %}?show={{ group.acronym }}">
