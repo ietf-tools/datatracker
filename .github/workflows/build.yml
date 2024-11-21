@@ -256,6 +256,10 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
 
+    - name: Add feature-latest tag
+      if: ${{ startsWith(github.ref_name, 'feat/') }}
+      run: echo "FEATURE_LATEST_TAG=$(echo $GITHUB_REF_NAME | tr / -)" >> $GITHUB_ENV
+
     - name: Build Images
       uses: docker/build-push-action@v6
       env:
@@ -265,7 +269,9 @@ jobs:
         file: dev/build/Dockerfile
         platforms: ${{ github.event.inputs.skiparm == 'true' && 'linux/amd64' || 'linux/amd64,linux/arm64' }}
         push: true
-        tags: ghcr.io/ietf-tools/datatracker:${{ env.PKG_VERSION }}
+        tags: |
+          ghcr.io/ietf-tools/datatracker:${{ env.PKG_VERSION }}
+          ${{ env.FEATURE_LATEST_TAG && format('ghcr.io/ietf-tools/datatracker:{0}-latest', env.FEATURE_LATEST_TAG) || null }}
         cache-from: type=gha
         cache-to: type=gha,mode=max
 
