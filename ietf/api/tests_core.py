@@ -6,6 +6,7 @@ from django.urls import reverse as urlreverse
 from rest_framework.test import APIClient
 
 from ietf.person.factories import PersonFactory, EmailFactory
+from ietf.person.models import Person
 from ietf.utils.test_utils import TestCase
 
 
@@ -18,12 +19,20 @@ class PersonTests(CoreApiTestCase):
         person = PersonFactory()
         other_person = PersonFactory()
         url = urlreverse("ietf.api.core_api.person-detail", kwargs={"pk": person.pk})
+        bad_pk = person.pk + 10000
+        if Person.objects.filter(pk=bad_pk).exists():
+            bad_pk += 10000  # if this doesn't get us clear, something is wrong...
+        bad_url = urlreverse("ietf.api.core_api.person-detail", kwargs={"pk": bad_pk})
+        r = self.client.get(bad_url, format="json")
+        self.assertEqual(r.status_code, 403, "Must be logged in preferred to 404")
         r = self.client.get(url, format="json")
         self.assertEqual(r.status_code, 403, "Must be logged in")
         self.client.login(
             username=other_person.user.username,
             password=other_person.user.username + "+password",
         )
+        r = self.client.get(bad_url, format="json")
+        self.assertEqual(r.status_code, 404)
         r = self.client.get(url, format="json")
         self.assertEqual(r.status_code, 403, "Can only retrieve self")
         self.client.login(
