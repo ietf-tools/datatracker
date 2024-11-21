@@ -22,6 +22,10 @@ class PersonTests(CoreApiTestCase):
         bad_pk = person.pk + 10000
         if Person.objects.filter(pk=bad_pk).exists():
             bad_pk += 10000  # if this doesn't get us clear, something is wrong...
+            self.assertFalse(
+                Person.objects.filter(pk=bad_pk).exists(),
+                "Failed to find a non-existent person pk",
+            )
         bad_url = urlreverse("ietf.api.core_api.person-detail", kwargs={"pk": bad_pk})
         r = self.client.get(bad_url, format="json")
         self.assertEqual(r.status_code, 403, "Must be logged in preferred to 404")
