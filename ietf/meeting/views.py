@@ -4,7 +4,6 @@
 
 import csv
 import datetime
-import glob
 import io
 import itertools
 import json
@@ -20,11 +19,13 @@ from calendar import timegm
 from collections import OrderedDict, Counter, deque, defaultdict, namedtuple
 from functools import partialmethod
 import jsonschema
+from pathlib import Path
 from urllib.parse import parse_qs, unquote, urlencode, urlsplit, urlunsplit
 from tempfile import mkstemp
 from wsgiref.handlers import format_date_time
 
 from django import forms
+from django.core.cache import caches
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import (HttpResponse, HttpResponseRedirect, HttpResponseForbidden,
                          HttpResponseNotFound, Http404, HttpResponseBadRequest,
@@ -250,7 +251,14 @@ def _get_materials_doc(meeting, name):
 
 @cache_page(1 * 60)
 def materials_document(request, document, num=None, ext=None):
-    meeting=get_meeting(num,type_in=['ietf','interim'])
+    """Materials document view
+
+    :param request: Django request
+    :param document: Name of document without an extension
+    :param num: meeting number
+    :param ext: extension including preceding '.'
+    """
+    meeting = get_meeting(num, type_in=["ietf", "interim"])
     num = meeting.number
     try:
         doc, rev = _get_materials_doc(meeting=meeting, name=document)
@@ -258,32 +266,34 @@ def materials_document(request, document, num=None, ext=None):
         raise Http404("No such document for meeting %s" % num)
 
     if not rev:
-        filename = doc.get_file_name()
+        filename = Path(doc.get_file_name())
     else:
-        filename = os.path.join(doc.get_file_path(), document)
+        filename = Path(doc.get_file_path()) / document
     if ext:
-        if not filename.endswith(ext):
-            name, _ = os.path.splitext(filename)
-            filename = name + ext
-    else:
-        filenames = glob.glob(filename+'.*')
-        if filenames:
-            filename = filenames[0]
-    _, basename = os.path.split(filename)
-    if not os.path.exists(filename):
-        raise Http404("File not found: %s" % filename)
+        filename = filename.with_suffix(ext)
+    elif filename.suffix == "":
+        # If we don't already have an extension, try to add one
+        ext_choices = {
+            # Construct a map from suffix to full filename
+            fn.suffix: fn
+            for fn in sorted(filename.parent.glob(filename.stem + ".*"))
+        }
+        if len(ext_choices) > 0:
+            if ".pdf" in ext_choices:
+                filename = ext_choices[".pdf"]
+            else:
+                filename = list(ext_choices.values())[0]
+    if not filename.exists():
+        raise Http404(f"File not found: {filename}")
 
     old_proceedings_format = meeting.number.isdigit() and int(meeting.number) <= 96
     if settings.MEETING_MATERIALS_SERVE_LOCALLY or old_proceedings_format:
-        with io.open(filename, 'rb') as file:
-            bytes = file.read()
-        
+        bytes = filename.read_bytes()
         mtype, chset = get_mime_type(bytes)
         content_type = "%s; charset=%s" % (mtype, chset)
 
-        file_ext = os.path.splitext(filename)
-        if len(file_ext) == 2 and file_ext[1] == '.md' and mtype == 'text/plain':
-            sorted_accept = sort_accept_tuple(request.META.get('HTTP_ACCEPT'))
+        if filename.suffix == ".md" and mtype == "text/plain":
+            sorted_accept = sort_accept_tuple(request.META.get("HTTP_ACCEPT"))
             for atype in sorted_accept:
                 if atype[0] == "text/markdown":
                     content_type = content_type.replace("plain", "markdown", 1)
@@ -293,7 +303,7 @@ def materials_document(request, document, num=None, ext=None):
                         "minimal.html",
                         {
                             "content": markdown.markdown(bytes.decode(encoding=chset)),
-                            "title": basename,
+                            "title": filename.name,
                         },
                     )
                     content_type = content_type.replace("plain", "html", 1)
@@ -302,10 +312,11 @@ def materials_document(request, document, num=None, ext=None):
                     break
 
         response = HttpResponse(bytes, content_type=content_type)
-        response['Content-Disposition'] = 'inline; filename="%s"' % basename
+        response["Content-Disposition"] = f'inline; filename="{filename.name}"'
         return response
     else:
         return HttpResponseRedirect(redirect_to=doc.get_href(meeting=meeting))
+
 
 @login_required
 def materials_editable_groups(request, num=None):
@@ -1647,8 +1658,16 @@ def agenda(request, num=None, name=None, base=None, ext=None, owner=None, utc=""
         }
     })
 
-@cache_page(5 * 60)
-def api_get_agenda_data (request, num=None):
+
+def generate_agenda_data(num=None, force_refresh=False):
+    """Generate data for the api_get_agenda_data endpoint
+    
+    :num: meeting number
+    :force_refresh: True to force a refresh of the cache
+    """
+    cache = caches["default"]
+    cache_timeout = 6 * 60
+
     meeting = get_ietf_meeting(num)
     if meeting is None:
         raise Http404("No such full IETF meeting")
@@ -1656,6 +1675,12 @@ def api_get_agenda_data (request, num=None):
         return Http404("Pre-IETF 64 meetings are not available through this API")
     else:
         pass
+
+    cache_key = f"generate_agenda_data_{meeting.number}"
+    if not force_refresh:
+        cached_value = cache.get(cache_key)
+        if cached_value is not None:
+            return cached_value
 
     # Select the schedule to show
     schedule = get_schedule(meeting, None)
@@ -1675,10 +1700,8 @@ def api_get_agenda_data (request, num=None):
 
     # Get Floor Plans
     floors = FloorPlan.objects.filter(meeting=meeting).order_by('order')
-
-    #debug.show('all([(item.acronym,item.session.order_number,item.session.order_in_meeting()) for item in filtered_assignments])')
-
-    return JsonResponse({
+    
+    result = {
         "meeting": {
             "number": schedule.meeting.number,
             "city": schedule.meeting.city,
@@ -1694,7 +1717,13 @@ def api_get_agenda_data (request, num=None):
         "usesNotes": meeting.uses_notes(),
         "schedule": list(map(agenda_extract_schedule, filtered_assignments)),
         "floors": list(map(agenda_extract_floorplan, floors))
-    })
+    }
+    cache.set(cache_key, result, timeout=cache_timeout)
+    return result
+
+
+def api_get_agenda_data(request, num=None):
+    return JsonResponse(generate_agenda_data(num, force_refresh=False))
 
 
 def api_get_session_materials(request, session_id=None):
@@ -1757,6 +1786,7 @@ def agenda_extract_schedule (item):
         "type": item.session.type.slug,
         "purpose": item.session.purpose.slug,
         "isBoF": item.session.group_at_the_time().state_id == "bof",
+        "isProposed": item.session.group_at_the_time().state_id == "proposed",
         "filterKeywords": item.filter_keywords,
         "groupAcronym": item.session.group_at_the_time().acronym,
         "groupName": item.session.group_at_the_time().name,
@@ -4075,6 +4105,7 @@ def organize_proceedings_sessions(sessions):
                 'minutes': _format_materials((s, s.minutes()) for s in ss),
                 'bluesheets': _format_materials((s, s.bluesheets()) for s in ss),
                 'recordings': _format_materials((s, s.recordings()) for s in ss),
+                'meetecho_recordings': _format_materials((s, [s.session_recording_url()]) for s in ss),
                 'chatlogs': _format_materials((s, s.chatlogs()) for s in ss),
                 'slides': _format_materials((s, s.slides()) for s in ss),
                 'drafts': _format_materials((s, s.drafts()) for s in ss),

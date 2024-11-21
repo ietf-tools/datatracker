@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2024, All Rights Reserved #}
+{% load origin static person_filters ietf_filters %}
+{% block pagehead %}
+    <link rel="stylesheet" href="{% static 'ietf/css/list.css' %}">
+{% endblock %}
+{% block title %}Group Leadership{% endblock %}
+{% block content %}
+    {% origin %}
+    <h1>Group Leadership ({{ group_type }})</h1>
+    {% if user|has_role:"Secretariat" %}
+        <div class="text-end">
+            <a class="btn btn-primary" href="{% url 'ietf.group.views.group_leadership_csv' group_type=group_type %}">
+            <i class="bi bi-file-ruled"></i> Export as CSV
+            </a>
+        </div>
+    {% endif %}
+    <table class="table table-sm table-striped">
+        <thead>
+            <tr>
+                <th scope="col">Leader</th>
+                <th scope="col">Groups</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for leader in leaders %}
+                <tr>
+                    <td>{{ leader.name }}</td>
+                    <td>{{ leader.groups }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

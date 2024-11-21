@@ -37,6 +37,8 @@
 import re
 import datetime
 import copy
+import hashlib
+import json
 import operator
 
 from collections import defaultdict
@@ -44,16 +46,17 @@ from functools import reduce
 
 from django import forms
 from django.conf import settings
+from django.contrib import messages
 from django.core.cache import cache, caches
 from django.urls import reverse as urlreverse
 from django.db.models import Q
-from django.http import Http404, HttpResponseBadRequest, HttpResponse, HttpResponseRedirect, QueryDict
+from django.http import Http404, HttpResponseBadRequest, HttpResponse, HttpResponseRedirect
 from django.shortcuts import render
 from django.utils import timezone
 from django.utils.html import strip_tags
 from django.utils.cache import _generate_cache_key # type: ignore
 from django.utils.text import slugify
-
+from django_stubs_ext import QuerySetAny
 
 import debug                            # pyflakes:ignore
 
@@ -62,7 +65,7 @@ from ietf.doc.models import ( Document, DocHistory, State,
     IESG_BALLOT_ACTIVE_STATES, IESG_STATCHG_CONFLREV_ACTIVE_STATES,
     IESG_CHARTER_ACTIVE_STATES )
 from ietf.doc.fields import select2_id_doc_name_json
-from ietf.doc.utils import get_search_cache_key, augment_events_with_revision, needed_ballot_positions
+from ietf.doc.utils import augment_events_with_revision, needed_ballot_positions
 from ietf.group.models import Group
 from ietf.idindex.index import active_drafts_index_by_group
 from ietf.name.models import DocTagName, DocTypeName, StreamName
@@ -144,6 +147,29 @@ class SearchForm(forms.Form):
         if q['by'] != 'irtfstate':
             q['irtfstate'] = None
         return q
+
+    def cache_key_fragment(self):
+        """Hash a bound form to get a value for use in a cache key
+        
+        Raises a ValueError if the form is not valid.
+        """
+        def _serialize_value(val):
+            # Need QuerySetAny instead of QuerySet until django-stubs 5.0.1
+            if isinstance(val, QuerySetAny):
+                return [item.pk for item in val]
+            else:
+                return getattr(val, "pk", val)  # use pk if present, else value
+    
+        if not self.is_valid():
+            raise ValueError(f"SearchForm invalid: {self.errors}")
+        contents = {
+            field_name: _serialize_value(field_value)
+            for field_name, field_value in self.cleaned_data.items() 
+            if field_name != "sort" and field_value is not None
+        }
+        contents_json = json.dumps(contents, sort_keys=True)
+        return hashlib.sha512(contents_json.encode("utf-8")).hexdigest()
+
 
 def retrieve_search_results(form, all_types=False):
     """Takes a validated SearchForm and return the results."""
@@ -256,44 +282,63 @@ def retrieve_search_results(form, all_types=False):
 
     return docs
 
+
 def search(request):
-    if request.GET:
-        # backwards compatibility
-        get_params = request.GET.copy()
-        if 'activeDrafts' in request.GET:
-            get_params['activedrafts'] = request.GET['activeDrafts']
-        if 'oldDrafts' in request.GET:
-            get_params['olddrafts'] = request.GET['oldDrafts']
-        if 'subState' in request.GET:
-            get_params['substate'] = request.GET['subState']
+    """Search for a draft"""
+    # defaults for results / meta
+    results = []
+    meta = {"by": None, "searching": False}
 
-        form = SearchForm(get_params)
-        if not form.is_valid():
-            return HttpResponseBadRequest("form not valid: %s" % form.errors)
-
-        cache_key = get_search_cache_key(get_params)
-        cached_val = cache.get(cache_key)
-        if cached_val:
-            [results, meta] = cached_val
-        else:
-            results = retrieve_search_results(form)
-            results, meta = prepare_document_table(request, results, get_params)
-            cache.set(cache_key, [results, meta]) # for settings.CACHE_MIDDLEWARE_SECONDS
-            log(f"Search results computed for {get_params}")
-        meta['searching'] = True
+    if request.method == "POST":
+        form = SearchForm(data=request.POST)
+        if form.is_valid():
+            cache_key = f"doc:document:search:{form.cache_key_fragment()}"
+            cached_val = cache.get(cache_key)
+            if cached_val:
+                [results, meta] = cached_val
+            else:
+                results = retrieve_search_results(form)
+                results, meta = prepare_document_table(
+                    request, results, form.cleaned_data
+                )
+                cache.set(
+                    cache_key, [results, meta]
+                )  # for settings.CACHE_MIDDLEWARE_SECONDS
+                log(f"Search results computed for {form.cleaned_data}")
+            meta["searching"] = True
     else:
-        form = SearchForm()
-        results = []
-        meta = { 'by': None, 'searching': False }
-        get_params = QueryDict('')
+        if request.GET:
+            # backwards compatibility - fill in the form
+            get_params = request.GET.copy()
+            if "activeDrafts" in request.GET:
+                get_params["activedrafts"] = request.GET["activeDrafts"]
+            if "oldDrafts" in request.GET:
+                get_params["olddrafts"] = request.GET["oldDrafts"]
+            if "subState" in request.GET:
+                get_params["substate"] = request.GET["subState"]
+            form = SearchForm(data=get_params)
+            messages.error(
+                request,
+                (
+                    "Searching via the URL query string is no longer supported. "
+                    "The form below has been filled in with the parameters from your request. "
+                    'To execute your search, please click "Search".'
+                ),
+            )
+        else:
+            form = SearchForm()
 
-    return render(request, 'doc/search/search.html', {
-        'form':form, 'docs':results, 'meta':meta, 'queryargs':get_params.urlencode() },
+    return render(
+        request,
+        "doc/search/search.html",
+        context={"form": form, "docs": results, "meta": meta},
     )
+
 
 def frontpage(request):
     form = SearchForm()
     return render(request, 'doc/frontpage.html', {'form':form})
+
 
 def search_for_name(request, name):
     def find_unique(n):
