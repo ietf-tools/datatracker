@@ -175,4 +175,92 @@ class EmailTests(CoreApiTestCase):
         self.assertEqual(email.origin, "factory")
 
     def test_email_partial_update(self):
-        self.fail("not implemented")
+        email = EmailFactory(
+            address="original@example.org", primary=False, active=True, origin="factory"
+        )
+        person = email.person
+        other_person = PersonFactory()
+        url = urlreverse(
+            "ietf.api.core_api.email-detail", kwargs={"pk": "original@example.org"}
+        )
+        bad_url = urlreverse(
+            "ietf.api.core_api.email-detail",
+            kwargs={"pk": "not-original@example.org"},
+        )
+
+        r = self.client.patch(
+            bad_url, data={"primary": True}, format="json"
+        )
+        self.assertEqual(r.status_code, 403, "Must be logged in preferred to 404")
+        r = self.client.patch(url, data={"primary": True}, format="json")
+        self.assertEqual(r.status_code, 403, "Must be logged in")
+
+        self.client.login(
+            username=other_person.user.username,
+            password=other_person.user.username + "+password",
+        )
+        r = self.client.patch(
+            bad_url, data={"primary": True}, format="json"
+        )
+        self.assertEqual(r.status_code, 404, "No such address")
+        r = self.client.patch(url, data={"primary": True}, format="json")
+        self.assertEqual(r.status_code, 403, "Can only access own addresses")
+
+        self.client.login(
+            username=person.user.username, password=person.user.username + "+password"
+        )
+        r = self.client.patch(url, data={"primary": True}, format="json")
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(
+            r.data,
+            {
+                "person": person.pk,
+                "address": "original@example.org",
+                "primary": True,
+                "active": True,
+                "origin": "factory",
+            },
+        )
+        email.refresh_from_db()
+        self.assertEqual(email.person, person)
+        self.assertEqual(email.address, "original@example.org")
+        self.assertTrue(email.primary)
+        self.assertTrue(email.active)
+        self.assertEqual(email.origin, "factory")
+
+        r = self.client.patch(url, data={"active": False}, format="json")
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(
+            r.data,
+            {
+                "person": person.pk,
+                "address": "original@example.org",
+                "primary": True,
+                "active": False,
+                "origin": "factory",
+            },
+        )
+        email.refresh_from_db()
+        self.assertEqual(email.person, person)
+        self.assertEqual(email.address, "original@example.org")
+        self.assertTrue(email.primary)
+        self.assertFalse(email.active)
+        self.assertEqual(email.origin, "factory")
+
+        r = self.client.patch(url, data={"address": "modified@example.org"}, format="json")
+        self.assertEqual(r.status_code, 200)  # extra fields allowed, but ignored
+        email.refresh_from_db()
+        self.assertEqual(email.person, person)
+        self.assertEqual(email.address, "original@example.org")
+        self.assertTrue(email.primary)
+        self.assertFalse(email.active)
+        self.assertEqual(email.origin, "factory")
+
+        r = self.client.patch(url, data={"origin": "hacker"}, format="json")
+        self.assertEqual(r.status_code, 200)  # extra fields allowed, but ignored
+        email.refresh_from_db()
+        self.assertEqual(email.person, person)
+        self.assertEqual(email.address, "original@example.org")
+        self.assertTrue(email.primary)
+        self.assertFalse(email.active)
+        self.assertEqual(email.origin, "factory")
