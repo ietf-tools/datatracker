@@ -14,9 +14,15 @@ class CoreApiTestCase(TestCase):
 class PersonTests(CoreApiTestCase):
     def test_person_detail(self):
         person = PersonFactory()
+        other_person = PersonFactory()
         url = urlreverse("ietf.api.core_api.person-detail", kwargs={"pk": person.pk})
         r = self.client.get(url, format="json")
-        self.assertEqual(r.status_code, 403)
+        self.assertEqual(r.status_code, 403, "Must be logged in")
+        self.client.login(
+            username=other_person.user.username, password=other_person.user.username + "+password"
+        )
+        r = self.client.get(url, format="json")
+        self.assertEqual(r.status_code, 403, "Can only retrieve self")
         self.client.login(
             username=person.user.username, password=person.user.username + "+password"
         )
