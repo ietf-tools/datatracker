@@ -1133,10 +1133,10 @@ def get_diff_revisions(request, name, doc):
 
     diff_documents = [doc]
     diff_documents.extend(
-        Document.objects.filter(
-            relateddocument__source=doc,
-            relateddocument__relationship="replaces",
-        )
+        [
+            r.target
+            for r in RelatedDocument.objects.filter(source=doc, relationship="replaces")
+        ]
     )
     if doc.came_from_draft():
         diff_documents.append(doc.came_from_draft())

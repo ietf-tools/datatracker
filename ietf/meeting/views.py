@@ -4105,6 +4105,7 @@ def organize_proceedings_sessions(sessions):
                 'minutes': _format_materials((s, s.minutes()) for s in ss),
                 'bluesheets': _format_materials((s, s.bluesheets()) for s in ss),
                 'recordings': _format_materials((s, s.recordings()) for s in ss),
+                'meetecho_recordings': _format_materials((s, [s.session_recording_url()]) for s in ss),
                 'chatlogs': _format_materials((s, s.chatlogs()) for s in ss),
                 'slides': _format_materials((s, s.slides()) for s in ss),
                 'drafts': _format_materials((s, s.drafts()) for s in ss),
