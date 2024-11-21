@@ -2,6 +2,7 @@
 """DRF API Views"""
 from rest_framework import mixins, viewsets
 from rest_framework.decorators import action
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from ietf.api.permissions import BelongsToOwnPerson, IsOwnPerson
@@ -16,7 +17,7 @@ class EmailViewSet(mixins.UpdateModelMixin, viewsets.GenericViewSet):
     
     Only allows updating an existing email for now.
     """
-    permission_classes = [BelongsToOwnPerson]
+    permission_classes = [IsAuthenticated & BelongsToOwnPerson]
     queryset = Email.objects.all()
     serializer_class = EmailSerializer
     lookup_value_regex = '.+@.+'  # allow @-sign in the pk
@@ -24,7 +25,7 @@ class EmailViewSet(mixins.UpdateModelMixin, viewsets.GenericViewSet):
 
 class PersonViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
     """Person viewset"""
-    permission_classes = [IsOwnPerson]
+    permission_classes = [IsAuthenticated & IsOwnPerson]
     queryset = Person.objects.all()
     serializer_class = PersonSerializer
 
