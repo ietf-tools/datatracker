@@ -17,7 +17,7 @@ import debug                            # pyflakes:ignore
 from ietf.ietfauth.utils import role_required
 from ietf.utils.mail import send_mail
 from ietf.meeting.forms import duration_string
-from ietf.meeting.helpers import get_meeting, make_materials_directories, populate_important_dates
+from ietf.meeting.helpers import make_materials_directories, populate_important_dates
 from ietf.meeting.models import Meeting, Session, Room, TimeSlot, SchedTimeSessAssignment, Schedule, SchedulingEvent
 from ietf.meeting.utils import add_event_info_to_session_qs
 from ietf.name.models import SessionStatusName
