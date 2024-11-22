@@ -17,7 +17,7 @@ import debug                            # pyflakes:ignore
 from ietf.ietfauth.utils import role_required
 from ietf.utils.mail import send_mail
 from ietf.meeting.forms import duration_string
-from ietf.meeting.helpers import get_meeting, make_materials_directories, populate_important_dates
+from ietf.meeting.helpers import make_materials_directories, populate_important_dates
 from ietf.meeting.models import Meeting, Session, Room, TimeSlot, SchedTimeSessAssignment, Schedule, SchedulingEvent
 from ietf.meeting.utils import add_event_info_to_session_qs
 from ietf.name.models import SessionStatusName
@@ -223,9 +223,8 @@ def add(request):
             )
             meeting.schedule = schedule
 
-            # we want to carry session request lock status over from previous meeting
-            previous_meeting = get_meeting( int(meeting.number) - 1 )
-            meeting.session_request_lock_message = previous_meeting.session_request_lock_message
+            # Create meeting with session requests locked
+            meeting.session_request_lock_message = "Session requests for this meeting have not yet opened."
             meeting.save()
 
             populate_important_dates(meeting)
