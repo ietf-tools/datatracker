@@ -3,7 +3,9 @@
 
 
 import datetime
+import hashlib
 import io
+import json
 import math
 import os
 import re
@@ -346,7 +348,6 @@ def augment_events_with_revision(doc, events):
     """Take a set of events for doc and add a .rev attribute with the
     revision they refer to by checking NewRevisionDocEvents."""
 
-    # Need QuerySetAny instead of QuerySet until django-stubs 5.0.1
     if isinstance(events, QuerySetAny):
         qs = events.filter(newrevisiondocevent__isnull=False)
     else:
@@ -1046,8 +1047,12 @@ def make_rev_history(doc):
     return sorted(history, key=lambda x: x['published'])
 
 
-def get_search_cache_key(key_fragment):
-    return f"doc:document:search:{key_fragment}"
+def get_search_cache_key(params):
+    from ietf.doc.views_search import SearchForm
+    fields = set(SearchForm.base_fields) - set(['sort',])
+    kwargs = dict([ (k,v) for (k,v) in list(params.items()) if k in fields ])
+    key = "doc:document:search:" + hashlib.sha512(json.dumps(kwargs, sort_keys=True).encode('utf-8')).hexdigest()
+    return key
 
 
 def build_file_urls(doc: Union[Document, DocHistory]):

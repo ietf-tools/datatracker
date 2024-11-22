@@ -35,7 +35,6 @@ class ShowAttachmentsWidget(Widget):
         html = '<div id="id_%s">' % name
         html += '<span class="d-none showAttachmentsEmpty form-control widget">No files attached</span>'
         html += '<div class="attachedFiles form-control widget">'
-        # Need QuerySetAny instead of QuerySet until django-stubs 5.0.1
         if value and isinstance(value, QuerySetAny):
             for attachment in value:
                 html += '<a class="initialAttach" href="%s">%s</a>&nbsp' % (conditional_escape(attachment.document.get_href()), conditional_escape(attachment.document.title))
