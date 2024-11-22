@@ -31,4 +31,4 @@ class GunicornRequestJsonFormatter(DatatrackerJsonFormatter):
         log_record.setdefault("cf_connecting_ip", record.args["{cf-connecting-ip}i"])
         log_record.setdefault("cf_connecting_ipv6", record.args["{cf-connecting-ipv6}i"])
         log_record.setdefault("cf_ray", record.args["{cf-ray}i"])
-        log_record.setdefault("is_authenticated", record.args["{x-datatracker-is-authenticated}i"])
+        log_record.setdefault("is_authenticated", record.args["{x-datatracker-is-authenticated}o"])
