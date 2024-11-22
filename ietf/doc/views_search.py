@@ -56,6 +56,7 @@ from django.utils import timezone
 from django.utils.html import strip_tags
 from django.utils.cache import _generate_cache_key # type: ignore
 from django.utils.text import slugify
+from django.views.decorators.csrf import ensure_csrf_cookie
 from django_stubs_ext import QuerySetAny
 
 import debug                            # pyflakes:ignore
@@ -283,6 +284,7 @@ def retrieve_search_results(form, all_types=False):
     return docs
 
 
+@ensure_csrf_cookie
 def search(request):
     """Search for a draft"""
     # defaults for results / meta
@@ -335,6 +337,7 @@ def search(request):
     )
 
 
+@ensure_csrf_cookie
 def frontpage(request):
     form = SearchForm()
     return render(request, 'doc/frontpage.html', {'form':form})
