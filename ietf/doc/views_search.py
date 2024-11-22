@@ -65,7 +65,7 @@ from ietf.doc.models import ( Document, DocHistory, State,
     IESG_BALLOT_ACTIVE_STATES, IESG_STATCHG_CONFLREV_ACTIVE_STATES,
     IESG_CHARTER_ACTIVE_STATES )
 from ietf.doc.fields import select2_id_doc_name_json
-from ietf.doc.utils import augment_events_with_revision, needed_ballot_positions
+from ietf.doc.utils import get_search_cache_key, augment_events_with_revision, needed_ballot_positions
 from ietf.group.models import Group
 from ietf.idindex.index import active_drafts_index_by_group
 from ietf.name.models import DocTagName, DocTypeName, StreamName
@@ -292,7 +292,7 @@ def search(request):
     if request.method == "POST":
         form = SearchForm(data=request.POST)
         if form.is_valid():
-            cache_key = f"doc:document:search:{form.cache_key_fragment()}"
+            cache_key = get_search_cache_key(form.cache_key_fragment())
             cached_val = cache.get(cache_key)
             if cached_val:
                 [results, meta] = cached_val

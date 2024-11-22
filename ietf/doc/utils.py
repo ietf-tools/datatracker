@@ -1046,6 +1046,10 @@ def make_rev_history(doc):
     return sorted(history, key=lambda x: x['published'])
 
 
+def get_search_cache_key(key_fragment):
+    return f"doc:document:search:{key_fragment}"
+
+
 def build_file_urls(doc: Union[Document, DocHistory]):
     if doc.type_id == "rfc":
         base_path = os.path.join(settings.RFC_PATH, doc.name + ".")
