@@ -82,13 +82,13 @@ def pre_request(worker, req):
     """Log the start of a request and add it to the in-flight list"""
     request_description = _describe_request(req)
     worker.log.info(f"gunicorn starting to process {request_description}")
-    in_flight = in_flight_by_pid.setdefault(worker.pid, list())
+    in_flight = in_flight_by_pid.setdefault(worker.pid, [])
     in_flight.append(request_description)
 
 
 def worker_abort(worker):
     """Emit an error log if any requests were in-flight"""
-    in_flight = in_flight_by_pid.get(worker.pid, set())
+    in_flight = in_flight_by_pid.get(worker.pid, [])
     if len(in_flight) > 0:
         worker.log.error(
             f"Aborted worker {worker.pid} with in-flight requests: {', '.join(in_flight)}"
@@ -97,7 +97,7 @@ def worker_abort(worker):
 
 def worker_int(worker):
     """Emit an error log if any requests were in-flight"""
-    in_flight = in_flight_by_pid.get(worker.pid, set())
+    in_flight = in_flight_by_pid.get(worker.pid, [])
     if len(in_flight) > 0:
         worker.log.error(
             f"Interrupted worker {worker.pid} with in-flight requests: {', '.join(in_flight)}"
@@ -107,6 +107,6 @@ def worker_int(worker):
 def post_request(worker, req, environ, resp):
     """Remove request from in-flight list when we finish handling it"""
     request_description = _describe_request(req)
-    in_flight = in_flight_by_pid.get(worker.pid, set())
+    in_flight = in_flight_by_pid.get(worker.pid, [])
     if request_description in in_flight:
         in_flight.remove(request_description)
