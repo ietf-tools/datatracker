@@ -39,6 +39,7 @@ from ietf.api.serializer import JsonExportMixin
 from ietf.doc.utils import DraftAliasGenerator, fuzzy_find_documents
 from ietf.group.utils import GroupAliasGenerator, role_holder_emails
 from ietf.ietfauth.utils import role_required
+from ietf.ietfauth.views import send_account_creation_email
 from ietf.ipr.utils import ingest_response_email as ipr_ingest_response_email
 from ietf.meeting.models import Meeting
 from ietf.nomcom.models import Volunteer, NomCom
@@ -141,13 +142,104 @@ class ApiV2PersonExportView(DetailView, JsonExportMixin):
 #         return HttpResponse(status=405)
 
 
+@require_api_key
+@role_required('Robot')
+@csrf_exempt
+def api_new_meeting_registration(request):
+    '''REST API to notify the datatracker about a new meeting registration'''
+    def err(code, text):
+        return HttpResponse(text, status=code, content_type='text/plain')
+    required_fields = [ 'meeting', 'first_name', 'last_name', 'affiliation', 'country_code',
+                        'email', 'reg_type', 'ticket_type', 'checkedin', 'is_nomcom_volunteer']
+    fields = required_fields + []
+    if request.method == 'POST':
+        # parameters:
+        #   apikey:
+        #   meeting
+        #   name
+        #   email
+        #   reg_type (In Person, Remote, Hackathon Only)
+        #   ticket_type (full_week, one_day, student)
+        #   
+        data = {'attended': False, }
+        missing_fields = []
+        for item in fields:
+            value = request.POST.get(item, None)
+            if value is None and item in required_fields:
+                missing_fields.append(item)
+            data[item] = value
+        if missing_fields:
+            return err(400, "Missing parameters: %s" % ', '.join(missing_fields))
+        number = data['meeting']
+        try:
+            meeting = Meeting.objects.get(number=number)
+        except Meeting.DoesNotExist:
+            return err(400, "Invalid meeting value: '%s'" % (number, ))
+        reg_type = data['reg_type']
+        email = data['email']
+        try:
+            validate_email(email)
+        except ValidationError:
+            return err(400, "Invalid email value: '%s'" % (email, ))
+        if request.POST.get('cancelled', 'false') == 'true':
+            MeetingRegistration.objects.filter(
+                meeting_id=meeting.pk,
+                email=email,
+                reg_type=reg_type).delete()
+            return HttpResponse('OK', status=200, content_type='text/plain')
+        else:
+            object, created = MeetingRegistration.objects.get_or_create(
+                meeting_id=meeting.pk,
+                email=email,
+                reg_type=reg_type)
+            try:
+                # Update attributes
+                for key in set(data.keys())-set(['attended', 'apikey', 'meeting', 'email']):
+                    if key == 'checkedin':
+                        new = bool(data.get(key).lower() == 'true')
+                    else:
+                        new = data.get(key)
+                    setattr(object, key, new)
+                person = Person.objects.filter(email__address=email)
+                if person.exists():
+                    object.person = person.first()
+                object.save()
+            except ValueError as e:
+                return err(400, "Unexpected POST data: %s" % e)
+            response = "Accepted, New registration" if created else "Accepted, Updated registration"
+            if User.objects.filter(username__iexact=email).exists() or Email.objects.filter(address=email).exists():
+                pass
+            else:
+                send_account_creation_email(request, email)
+                response += ", Email sent"
+
+            # handle nomcom volunteer
+            if request.POST.get('is_nomcom_volunteer', 'false').lower() == 'true' and object.person:
+                try:
+                    nomcom = NomCom.objects.get(is_accepting_volunteers=True)
+                except (NomCom.DoesNotExist, NomCom.MultipleObjectsReturned):
+                    nomcom = None
+                if nomcom:
+                    Volunteer.objects.get_or_create(
+                        nomcom=nomcom,
+                        person=object.person,
+                        defaults={
+                            "affiliation": data["affiliation"],
+                            "origin": "registration"
+                        }
+                    )
+            return HttpResponse(response, status=202, content_type='text/plain')
+    else:
+        return HttpResponse(status=405)
+
+
 _new_registration_json_validator = jsonschema.Draft202012Validator(
     schema={
         "type": "array",
         "items": {
             "type": "object",
             "properties": {
-                "meeting": {"type": "integer"},
+                "meeting": {"type": "string"},
                 "first_name": {"type": "string"},
                 "last_name": {"type": "string"},
                 "affiliation": {"type": "string"},
@@ -155,22 +247,21 @@ _new_registration_json_validator = jsonschema.Draft202012Validator(
                 "email": {"type": "string"},
                 "reg_type": {"type": "string"},
                 "ticket_type": {"type": "string"},
-                "checked_in": {"type": "boolean"},
+                "checkedin": {"type": "boolean"},
                 "is_nomcom_volunteer": {"type": "boolean"},
                 "cancelled": {"type": "boolean"},
             },
-            "required": ["meeting", "first_name", "last_name", "affiliation", "country_code", "email", "reg_type", "ticket_type", "checked_in", "is_nomcom_volunteer", "cancelled"],
+            "required": ["meeting", "first_name", "last_name", "affiliation", "country_code", "email", "reg_type", "ticket_type", "checkedin", "is_nomcom_volunteer", "cancelled"],
             "additionalProperties": "false"
         }
     }
 )
 
 
-@require_api_key
-@role_required('Robot')
+@requires_api_token
 @csrf_exempt
-def api_new_meeting_registration(request):
-    '''REST API to notify the datatracker about a new meeting registration'''
+def api_new_meeting_registration_v2(request):
+    '''REST API to notify the datatracker about new or updated meeting registrations'''
 
     def _safe_pop(lst):
         if lst:
@@ -237,8 +328,7 @@ def api_new_meeting_registration(request):
     # get person
     person = Person.objects.filter(email__address=email).first()
     if not person:
-        # no log level?
-        log.log(f"api_new_meeting_registration no Person found for {email}")
+        log.log(f"api_new_meeting_registration_v2 no Person found for {email}")
 
     # get existing records if any
     regs = MeetingRegistration.objects.filter(meeting__number=number, email=email)
@@ -255,10 +345,14 @@ def api_new_meeting_registration(request):
             email=email,
             reg_type=registration['reg_type'],
             ticket_type=registration['ticket_type'],
-            checkedin=registration['checked_in'])
+            checkedin=registration['checkedin'])
 
         # update any existing records if there are any
         new_reg.pk = _safe_pop(pks)
+        if new_reg.pk:
+            log.log(f"Updating MeetingRegistration record for meeting:{meeting} email:{email}")
+        else:
+            log.log(f"New MeetingRegistration record for meeting:{meeting} email:{email}")
         new_reg.save()
 
         # removed account creation email. Registration requires Datatracker account
