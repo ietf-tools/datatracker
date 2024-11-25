@@ -89,7 +89,7 @@ def pre_request(worker, req):
 def worker_abort(worker):
     """Emit an error log if any requests were in-flight"""
     in_flight = in_flight_by_pid.get(worker.pid, set())
-    if in_flight is not None:
+    if len(in_flight) > 0:
         worker.log.error(
             f"Aborted worker {worker.pid} with in-flight requests: {', '.join(in_flight)}"
         )
@@ -98,7 +98,7 @@ def worker_abort(worker):
 def worker_int(worker):
     """Emit an error log if any requests were in-flight"""
     in_flight = in_flight_by_pid.get(worker.pid, set())
-    if in_flight is not None:
+    if len(in_flight) > 0:
         worker.log.error(
             f"Interrupted worker {worker.pid} with in-flight requests: {', '.join(in_flight)}"
         )
