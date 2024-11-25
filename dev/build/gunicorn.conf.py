@@ -12,26 +12,25 @@ logconfig_dict = {
             "level": "INFO",
             "handlers": ["console"],
             "propagate": False,
-            "qualname": "gunicorn.error"
+            "qualname": "gunicorn.error",
         },
-
         "gunicorn.access": {
             "level": "INFO",
             "handlers": ["access_console"],
             "propagate": False,
-            "qualname": "gunicorn.access"
-        }
+            "qualname": "gunicorn.access",
+        },
     },
     "handlers": {
         "console": {
             "class": "logging.StreamHandler",
             "formatter": "json",
-            "stream": "ext://sys.stdout"
+            "stream": "ext://sys.stdout",
         },
         "access_console": {
             "class": "logging.StreamHandler",
             "formatter": "access_json",
-            "stream": "ext://sys.stdout"
+            "stream": "ext://sys.stdout",
         },
     },
     "formatters": {
@@ -44,8 +43,8 @@ logconfig_dict = {
             "class": "ietf.utils.jsonlogger.GunicornRequestJsonFormatter",
             "style": "{",
             "format": "{asctime}{levelname}{message}{name}{process}",
-        }
-    }
+        },
+    },
 }
 
 # Track in-flight requests and emit a list of what was happeningwhen a worker is terminated.
