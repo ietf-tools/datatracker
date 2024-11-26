@@ -323,7 +323,7 @@ const meetingUpdated = computed(() => {
   if (!agendaStore.meeting.updated) { return false }
   
   const updatedDatetime = DateTime.fromISO(agendaStore.meeting.updated).setZone(agendaStore.timezone)
-  if (!updatedDatetime.isValid || updatedDatetime < DateTime.fromISO('1980-01-01')) {
+  if (!updatedDatetime.isValid) {
     return false
   }
   
@@ -434,7 +434,7 @@ function reconnectScrollObservers () {
   scrollObserver.disconnect()
   visibleDays.length = 0
   for (const mDay of agendaStore.meetingDays) {
-    const el = document.getElementById(`agenda-day-${mDay.slug}`)
+    const el = document.getElementById(mDay.slug)
     el.dataset.dayId = mDay.slug.toString()
     el.dataset.dayTs = mDay.ts
     scrollObserver.observe(el)

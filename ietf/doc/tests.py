@@ -5,6 +5,7 @@
 import os
 import datetime
 import io
+from django.http import HttpRequest
 import lxml
 import bibtexparser
 import mock
@@ -52,6 +53,7 @@ from ietf.doc.utils import (
     generate_idnits2_rfcs_obsoleted,
     get_doc_email_aliases,
 )
+from ietf.doc.views_doc import get_diff_revisions
 from ietf.group.models import Group, Role
 from ietf.group.factories import GroupFactory, RoleFactory
 from ietf.ipr.factories import HolderIprDisclosureFactory
@@ -59,7 +61,7 @@ from ietf.meeting.models import Meeting, SessionPresentation, SchedulingEvent
 from ietf.meeting.factories import ( MeetingFactory, SessionFactory, SessionPresentationFactory,
      ProceedingsMaterialFactory )
 
-from ietf.name.models import SessionStatusName, BallotPositionName, DocTypeName
+from ietf.name.models import SessionStatusName, BallotPositionName, DocTypeName, RoleName
 from ietf.person.models import Person
 from ietf.person.factories import PersonFactory, EmailFactory
 from ietf.utils.mail import outbox, empty_outbox
@@ -1450,6 +1452,14 @@ Man                    Expires September 22, 2015               [Page 3]
         """Buttons for action holders should be shown when AD or secretary"""
         draft = WgDraftFactory()
         draft.action_holders.set([PersonFactory()])
+        other_group = GroupFactory(type_id=draft.group.type_id)
+
+        # create a test RoleName and put it in the docman_roles for the document group
+        RoleName.objects.create(slug="wrangler", name="Wrangler", used=True)
+        draft.group.features.docman_roles.append("wrangler")
+        draft.group.features.save()
+        wrangler = RoleFactory(group=draft.group, name_id="wrangler").person
+        wrangler_of_other_group = RoleFactory(group=other_group, name_id="wrangler").person
 
         url = urlreverse('ietf.doc.views_doc.document_main', kwargs=dict(name=draft.name))
         edit_ah_url = urlreverse('ietf.doc.views_doc.edit_action_holders', kwargs=dict(name=draft.name))
@@ -1482,6 +1492,8 @@ Man                    Expires September 22, 2015               [Page 3]
 
         _run_test(None, False)
         _run_test('plain', False)
+        _run_test(wrangler_of_other_group.user.username, False)
+        _run_test(wrangler.user.username, True)
         _run_test('ad', True)
         _run_test('secretary', True)
 
@@ -1683,6 +1695,17 @@ class DocTestCase(TestCase):
 
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=doc.name)))
         self.assertEqual(r.status_code, 200)
+        self.assertNotContains(r, "The session for this document was cancelled.")
+
+        SchedulingEvent.objects.create(
+            session=session,
+            status_id='canceled',
+            by = Person.objects.get(user__username="marschairman"), 
+        )
+
+        r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=doc.name)))
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "The session for this document was cancelled.")
 
     def test_document_ballot(self):
         doc = IndividualDraftFactory()
@@ -1865,6 +1888,18 @@ class DocTestCase(TestCase):
         self.assertContains(r, appr.text)
         self.assertContains(r, notes.text)
         self.assertContains(r, rfced_note.text)
+
+    def test_diff_revisions(self):
+        ind_doc = IndividualDraftFactory(create_revisions=range(2))
+        wg_doc = WgDraftFactory(
+            relations=[("replaces", ind_doc)], create_revisions=range(2)
+        )
+        diff_revisions = get_diff_revisions(HttpRequest(), wg_doc.name, wg_doc)
+        self.assertEqual(len(diff_revisions), 4)
+        self.assertEqual(
+            [t[3] for t in diff_revisions],
+            [f"{n}-{v:02d}" for n in [wg_doc.name, ind_doc.name] for v in [1, 0]],
+        )
 
     def test_history(self):
         doc = IndividualDraftFactory()
@@ -2718,60 +2753,6 @@ class DocumentMeetingTests(TestCase):
                 self.assertIsNone(doc.get_related_meeting(), f'{doc.type.slug} should not be related to meeting')
 
 class ChartTests(ResourceTestCaseMixin, TestCase):
-    def test_search_chart_conf(self):
-        doc = IndividualDraftFactory()
-
-        conf_url = urlreverse('ietf.doc.views_stats.chart_conf_newrevisiondocevent')
-
-        # No qurey arguments; expect an empty json object
-        r = self.client.get(conf_url)
-        self.assertValidJSONResponse(r)
-        self.assertEqual(unicontent(r), '{}')
-
-        # No match
-        r = self.client.get(conf_url + '?activedrafts=on&name=thisisnotadocumentname')
-        self.assertValidJSONResponse(r)
-        d = r.json()
-        self.assertEqual(d['chart']['type'], settings.CHART_TYPE_COLUMN_OPTIONS['chart']['type'])
-
-        r = self.client.get(conf_url + '?activedrafts=on&name=%s'%doc.name[6:12])
-        self.assertValidJSONResponse(r)
-        d = r.json()
-        self.assertEqual(d['chart']['type'], settings.CHART_TYPE_COLUMN_OPTIONS['chart']['type'])
-        self.assertEqual(len(d['series'][0]['data']), 0)
-
-    def test_search_chart_data(self):
-        doc = IndividualDraftFactory()
-
-        data_url = urlreverse('ietf.doc.views_stats.chart_data_newrevisiondocevent')
-
-        # No qurey arguments; expect an empty json list
-        r = self.client.get(data_url)
-        self.assertValidJSONResponse(r)
-        self.assertEqual(unicontent(r), '[]')
-
-        # No match
-        r = self.client.get(data_url + '?activedrafts=on&name=thisisnotadocumentname')
-        self.assertValidJSONResponse(r)
-        d = r.json()
-        self.assertEqual(unicontent(r), '[]')
-
-        r = self.client.get(data_url + '?activedrafts=on&name=%s'%doc.name[6:12])
-        self.assertValidJSONResponse(r)
-        d = r.json()
-        self.assertEqual(len(d), 1)
-        self.assertEqual(len(d[0]), 2)
-
-    def test_search_chart(self):
-        doc = IndividualDraftFactory()
-
-        chart_url = urlreverse('ietf.doc.views_stats.chart_newrevisiondocevent')
-        r = self.client.get(chart_url)
-        self.assertEqual(r.status_code, 200)
-
-        r = self.client.get(chart_url + '?activedrafts=on&name=%s'%doc.name[6:12])
-        self.assertEqual(r.status_code, 200)
-        
     def test_personal_chart(self):
         person = PersonFactory.create()
         IndividualDraftFactory.create(
@@ -3013,6 +2994,13 @@ class PdfizedTests(TestCase):
             with (Path(dir) / f'{draft.name}-{r:02d}.txt').open('w') as f:
                 f.write('text content')
 
+        self.assertTrue(
+            login_testing_unauthorized(
+                self,
+                PersonFactory().user.username,
+                urlreverse(self.view, kwargs={"name": draft.name}),
+            )
+        )
         self.should_succeed(dict(name=rfc.name))
         self.should_succeed(dict(name=draft.name))
         for r in range(0,2):

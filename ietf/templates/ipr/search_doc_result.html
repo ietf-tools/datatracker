@@ -54,16 +54,27 @@
             </tr>
         </thead>
 
-        {% for doc in docs %}
+        {% for d in docs %}
             <tbody>
                 <tr>
                     <th scope="col" class="table-info" colspan="3">
-                        Results for {{ doc.name|prettystdname|urlize_ietf_docs }} ("{{ doc.title }}"){% if not forloop.first %}{% if doc.related %}, which was {{ doc.relation|lower }} {{ doc.related.source|prettystdname|urlize_ietf_docs  }} ("{{ doc.related.source.title }}"){% endif %}{% endif %}
+                        Results for {{ d.name|prettystdname|urlize_ietf_docs }}
+                        ("{{ d.title }}"){% if d != doc and d.related %}, which
+                            {% if d == d.related.source %}
+                                {{ d.relation|lower }}
+                                {{ d.related.target|prettystdname|urlize_ietf_docs }}
+                                ("{{ d.related.target.title }}")
+                            {% else %}
+                                was {{ d.relation|lower }}
+                                {{ d.related.source|prettystdname|urlize_ietf_docs }}
+                                ("{{ d.related.source.title }}")
+                            {% endif %}
+                        {% endif %}
                     </th>
                 </tr>
             </tbody>
             <tbody>
-                {% with doc.iprdocrel_set.all as doc_iprs %}
+                {% with d.iprdocrel_set.all as doc_iprs %}
                     {% if doc_iprs %}
                         {% for ipr in doc_iprs %}
                             {% if ipr.disclosure.state_id in states %}
@@ -81,7 +92,7 @@
                             <td></td>
                             <td></td>
                             <td>
-                                No IPR disclosures have been submitted directly on {{ doc.name|prettystdname|urlize_ietf_docs }}{% if iprs %},
+                                No IPR disclosures have been submitted directly on {{ d.name|prettystdname|urlize_ietf_docs }}{% if iprs %},
                                     but there are disclosures on {% if docs|length == 2 %}a related document{% else %}related documents{% endif %}, listed on this page{% endif %}.
                             </td>
                         </tr>

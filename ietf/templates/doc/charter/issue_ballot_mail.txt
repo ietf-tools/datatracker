@@ -1,6 +1,6 @@
-{% load ietf_filters %}{% autoescape off %}To: {{ to }} {% if cc %}
-Cc: {{ cc }}
-{% endif %}From: IESG Secretary <iesg-secretary@ietf.org>
+{% load ietf_filters %}{% autoescape off %}To: {{ to }}{% if cc %}
+Cc: {{ cc }}{% endif %}
+From: IESG Secretary <iesg-secretary@ietf.org>
 Reply-To: IESG Secretary <iesg-secretary@ietf.org>
 Subject: Evaluation: {{ doc.name }}
 

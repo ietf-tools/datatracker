@@ -20,14 +20,15 @@ from ietf.doc.factories import (DocumentFactory, IndividualDraftFactory, Individ
                                 BallotPositionDocEventFactory, BallotDocEventFactory, IRSGBallotDocEventFactory)
 from ietf.doc.templatetags.ietf_filters import can_defer
 from ietf.doc.utils import create_ballot_if_not_open
+from ietf.doc.views_ballot import parse_ballot_edit_return_point
 from ietf.doc.views_doc import document_ballot_content
 from ietf.group.models import Group, Role
 from ietf.group.factories import GroupFactory, RoleFactory, ReviewTeamFactory
 from ietf.ipr.factories import HolderIprDisclosureFactory
 from ietf.name.models import BallotPositionName
 from ietf.iesg.models import TelechatDate
-from ietf.person.models import Person, PersonalApiKey
-from ietf.person.factories import PersonFactory
+from ietf.person.models import Person
+from ietf.person.factories import PersonFactory, PersonalApiKeyFactory
 from ietf.person.utils import get_active_ads
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized
 from ietf.utils.mail import outbox, empty_outbox, get_payload_text
@@ -110,7 +111,7 @@ class EditPositionTests(TestCase):
         create_ballot_if_not_open(None, draft, ad, 'approve')
         ad.user.last_login = timezone.now()
         ad.user.save()
-        apikey = PersonalApiKey.objects.create(endpoint=url, person=ad)
+        apikey = PersonalApiKeyFactory(endpoint=url, person=ad)
 
         # vote
         events_before = draft.docevent_set.count()
@@ -229,6 +230,9 @@ class EditPositionTests(TestCase):
         r = self.client.post(url, dict(position="discuss", discuss="Test discuss text"))
         self.assertEqual(r.status_code, 403)
         
+    # N.B. This test needs to be rewritten to exercise all types of ballots (iesg, irsg, rsab)
+    # and test against the output of the mailtriggers instead of looking for hardcoded values
+    # in the To and CC results. See #7864
     def test_send_ballot_comment(self):
         ad = Person.objects.get(user__username="ad")
         draft = WgDraftFactory(ad=ad,group__acronym='mars')
@@ -555,7 +559,7 @@ class BallotWriteupsTests(TestCase):
         q = PyQuery(r.content)
         self.assertFalse(q('[class=text-danger]:contains("not completed IETF Last Call")'))
 
-        for state_slug in ["lc", "watching", "ad-eval"]:
+        for state_slug in ["lc", "ad-eval"]:
             draft.set_state(State.objects.get(type="draft-iesg",slug=state_slug))
             r = self.client.get(url)
             self.assertEqual(r.status_code, 200)
@@ -1451,3 +1455,28 @@ class BallotContentTests(TestCase):
         self._assertBallotMessage(q, balloters[0], 'No discuss send log available')
         self._assertBallotMessage(q, balloters[1], 'No comment send log available')
         self._assertBallotMessage(q, old_balloter, 'No ballot position send log available')
+
+class ReturnToUrlTests(TestCase):
+    def test_invalid_return_to_url(self):
+        with self.assertRaises(ValueError):
+            parse_ballot_edit_return_point('/', 'draft-ietf-opsawg-ipfix-tcpo-v6eh', '998718')
+
+        with self.assertRaises(ValueError):
+            parse_ballot_edit_return_point('/a-route-that-does-not-exist/', 'draft-ietf-opsawg-ipfix-tcpo-v6eh', '998718')
+
+        with self.assertRaises(ValueError):
+            parse_ballot_edit_return_point('https://example.com/phishing', 'draft-ietf-opsawg-ipfix-tcpo-v6eh', '998718')
+
+    def test_valid_default_return_to_url(self):
+        self.assertEqual(parse_ballot_edit_return_point(
+            None,
+            'draft-ietf-opsawg-ipfix-tcpo-v6eh',
+            '998718'
+        ), '/doc/draft-ietf-opsawg-ipfix-tcpo-v6eh/ballot/998718/')
+        
+    def test_valid_return_to_url(self):
+        self.assertEqual(parse_ballot_edit_return_point(
+            '/doc/draft-ietf-opsawg-ipfix-tcpo-v6eh/ballot/998718/',
+            'draft-ietf-opsawg-ipfix-tcpo-v6eh',
+            '998718'
+        ), '/doc/draft-ietf-opsawg-ipfix-tcpo-v6eh/ballot/998718/')

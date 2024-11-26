@@ -3,7 +3,7 @@
 
 
 from django.conf import settings
-from django.db import models
+from django.db import models, transaction
 from django.db.models import signals
 from django.urls import reverse as urlreverse
 
@@ -104,17 +104,23 @@ def notify_events(sender, instance, **kwargs):
     if not isinstance(instance, DocEvent):
         return
 
+    if not kwargs.get("created", False):
+        return  # only notify on creation
+
     if instance.doc.type_id != 'draft':
         return
 
     if getattr(instance, "skip_community_list_notification", False):
         return
-
+    
     # kludge alert: queuing a celery task in response to a signal can cause unexpected attempts to
     # start a Celery task during tests. To prevent this, don't queue a celery task if we're running
     # tests.
     if settings.SERVER_MODE != "test":
-        notify_event_to_subscribers_task.delay(event_id=instance.pk)
+        # Wrap in on_commit in case a transaction is open
+        transaction.on_commit(
+            lambda: notify_event_to_subscribers_task.delay(event_id=instance.pk)
+        )
 
 
 signals.post_save.connect(notify_events)

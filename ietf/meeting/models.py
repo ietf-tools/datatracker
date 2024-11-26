@@ -369,20 +369,36 @@ class Meeting(models.Model):
 
     def updated(self):
         # should be Meeting.modified, but we don't have that
-        min_time = pytz.utc.localize(datetime.datetime(1970, 1, 1, 0, 0, 0))
-        timeslots_updated = self.timeslot_set.aggregate(Max('modified'))["modified__max"] or min_time
-        sessions_updated = self.session_set.aggregate(Max('modified'))["modified__max"] or min_time
-        assignments_updated = min_time
+        timeslots_updated = self.timeslot_set.aggregate(Max('modified'))["modified__max"]
+        sessions_updated = self.session_set.aggregate(Max('modified'))["modified__max"]
+        assignments_updated = None
         if self.schedule:
-            assignments_updated = SchedTimeSessAssignment.objects.filter(schedule__in=[self.schedule, self.schedule.base if self.schedule else None]).aggregate(Max('modified'))["modified__max"] or min_time
-        return max(timeslots_updated, sessions_updated, assignments_updated)
+            assignments_updated = SchedTimeSessAssignment.objects.filter(schedule__in=[self.schedule, self.schedule.base if self.schedule else None]).aggregate(Max('modified'))["modified__max"]
+        dts = [timeslots_updated, sessions_updated, assignments_updated]
+        valid_only = [dt for dt in dts if dt is not None]
+        return max(valid_only) if valid_only else None
 
     @memoize
     def previous_meeting(self):
         return Meeting.objects.filter(type_id=self.type_id,date__lt=self.date).order_by('-date').first()
 
     def uses_notes(self):
-        return self.date>=datetime.date(2020,7,6)
+        if self.type_id != 'ietf':
+            return True
+        num = self.get_number()
+        return num is not None and num >= 108
+
+    def has_recordings(self):
+        if self.type_id != 'ietf':
+            return True
+        num = self.get_number()
+        return num is not None and num >= 80
+
+    def has_chat_logs(self):
+        if self.type_id != 'ietf':
+            return True;
+        num = self.get_number()
+        return num is not None and num >= 60
 
     def meeting_start(self):
         """Meeting-local midnight at the start of the meeting date"""
@@ -772,7 +788,6 @@ class SchedTimeSessAssignment(models.Model):
     schedule = ForeignKey('Schedule', null=False, blank=False, related_name='assignments')
     extendedfrom = ForeignKey('self', null=True, default=None, help_text="Timeslot this session is an extension of.")
     modified = models.DateTimeField(auto_now=True)
-    notes    = models.TextField(blank=True)
     badness  = models.IntegerField(default=0, blank=True, null=True)
     pinned   = models.BooleanField(default=False, help_text="Do not move session during automatic placement.")
 
@@ -1027,6 +1042,7 @@ class Session(models.Model):
     on_agenda = models.BooleanField(default=True, help_text='Is this session visible on the meeting agenda?')
     has_onsite_tool = models.BooleanField(default=False, help_text="Does this session use the officially supported onsite and remote tooling?")
     chat_room = models.CharField(blank=True, max_length=32, help_text='Name of Zulip stream, if different from group acronym')
+    meetecho_recording_name = models.CharField(blank=True, max_length=64, help_text="Name of the meetecho recording")
 
     tombstone_for = models.ForeignKey('Session', blank=True, null=True, help_text="This session is the tombstone for a session that was rescheduled", on_delete=models.CASCADE)
 
@@ -1190,19 +1206,30 @@ class Session(models.Model):
         else:
             return ""
 
+    @staticmethod
+    def _alpha_str(n: int):
+        """Convert integer to string of a-z characters (a, b, c, ..., aa, ab, ...)"""
+        chars = []
+        while True:
+            chars.append(string.ascii_lowercase[n % 26])
+            n //= 26
+            # for 2nd letter and beyond, 0 means end the string
+            if n == 0:
+                break
+            # beyond the first letter, no need to represent a 0, so decrement
+            n -= 1
+        return "".join(chars[::-1])
+
     def docname_token(self):
         sess_mtg = Session.objects.filter(meeting=self.meeting, group=self.group).order_by('pk')
         index = list(sess_mtg).index(self)
-        return 'sess%s' % (string.ascii_lowercase[index])
+        return f"sess{self._alpha_str(index)}"
 
     def docname_token_only_for_multiple(self):
         sess_mtg = Session.objects.filter(meeting=self.meeting, group=self.group).order_by('pk')
         if len(list(sess_mtg)) > 1:
             index = list(sess_mtg).index(self)
-            if index < 26:
-                token = 'sess%s' % (string.ascii_lowercase[index])
-            else:
-                token = 'sess%s%s' % (string.ascii_lowercase[index//26],string.ascii_lowercase[index%26])
+            token = f"sess{self._alpha_str(index)}"
             return token
         return None
         
@@ -1305,12 +1332,25 @@ class Session(models.Model):
             return url.format(session=self)
         return None
 
+    def _session_recording_url_label(self):
+        otsa = self.official_timeslotassignment()
+        if otsa is None:
+            return None
+        if self.meeting.type.slug == "ietf" and self.has_onsite_tool:
+            session_label = f"IETF{self.meeting.number}-{self.group.acronym.upper()}-{otsa.timeslot.time.strftime('%Y%m%d-%H%M')}"
+        else:
+            session_label = f"IETF-{self.group.acronym.upper()}-{otsa.timeslot.time.strftime('%Y%m%d-%H%M')}"
+        return session_label
+
     def session_recording_url(self):
-        url = getattr(settings, "MEETECHO_SESSION_RECORDING_URL", "")
-        if self.meeting.type.slug == "ietf" and self.has_onsite_tool and url:
-            self.group.acronym_upper = self.group.acronym.upper()
-            return url.format(session=self)
-        return None
+        url_formatter = getattr(settings, "MEETECHO_SESSION_RECORDING_URL", "")
+        url = None
+        name = self.meetecho_recording_name
+        if name is None or name.strip() == "":
+            name = self._session_recording_url_label()
+        if url_formatter.strip() != "" and name is not None:
+            url = url_formatter.format(session_label=name)
+        return url
 
 
 class SchedulingEvent(models.Model):
@@ -1407,7 +1447,7 @@ class MeetingHost(models.Model):
                 validate_file_extension,
                 settings.MEETING_VALID_UPLOAD_EXTENSIONS['meetinghostlogo'],
             ),
-            WrappedValidator(
+   WrappedValidator(
                 validate_mime_type,
                 settings.MEETING_VALID_UPLOAD_MIME_TYPES['meetinghostlogo'],
                 True,

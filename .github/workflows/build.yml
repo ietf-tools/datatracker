@@ -63,6 +63,7 @@ jobs:
       pkg_version: ${{ steps.buildvars.outputs.pkg_version }}
       from_tag: ${{ steps.semver.outputs.nextStrict }}
       to_tag: ${{ steps.semver.outputs.current }}
+      base_image_version: ${{ steps.baseimgversion.outputs.base_image_version }}
 
     steps:   
     - uses: actions/checkout@v4
@@ -122,6 +123,11 @@ jobs:
           echo "::notice::Non-production build ${{ steps.semverdev.outputs.nextMajorStrict }}.0.0-dev.$GITHUB_RUN_NUMBER created using branch $GITHUB_REF_NAME"
         fi
 
+    - name: Get Base Image Target Version
+      id: baseimgversion
+      run: |
+        echo "base_image_version=$(sed -n '1p' dev/build/TARGET_BASE)" >> $GITHUB_OUTPUT
+
   # -----------------------------------------------------------------
   # TESTS
   # -----------------------------------------------------------------
@@ -131,8 +137,11 @@ jobs:
     uses: ./.github/workflows/tests.yml
     if: ${{ github.event.inputs.skiptests == 'false' || github.ref_name == 'release' }}
     needs: [prepare]
+    secrets: inherit
     with:
       ignoreLowerCoverage: ${{ github.event.inputs.ignoreLowerCoverage == 'true' }}
+      skipSelenium: true
+      targetBaseVersion: ${{ needs.prepare.outputs.base_image_version }}
 
   # -----------------------------------------------------------------
   # RELEASE
@@ -141,7 +150,8 @@ jobs:
     name: Make Release
     if: ${{ !failure() && !cancelled() }}
     needs: [tests, prepare]
-    runs-on: ubuntu-latest
+    runs-on:
+      group: hperf-8c32r
     permissions:
       contents: write
       packages: write
@@ -150,23 +160,24 @@ jobs:
       PKG_VERSION: ${{needs.prepare.outputs.pkg_version}}
       FROM_TAG: ${{needs.prepare.outputs.from_tag}}
       TO_TAG: ${{needs.prepare.outputs.to_tag}}
+      TARGET_BASE: ${{needs.prepare.outputs.base_image_version}}
 
     steps:
     - uses: actions/checkout@v4
       with:
         fetch-depth: 1
         fetch-tags: false
-        
-    - name: Setup Node.js
+
+    - name: Setup Node.js environment
       uses: actions/setup-node@v4
       with:
-        node-version: '16'
-    
+        node-version: 18.x
+
     - name: Setup Python
       uses: actions/setup-python@v5
       with:
-        python-version: '3.x'
-        
+        python-version: "3.x"
+
     - name: Download a Coverage Results
       if: ${{ github.event.inputs.skiptests == 'false' || github.ref_name == 'release' }}
       uses: actions/download-artifact@v4.1.8
@@ -215,7 +226,8 @@ jobs:
         AWS_ENDPOINT_URL: ${{ secrets.CF_R2_ENDPOINT }}
       run: |
         echo "Collecting statics..."
-        docker run --rm --name collectstatics -v $(pwd):/workspace ghcr.io/ietf-tools/datatracker-app-base:latest sh dev/build/collectstatics.sh
+        echo "Using ghcr.io/ietf-tools/datatracker-app-base:${{ env.TARGET_BASE }}"
+        docker run --rm --name collectstatics -v $(pwd):/workspace ghcr.io/ietf-tools/datatracker-app-base:${{ env.TARGET_BASE }} sh dev/build/collectstatics.sh
         echo "Pushing statics..."
         cd static
         aws s3 sync . s3://static/dt/$PKG_VERSION --only-show-errors
@@ -234,10 +246,7 @@ jobs:
         docker-compose.yml
         EOL
 
-    - name: Set up QEMU
-      uses: docker/setup-qemu-action@v3
-    
-    - name: Set up Docker Buildx
+    - name: Setup Docker Buildx
       uses: docker/setup-buildx-action@v3
 
     - name: Login to GitHub Container Registry
@@ -247,7 +256,11 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Build Release Docker Image
+    - name: Add feature-latest tag
+      if: ${{ startsWith(github.ref_name, 'feat/') }}
+      run: echo "FEATURE_LATEST_TAG=$(echo $GITHUB_REF_NAME | tr / -)" >> $GITHUB_ENV
+
+    - name: Build Images
       uses: docker/build-push-action@v6
       env:
         DOCKER_BUILD_SUMMARY: false
@@ -256,10 +269,12 @@ jobs:
         file: dev/build/Dockerfile
         platforms: ${{ github.event.inputs.skiparm == 'true' && 'linux/amd64' || 'linux/amd64,linux/arm64' }}
         push: true
-        tags: ghcr.io/ietf-tools/datatracker:${{ env.PKG_VERSION }}
+        tags: |
+          ghcr.io/ietf-tools/datatracker:${{ env.PKG_VERSION }}
+          ${{ env.FEATURE_LATEST_TAG && format('ghcr.io/ietf-tools/datatracker:{0}-latest', env.FEATURE_LATEST_TAG) || null }}
         cache-from: type=gha
         cache-to: type=gha,mode=max
-        
+
     - name: Update CHANGELOG
       id: changelog
       uses: Requarks/changelog-action@v1
@@ -269,6 +284,12 @@ jobs:
         fromTag: ${{ env.FROM_TAG }}
         toTag: ${{ env.TO_TAG }}
         writeToFile: false
+
+    - name: Download Coverage Results
+      if: ${{ github.event.inputs.skiptests == 'false' || github.ref_name == 'release' }}
+      uses: actions/download-artifact@v4.1.8
+      with:
+        name: coverage
 
     - name: Prepare Coverage Action
       if: ${{ github.event.inputs.skiptests == 'false' || github.ref_name == 'release' }}
@@ -335,50 +356,34 @@ jobs:
     steps:      
     - name: Notify on Slack (Success)
       if: ${{ !contains(join(needs.*.result, ','), 'failure') }}
-      uses: slackapi/slack-github-action@v1.26.0
+      uses: slackapi/slack-github-action@v2
       with:
-        channel-id: ${{ secrets.SLACK_GH_BUILDS_CHANNEL_ID }}
+        token: ${{ secrets.SLACK_GH_BOT }}
+        method: chat.postMessage
         payload: |
-          {
-            "text": "Datatracker Build <https://github.com/ietf-tools/datatracker/actions/runs/${{ github.run_id }}|${{ env.PKG_VERSION }}> by ${{ github.triggering_actor }} - <@${{ secrets.SLACK_UID_RJSPARKS }}>",
-            "attachments": [
-              {
-                "color": "28a745",
-                "fields": [
-                  {
-                    "title": "Status",
-                    "short": true,
-                    "value": "Completed"
-                  }
-                ]
-              }
-            ]
-          }
-      env:
-        SLACK_BOT_TOKEN: ${{ secrets.SLACK_GH_BOT }}
+          channel: ${{ secrets.SLACK_GH_BUILDS_CHANNEL_ID }}
+          text: "Datatracker Build <https://github.com/ietf-tools/datatracker/actions/runs/${{ github.run_id }}|${{ env.PKG_VERSION }}> by ${{ github.triggering_actor }}"
+          attachments:
+            - color: "28a745"
+              fields:
+                - title: "Status"
+                  short: true
+                  value: "Completed"
     - name: Notify on Slack (Failure)
       if: ${{ contains(join(needs.*.result, ','), 'failure') }}
-      uses: slackapi/slack-github-action@v1.26.0
+      uses: slackapi/slack-github-action@v2
       with:
-        channel-id: ${{ secrets.SLACK_GH_BUILDS_CHANNEL_ID }}
+        token: ${{ secrets.SLACK_GH_BOT }}
+        method: chat.postMessage
         payload: |
-          {
-            "text": "Datatracker Build <https://github.com/ietf-tools/datatracker/actions/runs/${{ github.run_id }}|${{ env.PKG_VERSION }}> by ${{ github.triggering_actor }} - <@${{ secrets.SLACK_UID_RJSPARKS }}>",
-            "attachments": [
-              {
-                "color": "a82929",
-                "fields": [
-                  {
-                    "title": "Status",
-                    "short": true,
-                    "value": "Failed"
-                  }
-                ]
-              }
-            ]
-          }
-      env:
-        SLACK_BOT_TOKEN: ${{ secrets.SLACK_GH_BOT }}
+          channel: ${{ secrets.SLACK_GH_BUILDS_CHANNEL_ID }}
+          text: "Datatracker Build <https://github.com/ietf-tools/datatracker/actions/runs/${{ github.run_id }}|${{ env.PKG_VERSION }}> by ${{ github.triggering_actor }}"
+          attachments:
+            - color: "a82929"
+              fields:
+                - title: "Status"
+                  short: true
+                  value: "Failed"
         
   # -----------------------------------------------------------------
   # SANDBOX

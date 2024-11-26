@@ -3,11 +3,13 @@
   n-dropdown(
     :options='jumpToDayOptions'
     size='huge'
+    :show='isDropdownOpenRef'
     :show-arrow='true'
     trigger='click'
     @select='jumpToDay'
+    @clickoutside='handleCloseDropdown'
     )
-    button
+    button(@click='handleOpenDropdown')
       i.bi.bi-arrow-down-circle
   button(@click='agendaStore.$patch({ filterShown: true })')
     i.bi.bi-funnel
@@ -28,8 +30,7 @@
 </template>
 
 <script setup>
-import { computed, h } from 'vue'
-
+import { computed, h, ref } from 'vue'
 import {
   NBadge,
   NDropdown,
@@ -51,21 +52,55 @@ const siteStore = useSiteStore()
 
 // Meeting Days
 
+function optionToLink(opts){
+  const { key, label, icon } = opts
+
+  return {
+    ...opts,
+    type: 'render',
+    render: () => h(
+      'a',
+      {
+        class: 'dropdown-link',
+        'data-testid': 'mobile-link',
+        href: `#${key}`,
+        onClick: () => jumpToDay(key)
+      },
+      [
+        h(
+          'span',
+          icon()
+        ),
+        h(
+          'span',
+          label
+        )
+      ]
+    )
+  }
+}
+
+const isDropdownOpenRef = ref(false)
+
+const handleOpenDropdown = () => isDropdownOpenRef.value = true
+
+const handleCloseDropdown = () => isDropdownOpenRef.value = false
+
 const jumpToDayOptions = computed(() => {
   const days = []
   if (agendaStore.isMeetingLive) {
-    days.push({
+    days.push(optionToLink({
       label: 'Jump to Now',
       key: 'now',
       icon: () => h('i', { class: 'bi bi-arrow-down-right-square text-red' })
-    })
+    }))
   }
   for (const day of agendaStore.meetingDays) {
-    days.push({
+    days.push(optionToLink({
       label: `Jump to ${day.label}`,
       key: day.slug,
       icon: () => h('i', { class: 'bi bi-arrow-down-right-square' })
-    })
+    }))
   }
   return days
 })
@@ -90,15 +125,15 @@ const downloadIcsOptions = [
 function jumpToDay (dayId) {
   if (dayId === 'now') {
     const lastEventId = agendaStore.findCurrentEventId()
-
     if (lastEventId) {
       document.getElementById(`agenda-rowid-${lastEventId}`)?.scrollIntoView(true)
     } else {
       message.warning('There is no event happening right now.')
     }
   } else {
-    document.getElementById(`agenda-day-${dayId}`)?.scrollIntoView(true)
+    document.getElementById(dayId)?.scrollIntoView(true)
   }
+  isDropdownOpenRef.value = false
 }
 
 function downloadIcs (key) {
@@ -162,4 +197,19 @@ function downloadIcs (key) {
     }
   }
 }
+
+.dropdown-link {
+  display: flex;
+  text-decoration:none;
+  gap: 0.2rem 0.5rem;
+  padding: 0.5em;
+  color: var(--bs-body-color);
+  
+  &:hover,
+  &:focus {
+    background-color: var(--bs-dark-bg-subtle);
+    text-decoration: underline;
+  }
+}
+
 </style>

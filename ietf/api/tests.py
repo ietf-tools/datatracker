@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2015-2020, All Rights Reserved
+# Copyright The IETF Trust 2015-2024, All Rights Reserved
 # -*- coding: utf-8 -*-
 import base64
 import copy
@@ -34,9 +34,8 @@ from ietf.meeting.factories import MeetingFactory, SessionFactory
 from ietf.meeting.models import Session
 from ietf.nomcom.models import Volunteer
 from ietf.nomcom.factories import NomComFactory, nomcom_kwargs_for_year
-from ietf.person.factories import PersonFactory, random_faker, EmailFactory
+from ietf.person.factories import PersonFactory, random_faker, EmailFactory, PersonalApiKeyFactory
 from ietf.person.models import Email, User
-from ietf.person.models import PersonalApiKey
 from ietf.stats.models import MeetingRegistration
 from ietf.utils.mail import empty_outbox, outbox, get_payload_text
 from ietf.utils.models import DumpInfo
@@ -49,6 +48,7 @@ OMITTED_APPS = (
     'ietf.secr.meetings',
     'ietf.secr.proceedings',
     'ietf.ipr',
+    'ietf.status',
 )
 
 class CustomApiTests(TestCase):
@@ -71,7 +71,7 @@ class CustomApiTests(TestCase):
         meeting = MeetingFactory(type_id='ietf')
         session = SessionFactory(group__type_id='wg', meeting=meeting)
         group = session.group
-        apikey = PersonalApiKey.objects.create(endpoint=url, person=recman)
+        apikey = PersonalApiKeyFactory(endpoint=url, person=recman)
         video = 'https://foo.example.com/bar/beer/'
 
         # error cases
@@ -79,7 +79,7 @@ class CustomApiTests(TestCase):
         self.assertContains(r, "Missing apikey parameter", status_code=400)
 
         badrole  = RoleFactory(group__type_id='ietf', name_id='ad')
-        badapikey = PersonalApiKey.objects.create(endpoint=url, person=badrole.person)
+        badapikey = PersonalApiKeyFactory(endpoint=url, person=badrole.person)
         badrole.person.user.last_login = timezone.now()
         badrole.person.user.save()
         r = self.client.post(url, {'apikey': badapikey.hash()} )
@@ -151,7 +151,7 @@ class CustomApiTests(TestCase):
         recman = recmanrole.person
         meeting = MeetingFactory(type_id="ietf")
         session = SessionFactory(group__type_id="wg", meeting=meeting)
-        apikey = PersonalApiKey.objects.create(endpoint=url, person=recman)
+        apikey = PersonalApiKeyFactory(endpoint=url, person=recman)
         video = "https://foo.example.com/bar/beer/"
 
         # error cases
@@ -159,7 +159,7 @@ class CustomApiTests(TestCase):
         self.assertContains(r, "Missing apikey parameter", status_code=400)
 
         badrole = RoleFactory(group__type_id="ietf", name_id="ad")
-        badapikey = PersonalApiKey.objects.create(endpoint=url, person=badrole.person)
+        badapikey = PersonalApiKeyFactory(endpoint=url, person=badrole.person)
         badrole.person.user.last_login = timezone.now()
         badrole.person.user.save()
         r = self.client.post(url, {"apikey": badapikey.hash()})
@@ -222,6 +222,70 @@ class CustomApiTests(TestCase):
         event = doc.latest_event()
         self.assertEqual(event.by, recman)
 
+    def test_api_set_meetecho_recording_name(self):
+        url = urlreverse("ietf.meeting.views.api_set_meetecho_recording_name")
+        recmanrole = RoleFactory(group__type_id="ietf", name_id="recman")
+        recman = recmanrole.person
+        meeting = MeetingFactory(type_id="ietf")
+        session = SessionFactory(group__type_id="wg", meeting=meeting)
+        apikey = PersonalApiKeyFactory(endpoint=url, person=recman)
+        name = "testname"
+
+        # error cases
+        r = self.client.post(url, {})
+        self.assertContains(r, "Missing apikey parameter", status_code=400)
+
+        badrole = RoleFactory(group__type_id="ietf", name_id="ad")
+        badapikey = PersonalApiKeyFactory(endpoint=url, person=badrole.person)
+        badrole.person.user.last_login = timezone.now()
+        badrole.person.user.save()
+        r = self.client.post(url, {"apikey": badapikey.hash()})
+        self.assertContains(r, "Restricted to role: Recording Manager", status_code=403)
+
+        r = self.client.post(url, {"apikey": apikey.hash()})
+        self.assertContains(r, "Too long since last regular login", status_code=400)
+        recman.user.last_login = timezone.now()
+        recman.user.save()
+
+        r = self.client.get(url, {"apikey": apikey.hash()})
+        self.assertContains(r, "Method not allowed", status_code=405)
+
+        r = self.client.post(url, {"apikey": apikey.hash()})
+        self.assertContains(r, "Missing session_id parameter", status_code=400)
+
+        r = self.client.post(url, {"apikey": apikey.hash(), "session_id": session.pk})
+        self.assertContains(r, "Missing name parameter", status_code=400)
+
+        bad_pk = int(Session.objects.order_by("-pk").first().pk) + 1
+        r = self.client.post(
+            url,
+            {
+                "apikey": apikey.hash(),
+                "session_id": bad_pk,
+                "name": name,
+            },
+        )
+        self.assertContains(r, "Session not found", status_code=400)
+
+        r = self.client.post(
+            url,
+            {
+                "apikey": apikey.hash(),
+                "session_id": "foo",
+                "name": name,
+            },
+        )
+        self.assertContains(r, "Invalid session_id", status_code=400)
+
+        r = self.client.post(
+            url, {"apikey": apikey.hash(), "session_id": session.pk, "name": name}
+        )
+        self.assertContains(r, "Done", status_code=200)
+
+        session.refresh_from_db()
+        self.assertEqual(session.meetecho_recording_name, name)
+
+
     def test_api_add_session_attendees_deprecated(self):
         # Deprecated test - should be removed when we stop accepting a simple list of user PKs in
         # the add_session_attendees() view
@@ -231,10 +295,10 @@ class CustomApiTests(TestCase):
         recman = recmanrole.person
         meeting = MeetingFactory(type_id='ietf')
         session = SessionFactory(group__type_id='wg', meeting=meeting)  
-        apikey = PersonalApiKey.objects.create(endpoint=url, person=recman)
+        apikey = PersonalApiKeyFactory(endpoint=url, person=recman)
 
         badrole  = RoleFactory(group__type_id='ietf', name_id='ad')
-        badapikey = PersonalApiKey.objects.create(endpoint=url, person=badrole.person)
+        badapikey = PersonalApiKeyFactory(endpoint=url, person=badrole.person)
         badrole.person.user.last_login = timezone.now()
         badrole.person.user.save()
 
@@ -297,10 +361,10 @@ class CustomApiTests(TestCase):
         recman = recmanrole.person
         meeting = MeetingFactory(type_id="ietf")
         session = SessionFactory(group__type_id="wg", meeting=meeting)
-        apikey = PersonalApiKey.objects.create(endpoint=url, person=recman)
+        apikey = PersonalApiKeyFactory(endpoint=url, person=recman)
 
         badrole = RoleFactory(group__type_id="ietf", name_id="ad")
-        badapikey = PersonalApiKey.objects.create(endpoint=url, person=badrole.person)
+        badapikey = PersonalApiKeyFactory(endpoint=url, person=badrole.person)
         badrole.person.user.last_login = timezone.now()
         badrole.person.user.save()
 
@@ -453,8 +517,8 @@ class CustomApiTests(TestCase):
             ),
         ):
             url = urlreverse(f"ietf.meeting.views.api_upload_{type_id}")
-            apikey = PersonalApiKey.objects.create(endpoint=url, person=recmanrole.person)
-            badapikey = PersonalApiKey.objects.create(endpoint=url, person=badrole.person)
+            apikey = PersonalApiKeyFactory(endpoint=url, person=recmanrole.person)
+            badapikey = PersonalApiKeyFactory(endpoint=url, person=badrole.person)
 
             r = self.client.post(url, {})
             self.assertContains(r, "Missing apikey parameter", status_code=400)
@@ -498,7 +562,7 @@ class CustomApiTests(TestCase):
         meeting = MeetingFactory(type_id='ietf')
         session = SessionFactory(group__type_id='wg', meeting=meeting)
         group = session.group
-        apikey = PersonalApiKey.objects.create(endpoint=url, person=recman)
+        apikey = PersonalApiKeyFactory(endpoint=url, person=recman)
 
         people = [
             {"name": "Andrea Andreotti", "affiliation": "Azienda"},
@@ -515,7 +579,7 @@ class CustomApiTests(TestCase):
         self.assertContains(r, "Missing apikey parameter", status_code=400)
 
         badrole = RoleFactory(group__type_id='ietf', name_id='ad')
-        badapikey = PersonalApiKey.objects.create(endpoint=url, person=badrole.person)
+        badapikey = PersonalApiKeyFactory(endpoint=url, person=badrole.person)
         badrole.person.user.last_login = timezone.now()
         badrole.person.user.save()
         r = self.client.post(url, {'apikey': badapikey.hash()})
@@ -590,7 +654,7 @@ class CustomApiTests(TestCase):
         meeting = MeetingFactory(type_id="ietf")
         session = SessionFactory(group__type_id="wg", meeting=meeting)
         group = session.group
-        apikey = PersonalApiKey.objects.create(endpoint=url, person=recman)
+        apikey = PersonalApiKeyFactory(endpoint=url, person=recman)
 
         people = [
             {"name": "Andrea Andreotti", "affiliation": "Azienda"},
@@ -607,7 +671,7 @@ class CustomApiTests(TestCase):
         self.assertContains(r, "Missing apikey parameter", status_code=400)
 
         badrole = RoleFactory(group__type_id="ietf", name_id="ad")
-        badapikey = PersonalApiKey.objects.create(endpoint=url, person=badrole.person)
+        badapikey = PersonalApiKeyFactory(endpoint=url, person=badrole.person)
         badrole.person.user.last_login = timezone.now()
         badrole.person.user.save()
         r = self.client.post(url, {"apikey": badapikey.hash()})
@@ -717,14 +781,14 @@ class CustomApiTests(TestCase):
         url = urlreverse('ietf.api.views.ApiV2PersonExportView')
         robot = PersonFactory(user__is_staff=True)
         RoleFactory(name_id='robot', person=robot, email=robot.email(), group__acronym='secretariat')
-        apikey = PersonalApiKey.objects.create(endpoint=url, person=robot)
+        apikey = PersonalApiKeyFactory(endpoint=url, person=robot)
 
         # error cases
         r = self.client.post(url, {})
         self.assertContains(r, "Missing apikey parameter", status_code=400)
 
         badrole = RoleFactory(group__type_id='ietf', name_id='ad')
-        badapikey = PersonalApiKey.objects.create(endpoint=url, person=badrole.person)
+        badapikey = PersonalApiKeyFactory(endpoint=url, person=badrole.person)
         badrole.person.user.last_login = timezone.now()
         badrole.person.user.save()
         r = self.client.post(url, {'apikey': badapikey.hash()})
@@ -763,7 +827,7 @@ class CustomApiTests(TestCase):
         oidcp = PersonFactory(user__is_staff=True)
         # Make sure 'oidcp' has an acceptable role
         RoleFactory(name_id='robot', person=oidcp, email=oidcp.email(), group__acronym='secretariat')
-        key = PersonalApiKey.objects.create(person=oidcp, endpoint=url)
+        key = PersonalApiKeyFactory(person=oidcp, endpoint=url)
         reg['apikey'] = key.hash()
         #
         # Test valid POST
@@ -950,7 +1014,7 @@ class CustomApiTests(TestCase):
         oidcp = PersonFactory(user__is_staff=True)
         # Make sure 'oidcp' has an acceptable role
         RoleFactory(name_id='robot', person=oidcp, email=oidcp.email(), group__acronym='secretariat')
-        key = PersonalApiKey.objects.create(person=oidcp, endpoint=url)
+        key = PersonalApiKeyFactory(person=oidcp, endpoint=url)
         reg['apikey'] = key.hash()
 
         # first test is_nomcom_volunteer False
@@ -1035,28 +1099,30 @@ class CustomApiTests(TestCase):
 
 
     def test_api_appauth(self):
-        url = urlreverse('ietf.api.views.app_auth')
-        person = PersonFactory()
-        apikey = PersonalApiKey.objects.create(endpoint=url, person=person)
-
-        self.client.login(username=person.user.username,password=f'{person.user.username}+password')
-        self.client.logout()
-
-        # error cases
-        # missing apikey
-        r = self.client.post(url, {})
-        self.assertContains(r, 'Missing apikey parameter', status_code=400)
-
-        # invalid apikey
-        r = self.client.post(url, {'apikey': 'foobar'})
-        self.assertContains(r, 'Invalid apikey', status_code=403)
-
-        # working case
-        r = self.client.post(url, {'apikey': apikey.hash()})
-        self.assertEqual(r.status_code, 200)
-        jsondata = r.json()
-        self.assertEqual(jsondata['success'], True)
+        for app in ["authortools", "bibxml"]:
+            url = urlreverse('ietf.api.views.app_auth', kwargs={"app": app})
+            person = PersonFactory()
+            apikey = PersonalApiKeyFactory(endpoint=url, person=person)
     
+            self.client.login(username=person.user.username,password=f'{person.user.username}+password')
+            self.client.logout()
+    
+            # error cases
+            # missing apikey
+            r = self.client.post(url, {})
+            self.assertContains(r, 'Missing apikey parameter', status_code=400)
+    
+            # invalid apikey
+            r = self.client.post(url, {'apikey': 'foobar'})
+            self.assertContains(r, 'Invalid apikey', status_code=403)
+    
+            # working case
+            r = self.client.post(url, {'apikey': apikey.hash()})
+            self.assertEqual(r.status_code, 200)
+            jsondata = r.json()
+            self.assertEqual(jsondata['success'], True)
+            self.client.logout()
+
     def test_api_get_session_matherials_no_agenda_meeting_url(self):
         meeting = MeetingFactory(type_id='ietf')
         session = SessionFactory(meeting=meeting)
@@ -1176,7 +1242,9 @@ class CustomApiTests(TestCase):
             sorted(e.address for e in emails),
         )
 
-    @override_settings(APP_API_TOKENS={"ietf.api.views.ingest_email": "valid-token"})
+    @override_settings(
+        APP_API_TOKENS={"ietf.api.views.ingest_email": "valid-token", "ietf.api.views.ingest_email_test": "test-token"}
+    )
     @mock.patch("ietf.api.views.iana_ingest_review_email")
     @mock.patch("ietf.api.views.ipr_ingest_response_email")
     @mock.patch("ietf.api.views.nomcom_ingest_feedback_email")
@@ -1186,26 +1254,44 @@ class CustomApiTests(TestCase):
         mocks = {mock_nomcom_ingest, mock_ipr_ingest, mock_iana_ingest}
         empty_outbox()        
         url = urlreverse("ietf.api.views.ingest_email")
+        test_mode_url = urlreverse("ietf.api.views.ingest_email_test")
 
         # test various bad calls
         r = self.client.get(url)
+        self.assertEqual(r.status_code, 403)
+        self.assertFalse(any(m.called for m in mocks))
+        r = self.client.get(test_mode_url)
         self.assertEqual(r.status_code, 403)
         self.assertFalse(any(m.called for m in mocks))
 
         r = self.client.post(url)
         self.assertEqual(r.status_code, 403)
         self.assertFalse(any(m.called for m in mocks))
+        r = self.client.post(test_mode_url)
+        self.assertEqual(r.status_code, 403)
+        self.assertFalse(any(m.called for m in mocks))
 
         r = self.client.get(url, headers={"X-Api-Key": "valid-token"})
+        self.assertEqual(r.status_code, 405)
+        self.assertFalse(any(m.called for m in mocks))
+        r = self.client.get(test_mode_url, headers={"X-Api-Key": "test-token"})
         self.assertEqual(r.status_code, 405)
         self.assertFalse(any(m.called for m in mocks))
 
         r = self.client.post(url, headers={"X-Api-Key": "valid-token"})
         self.assertEqual(r.status_code, 415)
         self.assertFalse(any(m.called for m in mocks))
+        r = self.client.post(test_mode_url, headers={"X-Api-Key": "test-token"})
+        self.assertEqual(r.status_code, 415)
+        self.assertFalse(any(m.called for m in mocks))
 
         r = self.client.post(
             url, content_type="application/json", headers={"X-Api-Key": "valid-token"}
+        )
+        self.assertEqual(r.status_code, 400)
+        self.assertFalse(any(m.called for m in mocks))
+        r = self.client.post(
+            test_mode_url, content_type="application/json", headers={"X-Api-Key": "test-token"}
         )
         self.assertEqual(r.status_code, 400)
         self.assertFalse(any(m.called for m in mocks))
@@ -1218,12 +1304,28 @@ class CustomApiTests(TestCase):
         )
         self.assertEqual(r.status_code, 400)
         self.assertFalse(any(m.called for m in mocks))
+        r = self.client.post(
+            test_mode_url,
+            "this is not JSON!",
+            content_type="application/json",
+            headers={"X-Api-Key": "test-token"},
+        )
+        self.assertEqual(r.status_code, 400)
+        self.assertFalse(any(m.called for m in mocks))
 
         r = self.client.post(
             url,
             {"json": "yes", "valid_schema": False},
             content_type="application/json",
             headers={"X-Api-Key": "valid-token"},
+        )
+        self.assertEqual(r.status_code, 400)
+        self.assertFalse(any(m.called for m in mocks))
+        r = self.client.post(
+            test_mode_url,
+            {"json": "yes", "valid_schema": False},
+            content_type="application/json",
+            headers={"X-Api-Key": "test-token"},
         )
         self.assertEqual(r.status_code, 400)
         self.assertFalse(any(m.called for m in mocks))
@@ -1235,6 +1337,16 @@ class CustomApiTests(TestCase):
             {"dest": "not-a-destination", "message": message_b64},
             content_type="application/json",
             headers={"X-Api-Key": "valid-token"},
+        )
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.headers["Content-Type"], "application/json")
+        self.assertEqual(json.loads(r.content), {"result": "bad_dest"})
+        self.assertFalse(any(m.called for m in mocks))
+        r = self.client.post(
+            test_mode_url,
+            {"dest": "not-a-destination", "message": message_b64},
+            content_type="application/json",
+            headers={"X-Api-Key": "test-token"},
         )
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.headers["Content-Type"], "application/json")
@@ -1256,6 +1368,19 @@ class CustomApiTests(TestCase):
         self.assertFalse(any(m.called for m in (mocks - {mock_iana_ingest})))
         mock_iana_ingest.reset_mock()
         
+        # the test mode endpoint should _not_ call the handler
+        r = self.client.post(
+            test_mode_url,
+            {"dest": "iana-review", "message": message_b64},
+            content_type="application/json",
+            headers={"X-Api-Key": "test-token"},
+        )
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.headers["Content-Type"], "application/json")
+        self.assertEqual(json.loads(r.content), {"result": "ok"})
+        self.assertFalse(any(m.called for m in mocks))
+        mock_iana_ingest.reset_mock()
+        
         r = self.client.post(
             url,
             {"dest": "ipr-response", "message": message_b64},
@@ -1270,6 +1395,19 @@ class CustomApiTests(TestCase):
         self.assertFalse(any(m.called for m in (mocks - {mock_ipr_ingest})))
         mock_ipr_ingest.reset_mock()
 
+        # the test mode endpoint should _not_ call the handler
+        r = self.client.post(
+            test_mode_url,
+            {"dest": "ipr-response", "message": message_b64},
+            content_type="application/json",
+            headers={"X-Api-Key": "test-token"},
+        )
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.headers["Content-Type"], "application/json")
+        self.assertEqual(json.loads(r.content), {"result": "ok"})
+        self.assertFalse(any(m.called for m in mocks))
+        mock_ipr_ingest.reset_mock()
+
         # bad nomcom-feedback dest
         for bad_nomcom_dest in [
             "nomcom-feedback",  # no suffix
@@ -1282,6 +1420,16 @@ class CustomApiTests(TestCase):
                 {"dest": bad_nomcom_dest, "message": message_b64},
                 content_type="application/json",
                 headers={"X-Api-Key": "valid-token"},
+            )
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers["Content-Type"], "application/json")
+            self.assertEqual(json.loads(r.content), {"result": "bad_dest"})
+            self.assertFalse(any(m.called for m in mocks))
+            r = self.client.post(
+                test_mode_url,
+                {"dest": bad_nomcom_dest, "message": message_b64},
+                content_type="application/json",
+                headers={"X-Api-Key": "test-token"},
             )
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.headers["Content-Type"], "application/json")
@@ -1302,6 +1450,19 @@ class CustomApiTests(TestCase):
         self.assertTrue(mock_nomcom_ingest.called)
         self.assertEqual(mock_nomcom_ingest.call_args, mock.call(b"This is a message", random_year))
         self.assertFalse(any(m.called for m in (mocks - {mock_nomcom_ingest})))
+        mock_nomcom_ingest.reset_mock()
+
+        # the test mode endpoint should _not_ call the handler
+        r = self.client.post(
+            test_mode_url,
+            {"dest": f"nomcom-feedback-{random_year}", "message": message_b64},
+            content_type="application/json",
+            headers={"X-Api-Key": "test-token"},
+        )
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.headers["Content-Type"], "application/json")
+        self.assertEqual(json.loads(r.content), {"result": "ok"})
+        self.assertFalse(any(m.called for m in mocks))
         mock_nomcom_ingest.reset_mock()
 
         # test that exceptions lead to email being sent - assumes that iana-review handling is representative

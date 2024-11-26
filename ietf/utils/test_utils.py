@@ -34,7 +34,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-import os
+import tempfile
 import re
 import email
 import html5lib
@@ -239,13 +239,8 @@ class TestCase(django.test.TestCase):
 
     def tempdir(self, label):
         slug = slugify(self.__class__.__name__.replace('.','-'))
-        dirname = "tmp-{label}-{slug}-dir".format(**locals())
-        if 'VIRTUAL_ENV' in os.environ:
-            dirname = os.path.join(os.environ['VIRTUAL_ENV'], dirname)
-        path = os.path.abspath(dirname)
-        if not os.path.exists(path):
-            os.mkdir(path)
-        return path
+        suffix = "-{label}-{slug}-dir".format(**locals())
+        return tempfile.mkdtemp(suffix=suffix)
 
     def assertNoFormPostErrors(self, response, error_css_selector=".is-invalid"):
         """Try to fish out form errors, if none found at least check the
@@ -306,7 +301,7 @@ class TestCase(django.test.TestCase):
 
         # Replace settings paths with temporary directories.
         self._ietf_temp_dirs = {}  # trashed during tearDown, DO NOT put paths you care about in this
-        for setting in self.settings_temp_path_overrides:
+        for setting in set(self.settings_temp_path_overrides):
             self._ietf_temp_dirs[setting] = self.tempdir(slugify(setting))
         self._ietf_saved_context = django.test.utils.override_settings(**self._ietf_temp_dirs)
         self._ietf_saved_context.enable()

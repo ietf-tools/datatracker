@@ -112,7 +112,7 @@ class DraftForm(forms.ModelForm):
         if not document:
             self.add_error("document", "Identifying the Internet-Draft or RFC for this disclosure is required.")
         elif not document.name.startswith("rfc"):
-            if revisions.strip() == "":
+            if revisions is None or revisions.strip() == "":
                 self.add_error("revisions", "Revisions of this Internet-Draft for which this disclosure is relevant must be specified.")
         return cleaned_data
 
@@ -338,7 +338,19 @@ class IprDisclosureFormBase(forms.ModelForm):
 
         return cleaned_data
 
+
 class HolderIprDisclosureForm(IprDisclosureFormBase):
+    is_blanket_disclosure = forms.BooleanField(
+        label=mark_safe(
+            'This is a blanket IPR disclosure '
+            '(see Section 5.4.3 of <a href="https://www.ietf.org/rfc/rfc8179.txt">RFC 8179</a>)'
+        ),
+        help_text="In satisfaction of its disclosure obligations, Patent Holder commits to license all of "
+                  "IPR (as defined in RFC 8179) that would have required disclosure under RFC 8179 on a "
+                  "royalty-free (and otherwise reasonable and non-discriminatory) basis. Patent Holder "
+                  "confirms that all other terms and conditions are described in this IPR disclosure.",
+        required=False,
+    )
     licensing = CustomModelChoiceField(IprLicenseTypeName.objects.all(),
         widget=forms.RadioSelect,empty_label=None)
 
@@ -356,6 +368,15 @@ class HolderIprDisclosureForm(IprDisclosureFormBase):
         else:
             # entering new disclosure
             self.fields['licensing'].queryset = IprLicenseTypeName.objects.exclude(slug='none-selected')
+        
+        if self.data.get("is_blanket_disclosure", False):
+            # for a blanket disclosure, patent details are not required
+            self.fields["patent_number"].required = False
+            self.fields["patent_inventor"].required = False
+            self.fields["patent_title"].required = False
+            self.fields["patent_date"].required = False
+            # n.b., self.fields["patent_notes"] is never required
+
             
     def clean(self):
         cleaned_data = super(HolderIprDisclosureForm, self).clean()

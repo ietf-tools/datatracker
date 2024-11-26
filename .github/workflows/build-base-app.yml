@@ -14,11 +14,18 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
       packages: write
 
     steps:
     - uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GH_COMMON_TOKEN }}
+
+    - name: Set Version
+      run: |
+        printf -v CURDATE '%(%Y%m%dT%H%M)T' -1
+        echo "IMGVERSION=$CURDATE" >> $GITHUB_ENV
 
     - name: Set up QEMU
       uses: docker/setup-qemu-action@v3
@@ -42,4 +49,18 @@ jobs:
         file: docker/base.Dockerfile
         platforms: linux/amd64,linux/arm64
         push: true
-        tags: ghcr.io/ietf-tools/datatracker-app-base:latest
+        tags: |
+          ghcr.io/ietf-tools/datatracker-app-base:${{ env.IMGVERSION }}
+          ghcr.io/ietf-tools/datatracker-app-base:latest
+
+    - name: Update version references
+      run: |
+        sed -i "1s/.*/FROM ghcr.io\/ietf-tools\/datatracker-app-base:${{ env.IMGVERSION }}/" dev/build/Dockerfile
+        echo "${{ env.IMGVERSION }}" > dev/build/TARGET_BASE
+
+    - name: Commit CHANGELOG.md
+      uses: stefanzweifel/git-auto-commit-action@v5
+      with:
+        branch: main
+        commit_message: 'ci: update base image target version to ${{ env.IMGVERSION }}'
+        file_pattern: dev/build/Dockerfile dev/build/TARGET_BASE

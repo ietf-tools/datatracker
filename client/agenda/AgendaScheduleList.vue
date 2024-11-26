@@ -24,7 +24,7 @@
           )
           //- ROW - DAY HEADING -----------------------
           template(v-if='item.displayType === `day`')
-            td(:id='`agenda-day-` + item.id', :colspan='pickerModeActive ? 6 : 5') {{item.date}}
+            td(:id='item.slug', :colspan='pickerModeActive ? 6 : 5') {{item.date}}
           //- ROW - SESSION HEADING -------------------
           template(v-else-if='item.displayType === `session-head`')
             td.agenda-table-cell-check(v-if='pickerModeActive') &nbsp;
@@ -83,6 +83,14 @@
                 template(#trigger)
                   span.badge.is-bof BoF
                 span #[a(href='https://www.ietf.org/how/bofs/', target='_blank') Birds of a Feather] sessions (BoFs) are initial discussions about a particular topic of interest to the IETF community.
+              n-popover(
+                v-if='item.isProposed'
+                trigger='hover'
+                :width='250'
+                )
+                template(#trigger)
+                  span.badge.is-proposed Proposed
+                span #[a(href='https://www.ietf.org/process/wgs/', target='_blank') Proposed WGs] are groups in the process of being chartered. If the charter is not approved by the IESG before the IETF meeting, the session may be canceled.
               .agenda-table-note(v-if='item.note')
                 i.bi.bi-arrow-return-right.me-1
                 span {{item.note}}
@@ -200,7 +208,7 @@ import {
 
 import AgendaDetailsModal from './AgendaDetailsModal.vue'
 
-import { useAgendaStore } from './store'
+import { useAgendaStore, daySlugPrefix, daySlug } from './store'
 import { useSiteStore } from '../shared/store'
 import { getUrl } from '../shared/urls'
 
@@ -248,6 +256,7 @@ const meetingEvents = computed(() => {
     if (itemDate.toISODate() !== acc.lastDate) {
       acc.result.push({
         id: item.id,
+        slug: daySlug(item),
         key: `day-${itemDate.toISODate()}`,
         displayType: 'day',
         date: itemDate.toLocaleString(DateTime.DATE_HUGE),
@@ -296,7 +305,7 @@ const meetingEvents = computed(() => {
           color: 'red'
         })
       }
-      if (agendaStore.useNotes) {
+      if (agendaStore.usesNotes) {
         links.push({
           id: `lnk-${item.id}-note`,
           label: 'Notepad for note-takers',
@@ -467,6 +476,7 @@ const meetingEvents = computed(() => {
       // groupParentName: item.groupParent?.name,
       icon,
       isBoF: item.isBoF,
+      isProposed: item.isProposed,
       isSessionEvent: item.type === 'regular',
       links,
       location: item.location,
@@ -574,6 +584,30 @@ function recalculateRedLine () {
     state.redhandOffset = 0
   }
 }
+
+/**
+ * On page load when browser location hash contains '#now' or '#agenda-day-*' then scroll accordingly
+ */
+;(function scrollToHashInit() {
+  if (!window.location.hash) {
+    return
+  }
+  if (!(window.location.hash === "#now" || window.location.hash.startsWith(`#${daySlugPrefix}`))) {
+    return
+  }
+  const unsubscribe = agendaStore.$subscribe((_mutation, agendaStoreState) => {
+    if (agendaStoreState.schedule.length === 0) {
+      return
+    }
+    unsubscribe() // we only need to scroll once, so unsubscribe from future updates
+    if(window.location.hash === "#now") {
+      const lastEventId = agendaStore.findCurrentEventId()
+      document.getElementById(`agenda-rowid-${lastEventId}`)?.scrollIntoView(true)
+    } else if(window.location.hash.startsWith(`#${daySlugPrefix}`)) {
+      document.getElementById(window.location.hash.substring(1))?.scrollIntoView(true)
+    }
+  })
+})()
 
 // MOUNTED
 
@@ -987,9 +1021,24 @@ onBeforeUnmount(() => {
         word-wrap: break-word;
       }
 
-      .badge.is-bof {
-        background-color: $teal-500;
+      .badge {
         margin: 0 8px;
+
+        &.is-bof {
+          background-color: $teal-500;
+
+          @at-root .theme-dark & {
+            background-color: $teal-700;
+          }
+        }
+
+        &.is-proposed {
+          background-color: $gray-500;
+
+          @at-root .theme-dark & {
+            background-color: $gray-700;
+          }
+        }
 
         @media screen and (max-width: $bs5-break-md) {
           width: 30px;

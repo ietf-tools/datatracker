@@ -42,8 +42,9 @@ import re
 from pathlib import Path
 
 from django.core.cache import caches
+from django.core.exceptions import PermissionDenied
 from django.db.models import Max
-from django.http import HttpResponse, Http404
+from django.http import HttpResponse, Http404, HttpResponseBadRequest
 from django.shortcuts import render, get_object_or_404, redirect
 from django.template.loader import render_to_string
 from django.urls import reverse as urlreverse
@@ -73,6 +74,7 @@ from ietf.ietfauth.utils import ( has_role, is_authorized_in_doc_stream, user_is
     role_required, is_individual_draft_author, can_request_rfc_publication)
 from ietf.name.models import StreamName, BallotPositionName
 from ietf.utils.history import find_history_active_at
+from ietf.doc.views_ballot import parse_ballot_edit_return_point
 from ietf.doc.forms import InvestigateForm, TelechatForm, NotifyForm, ActionHoldersForm, DocAuthorForm, DocAuthorChangeBasisForm
 from ietf.doc.mails import email_comment, email_remind_action_holders
 from ietf.mailtrigger.utils import gather_relevant_expansions
@@ -82,7 +84,7 @@ from ietf.review.models import ReviewAssignment
 from ietf.review.utils import can_request_review_of_doc, review_assignments_to_list_for_docs, review_requests_to_list_for_docs
 from ietf.review.utils import no_review_from_teams_on_doc
 from ietf.utils import markup_txt, log, markdown
-from ietf.utils.draft import PlaintextDraft
+from ietf.utils.draft import get_status_from_draft_text
 from ietf.utils.meetecho import MeetechoAPIError, SlidesManager
 from ietf.utils.response import permission_denied
 from ietf.utils.text import maybe_split
@@ -265,6 +267,8 @@ def document_main(request, name, rev=None, document_html=False):
         can_change_stream = bool(can_edit or roles)
 
         file_urls, found_types = build_file_urls(doc)
+        if not request.user.is_authenticated:
+            file_urls = [fu for fu in file_urls if fu[0] != "pdfized"]
         content = doc.text_or_error() # pyflakes:ignore
         content = markup_txt.markup(maybe_split(content, split=split_content))
 
@@ -400,12 +404,18 @@ def document_main(request, name, rev=None, document_html=False):
 
         can_edit_replaces = has_role(request.user, ("Area Director", "Secretariat", "IRTF Chair", "WG Chair", "RG Chair", "WG Secretary", "RG Secretary"))
 
+        can_edit_action_holders = can_edit or (
+            request.user.is_authenticated and group.has_role(request.user, group.features.docman_roles)
+        )
+
         is_author = request.user.is_authenticated and doc.documentauthor_set.filter(person__user=request.user).exists()
         can_view_possibly_replaces = can_edit_replaces or is_author
 
         latest_revision = None
 
         file_urls, found_types = build_file_urls(doc)
+        if not request.user.is_authenticated:
+            file_urls = [fu for fu in file_urls if fu[0] != "pdfized"]
         content = doc.text_or_error() # pyflakes:ignore
         content = markup_txt.markup(maybe_split(content, split=split_content))
 
@@ -577,7 +587,7 @@ def document_main(request, name, rev=None, document_html=False):
         if doc.get_state_slug() not in ["rfc", "expired"] and doc.stream_id in ("ietf",) and not snapshot:
             if iesg_state_slug == 'idexists' and can_edit:
                 actions.append(("Begin IESG Processing", urlreverse('ietf.doc.views_draft.edit_info', kwargs=dict(name=doc.name)) + "?new=1"))
-            elif can_edit_stream_info and (iesg_state_slug in ('idexists','watching')):
+            elif can_edit_stream_info and (iesg_state_slug == 'idexists'):
                 actions.append(("Submit to IESG for Publication", urlreverse('ietf.doc.views_draft.to_iesg', kwargs=dict(name=doc.name))))
 
         if request.user.is_authenticated and hasattr(request.user, "person"):
@@ -603,12 +613,7 @@ def document_main(request, name, rev=None, document_html=False):
         additional_urls = doc.documenturl_set.exclude(tag_id='auth48')
 
         # Stream description and name passing test
-        if doc.stream != None:
-            stream_desc = doc.stream.desc
-            stream = "draft-stream-" + doc.stream.slug
-        else:
-            stream_desc = "(None)"
-            stream = "(None)"
+        stream = ("draft-stream-" + doc.stream.slug) if doc.stream != None else "(None)"
 
         html = None
         js = None
@@ -647,7 +652,6 @@ def document_main(request, name, rev=None, document_html=False):
                                        revisions=simple_diff_revisions if document_html else revisions,
                                        snapshot=snapshot,
                                        stream=stream,
-                                       stream_desc=stream_desc,
                                        latest_revision=latest_revision,
                                        latest_rev=latest_rev,
                                        can_edit=can_edit,
@@ -661,6 +665,7 @@ def document_main(request, name, rev=None, document_html=False):
                                        can_edit_iana_state=can_edit_iana_state,
                                        can_edit_consensus=can_edit_consensus,
                                        can_edit_replaces=can_edit_replaces,
+                                       can_edit_action_holders=can_edit_action_holders,
                                        can_view_possibly_replaces=can_view_possibly_replaces,
                                        can_request_review=can_request_review,
                                        can_submit_unsolicited_review_for_teams=can_submit_unsolicited_review_for_teams,
@@ -871,6 +876,13 @@ def document_main(request, name, rev=None, document_html=False):
                     and doc.group.features.has_nonsession_materials
                     and doc.type_id in doc.group.features.material_types
             )
+
+        session_statusid = None
+        actual_doc = doc if isinstance(doc,Document) else doc.doc
+        if actual_doc.session_set.count() == 1:
+            if actual_doc.session_set.get().schedulingevent_set.exists():
+                session_statusid = actual_doc.session_set.get().schedulingevent_set.order_by("-time").first().status_id
+
         return render(request, "doc/document_material.html",
                                   dict(doc=doc,
                                        top=top,
@@ -883,6 +895,7 @@ def document_main(request, name, rev=None, document_html=False):
                                        can_upload = can_upload,
                                        other_types=other_types,
                                        presentations=presentations,
+                                       session_statusid=session_statusid,
                                        ))
 
 
@@ -998,7 +1011,7 @@ def document_raw_id(request, name, rev=None, ext=None):
     for t in possible_types:
         if os.path.exists(base_path + t):
             found_types[t]=base_path+t
-    if ext == None:
+    if ext is None:
         ext = 'txt'
     if not ext in found_types:
         raise Http404('dont have the file for that extension')
@@ -1039,6 +1052,8 @@ def document_html(request, name, rev=None):
         document_html=True,
     )
 
+
+@login_required
 def document_pdfized(request, name, rev=None, ext=None):
 
     found = fuzzy_find_documents(name, rev)
@@ -1118,10 +1133,10 @@ def get_diff_revisions(request, name, doc):
 
     diff_documents = [doc]
     diff_documents.extend(
-        Document.objects.filter(
-            relateddocument__source=doc,
-            relateddocument__relationship="replaces",
-        )
+        [
+            r.target
+            for r in RelatedDocument.objects.filter(source=doc, relationship="replaces")
+        ]
     )
     if doc.came_from_draft():
         diff_documents.append(doc.came_from_draft())
@@ -1227,7 +1242,7 @@ def document_bibtex(request, name, rev=None):
         raise Http404()
 
     # Make sure URL_REGEXPS did not grab too much for the rev number
-    if rev != None and len(rev) != 2:
+    if rev is not None and len(rev) != 2:
         mo = re.search(r"^(?P<m>[0-9]{1,2})-(?P<n>[0-9]{2})$", rev)
         if mo:
             name = name+"-"+mo.group(1)
@@ -1250,7 +1265,7 @@ def document_bibtex(request, name, rev=None):
         replaced_by = [d.name for d in doc.related_that("replaces")]
         draft_became_rfc = doc.became_rfc()
 
-        if rev != None and rev != doc.rev:
+        if rev is not None and rev != doc.rev:
             # find the entry in the history
             for h in doc.history_set.order_by("-time"):
                 if rev == h.rev:
@@ -1291,7 +1306,7 @@ def document_bibxml(request, name, rev=None):
         raise Http404()
 
     # Make sure URL_REGEXPS did not grab too much for the rev number
-    if rev != None and len(rev) != 2:
+    if rev is not None and len(rev) != 2:
         mo = re.search(r"^(?P<m>[0-9]{1,2})-(?P<n>[0-9]{2})$", rev)
         if mo:
             name = name+"-"+mo.group(1)
@@ -1439,7 +1454,7 @@ def document_referenced_by(request, name):
     if doc.type_id in ["bcp","std","fyi"]:
         for rfc in doc.contains():
             refs |= rfc.referenced_by()
-    full = ( request.GET.get('full') != None )
+    full = ( request.GET.get('full') is not None )
     numdocs = refs.count()
     if not full and numdocs>250:
        refs=refs[:250]
@@ -1459,7 +1474,7 @@ def document_ballot_content(request, doc, ballot_id, editable=True):
     augment_events_with_revision(doc, all_ballots)
 
     ballot = None
-    if ballot_id != None:
+    if ballot_id is not None:
         ballot_id = int(ballot_id)
         for b in all_ballots:
             if b.id == ballot_id:
@@ -1538,7 +1553,6 @@ def document_ballot(request, name, ballot_id=None):
     top = render_document_top(request, doc, ballot_tab, name)
 
     c = document_ballot_content(request, doc, ballot.id, editable=True)
-    request.session['ballot_edit_return_point'] = request.path_info
 
     return render(request, "doc/document_ballot.html",
                               dict(doc=doc,
@@ -1555,8 +1569,6 @@ def document_irsg_ballot(request, name, ballot_id=None):
             ballot_id = ballot.id
 
     c = document_ballot_content(request, doc, ballot_id, editable=True)
-
-    request.session['ballot_edit_return_point'] = request.path_info
 
     return render(request, "doc/document_ballot.html",
                               dict(doc=doc,
@@ -1575,8 +1587,6 @@ def document_rsab_ballot(request, name, ballot_id=None):
 
     c = document_ballot_content(request, doc, ballot_id, editable=True)
 
-    request.session['ballot_edit_return_point'] = request.path_info
-
     return render(
         request,
         "doc/document_ballot.html",
@@ -1591,11 +1601,18 @@ def ballot_popup(request, name, ballot_id):
     doc = get_object_or_404(Document, name=name)
     c = document_ballot_content(request, doc, ballot_id=ballot_id, editable=False)
     ballot = get_object_or_404(BallotDocEvent,id=ballot_id)
+    
+    try:
+        return_to_url = parse_ballot_edit_return_point(request.GET.get('ballot_edit_return_point'), name, ballot_id)
+    except ValueError:
+        return HttpResponseBadRequest('ballot_edit_return_point is invalid')
+    
     return render(request, "doc/ballot_popup.html",
                               dict(doc=doc,
                                    ballot_content=c,
                                    ballot_id=ballot_id,
                                    ballot_type_slug=ballot.ballot_type.slug,
+                                   ballot_edit_return_point=return_to_url,
                                    editable=True,
                                    ))
 
@@ -1661,7 +1678,7 @@ def add_comment(request, name):
 
     login = request.user.person
 
-    if doc.type_id == "draft" and doc.group != None:
+    if doc.type_id == "draft" and doc.group is not None:
         can_add_comment = bool(has_role(request.user, ("Area Director", "Secretariat", "IRTF Chair", "IANA", "RFC Editor")) or (
             request.user.is_authenticated and
             Role.objects.filter(name__in=("chair", "secr"),
@@ -1860,11 +1877,21 @@ def edit_authors(request, name):
         })
 
 
-@role_required('Area Director', 'Secretariat')
+@login_required
 def edit_action_holders(request, name):
     """Change the set of action holders for a doc"""
     doc = get_object_or_404(Document, name=name)
-    
+
+    can_edit = has_role(request.user, ("Area Director", "Secretariat")) or (
+        doc.group and doc.group.has_role(request.user, doc.group.features.docman_roles)
+    )
+    if not can_edit:
+        # Keep the list of roles in this message up-to-date with the can_edit logic
+        message = "Restricted to roles: Area Director, Secretariat"
+        if doc.group and doc.group.acronym != "none":
+            message += f", and document managers for the {doc.group.acronym} group"
+        raise PermissionDenied(message)
+
     if request.method == 'POST':
         form = ActionHoldersForm(request.POST)
         if form.is_valid():
@@ -1974,10 +2001,20 @@ class ReminderEmailForm(forms.Form):
         strip=True,
     )
 
-@role_required('Area Director', 'Secretariat')
+@login_required
 def remind_action_holders(request, name):
     doc = get_object_or_404(Document, name=name)
-    
+
+    can_edit = has_role(request.user, ("Area Director", "Secretariat")) or (
+        doc.group and doc.group.has_role(request.user, doc.group.features.docman_roles)
+    )
+    if not can_edit:
+        # Keep the list of roles in this message up-to-date with the can_edit logic
+        message = "Restricted to roles: Area Director, Secretariat"
+        if doc.group and doc.group.acronym != "none":
+            message += f", and document managers for the {doc.group.acronym} group"
+        raise PermissionDenied(message)
+
     if request.method == 'POST':
         form = ReminderEmailForm(request.POST)
         if form.is_valid():
@@ -2224,12 +2261,11 @@ def idnits2_state(request, name, rev=None):
     elif doc.intended_std_level:
         doc.deststatus = doc.intended_std_level.name
     else:
-        text = doc.text()
+         # 10000 is a conservative prefix on number of utf-8 encoded bytes to 
+         # cover at least the first 10 lines of characters
+        text = doc.text(size=10000)
         if text:
-            parsed_draft = PlaintextDraft(
-                text=doc.text(), source=name, name_from_source=False
-            )
-            doc.deststatus = parsed_draft.get_status()
+            doc.deststatus = get_status_from_draft_text(text)
         else:
             doc.deststatus = "Unknown"
     return render(

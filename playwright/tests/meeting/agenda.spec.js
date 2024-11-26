@@ -1431,7 +1431,7 @@ test.describe('past - small screens', () => {
 
         // can open the jump to day dropdown
         await barBtnLocator.first().click()
-        const jumpDayDdnLocator = page.locator('.n-dropdown-menu > .n-dropdown-option')
+        const jumpDayDdnLocator = page.locator('.n-dropdown-menu [data-testid=mobile-link]')
         await expect(jumpDayDdnLocator).toHaveCount(7)
         for (let idx = 0; idx < 7; idx++) {
           const localDateTime = DateTime.fromISO(meetingData.meeting.startDate, { zone: meetingData.meeting.timezone })

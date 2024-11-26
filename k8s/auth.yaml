@@ -81,7 +81,10 @@ spec:
             - name: nginx-tmp
               mountPath: /tmp
             - name: dt-cfg
-              mountPath: /etc/nginx/conf.d/auth.conf
+              mountPath: /etc/nginx/conf.d/00logging.conf
+              subPath: nginx-logging.conf
+            - name: dt-cfg
+              mountPath: /etc/nginx/conf.d/default.conf
               subPath: nginx-auth.conf
         # -----------------------------------------------------
         # ScoutAPM Container
@@ -141,9 +144,5 @@ spec:
       targetPort: http
       protocol: TCP
       name: http
-    - port: 8080
-      targetPort: http
-      protocol: TCP
-      name: http-old
   selector:
     app: auth

@@ -30,7 +30,7 @@ from tastypie.utils import is_valid_jsonp_callback_value
 from tastypie.utils.mime import determine_format, build_content_type
 from textwrap import dedent
 from traceback import format_exception, extract_tb
-from typing import Iterable, Optional
+from typing import Iterable, Optional, Literal
 
 import ietf
 from ietf.api import _api_list
@@ -399,7 +399,7 @@ def version(request):
 
 @require_api_key
 @csrf_exempt
-def app_auth(request):
+def app_auth(request, app: Literal["authortools", "bibxml"]):
     return HttpResponse(
             json.dumps({'success': True}),
             content_type='application/json')
@@ -577,6 +577,7 @@ def directauth(request):
                 data = None
 
         if raw_data is None or data is None:
+            log.log("Request body is either missing or invalid")
             return HttpResponse(json.dumps(dict(result="failure",reason="invalid post")), content_type='application/json')
 
         authtoken = data.get('authtoken', None)
@@ -584,9 +585,11 @@ def directauth(request):
         password = data.get('password', None)
 
         if any([item is None for item in (authtoken, username, password)]):
+            log.log("One or more mandatory fields are missing: authtoken, username, password")
             return HttpResponse(json.dumps(dict(result="failure",reason="invalid post")), content_type='application/json')
 
         if not is_valid_token("ietf.api.views.directauth", authtoken):
+            log.log("Auth token provided is invalid")
             return HttpResponse(json.dumps(dict(result="failure",reason="invalid authtoken")), content_type='application/json')
         
         user_query = User.objects.filter(username__iexact=username)
@@ -597,18 +600,20 @@ def directauth(request):
 
 
         # Note well that we are using user.username, not what was passed to the API.
-        if user_query.count() == 1 and authenticate(username = user_query.first().username, password = password):
+        user_count = user_query.count()
+        if user_count == 1 and authenticate(username = user_query.first().username, password = password):
             user = user_query.get()
             if user_query.filter(person__isnull=True).count() == 1: # Can't inspect user.person direclty here
-                log.log(f"Direct auth of personless user {user.pk}:{user.username}")
+                log.log(f"Direct auth success (personless user): {user.pk}:{user.username}")
             else:
-                log.log(f"Direct auth: {user.pk}:{user.person.plain_name()}")
+                log.log(f"Direct auth success: {user.pk}:{user.person.plain_name()}")
             return HttpResponse(json.dumps(dict(result="success")), content_type='application/json')
 
-        log.log(f"Direct auth failure: {username}")
+        log.log(f"Direct auth failure: {username} ({user_count} user(s) found)")
         return HttpResponse(json.dumps(dict(result="failure", reason="authentication failed")), content_type='application/json') 
 
     else:
+        log.log(f"Request must be POST: {request.method} received")
         return HttpResponse(status=405)
 
 
@@ -757,14 +762,16 @@ class EmailIngestionError(Exception):
         return msg
 
 
-@requires_api_token
-@csrf_exempt
-def ingest_email(request):
-    """Ingest incoming email
+def ingest_email_handler(request, test_mode=False):
+    """Ingest incoming email - handler
     
     Returns a 4xx or 5xx status code if the HTTP request was invalid or something went
     wrong while processing it. If the request was valid, returns a 200. This may or may
     not indicate that the message was accepted.
+    
+    If test_mode is true, actual processing of a valid message will be skipped. In this
+    mode, a valid request with a valid destination will be treated as accepted. The
+    "bad_dest" error may still be returned.
     """
 
     def _http_err(code, text):
@@ -800,15 +807,18 @@ def ingest_email(request):
     try:
         if dest == "iana-review":
             valid_dest = True
-            iana_ingest_review_email(message)
+            if not test_mode:
+                iana_ingest_review_email(message)
         elif dest == "ipr-response":
             valid_dest = True
-            ipr_ingest_response_email(message)
+            if not test_mode:
+                ipr_ingest_response_email(message)
         elif dest.startswith("nomcom-feedback-"):
             maybe_year = dest[len("nomcom-feedback-"):]
             if maybe_year.isdecimal():
                 valid_dest = True
-                nomcom_ingest_feedback_email(message, int(maybe_year))
+                if not test_mode:
+                    nomcom_ingest_feedback_email(message, int(maybe_year))
     except EmailIngestionError as err:
         error_email = err.as_emailmessage()
         if error_email is not None:
@@ -820,3 +830,25 @@ def ingest_email(request):
         return _api_response("bad_dest")
 
     return _api_response("ok")
+
+
+@requires_api_token
+@csrf_exempt
+def ingest_email(request):
+    """Ingest incoming email
+
+    Hands off to ingest_email_handler() with test_mode=False. This allows @requires_api_token to
+    give the test endpoint a distinct token from the real one.
+    """
+    return ingest_email_handler(request, test_mode=False)
+
+
+@requires_api_token
+@csrf_exempt
+def ingest_email_test(request):
+    """Ingest incoming email test endpoint
+    
+    Hands off to ingest_email_handler() with test_mode=True. This allows @requires_api_token to
+    give the test endpoint a distinct token from the real one.
+    """
+    return ingest_email_handler(request, test_mode=True)

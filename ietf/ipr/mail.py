@@ -171,31 +171,44 @@ def message_from_message(message,by=None):
     )
     return msg
 
+
+class UndeliverableIprResponseError(Exception):
+    """Response email could not be delivered and should be treated as an error"""
+
+
 def process_response_email(msg):
-    """Saves an incoming message.  msg=string.  Message "To" field is expected to
-    be in the format ietf-ipr+[identifier]@ietf.org.  Expect to find a message with
-    a matching value in the reply_to field, associated to an IPR disclosure through
-    IprEvent.  Create a Message object for the incoming message and associate it to
-    the original message via new IprEvent"""
+    """Save an incoming IPR response email message
+    
+    Message "To" field is expected to be in the format ietf-ipr+[identifier]@ietf.org. If
+    the address or identifier is missing, the message will be silently dropped.
+
+    Expect to find a message with a matching value in the reply_to field, associated to an
+    IPR disclosure through IprEvent. If it cannot be matched, raises UndeliverableIprResponseError 
+    
+    Creates a Message object for the incoming message and associates it to
+    the original message via new IprEvent
+    """
     message = message_from_bytes(force_bytes(msg))
     to = message.get('To', '')
 
     # exit if this isn't a response we're interested in (with plus addressing)
-    local,domain = get_base_ipr_request_address().split('@')
+    local, domain = get_base_ipr_request_address().split('@')
     if not re.match(r'^{}\+[a-zA-Z0-9_\-]{}@{}'.format(local,'{16}',domain),to):
-        return None
-    
+        _from = message.get("From", "<unknown>")
+        log(f"Ignoring IPR email without a message identifier from {_from} to {to}")
+        return
+
     try:
         to_message = Message.objects.get(reply_to=to)
     except Message.DoesNotExist:
         log('Error finding matching message ({})'.format(to))
-        return None
+        raise UndeliverableIprResponseError(f"Unable to find message matching {to}")
 
     try:
         disclosure = to_message.msgevents.first().disclosure
     except:
         log('Error processing message ({})'.format(to))
-        return None
+        raise UndeliverableIprResponseError("Error processing message for {to}")
 
     ietf_message = message_from_message(message)
     IprEvent.objects.create(
@@ -207,4 +220,4 @@ def process_response_email(msg):
     )
     
     log("Received IPR email from %s" % ietf_message.frm)
-    return ietf_message
+

@@ -312,7 +312,7 @@
       "order": 42,
       "slug": "watching",
       "type": "draft-iesg",
-      "used": true
+      "used": false
     },
     "model": "doc.state",
     "pk": 11
@@ -2619,6 +2619,19 @@
   },
   {
     "fields": {
+      "desc": "The BOF request is spam",
+      "name": "Spam",
+      "next_states": [],
+      "order": 5,
+      "slug": "spam",
+      "type": "bofreq",
+      "used": true
+    },
+    "model": "doc.state",
+    "pk": 182
+  },
+  {
+    "fields": {
       "label": "State"
     },
     "model": "doc.statetype",
@@ -3464,7 +3477,7 @@
       "parent_types": [],
       "req_subm_approval": true,
       "role_order": "[\n    \"chair\",\n    \"delegate\"\n]",
-      "session_purposes": "[\n    \"officehours\"\n]",
+      "session_purposes": "[\n    \"officehours\",\n    \"regular\"\n]",
       "show_on_agenda": true
     },
     "model": "group.groupfeatures",
@@ -14058,7 +14071,7 @@
   },
   {
     "fields": {
-      "desc": "Legacy stream",
+      "desc": "Legacy",
       "name": "Legacy",
       "order": 6,
       "used": true

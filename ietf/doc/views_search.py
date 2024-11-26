@@ -33,7 +33,8 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-
+import hashlib
+import json
 import re
 import datetime
 import copy
@@ -62,7 +63,7 @@ from ietf.doc.models import ( Document, DocHistory, State,
     IESG_BALLOT_ACTIVE_STATES, IESG_STATCHG_CONFLREV_ACTIVE_STATES,
     IESG_CHARTER_ACTIVE_STATES )
 from ietf.doc.fields import select2_id_doc_name_json
-from ietf.doc.utils import get_search_cache_key, augment_events_with_revision, needed_ballot_positions
+from ietf.doc.utils import augment_events_with_revision, needed_ballot_positions
 from ietf.group.models import Group
 from ietf.idindex.index import active_drafts_index_by_group
 from ietf.name.models import DocTagName, DocTypeName, StreamName
@@ -256,7 +257,14 @@ def retrieve_search_results(form, all_types=False):
 
     return docs
 
+
 def search(request):
+    def _get_cache_key(params):
+        fields = set(SearchForm.base_fields) - {'sort'}
+        kwargs = dict([(k, v) for (k, v) in list(params.items()) if k in fields])
+        key = "doc:document:search:" + hashlib.sha512(json.dumps(kwargs, sort_keys=True).encode('utf-8')).hexdigest()
+        return key
+
     if request.GET:
         # backwards compatibility
         get_params = request.GET.copy()
@@ -271,7 +279,7 @@ def search(request):
         if not form.is_valid():
             return HttpResponseBadRequest("form not valid: %s" % form.errors)
 
-        cache_key = get_search_cache_key(get_params)
+        cache_key = _get_cache_key(get_params)
         cached_val = cache.get(cache_key)
         if cached_val:
             [results, meta] = cached_val
@@ -484,6 +492,29 @@ def ad_workload(request):
             "ietf.doc.views_search.docs_for_ad", kwargs=dict(name=ad.full_name_as_key())
         )
         ad.buckets = copy.deepcopy(bucket_template)
+
+        # https://github.com/ietf-tools/datatracker/issues/4577
+        docs_via_group_ad = Document.objects.exclude(
+            group__acronym="none"
+        ).filter(
+            group__role__name="ad",
+            group__role__person=ad
+        ).filter(
+            states__type="draft-stream-ietf",
+            states__slug__in=["wg-doc","wg-lc","waiting-for-implementation","chair-w","writeupw"]
+        )
+
+        doc_for_ad = Document.objects.filter(ad=ad)
+
+        ad.pre_pubreq = (docs_via_group_ad | doc_for_ad).filter(
+            type="draft"
+        ).filter(
+            states__type="draft",
+            states__slug="active"
+        ).filter(
+            states__type="draft-iesg",
+            states__slug="idexists"
+        ).distinct().count()
 
         for doc in Document.objects.exclude(type_id="rfc").filter(ad=ad):
             dt = doc_type(doc)
@@ -734,7 +765,7 @@ def drafts_in_last_call(request):
     })
 
 def drafts_in_iesg_process(request):
-    states = State.objects.filter(type="draft-iesg").exclude(slug__in=('idexists', 'pub', 'dead', 'watching', 'rfcqueue'))
+    states = State.objects.filter(type="draft-iesg").exclude(slug__in=('idexists', 'pub', 'dead', 'rfcqueue'))
     title = "Documents in IESG process"
 
     grouped_docs = []

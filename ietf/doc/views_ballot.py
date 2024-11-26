@@ -8,13 +8,14 @@ import datetime, json
 
 from django import forms
 from django.conf import settings
-from django.http import HttpResponse, HttpResponseRedirect, Http404
+from django.http import HttpResponse, HttpResponseRedirect, Http404, HttpResponseBadRequest
 from django.shortcuts import render, get_object_or_404, redirect
 from django.template.defaultfilters import striptags
 from django.template.loader import render_to_string
 from django.urls import reverse as urlreverse
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.html import escape
+from urllib.parse import urlencode as urllib_urlencode
 
 import debug                            # pyflakes:ignore
 
@@ -39,6 +40,7 @@ from ietf.message.utils import infer_message
 from ietf.name.models import BallotPositionName, DocTypeName
 from ietf.person.models import Person
 from ietf.utils.fields import ModelMultipleChoiceField
+from ietf.utils.http import validate_return_to_path
 from ietf.utils.mail import send_mail_text, send_mail_preformatted
 from ietf.utils.decorators import require_api_key
 from ietf.utils.response import permission_denied
@@ -185,11 +187,11 @@ def edit_position(request, name, ballot_id):
 
     balloter = login = request.user.person
 
-    if 'ballot_edit_return_point' in request.session:
-        return_to_url = request.session['ballot_edit_return_point']
-    else:
-        return_to_url = urlreverse("ietf.doc.views_doc.document_ballot", kwargs=dict(name=doc.name, ballot_id=ballot_id))
-
+    try:
+        return_to_url = parse_ballot_edit_return_point(request.GET.get('ballot_edit_return_point'), doc.name, ballot_id)
+    except ValueError:
+        return HttpResponseBadRequest('ballot_edit_return_point is invalid')
+    
     # if we're in the Secretariat, we can select a balloter to act as stand-in for
     if has_role(request.user, "Secretariat"):
         balloter_id = request.GET.get('balloter')
@@ -209,9 +211,14 @@ def edit_position(request, name, ballot_id):
             save_position(form, doc, ballot, balloter, login, send_mail)
 
             if send_mail:
-                qstr=""
+                query = {}
                 if request.GET.get('balloter'):
-                    qstr += "?balloter=%s" % request.GET.get('balloter')
+                    query['balloter'] = request.GET.get('balloter')
+                if request.GET.get('ballot_edit_return_point'):
+                    query['ballot_edit_return_point'] = request.GET.get('ballot_edit_return_point')
+                qstr = ""
+                if len(query) > 0:
+                    qstr = "?" + urllib_urlencode(query, safe='/')
                 return HttpResponseRedirect(urlreverse('ietf.doc.views_ballot.send_ballot_comment', kwargs=dict(name=doc.name, ballot_id=ballot_id)) + qstr)
             elif request.POST.get("Defer") and doc.stream.slug != "irtf":
                 return redirect('ietf.doc.views_ballot.defer_ballot', name=doc)
@@ -316,6 +323,8 @@ def build_position_email(balloter, doc, pos):
 
     if doc.stream_id == "irtf":
         addrs = gather_address_lists('irsg_ballot_saved',doc=doc)
+    elif doc.stream_id == "editorial":
+        addrs = gather_address_lists('rsab_ballot_saved',doc=doc)
     else:
         addrs = gather_address_lists('iesg_ballot_saved',doc=doc)
 
@@ -337,11 +346,11 @@ def send_ballot_comment(request, name, ballot_id):
 
     balloter = request.user.person
 
-    if 'ballot_edit_return_point' in request.session:
-        return_to_url = request.session['ballot_edit_return_point']
-    else:
-        return_to_url = urlreverse("ietf.doc.views_doc.document_ballot", kwargs=dict(name=doc.name, ballot_id=ballot_id))
-
+    try:
+        return_to_url = parse_ballot_edit_return_point(request.GET.get('ballot_edit_return_point'), doc.name, ballot_id)
+    except ValueError:
+        return HttpResponseBadRequest('ballot_edit_return_point is invalid')
+    
     if 'HTTP_REFERER' in request.META:
         back_url = request.META['HTTP_REFERER']
     else:
@@ -632,7 +641,7 @@ def ballot_writeupnotes(request, name):
                 existing.save()
 
             if "issue_ballot" in request.POST and not ballot_already_approved:
-                if prev_state.slug in ['watching', 'writeupw', 'goaheadw']:
+                if prev_state.slug in ['writeupw', 'goaheadw']:
                     new_state = State.objects.get(used=True, type="draft-iesg", slug='iesg-eva')
                     prev_tags = doc.tags.filter(slug__in=IESG_SUBSTATE_TAGS)
                     doc.set_state(new_state)
@@ -699,7 +708,7 @@ def ballot_writeupnotes(request, name):
                                    back_url=doc.get_absolute_url(),
                                    ballot_issued=bool(doc.latest_event(type="sent_ballot_announcement")),
                                    warn_lc = not doc.docevent_set.filter(lastcalldocevent__expires__date__lt=date_today(DEADLINE_TZINFO)).exists(),
-                                   warn_unexpected_state= prev_state if bool(prev_state.slug in ['watching', 'ad-eval', 'lc']) else None,
+                                   warn_unexpected_state= prev_state if bool(prev_state.slug in ['ad-eval', 'lc']) else None,
                                    ballot_writeup_form=form,
                                    need_intended_status=need_intended_status,
                                    ))
@@ -1302,3 +1311,28 @@ def rsab_ballot_status(request):
     # Possible TODO: add a menu item to show this? Maybe only if you're in rsab or an rswg chair?
     # There will be so few of these that the general community would follow them from the rswg docs page.
     # Maybe the view isn't actually needed at all...
+
+
+def parse_ballot_edit_return_point(path, doc_name, ballot_id):
+    get_default_path = lambda: urlreverse("ietf.doc.views_doc.document_ballot", kwargs=dict(name=doc_name, ballot_id=ballot_id))
+    allowed_path_handlers = {
+        "ietf.community.views.view_list",
+        "ietf.doc.views_doc.document_ballot",
+        "ietf.doc.views_doc.document_irsg_ballot",
+        "ietf.doc.views_doc.document_rsab_ballot",
+        "ietf.doc.views_ballot.irsg_ballot_status",
+        "ietf.doc.views_ballot.rsab_ballot_status",
+        "ietf.doc.views_search.search",
+        "ietf.doc.views_search.docs_for_ad",
+        "ietf.doc.views_search.drafts_in_last_call",
+        "ietf.doc.views_search.recent_drafts",
+        "ietf.group.views.chartering_groups",
+        "ietf.group.views.group_documents",
+        "ietf.group.views.stream_documents",
+        "ietf.iesg.views.agenda",
+        "ietf.iesg.views.agenda_documents",
+        "ietf.iesg.views.discusses",
+        "ietf.iesg.views.past_documents",
+    }
+    return validate_return_to_path(path, get_default_path, allowed_path_handlers)
+

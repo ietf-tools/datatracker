@@ -35,6 +35,7 @@
 
 
 import copy
+import csv
 import datetime
 import itertools
 import math
@@ -334,35 +335,86 @@ def chartering_groups(request):
                   dict(charter_states=charter_states,
                        group_types=group_types))
 
+
 def concluded_groups(request):
     sections = OrderedDict()
 
-    sections['WGs'] = Group.objects.filter(type='wg', state="conclude").select_related("state", "charter").order_by("parent__name","acronym")
-    sections['RGs'] = Group.objects.filter(type='rg', state="conclude").select_related("state", "charter").order_by("parent__name","acronym")
-    sections['BOFs'] = Group.objects.filter(type='wg', state="bof-conc").select_related("state", "charter").order_by("parent__name","acronym")
-    sections['AGs'] = Group.objects.filter(type='ag', state="conclude").select_related("state", "charter").order_by("parent__name","acronym")
-    sections['RAGs'] = Group.objects.filter(type='rag', state="conclude").select_related("state", "charter").order_by("parent__name","acronym")
-    sections['Directorates'] = Group.objects.filter(type='dir', state="conclude").select_related("state", "charter").order_by("parent__name","acronym")
-    sections['Review teams'] = Group.objects.filter(type='review', state="conclude").select_related("state", "charter").order_by("parent__name","acronym")
-    sections['Teams'] = Group.objects.filter(type='team', state="conclude").select_related("state", "charter").order_by("parent__name","acronym")
-    sections['Programs'] = Group.objects.filter(type='program', state="conclude").select_related("state", "charter").order_by("parent__name","acronym")
+    sections["WGs"] = (
+        Group.objects.filter(type="wg", state="conclude")
+        .select_related("state", "charter")
+        .order_by("parent__name", "acronym")
+    )
+    sections["RGs"] = (
+        Group.objects.filter(type="rg", state="conclude")
+        .select_related("state", "charter")
+        .order_by("parent__name", "acronym")
+    )
+    sections["BOFs"] = (
+        Group.objects.filter(type="wg", state="bof-conc")
+        .select_related("state", "charter")
+        .order_by("parent__name", "acronym")
+    )
+    sections["AGs"] = (
+        Group.objects.filter(type="ag", state="conclude")
+        .select_related("state", "charter")
+        .order_by("parent__name", "acronym")
+    )
+    sections["RAGs"] = (
+        Group.objects.filter(type="rag", state="conclude")
+        .select_related("state", "charter")
+        .order_by("parent__name", "acronym")
+    )
+    sections["Directorates"] = (
+        Group.objects.filter(type="dir", state="conclude")
+        .select_related("state", "charter")
+        .order_by("parent__name", "acronym")
+    )
+    sections["Review teams"] = (
+        Group.objects.filter(type="review", state="conclude")
+        .select_related("state", "charter")
+        .order_by("parent__name", "acronym")
+    )
+    sections["Teams"] = (
+        Group.objects.filter(type="team", state="conclude")
+        .select_related("state", "charter")
+        .order_by("parent__name", "acronym")
+    )
+    sections["Programs"] = (
+        Group.objects.filter(type="program", state="conclude")
+        .select_related("state", "charter")
+        .order_by("parent__name", "acronym")
+    )
 
     for name, groups in sections.items():
-        
         # add start/conclusion date
         d = dict((g.pk, g) for g in groups)
 
         for g in groups:
             g.start_date = g.conclude_date = None
 
-        for e in ChangeStateGroupEvent.objects.filter(group__in=groups, state="active").order_by("-time"):
+        # Some older BOFs were created in the "active" state, so consider both "active" and "bof"
+        # ChangeStateGroupEvents when finding the start date. A group with _both_ "active" and "bof"
+        # events should not be in the "bof-conc" state so this shouldn't cause a problem (if it does,
+        # we'll need to clean up the data)
+        for e in ChangeStateGroupEvent.objects.filter(
+            group__in=groups,
+            state__in=["active", "bof"] if name == "BOFs" else ["active"],
+        ).order_by("-time"):
             d[e.group_id].start_date = e.time
 
-        for e in ChangeStateGroupEvent.objects.filter(group__in=groups, state="conclude").order_by("time"):
+        # Similarly, some older BOFs were concluded into the "conclude" state and the event was never
+        # fixed, so consider both "conclude" and "bof-conc" ChangeStateGroupEvents when finding the
+        # concluded date. A group with _both_ "conclude" and "bof-conc" events should not be in the
+        # "bof-conc" state so this shouldn't cause a problem (if it does, we'll need to clean up the
+        # data)
+        for e in ChangeStateGroupEvent.objects.filter(
+            group__in=groups,
+            state__in=["bof-conc", "conclude"] if name == "BOFs" else ["conclude"],
+        ).order_by("time"):
             d[e.group_id].conclude_date = e.time
 
-    return render(request, 'group/concluded_groups.html',
-                  dict(sections=sections))
+    return render(request, "group/concluded_groups.html", dict(sections=sections))
+
 
 def prepare_group_documents(request, group, clist):
     found_docs, meta = prepare_document_table(request, docs_tracked_by_community_list(clist), request.GET, max_results=500)
@@ -385,6 +437,48 @@ def prepare_group_documents(request, group, clist):
     meta_related = meta.copy()
 
     return docs, meta, docs_related, meta_related
+
+
+def get_leadership(group_type):
+    people = Person.objects.filter(
+        role__name__slug="chair",
+        role__group__type=group_type,
+        role__group__state__slug__in=("active", "bof", "proposed"),
+    ).distinct()
+    leaders = []
+    for person in people:
+        parts = person.name_parts()
+        groups = [
+            r.group.acronym
+            for r in person.role_set.filter(
+                name__slug="chair",
+                group__type=group_type,
+                group__state__slug__in=("active", "bof", "proposed"),
+            )
+        ]
+        entry = {"name": "%s, %s" % (parts[3], parts[1]), "groups": ", ".join(groups)}
+        leaders.append(entry)
+    return sorted(leaders, key=lambda a: a["name"])
+
+
+def group_leadership(request, group_type=None):
+    context = {}
+    context["leaders"] = get_leadership(group_type)
+    context["group_type"] = group_type
+    return render(request, "group/group_leadership.html", context)
+
+
+def group_leadership_csv(request, group_type=None):
+    leaders = get_leadership(group_type)
+    response = HttpResponse(content_type="text/csv")
+    response["Content-Disposition"] = (
+        f'attachment; filename="group_leadership_{group_type}.csv"'
+    )
+    writer = csv.writer(response, dialect=csv.excel, delimiter=str(","))
+    writer.writerow(["Name", "Groups"])
+    for leader in leaders:
+        writer.writerow([leader["name"], leader["groups"]])
+    return response
 
 def group_home(request, acronym, group_type=None):
     group = get_group_or_404(acronym, group_type)
@@ -680,7 +774,7 @@ def dependencies(request, acronym, group_type=None):
             {
                 "id": x.became_rfc().name if x.became_rfc() else x.name,
                 "rfc": x.type_id == "rfc" or x.became_rfc() is not None,
-                "post-wg": x.get_state_slug("draft-iesg") not in ["idexists", "watching", "dead"],
+                "post-wg": x.get_state_slug("draft-iesg") not in ["idexists", "dead"],
                 "expired": x.get_state_slug("draft") == "expired",
                 "replaced": x.get_state_slug("draft") == "repl",
                 "group": x.group.acronym if x.group and x.group.acronym != "none" else "",

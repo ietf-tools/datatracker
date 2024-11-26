@@ -489,9 +489,12 @@ class UploadAgendaForm(ApplyToAllFileUploadForm):
 class UploadSlidesForm(ApplyToAllFileUploadForm):
     doc_type = 'slides'
     title = forms.CharField(max_length=255)
+    approved = forms.BooleanField(label='Auto-approve', initial=True, required=False)
 
-    def __init__(self, session, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, session, show_apply_to_all_checkbox, can_manage, *args, **kwargs):
+        super().__init__(show_apply_to_all_checkbox, *args, **kwargs)
+        if not can_manage:
+            self.fields.pop('approved')
         self.session = session
 
     def clean_title(self):

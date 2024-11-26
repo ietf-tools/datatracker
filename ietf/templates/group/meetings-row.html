@@ -18,7 +18,7 @@
                 <div class="badge rounded-pill text-bg-secondary">{{ s.current_status_name }}</div>
                 {% if s.current_status == "canceled" %}
                     {% with timeslot=s.official_timeslotassignment.timeslot %}
-                        <span class="text-decoration-line-through text-secondary session-time date me-3" data-start-utc="{{ timeslot.time|utc|date:'Y-m-d' }}" data-end-utc="{{ timeslot.end_time|utc|date:'Y-m-d' }}"></span>
+                        <span class="text-decoration-line-through text-secondary session-time date me-3" data-start-utc="{{ timeslot.time|utc|date:'Y-m-d H:i' }}" data-end-utc="{{ timeslot.end_time|utc|date:'Y-m-d H:i' }}"></span>
                     {% endwith %}
                 {% endif %}
             {% endif %}
@@ -78,9 +78,9 @@
                 <div class="regular float-end">
                     {# see note in the included templates re: show_agenda parameter and required JS import #}
                     {% if s.meeting.type.slug == 'interim' %}
-                        {% include "meeting/interim_session_buttons.html" with show_agenda=False show_empty=False session=s meeting=s.meeting use_notes=s.meeting.use_notes %}
+                        {% include "meeting/interim_session_buttons.html" with show_agenda=False show_empty=False session=s meeting=s.meeting %}
                     {% else %}
-                        {% include "meeting/session_buttons_include.html" with show_agenda=False item=s.official_timeslotassignment session=s meeting=s.meeting use_notes=s.meeting.use_notes %}
+                        {% include "meeting/session_buttons_include.html" with show_agenda=False item=s.official_timeslotassignment session=s meeting=s.meeting %}
                     {% endif %}
                 </div>
             {% endif %}

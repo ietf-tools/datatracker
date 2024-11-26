@@ -1,0 +1,16 @@
+{% load origin %}
+{% load static %}
+{% load ietf_filters %}
+{% load person_filters %}
+{% origin %}
+{# Non-RFC #}
+
+{% if doc.became_rfc %} 
+    <div{% if document_html %} class="alert alert-warning small"{% endif %}>This is an older version of an Internet-Draft that was ultimately published as <a href="{% if document_html %}{% url 'ietf.doc.views_doc.document_html' name=doc.became_rfc.name %}{% else %}{% url 'ietf.doc.views_doc.document_main' name=doc.became_rfc.name %}{% endif %}">{{doc.became_rfc.name|prettystdname}}</a>.</div>
+{% elif snapshot and doc.rev != latest_rev  %}
+    <div{% if document_html %} class="alert alert-warning small p-2 mt-2"{% endif %}>This is an older version of an Internet-Draft whose latest revision state is "{{ doc.doc.get_state }}".</div>
+{% else %}
+    <span class="{% if doc.get_state_slug == 'active' %}text-success{% elif doc.get_state_slug == 'expired' or doc.get_state_slug == 'repl' %}text-danger{% endif %}">{% if snapshot and doc.rev == latest_rev %}{{ doc.doc.get_state }}{% else %}{{ doc.get_state }}{% endif %} Internet-Draft</span>
+    {% if submission %}({{ submission|safe }}){% endif %}
+    {% if resurrected_by %}- resurrect requested by {{ resurrected_by }}{% endif %}
+{% endif %}

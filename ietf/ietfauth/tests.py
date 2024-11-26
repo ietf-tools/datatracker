@@ -35,7 +35,7 @@ from ietf.ietfauth.utils import has_role
 from ietf.meeting.factories import MeetingFactory
 from ietf.nomcom.factories import NomComFactory
 from ietf.person.factories import PersonFactory, EmailFactory, UserFactory, PersonalApiKeyFactory
-from ietf.person.models import Person, Email, PersonalApiKey
+from ietf.person.models import Person, Email
 from ietf.person.tasks import send_apikey_usage_emails_task
 from ietf.review.factories import ReviewRequestFactory, ReviewAssignmentFactory
 from ietf.review.models import ReviewWish, UnavailablePeriod
@@ -527,6 +527,24 @@ class IetfAuthTests(TestCase):
         self.assertIn(secondary_address, to)
         self.assertNotIn(inactive_secondary_address, to)
 
+    def test_reset_password_without_user(self):
+        """Reset password using email address for person without a user account"""
+        url = urlreverse('ietf.ietfauth.views.password_reset')
+        email = EmailFactory()
+        person = email.person
+        # Remove the user object from the person to get a Email/Person without User:
+        person.user = None
+        person.save()
+        # Remove the remaining User record, since reset_password looks for that by username:
+        User.objects.filter(username__iexact=email.address).delete()
+        empty_outbox()
+        r = self.client.post(url, { 'username': email.address })
+        self.assertEqual(len(outbox), 1)
+        lastReceivedEmail = outbox[-1]
+        self.assertIn(email.address, lastReceivedEmail.get('To'))
+        self.assertTrue(lastReceivedEmail.get('Subject').startswith("Confirm password reset"))
+        self.assertContains(r, "Your password reset request has been successfully received", status_code=200)
+
     def test_review_overview(self):
         review_req = ReviewRequestFactory()
         assignment = ReviewAssignmentFactory(review_request=review_req,reviewer=EmailFactory(person__user__username='reviewer'))
@@ -770,9 +788,8 @@ class IetfAuthTests(TestCase):
             self.assertContains(r, 'Invalid apikey', status_code=403)
 
             # invalid apikey (invalidated api key)
-            unauthorized_url = urlreverse('ietf.api.views.app_auth')
-            invalidated_apikey = PersonalApiKey.objects.create(
-                        endpoint=unauthorized_url, person=person, valid=False)
+            unauthorized_url = urlreverse('ietf.api.views.app_auth', kwargs={'app': 'authortools'})
+            invalidated_apikey = PersonalApiKeyFactory(endpoint=unauthorized_url, person=person, valid=False)
             r = self.client.post(unauthorized_url, {'apikey': invalidated_apikey.hash()})
             self.assertContains(r, 'Invalid apikey', status_code=403)
 
@@ -785,7 +802,11 @@ class IetfAuthTests(TestCase):
             person.user.save()
 
             # endpoint mismatch
-            key2 = PersonalApiKey.objects.create(person=person, endpoint='/')
+            key2 = PersonalApiKeyFactory(
+                person=person,
+                endpoint='/',
+                validate_model=False,  # allow invalid endpoint
+            )
             r = self.client.post(key.endpoint, {'apikey':key2.hash(), 'dummy':'dummy',})
             self.assertContains(r, 'Apikey endpoint mismatch', status_code=400)
             key2.delete()

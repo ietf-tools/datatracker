@@ -401,24 +401,25 @@ if DEBUG:
 
 
 MIDDLEWARE = [
-    'django.middleware.csrf.CsrfViewMiddleware',
-    'corsheaders.middleware.CorsMiddleware', # see docs on CORS_REPLACE_HTTPS_REFERER before using it
-    'django.middleware.common.CommonMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.http.ConditionalGetMiddleware',
-    'simple_history.middleware.HistoryRequestMiddleware',
+    "django.middleware.csrf.CsrfViewMiddleware",
+    "corsheaders.middleware.CorsMiddleware", # see docs on CORS_REPLACE_HTTPS_REFERER before using it
+    "django.middleware.common.CommonMiddleware",
+    "django.contrib.sessions.middleware.SessionMiddleware",
+    "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "django.contrib.messages.middleware.MessageMiddleware",
+    "django.middleware.http.ConditionalGetMiddleware",
+    "simple_history.middleware.HistoryRequestMiddleware",
     # comment in this to get logging of SQL insert and update statements:
-    #'ietf.middleware.sql_log_middleware',
-    'ietf.middleware.SMTPExceptionMiddleware',
-    'ietf.middleware.Utf8ExceptionMiddleware',
-    'ietf.middleware.redirect_trailing_period_middleware',
-    'django_referrer_policy.middleware.ReferrerPolicyMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'django.middleware.security.SecurityMiddleware',
- #   'csp.middleware.CSPMiddleware',
-    'ietf.middleware.unicode_nfkc_normalization_middleware',
+    #"ietf.middleware.sql_log_middleware",
+    "ietf.middleware.SMTPExceptionMiddleware",
+    "ietf.middleware.Utf8ExceptionMiddleware",
+    "ietf.middleware.redirect_trailing_period_middleware",
+    "django_referrer_policy.middleware.ReferrerPolicyMiddleware",
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "django.middleware.security.SecurityMiddleware",
+    #"csp.middleware.CSPMiddleware",
+    "ietf.middleware.unicode_nfkc_normalization_middleware",
+    "ietf.middleware.is_authenticated_header_middleware",
 ]
 
 ROOT_URLCONF = 'ietf.urls'
@@ -436,7 +437,7 @@ STATICFILES_DIRS = (
 
 INSTALLED_APPS = [
     # Django apps
-    'django.contrib.admin',
+    'ietf.admin',  # replaces django.contrib.admin
     'django.contrib.admindocs',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -479,6 +480,7 @@ INSTALLED_APPS = [
     'ietf.release',
     'ietf.review',
     'ietf.stats',
+    'ietf.status',
     'ietf.submit',
     'ietf.sync',
     'ietf.utils',
@@ -596,6 +598,7 @@ TEST_CODE_COVERAGE_EXCLUDE_FILES = [
     "ietf/review/import_from_review_tool.py",
     "ietf/utils/patch.py",
     "ietf/utils/test_data.py",
+    "ietf/utils/jstest.py",
 ]
 
 # These are code line regex patterns
@@ -740,8 +743,6 @@ SECRETARIAT_INFO_EMAIL = "ietf-info@ietf.org"
 IANA_SYNC_PASSWORD = "secret"
 IANA_SYNC_CHANGES_URL = "https://datatracker.iana.org:4443/data-tracker/changes"
 IANA_SYNC_PROTOCOLS_URL = "https://www.iana.org/protocols/"
-
-RFC_TEXT_RSYNC_SOURCE="ftp.rfc-editor.org::rfcs-text-only"
 
 RFC_EDITOR_SYNC_PASSWORD="secret"
 RFC_EDITOR_SYNC_NOTIFICATION_URL = "https://www.rfc-editor.org/parser/parser.php"
@@ -969,7 +970,6 @@ OIDC_EXTRA_SCOPE_CLAIMS = 'ietf.ietfauth.utils.OidcExtraScopeClaims'
 # ==============================================================================
 
 
-RSYNC_BINARY = '/usr/bin/rsync'
 YANGLINT_BINARY = '/usr/bin/yanglint'
 DE_GFM_BINARY = '/usr/bin/de-gfm.ruby2.5'
 
@@ -1011,7 +1011,6 @@ CHAT_URL_PATTERN = 'https://zulip.ietf.org/#narrow/stream/{chat_room_name}'
 # CHAT_ARCHIVE_URL_PATTERN = 'https://www.ietf.org/jabber/logs/{chat_room_name}?C=M;O=D'
 
 PYFLAKES_DEFAULT_ARGS= ["ietf", ]
-VULTURE_DEFAULT_ARGS= ["ietf", ]
 
 # Automatic Scheduling
 #
@@ -1059,8 +1058,6 @@ GROUP_ALIAS_DOMAIN = IETF_DOMAIN
 TEST_DATA_DIR = os.path.abspath(BASE_DIR + "/../test/data")
 
 
-POSTCONFIRM_PATH   = "/a/postconfirm/wrapper"
-
 USER_PREFERENCE_DEFAULTS = {
     "expires_soon"  : "14",
     "new_enough"    : "14",
@@ -1075,6 +1072,7 @@ EXCLUDED_PERSONAL_EMAIL_REGEX_PATTERNS = [
     "@ietf.org$",
 ]
 
+# Configuration for django-markup
 MARKUP_SETTINGS = {
     'restructuredtext': {
         'settings_overrides': {
@@ -1087,8 +1085,6 @@ MARKUP_SETTINGS = {
         }
     }
 }
-
-MAILMAN_LIB_DIR = '/usr/lib/mailman'
 
 # This is the number of seconds required between subscribing to an ietf
 # mailing list and datatracker account creation being accepted
@@ -1173,7 +1169,7 @@ CELERY_TASK_IGNORE_RESULT = True  # ignore results unless specifically enabled f
 MEETECHO_ONSITE_TOOL_URL = "https://meetings.conf.meetecho.com/onsite{session.meeting.number}/?session={session.pk}"
 MEETECHO_VIDEO_STREAM_URL = "https://meetings.conf.meetecho.com/ietf{session.meeting.number}/?session={session.pk}"
 MEETECHO_AUDIO_STREAM_URL = "https://mp3.conf.meetecho.com/ietf{session.meeting.number}/{session.pk}.m3u"
-MEETECHO_SESSION_RECORDING_URL = "https://www.meetecho.com/ietf{session.meeting.number}/recordings#{session.group.acronym_upper}"
+MEETECHO_SESSION_RECORDING_URL = "https://meetecho-player.ietf.org/playout/?session={session_label}"
 
 # Put the production SECRET_KEY in settings_local.py, and also any other
 # sensitive or site-specific changes.  DO NOT commit settings_local.py to svn.
