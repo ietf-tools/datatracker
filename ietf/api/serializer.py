@@ -149,7 +149,6 @@ class AdminJsonSerializer(Serializer):
                                 field_value = None
                         else:
                             field_value = field
-                        # Need QuerySetAny instead of QuerySet until django-stubs 5.0.1
                         if isinstance(field_value, QuerySetAny) or isinstance(field_value, list):
                             self._current[name] = dict([ (rel.pk, self.expand_related(rel, name)) for rel in field_value ])
                         else:
