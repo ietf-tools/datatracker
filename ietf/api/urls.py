@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2017-2024, All Rights Reserved
-from drf_spectacular.views import SpectacularAPIView
 
 from django.conf import settings
 from django.urls import include
@@ -14,6 +13,7 @@ from ietf.utils.urls import url
 from . import views as api_views
 
 # DRF API routing - disabled until we plan to use it
+# from drf_spectacular.views import SpectacularAPIView
 # from django.urls import path
 # from ietf.person import api as person_api
 # from .routers import PrefixedSimpleRouter 
