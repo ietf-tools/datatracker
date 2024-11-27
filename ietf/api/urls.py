@@ -2,23 +2,24 @@
 from drf_spectacular.views import SpectacularAPIView
 
 from django.conf import settings
-from django.urls import include, path
+from django.urls import include
 from django.views.generic import TemplateView
 
 from ietf import api
 from ietf.doc import views_ballot
 from ietf.meeting import views as meeting_views
-from ietf.person import api as person_api
 from ietf.submit import views as submit_views
 from ietf.utils.urls import url
 
 from . import views as api_views
-from .routers import PrefixedSimpleRouter 
 
-# DRF API routing
-core_router = PrefixedSimpleRouter(name_prefix="ietf.api.core_api")  # core api router
-core_router.register("email", person_api.EmailViewSet)
-core_router.register("person", person_api.PersonViewSet)
+# DRF API routing - disabled until we plan to use it
+# from django.urls import path
+# from ietf.person import api as person_api
+# from .routers import PrefixedSimpleRouter 
+# core_router = PrefixedSimpleRouter(name_prefix="ietf.api.core_api")  # core api router
+# core_router.register("email", person_api.EmailViewSet)
+# core_router.register("person", person_api.PersonViewSet)
 
 api.autodiscover()
 
@@ -30,8 +31,8 @@ urlpatterns = [
     # For mailarchive use, requires secretariat role
     url(r'^v2/person/person', api_views.ApiV2PersonExportView.as_view()),
     # --- DRF API ---
-    path("core/", include(core_router.urls)),
-    path("schema/", SpectacularAPIView.as_view()),
+    # path("core/", include(core_router.urls)),
+    # path("schema/", SpectacularAPIView.as_view()),
     #
     # --- Custom API endpoints, sorted alphabetically ---
     # Email alias information for drafts
