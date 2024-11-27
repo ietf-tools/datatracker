@@ -744,8 +744,6 @@ IANA_SYNC_PASSWORD = "secret"
 IANA_SYNC_CHANGES_URL = "https://datatracker.iana.org:4443/data-tracker/changes"
 IANA_SYNC_PROTOCOLS_URL = "https://www.iana.org/protocols/"
 
-RFC_TEXT_RSYNC_SOURCE="ftp.rfc-editor.org::rfcs-text-only"
-
 RFC_EDITOR_SYNC_PASSWORD="secret"
 RFC_EDITOR_SYNC_NOTIFICATION_URL = "https://www.rfc-editor.org/parser/parser.php"
 RFC_EDITOR_GROUP_NOTIFICATION_EMAIL = "webmaster@rfc-editor.org"
@@ -972,7 +970,6 @@ OIDC_EXTRA_SCOPE_CLAIMS = 'ietf.ietfauth.utils.OidcExtraScopeClaims'
 # ==============================================================================
 
 
-RSYNC_BINARY = '/usr/bin/rsync'
 YANGLINT_BINARY = '/usr/bin/yanglint'
 DE_GFM_BINARY = '/usr/bin/de-gfm.ruby2.5'
 
@@ -1014,7 +1011,6 @@ CHAT_URL_PATTERN = 'https://zulip.ietf.org/#narrow/stream/{chat_room_name}'
 # CHAT_ARCHIVE_URL_PATTERN = 'https://www.ietf.org/jabber/logs/{chat_room_name}?C=M;O=D'
 
 PYFLAKES_DEFAULT_ARGS= ["ietf", ]
-VULTURE_DEFAULT_ARGS= ["ietf", ]
 
 # Automatic Scheduling
 #
@@ -1062,8 +1058,6 @@ GROUP_ALIAS_DOMAIN = IETF_DOMAIN
 TEST_DATA_DIR = os.path.abspath(BASE_DIR + "/../test/data")
 
 
-POSTCONFIRM_PATH   = "/a/postconfirm/wrapper"
-
 USER_PREFERENCE_DEFAULTS = {
     "expires_soon"  : "14",
     "new_enough"    : "14",
@@ -1078,6 +1072,7 @@ EXCLUDED_PERSONAL_EMAIL_REGEX_PATTERNS = [
     "@ietf.org$",
 ]
 
+# Configuration for django-markup
 MARKUP_SETTINGS = {
     'restructuredtext': {
         'settings_overrides': {
@@ -1090,8 +1085,6 @@ MARKUP_SETTINGS = {
         }
     }
 }
-
-MAILMAN_LIB_DIR = '/usr/lib/mailman'
 
 # This is the number of seconds required between subscribing to an ietf
 # mailing list and datatracker account creation being accepted
@@ -1279,6 +1272,8 @@ if "CACHES" not in locals():
         }
 
 PUBLISH_IPR_STATES = ['posted', 'removed', 'removed_objfalse']
+
+ADVERTISE_VERSIONS = ["markdown", "pyang", "rfc2html", "xml2rfc"]
 
 # We provide a secret key only for test and development modes.  It's
 # absolutely vital that django fails to start in production mode unless a

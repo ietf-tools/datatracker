@@ -68,10 +68,6 @@ urlpatterns = [
     ),
     url(r'^investigate/?$', views_doc.investigate),
 
-
-    url(r'^stats/newrevisiondocevent/?$', views_stats.chart_newrevisiondocevent),
-    url(r'^stats/newrevisiondocevent/conf/?$', views_stats.chart_conf_newrevisiondocevent),
-    url(r'^stats/newrevisiondocevent/data/?$', views_stats.chart_data_newrevisiondocevent),
     url(r'^stats/person/(?P<id>[0-9]+)/drafts/conf/?$', views_stats.chart_conf_person_drafts),
     url(r'^stats/person/(?P<id>[0-9]+)/drafts/data/?$', views_stats.chart_data_person_drafts),
 
