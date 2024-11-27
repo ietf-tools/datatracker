@@ -82,6 +82,10 @@ class SecrMeetingTestCase(TestCase):
             [cn.slug for cn in new_meeting.group_conflict_types.all()],
             post_data['group_conflict_types'],
         )
+        self.assertEqual(
+            new_meeting.session_request_lock_message, 
+            "Session requests for this meeting have not yet opened.",
+        )
 
     def test_add_meeting_default_conflict_types(self):
         """Add meeting should default to same conflict types as previous meeting"""
