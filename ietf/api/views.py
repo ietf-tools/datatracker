@@ -244,7 +244,7 @@ def version(request):
 
     # important libraries
     __version_extra__ = {}
-    for lib in settings.IMPORTANT_LIBRARIES:
+    for lib in settings.ADVERTISE_VERSIONS:
         __version_extra__[lib] = metadata_version(lib)
 
     return HttpResponse(

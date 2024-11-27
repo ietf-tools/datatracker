@@ -936,7 +936,7 @@ class CustomApiTests(TestCase):
         r = self.client.get(url)
         data = r.json()
         self.assertEqual(data['version'], ietf.__version__+ietf.__patch__)
-        for lib in settings.IMPORTANT_LIBRARIES:
+        for lib in settings.ADVERTISE_VERSIONS:
             self.assertIn(lib, data['other'])
         self.assertEqual(data['dumptime'], "2022-08-31 07:10:01 +0000")
         DumpInfo.objects.update(tz='PST8PDT')
