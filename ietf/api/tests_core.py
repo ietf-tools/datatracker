@@ -1,11 +1,12 @@
 # Copyright The IETF Trust 2024, All Rights Reserved
 """Core API tests"""
-from unittest.mock import patch, call
+from unittest.mock import patch
+# from unittest.mock import patch, call
 
 from django.urls import reverse as urlreverse, NoReverseMatch
 from rest_framework.test import APIClient
 
-from ietf.person.factories import PersonFactory, EmailFactory
+# from ietf.person.factories import PersonFactory, EmailFactory
 # from ietf.person.models import Person
 from ietf.utils.test_utils import TestCase
 
