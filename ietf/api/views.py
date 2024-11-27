@@ -23,6 +23,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.gzip import gzip_page
 from django.views.generic.detail import DetailView
 from email.message import EmailMessage
+from importlib.metadata import version as metadata_version
 from jwcrypto.jwk import JWK
 from tastypie.exceptions import BadRequest
 from tastypie.serializers import Serializer
@@ -240,9 +241,16 @@ def version(request):
         if dumpinfo.tz != "UTC":
             dumpdate = pytz.timezone(dumpinfo.tz).localize(dumpinfo.date.replace(tzinfo=None))
     dumptime = dumpdate.strftime('%Y-%m-%d %H:%M:%S %z') if dumpinfo else None
+
+    # important libraries
+    __version_extra__ = {}
+    for lib in settings.ADVERTISE_VERSIONS:
+        __version_extra__[lib] = metadata_version(lib)
+
     return HttpResponse(
             json.dumps({
                         'version': ietf.__version__+ietf.__patch__,
+                        'other': __version_extra__,
                         'dumptime': dumptime,
                     }),
                 content_type='application/json',
