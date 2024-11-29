@@ -8,6 +8,7 @@ from rest_framework import serializers, fields
 
 from ietf.name.serializers import StreamNameSerializer
 from .models import Document, DocumentAuthor
+from ..group.serializers import GroupSerializer
 
 
 class RfcAuthorSerializer(serializers.ModelSerializer):
@@ -36,6 +37,8 @@ class RfcMetadataSerializer(serializers.ModelSerializer):
     # updates = serializers.CharField()
     published = serializers.DateField()
     authors = RfcAuthorSerializer(many=True, source="documentauthor_set")
+    group = GroupSerializer()
+    area = GroupSerializer(source="group.area", required=False)
     stream = StreamNameSerializer()
     identifiers = fields.SerializerMethodField()
 
@@ -49,7 +52,7 @@ class RfcMetadataSerializer(serializers.ModelSerializer):
             "pages",
             "authors",
             "group",
-            # "area",
+            "area",
             "stream",
             "identifiers",
         ]
