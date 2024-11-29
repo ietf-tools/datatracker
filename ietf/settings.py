@@ -19,6 +19,7 @@ warnings.filterwarnings("ignore", "Log out via GET requests is deprecated")  # h
 warnings.filterwarnings("ignore", module="tastypie", message="The django.utils.datetime_safe module is deprecated.")
 warnings.filterwarnings("ignore", module="oidc_provider", message="The django.utils.timezone.utc alias is deprecated.")
 warnings.filterwarnings("ignore", message="The USE_DEPRECATED_PYTZ setting,")  # https://github.com/ietf-tools/datatracker/issues/5635
+warnings.filterwarnings("ignore", message="The is_dst argument to make_aware\\(\\)")  # caused by django-filters when USE_DEPRECATED_PYTZ is true 
 warnings.filterwarnings("ignore", message="The USE_L10N setting is deprecated.")  # https://github.com/ietf-tools/datatracker/issues/5648
 warnings.filterwarnings("ignore", message="django.contrib.auth.hashers.CryptPasswordHasher is deprecated.")  # https://github.com/ietf-tools/datatracker/issues/5663
 warnings.filterwarnings("ignore", message="'urllib3\\[secure\\]' extra is deprecated")
@@ -454,6 +455,7 @@ INSTALLED_APPS = [
     'django_celery_beat',
     'corsheaders',
     'django_markup',
+    'django_filters',
     'oidc_provider',
     'drf_spectacular',
     'drf_standardized_errors',

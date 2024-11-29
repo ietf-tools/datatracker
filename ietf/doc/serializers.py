@@ -38,7 +38,7 @@ class DocIdentifierSerializer(serializers.Serializer):
 class RfcMetadataSerializer(serializers.ModelSerializer):
     # all fields are stand-ins
     # updates = serializers.CharField()
-    # date = serializers.CharField()
+    published = serializers.DateField()
     authors = RfcAuthorSerializer(many=True, source="documentauthor_set")
     # identifiers = fields.SerializerMethodField()
 
@@ -48,7 +48,7 @@ class RfcMetadataSerializer(serializers.ModelSerializer):
             "id",
             "name",
             "title",
-            # "date",
+            "published",
             "pages",
             "authors",
             "group",
