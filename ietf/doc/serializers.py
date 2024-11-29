@@ -6,6 +6,7 @@ from typing import Literal
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers, fields
 
+from ietf.name.serializers import StreamNameSerializer
 from .models import Document, DocumentAuthor
 
 
@@ -17,11 +18,6 @@ class RfcAuthorSerializer(serializers.ModelSerializer):
     class Meta:
         model = DocumentAuthor
         fields = ["person", "name", "email", "affiliation", "country"]
-
-    # @extend_schema_field(fields.CharField)
-    # def get_name(self, document_author: DocumentAuthor) -> str:
-    #     """Name that should be shown for the RFC author list"""
-    #     return document_author.person.plain_name()
 
 
 @dataclass
@@ -40,6 +36,7 @@ class RfcMetadataSerializer(serializers.ModelSerializer):
     # updates = serializers.CharField()
     published = serializers.DateField()
     authors = RfcAuthorSerializer(many=True, source="documentauthor_set")
+    stream = StreamNameSerializer()
     # identifiers = fields.SerializerMethodField()
 
     class Meta:

@@ -10,6 +10,7 @@ from rest_framework.viewsets import GenericViewSet
 from ietf.utils.timezone import RPC_TZINFO
 from .models import Document, DocEvent
 from .serializers import RfcMetadataSerializer
+from ..name.models import StreamName
 
 
 class RfcLimitOffsetPagination(LimitOffsetPagination):
@@ -19,6 +20,7 @@ class RfcLimitOffsetPagination(LimitOffsetPagination):
 
 class RfcFilter(filters.FilterSet):
     published = filters.DateFromToRangeFilter()
+    stream = filters.ModelMultipleChoiceFilter(queryset=StreamName.objects.filter(used=True))
 
 
 class RfcViewSet(ListModelMixin, RetrieveModelMixin, GenericViewSet):
