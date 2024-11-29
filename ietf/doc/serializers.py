@@ -37,7 +37,7 @@ class RfcMetadataSerializer(serializers.ModelSerializer):
     published = serializers.DateField()
     authors = RfcAuthorSerializer(many=True, source="documentauthor_set")
     stream = StreamNameSerializer()
-    # identifiers = fields.SerializerMethodField()
+    identifiers = fields.SerializerMethodField()
 
     class Meta:
         model = Document
@@ -51,7 +51,7 @@ class RfcMetadataSerializer(serializers.ModelSerializer):
             "group",
             # "area",
             "stream",
-            # "identifiers",
+            "identifiers",
         ]
 
     @extend_schema_field(DocIdentifierSerializer)
@@ -59,4 +59,4 @@ class RfcMetadataSerializer(serializers.ModelSerializer):
         identifiers = []
         if doc.rfc_number:
             identifiers.append(DocIdentifier(type="doi", value=f"10.17487/RFC{doc.rfc_number:04d}"))
-        return DocIdentifierSerializer(data=identifiers, many=True)
+        return DocIdentifierSerializer(instance=identifiers, many=True).data
