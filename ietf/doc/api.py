@@ -7,10 +7,11 @@ from rest_framework.mixins import ListModelMixin, RetrieveModelMixin
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.viewsets import GenericViewSet
 
+from ietf.group.models import Group
+from ietf.name.models import StreamName
 from ietf.utils.timezone import RPC_TZINFO
 from .models import Document, DocEvent
 from .serializers import RfcMetadataSerializer
-from ..name.models import StreamName
 
 
 class RfcLimitOffsetPagination(LimitOffsetPagination):
@@ -20,7 +21,19 @@ class RfcLimitOffsetPagination(LimitOffsetPagination):
 
 class RfcFilter(filters.FilterSet):
     published = filters.DateFromToRangeFilter()
-    stream = filters.ModelMultipleChoiceFilter(queryset=StreamName.objects.filter(used=True))
+    stream = filters.ModelMultipleChoiceFilter(
+        queryset=StreamName.objects.filter(used=True)
+    )
+    group = filters.ModelMultipleChoiceFilter(
+        queryset=Group.objects.wgs(),
+        field_name="group__acronym",
+        to_field_name="acronym",
+    )
+    area = filters.ModelMultipleChoiceFilter(
+        queryset=Group.objects.areas(),
+        field_name="group__parent__acronym",
+        to_field_name="acronym",
+    )
 
 
 class RfcViewSet(ListModelMixin, RetrieveModelMixin, GenericViewSet):
