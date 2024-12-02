@@ -36,26 +36,30 @@ class RfcFilter(filters.FilterSet):
         to_field_name="acronym",
     )
     sort = filters.OrderingFilter(
-        fields = (
+        fields=(
             ("rfc_number", "number"),  # ?sort=number / ?sort=-number
             ("published", "published"),  # ?sort=published / ?sort=-published
         ),
     )
 
+
 class RfcViewSet(ListModelMixin, RetrieveModelMixin, GenericViewSet):
     permission_classes = []
-    queryset = Document.objects.filter(
-        type_id="rfc"
-    ).annotate(
-        published_datetime=Subquery(
-            DocEvent.objects.filter(
-                doc_id=OuterRef("pk"),
-                type="published_rfc",
-            ).order_by("-time").values("time")[:1]
-        ),
-    ).annotate(
-        published=TruncDate("published_datetime", tzinfo=RPC_TZINFO)
-    ).order_by("-rfc_number")  # default ordering - RfcFilter may override
+    queryset = (
+        Document.objects.filter(type_id="rfc")
+        .annotate(
+            published_datetime=Subquery(
+                DocEvent.objects.filter(
+                    doc_id=OuterRef("pk"),
+                    type="published_rfc",
+                )
+                .order_by("-time")
+                .values("time")[:1]
+            ),
+        )
+        .annotate(published=TruncDate("published_datetime", tzinfo=RPC_TZINFO))
+        .order_by("-rfc_number")
+    )  # default ordering - RfcFilter may override
 
     serializer_class = RfcMetadataSerializer
     pagination_class = RfcLimitOffsetPagination

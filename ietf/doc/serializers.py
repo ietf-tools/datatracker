@@ -13,6 +13,7 @@ from ..group.serializers import GroupSerializer
 
 class RfcAuthorSerializer(serializers.ModelSerializer):
     """Serializer for a DocumentAuthor in a response"""
+
     name = fields.CharField(source="person.plain_name")
     email = fields.EmailField(source="email.address", required=False)
 
@@ -62,5 +63,7 @@ class RfcMetadataSerializer(serializers.ModelSerializer):
     def get_identifiers(self, doc: Document):
         identifiers = []
         if doc.rfc_number:
-            identifiers.append(DocIdentifier(type="doi", value=f"10.17487/RFC{doc.rfc_number:04d}"))
+            identifiers.append(
+                DocIdentifier(type="doi", value=f"10.17487/RFC{doc.rfc_number:04d}")
+            )
         return DocIdentifierSerializer(instance=identifiers, many=True).data
