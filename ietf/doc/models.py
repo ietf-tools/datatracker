@@ -543,12 +543,11 @@ class DocumentInfo(models.Model):
         return path.exists()
 
     def text(self, size = -1):
-        path = self._text_path()
-        try:
-            with io.open(path, 'rb') as file:
-                raw = file.read(size)
-        except IOError:
+        path = Path(self._text_path())
+        if not path.exists():
             return None
+        with path.open('rb') as file:
+            raw = file.read(size)
         text = None
         try:
             text = raw.decode('utf-8')
