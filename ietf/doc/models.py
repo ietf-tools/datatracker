@@ -530,12 +530,20 @@ class DocumentInfo(models.Model):
     def replaced_by(self):
         return set([ r.document for r in self.related_that("replaces") ])
 
-    def text(self, size = -1):
+    def _text_path(self):
         path = self.get_file_name()
         root, ext =  os.path.splitext(path)
         txtpath = root+'.txt'
         if ext != '.txt' and os.path.exists(txtpath):
             path = txtpath
+        return path
+    
+    def text_exists(self):
+        path = Path(self._text_path())
+        return path.exists()
+
+    def text(self, size = -1):
+        path = self._text_path()
         try:
             with io.open(path, 'rb') as file:
                 raw = file.read(size)
