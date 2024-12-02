@@ -546,8 +546,12 @@ class DocumentInfo(models.Model):
         path = Path(self._text_path())
         if not path.exists():
             return None
-        with path.open('rb') as file:
-            raw = file.read(size)
+        try:
+            with path.open('rb') as file:
+                raw = file.read(size)
+        except IOError as e:
+            log.log(f"Error reading text for {path}: {e}")
+            return None
         text = None
         try:
             text = raw.decode('utf-8')
