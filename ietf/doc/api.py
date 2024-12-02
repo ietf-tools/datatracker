@@ -34,7 +34,12 @@ class RfcFilter(filters.FilterSet):
         field_name="group__parent__acronym",
         to_field_name="acronym",
     )
-
+    sort = filters.OrderingFilter(
+        fields = (
+            ("rfc_number", "number"),  # ?sort=number / ?sort=-number
+            ("published", "published"),  # ?sort=published / ?sort=-published
+        ),
+    )
 
 class RfcViewSet(ListModelMixin, RetrieveModelMixin, GenericViewSet):
     permission_classes = []
@@ -49,7 +54,7 @@ class RfcViewSet(ListModelMixin, RetrieveModelMixin, GenericViewSet):
         ),
     ).annotate(
         published=TruncDate("published_datetime", tzinfo=RPC_TZINFO)
-    ).order_by("-rfc_number")
+    ).order_by("-rfc_number")  # default ordering - RfcFilter may override
 
     serializer_class = RfcMetadataSerializer
     pagination_class = RfcLimitOffsetPagination
