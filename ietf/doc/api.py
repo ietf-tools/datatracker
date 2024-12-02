@@ -3,6 +3,7 @@
 from django.db.models import OuterRef, Subquery
 from django.db.models.functions import TruncDate
 from django_filters import rest_framework as filters
+from rest_framework import filters as drf_filters
 from rest_framework.mixins import ListModelMixin, RetrieveModelMixin
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.viewsets import GenericViewSet
@@ -58,5 +59,6 @@ class RfcViewSet(ListModelMixin, RetrieveModelMixin, GenericViewSet):
 
     serializer_class = RfcMetadataSerializer
     pagination_class = RfcLimitOffsetPagination
-    filter_backends = [filters.DjangoFilterBackend]
+    filter_backends = [filters.DjangoFilterBackend, drf_filters.SearchFilter]
     filterset_class = RfcFilter
+    search_fields = ["title", "abstract"]
