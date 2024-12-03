@@ -12,7 +12,7 @@ from ietf.group.models import Group
 from ietf.name.models import StreamName
 from ietf.utils.timezone import RPC_TZINFO
 from .models import Document, DocEvent
-from .serializers import RfcMetadataSerializer
+from .serializers import RfcMetadataSerializer, RfcStatus
 
 
 class RfcLimitOffsetPagination(LimitOffsetPagination):
@@ -34,6 +34,10 @@ class RfcFilter(filters.FilterSet):
         queryset=Group.objects.areas(),
         field_name="group__parent__acronym",
         to_field_name="acronym",
+    )
+    status = filters.MultipleChoiceFilter(
+        choices=[(slug, slug) for slug in RfcStatus.status_slugs],
+        method=RfcStatus.filter,
     )
     sort = filters.OrderingFilter(
         fields=(

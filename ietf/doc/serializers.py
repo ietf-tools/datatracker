@@ -64,6 +64,11 @@ class RfcStatus:
         "unkn": "unknown",
     }
 
+    # ClassVar annotation prevents dataclass from treating this as a field
+    status_slugs: ClassVar[list[RfcStatusSlugT]] = sorted(
+        set(stdlevelname_slug_map.values())
+    )
+
     @property
     def name(self):
         return RfcStatus.fancy_names.get(self.slug, self.slug)
@@ -75,11 +80,27 @@ class RfcStatus:
             slug=(cls.stdlevelname_slug_map.get(doc.std_level.slug, "unknown")),
         )
 
+    @classmethod
+    def filter(cls, queryset, name, value: list[RfcStatusSlugT]):
+        """Filter a queryset by status
+
+        This is basically the inverse of the from_document() method. Given a status name, filter
+        the queryset to those in that status. The queryset should be a Document queryset.
+        """
+        interesting_slugs = [
+            stdlevelname_slug
+            for stdlevelname_slug, status_slug in cls.stdlevelname_slug_map.items()
+            if status_slug in value
+        ]
+        if len(interesting_slugs) == 0:
+            return queryset.none()
+        return queryset.filter(std_level__slug__in=interesting_slugs)
+
 
 class RfcStatusSerializer(serializers.Serializer):
     """Status serializer for a Document instance"""
 
-    slug = serializers.ChoiceField(choices=list(RfcStatus.stdlevelname_slug_map.keys()))
+    slug = serializers.ChoiceField(choices=RfcStatus.status_slugs)
     name = serializers.CharField()
 
     def to_representation(self, instance: Document):
