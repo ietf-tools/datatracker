@@ -1,6 +1,6 @@
 # Copyright The IETF Trust 2024, All Rights Reserved
 """Doc API implementations"""
-from django.db.models import OuterRef, Subquery
+from django.db.models import OuterRef, Subquery, Prefetch
 from django.db.models.functions import TruncDate
 from django_filters import rest_framework as filters
 from rest_framework import filters as drf_filters
@@ -11,7 +11,7 @@ from rest_framework.viewsets import GenericViewSet
 from ietf.group.models import Group
 from ietf.name.models import StreamName
 from ietf.utils.timezone import RPC_TZINFO
-from .models import Document, DocEvent
+from .models import Document, DocEvent, RelatedDocument
 from .serializers import RfcMetadataSerializer, RfcStatus
 
 
@@ -63,6 +63,22 @@ class RfcViewSet(ListModelMixin, RetrieveModelMixin, GenericViewSet):
         )
         .annotate(published=TruncDate("published_datetime", tzinfo=RPC_TZINFO))
         .order_by("-rfc_number")
+        .prefetch_related(
+            Prefetch(
+                "targets_related",  # relationship to follow
+                queryset=RelatedDocument.objects.filter(
+                    source__type_id="rfc", relationship_id="obs"
+                ),
+                to_attr="obsoleted_by",  # attr to add to queryset instances
+            ),
+            Prefetch(
+                "targets_related",  # relationship to follow
+                queryset=RelatedDocument.objects.filter(
+                    source__type_id="rfc", relationship_id="updates"
+                ),
+                to_attr="updated_by",  # attr to add to queryset instances
+            ),
+        )
     )  # default ordering - RfcFilter may override
 
     serializer_class = RfcMetadataSerializer

@@ -8,7 +8,7 @@ from rest_framework import serializers, fields
 
 from ietf.group.serializers import GroupSerializer
 from ietf.name.serializers import StreamNameSerializer
-from .models import Document, DocumentAuthor
+from .models import Document, DocumentAuthor, RelatedDocument
 
 
 class RfcAuthorSerializer(serializers.ModelSerializer):
@@ -107,9 +107,13 @@ class RfcStatusSerializer(serializers.Serializer):
         return super().to_representation(instance=RfcStatus.from_document(instance))
 
 
+class RelatedRfcSerializer(serializers.Serializer):
+    id = serializers.IntegerField(source="source.id")
+    number = serializers.IntegerField(source="source.rfc_number")
+    title = serializers.CharField(source="source.title")
+
+
 class RfcMetadataSerializer(serializers.ModelSerializer):
-    # all fields are stand-ins
-    # updates = serializers.CharField()
     number = serializers.IntegerField(source="rfc_number")
     published = serializers.DateField()
     status = RfcStatusSerializer(source="*")
@@ -118,6 +122,8 @@ class RfcMetadataSerializer(serializers.ModelSerializer):
     area = GroupSerializer(source="group.area", required=False)
     stream = StreamNameSerializer()
     identifiers = fields.SerializerMethodField()
+    obsoleted_by = RelatedRfcSerializer(many=True, read_only=True)
+    updated_by = RelatedRfcSerializer(many=True, read_only=True)
 
     class Meta:
         model = Document
@@ -133,6 +139,8 @@ class RfcMetadataSerializer(serializers.ModelSerializer):
             "area",
             "stream",
             "identifiers",
+            "obsoleted_by",
+            "updated_by",
         ]
 
     @extend_schema_field(DocIdentifierSerializer)
