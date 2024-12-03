@@ -4,7 +4,6 @@
 
 import datetime
 import logging
-import io
 import os
 
 import django.db
