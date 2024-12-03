@@ -104,7 +104,7 @@ class RfcStatusSerializer(serializers.Serializer):
     name = serializers.CharField()
 
     def to_representation(self, instance: Document):
-        return super().to_representation(instance=(RfcStatus.from_document(instance)))
+        return super().to_representation(instance=RfcStatus.from_document(instance))
 
 
 class RfcMetadataSerializer(serializers.ModelSerializer):
