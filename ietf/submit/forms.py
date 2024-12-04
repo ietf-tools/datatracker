@@ -502,7 +502,7 @@ class SubmitterForm(NameEmailForm):
         return name
 
 class ReplacesForm(forms.Form):
-    replaces = SearchableDocumentsField(required=False, help_text='An I-D submission will be automatically attached to the previous version of the I-D with the same name, or assigned "-00" version if no previous version exists. If this submission is intended to replace an I-D with a different name (e.g. when an individual I-D is adopted as a Working Group document), please enter that name here. (Approval required to replace an I-D for which you are not an author.)')
+    replaces = SearchableDocumentsField(required=False, help_text='Do not enter anything here if you are only submitting the next version of your Internet-Draft. Only enter items here if this submission is intended to replace an I-D with a different name. A typical use of this field is to note what individual I-Ds are replaced by a new -00 Working group I-D. Note that additional approval will be required to replace an I-D for which you are not an author.')
 
     def __init__(self, *args, **kwargs):
         self.name = kwargs.pop("name")
