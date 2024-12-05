@@ -1081,6 +1081,8 @@ MARKUP_SETTINGS = {
             'footnote_references': 'superscript',
             'trim_footnote_reference_space': True,
             'default_reference_context': 'view',
+            'raw_enabled': False,
+            'file_insertion_enabled': False,
             'link_base': ''
         }
     }
