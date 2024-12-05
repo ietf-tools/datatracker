@@ -3318,3 +3318,18 @@ class InvestigateTests(TestCase):
             self.assertEqual(r.status_code, 200)
             q = PyQuery(r.content)
             self.assertEqual(len(q("#id_name_fragment.is-invalid")), 1)
+
+class LogIOErrorTests(TestCase):
+
+    def test_doc_text_io_error(self):
+
+        d = IndividualDraftFactory()
+
+        with mock.patch("ietf.doc.models.Path") as path_cls_mock:
+            with mock.patch("ietf.doc.models.log.log") as log_mock:
+                path_cls_mock.return_value.exists.return_value = True
+                path_cls_mock.return_value.open.return_value.__enter__.return_value.read.side_effect = IOError("Bad things happened")
+                text = d.text()
+                self.assertIsNone(text)
+                self.assertTrue(log_mock.called)
+                self.assertIn("Bad things happened", log_mock.call_args[0][0])
