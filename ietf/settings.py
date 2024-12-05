@@ -1149,11 +1149,14 @@ EXCLUDED_PERSONAL_EMAIL_REGEX_PATTERNS = [
 MARKUP_SETTINGS = {
     'restructuredtext': {
         'settings_overrides': {
+            'report_level': 3,  # error (3) or severe (4) only
             'initial_header_level': 3,
             'doctitle_xform': False,
             'footnote_references': 'superscript',
             'trim_footnote_reference_space': True,
             'default_reference_context': 'view',
+            'raw_enabled': False,  # critical for security
+            'file_insertion_enabled': False,  # critical for security
             'link_base': ''
         }
     }
