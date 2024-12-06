@@ -64,18 +64,21 @@ def _describe_request(req):
     start and end of handling a request. E.g., do not include a timestamp.
     """
     client_ip = "-"
+    asn = "-"
     cf_ray = "-"
     for header, value in req.headers:
         header = header.lower()
         if header == "cf-connecting-ip":
             client_ip = value
+        elif header == "x-ip-src-asnum":
+            asn = value
         elif header == "cf-ray":
             cf_ray = value
     if req.query:
         path = f"{req.path}?{req.query}"
     else:
         path = req.path
-    return f"{req.method} {path} (client_ip={client_ip}, cf_ray={cf_ray})"
+    return f"{req.method} {path} (client_ip={client_ip}, asn={asn}, cf_ray={cf_ray})"
 
 
 def pre_request(worker, req):
