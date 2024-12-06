@@ -1,5 +1,6 @@
 {
   "bofDefinition": "https://www.ietf.org/how/bofs/",
+  "hackathonWiki": "https://wiki.ietf.org/meeting/{meetingNumber}/hackathon",
   "meetingCalIcs": "/meeting/{meetingNumber}/agenda.ics",
   "meetingDetails": "/meeting/{meetingNumber}/session/{eventAcronym}/",
   "meetingMaterialsPdf": "/meeting/{meetingNumber}/agenda/{eventAcronym}-drafts.pdf",
