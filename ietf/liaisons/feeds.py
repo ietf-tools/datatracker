@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2007-2020, All Rights Reserved
+# Copyright The IETF Trust 2007-2024, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -101,7 +101,7 @@ class LiaisonStatementsFeed(Feed):
     def item_link(self, item):
         return urlreverse("ietf.liaisons.views.liaison_detail", kwargs={ "object_id": item.pk })
 
-    def item_pubdate(self, item):
+    def item_updateddate(self, item):
         # this method needs to return a datetime instance, even
         # though the database has only date, not time
         return item.submitted
