@@ -637,6 +637,14 @@ class XMLDraftTests(TestCase):
                 fullname="Joanna Q. Public",
                 asciiFullname="Not the Same at All",
             )),
+            "Joanna Q. Public (Not the Same at All)",
+        )
+        self.assertEqual(
+            XMLDraft.render_author_name(lxml.etree.Element(
+                "author",
+                fullname="Joanna Q. Public",
+                asciiFullname="Joanna Q. Public",
+            )),
             "Joanna Q. Public",
         )
         self.assertEqual(
