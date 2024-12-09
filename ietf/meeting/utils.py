@@ -870,6 +870,14 @@ def create_recording(session, url, title=None, user=None):
 
     return doc
 
+def delete_recording(session, pk):
+    '''
+    Delete a session recording
+    '''
+    document = Document.objects.filter(pk=pk, group=session.group).first()
+    if document:
+        document.delete()
+
 def get_next_sequence(group, meeting, type):
     '''
     Returns the next sequence number to use for a document of type = type.
