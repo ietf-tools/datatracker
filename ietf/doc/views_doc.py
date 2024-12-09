@@ -630,7 +630,7 @@ def document_main(request, name, rev=None, document_html=False):
                 snapshot = True
                 doc = doc.fake_history_obj(rev)
             else:
-                html = doc.html_body()
+                #html = doc.html_body()
                 if request.COOKIES.get("pagedeps") == "inline":
                     js = Path(finders.find("ietf/js/document_html.js")).read_text()
                     js += Path(finders.find("ietf/js/theme.js")).read_text()
