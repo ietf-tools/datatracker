@@ -137,6 +137,7 @@ jobs:
     uses: ./.github/workflows/tests.yml
     if: ${{ github.event.inputs.skiptests == 'false' || github.ref_name == 'release' }}
     needs: [prepare]
+    secrets: inherit
     with:
       ignoreLowerCoverage: ${{ github.event.inputs.ignoreLowerCoverage == 'true' }}
       skipSelenium: true
@@ -149,7 +150,8 @@ jobs:
     name: Make Release
     if: ${{ !failure() && !cancelled() }}
     needs: [tests, prepare]
-    runs-on: ubuntu-latest
+    runs-on:
+      group: hperf-8c32r
     permissions:
       contents: write
       packages: write
@@ -166,215 +168,113 @@ jobs:
         fetch-depth: 1
         fetch-tags: false
 
-    - name: Launch build VM
-      id: azlaunch
-      timeout-minutes: 10
-      run: |
-        echo "Authenticating to Azure..."
-        az login --service-principal -u ${{ secrets.AZ_BUILD_APP_ID }} -p ${{ secrets.AZ_BUILD_PWD }} --tenant ${{ secrets.AZ_BUILD_TENANT_ID }}
-        
-        echo "Creating VM..."
-        vminfo=$(az vm create \
-          --resource-group ghaDatatracker \
-          --name tmpGhaBuildVM-${{ github.run_number }} \
-          --image Ubuntu2204 \
-          --admin-username azureuser \
-          --generate-ssh-keys \
-          --priority Spot \
-          --size Standard_D8ads_v5 \
-          --max-price -1 \
-          --ephemeral-os-disk \
-          --os-disk-size-gb 100 \
-          --eviction-policy Delete \
-          --nic-delete-option Delete \
-          --os-disk-delete-option Delete \
-          --output tsv \
-          --query "publicIpAddress")
-        echo "ipaddr=$vminfo" >> "$GITHUB_OUTPUT"
-        echo "VM Public IP: $vminfo"
-        cat ~/.ssh/id_rsa > ${{ github.workspace }}/prvkey.key
-        
-        echo "Fetching SSH host public keys..."
-        until ssh-keyscan -t rsa $vminfo 2> /dev/null
-        do
-          echo "Will try again in 5 seconds..."
-          sleep 5
-        done
-        ssh-keyscan -t rsa $vminfo >> ~/.ssh/known_hosts
+    - name: Setup Node.js environment
+      uses: actions/setup-node@v4
+      with:
+        node-version: 18.x
 
-    - name: Remote SSH into Build VM
-      uses: appleboy/ssh-action@25ce8cbbcb08177468c7ff7ec5cbfa236f9341e1
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.x"
+
+    - name: Download a Coverage Results
+      if: ${{ github.event.inputs.skiptests == 'false' || github.ref_name == 'release' }}
+      uses: actions/download-artifact@v4.1.8
+      with:
+        name: coverage
+
+    - name: Make Release Build
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        GITHUB_ACTOR: ${{ github.actor }}
-        GITHUB_SHA: ${{ github.sha }}
-        GITHUB_REF_NAME: ${{ github.ref_name }}
-        GITHUB_RUN_ID: ${{ github.run_id }}
+        DEBIAN_FRONTEND: noninteractive
+        BROWSERSLIST_IGNORE_OLD_DATA: 1
+      run: |
+        echo "PKG_VERSION: $PKG_VERSION"
+        echo "GITHUB_SHA: $GITHUB_SHA"
+        echo "GITHUB_REF_NAME: $GITHUB_REF_NAME"
+        echo "Running frontend build script..."
+        echo "Compiling native node packages..."
+        yarn rebuild
+        echo "Packaging static assets..."
+        yarn build --base=https://static.ietf.org/dt/$PKG_VERSION/
+        yarn legacy:build
+        echo "Setting version $PKG_VERSION..."
+        sed -i -r -e "s|^__version__ += '.*'$|__version__ = '$PKG_VERSION'|" ietf/__init__.py
+        sed -i -r -e "s|^__release_hash__ += '.*'$|__release_hash__ = '$GITHUB_SHA'|" ietf/__init__.py
+        sed -i -r -e "s|^__release_branch__ += '.*'$|__release_branch__ = '$GITHUB_REF_NAME'|" ietf/__init__.py
+
+    - name: Set Production Flags
+      if: ${{ env.SHOULD_DEPLOY == 'true' }}
+      run: |
+        echo "Setting production flags in settings.py..."
+        sed -i -r -e 's/^DEBUG *= *.*$/DEBUG = False/' -e "s/^SERVER_MODE *= *.*\$/SERVER_MODE = 'production'/" ietf/settings.py
+        
+    - name: Make Release Tarball
+      env:
+        DEBIAN_FRONTEND: noninteractive
+      run: |
+        echo "Build release tarball..."
+        mkdir -p /home/runner/work/release
+        tar -czf /home/runner/work/release/release.tar.gz -X dev/build/exclude-patterns.txt .
+
+    - name: Collect + Push Statics
+      env:
+        DEBIAN_FRONTEND: noninteractive
         AWS_ACCESS_KEY_ID: ${{ secrets.CF_R2_STATIC_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.CF_R2_STATIC_KEY_SECRET }}
         AWS_DEFAULT_REGION: auto
         AWS_ENDPOINT_URL: ${{ secrets.CF_R2_ENDPOINT }}
-        PKG_VERSION: ${{ env.PKG_VERSION }}
-        SHOULD_DEPLOY: ${{ env.SHOULD_DEPLOY }}
-        SKIP_TESTS: ${{ github.event.inputs.skiptests }}
+      run: |
+        echo "Collecting statics..."
+        echo "Using ghcr.io/ietf-tools/datatracker-app-base:${{ env.TARGET_BASE }}"
+        docker run --rm --name collectstatics -v $(pwd):/workspace ghcr.io/ietf-tools/datatracker-app-base:${{ env.TARGET_BASE }} sh dev/build/collectstatics.sh
+        echo "Pushing statics..."
+        cd static
+        aws s3 sync . s3://static/dt/$PKG_VERSION --only-show-errors
+
+    - name: Augment dockerignore for docker image build
+      env:
         DEBIAN_FRONTEND: noninteractive
-        BROWSERSLIST_IGNORE_OLD_DATA: 1
-        TARGET_BASE: ${{ env.TARGET_BASE }}
+      run: |
+        cat >> .dockerignore <<EOL
+        .devcontainer
+        .github
+        .vscode
+        k8s
+        playwright
+        svn-history
+        docker-compose.yml
+        EOL
+
+    - name: Setup Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Login to GitHub Container Registry
+      uses: docker/login-action@v3
       with:
-        host: ${{ steps.azlaunch.outputs.ipaddr }}
-        port: 22
-        username: azureuser
-        command_timeout: 60m
-        key_path: ${{ github.workspace }}/prvkey.key
-        envs: GITHUB_TOKEN,GITHUB_ACTOR,GITHUB_SHA,GITHUB_REF_NAME,GITHUB_RUN_ID,AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY,AWS_DEFAULT_REGION,AWS_ENDPOINT_URL,PKG_VERSION,SHOULD_DEPLOY,SKIP_TESTS,DEBIAN_FRONTEND,BROWSERSLIST_IGNORE_OLD_DATA
-        script_stop: true
-        script: |
-          export DEBIAN_FRONTEND=noninteractive
-          lsb_release -a
-          sudo apt-get update
-          sudo apt-get upgrade -y
-          sudo apt-get install wget unzip curl -y
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
 
-          echo "=========================================================================="
-          echo "Installing Docker..."
-          echo "=========================================================================="
-          curl -fsSL https://get.docker.com -o get-docker.sh
-          sudo sh get-docker.sh
-          sudo docker buildx create \
-            --name container-builder \
-            --driver docker-container \
-            --bootstrap --use
+    - name: Add feature-latest tag
+      if: ${{ startsWith(github.ref_name, 'feat/') }}
+      run: echo "FEATURE_LATEST_TAG=$(echo $GITHUB_REF_NAME | tr / -)" >> $GITHUB_ENV
 
-          echo "=========================================================================="
-          echo "Login to ghcr.io..."
-          echo "=========================================================================="
-          echo $GITHUB_TOKEN | sudo docker login ghcr.io -u $GITHUB_ACTOR --password-stdin
+    - name: Build Images
+      uses: docker/build-push-action@v6
+      env:
+        DOCKER_BUILD_SUMMARY: false
+      with:
+        context: .
+        file: dev/build/Dockerfile
+        platforms: ${{ github.event.inputs.skiparm == 'true' && 'linux/amd64' || 'linux/amd64,linux/arm64' }}
+        push: true
+        tags: |
+          ghcr.io/ietf-tools/datatracker:${{ env.PKG_VERSION }}
+          ${{ env.FEATURE_LATEST_TAG && format('ghcr.io/ietf-tools/datatracker:{0}-latest', env.FEATURE_LATEST_TAG) || null }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
 
-          echo "=========================================================================="
-          echo "Installing GH CLI..."
-          echo "=========================================================================="
-          sudo mkdir -p -m 755 /etc/apt/keyrings \
-          	&& wget -qO- https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo tee /etc/apt/keyrings/githubcli-archive-keyring.gpg > /dev/null \
-          	&& sudo chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg \
-          	&& echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null \
-          	&& sudo apt update \
-          	&& sudo apt install gh -y
-
-          echo "=========================================================================="
-          echo "Installing AWS CLI..."
-          echo "=========================================================================="
-          curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-          unzip awscliv2.zip
-          sudo ./aws/install
-
-          echo "=========================================================================="
-          echo "Install Node.js..."
-          echo "=========================================================================="
-          curl -fsSL https://deb.nodesource.com/setup_18.x -o nodesource_setup.sh
-          sudo bash nodesource_setup.sh
-          sudo apt-get install -y nodejs
-          sudo corepack enable
-
-          echo "=========================================================================="
-          echo "Install Python 3.x..."
-          echo "=========================================================================="
-          sudo apt-get install python3 python3-dev -y
-          python3 --version
-
-          echo "=========================================================================="
-          echo "Clone project..."
-          echo "=========================================================================="
-          sudo mkdir -p /workspace
-          sudo chown azureuser /workspace
-          cd /workspace
-          gh repo clone ietf-tools/datatracker -- --depth=1 --no-tags
-          cd datatracker
-
-          if [ "$SKIP_TESTS" = "false" ] || [ "$GITHUB_REF_NAME" = "release" ] ; then
-            echo "=========================================================================="
-            echo "Downloading coverage..."
-            echo "=========================================================================="
-            gh run download $GITHUB_RUN_ID -n coverage
-          fi
-
-          echo "=========================================================================="
-          echo "Building project..."
-          echo "=========================================================================="
-          echo "PKG_VERSION: $PKG_VERSION"
-          echo "GITHUB_SHA: $GITHUB_SHA"
-          echo "GITHUB_REF_NAME: $GITHUB_REF_NAME"
-          echo "Running frontend build script..."
-          echo "Compiling native node packages..."
-          yarn rebuild
-          echo "Packaging static assets..."
-          yarn build --base=https://static.ietf.org/dt/$PKG_VERSION/
-          yarn legacy:build
-          echo "Setting version $PKG_VERSION..."
-          sed -i -r -e "s|^__version__ += '.*'$|__version__ = '$PKG_VERSION'|" ietf/__init__.py
-          sed -i -r -e "s|^__release_hash__ += '.*'$|__release_hash__ = '$GITHUB_SHA'|" ietf/__init__.py
-          sed -i -r -e "s|^__release_branch__ += '.*'$|__release_branch__ = '$GITHUB_REF_NAME'|" ietf/__init__.py
-
-          if [ "$SHOULD_DEPLOY" = "true" ] ; then
-            echo "=========================================================================="
-            echo "Setting production flags in settings.py..."
-            echo "=========================================================================="
-            sed -i -r -e 's/^DEBUG *= *.*$/DEBUG = False/' -e "s/^SERVER_MODE *= *.*\$/SERVER_MODE = 'production'/" ietf/settings.py
-          fi
-
-          echo "=========================================================================="
-          echo "Build release tarball..."
-          echo "=========================================================================="
-          mkdir -p /workspace/release
-          tar -czf /workspace/release.tar.gz -X dev/build/exclude-patterns.txt .
-
-          echo "=========================================================================="
-          echo "Collecting statics..."
-          echo "=========================================================================="
-          echo "Using ghcr.io/ietf-tools/datatracker-app-base:${{ env.TARGET_BASE }}"
-          sudo docker run --rm --name collectstatics -v $(pwd):/workspace ghcr.io/ietf-tools/datatracker-app-base:${{ env.TARGET_BASE }} sh dev/build/collectstatics.sh
-          echo "Pushing statics..."
-          cd static
-          aws s3 sync . s3://static/dt/$PKG_VERSION --only-show-errors
-          cd ..
-
-          echo "=========================================================================="
-          echo "Augment dockerignore for docker image build..."
-          echo "=========================================================================="
-          cat >> .dockerignore <<EOL
-          .devcontainer
-          .github
-          .vscode
-          k8s
-          playwright
-          svn-history
-          docker-compose.yml
-          EOL
-
-          echo "=========================================================================="
-          echo "Building Images..."
-          echo "=========================================================================="
-          sudo docker buildx build --file dev/build/Dockerfile --platform linux/amd64,linux/arm64 --tag ghcr.io/ietf-tools/datatracker:$PKG_VERSION --push .
-
-    - name: Fetch release tarball
-      run: |
-        mkdir -p /home/runner/work/release
-        chmod 0600 ${{ github.workspace }}/prvkey.key
-        scp -i ${{ github.workspace }}/prvkey.key azureuser@${{ steps.azlaunch.outputs.ipaddr }}:/workspace/release.tar.gz /home/runner/work/release/release.tar.gz
-
-    - name: Destroy Build VM + resources
-      if: always()
-      run: |
-        echo "Terminate VM..."        
-        az vm delete -g ghaDatatracker -n tmpGhaBuildVM-${{ github.run_number }} --yes --force-deletion true
-        echo "Delete Public IP..."
-        az resource delete -g ghaDatatracker -n tmpGhaBuildVM-${{ github.run_number }}PublicIP --resource-type "Microsoft.Network/publicIPAddresses"
-        echo "Delete Network Security Group..."
-        az resource delete -g ghaDatatracker -n tmpGhaBuildVM-${{ github.run_number }}NSG --resource-type "Microsoft.Network/networkSecurityGroups"
-        echo "Delete Virtual Network..."
-        az resource delete -g ghaDatatracker -n tmpGhaBuildVM-${{ github.run_number }}VNET --resource-type "Microsoft.Network/virtualNetworks"
-        echo "Logout from Azure..."
-        az logout
-        
     - name: Update CHANGELOG
       id: changelog
       uses: Requarks/changelog-action@v1
@@ -456,50 +356,34 @@ jobs:
     steps:      
     - name: Notify on Slack (Success)
       if: ${{ !contains(join(needs.*.result, ','), 'failure') }}
-      uses: slackapi/slack-github-action@v1.27.0
+      uses: slackapi/slack-github-action@v2
       with:
-        channel-id: ${{ secrets.SLACK_GH_BUILDS_CHANNEL_ID }}
+        token: ${{ secrets.SLACK_GH_BOT }}
+        method: chat.postMessage
         payload: |
-          {
-            "text": "Datatracker Build <https://github.com/ietf-tools/datatracker/actions/runs/${{ github.run_id }}|${{ env.PKG_VERSION }}> by ${{ github.triggering_actor }} - <@${{ secrets.SLACK_UID_RJSPARKS }}>",
-            "attachments": [
-              {
-                "color": "28a745",
-                "fields": [
-                  {
-                    "title": "Status",
-                    "short": true,
-                    "value": "Completed"
-                  }
-                ]
-              }
-            ]
-          }
-      env:
-        SLACK_BOT_TOKEN: ${{ secrets.SLACK_GH_BOT }}
+          channel: ${{ secrets.SLACK_GH_BUILDS_CHANNEL_ID }}
+          text: "Datatracker Build <https://github.com/ietf-tools/datatracker/actions/runs/${{ github.run_id }}|${{ env.PKG_VERSION }}> by ${{ github.triggering_actor }}"
+          attachments:
+            - color: "28a745"
+              fields:
+                - title: "Status"
+                  short: true
+                  value: "Completed"
     - name: Notify on Slack (Failure)
       if: ${{ contains(join(needs.*.result, ','), 'failure') }}
-      uses: slackapi/slack-github-action@v1.27.0
+      uses: slackapi/slack-github-action@v2
       with:
-        channel-id: ${{ secrets.SLACK_GH_BUILDS_CHANNEL_ID }}
+        token: ${{ secrets.SLACK_GH_BOT }}
+        method: chat.postMessage
         payload: |
-          {
-            "text": "Datatracker Build <https://github.com/ietf-tools/datatracker/actions/runs/${{ github.run_id }}|${{ env.PKG_VERSION }}> by ${{ github.triggering_actor }} - <@${{ secrets.SLACK_UID_RJSPARKS }}>",
-            "attachments": [
-              {
-                "color": "a82929",
-                "fields": [
-                  {
-                    "title": "Status",
-                    "short": true,
-                    "value": "Failed"
-                  }
-                ]
-              }
-            ]
-          }
-      env:
-        SLACK_BOT_TOKEN: ${{ secrets.SLACK_GH_BOT }}
+          channel: ${{ secrets.SLACK_GH_BUILDS_CHANNEL_ID }}
+          text: "Datatracker Build <https://github.com/ietf-tools/datatracker/actions/runs/${{ github.run_id }}|${{ env.PKG_VERSION }}> by ${{ github.triggering_actor }}"
+          attachments:
+            - color: "a82929"
+              fields:
+                - title: "Status"
+                  short: true
+                  value: "Failed"
         
   # -----------------------------------------------------------------
   # SANDBOX

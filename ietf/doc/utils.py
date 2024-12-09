@@ -3,9 +3,7 @@
 
 
 import datetime
-import hashlib
 import io
-import json
 import math
 import os
 import re
@@ -348,6 +346,7 @@ def augment_events_with_revision(doc, events):
     """Take a set of events for doc and add a .rev attribute with the
     revision they refer to by checking NewRevisionDocEvents."""
 
+    # Need QuerySetAny instead of QuerySet until django-stubs 5.0.1
     if isinstance(events, QuerySetAny):
         qs = events.filter(newrevisiondocevent__isnull=False)
     else:
@@ -1047,14 +1046,6 @@ def make_rev_history(doc):
     return sorted(history, key=lambda x: x['published'])
 
 
-def get_search_cache_key(params):
-    from ietf.doc.views_search import SearchForm
-    fields = set(SearchForm.base_fields) - set(['sort',])
-    kwargs = dict([ (k,v) for (k,v) in list(params.items()) if k in fields ])
-    key = "doc:document:search:" + hashlib.sha512(json.dumps(kwargs, sort_keys=True).encode('utf-8')).hexdigest()
-    return key
-
-
 def build_file_urls(doc: Union[Document, DocHistory]):
     if doc.type_id == "rfc":
         base_path = os.path.join(settings.RFC_PATH, doc.name + ".")
@@ -1090,7 +1081,7 @@ def build_file_urls(doc: Union[Document, DocHistory]):
             label = "plain text" if t == "txt" else t
             file_urls.append((label, base + doc.name + "-" + doc.rev + "." + t))
 
-        if doc.text():
+        if doc.text_exists():
             file_urls.append(("htmlized", urlreverse('ietf.doc.views_doc.document_html', kwargs=dict(name=doc.name, rev=doc.rev))))
             file_urls.append(("pdfized", urlreverse('ietf.doc.views_doc.document_pdfized', kwargs=dict(name=doc.name, rev=doc.rev))))
         file_urls.append(("bibtex", urlreverse('ietf.doc.views_doc.document_bibtex',kwargs=dict(name=doc.name,rev=doc.rev))))

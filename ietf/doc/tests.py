@@ -5,6 +5,7 @@
 import os
 import datetime
 import io
+from django.http import HttpRequest
 import lxml
 import bibtexparser
 import mock
@@ -52,6 +53,7 @@ from ietf.doc.utils import (
     generate_idnits2_rfcs_obsoleted,
     get_doc_email_aliases,
 )
+from ietf.doc.views_doc import get_diff_revisions
 from ietf.group.models import Group, Role
 from ietf.group.factories import GroupFactory, RoleFactory
 from ietf.ipr.factories import HolderIprDisclosureFactory
@@ -1887,6 +1889,18 @@ class DocTestCase(TestCase):
         self.assertContains(r, notes.text)
         self.assertContains(r, rfced_note.text)
 
+    def test_diff_revisions(self):
+        ind_doc = IndividualDraftFactory(create_revisions=range(2))
+        wg_doc = WgDraftFactory(
+            relations=[("replaces", ind_doc)], create_revisions=range(2)
+        )
+        diff_revisions = get_diff_revisions(HttpRequest(), wg_doc.name, wg_doc)
+        self.assertEqual(len(diff_revisions), 4)
+        self.assertEqual(
+            [t[3] for t in diff_revisions],
+            [f"{n}-{v:02d}" for n in [wg_doc.name, ind_doc.name] for v in [1, 0]],
+        )
+
     def test_history(self):
         doc = IndividualDraftFactory()
 
@@ -2739,60 +2753,6 @@ class DocumentMeetingTests(TestCase):
                 self.assertIsNone(doc.get_related_meeting(), f'{doc.type.slug} should not be related to meeting')
 
 class ChartTests(ResourceTestCaseMixin, TestCase):
-    def test_search_chart_conf(self):
-        doc = IndividualDraftFactory()
-
-        conf_url = urlreverse('ietf.doc.views_stats.chart_conf_newrevisiondocevent')
-
-        # No qurey arguments; expect an empty json object
-        r = self.client.get(conf_url)
-        self.assertValidJSONResponse(r)
-        self.assertEqual(unicontent(r), '{}')
-
-        # No match
-        r = self.client.get(conf_url + '?activedrafts=on&name=thisisnotadocumentname')
-        self.assertValidJSONResponse(r)
-        d = r.json()
-        self.assertEqual(d['chart']['type'], settings.CHART_TYPE_COLUMN_OPTIONS['chart']['type'])
-
-        r = self.client.get(conf_url + '?activedrafts=on&name=%s'%doc.name[6:12])
-        self.assertValidJSONResponse(r)
-        d = r.json()
-        self.assertEqual(d['chart']['type'], settings.CHART_TYPE_COLUMN_OPTIONS['chart']['type'])
-        self.assertEqual(len(d['series'][0]['data']), 0)
-
-    def test_search_chart_data(self):
-        doc = IndividualDraftFactory()
-
-        data_url = urlreverse('ietf.doc.views_stats.chart_data_newrevisiondocevent')
-
-        # No qurey arguments; expect an empty json list
-        r = self.client.get(data_url)
-        self.assertValidJSONResponse(r)
-        self.assertEqual(unicontent(r), '[]')
-
-        # No match
-        r = self.client.get(data_url + '?activedrafts=on&name=thisisnotadocumentname')
-        self.assertValidJSONResponse(r)
-        d = r.json()
-        self.assertEqual(unicontent(r), '[]')
-
-        r = self.client.get(data_url + '?activedrafts=on&name=%s'%doc.name[6:12])
-        self.assertValidJSONResponse(r)
-        d = r.json()
-        self.assertEqual(len(d), 1)
-        self.assertEqual(len(d[0]), 2)
-
-    def test_search_chart(self):
-        doc = IndividualDraftFactory()
-
-        chart_url = urlreverse('ietf.doc.views_stats.chart_newrevisiondocevent')
-        r = self.client.get(chart_url)
-        self.assertEqual(r.status_code, 200)
-
-        r = self.client.get(chart_url + '?activedrafts=on&name=%s'%doc.name[6:12])
-        self.assertEqual(r.status_code, 200)
-        
     def test_personal_chart(self):
         person = PersonFactory.create()
         IndividualDraftFactory.create(
@@ -3358,3 +3318,18 @@ class InvestigateTests(TestCase):
             self.assertEqual(r.status_code, 200)
             q = PyQuery(r.content)
             self.assertEqual(len(q("#id_name_fragment.is-invalid")), 1)
+
+class LogIOErrorTests(TestCase):
+
+    def test_doc_text_io_error(self):
+
+        d = IndividualDraftFactory()
+
+        with mock.patch("ietf.doc.models.Path") as path_cls_mock:
+            with mock.patch("ietf.doc.models.log.log") as log_mock:
+                path_cls_mock.return_value.exists.return_value = True
+                path_cls_mock.return_value.open.return_value.__enter__.return_value.read.side_effect = IOError("Bad things happened")
+                text = d.text()
+                self.assertIsNone(text)
+                self.assertTrue(log_mock.called)
+                self.assertIn("Bad things happened", log_mock.call_args[0][0])

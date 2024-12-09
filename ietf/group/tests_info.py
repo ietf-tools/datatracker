@@ -1431,7 +1431,7 @@ class MilestoneTests(TestCase):
         RoleFactory(group=group,name_id='chair',person=PersonFactory(user__username='marschairman'))
         draft = WgDraftFactory(group=group)
 
-        m1 = GroupMilestone.objects.create(id=1,
+        m1 = GroupMilestone.objects.create(
                                            group=group,
                                            desc="Test 1",
                                            due=date_today(DEADLINE_TZINFO),
@@ -1439,7 +1439,7 @@ class MilestoneTests(TestCase):
                                            state_id="active")
         m1.docs.set([draft])
 
-        m2 = GroupMilestone.objects.create(id=2,
+        m2 = GroupMilestone.objects.create(
                                            group=group,
                                            desc="Test 2",
                                            due=date_today(DEADLINE_TZINFO),
@@ -1580,13 +1580,14 @@ class MilestoneTests(TestCase):
         events_before = group.groupevent_set.count()
 
         # add
-        r = self.client.post(url, { 'prefix': "m1",
-                                    'm1-id': m1.id,
-                                    'm1-desc': m1.desc,
-                                    'm1-due': m1.due.strftime("%B %Y"),
-                                    'm1-resolved': m1.resolved,
-                                    'm1-docs': pklist(m1.docs),
-                                    'm1-review': "accept",
+        mstr = f"m{m1.id}"
+        r = self.client.post(url, { 'prefix': mstr,
+                                    f'{mstr}-id': m1.id,
+                                    f'{mstr}-desc': m1.desc,
+                                    f'{mstr}-due': m1.due.strftime("%B %Y"),
+                                    f'{mstr}-resolved': m1.resolved,
+                                    f'{mstr}-docs': pklist(m1.docs),
+                                    f'{mstr}-review': "accept",
                                     'action': "save",
                                     })
         self.assertEqual(r.status_code, 302)
@@ -1606,13 +1607,14 @@ class MilestoneTests(TestCase):
         events_before = group.groupevent_set.count()
 
         # delete
-        r = self.client.post(url, { 'prefix': "m1",
-                                    'm1-id': m1.id,
-                                    'm1-desc': m1.desc,
-                                    'm1-due': m1.due.strftime("%B %Y"),
-                                    'm1-resolved': "",
-                                    'm1-docs': pklist(m1.docs),
-                                    'm1-delete': "checked",
+        mstr = f"m{m1.id}"
+        r = self.client.post(url, { 'prefix': mstr,
+                                    f'{mstr}-id': m1.id,
+                                    f'{mstr}-desc': m1.desc,
+                                    f'{mstr}-due': m1.due.strftime("%B %Y"),
+                                    f'{mstr}-resolved': "",
+                                    f'{mstr}-docs': pklist(m1.docs),
+                                    f'{mstr}-delete': "checked",
                                     'action': "save",
                                     })
         self.assertEqual(r.status_code, 302)
@@ -1635,13 +1637,14 @@ class MilestoneTests(TestCase):
 
         due = self.last_day_of_month(date_today(DEADLINE_TZINFO) + datetime.timedelta(days=365))
 
+        mstr = f"m{m1.id}"
         # faulty post
-        r = self.client.post(url, { 'prefix': "m1",
-                                    'm1-id': m1.id,
-                                    'm1-desc': "", # no description
-                                    'm1-due': due.strftime("%B %Y"),
-                                    'm1-resolved': "",
-                                    'm1-docs': doc_pks,
+        r = self.client.post(url, { 'prefix': mstr,
+                                    f'{mstr}-id': m1.id,
+                                    f'{mstr}-desc': "", # no description
+                                    f'{mstr}-due': due.strftime("%B %Y"),
+                                    f'{mstr}-resolved': "",
+                                    f'{mstr}-docs': doc_pks,
                                     'action': "save",
                                     })
         self.assertEqual(r.status_code, 200)
@@ -1653,13 +1656,13 @@ class MilestoneTests(TestCase):
 
         # edit
         mailbox_before = len(outbox)
-        r = self.client.post(url, { 'prefix': "m1",
-                                    'm1-id': m1.id,
-                                    'm1-desc': "Test 2 - changed",
-                                    'm1-due': due.strftime("%B %Y"),
-                                    'm1-resolved': "Done",
-                                    'm1-resolved_checkbox': "checked",
-                                    'm1-docs': doc_pks,
+        r = self.client.post(url, { 'prefix': mstr,
+                                    f'{mstr}-id': m1.id,
+                                    f'{mstr}-desc': "Test 2 - changed",
+                                    f'{mstr}-due': due.strftime("%B %Y"),
+                                    f'{mstr}-resolved': "Done",
+                                    f'{mstr}-resolved_checkbox': "checked",
+                                    f'{mstr}-docs': doc_pks,
                                     'action': "save",
                                     })
         self.assertEqual(r.status_code, 302)

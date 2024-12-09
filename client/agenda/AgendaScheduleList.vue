@@ -83,6 +83,14 @@
                 template(#trigger)
                   span.badge.is-bof BoF
                 span #[a(href='https://www.ietf.org/how/bofs/', target='_blank') Birds of a Feather] sessions (BoFs) are initial discussions about a particular topic of interest to the IETF community.
+              n-popover(
+                v-if='item.isProposed'
+                trigger='hover'
+                :width='250'
+                )
+                template(#trigger)
+                  span.badge.is-proposed Proposed
+                span #[a(href='https://www.ietf.org/process/wgs/', target='_blank') Proposed WGs] are groups in the process of being chartered. If the charter is not approved by the IESG before the IETF meeting, the session may be canceled.
               .agenda-table-note(v-if='item.note')
                 i.bi.bi-arrow-return-right.me-1
                 span {{item.note}}
@@ -480,6 +488,7 @@ const meetingEvents = computed(() => {
       // groupParentName: item.groupParent?.name,
       icon,
       isBoF: item.isBoF,
+      isProposed: item.isProposed,
       isSessionEvent: item.type === 'regular',
       links,
       location: item.location,
@@ -1024,9 +1033,24 @@ onBeforeUnmount(() => {
         word-wrap: break-word;
       }
 
-      .badge.is-bof {
-        background-color: $teal-500;
+      .badge {
         margin: 0 8px;
+
+        &.is-bof {
+          background-color: $teal-500;
+
+          @at-root .theme-dark & {
+            background-color: $teal-700;
+          }
+        }
+
+        &.is-proposed {
+          background-color: $gray-500;
+
+          @at-root .theme-dark & {
+            background-color: $gray-700;
+          }
+        }
 
         @media screen and (max-width: $bs5-break-md) {
           width: 30px;
