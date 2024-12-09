@@ -416,8 +416,8 @@ def document_main(request, name, rev=None, document_html=False):
         file_urls, found_types = build_file_urls(doc)
         if not request.user.is_authenticated:
             file_urls = [fu for fu in file_urls if fu[0] != "pdfized"]
-        content = doc.text_or_error() # pyflakes:ignore
-        content = markup_txt.markup(maybe_split(content, split=split_content))
+        #content = doc.text_or_error() # pyflakes:ignore
+        #content = markup_txt.markup(maybe_split(content, split=split_content))
 
         latest_revision = doc.latest_event(NewRevisionDocEvent, type="new_revision")
 
@@ -647,7 +647,7 @@ def document_main(request, name, rev=None, document_html=False):
                                        group=group,
                                        top=top,
                                        name=doc.name,
-                                       content=content,
+                                       #content=content,
                                        split_content=split_content,
                                        revisions=simple_diff_revisions if document_html else revisions,
                                        snapshot=snapshot,
