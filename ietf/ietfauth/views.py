@@ -300,23 +300,6 @@ def profile(request):
                 email_confirmations.append(to_email)
                 send_new_email_confirmation_request(person, to_email)
 
-            for r in roles:
-                e = r.email_form.cleaned_data["email"]
-                if r.email_id != e.pk:
-                    r.email = e
-                    r.save()
-
-            primary_email = request.POST.get("primary_email", None)
-            active_emails = request.POST.getlist("active_emails", [])
-            for email in emails:
-                email.active = email.pk in active_emails
-                email.primary = email.address == primary_email
-                if email.primary and not email.active:
-                    email.active = True
-                if not email.origin:
-                    email.origin = person.user.username
-                email.save()
-
             # Make sure the alias table contains any new and/or old names.
             existing_aliases = set(Alias.objects.filter(person=person).values_list("name", flat=True))
             curr_names = set(x for x in [updated_person.name, updated_person.ascii, updated_person.ascii_short, updated_person.plain_name(), updated_person.plain_ascii(), ] if x)
@@ -416,6 +399,14 @@ def edit_person_externalresources(request):
     # May need to explain the tags more - probably more reason to move to a formset.
     title = "Additional person resources"
     return render(request, 'ietfauth/edit_field.html',dict(person=person, form=form, title=title, info=info) )
+
+@login_required
+@person_required
+def edit_subscriptions(request):
+    person = request.user.person
+    emails = Email.objects.filter(person=person).exclude(address__startswith='unknown-email-').order_by('-active','-time')
+    emails_json_serializable = list(emails.values("pk", "address", "primary", "active", "origin"))
+    return render(request, 'ietfauth/edit_subscriptions.html', dict(person=person,emails=emails_json_serializable) )
 
 def confirm_new_email(request, auth):
     try:
