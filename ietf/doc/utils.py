@@ -491,8 +491,9 @@ def update_action_holders(doc, prev_state=None, new_state=None, prev_tags=None, 
     
     Returns an event describing the change which should be passed to doc.save_with_history()
     
-    Only cares about draft-iesg state changes. Places where other state types are updated
-    may not call this method. If you add rules for updating action holders on other state
+    Only cares about draft-iesg state changes and draft expiration. 
+    Places where other state types are updated may not call this method. 
+    If you add rules for updating action holders on other state
     types, be sure this is called in the places that change that state.
     """
     # Should not call this with different state types
@@ -511,41 +512,52 @@ def update_action_holders(doc, prev_state=None, new_state=None, prev_tags=None, 
     
     # Remember original list of action holders to later check if it changed
     prev_set = list(doc.action_holders.all())
-    
-    # Update the action holders. To get this right for people with more
-    # than one relationship to the document, do removals first, then adds.
-    # Remove outdated action holders
-    iesg_state_changed = (prev_state != new_state) and (getattr(new_state, "type_id", None) == "draft-iesg") 
-    if iesg_state_changed:
-        # Clear the action_holders list on a state change. This will reset the age of any that get added back.
+
+    if new_state.type_id=="draft-iesg":
+        # Update the action holders. To get this right for people with more
+        # than one relationship to the document, do removals first, then adds.
+        # Remove outdated action holders
+        iesg_state_changed = (prev_state != new_state) and (getattr(new_state, "type_id", None) == "draft-iesg") 
+        if iesg_state_changed:
+            # Clear the action_holders list on a state change. This will reset the age of any that get added back.
+            doc.action_holders.clear()
+        if tags.removed("need-rev"):
+            # Removed the 'need-rev' tag - drop authors from the action holders list
+            DocumentActionHolder.objects.filter(document=doc, person__in=doc.authors()).delete()
+        elif tags.added("need-rev"):
+            # Remove the AD if we're asking for a new revision
+            DocumentActionHolder.objects.filter(document=doc, person=doc.ad).delete()
+
+        # Add new action holders
+        if doc.ad:
+            # AD is an action holder unless specified otherwise for the new state
+            if iesg_state_changed and new_state.slug not in DocumentActionHolder.CLEAR_ACTION_HOLDERS_STATES:
+                doc.action_holders.add(doc.ad)
+            # If AD follow-up is needed, make sure they are an action holder 
+            if tags.added("ad-f-up"):
+                doc.action_holders.add(doc.ad)
+        # Authors get the action if a revision is needed
+        if tags.added("need-rev"):
+            for auth in doc.authors():
+                doc.action_holders.add(auth)
+
+        # Now create an event if we changed the set
+        return add_action_holder_change_event(
+            doc, 
+            Person.objects.get(name='(System)'), 
+            prev_set,
+            reason='IESG state changed',
+        )
+    elif new_state.type_id=="draft" and new_state.slug=="expired":
         doc.action_holders.clear()
-    if tags.removed("need-rev"):
-        # Removed the 'need-rev' tag - drop authors from the action holders list
-        DocumentActionHolder.objects.filter(document=doc, person__in=doc.authors()).delete()
-    elif tags.added("need-rev"):
-        # Remove the AD if we're asking for a new revision
-        DocumentActionHolder.objects.filter(document=doc, person=doc.ad).delete()
-
-    # Add new action holders
-    if doc.ad:
-        # AD is an action holder unless specified otherwise for the new state
-        if iesg_state_changed and new_state.slug not in DocumentActionHolder.CLEAR_ACTION_HOLDERS_STATES:
-            doc.action_holders.add(doc.ad)
-        # If AD follow-up is needed, make sure they are an action holder 
-        if tags.added("ad-f-up"):
-            doc.action_holders.add(doc.ad)
-    # Authors get the action if a revision is needed
-    if tags.added("need-rev"):
-        for auth in doc.authors():
-            doc.action_holders.add(auth)
-
-    # Now create an event if we changed the set
-    return add_action_holder_change_event(
-        doc, 
-        Person.objects.get(name='(System)'), 
-        prev_set,
-        reason='IESG state changed',
-    )
+        return add_action_holder_change_event(
+            doc, 
+            Person.objects.get(name='(System)'), 
+            prev_set,
+            reason='draft expired',
+        )
+    else:
+        return None
 
 
 def update_documentauthors(doc, new_docauthors, by=None, basis=None):
