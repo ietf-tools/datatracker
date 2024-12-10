@@ -43,8 +43,8 @@ RUN rm -rf /tmp/library-scripts
 # Copy the startup file
 COPY docker/scripts/app-init.sh /docker-init.sh
 COPY docker/scripts/app-start.sh /docker-start.sh
-RUN sed -i 's/\r$//' /docker-init.sh && chmod +x /docker-init.sh
-RUN sed -i 's/\r$//' /docker-start.sh && chmod +x /docker-start.sh
+RUN sed -i 's/\r$//' /docker-init.sh && chmod +rx /docker-init.sh
+RUN sed -i 's/\r$//' /docker-start.sh && chmod +rx /docker-start.sh
 
 # Fix user UID / GID to match host
 RUN groupmod --gid $USER_GID $USERNAME \
