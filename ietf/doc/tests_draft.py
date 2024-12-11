@@ -19,10 +19,10 @@ from django.utils.html import escape
 
 import debug                            # pyflakes:ignore
 
-from ietf.doc.expire import expirable_drafts, get_expired_drafts, send_expire_notice_for_draft, expire_draft
-from ietf.doc.factories import EditorialDraftFactory, IndividualDraftFactory, WgDraftFactory, RgDraftFactory, DocEventFactory
+from ietf.doc.expire import expirable_drafts, get_expired_drafts, repair_dead_on_expire, send_expire_notice_for_draft, expire_draft
+from ietf.doc.factories import EditorialDraftFactory, IndividualDraftFactory, StateDocEventFactory, WgDraftFactory, RgDraftFactory, DocEventFactory
 from ietf.doc.models import ( Document, DocReminder, DocEvent,
-    ConsensusDocEvent, LastCallDocEvent, RelatedDocument, State, TelechatDocEvent, 
+    ConsensusDocEvent, LastCallDocEvent, RelatedDocument, State, StateDocEvent, TelechatDocEvent, 
     WriteupDocEvent, DocRelationshipName, IanaExpertDocEvent )
 from ietf.doc.utils import get_tags_for_stream_id, create_ballot_if_not_open
 from ietf.doc.views_draft import AdoptDraftForm
@@ -36,7 +36,7 @@ from ietf.iesg.models import TelechatDate
 from ietf.utils.test_utils import login_testing_unauthorized
 from ietf.utils.mail import outbox, empty_outbox, get_payload_text
 from ietf.utils.test_utils import TestCase
-from ietf.utils.timezone import date_today, datetime_from_date, DEADLINE_TZINFO
+from ietf.utils.timezone import date_today, datetime_today, datetime_from_date, DEADLINE_TZINFO
 
 
 class ChangeStateTests(TestCase):
@@ -844,6 +844,69 @@ class ExpireIDsTests(DraftFileMixin, TestCase):
         
         self.assertTrue(not os.path.exists(os.path.join(settings.INTERNET_DRAFT_PATH, txt)))
         self.assertTrue(os.path.exists(os.path.join(settings.INTERNET_DRAFT_ARCHIVE_DIR, txt)))
+
+
+    def test_repair_dead_on_expire(self):
+
+        # Create a draft in iesg idexists - ensure it doesn't get new docevents.
+        # Create a draft in iesg dead with no expires within the window - ensure it doesn't get new docevents and its state doesn't change.
+        # Create a draft in iesg dead with an expiry in the window - ensure it gets the right doc events, iesg state changes, draft state doesn't change.
+        last_year = datetime_today() - datetime.timedelta(days=365)
+
+        not_dead = WgDraftFactory(name="draft-not-dead")
+        not_dead_event_count = not_dead.docevent_set.count()
+
+        dead_not_from_expires = WgDraftFactory(name="draft-dead-not-from-expiring")
+        dead_not_from_expires.set_state(
+            State.objects.get(type="draft-iesg", slug="dead")
+        )
+        StateDocEventFactory(
+            doc=dead_not_from_expires, state=("draft-iesg", "dead"), time=last_year
+        )
+        DocEventFactory(
+            doc=dead_not_from_expires,
+            type="expired_document",
+            time=last_year + datetime.timedelta(days=1),
+        )
+        dead_not_from_expires_event_count = dead_not_from_expires.docevent_set.count()
+
+        dead_from_expires = []
+        dead_from_expires_event_count = dict()
+        for delta in [-5, 5]:
+            d = WgDraftFactory(
+                name=f"draft-dead-from-expiring-just-{'before' if delta<0 else 'after'}"
+            )
+            d.set_state(State.objects.get(type="draft-iesg", slug="dead"))
+            StateDocEventFactory(doc=d, state=("draft-iesg", "dead"), time=last_year)
+            DocEventFactory(
+                doc=d,
+                type="expired_document",
+                time=last_year + datetime.timedelta(seconds=delta),
+            )
+            dead_from_expires.append(d)
+            dead_from_expires_event_count[d] = d.docevent_set.count()
+
+        empty_outbox()
+
+        repair_dead_on_expire()
+
+        self.assertEqual(not_dead.docevent_set.count(), not_dead_event_count)
+        self.assertEqual(
+            dead_not_from_expires.docevent_set.count(),
+            dead_not_from_expires_event_count,
+        )
+        for d in dead_from_expires:
+            self.assertEqual(
+                d.docevent_set.count(), dead_from_expires_event_count[d] + 2
+            )
+            self.assertIn(
+                "due only to document expiry", d.latest_event(type="added_comment").desc
+            )
+            self.assertEqual(
+                d.latest_event(StateDocEvent).desc,
+                "IESG state changed to <b>I-D Exists</b> from Dead",
+            )
+        self.assertEqual(len(outbox), 0)
 
 
 class ExpireLastCallTests(TestCase):
