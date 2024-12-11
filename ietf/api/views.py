@@ -314,8 +314,10 @@ def api_new_meeting_registration_v2(request):
     except ValidationError:
         return _http_err(400, "Invalid email value: '%s'" % (email, ))
 
-    # handle cancelled. there will be only one record
+    # handle cancelled. there should be only one record
     if payload[0]['cancelled']:
+        if len(payload) > 1:
+            return _http_err(400, "Error. Received cancelled registration notification with more than one record. ({})".format(email))
         reg = MeetingRegistration.objects.filter(
             meeting__number=number,
             email=email,
