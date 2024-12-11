@@ -919,7 +919,9 @@ class CustomApiTests(TestCase):
         #
         # Check record
         reg = regs[0]
-        obj = MeetingRegistration.objects.get(email=reg['email'], meeting__number=reg['meeting'])
+        objects = MeetingRegistration.objects.filter(email=reg['email'], meeting__number=reg['meeting'])
+        self.assertEqual(objects.count(), 1)
+        obj = objects[0]
         for key in ['affiliation', 'country_code', 'first_name', 'last_name', 'reg_type', 'ticket_type', 'checkedin']:
             self.assertEqual(getattr(obj, key), False if key=='checkedin' else reg.get(key) , "Bad data for field '%s'" % key)
         self.assertEqual(obj.person, person)
@@ -942,7 +944,9 @@ class CustomApiTests(TestCase):
         ]
         r = self.client.post(url, data=json.dumps(regs), content_type='application/json', headers={"X-Api-Key": "valid-token"})
         self.assertContains(r, "Success", status_code=202)
-        obj = MeetingRegistration.objects.get(email=reg['email'], meeting__number=reg['meeting'])
+        objects = MeetingRegistration.objects.filter(email=reg['email'], meeting__number=reg['meeting'])
+        self.assertEqual(objects.count(), 1)
+        obj = objects[0]
         self.assertEqual(obj.reg_type, 'remote')
         #
         # Test multiple
