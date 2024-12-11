@@ -513,7 +513,15 @@ def update_action_holders(doc, prev_state=None, new_state=None, prev_tags=None, 
     # Remember original list of action holders to later check if it changed
     prev_set = list(doc.action_holders.all())
 
-    if new_state.type_id=="draft-iesg":
+    if new_state and new_state.type_id=="draft" and new_state.slug=="expired":
+        doc.action_holders.clear()
+        return add_action_holder_change_event(
+            doc, 
+            Person.objects.get(name='(System)'), 
+            prev_set,
+            reason='draft expired',
+        )
+    else:
         # Update the action holders. To get this right for people with more
         # than one relationship to the document, do removals first, then adds.
         # Remove outdated action holders
@@ -548,16 +556,6 @@ def update_action_holders(doc, prev_state=None, new_state=None, prev_tags=None, 
             prev_set,
             reason='IESG state changed',
         )
-    elif new_state.type_id=="draft" and new_state.slug=="expired":
-        doc.action_holders.clear()
-        return add_action_holder_change_event(
-            doc, 
-            Person.objects.get(name='(System)'), 
-            prev_set,
-            reason='draft expired',
-        )
-    else:
-        return None
 
 
 def update_documentauthors(doc, new_docauthors, by=None, basis=None):
