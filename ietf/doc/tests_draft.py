@@ -845,8 +845,8 @@ class ExpireIDsTests(DraftFileMixin, TestCase):
         self.assertTrue(not os.path.exists(os.path.join(settings.INTERNET_DRAFT_PATH, txt)))
         self.assertTrue(os.path.exists(os.path.join(settings.INTERNET_DRAFT_ARCHIVE_DIR, txt)))
 
-
-    def test_repair_dead_on_expire(self):
+    @mock.patch("ietf.community.signals.notify_of_event")
+    def test_repair_dead_on_expire(self, mock_notify):
 
         # Create a draft in iesg idexists - ensure it doesn't get new docevents.
         # Create a draft in iesg dead with no expires within the window - ensure it doesn't get new docevents and its state doesn't change.
@@ -886,7 +886,11 @@ class ExpireIDsTests(DraftFileMixin, TestCase):
             dead_from_expires.append(d)
             dead_from_expires_event_count[d] = d.docevent_set.count()
 
-        empty_outbox()
+        notified_during_factory_work = mock_notify.call_count
+        for call_args in mock_notify.call_args_list:
+            e = call_args.args[0]
+            self.assertTrue(isinstance(e,DocEvent))
+            self.assertFalse(hasattr(e,"skip_community_list_notification"))
 
         repair_dead_on_expire()
 
@@ -906,8 +910,12 @@ class ExpireIDsTests(DraftFileMixin, TestCase):
                 d.latest_event(StateDocEvent).desc,
                 "IESG state changed to <b>I-D Exists</b> from Dead",
             )
-        self.assertEqual(len(outbox), 0)
-
+        self.assertEqual(mock_notify.call_count, 4+notified_during_factory_work)
+        for call_args in mock_notify.call_args_list[-4:]:
+            e = call_args.args[0]
+            self.assertTrue(isinstance(e,DocEvent))
+            self.assertTrue(hasattr(e,"skip_community_list_notification"))
+            self.assertTrue(e.skip_community_list_notification)
 
 class ExpireLastCallTests(TestCase):
     def test_expire_last_call(self):
