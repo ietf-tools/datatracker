@@ -11,14 +11,11 @@
     </p>
     <ul>
         <li>
-            <a href="{% url "ietf.stats.views.document_stats" %}">Internet-Drafts and RFCs (authors, countries, formats, ...)</a>
-        </li>
-        <li>
-            <a href="{% url "ietf.stats.views.meeting_stats" %}">Meeting attendance</a>
-        </li>
-        <li>
             <a rel="nofollow" href="{% url "ietf.stats.views.review_stats" %}">Reviews of Internet-Drafts in review teams</a>
             (requires login)
         </li>
     </ul>
+    <p>
+        Statistics on meetings and authorship are not currently available.
+    </p>
 {% endblock %}

@@ -811,8 +811,8 @@ AUDIO_IMPORT_EMAIL = ['ietf@meetecho.com']
 SESSION_REQUEST_FROM_EMAIL = 'IETF Meeting Session Request Tool <session-request@ietf.org>' 
 
 SECRETARIAT_SUPPORT_EMAIL = "support@ietf.org"
-SECRETARIAT_ACTION_EMAIL = "ietf-action@ietf.org"
-SECRETARIAT_INFO_EMAIL = "ietf-info@ietf.org"
+SECRETARIAT_ACTION_EMAIL = SECRETARIAT_SUPPORT_EMAIL
+SECRETARIAT_INFO_EMAIL = SECRETARIAT_SUPPORT_EMAIL
 
 # Put real password in settings_local.py
 IANA_SYNC_PASSWORD = "secret"
@@ -1151,11 +1151,14 @@ EXCLUDED_PERSONAL_EMAIL_REGEX_PATTERNS = [
 MARKUP_SETTINGS = {
     'restructuredtext': {
         'settings_overrides': {
+            'report_level': 3,  # error (3) or severe (4) only
             'initial_header_level': 3,
             'doctitle_xform': False,
             'footnote_references': 'superscript',
             'trim_footnote_reference_space': True,
             'default_reference_context': 'view',
+            'raw_enabled': False,  # critical for security
+            'file_insertion_enabled': False,  # critical for security
             'link_base': ''
         }
     }
