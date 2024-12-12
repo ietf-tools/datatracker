@@ -17,7 +17,7 @@ django-csp>=3.7
 django-cors-headers>=3.11.0
 django-debug-toolbar>=3.2.4
 django-markup>=1.5    # Limited use - need to reconcile against direct use of markdown
-django-oidc-provider>=0.8.1    # 0.8 dropped Django 2 support
+django-oidc-provider==0.8.2    # 0.8.3 changes logout flow and claim return
 django-referrer-policy>=1.0
 django-simple-history>=3.0.0
 django-stubs>=4.2.7,<5    # The django-stubs version used determines the the mypy version indicated below
@@ -59,7 +59,7 @@ pyopenssl>=22.0.0    # Used by urllib3.contrib, which is used by PyQuery but not
 pyquery>=1.4.3
 python-dateutil>=2.8.2
 types-python-dateutil>=2.8.2
-python-json-logger>=2.0.7
+python-json-logger>=3.1.0
 python-magic==0.4.18    # Versions beyond the yanked .19 and .20 introduce form failures
 pymemcache>=4.0.0  # for django.core.cache.backends.memcached.PyMemcacheCache
 python-mimeparse>=1.6    # from TastyPie

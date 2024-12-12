@@ -809,8 +809,8 @@ AUDIO_IMPORT_EMAIL = ['ietf@meetecho.com']
 SESSION_REQUEST_FROM_EMAIL = 'IETF Meeting Session Request Tool <session-request@ietf.org>' 
 
 SECRETARIAT_SUPPORT_EMAIL = "support@ietf.org"
-SECRETARIAT_ACTION_EMAIL = "ietf-action@ietf.org"
-SECRETARIAT_INFO_EMAIL = "ietf-info@ietf.org"
+SECRETARIAT_ACTION_EMAIL = SECRETARIAT_SUPPORT_EMAIL
+SECRETARIAT_INFO_EMAIL = SECRETARIAT_SUPPORT_EMAIL
 
 # Put real password in settings_local.py
 IANA_SYNC_PASSWORD = "secret"
