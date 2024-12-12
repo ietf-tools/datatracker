@@ -230,7 +230,7 @@ def clean_up_draft_files():
 
 
 def repair_dead_on_expire():
-    by = Person.objects.get(pk=1)  # a.k.a. "(System)"
+    by = Person.objects.get(name="(System)")
     id_exists = State.objects.get(type="draft-iesg", slug="idexists")
     dead = State.objects.get(type="draft-iesg", slug="dead")
     dead_drafts = Document.objects.filter(
