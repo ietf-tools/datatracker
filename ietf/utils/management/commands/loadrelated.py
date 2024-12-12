@@ -23,7 +23,7 @@ import django.core.management.commands.loaddata as loaddata
 
 import debug                            # pyflakes:ignore
 
-from ietf.community.models import notify_events
+from ietf.community.signals import notify_of_events_receiver
 
 class Command(loaddata.Command):
     help = ("""
@@ -62,7 +62,7 @@ class Command(loaddata.Command):
         #
         self.serialization_formats = serializers.get_public_serializer_formats()
         #
-        post_save.disconnect(notify_events)
+        post_save.disconnect(notify_of_events_receiver())
         #
         connection = connections[self.using]
         self.fixture_count = 0
