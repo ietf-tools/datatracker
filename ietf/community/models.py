@@ -1,18 +1,13 @@
 # Copyright The IETF Trust 2012-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
-
-from django.conf import settings
-from django.db import models, transaction
-from django.db.models import signals
+from django.db import models
 from django.urls import reverse as urlreverse
 
-from ietf.doc.models import Document, DocEvent, State
+from ietf.doc.models import Document, State
 from ietf.group.models import Group
 from ietf.person.models import Person, Email
 from ietf.utils.models import ForeignKey
-
-from .tasks import notify_event_to_subscribers_task
 
 
 class CommunityList(models.Model):
@@ -98,39 +93,3 @@ class EmailSubscription(models.Model):
 
     def __str__(self):
         return "%s to %s (%s changes)" % (self.email, self.community_list, self.notify_on)
-
-
-def notify_of_event(event: DocEvent):
-    """Send subscriber notification emails for a 'draft'-related DocEvent
-    
-    If the event is attached to a draft of type 'doc', queues a task to send notification emails to
-    community list subscribers. No emails will be sent when SERVER_MODE is 'test'.
-    """
-    if event.doc.type_id != 'draft':
-        return
-
-    if getattr(event, "skip_community_list_notification", False):
-        return
-    
-    # kludge alert: queuing a celery task in response to a signal can cause unexpected attempts to
-    # start a Celery task during tests. To prevent this, don't queue a celery task if we're running
-    # tests.
-    if settings.SERVER_MODE != "test":
-        # Wrap in on_commit in case a transaction is open
-        transaction.on_commit(
-            lambda: notify_event_to_subscribers_task.delay(event_id=event.pk)
-        )
-
-
-def notify_of_events_receiver(sender, instance, **kwargs):
-    """Call notify_of_event after saving a new DocEvent"""
-    if not isinstance(instance, DocEvent):
-        return
-
-    if not kwargs.get("created", False):
-        return  # only notify on creation
-
-    notify_of_event(instance)
-
-
-signals.post_save.connect(notify_of_events_receiver)

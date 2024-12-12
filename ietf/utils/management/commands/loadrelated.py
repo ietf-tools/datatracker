@@ -23,7 +23,7 @@ import django.core.management.commands.loaddata as loaddata
 
 import debug                            # pyflakes:ignore
 
-from ietf.community.models import notify_of_events_receiver
+from ietf.community.signals import notify_of_events_receiver
 
 class Command(loaddata.Command):
     help = ("""

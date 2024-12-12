@@ -1,7 +1,6 @@
 # Copyright The IETF Trust 2016-2023, All Rights Reserved
 # -*- coding: utf-8 -*-
 
-
 import mock
 from pyquery import PyQuery
 
@@ -10,7 +9,8 @@ from django.urls import reverse as urlreverse
 
 import debug                            # pyflakes:ignore
 
-from ietf.community.models import CommunityList, SearchRule, EmailSubscription, notify_of_event
+from ietf.community.models import CommunityList, SearchRule, EmailSubscription
+from ietf.community.signals import notify_of_event
 from ietf.community.utils import docs_matching_community_list_rule, community_list_rules_matching_doc
 from ietf.community.utils import reset_name_contains_index_for_rule, notify_event_to_subscribers
 from ietf.community.tasks import notify_event_to_subscribers_task
@@ -431,7 +431,7 @@ class CommunityListTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
 
-    @mock.patch("ietf.community.models.notify_of_event")
+    @mock.patch("ietf.community.signals.notify_of_event")
     def test_notification_signal_receiver(self, mock_notify_of_event):
         """Saving a newly created DocEvent should notify subscribers
         
@@ -458,7 +458,7 @@ class CommunityListTests(TestCase):
 
     # Mock out the on_commit call so we can tell whether the task was actually queued
     @mock.patch("ietf.submit.views.transaction.on_commit", side_effect=lambda x: x())
-    @mock.patch("ietf.community.models.notify_event_to_subscribers_task")
+    @mock.patch("ietf.community.signals.notify_event_to_subscribers_task")
     def test_notify_of_event(self, mock_notify_task, mock_on_commit):
         """The community notification task should be called as intended"""
         person = PersonFactory()  # builds but does not save...
