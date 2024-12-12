@@ -445,16 +445,16 @@ class CommunityListTests(TestCase):
     
         # build a DocEvent that is not yet persisted
         doc = DocumentFactory()
-        d = DocEventFactory.build(by=person, doc=doc)  # builds but does not save...
+        event = DocEventFactory.build(by=person, doc=doc)  # builds but does not save...
         mock_notify_of_event.reset_mock()  # clear any calls that resulted from the factories
-        d.save()
-        self.assertEqual(mock_notify_of_event.delay.call_count, 1, "notify_task should be run on creation of DocEvent")
-        self.assertEqual(mock_notify_of_event.delay.call_args, mock.call(event_id=d.pk))
+        event.save()
+        self.assertEqual(mock_notify_of_event.call_count, 1, "notify_task should be run on creation of DocEvent")
+        self.assertEqual(mock_notify_of_event.call_args, mock.call(event))
 
         # save the existing DocEvent and see that no notification is sent    
         mock_notify_of_event.reset_mock()
-        d.save()
-        self.assertFalse(mock_notify_of_event.delay.called, "notify_task should not be run save of on existing DocEvent")
+        event.save()
+        self.assertFalse(mock_notify_of_event.called, "notify_task should not be run save of on existing DocEvent")
 
     # Mock out the on_commit call so we can tell whether the task was actually queued
     @mock.patch("ietf.submit.views.transaction.on_commit", side_effect=lambda x: x())
