@@ -100,17 +100,16 @@ class EmailSubscription(models.Model):
         return "%s to %s (%s changes)" % (self.email, self.community_list, self.notify_on)
 
 
-def notify_events(sender, instance, **kwargs):
-    if not isinstance(instance, DocEvent):
+def notify_of_event(event: DocEvent):
+    """Send subscriber notification emails for a 'draft'-related DocEvent
+    
+    If the event is attached to a draft of type 'doc', queues a task to send notification emails to
+    community list subscribers. No emails will be sent when SERVER_MODE is 'test'.
+    """
+    if event.doc.type_id != 'draft':
         return
 
-    if not kwargs.get("created", False):
-        return  # only notify on creation
-
-    if instance.doc.type_id != 'draft':
-        return
-
-    if getattr(instance, "skip_community_list_notification", False):
+    if getattr(event, "skip_community_list_notification", False):
         return
     
     # kludge alert: queuing a celery task in response to a signal can cause unexpected attempts to
@@ -119,8 +118,19 @@ def notify_events(sender, instance, **kwargs):
     if settings.SERVER_MODE != "test":
         # Wrap in on_commit in case a transaction is open
         transaction.on_commit(
-            lambda: notify_event_to_subscribers_task.delay(event_id=instance.pk)
+            lambda: notify_event_to_subscribers_task.delay(event_id=event.pk)
         )
 
 
-signals.post_save.connect(notify_events)
+def notify_of_events_receiver(sender, instance, **kwargs):
+    """Call notify_of_event after saving a new DocEvent"""
+    if not isinstance(instance, DocEvent):
+        return
+
+    if not kwargs.get("created", False):
+        return  # only notify on creation
+
+    notify_of_event(instance)
+
+
+signals.post_save.connect(notify_of_events_receiver)
