@@ -141,6 +141,7 @@ class RfcMetadataSerializer(serializers.ModelSerializer):
             "identifiers",
             "obsoleted_by",
             "updated_by",
+            "abstract",
         ]
 
     @extend_schema_field(DocIdentifierSerializer)
