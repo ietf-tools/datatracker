@@ -196,7 +196,15 @@ class DocumentInfo(models.Model):
         if not hasattr(self, '_cached_file_name'):
             self._cached_file_name = os.path.join(self.get_file_path(), self.get_base_name())
         return self._cached_file_name
+    
 
+    def objectname(self):
+        # Lots of assumptions here for early progress in feat/stitch.
+        # Likely these f-srings should be settings in a dict keyed by type_id
+        if self.type_id=="draft":
+            return f"{self.type_id}/archive/{self.name}-{self.rev}.txt"
+        else:
+            return f"{self.type_id}/{self.name}-{self.rev}.txt"
 
     def revisions_by_dochistory(self):
         revisions = []
