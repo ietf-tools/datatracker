@@ -3,6 +3,8 @@
 # expiry of Internet-Drafts
 
 
+import debug    # pyflakes:ignore
+
 from django.conf import settings
 from django.utils import timezone
 
@@ -11,12 +13,12 @@ from pathlib import Path
 
 from typing import List, Optional      # pyflakes:ignore
 
+from ietf.doc.utils import new_state_change_event, update_action_holders
 from ietf.utils import log
 from ietf.utils.mail import send_mail
-from ietf.doc.models import Document, DocEvent, State, IESG_SUBSTATE_TAGS
+from ietf.doc.models import Document, DocEvent, State, StateDocEvent
 from ietf.person.models import Person 
 from ietf.meeting.models import Meeting
-from ietf.doc.utils import add_state_change_event, update_action_holders
 from ietf.mailtrigger.utils import gather_address_lists
 from ietf.utils.timezone import date_today, datetime_today, DEADLINE_TZINFO
 
@@ -161,24 +163,11 @@ def expire_draft(doc):
 
     events = []
 
-    # change the state
-    if doc.latest_event(type='started_iesg_process'):
-        new_state = State.objects.get(used=True, type="draft-iesg", slug="dead")
-        prev_state = doc.get_state(new_state.type_id)
-        prev_tags = doc.tags.filter(slug__in=IESG_SUBSTATE_TAGS)
-        if new_state != prev_state:
-            doc.set_state(new_state)
-            doc.tags.remove(*prev_tags)
-            e = add_state_change_event(doc, system, prev_state, new_state, prev_tags=prev_tags, new_tags=[])
-            if e:
-                events.append(e)
-            e = update_action_holders(doc, prev_state, new_state, prev_tags=prev_tags, new_tags=[])
-            if e:
-                events.append(e)
-
     events.append(DocEvent.objects.create(doc=doc, rev=doc.rev, by=system, type="expired_document", desc="Document has expired"))
 
+    prev_draft_state=doc.get_state("draft")
     doc.set_state(State.objects.get(used=True, type="draft", slug="expired"))
+    events.append(update_action_holders(doc, prev_draft_state, doc.get_state("draft"),[],[]))
     doc.save_with_history(events)
 
 def clean_up_draft_files():
@@ -238,3 +227,42 @@ def clean_up_draft_files():
         except Document.DoesNotExist:
             # All uses of this past 2014 seem related to major system failures.
             move_file_to("unknown_ids")
+
+
+def repair_dead_on_expire():
+    by = Person.objects.get(name="(System)")
+    id_exists = State.objects.get(type="draft-iesg", slug="idexists")
+    dead = State.objects.get(type="draft-iesg", slug="dead")
+    dead_drafts = Document.objects.filter(
+        states__type="draft-iesg", states__slug="dead", type_id="draft"
+    )
+    for d in dead_drafts:
+        dead_event = d.latest_event(
+            StateDocEvent, state_type="draft-iesg", state__slug="dead"
+        )
+        if dead_event is not None:
+            if d.docevent_set.filter(type="expired_document").exists():
+                closest_expiry = min(
+                    [
+                        abs(e.time - dead_event.time)
+                        for e in d.docevent_set.filter(type="expired_document")
+                    ]
+                )
+                if closest_expiry.total_seconds() < 60:
+                    d.set_state(id_exists)
+                    events = []
+                    e = DocEvent(
+                        doc=d,
+                        rev=d.rev,
+                        type="added_comment",
+                        by=by,
+                        desc="IESG Dead state was set due only to document expiry - changing IESG state to ID-Exists",
+                    )
+                    e.skip_community_list_notification = True
+                    e.save()
+                    events.append(e)
+                    e = new_state_change_event(d, by, dead, id_exists)
+                    e.skip_community_list_notification = True
+                    e.save()
+                    events.append(e)
+                    d.save_with_history(events)

@@ -1,4 +1,6 @@
 # Copyright The IETF Trust 2024, All Rights Reserved
+
+import debug    # pyflakes:ignore
 import datetime
 import mock
 
@@ -19,6 +21,7 @@ from .tasks import (
     generate_idnits2_rfcs_obsoleted_task,
     generate_idnits2_rfc_status_task,
     notify_expirations_task,
+    repair_dead_on_expire_task,
 )
 
 class TaskTests(TestCase):
@@ -96,6 +99,10 @@ class TaskTests(TestCase):
         self.assertEqual(mock_expire.call_args_list[1], mock.call(docs[1]))
         self.assertEqual(mock_expire.call_args_list[2], mock.call(docs[2]))
 
+    @mock.patch("ietf.doc.tasks.repair_dead_on_expire")
+    def test_repair_dead_on_expire_task(self, mock_repair):
+        repair_dead_on_expire_task()
+        self.assertEqual(mock_repair.call_count, 1)
 
 class Idnits2SupportTests(TestCase):
     settings_temp_path_overrides = TestCase.settings_temp_path_overrides + ['DERIVED_DIR']
