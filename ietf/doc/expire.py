@@ -150,10 +150,17 @@ def move_draft_files_to_archive(doc, rev):
                     pass
                 else:
                     raise
+    
+    def remove_ftp_copy(f):
+        mark = Path(settings.FTP_DIR) / "internet-drafts" / f
+        if mark.exists():
+            mark.unlink()
+
 
     src_dir = Path(settings.INTERNET_DRAFT_PATH)
     for file in src_dir.glob("%s-%s.*" % (doc.name, rev)):
         move_file(str(file.name))
+        remove_ftp_copy(str(file.name))
 
 def expire_draft(doc):
     # clean up files
