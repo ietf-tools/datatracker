@@ -6,6 +6,7 @@ from django_filters import rest_framework as filters
 from rest_framework import filters as drf_filters
 from rest_framework.mixins import ListModelMixin, RetrieveModelMixin
 from rest_framework.pagination import LimitOffsetPagination
+from rest_framework.permissions import BasePermission
 from rest_framework.viewsets import GenericViewSet
 
 from ietf.group.models import Group
@@ -48,7 +49,7 @@ class RfcFilter(filters.FilterSet):
 
 
 class RfcViewSet(ListModelMixin, RetrieveModelMixin, GenericViewSet):
-    permission_classes = []
+    permission_classes: list[BasePermission] = []
     queryset = (
         Document.objects.filter(type_id="rfc")
         .annotate(
