@@ -1,6 +1,5 @@
 # Copyright The IETF Trust 2023-2024, All Rights Reserved
 
-from collections import defaultdict
 import json
 
 from django.db.models import OuterRef, Subquery, Q
