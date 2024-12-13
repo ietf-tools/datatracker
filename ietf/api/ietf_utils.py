@@ -5,9 +5,6 @@
 from functools import wraps
 from typing import Callable, Optional, Union
 
-from functools import wraps
-from typing import Callable, Optional, Union
-
 from django.conf import settings
 from django.http import HttpResponseForbidden
 

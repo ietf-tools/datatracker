@@ -8,7 +8,7 @@ from rest_framework import serializers, fields
 
 from ietf.group.serializers import GroupSerializer
 from ietf.name.serializers import StreamNameSerializer
-from .models import Document, DocumentAuthor, RelatedDocument
+from .models import Document, DocumentAuthor
 
 
 class RfcAuthorSerializer(serializers.ModelSerializer):
