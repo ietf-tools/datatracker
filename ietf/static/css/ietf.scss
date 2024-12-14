@@ -236,8 +236,11 @@ th,
 
 // Helper to constrain the size of the main logo
 .ietflogo {
-    width: 75%;
+    width: 100%;
     max-width: 300px;
+}
+.ietflogo > img {
+    width: 100%;
 }
 
 // Make revision numbers pagination items fixed-width
