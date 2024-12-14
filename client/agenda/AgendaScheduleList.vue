@@ -307,7 +307,7 @@ const meetingEvents = computed(() => {
         })
       }
       // -> Point to Wiki for Hackathon sessions, HedgeDocs otherwise
-      if (item.name.toLowerCase().contains('hackathon')) {
+      if (item.name.toLowerCase().includes('hackathon')) {
         links.push({
           id: `lnk-${item.id}-wiki`,
           label: 'Wiki',
