@@ -18,6 +18,7 @@ from .expire import (
     in_draft_expire_freeze,
     get_expired_drafts,
     expirable_drafts,
+    repair_dead_on_expire,
     send_expire_notice_for_draft,
     expire_draft,
     clean_up_draft_files,
@@ -59,6 +60,11 @@ def expire_ids_task():
     except Exception as e:
         log.log("Exception in expire-ids: %s" % e)
         raise
+
+
+@shared_task
+def repair_dead_on_expire_task():
+    repair_dead_on_expire()
 
 
 @shared_task
