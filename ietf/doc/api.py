@@ -50,8 +50,9 @@ class RfcFilter(filters.FilterSet):
 
 class RfcViewSet(ListModelMixin, RetrieveModelMixin, GenericViewSet):
     permission_classes: list[BasePermission] = []
+    lookup_field = "rfc_number"
     queryset = (
-        Document.objects.filter(type_id="rfc")
+        Document.objects.filter(type_id="rfc", rfc_number__isnull=False)
         .annotate(
             published_datetime=Subquery(
                 DocEvent.objects.filter(
