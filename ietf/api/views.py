@@ -142,6 +142,7 @@ class ApiV2PersonExportView(DetailView, JsonExportMixin):
 #     else:
 #         return HttpResponse(status=405)
 
+
 @require_api_key
 @role_required('Robot')
 @csrf_exempt
@@ -231,6 +232,155 @@ def api_new_meeting_registration(request):
             return HttpResponse(response, status=202, content_type='text/plain')
     else:
         return HttpResponse(status=405)
+
+
+_new_registration_json_validator = jsonschema.Draft202012Validator(
+    schema={
+        "type": "array",
+        "items": {
+            "type": "object",
+            "properties": {
+                "meeting": {"type": "string"},
+                "first_name": {"type": "string"},
+                "last_name": {"type": "string"},
+                "affiliation": {"type": "string"},
+                "country_code": {"type": "string"},
+                "email": {"type": "string"},
+                "reg_type": {"type": "string"},
+                "ticket_type": {"type": "string"},
+                "checkedin": {"type": "boolean"},
+                "is_nomcom_volunteer": {"type": "boolean"},
+                "cancelled": {"type": "boolean"},
+            },
+            "required": ["meeting", "first_name", "last_name", "affiliation", "country_code", "email", "reg_type", "ticket_type", "checkedin", "is_nomcom_volunteer", "cancelled"],
+            "additionalProperties": "false"
+        }
+    }
+)
+
+
+@requires_api_token
+@csrf_exempt
+def api_new_meeting_registration_v2(request):
+    '''REST API to notify the datatracker about new or updated meeting registrations'''
+
+    def _safe_pop(lst):
+        if lst:
+            return lst.pop()
+        else:
+            return None
+
+    def _http_err(code, text):
+        return HttpResponse(text, status=code, content_type="text/plain")
+
+    def _api_response(result):
+        return JsonResponse(data={"result": result})
+
+    if request.method != "POST":
+        return _http_err(405, "Method not allowed")
+
+    if request.content_type != "application/json":
+        return _http_err(415, "Content-Type must be application/json")
+
+    # Validate
+    try:
+        payload = json.loads(request.body)
+        _new_registration_json_validator.validate(payload)
+    except json.decoder.JSONDecodeError as err:
+        return _http_err(400, f"JSON parse error at line {err.lineno} col {err.colno}: {err.msg}")
+    except jsonschema.exceptions.ValidationError as err:
+        return _http_err(400, f"JSON schema error at {err.json_path}: {err.message}")
+    except Exception:
+        return _http_err(400, "Invalid request format")
+
+    # Validate consistency
+    # - if receive multiple records they should be for same meeting, same person (email)
+    if len(payload) > 1:
+        if len(set([r['meeting'] for r in payload])) != 1:
+            return _http_err(400, "Different meeting values")
+        if len(set([r['email'] for r in payload])) != 1:
+            return _http_err(400, "Different email values")
+
+    # Validate meeting
+    number = payload[0]['meeting']
+    try:
+        meeting = Meeting.objects.get(number=number)
+    except Meeting.DoesNotExist:
+        return _http_err(400, "Invalid meeting value: '%s'" % (number, ))
+
+    # Validate email
+    email = payload[0]['email']
+    try:
+        validate_email(email)
+    except ValidationError:
+        return _http_err(400, "Invalid email value: '%s'" % (email, ))
+
+    # handle cancelled. there should be only one record
+    if payload[0]['cancelled']:
+        if len(payload) > 1:
+            return _http_err(400, "Error. Received cancelled registration notification with more than one record. ({})".format(email))
+        reg = MeetingRegistration.objects.filter(
+            meeting__number=number,
+            email=email,
+            reg_type=payload[0]['reg_type'],
+            ticket_type=payload[0]['ticket_type']).first()
+        if reg:
+            reg.delete()
+        return HttpResponse('Success', status=202, content_type='text/plain')
+
+    # get person
+    person = Person.objects.filter(email__address=email).first()
+    if not person:
+        log.log(f"api_new_meeting_registration_v2 no Person found for {email}")
+
+    # get existing records if any
+    regs = MeetingRegistration.objects.filter(meeting__number=number, email=email)
+    pks = [r.pk for r in regs]
+
+    for registration in payload:
+        new_reg = MeetingRegistration(
+            meeting=meeting,
+            first_name=registration['first_name'],
+            last_name=registration['last_name'],
+            affiliation=registration['affiliation'],
+            country_code=registration['country_code'],
+            person=person,
+            email=email,
+            reg_type=registration['reg_type'],
+            ticket_type=registration['ticket_type'],
+            checkedin=registration['checkedin'])
+
+        # update any existing records if there are any
+        new_reg.pk = _safe_pop(pks)
+        if new_reg.pk:
+            log.log(f"Updating MeetingRegistration record for meeting:{meeting} email:{email}")
+        else:
+            log.log(f"New MeetingRegistration record for meeting:{meeting} email:{email}")
+        new_reg.save()
+
+        # removed account creation email. Registration requires Datatracker account
+
+        # handle nomcom volunteer
+        if registration['is_nomcom_volunteer'] and person:
+            try:
+                nomcom = NomCom.objects.get(is_accepting_volunteers=True)
+            except (NomCom.DoesNotExist, NomCom.MultipleObjectsReturned):
+                nomcom = None
+            if nomcom:
+                Volunteer.objects.get_or_create(
+                    nomcom=nomcom,
+                    person=person,
+                    defaults={
+                        "affiliation": registration["affiliation"],
+                        "origin": "registration"
+                    }
+                )
+
+    # delete any remaining records
+    if pks:
+        MeetingRegistration.objects.filter(pk__in=pks).delete()
+
+    return HttpResponse('Success', status=202, content_type='text/plain')
 
 
 def version(request):
