@@ -770,70 +770,6 @@ def save_files(form):
         log.log("saved file %s" % name)
     return file_name
 
-def get_draft_meta(form, saved_files):
-    authors = []
-    file_name = saved_files
-
-    if form.cleaned_data['xml']:
-        # Some meta-information, such as the page-count, can only
-        # be retrieved from the generated text file.  Provide a
-        # parsed draft object to get at that kind of information.
-        file_name['txt'] = os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s.txt' % (form.filename, form.revision))
-        file_size = os.stat(file_name['txt']).st_size
-        with io.open(file_name['txt']) as txt_file:
-            form.parsed_draft = PlaintextDraft(txt_file.read(), txt_file.name)
-    else:
-        file_size = form.cleaned_data['txt'].size
-
-    if form.authors:
-        authors = form.authors
-    else:
-        # If we don't have an xml file, try to extract the
-        # relevant information from the text file
-        for author in form.parsed_draft.get_author_list():
-            full_name, first_name, middle_initial, last_name, name_suffix, email, country, company = author
-
-            name = full_name.replace("\n", "").replace("\r", "").replace("<", "").replace(">", "").strip()
-
-            if email:
-                try:
-                    validate_email(email)
-                except ValidationError:
-                    email = ""
-
-            def turn_into_unicode(s):
-                if s is None:
-                    return ""
-
-                if isinstance(s, str):
-                    return s
-                else:
-                    try:
-                        return s.decode("utf-8")
-                    except UnicodeDecodeError:
-                        try:
-                            return s.decode("latin-1")
-                        except UnicodeDecodeError:
-                            return ""
-
-            name = turn_into_unicode(name)
-            email = turn_into_unicode(email)
-            company = turn_into_unicode(company)
-
-            authors.append({
-                "name": name,
-                "email": email,
-                "affiliation": company,
-                "country": country
-            })
-
-    if form.abstract:
-        abstract = form.abstract
-    else:
-        abstract = form.parsed_draft.get_abstract()
-
-    return authors, abstract, file_name, file_size
-
 
 def get_submission(form):
     # See if there is a Submission in state waiting-for-draft
@@ -1272,8 +1208,7 @@ def process_submission_xml(filename, revision):
 def _turn_into_unicode(s: Optional[Union[str, bytes]]):
     """Decode a possibly null string-like item as a string
     
-    Copied from ietf.submit.utils.get_draft_meta(), would be nice to
-    ditch this.
+    Would be nice to ditch this.
     """
     if s is None:
         return ""
@@ -1317,7 +1252,7 @@ def process_submission_text(filename, revision):
     if title:
         title = _normalize_title(title)
 
-    # Drops \r, \n, <, >. Based on get_draft_meta() behavior
+    # Translation taable drops \r, \n, <, >.
     trans_table = str.maketrans("", "", "\r\n<>")
     authors = [
         {
