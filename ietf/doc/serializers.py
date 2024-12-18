@@ -130,7 +130,6 @@ class RfcMetadataSerializer(serializers.ModelSerializer):
     class Meta:
         model = Document
         fields = [
-            "id",
             "number",
             "title",
             "published",
