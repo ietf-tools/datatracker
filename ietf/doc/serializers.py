@@ -114,6 +114,8 @@ class RelatedRfcSerializer(serializers.Serializer):
 
 
 class RfcMetadataSerializer(serializers.ModelSerializer):
+    """Serialize metadata of an RFC"""
+
     number = serializers.IntegerField(source="rfc_number")
     published = serializers.DateField()
     status = RfcStatusSerializer(source="*")
@@ -152,3 +154,13 @@ class RfcMetadataSerializer(serializers.ModelSerializer):
                 DocIdentifier(type="doi", value=f"10.17487/RFC{doc.rfc_number:04d}")
             )
         return DocIdentifierSerializer(instance=identifiers, many=True).data
+
+
+class RfcSerializer(RfcMetadataSerializer):
+    """Serialize an RFC, including its metadata and text content if available"""
+
+    text = serializers.CharField(allow_null=True)
+
+    class Meta:
+        model = RfcMetadataSerializer.Meta.model
+        fields = RfcMetadataSerializer.Meta.fields + ["text"]
