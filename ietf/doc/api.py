@@ -13,7 +13,7 @@ from ietf.group.models import Group
 from ietf.name.models import StreamName
 from ietf.utils.timezone import RPC_TZINFO
 from .models import Document, DocEvent, RelatedDocument
-from .serializers import RfcMetadataSerializer, RfcStatus
+from .serializers import RfcMetadataSerializer, RfcStatus, RfcSerializer
 
 
 class RfcLimitOffsetPagination(LimitOffsetPagination):
@@ -50,8 +50,9 @@ class RfcFilter(filters.FilterSet):
 
 class RfcViewSet(ListModelMixin, RetrieveModelMixin, GenericViewSet):
     permission_classes: list[BasePermission] = []
+    lookup_field = "rfc_number"
     queryset = (
-        Document.objects.filter(type_id="rfc")
+        Document.objects.filter(type_id="rfc", rfc_number__isnull=False)
         .annotate(
             published_datetime=Subquery(
                 DocEvent.objects.filter(
@@ -81,9 +82,12 @@ class RfcViewSet(ListModelMixin, RetrieveModelMixin, GenericViewSet):
             ),
         )
     )  # default ordering - RfcFilter may override
-
-    serializer_class = RfcMetadataSerializer
     pagination_class = RfcLimitOffsetPagination
     filter_backends = [filters.DjangoFilterBackend, drf_filters.SearchFilter]
     filterset_class = RfcFilter
     search_fields = ["title", "abstract"]
+
+    def get_serializer_class(self):
+        if self.action == "retrieve":
+            return RfcSerializer
+        return RfcMetadataSerializer
