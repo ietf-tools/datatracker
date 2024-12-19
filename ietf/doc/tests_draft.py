@@ -20,9 +20,9 @@ from django.utils.html import escape
 import debug                            # pyflakes:ignore
 
 from ietf.doc.expire import expirable_drafts, get_expired_drafts, send_expire_notice_for_draft, expire_draft
-from ietf.doc.factories import EditorialDraftFactory, IndividualDraftFactory, StateDocEventFactory, WgDraftFactory, RgDraftFactory, DocEventFactory
+from ietf.doc.factories import EditorialDraftFactory, IndividualDraftFactory, WgDraftFactory, RgDraftFactory, DocEventFactory
 from ietf.doc.models import ( Document, DocReminder, DocEvent,
-    ConsensusDocEvent, LastCallDocEvent, RelatedDocument, State, StateDocEvent, TelechatDocEvent, 
+    ConsensusDocEvent, LastCallDocEvent, RelatedDocument, State, TelechatDocEvent, 
     WriteupDocEvent, DocRelationshipName, IanaExpertDocEvent )
 from ietf.doc.utils import get_tags_for_stream_id, create_ballot_if_not_open
 from ietf.doc.views_draft import AdoptDraftForm
@@ -36,7 +36,7 @@ from ietf.iesg.models import TelechatDate
 from ietf.utils.test_utils import login_testing_unauthorized
 from ietf.utils.mail import outbox, empty_outbox, get_payload_text
 from ietf.utils.test_utils import TestCase
-from ietf.utils.timezone import date_today, datetime_today, datetime_from_date, DEADLINE_TZINFO
+from ietf.utils.timezone import date_today, datetime_from_date, DEADLINE_TZINFO
 
 
 class ChangeStateTests(TestCase):

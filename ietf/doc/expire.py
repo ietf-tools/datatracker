@@ -13,10 +13,10 @@ from pathlib import Path
 
 from typing import List, Optional      # pyflakes:ignore
 
-from ietf.doc.utils import new_state_change_event, update_action_holders
+from ietf.doc.utils import update_action_holders
 from ietf.utils import log
 from ietf.utils.mail import send_mail
-from ietf.doc.models import Document, DocEvent, State, StateDocEvent
+from ietf.doc.models import Document, DocEvent, State
 from ietf.person.models import Person 
 from ietf.meeting.models import Meeting
 from ietf.mailtrigger.utils import gather_address_lists
