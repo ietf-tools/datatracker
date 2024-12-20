@@ -213,11 +213,11 @@ def clean_up_draft_files():
 
         def move_file_to(subdir):
             # Similar to move_draft_files_to_archive
-            # ghostlinkd would keep this in the combined all archive since it would
-            # be sourced from a different place. But when ghostlinkd is removed, nothing
-            # new is needed here - the file will already exist in the combined archive
             shutil.move(path,
                         os.path.join(settings.INTERNET_DRAFT_ARCHIVE_DIR, subdir, basename))
+            mark = Path(settings.FTP_DIR) / "internet-drafts" / basename
+            if mark.exists():
+                mark.unlink()
 
         try:
             doc = Document.objects.get(name=filename, rev=revision)
