@@ -4,6 +4,7 @@
 
 import io
 import os
+from pathlib import Path
 import re
 import shutil
 import sys
@@ -280,6 +281,15 @@ class DraftYangChecker(object):
 
             dest = os.path.join(settings.SUBMIT_YANG_DRAFT_MODEL_DIR, model)
             shutil.move(path, dest)
+            ftp_dest = Path(settings.FTP_DIR) / "yang" / "draftmod" / model
+            try:
+                os.link(dest, ftp_dest)
+            except IOError as ex:
+                log(
+                    "There was an error creating a hardlink at %s pointing to %s: %s"
+                    % (ftp_dest, dest, ex)
+                )
+
 
             # summary result
             results.append({
