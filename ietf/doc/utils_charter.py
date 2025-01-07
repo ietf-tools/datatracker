@@ -114,7 +114,7 @@ def fix_charter_revision_after_approval(charter, by):
         os.link(new, ftp_filepath)
     except IOError:
         log(
-            "There was an error creating a harlink at %s pointing to %s"
+            "There was an error creating a hardlink at %s pointing to %s"
             % (ftp_filepath, new)
         )
 
