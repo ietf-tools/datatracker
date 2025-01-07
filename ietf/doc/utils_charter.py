@@ -112,10 +112,10 @@ def fix_charter_revision_after_approval(charter, by):
     )
     try:
         os.link(new, ftp_filepath)
-    except IOError as e:
+    except IOError as ex:
         log(
             "There was an error creating a hardlink at %s pointing to %s: %s"
-            % (ftp_filepath, new, e)
+            % (ftp_filepath, new, ex)
         )
 
     events = []
