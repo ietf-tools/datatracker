@@ -7,13 +7,12 @@ and viewsets should be put in api.py.
 """
 from dataclasses import dataclass
 
+from django.http import Http404
 from drf_spectacular.utils import extend_schema
-from rest_framework import viewsets
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from .serializers import MonitoringResultSerializer
-
-import debug
 
 
 @dataclass
@@ -24,19 +23,20 @@ class MonitoringResult:
     result_value: int
 
 
-class MonitoringViewSet(viewsets.ViewSet):
-    """Monitoring / status check DRF API views"""
+class MonitoringView(APIView):
+    """Monitoring / status check DRF API view"""
 
+    authentication_classes = []
     permission_classes = []  # allow any for testing
     # api_key_endpoint = "ietf.api.core_api.monitoring"
 
     @extend_schema(
         responses=MonitoringResultSerializer(many=True),
     )
-    def retrieve(self, request, pk):
-        """Report status for service monitoring"""
-        
-        debug.show("pk")
+    def get(self, request, flavor, format=None):
+        """Report monitoring status"""
+        if flavor != "nfs":
+            raise Http404()
 
         # ersatz status to report
         result = [
@@ -49,6 +49,6 @@ class MonitoringViewSet(viewsets.ViewSet):
                 result_value=17,  # milliseconds? minutes? Use your imagination
             ),
         ]
-        return Response(
-            MonitoringResultSerializer(result, many=True).data,
-        )
+
+        serializer = MonitoringResultSerializer(result, many=True)
+        return Response(serializer.data)

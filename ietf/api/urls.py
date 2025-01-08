@@ -1,7 +1,7 @@
 # Copyright The IETF Trust 2017-2024, All Rights Reserved
 
 from django.conf import settings
-from django.urls import include
+from django.urls import include, path
 from django.views.generic import TemplateView
 
 from ietf import api
@@ -12,15 +12,13 @@ from ietf.utils.urls import url
 
 from . import autodiscover as api_autodiscover
 from . import views as api_views
-from .views_api import MonitoringViewSet
+from .views_api import MonitoringView
 
 # DRF API routing - disabled until we plan to use it
 # from drf_spectacular.views import SpectacularAPIView
-from django.urls import path
 # from ietf.person import api as person_api
-from .routers import PrefixedSimpleRouter 
-core_router = PrefixedSimpleRouter(name_prefix="ietf.api.core_api")  # core api router
-core_router.register("monitoring", MonitoringViewSet, basename="monitoring"),
+# from .routers import PrefixedSimpleRouter 
+# core_router = PrefixedSimpleRouter(name_prefix="ietf.api.core_api")  # core api router
 # core_router.register("email", person_api.EmailViewSet)
 # core_router.register("person", person_api.PersonViewSet)
 
@@ -34,7 +32,8 @@ urlpatterns = [
     # For mailarchive use, requires secretariat role
     url(r'^v2/person/person', api_views.ApiV2PersonExportView.as_view()),
     # --- DRF API ---
-    path("core/", include(core_router.urls)),
+    # path("core/", include(core_router.urls)),
+    path("core/monitoring/<str:flavor>", MonitoringView.as_view()),
     # path("schema/", SpectacularAPIView.as_view()),
     #
     # --- Custom API endpoints, sorted alphabetically ---
