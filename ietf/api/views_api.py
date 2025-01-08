@@ -26,9 +26,7 @@ class MonitoringResult:
 class MonitoringView(APIView):
     """Monitoring / status check DRF API view"""
 
-    authentication_classes = []
-    permission_classes = []  # allow any for testing
-    # api_key_endpoint = "ietf.api.core_api.monitoring"
+    api_key_endpoint = "ietf.api.core_api.monitoring"
 
     @extend_schema(
         responses=MonitoringResultSerializer(many=True),
