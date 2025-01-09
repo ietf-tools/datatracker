@@ -3,7 +3,10 @@
 
 import base64
 import binascii
+import datetime
 import json
+from pathlib import Path
+from tempfile import NamedTemporaryFile
 import jsonschema
 import pytz
 import re
@@ -264,7 +267,22 @@ def app_auth(request, app: Literal["authortools", "bibxml"]):
             json.dumps({'success': True}),
             content_type='application/json')
 
-
+@requires_api_token
+@csrf_exempt
+def nfs_metrics(request):
+    with NamedTemporaryFile(dir=settings.TMP_DIR,delete=False) as fp:
+        fp.close()
+        mark = datetime.datetime.now()
+        with open(fp.name, mode="w") as f:
+            f.write("whyioughta"*1024)
+        write_latency = (datetime.datetime.now() - mark).total_seconds()
+        mark = datetime.datetime.now()
+        with open(fp.name, "r") as f:
+            _=f.read()
+        read_latency = (datetime.datetime.now() - mark).total_seconds()
+        Path(f.name).unlink()
+    response=f'nfs_latency_seconds{{operation="write"}} {write_latency}\nnfs_latency_seconds{{operation="read"}} {read_latency}\n'
+    return HttpResponse(response)
 
 def find_doc_for_rfcdiff(name, rev):
     """rfcdiff lookup heuristics

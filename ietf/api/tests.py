@@ -970,6 +970,14 @@ class CustomApiTests(TestCase):
             self.assertEqual(jsondata['success'], True)
             self.client.logout()
 
+    @override_settings(APP_API_TOKENS={"ietf.api.views.nfs_metrics": ["valid-token"]})
+    def test_api_nfs_metrics(self):
+        url = urlreverse("ietf.api.views.nfs_metrics")
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 403)
+        r = self.client.get(url, headers={"X-Api-Key": "valid-token"})
+        self.assertContains(r, 'nfs_latency_seconds{operation="write"}')
+
     def test_api_get_session_matherials_no_agenda_meeting_url(self):
         meeting = MeetingFactory(type_id='ietf')
         session = SessionFactory(meeting=meeting)
