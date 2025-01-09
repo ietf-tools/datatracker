@@ -28,7 +28,7 @@ from ietf.utils.test_utils import TestCase, login_testing_unauthorized
 
 
 class GroupMaterialTests(TestCase):
-    settings_temp_path_overrides = TestCase.settings_temp_path_overrides + ['AGENDA_PATH']
+    settings_temp_path_overrides = TestCase.settings_temp_path_overrides + ['AGENDA_PATH', 'FTP_DIR']
     def setUp(self):
         super().setUp()
         self.materials_dir = self.tempdir("materials")
@@ -37,6 +37,10 @@ class GroupMaterialTests(TestCase):
             self.slides_dir.mkdir()
         self.saved_document_path_pattern = settings.DOCUMENT_PATH_PATTERN
         settings.DOCUMENT_PATH_PATTERN = self.materials_dir + "/{doc.type_id}/"
+        self.assertTrue(Path(settings.FTP_DIR).exists())
+        ftp_slides_dir = Path(settings.FTP_DIR) / "slides"
+        if not ftp_slides_dir.exists():
+            ftp_slides_dir.mkdir()
 
         self.meeting_slides_dir = Path(settings.AGENDA_PATH) / "42" / "slides"
         if not self.meeting_slides_dir.exists():
@@ -112,7 +116,12 @@ class GroupMaterialTests(TestCase):
         self.assertEqual(doc.title, "Test File - with fancy title")
         self.assertEqual(doc.get_state_slug(), "active")
 
-        with io.open(os.path.join(self.materials_dir, "slides", doc.name + "-" + doc.rev + ".pdf")) as f:
+        basename=f"{doc.name}-{doc.rev}.pdf"
+        filepath=Path(self.materials_dir) / "slides" / basename
+        with filepath.open() as f:
+            self.assertEqual(f.read(), content)
+        ftp_filepath=Path(settings.FTP_DIR) / "slides" / basename
+        with ftp_filepath.open() as f:
             self.assertEqual(f.read(), content)
 
         # check that posting same name is prevented
