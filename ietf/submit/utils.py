@@ -8,6 +8,7 @@ import json
 import os
 import pathlib
 import re
+import subprocess
 import sys
 import time
 import traceback
@@ -1596,3 +1597,6 @@ def populate_yang_model_dirs():
                         modfile.unlink()
         except UnicodeDecodeError as e:
             log.log(f"Error processing {item.name}: {e}")
+
+    ftp_moddir = Path(settings.FTP_DIR) / "yang" / "draftmod"
+    subprocess.call(("/usr/bin/rsync", "-aq", "--delete", moddir, ftp_moddir))
