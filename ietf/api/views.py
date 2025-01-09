@@ -270,7 +270,7 @@ def app_auth(request, app: Literal["authortools", "bibxml"]):
 @requires_api_token
 @csrf_exempt
 def nfs_metrics(request):
-    with NamedTemporaryFile(dir=settings.TMP_DIR,delete=False) as fp:
+    with NamedTemporaryFile(dir=settings.NFS_METRICS_TMP_DIR,delete=False) as fp:
         fp.close()
         mark = datetime.datetime.now()
         with open(fp.name, mode="w") as f:

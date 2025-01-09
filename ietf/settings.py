@@ -761,7 +761,7 @@ MEETING_RECORDINGS_DIR = '/a/www/audio'
 DERIVED_DIR = '/a/ietfdata/derived'
 FTP_DIR = '/a/ftp'
 ALL_ID_DOWNLOAD_DIR = '/a/www/www6s/download'
-TMP_DIR = '/a/tmp'
+NFS_METRICS_TMP_DIR = '/a/tmp'
 
 DOCUMENT_FORMAT_ALLOWLIST = ["txt", "ps", "pdf", "xml", "html", ]
 
