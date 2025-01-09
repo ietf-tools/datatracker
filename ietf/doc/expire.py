@@ -13,10 +13,10 @@ from pathlib import Path
 
 from typing import List, Optional      # pyflakes:ignore
 
-from ietf.doc.utils import new_state_change_event, update_action_holders
+from ietf.doc.utils import update_action_holders
 from ietf.utils import log
 from ietf.utils.mail import send_mail
-from ietf.doc.models import Document, DocEvent, State, StateDocEvent
+from ietf.doc.models import Document, DocEvent, State
 from ietf.person.models import Person 
 from ietf.meeting.models import Meeting
 from ietf.mailtrigger.utils import gather_address_lists
@@ -213,11 +213,11 @@ def clean_up_draft_files():
 
         def move_file_to(subdir):
             # Similar to move_draft_files_to_archive
-            # ghostlinkd would keep this in the combined all archive since it would
-            # be sourced from a different place. But when ghostlinkd is removed, nothing
-            # new is needed here - the file will already exist in the combined archive
             shutil.move(path,
                         os.path.join(settings.INTERNET_DRAFT_ARCHIVE_DIR, subdir, basename))
+            mark = Path(settings.FTP_DIR) / "internet-drafts" / basename
+            if mark.exists():
+                mark.unlink()
 
         try:
             doc = Document.objects.get(name=filename, rev=revision)
@@ -235,41 +235,3 @@ def clean_up_draft_files():
             # All uses of this past 2014 seem related to major system failures.
             move_file_to("unknown_ids")
 
-
-def repair_dead_on_expire():
-    by = Person.objects.get(name="(System)")
-    id_exists = State.objects.get(type="draft-iesg", slug="idexists")
-    dead = State.objects.get(type="draft-iesg", slug="dead")
-    dead_drafts = Document.objects.filter(
-        states__type="draft-iesg", states__slug="dead", type_id="draft"
-    )
-    for d in dead_drafts:
-        dead_event = d.latest_event(
-            StateDocEvent, state_type="draft-iesg", state__slug="dead"
-        )
-        if dead_event is not None:
-            if d.docevent_set.filter(type="expired_document").exists():
-                closest_expiry = min(
-                    [
-                        abs(e.time - dead_event.time)
-                        for e in d.docevent_set.filter(type="expired_document")
-                    ]
-                )
-                if closest_expiry.total_seconds() < 60:
-                    d.set_state(id_exists)
-                    events = []
-                    e = DocEvent(
-                        doc=d,
-                        rev=d.rev,
-                        type="added_comment",
-                        by=by,
-                        desc="IESG Dead state was set due only to document expiry - changing IESG state to ID-Exists",
-                    )
-                    e.skip_community_list_notification = True
-                    e.save()
-                    events.append(e)
-                    e = new_state_change_event(d, by, dead, id_exists)
-                    e.skip_community_list_notification = True
-                    e.save()
-                    events.append(e)
-                    d.save_with_history(events)

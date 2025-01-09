@@ -43,23 +43,28 @@ def generate_wg_charters_files_task():
         encoding="utf8",
     )
 
-    charter_copy_dest = getattr(settings, "CHARTER_COPY_PATH", None)
-    if charter_copy_dest is not None:
-        if not Path(charter_copy_dest).is_dir():
-            log.log(
-                f"Error copying 1wg-charter files to {charter_copy_dest}: it does not exist or is not a directory"
-            )
-        else:
-            try:
-                shutil.copy2(charters_file, charter_copy_dest)
-            except IOError as err:
-                log.log(f"Error copying {charters_file} to {charter_copy_dest}: {err}")
-            try:
-                shutil.copy2(charters_by_acronym_file, charter_copy_dest)
-            except IOError as err:
+    charter_copy_dests = [
+        getattr(settings, "CHARTER_COPY_PATH", None), 
+        getattr(settings, "CHARTER_COPY_OTHER_PATH", None),
+        getattr(settings, "CHARTER_COPY_THIRD_PATH", None),
+    ]
+    for charter_copy_dest in charter_copy_dests:
+        if charter_copy_dest is not None:
+            if not Path(charter_copy_dest).is_dir():
                 log.log(
-                    f"Error copying {charters_by_acronym_file} to {charter_copy_dest}: {err}"
+                    f"Error copying 1wg-charter files to {charter_copy_dest}: it does not exist or is not a directory"
                 )
+            else:
+                try:
+                    shutil.copy2(charters_file, charter_copy_dest)
+                except IOError as err:
+                    log.log(f"Error copying {charters_file} to {charter_copy_dest}: {err}")
+                try:
+                    shutil.copy2(charters_by_acronym_file, charter_copy_dest)
+                except IOError as err:
+                    log.log(
+                        f"Error copying {charters_by_acronym_file} to {charter_copy_dest}: {err}"
+                    )
 
 
 @shared_task
