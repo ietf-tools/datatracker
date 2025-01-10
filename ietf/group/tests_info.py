@@ -62,6 +62,8 @@ class GroupPagesTests(TestCase):
     settings_temp_path_overrides = TestCase.settings_temp_path_overrides + [
         "CHARTER_PATH",
         "CHARTER_COPY_PATH",
+        "CHARTER_COPY_OTHER_PATH", # Note: not explicitly testing use of 
+        "CHARTER_COPY_THIRD_PATH", #       either of these settings
         "GROUP_SUMMARY_PATH",
     ]
 

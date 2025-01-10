@@ -65,7 +65,7 @@ from ietf.group.models import Role, Group
 from ietf.ietfauth.forms import ( RegistrationForm, PasswordForm, ResetPasswordForm, TestEmailForm,
                                 ChangePasswordForm, get_person_form, RoleEmailForm,
                                 NewEmailForm, ChangeUsernameForm, PersonPasswordForm)
-from ietf.ietfauth.utils import has_role
+from ietf.ietfauth.utils import has_role, send_new_email_confirmation_request
 from ietf.name.models import ExtResourceName
 from ietf.nomcom.models import NomCom
 from ietf.person.models import Person, Email, Alias, PersonalApiKey, PERSON_API_KEY_VALUES
@@ -297,31 +297,8 @@ def profile(request):
                 to_email = f.cleaned_data["new_email"]
                 if not to_email:
                     continue
-
                 email_confirmations.append(to_email)
-
-                auth = django.core.signing.dumps([person.user.username, to_email], salt="add_email")
-
-                domain = Site.objects.get_current().domain
-                from_email = settings.DEFAULT_FROM_EMAIL
-
-                existing = Email.objects.filter(address=to_email).first()
-                if existing:
-                    subject = 'Attempt to add your email address by %s' % person.name
-                    send_mail(request, to_email, from_email, subject, 'registration/add_email_exists_email.txt', {
-                        'domain': domain,
-                        'email': to_email,
-                        'person': person,
-                    })
-                else:
-                    subject = 'Confirm email address for %s' % person.name
-                    send_mail(request, to_email, from_email, subject, 'registration/add_email_email.txt', {
-                        'domain': domain,
-                        'auth': auth,
-                        'email': to_email,
-                        'person': person,
-                        'expire': settings.DAYS_TO_EXPIRE_REGISTRATION_LINK,
-                    })
+                send_new_email_confirmation_request(person, to_email)
 
             for r in roles:
                 e = r.email_form.cleaned_data["email"]

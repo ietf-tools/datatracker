@@ -1,4 +1,6 @@
 # Copyright The IETF Trust 2024, All Rights Reserved
+
+import debug    # pyflakes:ignore
 import datetime
 import mock
 
