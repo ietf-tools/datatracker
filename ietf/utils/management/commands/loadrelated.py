@@ -62,7 +62,7 @@ class Command(loaddata.Command):
         #
         self.serialization_formats = serializers.get_public_serializer_formats()
         #
-        post_save.disconnect(notify_of_events_receiver())
+        post_save.disconnect(notify_of_events_receiver, dispatch_uid="notify_of_events_receiver_uid")
         #
         connection = connections[self.using]
         self.fixture_count = 0
