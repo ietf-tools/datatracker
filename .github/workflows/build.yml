@@ -97,7 +97,7 @@ jobs:
         echo "IS_RELEASE=true" >> $GITHUB_ENV
         
     - name: Create Draft Release
-      uses: ncipollo/release-action@v1.14.0
+      uses: ncipollo/release-action@v1.15.0
       if: ${{ github.ref_name == 'release' }}
       with:
         prerelease: true
@@ -311,7 +311,7 @@ jobs:
         histCoveragePath: historical-coverage.json
         
     - name: Create Release
-      uses: ncipollo/release-action@v1.14.0
+      uses: ncipollo/release-action@v1.15.0
       if: ${{ env.SHOULD_DEPLOY == 'true' }}
       with:
         allowUpdates: true
@@ -324,7 +324,7 @@ jobs:
         token: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Update Baseline Coverage
-      uses: ncipollo/release-action@v1.14.0
+      uses: ncipollo/release-action@v1.15.0
       if: ${{ github.event.inputs.updateCoverage == 'true' || github.ref_name == 'release' }}
       with:
         allowUpdates: true
