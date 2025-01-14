@@ -4,6 +4,7 @@
 
 import io
 import os
+from pathlib import Path
 
 import debug    # pyflakes:ignore
 
@@ -540,7 +541,7 @@ class StatusChangeTests(TestCase):
         DocumentFactory(type_id='statchg',name='status-change-imaginary-mid-review',notify='notify@example.org')
 
 class StatusChangeSubmitTests(TestCase):
-    settings_temp_path_overrides = TestCase.settings_temp_path_overrides + ['STATUS_CHANGE_PATH']
+    settings_temp_path_overrides = TestCase.settings_temp_path_overrides + ['STATUS_CHANGE_PATH', 'FTP_PATH']
     def test_initial_submission(self):
         doc = Document.objects.get(name='status-change-imaginary-mid-review')
         url = urlreverse('ietf.doc.views_status_change.submit',kwargs=dict(name=doc.name))
@@ -556,14 +557,19 @@ class StatusChangeSubmitTests(TestCase):
         # Right now, nothing to test - we let people put whatever the web browser will let them put into that textbox
 
         # sane post using textbox
-        path = os.path.join(settings.STATUS_CHANGE_PATH, '%s-%s.txt' % (doc.name, doc.rev))
         self.assertEqual(doc.rev,'00')
-        self.assertFalse(os.path.exists(path))
+        basename = f"{doc.name}-{doc.rev}.txt"
+        filepath = Path(settings.STATUS_CHANGE_PATH) / basename
+        ftp_filepath = Path(settings.FTP_DIR) / "status-changes" / basename
+        self.assertFalse(filepath.exists())
+        self.assertFalse(ftp_filepath.exists())
         r = self.client.post(url,dict(content="Some initial review text\n",submit_response="1"))
         self.assertEqual(r.status_code,302)
         doc = Document.objects.get(name='status-change-imaginary-mid-review')
         self.assertEqual(doc.rev,'00')
-        with io.open(path) as f:
+        with filepath.open() as f:
+            self.assertEqual(f.read(),"Some initial review text\n")
+        with ftp_filepath.open() as f:
             self.assertEqual(f.read(),"Some initial review text\n")
         self.assertTrue( "mid-review-00" in doc.latest_event(NewRevisionDocEvent).desc)
 
@@ -628,3 +634,6 @@ class StatusChangeSubmitTests(TestCase):
     def setUp(self):
         super().setUp()
         DocumentFactory(type_id='statchg',name='status-change-imaginary-mid-review',notify='notify@example.org')
+        ftp_subdir=Path(settings.FTP_DIR)/"status-changes"
+        if not ftp_subdir.exists():
+            ftp_subdir.mkdir()

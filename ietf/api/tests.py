@@ -936,6 +936,8 @@ class CustomApiTests(TestCase):
         r = self.client.get(url)
         data = r.json()
         self.assertEqual(data['version'], ietf.__version__+ietf.__patch__)
+        for lib in settings.ADVERTISE_VERSIONS:
+            self.assertIn(lib, data['other'])
         self.assertEqual(data['dumptime'], "2022-08-31 07:10:01 +0000")
         DumpInfo.objects.update(tz='PST8PDT')
         r = self.client.get(url)
@@ -967,6 +969,14 @@ class CustomApiTests(TestCase):
             jsondata = r.json()
             self.assertEqual(jsondata['success'], True)
             self.client.logout()
+
+    @override_settings(APP_API_TOKENS={"ietf.api.views.nfs_metrics": ["valid-token"]})
+    def test_api_nfs_metrics(self):
+        url = urlreverse("ietf.api.views.nfs_metrics")
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 403)
+        r = self.client.get(url, headers={"X-Api-Key": "valid-token"})
+        self.assertContains(r, 'nfs_latency_seconds{operation="write"}')
 
     def test_api_get_session_matherials_no_agenda_meeting_url(self):
         meeting = MeetingFactory(type_id='ietf')

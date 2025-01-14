@@ -88,12 +88,13 @@
               </a>
               <br>
           {% endfor %}
-            {% if entry.session.video_stream_url %}
-                <a href="{{ entry.session.session_recording_url }}">
-                    Session recording
-                </a>
-                <br>
-            {% endif %}
+          {% for rec in entry.meetecho_recordings %}
+              <a href="{{ rec.material }}">
+                  Session recording 
+                  {% if rec.time %}{{ rec.time|date:"D G:i"}}{% endif %}
+              </a>
+              <br>
+          {% endfor%}
         </td>
         {# slides #}
         <td>

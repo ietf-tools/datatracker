@@ -1,9 +1,9 @@
 # Copyright The IETF Trust 2024, All Rights Reserved
-from pythonjsonlogger import jsonlogger
+from pythonjsonlogger.json import JsonFormatter
 import time
 
 
-class DatatrackerJsonFormatter(jsonlogger.JsonFormatter):
+class DatatrackerJsonFormatter(JsonFormatter):
     converter = time.gmtime  # use UTC
     default_msec_format = "%s.%03d"  # '.' instead of ','
 
@@ -29,6 +29,6 @@ class GunicornRequestJsonFormatter(DatatrackerJsonFormatter):
         log_record.setdefault("x_forwarded_for", record.args["{x-forwarded-for}i"])
         log_record.setdefault("x_forwarded_proto", record.args["{x-forwarded-proto}i"])
         log_record.setdefault("cf_connecting_ip", record.args["{cf-connecting-ip}i"])
-        log_record.setdefault("cf_connecting_ipv6", record.args["{cf-connecting-ipv6}i"])
         log_record.setdefault("cf_ray", record.args["{cf-ray}i"])
-        log_record.setdefault("is_authenticated", record.args["{x-datatracker-is-authenticated}i"])
+        log_record.setdefault("asn", record.args["{x-ip-src-asnum}i"])
+        log_record.setdefault("is_authenticated", record.args["{x-datatracker-is-authenticated}o"])

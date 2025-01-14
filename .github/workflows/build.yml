@@ -97,7 +97,7 @@ jobs:
         echo "IS_RELEASE=true" >> $GITHUB_ENV
         
     - name: Create Draft Release
-      uses: ncipollo/release-action@v1.14.0
+      uses: ncipollo/release-action@v1.15.0
       if: ${{ github.ref_name == 'release' }}
       with:
         prerelease: true
@@ -137,6 +137,7 @@ jobs:
     uses: ./.github/workflows/tests.yml
     if: ${{ github.event.inputs.skiptests == 'false' || github.ref_name == 'release' }}
     needs: [prepare]
+    secrets: inherit
     with:
       ignoreLowerCoverage: ${{ github.event.inputs.ignoreLowerCoverage == 'true' }}
       skipSelenium: true
@@ -255,6 +256,10 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
 
+    - name: Add feature-latest tag
+      if: ${{ startsWith(github.ref_name, 'feat/') }}
+      run: echo "FEATURE_LATEST_TAG=$(echo $GITHUB_REF_NAME | tr / -)" >> $GITHUB_ENV
+
     - name: Build Images
       uses: docker/build-push-action@v6
       env:
@@ -264,7 +269,9 @@ jobs:
         file: dev/build/Dockerfile
         platforms: ${{ github.event.inputs.skiparm == 'true' && 'linux/amd64' || 'linux/amd64,linux/arm64' }}
         push: true
-        tags: ghcr.io/ietf-tools/datatracker:${{ env.PKG_VERSION }}
+        tags: |
+          ghcr.io/ietf-tools/datatracker:${{ env.PKG_VERSION }}
+          ${{ env.FEATURE_LATEST_TAG && format('ghcr.io/ietf-tools/datatracker:{0}-latest', env.FEATURE_LATEST_TAG) || null }}
         cache-from: type=gha
         cache-to: type=gha,mode=max
 
@@ -304,7 +311,7 @@ jobs:
         histCoveragePath: historical-coverage.json
         
     - name: Create Release
-      uses: ncipollo/release-action@v1.14.0
+      uses: ncipollo/release-action@v1.15.0
       if: ${{ env.SHOULD_DEPLOY == 'true' }}
       with:
         allowUpdates: true
@@ -317,7 +324,7 @@ jobs:
         token: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Update Baseline Coverage
-      uses: ncipollo/release-action@v1.14.0
+      uses: ncipollo/release-action@v1.15.0
       if: ${{ github.event.inputs.updateCoverage == 'true' || github.ref_name == 'release' }}
       with:
         allowUpdates: true
@@ -349,50 +356,34 @@ jobs:
     steps:      
     - name: Notify on Slack (Success)
       if: ${{ !contains(join(needs.*.result, ','), 'failure') }}
-      uses: slackapi/slack-github-action@v1.27.0
+      uses: slackapi/slack-github-action@v2
       with:
-        channel-id: ${{ secrets.SLACK_GH_BUILDS_CHANNEL_ID }}
+        token: ${{ secrets.SLACK_GH_BOT }}
+        method: chat.postMessage
         payload: |
-          {
-            "text": "Datatracker Build <https://github.com/ietf-tools/datatracker/actions/runs/${{ github.run_id }}|${{ env.PKG_VERSION }}> by ${{ github.triggering_actor }} - <@${{ secrets.SLACK_UID_RJSPARKS }}>",
-            "attachments": [
-              {
-                "color": "28a745",
-                "fields": [
-                  {
-                    "title": "Status",
-                    "short": true,
-                    "value": "Completed"
-                  }
-                ]
-              }
-            ]
-          }
-      env:
-        SLACK_BOT_TOKEN: ${{ secrets.SLACK_GH_BOT }}
+          channel: ${{ secrets.SLACK_GH_BUILDS_CHANNEL_ID }}
+          text: "Datatracker Build <https://github.com/ietf-tools/datatracker/actions/runs/${{ github.run_id }}|${{ env.PKG_VERSION }}> by ${{ github.triggering_actor }}"
+          attachments:
+            - color: "28a745"
+              fields:
+                - title: "Status"
+                  short: true
+                  value: "Completed"
     - name: Notify on Slack (Failure)
       if: ${{ contains(join(needs.*.result, ','), 'failure') }}
-      uses: slackapi/slack-github-action@v1.27.0
+      uses: slackapi/slack-github-action@v2
       with:
-        channel-id: ${{ secrets.SLACK_GH_BUILDS_CHANNEL_ID }}
+        token: ${{ secrets.SLACK_GH_BOT }}
+        method: chat.postMessage
         payload: |
-          {
-            "text": "Datatracker Build <https://github.com/ietf-tools/datatracker/actions/runs/${{ github.run_id }}|${{ env.PKG_VERSION }}> by ${{ github.triggering_actor }} - <@${{ secrets.SLACK_UID_RJSPARKS }}>",
-            "attachments": [
-              {
-                "color": "a82929",
-                "fields": [
-                  {
-                    "title": "Status",
-                    "short": true,
-                    "value": "Failed"
-                  }
-                ]
-              }
-            ]
-          }
-      env:
-        SLACK_BOT_TOKEN: ${{ secrets.SLACK_GH_BOT }}
+          channel: ${{ secrets.SLACK_GH_BUILDS_CHANNEL_ID }}
+          text: "Datatracker Build <https://github.com/ietf-tools/datatracker/actions/runs/${{ github.run_id }}|${{ env.PKG_VERSION }}> by ${{ github.triggering_actor }}"
+          attachments:
+            - color: "a82929"
+              fields:
+                - title: "Status"
+                  short: true
+                  value: "Failed"
         
   # -----------------------------------------------------------------
   # SANDBOX

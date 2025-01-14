@@ -19,7 +19,7 @@ from django.utils.html import escape
 
 import debug                            # pyflakes:ignore
 
-from ietf.doc.expire import get_expired_drafts, send_expire_notice_for_draft, expire_draft
+from ietf.doc.expire import expirable_drafts, get_expired_drafts, send_expire_notice_for_draft, expire_draft
 from ietf.doc.factories import EditorialDraftFactory, IndividualDraftFactory, WgDraftFactory, RgDraftFactory, DocEventFactory
 from ietf.doc.models import ( Document, DocReminder, DocEvent,
     ConsensusDocEvent, LastCallDocEvent, RelatedDocument, State, TelechatDocEvent, 
@@ -763,13 +763,16 @@ class ExpireIDsTests(DraftFileMixin, TestCase):
         txt = "%s-%s.txt" % (draft.name, draft.rev)
         self.write_draft_file(txt, 5000)
 
+        self.assertFalse(expirable_drafts(Document.objects.filter(pk=draft.pk)).exists())
+        draft.set_state(State.objects.get(used=True, type="draft-iesg", slug="idexists"))
+        self.assertTrue(expirable_drafts(Document.objects.filter(pk=draft.pk)).exists())
         expire_draft(draft)
 
         draft = Document.objects.get(name=draft.name)
         self.assertEqual(draft.get_state_slug(), "expired")
-        self.assertEqual(draft.get_state_slug("draft-iesg"), "dead")
+        self.assertEqual(draft.get_state_slug("draft-iesg"), "idexists")
         self.assertTrue(draft.latest_event(type="expired_document"))
-        self.assertCountEqual(draft.action_holders.all(), [])
+        self.assertEqual(draft.action_holders.count(), 0)
         self.assertIn('Removed all action holders', draft.latest_event(type='changed_action_holders').desc)
         self.assertTrue(not os.path.exists(os.path.join(settings.INTERNET_DRAFT_PATH, txt)))
         self.assertTrue(os.path.exists(os.path.join(settings.INTERNET_DRAFT_ARCHIVE_DIR, txt)))

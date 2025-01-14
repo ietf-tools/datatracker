@@ -73,9 +73,11 @@ jobs:
         path: geckodriver.log
 
     - name: Upload Coverage Results to Codecov
-      uses: codecov/codecov-action@v4.6.0
+      uses: codecov/codecov-action@v5
       with:
+        disable_search: true
         files: coverage.xml
+        token: ${{ secrets.CODECOV_TOKEN }}
         
     - name: Convert Coverage Results
       if: ${{ always() }}

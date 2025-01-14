@@ -3,7 +3,10 @@
 
 import base64
 import binascii
+import datetime
 import json
+from pathlib import Path
+from tempfile import NamedTemporaryFile
 import jsonschema
 import pytz
 import re
@@ -23,6 +26,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.gzip import gzip_page
 from django.views.generic.detail import DetailView
 from email.message import EmailMessage
+from importlib.metadata import version as metadata_version
 from jwcrypto.jwk import JWK
 from tastypie.exceptions import BadRequest
 from tastypie.serializers import Serializer
@@ -240,9 +244,16 @@ def version(request):
         if dumpinfo.tz != "UTC":
             dumpdate = pytz.timezone(dumpinfo.tz).localize(dumpinfo.date.replace(tzinfo=None))
     dumptime = dumpdate.strftime('%Y-%m-%d %H:%M:%S %z') if dumpinfo else None
+
+    # important libraries
+    __version_extra__ = {}
+    for lib in settings.ADVERTISE_VERSIONS:
+        __version_extra__[lib] = metadata_version(lib)
+
     return HttpResponse(
             json.dumps({
                         'version': ietf.__version__+ietf.__patch__,
+                        'other': __version_extra__,
                         'dumptime': dumptime,
                     }),
                 content_type='application/json',
@@ -256,7 +267,22 @@ def app_auth(request, app: Literal["authortools", "bibxml"]):
             json.dumps({'success': True}),
             content_type='application/json')
 
-
+@requires_api_token
+@csrf_exempt
+def nfs_metrics(request):
+    with NamedTemporaryFile(dir=settings.NFS_METRICS_TMP_DIR,delete=False) as fp:
+        fp.close()
+        mark = datetime.datetime.now()
+        with open(fp.name, mode="w") as f:
+            f.write("whyioughta"*1024)
+        write_latency = (datetime.datetime.now() - mark).total_seconds()
+        mark = datetime.datetime.now()
+        with open(fp.name, "r") as f:
+            _=f.read()
+        read_latency = (datetime.datetime.now() - mark).total_seconds()
+        Path(f.name).unlink()
+    response=f'nfs_latency_seconds{{operation="write"}} {write_latency}\nnfs_latency_seconds{{operation="read"}} {read_latency}\n'
+    return HttpResponse(response)
 
 def find_doc_for_rfcdiff(name, rev):
     """rfcdiff lookup heuristics
