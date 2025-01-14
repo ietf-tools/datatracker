@@ -877,7 +877,7 @@ def delete_recording(session_presentation, user=None):
         raise ValueError(f"Document {document.pk} is not a recording (type_id={document.type_id})")
     recording_state = document.get_state("recording")
     deleted_state = State.objects.get(type_id="recording", slug="deleted")
-    if recording_state.slug is None or recording_state != deleted_state:
+    if recording_state != deleted_state:
         # Update the recording state and create a history event 
         document.set_state(deleted_state)
         StateDocEvent.objects.create(
