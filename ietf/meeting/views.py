@@ -2585,7 +2585,7 @@ def add_session_recordings(request, session_id, num):
     # num is redundant, but we're dragging it along an artifact of where we are in the current URL structure
     session = get_object_or_404(Session,pk=session_id)
     if not session.can_manage_materials(request.user):
-        raise Http404
+        permission_denied(request, "You don't have permission to manage recordings for this session.")
     if session.is_material_submission_cutoff() and not has_role(request.user, "Secretariat"):
         raise Http404
 
