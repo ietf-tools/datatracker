@@ -36,7 +36,6 @@ PHOTOS_DIR = MEDIA_ROOT + PHOTOS_DIRNAME
 
 SUBMIT_YANG_CATALOG_MODEL_DIR = '/assets/ietf-ftp/yang/catalogmod/'
 SUBMIT_YANG_DRAFT_MODEL_DIR = '/assets/ietf-ftp/yang/draftmod/'
-SUBMIT_YANG_INVAL_MODEL_DIR = '/assets/ietf-ftp/yang/invalmod/'
 SUBMIT_YANG_IANA_MODEL_DIR = '/assets/ietf-ftp/yang/ianamod/'
 SUBMIT_YANG_RFC_MODEL_DIR   = '/assets/ietf-ftp/yang/rfcmod/'
 
@@ -60,6 +59,7 @@ INTERNET_DRAFT_ARCHIVE_DIR = '/assets/collection/draft-archive'
 INTERNET_ALL_DRAFTS_ARCHIVE_DIR = '/assets/ietf-ftp/internet-drafts/'
 BIBXML_BASE_PATH = '/assets/ietfdata/derived/bibxml'
 FTP_DIR = '/assets/ftp'
+NFS_METRICS_TMP_DIR = '/assets/tmp'
 
 NOMCOM_PUBLIC_KEYS_DIR = 'data/nomcom_keys/public_keys/'
 SLIDE_STAGING_PATH = 'test/staging/'

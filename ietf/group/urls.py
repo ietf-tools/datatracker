@@ -57,7 +57,9 @@ info_detail_urls = [
 
 
 group_urls = [
-    url(r'^$', views.active_groups), 
+    url(r'^$', views.active_groups),
+    url(r'^leadership/(?P<group_type>(wg|rg))/$', views.group_leadership),
+    url(r'^leadership/(?P<group_type>(wg|rg))/csv/$', views.group_leadership_csv),
     url(r'^groupstats.json', views.group_stats_data, None, 'ietf.group.views.group_stats_data'),
     url(r'^groupmenu.json', views.group_menu_data, None, 'ietf.group.views.group_menu_data'),
     url(r'^chartering/$', views.chartering_groups),

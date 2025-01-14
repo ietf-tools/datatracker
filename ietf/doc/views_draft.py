@@ -95,7 +95,8 @@ def change_state(request, name):
     and logging the change as a comment."""
     doc = get_object_or_404(Document, name=name)
 
-    if (not doc.latest_event(type="started_iesg_process")) or doc.get_state_slug() == "expired":
+    # Steer ADs towards "Begin IESG Processing"
+    if doc.get_state_slug("draft-iesg")=="idexists" and not has_role(request.user,"Secretariat"):
         raise Http404
 
     login = request.user.person

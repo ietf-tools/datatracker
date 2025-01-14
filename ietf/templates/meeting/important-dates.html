@@ -19,7 +19,7 @@
     </a>
     {% for meeting in meetings %}
         {% if meeting.show_important_dates %}
-            <h2 class="mt-5">
+            <h2 class="mt-5" id="IETF{{ meeting.number }}">
                 IETF {{ meeting.number }}
                 <br>
                 <small class="text-body-secondary">{{ meeting.date }}, {{ meeting.city }}, {{ meeting.country }}</small>

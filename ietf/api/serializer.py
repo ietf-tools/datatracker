@@ -1,6 +1,9 @@
-# Copyright The IETF Trust 2018-2020, All Rights Reserved
+# Copyright The IETF Trust 2018-2024, All Rights Reserved
 # -*- coding: utf-8 -*-
+"""Serialization utilities
 
+This is _not_ for django-rest-framework!
+"""
 
 import hashlib
 import json
@@ -146,7 +149,6 @@ class AdminJsonSerializer(Serializer):
                                 field_value = None
                         else:
                             field_value = field
-                        # Need QuerySetAny instead of QuerySet until django-stubs 5.0.1
                         if isinstance(field_value, QuerySetAny) or isinstance(field_value, list):
                             self._current[name] = dict([ (rel.pk, self.expand_related(rel, name)) for rel in field_value ])
                         else:

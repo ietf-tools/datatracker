@@ -29,6 +29,7 @@ for sub in \
     /assets/www6/iesg \
     /assets/www6/iesg/evaluation \
     /assets/media/photo \
+    /assets/tmp \
     /assets/ftp \
     /assets/ftp/charter \
     /assets/ftp/internet-drafts \

@@ -82,7 +82,7 @@ else:
 # Set DEBUG if DATATRACKER_DEBUG env var is the word "true"
 DEBUG = os.environ.get("DATATRACKER_DEBUG", "false").lower() == "true"
 
-# DATATRACKER_ALLOWED_HOSTS env var is a comma-separated list of allowed hosts
+# DATATRACKER_ALLOWED_HOSTS env var is a newline-separated list of allowed hosts
 _allowed_hosts_str = os.environ.get("DATATRACKER_ALLOWED_HOSTS", None)
 if _allowed_hosts_str is not None:
     ALLOWED_HOSTS = _multiline_to_list(_allowed_hosts_str)
