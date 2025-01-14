@@ -48,7 +48,7 @@ from ietf.meeting.models import Session, TimeSlot, Meeting, SchedTimeSessAssignm
 from ietf.meeting.test_data import make_meeting_test_data, make_interim_meeting, make_interim_test_data
 from ietf.meeting.utils import condition_slide_order
 from ietf.meeting.utils import add_event_info_to_session_qs, participants_for_meeting
-from ietf.meeting.utils import create_recording, get_next_sequence, bluesheet_data
+from ietf.meeting.utils import create_recording, delete_recording, get_next_sequence, bluesheet_data
 from ietf.meeting.views import session_draft_list, parse_agenda_filter_params, sessions_post_save, agenda_extract_schedule
 from ietf.meeting.views import get_summary_by_area, get_summary_by_type, get_summary_by_purpose, generate_agenda_data
 from ietf.name.models import SessionStatusName, ImportantDateName, RoleName, ProceedingsMaterialTypeName
@@ -440,6 +440,48 @@ class MeetingTests(BaseMeetingTestCase):
         self.assertEqual(links[0].attrib['href'], new_recording_url)
         self.assertIn(new_recording_title, links[0].text_content())
         #debug.show("q(f'#notes_and_recordings_{session_pk}')")
+
+    def test_delete_recordings(self):
+        # No user specified, active recording state
+        sp = SessionPresentationFactory(
+            document__type_id="recording",
+            document__external_url="https://example.com/some-recording",
+            document__states=[("recording", "active")],
+        )
+        doc = sp.document
+        doc.docevent_set.all().delete()  # clear this out
+        delete_recording(sp)
+        self.assertFalse(SessionPresentation.objects.filter(pk=sp.pk).exists())
+        self.assertEqual(doc.get_state("recording").slug, "deleted", "recording state updated")
+        self.assertEqual(doc.docevent_set.count(), 1, "one event added")
+        event = doc.docevent_set.first()
+        self.assertEqual(event.type, "changed_state", "event is a changed_state event")
+        self.assertEqual(event.by.name, "(System)", "system user is responsible")
+
+        # Specified user, no recording state
+        sp = SessionPresentationFactory(
+            document__type_id="recording",
+            document__external_url="https://example.com/some-recording",
+            document__states=[],
+        )
+        doc = sp.document
+        doc.docevent_set.all().delete()  # clear this out
+        user = PersonFactory()  # naming matches the methods - user is a Person, not a User
+        delete_recording(sp, user=user)
+        self.assertFalse(SessionPresentation.objects.filter(pk=sp.pk).exists())
+        self.assertEqual(doc.get_state("recording").slug, "deleted", "recording state updated")
+        self.assertEqual(doc.docevent_set.count(), 1, "one event added")
+        event = doc.docevent_set.first()
+        self.assertEqual(event.type, "changed_state", "event is a changed_state event")
+        self.assertEqual(event.by, user, "user is responsible")
+
+        # Document is not a recording
+        sp = SessionPresentationFactory(
+            document__type_id="draft",
+            document__external_url="https://example.com/some-recording",
+        )
+        with self.assertRaises(ValueError):
+            delete_recording(sp)
 
     def test_agenda_ical_next_meeting_type(self):
         # start with no upcoming IETF meetings, just an interim
