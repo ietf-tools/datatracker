@@ -2571,7 +2571,7 @@ def add_session_drafts(request, session_id, num):
 
 class SessionRecordingsForm(forms.Form):
     title = forms.CharField(max_length=255)
-    url = forms.URLField(label="Link to recording (YouTube only)")
+    url = forms.URLField(label="URL of the recording (YouTube only)")
 
     def clean_url(self):
         url = self.cleaned_data['url']
@@ -2590,20 +2590,32 @@ def add_session_recordings(request, session_id, num):
         raise Http404
 
     session_number = None
-    sessions = get_sessions(session.meeting.number,session.group.acronym)
     official_timeslotassignment = session.official_timeslotassignment()
     assertion("official_timeslotassignment is not None")
     initial = {
         'title': f"Video recording for {session.group.acronym} on {official_timeslotassignment.timeslot.utc_start_time().strftime('%b-%d-%Y at %H:%M:%S')}"
     }
-    
+
+    # find session number if WG has more than one session at the meeting
+    sessions = get_sessions(session.meeting.number,session.group.acronym)
     if len(sessions) > 1:
        session_number = 1 + sessions.index(session)
 
+    recordings = session.get_material("recording", only_one=False)  # Document queryset
+    presentations = session.presentations.filter(document__in=recordings)  # SessionPresentation queryset
+
     if request.method == 'POST':
-        delete = request.POST.get('delete', False)
-        if delete:
-            delete_recording(pk=delete, session=session)
+        pk_to_delete = request.POST.get('delete', None)
+        if pk_to_delete is not None:
+            session_presentation = get_object_or_404(session.presentations, pk=pk_to_delete)
+            try:
+                delete_recording(session_presentation)
+            except ValueError as err:
+                log(f"Error deleting recording from session {session.pk}: {err}")
+                messages.error(
+                    request,
+                    "Unable to delete this recording. Please contact the secretariat for assistance.",
+                )
             form = SessionRecordingsForm(initial=initial)
         else:
             form = SessionRecordingsForm(request.POST)
@@ -2618,7 +2630,7 @@ def add_session_recordings(request, session_id, num):
     return render(request, "meeting/add_session_recordings.html",
                   { 'session': session,
                     'session_number': session_number,
-                    'already_linked': session.materials.filter(type="recording").exclude(states__type="recording", states__slug='deleted').order_by('presentations__order'),
+                    'already_linked': presentations,
                     'form': form,
                   })
 

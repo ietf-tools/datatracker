@@ -6,7 +6,7 @@
 {% block content %}
     {% origin %}
     <h1>
-        Add Recordings to  {{ session.meeting }}
+        Add Recordings to {{ session.meeting }}
         {% if session_number %}: Session {{ session_number }}{% endif %}
         <br>
         <small class="text-body-secondary">{{ session.group.acronym }}
@@ -20,50 +20,49 @@
         </div>
     {% endif %}
     <h2 class="mt-5">Recordings already linked to this session</h2>
-    {% if already_linked %}
-        <form method="post" id="delete_recordings_form">
-            {% csrf_token %}
-            <table class="table table-sm table-striped tablesorter">
-                <thead>
-                    <tr>
-                        <th scope="col" data-sort="num">Revision</th>
-                        <th scope="col" data-sort="document">Document</th>
-                        <th scope="col">Delete</th>
-                    </tr>
-                </thead>
-                <tbody>
-                        {% for sp in already_linked %}
-                            <tr>
-                                <td>
-                                    {% if sp.rev %}
-                                        -{{ sp.rev }}
-                                    {% else %}
-                                        (current)
-                                    {% endif %}
-                                </td>
-                                <td><a href="{{ sp.external_url }}">{{ sp.title }}</a></td>
-                                <td><button type="submit" aria-label="Delete {{ sp.title }}" class="btn btn-danger" name="delete" value="{{ sp.pk }}">Delete</button></td>
-                            </tr>
-                        {% endfor %}
-                </tbody>
-            </table>
-        </form>
-    {% else %}
+    <form method="post" id="delete_recordings_form">
+        {% csrf_token %}
         <table class="table table-sm table-striped">
             <thead>
-                <tr>
-                    <th scope="col" data-sort="num">Revision</th>
-                    <th scope="col" data-sort="document">Document</th>
-                    <th scope="col">Delete</th>
-                </tr>
+            <tr>
+                <th scope="col">Revision</th>
+                <th scope="col">Title</th>
+                <th scope="col">URL</th>
+                <th scope="col">Delete</th>
+            </tr>
             </thead>
             <tbody>
+            {% if already_linked|length == 0 %}
                 <tr>
-                    <td colspan="3" class="text-center font-italic">(none)</td>
+                    <td colspan="4" class="text-center font-italic">(none)</td>
                 </tr>
-            </tbody>
+            {% else %}
+                {% for sp in already_linked %}{% with recording_doc=sp.document %}
+                    <tr>
+                        <td>
+                            {% if sp.rev %}
+                                {{ sp.rev }}
+                            {% else %}
+                                (current)
+                            {% endif %}
+                        </td>
+                        <td>{{ recording_doc.title }}</td>
+                        <td><a href="{{ recording_doc.external_url }}">{{ recording_doc.external_url }}</a></td>
+                        <td>
+                            <button type="submit"
+                                    aria-label="Delete {{ recording_doc.title }}"
+                                    class="btn btn-danger"
+                                    name="delete"
+                                    value="{{ sp.pk }}">
+                                Delete
+                            </button>
+                        </td>
+                    </tr>
+                {% endwith %}{% endfor %}
+                </tbody>
+            {% endif %}
         </table>
-    {% endif %}
+    </form>
     <dialog id="delete_confirm_dialog">
         <p>Really delete the link to <a href="#" id="delete_confirm_link">(default)</a>?</p>
         <form method="post" class="d-flex justify-content-between">
@@ -72,7 +71,7 @@
             <button class="btn btn-danger" type="submit" name="delete" id="delete_confirm_submit">Delete</button>
         </form>
     </dialog>
-    <h2 class="mt-5">Add additional recordings to this session</h2>
+    <h2 class="mt-5">Add a recording to this session</h2>
     <form method="post">
         {% csrf_token %}
         {% bootstrap_form form %}
@@ -88,37 +87,36 @@
 {% endblock %}
 {% block js %}
     {{ form.media.js }}
-
     <script>
-    document.addEventListener('DOMContentLoaded', () => {
-        const form = document.getElementById('delete_recordings_form')
-        const dialog = document.getElementById('delete_confirm_dialog')
-        const dialog_link = document.getElementById('delete_confirm_link')
-        const dialog_submit = document.getElementById('delete_confirm_submit')
-        const dialog_cancel = document.getElementById('delete_confirm_cancel')
+        document.addEventListener('DOMContentLoaded', () => {
+            const form = document.getElementById('delete_recordings_form')
+            const dialog = document.getElementById('delete_confirm_dialog')
+            const dialog_link = document.getElementById('delete_confirm_link')
+            const dialog_submit = document.getElementById('delete_confirm_submit')
+            const dialog_cancel = document.getElementById('delete_confirm_cancel')
 
-        dialog.style.maxWidth = '30vw';
+            dialog.style.maxWidth = '30vw'
 
-        form.addEventListener('submit', (e) => {
-            e.preventDefault()
-            dialog_submit.value = e.submitter.value
-            const recording_link = e.submitter.closest('tr').querySelector('a')
-            dialog_link.setAttribute('href', recording_link.getAttribute('href'))
-            dialog_link.textContent = recording_link.textContent
-            dialog.showModal()
-        })
+            form.addEventListener('submit', (e) => {
+                e.preventDefault()
+                dialog_submit.value = e.submitter.value
+                const recording_link = e.submitter.closest('tr').querySelector('a')
+                dialog_link.setAttribute('href', recording_link.getAttribute('href'))
+                dialog_link.textContent = recording_link.textContent
+                dialog.showModal()
+            })
 
-        dialog_cancel.addEventListener('click', (e) => {
-            e.preventDefault()
-            dialog.close()
-        })
-
-        document.addEventListener('keydown', (e) => {
-            if (dialog.open && e.key === 'Escape') {
+            dialog_cancel.addEventListener('click', (e) => {
+                e.preventDefault()
                 dialog.close()
-            }
+            })
+
+            document.addEventListener('keydown', (e) => {
+                if (dialog.open && e.key === 'Escape') {
+                    dialog.close()
+                }
+            })
         })
-    })
     </script>
-    
+
 {% endblock %}
