@@ -2601,8 +2601,9 @@ def add_session_recordings(request, session_id, num):
     if len(sessions) > 1:
        session_number = 1 + sessions.index(session)
 
-    recordings = session.get_material("recording", only_one=False)  # Document queryset
-    presentations = session.presentations.filter(document__in=recordings)  # SessionPresentation queryset
+    presentations = session.presentations.filter(
+        document__in=session.get_material("recording", only_one=False),
+    ).order_by("document__title", "document__external_url")
 
     if request.method == 'POST':
         pk_to_delete = request.POST.get('delete', None)
