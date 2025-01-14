@@ -52,6 +52,7 @@ from ietf.meeting.utils import create_recording, delete_recording, get_next_sequ
 from ietf.meeting.views import session_draft_list, parse_agenda_filter_params, sessions_post_save, agenda_extract_schedule
 from ietf.meeting.views import get_summary_by_area, get_summary_by_type, get_summary_by_purpose, generate_agenda_data
 from ietf.name.models import SessionStatusName, ImportantDateName, RoleName, ProceedingsMaterialTypeName
+from ietf.settings import YOUTUBE_BASE_URL
 from ietf.utils.decorators import skip_coverage
 from ietf.utils.mail import outbox, empty_outbox, get_payload_text
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized, unicontent
@@ -7405,6 +7406,118 @@ class SessionTests(TestCase):
                                  })
         self.assertEqual(r.status_code,302)
         self.assertEqual(len(outbox),1)
+
+    @override_settings(YOUTUBE_DOMAINS=["youtube.com"])
+    def test_add_session_recordings(self):
+        session = SessionFactory(meeting__type_id="ietf")
+        url = urlreverse(
+            "ietf.meeting.views.add_session_recordings", 
+            kwargs={"session_id": session.pk, "num": session.meeting.number},
+        )
+        # does not fully validate authorization for non-secretariat users :-(
+        login_testing_unauthorized(self, "secretary", url)
+        r = self.client.get(url)
+        pq = PyQuery(r.content)
+        title_input = pq("input#id_title")
+        self.assertIsNotNone(title_input)
+        self.assertEqual(
+            title_input.attr.value,
+            "Video recording for {acro} on {timestamp}".format(
+                acro=session.group.acronym,
+                timestamp=session.official_timeslotassignment().timeslot.utc_start_time().strftime(
+                    "%b-%d-%Y at %H:%M:%S"
+                ),
+            ),
+        )
+        
+        with patch("ietf.meeting.views.create_recording") as mock_create:
+            r = self.client.post(
+                url,
+                data={
+                    "title": "This is my video title",
+                    "url": "",
+                }
+            )
+        self.assertFalse(mock_create.called)
+        
+        with patch("ietf.meeting.views.create_recording") as mock_create:
+            r = self.client.post(
+                url,
+                data={
+                    "title": "This is my video title",
+                    "url": "https://yubtub.com/this-is-not-a-youtube-video",
+                }
+            )
+        self.assertFalse(mock_create.called)
+
+        with patch("ietf.meeting.views.create_recording") as mock_create:
+            r = self.client.post(
+                url,
+                data={
+                    "title": "This is my video title",
+                    "url": "https://youtube.com/finally-a-video",
+                }
+            )
+        self.assertTrue(mock_create.called)
+        self.assertEqual(
+            mock_create.call_args, 
+            call(
+                session, 
+                "https://youtube.com/finally-a-video",
+                title="This is my video title",
+                user=Person.objects.get(user__username="secretary"),
+            ),
+        )
+
+        # CAN delete session presentation for this session
+        sp = SessionPresentationFactory(
+            session=session,
+            document__type_id="recording",
+            document__external_url="https://example.com/some-video",
+        )
+        with patch("ietf.meeting.views.delete_recording") as mock_delete:
+            r = self.client.post(
+                url,
+                data={
+                    "delete": str(sp.pk),
+                }
+            )
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(mock_delete.called)
+        self.assertEqual(mock_delete.call_args, call(sp))
+        
+        # ValueError message from delete_recording does not reach the user
+        sp = SessionPresentationFactory(
+            session=session,
+            document__type_id="recording",
+            document__external_url="https://example.com/some-video",
+        )
+        with patch("ietf.meeting.views.delete_recording", side_effect=ValueError("oh joy!")) as mock_delete:
+            r = self.client.post(
+                url,
+                data={
+                    "delete": str(sp.pk),
+                }
+            )
+        self.assertTrue(mock_delete.called)
+        self.assertNotContains(r, "oh joy!", status_code=200)
+        
+        # CANNOT delete session presentation for a different session
+        sp_for_other_session = SessionPresentationFactory(
+            document__type_id="recording",
+            document__external_url="https://example.com/some-other-video",
+        )
+        with patch("ietf.meeting.views.delete_recording") as mock_delete:
+            r = self.client.post(
+                url,
+                data={
+                    "delete": str(sp_for_other_session.pk),
+                }
+            )
+        self.assertEqual(r.status_code, 404)
+        self.assertFalse(mock_delete.called)
+
+
 
 class HasMeetingsTests(TestCase):
     settings_temp_path_overrides = TestCase.settings_temp_path_overrides + ['AGENDA_PATH']
