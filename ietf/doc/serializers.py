@@ -145,7 +145,7 @@ class RfcMetadataSerializer(serializers.ModelSerializer):
             "abstract",
         ]
 
-    @extend_schema_field(DocIdentifierSerializer)
+    @extend_schema_field(DocIdentifierSerializer(many=True))
     def get_identifiers(self, doc: Document):
         identifiers = []
         if doc.rfc_number:
