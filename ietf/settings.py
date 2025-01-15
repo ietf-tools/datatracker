@@ -6,6 +6,7 @@
 # BASE_DIR and "settings_local" are from
 # http://code.djangoproject.com/wiki/SplitSettings
 
+import boto3  # pyflakes:ignore
 import os
 import sys
 import datetime
@@ -733,6 +734,11 @@ URL_REGEXPS = {
     "rev": r"(?P<rev>[0-9]{1,2}(-[0-9]{2})?)",
     "owner": r"(?P<owner>[-A-Za-z0-9\'+._]+@[A-Za-z0-9-._]+)",
     "schedule_name": r"(?P<name>[A-Za-z0-9-:_]+)",
+}
+
+STORAGES = {
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
 }
 
 # Override this in settings_local.py if needed

@@ -36,6 +36,7 @@ from ietf.doc.models import ( Document, State, DocEvent, SubmissionDocEvent,
     DocumentAuthor, AddedMessageEvent )
 from ietf.doc.models import NewRevisionDocEvent
 from ietf.doc.models import RelatedDocument, DocRelationshipName, DocExtResource
+from ietf.doc.storage_utils import store_bytes
 from ietf.doc.utils import (add_state_change_event, rebuild_reference_relations,
     set_replaces_for_document, prettify_std_name, update_doc_extresources, 
     can_edit_docextresources, update_documentauthors, update_action_holders,
@@ -665,6 +666,9 @@ def move_files_to_repository(submission):
             ftp_dest = Path(settings.FTP_DIR) / "internet-drafts" / dest.name
             os.link(dest, all_archive_dest)
             os.link(dest, ftp_dest)
+            with open(dest,"rb") as f:
+                content_bytes = f.read()
+                store_bytes(f"draft-{ext}", fname, content_bytes)
         elif dest.exists():
             log.log("Intended to move '%s' to '%s', but found source missing while destination exists.")
         elif f".{ext}" in submission.file_types.split(','):

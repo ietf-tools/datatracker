@@ -17,6 +17,7 @@ from ietf.doc.mails import (email_bofreq_title_changed, email_bofreq_editors_cha
     email_bofreq_new_revision, email_bofreq_responsible_changed)
 from ietf.doc.models import (Document, DocEvent, NewRevisionDocEvent, 
     BofreqEditorDocEvent, BofreqResponsibleDocEvent, State)
+from ietf.doc.storage_utils import store_str
 from ietf.doc.utils import add_state_change_event
 from ietf.doc.utils_bofreq import bofreq_editors, bofreq_responsible
 from ietf.ietfauth.utils import has_role, role_required
@@ -101,6 +102,7 @@ def submit(request, name):
                 content = form.cleaned_data['bofreq_content']
             with io.open(bofreq.get_file_name(), 'w', encoding='utf-8') as destination:
                 destination.write(content)
+            store_str("bofreq", bofreq.get_base_name(), content)
             email_bofreq_new_revision(request, bofreq)
             return redirect('ietf.doc.views_doc.document_main', name=bofreq.name)
 
@@ -175,6 +177,7 @@ def new_bof_request(request):
                 content = form.cleaned_data['bofreq_content']
             with io.open(bofreq.get_file_name(), 'w', encoding='utf-8') as destination:
                 destination.write(content)
+            store_str("bofreq", bofreq.get_base_name(), content)
             email_bofreq_new_revision(request, bofreq)
             return redirect('ietf.doc.views_doc.document_main', name=bofreq.name)
 

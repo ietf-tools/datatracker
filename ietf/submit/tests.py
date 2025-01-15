@@ -31,6 +31,7 @@ from ietf.doc.factories import (DocumentFactory, WgDraftFactory, IndividualDraft
                                 ReviewFactory, WgRfcFactory)
 from ietf.doc.models import ( Document, DocEvent, State,
     BallotPositionDocEvent, DocumentAuthor, SubmissionDocEvent )
+from ietf.doc.storage_utils import retrieve_str
 from ietf.doc.utils import create_ballot_if_not_open, can_edit_docextresources, update_action_holders
 from ietf.group.factories import GroupFactory, RoleFactory
 from ietf.group.models import Group
@@ -428,6 +429,7 @@ class SubmitTests(BaseSubmitTestCase):
         self.assertTrue(draft.latest_event(type="added_suggested_replaces"))
         self.assertTrue(not os.path.exists(os.path.join(self.staging_dir, "%s-%s.txt" % (name, rev))))
         self.assertTrue(os.path.exists(os.path.join(self.repository_dir, "%s-%s.txt" % (name, rev))))
+        self.assertTrue(len(retrieve_str("draft-txt",f"{name}-{rev}.txt"))>0)
         self.assertEqual(draft.type_id, "draft")
         self.assertEqual(draft.stream_id, "ietf")
         self.assertTrue(draft.expires >= timezone.now() + datetime.timedelta(days=settings.INTERNET_DRAFT_DAYS_TO_EXPIRE - 1))

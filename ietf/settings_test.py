@@ -14,7 +14,7 @@ import os
 import shutil
 import tempfile
 from ietf.settings import *                                          # pyflakes:ignore
-from ietf.settings import TEST_CODE_COVERAGE_CHECKER
+from ietf.settings import boto3, STORAGES, TEST_CODE_COVERAGE_CHECKER
 import debug                            # pyflakes:ignore
 debug.debug = True
 
@@ -105,3 +105,24 @@ LOGGING["loggers"] = {  # pyflakes:ignore
         'level': 'INFO',
     },
 }
+
+for bucketname in [
+    "bofreq",
+    "charter",
+    "conflrev",
+    "draft-xml",
+    "draft-txt",
+    "draft-html",
+]:
+    STORAGES[bucketname] = {
+        "BACKEND": "storages.backends.s3.S3Storage",
+        "OPTIONS": dict(
+            endpoint_url="http://blobstore:9000",
+            access_key="minio_root",
+            secret_key="minio_pass",
+            security_token=None,
+            client_config=boto3.session.Config(signature_version="s3v4"),
+            verify=False,
+            bucket_name=bucketname,
+        ),
+    }

@@ -13,7 +13,38 @@ def init_blobstore():
         config=boto3.session.Config(signature_version="s3v4"),
         verify=False
     )
-    blobstore.create_bucket(Bucket="ietfdata")
+    for bucketname in [
+        "agenda",
+        "bluesheets",
+        "bofreq",
+        "charter",
+        "chatlog",
+        "conflrev",
+        "draft-xml",
+        "draft-txt",
+        "draft-html",
+        "draft-htmlized",
+        "draft-pdf",
+        "draft-pdfized",
+        "liai-att",
+        "liaison",
+        "minutes",
+        "narrativeminutes",
+        "polls",
+        "procmaterials",
+        "recording",
+        "review",
+        "rfc-txt",
+        "rfc-html",
+        "rfc-pdf",
+        "rfc-htmlized",
+        "rfc-pdfized",
+        "slides",
+        "statchg",
+        "statement",
+    ]:
+        blobstore.create_bucket(Bucket=bucketname)
+
 
 if __name__ == "__main__":
     sys.exit(init_blobstore())

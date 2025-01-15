@@ -26,6 +26,7 @@ import debug                            # pyflakes:ignore
 from ietf.doc.models import ( Document, DocHistory, State, DocEvent,
     BallotDocEvent, BallotPositionDocEvent, InitialReviewDocEvent, NewRevisionDocEvent,
     WriteupDocEvent, TelechatDocEvent )
+from ietf.doc.storage_utils import store_str
 from ietf.doc.utils import ( add_state_change_event, close_open_ballots,
     create_ballot, get_chartering_type )
 from ietf.doc.utils_charter import ( historic_milestones_for_charter,
@@ -441,9 +442,10 @@ def submit(request, name, option=None):
             )  # update rev
             with charter_filename.open("w", encoding="utf-8") as destination:
                 if form.cleaned_data["txt"]:
-                    destination.write(form.cleaned_data["txt"])
+                    content=form.cleaned_data["txt"]
                 else:
-                    destination.write(form.cleaned_data["content"])
+                    content=form.cleaned_data["content"]
+                destination.write(content)
             # Also provide a copy to the legacy ftp source directory, which is served by rsync
             # This replaces the hardlink copy that ghostlink has made in the past
             # Still using a hardlink as long as these are on the same filesystem.
@@ -454,7 +456,8 @@ def submit(request, name, option=None):
                 log(
                     "There was an error creating a hardlink at %s pointing to %s"
                     % (ftp_filename, charter_filename)
-                )     
+                )
+            store_str("charter", charter_filename.name, content)     
 
 
             if option in ["initcharter", "recharter"] and charter.ad == None:
