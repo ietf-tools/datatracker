@@ -19,7 +19,8 @@ document.addEventListener('DOMContentLoaded', () => {
             loadResultsFromTask('bogus-task-id') // bad task id will generate an error from Django
         }
         const taskId = (await response.json()).id
-        waitForResults(taskId, 10) // Poll for completion of the investigation
+        // Poll for completion of the investigation up to 18*10 = 180 seconds 
+        waitForResults(taskId, 18)
     }
 
     const waitForResults = async (taskId, retries) => {
@@ -34,7 +35,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         const result = await response.json()
         if (result.status !== 'ready' && retries > 0) {
-            setTimeout(waitForResults, 5000, taskId, retries - 1)
+            // 10 seconds per retry
+            setTimeout(waitForResults, 10000, taskId, retries - 1)
         } else {
             /* Either the response is ready or we timed out waiting. In either case, submit
                the task_id via POST and let Django display an error if it's not ready. Before
