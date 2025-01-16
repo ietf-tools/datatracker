@@ -12,8 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const runInvestigation = async () => {
         // Submit the request
         const response = await fetch('', {
-            method: investigateForm.method,
-            body: new FormData(investigateForm)
+            method: investigateForm.method, body: new FormData(investigateForm)
         })
         if (!response.ok) {
             loadResultsFromTask('bogus-task-id') // bad task id will generate an error from Django

@@ -126,5 +126,5 @@ def generate_draft_bibxml_files_task(days=7, process_all=False):
 def investigate_fragment_task(name_fragment: str):
     return {
         "name_fragment": name_fragment,
-        "results": investigate_fragment(name_fragment)
+        "results": investigate_fragment(name_fragment),
     }

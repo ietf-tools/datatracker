@@ -2286,10 +2286,10 @@ def investigate(request):
 
     POST with the task_id field empty starts an async task and returns a JSON response with
     the ID needed to monitor the task for results.
-    
+
     GET with a querystring parameter "id" will poll the status of the async task and return "ready"
     or "notready".
-    
+
     POST with the task_id field set to the id of a "ready" task will return its results or an error
     if the task failed or the id is invalid (expired, never exited, etc).
     """
@@ -2306,7 +2306,9 @@ def investigate(request):
                     retval = task_result.get()
                     results = retval["results"]
                     form.data = form.data.copy()
-                    form.data["name_fragment"] = retval["name_fragment"]  # ensure consistency
+                    form.data["name_fragment"] = retval[
+                        "name_fragment"
+                    ]  # ensure consistency
                     del form.data["task_id"]  # do not request the task result again
                 else:
                     form.add_error(
@@ -2323,9 +2325,9 @@ def investigate(request):
         if task_id is not None:
             # Check status if we got the "id" parameter
             task_result = AsyncResult(task_id)
-            return JsonResponse({
-                "status": "ready" if task_result.ready() else "notready"
-            })
+            return JsonResponse(
+                {"status": "ready" if task_result.ready() else "notready"}
+            )
         else:
             # Serve up an empty form
             form = InvestigateForm()
