@@ -49,7 +49,6 @@ import subprocess
 import tempfile
 import copy
 import boto3
-import botocore
 import factory.random
 import urllib3
 import warnings
@@ -954,8 +953,8 @@ class IetfTestRunner(DiscoverRunner):
                 bucket = blobstore.create_bucket(Bucket=bucketname)
                 #debug.show('f"created {bucket}"')
                 self.buckets.add(bucket)
-            except blobstore.meta.client.exceptions.BucketAlreadyOwnedByYou as e:
-                #debug.show('f"{bucketname} already there: {e}"')
+            except blobstore.meta.client.exceptions.BucketAlreadyOwnedByYou:
+                #debug.show('f"{bucketname} already there"')
                 bucket = blobstore.Bucket(bucketname)
                 self.buckets.add(bucket)
 
