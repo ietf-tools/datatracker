@@ -39,16 +39,16 @@
                     {% for path in results.can_verify %}
                         {% with url=path|url_for_path %}
                             <tr>
-                    <td>{{path.name}}</td>
+                                <td>{{ path.name }}</td>
                                 <td>
                                     {% if path|mtime_is_epoch %}
                                         Timestamp has been lost (is Unix Epoch)
                                     {% else %}
-                          {{path|mtime|date:"DATETIME_FORMAT"}}
+                                        {{ path|mtime|date:"DATETIME_FORMAT" }}
                                     {% endif %}
                                 </td>
-                    <td><a href="{{url}}">{{url}}</a></td>
-                    <td>{{path}}</td>
+                                <td><a href="{{ url }}">{{ url }}</a></td>
+                                <td>{{ path }}</td>
                             </tr>
                         {% endwith %}
                     {% endfor %}
@@ -73,16 +73,16 @@
                     {% for path in results.unverifiable_collections %}
                         {% with url=path|url_for_path %}
                             <tr>
-                <td>{{path.name}}</td>
+                                <td>{{ path.name }}</td>
                                 <td>
                                     {% if path|mtime_is_epoch %}
                                         Timestamp has been lost (is Unix Epoch)
                                     {% else %}
-                      {{path|mtime|date:"DATETIME_FORMAT"}}
+                                        {{ path|mtime|date:"DATETIME_FORMAT" }}
                                     {% endif %}
                                 </td>
-                <td><a href="{{url}}">{{url}}</a></td>
-                <td>{{path}}</td>
+                                <td><a href="{{ url }}">{{ url }}</a></td>
+                                <td>{{ path }}</td>
                             </tr>
                         {% endwith %}
                     {% endfor %}
@@ -103,15 +103,15 @@
                     {% for path in results.unexpected %}
                         {% with url=path|url_for_path %}
                             <tr>
-                <td>{{path.name}}</td>
+                                <td>{{ path.name }}</td>
                                 <td>
                                     {% if path|mtime_is_epoch %}
                                         Timestamp has been lost (is Unix Epoch)
                                     {% else %}
-                      {{path|mtime|date:"DATETIME_FORMAT"}}
+                                        {{ path|mtime|date:"DATETIME_FORMAT" }}
                                     {% endif %}
                                 </td>
-                <td><a href="{{url}}">{{url}}</a></td>
+                                <td><a href="{{ url }}">{{ url }}</a></td>
                             </tr>
                         {% endwith %}
                     {% endfor %}
@@ -120,7 +120,6 @@
             {% endif %}
         </div>
     {% endif %}
-    </div>
 {% endblock %}
 {% block js %}
     <script src="{% static "ietf/js/list.js" %}"></script>
