@@ -736,13 +736,13 @@ URL_REGEXPS = {
     "schedule_name": r"(?P<name>[A-Za-z0-9-:_]+)",
 }
 
-STORAGES = {
+STORAGES: dict[str, Any] = {
     "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
     "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
 }
 
 # settings_local will need to configure storages for these names
-MORE_STORAGE_NAMES = [
+MORE_STORAGE_NAMES: list[str] = [
     "bofreq",
     "charter",
     "conflrev",
