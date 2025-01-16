@@ -1,11 +1,12 @@
 # Copyright The IETF Trust 2025, All Rights Reserved
 
-import debug # pyflakes ignore
+import debug  # pyflakes ignore
 
 from django.core.files.base import ContentFile
 from django.core.files.storage import storages, Storage
 
 from ietf.utils.log import log
+
 
 def _get_storage(kind: str) -> Storage:
     if kind in [
@@ -22,7 +23,9 @@ def _get_storage(kind: str) -> Storage:
         raise NotImplementedError(f"Don't know how to store {kind}")
 
 
-def store_bytes(kind: str, name: str, content: bytes, allow_overwrite: bool = False) -> None:
+def store_bytes(
+    kind: str, name: str, content: bytes, allow_overwrite: bool = False
+) -> None:
     store = _get_storage(kind)
     if not allow_overwrite:
         try:
@@ -55,9 +58,13 @@ def retrieve_bytes(kind: str, name: str) -> bytes:
         content = f.read()
     return content
 
-def store_str(kind: str, name: str, content: str, allow_overwrite: bool = False) -> None:
+
+def store_str(
+    kind: str, name: str, content: str, allow_overwrite: bool = False
+) -> None:
     content_bytes = content.encode("utf-8")
     store_bytes(kind, name, content_bytes, allow_overwrite)
+
 
 def retrieve_str(kind: str, name: str) -> str:
     content_bytes = retrieve_bytes(kind, name)
