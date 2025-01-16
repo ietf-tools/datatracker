@@ -58,22 +58,22 @@ import debug                            # pyflakes:ignore
 
 from ietf.doc.models import ( Document, DocHistory, DocEvent, BallotDocEvent, BallotType,
     ConsensusDocEvent, NewRevisionDocEvent, TelechatDocEvent, WriteupDocEvent, IanaExpertDocEvent,
-                             IESG_BALLOT_ACTIVE_STATES, STATUSCHANGE_RELATIONS, DocumentActionHolder, DocumentAuthor,
-                             RelatedDocument, RelatedDocHistory)
+    IESG_BALLOT_ACTIVE_STATES, STATUSCHANGE_RELATIONS, DocumentActionHolder, DocumentAuthor,
+    RelatedDocument, RelatedDocHistory)
 from ietf.doc.tasks import investigate_fragment_task
 from ietf.doc.utils import (augment_events_with_revision,
-                            can_adopt_draft, can_unadopt_draft, get_chartering_type, get_tags_for_stream_id,
-                            needed_ballot_positions, nice_consensus, update_telechat, has_same_ballot,
-                            get_initial_notify, make_notify_changed_event, make_rev_history, default_consensus,
-                            add_events_message_info, get_unicode_document_content,
+    can_adopt_draft, can_unadopt_draft, get_chartering_type, get_tags_for_stream_id,
+    needed_ballot_positions, nice_consensus, update_telechat, has_same_ballot,
+    get_initial_notify, make_notify_changed_event, make_rev_history, default_consensus,
+    add_events_message_info, get_unicode_document_content,
     augment_docs_and_person_with_person_info, irsg_needed_ballot_positions, add_action_holder_change_event,
-                            build_file_urls, update_documentauthors, fuzzy_find_documents,
-                            bibxml_for_draft, get_doc_email_aliases)
+    build_file_urls, update_documentauthors, fuzzy_find_documents,
+    bibxml_for_draft, get_doc_email_aliases)
 from ietf.doc.utils_bofreq import bofreq_editors, bofreq_responsible
 from ietf.group.models import Role, Group
 from ietf.group.utils import can_manage_all_groups_of_type, can_manage_materials, group_features_role_filter
 from ietf.ietfauth.utils import ( has_role, is_authorized_in_doc_stream, user_is_person,
-                                 role_required, is_individual_draft_author, can_request_rfc_publication)
+    role_required, is_individual_draft_author, can_request_rfc_publication)
 from ietf.name.models import StreamName, BallotPositionName
 from ietf.utils.history import find_history_active_at
 from ietf.doc.views_ballot import parse_ballot_edit_return_point
