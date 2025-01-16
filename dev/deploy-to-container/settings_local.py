@@ -79,3 +79,17 @@ APP_API_TOKENS = {
 
 # OIDC configuration
 SITE_URL = 'https://__HOSTNAME__'
+
+for storagename in MORE_STORAGE_NAMES:
+    STORAGES[storagename] = {
+        "BACKEND": "storages.backends.s3.S3Storage",
+        "OPTIONS": dict(
+            endpoint_url="http://blobstore:9000",
+            access_key="minio_root",
+            secret_key="minio_pass",
+            security_token=None,
+            client_config=boto3.session.Config(signature_version="s3v4"),
+            verify=False,
+            bucket_name=f"test-{storagename}",
+        ),
+    }
