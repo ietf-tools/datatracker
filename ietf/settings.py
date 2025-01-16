@@ -741,6 +741,14 @@ STORAGES = {
     "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
 }
 
+# settings_local will need to configure storages for these names
+MORE_STORAGE_NAMES = [
+    "bofreq",
+    "charter",
+    "conflrev",
+    "draft",
+]
+
 # Override this in settings_local.py if needed
 # *_PATH variables ends with a slash/ .
 

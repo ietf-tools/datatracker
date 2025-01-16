@@ -12,9 +12,9 @@ def _get_storage(kind: str) -> Storage:
         "bofreq",
         "charter",
         "conflrev",
-        "draft-xml",
-        "draft-txt",
-        "draft-html",
+        "draft",
+        "draft",
+        "draft",
     ]:
         return storages[kind]
     else:

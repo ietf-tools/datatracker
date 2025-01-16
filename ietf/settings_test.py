@@ -14,7 +14,7 @@ import os
 import shutil
 import tempfile
 from ietf.settings import *                                          # pyflakes:ignore
-from ietf.settings import boto3, STORAGES, TEST_CODE_COVERAGE_CHECKER
+from ietf.settings import boto3, STORAGES, TEST_CODE_COVERAGE_CHECKER, MORE_STORAGE_NAMES
 import debug                            # pyflakes:ignore
 debug.debug = True
 
@@ -106,15 +106,8 @@ LOGGING["loggers"] = {  # pyflakes:ignore
     },
 }
 
-for bucketname in [
-    "bofreq",
-    "charter",
-    "conflrev",
-    "draft-xml",
-    "draft-txt",
-    "draft-html",
-]:
-    STORAGES[bucketname] = {
+for storagename in MORE_STORAGE_NAMES:
+    STORAGES[storagename] = {
         "BACKEND": "storages.backends.s3.S3Storage",
         "OPTIONS": dict(
             endpoint_url="http://blobstore:9000",
@@ -123,6 +116,6 @@ for bucketname in [
             security_token=None,
             client_config=boto3.session.Config(signature_version="s3v4"),
             verify=False,
-            bucket_name=bucketname,
+            bucket_name=f"test-{storagename}",
         ),
     }

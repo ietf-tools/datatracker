@@ -48,6 +48,8 @@ import pathlib
 import subprocess
 import tempfile
 import copy
+import boto3
+import botocore
 import factory.random
 import urllib3
 import warnings
@@ -752,6 +754,7 @@ class IetfTestRunner(DiscoverRunner):
         # contains parent classes to later subclasses, the parent classes will determine the ordering, so use the most
         # specific classes necessary to get the right ordering:
         self.reorder_by = (PyFlakesTestCase, MyPyTest,) + self.reorder_by + (StaticLiveServerTestCase, TemplateTagTest, CoverageTest,)
+        self.buckets = set()
 
     def setup_test_environment(self, **kwargs):
         global template_coverage_collection
@@ -936,6 +939,27 @@ class IetfTestRunner(DiscoverRunner):
                 print(" (extra pedantically)")
                 self.vnu = start_vnu_server()
 
+        blobstore = boto3.resource("s3",
+            endpoint_url="http://blobstore:9000",
+            aws_access_key_id="minio_root",
+            aws_secret_access_key="minio_pass",
+            aws_session_token=None,
+            config=boto3.session.Config(signature_version="s3v4"),
+            #config=boto3.session.Config(signature_version=botocore.UNSIGNED),
+            verify=False
+        )
+        for storagename in settings.MORE_STORAGE_NAMES:
+            bucketname = f"test-{storagename}"
+            try:
+                bucket = blobstore.create_bucket(Bucket=bucketname)
+                #debug.show('f"created {bucket}"')
+                self.buckets.add(bucket)
+            except blobstore.meta.client.exceptions.BucketAlreadyOwnedByYou as e:
+                #debug.show('f"{bucketname} already there: {e}"')
+                bucket = blobstore.Bucket(bucketname)
+                self.buckets.add(bucket)
+
+
         super(IetfTestRunner, self).setup_test_environment(**kwargs)
 
     def teardown_test_environment(self, **kwargs):
@@ -965,6 +989,17 @@ class IetfTestRunner(DiscoverRunner):
                 self.config_file[kind].close()
             if self.vnu:
                 self.vnu.terminate()
+
+
+        for bucket in self.buckets:
+            # bucketname=bucket.name
+            # debug.show('f"Trying to delete {bucketname} contents"')
+            # debug.show("bucket.objects.delete()")
+            # debug.show('f"Trying to delete {bucketname} itself"')
+            # debug.show("bucket.delete()")
+            bucket.objects.delete()
+            bucket.delete()
+
 
         super(IetfTestRunner, self).teardown_test_environment(**kwargs)
 
