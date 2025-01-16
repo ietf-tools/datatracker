@@ -1,7 +1,8 @@
 # Copyright The IETF Trust 2007-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
 
-from ietf.settings import *                                          # pyflakes:ignore
+from ietf.settings import *   # pyflakes:ignore
+from ietf.settings import boto3, STORAGES, MORE_STORAGE_NAMES
 
 ALLOWED_HOSTS = ['*']
 

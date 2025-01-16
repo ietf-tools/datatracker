@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from ietf.settings import *  # pyflakes:ignore
-import boto3
+from ietf.settings import boto3, STORAGES, MORE_STORAGE_NAMES
 
 ALLOWED_HOSTS = ['*']
 
