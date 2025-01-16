@@ -31,6 +31,7 @@ from .utils import (
     generate_idnits2_rfcs_obsoleted,
     update_or_create_draft_bibxml_file,
     ensure_draft_bibxml_path_exists,
+    investigate_fragment,
 )
 
 
@@ -119,3 +120,11 @@ def generate_draft_bibxml_files_task(days=7, process_all=False):
             update_or_create_draft_bibxml_file(event.doc, event.rev)
         except Exception as err:
             log.log(f"Error generating bibxml for {event.doc.name}-{event.rev}: {err}")
+
+
+@shared_task(ignore_result=False)
+def investigate_fragment_task(name_fragment: str):
+    return {
+        "name_fragment": name_fragment,
+        "results": investigate_fragment(name_fragment)
+    }

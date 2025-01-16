@@ -41,10 +41,11 @@ import re
 
 from pathlib import Path
 
+from celery.result import AsyncResult
 from django.core.cache import caches
 from django.core.exceptions import PermissionDenied
 from django.db.models import Max
-from django.http import HttpResponse, Http404, HttpResponseBadRequest
+from django.http import HttpResponse, Http404, HttpResponseBadRequest, JsonResponse
 from django.shortcuts import render, get_object_or_404, redirect
 from django.template.loader import render_to_string
 from django.urls import reverse as urlreverse
@@ -57,21 +58,22 @@ import debug                            # pyflakes:ignore
 
 from ietf.doc.models import ( Document, DocHistory, DocEvent, BallotDocEvent, BallotType,
     ConsensusDocEvent, NewRevisionDocEvent, TelechatDocEvent, WriteupDocEvent, IanaExpertDocEvent,
-    IESG_BALLOT_ACTIVE_STATES, STATUSCHANGE_RELATIONS, DocumentActionHolder, DocumentAuthor,
-    RelatedDocument, RelatedDocHistory)
+                             IESG_BALLOT_ACTIVE_STATES, STATUSCHANGE_RELATIONS, DocumentActionHolder, DocumentAuthor,
+                             RelatedDocument, RelatedDocHistory)
+from ietf.doc.tasks import investigate_fragment_task
 from ietf.doc.utils import (augment_events_with_revision,
-    can_adopt_draft, can_unadopt_draft, get_chartering_type, get_tags_for_stream_id, investigate_fragment,
-    needed_ballot_positions, nice_consensus, update_telechat, has_same_ballot,
-    get_initial_notify, make_notify_changed_event, make_rev_history, default_consensus,
-    add_events_message_info, get_unicode_document_content,
+                            can_adopt_draft, can_unadopt_draft, get_chartering_type, get_tags_for_stream_id,
+                            needed_ballot_positions, nice_consensus, update_telechat, has_same_ballot,
+                            get_initial_notify, make_notify_changed_event, make_rev_history, default_consensus,
+                            add_events_message_info, get_unicode_document_content,
     augment_docs_and_person_with_person_info, irsg_needed_ballot_positions, add_action_holder_change_event,
-    build_file_urls, update_documentauthors, fuzzy_find_documents,
-    bibxml_for_draft, get_doc_email_aliases)
+                            build_file_urls, update_documentauthors, fuzzy_find_documents,
+                            bibxml_for_draft, get_doc_email_aliases)
 from ietf.doc.utils_bofreq import bofreq_editors, bofreq_responsible
 from ietf.group.models import Role, Group
 from ietf.group.utils import can_manage_all_groups_of_type, can_manage_materials, group_features_role_filter
 from ietf.ietfauth.utils import ( has_role, is_authorized_in_doc_stream, user_is_person,
-    role_required, is_individual_draft_author, can_request_rfc_publication)
+                                 role_required, is_individual_draft_author, can_request_rfc_publication)
 from ietf.name.models import StreamName, BallotPositionName
 from ietf.utils.history import find_history_active_at
 from ietf.doc.views_ballot import parse_ballot_edit_return_point
@@ -2275,16 +2277,65 @@ def idnits2_state(request, name, rev=None):
         content_type="text/plain;charset=utf-8",
     )
 
+
 @role_required("Secretariat")
 def investigate(request):
+    """Investigate a fragment
+
+    A plain GET with no querystring returns the UI page.
+
+    POST with the task_id field empty starts an async task and returns a JSON response with
+    the ID needed to monitor the task for results.
+    
+    GET with a querystring parameter "id" will poll the status of the async task and return "ready"
+    or "notready".
+    
+    POST with the task_id field set to the id of a "ready" task will return its results or an error
+    if the task failed or the id is invalid (expired, never exited, etc).
+    """
     results = None
+    # Start an investigation or retrieve a result on a POST
     if request.method == "POST":
         form = InvestigateForm(request.POST)
         if form.is_valid():
-            name_fragment = form.cleaned_data["name_fragment"]
-            results = investigate_fragment(name_fragment)
+            task_id = form.cleaned_data["task_id"]
+            if task_id:
+                # Ignore the rest of the form and retrieve the result
+                task_result = AsyncResult(task_id)
+                if task_result.successful():
+                    retval = task_result.get()
+                    results = retval["results"]
+                    form.data = form.data.copy()
+                    form.data["name_fragment"] = retval["name_fragment"]  # ensure consistency
+                    del form.data["task_id"]  # do not request the task result again
+                else:
+                    form.add_error(
+                        None,
+                        "The investigation task failed. Please try again and ask for help if this recurs.",
+                    )
+                # Falls through to the render at the end!
+            else:
+                name_fragment = form.cleaned_data["name_fragment"]
+                task_result = investigate_fragment_task.delay(name_fragment)
+                return JsonResponse({"id": task_result.id})
     else:
-        form = InvestigateForm()
+        task_id = request.GET.get("id", None)
+        if task_id is not None:
+            # Check status if we got the "id" parameter
+            task_result = AsyncResult(task_id)
+            return JsonResponse({
+                "status": "ready" if task_result.ready() else "notready"
+            })
+        else:
+            # Serve up an empty form
+            form = InvestigateForm()
+
+    # If we get here, it is just a plain GET - serve the UI
     return render(
-        request, "doc/investigate.html", context=dict(form=form, results=results)
+        request,
+        "doc/investigate.html",
+        context={
+            "form": form,
+            "results": results,
+        },
     )

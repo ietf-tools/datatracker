@@ -6,112 +6,175 @@
     <link rel="stylesheet" href="{% static "ietf/css/list.css" %}">
 {% endblock %}
 {% block content %}
-  {% origin %}
-  <h1>Investigate</h1>
-  <form id="investigate" method="post">
-    {% csrf_token %}
-    {% bootstrap_form form %}
-    <button class="btn btn-primary" type="submit">Investigate</button>
-  </form>
-  {% if results %}
-    <div id="results">
-      {% if results.can_verify %}
-        <h2>These can be authenticated</h2>
-        <table id="authenticated" class="table table-sm table-striped tablesorter">
-          <thead>
-            <tr>
-              <th scope="col" data-sort="name">Name</th>
-              <th scope="col" data-sort="modified">Last Modified On</th>
-              <th scope="col" data-sort="link">Link</th>
-              <th scope="col" data-sort="source">Source</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for path in results.can_verify %}
-              {% with url=path|url_for_path %}
-                <tr>
+    {% origin %}
+    <h1>Investigate</h1>
+    <div class="mb-3">
+        <form id="investigate" method="post">
+            {% csrf_token %}
+            {% bootstrap_form form %}
+            <button class="btn btn-primary" type="submit" id="investigate-button">
+            <span id="spinner"
+                  class="spinner-border spinner-border-sm d-none"
+                  role="status"
+                  aria-hidden="true">
+            </span>
+                Investigate
+            </button>
+        </form>
+    </div>
+    {% if results %}
+        <div id="results">
+            {% if results.can_verify %}
+                <h2>These can be authenticated</h2>
+                <table id="authenticated" class="table table-sm table-striped tablesorter">
+                    <thead>
+                    <tr>
+                        <th scope="col" data-sort="name">Name</th>
+                        <th scope="col" data-sort="modified">Last Modified On</th>
+                        <th scope="col" data-sort="link">Link</th>
+                        <th scope="col" data-sort="source">Source</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for path in results.can_verify %}
+                        {% with url=path|url_for_path %}
+                            <tr>
                     <td>{{path.name}}</td>
-                    <td>
-                        {% if path|mtime_is_epoch %}
-                          Timestamp has been lost (is Unix Epoch)
-                        {% else %}
+                                <td>
+                                    {% if path|mtime_is_epoch %}
+                                        Timestamp has been lost (is Unix Epoch)
+                                    {% else %}
                           {{path|mtime|date:"DATETIME_FORMAT"}}
-                        {% endif %}
-                    </td>
+                                    {% endif %}
+                                </td>
                     <td><a href="{{url}}">{{url}}</a></td>
                     <td>{{path}}</td>
-                </tr>
-              {% endwith %}
-            {% endfor %}
-          </tbody>
-        </table>
-      {% else %}
-      <h2>Nothing with this name fragment can be authenticated</h2>
-      {% endif %}
-      <hr>
-      {% if results.unverifiable_collections %}
-        <h2>These are in the archive, but cannot be authenticated</h2>
-        <table id="unverifiable" class="table table-sm table-striped tablesorter">
-          <thead>
-            <tr>
-              <th scope="col" data-sort="name">Name</th>
-              <th scope="col" data-sort="modified">Last Modified On</th>
-              <th scope="col" data-sort="link">Link</th>
-              <th scope="col" data-sort="source">Source</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for path in results.unverifiable_collections %}
-              {% with url=path|url_for_path %}
-              <tr>
+                            </tr>
+                        {% endwith %}
+                    {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <h2>Nothing with this name fragment can be authenticated</h2>
+            {% endif %}
+            <hr>
+            {% if results.unverifiable_collections %}
+                <h2>These are in the archive, but cannot be authenticated</h2>
+                <table id="unverifiable" class="table table-sm table-striped tablesorter">
+                    <thead>
+                    <tr>
+                        <th scope="col" data-sort="name">Name</th>
+                        <th scope="col" data-sort="modified">Last Modified On</th>
+                        <th scope="col" data-sort="link">Link</th>
+                        <th scope="col" data-sort="source">Source</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for path in results.unverifiable_collections %}
+                        {% with url=path|url_for_path %}
+                            <tr>
                 <td>{{path.name}}</td>
-                <td>
-                    {% if path|mtime_is_epoch %}
-                      Timestamp has been lost (is Unix Epoch)
-                    {% else %}
+                                <td>
+                                    {% if path|mtime_is_epoch %}
+                                        Timestamp has been lost (is Unix Epoch)
+                                    {% else %}
                       {{path|mtime|date:"DATETIME_FORMAT"}}
-                    {% endif %}
-                </td>
+                                    {% endif %}
+                                </td>
                 <td><a href="{{url}}">{{url}}</a></td>
                 <td>{{path}}</td>
-              </tr>
-              {% endwith %}
-            {% endfor %}
-          </tbody>
-        </table>
-      {% endif %}
-      {% if results.unexpected %}
-        <h2>These are unexpected and we do not know what their origin is. These cannot be authenticated</h2>
-        <table id="unexpected" class="table table-sm table-striped tablesorter">
-          <thead>
-            <tr>
-              <th scope="col" data-sort="name">Name</th>
-              <th scope="col" data-sort="modified">Last Modified On</th>
-              <th scope="col" data-sort="link">Link</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for path in results.unexpected %}
-              {% with url=path|url_for_path %}
-              <tr>
+                            </tr>
+                        {% endwith %}
+                    {% endfor %}
+                    </tbody>
+                </table>
+            {% endif %}
+            {% if results.unexpected %}
+                <h2>These are unexpected and we do not know what their origin is. These cannot be authenticated</h2>
+                <table id="unexpected" class="table table-sm table-striped tablesorter">
+                    <thead>
+                    <tr>
+                        <th scope="col" data-sort="name">Name</th>
+                        <th scope="col" data-sort="modified">Last Modified On</th>
+                        <th scope="col" data-sort="link">Link</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for path in results.unexpected %}
+                        {% with url=path|url_for_path %}
+                            <tr>
                 <td>{{path.name}}</td>
-                <td>
-                    {% if path|mtime_is_epoch %}
-                      Timestamp has been lost (is Unix Epoch)
-                    {% else %}
+                                <td>
+                                    {% if path|mtime_is_epoch %}
+                                        Timestamp has been lost (is Unix Epoch)
+                                    {% else %}
                       {{path|mtime|date:"DATETIME_FORMAT"}}
-                    {% endif %}
-                </td>
+                                    {% endif %}
+                                </td>
                 <td><a href="{{url}}">{{url}}</a></td>
-              </tr>
-              {% endwith %}
-            {% endfor %}
-          </tbody>
-        </table>
-      {% endif %}
+                            </tr>
+                        {% endwith %}
+                    {% endfor %}
+                    </tbody>
+                </table>
+            {% endif %}
+        </div>
+    {% endif %}
     </div>
-  {% endif %}
 {% endblock %}
 {% block js %}
     <script src="{% static "ietf/js/list.js" %}"></script>
+    <script type="application/javascript">
+        document.addEventListener('DOMContentLoaded', () => {
+            const investigateForm = document.forms['investigate']
+            investigateForm.addEventListener('submit', (event) => {
+                // Intercept submission unless we've filled in the task_id field
+                if (!investigateForm.elements['id_task_id'].value) {
+                    event.preventDefault()
+                    runInvestigation()
+                }
+            })
+
+            const runInvestigation = async () => {
+                // Submit the request
+                const response = await fetch('', {
+                    method: investigateForm.method,
+                    body: new FormData(investigateForm)
+                })
+                if (!response.ok) {
+                    loadResultsFromTask('bogus-task-id') // bad task id will generate an error from Django
+                }
+                const taskId = (await response.json()).id
+                waitForResults(taskId, 10) // Poll for completion of the investigation
+            }
+
+            const waitForResults = async (taskId, retries) => {
+                // indicate that investigation is in progress
+                document.getElementById('spinner').classList.remove('d-none')
+                document.getElementById('investigate-button').disabled = true
+                investigateForm.elements['id_name_fragment'].disabled = true
+
+                const response = await fetch('?' + new URLSearchParams({ id: taskId }))
+                if (!response.ok) {
+                    loadResultsFromTask('bogus-task-id') // bad task id will generate an error from Django
+                }
+                const result = await response.json()
+                if (result.status !== 'ready' && retries > 0) {
+                    setTimeout(waitForResults, 5000, taskId, retries - 1)
+                } else {
+                    /* Either the response is ready or we timed out waiting. In either case, submit
+                       the task_id via POST and let Django display an error if it's not ready. Before
+                       submitting, re-enable the form fields so the POST is valid. Other in-progress
+                       indicators will be reset when the POST response is loaded. */
+                    loadResultsFromTask(taskId)
+                }
+            }
+            
+            const loadResultsFromTask = (taskId) => {
+                investigateForm.elements['id_name_fragment'].disabled = false
+                investigateForm.elements['id_task_id'].value = taskId
+                investigateForm.submit()
+            }
+        })
+    </script>
 {% endblock %}
