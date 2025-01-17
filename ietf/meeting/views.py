@@ -9,6 +9,8 @@ import itertools
 import json
 import math
 import os
+from hashlib import sha384
+
 import pytz
 import re
 import tarfile
@@ -4120,7 +4122,20 @@ def organize_proceedings_sessions(sessions):
     return meeting_groups, not_meeting_groups
 
 
-def proceedings(request, num=None):
+def generate_proceedings_content(meeting, force_refresh=False):
+    """Render proceedings content for a meeting and update cache
+    
+    :meeting: meeting whose proceedings should be rendered
+    :force_refresh: true to force regeneration and cache refresh
+    """
+    cache = caches["default"]
+    cache_version = Document.objects.filter(session__meeting__number=meeting.number).aggregate(Max('time'))["time__max"]
+    bare_key = f"proceedings.{meeting.number}.{cache_version}"
+    cache_key = sha384(bare_key.encode("utf8")).hexdigest()
+    if not force_refresh:
+        cached_content = cache.get(cache_key, None)
+        if cached_content is not None:
+            return cached_content
 
     def area_and_group_acronyms_from_session(s):
         area = s.group_parent_at_the_time()
@@ -4128,18 +4143,6 @@ def proceedings(request, num=None):
             area = s.group.parent
         group = s.group_at_the_time()
         return (area.acronym, group.acronym)
-
-    meeting = get_meeting(num)
-
-    # Early proceedings were hosted on www.ietf.org rather than the datatracker
-    if meeting.proceedings_format_version == 1:
-        return HttpResponseRedirect(settings.PROCEEDINGS_V1_BASE_URL.format(meeting=meeting))
-
-    if not meeting.schedule or not meeting.schedule.assignments.exists():
-        kwargs = dict()
-        if num:
-            kwargs['num'] = num
-        return redirect('ietf.meeting.views.materials', **kwargs)
 
     begin_date = meeting.get_submission_start_date()
     cut_off_date = meeting.get_submission_cut_off_date()
@@ -4187,26 +4190,50 @@ def proceedings(request, num=None):
         meeting_groups, not_meeting_groups = organize_proceedings_sessions(area_sessions)
         ietf_areas.append((area, meeting_groups, not_meeting_groups))
 
-    cache_version = Document.objects.filter(session__meeting__number=meeting.number).aggregate(Max('time'))["time__max"]
+    with timezone.override(meeting.tz()):
+        rendered_content = render_to_string(
+            "meeting/proceedings.html", 
+            {
+                'meeting': meeting,
+                'plenaries': plenaries,
+                'training': training,
+                'irtf': irtf,
+                'iab': iab,
+                'editorial': editorial,
+                'ietf_areas': ietf_areas,
+                'cut_off_date': cut_off_date,
+                'cor_cut_off_date': cor_cut_off_date,
+                'submission_started': today_utc > begin_date,
+                'attendance': meeting.get_attendance(),
+                'meetinghost_logo': {
+                    'max_height': settings.MEETINGHOST_LOGO_MAX_DISPLAY_HEIGHT,
+                    'max_width': settings.MEETINGHOST_LOGO_MAX_DISPLAY_WIDTH,
+                }
+            },
+        )
+    cache.set(cache_key, rendered_content, timeout=900)
+    return rendered_content
+        
+
+def proceedings(request, num=None):
+    meeting = get_meeting(num)
+    
+    # Early proceedings were hosted on www.ietf.org rather than the datatracker
+    if meeting.proceedings_format_version == 1:
+        return HttpResponseRedirect(settings.PROCEEDINGS_V1_BASE_URL.format(meeting=meeting))
+
+    if not meeting.schedule or not meeting.schedule.assignments.exists():
+        kwargs = dict()
+        if num:
+            kwargs['num'] = num
+        return redirect('ietf.meeting.views.materials', **kwargs)
+
 
     with timezone.override(meeting.tz()):
-        return render(request, "meeting/proceedings.html", {
+        return render(request, "meeting/proceedings_wrapper.html", {
             'meeting': meeting,
-            'plenaries': plenaries,
-            'training': training,
-            'irtf': irtf,
-            'iab': iab,
-            'editorial': editorial,
-            'ietf_areas': ietf_areas,
-            'cut_off_date': cut_off_date,
-            'cor_cut_off_date': cor_cut_off_date,
-            'submission_started': today_utc > begin_date,
-            'cache_version': cache_version,
             'attendance': meeting.get_attendance(),
-            'meetinghost_logo': {
-                'max_height': settings.MEETINGHOST_LOGO_MAX_DISPLAY_HEIGHT,
-                'max_width': settings.MEETINGHOST_LOGO_MAX_DISPLAY_WIDTH,
-            }
+            'proceedings_content': generate_proceedings_content(meeting),
         })
 
 @role_required('Secretariat')

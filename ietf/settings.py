@@ -1321,9 +1321,9 @@ if "CACHES" not in locals():
     else:
         CACHES = {
             "default": {
-                "BACKEND": "django.core.cache.backends.dummy.DummyCache",
-                #'BACKEND': 'ietf.utils.cache.LenientMemcacheCache',
-                #'LOCATION': '127.0.0.1:11211',
+                # "BACKEND": "django.core.cache.backends.dummy.DummyCache",
+                'BACKEND': 'ietf.utils.cache.LenientMemcacheCache',
+                'LOCATION': '127.0.0.1:11211',
                 #'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
                 "VERSION": __version__,
                 "KEY_PREFIX": "ietf:dt",
