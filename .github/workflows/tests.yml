@@ -29,11 +29,7 @@ jobs:
       db:
         image: ghcr.io/ietf-tools/datatracker-db:latest
       blobstore:
-        image: quay.io/minio/minio:latest
-        environment:
-          - MINIO_ROOT_USER=minio_root
-          - MINIO_ROOT_PASSWORD=minio_pass
-          - MINIO_DEFAULT_BUCKETS=defaultbucket
+        image: ghcr.io/ietf-tools/datatracker-devblobstore:latest
     
     steps:
     - uses: actions/checkout@v4

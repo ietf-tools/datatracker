@@ -85,15 +85,10 @@ services:
             - app-assets:/assets
 
     blobstore:
-        image: quay.io/minio/minio:latest
+        image: ghcr.io/ietf-tools/datatracker-devblobstore:latest
         restart: unless-stopped
         volumes:
             - "minio-data:/data"
-        environment:
-            - MINIO_ROOT_USER=minio_root
-            - MINIO_ROOT_PASSWORD=minio_pass
-            - MINIO_DEFAULT_BUCKETS=defaultbucket
-        command: server --console-address ":9001" /data
 
 
 

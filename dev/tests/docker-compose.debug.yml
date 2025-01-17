@@ -29,12 +29,7 @@ services:
             - postgresdb-data:/var/lib/postgresql/data
 
     blobstore:
-      image: quay.io/minio/minio:latest
-      environment:
-        - MINIO_ROOT_USER=minio_root
-        - MINIO_ROOT_PASSWORD=minio_pass
-        - MINIO_DEFAULT_BUCKETS=defaultbucket
-      command: server /data
+      image: ghcr.io/ietf-tools/datatracker-devblobstore:latest
 
 volumes:
     postgresdb-data:
