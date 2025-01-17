@@ -167,6 +167,7 @@ def edit_material(request, name=None, acronym=None, action=None, doc_type=None):
                 with filepath.open('wb+') as dest:
                     for chunk in f.chunks():
                         dest.write(chunk)
+                # TODO-BLOBSTORE store (in chunks? is ContentFile good enough?)
                 if not doc.meeting_related():
                     log.assertion('doc.type_id == "slides"')
                     ftp_filepath = Path(settings.FTP_DIR) / doc.type_id / basename

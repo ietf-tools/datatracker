@@ -499,6 +499,7 @@ def post_submission(request, submission, approved_doc_desc, approved_subm_desc):
     ref_rev_file_name = os.path.join(os.path.join(settings.BIBXML_BASE_PATH, 'bibxml-ids'), 'reference.I-D.%s-%s.xml' % (draft.name, draft.rev ))
     with io.open(ref_rev_file_name, "w", encoding='utf-8') as f:
         f.write(ref_text)
+    # TODO-BLOBSTORE
 
     log.log(f"{submission.name}: done")
     
@@ -773,6 +774,7 @@ def save_files(form):
             for chunk in f.chunks():
                 destination.write(chunk)
         log.log("saved file %s" % name)
+        # TODO-BLOBSTORE
     return file_name
 
 
@@ -995,6 +997,7 @@ def render_missing_formats(submission):
                 xml_version,
             )
         )
+        # TODO-BLOBSTORE
 
     # --- Convert to html ---
     html_path = staging_path(submission.name, submission.rev, '.html')
@@ -1017,6 +1020,7 @@ def render_missing_formats(submission):
             xml_version,
         )
     )
+    # TODO-BLOBSTORE
 
 
 def accept_submission(submission: Submission, request: Optional[HttpRequest] = None, autopost=False):

@@ -163,6 +163,7 @@ class UploadForm(forms.Form):
                 destination.write(self.cleaned_data['txt'])
             else:
                 destination.write(self.cleaned_data['content'])
+        # TODO-BLOBSTORE
         try:
             ftp_filename = Path(settings.FTP_DIR) / "status-changes" / basename
             os.link(filename, ftp_filename) # Path.hardlink is not available until 3.10

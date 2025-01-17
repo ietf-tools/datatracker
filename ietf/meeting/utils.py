@@ -229,6 +229,7 @@ def generate_bluesheet(request, session):
     os.close(fd)
     with open(name, "w") as file:
         file.write(text)
+    # TODO-BLOBSTORE
     with open(name, "br") as file:
         return save_bluesheet(request, session, file)
 
@@ -788,6 +789,7 @@ def handle_upload_file(file, filename, meeting, subdir, request=None, encoding=N
             # document (sanitize will remove these).
             clean = sanitize_document(text)
             destination.write(clean.encode('utf8'))
+            # TODO-BLOBSTORE
             if request and clean != text:
                 messages.warning(request,
                                  (
@@ -798,6 +800,7 @@ def handle_upload_file(file, filename, meeting, subdir, request=None, encoding=N
         else:
             for chunk in chunks:
                 destination.write(chunk)
+            # TODO-BLOBSTORE
 
     # unzip zipfile
     if is_zipfile:
@@ -834,6 +837,7 @@ def write_doc_for_session(session, type_id, filename, contents):
     path.mkdir(parents=True, exist_ok=True)
     with open(path / filename, "wb") as file:
         file.write(contents.encode('utf-8'))
+    # TODO-BLOBSTORE
     return
 
 def create_recording(session, url, title=None, user=None):

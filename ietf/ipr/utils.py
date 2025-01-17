@@ -87,8 +87,9 @@ def generate_draft_recursive_txt():
     filename = '/a/ietfdata/derived/ipr_draft_recursive.txt'
     with open(filename, 'w') as f:
         f.write(data)
+    # TODO-BLOBSTORE: Where is this exposed?
 
-    
+
 def ingest_response_email(message: bytes):
     from ietf.api.views import EmailIngestionError  # avoid circular import
     try:

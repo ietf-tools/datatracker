@@ -139,8 +139,10 @@ def submit(request, name):
                 if writing_pdf:
                     for chunk in form.cleaned_data["statement_file"].chunks():
                         destination.write(chunk)
+                    # TODO-BLOBSTORE
                 else:
                     destination.write(markdown_content)
+                    # TODO-BLOBSTORE
             return redirect("ietf.doc.views_doc.document_main", name=statement.name)
 
     else:
@@ -256,8 +258,10 @@ def new_statement(request):
                 if writing_pdf:
                     for chunk in form.cleaned_data["statement_file"].chunks():
                         destination.write(chunk)
+                    # TODO-BLOBSTORE
                 else:
                     destination.write(markdown_content)
+                    # TODO-BLOBSTORE
             return redirect("ietf.doc.views_doc.document_main", name=statement.name)
 
     else:

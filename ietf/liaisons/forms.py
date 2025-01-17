@@ -379,6 +379,7 @@ class LiaisonModelForm(forms.ModelForm):
             attach_file = io.open(os.path.join(settings.LIAISON_ATTACH_PATH, attach.name + extension), 'wb')
             attach_file.write(attached_file.read())
             attach_file.close()
+            # TODO-BLOBSTORE
 
             if not self.is_new:
                 # create modified event

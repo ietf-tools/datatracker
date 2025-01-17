@@ -3001,6 +3001,7 @@ def upload_session_slides(request, session_id, num, name=None):
                 for chunk in file.chunks():
                     destination.write(chunk)
                 destination.close()
+                # TODO-BLOBSTORE : Do we keep a staging blobstore until we can refactor away exposing staged things through www.ietf.org?
 
                 submission.filename = filename
                 submission.save()
@@ -4703,6 +4704,7 @@ def api_upload_bluesheet(request):
         save_err = save_bluesheet(request, session, file)
     if save_err:
         return err(400, save_err)
+    # TODO-BLOBSTORE
 
     return HttpResponse("Done", status=200, content_type='text/plain')
 

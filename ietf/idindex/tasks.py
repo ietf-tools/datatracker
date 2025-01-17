@@ -39,6 +39,8 @@ class TempFileManager(AbstractContextManager):
             target.unlink(missing_ok=True)
             os.link(dest_path, target) # until python>=3.10
 
+    # TODO-BLOBSTORE : Going to need something to put these generated things into storage
+
     def cleanup(self):
         for tf_path in self.cleanup_list:
             tf_path.unlink(missing_ok=True)

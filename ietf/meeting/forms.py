@@ -361,6 +361,7 @@ class InterimSessionModelForm(forms.ModelForm):
             os.makedirs(directory)
         with io.open(path, "w", encoding='utf-8') as file:
             file.write(self.cleaned_data['agenda'])
+        # TODO-BLOBSTORE
 
 
 class InterimAnnounceForm(forms.ModelForm):
