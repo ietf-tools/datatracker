@@ -13,6 +13,7 @@ Django>4.2,<5
 django-analytical>=3.1.0
 django-bootstrap5>=21.3
 django-celery-beat>=2.3.0
+django-celery-results>=2.5.1
 django-csp>=3.7
 django-cors-headers>=3.11.0
 django-debug-toolbar>=3.2.4
