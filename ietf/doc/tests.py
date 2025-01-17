@@ -3280,7 +3280,8 @@ class InvestigateTests(TestCase):
             "draft-this-should-not-be-possible-00.txt",
         )
 
-    def test_investigate(self):
+    def test_investigate_get(self):
+        """GET with no querystring should retrieve the investigate UI"""
         url = urlreverse("ietf.doc.views_doc.investigate")
         login_testing_unauthorized(self, "secretary", url)
         r = self.client.get(url)
@@ -3288,36 +3289,143 @@ class InvestigateTests(TestCase):
         q = PyQuery(r.content)
         self.assertEqual(len(q("form#investigate")), 1)
         self.assertEqual(len(q("div#results")), 0)
-        r = self.client.post(url, dict(name_fragment="this-is-not-found"))
+
+    @mock.patch("ietf.doc.views_doc.AsyncResult")
+    def test_investgate_get_task_id(self, mock_asyncresult):
+        """GET with querystring should lookup task status"""
+        url = urlreverse("ietf.doc.views_doc.investigate")
+        login_testing_unauthorized(self, "secretary", url)
+        mock_asyncresult.return_value.ready.return_value = True
+        r = self.client.get(url + "?id=a-task-id")
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.json(), {"status": "ready"})
+        self.assertTrue(mock_asyncresult.called)
+        self.assertEqual(mock_asyncresult.call_args, mock.call("a-task-id"))
+        mock_asyncresult.reset_mock()
+
+        mock_asyncresult.return_value.ready.return_value = False
+        r = self.client.get(url + "?id=a-task-id")
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.json(), {"status": "notready"})
+        self.assertTrue(mock_asyncresult.called)
+        self.assertEqual(mock_asyncresult.call_args, mock.call("a-task-id"))
+
+    @mock.patch("ietf.doc.views_doc.investigate_fragment_task")
+    def test_investigate_post(self, mock_investigate_fragment_task):
+        """POST with a name_fragment and no task_id should start a celery task"""
+        url = urlreverse("ietf.doc.views_doc.investigate")
+        login_testing_unauthorized(self, "secretary", url)
+
+        # test some invalid cases
+        r = self.client.post(url, {"name_fragment": "short"})  # limit is >= 8 characters
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
+        self.assertEqual(len(q("#id_name_fragment.is-invalid")), 1)
+        self.assertFalse(mock_investigate_fragment_task.delay.called)
+        for char in ["*", "%", "/", "\\"]:
+            r = self.client.post(url, {"name_fragment": f"bad{char}character"})
+            self.assertEqual(r.status_code, 200)
+            q = PyQuery(r.content)
+            self.assertEqual(len(q("#id_name_fragment.is-invalid")), 1)
+            self.assertFalse(mock_investigate_fragment_task.delay.called)
+        
+        # now a valid one
+        mock_investigate_fragment_task.delay.return_value.id = "a-task-id"
+        r = self.client.post(url, {"name_fragment": "this-is-a-valid-fragment"})
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(mock_investigate_fragment_task.delay.called)
+        self.assertEqual(mock_investigate_fragment_task.delay.call_args, mock.call("this-is-a-valid-fragment"))
+        self.assertEqual(r.json(), {"id": "a-task-id"})
+
+    @mock.patch("ietf.doc.views_doc.AsyncResult")
+    def test_investigate_post_task_id(self, mock_asyncresult):
+        """POST with name_fragment and task_id should retrieve results"""
+        url = urlreverse("ietf.doc.views_doc.investigate")
+        login_testing_unauthorized(self, "secretary", url)
+
+        # First, test a non-successful result - this could be a failure or non-existent task id
+        mock_result = mock_asyncresult.return_value
+        mock_result.successful.return_value = False
+        r = self.client.post(url, {"name_fragment": "some-fragment", "task_id": "a-task-id"})
+        self.assertContains(r, "The investigation task failed.", status_code=200)
+        self.assertTrue(mock_asyncresult.called)
+        self.assertEqual(mock_asyncresult.call_args, mock.call("a-task-id"))
+        self.assertFalse(mock_result.get.called)
+        mock_asyncresult.reset_mock()
+        q = PyQuery(r.content)
+        self.assertEqual(q("#id_name_fragment").val(), "some-fragment")
+        self.assertEqual(q("#id_task_id").val(), "a-task-id")
+
+        # now the various successful result mixes
+        mock_result = mock_asyncresult.return_value
+        mock_result.successful.return_value = True
+        mock_result.get.return_value = {
+            "name_fragment": "different-fragment",
+            "results": {
+                "can_verify": set(),
+                "unverifiable_collections": set(),
+                "unexpected": set(),
+            }
+        }
+        r = self.client.post(url, {"name_fragment": "some-fragment", "task_id": "a-task-id"})
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(mock_asyncresult.called)
+        self.assertEqual(mock_asyncresult.call_args, mock.call("a-task-id"))
+        mock_asyncresult.reset_mock()
+        q = PyQuery(r.content)
+        self.assertEqual(q("#id_name_fragment").val(), "different-fragment", "name_fragment should be reset")
+        self.assertEqual(q("#id_task_id").val(), "", "task_id should be cleared")
         self.assertEqual(len(q("div#results")), 1)
         self.assertEqual(len(q("table#authenticated")), 0)
         self.assertEqual(len(q("table#unverifiable")), 0)
         self.assertEqual(len(q("table#unexpected")), 0)
-        r = self.client.post(url, dict(name_fragment="mixed-provenance"))
+
+        # This file was created in setUp. It allows the view to render properly
+        # but its location / content don't matter for this test otherwise.
+        a_file_that_exists = Path(settings.INTERNET_DRAFT_PATH) / "draft-this-is-active-00.txt"
+
+        mock_result.get.return_value = {
+            "name_fragment": "different-fragment",
+            "results": {
+                "can_verify": {a_file_that_exists},
+                "unverifiable_collections": {a_file_that_exists},
+                "unexpected": set(),
+            }
+        }
+        r = self.client.post(url, {"name_fragment": "some-fragment", "task_id": "a-task-id"})
         self.assertEqual(r.status_code, 200)
+        self.assertTrue(mock_asyncresult.called)
+        self.assertEqual(mock_asyncresult.call_args, mock.call("a-task-id"))
+        mock_asyncresult.reset_mock()
         q = PyQuery(r.content)
+        self.assertEqual(q("#id_name_fragment").val(), "different-fragment", "name_fragment should be reset")
+        self.assertEqual(q("#id_task_id").val(), "", "task_id should be cleared")
         self.assertEqual(len(q("div#results")), 1)
         self.assertEqual(len(q("table#authenticated")), 1)
         self.assertEqual(len(q("table#unverifiable")), 1)
         self.assertEqual(len(q("table#unexpected")), 0)
-        r = self.client.post(url, dict(name_fragment="not-be-possible"))
+
+        mock_result.get.return_value = {
+            "name_fragment": "different-fragment",
+            "results": {
+                "can_verify": set(),
+                "unverifiable_collections": set(),
+                "unexpected": {a_file_that_exists},
+            }
+        }
+        r = self.client.post(url, {"name_fragment": "some-fragment", "task_id": "a-task-id"})
         self.assertEqual(r.status_code, 200)
+        self.assertTrue(mock_asyncresult.called)
+        self.assertEqual(mock_asyncresult.call_args, mock.call("a-task-id"))
+        mock_asyncresult.reset_mock()
         q = PyQuery(r.content)
+        self.assertEqual(q("#id_name_fragment").val(), "different-fragment", "name_fragment should be reset")
+        self.assertEqual(q("#id_task_id").val(), "", "task_id should be cleared")
         self.assertEqual(len(q("div#results")), 1)
         self.assertEqual(len(q("table#authenticated")), 0)
         self.assertEqual(len(q("table#unverifiable")), 0)
         self.assertEqual(len(q("table#unexpected")), 1)
-        r = self.client.post(url, dict(name_fragment="short"))
-        self.assertEqual(r.status_code, 200)
-        q = PyQuery(r.content)
-        self.assertEqual(len(q("#id_name_fragment.is-invalid")), 1)
-        for char in ["*", "%", "/", "\\"]:
-            r = self.client.post(url, dict(name_fragment=f"bad{char}character"))
-            self.assertEqual(r.status_code, 200)
-            q = PyQuery(r.content)
-            self.assertEqual(len(q("#id_name_fragment.is-invalid")), 1)
+
 
 class LogIOErrorTests(TestCase):
 

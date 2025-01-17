@@ -453,6 +453,7 @@ INSTALLED_APPS = [
     'django_vite',
     'django_bootstrap5',
     'django_celery_beat',
+    'django_celery_results',
     'corsheaders',
     'django_markup',
     'oidc_provider',
@@ -1240,7 +1241,9 @@ CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True  # the default, but setting it 
 # https://docs.celeryq.dev/en/stable/userguide/tasks.html#rpc-result-backend-rabbitmq-qpid
 # Results can be retrieved only once and only by the caller of the task. Results will be
 # lost if the message broker restarts.
-CELERY_RESULT_BACKEND = 'rpc://'  # sends a msg via the msg broker
+CELERY_RESULT_BACKEND = 'django-cache'  # use a Django cache for results
+CELERY_CACHE_BACKEND = 'celery-results'  # which Django cache to use
+CELERY_RESULT_EXPIRES = datetime.timedelta(minutes=5)  # how long are results valid? (Default is 1 day)
 CELERY_TASK_IGNORE_RESULT = True  # ignore results unless specifically enabled for a task
 
 # Meetecho API setup: Uncomment this and provide real credentials to enable
@@ -1323,6 +1326,11 @@ if "CACHES" not in locals():
                     "MAX_ENTRIES": 5000,
                 },
             },
+            "celery-results": {
+                "BACKEND": "django.core.cache.backends.memcached.PyMemcacheCache",
+                "LOCATION": f"{MEMCACHED_HOST}:{MEMCACHED_PORT}",
+                "KEY_PREFIX": "ietf:celery",
+            },
         }
     else:
         CACHES = {
@@ -1360,6 +1368,11 @@ if "CACHES" not in locals():
                 "OPTIONS": {
                     "MAX_ENTRIES": 5000,
                 },
+            },
+            "celery-results": {
+                "BACKEND": "django.core.cache.backends.memcached.PyMemcacheCache",
+                "LOCATION": "app:11211",
+                "KEY_PREFIX": "ietf:celery",
             },
         }
 
