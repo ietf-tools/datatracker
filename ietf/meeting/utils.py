@@ -24,7 +24,6 @@ from django.utils.encoding import smart_str
 import debug                            # pyflakes:ignore
 
 from ietf.dbtemplate.models import DBTemplate
-from ietf.meeting.helpers import get_schedule
 from ietf.meeting.models import (Session, SchedulingEvent, TimeSlot,
     Constraint, SchedTimeSessAssignment, SessionPresentation, Attended)
 from ietf.doc.models import Document, State, NewRevisionDocEvent
@@ -1030,7 +1029,7 @@ def generate_proceedings_content(meeting, force_refresh=False):
     cor_cut_off_date = meeting.get_submission_correction_date()
     today_utc = date_today(datetime.timezone.utc)
 
-    schedule = get_schedule(meeting, None)
+    schedule = meeting.schedule
     sessions  = (
         meeting.session_set.with_current_status()
         .filter(Q(timeslotassignments__schedule__in=[schedule, schedule.base if schedule else None])
