@@ -1091,7 +1091,11 @@ def generate_proceedings_content(meeting, force_refresh=False):
                 }
             },
         )
-    cache.set(cache_key, rendered_content, timeout=900)
+    cache.set(
+        cache_key,
+        rendered_content,
+        timeout=86400,  # one day, in seconds
+    )
     return rendered_content
 
 
