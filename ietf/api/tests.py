@@ -560,7 +560,6 @@ class CustomApiTests(TestCase):
         recman = recmanrole.person
         meeting = MeetingFactory(type_id="ietf")
         session = SessionFactory(group__type_id="wg", meeting=meeting)
-        group = session.group
         apikey = PersonalApiKeyFactory(endpoint=url, person=recman)
 
         people = [
@@ -600,18 +599,6 @@ class CustomApiTests(TestCase):
         r = self.client.post(url, {"apikey": apikey.hash(), "session_id": session.pk})
         self.assertContains(r, "Missing bluesheet parameter", status_code=400)
 
-        r = self.client.post(
-            url,
-            {
-                "apikey": apikey.hash(),
-                "meeting": meeting.number,
-                "group": group.acronym,
-                "item": "1",
-                "bluesheet": "foobar",
-            },
-        )
-        self.assertContains(r, "Invalid json value: 'foobar'", status_code=400)
-
         bad_session_pk = int(Session.objects.order_by("-pk").first().pk) + 1
         r = self.client.post(
             url,
@@ -650,9 +637,7 @@ class CustomApiTests(TestCase):
             url,
             {
                 "apikey": apikey.hash(),
-                "meeting": meeting.number,
-                "group": group.acronym,
-                "item": "1",
+                "session_id": session.pk,
                 "bluesheet": bluesheet,
             },
         )
