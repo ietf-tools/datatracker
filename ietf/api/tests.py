@@ -560,7 +560,6 @@ class CustomApiTests(TestCase):
         recman = recmanrole.person
         meeting = MeetingFactory(type_id="ietf")
         session = SessionFactory(group__type_id="wg", meeting=meeting)
-        group = session.group
         apikey = PersonalApiKeyFactory(endpoint=url, person=recman)
 
         people = [
