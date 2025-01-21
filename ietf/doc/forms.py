@@ -276,6 +276,7 @@ class InvestigateForm(forms.Form):
         ),
         min_length=8,
     )
+    task_id = forms.CharField(required=False, widget=forms.HiddenInput)
 
     def clean_name_fragment(self):
         disallowed_characters = ["%", "/", "\\", "*"]
