@@ -1010,7 +1010,9 @@ def generate_proceedings_content(meeting, force_refresh=False):
     """
     cache = caches["default"]
     cache_version = Document.objects.filter(session__meeting__number=meeting.number).aggregate(Max('time'))["time__max"]
-    bare_key = f"proceedings.{meeting.number}.{cache_version}"
+    # Include proceedings_final in the bare_key so we'll always reflect that accurately, even at the cost of
+    # a recomputation in the view
+    bare_key = f"proceedings.{meeting.number}.{cache_version}.final={meeting.proceedings_final}"
     cache_key = sha384(bare_key.encode("utf8")).hexdigest()
     if not force_refresh:
         cached_content = cache.get(cache_key, None)
@@ -1023,11 +1025,6 @@ def generate_proceedings_content(meeting, force_refresh=False):
             area = s.group.parent
         group = s.group_at_the_time()
         return (area.acronym, group.acronym)
-
-    begin_date = meeting.get_submission_start_date()
-    cut_off_date = meeting.get_submission_cut_off_date()
-    cor_cut_off_date = meeting.get_submission_correction_date()
-    today_utc = date_today(datetime.timezone.utc)
 
     schedule = meeting.schedule
     sessions  = (
@@ -1081,10 +1078,6 @@ def generate_proceedings_content(meeting, force_refresh=False):
                 'iab': iab,
                 'editorial': editorial,
                 'ietf_areas': ietf_areas,
-                'cut_off_date': cut_off_date,
-                'cor_cut_off_date': cor_cut_off_date,
-                'submission_started': today_utc > begin_date,
-                'attendance': meeting.get_attendance(),
                 'meetinghost_logo': {
                     'max_height': settings.MEETINGHOST_LOGO_MAX_DISPLAY_HEIGHT,
                     'max_width': settings.MEETINGHOST_LOGO_MAX_DISPLAY_WIDTH,
