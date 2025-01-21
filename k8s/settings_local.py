@@ -272,6 +272,11 @@ CACHES = {
             "MAX_ENTRIES": 5000,
         },
     },
+    "celery-results": {
+        "BACKEND": "django.core.cache.backends.memcached.PyMemcacheCache",
+        "LOCATION": f"{MEMCACHED_HOST}:{MEMCACHED_PORT}",
+        "KEY_PREFIX": "ietf:celery",
+    },
 }
 
 _csrf_trusted_origins_str = os.environ.get("DATATRACKER_CSRF_TRUSTED_ORIGINS")
