@@ -18,13 +18,13 @@ document.addEventListener('DOMContentLoaded', () => {
             loadResultsFromTask('bogus-task-id') // bad task id will generate an error from Django
         }
         const taskId = (await response.json()).id
-        // Poll for completion of the investigation up to 18*10 = 180 seconds 
-        waitForResults(taskId, 18)
+        // Poll for completion of the investigation up to 60*10 = 600 seconds 
+        waitForResults(taskId, 60)
     }
 
     const waitForResults = async (taskId, retries) => {
         // indicate that investigation is in progress
-        document.getElementById('spinner').classList.remove('d-none')
+        document.querySelectorAll('.investigation-indicator').forEach(elt => elt.classList.remove('d-none'))
         document.getElementById('investigate-button').disabled = true
         investigateForm.elements['id_name_fragment'].disabled = true
 
