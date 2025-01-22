@@ -13,13 +13,15 @@
             {% csrf_token %}
             {% bootstrap_form form %}
             <button class="btn btn-primary" type="submit" id="investigate-button">
-            <span id="spinner"
-                  class="spinner-border spinner-border-sm d-none"
-                  role="status"
-                  aria-hidden="true">
-            </span>
+                <span class="spinner-border spinner-border-sm investigation-indicator d-none"
+                      role="status"
+                      aria-hidden="true">
+                </span>
                 Investigate
             </button>
+            <div class="alert alert-info mt-3 d-none investigation-indicator">
+                Please be patient, processing may take several minutes.
+            </div>
         </form>
     </div>
     {% if results %}
