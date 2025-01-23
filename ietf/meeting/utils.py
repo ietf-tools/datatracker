@@ -22,7 +22,8 @@ import debug                            # pyflakes:ignore
 
 from ietf.dbtemplate.models import DBTemplate
 from ietf.meeting.models import (Session, SchedulingEvent, TimeSlot,
-    Constraint, SchedTimeSessAssignment, SessionPresentation, Attended)
+    Constraint, SchedTimeSessAssignment, SessionPresentation, Attended,
+    Registration, Meeting)
 from ietf.doc.models import Document, State, NewRevisionDocEvent
 from ietf.doc.models import DocEvent
 from ietf.group.models import Group
@@ -997,3 +998,91 @@ def participants_for_meeting(meeting):
     sessions = meeting.session_set.filter(Q(type='plenary') | Q(group__type__in=['wg', 'rg']))
     attended = Attended.objects.filter(session__in=sessions).values_list('person', flat=True).distinct()
     return (checked_in, attended)
+
+
+def get_preferred(regs):
+    """ Return a preferred regular registration (non hackathon) from 
+        a list of registrations if there is one, otherwise any.
+    """
+    for reg in regs:
+        if reg.reg_type in ['onsite', 'remote']:
+            return reg
+    return reg
+
+
+def migrate_registrations(initial=False):
+    """ Migrate ietf.stats.MeetingRegistration to ietf.meeting.Registration
+        If initial is True, migrate all meetings otherwise only future meetings.
+        This function is idempotent. It can be run regularly from cron.
+    """
+    if initial:
+        meetings = Meeting.objects.filter(type='ietf')
+    else:
+        # still process records during week of meeting
+        one_week_ago = datetime.date.today() - datetime.timedelta(days=7)
+        meetings = Meeting.objects.filter(type='ietf', date__gt=one_week_ago)
+    
+    for meeting in meetings:
+        # gather all MeetingRegistrations by person (email)
+        emails = {}
+        for meeting_reg in MeetingRegistration.objects.filter(meeting=meeting):
+            if meeting_reg.email in emails:
+                emails[meeting_reg.email].append(meeting_reg)
+            else:
+                emails[meeting_reg.email] = [meeting_reg]
+        # process each person's registrations
+        for email, meeting_regs in emails.items():
+            preferred_reg = get_preferred(meeting_regs)
+            reg, created = Registration.objects.get_or_create(
+                meeting=meeting,
+                email=email,
+                defaults={
+                    'first_name': preferred_reg.first_name,
+                    'last_name': preferred_reg.last_name,
+                    'affiliation': preferred_reg.affiliation,
+                    'country_code': preferred_reg.country_code,
+                    'person': preferred_reg.person,
+                    'attended': preferred_reg.attended,
+                    'checkedin': preferred_reg.checkedin,
+                }
+            )
+            if created:
+                for meeting_reg in meeting_regs:
+                    reg.tickets.create(
+                        attendance_type_id=meeting_reg.reg_type,
+                        ticket_type_id=meeting_reg.ticket_type,
+                    )
+            else:
+                # check if tickets differ
+                reg_tuple_list = [(t.attendance_type_id, t.ticket_type_id) for t in reg.tickets.all()]
+                meeting_reg_tuple_list = [(mr.reg_type, mr.ticket_type) for mr in meeting_regs]
+                if not set(reg_tuple_list) == set(meeting_reg_tuple_list):
+                    # update tickets
+                    reg.tickets.all().delete()
+                    for meeting_reg in meeting_regs:
+                        reg.tickets.create(
+                            attendance_type_id=meeting_reg.reg_type,
+                            ticket_type_id=meeting_reg.ticket_type,
+                        )
+                # check fields for updates
+                fields_to_check = [
+                    'first_name', 'last_name', 'affiliation', 'country_code',
+                    'attended', 'checkedin'
+                ]
+                
+                changed = False
+                for field in fields_to_check:
+                    new_value = getattr(preferred_reg, field)
+                    if getattr(reg, field) != new_value:
+                        setattr(reg, field, new_value)
+                        changed = True
+                        
+                if changed:
+                    reg.save()
+        # delete cancelled Registrations
+        meeting_reg_email_set = set(emails.keys())
+        reg_email_set = set(Registration.objects.filter(meeting=meeting).values_list('email', flat=True))
+        for email in reg_email_set - meeting_reg_email_set:
+            Registration.objects.filter(meeting=meeting, email=email).delete()
+
+    return
