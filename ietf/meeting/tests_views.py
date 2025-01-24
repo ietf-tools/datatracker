@@ -5235,6 +5235,12 @@ class InterimTests(TestCase):
         doc = session.materials.first()
         path = os.path.join(doc.get_file_path(),doc.filename_with_rev())
         self.assertTrue(os.path.exists(path))
+        with Path(path).open() as f:
+            self.assertEqual(f.read(), agenda)
+        self.assertEqual(
+            retrieve_str("agenda",doc.uploaded_filename),
+            agenda
+        )
         # check notices to secretariat and chairs
         self.assertEqual(len(outbox), length_before + emails_expected)
         return meeting
@@ -5302,6 +5308,10 @@ class InterimTests(TestCase):
         timeslot = session.official_timeslotassignment().timeslot
         self.assertEqual(timeslot.time,dt)
         self.assertEqual(timeslot.duration,duration)
+        self.assertEqual(
+            retrieve_str("agenda",session.agenda().uploaded_filename),
+            agenda
+        )
 
     def test_interim_request_multi_day(self):
         make_meeting_test_data()
@@ -5369,6 +5379,11 @@ class InterimTests(TestCase):
         self.assertEqual(timeslot.time,dt2)
         self.assertEqual(timeslot.duration,duration)
         self.assertEqual(session.agenda_note,agenda_note)
+        for session in meeting.session_set.all():
+            self.assertEqual(
+                retrieve_str("agenda",session.agenda().uploaded_filename),
+                agenda
+            )
 
     def test_interim_request_multi_day_non_consecutive(self):
         make_meeting_test_data()
@@ -5518,6 +5533,11 @@ class InterimTests(TestCase):
         self.assertEqual(timeslot.time,dt2)
         self.assertEqual(timeslot.duration,duration)
         self.assertEqual(session.agenda_note,agenda_note)
+        for session in meeting.session_set.all():
+            self.assertEqual(
+                retrieve_str("agenda",session.agenda().uploaded_filename),
+                agenda
+            )
 
 
     # test_interim_pending subsumed by test_appears_on_pending
@@ -6091,6 +6111,10 @@ class InterimTests(TestCase):
         self.assertNotEqual(agenda_doc.uploaded_filename, uploaded_filename_before, 'Uploaded filename should be updated')
         with (Path(agenda_doc.get_file_path()) / agenda_doc.uploaded_filename).open() as f:
             self.assertEqual(f.read(), 'modified agenda contents', 'New agenda contents should be saved')
+        self.assertEqual(
+            retrieve_str(agenda_doc.type_id, agenda_doc.uploaded_filename),
+            "modified agenda contents"
+        )
 
     def test_interim_request_details_permissions(self):
         make_interim_test_data()
