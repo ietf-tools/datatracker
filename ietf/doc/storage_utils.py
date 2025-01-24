@@ -2,34 +2,29 @@
 
 import debug  # pyflakes ignore
 
-from django.core.files.base import ContentFile
+from django.conf import settings
+from django.core.files.base import ContentFile, File
 from django.core.files.storage import storages, Storage
 
 from ietf.utils.log import log
 
 
 def _get_storage(kind: str) -> Storage:
-    if kind in [
-        "bofreq",
-        "charter",
-        "conflrev",
-        "draft",
-        "draft",
-        "draft",
-    ]:
+    if kind in settings.MORE_STORAGE_NAMES:
         return storages[kind]
     else:
         debug.say(f"Got into not-implemented looking for {kind}")
         raise NotImplementedError(f"Don't know how to store {kind}")
 
 
-def store_bytes(
-    kind: str, name: str, content: bytes, allow_overwrite: bool = False
-) -> None:
+def store_file(kind: str, name: str, file: File, allow_overwrite: bool = False) -> None:
     store = _get_storage(kind)
-    if not allow_overwrite:
+    if not allow_overwrite and store.exists(name):
+        log(f"Failed to save {kind}:{name} - name already exists in store")
+        debug.show('f"Failed to save {kind}:{name} - name already exists in store"')
+    else:
         try:
-            new_name = store.save(name, ContentFile(content))
+            new_name = store.save(name, file)
         except Exception as e:
             # Log and then swallow the exception while we're learning.
             # Don't let failure pass so quietly when these are the autoritative bits.
@@ -40,16 +35,21 @@ def store_bytes(
             log(
                 f"Conflict encountered saving {name} - results stored in {new_name} instead."
             )
-    else:
-        try:
-            with store.open(name) as f:
-                f.write(content)
-        except Exception as e:
-            # Log and then swallow the exception while we're learning.
-            # Don't let failure pass so quietly when these are the autoritative bits.
-            log(f"Failed to save {kind}:{name}", e)
-            return None
-        raise NotImplementedError()
+            debug.show('f"Conflict encountered saving {name} - results stored in {new_name} instead."')
+        return None
+
+
+def store_bytes(
+    kind: str, name: str, content: bytes, allow_overwrite: bool = False
+) -> None:
+    return store_file(kind, name, ContentFile(content), allow_overwrite)
+
+
+def store_str(
+    kind: str, name: str, content: str, allow_overwrite: bool = False
+) -> None:
+    content_bytes = content.encode("utf-8")
+    return store_bytes(kind, name, content_bytes, allow_overwrite)
 
 
 def retrieve_bytes(kind: str, name: str) -> bytes:
@@ -59,13 +59,7 @@ def retrieve_bytes(kind: str, name: str) -> bytes:
     return content
 
 
-def store_str(
-    kind: str, name: str, content: str, allow_overwrite: bool = False
-) -> None:
-    content_bytes = content.encode("utf-8")
-    store_bytes(kind, name, content_bytes, allow_overwrite)
-
-
 def retrieve_str(kind: str, name: str) -> str:
     content_bytes = retrieve_bytes(kind, name)
+    # TODO: try to decode all the different ways doc.text() does
     return content_bytes.decode("utf-8")

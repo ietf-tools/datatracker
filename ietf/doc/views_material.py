@@ -19,6 +19,7 @@ import debug                            # pyflakes:ignore
 
 from ietf.doc.models import Document, DocTypeName, DocEvent, State
 from ietf.doc.models import NewRevisionDocEvent
+from ietf.doc.storage_utils import store_file
 from ietf.doc.utils import add_state_change_event, check_common_doc_name_rules
 from ietf.group.models import Group
 from ietf.group.utils import can_manage_materials
@@ -167,7 +168,8 @@ def edit_material(request, name=None, acronym=None, action=None, doc_type=None):
                 with filepath.open('wb+') as dest:
                     for chunk in f.chunks():
                         dest.write(chunk)
-                # TODO-BLOBSTORE store (in chunks? is ContentFile good enough?)
+                f.seek(0)
+                store_file(doc.type_id, basename, f)
                 if not doc.meeting_related():
                     log.assertion('doc.type_id == "slides"')
                     ftp_filepath = Path(settings.FTP_DIR) / doc.type_id / basename

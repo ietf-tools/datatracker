@@ -21,6 +21,7 @@ from django.utils.encoding import smart_str
 import debug                            # pyflakes:ignore
 
 from ietf.dbtemplate.models import DBTemplate
+from ietf.doc.storage_utils import store_bytes
 from ietf.meeting.models import (Session, SchedulingEvent, TimeSlot,
     Constraint, SchedTimeSessAssignment, SessionPresentation, Attended)
 from ietf.doc.models import Document, State, NewRevisionDocEvent
@@ -775,8 +776,10 @@ def handle_upload_file(file, filename, meeting, subdir, request=None, encoding=N
             # Whole file sanitization; add back what's missing from a complete
             # document (sanitize will remove these).
             clean = sanitize_document(text)
-            destination.write(clean.encode('utf8'))
-            # TODO-BLOBSTORE
+            clean_bytes = clean.encode('utf8')
+            destination.write(clean_bytes)
+            # Assumes contents of subdir are always document type ids
+            store_bytes(subdir, filename.name, clean_bytes)
             if request and clean != text:
                 messages.warning(request,
                                  (
@@ -787,7 +790,10 @@ def handle_upload_file(file, filename, meeting, subdir, request=None, encoding=N
         else:
             for chunk in chunks:
                 destination.write(chunk)
-            # TODO-BLOBSTORE
+            file.seek(0)
+            if hasattr(file, "chunks"):
+                chunks = file.chunks()
+            store_bytes(subdir, filename.name, b"".join(chunks))
 
     return None
 

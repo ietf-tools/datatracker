@@ -1431,6 +1431,7 @@ class MeetingHost(models.Model):
     """Meeting sponsor"""
     meeting = ForeignKey(Meeting, related_name='meetinghosts')
     name = models.CharField(max_length=255, blank=False)
+    # TODO-BLOBSTORE - capture these logos
     logo = MissingOkImageField(
         storage=NoLocationMigrationFileSystemStorage(location=settings.MEETINGHOST_LOGO_PATH),
         upload_to=_host_upload_path,

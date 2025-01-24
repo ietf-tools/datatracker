@@ -748,6 +748,12 @@ MORE_STORAGE_NAMES: list[str] = [
     "charter",
     "conflrev",
     "draft",
+    "slides",
+    "minutes",
+    "agenda",
+    "bluesheets",
+    "procmaterials",
+    "narrativeminutes",
 ]
 
 # Override this in settings_local.py if needed
