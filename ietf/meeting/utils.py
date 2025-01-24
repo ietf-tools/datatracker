@@ -738,15 +738,10 @@ def handle_upload_file(file, filename, meeting, subdir, request=None, encoding=N
 
     This function takes a _binary mode_ file object, a filename and a meeting object and subdir as string.
     It saves the file to the appropriate directory, get_materials_path() + subdir.
-    If the file is a zip file, it creates a new directory in 'slides', which is the basename of the
-    zip file and unzips the file in the new directory.
     """
     filename = Path(filename)
-    is_zipfile = filename.suffix == '.zip'
 
     path = Path(meeting.get_materials_path()) / subdir
-    if is_zipfile:
-        path = path / filename.stem
     path.mkdir(parents=True, exist_ok=True)
 
     # agendas and minutes can only have one file instance so delete file if it already exists
@@ -798,10 +793,6 @@ def handle_upload_file(file, filename, meeting, subdir, request=None, encoding=N
         else:
             for chunk in chunks:
                 destination.write(chunk)
-
-    # unzip zipfile
-    if is_zipfile:
-        subprocess.call(['unzip', filename], cwd=path)
 
     return None
 
