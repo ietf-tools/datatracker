@@ -755,6 +755,7 @@ MORE_STORAGE_NAMES: list[str] = [
     "procmaterials",
     "narrativeminutes",
     "statement",
+    "statchg",
 ]
 
 # Override this in settings_local.py if needed
