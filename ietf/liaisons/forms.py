@@ -21,6 +21,7 @@ from django_stubs_ext import QuerySetAny
 
 import debug                            # pyflakes:ignore
 
+from ietf.doc.storage_utils import store_file
 from ietf.ietfauth.utils import has_role
 from ietf.name.models import DocRelationshipName
 from ietf.liaisons.utils import get_person_for_user,is_authorized_individual
@@ -379,7 +380,8 @@ class LiaisonModelForm(forms.ModelForm):
             attach_file = io.open(os.path.join(settings.LIAISON_ATTACH_PATH, attach.name + extension), 'wb')
             attach_file.write(attached_file.read())
             attach_file.close()
-            # TODO-BLOBSTORE
+            attached_file.seek(0)
+            store_file(attach.type_id, attach.uploaded_filename, attached_file)
 
             if not self.is_new:
                 # create modified event

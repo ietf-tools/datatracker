@@ -756,6 +756,7 @@ MORE_STORAGE_NAMES: list[str] = [
     "narrativeminutes",
     "statement",
     "statchg",
+    "liai-att",
 ]
 
 # Override this in settings_local.py if needed
