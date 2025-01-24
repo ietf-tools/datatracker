@@ -1466,12 +1466,8 @@ def investigate_fragment(name_fragment: str):
     # Ensure name_fragment does not interact badly with the cache key handling
     name_digest = sha384(name_fragment.encode("utf8")).hexdigest()
     cache_key = f"investigate_fragment:{name_digest}"
-    cached_result = cache.get(cache_key)
-    if cached_result is not None:
-        can_verify = cached_result["can_verify"]
-        unverifiable_collections = cached_result["unverifiable_collections"]
-        unexpected = cached_result["unexpected"]
-    else:
+    result = cache.get(cache_key)
+    if result is None:
         can_verify = set()
         for root in [settings.INTERNET_DRAFT_PATH, settings.INTERNET_DRAFT_ARCHIVE_DIR]:
             can_verify.update(list(Path(root).glob(f"*{name_fragment}*")))
@@ -1494,21 +1490,14 @@ def investigate_fragment(name_fragment: str):
             Path(settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR).glob(f"*{name_fragment}*")
         )
         unexpected = [p for p in maybe_unexpected if p.name not in expected_names]
-        cache.set(
-            key=cache_key,
-            timeout=3600,  # 1 hour
-            value={
-                "can_verify": can_verify,
-                "unverifiable_collections": unverifiable_collections,
-                "unexpected": unexpected,
-            }
+        result = dict(
+            can_verify=can_verify,
+            unverifiable_collections=unverifiable_collections,
+            unexpected=unexpected,
         )
-
-    return dict(
-        can_verify=can_verify,
-        unverifiable_collections=unverifiable_collections,
-        unexpected=unexpected,
-    )
+        # 1 hour caching
+        cache.set(key=cache_key, timeout=3600, value=result)
+    return result
 
 
 def update_or_create_draft_bibxml_file(doc, rev):
