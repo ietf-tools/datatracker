@@ -744,14 +744,6 @@ def handle_upload_file(file, filename, meeting, subdir, request=None, encoding=N
     path = Path(meeting.get_materials_path()) / subdir
     path.mkdir(parents=True, exist_ok=True)
 
-    # agendas and minutes can only have one file instance so delete file if it already exists
-    if subdir in ('agenda', 'minutes'):
-        for f in path.glob(f'{filename.stem}.*'):
-            try:
-                f.unlink()
-            except FileNotFoundError:
-                pass  # if the file is already gone, so be it
-
     with (path / filename).open('wb+') as destination:
         # prep file for reading
         if hasattr(file, "chunks"):
