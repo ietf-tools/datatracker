@@ -4699,8 +4699,6 @@ def api_upload_bluesheet(request):
         save_err = save_bluesheet(request, session, file)
     if save_err:
         return err(400, save_err)
-    # TODO-BLOBSTORE
-
     return HttpResponse("Done", status=200, content_type='text/plain')
 
 
