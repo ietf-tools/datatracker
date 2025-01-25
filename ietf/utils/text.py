@@ -2,81 +2,33 @@
 # -*- coding: utf-8 -*-
 
 
-import bleach  # type: ignore
-import copy
 import email
 import re
 import textwrap
 import tlds
 import unicodedata
 
-from django.core.validators import URLValidator
-from django.core.exceptions import ValidationError
 from django.utils.functional import keep_lazy
 from django.utils.safestring import mark_safe
 
 import debug                            # pyflakes:ignore
 
+from .bleach import bleach_cleaner, bleach_linker, liberal_bleach_cleaner
 from .texescape import init as texescape_init, tex_escape_map
 
 tlds_sorted = sorted(tlds.tld_set, key=len, reverse=True)
-protocols = set(bleach.sanitizer.ALLOWED_PROTOCOLS)
-protocols.add("ftp")  # we still have some ftp links
-protocols.add("xmpp")  # we still have some xmpp links
-
-tags = set(bleach.sanitizer.ALLOWED_TAGS).union(
-    {
-        # fmt: off
-        'a', 'abbr', 'acronym', 'address', 'b', 'big',
-        'blockquote', 'body', 'br', 'caption', 'center', 'cite', 'code', 'col',
-        'colgroup', 'dd', 'del', 'dfn', 'dir', 'div', 'dl', 'dt', 'em', 'font',
-        'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'head', 'hr', 'html', 'i', 'ins', 'kbd',
-        'li', 'ol', 'p', 'pre', 'q', 's', 'samp', 'small', 'span', 'strike', 'style',
-        'strong', 'sub', 'sup', 'table', 'title', 'tbody', 'td', 'tfoot', 'th', 'thead',
-        'tr', 'tt', 'u', 'ul', 'var'
-        # fmt: on
-    }
-)
-
-attributes = copy.copy(bleach.sanitizer.ALLOWED_ATTRIBUTES)
-attributes["*"] = ["id"]
-attributes["ol"] = ["start"]
-
-bleach_cleaner = bleach.sanitizer.Cleaner(
-    tags=tags, attributes=attributes, protocols=protocols, strip=True
-)
-
-liberal_tags = copy.copy(tags)
-liberal_attributes = copy.copy(attributes)
-liberal_tags.update(["img","figure","figcaption"])
-liberal_attributes["img"] = ["src","alt"]
-
-liberal_bleach_cleaner = bleach.sanitizer.Cleaner(
-    tags=liberal_tags, attributes=liberal_attributes, protocols=protocols, strip=True
-)
-
-validate_url = URLValidator()
 
 
-def check_url_validity(attrs, new=False):
-    if (None, "href") not in attrs:
-        # rfc2html creates a tags without href
-        return attrs
-    url = attrs[(None, "href")]
-    try:
-        if url.startswith("http"):
-            validate_url(url)
-    except ValidationError:
-        return None
-    return attrs
+def clean_html(text):
+    return bleach_cleaner.clean(text)
 
 
-bleach_linker = bleach.Linker(
-    callbacks=[check_url_validity],
-    url_re=bleach.linkifier.build_url_re(tlds=tlds_sorted, protocols=protocols),
-    email_re=bleach.linkifier.build_email_re(tlds=tlds_sorted),  # type: ignore
-    parse_email=True,
-)
+def liberal_clean_html(text):
+    return liberal_bleach_cleaner.clean(text)
+
+
+def linkify(text):
+    return bleach_linker.linkify(text)
 
 
 @keep_lazy(str)

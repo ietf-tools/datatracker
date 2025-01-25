@@ -16,8 +16,8 @@ import debug                            # pyflakes:ignore
 from django import forms
 from django.utils.functional import keep_lazy
 
+from ietf.utils.bleach import bleach_cleaner, acceptable_tags
 from ietf.utils.mime import get_mime_type
-from ietf.utils.text import bleach_cleaner, tags as acceptable_tags
 
 acceptable_protocols = ['http', 'https', 'mailto', 'xmpp', ]
 
@@ -33,7 +33,7 @@ def unescape(text):
 @keep_lazy(str)
 def remove_tags(html, tags):
     """Returns the given HTML sanitized, and with the given tags removed."""
-    allowed = set(acceptable_tags) - set([ t.lower() for t in tags ])
+    allowed = acceptable_tags - set(t.lower() for t in tags)
     return bleach.clean(html, tags=allowed, strip=True)
 
 # ----------------------------------------------------------------------
