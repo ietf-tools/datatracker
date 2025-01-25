@@ -757,6 +757,8 @@ MORE_STORAGE_NAMES: list[str] = [
     "statement",
     "statchg",
     "liai-att",
+    "chatlog",
+    "polls",
 ]
 
 # Override this in settings_local.py if needed

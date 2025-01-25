@@ -32,10 +32,9 @@ def store_file(kind: str, name: str, file: File, allow_overwrite: bool = False) 
             debug.show("e")
             return None
         if new_name != name:
-            log(
-                f"Conflict encountered saving {name} - results stored in {new_name} instead."
-            )
-            debug.show('f"Conflict encountered saving {name} - results stored in {new_name} instead."')
+            complaint = f"Error encountered saving '{name}' - results stored in '{new_name}' instead."
+            log(complaint)
+            debug.show("complaint")
         return None
 
 

@@ -21,7 +21,7 @@ from django.utils.encoding import smart_str
 import debug                            # pyflakes:ignore
 
 from ietf.dbtemplate.models import DBTemplate
-from ietf.doc.storage_utils import store_bytes
+from ietf.doc.storage_utils import store_bytes, store_str
 from ietf.meeting.models import (Session, SchedulingEvent, TimeSlot,
     Constraint, SchedTimeSessAssignment, SessionPresentation, Attended)
 from ietf.doc.models import Document, State, NewRevisionDocEvent
@@ -827,8 +827,8 @@ def write_doc_for_session(session, type_id, filename, contents):
     path.mkdir(parents=True, exist_ok=True)
     with open(path / filename, "wb") as file:
         file.write(contents.encode('utf-8'))
-    # TODO-BLOBSTORE
-    return
+    store_str(type_id, filename.name, contents)
+    return None
 
 def create_recording(session, url, title=None, user=None):
     '''
