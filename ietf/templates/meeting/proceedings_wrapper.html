@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
+{% load ietf_filters static %}
+{% block pagehead %}
+    <link rel="stylesheet" href="{% static "ietf/css/list.css" %}">
+{% endblock %}
+{% block title %}
+    IETF {{ meeting.number }}
+    {% if not meeting.proceedings_final %}Draft{% endif %}
+    Proceedings
+{% endblock %}
+{% block content %}
+    {% origin %}
+    {% include 'meeting/proceedings/title.html' with meeting=meeting attendance=attendance only %}
+    {% if user|has_role:"Secretariat" and not meeting.proceedings_final %}
+        <a class="btn btn-warning finalize-button"
+           href="{% url 'ietf.meeting.views.finalize_proceedings' num=meeting.number %}">
+            Finalize proceedings
+        </a>
+    {% endif %}
+    {{ proceedings_content }}
+{% endblock %}
+{% block js %}
+    <script src="{% static "ietf/js/list.js" %}">
+    </script>
+{% endblock %}
