@@ -13,7 +13,7 @@ from pathlib import Path
 
 from typing import List, Optional      # pyflakes:ignore
 
-from ietf.doc.storage_utils import remove_from_storage
+from ietf.doc.storage_utils import exists_in_storage, remove_from_storage
 from ietf.doc.utils import update_action_holders
 from ietf.utils import log
 from ietf.utils.mail import send_mail
@@ -225,6 +225,13 @@ def clean_up_draft_files():
             mark = Path(settings.FTP_DIR) / "internet-drafts" / basename
             if mark.exists():
                 mark.unlink()
+            if ext:
+                # Note that we're not moving these strays anywhere - the assumption
+                # is that the active-draft blobstore will not get strays.
+                # See, however, the note about "major system failures" at "unknown_ids"
+                blobname = f"{ext[1:]}/{basename}"
+                if exists_in_storage("active-draft", blobname):
+                    remove_from_storage("active-draft", blobname)
 
         try:
             doc = Document.objects.get(name=filename, rev=revision)
