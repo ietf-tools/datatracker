@@ -1,6 +1,5 @@
 # Copyright The IETF Trust 2016-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
-from typing import Iterable
 
 import bleach
 import email
