@@ -21,6 +21,7 @@ from django.utils.encoding import smart_str
 import debug                            # pyflakes:ignore
 
 from ietf.dbtemplate.models import DBTemplate
+from ietf.doc.storage_utils import store_bytes, store_str
 from ietf.meeting.models import (Session, SchedulingEvent, TimeSlot,
     Constraint, SchedTimeSessAssignment, SessionPresentation, Attended)
 from ietf.doc.models import Document, State, NewRevisionDocEvent
@@ -225,6 +226,8 @@ def generate_bluesheet(request, session):
             'session': session,
             'data': data,
         })
+    # TODO-BLOBSTORE Verify that this is only creating a file-like object to pass along
+    # if so, we can do this in memory and not involve disk.
     fd, name = tempfile.mkstemp(suffix=".txt", text=True)
     os.close(fd)
     with open(name, "w") as file:
@@ -774,7 +777,10 @@ def handle_upload_file(file, filename, meeting, subdir, request=None, encoding=N
             # Whole file sanitization; add back what's missing from a complete
             # document (sanitize will remove these).
             clean = sanitize_document(text)
-            destination.write(clean.encode('utf8'))
+            clean_bytes = clean.encode('utf8')
+            destination.write(clean_bytes)
+            # Assumes contents of subdir are always document type ids
+            store_bytes(subdir, filename.name, clean_bytes)
             if request and clean != text:
                 messages.warning(request,
                                  (
@@ -785,6 +791,10 @@ def handle_upload_file(file, filename, meeting, subdir, request=None, encoding=N
         else:
             for chunk in chunks:
                 destination.write(chunk)
+            file.seek(0)
+            if hasattr(file, "chunks"):
+                chunks = file.chunks()
+            store_bytes(subdir, filename.name, b"".join(chunks))
 
     return None
 
@@ -817,7 +827,8 @@ def write_doc_for_session(session, type_id, filename, contents):
     path.mkdir(parents=True, exist_ok=True)
     with open(path / filename, "wb") as file:
         file.write(contents.encode('utf-8'))
-    return
+    store_str(type_id, filename.name, contents)
+    return None
 
 def create_recording(session, url, title=None, user=None):
     '''

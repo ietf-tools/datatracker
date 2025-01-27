@@ -19,6 +19,7 @@ import debug                            # pyflakes:ignore
 
 from ietf.doc.models import ( BallotDocEvent, BallotPositionDocEvent, DocEvent,
     Document, NewRevisionDocEvent, State )
+from ietf.doc.storage_utils import store_str
 from ietf.doc.utils import ( add_state_change_event, close_open_ballots,
     create_ballot_if_not_open, update_telechat )
 from ietf.doc.mails import email_iana, email_ad_approved_conflict_review
@@ -186,9 +187,10 @@ class UploadForm(forms.Form):
         filepath = Path(settings.CONFLICT_REVIEW_PATH) / basename
         with filepath.open('w', encoding='utf-8') as destination:
             if self.cleaned_data['txt']:
-                destination.write(self.cleaned_data['txt'])
+                content = self.cleaned_data['txt']
             else:
-                destination.write(self.cleaned_data['content'])
+                content = self.cleaned_data['content']
+            destination.write(content)
         ftp_filepath = Path(settings.FTP_DIR) / "conflict-reviews" / basename
         try:
             os.link(filepath, ftp_filepath) # Path.hardlink_to is not available until 3.10
@@ -197,6 +199,7 @@ class UploadForm(forms.Form):
                 "There was an error creating a hardlink at %s pointing to %s: %s"
                 % (ftp_filepath, filepath, e)
             )
+        store_str("conflrev", basename, content)
 
 #This is very close to submit on charter - can we get better reuse?
 @role_required('Area Director','Secretariat')

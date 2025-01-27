@@ -25,6 +25,7 @@ from tastypie.test import ResourceTestCaseMixin
 import debug                            # pyflakes:ignore
 
 import ietf
+from ietf.doc.storage_utils import retrieve_str
 from ietf.doc.utils import get_unicode_document_content
 from ietf.doc.models import RelatedDocument, State
 from ietf.doc.factories import IndividualDraftFactory, WgDraftFactory, WgRfcFactory
@@ -553,6 +554,10 @@ class CustomApiTests(TestCase):
             newdoc = session.presentations.get(document__type_id=type_id).document
             newdoccontent = get_unicode_document_content(newdoc.name, Path(session.meeting.get_materials_path()) / type_id / newdoc.uploaded_filename)
             self.assertEqual(json.loads(content), json.loads(newdoccontent))
+            self.assertEqual(
+                json.loads(retrieve_str(type_id, newdoc.uploaded_filename)),
+                json.loads(content)
+            )
 
     def test_api_upload_bluesheet(self):
         url = urlreverse("ietf.meeting.views.api_upload_bluesheet")

@@ -73,6 +73,11 @@ echo "Creating data directories..."
 chmod +x ./docker/scripts/app-create-dirs.sh
 ./docker/scripts/app-create-dirs.sh
 
+# Configure the development blobstore
+
+echo "Configuring blobstore..."
+PYTHONPATH=/workspace python ./docker/scripts/app-configure-blobstore.py
+
 # Download latest coverage results file
 
 echo "Downloading latest coverage results file..."

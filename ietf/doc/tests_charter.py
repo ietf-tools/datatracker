@@ -16,6 +16,7 @@ import debug                            # pyflakes:ignore
 from ietf.doc.factories import CharterFactory, NewRevisionDocEventFactory, TelechatDocEventFactory
 from ietf.doc.models import ( Document, State, BallotDocEvent, BallotType, NewRevisionDocEvent,
     TelechatDocEvent, WriteupDocEvent )
+from ietf.doc.storage_utils import retrieve_str
 from ietf.doc.utils_charter import ( next_revision, default_review_text, default_action_text,
     charter_name_for_group )
 from ietf.doc.utils import close_open_ballots
@@ -519,6 +520,11 @@ class EditCharterTests(TestCase):
         ftp_charter_path = Path(settings.FTP_DIR) / "charter" / charter_path.name
         self.assertTrue(ftp_charter_path.exists())
         self.assertTrue(charter_path.samefile(ftp_charter_path))
+        blobstore_contents = retrieve_str("charter", charter.get_base_name())
+        self.assertEqual(
+            blobstore_contents,
+            "Windows line\nMac line\nUnix line\n" + utf_8_snippet.decode("utf-8"),
+        )        
 
 
     def test_submit_initial_charter(self):

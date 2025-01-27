@@ -16,6 +16,7 @@ import debug    # pyflakes:ignore
 
 from ietf.doc.factories import IndividualDraftFactory, ConflictReviewFactory, RgDraftFactory
 from ietf.doc.models import Document, DocEvent, NewRevisionDocEvent, BallotPositionDocEvent, TelechatDocEvent, State, DocTagName
+from ietf.doc.storage_utils import retrieve_str
 from ietf.doc.utils import create_ballot_if_not_open
 from ietf.doc.views_conflict_review import default_approval_text
 from ietf.group.models import Person
@@ -422,6 +423,7 @@ class ConflictReviewSubmitTests(TestCase):
             f.close()
         self.assertTrue(ftp_path.exists())
         self.assertTrue( "submission-00" in doc.latest_event(NewRevisionDocEvent).desc)
+        self.assertEqual(retrieve_str("conflrev",basename), "Some initial review text\n")
 
     def test_subsequent_submission(self):
         doc = Document.objects.get(name='conflict-review-imaginary-irtf-submission')

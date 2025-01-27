@@ -28,5 +28,8 @@ services:
         volumes:
             - postgresdb-data:/var/lib/postgresql/data
 
+    blobstore:
+      image: ghcr.io/ietf-tools/datatracker-devblobstore:latest
+
 volumes:
     postgresdb-data:

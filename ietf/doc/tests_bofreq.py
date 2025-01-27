@@ -16,6 +16,7 @@ from django.urls import reverse as urlreverse
 from django.template.loader import render_to_string
 from django.utils import timezone
 
+from ietf.doc.storage_utils import retrieve_str
 from ietf.group.factories import RoleFactory
 from ietf.doc.factories import BofreqFactory, NewRevisionDocEventFactory
 from ietf.doc.models import State, Document, NewRevisionDocEvent
@@ -340,6 +341,7 @@ This test section has some text.
                         doc = reload_db_objects(doc)
                         self.assertEqual('%02d'%(int(rev)+1) ,doc.rev)
                         self.assertEqual(f'# {username}', doc.text())
+                        self.assertEqual(f'# {username}', retrieve_str('bofreq',doc.get_base_name()))
                         self.assertEqual(docevent_count+1, doc.docevent_set.count())
                         self.assertEqual(1, len(outbox))
                         rev = doc.rev
@@ -379,6 +381,7 @@ This test section has some text.
                     self.assertEqual(list(bofreq_editors(bofreq)), [nobody])
                     self.assertEqual(bofreq.latest_event(NewRevisionDocEvent).rev, '00')
                     self.assertEqual(bofreq.text_or_error(), 'some stuff')
+                    self.assertEqual(retrieve_str('bofreq',bofreq.get_base_name()), 'some stuff')
                     self.assertEqual(len(outbox),1)
         finally:
             os.unlink(file.name)

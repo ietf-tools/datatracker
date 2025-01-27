@@ -14,6 +14,7 @@ from django.urls import reverse as urlreverse
 
 from ietf.doc.factories import StatementFactory, DocEventFactory
 from ietf.doc.models import Document, State, NewRevisionDocEvent
+from ietf.doc.storage_utils import retrieve_str
 from ietf.group.models import Group
 from ietf.person.factories import PersonFactory
 from ietf.utils.mail import outbox, empty_outbox
@@ -185,8 +186,16 @@ This test section has some text.
                 self.assertEqual("%02d" % (int(rev) + 1), doc.rev)
                 if postdict["statement_submission"] == "enter":
                     self.assertEqual(f"# {username}", doc.text())
+                    self.assertEqual(
+                        retrieve_str("statement", f"{doc.name}-{doc.rev}.md"),
+                        f"# {username}"
+                    )
                 else:
                     self.assertEqual("not valid pdf", doc.text())
+                    self.assertEqual(
+                        retrieve_str("statement", f"{doc.name}-{doc.rev}.pdf"),
+                        "not valid pdf"
+                    )
                 self.assertEqual(docevent_count + 1, doc.docevent_set.count())
                 self.assertEqual(0, len(outbox))
                 rev = doc.rev
@@ -255,8 +264,16 @@ This test section has some text.
             self.assertIsNotNone(statement.history_set.last().latest_event(type="published_statement"))
             if postdict["statement_submission"] == "enter":
                 self.assertEqual(statement.text_or_error(), "some stuff")
+                self.assertEqual(
+                    retrieve_str("statement", statement.uploaded_filename),
+                    "some stuff"
+                )
             else:
                 self.assertTrue(statement.uploaded_filename.endswith("pdf"))
+                self.assertEqual(
+                    retrieve_str("statement", f"{statement.name}-{statement.rev}.pdf"),
+                    "not valid pdf"
+                )
             self.assertEqual(len(outbox), 0)
 
         existing_statement = StatementFactory()

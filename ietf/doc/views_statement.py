@@ -10,6 +10,7 @@ from django.http import FileResponse, Http404
 from django.views.decorators.cache import cache_control
 from django.shortcuts import get_object_or_404, render, redirect
 from django.template.loader import render_to_string
+from ietf.doc.storage_utils import store_file, store_str
 from ietf.utils import markdown
 from django.utils.html import escape
 
@@ -137,12 +138,15 @@ def submit(request, name):
                 mode="wb" if writing_pdf else "w"
             ) as destination:
                 if writing_pdf:
-                    for chunk in form.cleaned_data["statement_file"].chunks():
+                    f = form.cleaned_data["statement_file"]
+                    for chunk in f.chunks():
                         destination.write(chunk)
+                    f.seek(0)
+                    store_file("statement", statement.uploaded_filename, f)
                 else:
                     destination.write(markdown_content)
+                    store_str("statement", statement.uploaded_filename, markdown_content)
             return redirect("ietf.doc.views_doc.document_main", name=statement.name)
-
     else:
         if statement.uploaded_filename.endswith("pdf"):
             text = CONST_PDF_REV_NOTICE
@@ -254,10 +258,14 @@ def new_statement(request):
                 mode="wb" if writing_pdf else "w"
             ) as destination:
                 if writing_pdf:
-                    for chunk in form.cleaned_data["statement_file"].chunks():
+                    f = form.cleaned_data["statement_file"]
+                    for chunk in f.chunks():
                         destination.write(chunk)
+                        f.seek(0)
+                        store_file("statement", statement.uploaded_filename, f)
                 else:
                     destination.write(markdown_content)
+                    store_str("statement", statement.uploaded_filename, markdown_content)
             return redirect("ietf.doc.views_doc.document_main", name=statement.name)
 
     else:
