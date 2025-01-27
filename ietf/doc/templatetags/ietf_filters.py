@@ -26,7 +26,7 @@ import debug                            # pyflakes:ignore
 from ietf.doc.models import BallotDocEvent, Document
 from ietf.doc.models import ConsensusDocEvent
 from ietf.ietfauth.utils import can_request_rfc_publication as utils_can_request_rfc_publication
-from ietf.utils.html import sanitize_fragment
+from ietf.utils.html import clean_html
 from ietf.utils import log
 from ietf.doc.utils import prettify_std_name
 from ietf.utils.html import clean_html
@@ -100,7 +100,7 @@ def sanitize(value):
     attributes to those deemed acceptable.  See ietf/utils/html.py
     for the details.
     """
-    return mark_safe(sanitize_fragment(value))
+    return mark_safe(clean_html(value))
 
 
 # For use with ballot view
@@ -457,7 +457,7 @@ def format_history_text(text, trunc_words=25):
 def format_snippet(text, trunc_words=25): 
     # urlize if there aren't already links present
     text = linkify(text)
-    full = keep_spacing(collapsebr(linebreaksbr(mark_safe(sanitize_fragment(text)))))
+    full = keep_spacing(collapsebr(linebreaksbr(mark_safe(clean_html(text)))))
     snippet = truncatewords_html(full, trunc_words)
     if snippet != full:
         return mark_safe('<div class="snippet">%s<button type="button" aria-label="Expand" class="btn btn-sm btn-primary show-all"><i class="bi bi-caret-down"></i></button></div><div class="d-none full">%s</div>' % (snippet, full))

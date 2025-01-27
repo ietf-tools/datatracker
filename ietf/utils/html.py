@@ -73,13 +73,6 @@ def remove_tags(html, tags):
     allowed = acceptable_tags - set(t.lower() for t in tags)
     return bleach.clean(html, tags=allowed, strip=True)
 
-# ----------------------------------------------------------------------
-# Html fragment cleaning
-
-def sanitize_fragment(html):
-    """Sanitize an HTML fragment"""
-    return _bleach_cleaner.clean(html)
-
 
 # ----------------------------------------------------------------------
 # Text field cleaning
