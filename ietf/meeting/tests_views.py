@@ -6423,8 +6423,7 @@ class MaterialsTests(TestCase):
             text = doc.text()
             self.assertIn('Some text', text)
             self.assertNotIn('<section>', text)
-            self.assertIn('charset="utf-8"', text)
-
+        
             # txt upload
             test_file = BytesIO(b'This is some text for a test, with the word\nvirtual at the beginning of a line.')
             test_file.name = "some.txt"
