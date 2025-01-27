@@ -29,7 +29,8 @@ from ietf.ietfauth.utils import can_request_rfc_publication as utils_can_request
 from ietf.utils.html import sanitize_fragment
 from ietf.utils import log
 from ietf.doc.utils import prettify_std_name
-from ietf.utils.text import wordwrap, fill, wrap_text_if_unwrapped, clean_html, linkify
+from ietf.utils.html import clean_html
+from ietf.utils.text import wordwrap, fill, wrap_text_if_unwrapped, linkify
 from ietf.utils.validators import validate_url
 
 register = template.Library()

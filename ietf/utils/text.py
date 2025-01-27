@@ -13,18 +13,10 @@ from django.utils.safestring import mark_safe
 
 import debug                            # pyflakes:ignore
 
-from .bleach import bleach_cleaner, bleach_linker, liberal_bleach_cleaner
+from .bleach import bleach_linker
 from .texescape import init as texescape_init, tex_escape_map
 
 tlds_sorted = sorted(tlds.tld_set, key=len, reverse=True)
-
-
-def clean_html(text):
-    return bleach_cleaner.clean(text)
-
-
-def liberal_clean_html(text):
-    return liberal_bleach_cleaner.clean(text)
 
 
 def linkify(text):

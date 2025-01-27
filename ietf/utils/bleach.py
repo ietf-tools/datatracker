@@ -39,6 +39,7 @@ liberal_bleach_cleaner = _bleach.sanitizer.Cleaner(
     tags=liberal_tags, attributes=liberal_attributes, protocols=protocols, strip=True
 )
 
+
 def check_url_validity(attrs, new=False):
     if (None, "href") not in attrs:
         # rfc2html creates a tags without href
@@ -54,7 +55,7 @@ def check_url_validity(attrs, new=False):
 
 bleach_linker = _bleach.Linker(
     callbacks=[check_url_validity],
-    url_re=bleach.linkifier.build_url_re(tlds=tlds_sorted, protocols=protocols),
+    url_re=_bleach.linkifier.build_url_re(tlds=tlds_sorted, protocols=protocols),
     email_re=bleach.linkifier.build_email_re(tlds=tlds_sorted),  # type: ignore
     parse_email=True,
 )

@@ -16,7 +16,7 @@ import debug                            # pyflakes:ignore
 from django import forms
 from django.utils.functional import keep_lazy
 
-from ietf.utils.bleach import bleach_cleaner, acceptable_tags
+from ietf.utils.bleach import acceptable_tags, bleach_cleaner, liberal_bleach_cleaner
 from ietf.utils.mime import get_mime_type
 
 acceptable_protocols = ['http', 'https', 'mailto', 'xmpp', ]
@@ -29,6 +29,16 @@ def unescape(text):
     This function undoes what django.utils.html.escape() does
     """
     return text.replace('&amp;', '&').replace('&#39;', "'").replace('&quot;', '"').replace('&gt;', '>').replace('&lt;', '<' )
+
+
+def clean_html(text):
+    return bleach_cleaner.clean(text)
+
+
+def liberal_clean_html(text):
+    return liberal_bleach_cleaner.clean(text)
+
+
 
 @keep_lazy(str)
 def remove_tags(html, tags):
