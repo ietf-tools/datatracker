@@ -747,6 +747,7 @@ MORE_STORAGE_NAMES: list[str] = [
     "bofreq",
     "charter",
     "conflrev",
+    "active-draft",
     "draft",
     "slides",
     "minutes",
@@ -759,6 +760,8 @@ MORE_STORAGE_NAMES: list[str] = [
     "liai-att",
     "chatlog",
     "polls",
+    "staging",
+    "bibxml-ids"
 ]
 
 # Override this in settings_local.py if needed

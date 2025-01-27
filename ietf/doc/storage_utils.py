@@ -17,7 +17,32 @@ def _get_storage(kind: str) -> Storage:
         raise NotImplementedError(f"Don't know how to store {kind}")
 
 
+def exists_in_storage(kind: str, name: str) -> bool:
+    store = _get_storage(kind)
+    try:
+        # open is realized with a HEAD
+        # See https://github.com/jschneier/django-storages/blob/b79ea310201e7afd659fe47e2882fe59aae5b517/storages/backends/s3.py#L528
+        with store.open(name):
+            return True
+    except FileNotFoundError:
+        return False
+
+
+def remove_from_storage(kind: str, name: str) -> None:
+    store = _get_storage(kind)
+    try:
+        with store.open(name):
+            pass
+        store.delete(name)
+        # debug.show('f"deleted {name} from {kind} storage"')
+    except FileNotFoundError:
+        complaint = f"WARNING: Asked to delete non-existant {name} from {kind} storage"
+        log(complaint)
+        # debug.show("complaint")
+
+
 def store_file(kind: str, name: str, file: File, allow_overwrite: bool = False) -> None:
+    # debug.show('f"asked to store {name} into {kind}"')
     store = _get_storage(kind)
     if not allow_overwrite and store.exists(name):
         log(f"Failed to save {kind}:{name} - name already exists in store")

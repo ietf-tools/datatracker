@@ -13,6 +13,7 @@ from pathlib import Path
 
 from typing import List, Optional      # pyflakes:ignore
 
+from ietf.doc.storage_utils import remove_from_storage
 from ietf.doc.utils import update_action_holders
 from ietf.utils import log
 from ietf.utils.mail import send_mail
@@ -156,11 +157,17 @@ def move_draft_files_to_archive(doc, rev):
         if mark.exists():
             mark.unlink()
 
+    def remove_from_active_draft_storage(file):
+        # Assumes the glob will never find a file with no suffix
+        ext = file.suffix[1:]
+        remove_from_storage("active-draft", f"{ext}/{file.name}")
 
+    # Note that the object is already in the "draft" storage.
     src_dir = Path(settings.INTERNET_DRAFT_PATH)
     for file in src_dir.glob("%s-%s.*" % (doc.name, rev)):
         move_file(str(file.name))
         remove_ftp_copy(str(file.name))
+        remove_from_active_draft_storage(file)
 
 def expire_draft(doc):
     # clean up files

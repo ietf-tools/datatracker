@@ -36,7 +36,7 @@ from ietf.doc.models import ( Document, State, DocEvent, SubmissionDocEvent,
     DocumentAuthor, AddedMessageEvent )
 from ietf.doc.models import NewRevisionDocEvent
 from ietf.doc.models import RelatedDocument, DocRelationshipName, DocExtResource
-from ietf.doc.storage_utils import store_bytes
+from ietf.doc.storage_utils import remove_from_storage, retrieve_bytes, store_bytes, store_file, store_str
 from ietf.doc.utils import (add_state_change_event, rebuild_reference_relations,
     set_replaces_for_document, prettify_std_name, update_doc_extresources, 
     can_edit_docextresources, update_documentauthors, update_action_holders,
@@ -499,7 +499,7 @@ def post_submission(request, submission, approved_doc_desc, approved_subm_desc):
     ref_rev_file_name = os.path.join(os.path.join(settings.BIBXML_BASE_PATH, 'bibxml-ids'), 'reference.I-D.%s-%s.xml' % (draft.name, draft.rev ))
     with io.open(ref_rev_file_name, "w", encoding='utf-8') as f:
         f.write(ref_text)
-    # TODO-BLOBSTORE
+    store_str("bibxml-ids", f"reference.I-D.{draft.name}-{draft.rev}.txt", ref_text) # TODO-BLOBSTORE verify with test
 
     log.log(f"{submission.name}: done")
     
@@ -667,9 +667,12 @@ def move_files_to_repository(submission):
             ftp_dest = Path(settings.FTP_DIR) / "internet-drafts" / dest.name
             os.link(dest, all_archive_dest)
             os.link(dest, ftp_dest)
-            with open(dest,"rb") as f:
-                content_bytes = f.read()
-                store_bytes("draft", f"{ext}/{fname}", content_bytes)
+            # Shadow what's happening to the fs in the blobstores. When the stores become
+            # authoritative, the source and dest checks will need to apply to the stores instead.
+            content_bytes = retrieve_bytes("staging", fname)
+            store_bytes("active-draft", f"{ext}/{fname}", content_bytes)
+            store_bytes("draft", f"{ext}/{fname}", content_bytes)
+            remove_from_storage("staging", fname)
         elif dest.exists():
             log.log("Intended to move '%s' to '%s', but found source missing while destination exists.")
         elif f".{ext}" in submission.file_types.split(','):
@@ -686,6 +689,7 @@ def remove_staging_files(name, rev, exts=None):
     basename = pathlib.Path(settings.IDSUBMIT_STAGING_PATH) / f'{name}-{rev}' 
     for ext in exts:
         basename.with_suffix(ext).unlink(missing_ok=True)
+        remove_from_storage("staging", basename.with_suffix(ext).name)
 
 
 def remove_submission_files(submission):
@@ -774,7 +778,8 @@ def save_files(form):
             for chunk in f.chunks():
                 destination.write(chunk)
         log.log("saved file %s" % name)
-        # TODO-BLOBSTORE
+        f.seek(0)
+        store_file("staging", f"{form.filename}-{form.revision}.{ext}", f)
     return file_name
 
 
@@ -997,7 +1002,8 @@ def render_missing_formats(submission):
                 xml_version,
             )
         )
-        # TODO-BLOBSTORE
+    with Path(txt_path).open() as f:
+        store_file("staging", f"{submission.name}-{submission.rev}.txt", f)
 
     # --- Convert to html ---
     html_path = staging_path(submission.name, submission.rev, '.html')
@@ -1020,7 +1026,8 @@ def render_missing_formats(submission):
             xml_version,
         )
     )
-    # TODO-BLOBSTORE
+    with Path(html_path).open() as f:
+        store_file("staging", f"{submission.name}-{submission.rev}.html", f)
 
 
 def accept_submission(submission: Submission, request: Optional[HttpRequest] = None, autopost=False):

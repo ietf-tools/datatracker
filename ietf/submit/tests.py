@@ -31,7 +31,7 @@ from ietf.doc.factories import (DocumentFactory, WgDraftFactory, IndividualDraft
                                 ReviewFactory, WgRfcFactory)
 from ietf.doc.models import ( Document, DocEvent, State,
     BallotPositionDocEvent, DocumentAuthor, SubmissionDocEvent )
-from ietf.doc.storage_utils import retrieve_str
+from ietf.doc.storage_utils import exists_in_storage, retrieve_str, store_file, store_str
 from ietf.doc.utils import create_ballot_if_not_open, can_edit_docextresources, update_action_holders
 from ietf.group.factories import GroupFactory, RoleFactory
 from ietf.group.models import Group
@@ -429,7 +429,13 @@ class SubmitTests(BaseSubmitTestCase):
         self.assertTrue(draft.latest_event(type="added_suggested_replaces"))
         self.assertTrue(not os.path.exists(os.path.join(self.staging_dir, "%s-%s.txt" % (name, rev))))
         self.assertTrue(os.path.exists(os.path.join(self.repository_dir, "%s-%s.txt" % (name, rev))))
-        self.assertTrue(len(retrieve_str("draft",f"txt/{name}-{rev}.txt"))>0)
+        check_ext = ["xml", "txt", "html"] if "xml" in formats else ["txt"]
+        for ext in check_ext:
+            basename=f"{name}-{rev}.{ext}"
+            extname=f"{ext}/{basename}"
+            self.assertFalse(exists_in_storage("staging", basename))
+            self.assertTrue(exists_in_storage("active-draft", extname))
+            self.assertTrue(exists_in_storage("draft", extname))            
         self.assertEqual(draft.type_id, "draft")
         self.assertEqual(draft.stream_id, "ietf")
         self.assertTrue(draft.expires >= timezone.now() + datetime.timedelta(days=settings.INTERNET_DRAFT_DAYS_TO_EXPIRE - 1))
@@ -773,6 +779,13 @@ class SubmitTests(BaseSubmitTestCase):
         self.assertTrue(os.path.exists(os.path.join(self.archive_dir, "%s-%s.txt" % (name, old_rev))))
         self.assertTrue(not os.path.exists(os.path.join(self.staging_dir, "%s-%s.txt" % (name, rev))))
         self.assertTrue(os.path.exists(os.path.join(self.repository_dir, "%s-%s.txt" % (name, rev))))
+        check_ext = ["xml", "txt", "html"] if "xml" in formats else ["txt"]
+        for ext in check_ext:
+            basename=f"{name}-{rev}.{ext}"
+            extname=f"{ext}/{basename}"
+            self.assertFalse(exists_in_storage("staging", basename))
+            self.assertTrue(exists_in_storage("active-draft", extname))
+            self.assertTrue(exists_in_storage("draft", extname))  
         self.assertEqual(draft.type_id, "draft")
         if stream_type == 'ietf':
             self.assertEqual(draft.stream_id, "ietf")
@@ -973,7 +986,13 @@ class SubmitTests(BaseSubmitTestCase):
                 self.assertTrue(variant_path.samefile(variant_ftp_path))
                 variant_all_archive_path = Path(settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR) / variant_path.name
                 self.assertTrue(variant_path.samefile(variant_all_archive_path))
-
+        check_ext = ["xml", "txt", "html"] if "xml" in formats else ["txt"]
+        for ext in check_ext:
+            basename=f"{name}-{rev}.{ext}"
+            extname=f"{ext}/{basename}"
+            self.assertFalse(exists_in_storage("staging", basename))
+            self.assertTrue(exists_in_storage("active-draft", extname))
+            self.assertTrue(exists_in_storage("draft", extname))  
 
 
     def test_submit_new_individual_txt(self):
@@ -1418,6 +1437,7 @@ class SubmitTests(BaseSubmitTestCase):
         # cancel
         r = self.client.post(status_url, dict(action=action))
         self.assertTrue(not os.path.exists(os.path.join(self.staging_dir, "%s-%s.txt" % (name, rev))))
+        self.assertFalse(exists_in_storage("staging",f"{name}-{rev}.txt"))
 
     def test_edit_submission_and_force_post(self):
         # submit -> edit
@@ -1607,16 +1627,21 @@ class SubmitTests(BaseSubmitTestCase):
         self.assertEqual(Submission.objects.filter(name=name).count(), 1)
 
         self.assertTrue(os.path.exists(os.path.join(self.staging_dir, "%s-%s.txt" % (name, rev))))
+        self.assertTrue(exists_in_storage("staging",f"{name}-{rev}.txt"))
         fd = io.open(os.path.join(self.staging_dir, "%s-%s.txt" % (name, rev)))
         txt_contents = fd.read()
         fd.close()
         self.assertTrue(name in txt_contents)
         self.assertTrue(os.path.exists(os.path.join(self.staging_dir, "%s-%s.xml" % (name, rev))))
+        self.assertTrue(exists_in_storage("staging",f"{name}-{rev}.txt"))
         fd = io.open(os.path.join(self.staging_dir, "%s-%s.xml" % (name, rev)))
         xml_contents = fd.read()
         fd.close()
         self.assertTrue(name in xml_contents)
         self.assertTrue('<?xml version="1.0" encoding="UTF-8"?>' in xml_contents)
+        xml_contents = retrieve_str("staging", f"{name}-{rev}.xml")
+        self.assertTrue(name in xml_contents)
+        self.assertTrue('<?xml version="1.0" encoding="UTF-8"?>' in xml_contents)       
 
     def test_expire_submissions(self):
         s = Submission.objects.create(name="draft-ietf-mars-foo",
@@ -2767,10 +2792,13 @@ class AsyncSubmissionTests(BaseSubmitTestCase):
         xml_path = Path(settings.IDSUBMIT_STAGING_PATH) / 'draft-somebody-test-00.xml'
         with xml_path.open('w') as f:
             f.write(xml_data)
+        store_str("submission", "draft-somebpdy-test-00.xml", xml_data)
         txt_path = xml_path.with_suffix('.txt')
         self.assertFalse(txt_path.exists())
         html_path = xml_path.with_suffix('.html')
         self.assertFalse(html_path.exists())
+        for ext in ["txt", "html"]:
+            self.assertFalse(exists_in_storage("staging",f"draft-somebody-test-00.{ext}"))
         process_and_accept_uploaded_submission(submission)
 
         submission = Submission.objects.get(pk=submission.pk)  # refresh
@@ -2786,6 +2814,8 @@ class AsyncSubmissionTests(BaseSubmitTestCase):
         # at least test that these were created
         self.assertTrue(txt_path.exists())
         self.assertTrue(html_path.exists())
+        for ext in ["txt", "html"]:
+            self.assertFalse(exists_in_storage("staging",f"draft-somebody-test-00.{ext}"))
         self.assertEqual(submission.file_size, os.stat(txt_path).st_size)
         self.assertIn('Completed submission validation checks', submission.submissionevent_set.last().desc)
 
@@ -2811,6 +2841,7 @@ class AsyncSubmissionTests(BaseSubmitTestCase):
         xml_path = Path(settings.IDSUBMIT_STAGING_PATH) / 'draft-somebody-test-00.xml'
         with xml_path.open('w') as f:
             f.write(xml_data)
+        store_str("staging", "draft-somebody-test-00.xml", xml_data)
         process_and_accept_uploaded_submission(submission)
         submission = Submission.objects.get(pk=submission.pk)  # refresh
         self.assertEqual(submission.state_id, 'cancel')
@@ -2827,6 +2858,7 @@ class AsyncSubmissionTests(BaseSubmitTestCase):
         xml_path = Path(settings.IDSUBMIT_STAGING_PATH) / 'draft-somebody-test-00.xml'
         with xml_path.open('w') as f:
             f.write(re.sub(r'<email>.*</email>', '', xml_data))
+        store_str("staging", "draft-somebody-test-00.xml", re.sub(r'<email>.*</email>', '', xml_data))
         process_and_accept_uploaded_submission(submission)
         submission = Submission.objects.get(pk=submission.pk)  # refresh
         self.assertEqual(submission.state_id, 'cancel')
@@ -2843,6 +2875,7 @@ class AsyncSubmissionTests(BaseSubmitTestCase):
         xml_path = Path(settings.IDSUBMIT_STAGING_PATH) / 'draft-somebody-test-00.xml'
         with xml_path.open('w') as f:
             f.write(re.sub(r'<title>.*</title>', '<title></title>', xml_data))
+        store_str("staging", "draft-somebody-test-00.xml", re.sub(r'<title>.*</title>', '<title></title>', xml_data))
         process_and_accept_uploaded_submission(submission)
         submission = Submission.objects.get(pk=submission.pk)  # refresh
         self.assertEqual(submission.state_id, 'cancel')
@@ -2859,6 +2892,7 @@ class AsyncSubmissionTests(BaseSubmitTestCase):
         xml_path = Path(settings.IDSUBMIT_STAGING_PATH) / 'draft-different-name-00.xml'
         with xml_path.open('w') as f:
             f.write(xml_data)
+        store_str("staging", "draft-different-name-00.xml", xml_data)
         process_and_accept_uploaded_submission(submission)
         submission = Submission.objects.get(pk=submission.pk)  # refresh
         self.assertEqual(submission.state_id, 'cancel')
@@ -2875,6 +2909,7 @@ class AsyncSubmissionTests(BaseSubmitTestCase):
         xml_path = Path(settings.IDSUBMIT_STAGING_PATH) / 'draft-somebody-test-01.xml'
         with xml_path.open('w') as f:
             f.write(xml_data)
+        store_str("staging", "draft-somebody-test-01.xml", xml_data)
         process_and_accept_uploaded_submission(submission)
         submission = Submission.objects.get(pk=submission.pk)  # refresh
         self.assertEqual(submission.state_id, 'cancel')
@@ -2891,6 +2926,7 @@ class AsyncSubmissionTests(BaseSubmitTestCase):
         txt_path = Path(settings.IDSUBMIT_STAGING_PATH) / 'draft-somebody-test-00.txt'
         with txt_path.open('w') as f:
             f.write(txt_data)
+        store_str("staging", "draft-somebody-test-00.txt", txt_data)
         process_and_accept_uploaded_submission(submission)
         submission = Submission.objects.get(pk=submission.pk)  # refresh
         self.assertEqual(submission.state_id, 'cancel')
@@ -2905,8 +2941,9 @@ class AsyncSubmissionTests(BaseSubmitTestCase):
             state_id='uploaded',
         )
         xml_path = Path(settings.IDSUBMIT_STAGING_PATH) / 'draft-somebody-test-00.xml'
-        with xml_path.open('w') as f:
+        with xml_path.open('w') as f: # Why is this state being written if the thing that uses it is mocked out?
             f.write(xml_data)
+        store_str("staging", "draft-somebody-test-00.xml", xml_data)
         with mock.patch('ietf.submit.utils.process_submission_xml') as mock_proc_xml:
             process_and_accept_uploaded_submission(submission)
         submission = Submission.objects.get(pk=submission.pk)  # refresh
@@ -2924,6 +2961,7 @@ class AsyncSubmissionTests(BaseSubmitTestCase):
         xml_path = Path(settings.IDSUBMIT_STAGING_PATH) / 'draft-somebody-test-00.xml'
         with xml_path.open('w') as f:
             f.write(xml_data)
+        store_str("staging", "draft-somebody-test-00.xml", xml_data)
         with mock.patch(
                 'ietf.submit.utils.apply_checkers',
                 side_effect = lambda _, __: submission.checks.create(
@@ -2970,6 +3008,7 @@ class AsyncSubmissionTests(BaseSubmitTestCase):
         )
         xml_contents = xml.read()
         xml_path.write_text(xml_contents)
+        store_str("staging", "draft-somebody-test-00.xml", xml_contents)
         output = process_submission_xml("draft-somebody-test", "00")
         self.assertEqual(output["filename"], "draft-somebody-test")
         self.assertEqual(output["rev"], "00")
@@ -2986,18 +3025,22 @@ class AsyncSubmissionTests(BaseSubmitTestCase):
 
         # Should behave on missing or partial <date> elements
         xml_path.write_text(re.sub(r"<date.+>", "", xml_contents))  # strip <date...> entirely
+        store_str("staging", "draft-somebody-test-00.xml", re.sub(r"<date.+>", "", xml_contents))
         output = process_submission_xml("draft-somebody-test", "00")
         self.assertEqual(output["document_date"], None)
 
         xml_path.write_text(re.sub(r"<date year=.+ month", "<date month", xml_contents))  # remove year
+        store_str("staging", "draft-somebody-test-00.xml", re.sub(r"<date year=.+ month", "<date month", xml_contents))
         output = process_submission_xml("draft-somebody-test", "00")
         self.assertEqual(output["document_date"], date_today())
 
         xml_path.write_text(re.sub(r"(<date.+) month=.+day=(.+>)", r"\1 day=\2", xml_contents))  # remove month
+        store_str("staging", "draft-somebody-test-00.xml", re.sub(r"(<date.+) month=.+day=(.+>)", r"\1 day=\2", xml_contents))
         output = process_submission_xml("draft-somebody-test", "00")
         self.assertEqual(output["document_date"], date_today())
 
         xml_path.write_text(re.sub(r"<date(.+) day=.+>", r"<date\1>", xml_contents))  # remove day
+        store_str("staging", "draft-somebody-test-00.xml", re.sub(r"<date(.+) day=.+>", r"<date\1>", xml_contents))
         output = process_submission_xml("draft-somebody-test", "00")
         self.assertEqual(output["document_date"], date_today())
 
@@ -3010,6 +3053,8 @@ class AsyncSubmissionTests(BaseSubmitTestCase):
             title="Correct Draft Title",
         )
         xml_path.write_text(xml.read())
+        xml.seek(0)
+        store_file("staging", "draft-somebody-test-00.xml", xml)
         with self.assertRaisesMessage(SubmissionError, "disagrees with submission filename"):
             process_submission_xml("draft-somebody-test", "00")
 
@@ -3022,6 +3067,8 @@ class AsyncSubmissionTests(BaseSubmitTestCase):
             title="Correct Draft Title",
         )
         xml_path.write_text(xml.read())
+        xml.seek(0)
+        store_file("staging", "draft-somebody-test-00.xml", xml)
         with self.assertRaisesMessage(SubmissionError, "disagrees with submission revision"):
             process_submission_xml("draft-somebody-test", "00")
 
@@ -3034,6 +3081,8 @@ class AsyncSubmissionTests(BaseSubmitTestCase):
             title="",
         )
         xml_path.write_text(xml.read())
+        xml.seek(0)
+        store_file("staging", "draft-somebody-test-00.xml", xml)
         with self.assertRaisesMessage(SubmissionError, "Could not extract a valid title"):
             process_submission_xml("draft-somebody-test", "00")
 
@@ -3047,6 +3096,8 @@ class AsyncSubmissionTests(BaseSubmitTestCase):
             title="Correct Draft Title",
         )
         txt_path.write_text(txt.read())
+        txt.seek(0)
+        store_file("staging", "draft-somebody-test-00.txt", txt)
         output = process_submission_text("draft-somebody-test", "00")
         self.assertEqual(output["filename"], "draft-somebody-test")
         self.assertEqual(output["rev"], "00")
@@ -3071,6 +3122,8 @@ class AsyncSubmissionTests(BaseSubmitTestCase):
         )
         with txt_path.open('w') as fd:
             fd.write(txt.read())
+        txt.seek(0)
+        store_file("staging", "draft-somebody-test-00.txt", txt)
         txt.close()
         with self.assertRaisesMessage(SubmissionError, 'disagrees with submission filename'):
             process_submission_text("draft-somebody-test", "00")
@@ -3085,6 +3138,8 @@ class AsyncSubmissionTests(BaseSubmitTestCase):
         )
         with txt_path.open('w') as fd:
             fd.write(txt.read())
+        txt.seek(0)
+        store_file("staging", "draft-somebody-test-00.txt", txt)
         txt.close()
         with self.assertRaisesMessage(SubmissionError, 'disagrees with submission revision'):
             process_submission_text("draft-somebody-test", "00")
@@ -3223,6 +3278,7 @@ class PostSubmissionTests(BaseSubmitTestCase):
         path = Path(self.staging_dir)
         for ext in ['txt', 'xml', 'pdf', 'md']:
             (path / f'{draft.name}-{draft.rev}.{ext}').touch()
+            store_str("staging", f"{draft.name}-{draft.rev}.{ext}", "")
         files = find_submission_filenames(draft)
         self.assertCountEqual(
             files,
@@ -3282,6 +3338,7 @@ class ValidateSubmissionFilenameTests(BaseSubmitTestCase):
         new_wg_doc = WgDraftFactory(rev='01', relations=[('replaces',old_wg_doc)])
         path = Path(self.archive_dir) / f'{new_wg_doc.name}-{new_wg_doc.rev}.txt'
         path.touch()
+        store_str("staging", f"{new_wg_doc.name}-{new_wg_doc.rev}.txt", "")
 
         bad_revs = (None, '', '2', 'aa', '00', '01', '100', '002', u'öö')
         for rev in bad_revs:
