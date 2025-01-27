@@ -1,26 +1,67 @@
 # Copyright The IETF Trust 2016-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
+from typing import Iterable
 
-
+import bleach
 import email
 import re
 import textwrap
 import tlds
 import unicodedata
 
+from django.core.exceptions import ValidationError
+from django.core.validators import URLValidator
 from django.utils.functional import keep_lazy
 from django.utils.safestring import mark_safe
 
 import debug                            # pyflakes:ignore
 
-from .bleach import bleach_linker
 from .texescape import init as texescape_init, tex_escape_map
 
-tlds_sorted = sorted(tlds.tld_set, key=len, reverse=True)
+# Sort in reverse so substrings are considered later - e.g., so ".co" comes after ".com".
+tlds_sorted = sorted(tlds.tld_set, reverse=True)
+
+# Protocols we're interested in auto-linking. See also ietf.utils.html.acceptable_protocols,
+# which is protocols we allow people to include explicitly  in sanitized html. 
+linkable_protocols = ["http", "https", "mailto", "ftp", "xmpp"]
+
+
+_validate_url = URLValidator() 
+
+
+def check_url_validity(attrs, new=False):
+    """Callback for bleach linkify
+    
+    :param attrs: dict of attributes of the <a> tag
+    :param new: boolean - True if the link is new; False if <a> was found in text
+    :return: new dict of attributes for the link, or None to block link creation 
+
+    Attributes are namespaced, so normally look like `(None, "SomeAttribute")`.
+    This includes as the keys in the `attrs` argument, so `attrs[(None, "href")]`
+    would be the value of the href attribute.  
+    """
+    if (None, "href") not in attrs:
+        # rfc2html creates a tags without href
+        return attrs
+    url = attrs[(None, "href")]
+    try:
+        if url.startswith("http"):
+            _validate_url(url)
+    except ValidationError:
+        return None
+    return attrs
+
+
+_bleach_linker = bleach.Linker(
+    callbacks=[check_url_validity],
+    url_re=bleach.linkifier.build_url_re(tlds=tlds_sorted, protocols=linkable_protocols),
+    email_re=bleach.linkifier.build_email_re(tlds=tlds_sorted),  # type: ignore
+    parse_email=True,
+)
 
 
 def linkify(text):
-    return bleach_linker.linkify(text)
+    return _bleach_linker.linkify(text)
 
 
 @keep_lazy(str)

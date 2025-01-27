@@ -12,7 +12,9 @@ from markdown.postprocessors import Postprocessor
 from django.utils.safestring import mark_safe
 
 from ietf.doc.templatetags.ietf_filters import urlize_ietf_docs
-from ietf.utils.text import clean_html, liberal_clean_html, linkify
+from .html import clean_html, liberal_clean_html
+from .text import linkify
+
 
 
 class LinkifyExtension(Extension):
