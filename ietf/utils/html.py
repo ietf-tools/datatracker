@@ -6,8 +6,6 @@
 
 import bleach
 import html2text
-import lxml.etree
-import lxml.html
 
 import debug                            # pyflakes:ignore
 
@@ -15,10 +13,6 @@ from django import forms
 from django.utils.functional import keep_lazy
 
 from ietf.utils.mime import get_mime_type
-
-
-class ParserError(Exception):
-    pass
 
 
 # Allow the protocols/tags/attributes we specifically want, plus anything that bleach declares
@@ -85,26 +79,6 @@ def remove_tags(html, tags):
 def sanitize_fragment(html):
     """Sanitize an HTML fragment"""
     return _bleach_cleaner.clean(html)
-
-
-# ----------------------------------------------------------------------
-# Html document cleaning
-
-def sanitize_document(html) -> bytes:
-    """Sanitize an HTML document
-    
-    Encodes as utf-8 and sets the <meta charset> tag in the <head> if one is present.
-    Any existing <meta> tags are stripped as part of the sanitization.
-    """
-    clean_str = _bleach_cleaner.clean(html)
-    try:
-        doc = lxml.html.document_fromstring(clean_str)
-    except lxml.etree.ParserError as err:
-        raise ParserError from err
-    head_elt = doc.find("head")
-    if head_elt is not None:
-        head_elt.insert(0, lxml.html.fragment_fromstring('<meta charset="utf-8">'))
-    return lxml.html.tostring(doc, encoding="utf-8")
 
 
 # ----------------------------------------------------------------------
