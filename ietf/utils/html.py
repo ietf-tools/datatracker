@@ -64,10 +64,12 @@ _liberal_bleach_cleaner = bleach.sanitizer.Cleaner(
 
 
 def clean_html(text: str):
+    """Clean the HTML in a string"""
     return _bleach_cleaner.clean(text)
 
 
 def liberal_clean_html(text: str):
+    """More permissively clean the HTML in a string"""
     return _liberal_bleach_cleaner.clean(text)
 
 
@@ -81,6 +83,7 @@ def remove_tags(html, tags):
 # Html fragment cleaning
 
 def sanitize_fragment(html):
+    """Sanitize an HTML fragment"""
     return _bleach_cleaner.clean(html)
 
 
