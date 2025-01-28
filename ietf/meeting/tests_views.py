@@ -37,7 +37,7 @@ from django.utils.text import slugify
 import debug           # pyflakes:ignore
 
 from ietf.doc.models import Document, NewRevisionDocEvent
-from ietf.doc.storage_utils import retrieve_bytes, retrieve_str
+from ietf.doc.storage_utils import remove_from_storage, retrieve_bytes, retrieve_str
 from ietf.group.models import Group, Role, GroupFeatures
 from ietf.group.utils import can_manage_group
 from ietf.person.models import Person
@@ -7191,7 +7191,9 @@ class ImportNotesTests(TestCase):
         # remove the file uploaded for the first rev
         minutes_docs = self.session.presentations.filter(document__type='minutes')
         self.assertEqual(minutes_docs.count(), 1)
-        Path(minutes_docs.first().document.get_file_name()).unlink()
+        to_remove = Path(minutes_docs.first().document.get_file_name())
+        to_remove.unlink()
+        remove_from_storage("minutes", to_remove.name)
 
         self.assertEqual(r.status_code, 302)
         with requests_mock.Mocker() as mock:
