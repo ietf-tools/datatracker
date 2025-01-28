@@ -37,7 +37,7 @@ from django.utils.text import slugify
 import debug           # pyflakes:ignore
 
 from ietf.doc.models import Document, NewRevisionDocEvent
-from ietf.doc.storage_utils import remove_from_storage, retrieve_bytes, retrieve_str
+from ietf.doc.storage_utils import exists_in_storage, remove_from_storage, retrieve_bytes, retrieve_str
 from ietf.group.models import Group, Role, GroupFeatures
 from ietf.group.utils import can_manage_group
 from ietf.person.models import Person
@@ -6785,7 +6785,6 @@ class MaterialsTests(TestCase):
         self.assertEqual(2, agenda.docevent_set.count())
         self.assertFalse(mock_slides_manager_cls.called)
 
-    # TODO-BLOBSTORE - review proposed slides
     def test_propose_session_slides(self):
         for type_id in ['ietf','interim']:
             session = SessionFactory(meeting__type_id=type_id)
@@ -6812,7 +6811,8 @@ class MaterialsTests(TestCase):
             login_testing_unauthorized(self,newperson.user.username,upload_url)
             r = self.client.get(upload_url)
             self.assertEqual(r.status_code,200)
-            test_file = BytesIO(b'this is not really a slide')
+            test_bytes = b'this is not really a slide'
+            test_file = BytesIO(test_bytes)
             test_file.name = 'not_really.txt'
             empty_outbox()
             r = self.client.post(upload_url,dict(file=test_file,title='a test slide file',apply_to_all=True,approved=False))
@@ -6820,6 +6820,11 @@ class MaterialsTests(TestCase):
             session = Session.objects.get(pk=session.pk)
             self.assertEqual(session.slidesubmission_set.count(),1)
             self.assertEqual(len(outbox),1)
+            self.assertFalse(exists_in_storage("slides", session.slidesubmission_set.get().uploaded_filename))
+            self.assertEqual(
+                retrieve_bytes("staging", session.slidesubmission_set.get().uploaded_filename),
+                test_bytes
+            )
 
             r = self.client.get(session_overview_url)
             self.assertEqual(r.status_code, 200)
@@ -6839,13 +6844,20 @@ class MaterialsTests(TestCase):
             login_testing_unauthorized(self,chair.user.username,upload_url)
             r = self.client.get(upload_url)
             self.assertEqual(r.status_code,200)
-            test_file = BytesIO(b'this is not really a slide either')
+            test_bytes = b'this is not really a slide either'
+            test_file = BytesIO(test_bytes)
             test_file.name = 'again_not_really.txt'
             empty_outbox()
             r = self.client.post(upload_url,dict(file=test_file,title='a selfapproved test slide file',apply_to_all=True,approved=True))
             self.assertEqual(r.status_code, 302)
             self.assertEqual(len(outbox),0)
             self.assertEqual(session.slidesubmission_set.count(),2)
+            sp = session.slidesubmission_set.get(title__contains="selfapproved")
+            self.assertFalse(exists_in_storage("staging", sp.uploaded_filename))
+            self.assertEqual(
+                retrieve_bytes("slides", sp.uploaded_filename),
+                test_bytes
+            )
             self.client.logout()
 
             self.client.login(username=chair.user.username, password=chair.user.username+"+password")
@@ -6868,6 +6880,8 @@ class MaterialsTests(TestCase):
         self.assertEqual(r.status_code,302)
         self.assertEqual(SlideSubmission.objects.filter(status__slug = 'rejected').count(), 1)
         self.assertEqual(SlideSubmission.objects.filter(status__slug = 'pending').count(), 0)
+        if submission.filename is not None and submission.filename != "":
+            self.assertFalse(exists_in_storage("staging", submission.filename))
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         self.assertRegex(r.content.decode(), r"These\s+slides\s+have\s+already\s+been\s+rejected")
@@ -6886,6 +6900,7 @@ class MaterialsTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code,200)
         empty_outbox()
+        self.assertTrue(exists_in_storage("staging", submission.filename))
         r = self.client.post(url,dict(title='different title',approve='approve'))
         self.assertEqual(r.status_code,302)
         self.assertEqual(SlideSubmission.objects.filter(status__slug = 'pending').count(), 0)
@@ -6895,6 +6910,8 @@ class MaterialsTests(TestCase):
         self.assertIsNotNone(submission.doc)
         self.assertEqual(session.presentations.count(),1)
         self.assertEqual(session.presentations.first().document.title,'different title')
+        self.assertTrue(exists_in_storage("slides", submission.doc.uploaded_filename))
+        self.assertFalse(exists_in_storage("staging", submission.filename))
         self.assertEqual(mock_slides_manager_cls.call_count, 1)
         self.assertEqual(mock_slides_manager_cls.call_args, call(api_config="fake settings"))
         self.assertEqual(mock_slides_manager_cls.return_value.add.call_count, 1)
@@ -6986,12 +7003,15 @@ class MaterialsTests(TestCase):
 
         submission = SlideSubmission.objects.get(session=session)
 
+        self.assertTrue(exists_in_storage("staging", submission.filename))
         approve_url = urlreverse('ietf.meeting.views.approve_proposed_slides', kwargs={'slidesubmission_id':submission.pk,'num':submission.session.meeting.number})
         login_testing_unauthorized(self, chair.user.username, approve_url)
         r = self.client.post(approve_url,dict(title=submission.title,approve='approve'))
         submission.refresh_from_db()
         self.assertEqual(r.status_code,302)
         self.client.logout()
+        self.assertFalse(exists_in_storage("staging", submission.filename))
+        self.assertTrue(exists_in_storage("slides", submission.doc.uploaded_filename))
         self.assertEqual(mock_slides_manager_cls.call_count, 1)
         self.assertEqual(mock_slides_manager_cls.call_args, call(api_config="fake settings"))
         self.assertEqual(mock_slides_manager_cls.return_value.add.call_count, 1)
@@ -7017,11 +7037,16 @@ class MaterialsTests(TestCase):
 
         (first_submission, second_submission) = SlideSubmission.objects.filter(session=session, status__slug = 'pending').order_by('id')
 
+        self.assertTrue(exists_in_storage("staging", first_submission.filename))
+        self.assertTrue(exists_in_storage("staging", second_submission.filename))
         approve_url = urlreverse('ietf.meeting.views.approve_proposed_slides', kwargs={'slidesubmission_id':second_submission.pk,'num':second_submission.session.meeting.number})
         login_testing_unauthorized(self, chair.user.username, approve_url)
         r = self.client.post(approve_url,dict(title=submission.title,approve='approve'))
         first_submission.refresh_from_db()
         second_submission.refresh_from_db()
+        self.assertTrue(exists_in_storage("staging", first_submission.filename))
+        self.assertFalse(exists_in_storage("staging", second_submission.filename))
+        self.assertTrue(exists_in_storage("slides", second_submission.doc.uploaded_filename))
         self.assertEqual(r.status_code,302)
         self.assertEqual(mock_slides_manager_cls.call_count, 1)
         self.assertEqual(mock_slides_manager_cls.call_args, call(api_config="fake settings"))
@@ -7038,6 +7063,7 @@ class MaterialsTests(TestCase):
         self.assertEqual(r.status_code,302)
         self.client.logout()
         self.assertFalse(mock_slides_manager_cls.called)
+        self.assertFalse(exists_in_storage("staging", first_submission.filename))
 
         self.assertEqual(SlideSubmission.objects.filter(status__slug = 'pending').count(),0)
         self.assertEqual(SlideSubmission.objects.filter(status__slug = 'rejected').count(),1)
