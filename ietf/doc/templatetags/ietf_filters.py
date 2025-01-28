@@ -26,7 +26,6 @@ import debug                            # pyflakes:ignore
 from ietf.doc.models import BallotDocEvent, Document
 from ietf.doc.models import ConsensusDocEvent
 from ietf.ietfauth.utils import can_request_rfc_publication as utils_can_request_rfc_publication
-from ietf.utils.html import clean_html
 from ietf.utils import log
 from ietf.doc.utils import prettify_std_name
 from ietf.utils.html import clean_html
