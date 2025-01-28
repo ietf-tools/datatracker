@@ -61,7 +61,7 @@ def store_file(kind: str, name: str, file: File, allow_overwrite: bool = False) 
             log(complaint)
             debug.show("complaint")
         return None
-
+    # TODO return value on other paths
 
 def store_bytes(
     kind: str, name: str, content: bytes, allow_overwrite: bool = False
