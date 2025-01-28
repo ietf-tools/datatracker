@@ -30,7 +30,7 @@ from ietf.group.utils import can_manage_materials
 from ietf.name.models import SessionStatusName, ConstraintName, DocTypeName
 from ietf.person.models import Person
 from ietf.stats.models import MeetingRegistration
-from ietf.utils.html import sanitize_document
+from ietf.utils.html import clean_html
 from ietf.utils.log import log
 from ietf.utils.timezone import date_today
 
@@ -773,8 +773,8 @@ def handle_upload_file(file, filename, meeting, subdir, request=None, encoding=N
                     return "Failure trying to save '%s'. Hint: Try to upload as UTF-8: %s..." % (filename, str(e)[:120])
             # Whole file sanitization; add back what's missing from a complete
             # document (sanitize will remove these).
-            clean = sanitize_document(text)
-            destination.write(clean.encode('utf8'))
+            clean = clean_html(text)
+            destination.write(clean.encode("utf8"))
             if request and clean != text:
                 messages.warning(request,
                                  (
