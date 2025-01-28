@@ -6820,9 +6820,8 @@ class MaterialsTests(TestCase):
             session = Session.objects.get(pk=session.pk)
             self.assertEqual(session.slidesubmission_set.count(),1)
             self.assertEqual(len(outbox),1)
-            self.assertFalse(exists_in_storage("slides", session.slidesubmission_set.get().uploaded_filename))
             self.assertEqual(
-                retrieve_bytes("staging", session.slidesubmission_set.get().uploaded_filename),
+                retrieve_bytes("staging", session.slidesubmission_set.get().filename),
                 test_bytes
             )
 
@@ -6852,10 +6851,10 @@ class MaterialsTests(TestCase):
             self.assertEqual(r.status_code, 302)
             self.assertEqual(len(outbox),0)
             self.assertEqual(session.slidesubmission_set.count(),2)
-            sp = session.slidesubmission_set.get(title__contains="selfapproved")
-            self.assertFalse(exists_in_storage("staging", sp.uploaded_filename))
+            sp = session.presentations.get(document__title__contains="selfapproved")
+            self.assertFalse(exists_in_storage("staging", sp.document.uploaded_filename))
             self.assertEqual(
-                retrieve_bytes("slides", sp.uploaded_filename),
+                retrieve_bytes("slides", sp.document.uploaded_filename),
                 test_bytes
             )
             self.client.logout()
