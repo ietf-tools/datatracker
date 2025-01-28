@@ -2792,7 +2792,7 @@ class AsyncSubmissionTests(BaseSubmitTestCase):
         xml_path = Path(settings.IDSUBMIT_STAGING_PATH) / 'draft-somebody-test-00.xml'
         with xml_path.open('w') as f:
             f.write(xml_data)
-        store_str("submission", "draft-somebpdy-test-00.xml", xml_data)
+        store_str("staging", "draft-somebpdy-test-00.xml", xml_data)
         txt_path = xml_path.with_suffix('.txt')
         self.assertFalse(txt_path.exists())
         html_path = xml_path.with_suffix('.html')
@@ -2815,7 +2815,7 @@ class AsyncSubmissionTests(BaseSubmitTestCase):
         self.assertTrue(txt_path.exists())
         self.assertTrue(html_path.exists())
         for ext in ["txt", "html"]:
-            self.assertFalse(exists_in_storage("staging",f"draft-somebody-test-00.{ext}"))
+            self.assertTrue(exists_in_storage("staging", f"draft-somebody-test-00.{ext}"))
         self.assertEqual(submission.file_size, os.stat(txt_path).st_size)
         self.assertIn('Completed submission validation checks', submission.submissionevent_set.last().desc)
 
