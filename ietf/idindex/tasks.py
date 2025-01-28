@@ -15,6 +15,8 @@ from typing import List
 
 from django.conf import settings
 
+from ietf.doc.storage_utils import store_file
+
 from .index import all_id_txt, all_id2_txt, id_index_txt
 
 
@@ -38,9 +40,8 @@ class TempFileManager(AbstractContextManager):
             target = path / dest_path.name
             target.unlink(missing_ok=True)
             os.link(dest_path, target) # until python>=3.10
-
-    # TODO-BLOBSTORE : Going to need something to put these generated things into storage? 
-    # Or are we doing this in parallel with each use of TempFileManager in the code?
+        with dest_path.open("rb") as f:
+            store_file("indexes", dest_path.name, f)
 
     def cleanup(self):
         for tf_path in self.cleanup_list:

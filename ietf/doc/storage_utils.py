@@ -1,5 +1,7 @@
 # Copyright The IETF Trust 2025, All Rights Reserved
 
+from io import BufferedReader
+from typing import Union
 import debug  # pyflakes ignore
 
 from django.conf import settings
@@ -41,7 +43,7 @@ def remove_from_storage(kind: str, name: str) -> None:
         # debug.show("complaint")
 
 
-def store_file(kind: str, name: str, file: File, allow_overwrite: bool = False) -> None:
+def store_file(kind: str, name: str, file: Union[File,BufferedReader], allow_overwrite: bool = False) -> None:
     # debug.show('f"asked to store {name} into {kind}"')
     store = _get_storage(kind)
     if not allow_overwrite and store.exists(name):

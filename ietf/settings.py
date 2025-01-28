@@ -761,7 +761,8 @@ MORE_STORAGE_NAMES: list[str] = [
     "chatlog",
     "polls",
     "staging",
-    "bibxml-ids"
+    "bibxml-ids",
+    "indexes"
 ]
 
 # Override this in settings_local.py if needed
