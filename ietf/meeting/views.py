@@ -5010,6 +5010,7 @@ def approve_proposed_slides(request, slidesubmission_id, num):
                 if not os.path.exists(path):
                     os.makedirs(path)
                 shutil.move(submission.staged_filepath(), os.path.join(path, target_filename))
+                # TODO-BLOBSTORE
                 post_process(doc)
                 DocEvent.objects.create(type="approved_slides", doc=doc, rev=doc.rev, by=request.user.person, desc="Slides approved")
 
@@ -5050,6 +5051,7 @@ def approve_proposed_slides(request, slidesubmission_id, num):
                 try:
                     if submission.filename != None and submission.filename != '':
                         os.unlink(submission.staged_filepath())
+                        # TODO-BLOBSTORE
                 except (FileNotFoundError, IsADirectoryError):
                     pass
                 acronym = submission.session.group.acronym
