@@ -17,7 +17,7 @@ class NoLocationMigrationFileSystemStorage(FileSystemStorage):
 
 class BlobShadowFileSystemStorage(NoLocationMigrationFileSystemStorage):
     """FileSystemStorage that shadows writes to the blob store as well
-    
+
     Strips directories from the filename when naming the blob.
     """
 
