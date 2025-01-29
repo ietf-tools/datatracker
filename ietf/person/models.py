@@ -67,7 +67,7 @@ class Person(models.Model):
         default=None,
     )
     photo_thumb = models.ImageField(
-        storage=BlobShadowFileSystemStorage("photothumb"),
+        storage=BlobShadowFileSystemStorage("photo"),
         upload_to=settings.PHOTOS_DIRNAME,
         blank=True,
         default=None,

@@ -766,7 +766,6 @@ MORE_STORAGE_NAMES: list[str] = [
     "floorplan",
     "meetinghostlogo",
     "photo",
-    "photothumb",
 ]
 
 # Override this in settings_local.py if needed
