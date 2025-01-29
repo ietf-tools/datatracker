@@ -63,7 +63,7 @@ def store_file(kind: str, name: str, file: Union[File,BufferedReader], allow_ove
             log(complaint)
             debug.show("complaint")
         return None
-
+    # TODO return value on other paths
 
 def store_bytes(
     kind: str, name: str, content: bytes, allow_overwrite: bool = False

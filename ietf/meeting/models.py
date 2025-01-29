@@ -39,7 +39,7 @@ from ietf.name.models import (
 from ietf.person.models import Person
 from ietf.utils.decorators import memoize
 from ietf.utils.history import find_history_replacements_active_at, find_history_active_at
-from ietf.utils.storage import NoLocationMigrationFileSystemStorage
+from ietf.utils.storage import BlobShadowFileSystemStorage
 from ietf.utils.text import xslugify
 from ietf.utils.timezone import datetime_from_date, date_today
 from ietf.utils.models import ForeignKey
@@ -527,7 +527,12 @@ class FloorPlan(models.Model):
     modified= models.DateTimeField(auto_now=True)
     meeting = ForeignKey(Meeting)
     order   = models.SmallIntegerField()
-    image   = models.ImageField(storage=NoLocationMigrationFileSystemStorage(), upload_to=floorplan_path, blank=True, default=None)
+    image   = models.ImageField(
+        storage=BlobShadowFileSystemStorage(kind="floorplan"),
+        upload_to=floorplan_path,
+        blank=True,
+        default=None,
+    )
     #
     class Meta:
         ordering = ['-id',]
@@ -1433,7 +1438,10 @@ class MeetingHost(models.Model):
     name = models.CharField(max_length=255, blank=False)
     # TODO-BLOBSTORE - capture these logos and look for other ImageField like model fields.
     logo = MissingOkImageField(
-        storage=NoLocationMigrationFileSystemStorage(location=settings.MEETINGHOST_LOGO_PATH),
+        storage=BlobShadowFileSystemStorage(
+            kind="meetinghostlogo",
+            location=settings.MEETINGHOST_LOGO_PATH,
+        ),
         upload_to=_host_upload_path,
         width_field='logo_width',
         height_field='logo_height',

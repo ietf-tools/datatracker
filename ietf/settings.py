@@ -762,7 +762,10 @@ MORE_STORAGE_NAMES: list[str] = [
     "polls",
     "staging",
     "bibxml-ids",
-    "indexes"
+    "indexes",
+    "floorplan",
+    "meetinghostlogo",
+    "photo",
 ]
 
 # Override this in settings_local.py if needed
