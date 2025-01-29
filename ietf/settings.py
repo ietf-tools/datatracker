@@ -762,6 +762,7 @@ MORE_STORAGE_NAMES: list[str] = [
     "polls",
     "staging",
     "bibxml-ids",
+    "indexes",
     "floorplan",
     "meetinghostlogo",
 ]
