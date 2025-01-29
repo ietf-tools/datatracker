@@ -10,6 +10,7 @@ from pathlib import Path
 from django.conf import settings
 from django.template.loader import render_to_string
 
+from ietf.doc.storage_utils import store_file
 from ietf.utils import log
 
 from .models import Group
@@ -42,6 +43,11 @@ def generate_wg_charters_files_task():
         render_to_string("group/1wg-charters-by-acronym.txt", {"groups": groups}),
         encoding="utf8",
     )
+
+    with charters_file.open() as f:
+        store_file("indexes", "1wg-charters.txt", f)
+    with charters_by_acronym_file.open() as f:
+        store_file("indexes", "1wg-charters-by-acronym.txt", f)
 
     charter_copy_dests = [
         getattr(settings, "CHARTER_COPY_PATH", None), 
@@ -102,3 +108,8 @@ def generate_wg_summary_files_task():
         ),
         encoding="utf8",
     )
+
+    with summary_file.open() as f:
+        store_file("indexes", "1wg-summary.txt", f)
+    with summary_by_acronym_file.open() as f:
+        store_file("indexes", "1wg-summary-by-acronym.txt", f)
