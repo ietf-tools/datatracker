@@ -804,7 +804,7 @@ def complete_review(request, name, assignment_id=None, acronym=None):
                 content = form.cleaned_data['review_content']
 
             review_path = Path(review.get_file_path()) / f"{review.name}.txt"
-            review_path.write_text(content)
+            review_path.write_text(content) # TODO-BLOBSTORE
             review_ftp_path = Path(settings.FTP_DIR) / "review" / review_path.name
             # See https://github.com/ietf-tools/datatracker/issues/6941 - when that's
             # addressed, making this link should not be conditional
