@@ -112,7 +112,7 @@ class BaseMeetingTestCase(TestCase):
         # files will upload to the locations specified in settings.py.
         # Note that this will affect any use of the storage class in
         # meeting.models - i.e., FloorPlan.image and MeetingHost.logo
-        self.patcher = patch('ietf.meeting.models.NoLocationMigrationFileSystemStorage.base_location',
+        self.patcher = patch('ietf.meeting.models.BlobShadowFileSystemStorage.base_location',
                              new_callable=PropertyMock)
         mocked = self.patcher.start()
         mocked.return_value = self.storage_dir
