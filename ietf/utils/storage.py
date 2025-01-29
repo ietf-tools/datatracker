@@ -9,9 +9,9 @@ from .log import log
 
 class NoLocationMigrationFileSystemStorage(FileSystemStorage):
 
-    def deconstruct(obj):  # pylint: disable=no-self-argument
-        path, args, kwargs = FileSystemStorage.deconstruct(obj)
-        kwargs["location"] = None
+    def deconstruct(self):
+        path, args, kwargs = super().deconstruct()
+        kwargs["location"] = None  # don't record location in migrations
         return path, args, kwargs
 
 
@@ -23,6 +23,7 @@ class BlobShadowFileSystemStorage(NoLocationMigrationFileSystemStorage):
 
     def __init__(
         self,
+        *,  # disallow positional arguments
         kind: str,
         location=None,
         base_url=None,
@@ -46,3 +47,8 @@ class BlobShadowFileSystemStorage(NoLocationMigrationFileSystemStorage):
         except Exception as err:
             log(f"Failed to shadow {saved_name} at {self.kind}:{blob_name}: {err}")
         return saved_name  # includes the path!
+
+    def deconstruct(self):
+        path, args, kwargs = super().deconstruct()
+        kwargs["kind"] = ""  # don't record "kind" in migrations
+        return path, args, kwargs
