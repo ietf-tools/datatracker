@@ -39,7 +39,7 @@ from ietf.name.models import (
 from ietf.person.models import Person
 from ietf.utils.decorators import memoize
 from ietf.utils.history import find_history_replacements_active_at, find_history_active_at
-from ietf.utils.storage import BlobShadowFileSystemStorage, NoLocationMigrationFileSystemStorage
+from ietf.utils.storage import BlobShadowFileSystemStorage
 from ietf.utils.text import xslugify
 from ietf.utils.timezone import datetime_from_date, date_today
 from ietf.utils.models import ForeignKey
