@@ -178,6 +178,11 @@ jobs:
       with:
         python-version: "3.x"
 
+    - name: Setup AWS CLI
+      uses: unfor19/install-aws-cli-action@v1
+      with:
+        version: 2.22.35
+
     - name: Download a Coverage Results
       if: ${{ github.event.inputs.skiptests == 'false' || github.ref_name == 'release' }}
       uses: actions/download-artifact@v4.1.8
