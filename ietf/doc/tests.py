@@ -5,6 +5,8 @@
 import os
 import datetime
 import io
+from hashlib import sha384
+
 from django.http import HttpRequest
 import lxml
 import bibtexparser
@@ -3279,6 +3281,41 @@ class InvestigateTests(TestCase):
             list(result["unexpected"])[0].name,
             "draft-this-should-not-be-possible-00.txt",
         )
+
+    @mock.patch("ietf.doc.utils.caches")
+    def test_investigate_fragment_cache(self, mock_caches):
+        """investigate_fragment should cache its result"""
+        mock_default_cache = mock_caches["default"]
+        mock_default_cache.get.return_value = None  # disable cache
+        result = investigate_fragment("this-is-active")
+        self.assertEqual(len(result["can_verify"]), 1)
+        self.assertEqual(len(result["unverifiable_collections"]), 0)
+        self.assertEqual(len(result["unexpected"]), 0)
+        self.assertEqual(
+            list(result["can_verify"])[0].name, "draft-this-is-active-00.txt"
+        )
+        self.assertTrue(mock_default_cache.get.called)
+        self.assertTrue(mock_default_cache.set.called)
+        expected_key = f"investigate_fragment:{sha384(b'this-is-active').hexdigest()}"
+        self.assertEqual(mock_default_cache.set.call_args.kwargs["key"], expected_key)
+        cached_value = mock_default_cache.set.call_args.kwargs["value"]  # hang on to this
+        mock_default_cache.reset_mock()
+
+        # Check that a cached value is used
+        mock_default_cache.get.return_value = cached_value
+        with mock.patch("ietf.doc.utils.Path") as mock_path:
+            result = investigate_fragment("this-is-active")
+        # Check that we got the same results
+        self.assertEqual(len(result["can_verify"]), 1)
+        self.assertEqual(len(result["unverifiable_collections"]), 0)
+        self.assertEqual(len(result["unexpected"]), 0)
+        self.assertEqual(
+            list(result["can_verify"])[0].name, "draft-this-is-active-00.txt"
+        )
+        # And that we used the cache
+        self.assertFalse(mock_path.called)  # a proxy for "did the method do any real work"
+        self.assertTrue(mock_default_cache.get.called)
+        self.assertEqual(mock_default_cache.get.call_args, mock.call(expected_key))
 
     def test_investigate_get(self):
         """GET with no querystring should retrieve the investigate UI"""
