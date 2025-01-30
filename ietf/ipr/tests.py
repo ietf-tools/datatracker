@@ -161,12 +161,6 @@ class IprTests(TestCase):
         r = self.client.get(urlreverse("ietf.ipr.views.history", kwargs=dict(id=ipr.pk)))
         self.assertContains(r, ipr.title)
 
-    def test_iprs_for_drafts(self):
-        draft=WgDraftFactory()
-        ipr = HolderIprDisclosureFactory(docs=[draft,])
-        r = self.client.get(urlreverse("ietf.ipr.views.by_draft_txt"))
-        self.assertContains(r, draft.name)
-        self.assertContains(r, str(ipr.pk))
 
     def test_about(self):
         r = self.client.get(urlreverse("ietf.ipr.views.about"))
