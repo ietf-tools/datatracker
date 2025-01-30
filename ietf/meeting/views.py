@@ -2608,7 +2608,7 @@ def add_session_recordings(request, session_id, num):
     if request.method == 'POST':
         pk_to_delete = request.POST.get('delete', None)
         if pk_to_delete is not None:
-            session_presentation = get_object_or_404(session.presentations, pk=pk_to_delete)
+            session_presentation = get_object_or_404(presentations, pk=pk_to_delete)
             try:
                 delete_recording(session_presentation)
             except ValueError as err:
