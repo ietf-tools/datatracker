@@ -31,7 +31,7 @@ from ietf.group.utils import can_manage_materials
 from ietf.name.models import SessionStatusName, ConstraintName, DocTypeName
 from ietf.person.models import Person
 from ietf.stats.models import MeetingRegistration
-from ietf.utils.html import sanitize_document
+from ietf.utils.html import clean_html
 from ietf.utils.log import log
 from ietf.utils.timezone import date_today
 
