@@ -5,13 +5,13 @@ import itertools
 import os
 import pytz
 import subprocess
-import tempfile
 
 from collections import defaultdict
 from pathlib import Path
 
 from django.conf import settings
 from django.contrib import messages
+from django.core.files.base import ContentFile
 from django.db.models import OuterRef, Subquery, TextField, Q, Value
 from django.db.models.functions import Coalesce
 from django.template.loader import render_to_string
@@ -225,12 +225,7 @@ def generate_bluesheet(request, session):
             'session': session,
             'data': data,
         })
-    fd, name = tempfile.mkstemp(suffix=".txt", text=True)
-    os.close(fd)
-    with open(name, "w") as file:
-        file.write(text)
-    with open(name, "br") as file:
-        return save_bluesheet(request, session, file)
+    return save_bluesheet(request, session, ContentFile(text.encode("utf-8"), name="unusednamepartsothereisanextension.txt"))
 
 
 def finalize(request, meeting):
