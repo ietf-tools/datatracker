@@ -24,7 +24,7 @@ from ietf.dbtemplate.models import DBTemplate
 from ietf.doc.storage_utils import store_bytes, store_str
 from ietf.meeting.models import (Session, SchedulingEvent, TimeSlot,
     Constraint, SchedTimeSessAssignment, SessionPresentation, Attended)
-from ietf.doc.models import Document, State, NewRevisionDocEvent
+from ietf.doc.models import Document, State, NewRevisionDocEvent, StateDocEvent
 from ietf.doc.models import DocEvent
 from ietf.group.models import Group
 from ietf.group.utils import can_manage_materials
@@ -863,6 +863,26 @@ def create_recording(session, url, title=None, user=None):
     session.presentations.add(pres)
 
     return doc
+
+def delete_recording(session_presentation, user=None):
+    """Delete a session recording"""
+    document = session_presentation.document
+    if document.type_id != "recording":
+        raise ValueError(f"Document {document.pk} is not a recording (type_id={document.type_id})")
+    recording_state = document.get_state("recording")
+    deleted_state = State.objects.get(type_id="recording", slug="deleted")
+    if recording_state != deleted_state:
+        # Update the recording state and create a history event 
+        document.set_state(deleted_state)
+        StateDocEvent.objects.create(
+            type="changed_state",
+            by=user or Person.objects.get(name="(System)"),
+            doc=document,
+            rev=document.rev,
+            state_type=deleted_state.type,
+            state=deleted_state,
+        )
+    session_presentation.delete()
 
 def get_next_sequence(group, meeting, type):
     '''

@@ -20,7 +20,7 @@ from collections import OrderedDict, Counter, deque, defaultdict, namedtuple
 from functools import partialmethod
 import jsonschema
 from pathlib import Path
-from urllib.parse import parse_qs, unquote, urlencode, urlsplit, urlunsplit
+from urllib.parse import parse_qs, unquote, urlencode, urlsplit, urlunsplit, urlparse
 from tempfile import mkstemp
 from wsgiref.handlers import format_date_time
 
@@ -87,7 +87,7 @@ from ietf.meeting.utils import diff_meeting_schedules, prefetch_schedule_diff_ob
 from ietf.meeting.utils import swap_meeting_schedule_timeslot_assignments, bulk_create_timeslots
 from ietf.meeting.utils import preprocess_meeting_important_dates
 from ietf.meeting.utils import new_doc_for_session, write_doc_for_session
-from ietf.meeting.utils import get_activity_stats, post_process, create_recording
+from ietf.meeting.utils import get_activity_stats, post_process, create_recording, delete_recording
 from ietf.meeting.utils import participants_for_meeting, generate_bluesheet, bluesheet_data, save_bluesheet
 from ietf.message.utils import infer_message
 from ietf.name.models import SlideSubmissionStatusName, ProceedingsMaterialTypeName, SessionPurposeName
@@ -104,6 +104,7 @@ from ietf.utils.pdf import pdf_pages
 from ietf.utils.response import permission_denied
 from ietf.utils.text import xslugify
 from ietf.utils.timezone import datetime_today, date_today
+from ietf.settings import YOUTUBE_DOMAINS
 
 from .forms import (InterimMeetingModelForm, InterimAnnounceForm, InterimSessionModelForm,
     InterimCancelForm, InterimSessionInlineFormSet, RequestMinutesForm,
@@ -2568,6 +2569,89 @@ def add_session_drafts(request, session_id, num):
                     'already_linked': session.presentations.filter(document__type_id='draft'),
                     'form': form,
                   })
+
+class SessionRecordingsForm(forms.Form):
+    title = forms.CharField(max_length=255)
+    url = forms.URLField(label="URL of the recording (YouTube only)")
+
+    def clean_url(self):
+        url = self.cleaned_data['url']
+        parsed_url = urlparse(url)
+        if parsed_url.hostname not in YOUTUBE_DOMAINS:
+            raise forms.ValidationError("Must be a YouTube URL")
+        return url
+
+
+def add_session_recordings(request, session_id, num):
+    # num is redundant, but we're dragging it along an artifact of where we are in the current URL structure
+    session = get_object_or_404(Session, pk=session_id)
+    if not session.can_manage_materials(request.user):
+        permission_denied(
+            request, "You don't have permission to manage recordings for this session."
+        )
+    if session.is_material_submission_cutoff() and not has_role(
+        request.user, "Secretariat"
+    ):
+        raise Http404
+
+    session_number = None
+    official_timeslotassignment = session.official_timeslotassignment()
+    assertion("official_timeslotassignment is not None")
+    initial = {
+        "title": "Video recording of {acronym} for {timestamp}".format(
+            acronym=session.group.acronym,
+            timestamp=official_timeslotassignment.timeslot.utc_start_time().strftime(
+                "%Y-%m-%d %H:%M"
+            ),
+        )
+    }
+
+    # find session number if WG has more than one session at the meeting
+    sessions = get_sessions(session.meeting.number, session.group.acronym)
+    if len(sessions) > 1:
+        session_number = 1 + sessions.index(session)
+
+    presentations = session.presentations.filter(
+        document__in=session.get_material("recording", only_one=False),
+    ).order_by("document__title", "document__external_url")
+
+    if request.method == "POST":
+        pk_to_delete = request.POST.get("delete", None)
+        if pk_to_delete is not None:
+            session_presentation = get_object_or_404(presentations, pk=pk_to_delete)
+            try:
+                delete_recording(session_presentation)
+            except ValueError as err:
+                log(f"Error deleting recording from session {session.pk}: {err}")
+                messages.error(
+                    request,
+                    "Unable to delete this recording. Please contact the secretariat for assistance.",
+                )
+            form = SessionRecordingsForm(initial=initial)
+        else:
+            form = SessionRecordingsForm(request.POST)
+            if form.is_valid():
+                title = form.cleaned_data["title"]
+                url = form.cleaned_data["url"]
+                create_recording(session, url, title=title, user=request.user.person)
+                return redirect(
+                    "ietf.meeting.views.session_details",
+                    num=session.meeting.number,
+                    acronym=session.group.acronym,
+                )
+    else:
+        form = SessionRecordingsForm(initial=initial)
+
+    return render(
+        request,
+        "meeting/add_session_recordings.html",
+        {
+            "session": session,
+            "session_number": session_number,
+            "already_linked": presentations,
+            "form": form,
+        },
+    )
 
 
 def session_attendance(request, session_id, num):
