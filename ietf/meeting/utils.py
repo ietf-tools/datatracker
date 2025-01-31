@@ -226,8 +226,6 @@ def generate_bluesheet(request, session):
             'session': session,
             'data': data,
         })
-    # TODO-BLOBSTORE Verify that this is only creating a file-like object to pass along
-    # if so, we can do this in memory and not involve disk.
     fd, name = tempfile.mkstemp(suffix=".txt", text=True)
     os.close(fd)
     with open(name, "w") as file:
