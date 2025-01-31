@@ -2583,10 +2583,14 @@ class SessionRecordingsForm(forms.Form):
 
 def add_session_recordings(request, session_id, num):
     # num is redundant, but we're dragging it along an artifact of where we are in the current URL structure
-    session = get_object_or_404(Session,pk=session_id)
+    session = get_object_or_404(Session, pk=session_id)
     if not session.can_manage_materials(request.user):
-        permission_denied(request, "You don't have permission to manage recordings for this session.")
-    if session.is_material_submission_cutoff() and not has_role(request.user, "Secretariat"):
+        permission_denied(
+            request, "You don't have permission to manage recordings for this session."
+        )
+    if session.is_material_submission_cutoff() and not has_role(
+        request.user, "Secretariat"
+    ):
         raise Http404
 
     session_number = None
@@ -2595,21 +2599,23 @@ def add_session_recordings(request, session_id, num):
     initial = {
         "title": "Video recording of {acronym} for {timestamp}".format(
             acronym=session.group.acronym,
-            timestamp=official_timeslotassignment.timeslot.utc_start_time().strftime("%Y-%m-%d %H:%M"),
+            timestamp=official_timeslotassignment.timeslot.utc_start_time().strftime(
+                "%Y-%m-%d %H:%M"
+            ),
         )
     }
 
     # find session number if WG has more than one session at the meeting
-    sessions = get_sessions(session.meeting.number,session.group.acronym)
+    sessions = get_sessions(session.meeting.number, session.group.acronym)
     if len(sessions) > 1:
-       session_number = 1 + sessions.index(session)
+        session_number = 1 + sessions.index(session)
 
     presentations = session.presentations.filter(
         document__in=session.get_material("recording", only_one=False),
     ).order_by("document__title", "document__external_url")
 
-    if request.method == 'POST':
-        pk_to_delete = request.POST.get('delete', None)
+    if request.method == "POST":
+        pk_to_delete = request.POST.get("delete", None)
         if pk_to_delete is not None:
             session_presentation = get_object_or_404(presentations, pk=pk_to_delete)
             try:
@@ -2624,19 +2630,28 @@ def add_session_recordings(request, session_id, num):
         else:
             form = SessionRecordingsForm(request.POST)
             if form.is_valid():
-                title = form.cleaned_data['title']
-                url = form.cleaned_data['url']
+                title = form.cleaned_data["title"]
+                url = form.cleaned_data["url"]
                 create_recording(session, url, title=title, user=request.user.person)
-                return redirect('ietf.meeting.views.session_details', num=session.meeting.number, acronym=session.group.acronym)
+                return redirect(
+                    "ietf.meeting.views.session_details",
+                    num=session.meeting.number,
+                    acronym=session.group.acronym,
+                )
     else:
         form = SessionRecordingsForm(initial=initial)
 
-    return render(request, "meeting/add_session_recordings.html",
-                  { 'session': session,
-                    'session_number': session_number,
-                    'already_linked': presentations,
-                    'form': form,
-                  })
+    return render(
+        request,
+        "meeting/add_session_recordings.html",
+        {
+            "session": session,
+            "session_number": session_number,
+            "already_linked": presentations,
+            "form": form,
+        },
+    )
+
 
 def session_attendance(request, session_id, num):
     """Session attendance view
