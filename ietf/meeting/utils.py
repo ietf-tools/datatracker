@@ -776,7 +776,7 @@ def handle_upload_file(file, filename, meeting, subdir, request=None, encoding=N
                     return "Failure trying to save '%s'. Hint: Try to upload as UTF-8: %s..." % (filename, str(e)[:120])
             # Whole file sanitization; add back what's missing from a complete
             # document (sanitize will remove these).
-            clean = sanitize_document(text)
+            clean = clean_html(text)
             clean_bytes = clean.encode('utf8')
             destination.write(clean_bytes)
             # Assumes contents of subdir are always document type ids
