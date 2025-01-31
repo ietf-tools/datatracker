@@ -7421,10 +7421,10 @@ class SessionTests(TestCase):
         self.assertIsNotNone(title_input)
         self.assertEqual(
             title_input.attr.value,
-            "Video recording for {acro} on {timestamp}".format(
+            "Video recording of {acro} for {timestamp}".format(
                 acro=session.group.acronym,
                 timestamp=session.official_timeslotassignment().timeslot.utc_start_time().strftime(
-                    "%b-%d-%Y at %H:%M:%S"
+                    "%Y-%m-%d %H:%M"
                 ),
             ),
         )
