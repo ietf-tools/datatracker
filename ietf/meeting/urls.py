@@ -64,7 +64,8 @@ type_ietf_only_patterns = [
 type_interim_patterns = [
     url(r'^agenda/(?P<acronym>[A-Za-z0-9-]+)-drafts.pdf$', views.session_draft_pdf),
     url(r'^agenda/(?P<acronym>[A-Za-z0-9-]+)-drafts.tgz$', views.session_draft_tarfile),
-    url(r'^materials/%(document)s((?P<ext>\.[a-z0-9]+)|/)?$' % settings.URL_REGEXPS, views.materials_document),
+    url(r'^materials/%(document)s(?P<ext>\.[a-z0-9]+)$' % settings.URL_REGEXPS, views.materials_document),
+    url(r'^materials/%(document)s/?$' % settings.URL_REGEXPS, views.materials_document),
     url(r'^agenda.json$', views.agenda_json)
 ]
 
