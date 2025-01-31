@@ -6,112 +6,124 @@
     <link rel="stylesheet" href="{% static "ietf/css/list.css" %}">
 {% endblock %}
 {% block content %}
-  {% origin %}
-  <h1>Investigate</h1>
-  <form id="investigate" method="post">
-    {% csrf_token %}
-    {% bootstrap_form form %}
-    <button class="btn btn-primary" type="submit">Investigate</button>
-  </form>
-  {% if results %}
-    <div id="results">
-      {% if results.can_verify %}
-        <h2>These can be authenticated</h2>
-        <table id="authenticated" class="table table-sm table-striped tablesorter">
-          <thead>
-            <tr>
-              <th scope="col" data-sort="name">Name</th>
-              <th scope="col" data-sort="modified">Last Modified On</th>
-              <th scope="col" data-sort="link">Link</th>
-              <th scope="col" data-sort="source">Source</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for path in results.can_verify %}
-              {% with url=path|url_for_path %}
-                <tr>
-                    <td>{{path.name}}</td>
-                    <td>
-                        {% if path|mtime_is_epoch %}
-                          Timestamp has been lost (is Unix Epoch)
-                        {% else %}
-                          {{path|mtime|date:"DATETIME_FORMAT"}}
-                        {% endif %}
-                    </td>
-                    <td><a href="{{url}}">{{url}}</a></td>
-                    <td>{{path}}</td>
-                </tr>
-              {% endwith %}
-            {% endfor %}
-          </tbody>
-        </table>
-      {% else %}
-      <h2>Nothing with this name fragment can be authenticated</h2>
-      {% endif %}
-      <hr>
-      {% if results.unverifiable_collections %}
-        <h2>These are in the archive, but cannot be authenticated</h2>
-        <table id="unverifiable" class="table table-sm table-striped tablesorter">
-          <thead>
-            <tr>
-              <th scope="col" data-sort="name">Name</th>
-              <th scope="col" data-sort="modified">Last Modified On</th>
-              <th scope="col" data-sort="link">Link</th>
-              <th scope="col" data-sort="source">Source</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for path in results.unverifiable_collections %}
-              {% with url=path|url_for_path %}
-              <tr>
-                <td>{{path.name}}</td>
-                <td>
-                    {% if path|mtime_is_epoch %}
-                      Timestamp has been lost (is Unix Epoch)
-                    {% else %}
-                      {{path|mtime|date:"DATETIME_FORMAT"}}
-                    {% endif %}
-                </td>
-                <td><a href="{{url}}">{{url}}</a></td>
-                <td>{{path}}</td>
-              </tr>
-              {% endwith %}
-            {% endfor %}
-          </tbody>
-        </table>
-      {% endif %}
-      {% if results.unexpected %}
-        <h2>These are unexpected and we do not know what their origin is. These cannot be authenticated</h2>
-        <table id="unexpected" class="table table-sm table-striped tablesorter">
-          <thead>
-            <tr>
-              <th scope="col" data-sort="name">Name</th>
-              <th scope="col" data-sort="modified">Last Modified On</th>
-              <th scope="col" data-sort="link">Link</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for path in results.unexpected %}
-              {% with url=path|url_for_path %}
-              <tr>
-                <td>{{path.name}}</td>
-                <td>
-                    {% if path|mtime_is_epoch %}
-                      Timestamp has been lost (is Unix Epoch)
-                    {% else %}
-                      {{path|mtime|date:"DATETIME_FORMAT"}}
-                    {% endif %}
-                </td>
-                <td><a href="{{url}}">{{url}}</a></td>
-              </tr>
-              {% endwith %}
-            {% endfor %}
-          </tbody>
-        </table>
-      {% endif %}
+    {% origin %}
+    <h1>Investigate</h1>
+    <div class="mb-3">
+        <form id="investigate" method="post">
+            {% csrf_token %}
+            {% bootstrap_form form %}
+            <button class="btn btn-primary" type="submit" id="investigate-button">
+                <span class="spinner-border spinner-border-sm investigation-indicator d-none"
+                      role="status"
+                      aria-hidden="true">
+                </span>
+                Investigate
+            </button>
+            <div class="alert alert-info mt-3 d-none investigation-indicator">
+                Please be patient, processing may take several minutes.
+            </div>
+        </form>
     </div>
-  {% endif %}
+    {% if results %}
+        <div id="results">
+            {% if results.can_verify %}
+                <h2>These can be authenticated</h2>
+                <table id="authenticated" class="table table-sm table-striped tablesorter">
+                    <thead>
+                    <tr>
+                        <th scope="col" data-sort="name">Name</th>
+                        <th scope="col" data-sort="modified">Last Modified On</th>
+                        <th scope="col" data-sort="link">Link</th>
+                        <th scope="col" data-sort="source">Source</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for path in results.can_verify %}
+                        {% with url=path|url_for_path %}
+                            <tr>
+                                <td>{{ path.name }}</td>
+                                <td>
+                                    {% if path|mtime_is_epoch %}
+                                        Timestamp has been lost (is Unix Epoch)
+                                    {% else %}
+                                        {{ path|mtime|date:"DATETIME_FORMAT" }}
+                                    {% endif %}
+                                </td>
+                                <td><a href="{{ url }}">{{ url }}</a></td>
+                                <td>{{ path }}</td>
+                            </tr>
+                        {% endwith %}
+                    {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <h2>Nothing with this name fragment can be authenticated</h2>
+            {% endif %}
+            <hr>
+            {% if results.unverifiable_collections %}
+                <h2>These are in the archive, but cannot be authenticated</h2>
+                <table id="unverifiable" class="table table-sm table-striped tablesorter">
+                    <thead>
+                    <tr>
+                        <th scope="col" data-sort="name">Name</th>
+                        <th scope="col" data-sort="modified">Last Modified On</th>
+                        <th scope="col" data-sort="link">Link</th>
+                        <th scope="col" data-sort="source">Source</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for path in results.unverifiable_collections %}
+                        {% with url=path|url_for_path %}
+                            <tr>
+                                <td>{{ path.name }}</td>
+                                <td>
+                                    {% if path|mtime_is_epoch %}
+                                        Timestamp has been lost (is Unix Epoch)
+                                    {% else %}
+                                        {{ path|mtime|date:"DATETIME_FORMAT" }}
+                                    {% endif %}
+                                </td>
+                                <td><a href="{{ url }}">{{ url }}</a></td>
+                                <td>{{ path }}</td>
+                            </tr>
+                        {% endwith %}
+                    {% endfor %}
+                    </tbody>
+                </table>
+            {% endif %}
+            {% if results.unexpected %}
+                <h2>These are unexpected and we do not know what their origin is. These cannot be authenticated</h2>
+                <table id="unexpected" class="table table-sm table-striped tablesorter">
+                    <thead>
+                    <tr>
+                        <th scope="col" data-sort="name">Name</th>
+                        <th scope="col" data-sort="modified">Last Modified On</th>
+                        <th scope="col" data-sort="link">Link</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for path in results.unexpected %}
+                        {% with url=path|url_for_path %}
+                            <tr>
+                                <td>{{ path.name }}</td>
+                                <td>
+                                    {% if path|mtime_is_epoch %}
+                                        Timestamp has been lost (is Unix Epoch)
+                                    {% else %}
+                                        {{ path|mtime|date:"DATETIME_FORMAT" }}
+                                    {% endif %}
+                                </td>
+                                <td><a href="{{ url }}">{{ url }}</a></td>
+                            </tr>
+                        {% endwith %}
+                    {% endfor %}
+                    </tbody>
+                </table>
+            {% endif %}
+        </div>
+    {% endif %}
 {% endblock %}
 {% block js %}
     <script src="{% static "ietf/js/list.js" %}"></script>
+    <script src="{% static "ietf/js/investigate.js" %}"></script>
 {% endblock %}

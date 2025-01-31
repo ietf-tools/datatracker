@@ -13,7 +13,34 @@ on:
       - 'package.json'
 
 jobs:
+  # -----------------------------------------------------------------
+  # PREPARE
+  # -----------------------------------------------------------------
+  prepare:
+    name: Prepare
+    runs-on: ubuntu-latest
+    outputs:
+      base_image_version: ${{ steps.baseimgversion.outputs.base_image_version }}
+
+    steps:   
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 1
+        fetch-tags: false
+
+    - name: Get Base Image Target Version
+      id: baseimgversion
+      run: |
+        echo "base_image_version=$(sed -n '1p' dev/build/TARGET_BASE)" >> $GITHUB_OUTPUT
+
+  # -----------------------------------------------------------------
+  # TESTS
+  # -----------------------------------------------------------------
   tests:
+    name: Run Tests
     uses: ./.github/workflows/tests.yml
+    needs: [prepare]
     with:
       ignoreLowerCoverage: false
+      skipSelenium: true
+      targetBaseVersion: ${{ needs.prepare.outputs.base_image_version }}

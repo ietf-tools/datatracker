@@ -30,7 +30,7 @@ from ietf.group.utils import can_manage_materials
 from ietf.name.models import SessionStatusName, ConstraintName, DocTypeName
 from ietf.person.models import Person
 from ietf.stats.models import MeetingRegistration
-from ietf.utils.html import sanitize_document
+from ietf.utils.html import clean_html
 from ietf.utils.log import log
 from ietf.utils.timezone import date_today
 
@@ -738,24 +738,11 @@ def handle_upload_file(file, filename, meeting, subdir, request=None, encoding=N
 
     This function takes a _binary mode_ file object, a filename and a meeting object and subdir as string.
     It saves the file to the appropriate directory, get_materials_path() + subdir.
-    If the file is a zip file, it creates a new directory in 'slides', which is the basename of the
-    zip file and unzips the file in the new directory.
     """
     filename = Path(filename)
-    is_zipfile = filename.suffix == '.zip'
 
     path = Path(meeting.get_materials_path()) / subdir
-    if is_zipfile:
-        path = path / filename.stem
     path.mkdir(parents=True, exist_ok=True)
-
-    # agendas and minutes can only have one file instance so delete file if it already exists
-    if subdir in ('agenda', 'minutes'):
-        for f in path.glob(f'{filename.stem}.*'):
-            try:
-                f.unlink()
-            except FileNotFoundError:
-                pass  # if the file is already gone, so be it
 
     with (path / filename).open('wb+') as destination:
         # prep file for reading
@@ -786,8 +773,8 @@ def handle_upload_file(file, filename, meeting, subdir, request=None, encoding=N
                     return "Failure trying to save '%s'. Hint: Try to upload as UTF-8: %s..." % (filename, str(e)[:120])
             # Whole file sanitization; add back what's missing from a complete
             # document (sanitize will remove these).
-            clean = sanitize_document(text)
-            destination.write(clean.encode('utf8'))
+            clean = clean_html(text)
+            destination.write(clean.encode("utf8"))
             if request and clean != text:
                 messages.warning(request,
                                  (
@@ -798,10 +785,6 @@ def handle_upload_file(file, filename, meeting, subdir, request=None, encoding=N
         else:
             for chunk in chunks:
                 destination.write(chunk)
-
-    # unzip zipfile
-    if is_zipfile:
-        subprocess.call(['unzip', filename], cwd=path)
 
     return None
 

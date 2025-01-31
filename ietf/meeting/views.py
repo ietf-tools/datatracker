@@ -4666,11 +4666,6 @@ def api_upload_bluesheet(request):
             content="Method not allowed", content_type="text/plain", permitted_methods=('POST',)
         )
 
-    # Temporary: fall back to deprecated interface if we have old-style parameters.
-    # Do away with this once meetecho is using the new pk-based interface.
-    if any(k in request.POST for k in ['meeting', 'group', 'item']):
-        return deprecated_api_upload_bluesheet(request)
-
     session_id = request.POST.get('session_id', None)
     if session_id is None:
         return err(400, 'Missing session_id parameter')
@@ -4703,65 +4698,6 @@ def api_upload_bluesheet(request):
         save_err = save_bluesheet(request, session, file)
     if save_err:
         return err(400, save_err)
-
-    return HttpResponse("Done", status=200, content_type='text/plain')
-
-
-def deprecated_api_upload_bluesheet(request):
-    def err(code, text):
-        return HttpResponse(text, status=code, content_type='text/plain')
-    if request.method == 'POST':
-        # parameters:
-        #   apikey: the poster's personal API key
-        #   meeting: number as string, i.e., '101', or 'interim-2018-quic-02'
-        #   group: acronym or special, i.e., 'quic' or 'plenary'
-        #   item: '1', '2', '3' (the group's first, second, third etc.
-        #                           session during the week)
-        #   bluesheet: json blob with
-        #       [{'name': 'Name', 'affiliation': 'Organization', }, ...]
-        for item in ['meeting', 'group', 'item', 'bluesheet',]:
-            value = request.POST.get(item)
-            if not value:
-                return err(400, "Missing %s parameter" % item)
-        number = request.POST.get('meeting')
-        sessions = Session.objects.filter(meeting__number=number)
-        if not sessions.exists():
-            return err(400, "No sessions found for meeting '%s'" % (number, ))
-        acronym = request.POST.get('group')
-        sessions = sessions.filter(group__acronym=acronym)
-        if not sessions.exists():
-            return err(400, "No sessions found in meeting '%s' for group '%s'" % (number, acronym))
-        session_times = [ (s.official_timeslotassignment().timeslot.time, s.id, s) for s in sessions if s.official_timeslotassignment() ]
-        session_times.sort()
-        item = request.POST.get('item')
-        if not item.isdigit():
-            return err(400, "Expected a numeric value for 'item', found '%s'" % (item, ))
-        n = int(item)-1              # change 1-based to 0-based
-        try:
-            time, __, session = session_times[n]
-        except IndexError:
-            return err(400, "No item '%s' found in list of sessions for group" % (item, ))
-        bjson = request.POST.get('bluesheet')
-        try:
-            data = json.loads(bjson)
-        except json.decoder.JSONDecodeError:
-            return err(400, "Invalid json value: '%s'" % (bjson, ))
-
-        text = render_to_string('meeting/bluesheet.txt', {
-                'data': data,
-                'session': session,
-            })
-
-        fd, name = tempfile.mkstemp(suffix=".txt", text=True)
-        os.close(fd)
-        with open(name, "w") as file:
-            file.write(text)
-        with open(name, "br") as file:
-            save_err = save_bluesheet(request, session, file)
-        if save_err:
-            return err(400, save_err)
-    else:
-        return err(405, "Method not allowed")
 
     return HttpResponse("Done", status=200, content_type='text/plain')
 

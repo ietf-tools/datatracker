@@ -13,6 +13,7 @@ Django>4.2,<5
 django-analytical>=3.1.0
 django-bootstrap5>=21.3
 django-celery-beat>=2.3.0
+django-celery-results>=2.5.1
 django-csp>=3.7
 django-cors-headers>=3.11.0
 django-debug-toolbar>=3.2.4
@@ -43,8 +44,7 @@ jsonfield>=3.1.0    # for SubmissionCheck.  This is https://github.com/bradjaspe
 jsonschema[format]>=4.2.1
 jwcrypto>=1.2    # for signed notifications - this is aspirational, and is not really used.
 logging_tree>=1.9    # Used only by the showloggers management command
-lxml>=5.3.0    # lxml[html_clean] fails on some architectures
-lxml_html_clean>=0.4.1
+lxml>=5.3.0
 markdown>=3.3.6
 types-markdown>=3.3.6
 mock>=4.0.3    # Used only by tests, of course
@@ -60,7 +60,7 @@ pyopenssl>=22.0.0    # Used by urllib3.contrib, which is used by PyQuery but not
 pyquery>=1.4.3
 python-dateutil>=2.8.2
 types-python-dateutil>=2.8.2
-python-json-logger>=2.0.7
+python-json-logger>=3.1.0
 python-magic==0.4.18    # Versions beyond the yanked .19 and .20 introduce form failures
 pymemcache>=4.0.0  # for django.core.cache.backends.memcached.PyMemcacheCache
 python-mimeparse>=1.6    # from TastyPie

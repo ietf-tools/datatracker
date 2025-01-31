@@ -12,13 +12,15 @@ from markdown.postprocessors import Postprocessor
 from django.utils.safestring import mark_safe
 
 from ietf.doc.templatetags.ietf_filters import urlize_ietf_docs
-from ietf.utils.text import bleach_cleaner, liberal_bleach_cleaner, bleach_linker
+from .html import clean_html, liberal_clean_html
+from .text import linkify
+
 
 
 class LinkifyExtension(Extension):
     """
     Simple Markdown extension inspired by https://github.com/daGrevis/mdx_linkify,
-    but using our bleach_linker directly. Doing the linkification on the converted
+    but using our own linker directly. Doing the linkification on the converted
     Markdown output introduces artifacts.
     """
 
@@ -31,12 +33,12 @@ class LinkifyExtension(Extension):
 
 class LinkifyPostprocessor(Postprocessor):
     def run(self, text):
-        return urlize_ietf_docs(bleach_linker.linkify(text))
+        return urlize_ietf_docs(linkify(text))
 
 
 def markdown(text):
     return mark_safe(
-        bleach_cleaner.clean(
+        clean_html(
             python_markdown.markdown(
                 text,
                 extensions=[
@@ -52,7 +54,7 @@ def markdown(text):
 
 def liberal_markdown(text):
     return mark_safe(
-        liberal_bleach_cleaner.clean(
+        liberal_clean_html(
             python_markdown.markdown(
                 text,
                 extensions=[

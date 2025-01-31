@@ -132,6 +132,7 @@
         "ietf/static/js/highcharts.js",
         "ietf/static/js/highstock.js",
         "ietf/static/js/ietf.js",
+        "ietf/static/js/investigate.js",
         "ietf/static/js/ipr-edit.js",
         "ietf/static/js/ipr-search.js",
         "ietf/static/js/js-cookie.js",

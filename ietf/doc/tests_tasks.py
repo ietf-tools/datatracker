@@ -1,4 +1,6 @@
 # Copyright The IETF Trust 2024, All Rights Reserved
+
+import debug    # pyflakes:ignore
 import datetime
 import mock
 
@@ -18,6 +20,7 @@ from .tasks import (
     generate_draft_bibxml_files_task,
     generate_idnits2_rfcs_obsoleted_task,
     generate_idnits2_rfc_status_task,
+    investigate_fragment_task,
     notify_expirations_task,
 )
 
@@ -95,6 +98,18 @@ class TaskTests(TestCase):
         self.assertEqual(mock_expire.call_args_list[0], mock.call(docs[0]))
         self.assertEqual(mock_expire.call_args_list[1], mock.call(docs[1]))
         self.assertEqual(mock_expire.call_args_list[2], mock.call(docs[2]))
+
+    def test_investigate_fragment_task(self):
+        investigation_results = object()  # singleton
+        with mock.patch(
+            "ietf.doc.tasks.investigate_fragment", return_value=investigation_results
+        ) as mock_inv:
+            retval = investigate_fragment_task("some fragment")
+        self.assertTrue(mock_inv.called)
+        self.assertEqual(mock_inv.call_args, mock.call("some fragment"))
+        self.assertEqual(
+            retval, {"name_fragment": "some fragment", "results": investigation_results}
+        )
 
 
 class Idnits2SupportTests(TestCase):
