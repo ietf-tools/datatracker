@@ -1,6 +1,6 @@
 # Copyright The IETF Trust 2024, All Rights Reserved
 """Doc API implementations"""
-from django.db.models import OuterRef, Subquery, Prefetch
+from django.db.models import OuterRef, Subquery, Prefetch, Value, JSONField
 from django.db.models.functions import TruncDate
 from django_filters import rest_framework as filters
 from rest_framework import filters as drf_filters
@@ -48,6 +48,27 @@ class RfcFilter(filters.FilterSet):
     )
 
 
+class PrefetchRelatedDocument(Prefetch):
+    """Prefetch via a RelatedDocument
+
+    Prefetches following RelatedDocument relationships to other docs. By default, includes
+    those for which the current RFC is the `source`. If `reverse` is True, includes those
+    for which it is the `target` instead. Defaults to only "rfc" documents.
+    """
+
+    def __init__(self, to_attr, relationship_id, reverse=False, doc_type_id="rfc"):
+        super().__init__(
+            lookup="targets_related" if reverse else "relateddocument_set",
+            queryset=RelatedDocument.objects.filter(
+                **{
+                    "relationship_id": relationship_id,
+                    f"{'source' if reverse else 'target'}__type_id": doc_type_id,
+                }
+            ),
+            to_attr=to_attr,
+        )
+
+
 class RfcViewSet(ListModelMixin, RetrieveModelMixin, GenericViewSet):
     permission_classes: list[BasePermission] = []
     lookup_field = "rfc_number"
@@ -66,20 +87,28 @@ class RfcViewSet(ListModelMixin, RetrieveModelMixin, GenericViewSet):
         .annotate(published=TruncDate("published_datetime", tzinfo=RPC_TZINFO))
         .order_by("-rfc_number")
         .prefetch_related(
-            Prefetch(
-                "targets_related",  # relationship to follow
-                queryset=RelatedDocument.objects.filter(
-                    source__type_id="rfc", relationship_id="obs"
-                ),
-                to_attr="obsoleted_by",  # attr to add to queryset instances
+            PrefetchRelatedDocument(
+                to_attr="drafts",
+                relationship_id="became_rfc",
+                doc_type_id="draft",
+                reverse=True,
             ),
-            Prefetch(
-                "targets_related",  # relationship to follow
-                queryset=RelatedDocument.objects.filter(
-                    source__type_id="rfc", relationship_id="updates"
-                ),
-                to_attr="updated_by",  # attr to add to queryset instances
+            PrefetchRelatedDocument(to_attr="obsoletes", relationship_id="obs"),
+            PrefetchRelatedDocument(
+                to_attr="obsoleted_by", relationship_id="obs", reverse=True
             ),
+            PrefetchRelatedDocument(to_attr="updates", relationship_id="updates"),
+            PrefetchRelatedDocument(
+                to_attr="updated_by", relationship_id="updates", reverse=True
+            ),
+        )
+        .annotate(
+            # TODO implement these fake fields for real
+            is_also=Value([], output_field=JSONField()),
+            see_also=Value([], output_field=JSONField()),
+            formats=Value(["txt", "xml"], output_field=JSONField()),
+            keywords=Value(["keyword"], output_field=JSONField()),
+            errata=Value([], output_field=JSONField()),
         )
     )  # default ordering - RfcFilter may override
     pagination_class = RfcLimitOffsetPagination
