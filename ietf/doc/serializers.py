@@ -66,7 +66,8 @@ class RfcStatus:
 
     # ClassVar annotation prevents dataclass from treating this as a field
     status_slugs: ClassVar[list[RfcStatusSlugT]] = sorted(
-        set(stdlevelname_slug_map.values())
+        # TODO implement "not-issued" RFCs
+        set(stdlevelname_slug_map.values()) | {"not-issued"}
     )
 
     @property
@@ -107,7 +108,19 @@ class RfcStatusSerializer(serializers.Serializer):
         return super().to_representation(instance=RfcStatus.from_document(instance))
 
 
+class RelatedDraftSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Document
+        fields = ["id", "name", "title"]
+
+
 class RelatedRfcSerializer(serializers.Serializer):
+    id = serializers.IntegerField(source="target.id")
+    number = serializers.IntegerField(source="target.rfc_number")
+    title = serializers.CharField(source="target.title")
+
+
+class ReverseRelatedRfcSerializer(serializers.Serializer):
     id = serializers.IntegerField(source="source.id")
     number = serializers.IntegerField(source="source.rfc_number")
     title = serializers.CharField(source="source.title")
@@ -115,6 +128,7 @@ class RelatedRfcSerializer(serializers.Serializer):
 
 class RfcMetadataSerializer(serializers.ModelSerializer):
     """Serialize metadata of an RFC"""
+    RFC_FORMATS = ("xml", "txt", "html", "htmlized", "pdf")
 
     number = serializers.IntegerField(source="rfc_number")
     published = serializers.DateField()
@@ -124,8 +138,16 @@ class RfcMetadataSerializer(serializers.ModelSerializer):
     area = GroupSerializer(source="group.area", required=False)
     stream = StreamNameSerializer()
     identifiers = fields.SerializerMethodField()
-    obsoleted_by = RelatedRfcSerializer(many=True, read_only=True)
-    updated_by = RelatedRfcSerializer(many=True, read_only=True)
+    draft = RelatedDraftSerializer(source="came_from_draft", read_only=True)  # todo prefetch this
+    obsoletes = RelatedRfcSerializer(many=True, read_only=True)
+    obsoleted_by = ReverseRelatedRfcSerializer(many=True, read_only=True)
+    updates = RelatedRfcSerializer(many=True, read_only=True)
+    updated_by = ReverseRelatedRfcSerializer(many=True, read_only=True)
+    is_also = serializers.ListField(child=serializers.CharField(), read_only=True)
+    see_also = serializers.ListField(child=serializers.CharField(), read_only=True)
+    formats = fields.MultipleChoiceField(choices=RFC_FORMATS)
+    keywords = serializers.ListField(child=serializers.CharField(), read_only=True)
+    errata = serializers.ListField(child=serializers.CharField(), read_only=True)
 
     class Meta:
         model = Document
@@ -140,9 +162,17 @@ class RfcMetadataSerializer(serializers.ModelSerializer):
             "area",
             "stream",
             "identifiers",
+            "obsoletes",
             "obsoleted_by",
+            "updates",
             "updated_by",
+            "is_also",
+            "see_also",
+            "draft",
             "abstract",
+            "formats",
+            "keywords",
+            "errata",
         ]
 
     @extend_schema_field(DocIdentifierSerializer(many=True))
