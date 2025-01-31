@@ -2593,7 +2593,10 @@ def add_session_recordings(request, session_id, num):
     official_timeslotassignment = session.official_timeslotassignment()
     assertion("official_timeslotassignment is not None")
     initial = {
-        'title': f"Video recording for {session.group.acronym} on {official_timeslotassignment.timeslot.utc_start_time().strftime('%b-%d-%Y at %H:%M:%S')}"
+        "title": "Video recording of {acronym} for {timestamp}".format(
+            acronym=session.group.acronym,
+            timestamp=official_timeslotassignment.timeslot.utc_start_time().strftime("%Y-%m-%d %H:%M"),
+        )
     }
 
     # find session number if WG has more than one session at the meeting
