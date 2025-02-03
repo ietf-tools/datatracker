@@ -1017,11 +1017,17 @@ def migrate_registrations(initial=False):
     """
     if initial:
         meetings = Meeting.objects.filter(type='ietf')
+        MeetingRegistration.objects.filter(reg_type='hackathon').update(reg_type='hackathon_remote')
+        MeetingRegistration.objects.filter(pk=49645).update(reg_type='one_day')
+        MeetingRegistration.objects.filter(pk=50804).update(reg_type='week_pass')
+        MeetingRegistration.objects.filter(pk=42386).update(reg_type='week_pass')
+        MeetingRegistration.objects.filter(pk=42782).update(reg_type='one_day')
+        MeetingRegistration.objects.filter(pk=43464).update(reg_type='week_pass')
     else:
         # still process records during week of meeting
         one_week_ago = datetime.date.today() - datetime.timedelta(days=7)
         meetings = Meeting.objects.filter(type='ietf', date__gt=one_week_ago)
-    
+
     for meeting in meetings:
         # gather all MeetingRegistrations by person (email)
         emails = {}
