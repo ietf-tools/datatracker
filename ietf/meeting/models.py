@@ -1490,8 +1490,8 @@ class Registration(models.Model):
     last_name = models.CharField(max_length=255)
     affiliation = models.CharField(blank=True, max_length=255)
     country_code = models.CharField(max_length=2)        # ISO 3166
-    person = ForeignKey(Person, blank=True, null=True)
-    email =  models.EmailField(blank=True, null=True)
+    person = ForeignKey(Person, blank=True, null=True, on_delete=models.PROTECT)
+    email = models.EmailField(blank=True, null=True)
     # attended was used prior to the introduction of the ietf.meeting.Attended model and is still used by
     # Meeting.get_attendance() for older meetings. It should not be used except for dealing with legacy data.
     attended = models.BooleanField(default=False)
@@ -1506,8 +1506,8 @@ class Registration(models.Model):
 
 class RegistrationTicket(models.Model):
     registration = ForeignKey(Registration, related_name='tickets')
-    attendance_type = ForeignKey(AttendanceTypeName)
-    ticket_type = ForeignKey(RegistrationTicketTypeName)
+    attendance_type = ForeignKey(AttendanceTypeName, on_delete=models.PROTECT)
+    ticket_type = ForeignKey(RegistrationTicketTypeName, on_delete=models.PROTECT)
 
     def __str__(self):
         return "{}:{}".format(self.attendance_type, self.ticket_type)
