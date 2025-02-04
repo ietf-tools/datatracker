@@ -1,17 +1,15 @@
 # Copyright The IETF Trust 2016-2020, All Rights Reserved
 # -*- coding: utf-8 -*-
 
-
-import bleach  # type: ignore
-import copy
+import bleach
 import email
 import re
 import textwrap
 import tlds
 import unicodedata
 
-from django.core.validators import URLValidator
 from django.core.exceptions import ValidationError
+from django.core.validators import URLValidator
 from django.utils.functional import keep_lazy
 from django.utils.safestring import mark_safe
 
@@ -19,64 +17,50 @@ import debug                            # pyflakes:ignore
 
 from .texescape import init as texescape_init, tex_escape_map
 
-tlds_sorted = sorted(tlds.tld_set, key=len, reverse=True)
-protocols = set(bleach.sanitizer.ALLOWED_PROTOCOLS)
-protocols.add("ftp")  # we still have some ftp links
-protocols.add("xmpp")  # we still have some xmpp links
+# Sort in reverse so substrings are considered later - e.g., so ".co" comes after ".com".
+tlds_sorted = sorted(tlds.tld_set, reverse=True)
 
-tags = set(bleach.sanitizer.ALLOWED_TAGS).union(
-    {
-        # fmt: off
-        'a', 'abbr', 'acronym', 'address', 'b', 'big',
-        'blockquote', 'body', 'br', 'caption', 'center', 'cite', 'code', 'col',
-        'colgroup', 'dd', 'del', 'dfn', 'dir', 'div', 'dl', 'dt', 'em', 'font',
-        'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'head', 'hr', 'html', 'i', 'ins', 'kbd',
-        'li', 'ol', 'p', 'pre', 'q', 's', 'samp', 'small', 'span', 'strike', 'style',
-        'strong', 'sub', 'sup', 'table', 'title', 'tbody', 'td', 'tfoot', 'th', 'thead',
-        'tr', 'tt', 'u', 'ul', 'var'
-        # fmt: on
-    }
-)
+# Protocols we're interested in auto-linking. See also ietf.utils.html.acceptable_protocols,
+# which is protocols we allow people to include explicitly  in sanitized html. 
+linkable_protocols = ["http", "https", "mailto", "ftp", "xmpp"]
 
-attributes = copy.copy(bleach.sanitizer.ALLOWED_ATTRIBUTES)
-attributes["*"] = ["id"]
-attributes["ol"] = ["start"]
 
-bleach_cleaner = bleach.sanitizer.Cleaner(
-    tags=tags, attributes=attributes, protocols=protocols, strip=True
-)
-
-liberal_tags = copy.copy(tags)
-liberal_attributes = copy.copy(attributes)
-liberal_tags.update(["img","figure","figcaption"])
-liberal_attributes["img"] = ["src","alt"]
-
-liberal_bleach_cleaner = bleach.sanitizer.Cleaner(
-    tags=liberal_tags, attributes=liberal_attributes, protocols=protocols, strip=True
-)
-
-validate_url = URLValidator()
+_validate_url = URLValidator() 
 
 
 def check_url_validity(attrs, new=False):
+    """Callback for bleach linkify
+    
+    :param attrs: dict of attributes of the <a> tag
+    :param new: boolean - True if the link is new; False if <a> was found in text
+    :return: new dict of attributes for the link, or None to block link creation 
+
+    Attributes are namespaced, so normally look like `(None, "SomeAttribute")`.
+    This includes as the keys in the `attrs` argument, so `attrs[(None, "href")]`
+    would be the value of the href attribute.  
+    """
     if (None, "href") not in attrs:
         # rfc2html creates a tags without href
         return attrs
     url = attrs[(None, "href")]
     try:
         if url.startswith("http"):
-            validate_url(url)
+            _validate_url(url)
     except ValidationError:
         return None
     return attrs
 
 
-bleach_linker = bleach.Linker(
+_bleach_linker = bleach.Linker(
     callbacks=[check_url_validity],
-    url_re=bleach.linkifier.build_url_re(tlds=tlds_sorted, protocols=protocols),
+    url_re=bleach.linkifier.build_url_re(tlds=tlds_sorted, protocols=linkable_protocols),
     email_re=bleach.linkifier.build_email_re(tlds=tlds_sorted),  # type: ignore
     parse_email=True,
 )
+
+
+def linkify(text):
+    return _bleach_linker.linkify(text)
 
 
 @keep_lazy(str)

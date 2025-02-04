@@ -368,5 +368,13 @@
             </tbody>
         </table>
     {% endif %}
+
+    {% if can_manage_materials %}
+        <a class="btn btn-primary"
+            href="{% url 'ietf.meeting.views.add_session_recordings' session_id=session.pk num=session.meeting.number %}">
+            Link additional recordings to session
+        </a>
+    {% endif %}
+
 {% endwith %}{% endwith %}
 {% endfor %}

@@ -24,6 +24,8 @@ $(document)
             .before(mailArchiveSearchTemplate);
 
         var mailArchiveSearch = form.find(".mail-archive-search");
+        const isReviewer = mailArchiveSearch.data('isReviewer');
+        const searchMailArchiveUrl = mailArchiveSearch.data('searchMailArchiveUrl');
 
         var retrievingData = null;
 
