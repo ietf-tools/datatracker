@@ -9,7 +9,6 @@ import itertools
 import json
 import math
 import os
-
 import pytz
 import re
 import tarfile
