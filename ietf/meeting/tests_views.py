@@ -2124,7 +2124,7 @@ class EditTimeslotsTests(TestCase):
     @staticmethod
     def create_bare_meeting(number=120) -> Meeting:
         """Create a basic IETF meeting"""
-        return MeetingFactory(
+        return MeetingFactory.create(
             type_id='ietf',
             number=number,
             date=date_today() + datetime.timedelta(days=10),
