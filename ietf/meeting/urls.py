@@ -16,6 +16,7 @@ class AgendaRedirectView(RedirectView):
 safe_for_all_meeting_types = [
     url(r'^session/(?P<acronym>[-a-z0-9]+)/?$',  views.session_details),
     url(r'^session/(?P<session_id>\d+)/drafts$',  views.add_session_drafts),
+    url(r'^session/(?P<session_id>\d+)/recordings$', views.add_session_recordings),
     url(r'^session/(?P<session_id>\d+)/attendance$', views.session_attendance),
     url(r'^session/(?P<session_id>\d+)/bluesheets$', views.upload_session_bluesheets),
     url(r'^session/(?P<session_id>\d+)/minutes$', views.upload_session_minutes),
@@ -63,7 +64,8 @@ type_ietf_only_patterns = [
 type_interim_patterns = [
     url(r'^agenda/(?P<acronym>[A-Za-z0-9-]+)-drafts.pdf$', views.session_draft_pdf),
     url(r'^agenda/(?P<acronym>[A-Za-z0-9-]+)-drafts.tgz$', views.session_draft_tarfile),
-    url(r'^materials/%(document)s((?P<ext>\.[a-z0-9]+)|/)?$' % settings.URL_REGEXPS, views.materials_document),
+    url(r'^materials/%(document)s(?P<ext>\.[a-z0-9]+)$' % settings.URL_REGEXPS, views.materials_document),
+    url(r'^materials/%(document)s/?$' % settings.URL_REGEXPS, views.materials_document),
     url(r'^agenda.json$', views.agenda_json)
 ]
 

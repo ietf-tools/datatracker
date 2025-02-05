@@ -32,6 +32,7 @@ from django.db.models import F, Max
 from django.http import QueryDict, FileResponse
 from django.template import Context, Template
 from django.utils import timezone
+from django.utils.safestring import mark_safe
 from django.utils.text import slugify
 
 import debug           # pyflakes:ignore
@@ -46,9 +47,9 @@ from ietf.meeting.helpers import send_interim_meeting_cancellation_notice, send_
 from ietf.meeting.helpers import send_interim_minutes_reminder, populate_important_dates, update_important_dates
 from ietf.meeting.models import Session, TimeSlot, Meeting, SchedTimeSessAssignment, Schedule, SessionPresentation, SlideSubmission, SchedulingEvent, Room, Constraint, ConstraintName
 from ietf.meeting.test_data import make_meeting_test_data, make_interim_meeting, make_interim_test_data
-from ietf.meeting.utils import condition_slide_order
+from ietf.meeting.utils import condition_slide_order, generate_proceedings_content
 from ietf.meeting.utils import add_event_info_to_session_qs, participants_for_meeting
-from ietf.meeting.utils import create_recording, get_next_sequence, bluesheet_data
+from ietf.meeting.utils import create_recording, delete_recording, get_next_sequence, bluesheet_data
 from ietf.meeting.views import session_draft_list, parse_agenda_filter_params, sessions_post_save, agenda_extract_schedule
 from ietf.meeting.views import get_summary_by_area, get_summary_by_type, get_summary_by_purpose, generate_agenda_data
 from ietf.name.models import SessionStatusName, ImportantDateName, RoleName, ProceedingsMaterialTypeName
@@ -440,6 +441,48 @@ class MeetingTests(BaseMeetingTestCase):
         self.assertEqual(links[0].attrib['href'], new_recording_url)
         self.assertIn(new_recording_title, links[0].text_content())
         #debug.show("q(f'#notes_and_recordings_{session_pk}')")
+
+    def test_delete_recordings(self):
+        # No user specified, active recording state
+        sp = SessionPresentationFactory(
+            document__type_id="recording",
+            document__external_url="https://example.com/some-recording",
+            document__states=[("recording", "active")],
+        )
+        doc = sp.document
+        doc.docevent_set.all().delete()  # clear this out
+        delete_recording(sp)
+        self.assertFalse(SessionPresentation.objects.filter(pk=sp.pk).exists())
+        self.assertEqual(doc.get_state("recording").slug, "deleted", "recording state updated")
+        self.assertEqual(doc.docevent_set.count(), 1, "one event added")
+        event = doc.docevent_set.first()
+        self.assertEqual(event.type, "changed_state", "event is a changed_state event")
+        self.assertEqual(event.by.name, "(System)", "system user is responsible")
+
+        # Specified user, no recording state
+        sp = SessionPresentationFactory(
+            document__type_id="recording",
+            document__external_url="https://example.com/some-recording",
+            document__states=[],
+        )
+        doc = sp.document
+        doc.docevent_set.all().delete()  # clear this out
+        user = PersonFactory()  # naming matches the methods - user is a Person, not a User
+        delete_recording(sp, user=user)
+        self.assertFalse(SessionPresentation.objects.filter(pk=sp.pk).exists())
+        self.assertEqual(doc.get_state("recording").slug, "deleted", "recording state updated")
+        self.assertEqual(doc.docevent_set.count(), 1, "one event added")
+        event = doc.docevent_set.first()
+        self.assertEqual(event.type, "changed_state", "event is a changed_state event")
+        self.assertEqual(event.by, user, "user is responsible")
+
+        # Document is not a recording
+        sp = SessionPresentationFactory(
+            document__type_id="draft",
+            document__external_url="https://example.com/some-recording",
+        )
+        with self.assertRaises(ValueError):
+            delete_recording(sp)
 
     def test_agenda_ical_next_meeting_type(self):
         # start with no upcoming IETF meetings, just an interim
@@ -2082,7 +2125,8 @@ class EditTimeslotsTests(TestCase):
     @staticmethod
     def create_bare_meeting(number=120) -> Meeting:
         """Create a basic IETF meeting"""
-        return MeetingFactory(
+        # Call create() explicitly so mypy sees the correct type
+        return MeetingFactory.create(
             type_id='ietf',
             number=number,
             date=date_today() + datetime.timedelta(days=10),
@@ -7363,6 +7407,118 @@ class SessionTests(TestCase):
         self.assertEqual(r.status_code,302)
         self.assertEqual(len(outbox),1)
 
+    @override_settings(YOUTUBE_DOMAINS=["youtube.com"])
+    def test_add_session_recordings(self):
+        session = SessionFactory(meeting__type_id="ietf")
+        url = urlreverse(
+            "ietf.meeting.views.add_session_recordings", 
+            kwargs={"session_id": session.pk, "num": session.meeting.number},
+        )
+        # does not fully validate authorization for non-secretariat users :-(
+        login_testing_unauthorized(self, "secretary", url)
+        r = self.client.get(url)
+        pq = PyQuery(r.content)
+        title_input = pq("input#id_title")
+        self.assertIsNotNone(title_input)
+        self.assertEqual(
+            title_input.attr.value,
+            "Video recording of {acro} for {timestamp}".format(
+                acro=session.group.acronym,
+                timestamp=session.official_timeslotassignment().timeslot.utc_start_time().strftime(
+                    "%Y-%m-%d %H:%M"
+                ),
+            ),
+        )
+        
+        with patch("ietf.meeting.views.create_recording") as mock_create:
+            r = self.client.post(
+                url,
+                data={
+                    "title": "This is my video title",
+                    "url": "",
+                }
+            )
+        self.assertFalse(mock_create.called)
+        
+        with patch("ietf.meeting.views.create_recording") as mock_create:
+            r = self.client.post(
+                url,
+                data={
+                    "title": "This is my video title",
+                    "url": "https://yubtub.com/this-is-not-a-youtube-video",
+                }
+            )
+        self.assertFalse(mock_create.called)
+
+        with patch("ietf.meeting.views.create_recording") as mock_create:
+            r = self.client.post(
+                url,
+                data={
+                    "title": "This is my video title",
+                    "url": "https://youtube.com/finally-a-video",
+                }
+            )
+        self.assertTrue(mock_create.called)
+        self.assertEqual(
+            mock_create.call_args, 
+            call(
+                session, 
+                "https://youtube.com/finally-a-video",
+                title="This is my video title",
+                user=Person.objects.get(user__username="secretary"),
+            ),
+        )
+
+        # CAN delete session presentation for this session
+        sp = SessionPresentationFactory(
+            session=session,
+            document__type_id="recording",
+            document__external_url="https://example.com/some-video",
+        )
+        with patch("ietf.meeting.views.delete_recording") as mock_delete:
+            r = self.client.post(
+                url,
+                data={
+                    "delete": str(sp.pk),
+                }
+            )
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(mock_delete.called)
+        self.assertEqual(mock_delete.call_args, call(sp))
+        
+        # ValueError message from delete_recording does not reach the user
+        sp = SessionPresentationFactory(
+            session=session,
+            document__type_id="recording",
+            document__external_url="https://example.com/some-video",
+        )
+        with patch("ietf.meeting.views.delete_recording", side_effect=ValueError("oh joy!")) as mock_delete:
+            r = self.client.post(
+                url,
+                data={
+                    "delete": str(sp.pk),
+                }
+            )
+        self.assertTrue(mock_delete.called)
+        self.assertNotContains(r, "oh joy!", status_code=200)
+        
+        # CANNOT delete session presentation for a different session
+        sp_for_other_session = SessionPresentationFactory(
+            document__type_id="recording",
+            document__external_url="https://example.com/some-other-video",
+        )
+        with patch("ietf.meeting.views.delete_recording") as mock_delete:
+            r = self.client.post(
+                url,
+                data={
+                    "delete": str(sp_for_other_session.pk),
+                }
+            )
+        self.assertEqual(r.status_code, 404)
+        self.assertFalse(mock_delete.called)
+
+
+
 class HasMeetingsTests(TestCase):
     settings_temp_path_overrides = TestCase.settings_temp_path_overrides + ['AGENDA_PATH']
 
@@ -8141,8 +8297,7 @@ class ProceedingsTests(BaseMeetingTestCase):
         path = Path(settings.BASE_DIR) / 'meeting/test_procmat.pdf'
         return path.open('rb')
 
-    def _assertMeetingHostsDisplayed(self, response, meeting):
-        pq = PyQuery(response.content)
+    def _assertMeetingHostsDisplayed(self, pq: PyQuery, meeting):
         host_divs = pq('div.host-logo')
         self.assertEqual(len(host_divs), meeting.meetinghosts.count(), 'Should have a logo for every meeting host')
         self.assertEqual(
@@ -8158,12 +8313,11 @@ class ProceedingsTests(BaseMeetingTestCase):
             'Correct image and name for each host should appear in the correct order'
         )
 
-    def _assertProceedingsMaterialsDisplayed(self, response, meeting):
+    def _assertProceedingsMaterialsDisplayed(self, pq: PyQuery, meeting):
         """Checks that all (and only) active materials are linked with correct href and title"""
         expected_materials = [
             m for m in meeting.proceedings_materials.order_by('type__order') if m.active()
         ]
-        pq = PyQuery(response.content)
         links = pq('div.proceedings-material a')
         self.assertEqual(len(links), len(expected_materials), 'Should have an entry for each active ProceedingsMaterial')
         self.assertEqual(
@@ -8172,9 +8326,8 @@ class ProceedingsTests(BaseMeetingTestCase):
             'Correct title and link for each ProceedingsMaterial should appear in the correct order'
         )
 
-    def _assertGroupSessions(self, response, meeting):
+    def _assertGroupSessions(self,  pq: PyQuery):
         """Checks that group/sessions are present"""
-        pq = PyQuery(response.content)
         sections = ["plenaries", "gen", "iab", "editorial", "irtf", "training"]
         for section in sections:
             self.assertEqual(len(pq(f"#{section}")), 1, f"{section} section should exists in proceedings")
@@ -8182,10 +8335,9 @@ class ProceedingsTests(BaseMeetingTestCase):
     def test_proceedings(self):
         """Proceedings should be displayed correctly
 
-        Currently only tests that the view responds with a 200 response code and checks the ProceedingsMaterials
-        at the top of the proceedings. Ought to actually test the display of the individual group/session
-        materials as well.
+        Proceedings contents are tested in detail when testing generate_proceedings_content.
         """
+        # number must be >97 (settings.PROCEEDINGS_VERSION_CHANGES)
         meeting = make_meeting_test_data(meeting=MeetingFactory(type_id='ietf', number='100'))
         session = Session.objects.filter(meeting=meeting, group__acronym="mars").first()
         GroupEventFactory(group=session.group,type='status_update')
@@ -8210,16 +8362,72 @@ class ProceedingsTests(BaseMeetingTestCase):
         self._create_proceedings_materials(meeting)
 
         url = urlreverse("ietf.meeting.views.proceedings", kwargs=dict(num=meeting.number))
-        r = self.client.get(url)
+        cached_content = mark_safe("<p>Fake proceedings content</p>")
+        with patch("ietf.meeting.views.generate_proceedings_content") as mock_gpc:
+            mock_gpc.return_value = cached_content
+            r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
+        self.assertIn(cached_content, r.content.decode())
+        self.assertTemplateUsed(r, "meeting/proceedings_wrapper.html")
+        self.assertTemplateNotUsed(r, "meeting/proceedings.html")
 
+        # These are rendered in proceedings_wrapper.html, so test them here
         if len(meeting.city) > 0:
             self.assertContains(r, meeting.city)
         if len(meeting.venue_name) > 0:
             self.assertContains(r, meeting.venue_name)
+        self._assertMeetingHostsDisplayed(PyQuery(r.content), meeting)
+
+    @patch("ietf.meeting.utils.caches")
+    def test_generate_proceedings_content(self, mock_caches):
+        # number must be >97 (settings.PROCEEDINGS_VERSION_CHANGES)
+        meeting = make_meeting_test_data(meeting=MeetingFactory(type_id='ietf', number='100'))
+
+        # First, check that by default a value in the cache is used without doing any other computation 
+        mock_default_cache = mock_caches["default"]
+        mock_default_cache.get.return_value = "a cached value"
+        result = generate_proceedings_content(meeting)
+        self.assertEqual(result, "a cached value")
+        self.assertFalse(mock_default_cache.set.called)
+        self.assertTrue(mock_default_cache.get.called)
+        cache_key = mock_default_cache.get.call_args.args[0]
+        mock_default_cache.get.reset_mock()
+    
+        # Now set up for actual computation of the proceedings content.
+        session = Session.objects.filter(meeting=meeting, group__acronym="mars").first()
+        GroupEventFactory(group=session.group,type='status_update')
+        SessionPresentationFactory(document__type_id='recording',session=session)
+        SessionPresentationFactory(document__type_id='recording',session=session,document__title="Audio recording for tests")
+
+        # Add various group sessions
+        groups = []
+        parent_groups = [
+                GroupFactory.create(type_id="area", acronym="gen"),
+                GroupFactory.create(acronym="iab"),
+                GroupFactory.create(acronym="irtf"),
+                ]
+        for parent in parent_groups:
+            groups.append(GroupFactory.create(parent=parent))
+        for acronym in ["rsab", "edu"]:
+            groups.append(GroupFactory.create(acronym=acronym))
+        for group in groups:
+            SessionFactory(meeting=meeting, group=group)
+
+        self.write_materials_files(meeting, session)
+        self._create_proceedings_materials(meeting)
+
+        # Now "empty" the mock cache and see that we compute the expected proceedings content.
+        mock_default_cache.get.return_value = None
+        proceedings_content = generate_proceedings_content(meeting)
+        self.assertTrue(mock_default_cache.get.called)
+        self.assertEqual(mock_default_cache.get.call_args.args[0], cache_key, "same cache key each time")
+        self.assertTrue(mock_default_cache.set.called)
+        self.assertEqual(mock_default_cache.set.call_args, call(cache_key, proceedings_content, timeout=86400))
+        mock_default_cache.get.reset_mock()
+        mock_default_cache.set.reset_mock()
 
         # standard items on every proceedings
-        pq = PyQuery(r.content)
+        pq = PyQuery(proceedings_content)
         self.assertNotEqual(
             pq('a[href="{}"]'.format(
                 urlreverse('ietf.meeting.views.proceedings_overview', kwargs=dict(num=meeting.number)))
@@ -8250,9 +8458,17 @@ class ProceedingsTests(BaseMeetingTestCase):
         )
 
         # configurable contents
-        self._assertMeetingHostsDisplayed(r, meeting)
-        self._assertProceedingsMaterialsDisplayed(r, meeting)
-        self._assertGroupSessions(r, meeting)
+        self._assertProceedingsMaterialsDisplayed(pq, meeting)
+        self._assertGroupSessions(pq)
+
+        # Finally, repeat the first cache test, but now with force_refresh=True. The cached value
+        # should be ignored and we should recompute the proceedings as before.
+        mock_default_cache.get.return_value = "a cached value"
+        result = generate_proceedings_content(meeting, force_refresh=True)
+        self.assertEqual(result, proceedings_content)  # should have recomputed the same thing
+        self.assertFalse(mock_default_cache.get.called, "don't bother reading cache when force_refresh is True")
+        self.assertTrue(mock_default_cache.set.called)
+        self.assertEqual(mock_default_cache.set.call_args, call(cache_key, proceedings_content, timeout=86400))
 
     def test_named_session(self):
         """Session with a name should appear separately in the proceedings"""

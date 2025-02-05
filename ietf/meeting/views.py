@@ -20,7 +20,7 @@ from collections import OrderedDict, Counter, deque, defaultdict, namedtuple
 from functools import partialmethod
 import jsonschema
 from pathlib import Path
-from urllib.parse import parse_qs, unquote, urlencode, urlsplit, urlunsplit
+from urllib.parse import parse_qs, unquote, urlencode, urlsplit, urlunsplit, urlparse
 from tempfile import mkstemp
 from wsgiref.handlers import format_date_time
 
@@ -75,7 +75,13 @@ from ietf.meeting.helpers import send_interim_meeting_cancellation_notice, send_
 from ietf.meeting.helpers import send_interim_approval
 from ietf.meeting.helpers import send_interim_approval_request
 from ietf.meeting.helpers import send_interim_announcement_request, sessions_post_cancel
-from ietf.meeting.utils import finalize, sort_accept_tuple, condition_slide_order
+from ietf.meeting.utils import (
+    condition_slide_order,
+    finalize,
+    generate_proceedings_content,
+    organize_proceedings_sessions,
+    sort_accept_tuple,
+)
 from ietf.meeting.utils import add_event_info_to_session_qs
 from ietf.meeting.utils import session_time_for_sorting
 from ietf.meeting.utils import session_requested_by, SaveMaterialsError
@@ -86,7 +92,7 @@ from ietf.meeting.utils import diff_meeting_schedules, prefetch_schedule_diff_ob
 from ietf.meeting.utils import swap_meeting_schedule_timeslot_assignments, bulk_create_timeslots
 from ietf.meeting.utils import preprocess_meeting_important_dates
 from ietf.meeting.utils import new_doc_for_session, write_doc_for_session
-from ietf.meeting.utils import get_activity_stats, post_process, create_recording
+from ietf.meeting.utils import get_activity_stats, post_process, create_recording, delete_recording
 from ietf.meeting.utils import participants_for_meeting, generate_bluesheet, bluesheet_data, save_bluesheet
 from ietf.message.utils import infer_message
 from ietf.name.models import SlideSubmissionStatusName, ProceedingsMaterialTypeName, SessionPurposeName
@@ -103,6 +109,7 @@ from ietf.utils.pdf import pdf_pages
 from ietf.utils.response import permission_denied
 from ietf.utils.text import xslugify
 from ietf.utils.timezone import datetime_today, date_today
+from ietf.settings import YOUTUBE_DOMAINS
 
 from .forms import (InterimMeetingModelForm, InterimAnnounceForm, InterimSessionModelForm,
     InterimCancelForm, InterimSessionInlineFormSet, RequestMinutesForm,
@@ -2568,6 +2575,89 @@ def add_session_drafts(request, session_id, num):
                     'form': form,
                   })
 
+class SessionRecordingsForm(forms.Form):
+    title = forms.CharField(max_length=255)
+    url = forms.URLField(label="URL of the recording (YouTube only)")
+
+    def clean_url(self):
+        url = self.cleaned_data['url']
+        parsed_url = urlparse(url)
+        if parsed_url.hostname not in YOUTUBE_DOMAINS:
+            raise forms.ValidationError("Must be a YouTube URL")
+        return url
+
+
+def add_session_recordings(request, session_id, num):
+    # num is redundant, but we're dragging it along an artifact of where we are in the current URL structure
+    session = get_object_or_404(Session, pk=session_id)
+    if not session.can_manage_materials(request.user):
+        permission_denied(
+            request, "You don't have permission to manage recordings for this session."
+        )
+    if session.is_material_submission_cutoff() and not has_role(
+        request.user, "Secretariat"
+    ):
+        raise Http404
+
+    session_number = None
+    official_timeslotassignment = session.official_timeslotassignment()
+    assertion("official_timeslotassignment is not None")
+    initial = {
+        "title": "Video recording of {acronym} for {timestamp}".format(
+            acronym=session.group.acronym,
+            timestamp=official_timeslotassignment.timeslot.utc_start_time().strftime(
+                "%Y-%m-%d %H:%M"
+            ),
+        )
+    }
+
+    # find session number if WG has more than one session at the meeting
+    sessions = get_sessions(session.meeting.number, session.group.acronym)
+    if len(sessions) > 1:
+        session_number = 1 + sessions.index(session)
+
+    presentations = session.presentations.filter(
+        document__in=session.get_material("recording", only_one=False),
+    ).order_by("document__title", "document__external_url")
+
+    if request.method == "POST":
+        pk_to_delete = request.POST.get("delete", None)
+        if pk_to_delete is not None:
+            session_presentation = get_object_or_404(presentations, pk=pk_to_delete)
+            try:
+                delete_recording(session_presentation)
+            except ValueError as err:
+                log(f"Error deleting recording from session {session.pk}: {err}")
+                messages.error(
+                    request,
+                    "Unable to delete this recording. Please contact the secretariat for assistance.",
+                )
+            form = SessionRecordingsForm(initial=initial)
+        else:
+            form = SessionRecordingsForm(request.POST)
+            if form.is_valid():
+                title = form.cleaned_data["title"]
+                url = form.cleaned_data["url"]
+                create_recording(session, url, title=title, user=request.user.person)
+                return redirect(
+                    "ietf.meeting.views.session_details",
+                    num=session.meeting.number,
+                    acronym=session.group.acronym,
+                )
+    else:
+        form = SessionRecordingsForm(initial=initial)
+
+    return render(
+        request,
+        "meeting/add_session_recordings.html",
+        {
+            "session": session,
+            "session_number": session_number,
+            "already_linked": presentations,
+            "form": form,
+        },
+    )
+
 
 def session_attendance(request, session_id, num):
     """Session attendance view
@@ -4044,93 +4134,10 @@ def upcoming_json(request):
     response = HttpResponse(json.dumps(data, indent=2, sort_keys=False), content_type='application/json;charset=%s'%settings.DEFAULT_CHARSET)
     return response
 
-def organize_proceedings_sessions(sessions):
-    # Collect sessions by Group, then bin by session name (including sessions with blank names).
-    # If all of a group's sessions are 'notmeet', the processed data goes in not_meeting_sessions.
-    # Otherwise, the data goes in meeting_sessions.
-    meeting_groups = []
-    not_meeting_groups = []
-    for group_acronym, group_sessions in itertools.groupby(sessions, key=lambda s: s.group.acronym):
-        by_name = {}
-        is_meeting = False
-        all_canceled = True
-        group = None
-        for s in sorted(
-                group_sessions,
-                key=lambda gs: (
-                        gs.official_timeslotassignment().timeslot.time
-                        if gs.official_timeslotassignment() else datetime.datetime(datetime.MAXYEAR, 1, 1)
-                ),
-        ):
-            group = s.group
-            if s.current_status != 'notmeet':
-                is_meeting = True
-            if s.current_status != 'canceled':
-                all_canceled = False
-            by_name.setdefault(s.name, [])
-            if s.current_status != 'notmeet' or s.presentations.exists():
-                by_name[s.name].append(s)  # for notmeet, only include sessions with materials
-        for sess_name, ss in by_name.items():
-            session = ss[0] if ss else None
-            def _format_materials(items):
-                """Format session/material for template
-
-                Input is a list of (session, materials) pairs. The materials value can be a single value or a list.
-                """
-                material_times = {}  # key is material, value is first timestamp it appeared
-                for s, mats in items:
-                    tsa = s.official_timeslotassignment()
-                    timestamp = tsa.timeslot.time if tsa else None
-                    if not isinstance(mats, list):
-                        mats = [mats]
-                    for mat in mats:
-                        if mat and mat not in material_times:
-                            material_times[mat] = timestamp
-                n_mats = len(material_times)
-                result = []
-                if n_mats == 1:
-                    result.append({'material': list(material_times)[0]})  # no 'time' when only a single material
-                elif n_mats > 1:
-                    for mat, timestamp in material_times.items():
-                        result.append({'material': mat, 'time': timestamp})
-                return result
-
-            entry = {
-                'group': group,
-                'name': sess_name,
-                'session': session,
-                'canceled': all_canceled,
-                'has_materials': s.presentations.exists(),
-                'agendas': _format_materials((s, s.agenda()) for s in ss),
-                'minutes': _format_materials((s, s.minutes()) for s in ss),
-                'bluesheets': _format_materials((s, s.bluesheets()) for s in ss),
-                'recordings': _format_materials((s, s.recordings()) for s in ss),
-                'meetecho_recordings': _format_materials((s, [s.session_recording_url()]) for s in ss),
-                'chatlogs': _format_materials((s, s.chatlogs()) for s in ss),
-                'slides': _format_materials((s, s.slides()) for s in ss),
-                'drafts': _format_materials((s, s.drafts()) for s in ss),
-                'last_update': session.last_update if hasattr(session, 'last_update') else None
-            }
-            if session and session.meeting.type_id == 'ietf' and not session.meeting.proceedings_final:
-                entry['attendances'] = _format_materials((s, s) for s in ss if Attended.objects.filter(session=s).exists())
-            if is_meeting:
-                meeting_groups.append(entry)
-            else:
-                not_meeting_groups.append(entry)
-    return meeting_groups, not_meeting_groups
-
 
 def proceedings(request, num=None):
-
-    def area_and_group_acronyms_from_session(s):
-        area = s.group_parent_at_the_time()
-        if area == None:
-            area = s.group.parent
-        group = s.group_at_the_time()
-        return (area.acronym, group.acronym)
-
     meeting = get_meeting(num)
-
+    
     # Early proceedings were hosted on www.ietf.org rather than the datatracker
     if meeting.proceedings_format_version == 1:
         return HttpResponseRedirect(settings.PROCEEDINGS_V1_BASE_URL.format(meeting=meeting))
@@ -4141,72 +4148,12 @@ def proceedings(request, num=None):
             kwargs['num'] = num
         return redirect('ietf.meeting.views.materials', **kwargs)
 
-    begin_date = meeting.get_submission_start_date()
-    cut_off_date = meeting.get_submission_cut_off_date()
-    cor_cut_off_date = meeting.get_submission_correction_date()
-    today_utc = date_today(datetime.timezone.utc)
-
-    schedule = get_schedule(meeting, None)
-    sessions  = (
-        meeting.session_set.with_current_status()
-        .filter(Q(timeslotassignments__schedule__in=[schedule, schedule.base if schedule else None])
-                | Q(current_status='notmeet'))
-        .select_related()
-        .order_by('-current_status')
-    )
-
-    plenaries, _ = organize_proceedings_sessions(
-        sessions.filter(name__icontains='plenary')
-        .exclude(current_status='notmeet')
-    )
-    irtf_meeting, irtf_not_meeting = organize_proceedings_sessions(
-        sessions.filter(group__parent__acronym = 'irtf').order_by('group__acronym')
-    )
-    # per Colin (datatracker #5010) - don't report not meeting rags
-    irtf_not_meeting = [item for item in irtf_not_meeting if item["group"].type_id != "rag"]
-    irtf = {"meeting_groups":irtf_meeting, "not_meeting_groups":irtf_not_meeting}
-
-    training, _ = organize_proceedings_sessions(
-        sessions.filter(group__acronym__in=['edu','iaoc'], type_id__in=['regular', 'other',])
-        .exclude(current_status='notmeet')
-    )
-    iab, _ = organize_proceedings_sessions(
-        sessions.filter(group__parent__acronym = 'iab')
-        .exclude(current_status='notmeet')
-    )
-    editorial, _ = organize_proceedings_sessions(
-        sessions.filter(group__acronym__in=['rsab','rswg'])
-        .exclude(current_status='notmeet')
-    )
-
-    ietf = sessions.filter(group__parent__type__slug = 'area').exclude(group__acronym__in=['edu','iepg','tools'])
-    ietf = list(ietf)
-    ietf.sort(key=lambda s: area_and_group_acronyms_from_session(s))
-    ietf_areas = []
-    for area, area_sessions in itertools.groupby(ietf, key=lambda s: s.group_parent_at_the_time()):
-        meeting_groups, not_meeting_groups = organize_proceedings_sessions(area_sessions)
-        ietf_areas.append((area, meeting_groups, not_meeting_groups))
-
-    cache_version = Document.objects.filter(session__meeting__number=meeting.number).aggregate(Max('time'))["time__max"]
 
     with timezone.override(meeting.tz()):
-        return render(request, "meeting/proceedings.html", {
+        return render(request, "meeting/proceedings_wrapper.html", {
             'meeting': meeting,
-            'plenaries': plenaries,
-            'training': training,
-            'irtf': irtf,
-            'iab': iab,
-            'editorial': editorial,
-            'ietf_areas': ietf_areas,
-            'cut_off_date': cut_off_date,
-            'cor_cut_off_date': cor_cut_off_date,
-            'submission_started': today_utc > begin_date,
-            'cache_version': cache_version,
             'attendance': meeting.get_attendance(),
-            'meetinghost_logo': {
-                'max_height': settings.MEETINGHOST_LOGO_MAX_DISPLAY_HEIGHT,
-                'max_width': settings.MEETINGHOST_LOGO_MAX_DISPLAY_WIDTH,
-            }
+            'proceedings_content': generate_proceedings_content(meeting),
         })
 
 @role_required('Secretariat')
