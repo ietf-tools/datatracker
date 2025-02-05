@@ -4,10 +4,16 @@ import datetime
 from mock import patch, call
 from ietf.utils.test_utils import TestCase
 from .factories import MeetingFactory
-from .tasks import proceedings_content_refresh_task
+from .tasks import proceedings_content_refresh_task, agenda_data_refresh
 
 
 class TaskTests(TestCase):
+    @patch("ietf.meeting.tasks.generate_agenda_data")
+    def test_agenda_data_refresh(self, mock_generate):
+        agenda_data_refresh()
+        self.assertTrue(mock_generate.called)
+        self.assertEqual(mock_generate.call_args, call(force_refresh=True))
+
     @patch("ietf.meeting.tasks.generate_proceedings_content")
     def test_proceedings_content_refresh_task(self, mock_generate):
         # Generate a couple of meetings
