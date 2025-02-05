@@ -2125,7 +2125,8 @@ class EditTimeslotsTests(TestCase):
     @staticmethod
     def create_bare_meeting(number=120) -> Meeting:
         """Create a basic IETF meeting"""
-        return MeetingFactory(
+        # Call create() explicitly so mypy sees the correct type
+        return MeetingFactory.create(
             type_id='ietf',
             number=number,
             date=date_today() + datetime.timedelta(days=10),

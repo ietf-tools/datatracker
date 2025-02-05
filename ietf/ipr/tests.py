@@ -726,7 +726,7 @@ I would like to revoke this declaration.
         self.assertIn(f'{settings.IDTRACKER_BASE_URL}{urlreverse("ietf.ipr.views.showlist")}', get_payload_text(outbox[1]).replace('\n',' '))
 
     def send_ipr_email_helper(self) -> tuple[str, IprEvent, HolderIprDisclosure]:
-        ipr = HolderIprDisclosureFactory()
+        ipr = HolderIprDisclosureFactory.create()  # call create() explicitly so mypy sees correct type
         url = urlreverse('ietf.ipr.views.email',kwargs={ "id": ipr.id })
         self.client.login(username="secretary", password="secretary+password")
         yesterday = date_today() - datetime.timedelta(1)
