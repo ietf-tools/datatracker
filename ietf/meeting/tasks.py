@@ -17,7 +17,7 @@ def agenda_data_refresh():
 
 
 @shared_task
-def proceedings_content_refresh_task(all=False):
+def proceedings_content_refresh_task(*, all=False):
     """Refresh meeting proceedings cache
 
     If `all` is `False`, then refreshes the cache for meetings whose numbers modulo
