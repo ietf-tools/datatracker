@@ -285,7 +285,7 @@ class DocEventFactory(factory.django.DjangoModelFactory):
 
     type = 'added_comment'
     by = factory.SubFactory('ietf.person.factories.PersonFactory')
-    doc: Any = factory.SubFactory(DocumentFactory)
+    doc: Any = factory.SubFactory(DocumentFactory)  # `Any` to appease mypy when a subclass overrides doc
     desc = factory.Faker('sentence',nb_words=6)
 
     @factory.lazy_attribute
