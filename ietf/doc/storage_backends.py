@@ -35,8 +35,7 @@ class CustomS3Storage(S3Storage):
         if not allow_overwrite and not is_new:
             log(f"Failed to save {kind}:{name} - name already exists in store")
             debug.show('f"Failed to save {kind}:{name} - name already exists in store"')
-            debug.traceback()
-            raise Exception("Not ignoring overwrite attempts while testing")
+            # raise Exception("Not ignoring overwrite attempts while testing")
         else:
             try:
                 new_name = self.save(name, file)
@@ -69,11 +68,9 @@ class CustomS3Storage(S3Storage):
             except Exception as e:
                 # Log and then swallow the exception while we're learning.
                 # Don't let failure pass so quietly when these are the autoritative bits.
-                log(f"Failed to save {kind}:{name}", e)
-                raise e
-                debug.show("type(e)")
-                debug.show("e")
-                debug.traceback()
+                complaint = f"Failed to save {kind}:{name}"
+                log(complaint, e)
+                debug.show('f"{complaint}: {e}')
             finally:
                 del self.in_flight_custom_metadata[name]
         return None
