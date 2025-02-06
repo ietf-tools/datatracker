@@ -52,7 +52,7 @@ import debug                            # pyflakes:ignore
 
 from ietf.doc.fields import SearchableDocumentsField
 from ietf.doc.models import Document, State, DocEvent, NewRevisionDocEvent
-from ietf.doc.storage_utils import remove_from_storage, retrieve_bytes, store_bytes, store_file
+from ietf.doc.storage_utils import remove_from_storage, retrieve_bytes, store_file
 from ietf.group.models import Group
 from ietf.group.utils import can_manage_session_materials, can_manage_some_groups, can_manage_group
 from ietf.person.models import Person, User
@@ -5096,7 +5096,7 @@ def approve_proposed_slides(request, slidesubmission_id, num):
                 if not os.path.exists(path):
                     os.makedirs(path)
                 shutil.move(submission.staged_filepath(), os.path.join(path, target_filename))
-                store_bytes("slides", target_filename, retrieve_bytes("staging", submission.filename))
+                doc.store_bytes(target_filename, retrieve_bytes("staging", submission.filename))
                 remove_from_storage("staging", submission.filename)
                 post_process(doc)
                 DocEvent.objects.create(type="approved_slides", doc=doc, rev=doc.rev, by=request.user.person, desc="Slides approved")

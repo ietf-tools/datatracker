@@ -44,10 +44,10 @@ def generate_wg_charters_files_task():
         encoding="utf8",
     )
 
-    with charters_file.open() as f:
-        store_file("indexes", "1wg-charters.txt", f)
-    with charters_by_acronym_file.open() as f:
-        store_file("indexes", "1wg-charters-by-acronym.txt", f)
+    with charters_file.open("rb") as f:
+        store_file("indexes", "1wg-charters.txt", f, allow_overwrite=True)
+    with charters_by_acronym_file.open("rb") as f:
+        store_file("indexes", "1wg-charters-by-acronym.txt", f, allow_overwrite=True)
 
     charter_copy_dests = [
         getattr(settings, "CHARTER_COPY_PATH", None), 
@@ -109,7 +109,7 @@ def generate_wg_summary_files_task():
         encoding="utf8",
     )
 
-    with summary_file.open() as f:
-        store_file("indexes", "1wg-summary.txt", f)
-    with summary_by_acronym_file.open() as f:
-        store_file("indexes", "1wg-summary-by-acronym.txt", f)
+    with summary_file.open("rb") as f:
+        store_file("indexes", "1wg-summary.txt", f, allow_overwrite=True)
+    with summary_by_acronym_file.open("rb") as f:
+        store_file("indexes", "1wg-summary-by-acronym.txt", f, allow_overwrite=True)

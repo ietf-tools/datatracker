@@ -19,7 +19,6 @@ import debug                            # pyflakes:ignore
 
 from ietf.doc.models import ( BallotDocEvent, BallotPositionDocEvent, DocEvent,
     Document, NewRevisionDocEvent, State )
-from ietf.doc.storage_utils import store_str
 from ietf.doc.utils import ( add_state_change_event, close_open_ballots,
     create_ballot_if_not_open, update_telechat )
 from ietf.doc.mails import email_iana, email_ad_approved_conflict_review
@@ -199,7 +198,7 @@ class UploadForm(forms.Form):
                 "There was an error creating a hardlink at %s pointing to %s: %s"
                 % (ftp_filepath, filepath, e)
             )
-        store_str("conflrev", basename, content)
+        review.store_str(basename, content)
 
 #This is very close to submit on charter - can we get better reuse?
 @role_required('Area Director','Secretariat')

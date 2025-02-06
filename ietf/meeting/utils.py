@@ -778,6 +778,8 @@ def handle_upload_file(file, filename, meeting, subdir, request=None, encoding=N
             clean_bytes = clean.encode('utf8')
             destination.write(clean_bytes)
             # Assumes contents of subdir are always document type ids
+            # TODO-BLOBSTORE: see if we can refactor this so that the connection to the document isn't lost
+            # In the meantime, consider faking it by parsing filename (shudder).
             store_bytes(subdir, filename.name, clean_bytes)
             if request and clean != text:
                 messages.warning(request,
@@ -792,6 +794,7 @@ def handle_upload_file(file, filename, meeting, subdir, request=None, encoding=N
             file.seek(0)
             if hasattr(file, "chunks"):
                 chunks = file.chunks()
+            # TODO-BLOBSTORE: See above question about refactoring
             store_bytes(subdir, filename.name, b"".join(chunks))
 
     return None
@@ -819,6 +822,7 @@ def new_doc_for_session(type_id, session):
     session.presentations.create(document=doc,rev='00')
     return doc
 
+# TODO-BLOBSTORE - consider adding doc to this signature and factoring away type_id
 def write_doc_for_session(session, type_id, filename, contents):
     filename = Path(filename)
     path = Path(session.meeting.get_materials_path()) / type_id

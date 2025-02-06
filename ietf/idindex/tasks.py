@@ -41,7 +41,7 @@ class TempFileManager(AbstractContextManager):
             target.unlink(missing_ok=True)
             os.link(dest_path, target) # until python>=3.10
         with dest_path.open("rb") as f:
-            store_file("indexes", dest_path.name, f)
+            store_file("indexes", dest_path.name, f, allow_overwrite=True)
 
     def cleanup(self):
         for tf_path in self.cleanup_list:

@@ -581,8 +581,8 @@ class DraftFileMixin():
         _, ext = os.path.splitext(name)
         if ext:
             ext=ext[1:]
-            store_str("active-draft", f"{ext}/{name}", "a"*size)
-            store_str("draft", f"{ext}/{name}", "a"*size)
+            store_str("active-draft", f"{ext}/{name}", "a"*size, allow_overwrite=True)
+            store_str("draft", f"{ext}/{name}", "a"*size, allow_overwrite=True)
 
 
 class ResurrectTests(DraftFileMixin, TestCase):

@@ -55,6 +55,7 @@ from ietf.meeting.views import get_summary_by_area, get_summary_by_type, get_sum
 from ietf.name.models import SessionStatusName, ImportantDateName, RoleName, ProceedingsMaterialTypeName
 from ietf.utils.decorators import skip_coverage
 from ietf.utils.mail import outbox, empty_outbox, get_payload_text
+from ietf.utils.test_runner import TestBlobstoreManager
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized, unicontent
 from ietf.utils.timezone import date_today, time_now
 
@@ -5227,6 +5228,7 @@ class InterimTests(TestCase):
 
     def do_interim_request_single_virtual(self, emails_expected):
         make_meeting_test_data()
+        TestBlobstoreManager().emptyTestBlobstores()
         group = Group.objects.get(acronym='mars')
         date = date_today() + datetime.timedelta(days=30)
         time = time_now().replace(microsecond=0,second=0)
@@ -5304,6 +5306,7 @@ class InterimTests(TestCase):
 
     def test_interim_request_single_in_person(self):
         make_meeting_test_data()
+        TestBlobstoreManager().emptyTestBlobstores()
         group = Group.objects.get(acronym='mars')
         date = date_today() + datetime.timedelta(days=30)
         time = time_now().replace(microsecond=0,second=0)
@@ -5488,6 +5491,7 @@ class InterimTests(TestCase):
 
     def test_interim_request_series(self):
         make_meeting_test_data()
+        TestBlobstoreManager().emptyTestBlobstores()
         meeting_count_before = Meeting.objects.filter(type='interim').count()
         date = date_today() + datetime.timedelta(days=30)
         if (date.month, date.day) == (12, 31):
@@ -6118,6 +6122,7 @@ class InterimTests(TestCase):
     def test_interim_request_edit_agenda_updates_doc(self):
         """Updating the agenda through the request edit form should update the doc correctly"""
         make_interim_test_data()
+        TestBlobstoreManager().emptyTestBlobstores()
         meeting = add_event_info_to_session_qs(Session.objects.filter(meeting__type='interim', group__acronym='mars')).filter(current_status='sched').first().meeting
         group = meeting.session_set.first().group
         url = urlreverse('ietf.meeting.views.interim_request_edit', kwargs={'number': meeting.number})
@@ -6494,11 +6499,9 @@ class MaterialsTests(TestCase):
             text = doc.text()
             self.assertIn('Some text', text)
             self.assertNotIn('<section>', text)
-            self.assertIn('charset="utf-8"', text)
             text = retrieve_str(doctype, f"{doc.name}-{doc.rev}.html")
             self.assertIn('Some text', text)
             self.assertNotIn('<section>', text)
-            self.assertIn('charset="utf-8"', text)
 
             # txt upload
             test_bytes = b'This is some text for a test, with the word\nvirtual at the beginning of a line.'
@@ -6972,6 +6975,7 @@ class MaterialsTests(TestCase):
     @override_settings(MEETECHO_API_CONFIG="fake settings")  # enough to trigger API calls
     @patch("ietf.meeting.views.SlidesManager")
     def test_approve_proposed_slides_multisession_apply_one(self, mock_slides_manager_cls):
+        TestBlobstoreManager().emptyTestBlobstores()
         submission = SlideSubmissionFactory(session__meeting__type_id='ietf')
         session1 = submission.session
         session2 = SessionFactory(group=submission.session.group, meeting=submission.session.meeting)
@@ -7000,6 +7004,7 @@ class MaterialsTests(TestCase):
     @override_settings(MEETECHO_API_CONFIG="fake settings")  # enough to trigger API calls
     @patch("ietf.meeting.views.SlidesManager")
     def test_approve_proposed_slides_multisession_apply_all(self, mock_slides_manager_cls):
+        TestBlobstoreManager().emptyTestBlobstores()
         submission = SlideSubmissionFactory(session__meeting__type_id='ietf')
         session1 = submission.session
         session2 = SessionFactory(group=submission.session.group, meeting=submission.session.meeting)

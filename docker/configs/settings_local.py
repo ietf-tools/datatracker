@@ -40,7 +40,7 @@ INTERNAL_IPS = [".".join(ip.split(".")[:-1] + ["1"]) for ip in ips] + ['127.0.0.
 # ]
 for storagename in MORE_STORAGE_NAMES:
     STORAGES[storagename] = {
-        "BACKEND": "storages.backends.s3.S3Storage",
+        "BACKEND": "ietf.doc.storage_backends.CustomS3Storage",
         "OPTIONS": dict(
             endpoint_url="http://blobstore:9000",
             access_key="minio_root",

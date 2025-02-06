@@ -456,6 +456,7 @@ def post_submission(request, submission, approved_doc_desc, approved_subm_desc):
         from ietf.doc.expire import move_draft_files_to_archive
         move_draft_files_to_archive(draft, prev_rev)
 
+    submission.draft = draft
     move_files_to_repository(submission)
     submission.state = DraftSubmissionStateName.objects.get(slug="posted")
     log.log(f"{submission.name}: moved files")
@@ -489,7 +490,6 @@ def post_submission(request, submission, approved_doc_desc, approved_subm_desc):
     if new_possibly_replaces:
         send_review_possibly_replaces_request(request, draft, submitter_info)
 
-    submission.draft = draft
     submission.save()
 
     create_submission_event(request, submission, approved_subm_desc)
@@ -671,7 +671,7 @@ def move_files_to_repository(submission):
             # authoritative, the source and dest checks will need to apply to the stores instead.
             content_bytes = retrieve_bytes("staging", fname)
             store_bytes("active-draft", f"{ext}/{fname}", content_bytes)
-            store_bytes("draft", f"{ext}/{fname}", content_bytes)
+            submission.draft.store_bytes(f"{ext}/{fname}", content_bytes)
             remove_from_storage("staging", fname)
         elif dest.exists():
             log.log("Intended to move '%s' to '%s', but found source missing while destination exists.")
@@ -689,7 +689,7 @@ def remove_staging_files(name, rev, exts=None):
     basename = pathlib.Path(settings.IDSUBMIT_STAGING_PATH) / f'{name}-{rev}' 
     for ext in exts:
         basename.with_suffix(ext).unlink(missing_ok=True)
-        remove_from_storage("staging", basename.with_suffix(ext).name)
+        remove_from_storage("staging", basename.with_suffix(ext).name, warn_if_missing=False)
 
 
 def remove_submission_files(submission):
@@ -1002,8 +1002,10 @@ def render_missing_formats(submission):
                 xml_version,
             )
         )
-    with Path(txt_path).open() as f:
-        store_file("staging", f"{submission.name}-{submission.rev}.txt", f)
+        # When the blobstores become autoritative - the guard at the
+        # containing if statement needs to be based on the store
+        with Path(txt_path).open("rb") as f:
+            store_file("staging", f"{submission.name}-{submission.rev}.txt", f)
 
     # --- Convert to html ---
     html_path = staging_path(submission.name, submission.rev, '.html')
@@ -1026,7 +1028,7 @@ def render_missing_formats(submission):
             xml_version,
         )
     )
-    with Path(html_path).open() as f:
+    with Path(html_path).open("rb") as f:
         store_file("staging", f"{submission.name}-{submission.rev}.html", f)
 
 
@@ -1379,6 +1381,7 @@ def process_and_validate_submission(submission):
     except SubmissionError:
         raise  # pass SubmissionErrors up the stack
     except Exception as err:
+        # (this is a good point to just `raise err` when diagnosing Submission test failures)
         # convert other exceptions into SubmissionErrors
         log.log(f'Unexpected exception while processing submission {submission.pk}.')
         log.log(traceback.format_exc())

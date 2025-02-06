@@ -20,7 +20,6 @@ from django.utils.functional import cached_property
 import debug                            # pyflakes:ignore
 
 from ietf.doc.models import Document, State, NewRevisionDocEvent
-from ietf.doc.storage_utils import store_str
 from ietf.group.models import Group
 from ietf.group.utils import groups_managed_by
 from ietf.meeting.models import Session, Meeting, Schedule, countries, timezones, TimeSlot, Room
@@ -362,7 +361,7 @@ class InterimSessionModelForm(forms.ModelForm):
             os.makedirs(directory)
         with io.open(path, "w", encoding='utf-8') as file:
             file.write(self.cleaned_data['agenda'])
-        store_str("agenda", doc.uploaded_filename, self.cleaned_data['agenda'])
+        doc.store_str(doc.uploaded_filename, self.cleaned_data['agenda'])
 
 
 class InterimAnnounceForm(forms.ModelForm):

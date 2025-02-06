@@ -31,7 +31,7 @@ from ietf.doc.factories import (DocumentFactory, WgDraftFactory, IndividualDraft
                                 ReviewFactory, WgRfcFactory)
 from ietf.doc.models import ( Document, DocEvent, State,
     BallotPositionDocEvent, DocumentAuthor, SubmissionDocEvent )
-from ietf.doc.storage_utils import exists_in_storage, retrieve_str, store_file, store_str
+from ietf.doc.storage_utils import exists_in_storage, retrieve_str, store_str
 from ietf.doc.utils import create_ballot_if_not_open, can_edit_docextresources, update_action_holders
 from ietf.group.factories import GroupFactory, RoleFactory
 from ietf.group.models import Group
@@ -54,6 +54,7 @@ from ietf.submit.utils import (expirable_submissions, expire_submission, find_su
 from ietf.utils import tool_version
 from ietf.utils.accesstoken import generate_access_token
 from ietf.utils.mail import outbox, get_payload_text
+from ietf.utils.test_runner import TestBlobstoreManager
 from ietf.utils.test_utils import login_testing_unauthorized, TestCase
 from ietf.utils.timezone import date_today
 from ietf.utils.draft import PlaintextDraft
@@ -356,6 +357,7 @@ class SubmitTests(BaseSubmitTestCase):
 
     def submit_new_wg(self, formats):
         # submit new -> supply submitter info -> approve
+        TestBlobstoreManager().emptyTestBlobstores()
         GroupFactory(type_id='wg',acronym='ames')
         mars = GroupFactory(type_id='wg', acronym='mars')
         RoleFactory(name_id='chair', group=mars, person__user__username='marschairman')
@@ -543,6 +545,7 @@ class SubmitTests(BaseSubmitTestCase):
 
     def submit_new_concluded_wg_as_author(self, group_state_id='conclude'):
         """A new concluded WG submission by a logged-in author needs AD approval"""
+        TestBlobstoreManager().emptyTestBlobstores()
         mars = GroupFactory(type_id='wg', acronym='mars', state_id=group_state_id)
         draft = WgDraftFactory(group=mars)
         setup_default_community_list_for_group(draft.group)
@@ -588,6 +591,7 @@ class SubmitTests(BaseSubmitTestCase):
 
     def submit_existing(self, formats, change_authors=True, group_type='wg', stream_type='ietf'):
         # submit new revision of existing -> supply submitter info -> prev authors confirm
+        TestBlobstoreManager().emptyTestBlobstores()
 
         def _assert_authors_are_action_holders(draft, expect=True):
             for author in draft.authors():
@@ -924,6 +928,7 @@ class SubmitTests(BaseSubmitTestCase):
 
     def submit_new_individual(self, formats):
         # submit new -> supply submitter info -> confirm
+        TestBlobstoreManager().emptyTestBlobstores()
 
         name = "draft-authorname-testing-tests"
         rev = "00"
@@ -1009,6 +1014,7 @@ class SubmitTests(BaseSubmitTestCase):
         self.submit_new_individual(["txt", "xml"])
 
     def submit_new_draft_no_org_or_address(self, formats):
+        TestBlobstoreManager().emptyTestBlobstores()
         name = 'draft-testing-no-org-or-address'
 
         author = PersonFactory()
@@ -1099,6 +1105,7 @@ class SubmitTests(BaseSubmitTestCase):
             self.assertIsNone(event, 'External resource change event was unexpectedly created')
 
     def submit_new_draft_with_extresources(self, group):
+        TestBlobstoreManager().emptyTestBlobstores()
         name = 'draft-testing-with-extresources'
 
         status_url, author = self.do_submission(name, rev='00', group=group)
@@ -1128,6 +1135,7 @@ class SubmitTests(BaseSubmitTestCase):
 
     def submit_new_individual_logged_in(self, formats):
         # submit new -> supply submitter info -> done
+        TestBlobstoreManager().emptyTestBlobstores()
 
         name = "draft-authorname-testing-logged-in"
         rev = "00"
@@ -1271,6 +1279,7 @@ class SubmitTests(BaseSubmitTestCase):
         
         Unlike some other tests in this module, does not confirm draft if this would be required.
         """
+        TestBlobstoreManager().emptyTestBlobstores()
         orig_draft: Document = DocumentFactory(  # type: ignore[annotation-unchecked]
             type_id='draft',
             group=GroupFactory(type_id=group_type) if group_type else None,
@@ -1311,6 +1320,7 @@ class SubmitTests(BaseSubmitTestCase):
 
     def submit_new_individual_replacing_wg(self, logged_in=False, group_state_id='active', notify_ad=False):
         """Chair of an active WG should be notified if individual draft is proposed to replace a WG draft"""
+        TestBlobstoreManager().emptyTestBlobstores()
         name = "draft-authorname-testing-tests"
         rev = "00"
         group = None
@@ -1928,6 +1938,7 @@ class SubmitTests(BaseSubmitTestCase):
         
         Assumes approval allowed by AD and secretary and, optionally, chair of WG
         """
+        TestBlobstoreManager().emptyTestBlobstores()
         class _SubmissionFactory:
             """Helper class to generate fresh submissions"""
             def __init__(self, author, state):
@@ -2777,6 +2788,7 @@ class AsyncSubmissionTests(BaseSubmitTestCase):
     """Tests of async submission-related tasks"""
     def test_process_and_accept_uploaded_submission(self):
         """process_and_accept_uploaded_submission should properly process a submission"""
+        TestBlobstoreManager().emptyTestBlobstores()
         _today = date_today()
         xml, author = submission_file('draft-somebody-test-00', 'draft-somebody-test-00.xml', None, 'test_submission.xml')
         xml_data = xml.read()
@@ -2792,7 +2804,7 @@ class AsyncSubmissionTests(BaseSubmitTestCase):
         xml_path = Path(settings.IDSUBMIT_STAGING_PATH) / 'draft-somebody-test-00.xml'
         with xml_path.open('w') as f:
             f.write(xml_data)
-        store_str("staging", "draft-somebpdy-test-00.xml", xml_data)
+        store_str("staging", "draft-somebody-test-00.xml", xml_data)
         txt_path = xml_path.with_suffix('.txt')
         self.assertFalse(txt_path.exists())
         html_path = xml_path.with_suffix('.html')
@@ -2830,6 +2842,7 @@ class AsyncSubmissionTests(BaseSubmitTestCase):
         txt.close()
 
         # submitter is not an author
+        TestBlobstoreManager().emptyTestBlobstores()
         submitter = PersonFactory()
         submission = SubmissionFactory(
             name='draft-somebody-test',
@@ -2848,6 +2861,7 @@ class AsyncSubmissionTests(BaseSubmitTestCase):
         self.assertIn('not one of the document authors', submission.submissionevent_set.last().desc)
 
         # author has no email address in XML
+        TestBlobstoreManager().emptyTestBlobstores()
         submission = SubmissionFactory(
             name='draft-somebody-test',
             rev='00',
@@ -2865,6 +2879,7 @@ class AsyncSubmissionTests(BaseSubmitTestCase):
         self.assertIn('Email address not found for all authors', submission.submissionevent_set.last().desc)
 
         # no title
+        TestBlobstoreManager().emptyTestBlobstores()
         submission = SubmissionFactory(
             name='draft-somebody-test',
             rev='00',
@@ -2882,6 +2897,7 @@ class AsyncSubmissionTests(BaseSubmitTestCase):
         self.assertIn('Could not extract a valid title', submission.submissionevent_set.last().desc)
 
         # draft name mismatch
+        TestBlobstoreManager().emptyTestBlobstores()
         submission = SubmissionFactory(
             name='draft-different-name',
             rev='00',
@@ -2899,6 +2915,7 @@ class AsyncSubmissionTests(BaseSubmitTestCase):
         self.assertIn('Submission rejected: XML Internet-Draft filename', submission.submissionevent_set.last().desc)
 
         # rev mismatch
+        TestBlobstoreManager().emptyTestBlobstores()
         submission = SubmissionFactory(
             name='draft-somebody-test',
             rev='01',
@@ -2916,6 +2933,7 @@ class AsyncSubmissionTests(BaseSubmitTestCase):
         self.assertIn('Submission rejected: XML Internet-Draft revision', submission.submissionevent_set.last().desc)
 
         # not xml
+        TestBlobstoreManager().emptyTestBlobstores()
         submission = SubmissionFactory(
             name='draft-somebody-test',
             rev='00',
@@ -2933,6 +2951,7 @@ class AsyncSubmissionTests(BaseSubmitTestCase):
         self.assertIn('Only XML Internet-Draft submissions', submission.submissionevent_set.last().desc)
 
         # wrong state
+        TestBlobstoreManager().emptyTestBlobstores()
         submission = SubmissionFactory(
             name='draft-somebody-test',
             rev='00',
@@ -2951,6 +2970,7 @@ class AsyncSubmissionTests(BaseSubmitTestCase):
         self.assertEqual(submission.state_id, 'uploaded', 'State should not be changed')
 
         # failed checker
+        TestBlobstoreManager().emptyTestBlobstores()
         submission = SubmissionFactory(
             name='draft-somebody-test',
             rev='00',
@@ -2998,6 +3018,7 @@ class AsyncSubmissionTests(BaseSubmitTestCase):
         self.assertEqual(mock_method.call_count, 0)
 
     def test_process_submission_xml(self):
+        TestBlobstoreManager().emptyTestBlobstores()
         xml_path = Path(settings.IDSUBMIT_STAGING_PATH) / "draft-somebody-test-00.xml"
         xml, _ = submission_file(
             "draft-somebody-test-00",
@@ -3024,27 +3045,32 @@ class AsyncSubmissionTests(BaseSubmitTestCase):
         self.assertEqual(output["xml_version"], "3")
 
         # Should behave on missing or partial <date> elements
+        TestBlobstoreManager().emptyTestBlobstores()
         xml_path.write_text(re.sub(r"<date.+>", "", xml_contents))  # strip <date...> entirely
         store_str("staging", "draft-somebody-test-00.xml", re.sub(r"<date.+>", "", xml_contents))
         output = process_submission_xml("draft-somebody-test", "00")
         self.assertEqual(output["document_date"], None)
 
+        TestBlobstoreManager().emptyTestBlobstores()
         xml_path.write_text(re.sub(r"<date year=.+ month", "<date month", xml_contents))  # remove year
         store_str("staging", "draft-somebody-test-00.xml", re.sub(r"<date year=.+ month", "<date month", xml_contents))
         output = process_submission_xml("draft-somebody-test", "00")
         self.assertEqual(output["document_date"], date_today())
 
+        TestBlobstoreManager().emptyTestBlobstores()
         xml_path.write_text(re.sub(r"(<date.+) month=.+day=(.+>)", r"\1 day=\2", xml_contents))  # remove month
         store_str("staging", "draft-somebody-test-00.xml", re.sub(r"(<date.+) month=.+day=(.+>)", r"\1 day=\2", xml_contents))
         output = process_submission_xml("draft-somebody-test", "00")
         self.assertEqual(output["document_date"], date_today())
 
+        TestBlobstoreManager().emptyTestBlobstores()
         xml_path.write_text(re.sub(r"<date(.+) day=.+>", r"<date\1>", xml_contents))  # remove day
         store_str("staging", "draft-somebody-test-00.xml", re.sub(r"<date(.+) day=.+>", r"<date\1>", xml_contents))
         output = process_submission_xml("draft-somebody-test", "00")
         self.assertEqual(output["document_date"], date_today())
 
         # name mismatch
+        TestBlobstoreManager().emptyTestBlobstores()
         xml, _ = submission_file(
             "draft-somebody-wrong-name-00",  # name that appears in the file
             "draft-somebody-test-00.xml",
@@ -3054,11 +3080,12 @@ class AsyncSubmissionTests(BaseSubmitTestCase):
         )
         xml_path.write_text(xml.read())
         xml.seek(0)
-        store_file("staging", "draft-somebody-test-00.xml", xml)
+        store_str("staging", "draft-somebody-test-00.xml", xml.read())
         with self.assertRaisesMessage(SubmissionError, "disagrees with submission filename"):
             process_submission_xml("draft-somebody-test", "00")
 
         # rev mismatch
+        TestBlobstoreManager().emptyTestBlobstores()
         xml, _ = submission_file(
             "draft-somebody-test-01",  # name that appears in the file
             "draft-somebody-test-00.xml",
@@ -3068,11 +3095,12 @@ class AsyncSubmissionTests(BaseSubmitTestCase):
         )
         xml_path.write_text(xml.read())
         xml.seek(0)
-        store_file("staging", "draft-somebody-test-00.xml", xml)
+        store_str("staging", "draft-somebody-test-00.xml", xml.read())
         with self.assertRaisesMessage(SubmissionError, "disagrees with submission revision"):
             process_submission_xml("draft-somebody-test", "00")
 
         # missing title
+        TestBlobstoreManager().emptyTestBlobstores()
         xml, _ = submission_file(
             "draft-somebody-test-00",  # name that appears in the file
             "draft-somebody-test-00.xml",
@@ -3082,11 +3110,12 @@ class AsyncSubmissionTests(BaseSubmitTestCase):
         )
         xml_path.write_text(xml.read())
         xml.seek(0)
-        store_file("staging", "draft-somebody-test-00.xml", xml)
+        store_str("staging", "draft-somebody-test-00.xml", xml.read())
         with self.assertRaisesMessage(SubmissionError, "Could not extract a valid title"):
             process_submission_xml("draft-somebody-test", "00")
 
     def test_process_submission_text(self):
+        TestBlobstoreManager().emptyTestBlobstores()
         txt_path = Path(settings.IDSUBMIT_STAGING_PATH) / "draft-somebody-test-00.txt"
         txt, _ = submission_file(
             "draft-somebody-test-00",
@@ -3097,7 +3126,7 @@ class AsyncSubmissionTests(BaseSubmitTestCase):
         )
         txt_path.write_text(txt.read())
         txt.seek(0)
-        store_file("staging", "draft-somebody-test-00.txt", txt)
+        store_str("staging", "draft-somebody-test-00.txt", txt.read())
         output = process_submission_text("draft-somebody-test", "00")
         self.assertEqual(output["filename"], "draft-somebody-test")
         self.assertEqual(output["rev"], "00")
@@ -3113,6 +3142,7 @@ class AsyncSubmissionTests(BaseSubmitTestCase):
         self.assertIsNone(output["xml_version"])
 
         # name mismatch
+        TestBlobstoreManager().emptyTestBlobstores()
         txt, _ = submission_file(
             "draft-somebody-wrong-name-00",  # name that appears in the file
             "draft-somebody-test-00.txt",
@@ -3123,12 +3153,13 @@ class AsyncSubmissionTests(BaseSubmitTestCase):
         with txt_path.open('w') as fd:
             fd.write(txt.read())
         txt.seek(0)
-        store_file("staging", "draft-somebody-test-00.txt", txt)
+        store_str("staging", "draft-somebody-test-00.txt", txt.read())
         txt.close()
         with self.assertRaisesMessage(SubmissionError, 'disagrees with submission filename'):
             process_submission_text("draft-somebody-test", "00")
 
         # rev mismatch
+        TestBlobstoreManager().emptyTestBlobstores()
         txt, _ = submission_file(
             "draft-somebody-test-01",  # name that appears in the file
             "draft-somebody-test-00.txt",
@@ -3139,7 +3170,7 @@ class AsyncSubmissionTests(BaseSubmitTestCase):
         with txt_path.open('w') as fd:
             fd.write(txt.read())
         txt.seek(0)
-        store_file("staging", "draft-somebody-test-00.txt", txt)
+        store_str("staging", "draft-somebody-test-00.txt", txt.read())
         txt.close()
         with self.assertRaisesMessage(SubmissionError, 'disagrees with submission revision'):
             process_submission_text("draft-somebody-test", "00")

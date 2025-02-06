@@ -160,7 +160,7 @@ def move_draft_files_to_archive(doc, rev):
     def remove_from_active_draft_storage(file):
         # Assumes the glob will never find a file with no suffix
         ext = file.suffix[1:]
-        remove_from_storage("active-draft", f"{ext}/{file.name}")
+        remove_from_storage("active-draft", f"{ext}/{file.name}", warn_if_missing=False)
 
     # Note that the object is already in the "draft" storage.
     src_dir = Path(settings.INTERNET_DRAFT_PATH)

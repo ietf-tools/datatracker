@@ -26,7 +26,6 @@ from ietf.doc.models import ( Document, State, DocEvent, BallotDocEvent,
     BallotPositionDocEvent, NewRevisionDocEvent, WriteupDocEvent, STATUSCHANGE_RELATIONS )
 from ietf.doc.forms import AdForm
 from ietf.doc.lastcall import request_last_call
-from ietf.doc.storage_utils import store_str
 from ietf.doc.utils import add_state_change_event, update_telechat, close_open_ballots, create_ballot_if_not_open
 from ietf.doc.views_ballot import LastCallTextForm
 from ietf.group.models import Group
@@ -165,7 +164,7 @@ class UploadForm(forms.Form):
             else:
                 content = self.cleaned_data['content']
             destination.write(content)
-            store_str("statchg", basename, content)
+            doc.store_str(basename, content)
         try:
             ftp_filename = Path(settings.FTP_DIR) / "status-changes" / basename
             os.link(filename, ftp_filename) # Path.hardlink is not available until 3.10

@@ -30,7 +30,6 @@ from django.urls import reverse as urlreverse
 
 from ietf.doc.models import (Document, NewRevisionDocEvent, State,
                              LastCallDocEvent, ReviewRequestDocEvent, ReviewAssignmentDocEvent, DocumentAuthor)
-from ietf.doc.storage_utils import store_str
 from ietf.name.models import (ReviewRequestStateName, ReviewAssignmentStateName, ReviewResultName, 
                              ReviewTypeName)
 from ietf.person.models import Person
@@ -806,7 +805,7 @@ def complete_review(request, name, assignment_id=None, acronym=None):
 
             review_path = Path(review.get_file_path()) / f"{review.name}.txt"
             review_path.write_text(content)
-            store_str("review", f"{review.name}.txt", content)
+            review.store_str(f"{review.name}.txt", content, allow_overwrite=True) # We have a bug that review revisions dont create a new version!
             review_ftp_path = Path(settings.FTP_DIR) / "review" / review_path.name
             # See https://github.com/ietf-tools/datatracker/issues/6941 - when that's
             # addressed, making this link should not be conditional
