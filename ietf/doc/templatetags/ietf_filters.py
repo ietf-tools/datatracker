@@ -533,11 +533,14 @@ def ics_date_time(dt, tzname):
     >>> ics_date_time(datetime.datetime(2022,1,2,3,4,5), 'UTC')
     ':20220102T030405Z'
 
+    >>> ics_date_time(datetime.datetime(2022,1,2,3,4,5), 'GmT')
+    ':20220102T030405Z'
+
     >>> ics_date_time(datetime.datetime(2022,1,2,3,4,5), 'America/Los_Angeles')
     ';TZID=America/Los_Angeles:20220102T030405'
     """
     timestamp = dt.strftime('%Y%m%dT%H%M%S')
-    if tzname.lower() == 'utc':
+    if tzname.lower() in ('gmt', 'utc'):
         return f':{timestamp}Z'
     else:
         return f';TZID={ics_esc(tzname)}:{timestamp}'
