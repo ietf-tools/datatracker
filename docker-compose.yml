@@ -15,6 +15,7 @@ services:
         depends_on:
             - db
             - mq
+            - blobstore
 
         ipc: host
 
@@ -83,6 +84,19 @@ services:
             - .:/workspace
             - app-assets:/assets
 
+    blobstore:
+        image: quay.io/minio/minio:latest
+        restart: unless-stopped
+        volumes:
+            - "minio-data:/data"
+        environment:
+            - MINIO_ROOT_USER=minio_root
+            - MINIO_ROOT_PASSWORD=minio_pass
+            - MINIO_DEFAULT_BUCKETS=defaultbucket
+        command: server --console-address ":9001" /data
+
+
+
 #  Celery Beat is a periodic task runner. It is not normally needed for development,
 #  but can be enabled by uncommenting the following.
 #
@@ -106,3 +120,4 @@ services:
 volumes:
     postgresdb-data:
     app-assets:
+    minio-data:
