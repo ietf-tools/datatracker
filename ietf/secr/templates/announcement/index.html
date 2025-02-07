@@ -1,0 +1,31 @@
+{# Copyright The IETF Trust 2024, All Rights Reserved #}
+{% extends "base.html" %}
+{% load static %}
+{% load ietf_filters %}
+{% load django_bootstrap5 %}
+{% block title %}Announcement{% endblock %}
+{% block content %}
+    <h1 class="announcement">Announcement</h1>
+    {% if form.non_field_errors %}<div class="my-3 alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
+
+    <form id="announcement-form" method="post">
+        {% csrf_token %}
+        {% bootstrap_field form.nomcom layout='horizontal' %}
+        {% bootstrap_field form.to layout='horizontal' %}
+        {% bootstrap_field form.to_custom layout='horizontal' %}
+        {% bootstrap_field form.frm layout='horizontal' %}
+        {% bootstrap_field form.cc layout='horizontal' %}
+        {% bootstrap_field form.bcc layout='horizontal' %}
+        {% bootstrap_field form.reply_to layout='horizontal' %}
+        {% bootstrap_field form.subject layout='horizontal' %}
+        {% bootstrap_field form.body layout='horizontal' %}
+
+        <button type="submit" class="btn btn-primary">Continue</button>
+        <a class="btn btn-secondary float-end"
+               href="{% url 'ietf.secr' %}">Cancel</a>
+    </form>
+
+{% endblock %}
+{% block js %}
+    <script src="{% static 'ietf/js/announcement.js' %}"></script>
+{% endblock %}
