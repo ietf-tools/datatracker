@@ -334,7 +334,7 @@ div:is(.artwork, .sourcecode).alignRight {
   justify-content: end;
 }
 div:is(.artwork, .sourcecode)::before {
-  flex: 0 1 3ch;
+  flex: 0 1 6ch;
   content: "";
 }
 div:is(.artwork, .sourcecode).alignRight::before {
