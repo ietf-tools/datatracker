@@ -96,7 +96,7 @@ class CustomS3Storage(S3Storage):
         except FileNotFoundError:
             if warn_if_missing:
                 complaint = (
-                    f"WARNING: Asked to delete non-existant {name} from {kind} storage"
+                    f"WARNING: Asked to delete non-existent {name} from {kind} storage"
                 )
                 log(complaint)
                 debug.show("complaint")
