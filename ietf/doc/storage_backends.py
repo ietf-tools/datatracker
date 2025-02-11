@@ -107,7 +107,7 @@ class CustomS3Storage(S3Storage):
             debug.show("complaint")
         else:
             # Note that existing_record is a queryset that will have one matching object
-            existing_record.update(deleted=now)
+            existing_record.filter(deleted__isnull=True).update(deleted=now)
 
     def _get_write_parameters(self, name, content=None):
         # debug.show('f"getting write parameters for {name}"')
