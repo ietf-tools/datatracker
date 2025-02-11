@@ -106,6 +106,23 @@ Nightly database dumps of the datatracker are available as Docker images: `ghcr.
 
 > Note that to update the database in your dev environment to the latest version, you should run the `docker/cleandb` script.
 
+### Blob storage for dev/test
+
+The dev and test environments use [minio](https://github.com/minio/minio) to provide local blob storage. See the settings files for how the app container communicates with the blobstore container. If you need to work with minio directly from outside the containers (to interact with its api or console), use `docker compose` from the top level directory of your clone to expose it at an ephemeral port.
+
+```
+$ docker compose port blobstore 9001
+0.0.0.0:<some ephemeral port>
+
+$ curl -I http://localhost:<some ephemeral port>
+HTTP/1.1 200 OK
+...
+```
+
+
+The minio container exposes the minio api at port 9000 and the minio console at port 9001
+
+
 ### Frontend Development
 
 #### Intro

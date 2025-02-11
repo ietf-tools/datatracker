@@ -1,11 +1,12 @@
-# Copyright The IETF Trust 2007-2019, All Rights Reserved
+# Copyright The IETF Trust 2007-2025, All Rights Reserved
 # -*- coding: utf-8 -*-
 
-from ietf.settings import *                                          # pyflakes:ignore
+from ietf.settings import *  # pyflakes:ignore
+from ietf.settings import boto3, STORAGES, MORE_STORAGE_NAMES
 
 ALLOWED_HOSTS = ['*']
 
-from ietf.settings_postgresqldb import DATABASES   # pyflakes:ignore
+from ietf.settings_postgresqldb import DATABASES  # pyflakes:ignore
 
 IDSUBMIT_IDNITS_BINARY = "/usr/local/bin/idnits"
 IDSUBMIT_STAGING_PATH = "/assets/www6s/staging/"
@@ -37,6 +38,20 @@ INTERNAL_IPS = [".".join(ip.split(".")[:-1] + ["1"]) for ip in ips] + ['127.0.0.
 # DEV_TEMPLATE_CONTEXT_PROCESSORS = [
 #    'ietf.context_processors.sql_debug',
 # ]
+for storagename in MORE_STORAGE_NAMES:
+    STORAGES[storagename] = {
+        "BACKEND": "ietf.doc.storage_backends.CustomS3Storage",
+        "OPTIONS": dict(
+            endpoint_url="http://blobstore:9000",
+            access_key="minio_root",
+            secret_key="minio_pass",
+            security_token=None,
+            client_config=boto3.session.Config(signature_version="s3v4"),
+            verify=False,
+            bucket_name=storagename,
+        ),
+    }
+
 
 DOCUMENT_PATH_PATTERN = '/assets/ietfdata/doc/{doc.type_id}/'
 INTERNET_DRAFT_PATH = '/assets/ietf-ftp/internet-drafts/'

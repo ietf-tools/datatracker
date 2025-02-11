@@ -18,6 +18,7 @@ from django.urls import reverse as urlreverse
 from django.utils import timezone
 
 from ietf.doc.models import Document, State, NewRevisionDocEvent
+from ietf.doc.storage_utils import retrieve_str
 from ietf.group.factories import RoleFactory
 from ietf.group.models import Group
 from ietf.meeting.factories import MeetingFactory, SessionFactory, SessionPresentationFactory
@@ -123,6 +124,9 @@ class GroupMaterialTests(TestCase):
         ftp_filepath=Path(settings.FTP_DIR) / "slides" / basename
         with ftp_filepath.open() as f:
             self.assertEqual(f.read(), content)
+        # This test is very sloppy wrt the actual file content.
+        # Working with/around that for the moment.
+        self.assertEqual(retrieve_str("slides", basename), content)
 
         # check that posting same name is prevented
         test_file.seek(0)
@@ -237,4 +241,6 @@ class GroupMaterialTests(TestCase):
 
         with io.open(os.path.join(doc.get_file_path(), doc.name + "-" + doc.rev + ".txt")) as f:
             self.assertEqual(f.read(), content)
+        self.assertEqual(retrieve_str("slides", f"{doc.name}-{doc.rev}.txt"), content)
+
 

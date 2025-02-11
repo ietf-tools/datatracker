@@ -15,6 +15,7 @@ services:
         depends_on:
             - db
             - mq
+            - blobstore
 
         ipc: host
 
@@ -83,6 +84,14 @@ services:
             - .:/workspace
             - app-assets:/assets
 
+    blobstore:
+        image: ghcr.io/ietf-tools/datatracker-devblobstore:latest
+        restart: unless-stopped
+        volumes:
+            - "minio-data:/data"
+
+
+
 #  Celery Beat is a periodic task runner. It is not normally needed for development,
 #  but can be enabled by uncommenting the following.
 #
@@ -106,3 +115,4 @@ services:
 volumes:
     postgresdb-data:
     app-assets:
+    minio-data:

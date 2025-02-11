@@ -186,9 +186,10 @@ class UploadForm(forms.Form):
         filepath = Path(settings.CONFLICT_REVIEW_PATH) / basename
         with filepath.open('w', encoding='utf-8') as destination:
             if self.cleaned_data['txt']:
-                destination.write(self.cleaned_data['txt'])
+                content = self.cleaned_data['txt']
             else:
-                destination.write(self.cleaned_data['content'])
+                content = self.cleaned_data['content']
+            destination.write(content)
         ftp_filepath = Path(settings.FTP_DIR) / "conflict-reviews" / basename
         try:
             os.link(filepath, ftp_filepath) # Path.hardlink_to is not available until 3.10
@@ -197,6 +198,7 @@ class UploadForm(forms.Form):
                 "There was an error creating a hardlink at %s pointing to %s: %s"
                 % (ftp_filepath, filepath, e)
             )
+        review.store_str(basename, content)
 
 #This is very close to submit on charter - can we get better reuse?
 @role_required('Area Director','Secretariat')
