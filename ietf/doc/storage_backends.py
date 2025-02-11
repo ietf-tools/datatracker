@@ -5,7 +5,6 @@ import debug  # pyflakes:ignore
 from hashlib import sha384
 from io import BufferedReader
 from storages.backends.s3 import S3Storage
-from storages.utils import is_seekable
 from typing import Dict, Optional, Union
 
 from django.core.files.base import File
@@ -112,11 +111,11 @@ class CustomS3Storage(S3Storage):
         params = super()._get_write_parameters(name, content)
         if "Metadata" not in params:
             params["Metadata"] = {}
-        if not is_seekable(content):
-            # TODO-BLOBSTORE
+        try:
+            content.seek(0)
+        except AttributeError:            # TODO-BLOBSTORE
             debug.say("Encountered Non-Seekable content")
             raise NotImplementedError("cannot handle unseekable content")
-        content.seek(0)
         content_bytes = content.read()
         if not isinstance(
             content_bytes, bytes
