@@ -14,6 +14,10 @@ from ietf.utils.log import log
 from ietf.utils.timezone import timezone
 
 
+
+# TODO-BLOBSTORE
+# Consider overriding save directly so that
+# we capture metadata for, e.g., ImageField objects
 class CustomS3Storage(S3Storage):
 
     def __init__(self, **settings):
