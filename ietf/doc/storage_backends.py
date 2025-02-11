@@ -40,26 +40,24 @@ class CustomS3Storage(S3Storage):
             try:
                 new_name = self.save(name, file)
                 now = timezone.now()
-                existing_record = StoredObject.objects.filter(store=kind, name=name)
-                if existing_record.exists():
-                    # Note this is updating a queryset which is guaranteed by constraints to have one object
-                    existing_record.update(
-                        sha384=self.in_flight_custom_metadata[name]["sha384"],
-                        len=int(self.in_flight_custom_metadata[name]["len"]),
-                        modified=now,
-                    )
-                else:
-                    StoredObject.objects.create(
-                        store=kind,
-                        name=name,
+                record, created = StoredObject.objects.get_or_create(
+                    store=kind, 
+                    name=name,
+                    defaults=dict(
                         sha384=self.in_flight_custom_metadata[name]["sha384"],
                         len=int(self.in_flight_custom_metadata[name]["len"]),
                         store_created=now,
                         created=now,
                         modified=now,
-                        doc_name=doc_name,
-                        doc_rev=doc_rev,
+                        doc_name=doc_name, # Note that these are assumed to be invariant
+                        doc_rev=doc_rev,   # for a given name
                     )
+                )
+                if not created:
+                    record.sha384=self.in_flight_custom_metadata[name]["sha384"]
+                    record.len=int(self.in_flight_custom_metadata[name]["len"])
+                    record.modified=now
+                    record.save()
                 if new_name != name:
                     complaint = f"Error encountered saving '{name}' - results stored in '{new_name}' instead."
                     log(complaint)
@@ -70,7 +68,7 @@ class CustomS3Storage(S3Storage):
                 # Don't let failure pass so quietly when these are the autoritative bits.
                 complaint = f"Failed to save {kind}:{name}"
                 log(complaint, e)
-                debug.show('f"{complaint}: {e}')
+                debug.show('f"{complaint}: {e}"')
             finally:
                 del self.in_flight_custom_metadata[name]
         return None
