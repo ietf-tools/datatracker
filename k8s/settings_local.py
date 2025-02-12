@@ -285,3 +285,32 @@ if _csrf_trusted_origins_str is not None:
 
 # Console logs as JSON instead of plain when running in k8s
 LOGGING["handlers"]["console"]["formatter"] = "json"
+
+# Configure storages for the blob store
+_blob_store_endpoint_url = os.environ.get("DATATRACKER_BLOB_STORE_ENDPOINT_URL")
+_blob_store_access_key = os.environ.get("DATATRACKER_BLOB_STORE_ACCESS_KEY")
+_blob_store_secret_key = os.environ.get("DATATRACKER_BLOB_STORE_SECRET_KEY")
+if None in (_blob_store_endpoint_url, _blob_store_access_key, _blob_store_secret_key):
+    raise RuntimeError(
+        "All of DATATRACKER_BLOB_STORE_ENDPOINT_URL, DATATRACKER_BLOB_STORE_ACCESS_KEY, "
+        "and DATATRACKER_BLOB_STORE_SECRET_KEY must be set"
+    )
+try:
+    from ietf.settings import MORE_STORAGE_NAMES
+except ImportError:
+    pass  # Don't fail if MORE_STORAGE_NAMES is not there, just don't configure it
+else:
+    from ietf.settings import boto3, STORAGES  # do fail if these aren't found!
+    for storage_name in MORE_STORAGE_NAMES:
+        STORAGES[storage_name] = {
+            "BACKEND": "ietf.doc.storage_backends.CustomS3Storage",
+            "OPTIONS": dict(
+                endpoint_url=_blob_store_endpoint_url,
+                access_key=_blob_store_access_key,
+                secret_key=_blob_store_secret_key,
+                security_token=None,
+                client_config=boto3.session.Config(signature_version="s3v4"),
+                verify=False,
+                bucket_name=storage_name,
+            ),
+        }
