@@ -6,7 +6,7 @@ from email.utils import parseaddr
 import json
 
 from ietf import __release_hash__
-from ietf.settings import *                                          # pyflakes:ignore
+from ietf.settings import *  # pyflakes:ignore
 
 
 def _multiline_to_list(s):
@@ -29,7 +29,7 @@ _SECRET_KEY = os.environ.get("DATATRACKER_DJANGO_SECRET_KEY", None)
 if _SECRET_KEY is not None:
     SECRET_KEY = _SECRET_KEY
 else:
-    raise RuntimeError("DATATRACKER_DJANGO_SECRET_KEY must be set")    
+    raise RuntimeError("DATATRACKER_DJANGO_SECRET_KEY must be set")
 
 _NOMCOM_APP_SECRET_B64 = os.environ.get("DATATRACKER_NOMCOM_APP_SECRET_B64", None)
 if _NOMCOM_APP_SECRET_B64 is not None:
@@ -41,7 +41,7 @@ _IANA_SYNC_PASSWORD = os.environ.get("DATATRACKER_IANA_SYNC_PASSWORD", None)
 if _IANA_SYNC_PASSWORD is not None:
     IANA_SYNC_PASSWORD = _IANA_SYNC_PASSWORD
 else:
-    raise RuntimeError("DATATRACKER_IANA_SYNC_PASSWORD must be set")    
+    raise RuntimeError("DATATRACKER_IANA_SYNC_PASSWORD must be set")
 
 _RFC_EDITOR_SYNC_PASSWORD = os.environ.get("DATATRACKER_RFC_EDITOR_SYNC_PASSWORD", None)
 if _RFC_EDITOR_SYNC_PASSWORD is not None:
@@ -59,25 +59,25 @@ _GITHUB_BACKUP_API_KEY = os.environ.get("DATATRACKER_GITHUB_BACKUP_API_KEY", Non
 if _GITHUB_BACKUP_API_KEY is not None:
     GITHUB_BACKUP_API_KEY = _GITHUB_BACKUP_API_KEY
 else:
-    raise RuntimeError("DATATRACKER_GITHUB_BACKUP_API_KEY must be set")    
+    raise RuntimeError("DATATRACKER_GITHUB_BACKUP_API_KEY must be set")
 
 _API_KEY_TYPE = os.environ.get("DATATRACKER_API_KEY_TYPE", None)
 if _API_KEY_TYPE is not None:
     API_KEY_TYPE = _API_KEY_TYPE
 else:
-    raise RuntimeError("DATATRACKER_API_KEY_TYPE must be set")    
+    raise RuntimeError("DATATRACKER_API_KEY_TYPE must be set")
 
 _API_PUBLIC_KEY_PEM_B64 = os.environ.get("DATATRACKER_API_PUBLIC_KEY_PEM_B64", None)
 if _API_PUBLIC_KEY_PEM_B64 is not None:
     API_PUBLIC_KEY_PEM = b64decode(_API_PUBLIC_KEY_PEM_B64)
 else:
-    raise RuntimeError("DATATRACKER_API_PUBLIC_KEY_PEM_B64 must be set")    
+    raise RuntimeError("DATATRACKER_API_PUBLIC_KEY_PEM_B64 must be set")
 
 _API_PRIVATE_KEY_PEM_B64 = os.environ.get("DATATRACKER_API_PRIVATE_KEY_PEM_B64", None)
 if _API_PRIVATE_KEY_PEM_B64 is not None:
     API_PRIVATE_KEY_PEM = b64decode(_API_PRIVATE_KEY_PEM_B64)
 else:
-    raise RuntimeError("DATATRACKER_API_PRIVATE_KEY_PEM_B64 must be set")    
+    raise RuntimeError("DATATRACKER_API_PRIVATE_KEY_PEM_B64 must be set")
 
 # Set DEBUG if DATATRACKER_DEBUG env var is the word "true"
 DEBUG = os.environ.get("DATATRACKER_DEBUG", "false").lower() == "true"
@@ -102,7 +102,9 @@ DATABASES = {
 # Configure persistent connections. A setting of 0 is Django's default.
 _conn_max_age = os.environ.get("DATATRACKER_DB_CONN_MAX_AGE", "0")
 # A string "none" means unlimited age.
-DATABASES["default"]["CONN_MAX_AGE"] = None if _conn_max_age.lower() == "none" else int(_conn_max_age)
+DATABASES["default"]["CONN_MAX_AGE"] = (
+    None if _conn_max_age.lower() == "none" else int(_conn_max_age)
+)
 # Enable connection health checks if DATATRACKER_DB_CONN_HEALTH_CHECK is the string "true"
 _conn_health_checks = bool(
     os.environ.get("DATATRACKER_DB_CONN_HEALTH_CHECKS", "false").lower() == "true"
@@ -114,9 +116,11 @@ _admins_str = os.environ.get("DATATRACKER_ADMINS", None)
 if _admins_str is not None:
     ADMINS = [parseaddr(admin) for admin in _multiline_to_list(_admins_str)]
 else:
-    raise RuntimeError("DATATRACKER_ADMINS must be set")    
+    raise RuntimeError("DATATRACKER_ADMINS must be set")
 
-USING_DEBUG_EMAIL_SERVER = os.environ.get("DATATRACKER_EMAIL_DEBUG", "false").lower() == "true"
+USING_DEBUG_EMAIL_SERVER = (
+    os.environ.get("DATATRACKER_EMAIL_DEBUG", "false").lower() == "true"
+)
 EMAIL_HOST = os.environ.get("DATATRACKER_EMAIL_HOST", "localhost")
 EMAIL_PORT = int(os.environ.get("DATATRACKER_EMAIL_PORT", "2025"))
 
@@ -126,7 +130,7 @@ if _celery_password is None:
 CELERY_BROKER_URL = "amqp://datatracker:{password}@{host}/{queue}".format(
     host=os.environ.get("RABBITMQ_HOSTNAME", "dt-rabbitmq"),
     password=_celery_password,
-    queue=os.environ.get("RABBITMQ_QUEUE", "dt")
+    queue=os.environ.get("RABBITMQ_QUEUE", "dt"),
 )
 
 IANA_SYNC_USERNAME = "ietfsync"
@@ -140,10 +144,10 @@ if _registration_api_key is None:
     raise RuntimeError("DATATRACKER_REGISTRATION_API_KEY must be set")
 STATS_REGISTRATION_ATTENDEES_JSON_URL = f"https://registration.ietf.org/{{number}}/attendees/?apikey={_registration_api_key}"
 
-#FIRST_CUTOFF_DAYS = 12
-#SECOND_CUTOFF_DAYS = 12
-#SUBMISSION_CUTOFF_DAYS = 26
-#SUBMISSION_CORRECTION_DAYS = 57
+# FIRST_CUTOFF_DAYS = 12
+# SECOND_CUTOFF_DAYS = 12
+# SUBMISSION_CUTOFF_DAYS = 26
+# SUBMISSION_CORRECTION_DAYS = 57
 MEETING_MATERIALS_SUBMISSION_CUTOFF_DAYS = 26
 MEETING_MATERIALS_SUBMISSION_CORRECTION_DAYS = 54
 
@@ -155,7 +159,7 @@ _MEETECHO_CLIENT_SECRET = os.environ.get("DATATRACKER_MEETECHO_CLIENT_SECRET", N
 if _MEETECHO_CLIENT_ID is not None and _MEETECHO_CLIENT_SECRET is not None:
     MEETECHO_API_CONFIG = {
         "api_base": os.environ.get(
-            "DATATRACKER_MEETECHO_API_BASE", 
+            "DATATRACKER_MEETECHO_API_BASE",
             "https://meetings.conf.meetecho.com/api/v1/",
         ),
         "client_id": _MEETECHO_CLIENT_ID,
@@ -173,7 +177,9 @@ if "DATATRACKER_APP_API_TOKENS_JSON_B64" in os.environ:
         raise RuntimeError(
             "Only one of DATATRACKER_APP_API_TOKENS_JSON and DATATRACKER_APP_API_TOKENS_JSON_B64 may be set"
         )
-    _APP_API_TOKENS_JSON = b64decode(os.environ.get("DATATRACKER_APP_API_TOKENS_JSON_B64"))
+    _APP_API_TOKENS_JSON = b64decode(
+        os.environ.get("DATATRACKER_APP_API_TOKENS_JSON_B64")
+    )
 else:
     _APP_API_TOKENS_JSON = os.environ.get("DATATRACKER_APP_API_TOKENS_JSON", None)
 
@@ -189,7 +195,9 @@ IDSUBMIT_MAX_DAILY_SAME_SUBMITTER = 5000
 
 # Leave DATATRACKER_MATOMO_SITE_ID unset to disable Matomo reporting
 if "DATATRACKER_MATOMO_SITE_ID" in os.environ:
-    MATOMO_DOMAIN_PATH = os.environ.get("DATATRACKER_MATOMO_DOMAIN_PATH", "analytics.ietf.org")
+    MATOMO_DOMAIN_PATH = os.environ.get(
+        "DATATRACKER_MATOMO_DOMAIN_PATH", "analytics.ietf.org"
+    )
     MATOMO_SITE_ID = os.environ.get("DATATRACKER_MATOMO_SITE_ID")
     MATOMO_DISABLE_COOKIES = True
 
@@ -197,9 +205,13 @@ if "DATATRACKER_MATOMO_SITE_ID" in os.environ:
 _SCOUT_KEY = os.environ.get("DATATRACKER_SCOUT_KEY", None)
 if _SCOUT_KEY is not None:
     if SERVER_MODE == "production":
-        PROD_PRE_APPS = ["scout_apm.django", ]
+        PROD_PRE_APPS = [
+            "scout_apm.django",
+        ]
     else:
-        DEV_PRE_APPS = ["scout_apm.django", ]
+        DEV_PRE_APPS = [
+            "scout_apm.django",
+        ]
     SCOUT_MONITOR = True
     SCOUT_KEY = _SCOUT_KEY
     SCOUT_NAME = os.environ.get("DATATRACKER_SCOUT_NAME", "Datatracker")
@@ -216,16 +228,17 @@ if _SCOUT_KEY is not None:
 STATIC_URL = os.environ.get("DATATRACKER_STATIC_URL", None)
 if STATIC_URL is None:
     from ietf import __version__
+
     STATIC_URL = f"https://static.ietf.org/dt/{__version__}/"
 
 # Set these to the same as "production" in settings.py, whether production mode or not
 MEDIA_ROOT = "/a/www/www6s/lib/dt/media/"
-MEDIA_URL  = "https://www.ietf.org/lib/dt/media/"
+MEDIA_URL = "https://www.ietf.org/lib/dt/media/"
 PHOTOS_DIRNAME = "photo"
 PHOTOS_DIR = MEDIA_ROOT + PHOTOS_DIRNAME
 
 # Normally only set for debug, but needed until we have a real FS
-DJANGO_VITE_MANIFEST_PATH = os.path.join(BASE_DIR, 'static/dist-neue/manifest.json')
+DJANGO_VITE_MANIFEST_PATH = os.path.join(BASE_DIR, "static/dist-neue/manifest.json")
 
 # Binaries that are different in the docker image
 DE_GFM_BINARY = "/usr/local/bin/de-gfm"
@@ -235,6 +248,7 @@ IDSUBMIT_IDNITS_BINARY = "/usr/local/bin/idnits"
 MEMCACHED_HOST = os.environ.get("DT_MEMCACHED_SERVICE_HOST", "127.0.0.1")
 MEMCACHED_PORT = os.environ.get("DT_MEMCACHED_SERVICE_PORT", "11211")
 from ietf import __version__
+
 CACHES = {
     "default": {
         "BACKEND": "ietf.utils.cache.LenientMemcacheCache",
@@ -295,12 +309,16 @@ if None in (_blob_store_endpoint_url, _blob_store_access_key, _blob_store_secret
         "All of DATATRACKER_BLOB_STORE_ENDPOINT_URL, DATATRACKER_BLOB_STORE_ACCESS_KEY, "
         "and DATATRACKER_BLOB_STORE_SECRET_KEY must be set"
     )
+_blob_store_bucket_prefix = os.environ.get(
+    "DATATRACKER_BLOB_STORE_BUCKET_PREFIX", ""
+)
 try:
     from ietf.settings import MORE_STORAGE_NAMES
 except ImportError:
     pass  # Don't fail if MORE_STORAGE_NAMES is not there, just don't configure it
 else:
     from ietf.settings import boto3, STORAGES  # do fail if these aren't found!
+
     for storage_name in MORE_STORAGE_NAMES:
         STORAGES[storage_name] = {
             "BACKEND": "ietf.doc.storage_backends.CustomS3Storage",
@@ -311,6 +329,6 @@ else:
                 security_token=None,
                 client_config=boto3.session.Config(signature_version="s3v4"),
                 verify=False,
-                bucket_name=storage_name,
+                bucket_name="{_blob_store_bucket_prefix}{storage_name}".strip(),
             ),
         }
