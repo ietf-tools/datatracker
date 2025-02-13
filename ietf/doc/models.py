@@ -7,7 +7,6 @@ import logging
 import os
 
 import django.db
-import rfc2html
 
 from io import BufferedReader
 from pathlib import Path
@@ -44,6 +43,7 @@ from ietf.person.models import Email, Person
 from ietf.person.utils import get_active_balloters
 from ietf.utils import log
 from ietf.utils.decorators import memoize
+from ietf.utils.htmlize import make_htmlized_fragment
 from ietf.utils.validators import validate_no_control_chars
 from ietf.utils.mail import formataddr
 from ietf.utils.models import ForeignKey
@@ -634,10 +634,7 @@ class DocumentInfo(models.Model):
             except EOFError:
                 html = None
             if not html:
-                # The path here has to match the urlpattern for htmlized
-                # documents in order to produce correct intra-document links
-                html = rfc2html.markup(text, path=settings.HTMLIZER_URL_PREFIX)
-                html = f'<div class="rfcmarkup">{html}</div>'
+                html = make_htmlized_fragment(text)
                 if html:
                     cache.set(cache_key, html, settings.HTMLIZER_CACHE_TIME)
         return html
