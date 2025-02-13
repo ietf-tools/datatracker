@@ -329,6 +329,6 @@ else:
                 security_token=None,
                 client_config=boto3.session.Config(signature_version="s3v4"),
                 verify=False,
-                bucket_name="{_blob_store_bucket_prefix}{storage_name}".strip(),
+                bucket_name=f"{_blob_store_bucket_prefix}{storage_name}".strip(),
             ),
         }
