@@ -59,6 +59,7 @@ class CustomS3Storage(S3Storage):
                     record.sha384 = self.in_flight_custom_metadata[name]["sha384"]
                     record.len = int(self.in_flight_custom_metadata[name]["len"])
                     record.modified = now
+                    record.deleted = None
                     record.save()
                 if new_name != name:
                     complaint = f"Error encountered saving '{name}' - results stored in '{new_name}' instead."
