@@ -14,7 +14,6 @@ from ietf.utils.log import log
 from ietf.utils.timezone import timezone
 
 
-
 # TODO-BLOBSTORE
 # Consider overriding save directly so that
 # we capture metadata for, e.g., ImageField objects
@@ -44,7 +43,7 @@ class CustomS3Storage(S3Storage):
                 new_name = self.save(name, file)
                 now = timezone.now()
                 record, created = StoredObject.objects.get_or_create(
-                    store=kind, 
+                    store=kind,
                     name=name,
                     defaults=dict(
                         sha384=self.in_flight_custom_metadata[name]["sha384"],
@@ -52,14 +51,14 @@ class CustomS3Storage(S3Storage):
                         store_created=now,
                         created=now,
                         modified=now,
-                        doc_name=doc_name, # Note that these are assumed to be invariant
-                        doc_rev=doc_rev,   # for a given name
-                    )
+                        doc_name=doc_name,  # Note that these are assumed to be invariant
+                        doc_rev=doc_rev,  # for a given name
+                    ),
                 )
                 if not created:
-                    record.sha384=self.in_flight_custom_metadata[name]["sha384"]
-                    record.len=int(self.in_flight_custom_metadata[name]["len"])
-                    record.modified=now
+                    record.sha384 = self.in_flight_custom_metadata[name]["sha384"]
+                    record.len = int(self.in_flight_custom_metadata[name]["len"])
+                    record.modified = now
                     record.deleted = None
                     record.save()
                 if new_name != name:
@@ -118,7 +117,7 @@ class CustomS3Storage(S3Storage):
             params["Metadata"] = {}
         try:
             content.seek(0)
-        except AttributeError:            # TODO-BLOBSTORE
+        except AttributeError:  # TODO-BLOBSTORE
             debug.say("Encountered Non-Seekable content")
             raise NotImplementedError("cannot handle unseekable content")
         content_bytes = content.read()
