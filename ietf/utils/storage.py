@@ -2,6 +2,7 @@
 """Django Storage classes"""
 from pathlib import Path
 
+from django.conf import settings
 from django.core.files.storage import FileSystemStorage
 from ietf.doc.storage_utils import store_file
 from .log import log
@@ -39,13 +40,14 @@ class BlobShadowFileSystemStorage(NoLocationMigrationFileSystemStorage):
         # Write content to the filesystem - this deals with chunks, etc...
         saved_name = super().save(name, content, max_length)
 
-        # Retrieve the content and write to the blob store
-        blob_name = Path(saved_name).name  # strips path
-        try:
-            with self.open(saved_name, "rb") as f:
-                store_file(self.kind, blob_name, f, allow_overwrite=True)
-        except Exception as err:
-            log(f"Failed to shadow {saved_name} at {self.kind}:{blob_name}: {err}")
+        if settings.ENABLE_BLOBSTORAGE:
+            # Retrieve the content and write to the blob store
+            blob_name = Path(saved_name).name  # strips path
+            try:
+                with self.open(saved_name, "rb") as f:
+                    store_file(self.kind, blob_name, f, allow_overwrite=True)
+            except Exception as err:
+                log(f"Failed to shadow {saved_name} at {self.kind}:{blob_name}: {err}")
         return saved_name  # includes the path!
 
     def deconstruct(self):

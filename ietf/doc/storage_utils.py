@@ -21,13 +21,17 @@ def _get_storage(kind: str):
 
 
 def exists_in_storage(kind: str, name: str) -> bool:
-    store = _get_storage(kind)
-    return store.exists_in_storage(kind, name)
+    if settings.ENABLE_BLOBSTORAGE:
+        store = _get_storage(kind)
+        return store.exists_in_storage(kind, name)
+    else:
+        return False
 
 
 def remove_from_storage(kind: str, name: str, warn_if_missing: bool = True) -> None:
-    store = _get_storage(kind)
-    store.remove_from_storage(kind, name, warn_if_missing)
+    if settings.ENABLE_BLOBSTORAGE:
+        store = _get_storage(kind)
+        store.remove_from_storage(kind, name, warn_if_missing)
     return None
 
 
@@ -41,8 +45,9 @@ def store_file(
     doc_rev: Optional[str] = None,
 ) -> None:
     # debug.show('f"asked to store {name} into {kind}"')
-    store = _get_storage(kind)
-    store.store_file(kind, name, file, allow_overwrite, doc_name, doc_rev)
+    if settings.ENABLE_BLOBSTORAGE:
+        store = _get_storage(kind)
+        store.store_file(kind, name, file, allow_overwrite, doc_name, doc_rev)
     return None
 
 
@@ -54,7 +59,9 @@ def store_bytes(
     doc_name: Optional[str] = None,
     doc_rev: Optional[str] = None,
 ) -> None:
-    return store_file(kind, name, ContentFile(content), allow_overwrite)
+    if settings.ENABLE_BLOBSTORAGE:
+        store_file(kind, name, ContentFile(content), allow_overwrite)
+    return None
 
 
 def store_str(
@@ -65,18 +72,25 @@ def store_str(
     doc_name: Optional[str] = None,
     doc_rev: Optional[str] = None,
 ) -> None:
-    content_bytes = content.encode("utf-8")
-    return store_bytes(kind, name, content_bytes, allow_overwrite)
+    if settings.ENABLE_BLOBSTORAGE:
+        content_bytes = content.encode("utf-8")
+        store_bytes(kind, name, content_bytes, allow_overwrite)
+    return None
 
 
 def retrieve_bytes(kind: str, name: str) -> bytes:
-    store = _get_storage(kind)
-    with store.open(name) as f:
-        content = f.read()
+    content = b""
+    if settings.ENABLE_BLOBSTORAGE:
+        store = _get_storage(kind)
+        with store.open(name) as f:
+            content = f.read()
     return content
 
 
 def retrieve_str(kind: str, name: str) -> str:
-    content_bytes = retrieve_bytes(kind, name)
-    # TODO: try to decode all the different ways doc.text() does
-    return content_bytes.decode("utf-8")
+    content = ""
+    if settings.ENABLE_BLOBSTORAGE:
+        content_bytes = retrieve_bytes(kind, name)
+        # TODO-BLOBSTORE: try to decode all the different ways doc.text() does
+        content = content_bytes.decode("utf-8")
+    return content

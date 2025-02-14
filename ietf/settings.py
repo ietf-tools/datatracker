@@ -184,6 +184,8 @@ STATIC_IETF_ORG = "https://static.ietf.org"
 # Server-side static.ietf.org URL (used in pdfized)
 STATIC_IETF_ORG_INTERNAL = STATIC_IETF_ORG
 
+ENABLE_BLOBSTORAGE = True
+
 WSGI_APPLICATION = "ietf.wsgi.application"
 
 AUTHENTICATION_BACKENDS = ( 'ietf.ietfauth.backends.CaseInsensitiveModelBackend', )
