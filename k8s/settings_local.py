@@ -312,6 +312,9 @@ if None in (_blob_store_endpoint_url, _blob_store_access_key, _blob_store_secret
 _blob_store_bucket_prefix = os.environ.get(
     "DATATRACKER_BLOB_STORE_BUCKET_PREFIX", ""
 )
+_blob_store_enable_profiling = (
+    os.environ.get("DATATRACKER_BLOB_STORE_ENABLE_PROFILING", "false").lower() == "true"
+)
 try:
     from ietf.settings import MORE_STORAGE_NAMES
 except ImportError:
@@ -329,5 +332,6 @@ else:
                 security_token=None,
                 client_config=boto3.session.Config(signature_version="s3v4"),
                 bucket_name=f"{_blob_store_bucket_prefix}{storage_name}".strip(),
+                ietf_log_blob_timing=_blob_store_enable_profiling,
             ),
         }
