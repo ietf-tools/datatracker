@@ -1,7 +1,9 @@
 # Copyright The IETF Trust 2025, All Rights Reserved
 
 import debug  # pyflakes:ignore
+import json
 
+from contextlib import contextmanager
 from hashlib import sha384
 from io import BufferedReader
 from storages.backends.s3 import S3Storage
@@ -13,6 +15,34 @@ from ietf.doc.models import StoredObject
 from ietf.utils.log import log
 from ietf.utils.timezone import timezone
 
+
+@contextmanager
+def maybe_log_timing(enabled, op, **kwargs):
+    """If enabled, log elapsed time and additional data from kwargs
+
+    Emits log even if an exception occurs
+    """
+    before = timezone.now()
+    exception = None
+    try:
+        yield
+    except Exception as err:
+        exception = err
+        raise
+    finally:
+        if enabled:
+            dt = timezone.now() - before
+            log(
+                json.dumps(
+                    {
+                        "log": "S3Storage_timing",
+                        "seconds": dt.total_seconds(),
+                        "op": op,
+                        "exception": "" if exception is None else repr(exception),
+                        **kwargs,
+                    }
+                )
+            )
 
 
 # TODO-BLOBSTORE
@@ -29,30 +59,26 @@ class CustomS3Storage(S3Storage):
         return super().get_default_settings() | {"ietf_log_blob_timing": False}
 
     def _save(self, name, content):
-        # Only overriding this to add the option to time the operation
-        before = timezone.now()
-        result = super()._save(name, content)
-        if self.ietf_log_blob_timing:
-            dt = timezone.now() - before
-            log(f"S3Storage timing: _save('{name}', ...) for {self.bucket_name} took {dt.total_seconds()} s")
-        return result
+        with maybe_log_timing(
+            self.ietf_log_blob_timing, "_save", bucket_name=self.bucket_name, name=name
+        ):
+            return super()._save(name, content)
 
     def _open(self, name, mode="rb"):
-        # Only overriding this to add the option to time the operation
-        before = timezone.now()
-        result = super()._open(name, mode)
-        if self.ietf_log_blob_timing:
-            dt = timezone.now() - before
-            log(f"S3Storage timing: _open('{name}', ...) for {self.bucket_name} took {dt.total_seconds()} s")
-        return result
+        with maybe_log_timing(
+            self.ietf_log_blob_timing,
+            "_open",
+            bucket_name=self.bucket_name,
+            name=name,
+            mode=mode,
+        ):
+            return super()._open(name, mode)
 
     def delete(self, name):
-        # Only overriding this to add the option to time the operation
-        before = timezone.now()
-        super().delete(name)
-        if self.ietf_log_blob_timing:
-            dt = timezone.now() - before
-            log(f"S3Storage timing: delete('{name}') for {self.bucket_name} took {dt.total_seconds()} s")
+        with maybe_log_timing(
+            self.ietf_log_blob_timing, "delete", bucket_name=self.bucket_name, name=name
+        ):
+            super().delete(name)
 
     def store_file(
         self,
@@ -74,7 +100,7 @@ class CustomS3Storage(S3Storage):
                 new_name = self.save(name, file)
                 now = timezone.now()
                 record, created = StoredObject.objects.get_or_create(
-                    store=kind, 
+                    store=kind,
                     name=name,
                     defaults=dict(
                         sha384=self.in_flight_custom_metadata[name]["sha384"],
@@ -82,14 +108,14 @@ class CustomS3Storage(S3Storage):
                         store_created=now,
                         created=now,
                         modified=now,
-                        doc_name=doc_name, # Note that these are assumed to be invariant
-                        doc_rev=doc_rev,   # for a given name
-                    )
+                        doc_name=doc_name,  # Note that these are assumed to be invariant
+                        doc_rev=doc_rev,  # for a given name
+                    ),
                 )
                 if not created:
-                    record.sha384=self.in_flight_custom_metadata[name]["sha384"]
-                    record.len=int(self.in_flight_custom_metadata[name]["len"])
-                    record.modified=now
+                    record.sha384 = self.in_flight_custom_metadata[name]["sha384"]
+                    record.len = int(self.in_flight_custom_metadata[name]["len"])
+                    record.modified = now
                     record.save()
                 if new_name != name:
                     complaint = f"Error encountered saving '{name}' - results stored in '{new_name}' instead."
@@ -147,7 +173,7 @@ class CustomS3Storage(S3Storage):
             params["Metadata"] = {}
         try:
             content.seek(0)
-        except AttributeError:            # TODO-BLOBSTORE
+        except AttributeError:  # TODO-BLOBSTORE
             debug.say("Encountered Non-Seekable content")
             raise NotImplementedError("cannot handle unseekable content")
         content_bytes = content.read()
