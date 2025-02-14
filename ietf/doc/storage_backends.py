@@ -34,7 +34,7 @@ class CustomS3Storage(S3Storage):
         result = super()._save(name, content)
         if self.ietf_log_blob_timing:
             dt = timezone.now() - before
-            log(f"S3Storage timing: _save('{name}', ...) for {self.bucket_name} took {dt.total_seconds()}")
+            log(f"S3Storage timing: _save('{name}', ...) for {self.bucket_name} took {dt.total_seconds()} s")
         return result
 
     def _open(self, name, mode="rb"):
@@ -43,7 +43,7 @@ class CustomS3Storage(S3Storage):
         result = super()._open(name, mode)
         if self.ietf_log_blob_timing:
             dt = timezone.now() - before
-            log(f"S3Storage timing: _open('{name}', ...) for {self.bucket_name} took {dt.total_seconds()}")
+            log(f"S3Storage timing: _open('{name}', ...) for {self.bucket_name} took {dt.total_seconds()} s")
         return result
 
     def delete(self, name):
@@ -52,7 +52,7 @@ class CustomS3Storage(S3Storage):
         super().delete(name)
         if self.ietf_log_blob_timing:
             dt = timezone.now() - before
-            log(f"S3Storage timing: delete('{name}') for {self.bucket_name} took {dt.total_seconds()}")
+            log(f"S3Storage timing: delete('{name}') for {self.bucket_name} took {dt.total_seconds()} s")
 
     def store_file(
         self,
