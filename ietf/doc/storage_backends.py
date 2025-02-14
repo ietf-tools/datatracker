@@ -24,6 +24,36 @@ class CustomS3Storage(S3Storage):
         self.in_flight_custom_metadata: Dict[str, Dict[str, str]] = {}
         super().__init__(**settings)
 
+    def get_default_settings(self):
+        # add a default for the ietf_log_blob_timing boolean
+        return super().get_default_settings() | {"ietf_log_blob_timing": False}
+
+    def _save(self, name, content):
+        # Only overriding this to add the option to time the operation
+        before = timezone.now()
+        result = super()._save(name, content)
+        if self.ietf_log_blob_timing:
+            dt = timezone.now() - before
+            log(f"S3Storage timing: _save('{name}', ...) for {self.bucket_name} took {dt.total_seconds()}")
+        return result
+
+    def _open(self, name, mode="rb"):
+        # Only overriding this to add the option to time the operation
+        before = timezone.now()
+        result = super()._open(name, mode)
+        if self.ietf_log_blob_timing:
+            dt = timezone.now() - before
+            log(f"S3Storage timing: _open('{name}', ...) for {self.bucket_name} took {dt.total_seconds()}")
+        return result
+
+    def delete(self, name):
+        # Only overriding this to add the option to time the operation
+        before = timezone.now()
+        super().delete(name)
+        if self.ietf_log_blob_timing:
+            dt = timezone.now() - before
+            log(f"S3Storage timing: delete('{name}') for {self.bucket_name} took {dt.total_seconds()}")
+
     def store_file(
         self,
         kind: str,
