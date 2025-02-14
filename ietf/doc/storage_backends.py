@@ -22,7 +22,7 @@ class CustomS3Storage(S3Storage):
 
     def __init__(self, **settings):
         self.in_flight_custom_metadata: Dict[str, Dict[str, str]] = {}
-        return super().__init__(**settings)
+        super().__init__(**settings)
 
     def store_file(
         self,
