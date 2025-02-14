@@ -1,7 +1,9 @@
 # Copyright The IETF Trust 2025, All Rights Reserved
 
 import debug  # pyflakes:ignore
+import json
 
+from contextlib import contextmanager
 from hashlib import sha384
 from io import BufferedReader
 from storages.backends.s3 import S3Storage
@@ -14,6 +16,35 @@ from ietf.utils.log import log
 from ietf.utils.timezone import timezone
 
 
+@contextmanager
+def maybe_log_timing(enabled, op, **kwargs):
+    """If enabled, log elapsed time and additional data from kwargs
+
+    Emits log even if an exception occurs
+    """
+    before = timezone.now()
+    exception = None
+    try:
+        yield
+    except Exception as err:
+        exception = err
+        raise
+    finally:
+        if enabled:
+            dt = timezone.now() - before
+            log(
+                json.dumps(
+                    {
+                        "log": "S3Storage_timing",
+                        "seconds": dt.total_seconds(),
+                        "op": op,
+                        "exception": "" if exception is None else repr(exception),
+                        **kwargs,
+                    }
+                )
+            )
+
+
 # TODO-BLOBSTORE
 # Consider overriding save directly so that
 # we capture metadata for, e.g., ImageField objects
@@ -21,7 +52,33 @@ class CustomS3Storage(S3Storage):
 
     def __init__(self, **settings):
         self.in_flight_custom_metadata: Dict[str, Dict[str, str]] = {}
-        return super().__init__(**settings)
+        super().__init__(**settings)
+
+    def get_default_settings(self):
+        # add a default for the ietf_log_blob_timing boolean
+        return super().get_default_settings() | {"ietf_log_blob_timing": False}
+
+    def _save(self, name, content):
+        with maybe_log_timing(
+            self.ietf_log_blob_timing, "_save", bucket_name=self.bucket_name, name=name
+        ):
+            return super()._save(name, content)
+
+    def _open(self, name, mode="rb"):
+        with maybe_log_timing(
+            self.ietf_log_blob_timing,
+            "_open",
+            bucket_name=self.bucket_name,
+            name=name,
+            mode=mode,
+        ):
+            return super()._open(name, mode)
+
+    def delete(self, name):
+        with maybe_log_timing(
+            self.ietf_log_blob_timing, "delete", bucket_name=self.bucket_name, name=name
+        ):
+            super().delete(name)
 
     def store_file(
         self,
