@@ -723,9 +723,25 @@ class IetfTestRunner(DiscoverRunner):
         parser.add_argument('--rerun-until-failure',
             action='store_true', dest='rerun', default=False,
             help='Run the indicated tests in a loop until a failure occurs. ' )
+        parser.add_argument('--no-manage-blobstore', action='store_false', dest='manage_blobstore',
+                            help='Disable creating/deleting test buckets in the blob store.'
+                                 'When this argument is used, a set of buckets with "test-" prefixed to their '
+                                 'names must already exist.')
 
-    def __init__(self, ignore_lower_coverage=False, skip_coverage=False, save_version_coverage=None, html_report=None, permit_mixed_migrations=None, show_logging=None, validate_html=None, validate_html_harder=None, rerun=None, **kwargs):
-        #
+    def __init__(
+        self,
+        ignore_lower_coverage=False,
+        skip_coverage=False,
+        save_version_coverage=None,
+        html_report=None,
+        permit_mixed_migrations=None,
+        show_logging=None,
+        validate_html=None,
+        validate_html_harder=None,
+        rerun=None,
+        manage_blobstore=True,
+        **kwargs
+    ):    #
         self.ignore_lower_coverage = ignore_lower_coverage
         self.check_coverage = not skip_coverage
         self.save_version_coverage = save_version_coverage
@@ -754,7 +770,7 @@ class IetfTestRunner(DiscoverRunner):
         # specific classes necessary to get the right ordering:
         self.reorder_by = (PyFlakesTestCase, MyPyTest,) + self.reorder_by + (StaticLiveServerTestCase, TemplateTagTest, CoverageTest,)
         #self.buckets = set()
-        self.blobstoremanager = TestBlobstoreManager()
+        self.blobstoremanager = TestBlobstoreManager() if manage_blobstore else None
 
     def setup_test_environment(self, **kwargs):
         global template_coverage_collection
@@ -939,7 +955,8 @@ class IetfTestRunner(DiscoverRunner):
                 print(" (extra pedantically)")
                 self.vnu = start_vnu_server()
 
-        self.blobstoremanager.createTestBlobstores()
+        if self.blobstoremanager is not None:
+            self.blobstoremanager.createTestBlobstores()
         
         super(IetfTestRunner, self).setup_test_environment(**kwargs)
 
@@ -971,7 +988,8 @@ class IetfTestRunner(DiscoverRunner):
             if self.vnu:
                 self.vnu.terminate()
 
-        self.blobstoremanager.destroyTestBlobstores()
+        if self.blobstoremanager is not None:
+            self.blobstoremanager.destroyTestBlobstores()
 
         super(IetfTestRunner, self).teardown_test_environment(**kwargs)
 
