@@ -123,6 +123,7 @@ for storagename in MORE_STORAGE_NAMES:
             secret_key=_blob_store_secret_key,
             security_token=None,
             client_config=boto3.session.Config(signature_version="s3v4"),
-            bucket_name=f"test-{storagename}",
+            bucket_name=f"{_blob_store_bucket_prefix}{storagename}",
+            ietf_log_blob_timing=_blob_store_enable_profiling,
         ),
     }
