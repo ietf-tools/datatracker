@@ -106,16 +106,23 @@ LOGGING["loggers"] = {  # pyflakes:ignore
     },
 }
 
+# Configure storages for the blob store - use env settings if present. See the --no-manage-blobstore test option.
+_blob_store_endpoint_url = os.environ.get("DATATRACKER_BLOB_STORE_ENDPOINT_URL", "http://blobstore:9000")
+_blob_store_access_key = os.environ.get("DATATRACKER_BLOB_STORE_ACCESS_KEY", "minio_root")
+_blob_store_secret_key = os.environ.get("DATATRACKER_BLOB_STORE_SECRET_KEY", "minio_pass")
+_blob_store_bucket_prefix = os.environ.get("DATATRACKER_BLOB_STORE_BUCKET_PREFIX", "test-")
+_blob_store_enable_profiling = (
+    os.environ.get("DATATRACKER_BLOB_STORE_ENABLE_PROFILING", "false").lower() == "true"
+)
 for storagename in MORE_STORAGE_NAMES:
     STORAGES[storagename] = {
         "BACKEND": "ietf.doc.storage_backends.CustomS3Storage",
         "OPTIONS": dict(
-            endpoint_url="http://blobstore:9000",
-            access_key="minio_root",
-            secret_key="minio_pass",
+            endpoint_url=_blob_store_endpoint_url,
+            access_key=_blob_store_access_key,
+            secret_key=_blob_store_secret_key,
             security_token=None,
             client_config=boto3.session.Config(signature_version="s3v4"),
-            verify=False,
             bucket_name=f"test-{storagename}",
         ),
     }
