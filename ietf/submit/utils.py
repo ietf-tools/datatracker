@@ -55,6 +55,7 @@ from ietf.submit.models import ( Submission, SubmissionEvent, Preapproval, Draft
 from ietf.utils import log
 from ietf.utils.accesstoken import generate_random_key
 from ietf.utils.draft import PlaintextDraft
+from ietf.utils.htmlize import make_htmlized_fragment
 from ietf.utils.mail import is_valid_email
 from ietf.utils.text import parse_unicode, normalize_text
 from ietf.utils.timezone import date_today
@@ -1322,6 +1323,17 @@ def process_and_validate_submission(submission):
                     f">> stderr:\n{err.xml2rfc_stderr}"
                 )
                 raise
+
+        try:
+            html = make_htmlized_fragment(
+                staging_path(submission.name, submission.rev, ".txt").read_text()
+            )
+            store_str("staging", f"{submission.name}-{submission.rev}.htmlized", html)
+        except Exception as err:
+            log.log(
+                f"make_htmlized_fragment failure for {submission.name}-{submission.rev}: {repr(err)}"
+            )
+
         # Parse text, whether uploaded or generated from XML
         text_metadata = process_submission_text(submission.name, submission.rev)
 
