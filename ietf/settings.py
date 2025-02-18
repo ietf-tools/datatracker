@@ -933,7 +933,6 @@ IDSUBMIT_EXPIRATION_AGE = datetime.timedelta(days=14)
 IDSUBMIT_FILE_TYPES = (
     'txt',
     'html',
-    'htmlized',
     'xml',
     'pdf',
     'ps',

@@ -649,7 +649,8 @@ def cancel_submission(submission):
 
 
 def rename_submission_files(submission, prev_rev, new_rev):
-    for ext in settings.IDSUBMIT_FILE_TYPES:
+    # TODO-BLOBSTORE decide what to do about the .htmlized submitted files
+    for ext in settings.IDSUBMIT_FILE_TYPES + ["htmlized"]:
         staging_path = Path(settings.IDSUBMIT_STAGING_PATH) 
         source = staging_path / f"{submission.name}-{prev_rev}.{ext}"
         dest = staging_path / f"{submission.name}-{new_rev}.{ext}"
@@ -686,7 +687,8 @@ def remove_staging_files(name, rev, exts=None):
     exts is a list of extensions to be removed. If None, defaults to settings.IDSUBMIT_FILE_TYPES.
     """
     if exts is None:
-        exts = [f'.{ext}' for ext in settings.IDSUBMIT_FILE_TYPES]
+        # TODO-BLOBSTORE decide what to do about the .htmlized submitted files
+        exts = [f'.{ext}' for ext in settings.IDSUBMIT_FILE_TYPES + ["htmlized"]]
     basename = pathlib.Path(settings.IDSUBMIT_STAGING_PATH) / f'{name}-{rev}' 
     for ext in exts:
         basename.with_suffix(ext).unlink(missing_ok=True)
