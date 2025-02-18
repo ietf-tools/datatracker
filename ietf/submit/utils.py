@@ -679,21 +679,17 @@ def move_files_to_repository(submission):
             raise ValueError("Intended to move '%s' to '%s', but found source and destination missing.")
 
 
-def remove_staging_files(name, rev, exts=None):
-    """Remove staging files corresponding to a submission
-    
-    exts is a list of extensions to be removed. If None, defaults to settings.IDSUBMIT_FILE_TYPES.
-    """
-    if exts is None:
-        exts = [f'.{ext}' for ext in settings.IDSUBMIT_FILE_TYPES]
+def remove_staging_files(name, rev):
+    """Remove staging files corresponding to a submission"""
     basename = pathlib.Path(settings.IDSUBMIT_STAGING_PATH) / f'{name}-{rev}' 
+    exts = [f'.{ext}' for ext in settings.IDSUBMIT_FILE_TYPES]
     for ext in exts:
         basename.with_suffix(ext).unlink(missing_ok=True)
         remove_from_storage("staging", basename.with_suffix(ext).name, warn_if_missing=False)
 
 
 def remove_submission_files(submission):
-    remove_staging_files(submission.name, submission.rev, submission.file_types.split(','))
+    remove_staging_files(submission.name, submission.rev)
 
 
 def approvable_submissions_for_user(user):
