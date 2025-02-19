@@ -49,6 +49,7 @@ import subprocess
 import tempfile
 import copy
 import boto3
+import botocore.config
 import factory.random
 import urllib3
 import warnings
@@ -85,6 +86,8 @@ import ietf.utils.mail
 from ietf.utils.management.commands import pyflakes
 from ietf.utils.test_smtpserver import SMTPTestServerDriver
 from ietf.utils.test_utils import TestCase
+
+from mypy_boto3_s3.service_resource import Bucket
 
 
 loaded_templates = set()
@@ -1248,15 +1251,15 @@ class IetfLiveServerTestCase(StaticLiveServerTestCase):
 
 class TestBlobstoreManager():
     # N.B. buckets and blobstore are intentional Class-level attributes
-    buckets = set()
+    buckets: set[Bucket] = set()
 
     blobstore = boto3.resource("s3",
         endpoint_url="http://blobstore:9000",
         aws_access_key_id="minio_root",
         aws_secret_access_key="minio_pass",
         aws_session_token=None,
-        config=boto3.session.Config(signature_version="s3v4"),
-        #config=boto3.session.Config(signature_version=botocore.UNSIGNED),
+        config = botocore.config.Config(signature_version="s3v4"),
+        #config=botocore.config.Config(signature_version=botocore.UNSIGNED),
         verify=False
     )
 
