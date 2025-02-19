@@ -7,6 +7,7 @@ import json
 
 from ietf import __release_hash__
 from ietf.settings import *  # pyflakes:ignore
+from ietf.settings import BLOBSTORAGE_CONNECT_TIMEOUT, BLOBSTORAGE_READ_TIMEOUT, BLOBSTORAGE_MAX_ATTEMPTS
 
 
 def _multiline_to_list(s):

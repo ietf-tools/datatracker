@@ -14,7 +14,7 @@ import os
 import shutil
 import tempfile
 from ietf.settings import *                                          # pyflakes:ignore
-from ietf.settings import STORAGES, TEST_CODE_COVERAGE_CHECKER, MORE_STORAGE_NAMES
+from ietf.settings import STORAGES, TEST_CODE_COVERAGE_CHECKER, MORE_STORAGE_NAMES, BLOBSTORAGE_CONNECT_TIMEOUT, BLOBSTORAGE_READ_TIMEOUT, BLOBSTORAGE_MAX_ATTEMPTS
 import botocore.config
 import debug                            # pyflakes:ignore
 debug.debug = True
