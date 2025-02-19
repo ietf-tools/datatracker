@@ -79,11 +79,18 @@ def store_str(
 
 
 def retrieve_bytes(kind: str, name: str) -> bytes:
+    from ietf.doc.storage_backends import maybe_log_timing
     content = b""
     if settings.ENABLE_BLOBSTORAGE:
         store = _get_storage(kind)
         with store.open(name) as f:
-            content = f.read()
+            with maybe_log_timing(
+                hasattr(store, "ietf_log_blob_timing") and store.ietf_log_blob_timing,
+                "read",
+                bucket_name=store.bucket_name if hasattr(store, "bucket_name") else "",
+                name=name,
+            ):
+                content = f.read()
     return content
 
 
