@@ -315,6 +315,15 @@ _blob_store_bucket_prefix = os.environ.get(
 _blob_store_enable_profiling = (
     os.environ.get("DATATRACKER_BLOB_STORE_ENABLE_PROFILING", "false").lower() == "true"
 )
+_blob_store_max_attempts = (
+    os.environ.get("DATATRACKER_BLOB_STORE_MAX_ATTEMPTS", BLOBSTORAGE_MAX_ATTEMPTS)
+)
+_blob_store_connect_timeout = (
+    os.environ.get("DATATRACKER_BLOB_STORE_CONNECT_TIMEOUT", BLOBSTORAGE_CONNECT_TIMEOUT)
+)
+_blob_store_read_timeout = (
+    os.environ.get("DATATRACKER_BLOB_STORE_READ_TIMEOUT", BLOBSTORAGE_READ_TIMEOUT)
+)
 try:
     from ietf.settings import MORE_STORAGE_NAMES
 except ImportError:
@@ -331,7 +340,12 @@ else:
                 access_key=_blob_store_access_key,
                 secret_key=_blob_store_secret_key,
                 security_token=None,
-                client_config=botocore.config.Config(signature_version="s3v4"),
+                client_config=botocore.config.Config(
+                    signature_version="s3v4",
+                    connect_timeout=_blob_store_connect_timeout,
+                    read_timeout=_blob_store_read_timeout,
+                    retries={"total_max_attempts": _blob_store_max_attempts},
+                ),
                 bucket_name=f"{_blob_store_bucket_prefix}{storage_name}".strip(),
                 ietf_log_blob_timing=_blob_store_enable_profiling,
             ),

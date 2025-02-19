@@ -123,7 +123,12 @@ for storagename in MORE_STORAGE_NAMES:
             access_key=_blob_store_access_key,
             secret_key=_blob_store_secret_key,
             security_token=None,
-            client_config=botocore.config.Config(signature_version="s3v4"),
+            client_config=botocore.config.Config(
+                signature_version="s3v4",
+                connect_timeout=BLOBSTORAGE_CONNECT_TIMEOUT,
+                read_timeout=BLOBSTORAGE_READ_TIMEOUT,
+                retries={"total_max_attempts": BLOBSTORAGE_MAX_ATTEMPTS},
+            ),
             bucket_name=f"{_blob_store_bucket_prefix}{storagename}",
             ietf_log_blob_timing=_blob_store_enable_profiling,
         ),
