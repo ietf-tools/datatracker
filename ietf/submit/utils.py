@@ -646,6 +646,7 @@ def cancel_submission(submission):
 
 
 def rename_submission_files(submission, prev_rev, new_rev):
+    log.unreachable("2025-2-19")
     for ext in settings.IDSUBMIT_FILE_TYPES:
         staging_path = Path(settings.IDSUBMIT_STAGING_PATH) 
         source = staging_path / f"{submission.name}-{prev_rev}.{ext}"
