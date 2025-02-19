@@ -379,6 +379,8 @@ class LiaisonModelForm(forms.ModelForm):
             attach_file = io.open(os.path.join(settings.LIAISON_ATTACH_PATH, attach.name + extension), 'wb')
             attach_file.write(attached_file.read())
             attach_file.close()
+            attached_file.seek(0)
+            attach.store_file(attach.uploaded_filename, attached_file)
 
             if not self.is_new:
                 # create modified event

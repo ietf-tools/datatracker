@@ -1510,7 +1510,7 @@ def update_or_create_draft_bibxml_file(doc, rev):
         existing_bibxml = ""
     if normalized_bibxml.strip() != existing_bibxml.strip():
         log.log(f"Writing {ref_rev_file_path}")
-        ref_rev_file_path.write_text(normalized_bibxml, encoding="utf8")
+        ref_rev_file_path.write_text(normalized_bibxml, encoding="utf8") # TODO-BLOBSTORE
 
 
 def ensure_draft_bibxml_path_exists():

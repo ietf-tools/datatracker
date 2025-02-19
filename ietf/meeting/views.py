@@ -52,6 +52,7 @@ import debug                            # pyflakes:ignore
 
 from ietf.doc.fields import SearchableDocumentsField
 from ietf.doc.models import Document, State, DocEvent, NewRevisionDocEvent
+from ietf.doc.storage_utils import remove_from_storage, retrieve_bytes, store_file
 from ietf.group.models import Group
 from ietf.group.utils import can_manage_session_materials, can_manage_some_groups, can_manage_group
 from ietf.person.models import Person, User
@@ -3091,6 +3092,8 @@ def upload_session_slides(request, session_id, num, name=None):
                 for chunk in file.chunks():
                     destination.write(chunk)
                 destination.close()
+                file.seek(0)
+                store_file("staging", filename, file)
 
                 submission.filename = filename
                 submission.save()
@@ -4645,7 +4648,6 @@ def api_upload_bluesheet(request):
         save_err = save_bluesheet(request, session, file)
     if save_err:
         return err(400, save_err)
-
     return HttpResponse("Done", status=200, content_type='text/plain')
 
 
@@ -4957,6 +4959,8 @@ def approve_proposed_slides(request, slidesubmission_id, num):
                 if not os.path.exists(path):
                     os.makedirs(path)
                 shutil.move(submission.staged_filepath(), os.path.join(path, target_filename))
+                doc.store_bytes(target_filename, retrieve_bytes("staging", submission.filename))
+                remove_from_storage("staging", submission.filename)
                 post_process(doc)
                 DocEvent.objects.create(type="approved_slides", doc=doc, rev=doc.rev, by=request.user.person, desc="Slides approved")
 
@@ -4994,11 +4998,14 @@ def approve_proposed_slides(request, slidesubmission_id, num):
                 # in a SlideSubmission object without a file.  Handle
                 # this case and keep processing the 'disapprove' even if
                 # the filename doesn't exist.
-                try:
-                    if submission.filename != None and submission.filename != '':
+
+                if submission.filename != None and submission.filename != '':
+                    try:
                         os.unlink(submission.staged_filepath())
-                except (FileNotFoundError, IsADirectoryError):
-                    pass
+                    except (FileNotFoundError, IsADirectoryError):
+                        pass
+                    remove_from_storage("staging", submission.filename)
+
                 acronym = submission.session.group.acronym
                 submission.status = SlideSubmissionStatusName.objects.get(slug='rejected')
                 submission.save()

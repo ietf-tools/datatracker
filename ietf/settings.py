@@ -183,6 +183,12 @@ STATIC_IETF_ORG = "https://static.ietf.org"
 # Server-side static.ietf.org URL (used in pdfized)
 STATIC_IETF_ORG_INTERNAL = STATIC_IETF_ORG
 
+ENABLE_BLOBSTORAGE = True
+
+BLOBSTORAGE_MAX_ATTEMPTS = 1
+BLOBSTORAGE_CONNECT_TIMEOUT = 2
+BLOBSTORAGE_READ_TIMEOUT = 2
+
 WSGI_APPLICATION = "ietf.wsgi.application"
 
 AUTHENTICATION_BACKENDS = ( 'ietf.ietfauth.backends.CaseInsensitiveModelBackend', )
@@ -735,6 +741,38 @@ URL_REGEXPS = {
     "owner": r"(?P<owner>[-A-Za-z0-9\'+._]+@[A-Za-z0-9-._]+)",
     "schedule_name": r"(?P<name>[A-Za-z0-9-:_]+)",
 }
+
+STORAGES: dict[str, Any] = {
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
+}
+
+# settings_local will need to configure storages for these names
+MORE_STORAGE_NAMES: list[str] = [
+    "bofreq",
+    "charter",
+    "conflrev",
+    "active-draft",
+    "draft",
+    "slides",
+    "minutes",
+    "agenda",
+    "bluesheets",
+    "procmaterials",
+    "narrativeminutes",
+    "statement",
+    "statchg",
+    "liai-att",
+    "chatlog",
+    "polls",
+    "staging",
+    "bibxml-ids",
+    "indexes",
+    "floorplan",
+    "meetinghostlogo",
+    "photo",
+    "review",
+]
 
 # Override this in settings_local.py if needed
 # *_PATH variables ends with a slash/ .
