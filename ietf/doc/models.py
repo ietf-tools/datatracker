@@ -12,7 +12,7 @@ import rfc2html
 from io import BufferedReader
 from pathlib import Path
 from lxml import etree
-from typing import Optional, TYPE_CHECKING, Union
+from typing import Optional, Protocol, TYPE_CHECKING, Union
 from weasyprint import HTML as wpHTML
 from weasyprint.text.fonts import FontConfiguration
 
@@ -722,23 +722,50 @@ class DocumentInfo(models.Model):
             refs_to |= self.came_from_draft().referenced_by_rfcs()
         return refs_to
     
+    class Meta:
+        abstract = True
+
+
+class HasNameRevAndTypeIdProtocol(Protocol):
+    """Typing Protocol describing a class that has name, rev, and type_id properties"""
+    @property
+    def name(self) -> str: ...
+    @property
+    def rev(self) -> str: ...
+    @property
+    def type_id(self) -> str: ...
+
+
+class StorableMixin:
+    """Mixin that adds storage helpers to a DocumentInfo subclass"""
     def store_str(
-        self, name: str, content: str, allow_overwrite: bool = False
+        self: HasNameRevAndTypeIdProtocol,
+        name: str,
+        content: str,
+        allow_overwrite: bool = False
     ) -> None:
         return utils_store_str(self.type_id, name, content, allow_overwrite, self.name, self.rev)
-        
+
     def store_bytes(
-        self, name: str, content: bytes, allow_overwrite: bool = False, doc_name: Optional[str] = None, doc_rev: Optional[str] = None
+        self: HasNameRevAndTypeIdProtocol,
+        name: str,
+        content: bytes,
+        allow_overwrite: bool = False,
+        doc_name: Optional[str] = None,
+        doc_rev: Optional[str] = None
     ) -> None:
         return utils_store_bytes(self.type_id, name, content, allow_overwrite, self.name, self.rev)
 
     def store_file(
-        self, name: str, file: Union[File,BufferedReader], allow_overwrite: bool = False, doc_name: Optional[str] = None, doc_rev: Optional[str] = None
+        self: HasNameRevAndTypeIdProtocol,
+        name: str,
+        file: Union[File, BufferedReader],
+        allow_overwrite: bool = False,
+        doc_name: Optional[str] = None,
+        doc_rev: Optional[str] = None
     ) -> None:
         return utils_store_file(self.type_id, name, file, allow_overwrite, self.name, self.rev)
 
-    class Meta:
-        abstract = True
 
 STATUSCHANGE_RELATIONS = ('tops','tois','tohist','toinf','tobcp','toexp')
 
@@ -892,7 +919,7 @@ validate_docname = RegexValidator(
     'invalid'
 )
 
-class Document(DocumentInfo):
+class Document(StorableMixin, DocumentInfo):
     name = models.CharField(max_length=255, validators=[validate_docname,], unique=True)           # immutable
     
     action_holders = models.ManyToManyField(Person, through=DocumentActionHolder, blank=True)
@@ -1214,7 +1241,7 @@ class DocHistoryAuthor(DocumentAuthorInfo):
     def __str__(self):
         return u"%s %s (%s)" % (self.document.doc.name, self.person, self.order)
 
-class DocHistory(DocumentInfo):
+class DocHistory(StorableMixin, DocumentInfo):
     doc = ForeignKey(Document, related_name="history_set")
 
     name = models.CharField(max_length=255)
