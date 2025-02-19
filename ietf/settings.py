@@ -6,7 +6,6 @@
 # BASE_DIR and "settings_local" are from
 # http://code.djangoproject.com/wiki/SplitSettings
 
-import boto3  # pyflakes:ignore
 import os
 import sys
 import datetime

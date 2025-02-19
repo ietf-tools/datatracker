@@ -14,7 +14,8 @@ import os
 import shutil
 import tempfile
 from ietf.settings import *                                          # pyflakes:ignore
-from ietf.settings import boto3, STORAGES, TEST_CODE_COVERAGE_CHECKER, MORE_STORAGE_NAMES
+from ietf.settings import STORAGES, TEST_CODE_COVERAGE_CHECKER, MORE_STORAGE_NAMES
+import botocore.config
 import debug                            # pyflakes:ignore
 debug.debug = True
 
@@ -122,7 +123,7 @@ for storagename in MORE_STORAGE_NAMES:
             access_key=_blob_store_access_key,
             secret_key=_blob_store_secret_key,
             security_token=None,
-            client_config=boto3.session.Config(
+            client_config=botocore.config.Config(
                 signature_version="s3v4",
                 connect_timeout=BLOBSTORAGE_CONNECT_TIMEOUT,
                 read_timeout=BLOBSTORAGE_READ_TIMEOUT,

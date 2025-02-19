@@ -7,7 +7,7 @@ from contextlib import contextmanager
 from hashlib import sha384
 from io import BufferedReader
 from storages.backends.s3 import S3Storage
-from typing import Dict, Optional, Union
+from typing import Optional, Union
 
 from django.core.files.base import File
 
@@ -51,7 +51,7 @@ def maybe_log_timing(enabled, op, **kwargs):
 class CustomS3Storage(S3Storage):
 
     def __init__(self, **settings):
-        self.in_flight_custom_metadata: Dict[str, Dict[str, str]] = {}
+        self.in_flight_custom_metadata = {}  # type is Dict[str, Dict[str, str]]
         super().__init__(**settings)
 
     def get_default_settings(self):

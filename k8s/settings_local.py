@@ -329,7 +329,8 @@ try:
 except ImportError:
     pass  # Don't fail if MORE_STORAGE_NAMES is not there, just don't configure it
 else:
-    from ietf.settings import boto3, STORAGES  # do fail if these aren't found!
+    from ietf.settings import STORAGES  # do fail if these aren't found!
+    import botocore.config
 
     for storage_name in MORE_STORAGE_NAMES:
         STORAGES[storage_name] = {
@@ -339,7 +340,7 @@ else:
                 access_key=_blob_store_access_key,
                 secret_key=_blob_store_secret_key,
                 security_token=None,
-                client_config=boto3.session.Config(
+                client_config=botocore.config.Config(
                     signature_version="s3v4",
                     connect_timeout=_blob_store_connect_timeout,
                     read_timeout=_blob_store_read_timeout,
