@@ -47,7 +47,7 @@ for storagename in MORE_STORAGE_NAMES:
             access_key="minio_root",
             secret_key="minio_pass",
             security_token=None,
-            client_config=botocore.confg.Config(
+            client_config=botocore.config.Config(
                 signature_version="s3v4",
                 connect_timeout=BLOBSTORAGE_CONNECT_TIMEOUT,
                 read_timeout=BLOBSTORAGE_READ_TIMEOUT,
