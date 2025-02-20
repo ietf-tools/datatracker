@@ -24,6 +24,7 @@ from django.utils.encoding import smart_str
 import debug                            # pyflakes:ignore
 
 from ietf.dbtemplate.models import DBTemplate
+from ietf.doc.storage_utils import store_bytes, store_str
 from ietf.meeting.models import (Session, SchedulingEvent, TimeSlot,
     Constraint, SchedTimeSessAssignment, SessionPresentation, Attended)
 from ietf.doc.models import Document, State, NewRevisionDocEvent, StateDocEvent
@@ -772,7 +773,12 @@ def handle_upload_file(file, filename, meeting, subdir, request=None, encoding=N
             # Whole file sanitization; add back what's missing from a complete
             # document (sanitize will remove these).
             clean = clean_html(text)
-            destination.write(clean.encode("utf8"))
+            clean_bytes = clean.encode('utf8')
+            destination.write(clean_bytes)
+            # Assumes contents of subdir are always document type ids
+            # TODO-BLOBSTORE: see if we can refactor this so that the connection to the document isn't lost
+            # In the meantime, consider faking it by parsing filename (shudder).
+            store_bytes(subdir, filename.name, clean_bytes)
             if request and clean != text:
                 messages.warning(request,
                                  (
@@ -783,6 +789,11 @@ def handle_upload_file(file, filename, meeting, subdir, request=None, encoding=N
         else:
             for chunk in chunks:
                 destination.write(chunk)
+            file.seek(0)
+            if hasattr(file, "chunks"):
+                chunks = file.chunks()
+            # TODO-BLOBSTORE: See above question about refactoring
+            store_bytes(subdir, filename.name, b"".join(chunks))
 
     return None
 
@@ -809,13 +820,15 @@ def new_doc_for_session(type_id, session):
     session.presentations.create(document=doc,rev='00')
     return doc
 
+# TODO-BLOBSTORE - consider adding doc to this signature and factoring away type_id
 def write_doc_for_session(session, type_id, filename, contents):
     filename = Path(filename)
     path = Path(session.meeting.get_materials_path()) / type_id
     path.mkdir(parents=True, exist_ok=True)
     with open(path / filename, "wb") as file:
         file.write(contents.encode('utf-8'))
-    return
+    store_str(type_id, filename.name, contents)
+    return None
 
 def create_recording(session, url, title=None, user=None):
     '''

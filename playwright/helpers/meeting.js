@@ -395,7 +395,7 @@ module.exports = {
         name: 'Hackathon Kickoff',
         startDateTime: day1.set({ hour: 10, minute: 30 }),
         duration: '30m',
-        ...findAreaGroup('hackathon-kickoff', categories[2]),
+        ...findAreaGroup('hackathon', categories[2]),
         showAgenda: true,
         hasAgenda: true,
         hasRecordings: true,

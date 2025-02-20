@@ -38,6 +38,7 @@ from django.utils.text import slugify
 import debug           # pyflakes:ignore
 
 from ietf.doc.models import Document, NewRevisionDocEvent
+from ietf.doc.storage_utils import exists_in_storage, remove_from_storage, retrieve_bytes, retrieve_str
 from ietf.group.models import Group, Role, GroupFeatures
 from ietf.group.utils import can_manage_group
 from ietf.person.models import Person
@@ -55,6 +56,7 @@ from ietf.meeting.views import get_summary_by_area, get_summary_by_type, get_sum
 from ietf.name.models import SessionStatusName, ImportantDateName, RoleName, ProceedingsMaterialTypeName
 from ietf.utils.decorators import skip_coverage
 from ietf.utils.mail import outbox, empty_outbox, get_payload_text
+from ietf.utils.test_runner import TestBlobstoreManager
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized, unicontent
 from ietf.utils.timezone import date_today, time_now
 
@@ -112,7 +114,7 @@ class BaseMeetingTestCase(TestCase):
         # files will upload to the locations specified in settings.py.
         # Note that this will affect any use of the storage class in
         # meeting.models - i.e., FloorPlan.image and MeetingHost.logo
-        self.patcher = patch('ietf.meeting.models.NoLocationMigrationFileSystemStorage.base_location',
+        self.patcher = patch('ietf.meeting.models.BlobShadowFileSystemStorage.base_location',
                              new_callable=PropertyMock)
         mocked = self.patcher.start()
         mocked.return_value = self.storage_dir
@@ -5228,6 +5230,7 @@ class InterimTests(TestCase):
 
     def do_interim_request_single_virtual(self, emails_expected):
         make_meeting_test_data()
+        TestBlobstoreManager().emptyTestBlobstores()
         group = Group.objects.get(acronym='mars')
         date = date_today() + datetime.timedelta(days=30)
         time = time_now().replace(microsecond=0,second=0)
@@ -5278,6 +5281,12 @@ class InterimTests(TestCase):
         doc = session.materials.first()
         path = os.path.join(doc.get_file_path(),doc.filename_with_rev())
         self.assertTrue(os.path.exists(path))
+        with Path(path).open() as f:
+            self.assertEqual(f.read(), agenda)
+        self.assertEqual(
+            retrieve_str("agenda",doc.uploaded_filename),
+            agenda
+        )
         # check notices to secretariat and chairs
         self.assertEqual(len(outbox), length_before + emails_expected)
         return meeting
@@ -5299,6 +5308,7 @@ class InterimTests(TestCase):
 
     def test_interim_request_single_in_person(self):
         make_meeting_test_data()
+        TestBlobstoreManager().emptyTestBlobstores()
         group = Group.objects.get(acronym='mars')
         date = date_today() + datetime.timedelta(days=30)
         time = time_now().replace(microsecond=0,second=0)
@@ -5345,6 +5355,10 @@ class InterimTests(TestCase):
         timeslot = session.official_timeslotassignment().timeslot
         self.assertEqual(timeslot.time,dt)
         self.assertEqual(timeslot.duration,duration)
+        self.assertEqual(
+            retrieve_str("agenda",session.agenda().uploaded_filename),
+            agenda
+        )
 
     def test_interim_request_multi_day(self):
         make_meeting_test_data()
@@ -5412,6 +5426,11 @@ class InterimTests(TestCase):
         self.assertEqual(timeslot.time,dt2)
         self.assertEqual(timeslot.duration,duration)
         self.assertEqual(session.agenda_note,agenda_note)
+        for session in meeting.session_set.all():
+            self.assertEqual(
+                retrieve_str("agenda",session.agenda().uploaded_filename),
+                agenda
+            )
 
     def test_interim_request_multi_day_non_consecutive(self):
         make_meeting_test_data()
@@ -5474,6 +5493,7 @@ class InterimTests(TestCase):
 
     def test_interim_request_series(self):
         make_meeting_test_data()
+        TestBlobstoreManager().emptyTestBlobstores()
         meeting_count_before = Meeting.objects.filter(type='interim').count()
         date = date_today() + datetime.timedelta(days=30)
         if (date.month, date.day) == (12, 31):
@@ -5561,6 +5581,11 @@ class InterimTests(TestCase):
         self.assertEqual(timeslot.time,dt2)
         self.assertEqual(timeslot.duration,duration)
         self.assertEqual(session.agenda_note,agenda_note)
+        for session in meeting.session_set.all():
+            self.assertEqual(
+                retrieve_str("agenda",session.agenda().uploaded_filename),
+                agenda
+            )
 
 
     # test_interim_pending subsumed by test_appears_on_pending
@@ -6099,6 +6124,7 @@ class InterimTests(TestCase):
     def test_interim_request_edit_agenda_updates_doc(self):
         """Updating the agenda through the request edit form should update the doc correctly"""
         make_interim_test_data()
+        TestBlobstoreManager().emptyTestBlobstores()
         meeting = add_event_info_to_session_qs(Session.objects.filter(meeting__type='interim', group__acronym='mars')).filter(current_status='sched').first().meeting
         group = meeting.session_set.first().group
         url = urlreverse('ietf.meeting.views.interim_request_edit', kwargs={'number': meeting.number})
@@ -6134,6 +6160,10 @@ class InterimTests(TestCase):
         self.assertNotEqual(agenda_doc.uploaded_filename, uploaded_filename_before, 'Uploaded filename should be updated')
         with (Path(agenda_doc.get_file_path()) / agenda_doc.uploaded_filename).open() as f:
             self.assertEqual(f.read(), 'modified agenda contents', 'New agenda contents should be saved')
+        self.assertEqual(
+            retrieve_str(agenda_doc.type_id, agenda_doc.uploaded_filename),
+            "modified agenda contents"
+        )
 
     def test_interim_request_details_permissions(self):
         make_interim_test_data()
@@ -6354,12 +6384,14 @@ class MaterialsTests(TestCase):
         q = PyQuery(r.content)
         self.assertIn('Upload', str(q("title")))
         self.assertFalse(session.presentations.exists())
-        test_file = StringIO('%PDF-1.4\n%âãÏÓ\nthis is some text for a test')
+        test_content = '%PDF-1.4\n%âãÏÓ\nthis is some text for a test'
+        test_file = StringIO(test_content)
         test_file.name = "not_really.pdf"
         r = self.client.post(url,dict(file=test_file))
         self.assertEqual(r.status_code, 302)
         bs_doc = session.presentations.filter(document__type_id='bluesheets').first().document
         self.assertEqual(bs_doc.rev,'00')
+        self.assertEqual(retrieve_str("bluesheets", f"{bs_doc.name}-{bs_doc.rev}.pdf"), test_content)
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
@@ -6389,12 +6421,14 @@ class MaterialsTests(TestCase):
         q = PyQuery(r.content)
         self.assertIn('Upload', str(q("title")))
         self.assertFalse(session.presentations.exists())
-        test_file = StringIO('%PDF-1.4\n%âãÏÓ\nthis is some text for a test')
+        test_content = '%PDF-1.4\n%âãÏÓ\nthis is some text for a test'
+        test_file = StringIO(test_content)
         test_file.name = "not_really.pdf"
         r = self.client.post(url,dict(file=test_file))
         self.assertEqual(r.status_code, 302)
         bs_doc = session.presentations.filter(document__type_id='bluesheets').first().document
         self.assertEqual(bs_doc.rev,'00')
+        self.assertEqual(retrieve_str("bluesheets", f"{bs_doc.name}-{bs_doc.rev}.pdf"), test_content)
 
     def test_upload_bluesheets_interim_chair_access(self):
         make_meeting_test_data()
@@ -6467,27 +6501,36 @@ class MaterialsTests(TestCase):
             text = doc.text()
             self.assertIn('Some text', text)
             self.assertNotIn('<section>', text)
-        
+            text = retrieve_str(doctype, f"{doc.name}-{doc.rev}.html")
+            self.assertIn('Some text', text)
+            self.assertNotIn('<section>', text)
+
             # txt upload
-            test_file = BytesIO(b'This is some text for a test, with the word\nvirtual at the beginning of a line.')
+            test_bytes = b'This is some text for a test, with the word\nvirtual at the beginning of a line.'
+            test_file = BytesIO(test_bytes)
             test_file.name = "some.txt"
             r = self.client.post(url,dict(submission_method="upload",file=test_file,apply_to_all=False))
             self.assertEqual(r.status_code, 302)
             doc = session.presentations.filter(document__type_id=doctype).first().document
             self.assertEqual(doc.rev,'01')
             self.assertFalse(session2.presentations.filter(document__type_id=doctype))
+            retrieved_bytes = retrieve_bytes(doctype, f"{doc.name}-{doc.rev}.txt")
+            self.assertEqual(retrieved_bytes, test_bytes)
     
             r = self.client.get(url)
             self.assertEqual(r.status_code, 200)
             q = PyQuery(r.content)
             self.assertIn('Revise', str(q("Title")))
-            test_file = BytesIO(b'this is some different text for a test')
+            test_bytes = b'this is some different text for a test'
+            test_file = BytesIO(test_bytes)
             test_file.name = "also_some.txt"
             r = self.client.post(url,dict(submission_method="upload",file=test_file,apply_to_all=True))
             self.assertEqual(r.status_code, 302)
             doc = Document.objects.get(pk=doc.pk)
             self.assertEqual(doc.rev,'02')
             self.assertTrue(session2.presentations.filter(document__type_id=doctype))
+            retrieved_bytes = retrieve_bytes(doctype, f"{doc.name}-{doc.rev}.txt")
+            self.assertEqual(retrieved_bytes, test_bytes)
 
             # Test bad encoding
             test_file = BytesIO('<html><h1>Title</h1><section>Some\x93text</section></html>'.encode('latin1'))
@@ -6540,12 +6583,15 @@ class MaterialsTests(TestCase):
             q = PyQuery(r.content)
             self.assertIn('Upload', str(q("title")))
             self.assertFalse(session.presentations.filter(document__type_id=doctype))
-            test_file = BytesIO(b'this is some text for a test')
+            test_bytes = b'this is some text for a test'
+            test_file = BytesIO(test_bytes)
             test_file.name = "not_really.txt"
             r = self.client.post(url,dict(submission_method="upload",file=test_file))
             self.assertEqual(r.status_code, 302)
             doc = session.presentations.filter(document__type_id=doctype).first().document
             self.assertEqual(doc.rev,'00')
+            retrieved_bytes = retrieve_bytes(doctype, f"{doc.name}-{doc.rev}.txt")
+            self.assertEqual(retrieved_bytes, test_bytes)
 
             # Verify that we don't have dead links
             url = urlreverse('ietf.meeting.views.session_details', kwargs={'num':session.meeting.number, 'acronym': session.group.acronym})
@@ -6567,12 +6613,15 @@ class MaterialsTests(TestCase):
             q = PyQuery(r.content)
             self.assertIn('Upload', str(q("title")))
             self.assertFalse(session.presentations.filter(document__type_id=doctype))
-            test_file = BytesIO(b'this is some text for a test')
+            test_bytes = b'this is some text for a test'
+            test_file = BytesIO(test_bytes)
             test_file.name = "not_really.txt"
             r = self.client.post(url,dict(submission_method="upload",file=test_file))
             self.assertEqual(r.status_code, 302)
             doc = session.presentations.filter(document__type_id=doctype).first().document
             self.assertEqual(doc.rev,'00')
+            retrieved_bytes = retrieve_bytes(doctype, f"{doc.name}-{doc.rev}.txt")
+            self.assertEqual(retrieved_bytes, test_bytes)
 
             # Verify that we don't have dead links
             url = urlreverse('ietf.meeting.views.session_details', kwargs={'num':session.meeting.number, 'acronym': session.group.acronym})
@@ -6597,18 +6646,22 @@ class MaterialsTests(TestCase):
         self.assertRedirects(r, redirect_url)
         doc = session.presentations.filter(document__type_id='agenda').first().document
         self.assertEqual(doc.rev,'00')
+        self.assertEqual(retrieve_str("agenda",f"{doc.name}-{doc.rev}.md"), test_text)
 
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertIn('Revise', str(q("Title")))
 
-        test_file = BytesIO(b'Upload after enter')
+        test_bytes = b'Upload after enter'
+        test_file = BytesIO(test_bytes)
         test_file.name = "some.txt"
         r = self.client.post(url,dict(submission_method="upload",file=test_file))
         self.assertRedirects(r, redirect_url)
         doc = Document.objects.get(pk=doc.pk)
         self.assertEqual(doc.rev,'01')
+        retrieved_bytes = retrieve_bytes("agenda", f"{doc.name}-{doc.rev}.txt")
+        self.assertEqual(retrieved_bytes, test_bytes)
 
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
@@ -6620,6 +6673,8 @@ class MaterialsTests(TestCase):
         self.assertRedirects(r, redirect_url)
         doc = Document.objects.get(pk=doc.pk)
         self.assertEqual(doc.rev,'02')
+        self.assertEqual(retrieve_str("agenda",f"{doc.name}-{doc.rev}.md"), test_text)
+
 
     @override_settings(MEETECHO_API_CONFIG="fake settings")  # enough to trigger API calls
     @patch("ietf.meeting.views.SlidesManager")
@@ -6635,7 +6690,8 @@ class MaterialsTests(TestCase):
         q = PyQuery(r.content)
         self.assertIn('Upload', str(q("title")))
         self.assertFalse(session1.presentations.filter(document__type_id='slides'))
-        test_file = BytesIO(b'this is not really a slide')
+        test_bytes = b'this is not really a slide'
+        test_file = BytesIO(test_bytes)
         test_file.name = 'not_really.txt'
         r = self.client.post(url,dict(file=test_file,title='a test slide file',apply_to_all=True,approved=True))
         self.assertEqual(r.status_code, 302)
@@ -6647,6 +6703,7 @@ class MaterialsTests(TestCase):
         self.assertEqual(mock_slides_manager_cls.call_count, 1)
         self.assertEqual(mock_slides_manager_cls.call_args, call(api_config="fake settings"))
         self.assertEqual(mock_slides_manager_cls.return_value.add.call_count, 2)
+        self.assertEqual(retrieve_bytes("slides", f"{sp.document.name}-{sp.document.rev}.txt"), test_bytes)
         # don't care which order they were called in, just that both sessions were updated
         self.assertCountEqual(
             mock_slides_manager_cls.return_value.add.call_args_list,
@@ -6658,7 +6715,8 @@ class MaterialsTests(TestCase):
         mock_slides_manager_cls.reset_mock()
 
         url = urlreverse('ietf.meeting.views.upload_session_slides',kwargs={'num':session2.meeting.number,'session_id':session2.id})
-        test_file = BytesIO(b'some other thing still not slidelike')
+        test_bytes = b'some other thing still not slidelike'
+        test_file = BytesIO(test_bytes)
         test_file.name = 'also_not_really.txt'
         r = self.client.post(url,dict(file=test_file,title='a different slide file',apply_to_all=False,approved=True))
         self.assertEqual(r.status_code, 302)
@@ -6671,6 +6729,7 @@ class MaterialsTests(TestCase):
         self.assertEqual(mock_slides_manager_cls.call_count, 1)
         self.assertEqual(mock_slides_manager_cls.call_args, call(api_config="fake settings"))
         self.assertEqual(mock_slides_manager_cls.return_value.add.call_count, 1)
+        self.assertEqual(retrieve_bytes("slides", f"{sp.document.name}-{sp.document.rev}.txt"), test_bytes)
         self.assertEqual(
             mock_slides_manager_cls.return_value.add.call_args,
             call(session=session2, slides=sp.document, order=2),
@@ -6682,7 +6741,8 @@ class MaterialsTests(TestCase):
         self.assertTrue(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertIn('Revise', str(q("title")))
-        test_file = BytesIO(b'new content for the second slide deck')
+        test_bytes = b'new content for the second slide deck'
+        test_file = BytesIO(test_bytes)
         test_file.name = 'doesnotmatter.txt'
         r = self.client.post(url,dict(file=test_file,title='rename the presentation',apply_to_all=False, approved=True))
         self.assertEqual(r.status_code, 302)
@@ -6692,6 +6752,7 @@ class MaterialsTests(TestCase):
         self.assertEqual(replacement_sp.rev,'01')
         self.assertEqual(replacement_sp.document.rev,'01')
         self.assertEqual(mock_slides_manager_cls.call_count, 1)
+        self.assertEqual(retrieve_bytes("slides", f"{replacement_sp.document.name}-{replacement_sp.document.rev}.txt"), test_bytes)
         self.assertEqual(mock_slides_manager_cls.call_args, call(api_config="fake settings"))
         self.assertEqual(mock_slides_manager_cls.return_value.revise.call_count, 1)
         self.assertEqual(
@@ -6771,7 +6832,6 @@ class MaterialsTests(TestCase):
         self.assertEqual(2, agenda.docevent_set.count())
         self.assertFalse(mock_slides_manager_cls.called)
 
-
     def test_propose_session_slides(self):
         for type_id in ['ietf','interim']:
             session = SessionFactory(meeting__type_id=type_id)
@@ -6798,7 +6858,8 @@ class MaterialsTests(TestCase):
             login_testing_unauthorized(self,newperson.user.username,upload_url)
             r = self.client.get(upload_url)
             self.assertEqual(r.status_code,200)
-            test_file = BytesIO(b'this is not really a slide')
+            test_bytes = b'this is not really a slide'
+            test_file = BytesIO(test_bytes)
             test_file.name = 'not_really.txt'
             empty_outbox()
             r = self.client.post(upload_url,dict(file=test_file,title='a test slide file',apply_to_all=True,approved=False))
@@ -6806,6 +6867,10 @@ class MaterialsTests(TestCase):
             session = Session.objects.get(pk=session.pk)
             self.assertEqual(session.slidesubmission_set.count(),1)
             self.assertEqual(len(outbox),1)
+            self.assertEqual(
+                retrieve_bytes("staging", session.slidesubmission_set.get().filename),
+                test_bytes
+            )
 
             r = self.client.get(session_overview_url)
             self.assertEqual(r.status_code, 200)
@@ -6825,13 +6890,20 @@ class MaterialsTests(TestCase):
             login_testing_unauthorized(self,chair.user.username,upload_url)
             r = self.client.get(upload_url)
             self.assertEqual(r.status_code,200)
-            test_file = BytesIO(b'this is not really a slide either')
+            test_bytes = b'this is not really a slide either'
+            test_file = BytesIO(test_bytes)
             test_file.name = 'again_not_really.txt'
             empty_outbox()
             r = self.client.post(upload_url,dict(file=test_file,title='a selfapproved test slide file',apply_to_all=True,approved=True))
             self.assertEqual(r.status_code, 302)
             self.assertEqual(len(outbox),0)
             self.assertEqual(session.slidesubmission_set.count(),2)
+            sp = session.presentations.get(document__title__contains="selfapproved")
+            self.assertFalse(exists_in_storage("staging", sp.document.uploaded_filename))
+            self.assertEqual(
+                retrieve_bytes("slides", sp.document.uploaded_filename),
+                test_bytes
+            )
             self.client.logout()
 
             self.client.login(username=chair.user.username, password=chair.user.username+"+password")
@@ -6854,6 +6926,8 @@ class MaterialsTests(TestCase):
         self.assertEqual(r.status_code,302)
         self.assertEqual(SlideSubmission.objects.filter(status__slug = 'rejected').count(), 1)
         self.assertEqual(SlideSubmission.objects.filter(status__slug = 'pending').count(), 0)
+        if submission.filename is not None and submission.filename != "":
+            self.assertFalse(exists_in_storage("staging", submission.filename))
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         self.assertRegex(r.content.decode(), r"These\s+slides\s+have\s+already\s+been\s+rejected")
@@ -6872,6 +6946,7 @@ class MaterialsTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code,200)
         empty_outbox()
+        self.assertTrue(exists_in_storage("staging", submission.filename))
         r = self.client.post(url,dict(title='different title',approve='approve'))
         self.assertEqual(r.status_code,302)
         self.assertEqual(SlideSubmission.objects.filter(status__slug = 'pending').count(), 0)
@@ -6881,6 +6956,8 @@ class MaterialsTests(TestCase):
         self.assertIsNotNone(submission.doc)
         self.assertEqual(session.presentations.count(),1)
         self.assertEqual(session.presentations.first().document.title,'different title')
+        self.assertTrue(exists_in_storage("slides", submission.doc.uploaded_filename))
+        self.assertFalse(exists_in_storage("staging", submission.filename))
         self.assertEqual(mock_slides_manager_cls.call_count, 1)
         self.assertEqual(mock_slides_manager_cls.call_args, call(api_config="fake settings"))
         self.assertEqual(mock_slides_manager_cls.return_value.add.call_count, 1)
@@ -6900,6 +6977,7 @@ class MaterialsTests(TestCase):
     @override_settings(MEETECHO_API_CONFIG="fake settings")  # enough to trigger API calls
     @patch("ietf.meeting.views.SlidesManager")
     def test_approve_proposed_slides_multisession_apply_one(self, mock_slides_manager_cls):
+        TestBlobstoreManager().emptyTestBlobstores()
         submission = SlideSubmissionFactory(session__meeting__type_id='ietf')
         session1 = submission.session
         session2 = SessionFactory(group=submission.session.group, meeting=submission.session.meeting)
@@ -6928,6 +7006,7 @@ class MaterialsTests(TestCase):
     @override_settings(MEETECHO_API_CONFIG="fake settings")  # enough to trigger API calls
     @patch("ietf.meeting.views.SlidesManager")
     def test_approve_proposed_slides_multisession_apply_all(self, mock_slides_manager_cls):
+        TestBlobstoreManager().emptyTestBlobstores()
         submission = SlideSubmissionFactory(session__meeting__type_id='ietf')
         session1 = submission.session
         session2 = SessionFactory(group=submission.session.group, meeting=submission.session.meeting)
@@ -6972,12 +7051,15 @@ class MaterialsTests(TestCase):
 
         submission = SlideSubmission.objects.get(session=session)
 
+        self.assertTrue(exists_in_storage("staging", submission.filename))
         approve_url = urlreverse('ietf.meeting.views.approve_proposed_slides', kwargs={'slidesubmission_id':submission.pk,'num':submission.session.meeting.number})
         login_testing_unauthorized(self, chair.user.username, approve_url)
         r = self.client.post(approve_url,dict(title=submission.title,approve='approve'))
         submission.refresh_from_db()
         self.assertEqual(r.status_code,302)
         self.client.logout()
+        self.assertFalse(exists_in_storage("staging", submission.filename))
+        self.assertTrue(exists_in_storage("slides", submission.doc.uploaded_filename))
         self.assertEqual(mock_slides_manager_cls.call_count, 1)
         self.assertEqual(mock_slides_manager_cls.call_args, call(api_config="fake settings"))
         self.assertEqual(mock_slides_manager_cls.return_value.add.call_count, 1)
@@ -7003,11 +7085,16 @@ class MaterialsTests(TestCase):
 
         (first_submission, second_submission) = SlideSubmission.objects.filter(session=session, status__slug = 'pending').order_by('id')
 
+        self.assertTrue(exists_in_storage("staging", first_submission.filename))
+        self.assertTrue(exists_in_storage("staging", second_submission.filename))
         approve_url = urlreverse('ietf.meeting.views.approve_proposed_slides', kwargs={'slidesubmission_id':second_submission.pk,'num':second_submission.session.meeting.number})
         login_testing_unauthorized(self, chair.user.username, approve_url)
         r = self.client.post(approve_url,dict(title=submission.title,approve='approve'))
         first_submission.refresh_from_db()
         second_submission.refresh_from_db()
+        self.assertTrue(exists_in_storage("staging", first_submission.filename))
+        self.assertFalse(exists_in_storage("staging", second_submission.filename))
+        self.assertTrue(exists_in_storage("slides", second_submission.doc.uploaded_filename))
         self.assertEqual(r.status_code,302)
         self.assertEqual(mock_slides_manager_cls.call_count, 1)
         self.assertEqual(mock_slides_manager_cls.call_args, call(api_config="fake settings"))
@@ -7024,6 +7111,7 @@ class MaterialsTests(TestCase):
         self.assertEqual(r.status_code,302)
         self.client.logout()
         self.assertFalse(mock_slides_manager_cls.called)
+        self.assertFalse(exists_in_storage("staging", first_submission.filename))
 
         self.assertEqual(SlideSubmission.objects.filter(status__slug = 'pending').count(),0)
         self.assertEqual(SlideSubmission.objects.filter(status__slug = 'rejected').count(),1)
@@ -7114,6 +7202,10 @@ class ImportNotesTests(TestCase):
         minutes_path = Path(self.meeting.get_materials_path()) / 'minutes'
         with (minutes_path / self.session.minutes().uploaded_filename).open() as f:
             self.assertEqual(f.read(), 'original markdown text')
+        self.assertEqual(
+            retrieve_str("minutes", self.session.minutes().uploaded_filename),
+            'original markdown text'
+        )
 
     def test_refuses_identical_import(self):
         """Should not be able to import text identical to the current revision"""
@@ -7173,7 +7265,9 @@ class ImportNotesTests(TestCase):
         # remove the file uploaded for the first rev
         minutes_docs = self.session.presentations.filter(document__type='minutes')
         self.assertEqual(minutes_docs.count(), 1)
-        Path(minutes_docs.first().document.get_file_name()).unlink()
+        to_remove = Path(minutes_docs.first().document.get_file_name())
+        to_remove.unlink()
+        remove_from_storage("minutes", to_remove.name)
 
         self.assertEqual(r.status_code, 302)
         with requests_mock.Mocker() as mock:

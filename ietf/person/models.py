@@ -29,7 +29,7 @@ import debug                            # pyflakes:ignore
 from ietf.name.models import ExtResourceName
 from ietf.person.name import name_parts, initials, plain_name
 from ietf.utils.mail import send_mail_preformatted
-from ietf.utils.storage import NoLocationMigrationFileSystemStorage
+from ietf.utils.storage import BlobShadowFileSystemStorage
 from ietf.utils.mail import formataddr
 from ietf.person.name import unidecode_name
 from ietf.utils import log
@@ -60,8 +60,18 @@ class Person(models.Model):
     pronouns_selectable = jsonfield.JSONCharField("Pronouns", max_length=120, blank=True, null=True, default=list )
     pronouns_freetext = models.CharField(" ", max_length=30, null=True, blank=True, help_text="Optionally provide your personal pronouns. These will be displayed on your public profile page and alongside your name in Meetecho and, in future, other systems. Select any number of the checkboxes OR provide a custom string up to 30 characters.")
     biography = models.TextField(blank=True, help_text="Short biography for use on leadership pages. Use plain text or reStructuredText markup.")
-    photo = models.ImageField(storage=NoLocationMigrationFileSystemStorage(), upload_to=settings.PHOTOS_DIRNAME, blank=True, default=None)
-    photo_thumb = models.ImageField(storage=NoLocationMigrationFileSystemStorage(), upload_to=settings.PHOTOS_DIRNAME, blank=True, default=None)
+    photo = models.ImageField(
+        storage=BlobShadowFileSystemStorage(kind="photo"),
+        upload_to=settings.PHOTOS_DIRNAME,
+        blank=True,
+        default=None,
+    )
+    photo_thumb = models.ImageField(
+        storage=BlobShadowFileSystemStorage(kind="photo"),
+        upload_to=settings.PHOTOS_DIRNAME,
+        blank=True,
+        default=None,
+    )
     name_from_draft = models.CharField("Full Name (from submission)", null=True, max_length=255, editable=False, help_text="Name as found in an Internet-Draft submission.")
 
     def __str__(self):

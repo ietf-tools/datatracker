@@ -36,6 +36,7 @@ from ietf.doc.models import ( Document, State, DocEvent, SubmissionDocEvent,
     DocumentAuthor, AddedMessageEvent )
 from ietf.doc.models import NewRevisionDocEvent
 from ietf.doc.models import RelatedDocument, DocRelationshipName, DocExtResource
+from ietf.doc.storage_utils import remove_from_storage, retrieve_bytes, store_bytes, store_file, store_str
 from ietf.doc.utils import (add_state_change_event, rebuild_reference_relations,
     set_replaces_for_document, prettify_std_name, update_doc_extresources, 
     can_edit_docextresources, update_documentauthors, update_action_holders,
@@ -455,6 +456,7 @@ def post_submission(request, submission, approved_doc_desc, approved_subm_desc):
         from ietf.doc.expire import move_draft_files_to_archive
         move_draft_files_to_archive(draft, prev_rev)
 
+    submission.draft = draft
     move_files_to_repository(submission)
     submission.state = DraftSubmissionStateName.objects.get(slug="posted")
     log.log(f"{submission.name}: moved files")
@@ -488,7 +490,6 @@ def post_submission(request, submission, approved_doc_desc, approved_subm_desc):
     if new_possibly_replaces:
         send_review_possibly_replaces_request(request, draft, submitter_info)
 
-    submission.draft = draft
     submission.save()
 
     create_submission_event(request, submission, approved_subm_desc)
@@ -498,6 +499,7 @@ def post_submission(request, submission, approved_doc_desc, approved_subm_desc):
     ref_rev_file_name = os.path.join(os.path.join(settings.BIBXML_BASE_PATH, 'bibxml-ids'), 'reference.I-D.%s-%s.xml' % (draft.name, draft.rev ))
     with io.open(ref_rev_file_name, "w", encoding='utf-8') as f:
         f.write(ref_text)
+    store_str("bibxml-ids", f"reference.I-D.{draft.name}-{draft.rev}.txt", ref_text) # TODO-BLOBSTORE verify with test
 
     log.log(f"{submission.name}: done")
     
@@ -646,6 +648,7 @@ def cancel_submission(submission):
 
 
 def rename_submission_files(submission, prev_rev, new_rev):
+    log.unreachable("2025-2-19")
     for ext in settings.IDSUBMIT_FILE_TYPES:
         staging_path = Path(settings.IDSUBMIT_STAGING_PATH) 
         source = staging_path / f"{submission.name}-{prev_rev}.{ext}"
@@ -665,26 +668,29 @@ def move_files_to_repository(submission):
             ftp_dest = Path(settings.FTP_DIR) / "internet-drafts" / dest.name
             os.link(dest, all_archive_dest)
             os.link(dest, ftp_dest)
+            # Shadow what's happening to the fs in the blobstores. When the stores become
+            # authoritative, the source and dest checks will need to apply to the stores instead.
+            content_bytes = retrieve_bytes("staging", fname)
+            store_bytes("active-draft", f"{ext}/{fname}", content_bytes)
+            submission.draft.store_bytes(f"{ext}/{fname}", content_bytes)
+            remove_from_storage("staging", fname)
         elif dest.exists():
             log.log("Intended to move '%s' to '%s', but found source missing while destination exists.")
         elif f".{ext}" in submission.file_types.split(','):
             raise ValueError("Intended to move '%s' to '%s', but found source and destination missing.")
 
 
-def remove_staging_files(name, rev, exts=None):
-    """Remove staging files corresponding to a submission
-    
-    exts is a list of extensions to be removed. If None, defaults to settings.IDSUBMIT_FILE_TYPES.
-    """
-    if exts is None:
-        exts = [f'.{ext}' for ext in settings.IDSUBMIT_FILE_TYPES]
+def remove_staging_files(name, rev):
+    """Remove staging files corresponding to a submission"""
     basename = pathlib.Path(settings.IDSUBMIT_STAGING_PATH) / f'{name}-{rev}' 
+    exts = [f'.{ext}' for ext in settings.IDSUBMIT_FILE_TYPES]
     for ext in exts:
         basename.with_suffix(ext).unlink(missing_ok=True)
+        remove_from_storage("staging", basename.with_suffix(ext).name, warn_if_missing=False)
 
 
 def remove_submission_files(submission):
-    remove_staging_files(submission.name, submission.rev, submission.file_types.split(','))
+    remove_staging_files(submission.name, submission.rev)
 
 
 def approvable_submissions_for_user(user):
@@ -769,6 +775,8 @@ def save_files(form):
             for chunk in f.chunks():
                 destination.write(chunk)
         log.log("saved file %s" % name)
+        f.seek(0)
+        store_file("staging", f"{form.filename}-{form.revision}.{ext}", f)
     return file_name
 
 
@@ -991,6 +999,10 @@ def render_missing_formats(submission):
                 xml_version,
             )
         )
+        # When the blobstores become autoritative - the guard at the
+        # containing if statement needs to be based on the store
+        with Path(txt_path).open("rb") as f:
+            store_file("staging", f"{submission.name}-{submission.rev}.txt", f)
 
     # --- Convert to html ---
     html_path = staging_path(submission.name, submission.rev, '.html')
@@ -1013,6 +1025,8 @@ def render_missing_formats(submission):
             xml_version,
         )
     )
+    with Path(html_path).open("rb") as f:
+        store_file("staging", f"{submission.name}-{submission.rev}.html", f)
 
 
 def accept_submission(submission: Submission, request: Optional[HttpRequest] = None, autopost=False):
@@ -1364,6 +1378,7 @@ def process_and_validate_submission(submission):
     except SubmissionError:
         raise  # pass SubmissionErrors up the stack
     except Exception as err:
+        # (this is a good point to just `raise err` when diagnosing Submission test failures)
         # convert other exceptions into SubmissionErrors
         log.log(f'Unexpected exception while processing submission {submission.pk}.')
         log.log(traceback.format_exc())

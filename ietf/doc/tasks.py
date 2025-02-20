@@ -84,7 +84,7 @@ def generate_idnits2_rfc_status_task():
     outpath = Path(settings.DERIVED_DIR) / "idnits2-rfc-status"
     blob = generate_idnits2_rfc_status()
     try:
-        outpath.write_text(blob, encoding="utf8")
+        outpath.write_text(blob, encoding="utf8") # TODO-BLOBSTORE
     except Exception as e:
         log.log(f"failed to write idnits2-rfc-status: {e}")
 
@@ -94,7 +94,7 @@ def generate_idnits2_rfcs_obsoleted_task():
     outpath = Path(settings.DERIVED_DIR) / "idnits2-rfcs-obsoleted"
     blob = generate_idnits2_rfcs_obsoleted()
     try:
-        outpath.write_text(blob, encoding="utf8")
+        outpath.write_text(blob, encoding="utf8") # TODO-BLOBSTORE
     except Exception as e:
         log.log(f"failed to write idnits2-rfcs-obsoleted: {e}")
 

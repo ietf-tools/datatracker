@@ -48,6 +48,8 @@ import pathlib
 import subprocess
 import tempfile
 import copy
+import boto3
+import botocore.config
 import factory.random
 import urllib3
 import warnings
@@ -84,6 +86,8 @@ import ietf.utils.mail
 from ietf.utils.management.commands import pyflakes
 from ietf.utils.test_smtpserver import SMTPTestServerDriver
 from ietf.utils.test_utils import TestCase
+
+from mypy_boto3_s3.service_resource import Bucket
 
 
 loaded_templates = set()
@@ -722,9 +726,25 @@ class IetfTestRunner(DiscoverRunner):
         parser.add_argument('--rerun-until-failure',
             action='store_true', dest='rerun', default=False,
             help='Run the indicated tests in a loop until a failure occurs. ' )
+        parser.add_argument('--no-manage-blobstore', action='store_false', dest='manage_blobstore',
+                            help='Disable creating/deleting test buckets in the blob store.'
+                                 'When this argument is used, a set of buckets with "test-" prefixed to their '
+                                 'names must already exist.')
 
-    def __init__(self, ignore_lower_coverage=False, skip_coverage=False, save_version_coverage=None, html_report=None, permit_mixed_migrations=None, show_logging=None, validate_html=None, validate_html_harder=None, rerun=None, **kwargs):
-        #
+    def __init__(
+        self,
+        ignore_lower_coverage=False,
+        skip_coverage=False,
+        save_version_coverage=None,
+        html_report=None,
+        permit_mixed_migrations=None,
+        show_logging=None,
+        validate_html=None,
+        validate_html_harder=None,
+        rerun=None,
+        manage_blobstore=True,
+        **kwargs
+    ):    #
         self.ignore_lower_coverage = ignore_lower_coverage
         self.check_coverage = not skip_coverage
         self.save_version_coverage = save_version_coverage
@@ -752,6 +772,8 @@ class IetfTestRunner(DiscoverRunner):
         # contains parent classes to later subclasses, the parent classes will determine the ordering, so use the most
         # specific classes necessary to get the right ordering:
         self.reorder_by = (PyFlakesTestCase, MyPyTest,) + self.reorder_by + (StaticLiveServerTestCase, TemplateTagTest, CoverageTest,)
+        #self.buckets = set()
+        self.blobstoremanager = TestBlobstoreManager() if manage_blobstore else None
 
     def setup_test_environment(self, **kwargs):
         global template_coverage_collection
@@ -936,6 +958,9 @@ class IetfTestRunner(DiscoverRunner):
                 print(" (extra pedantically)")
                 self.vnu = start_vnu_server()
 
+        if self.blobstoremanager is not None:
+            self.blobstoremanager.createTestBlobstores()
+        
         super(IetfTestRunner, self).setup_test_environment(**kwargs)
 
     def teardown_test_environment(self, **kwargs):
@@ -965,6 +990,9 @@ class IetfTestRunner(DiscoverRunner):
                 self.config_file[kind].close()
             if self.vnu:
                 self.vnu.terminate()
+
+        if self.blobstoremanager is not None:
+            self.blobstoremanager.destroyTestBlobstores()
 
         super(IetfTestRunner, self).teardown_test_environment(**kwargs)
 
@@ -1220,3 +1248,39 @@ class IetfLiveServerTestCase(StaticLiveServerTestCase):
         for k, v in self.replaced_settings.items():
             setattr(settings, k, v)
         super().tearDown()
+
+class TestBlobstoreManager():
+    # N.B. buckets and blobstore are intentional Class-level attributes
+    buckets: set[Bucket] = set()
+
+    blobstore = boto3.resource("s3",
+        endpoint_url="http://blobstore:9000",
+        aws_access_key_id="minio_root",
+        aws_secret_access_key="minio_pass",
+        aws_session_token=None,
+        config = botocore.config.Config(signature_version="s3v4"),
+        #config=botocore.config.Config(signature_version=botocore.UNSIGNED),
+        verify=False
+    )
+
+    def createTestBlobstores(self):
+        for storagename in settings.MORE_STORAGE_NAMES:
+            bucketname = f"test-{storagename}"
+            try:
+                bucket = self.blobstore.create_bucket(Bucket=bucketname)
+                self.buckets.add(bucket)
+            except self.blobstore.meta.client.exceptions.BucketAlreadyOwnedByYou:
+                bucket = self.blobstore.Bucket(bucketname)
+                self.buckets.add(bucket)
+
+    def destroyTestBlobstores(self):
+        self.emptyTestBlobstores(destroy=True)
+
+    def emptyTestBlobstores(self, destroy=False):
+        # debug.show('f"Asked to empty test blobstores with destroy={destroy}"')
+        for bucket in self.buckets:
+            bucket.objects.delete()
+            if destroy:
+                bucket.delete()
+        if destroy:
+            self.buckets = set()

@@ -160,9 +160,11 @@ class UploadForm(forms.Form):
         filename = Path(settings.STATUS_CHANGE_PATH) / basename
         with io.open(filename, 'w', encoding='utf-8') as destination:
             if self.cleaned_data['txt']:
-                destination.write(self.cleaned_data['txt'])
+                content = self.cleaned_data['txt']
             else:
-                destination.write(self.cleaned_data['content'])
+                content = self.cleaned_data['content']
+            destination.write(content)
+            doc.store_str(basename, content)
         try:
             ftp_filename = Path(settings.FTP_DIR) / "status-changes" / basename
             os.link(filename, ftp_filename) # Path.hardlink is not available until 3.10
