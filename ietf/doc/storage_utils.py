@@ -28,7 +28,7 @@ def exists_in_storage(kind: str, name: str) -> bool:
             store = _get_storage(kind)
             return store.exists_in_storage(kind, name)
         except Exception as err:
-            log(f"Blobstore Error: Failed to test existence of {kind}:{name}: {err}")
+            log(f"Blobstore Error: Failed to test existence of {kind}:{name}: {repr(err)}")
     else:
         return False
 
@@ -39,7 +39,7 @@ def remove_from_storage(kind: str, name: str, warn_if_missing: bool = True) -> N
             store = _get_storage(kind)
             store.remove_from_storage(kind, name, warn_if_missing)
         except Exception as err:
-            log(f"Blobstore Error: Failed to remove {kind}:{name}: {err}")
+            log(f"Blobstore Error: Failed to remove {kind}:{name}: {repr(err)}")
     return None
 
 
@@ -58,7 +58,7 @@ def store_file(
             store = _get_storage(kind)
             store.store_file(kind, name, file, allow_overwrite, doc_name, doc_rev)
         except Exception as err:
-            log(f"Blobstore Error: Failed to store file {kind}:{name}: {err}")
+            log(f"Blobstore Error: Failed to store file {kind}:{name}: {repr(err)}")
     return None
 
 
@@ -75,7 +75,7 @@ def store_bytes(
             store_file(kind, name, ContentFile(content), allow_overwrite)
         except Exception as err:
             # n.b., not likely to get an exception here because store_file or store_bytes will catch it
-            log(f"Blobstore Error: Failed to store bytes to {kind}:{name}: {err}")
+            log(f"Blobstore Error: Failed to store bytes to {kind}:{name}: {repr(err)}")
     return None
 
 
@@ -93,7 +93,7 @@ def store_str(
             store_bytes(kind, name, content_bytes, allow_overwrite)
         except Exception as err:
             # n.b., not likely to get an exception here because store_file or store_bytes will catch it
-            log(f"Blobstore Error: Failed to store string to {kind}:{name}: {err}")
+            log(f"Blobstore Error: Failed to store string to {kind}:{name}: {repr(err)}")
     return None
 
 
@@ -112,7 +112,7 @@ def retrieve_bytes(kind: str, name: str) -> bytes:
                 ):
                     content = f.read()
         except Exception as err:
-            log(f"Blobstore Error: Failed to read bytes from {kind}:{name}: {err}")
+            log(f"Blobstore Error: Failed to read bytes from {kind}:{name}: {repr(err)}")
     return content
 
 
@@ -124,5 +124,5 @@ def retrieve_str(kind: str, name: str) -> str:
             # TODO-BLOBSTORE: try to decode all the different ways doc.text() does
             content = content_bytes.decode("utf-8")
         except Exception as err:
-            log(f"Blobstore Error: Failed to read string from {kind}:{name}: {err}")
+            log(f"Blobstore Error: Failed to read string from {kind}:{name}: {repr(err)}")
     return content
