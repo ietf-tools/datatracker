@@ -564,8 +564,9 @@ class StatusChangeSubmitTests(TestCase):
         ftp_filepath = Path(settings.FTP_DIR) / "status-changes" / basename
         self.assertFalse(filepath.exists())
         self.assertFalse(ftp_filepath.exists())
-        with self.assertRaises(FileNotFoundError):
-            retrieve_str("statchg",basename)
+        # TODO-BLOBSTORE: next assert is disabled because we currently suppress all exceptions 
+        # with self.assertRaises(FileNotFoundError):
+        #     retrieve_str("statchg",basename)
         r = self.client.post(url,dict(content="Some initial review text\n",submit_response="1"))
         self.assertEqual(r.status_code,302)
         doc = Document.objects.get(name='status-change-imaginary-mid-review')
