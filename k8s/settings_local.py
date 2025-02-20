@@ -317,13 +317,13 @@ _blob_store_bucket_prefix = os.environ.get(
 _blob_store_enable_profiling = (
     os.environ.get("DATATRACKER_BLOB_STORE_ENABLE_PROFILING", "false").lower() == "true"
 )
-_blob_store_max_attempts = (
+_blob_store_max_attempts = int(
     os.environ.get("DATATRACKER_BLOB_STORE_MAX_ATTEMPTS", BLOBSTORAGE_MAX_ATTEMPTS)
 )
-_blob_store_connect_timeout = (
+_blob_store_connect_timeout = float(
     os.environ.get("DATATRACKER_BLOB_STORE_CONNECT_TIMEOUT", BLOBSTORAGE_CONNECT_TIMEOUT)
 )
-_blob_store_read_timeout = (
+_blob_store_read_timeout = float(
     os.environ.get("DATATRACKER_BLOB_STORE_READ_TIMEOUT", BLOBSTORAGE_READ_TIMEOUT)
 )
 for storage_name in MORE_STORAGE_NAMES:
