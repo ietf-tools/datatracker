@@ -29,8 +29,7 @@ def exists_in_storage(kind: str, name: str) -> bool:
             return store.exists_in_storage(kind, name)
         except Exception as err:
             log(f"Blobstore Error: Failed to test existence of {kind}:{name}: {repr(err)}")
-    else:
-        return False
+    return False
 
 
 def remove_from_storage(kind: str, name: str, warn_if_missing: bool = True) -> None:
