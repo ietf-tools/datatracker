@@ -128,7 +128,7 @@ class ReverseRelatedRfcSerializer(serializers.Serializer):
 
 class RfcMetadataSerializer(serializers.ModelSerializer):
     """Serialize metadata of an RFC"""
-    RFC_FORMATS = ("xml", "txt", "html", "htmlized", "pdf")
+    RFC_FORMATS = ("xml", "txt", "html", "htmlized", "pdf", "ps")
 
     number = serializers.IntegerField(source="rfc_number")
     published = serializers.DateField()
