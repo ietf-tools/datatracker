@@ -1,4 +1,4 @@
-{% load humanize tz %}{% autoescape off %}{% timezone schedule.meeting.tz %}{% with tzname=schedule.meeting.time_zone|lower %}{% load ietf_filters textfilters %}{% load cache %}{% cache 1800 ietf_meeting_agenda_ics schedule.meeting.number request.path request.GET %}BEGIN:VCALENDAR
+{% load humanize tz %}{% autoescape off %}{% timezone schedule.meeting.tz %}{% with tzname=schedule.meeting.time_zone %}{% load ietf_filters textfilters %}{% load cache %}{% cache 1800 ietf_meeting_agenda_ics schedule.meeting.number request.path request.GET %}BEGIN:VCALENDAR
 VERSION:2.0
 METHOD:PUBLISH
 PRODID:-//IETF//datatracker.ietf.org ical agenda//EN
