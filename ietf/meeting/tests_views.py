@@ -385,7 +385,20 @@ class MeetingTests(BaseMeetingTestCase):
         assert_ical_response_is_valid(self, r)
         self.assertContains(r, "BEGIN:VTIMEZONE")
         self.assertContains(r, "END:VTIMEZONE")
-
+        self.assertContains(r, meeting.time_zone, msg_prefix="time_zone should appear in its original case")
+        self.assertNotEqual(
+            meeting.time_zone,
+            meeting.time_zone.lower(),
+            "meeting needs a mixed-case tz for this test",
+        )
+        self.assertNotContains(r, meeting.time_zone.lower(), msg_prefix="time_zone should not be lower-cased")
+        self.assertNotEqual(
+            meeting.time_zone,
+            meeting.time_zone.upper(),
+            "meeting needs a mixed-case tz for this test",
+        )
+        self.assertNotContains(r, meeting.time_zone.upper(), msg_prefix="time_zone should not be upper-cased")
+    
         # iCal, single group
         r = self.client.get(ical_url + "?show=" + session.group.parent.acronym.upper())
         assert_ical_response_is_valid(self, r)

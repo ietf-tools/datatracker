@@ -58,7 +58,7 @@ from ietf.utils.draft import PlaintextDraft
 from ietf.utils.mail import is_valid_email
 from ietf.utils.text import parse_unicode, normalize_text
 from ietf.utils.timezone import date_today
-from ietf.utils.xmldraft import XMLDraft
+from ietf.utils.xmldraft import InvalidMetadataError, XMLDraft
 from ietf.person.name import unidecode_name
 
 
@@ -1201,6 +1201,11 @@ def process_submission_xml(filename, revision):
     if not title:
         raise SubmissionError("Could not extract a valid title from the XML")
     
+    try:
+        document_date = xml_draft.get_creation_date()
+    except InvalidMetadataError as err:
+        raise SubmissionError(str(err)) from err
+
     return {
         "filename": xml_draft.filename,
         "rev": xml_draft.revision,
@@ -1210,7 +1215,7 @@ def process_submission_xml(filename, revision):
             for auth in xml_draft.get_author_list()
         ],
         "abstract": None,  # not supported from XML
-        "document_date": xml_draft.get_creation_date(),
+        "document_date": document_date,
         "pages": None,  # not supported from XML
         "words": None,  # not supported from XML
         "first_two_pages": None,  # not supported from XML

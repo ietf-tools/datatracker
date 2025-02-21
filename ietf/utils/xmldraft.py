@@ -159,7 +159,16 @@ class XMLDraft(Draft):
                 day = today.day
             else:
                 day = 15
-        return datetime.date(year, month, day)
+        try:
+            creation_date = datetime.date(year, month, day)
+        except Exception:
+            raise InvalidMetadataError(
+                "The <date> element in the <front> section specified an incomplete date "
+                "that was not consistent with today's date. If you specify only a year, "
+                "it must be the four-digit current year. To use today's date, omit the "
+                "date tag or use <date/>."
+            )
+        return creation_date
 
     def get_creation_date(self):
         return self.parse_creation_date(self.xmlroot.find("front/date"))
@@ -269,3 +278,7 @@ class XMLParseError(Exception):
 class InvalidXMLError(Exception):
     """File is not valid XML"""
     pass
+
+
+class InvalidMetadataError(Exception):
+    """XML is well-formed but has invalid metadata"""
