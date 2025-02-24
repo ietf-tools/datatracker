@@ -6,7 +6,7 @@
     "configurations": [
         {
             "name": "Run Server",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "python": "/usr/local/bin/python",
             "program": "${workspaceFolder}/ietf/manage.py",
@@ -24,7 +24,7 @@
         },
         {
             "name": "Run Server in Vite Dev Mode",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "python": "/usr/local/bin/python",
             "program": "${workspaceFolder}/ietf/manage.py",
@@ -42,7 +42,7 @@
         },
         {
             "name": "Run Server with Debug Toolbar",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "python": "/usr/local/bin/python",
             "program": "${workspaceFolder}/ietf/manage.py",

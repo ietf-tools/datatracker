@@ -236,6 +236,40 @@
     </ul>
 </li>
 {% endif %}
+
+{% comment %} Dropdown for quick access errata {% endcomment %}
+
+<li class="nav-item dropdown">
+    {% if flavor == "top" %}
+        <a href="#"
+           class="nav-link dropdown-toggle"
+           role="button"
+           data-bs-toggle="dropdown"
+           aria-expanded="false">
+            RFC Errata
+        </a>
+        <ul class="dropdown-menu {% if flavor == 'top' %}mt-n1{% else %}ms-n1{% endif %}">
+        {% else %}
+            <span class="fw-bolder">RFC Errata</span>
+        </li>
+    {% endif %}
+    <li>
+        <a class="dropdown-item {% if flavor != 'top' %}text-wrap{% endif %}"
+           href="{% url "ietf.doc.views_search.search" %}">
+            Submit Errata
+        </a>
+    </li>
+    <li>
+        <a class="dropdown-item {% if flavor != 'top' %}text-wrap{% endif %}"
+           href="{% url "ietf.doc.views_search.recent_drafts" %}">
+            Search for Errata
+        </a>
+    </li>
+    {% if flavor == 'top' %}
+    </ul>
+</li>
+{% endif %}
+
 <li class="nav-item dropdown">
     {% if flavor == "top" %}
         <a href="#"
