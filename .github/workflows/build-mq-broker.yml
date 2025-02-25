@@ -12,7 +12,7 @@ on:
     inputs:
       rabbitmq_version:
         description: 'RabbitMQ Version'
-        default: '3.12-alpine'
+        default: '3.13-alpine'
         required: true
         type: string
 
