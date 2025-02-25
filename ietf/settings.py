@@ -634,6 +634,7 @@ DRF_STANDARDIZED_ERRORS = {
 IDTRACKER_BASE_URL = "https://datatracker.ietf.org"
 RFCDIFF_BASE_URL = "https://author-tools.ietf.org/iddiff"
 IDNITS_BASE_URL = "https://author-tools.ietf.org/api/idnits"
+IDNITS3_BASE_URL = "https://author-tools.ietf.org/api/idnits3"
 IDNITS_SERVICE_URL = "https://author-tools.ietf.org/idnits"
 
 # Content security policy configuration (django-csp)
