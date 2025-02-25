@@ -1,0 +1,90 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: flower
+  labels:
+    deleteBeforeUpgrade: yes
+spec:
+  replicas: 1
+  revisionHistoryLimit: 2
+  selector:
+    matchLabels:
+      app: flower
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: flower
+    spec:
+      affinity:
+        podAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: app
+                    operator: In
+                    values:
+                      - datatracker
+              topologyKey: "kubernetes.io/hostname"
+      securityContext:
+        runAsNonRoot: true
+      containers:
+        # -----------------------------------------------------
+        # Flower Container
+        # -----------------------------------------------------
+        - name: flower
+          image: "ghcr.io/ietf-tools/datatracker:$APP_IMAGE_TAG"
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 5555
+              name: http
+              protocol: TCP
+          volumeMounts:
+            - name: dt-vol
+              mountPath: /a
+            - name: dt-tmp
+              mountPath: /tmp
+            - name: dt-cfg
+              mountPath: /workspace/ietf/settings_local.py
+              subPath: settings_local.py
+          env:
+            - name: "CONTAINER_ROLE"
+              value: "flower"
+          envFrom:
+            - secretRef:
+                name: dt-secrets-env
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            readOnlyRootFilesystem: true
+            runAsUser: 1000
+            runAsGroup: 1000
+      volumes:
+        # To be overridden with the actual shared volume
+        - name: dt-vol
+        - name: dt-tmp
+          emptyDir:
+            sizeLimit: "2Gi"
+        - name: dt-cfg
+          configMap:
+            name: files-cfgmap
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 600
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: flower
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app: flower
