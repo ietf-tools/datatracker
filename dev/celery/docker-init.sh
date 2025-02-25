@@ -4,7 +4,7 @@
 #
 #   CELERY_APP - name of application to pass to celery (defaults to ietf)
 #
-#   CELERY_ROLE - 'worker' or 'beat' (defaults to 'worker')
+#   CELERY_ROLE - 'worker', 'beat', or 'flower' (defaults to 'worker')
 #
 #   CELERY_UID - numeric uid for the celery worker process
 #
@@ -27,6 +27,10 @@ if [[ -n "${UPDATE_REQUIREMENTS_FROM}" ]]; then
   reqs_file="${WORKSPACEDIR}/${UPDATE_REQUIREMENTS_FROM}"
   echo "Updating requirements from ${reqs_file}..."
   pip install --upgrade -r "${reqs_file}"
+fi
+
+if [[ "${CELERY_ROLE}" == "flower" ]]; then
+    pip install --upgrade flower
 fi
 
 CELERY_OPTS=( "${CELERY_ROLE}" )
