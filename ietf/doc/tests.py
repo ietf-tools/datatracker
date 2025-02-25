@@ -1975,6 +1975,20 @@ class DocTestCase(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, doc.name)
 
+    def test_draft_feed(self):
+        doc = WgDraftFactory()
+        doc.docevent_set.filter(newrevisiondocevent__isnull=False).update(time=timezone.now())
+        StateDocEventFactory(doc=doc, time=timezone.now())
+
+        old = WgDraftFactory()
+        old.docevent_set.filter(newrevisiondocevent__isnull=False).update(time=timezone.now()-datetime.timedelta(days=8))
+        StateDocEventFactory(doc=old, time=timezone.now()-datetime.timedelta(days=8))
+
+        r = self.client.get("/feed/draft/")
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, doc.name)
+        self.assertNotContains(r, old.name)
+
     def test_rfc_feed(self):
         rfc = WgRfcFactory(rfc_number=9000)
         DocEventFactory(doc=rfc, type="published_rfc")
