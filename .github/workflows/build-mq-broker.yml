@@ -51,4 +51,4 @@ jobs:
         build-args: RABBITMQ_VERSION=${{ inputs.rabbitmq_version }}
         tags: |
           ghcr.io/ietf-tools/datatracker-mq:${{ inputs.rabbitmq_version }}
-
+          ghcr.io/ietf-tools/datatracker-mq:latest
