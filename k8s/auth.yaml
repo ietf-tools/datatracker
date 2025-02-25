@@ -122,7 +122,7 @@ spec:
             runAsUser: 65534 # "nobody" user by default
             runAsGroup: 65534  # "nogroup" group by default
       volumes:
-        # To be overriden with the actual shared volume
+        # To be overridden with the actual shared volume
         - name: dt-vol
         - name: dt-tmp
           emptyDir:
