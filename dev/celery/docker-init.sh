@@ -29,10 +29,6 @@ if [[ -n "${UPDATE_REQUIREMENTS_FROM}" ]]; then
   pip install --upgrade -r "${reqs_file}"
 fi
 
-if [[ "${CELERY_ROLE}" == "flower" ]]; then
-    pip install --upgrade flower
-fi
-
 CELERY_OPTS=( "${CELERY_ROLE}" )
 if [[ -n "${CELERY_UID}" ]]; then
   # ensure that a user with the necessary UID exists in container

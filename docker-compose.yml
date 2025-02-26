@@ -74,6 +74,8 @@ services:
             CELERY_ROLE: worker
             UPDATE_REQUIREMENTS_FROM: requirements.txt
             DEV_MODE: "yes"
+            CELERY_UID: "501"
+            CELERY_GID: "1000"
         command:
             - '--loglevel=INFO'
         depends_on:
