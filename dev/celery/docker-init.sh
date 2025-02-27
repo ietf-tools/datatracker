@@ -55,9 +55,9 @@ run_as_celery_uid () {
     if [[ -n "${CELERY_GROUP}" ]]; then
       SU_OPTS+=("-g" "${CELERY_GROUP}")
     fi
-    su "${SU_OPTS[@]}" "${CELERY_USERNAME:-root}" -s /bin/sh -c "$@"
+    su "${SU_OPTS[@]}" "${CELERY_USERNAME:-root}" -s /bin/sh -c "$*"
   else
-    /bin/sh -c "$@"
+    /bin/sh -c "$*"
   fi
 }
 
