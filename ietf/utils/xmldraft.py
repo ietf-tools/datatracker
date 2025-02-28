@@ -145,23 +145,31 @@ class XMLDraft(Draft):
 
     @staticmethod
     def parse_creation_date(date_elt):
-        if date_elt is None:
-            return None
-        today = date_today()
-        # ths mimics handling of date elements in the xml2rfc text/html writers
-        year, month, day = extract_date(date_elt, today)
-        year, month, day = augment_date(year, month, day, today)
-        if not day:
-            # Must choose a day for a datetime.date. Per RFC 7991 sect 2.17, we use
-            # today's date if it is consistent with the rest of the date. Otherwise,
-            # arbitrariy (and consistent with the text parser) assume the 15th.
-            if year == today.year and month == today.month:
-                day = today.day
-            else:
-                day = 15
+        try:
+            if date_elt is None:
+                return None
+            today = date_today()
+            # ths mimics handling of date elements in the xml2rfc text/html writers
+            year, month, day = extract_date(date_elt, today)
+            year, month, day = augment_date(year, month, day, today)
+            if not day:
+                # Must choose a day for a datetime.date. Per RFC 7991 sect 2.17, we use
+                # today's date if it is consistent with the rest of the date. Otherwise,
+                # arbitrariy (and consistent with the text parser) assume the 15th.
+                if year == today.year and month == today.month:
+                    day = today.day
+                else:
+                    day = 15
+        except:
+            # Give a generic error if anything goes wrong so far...
+            raise InvalidMetadataError(
+                "Unable to parse the <date> element in the <front> section."
+            )
         try:
             creation_date = datetime.date(year, month, day)
         except Exception:
+            # If everything went well, we should have had a valid datetime, but we didn't.
+            # The parsing _worked_ but not in a way that we can go forward with.
             raise InvalidMetadataError(
                 "The <date> element in the <front> section specified an incomplete date "
                 "that was not consistent with today's date. If you specify only a year, "
@@ -171,11 +179,7 @@ class XMLDraft(Draft):
         return creation_date
 
     def get_creation_date(self):
-        try:
-            creation_date = self.parse_creation_date(self.xmlroot.find("front/date"))
-        except InvalidMetadataError:
-            raise  # leave this alone
-        raise InvalidMetadataError("Unable to parse the <date> element in the <front> section.")
+        return self.parse_creation_date(self.xmlroot.find("front/date"))
 
     # todo fix the implementation of XMLDraft.get_abstract()
     #
