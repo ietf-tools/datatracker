@@ -171,7 +171,11 @@ class XMLDraft(Draft):
         return creation_date
 
     def get_creation_date(self):
-        return self.parse_creation_date(self.xmlroot.find("front/date"))
+        try:
+            creation_date = self.parse_creation_date(self.xmlroot.find("front/date"))
+        except InvalidMetadataError:
+            raise  # leave this alone
+        raise InvalidMetadataError("Unable to parse the <date> element in the <front> section.")
 
     # todo fix the implementation of XMLDraft.get_abstract()
     #
