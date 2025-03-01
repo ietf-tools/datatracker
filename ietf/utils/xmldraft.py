@@ -23,9 +23,11 @@ def capture_xml2rfc_output():
     parser_err = io.StringIO()
     xml2rfc.log.write_out = parser_out
     xml2rfc.log.write_err = parser_err
-    yield {"stdout": parser_out, "stderr": parser_err}
-    xml2rfc.log.write_out = orig_write_out
-    xml2rfc.log.write_err = orig_write_err
+    try:
+        yield {"stdout": parser_out, "stderr": parser_err}
+    finally:
+        xml2rfc.log.write_out = orig_write_out
+        xml2rfc.log.write_err = orig_write_err
 
 
 class XMLDraft(Draft):

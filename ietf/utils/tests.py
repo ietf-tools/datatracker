@@ -742,6 +742,7 @@ class XMLDraftTests(TestCase):
         )
 
     def test_capture_xml2rfc_output(self):
+        """capture_xml2rfc_output reroutes and captures xml2rfc logs"""
         orig_write_out = xml2rfc_log.write_out
         orig_write_err = xml2rfc_log.write_err
         with capture_xml2rfc_output() as outer_log_streams:  # ensure no output
@@ -749,6 +750,7 @@ class XMLDraftTests(TestCase):
             with capture_xml2rfc_output() as inner_log_streams:
                 # arbitrary xml2rfc method that triggers a log, nothing special otherwise
                 xml2rfc_extract_date({"year": "fish"}, datetime.date(2025,3,1))
+            self.assertNotEqual(inner_log_streams, outer_log_streams)
             self.assertEqual(xml2rfc_log.write_out, outer_log_streams["stdout"], "out stream should be restored")
             self.assertEqual(xml2rfc_log.write_err, outer_log_streams["stderr"], "err stream should be restored")
         self.assertEqual(xml2rfc_log.write_out, orig_write_out, "original out stream should be restored")
@@ -758,6 +760,19 @@ class XMLDraftTests(TestCase):
         self.assertGreater(len(inner_log_streams["stderr"].getvalue()), 0, "want output on inner streams")
         self.assertEqual(len(outer_log_streams["stdout"].getvalue()), 0, "no output on outer streams")
         self.assertEqual(len(outer_log_streams["stderr"].getvalue()), 0, "no output on outer streams")
+
+    def test_capture_xml2rfc_output_exception_handling(self):
+        """capture_xml2rfc_output restores streams after an exception"""
+        orig_write_out = xml2rfc_log.write_out
+        orig_write_err = xml2rfc_log.write_err
+        with capture_xml2rfc_output() as outer_log_streams:  # ensure no output
+            with self.assertRaises(RuntimeError), capture_xml2rfc_output() as inner_log_streams:
+                raise RuntimeError("nooo")
+            self.assertNotEqual(inner_log_streams, outer_log_streams)
+            self.assertEqual(xml2rfc_log.write_out, outer_log_streams["stdout"], "out stream should be restored")
+            self.assertEqual(xml2rfc_log.write_err, outer_log_streams["stderr"], "err stream should be restored")
+        self.assertEqual(xml2rfc_log.write_out, orig_write_out, "original out stream should be restored")
+        self.assertEqual(xml2rfc_log.write_err, orig_write_err, "original err stream should be restored")
 
 
 class NameTests(TestCase):
