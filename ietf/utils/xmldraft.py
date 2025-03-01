@@ -160,11 +160,11 @@ class XMLDraft(Draft):
                     day = today.day
                 else:
                     day = 15
-        except:
+        except Exception as err:
             # Give a generic error if anything goes wrong so far...
             raise InvalidMetadataError(
                 "Unable to parse the <date> element in the <front> section."
-            )
+            ) from err
         try:
             creation_date = datetime.date(year, month, day)
         except Exception:
