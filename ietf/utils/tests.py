@@ -57,7 +57,7 @@ from ietf.utils.test_runner import get_template_paths, set_coverage_checking
 from ietf.utils.test_utils import TestCase, unicontent
 from ietf.utils.text import parse_unicode
 from ietf.utils.timezone import timezone_not_near_midnight
-from ietf.utils.xmldraft import XMLDraft
+from ietf.utils.xmldraft import XMLDraft, InvalidMetadataError
 
 class SendingMail(TestCase):
 
@@ -590,6 +590,74 @@ class XMLDraftTests(TestCase):
                 ),
                 datetime.date(today.year, 1 if today.month != 1 else 2, 15),
             )
+            # Some exeception-inducing conditions
+            with self.assertRaises(
+                InvalidMetadataError,
+                msg="raise an InvalidMetadataError if a year-only date is not current",
+            ):
+                XMLDraft.parse_creation_date(
+                    {
+                        "year": str(today.year - 1),
+                        "month": "",
+                        "day": "",
+                    }
+                )
+            with self.assertRaises(
+                InvalidMetadataError,
+                msg="raise an InvalidMetadataError for a non-numeric year"
+            ):
+                XMLDraft.parse_creation_date(
+                    {
+                        "year": "two thousand twenty-five",
+                        "month": "2",
+                        "day": "28",
+                    }
+                )
+            with self.assertRaises(
+                InvalidMetadataError,
+                msg="raise an InvalidMetadataError for an invalid month"
+            ):
+                XMLDraft.parse_creation_date(
+                    {
+                        "year": "2024",
+                        "month": "13",
+                        "day": "28",
+                    }
+                )
+            with self.assertRaises(
+                InvalidMetadataError,
+                msg="raise an InvalidMetadataError for a misspelled month"
+            ):
+                XMLDraft.parse_creation_date(
+                    {
+                        "year": "2024",
+                        "month": "Oktobur",
+                        "day": "28",
+                    }
+                )
+            with self.assertRaises(
+                InvalidMetadataError,
+                msg="raise an InvalidMetadataError for an invalid day"
+            ):
+                XMLDraft.parse_creation_date(
+                    {
+                        "year": "2024",
+                        "month": "feb",
+                        "day": "31",
+                    }
+                )
+            with self.assertRaises(
+                InvalidMetadataError,
+                msg="raise an InvalidMetadataError for a non-numeric day"
+            ):
+                XMLDraft.parse_creation_date(
+                    {
+                        "year": "2024",
+                        "month": "feb",
+                        "day": "twenty-four",
+                    }
+                )
+
 
     def test_parse_docname(self):
         with self.assertRaises(ValueError) as cm:
