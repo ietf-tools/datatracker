@@ -145,26 +145,42 @@ class XMLDraft(Draft):
 
     @staticmethod
     def parse_creation_date(date_elt):
+        if date_elt is None:
+            return None
+
+        today = date_today()
+
+        # Outright reject non-numeric year / day (xml2rfc's extract_date does not do this)
+        # (n.b., "year" can be non-numeric in a <reference> section per RFC 7991)
+        year = date_elt.get("year")
+        day = date_elt.get("day")
+        non_numeric_year = year and not year.isdigit()
+        non_numeric_day = day and not day.isdigit()
+        if non_numeric_day or non_numeric_year:
+            raise InvalidMetadataError(
+                "Unable to parse the <date> element in the <front> section: "
+                "year and day must be numeric values if specified."
+            )
+
         try:
-            if date_elt is None:
-                return None
-            today = date_today()
             # ths mimics handling of date elements in the xml2rfc text/html writers
             year, month, day = extract_date(date_elt, today)
             year, month, day = augment_date(year, month, day, today)
-            if not day:
-                # Must choose a day for a datetime.date. Per RFC 7991 sect 2.17, we use
-                # today's date if it is consistent with the rest of the date. Otherwise,
-                # arbitrariy (and consistent with the text parser) assume the 15th.
-                if year == today.year and month == today.month:
-                    day = today.day
-                else:
-                    day = 15
         except Exception as err:
             # Give a generic error if anything goes wrong so far...
             raise InvalidMetadataError(
                 "Unable to parse the <date> element in the <front> section."
             ) from err
+
+        if not day:
+            # Must choose a day for a datetime.date. Per RFC 7991 sect 2.17, we use
+            # today's date if it is consistent with the rest of the date. Otherwise,
+            # arbitrariy (and consistent with the text parser) assume the 15th.
+            if year == today.year and month == today.month:
+                day = today.day
+            else:
+                day = 15
+
         try:
             creation_date = datetime.date(year, month, day)
         except Exception:
