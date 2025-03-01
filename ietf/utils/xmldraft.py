@@ -7,12 +7,25 @@ import xml2rfc
 
 import debug  # pyflakes: ignore
 
-from contextlib import ExitStack
+from contextlib import contextmanager
 from lxml.etree import XMLSyntaxError
 from xml2rfc.util.date import augment_date, extract_date
 from ietf.utils.timezone import date_today
 
 from .draft import Draft
+
+
+@contextmanager
+def capture_xml2rfc_output():
+    orig_write_out = xml2rfc.log.write_out
+    orig_write_err = xml2rfc.log.write_err
+    parser_out = io.StringIO()
+    parser_err = io.StringIO()
+    xml2rfc.log.write_out = parser_out
+    xml2rfc.log.write_err = parser_err
+    yield {"stdout": parser_out, "stderr": parser_err}
+    xml2rfc.log.write_out = orig_write_out
+    xml2rfc.log.write_err = orig_write_err
 
 
 class XMLDraft(Draft):
@@ -38,27 +51,18 @@ class XMLDraft(Draft):
         Converts to xml2rfc v3 schema, then returns the root of the v3 tree and the original
         xml version.
         """
-        orig_write_out = xml2rfc.log.write_out
-        orig_write_err = xml2rfc.log.write_err
-        parser_out = io.StringIO()
-        parser_err = io.StringIO()
 
-        with ExitStack() as stack:
-            @stack.callback
-            def cleanup():  # called when context exited, even if there's an exception
-                xml2rfc.log.write_out = orig_write_out
-                xml2rfc.log.write_err = orig_write_err
-
-            xml2rfc.log.write_out = parser_out
-            xml2rfc.log.write_err = parser_err
-
+        with capture_xml2rfc_output() as parser_logs:
             parser = xml2rfc.XmlRfcParser(filename, quiet=True)
             try:
                 tree = parser.parse()
             except XMLSyntaxError:
                 raise InvalidXMLError()
             except Exception as e:
-                raise XMLParseError(parser_out.getvalue(), parser_err.getvalue()) from e
+                raise XMLParseError(
+                    parser_logs["stdout"].getvalue(),
+                    parser_logs["stderr"].getvalue(),
+                ) from e
 
             xml_version = tree.getroot().get('version', '2')
             if xml_version == '2':

@@ -24,6 +24,7 @@ from importlib import import_module
 from textwrap import dedent
 from tempfile import mkdtemp
 from xml2rfc import log as xml2rfc_log
+from xml2rfc.util.date import extract_date as xml2rfc_extract_date
 
 from django.apps import apps
 from django.contrib.auth.models import User
@@ -58,7 +59,7 @@ from ietf.utils.test_runner import get_template_paths, set_coverage_checking
 from ietf.utils.test_utils import TestCase, unicontent
 from ietf.utils.text import parse_unicode
 from ietf.utils.timezone import timezone_not_near_midnight
-from ietf.utils.xmldraft import XMLDraft, InvalidMetadataError
+from ietf.utils.xmldraft import XMLDraft, InvalidMetadataError, capture_xml2rfc_output
 
 class SendingMail(TestCase):
 
@@ -510,18 +511,6 @@ class PlaintextDraftTests(TestCase):
 
 
 class XMLDraftTests(TestCase):
-    def setUp(self):
-        # suppress xml2rfc output
-        self._orig_write_out = xml2rfc_log.write_out
-        self._orig_write_err = xml2rfc_log.write_err
-        xml2rfc_log.write_out = io.StringIO()
-        xml2rfc_log.write_err = io.StringIO()
-    
-    def tearDown(self):
-        # restore xml2rfc log streams
-        xml2rfc_log.write_out = self._orig_write_out
-        xml2rfc_log.write_err = self._orig_write_err
-
     def test_get_refs_v3(self):
         draft = XMLDraft('ietf/utils/test_draft_with_references_v3.xml')
         self.assertEqual(
@@ -557,7 +546,7 @@ class XMLDraftTests(TestCase):
     def test_parse_creation_date(self):
         # override date_today to avoid skew when test runs around midnight
         today = datetime.date.today()
-        with patch("ietf.utils.xmldraft.date_today", return_value=today):
+        with capture_xml2rfc_output(), patch("ietf.utils.xmldraft.date_today", return_value=today):
             # Note: using a dict as a stand-in for XML elements, which rely on the get() method
             self.assertEqual(
                 XMLDraft.parse_creation_date({"year": "2022", "month": "11", "day": "24"}),
@@ -751,6 +740,24 @@ class XMLDraftTests(TestCase):
             )),
             "J. Q.",
         )
+
+    def test_capture_xml2rfc_output(self):
+        orig_write_out = xml2rfc_log.write_out
+        orig_write_err = xml2rfc_log.write_err
+        with capture_xml2rfc_output() as outer_log_streams:  # ensure no output
+            # such meta! very Inception!
+            with capture_xml2rfc_output() as inner_log_streams:
+                # arbitrary xml2rfc method that triggers a log, nothing special otherwise
+                xml2rfc_extract_date({"year": "fish"}, datetime.date(2025,3,1))
+            self.assertEqual(xml2rfc_log.write_out, outer_log_streams["stdout"], "out stream should be restored")
+            self.assertEqual(xml2rfc_log.write_err, outer_log_streams["stderr"], "err stream should be restored")
+        self.assertEqual(xml2rfc_log.write_out, orig_write_out, "original out stream should be restored")
+        self.assertEqual(xml2rfc_log.write_err, orig_write_err, "original err stream should be restored")
+
+        # don't happen to get any output on stdout and not paranoid enough to force some, just test stderr
+        self.assertGreater(len(inner_log_streams["stderr"].getvalue()), 0, "want output on inner streams")
+        self.assertEqual(len(outer_log_streams["stdout"].getvalue()), 0, "no output on outer streams")
+        self.assertEqual(len(outer_log_streams["stderr"].getvalue()), 0, "no output on outer streams")
 
 
 class NameTests(TestCase):
