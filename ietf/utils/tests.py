@@ -23,6 +23,7 @@ from fnmatch import fnmatch
 from importlib import import_module
 from textwrap import dedent
 from tempfile import mkdtemp
+from xml2rfc import log as xml2rfc_log
 
 from django.apps import apps
 from django.contrib.auth.models import User
@@ -509,6 +510,18 @@ class PlaintextDraftTests(TestCase):
 
 
 class XMLDraftTests(TestCase):
+    def setUp(self):
+        # suppress xml2rfc output
+        self._orig_write_out = xml2rfc_log.write_out
+        self._orig_write_err = xml2rfc_log.write_err
+        xml2rfc_log.write_out = io.StringIO()
+        xml2rfc_log.write_err = io.StringIO()
+    
+    def tearDown(self):
+        # restore xml2rfc log streams
+        xml2rfc_log.write_out = self._orig_write_out
+        xml2rfc_log.write_err = self._orig_write_err
+
     def test_get_refs_v3(self):
         draft = XMLDraft('ietf/utils/test_draft_with_references_v3.xml')
         self.assertEqual(
