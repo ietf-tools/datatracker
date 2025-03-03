@@ -1,6 +1,6 @@
 # Copyright The IETF Trust 2024, All Rights Reserved
 
-# Configure security scheme headers for forwarded requets. Cloudflare sets X-Forwarded-Proto 
+# Configure security scheme headers for forwarded requests. Cloudflare sets X-Forwarded-Proto 
 # for us. Don't trust any of the other similar headers. Only trust the header if it's coming
 # from localhost, as all legitimate traffic will reach gunicorn via co-located nginx.
 secure_scheme_headers = {"X-FORWARDED-PROTO": "https"}
