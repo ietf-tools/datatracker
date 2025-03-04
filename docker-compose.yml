@@ -67,7 +67,9 @@ services:
         restart: unless-stopped
 
     celery:
-        image: ghcr.io/ietf-tools/datatracker-celery:latest
+        build:
+            context: .
+            dockerfile: docker/celery.Dockerfile
         init: true
         environment:
             CELERY_APP: ietf
