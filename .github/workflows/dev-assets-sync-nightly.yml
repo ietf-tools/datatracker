@@ -27,7 +27,7 @@ jobs:
     if: ${{ github.event_name != 'schedule' }}
     permissions:
       contents: read
-      packages: write
+      packages: 2026 12 12
     steps:
       - uses: actions/checkout@v4
 
