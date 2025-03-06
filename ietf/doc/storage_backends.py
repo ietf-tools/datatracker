@@ -1,4 +1,5 @@
 # Copyright The IETF Trust 2025, All Rights Reserved
+from django.core.files.storage import Storage
 
 import debug  # pyflakes:ignore
 import json
@@ -9,12 +10,27 @@ from io import BufferedReader
 from storages.backends.s3 import S3Storage
 from typing import Optional, Union
 
+from django.conf import settings
 from django.core.files.base import File
 
 from ietf.doc.models import StoredObject
 from ietf.utils.log import log
 from ietf.utils.timezone import timezone
 
+
+# class MetadataFileMixin:
+#     def __init__(self, ):
+#         self.kind = kind
+#         self.allow_overwrite = allow_overwrite
+    
+
+class MetadataFile(File):
+    def __init__(self, name, file, allow_overwrite=False, doc_name=None, doc_rev=None):
+        super().__init__(file, name)
+        self.allow_overwrite = allow_overwrite
+        self.doc_name = doc_name
+        self.doc_rev = doc_rev
+        
 
 @contextmanager
 def maybe_log_timing(enabled, op, **kwargs):
@@ -58,11 +74,56 @@ class CustomS3Storage(S3Storage):
         # add a default for the ietf_log_blob_timing boolean
         return super().get_default_settings() | {"ietf_log_blob_timing": False}
 
-    def _save(self, name, content):
+    def _save(self, name, content: File):
         with maybe_log_timing(
             self.ietf_log_blob_timing, "_save", bucket_name=self.bucket_name, name=name
         ):
-            return super()._save(name, content)
+            if not isinstance(content, MetadataFile):
+                raise NotImplementedError("Only handle MetadataFile so far")
+            is_new = not self.exists_in_storage(self.bucket_name, name)
+            # debug.show('f"Asked to store {name} in {self.bucket_name}: is_new={is_new}, allow_overwrite={content.allow_overwrite}"')
+            if not content.allow_overwrite and not is_new:
+                log(f"Failed to save {self.bucket_name}:{name} - name already exists in store")
+                debug.show('f"Failed to save {self.bucket_name}:{name} - name already exists in store"')
+                # raise Exception("Not ignoring overwrite attempts while testing")
+                return "--write-failed--"  # did not save, not sure what else to return
+            else:
+                try:
+                    new_name = super()._save(name, content)
+                    now = timezone.now()
+                    record, created = StoredObject.objects.get_or_create(
+                        store=self.bucket_name,
+                        name=name,
+                        defaults=dict(
+                            sha384=self.in_flight_custom_metadata[name]["sha384"],
+                            len=int(self.in_flight_custom_metadata[name]["len"]),
+                            store_created=now,
+                            created=now,
+                            modified=now,
+                            doc_name=content.doc_name,  # Note that these are assumed to be invariant
+                            doc_rev=content.doc_rev,  # for a given name
+                        ),
+                    )
+                    if not created:
+                        record.sha384 = self.in_flight_custom_metadata[name]["sha384"]
+                        record.len = int(self.in_flight_custom_metadata[name]["len"])
+                        record.modified = now
+                        record.deleted = None
+                        record.save()
+                    if new_name != name:
+                        complaint = f"Error encountered saving '{name}' - results stored in '{new_name}' instead."
+                        log(complaint)
+                        debug.show("complaint")
+                        # Note that we are otherwise ignoring this condition - it should become an error later.
+                except Exception as e:
+                    # Log and then swallow the exception while we're learning.
+                    # Don't let failure pass so quietly when these are the autoritative bits.
+                    complaint = f"Failed to save {self.bucket_name}:{name}"
+                    log(complaint, e)
+                    debug.show('f"{complaint}: {e}"')
+                finally:
+                    del self.in_flight_custom_metadata[name]
+                return new_name
 
     def _open(self, name, mode="rb"):
         with maybe_log_timing(
@@ -89,49 +150,18 @@ class CustomS3Storage(S3Storage):
         doc_name: Optional[str] = None,
         doc_rev: Optional[str] = None,
     ):
-        is_new = not self.exists_in_storage(kind, name)
-        # debug.show('f"Asked to store {name} in {kind}: is_new={is_new}, allow_overwrite={allow_overwrite}"')
-        if not allow_overwrite and not is_new:
-            log(f"Failed to save {kind}:{name} - name already exists in store")
-            debug.show('f"Failed to save {kind}:{name} - name already exists in store"')
-            # raise Exception("Not ignoring overwrite attempts while testing")
-        else:
-            try:
-                new_name = self.save(name, file)
-                now = timezone.now()
-                record, created = StoredObject.objects.get_or_create(
-                    store=kind,
-                    name=name,
-                    defaults=dict(
-                        sha384=self.in_flight_custom_metadata[name]["sha384"],
-                        len=int(self.in_flight_custom_metadata[name]["len"]),
-                        store_created=now,
-                        created=now,
-                        modified=now,
-                        doc_name=doc_name,  # Note that these are assumed to be invariant
-                        doc_rev=doc_rev,  # for a given name
-                    ),
-                )
-                if not created:
-                    record.sha384 = self.in_flight_custom_metadata[name]["sha384"]
-                    record.len = int(self.in_flight_custom_metadata[name]["len"])
-                    record.modified = now
-                    record.deleted = None
-                    record.save()
-                if new_name != name:
-                    complaint = f"Error encountered saving '{name}' - results stored in '{new_name}' instead."
-                    log(complaint)
-                    debug.show("complaint")
-                    # Note that we are otherwise ignoring this condition - it should become an error later.
-            except Exception as e:
-                # Log and then swallow the exception while we're learning.
-                # Don't let failure pass so quietly when these are the autoritative bits.
-                complaint = f"Failed to save {kind}:{name}"
-                log(complaint, e)
-                debug.show('f"{complaint}: {e}"')
-            finally:
-                del self.in_flight_custom_metadata[name]
-        return None
+        if kind != self.bucket_name:
+            raise RuntimeError("Called store_file() for {kind} against the {self.bucket_name} Storage")
+        self.save(
+            name,
+            content=MetadataFile(
+                name=name,
+                file=file,
+                allow_overwrite=allow_overwrite,
+                doc_name=doc_name,
+                doc_rev=doc_rev,
+            )
+        )
 
     def exists_in_storage(self, kind: str, name: str) -> bool:
         try:
