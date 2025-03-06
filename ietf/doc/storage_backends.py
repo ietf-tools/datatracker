@@ -18,18 +18,13 @@ from ietf.utils.log import log
 from ietf.utils.timezone import timezone
 
 
-# class MetadataFileMixin:
-#     def __init__(self, ):
-#         self.kind = kind
-#         self.allow_overwrite = allow_overwrite
-    
-
 class MetadataFile(File):
     def __init__(self, name, file, allow_overwrite=False, doc_name=None, doc_rev=None):
         super().__init__(file, name)
         self.allow_overwrite = allow_overwrite
         self.doc_name = doc_name
         self.doc_rev = doc_rev
+        self._custom_metadata = {}
         
 
 @contextmanager
@@ -66,10 +61,6 @@ def maybe_log_timing(enabled, op, **kwargs):
 # we capture metadata for, e.g., ImageField objects
 class CustomS3Storage(S3Storage):
 
-    def __init__(self, **settings):
-        self.in_flight_custom_metadata = {}  # type is Dict[str, Dict[str, str]]
-        super().__init__(**settings)
-
     def get_default_settings(self):
         # add a default for the ietf_log_blob_timing boolean
         return super().get_default_settings() | {"ietf_log_blob_timing": False}
@@ -95,8 +86,8 @@ class CustomS3Storage(S3Storage):
                         store=self.bucket_name,
                         name=name,
                         defaults=dict(
-                            sha384=self.in_flight_custom_metadata[name]["sha384"],
-                            len=int(self.in_flight_custom_metadata[name]["len"]),
+                            sha384=content._custom_metadata["sha384"],
+                            len=int(content._custom_metadata["len"]),
                             store_created=now,
                             created=now,
                             modified=now,
@@ -105,8 +96,8 @@ class CustomS3Storage(S3Storage):
                         ),
                     )
                     if not created:
-                        record.sha384 = self.in_flight_custom_metadata[name]["sha384"]
-                        record.len = int(self.in_flight_custom_metadata[name]["len"])
+                        record.sha384 = content._custom_metadata["sha384"]
+                        record.len = int(content._custom_metadata["len"])
                         record.modified = now
                         record.deleted = None
                         record.save()
@@ -121,8 +112,6 @@ class CustomS3Storage(S3Storage):
                     complaint = f"Failed to save {self.bucket_name}:{name}"
                     log(complaint, e)
                     debug.show('f"{complaint}: {e}"')
-                finally:
-                    del self.in_flight_custom_metadata[name]
                 return new_name
 
     def _open(self, name, mode="rb"):
@@ -202,6 +191,8 @@ class CustomS3Storage(S3Storage):
         params = super()._get_write_parameters(name, content)
         if "Metadata" not in params:
             params["Metadata"] = {}
+        if not isinstance(content, MetadataFile):
+            raise NotImplementedError("Can only handle content of type MetadataFile")
         try:
             content.seek(0)
         except AttributeError:  # TODO-BLOBSTORE
@@ -218,5 +209,5 @@ class CustomS3Storage(S3Storage):
             "sha384": f"{sha384(content_bytes).hexdigest()}",
         }
         params["Metadata"].update(metadata)
-        self.in_flight_custom_metadata[name] = metadata
+        content._custom_metadata = metadata
         return params
