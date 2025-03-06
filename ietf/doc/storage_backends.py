@@ -1,5 +1,5 @@
 # Copyright The IETF Trust 2025, All Rights Reserved
-from django.core.files.storage import Storage
+from django.core.files.storage import Storage, storages
 
 import debug  # pyflakes:ignore
 import json
@@ -59,7 +59,7 @@ def maybe_log_timing(enabled, op, **kwargs):
 # TODO-BLOBSTORE
 # Consider overriding save directly so that
 # we capture metadata for, e.g., ImageField objects
-class CustomS3Storage(S3Storage):
+class StorageObjectStorageMixin:
 
     def get_default_settings(self):
         # add a default for the ietf_log_blob_timing boolean
@@ -140,7 +140,7 @@ class CustomS3Storage(S3Storage):
         doc_rev: Optional[str] = None,
     ):
         if kind != self.bucket_name:
-            raise RuntimeError("Called store_file() for {kind} against the {self.bucket_name} Storage")
+            raise RuntimeError(f"Called store_file() for {kind} against the {self.bucket_name} Storage")
         self.save(
             name,
             content=MetadataFile(
@@ -211,3 +211,37 @@ class CustomS3Storage(S3Storage):
         params["Metadata"].update(metadata)
         content._custom_metadata = metadata
         return params
+
+
+class CustomS3Storage(StorageObjectStorageMixin, S3Storage):
+    pass
+
+
+class StagedBlobStorage(StorageObjectStorageMixin, Storage):
+    """Storage using an intermediate staging step"""
+
+    def __init__(self, staging_storage: Union[str, Storage], final_storage: Union[str, Storage]):
+        self._staging_storage = staging_storage
+        self._final_storage = final_storage
+
+    @property
+    def staging_storage(self) -> Storage:
+        if isinstance(self._staging_storage, str):
+            return storages[self._staging_storage]
+        return self._staging_storage 
+
+    @property
+    def final_storage(self) -> Storage:
+        if isinstance(self._final_storage, str):
+            return storages[self._final_storage]
+        return self._final_storage 
+
+    @property
+    def bucket_name(self):
+        return self.final_storage.bucket_name
+
+    def _save(self, name, content):
+        return self.staging_storage.save(name, content)
+
+    def exists(self, name):        
+        return False  # TODO-BLOBSTORE implement this
