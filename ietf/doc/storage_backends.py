@@ -60,6 +60,7 @@ def maybe_log_timing(enabled, op, **kwargs):
 # Consider overriding save directly so that
 # we capture metadata for, e.g., ImageField objects
 class StorageObjectStorageMixin:
+    commit_on_save = True  # if True, blobs are immediately treated as committed
 
     def get_default_settings(self):
         # add a default for the ietf_log_blob_timing boolean
@@ -91,6 +92,7 @@ class StorageObjectStorageMixin:
                             store_created=now,
                             created=now,
                             modified=now,
+                            committed=now if self.commit_on_save else None,
                             doc_name=content.doc_name,  # Note that these are assumed to be invariant
                             doc_rev=content.doc_rev,  # for a given name
                         ),
@@ -100,6 +102,7 @@ class StorageObjectStorageMixin:
                         record.len = int(content._custom_metadata["len"])
                         record.modified = now
                         record.deleted = None
+                        record.committed = None
                         record.save()
                     if new_name != name:
                         complaint = f"Error encountered saving '{name}' - results stored in '{new_name}' instead."
@@ -219,6 +222,7 @@ class CustomS3Storage(StorageObjectStorageMixin, S3Storage):
 
 class StagedBlobStorage(StorageObjectStorageMixin, Storage):
     """Storage using an intermediate staging step"""
+    commit_on_save = False  # files not committed until they're moved to the final_storage
 
     def __init__(self, staging_storage: Union[str, Storage], final_storage: Union[str, Storage]):
         self._staging_storage = staging_storage
