@@ -62,10 +62,6 @@ def maybe_log_timing(enabled, op, **kwargs):
 class StorageObjectStorageMixin:
     commit_on_save = True  # if True, blobs are immediately treated as committed
 
-    def get_default_settings(self):
-        # add a default for the ietf_log_blob_timing boolean
-        return super().get_default_settings() | {"ietf_log_blob_timing": False}
-
     def _save(self, name, content: File):
         with maybe_log_timing(
             self.ietf_log_blob_timing, "_save", bucket_name=self.bucket_name, name=name
@@ -132,6 +128,13 @@ class StorageObjectStorageMixin:
             self.ietf_log_blob_timing, "delete", bucket_name=self.bucket_name, name=name
         ):
             super().delete(name)
+
+    def commit(self, name):
+        StoredObject.objects.filter(
+            store=self.bucket_name,
+            name=name,
+            committed=False
+        ).update(committed=timezone.now())
 
     def store_file(
         self,
@@ -217,12 +220,15 @@ class StorageObjectStorageMixin:
 
 
 class CustomS3Storage(StorageObjectStorageMixin, S3Storage):
-    pass
+    def get_default_settings(self):
+        # add a default for the ietf_log_blob_timing boolean
+        return super().get_default_settings() | {"ietf_log_blob_timing": False}
 
 
-class StagedBlobStorage(StorageObjectStorageMixin, Storage):
+class StagedBlobStorage(Storage):
     """Storage using an intermediate staging step"""
     commit_on_save = False  # files not committed until they're moved to the final_storage
+    ietf_log_blob_timing = True
 
     def __init__(self, staging_storage: Union[str, Storage], final_storage: Union[str, Storage]):
         self._staging_storage = staging_storage
@@ -249,3 +255,13 @@ class StagedBlobStorage(StorageObjectStorageMixin, Storage):
 
     def exists(self, name):        
         return False  # TODO-BLOBSTORE implement this
+
+
+class StorageObjectStagedBlogStorage(StorageObjectStorageMixin, StagedBlobStorage):
+    def commit(self, name):
+        with self.staging_storage.open(name) as staged:
+            self.final_storage.save(
+                name=name,
+                content=staged,
+            )
+        super().commit(name)
