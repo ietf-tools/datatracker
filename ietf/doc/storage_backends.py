@@ -13,7 +13,7 @@ from typing import Optional, Union, Protocol
 from django.core.files.base import File
 
 from ietf.doc.models import StoredObject
-from ietf.doc.tasks import commit_staged_storageobject_task
+from ietf.doc.tasks import commit_staged_StoredObject_task
 from ietf.utils.log import log
 from ietf.utils.timezone import timezone
 
@@ -78,7 +78,7 @@ def maybe_log_timing(enabled, op, **kwargs):
 # TODO-BLOBSTORE
 # Consider overriding save directly so that
 # we capture metadata for, e.g., ImageField objects
-class StorageObjectStorageMixin: #(BucketStorageProtocol):
+class StoredObjectStorageMixin: #(BucketStorageProtocol):
     commit_on_save = True  # if True, blobs are immediately treated as committed
 
     def commit(self, name):
@@ -178,7 +178,7 @@ class StorageObjectStorageMixin: #(BucketStorageProtocol):
                 debug.show("complaint")
         existing_record = StoredObject.objects.filter(store=kind, name=name)
         if not existing_record.exists() and warn_if_missing:
-            complaint = f"WARNING: Asked to delete {name} from {kind} storage, but there was no matching StorageObject"
+            complaint = f"WARNING: Asked to delete {name} from {kind} storage, but there was no matching StoredObject"
             log(complaint)
             debug.show("complaint")
         else:
@@ -186,7 +186,7 @@ class StorageObjectStorageMixin: #(BucketStorageProtocol):
             existing_record.filter(deleted__isnull=True).update(deleted=now)
 
 
-class CustomS3Storage(StorageObjectStorageMixin, S3Storage):
+class CustomS3Storage(StoredObjectStorageMixin, S3Storage):
     def get_default_settings(self):
         # add a default for the ietf_log_blob_timing boolean
         return super().get_default_settings() | {"ietf_log_blob_timing": False}
@@ -263,13 +263,13 @@ class StagedBlobStorage(Storage):
         return False  # TODO-BLOBSTORE implement this
 
 
-class StorageObjectStagedBlogStorage(StorageObjectStorageMixin, StagedBlobStorage):
+class StoredObjectStagedBlogStorage(StoredObjectStorageMixin, StagedBlobStorage):
     commit_on_save = False  # files not committed until they're moved to the final_storage
     ietf_log_blob_timing = True
 
     def _save(self, name, content):
         new_name = super()._save(name, content)
-        commit_staged_storageobject_task.delay(self.bucket_name, name)
+        commit_staged_StoredObject_task.delay(self.bucket_name, name)
         return new_name
 
     def commit(self, name):

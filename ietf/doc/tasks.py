@@ -132,5 +132,5 @@ def investigate_fragment_task(name_fragment: str):
 
 
 @shared_task
-def commit_staged_storageobject_task(kind, name):
+def commit_staged_StoredObject_task(kind, name):
     commit_object(kind, name)
