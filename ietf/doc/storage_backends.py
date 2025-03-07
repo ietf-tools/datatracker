@@ -109,28 +109,22 @@ class StoredObjectStorageMixin:
     def record_committed_save(self, name):
         debug.say(f"StoredObjectStorageMixin.record_committed_save('{name}') called")
         now = timezone.now()
-        obj = StoredObject.objects.filter(
+        StoredObject.objects.filter(
             store=self.kind,
             name=name,
             deleted__isnull=True,  # don't "commit" a deleted file on save
             committed__isnull=True,
-        ).first()
-        if obj is not None:
-            obj.committed = now
-            obj.save()
+        ).update(committed=now)
 
     def record_committed_delete(self, name):
         debug.say(f"StoredObjectStorageMixin.record_committed_delete('{name}') called")
         now = timezone.now()
-        obj = StoredObject.objects.filter(
+        StoredObject.objects.filter(
             store=self.kind,
             name=name,
             deleted__isnull=False,  # only "commit" a deleted file on delete
             committed__isnull=True,
-        ).first()
-        if obj is not None:
-            obj.committed = now
-            obj.save()
+        ).update(committed=now)
 
     def store_file(
         self,
