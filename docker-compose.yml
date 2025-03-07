@@ -92,7 +92,15 @@ services:
         volumes:
             - "minio-data:/data"
 
-
+    blobdb:
+        image: postgres:16
+        restart: unless-stopped
+        environment:
+            POSTGRES_DB: blob
+            POSTGRES_USER: dt
+            POSTGRES_PASSWORD: abcd1234
+        volumes:
+            - blobdb-data:/var/lib/postgresql/data
 
 #  Celery Beat is a periodic task runner. It is not normally needed for development,
 #  but can be enabled by uncommenting the following.
@@ -118,3 +126,4 @@ volumes:
     postgresdb-data:
     app-assets:
     minio-data:
+    blobdb-data:
