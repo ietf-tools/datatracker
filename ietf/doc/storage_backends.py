@@ -1,16 +1,16 @@
 # Copyright The IETF Trust 2025, All Rights Reserved
-from django.core.files.storage import Storage, storages
-
 import debug  # pyflakes:ignore
 import json
 
 from contextlib import contextmanager
+from functools import cached_property
 from hashlib import sha384
 from io import BufferedReader
 from storages.backends.s3 import S3Storage
-from typing import Optional, Union, Protocol
+from typing import Optional, Union,  Any
 
 from django.core.files.base import File
+from django.core.files.storage import Storage, storages
 
 from ietf.doc.models import StoredObject
 from ietf.doc.tasks import commit_staged_StoredObject_task
@@ -108,7 +108,7 @@ class StoredObjectStorageMixin:
     def commit(self, name):
         now = timezone.now()
         obj = StoredObject.objects.filter(
-            store=self.bucket_name,
+            store=self.kind,
             name=name,
             committed__isnull=True
         ).first()
@@ -124,8 +124,8 @@ class StoredObjectStorageMixin:
         doc_name: Optional[str] = None,
         doc_rev: Optional[str] = None,
     ):
-        if kind != self.bucket_name:
-            raise RuntimeError(f"Called store_file() for {kind} against the {self.bucket_name} Storage")
+        if kind != self.kind:
+            raise RuntimeError(f"Called store_file() for {kind} against the {self.kind} Storage")
         is_new = not self.exists_in_storage(kind, name)
         # debug.show('f"Asked to store {name} in {kind}: is_new={is_new}, allow_overwrite={allow_overwrite}"')
         if not allow_overwrite and not is_new:
@@ -136,7 +136,7 @@ class StoredObjectStorageMixin:
             content = StoredObjectFile(
                 file=file,
                 name=name,
-                store=self.bucket_name,
+                store=self.kind,
                 doc_name=doc_name,
                 doc_rev=doc_rev,
             )
@@ -252,31 +252,41 @@ class MetadataS3Storage(S3Storage):
 
 
 class CustomS3Storage(StoredObjectStorageMixin, MetadataS3Storage):
-    pass
+    @cached_property
+    def kind(self):
+        return self.bucket_name  # teach StoredObjectStorageMixin our kind
 
 
 class StagedBlobStorage(Storage):
     """Storage using an intermediate staging step"""
 
-    def __init__(self, staging_storage: Union[str, Storage], final_storage: Union[str, Storage]):
+    def __init__(
+        self,
+        kind: str,
+        staging_storage: Union[str, Storage, dict[str, Any]],
+        final_storage: Union[str, Storage, dict[str, Any]],
+    ):
+        self.kind = kind
         self._staging_storage = staging_storage
         self._final_storage = final_storage
 
-    @property
+    @cached_property
     def staging_storage(self) -> Storage:
         if isinstance(self._staging_storage, str):
-            return storages[self._staging_storage]
-        return self._staging_storage 
+            return storages[self._staging_storage]  # str = alias of another STORAGES entry
+        elif isinstance(self._staging_storage, Storage):
+            return self._staging_storage  # Storage = actual storage instance
+        else:
+            return storages.create_storage(params=self._staging_storage)  # dict = def of another Storage
 
-    @property
+    @cached_property
     def final_storage(self) -> Storage:
         if isinstance(self._final_storage, str):
-            return storages[self._final_storage]
-        return self._final_storage 
-
-    @property
-    def bucket_name(self):
-        return self.final_storage.bucket_name
+            return storages[self._final_storage]  # str = alias of another STORAGES entry
+        elif isinstance(self._final_storage, Storage):
+            return self._final_storage  # Storage = actual storage instance
+        else:
+            return storages.create_storage(params=self._final_storage)  # dict = def of another Storage
 
     def _open(self, name, mode="rb"):
         try:
@@ -298,7 +308,7 @@ class StoredObjectStagedBlogStorage(StoredObjectStorageMixin, StagedBlobStorage)
 
     def _save(self, name, content):
         new_name = super()._save(name, content)
-        commit_staged_StoredObject_task.delay(self.bucket_name, name)
+        commit_staged_StoredObject_task.delay(self.kind, name)
         return new_name
 
     def commit(self, name):
@@ -308,10 +318,10 @@ class StoredObjectStagedBlogStorage(StoredObjectStorageMixin, StagedBlobStorage)
                 content=StoredObjectFile.from_storedobject(
                     file=staged,
                     name=name,
-                    store=self.bucket_name,
+                    store=self.kind,
                 ),
             )
         if new_name != name:
-            log(f"Staged file {self.bucket_name}:{name} was committed as {self.bucket_name}:{new_name}")
+            log(f"Staged file {self.kind}:{name} was committed as {self.kind}:{new_name}")
         super().commit(name)
         self.staging_storage.delete(name)
