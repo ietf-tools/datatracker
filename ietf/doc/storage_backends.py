@@ -19,31 +19,55 @@ from ietf.utils.timezone import timezone
 
 
 class MetadataFile(File):
-    def __init__(self, name, file, doc_name=None, doc_rev=None):
+    """Django storage File object that carries custom metadata"""
+    def __init__(self, file, name):
         super().__init__(file, name)
-        self.doc_name = doc_name
-        self.doc_rev = doc_rev
         self._custom_metadata = None 
 
     @property
     def custom_metadata(self):
         if self._custom_metadata is None:
-            try:
-                self.file.seek(0)
-            except AttributeError:  # TODO-BLOBSTORE
-                debug.say("Encountered Non-Seekable content")
-                raise NotImplementedError("cannot handle unseekable content")
-            content_bytes = self.file.read()
-            if not isinstance(
-                content_bytes, bytes
-            ):  # TODO-BLOBSTORE: This is sketch-development only -remove before committing
-                raise Exception(f"Expected bytes - got {type(content_bytes)}")
-            self.file.seek(0)
-            self._custom_metadata = {
-                "len": f"{len(content_bytes)}",
-                "sha384": f"{sha384(content_bytes).hexdigest()}",
-            }
+            self._custom_metadata = self._compute_custom_metadata()
         return self._custom_metadata
+
+    def _compute_custom_metadata(self):
+        try:
+            self.file.seek(0)
+        except AttributeError:  # TODO-BLOBSTORE
+            debug.say("Encountered Non-Seekable content")
+            raise NotImplementedError("cannot handle unseekable content")
+        content_bytes = self.file.read()
+        if not isinstance(
+            content_bytes, bytes
+        ):  # TODO-BLOBSTORE: This is sketch-development only -remove before committing
+            raise Exception(f"Expected bytes - got {type(content_bytes)}")
+        self.file.seek(0)
+        return {
+            "len": f"{len(content_bytes)}",
+            "sha384": f"{sha384(content_bytes).hexdigest()}",
+        }
+
+
+class StoredObjectFile(MetadataFile):
+    """Django storage File object that represents a StoredObject"""
+    def __init__(self, file, name, store, doc_name=None, doc_rev=None):
+        super().__init__(file, name)
+        self.store = store
+        self.doc_name = doc_name
+        self.doc_rev = doc_rev
+
+    @classmethod
+    def from_storedobject(cls, file, name, store):
+        """Alternate constructor for objects that already exist in the StoredObject table"""
+        stored_object = StoredObject.objects.filter(store=store, name=name, deleted__isnull=True).first()
+        if stored_object is None:
+            raise FileNotFoundError(f"StoredObject for {store}:{name} does not exist or was deleted")
+        file = cls(file, name, store, doc_name=stored_object.doc_name, doc_rev=stored_object.doc_rev)
+        if int(file.custom_metadata["len"]) != stored_object.len:
+            raise RuntimeError(f"File length changed unexpectedly for {store}:{name}")
+        if file.custom_metadata["sha384"] != stored_object.sha384:
+            raise RuntimeError(f"SHA-384 hash changed unexpectedly for {store}:{name}")
+        return file
 
 
 @contextmanager
@@ -78,7 +102,7 @@ def maybe_log_timing(enabled, op, **kwargs):
 # TODO-BLOBSTORE
 # Consider overriding save directly so that
 # we capture metadata for, e.g., ImageField objects
-class StoredObjectStorageMixin: #(BucketStorageProtocol):
+class StoredObjectStorageMixin:
     commit_on_save = True  # if True, blobs are immediately treated as committed
 
     def commit(self, name):
@@ -109,9 +133,10 @@ class StoredObjectStorageMixin: #(BucketStorageProtocol):
             debug.show('f"Failed to save {kind}:{name} - name already exists in store"')
             # raise Exception("Not ignoring overwrite attempts while testing")
         else:
-            content = MetadataFile(
-                name=name,
+            content = StoredObjectFile(
                 file=file,
+                name=name,
+                store=self.bucket_name,
                 doc_name=doc_name,
                 doc_rev=doc_rev,
             )
@@ -186,7 +211,7 @@ class StoredObjectStorageMixin: #(BucketStorageProtocol):
             existing_record.filter(deleted__isnull=True).update(deleted=now)
 
 
-class CustomS3Storage(StoredObjectStorageMixin, S3Storage):
+class MetadataS3Storage(S3Storage):
     def get_default_settings(self):
         # add a default for the ietf_log_blob_timing boolean
         return super().get_default_settings() | {"ietf_log_blob_timing": False}
@@ -197,7 +222,7 @@ class CustomS3Storage(StoredObjectStorageMixin, S3Storage):
         ):
             if not isinstance(content, MetadataFile):
                 raise NotImplementedError("Only handle MetadataFile so far")
-                return new_name
+            return super()._save(name, content)
 
     def _open(self, name, mode="rb"):
         with maybe_log_timing(
@@ -224,6 +249,10 @@ class CustomS3Storage(StoredObjectStorageMixin, S3Storage):
             raise NotImplementedError("Can only handle content of type MetadataFile")
         params["Metadata"].update(content.custom_metadata)
         return params
+
+
+class CustomS3Storage(StoredObjectStorageMixin, MetadataS3Storage):
+    pass
 
 
 class StagedBlobStorage(Storage):
@@ -274,9 +303,15 @@ class StoredObjectStagedBlogStorage(StoredObjectStorageMixin, StagedBlobStorage)
 
     def commit(self, name):
         with self.staging_storage.open(name) as staged:
-            self.final_storage.save(
+            new_name = self.final_storage.save(
                 name=name,
-                content=staged,
+                content=StoredObjectFile.from_storedobject(
+                    file=staged,
+                    name=name,
+                    store=self.bucket_name,
+                ),
             )
+        if new_name != name:
+            log(f"Staged file {self.bucket_name}:{name} was committed as {self.bucket_name}:{new_name}")
         super().commit(name)
         self.staging_storage.delete(name)
