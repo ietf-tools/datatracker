@@ -13,7 +13,7 @@ from django.core.files.base import File
 from django.core.files.storage import Storage, storages
 
 from ietf.doc.models import StoredObject
-from ietf.doc.tasks import commit_staged_StoredObject_task
+from ietf.doc.tasks import commit_saved_staged_storedobject_task
 from ietf.utils.log import log
 from ietf.utils.timezone import timezone
 
@@ -105,12 +105,14 @@ def maybe_log_timing(enabled, op, **kwargs):
 class StoredObjectStorageMixin:
     commit_on_save = True  # if True, blobs are immediately treated as committed
 
-    def commit(self, name):
+    def record_committed_save(self, name):
+        debug.say(f"StoredObjectStorageMixin.record_committed_save('{name}') called")
         now = timezone.now()
         obj = StoredObject.objects.filter(
             store=self.kind,
             name=name,
-            committed__isnull=True
+            deleted__isnull=True,  # don't "commit" a deleted file on save
+            committed__isnull=True,
         ).first()
         obj.committed = now
         obj.save()
@@ -296,32 +298,50 @@ class StagedBlobStorage(Storage):
         return self.final_storage.open(name, mode)
 
     def _save(self, name, content):
-        return self.staging_storage.save(name, content)
+        new_name = self.staging_storage.save(name, content)
+        commit_saved_staged_storedobject_task.delay(self.kind, name)
+        return new_name
+
+    def commit_save(self, name):
+        debug.say(f"StagedBlobStorage.commit_save('{name}') called")
+        try:
+            with self.staging_storage.open(name) as staged:
+                new_name = self.final_storage.save(
+                    name=name,
+                    content=StoredObjectFile.from_storedobject(
+                        file=staged,
+                        name=name,
+                        store=self.kind,
+                    ),
+                )
+        except FileNotFoundError:
+            log(f"Failed to commit save of {self.kind}:{name} due to FileNotFoundError from staging storage")
+        else:
+            if new_name != name:
+                log(f"Staged file {self.kind}:{name} was committed as {self.kind}:{new_name}")
+            self.staging_storage.delete(name)
+
 
     def exists(self, name):        
         return False  # TODO-BLOBSTORE implement this
 
+    def delete(self, name):
+        # Immediately delete from staging, if possible
+        try:
+            self.staging_storage.delete(name)
+        except NotImplementedError:
+            log(f"Staging storage does not implement delete() for {self.kind}:{name}")
+        try:
+            self.final_storage.delete(name)
+        except NotImplementedError:
+            log(f"Final storage does not implement delete() for {self.kind}:{name}")
 
-class StoredObjectStagedBlogStorage(StoredObjectStorageMixin, StagedBlobStorage):
+
+class StoredObjectStagedBlobStorage(StoredObjectStorageMixin, StagedBlobStorage):
     commit_on_save = False  # files not committed until they're moved to the final_storage
     ietf_log_blob_timing = True
 
-    def _save(self, name, content):
-        new_name = super()._save(name, content)
-        commit_staged_StoredObject_task.delay(self.kind, name)
-        return new_name
-
-    def commit(self, name):
-        with self.staging_storage.open(name) as staged:
-            new_name = self.final_storage.save(
-                name=name,
-                content=StoredObjectFile.from_storedobject(
-                    file=staged,
-                    name=name,
-                    store=self.kind,
-                ),
-            )
-        if new_name != name:
-            log(f"Staged file {self.kind}:{name} was committed as {self.kind}:{new_name}")
-        super().commit(name)
-        self.staging_storage.delete(name)
+    def commit_save(self, name):
+        debug.say(f"StoredObjectStagedBlobStorage.commit_save('{name}') called")
+        super().commit_save(name)
+        super().record_committed_save(name)
