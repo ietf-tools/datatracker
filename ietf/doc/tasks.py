@@ -26,6 +26,7 @@ from .expire import (
 )
 from .lastcall import get_expired_last_calls, expire_last_call
 from .models import Document, NewRevisionDocEvent
+from .storage_utils import commit_object
 from .utils import (
     generate_idnits2_rfc_status,
     generate_idnits2_rfcs_obsoleted,
@@ -128,3 +129,8 @@ def investigate_fragment_task(name_fragment: str):
         "name_fragment": name_fragment,
         "results": investigate_fragment(name_fragment),
     }
+
+
+@shared_task
+def commit_staged_storageobject_task(kind, name):
+    commit_object(kind, name)

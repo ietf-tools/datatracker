@@ -13,6 +13,7 @@ from typing import Optional, Union, Protocol
 from django.core.files.base import File
 
 from ietf.doc.models import StoredObject
+from ietf.doc.tasks import commit_staged_storageobject_task
 from ietf.utils.log import log
 from ietf.utils.timezone import timezone
 
@@ -81,11 +82,14 @@ class StorageObjectStorageMixin: #(BucketStorageProtocol):
     commit_on_save = True  # if True, blobs are immediately treated as committed
 
     def commit(self, name):
-        StoredObject.objects.filter(
+        now = timezone.now()
+        obj = StoredObject.objects.filter(
             store=self.bucket_name,
             name=name,
-            committed=False
-        ).update(committed=timezone.now())
+            committed__isnull=True
+        ).first()
+        obj.committed = now
+        obj.save()
 
     def store_file(
         self,
@@ -263,6 +267,11 @@ class StorageObjectStagedBlogStorage(StorageObjectStorageMixin, StagedBlobStorag
     commit_on_save = False  # files not committed until they're moved to the final_storage
     ietf_log_blob_timing = True
 
+    def _save(self, name, content):
+        new_name = super()._save(name, content)
+        commit_staged_storageobject_task.delay(self.bucket_name, name)
+        return new_name
+
     def commit(self, name):
         with self.staging_storage.open(name) as staged:
             self.final_storage.save(
@@ -270,3 +279,4 @@ class StorageObjectStagedBlogStorage(StorageObjectStorageMixin, StagedBlobStorag
                 content=staged,
             )
         super().commit(name)
+        self.staging_storage.delete(name)

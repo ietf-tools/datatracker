@@ -139,3 +139,10 @@ def retrieve_str(kind: str, name: str) -> str:
             if settings.SERVER_MODE == "development":
                 raise
     return content
+
+
+def commit_object(kind: str, name: str):
+    if settings.ENABLE_BLOBSTORAGE:
+        store = _get_storage(kind)
+        if hasattr(store, "commit"):
+            store.commit(name)
