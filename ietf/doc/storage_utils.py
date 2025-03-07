@@ -146,3 +146,10 @@ def commit_saved_object(kind: str, name: str):
         store = _get_storage(kind)
         if hasattr(store, "commit_save"):
             store.commit_save(name)
+
+
+def commit_deleted_object(kind: str, name: str):
+    if settings.ENABLE_BLOBSTORAGE:
+        store = _get_storage(kind)
+        if hasattr(store, "commit_delete"):
+            store.commit_delete(name)

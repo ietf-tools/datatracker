@@ -11,9 +11,10 @@ from typing import Optional, Union,  Any
 
 from django.core.files.base import File
 from django.core.files.storage import Storage, storages
+from django.db import transaction
 
 from ietf.doc.models import StoredObject
-from ietf.doc.tasks import commit_saved_staged_storedobject_task
+from ietf.doc.tasks import commit_saved_staged_storedobject_task, commit_deleted_staged_storedobject_task
 from ietf.utils.log import log
 from ietf.utils.timezone import timezone
 
@@ -114,8 +115,22 @@ class StoredObjectStorageMixin:
             deleted__isnull=True,  # don't "commit" a deleted file on save
             committed__isnull=True,
         ).first()
-        obj.committed = now
-        obj.save()
+        if obj is not None:
+            obj.committed = now
+            obj.save()
+
+    def record_committed_delete(self, name):
+        debug.say(f"StoredObjectStorageMixin.record_committed_delete('{name}') called")
+        now = timezone.now()
+        obj = StoredObject.objects.filter(
+            store=self.kind,
+            name=name,
+            deleted__isnull=False,  # only "commit" a deleted file on delete
+            committed__isnull=True,
+        ).first()
+        if obj is not None:
+            obj.committed = now
+            obj.save()
 
     def store_file(
         self,
@@ -210,7 +225,10 @@ class StoredObjectStorageMixin:
             debug.show("complaint")
         else:
             # Note that existing_record is a queryset that will have one matching object
-            existing_record.filter(deleted__isnull=True).update(deleted=now)
+            existing_record.filter(deleted__isnull=True).update(
+                deleted=now,
+                committed=now if self.commit_on_save else None,
+            )
 
 
 class MetadataS3Storage(S3Storage):
@@ -298,8 +316,12 @@ class StagedBlobStorage(Storage):
         return self.final_storage.open(name, mode)
 
     def _save(self, name, content):
+        # Save to staging immediately
         new_name = self.staging_storage.save(name, content)
-        commit_saved_staged_storedobject_task.delay(self.kind, name)
+        # Queue a task to delete from final storage later
+        transaction.on_commit(
+            lambda: commit_saved_staged_storedobject_task.delay(self.kind, name)
+        )
         return new_name
 
     def commit_save(self, name):
@@ -331,6 +353,13 @@ class StagedBlobStorage(Storage):
             self.staging_storage.delete(name)
         except NotImplementedError:
             log(f"Staging storage does not implement delete() for {self.kind}:{name}")
+        # Queue a task to delete from final storage later
+        transaction.on_commit(
+            lambda: commit_deleted_staged_storedobject_task.delay(self.kind, name)
+        )
+
+    def commit_delete(self, name):
+        debug.say(f"StagedBlobStorage.commit_delete('{name}') called")
         try:
             self.final_storage.delete(name)
         except NotImplementedError:
@@ -345,3 +374,8 @@ class StoredObjectStagedBlobStorage(StoredObjectStorageMixin, StagedBlobStorage)
         debug.say(f"StoredObjectStagedBlobStorage.commit_save('{name}') called")
         super().commit_save(name)
         super().record_committed_save(name)
+
+    def commit_delete(self, name):
+        debug.say(f"StoredObjectStagedBlobStorage.commit_delete('{name}') called")
+        super().commit_delete(name)
+        super().record_committed_delete(name)
