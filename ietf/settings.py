@@ -470,6 +470,7 @@ INSTALLED_APPS = [
     'widget_tweaks',
     # IETF apps
     'ietf.api',
+    'ietf.blobdb',
     'ietf.community',
     'ietf.dbtemplate',
     'ietf.doc',
