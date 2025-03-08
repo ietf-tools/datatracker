@@ -152,7 +152,6 @@ class StoredObjectStorageMixin:
                 doc_rev=doc_rev,
             )
             try:
-                new_name = self.save(name, content)
                 now = timezone.now()
                 record, created = StoredObject.objects.get_or_create(
                     store=kind,
@@ -163,7 +162,7 @@ class StoredObjectStorageMixin:
                         store_created=now,
                         created=now,
                         modified=now,
-                        committed=now if self.commit_on_save else None,
+                        committed=None,  # we haven't saved yet
                         doc_name=content.doc_name,  # Note that these are assumed to be invariant
                         doc_rev=content.doc_rev,  # for a given name
                     ),
@@ -174,6 +173,10 @@ class StoredObjectStorageMixin:
                     record.modified = now
                     record.deleted = None
                     record.committed = None
+                    record.save()
+                new_name = self.save(name, content)
+                if self.commit_on_save:
+                    record.committed = timezone.now()
                     record.save()
                 if new_name != name:
                     complaint = f"Error encountered saving '{name}' - results stored in '{new_name}' instead."
@@ -277,10 +280,12 @@ class StagedBlobStorage(Storage):
     def __init__(
         self,
         kind: str,
+        async_commit: bool,
         staging_storage: Union[str, Storage, dict[str, Any]],
         final_storage: Union[str, Storage, dict[str, Any]],
     ):
         self.kind = kind
+        self.async_commit = async_commit
         self._staging_storage = staging_storage
         self._final_storage = final_storage
 
@@ -312,10 +317,13 @@ class StagedBlobStorage(Storage):
     def _save(self, name, content):
         # Save to staging immediately
         new_name = self.staging_storage.save(name, content)
-        # Queue a task to delete from final storage later
-        transaction.on_commit(
-            lambda: commit_saved_staged_storedobject_task.delay(self.kind, name)
-        )
+        if self.async_commit:
+            # Queue a task to delete from final storage later
+            transaction.on_commit(
+                lambda: commit_saved_staged_storedobject_task.delay(self.kind, name)
+            )
+        else:
+            self.commit_save(name)  # TODO-BLOBSTORE: deal with name change in this call
         return new_name
 
     def commit_save(self, name):
@@ -337,7 +345,6 @@ class StagedBlobStorage(Storage):
                 log(f"Staged file {self.kind}:{name} was committed as {self.kind}:{new_name}")
             self.staging_storage.delete(name)
 
-
     def exists(self, name):        
         return False  # TODO-BLOBSTORE implement this
 
@@ -348,9 +355,12 @@ class StagedBlobStorage(Storage):
         except NotImplementedError:
             log(f"Staging storage does not implement delete() for {self.kind}:{name}")
         # Queue a task to delete from final storage later
-        transaction.on_commit(
-            lambda: commit_deleted_staged_storedobject_task.delay(self.kind, name)
-        )
+        if self.async_commit:
+            transaction.on_commit(
+                lambda: commit_deleted_staged_storedobject_task.delay(self.kind, name)
+            )
+        else:
+            self.commit_delete(name)
 
     def commit_delete(self, name):
         debug.say(f"StagedBlobStorage.commit_delete('{name}') called")
