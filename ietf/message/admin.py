@@ -23,7 +23,7 @@ class MessageSentStatusListFilter(admin.SimpleListFilter):
 
 
 class MessageAdmin(admin.ModelAdmin):
-    list_display = ["subject", "by", "time", "groups"]
+    list_display = ["sent_status", "subject", "by", "time", "groups"]
     search_fields = ["subject", "body"]
     raw_id_fields = ["by", "related_groups", "related_docs"]
     list_filter = [
@@ -35,6 +35,10 @@ class MessageAdmin(admin.ModelAdmin):
 
     def groups(self, instance):
         return ", ".join(g.acronym for g in instance.related_groups.all())
+
+    @admin.display(description="Sent", boolean=True)
+    def sent_status(self, instance):
+        return instance.sent is not None
 
     @admin.action(description="Send selected messages if unsent")
     def retry_send(self, request, queryset: QuerySet[Message]):
