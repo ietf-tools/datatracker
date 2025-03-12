@@ -4,10 +4,32 @@ from django.db.models import QuerySet
 from ietf.message.models import Message, MessageAttachment, SendQueue, AnnouncementFrom
 from ietf.message.tasks import retry_send_messages_by_pk_task
 
+class MessageSentStatusListFilter(admin.SimpleListFilter):
+    """"""
+    title = "Status"
+    parameter_name = "status"
+    
+    def lookups(self, request, model_admin):
+        return [
+            ("sent", "Sent"),
+            ("unsent", "Not sent"),
+        ]
+    
+    def queryset(self, request, queryset):
+        if self.value() == "unsent":
+            return queryset.filter(sent__isnull=True)
+        elif self.value() == "sent":
+            return queryset.filter(sent__isnull=False)
+
+
 class MessageAdmin(admin.ModelAdmin):
     list_display = ["subject", "by", "time", "groups"]
     search_fields = ["subject", "body"]
     raw_id_fields = ["by", "related_groups", "related_docs"]
+    list_filter = [
+        MessageSentStatusListFilter,
+        ("time", admin.DateFieldListFilter),
+    ]
     ordering = ["-time"]
     actions = ["retry_send"]
 
@@ -16,14 +38,22 @@ class MessageAdmin(admin.ModelAdmin):
 
     @admin.action(description="Send selected messages if unsent")
     def retry_send(self, request, queryset: QuerySet[Message]):
-        retry_send_messages_by_pk_task.delay(
-            message_pks=list(queryset.values_list("pk", flat=True)),
-            resend=False,
-        )
-        self.message_user(
-            request,
-            "Messages queued for delivery",
-            messages.SUCCESS)
+        try:
+            retry_send_messages_by_pk_task.delay(
+                message_pks=list(queryset.values_list("pk", flat=True)),
+                resend=False,
+            )
+        except Exception as err:
+            self.message_user(
+                request,
+                f"Error: {repr(err)}",
+                messages.ERROR,
+            )
+        else:
+            self.message_user(
+                request,
+                "Messages queued for delivery",
+                messages.SUCCESS)
 admin.site.register(Message, MessageAdmin)
 
 class MessageAttachmentAdmin(admin.ModelAdmin):
