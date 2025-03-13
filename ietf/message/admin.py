@@ -1,5 +1,7 @@
+# Copyright The IETF Trust 2012-2025, All Rights Reserved
 from django.contrib import admin, messages
 from django.db.models import QuerySet
+from rangefilter.filters import DateRangeQuickSelectListFilterBuilder
 
 from ietf.message.models import Message, MessageAttachment, SendQueue, AnnouncementFrom
 from ietf.message.tasks import retry_send_messages_by_pk_task
@@ -28,7 +30,7 @@ class MessageAdmin(admin.ModelAdmin):
     raw_id_fields = ["by", "related_groups", "related_docs"]
     list_filter = [
         MessageSentStatusListFilter,
-        ("time", admin.DateFieldListFilter),
+        ("time", DateRangeQuickSelectListFilterBuilder()),
     ]
     ordering = ["-time"]
     actions = ["retry_send"]

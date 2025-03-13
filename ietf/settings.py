@@ -465,6 +465,7 @@ INSTALLED_APPS = [
     'drf_spectacular',
     'drf_standardized_errors',
     'rest_framework',
+    'rangefilter',
     'simple_history',
     'tastypie',
     'widget_tweaks',
