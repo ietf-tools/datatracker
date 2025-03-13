@@ -1,3 +1,4 @@
+# Copyright The IETF Trust 2025, All Rights Reserved
 from hashlib import sha384
 
 from django.db import models

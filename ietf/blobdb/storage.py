@@ -1,3 +1,4 @@
+# Copyright The IETF Trust 2025, All Rights Reserved
 from django.core.files.base import ContentFile
 from django.core.files.storage import Storage
 from django.db.models.functions import Length
@@ -12,7 +13,7 @@ class BlobdbStorage(Storage):
 
     def __init__(self, bucket_name=None):
         self.bucket_name = bucket_name
-    
+
     def get_queryset(self):
         return Blob.objects.filter(bucket=self.bucket_name)
 
@@ -24,7 +25,8 @@ class BlobdbStorage(Storage):
 
     def size(self, name):
         sizes = (
-            self.get_queryset().filter(name=name)
+            self.get_queryset()
+            .filter(name=name)
             .annotate(object_size=Length("content"))
             .values_list("object_size", flat=True)
         )

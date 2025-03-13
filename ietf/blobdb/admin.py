@@ -1,3 +1,4 @@
+# Copyright The IETF Trust 2025, All Rights Reserved
 from django.contrib import admin
 from django.db.models.functions import Length
 
