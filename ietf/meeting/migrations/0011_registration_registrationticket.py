@@ -10,7 +10,7 @@ class Migration(migrations.Migration):
     dependencies = [
         ("person", "0003_alter_personalapikey_endpoint"),
         ("name", "0016_populate_new_reg_names"),
-        ("meeting", "0009_session_meetecho_recording_name"),
+        ("meeting", "0010_alter_floorplan_image_alter_meetinghost_logo"),
     ]
 
     operations = [
