@@ -6,17 +6,19 @@ from rangefilter.filters import DateRangeQuickSelectListFilterBuilder
 from ietf.message.models import Message, MessageAttachment, SendQueue, AnnouncementFrom
 from ietf.message.tasks import retry_send_messages_by_pk_task
 
+
 class MessageSentStatusListFilter(admin.SimpleListFilter):
     """Filter Messages by whether or not they were sent"""
+
     title = "status"
     parameter_name = "status"
-    
+
     def lookups(self, request, model_admin):
         return [
             ("sent", "Sent"),
             ("unsent", "Not sent"),
         ]
-    
+
     def queryset(self, request, queryset):
         if self.value() == "unsent":
             return queryset.filter(sent__isnull=True)
@@ -56,16 +58,24 @@ class MessageAdmin(admin.ModelAdmin):
                 messages.ERROR,
             )
         else:
-            self.message_user(
-                request,
-                "Messages queued for delivery",
-                messages.SUCCESS)
+            self.message_user(request, "Messages queued for delivery", messages.SUCCESS)
+
+
 admin.site.register(Message, MessageAdmin)
 
+
 class MessageAttachmentAdmin(admin.ModelAdmin):
-    list_display = ['id', 'message', 'filename', 'removed',]
-    raw_id_fields = ['message']
+    list_display = [
+        "id",
+        "message",
+        "filename",
+        "removed",
+    ]
+    raw_id_fields = ["message"]
+
+
 admin.site.register(MessageAttachment, MessageAttachmentAdmin)
+
 
 class SendQueueAdmin(admin.ModelAdmin):
     list_display = ["time", "by", "message", "send_at", "sent_at"]
@@ -73,10 +83,17 @@ class SendQueueAdmin(admin.ModelAdmin):
     search_fields = ["message__body"]
     raw_id_fields = ["by", "message"]
     ordering = ["-time"]
+
+
 admin.site.register(SendQueue, SendQueueAdmin)
 
+
 class AnnouncementFromAdmin(admin.ModelAdmin):
-    list_display = ['name', 'group', 'address', ]
+    list_display = [
+        "name",
+        "group",
+        "address",
+    ]
+
+
 admin.site.register(AnnouncementFrom, AnnouncementFromAdmin)
-
-
