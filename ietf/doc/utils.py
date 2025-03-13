@@ -11,12 +11,14 @@ import textwrap
 
 from collections import defaultdict, namedtuple, Counter
 from dataclasses import dataclass
+from hashlib import sha384
 from pathlib import Path
 from typing import Iterator, Optional, Union
 from zoneinfo import ZoneInfo
 
 from django.conf import settings
 from django.contrib import messages
+from django.core.cache import caches
 from django.db.models import OuterRef
 from django.forms import ValidationError
 from django.http import Http404
@@ -1459,35 +1461,43 @@ def get_doc_email_aliases(name: Optional[str] = None):
     return sorted(aliases, key=lambda a: (a["doc_name"]))
 
 
-def investigate_fragment(name_fragment):
-    can_verify = set()
-    for root in [settings.INTERNET_DRAFT_PATH, settings.INTERNET_DRAFT_ARCHIVE_DIR]:
-        can_verify.update(list(Path(root).glob(f"*{name_fragment}*")))
-    archive_verifiable_names = set([p.name for p in can_verify])
-    # Can also verify drafts in proceedings directories
-    can_verify.update(list(Path(settings.AGENDA_PATH).glob(f"**/*{name_fragment}*")))
-
-    # N.B. This reflects the assumption that the internet draft archive dir is in the
-    # a directory with other collections (at /a/ietfdata/draft/collections as this is written)
-    unverifiable_collections = set([
-        p for p in
-        Path(settings.INTERNET_DRAFT_ARCHIVE_DIR).parent.glob(f"**/*{name_fragment}*")
-        if p.name not in archive_verifiable_names
-    ])
+def investigate_fragment(name_fragment: str):
+    cache = caches["default"]
+    # Ensure name_fragment does not interact badly with the cache key handling
+    name_digest = sha384(name_fragment.encode("utf8")).hexdigest()
+    cache_key = f"investigate_fragment:{name_digest}"
+    result = cache.get(cache_key)
+    if result is None:
+        can_verify = set()
+        for root in [settings.INTERNET_DRAFT_PATH, settings.INTERNET_DRAFT_ARCHIVE_DIR]:
+            can_verify.update(list(Path(root).glob(f"*{name_fragment}*")))
+        archive_verifiable_names = set([p.name for p in can_verify])
+        # Can also verify drafts in proceedings directories
+        can_verify.update(list(Path(settings.AGENDA_PATH).glob(f"**/*{name_fragment}*")))
     
-    unverifiable_collections.difference_update(can_verify)
-
-    expected_names = set([p.name for p in can_verify.union(unverifiable_collections)])
-    maybe_unexpected = list(
-        Path(settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR).glob(f"*{name_fragment}*")
-    )
-    unexpected = [p for p in maybe_unexpected if p.name not in expected_names]
-
-    return dict(
-        can_verify=can_verify,
-        unverifiable_collections=unverifiable_collections,
-        unexpected=unexpected,
-    )
+        # N.B. This reflects the assumption that the internet draft archive dir is in the
+        # a directory with other collections (at /a/ietfdata/draft/collections as this is written)
+        unverifiable_collections = set([
+            p for p in
+            Path(settings.INTERNET_DRAFT_ARCHIVE_DIR).parent.glob(f"**/*{name_fragment}*")
+            if p.name not in archive_verifiable_names
+        ])
+        
+        unverifiable_collections.difference_update(can_verify)
+    
+        expected_names = set([p.name for p in can_verify.union(unverifiable_collections)])
+        maybe_unexpected = list(
+            Path(settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR).glob(f"*{name_fragment}*")
+        )
+        unexpected = [p for p in maybe_unexpected if p.name not in expected_names]
+        result = dict(
+            can_verify=can_verify,
+            unverifiable_collections=unverifiable_collections,
+            unexpected=unexpected,
+        )
+        # 1 hour caching
+        cache.set(key=cache_key, timeout=3600, value=result)
+    return result
 
 
 def update_or_create_draft_bibxml_file(doc, rev):
@@ -1500,7 +1510,7 @@ def update_or_create_draft_bibxml_file(doc, rev):
         existing_bibxml = ""
     if normalized_bibxml.strip() != existing_bibxml.strip():
         log.log(f"Writing {ref_rev_file_path}")
-        ref_rev_file_path.write_text(normalized_bibxml, encoding="utf8")
+        ref_rev_file_path.write_text(normalized_bibxml, encoding="utf8") # TODO-BLOBSTORE
 
 
 def ensure_draft_bibxml_path_exists():

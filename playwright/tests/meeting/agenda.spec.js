@@ -238,7 +238,7 @@ test.describe('past - desktop', () => {
       // Name column
       // -----------
       // Event icon
-      if (['break', 'plenary'].includes(event.type) || (event.type === 'other' && ['office hours', 'hackathon'].some(s => event.name.toLowerCase().indexOf(s) >= 0))) {
+      if (['break', 'plenary'].includes(event.type) || (event.type === 'other' && event.name.toLowerCase().indexOf('office hours') >= 0)) {
         await expect(row.locator('.agenda-table-cell-name > i.bi')).toBeVisible()
       }
       // Name link
@@ -286,7 +286,7 @@ test.describe('past - desktop', () => {
               // No meeting materials yet warning badge
               await expect(eventButtons.locator('.no-meeting-materials')).toBeVisible()
             }
-            if (event.name.toLowerCase().includes('hackathon')) {
+            if (event.groupAcronym === 'hackathon') {
               // Hackathon Wiki button
               const hackathonWikiLink = `https://wiki.ietf.org/meeting/${meetingData.meeting.number}/hackathon`
               await expect(eventButtons.locator(`#btn-lnk-${event.id}-wiki`)).toHaveAttribute('href', hackathonWikiLink)
@@ -1169,7 +1169,7 @@ test.describe('future - desktop', () => {
             // No meeting materials yet warning badge
             await expect(eventButtons.locator('.no-meeting-materials')).toBeVisible()
           }
-          if (event.name.toLowerCase().includes('hackathon')) {
+          if (event.groupAcronym === 'hackathon') {
             // Hackathon Wiki button
             const hackathonWikiLink = `https://wiki.ietf.org/meeting/${meetingData.meeting.number}/hackathon`
             await expect(eventButtons.locator(`#btn-lnk-${event.id}-wiki`)).toHaveAttribute('href', hackathonWikiLink)

@@ -26,6 +26,7 @@ from tastypie.test import ResourceTestCaseMixin
 import debug                            # pyflakes:ignore
 
 import ietf
+from ietf.doc.storage_utils import retrieve_str
 from ietf.doc.utils import get_unicode_document_content
 from ietf.doc.models import RelatedDocument, State
 from ietf.doc.factories import IndividualDraftFactory, WgDraftFactory, WgRfcFactory
@@ -554,98 +555,10 @@ class CustomApiTests(TestCase):
             newdoc = session.presentations.get(document__type_id=type_id).document
             newdoccontent = get_unicode_document_content(newdoc.name, Path(session.meeting.get_materials_path()) / type_id / newdoc.uploaded_filename)
             self.assertEqual(json.loads(content), json.loads(newdoccontent))
-
-    def test_deprecated_api_upload_bluesheet(self):
-        url = urlreverse('ietf.meeting.views.api_upload_bluesheet')
-        recmanrole = RoleFactory(group__type_id='ietf', name_id='recman')
-        recman = recmanrole.person
-        meeting = MeetingFactory(type_id='ietf')
-        session = SessionFactory(group__type_id='wg', meeting=meeting)
-        group = session.group
-        apikey = PersonalApiKeyFactory(endpoint=url, person=recman)
-
-        people = [
-            {"name": "Andrea Andreotti", "affiliation": "Azienda"},
-            {"name": "Bosse Bernadotte", "affiliation": "Bolag"},
-            {"name": "Charles Charlemagne", "affiliation": "Compagnie"},
-        ]
-        for i in range(3):
-            faker = random_faker()
-            people.append(dict(name=faker.name(), affiliation=faker.company()))
-        bluesheet = json.dumps(people)
-
-        # error cases
-        r = self.client.post(url, {})
-        self.assertContains(r, "Missing apikey parameter", status_code=400)
-
-        badrole = RoleFactory(group__type_id='ietf', name_id='ad')
-        badapikey = PersonalApiKeyFactory(endpoint=url, person=badrole.person)
-        badrole.person.user.last_login = timezone.now()
-        badrole.person.user.save()
-        r = self.client.post(url, {'apikey': badapikey.hash()})
-        self.assertContains(r, "Restricted to roles: Recording Manager, Secretariat", status_code=403)
-
-        r = self.client.post(url, {'apikey': apikey.hash()})
-        self.assertContains(r, "Too long since last regular login", status_code=400)
-        recman.user.last_login = timezone.now()
-        recman.user.save()
-
-        r = self.client.get(url, {'apikey': apikey.hash()})
-        self.assertContains(r, "Method not allowed", status_code=405)
-
-        r = self.client.post(url, {'apikey': apikey.hash(), 'group': group.acronym})
-        self.assertContains(r, "Missing meeting parameter", status_code=400)
-
-        r = self.client.post(url, {'apikey': apikey.hash(), 'meeting': meeting.number, })
-        self.assertContains(r, "Missing group parameter", status_code=400)
-
-        r = self.client.post(url, {'apikey': apikey.hash(), 'meeting': meeting.number, 'group': group.acronym})
-        self.assertContains(r, "Missing item parameter", status_code=400)
-
-        r = self.client.post(url,
-                             {'apikey': apikey.hash(), 'meeting': meeting.number, 'group': group.acronym, 'item': '1'})
-        self.assertContains(r, "Missing bluesheet parameter", status_code=400)
-
-        r = self.client.post(url, {'apikey': apikey.hash(), 'meeting': '1', 'group': group.acronym,
-                                   'item': '1', 'bluesheet': bluesheet, })
-        self.assertContains(r, "No sessions found for meeting", status_code=400)
-
-        r = self.client.post(url, {'apikey': apikey.hash(), 'meeting': meeting.number, 'group': 'bogous',
-                                   'item': '1', 'bluesheet': bluesheet, })
-        self.assertContains(r, "No sessions found in meeting '%s' for group 'bogous'" % meeting.number, status_code=400)
-
-        r = self.client.post(url, {'apikey': apikey.hash(), 'meeting': meeting.number, 'group': group.acronym,
-                                   'item': '1', 'bluesheet': "foobar", })
-        self.assertContains(r, "Invalid json value: 'foobar'", status_code=400)
-
-        r = self.client.post(url, {'apikey': apikey.hash(), 'meeting': meeting.number, 'group': group.acronym,
-                                   'item': '5', 'bluesheet': bluesheet, })
-        self.assertContains(r, "No item '5' found in list of sessions for group", status_code=400)
-
-        r = self.client.post(url, {'apikey': apikey.hash(), 'meeting': meeting.number, 'group': group.acronym,
-                                   'item': 'foo', 'bluesheet': bluesheet, })
-        self.assertContains(r, "Expected a numeric value for 'item', found 'foo'", status_code=400)
-
-        r = self.client.post(url, {'apikey': apikey.hash(), 'meeting': meeting.number, 'group': group.acronym,
-                                   'item': '1', 'bluesheet': bluesheet, })
-        self.assertContains(r, "Done", status_code=200)
-
-        # Submit again, with slightly different content, as an updated version
-        people[1]['affiliation'] = 'Bolaget AB'
-        bluesheet = json.dumps(people)
-        r = self.client.post(url, {'apikey': apikey.hash(), 'meeting': meeting.number, 'group': group.acronym,
-                                   'item': '1', 'bluesheet': bluesheet, })
-        self.assertContains(r, "Done", status_code=200)
-
-        bluesheet = session.presentations.filter(document__type__slug='bluesheets').first().document
-        # We've submitted an update; check that the rev is right
-        self.assertEqual(bluesheet.rev, '01')
-        # Check the content
-        with open(bluesheet.get_file_name()) as file:
-            text = file.read()
-            for p in people:
-                self.assertIn(p['name'], html.unescape(text))
-                self.assertIn(p['affiliation'], html.unescape(text))
+            self.assertEqual(
+                json.loads(retrieve_str(type_id, newdoc.uploaded_filename)),
+                json.loads(content)
+            )
 
     def test_api_upload_bluesheet(self):
         url = urlreverse("ietf.meeting.views.api_upload_bluesheet")
@@ -653,7 +566,6 @@ class CustomApiTests(TestCase):
         recman = recmanrole.person
         meeting = MeetingFactory(type_id="ietf")
         session = SessionFactory(group__type_id="wg", meeting=meeting)
-        group = session.group
         apikey = PersonalApiKeyFactory(endpoint=url, person=recman)
 
         people = [
@@ -693,18 +605,6 @@ class CustomApiTests(TestCase):
         r = self.client.post(url, {"apikey": apikey.hash(), "session_id": session.pk})
         self.assertContains(r, "Missing bluesheet parameter", status_code=400)
 
-        r = self.client.post(
-            url,
-            {
-                "apikey": apikey.hash(),
-                "meeting": meeting.number,
-                "group": group.acronym,
-                "item": "1",
-                "bluesheet": "foobar",
-            },
-        )
-        self.assertContains(r, "Invalid json value: 'foobar'", status_code=400)
-
         bad_session_pk = int(Session.objects.order_by("-pk").first().pk) + 1
         r = self.client.post(
             url,
@@ -743,9 +643,7 @@ class CustomApiTests(TestCase):
             url,
             {
                 "apikey": apikey.hash(),
-                "meeting": meeting.number,
-                "group": group.acronym,
-                "item": "1",
+                "session_id": session.pk,
                 "bluesheet": bluesheet,
             },
         )
@@ -1160,6 +1058,14 @@ class CustomApiTests(TestCase):
             jsondata = r.json()
             self.assertEqual(jsondata['success'], True)
             self.client.logout()
+
+    @override_settings(APP_API_TOKENS={"ietf.api.views.nfs_metrics": ["valid-token"]})
+    def test_api_nfs_metrics(self):
+        url = urlreverse("ietf.api.views.nfs_metrics")
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 403)
+        r = self.client.get(url, headers={"X-Api-Key": "valid-token"})
+        self.assertContains(r, 'nfs_latency_seconds{operation="write"}')
 
     def test_api_get_session_matherials_no_agenda_meeting_url(self):
         meeting = MeetingFactory(type_id='ietf')

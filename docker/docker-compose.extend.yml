@@ -16,6 +16,10 @@ services:
     pgadmin:
         ports:
             - '5433'
+    blobstore:
+        ports:
+            - '9000'
+            - '9001'
     celery:
         volumes:
             - .:/workspace

@@ -361,6 +361,7 @@ class InterimSessionModelForm(forms.ModelForm):
             os.makedirs(directory)
         with io.open(path, "w", encoding='utf-8') as file:
             file.write(self.cleaned_data['agenda'])
+        doc.store_str(doc.uploaded_filename, self.cleaned_data['agenda'])
 
 
 class InterimAnnounceForm(forms.ModelForm):

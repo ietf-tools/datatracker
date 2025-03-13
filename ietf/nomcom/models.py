@@ -42,6 +42,7 @@ class ReminderDates(models.Model):
 
 
 class NomCom(models.Model):
+    # TODO-BLOBSTORE: migrate this to a database field instead of a FileField and update code accordingly
     public_key = models.FileField(storage=NoLocationMigrationFileSystemStorage(location=settings.NOMCOM_PUBLIC_KEYS_DIR),
                                   upload_to=upload_path_handler, blank=True, null=True)
 

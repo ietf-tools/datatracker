@@ -373,6 +373,7 @@ def update_docs_from_rfc_index(
         "INDEPENDENT": StreamName.objects.get(slug="ise"),
         "IRTF": StreamName.objects.get(slug="irtf"),
         "IAB": StreamName.objects.get(slug="iab"),
+        "Editorial": StreamName.objects.get(slug="editorial"),
         "Legacy": StreamName.objects.get(slug="legacy"),
     }
 

@@ -4,11 +4,12 @@
 
 1. [Set up Docker](https://docs.docker.com/get-started/) on your preferred platform. On Windows, it is highly recommended to use the [WSL 2 *(Windows Subsystem for Linux)*](https://docs.docker.com/desktop/windows/wsl/) backend.
 
+> [!IMPORTANT]  
 > See the [IETF Tools Windows Dev guide](https://github.com/ietf-tools/.github/blob/main/docs/windows-dev.md) on how to get started when using Windows.
 
 2. On Linux, you must [install Docker Compose manually](https://docs.docker.com/compose/install/linux/#install-the-plugin-manually) and not install Docker Desktop. On Mac and Windows install Docker Desktop which already includes Docker Compose.
 
-2. If you have a copy of the datatracker code checked out already, simply `cd` to the top-level directory.
+3. If you have a copy of the datatracker code checked out already, simply `cd` to the top-level directory.
 
    If not, check out a datatracker branch as usual. We'll check out `main` below, but you can use any branch:
 
@@ -18,7 +19,7 @@
     git checkout main
     ```
 
-3. Follow the instructions for your preferred editor:
+4. Follow the instructions for your preferred editor:
     - [Visual Studio Code](#using-visual-studio-code)
     - [Other Editors / Generic](#using-other-editors--generic)
 
@@ -188,7 +189,6 @@ The content of the source files will be copied into the target `.ics` files. Mak
 ### Missing assets in the data folder
 
 Because including all assets in the image would significantly increase the file size, they are not included by default. You can however fetch them by running the **Fetch assets via rsync** task in VS Code or run manually the script `docker/scripts/app-rsync-extras.sh`
-
 
 ### Linux file permissions leaking to the host system
 

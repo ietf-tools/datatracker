@@ -1,15 +1,15 @@
-{% load humanize tz %}{% autoescape off %}{% timezone schedule.meeting.tz %}{% load ietf_filters textfilters %}{% load cache %}{% cache 1800 ietf_meeting_agenda_ics schedule.meeting.number request.path request.GET %}BEGIN:VCALENDAR
+{% load humanize tz %}{% autoescape off %}{% timezone schedule.meeting.tz %}{% with tzname=schedule.meeting.time_zone %}{% load ietf_filters textfilters %}{% load cache %}{% cache 1800 ietf_meeting_agenda_ics schedule.meeting.number request.path request.GET %}BEGIN:VCALENDAR
 VERSION:2.0
 METHOD:PUBLISH
 PRODID:-//IETF//datatracker.ietf.org ical agenda//EN
-{{schedule.meeting.vtimezone}}{% for item in assignments %}BEGIN:VEVENT
+{% if tzname != "utc" and tzname != "gmt" %}{% firstof schedule.meeting.vtimezone "" %}{% endif %}{% for item in assignments %}BEGIN:VEVENT
 UID:ietf-{{schedule.meeting.number}}-{{item.timeslot.pk}}-{{item.session.group.acronym}}
 SUMMARY:{% if item.session.name %}{{item.session.name|ics_esc}}{% else %}{{item.session.group_at_the_time.acronym|lower}} - {{item.session.group_at_the_time.name}}{%endif%}{% if item.session.agenda_note %} ({{item.session.agenda_note}}){% endif %}
 {% if item.timeslot.show_location %}LOCATION:{{item.timeslot.get_location}}
 {% endif %}STATUS:{{item.session.ical_status}}
 CLASS:PUBLIC
-DTSTART{% ics_date_time item.timeslot.local_start_time schedule.meeting.time_zone %}
-DTEND{% ics_date_time item.timeslot.local_end_time schedule.meeting.time_zone %}
+DTSTART{% ics_date_time item.timeslot.local_start_time tzname %}
+DTEND{% ics_date_time item.timeslot.local_end_time tzname %}
 DTSTAMP{% ics_date_time item.timeslot.modified|utc 'utc' %}{% if item.session.agenda %}
 URL:{{item.session.agenda.get_versionless_href}}{% endif %}
 DESCRIPTION:{{item.timeslot.name|ics_esc}}\n{% if item.session.agenda_note %}
@@ -29,4 +29,4 @@ DESCRIPTION:{{item.timeslot.name|ics_esc}}\n{% if item.session.agenda_note %}
  \n{# link agenda for ietf meetings #}
  See in schedule: {% absurl 'agenda' num=schedule.meeting.number %}#row-{{ item.slug }}\n{% endif %}
 END:VEVENT
-{% endfor %}END:VCALENDAR{% endcache %}{% endtimezone %}{% endautoescape %}
+{% endfor %}END:VCALENDAR{% endcache %}{% endwith %}{% endtimezone %}{% endautoescape %}
