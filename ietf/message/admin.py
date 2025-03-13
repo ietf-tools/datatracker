@@ -7,8 +7,8 @@ from ietf.message.models import Message, MessageAttachment, SendQueue, Announcem
 from ietf.message.tasks import retry_send_messages_by_pk_task
 
 class MessageSentStatusListFilter(admin.SimpleListFilter):
-    """"""
-    title = "Status"
+    """Filter Messages by whether or not they were sent"""
+    title = "status"
     parameter_name = "status"
     
     def lookups(self, request, model_admin):
