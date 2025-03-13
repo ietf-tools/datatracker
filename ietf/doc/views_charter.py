@@ -441,9 +441,10 @@ def submit(request, name, option=None):
             )  # update rev
             with charter_filename.open("w", encoding="utf-8") as destination:
                 if form.cleaned_data["txt"]:
-                    destination.write(form.cleaned_data["txt"])
+                    content=form.cleaned_data["txt"]
                 else:
-                    destination.write(form.cleaned_data["content"])
+                    content=form.cleaned_data["content"]
+                destination.write(content)
             # Also provide a copy to the legacy ftp source directory, which is served by rsync
             # This replaces the hardlink copy that ghostlink has made in the past
             # Still using a hardlink as long as these are on the same filesystem.
@@ -454,7 +455,8 @@ def submit(request, name, option=None):
                 log(
                     "There was an error creating a hardlink at %s pointing to %s"
                     % (ftp_filename, charter_filename)
-                )     
+                )
+            charter.store_str(charter_filename.name, content)     
 
 
             if option in ["initcharter", "recharter"] and charter.ad == None:

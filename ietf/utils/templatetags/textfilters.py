@@ -11,7 +11,7 @@ from django.utils.safestring import mark_safe
 
 import debug                            # pyflakes:ignore
 
-from ietf.utils.text import xslugify as _xslugify, texescape, bleach_linker
+from ietf.utils.text import linkify as _linkify, xslugify as _xslugify, texescape
 
 register = template.Library()
 
@@ -74,7 +74,7 @@ def texescape_filter(value):
 @register.filter
 @stringfilter
 def linkify(value):
-    text = mark_safe(bleach_linker.linkify(value))
+    text = mark_safe(_linkify(value))
     return text
 
 @register.filter

@@ -7,7 +7,7 @@ import factory
 import factory.fuzzy
 import datetime
 
-from typing import Optional         # pyflakes:ignore
+from typing import Any  # pyflakes:ignore
 
 from django.conf import settings
 from django.utils import timezone
@@ -37,13 +37,16 @@ class BaseDocumentFactory(factory.django.DjangoModelFactory):
         model = Document
         skip_postgeneration_save = True
 
+    # n.b., a few attributes are typed as Any so mypy won't complain when we override in subclasses
     title = factory.Faker('sentence',nb_words=5)
-    abstract = factory.Faker('paragraph', nb_sentences=5)
+    abstract: Any = factory.Faker('paragraph', nb_sentences=5)
     rev = '00'
-    std_level_id = None                 # type: Optional[str]
+    std_level_id: Any = None
     intended_std_level_id = None
     time = timezone.now()
-    expires = factory.LazyAttribute(lambda o: o.time+datetime.timedelta(days=settings.INTERNET_DRAFT_DAYS_TO_EXPIRE))
+    expires: Any = factory.LazyAttribute(
+        lambda o: o.time+datetime.timedelta(days=settings.INTERNET_DRAFT_DAYS_TO_EXPIRE)
+    )
     pages = factory.fuzzy.FuzzyInteger(2,400)
 
 
@@ -282,7 +285,7 @@ class DocEventFactory(factory.django.DjangoModelFactory):
 
     type = 'added_comment'
     by = factory.SubFactory('ietf.person.factories.PersonFactory')
-    doc = factory.SubFactory(DocumentFactory)
+    doc: Any = factory.SubFactory(DocumentFactory)  # `Any` to appease mypy when a subclass overrides doc
     desc = factory.Faker('sentence',nb_words=6)
 
     @factory.lazy_attribute

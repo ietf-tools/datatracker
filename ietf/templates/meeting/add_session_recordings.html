@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin static django_bootstrap5 %}
+{% block title %}Add I-Ds to {{ session.meeting }} : {{ session.group.acronym }}{% endblock %}
+{% block pagehead %}{{ form.media.css }}{% endblock %}
+{% block content %}
+    {% origin %}
+    <h1>
+        Add Recordings to {{ session.meeting }}
+        {% if session_number %}: Session {{ session_number }}{% endif %}
+        <br>
+        <small class="text-body-secondary">{{ session.group.acronym }}
+            {% if session.name %}: {{ session.name }}{% endif %}
+        </small>
+    </h1>
+    {% if session.is_material_submission_cutoff %}
+        <div class="alert alert-warning my-3">
+            The deadline for submission corrections has passed. This may affect published proceedings.
+        </div>
+    {% endif %}
+    {% if already_linked|length > 0 %}
+        <h2 class="mt-5">Recordings already linked to this session</h2>
+        <form method="post" id="delete_recordings_form">
+            {% csrf_token %}
+            <table class="table table-sm table-striped">
+                <thead>
+                <tr>
+                    <th scope="col">Title</th>
+                    <th scope="col">URL</th>
+                    <th scope="col">Delete</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for sp in already_linked %}{% with recording_doc=sp.document %}
+                    <tr>
+                        <td>{{ recording_doc.title }}</td>
+                        <td><a href="{{ recording_doc.external_url }}">{{ recording_doc.external_url }}</a></td>
+                        <td>
+                            <button type="submit"
+                                    aria-label="Delete {{ recording_doc.title }}"
+                                    class="btn btn-danger"
+                                    name="delete"
+                                    value="{{ sp.pk }}">
+                                Delete
+                            </button>
+                        </td>
+                    </tr>
+                {% endwith %}{% endfor %}
+                </tbody>
+            </table>
+        </form>
+    {% endif %}
+    <dialog id="delete_confirm_dialog">
+        <p>Really delete the link to <a href="#" id="delete_confirm_link">(default)</a>?</p>
+        <form method="post" class="d-flex justify-content-between">
+            {% csrf_token %}
+            <button class="btn btn-secondary" type="button" id="delete_confirm_cancel">Cancel</button>
+            <button class="btn btn-danger" type="submit" name="delete" id="delete_confirm_submit">Delete</button>
+        </form>
+    </dialog>
+    <h2 class="mt-5">Add a recording to this session</h2>
+    <form method="post">
+        {% csrf_token %}
+        {% bootstrap_form form %}
+        <button class="btn btn-{% if session.is_material_submission_cutoff %}warning{% else %}primary{% endif %}"
+                type="submit">
+            Add recording
+        </button>
+        <a class="btn btn-secondary float-end"
+           href="{% url 'ietf.meeting.views.session_details' num=session.meeting.number acronym=session.group.acronym %}">
+            Back
+        </a>
+    </form>
+{% endblock %}
+{% block js %}
+    {{ form.media.js }}
+    <script src="{% static 'ietf/js/add_session_recordings.js' %}"></script>
+{% endblock %}

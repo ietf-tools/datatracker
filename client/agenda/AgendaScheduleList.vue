@@ -307,7 +307,7 @@ const meetingEvents = computed(() => {
         })
       }
       // -> Point to Wiki for Hackathon sessions, HedgeDocs otherwise
-      if (item.name.toLowerCase().includes('hackathon')) {
+      if (item.groupAcronym === 'hackathon') {
         links.push({
           id: `lnk-${item.id}-wiki`,
           label: 'Wiki',
@@ -461,7 +461,7 @@ const meetingEvents = computed(() => {
       case 'other':
         if (item.name.toLowerCase().indexOf('office hours') >= 0) {
           icon = 'bi-building'
-        } else if (item.name.toLowerCase().indexOf('hackathon') >= 0) {
+        } else if (item.groupAcronym === 'hackathon') {
           icon = 'bi-command bi-pink'
         }
         break

@@ -20,6 +20,7 @@ from pyquery import PyQuery
 
 import debug                            # pyflakes:ignore
 
+from ietf.doc.storage_utils import retrieve_str
 import ietf.review.mailarch
 
 from ietf.doc.factories import ( NewRevisionDocEventFactory, IndividualDraftFactory, WgDraftFactory,
@@ -63,6 +64,10 @@ class ReviewTests(TestCase):
         review_file = Path(self.review_subdir) / f"{assignment.review.name}.txt"
         content = review_file.read_text()
         self.assertEqual(content, expected_content)
+        self.assertEqual(
+            retrieve_str("review", review_file.name),
+            expected_content
+        )
         review_ftp_file = Path(settings.FTP_DIR) / "review" / review_file.name
         self.assertTrue(review_file.samefile(review_ftp_file))
 

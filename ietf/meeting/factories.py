@@ -9,6 +9,7 @@ import datetime
 from django.core.files.base import ContentFile
 from django.db.models import Q
 
+from ietf.doc.storage_utils import store_str
 from ietf.meeting.models import (Attended, Meeting, Session, SchedulingEvent, Schedule,
     TimeSlot, SessionPresentation, FloorPlan, Room, SlideSubmission, Constraint,
     MeetingHost, ProceedingsMaterial, Registration, RegistrationTicket)
@@ -239,6 +240,10 @@ class SlideSubmissionFactory(factory.django.DjangoModelFactory):
     make_file = factory.PostGeneration(
                     lambda obj, create, extracted, **kwargs: open(obj.staged_filepath(),'a').close()
                 )
+    
+    store_submission = factory.PostGeneration(
+        lambda obj, create, extracted, **kwargs: store_str("staging", obj.filename, "")
+    )
 
 class ConstraintFactory(factory.django.DjangoModelFactory):
     class Meta:

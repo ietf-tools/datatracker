@@ -12,7 +12,7 @@ from .models import (StateType, State, RelatedDocument, DocumentAuthor, Document
     TelechatDocEvent, BallotPositionDocEvent, ReviewRequestDocEvent, InitialReviewDocEvent,
     AddedMessageEvent, SubmissionDocEvent, DeletedEvent, EditedAuthorsDocEvent, DocumentURL,
     ReviewAssignmentDocEvent, IanaExpertDocEvent, IRSGBallotDocEvent, DocExtResource, DocumentActionHolder,
-    BofreqEditorDocEvent, BofreqResponsibleDocEvent )
+    BofreqEditorDocEvent, BofreqResponsibleDocEvent, StoredObject )
 
 from ietf.utils.validators import validate_external_resource_value
 
@@ -218,3 +218,9 @@ class DocExtResourceAdmin(admin.ModelAdmin):
     search_fields = ['doc__name', 'value', 'display_name', 'name__slug',]
     raw_id_fields = ['doc', ]
 admin.site.register(DocExtResource, DocExtResourceAdmin)
+
+class StoredObjectAdmin(admin.ModelAdmin):
+    list_display = ['store', 'name', 'modified', 'deleted']
+    list_filter = ['deleted']
+    search_fields = ['store', 'name', 'doc_name', 'doc_rev', 'deleted']
+admin.site.register(StoredObject, StoredObjectAdmin)

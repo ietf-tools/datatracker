@@ -183,6 +183,12 @@ STATIC_IETF_ORG = "https://static.ietf.org"
 # Server-side static.ietf.org URL (used in pdfized)
 STATIC_IETF_ORG_INTERNAL = STATIC_IETF_ORG
 
+ENABLE_BLOBSTORAGE = True
+
+BLOBSTORAGE_MAX_ATTEMPTS = 1
+BLOBSTORAGE_CONNECT_TIMEOUT = 2
+BLOBSTORAGE_READ_TIMEOUT = 2
+
 WSGI_APPLICATION = "ietf.wsgi.application"
 
 AUTHENTICATION_BACKENDS = ( 'ietf.ietfauth.backends.CaseInsensitiveModelBackend', )
@@ -452,6 +458,7 @@ INSTALLED_APPS = [
     'django_vite',
     'django_bootstrap5',
     'django_celery_beat',
+    'django_celery_results',
     'corsheaders',
     'django_markup',
     'oidc_provider',
@@ -735,6 +742,38 @@ URL_REGEXPS = {
     "schedule_name": r"(?P<name>[A-Za-z0-9-:_]+)",
 }
 
+STORAGES: dict[str, Any] = {
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
+}
+
+# settings_local will need to configure storages for these names
+MORE_STORAGE_NAMES: list[str] = [
+    "bofreq",
+    "charter",
+    "conflrev",
+    "active-draft",
+    "draft",
+    "slides",
+    "minutes",
+    "agenda",
+    "bluesheets",
+    "procmaterials",
+    "narrativeminutes",
+    "statement",
+    "statchg",
+    "liai-att",
+    "chatlog",
+    "polls",
+    "staging",
+    "bibxml-ids",
+    "indexes",
+    "floorplan",
+    "meetinghostlogo",
+    "photo",
+    "review",
+]
+
 # Override this in settings_local.py if needed
 # *_PATH variables ends with a slash/ .
 
@@ -744,8 +783,8 @@ INTERNET_DRAFT_PDF_PATH = '/a/www/ietf-datatracker/pdf/'
 RFC_PATH = '/a/www/ietf-ftp/rfc/'
 CHARTER_PATH = '/a/ietfdata/doc/charter/'
 CHARTER_COPY_PATH = '/a/www/ietf-ftp/ietf'  # copy 1wg-charters files here if set
-CHARTER_COPY_OTHER_PATH = '/a/www/ftp/ietf'
-CHARTER_COPY_THIRD_PATH = '/a/www/ftp/charter'
+CHARTER_COPY_OTHER_PATH = '/a/ftp/ietf'
+CHARTER_COPY_THIRD_PATH = '/a/ftp/charter'
 GROUP_SUMMARY_PATH = '/a/www/ietf-ftp/ietf'
 BOFREQ_PATH = '/a/ietfdata/doc/bofreq/'
 CONFLICT_REVIEW_PATH = '/a/ietfdata/doc/conflict-review'
@@ -761,6 +800,7 @@ MEETING_RECORDINGS_DIR = '/a/www/audio'
 DERIVED_DIR = '/a/ietfdata/derived'
 FTP_DIR = '/a/ftp'
 ALL_ID_DOWNLOAD_DIR = '/a/www/www6s/download'
+NFS_METRICS_TMP_DIR = '/a/tmp'
 
 DOCUMENT_FORMAT_ALLOWLIST = ["txt", "ps", "pdf", "xml", "html", ]
 
@@ -1225,7 +1265,9 @@ CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True  # the default, but setting it 
 # https://docs.celeryq.dev/en/stable/userguide/tasks.html#rpc-result-backend-rabbitmq-qpid
 # Results can be retrieved only once and only by the caller of the task. Results will be
 # lost if the message broker restarts.
-CELERY_RESULT_BACKEND = 'rpc://'  # sends a msg via the msg broker
+CELERY_RESULT_BACKEND = 'django-cache'  # use a Django cache for results
+CELERY_CACHE_BACKEND = 'celery-results'  # which Django cache to use
+CELERY_RESULT_EXPIRES = datetime.timedelta(minutes=5)  # how long are results valid? (Default is 1 day)
 CELERY_TASK_IGNORE_RESULT = True  # ignore results unless specifically enabled for a task
 
 # Meetecho API setup: Uncomment this and provide real credentials to enable
@@ -1308,6 +1350,11 @@ if "CACHES" not in locals():
                     "MAX_ENTRIES": 5000,
                 },
             },
+            "celery-results": {
+                "BACKEND": "django.core.cache.backends.memcached.PyMemcacheCache",
+                "LOCATION": f"{MEMCACHED_HOST}:{MEMCACHED_PORT}",
+                "KEY_PREFIX": "ietf:celery",
+            },
         }
     else:
         CACHES = {
@@ -1346,6 +1393,11 @@ if "CACHES" not in locals():
                     "MAX_ENTRIES": 5000,
                 },
             },
+            "celery-results": {
+                "BACKEND": "django.core.cache.backends.memcached.PyMemcacheCache",
+                "LOCATION": "app:11211",
+                "KEY_PREFIX": "ietf:celery",
+            },
         }
 
 PUBLISH_IPR_STATES = ['posted', 'removed', 'removed_objfalse']
@@ -1383,3 +1435,6 @@ if SERVER_MODE != 'production':
     CSRF_TRUSTED_ORIGINS += ['http://localhost:8000', 'http://127.0.0.1:8000', 'http://[::1]:8000']
     SESSION_COOKIE_SECURE = False
     SESSION_COOKIE_SAMESITE = 'Lax'
+
+
+YOUTUBE_DOMAINS = ['www.youtube.com', 'youtube.com', 'youtu.be', 'm.youtube.com', 'youtube-nocookie.com', 'www.youtube-nocookie.com']

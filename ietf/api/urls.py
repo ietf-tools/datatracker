@@ -83,6 +83,8 @@ urlpatterns = [
     url(r'^version/?$', api_views.version),
     # Application authentication API key
     url(r'^appauth/(?P<app>authortools|bibxml)$', api_views.app_auth),
+    # NFS metrics endpoint
+    url(r'^metrics/nfs/?$', api_views.nfs_metrics),
     # latest versions
     url(r'^rfcdiff-latest-json/%(name)s(?:-%(rev)s)?(\.txt|\.html)?/?$' % settings.URL_REGEXPS, api_views.rfcdiff_latest_json),
     url(r'^rfcdiff-latest-json/(?P<name>[Rr][Ff][Cc] [0-9]+?)(\.txt|\.html)?/?$', api_views.rfcdiff_latest_json),

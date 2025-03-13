@@ -15,6 +15,7 @@ import debug    # pyflakes:ignore
 
 from ietf.doc.factories import WgDraftFactory, RfcFactory
 from ietf.doc.models import Document, RelatedDocument, State, LastCallDocEvent, NewRevisionDocEvent
+from ietf.doc.storage_utils import retrieve_str
 from ietf.group.factories import GroupFactory
 from ietf.name.models import DocRelationshipName
 from ietf.idindex.index import all_id_txt, all_id2_txt, id_index_txt
@@ -203,5 +204,9 @@ class TaskTests(TestCase):
                 self.assertFalse(path2.exists())  # left behind
                 # check destination contents and permissions
                 self.assertEqual(dest.read_text(), "yay")
+                self.assertEqual(
+                    retrieve_str("indexes", "yay.txt"),
+                    "yay"
+                )
                 self.assertEqual(dest.stat().st_mode & 0o777, 0o644)
                 self.assertTrue(dest.samefile(other_path / "yay.txt"))
