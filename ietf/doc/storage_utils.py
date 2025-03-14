@@ -29,6 +29,8 @@ def exists_in_storage(kind: str, name: str) -> bool:
             return store.exists_in_storage(kind, name)
         except Exception as err:
             log(f"Blobstore Error: Failed to test existence of {kind}:{name}: {repr(err)}")
+            if settings.SERVER_MODE == "development":
+                raise
     return False
 
 
@@ -39,6 +41,8 @@ def remove_from_storage(kind: str, name: str, warn_if_missing: bool = True) -> N
             store.remove_from_storage(kind, name, warn_if_missing)
         except Exception as err:
             log(f"Blobstore Error: Failed to remove {kind}:{name}: {repr(err)}")
+            if settings.SERVER_MODE == "development":
+                raise
     return None
 
 
@@ -58,6 +62,8 @@ def store_file(
             store.store_file(kind, name, file, allow_overwrite, doc_name, doc_rev)
         except Exception as err:
             log(f"Blobstore Error: Failed to store file {kind}:{name}: {repr(err)}")
+            if settings.SERVER_MODE == "development":
+                raise
     return None
 
 
@@ -75,6 +81,8 @@ def store_bytes(
         except Exception as err:
             # n.b., not likely to get an exception here because store_file or store_bytes will catch it
             log(f"Blobstore Error: Failed to store bytes to {kind}:{name}: {repr(err)}")
+            if settings.SERVER_MODE == "development":
+                raise
     return None
 
 
@@ -93,6 +101,8 @@ def store_str(
         except Exception as err:
             # n.b., not likely to get an exception here because store_file or store_bytes will catch it
             log(f"Blobstore Error: Failed to store string to {kind}:{name}: {repr(err)}")
+            if settings.SERVER_MODE == "development":
+                raise
     return None
 
 
@@ -112,6 +122,8 @@ def retrieve_bytes(kind: str, name: str) -> bytes:
                     content = f.read()
         except Exception as err:
             log(f"Blobstore Error: Failed to read bytes from {kind}:{name}: {repr(err)}")
+            if settings.SERVER_MODE == "development":
+                raise
     return content
 
 
@@ -124,4 +136,20 @@ def retrieve_str(kind: str, name: str) -> str:
             content = content_bytes.decode("utf-8")
         except Exception as err:
             log(f"Blobstore Error: Failed to read string from {kind}:{name}: {repr(err)}")
+            if settings.SERVER_MODE == "development":
+                raise
     return content
+
+
+def commit_saved_object(kind: str, name: str):
+    if settings.ENABLE_BLOBSTORAGE:
+        store = _get_storage(kind)
+        if hasattr(store, "commit_save"):
+            store.commit_save(name)
+
+
+def commit_deleted_object(kind: str, name: str):
+    if settings.ENABLE_BLOBSTORAGE:
+        store = _get_storage(kind)
+        if hasattr(store, "commit_delete"):
+            store.commit_delete(name)

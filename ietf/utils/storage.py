@@ -48,6 +48,8 @@ class BlobShadowFileSystemStorage(NoLocationMigrationFileSystemStorage):
                     store_file(self.kind, blob_name, f, allow_overwrite=True)
             except Exception as err:
                 log(f"Blobstore Error: Failed to shadow {saved_name} at {self.kind}:{blob_name}: {repr(err)}")
+                if settings.SERVER_MODE == "development":
+                    raise
         return saved_name  # includes the path!
 
     def deconstruct(self):

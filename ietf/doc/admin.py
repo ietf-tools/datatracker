@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2010-2021, All Rights Reserved
+# Copyright The IETF Trust 2010-2025, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 
@@ -220,7 +220,8 @@ class DocExtResourceAdmin(admin.ModelAdmin):
 admin.site.register(DocExtResource, DocExtResourceAdmin)
 
 class StoredObjectAdmin(admin.ModelAdmin):
-    list_display = ['store', 'name', 'modified', 'deleted']
+    list_display = ['store', 'name', 'modified', 'deleted', 'committed']
     list_filter = ['deleted']
     search_fields = ['store', 'name', 'doc_name', 'doc_rev', 'deleted']
+    list_display_links = ['name']
 admin.site.register(StoredObject, StoredObjectAdmin)
