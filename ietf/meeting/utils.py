@@ -1070,34 +1070,34 @@ def migrate_registrations(initial=False):
             if created:
                 for meeting_reg in meeting_regs:
                     reg.tickets.create(
-                        attendance_type_id=meeting_reg.reg_type,
-                        ticket_type_id=meeting_reg.ticket_type,
+                        attendance_type_id=meeting_reg.reg_type or 'unknown',
+                        ticket_type_id=meeting_reg.ticket_type or 'unknown',
                     )
             else:
                 # check if tickets differ
                 reg_tuple_list = [(t.attendance_type_id, t.ticket_type_id) for t in reg.tickets.all()]
-                meeting_reg_tuple_list = [(mr.reg_type, mr.ticket_type) for mr in meeting_regs]
+                meeting_reg_tuple_list = [(mr.reg_type or 'unknown', mr.ticket_type or 'unknown') for mr in meeting_regs]
                 if not set(reg_tuple_list) == set(meeting_reg_tuple_list):
                     # update tickets
                     reg.tickets.all().delete()
                     for meeting_reg in meeting_regs:
                         reg.tickets.create(
-                            attendance_type_id=meeting_reg.reg_type,
-                            ticket_type_id=meeting_reg.ticket_type,
+                            attendance_type_id=meeting_reg.reg_type or 'unknown',
+                            ticket_type_id=meeting_reg.ticket_type or 'unknown',
                         )
                 # check fields for updates
                 fields_to_check = [
                     'first_name', 'last_name', 'affiliation', 'country_code',
                     'attended', 'checkedin'
                 ]
-                
+
                 changed = False
                 for field in fields_to_check:
                     new_value = getattr(preferred_reg, field)
                     if getattr(reg, field) != new_value:
                         setattr(reg, field, new_value)
                         changed = True
-                        
+
                 if changed:
                     reg.save()
         # delete cancelled Registrations
@@ -1107,6 +1107,17 @@ def migrate_registrations(initial=False):
             Registration.objects.filter(meeting=meeting, email=email).delete()
 
     return
+
+
+def test_migrate_registrations():
+    """A simple utility function to test that all MeetingRegistration
+    records got migrated
+    """
+    for mr in MeetingRegistration.objects.all():
+        reg = Registration.objects.get(meeting=mr.meeting, email=mr.email)
+        assert reg.tickets.filter(
+            attendance_type__slug=mr.reg_type or 'unknown',
+            ticket_type__slug=mr.ticket_type or 'unknown').exists()
 
 
 def generate_proceedings_content(meeting, force_refresh=False):
