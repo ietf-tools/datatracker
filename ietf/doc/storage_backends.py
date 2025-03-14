@@ -135,8 +135,6 @@ class StoredObjectStorageMixin:
         doc_name: Optional[str] = None,
         doc_rev: Optional[str] = None,
     ):
-        if kind != self.kind:
-            raise RuntimeError(f"Called store_file() for {kind} against the {self.kind} Storage")
         is_new = not self.exists_in_storage(kind, name)
         # debug.show('f"Asked to store {name} in {kind}: is_new={is_new}, allow_overwrite={allow_overwrite}"')
         if not allow_overwrite and not is_new:
