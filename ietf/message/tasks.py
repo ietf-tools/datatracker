@@ -28,12 +28,19 @@ def send_scheduled_mail_task():
 
 
 @shared_task
-def retry_send_messages_by_pk_task(message_pks, resend=False):
+def retry_send_messages_by_pk_task(message_pks: list, resend=False):
     """Task to retry sending Messages by PK
     
     Sends Messages whose PK is included in the list.
     Only previously unsent messages are sent unless `resend` is true.
     """
+    log.log(
+        "retry_send_messages_by_pk_task: "
+        "retrying send of Message PKs [{}] (resend={})".format(
+            ", ".join(str(pk) for pk in message_pks),
+            resend,
+        )
+    )
     retry_send_messages(
         messages=Message.objects.filter(pk__in=message_pks),
         resend=resend,

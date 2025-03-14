@@ -68,13 +68,22 @@ def retry_send_messages(messages: QuerySet[Message], resend=False):
     """Attempt delivery of Messages"""
     if not resend:
         # only include sent messages on explicit request
+        for already_sent in messages.filter(sent__isnull=False):
+            log.log(
+                f"retry_send_messages: skipping {already_sent.pk} "
+                f"(already sent {already_sent.sent.isoformat(timespec='milliseconds')})"
+            )
         messages = messages.filter(sent__isnull=True)
     for msg in messages:
         to = ",".join(a[1] for a in email.utils.getaddresses([msg.to]))
         try:
             send_mail_message(None, msg)
-            log.log(f'{msg.pk}  {msg.frm} -> {to}  "{msg.subject.strip()}"')
+            log.log(
+                f'retry_send_messages: '
+                f'sent {msg.pk} {msg.frm} -> {to} "{msg.subject.strip()}"'
+            )
         except smtplib.SMTPException as e:
             log.log(
+                f'retry_send_messages: '
                 f'Failure {e}:  {msg.pk}  {msg.frm} -> {to}  "{msg.subject.strip()}"'
             )
