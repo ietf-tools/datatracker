@@ -2,8 +2,6 @@
 #
 # Celery task definitions
 #
-import datetime
-
 from celery import shared_task
 from smtplib import SMTPException
 
