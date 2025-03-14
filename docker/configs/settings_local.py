@@ -46,6 +46,7 @@ for storagename in MORE_STORAGE_NAMES:
         "BACKEND": "ietf.doc.storage_backends.StoredObjectStagedBlobStorage",
         "OPTIONS": {
             "kind": storagename,
+            "async_commit": True,  # TODO-BLOBSTORE should probably be false for Celery containers
             "staging_storage": {
                 "BACKEND": "ietf.blobdb.storage.BlobdbStorage",
                 "OPTIONS": {"bucket_name": storagename},
