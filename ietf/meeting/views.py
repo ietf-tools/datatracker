@@ -2526,6 +2526,7 @@ def session_details(request, num, acronym):
                     'can_manage_materials' : can_manage,
                     'can_view_request': can_view_request,
                     'thisweek': datetime_today()-datetime.timedelta(days=7),
+                    'future': timezone.now() < session.official_timeslotassignment().timeslot.end_time(),
                   })
 
 class SessionDraftsForm(forms.Form):
@@ -2822,6 +2823,7 @@ def upload_session_minutes(request, session_id, num):
                    'session_number': session_number,
                    'minutes_sp' : minutes_sp,
                    'form': form,
+                   'future': timezone.now() < session.official_timeslotassignment().timeslot.end_time(),
                   })
 
 @role_required("Secretariat")
