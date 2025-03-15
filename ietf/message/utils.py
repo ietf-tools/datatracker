@@ -69,6 +69,7 @@ def retry_send_messages(messages: QuerySet[Message], resend=False):
     if not resend:
         # only include sent messages on explicit request
         for already_sent in messages.filter(sent__isnull=False):
+            assert already_sent.sent is not None  # appease mypy type checking
             log.log(
                 f"retry_send_messages: skipping {already_sent.pk} "
                 f"(already sent {already_sent.sent.isoformat(timespec='milliseconds')})"
