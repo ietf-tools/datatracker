@@ -431,7 +431,7 @@ class MeetingTests(BaseMeetingTestCase):
         r = self.client.get(url)
         q = PyQuery(r.content)
         # debug.show("q(f'#notes_and_recordings_{session.pk}')")
-        self.assertEqual(len(q(f"#notes_and_recordings_{session.pk} tr")), 1)
+        self.assertEqual(len(q(f"#notes_and_recordings_{session.pk} tr")), 2)
         link = q(f"#notes_and_recordings_{session.pk} tr a")
         self.assertEqual(len(link), 1)
         self.assertEqual(link[0].attrib['href'], str(session.session_recording_url()))
