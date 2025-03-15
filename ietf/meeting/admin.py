@@ -7,7 +7,7 @@ from django.contrib import admin
 from ietf.meeting.models import (Attended, Meeting, Room, Session, TimeSlot, Constraint, Schedule,
     SchedTimeSessAssignment, ResourceAssociation, FloorPlan, UrlResource,
     SessionPresentation, ImportantDate, SlideSubmission, SchedulingEvent, BusinessConstraint,
-    ProceedingsMaterial, MeetingHost)
+    ProceedingsMaterial, MeetingHost, Registration, RegistrationTicket)
 
 
 class UrlResourceAdmin(admin.ModelAdmin):
@@ -213,3 +213,33 @@ class AttendedAdmin(admin.ModelAdmin):
     search_fields = ["person__name", "session__group__acronym", "session__meeting__number", "session__name", "session__purpose__name"]
     raw_id_fields= ["person", "session"]
 admin.site.register(Attended, AttendedAdmin)
+
+class MeetingFilter(admin.SimpleListFilter):
+    title = 'Meeting Filter'
+    parameter_name = 'meeting_id'
+
+    def lookups(self, request, model_admin):
+        # Your queryset to limit choices
+        choices = Meeting.objects.filter(type='ietf').values_list('id', 'number')
+        return choices
+
+    def queryset(self, request, queryset):
+        if self.value():
+            return queryset.filter(meeting__id=self.value())
+        return queryset
+class RegistrationAdmin(admin.ModelAdmin):
+    model = Registration
+    # list_filter = [('meeting', Meeting.objects.filter(type='ietf')), ]
+    list_filter = [MeetingFilter, ]
+    list_display = ['meeting', 'first_name', 'last_name', 'affiliation', 'country_code', 'person', 'email', ]
+    search_fields = ['meeting__number', 'first_name', 'last_name', 'affiliation', 'country_code', 'email', ]
+    raw_id_fields = ['person']
+admin.site.register(Registration, RegistrationAdmin)
+
+class RegistrationTicketAdmin(admin.ModelAdmin):
+    model = RegistrationTicket
+    list_filter = ['attendance_type', ]
+    list_display = ['registration', 'attendance_type', 'ticket_type']
+    search_fields = ['registration__first_name', 'registration__last_name', 'registration__email']
+    raw_id_fields = ['registration']
+admin.site.register(RegistrationTicket, RegistrationTicketAdmin)
