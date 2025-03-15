@@ -253,6 +253,7 @@ const meetingEvents = computed(() => {
 
     // -> Add date row
     const itemDate = DateTime.fromISO(item.adjustedStartDate)
+    let willRenderDateRow = false
     if (itemDate.toISODate() !== acc.lastDate) {
       acc.result.push({
         id: item.id,
@@ -262,12 +263,13 @@ const meetingEvents = computed(() => {
         date: itemDate.toLocaleString(DateTime.DATE_HUGE),
         cssClasses: 'agenda-table-display-day'
       })
+      willRenderDateRow = true
     }
     acc.lastDate = itemDate.toISODate()
 
     // -> Add session header row
     const typeName = `${item.type}-${item.slotName}`
-    if (item.type === 'regular' && acc.lastTypeName !== typeName) {
+    if (item.type === 'regular' && (acc.lastTypeName !== typeName || willRenderDateRow)) {
       acc.result.push({
         key: `sesshd-${item.id}`,
         displayType: 'session-head',
