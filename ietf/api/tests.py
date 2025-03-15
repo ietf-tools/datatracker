@@ -973,6 +973,35 @@ class CustomApiTests(TestCase):
         self.assertCountEqual(result.keys(), ["addresses"])
         self.assertCountEqual(result["addresses"], Email.objects.filter(active=True).values_list("address", flat=True))
 
+    @override_settings(APP_API_TOKENS={"ietf.api.views.related_email_list": ["valid-token"]})
+    def test_related_email_list(self):
+        joe = EmailFactory(address='joe@work.com')
+        EmailFactory(address='joe@home.com', person=joe.person)
+        url = urlreverse("ietf.api.views.related_email_list")
+        r = self.client.post(url, headers={})
+        self.assertEqual(r.status_code, 403)
+        r = self.client.get(url, headers={})
+        self.assertEqual(r.status_code, 403)
+        r = self.client.get(url, headers={"X-Api-Key": "not-the-valid-token"})
+        self.assertEqual(r.status_code, 403)
+        r = self.client.post(url, headers={"X-Api-Key": "not-the-valid-token"})
+        self.assertEqual(r.status_code, 403)
+        r = self.client.post(url, headers={"X-Api-Key": "valid-token"})
+        self.assertEqual(r.status_code, 405)
+        # no parameters
+        r = self.client.get(url, headers={"X-Api-Key": "valid-token"})
+        self.assertEqual(r.status_code, 400)
+        # empty parameter
+        r = self.client.get(url + '?email=', headers={"X-Api-Key": "valid-token"})
+        self.assertEqual(r.status_code, 400)
+        # valid
+        r = self.client.get(url + '?email=joe%40home.com', headers={"X-Api-Key": "valid-token"})
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.headers["Content-Type"], "application/json")
+        result = json.loads(r.content)
+        self.assertCountEqual(result.keys(), ["addresses"])
+        self.assertCountEqual(result["addresses"], joe.person.email_set.exclude(address='joe@home.com').values_list("address", flat=True))
+
     @override_settings(APP_API_TOKENS={"ietf.api.views.role_holder_addresses": ["valid-token"]})
     def test_role_holder_addresses(self):
         url = urlreverse("ietf.api.views.role_holder_addresses")
