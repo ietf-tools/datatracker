@@ -11,9 +11,9 @@ from django.utils import timezone
 import debug                            # pyflakes:ignore
 
 from ietf.group.factories import GroupFactory
-from ietf.message.factories import SendQueueFactory
+from ietf.message.factories import MessageFactory, SendQueueFactory
 from ietf.message.models import Message, SendQueue
-from ietf.message.tasks import send_scheduled_mail_task
+from ietf.message.tasks import send_scheduled_mail_task, retry_send_messages_by_pk_task
 from ietf.message.utils import send_scheduled_message_from_send_queue
 from ietf.person.models import Person
 from ietf.utils.mail import outbox, send_mail_text, send_mail_message, get_payload_text
@@ -150,3 +150,18 @@ class TaskTests(TestCase):
         self.assertEqual(mock_send_message.call_count, 1)
         self.assertEqual(mock_send_message.call_args[0], (not_yet_sent,))
         self.assertTrue(mock_log_smtp_exception.called)
+
+    @mock.patch("ietf.message.tasks.retry_send_messages")
+    def test_retry_send_messages_by_pk_task(self, mock_retry_send):
+        msgs = MessageFactory.create_batch(3)
+        MessageFactory()  # an extra message that won't be resent
+
+        retry_send_messages_by_pk_task([msg.pk for msg in msgs], resend=False)
+        called_with_messages = mock_retry_send.call_args.kwargs["messages"]
+        self.assertCountEqual(msgs, called_with_messages)
+        self.assertFalse(mock_retry_send.call_args.kwargs["resend"])
+
+        retry_send_messages_by_pk_task([msg.pk for msg in msgs], resend=True)
+        called_with_messages = mock_retry_send.call_args.kwargs["messages"]
+        self.assertCountEqual(msgs, called_with_messages)
+        self.assertTrue(mock_retry_send.call_args.kwargs["resend"])
