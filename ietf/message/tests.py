@@ -14,7 +14,7 @@ from ietf.group.factories import GroupFactory
 from ietf.message.factories import MessageFactory, SendQueueFactory
 from ietf.message.models import Message, SendQueue
 from ietf.message.tasks import send_scheduled_mail_task, retry_send_messages_by_pk_task
-from ietf.message.utils import send_scheduled_message_from_send_queue
+from ietf.message.utils import send_scheduled_message_from_send_queue, retry_send_messages
 from ietf.person.models import Person
 from ietf.utils.mail import outbox, send_mail_text, send_mail_message, get_payload_text
 from ietf.utils.test_utils import TestCase
@@ -131,6 +131,44 @@ class SendScheduledAnnouncementsTests(TestCase):
         self.assertTrue("This is a test" in outbox[-1]["Subject"])
         self.assertTrue("--NextPart" in outbox[-1].as_string())
         self.assertTrue(SendQueue.objects.get(id=q.id).sent_at)
+
+
+class UtilsTests(TestCase):
+    @mock.patch("ietf.message.utils.send_mail_message")
+    def test_retry_send_messages(self, mock_send_mail_message):
+        sent_message = MessageFactory(sent=timezone.now())
+        unsent_messages = MessageFactory.create_batch(2, sent=None)
+        
+        # Send the sent message and one of the unsent messages
+        retry_send_messages(
+            Message.objects.filter(pk__in=[
+                sent_message.pk,
+                unsent_messages[0].pk,
+            ]),
+            resend=False,
+        )
+        self.assertEqual(mock_send_mail_message.call_count, 1)
+        self.assertEqual(
+            mock_send_mail_message.call_args.args[1],
+            unsent_messages[0],
+        )
+        
+        mock_send_mail_message.reset_mock()
+        # Once again, send the sent message and one of the unsent messages 
+        # (we can use the same one because our mock prevented it from having
+        # its status updated to sent)
+        retry_send_messages(
+            Message.objects.filter(pk__in=[
+                sent_message.pk,
+                unsent_messages[0].pk,
+            ]),
+            resend=True,
+        )
+        self.assertEqual(mock_send_mail_message.call_count, 2)
+        self.assertCountEqual(
+            [call_args.args[1] for call_args in mock_send_mail_message.call_args_list],
+            [sent_message, unsent_messages[0]],
+        )
 
 
 class TaskTests(TestCase):
