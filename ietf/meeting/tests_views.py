@@ -424,37 +424,41 @@ class MeetingTests(BaseMeetingTestCase):
         self.assertEqual(r.status_code, 200)
 
     def test_session_recordings_via_factories(self):
-        session = SessionFactory(meeting__type_id="ietf", meeting__date=date_today()-datetime.timedelta(days=180))
+        session = SessionFactory(meeting__type_id="ietf", meeting__date=date_today()-datetime.timedelta(days=180), meeting__number=str(random.randint(108,150)))
         self.assertEqual(session.meetecho_recording_name, "")
         self.assertEqual(len(session.recordings()), 0)
         url = urlreverse("ietf.meeting.views.session_details", kwargs=dict(num=session.meeting.number, acronym=session.group.acronym))
         r = self.client.get(url)
         q = PyQuery(r.content)
         # debug.show("q(f'#notes_and_recordings_{session.pk}')")
-        self.assertEqual(len(q(f"#notes_and_recordings_{session.pk} tr")), 1)
-        link = q(f"#notes_and_recordings_{session.pk} tr a")
-        self.assertEqual(len(link), 1)
-        self.assertEqual(link[0].attrib['href'], str(session.session_recording_url()))
+        self.assertEqual(len(q(f"#notes_and_recordings_{session.pk} tr")), 2)
+        links = q(f"#notes_and_recordings_{session.pk} tr a")
+        self.assertEqual(len(links), 2)
+        self.assertEqual(links[0].attrib['href'], str(session.notes_url()))
+        self.assertEqual(links[1].attrib['href'], str(session.session_recording_url()))
 
         session.meetecho_recording_name = 'my_test_session_name'
         session.save()
         r = self.client.get(url)
         q = PyQuery(r.content)
-        self.assertEqual(len(q(f"#notes_and_recordings_{session.pk} tr")), 1)
+        self.assertEqual(len(q(f"#notes_and_recordings_{session.pk} tr")), 2)
         links = q(f"#notes_and_recordings_{session.pk} tr a")
-        self.assertEqual(len(links), 1)
-        self.assertEqual(links[0].attrib['href'], session.session_recording_url())
+        self.assertEqual(len(links), 2)
+        self.assertEqual(links[0].attrib['href'], str(session.notes_url()))
+        self.assertEqual(links[1].attrib['href'], str(session.session_recording_url()))
 
         new_recording_url = "https://www.youtube.com/watch?v=jNQXAC9IVRw"
         new_recording_title = "Me at the zoo"
         create_recording(session, new_recording_url, new_recording_title)
         r = self.client.get(url)
         q = PyQuery(r.content)
-        self.assertEqual(len(q(f"#notes_and_recordings_{session.pk} tr")), 2)
+        self.assertEqual(len(q(f"#notes_and_recordings_{session.pk} tr")), 3)
         links = q(f"#notes_and_recordings_{session.pk} tr a")
-        self.assertEqual(len(links), 2)
-        self.assertEqual(links[0].attrib['href'], new_recording_url)
-        self.assertIn(new_recording_title, links[0].text_content())
+        self.assertEqual(len(links), 3)
+        self.assertEqual(links[0].attrib['href'], str(session.notes_url()))
+        self.assertEqual(links[1].attrib['href'], new_recording_url)
+        self.assertIn(new_recording_title, links[1].text_content())
+        self.assertEqual(links[2].attrib['href'], str(session.session_recording_url()))
         #debug.show("q(f'#notes_and_recordings_{session_pk}')")
 
     def test_delete_recordings(self):
