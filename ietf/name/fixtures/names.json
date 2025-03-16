@@ -6879,6 +6879,16 @@
   },
   {
     "fields": {
+      "desc": "",
+      "name": "Unknown",
+      "order": 0,
+      "used": true
+    },
+    "model": "name.attendancetypename",
+    "pk": "unknown"
+  },
+  {
+    "fields": {
       "blocking": false,
       "desc": "",
       "name": "Abstain",
@@ -12986,6 +12996,16 @@
     },
     "model": "name.registrationtickettypename",
     "pk": "student"
+  },
+  {
+    "fields": {
+      "desc": "",
+      "name": "Unknown",
+      "order": 0,
+      "used": true
+    },
+    "model": "name.registrationtickettypename",
+    "pk": "unknown"
   },
   {
     "fields": {
