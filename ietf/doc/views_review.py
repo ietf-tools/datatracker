@@ -911,7 +911,6 @@ def complete_review(request, name, assignment_id=None, acronym=None):
                         body = render_to_string("review/completed_review.txt", {
                             "assignment": assignment,
                             "content": content,
-                            "draftname": name,
                         }),
                     )
                 msg.related_groups.add(*related_groups)
