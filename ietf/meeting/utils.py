@@ -1109,7 +1109,7 @@ def migrate_registrations(initial=False):
     return
 
 
-def test_migrate_registrations():
+def check_migrate_registrations():
     """A simple utility function to test that all MeetingRegistration
     records got migrated
     """
