@@ -3221,9 +3221,9 @@ def upload_session_slides(request, session_id, num, name=None):
                     acronym=session.group.acronym,
                 )
     else:
-        initial = {}
+        initial = {"apply_to_all": False}
         if doc is not None:
-            initial = {"title": doc.title}
+            initial["title"] = doc.title
         form = UploadSlidesForm(session, show_apply_to_all_checkbox, can_manage, initial=initial)
 
     return render(
