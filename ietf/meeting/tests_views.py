@@ -4655,6 +4655,53 @@ class SessionDetailsTests(TestCase):
         q = PyQuery(r.content)
         self.assertEqual(1,len(q(".alert-warning:contains('may affect published proceedings')")))
 
+    def test_proposed_slides_for_approval(self):
+        group = GroupFactory()
+        meeting = MeetingFactory(type_id="ietf", date=date_today() + datetime.timedelta(days=10))
+        sessions = SessionFactory.create_batch(
+            2,
+            group=group,
+            meeting=meeting,
+        )
+        # Create pending submissions
+        first_session_pending = SlideSubmissionFactory(session=sessions[0], title="first session title") 
+        second_session_pending = SlideSubmissionFactory(session=sessions[1], title="second session title")
+        
+        # and their approval URLs
+        first_approval_url = urlreverse(
+            "ietf.meeting.views.approve_proposed_slides",
+            kwargs={"slidesubmission_id": first_session_pending.pk, "num": meeting.number},
+        )
+        second_approval_url = urlreverse(
+            "ietf.meeting.views.approve_proposed_slides",
+            kwargs={"slidesubmission_id": second_session_pending.pk, "num": meeting.number},
+        )
+
+        # Retrieve the URL as a group chair
+        url = urlreverse(
+            "ietf.meeting.views.session_details",
+            kwargs={
+                "num": meeting.number,
+                "acronym": group.acronym,
+            },
+        )
+        chair = RoleFactory(group=group, name_id="chair").person
+        self.client.login(username=chair.user.username, password=f"{chair.user.username}+password")
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        pq = PyQuery(r.content)
+        self.assertEqual(
+            len(pq(f'a[href="{first_approval_url}"]')), 
+            1, 
+            "first session proposed slides should be linked for approval",
+        )
+        self.assertEqual(
+            len(pq(f'a[href="{second_approval_url}"]')),
+            1, 
+            "second session proposed slides should be linked for approval",
+        )
+        
+
 class EditScheduleListTests(TestCase):
     def setUp(self):
         super().setUp()
