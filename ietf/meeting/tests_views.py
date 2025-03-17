@@ -4656,6 +4656,8 @@ class SessionDetailsTests(TestCase):
         self.assertEqual(1,len(q(".alert-warning:contains('may affect published proceedings')")))
 
     def test_proposed_slides_for_approval(self):
+        # This test overlaps somewhat with MaterialsTests of proposed slides handling. The focus
+        # here is on the display of slides, not the approval action.
         group = GroupFactory()
         meeting = MeetingFactory(type_id="ietf", date=date_today() + datetime.timedelta(days=10))
         sessions = SessionFactory.create_batch(
