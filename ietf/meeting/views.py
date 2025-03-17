@@ -2512,9 +2512,16 @@ def session_details(request, num, acronym):
     pending_suggestions = None
     if request.user.is_authenticated:
         if can_manage:
-            pending_suggestions = session.slidesubmission_set.filter(status__slug='pending')
+            pending_suggestions = SlideSubmission.objects.filter(
+                session__in=sessions,
+                status__slug='pending',
+            )
         else:
-            pending_suggestions = session.slidesubmission_set.filter(status__slug='pending', submitter=request.user.person)
+            pending_suggestions = SlideSubmission.objects.filter(
+                session__in=sessions,
+                status__slug='pending',
+                submitter=request.user.person,
+            )
 
     return render(request, "meeting/session_details.html",
                   { 'scheduled_sessions':scheduled_sessions ,
