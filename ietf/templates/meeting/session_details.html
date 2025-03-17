@@ -31,7 +31,7 @@
     {% include 'meeting/session_details_panel.html' with sessions=scheduled_sessions %}
     <h2 class="mt-3">Unscheduled Sessions</h2>
     {% include 'meeting/session_details_panel.html' with sessions=unscheduled_sessions %}
-    {% if pending_suggestions %}
+    {% if pending_suggestions.exists %}
         <h2 class="mt-3">
             {% if can_manage_materials %}
                 Proposed slides awaiting your approval
