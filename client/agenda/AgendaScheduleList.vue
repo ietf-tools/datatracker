@@ -15,6 +15,7 @@
           td(:colspan='pickerModeActive ? 6 : 5')
             i.bi.bi-exclamation-triangle.me-2
             span(v-if='agendaStore.searchVisible && agendaStore.searchText') No event matching your search query.
+            span(v-else-if='agendaStore.meeting.prelimAgendaDate') A preliminary agenda is expected to be released on {{ agendaStore.meeting.prelimAgendaDate }}
             span(v-else) Nothing to display
         tr(
           v-for='item of meetingEvents'
