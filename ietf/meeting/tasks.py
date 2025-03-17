@@ -9,7 +9,7 @@ from ietf.utils import log
 from .models import Meeting
 from .utils import generate_proceedings_content
 from .views import generate_agenda_data
-from .utils import migrate_registrations
+from .utils import migrate_registrations, check_migrate_registrations
 
 
 @shared_task
@@ -24,6 +24,14 @@ def migrate_registrations_task(initial=False):
         This function is idempotent. It can be run regularly from cron.
     """
     migrate_registrations(initial=initial)
+
+
+@shared_task
+def check_migrate_registrations_task():
+    """ Compare MeetingRegistration with Registration to ensure
+        all records migrated
+    """
+    check_migrate_registrations()
 
 
 def proceedings_content_refresh_task(*, all=False):

@@ -31,7 +31,7 @@ def reverse(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("name", "0015_attendancetypename_registrationtickettypename"),
+        ("name", "0016_attendancetypename_registrationtickettypename"),
     ]
 
     operations = [
