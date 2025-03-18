@@ -242,19 +242,15 @@ export const useAgendaStore = defineStore('agenda', {
       const current = (this.nowDebugDiff ? DateTime.local().minus(this.nowDebugDiff) : DateTime.local()).setZone(this.timezone)
 
       // -> Find next event after current time
-      let nextEvent = {}
+      let nextEventId = undefined
       for(const sh of this.scheduleAdjusted) {
         if (sh.adjustedStart > current) {
-          nextEvent = {
-            id: sh.id,
-            start: sh.adjustedStart.toMillis(),
-            end: sh.adjustedEnd.toMillis()
-          }
+          nextEventId = sh.id
           break
         }
       }
 
-      return nextEvent.id || null
+      return nextEventId || null
     },
     hideLoadingScreen () {
       // -> Hide loading screen
