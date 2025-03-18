@@ -209,7 +209,7 @@ function scrollToNow (ev) {
   if (nowEventId) {
     document.getElementById(`agenda-rowid-${nowEventId}`)?.scrollIntoView(true)
   } else {
-    message.warning('There is no event happening right now.')
+    message.warning('There is no event happening right now or in the future.')
   }
 }
 

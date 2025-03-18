@@ -233,7 +233,9 @@ export const useAgendaStore = defineStore('agenda', {
     findNowEventId () {
       const currentEventId = this.findCurrentEventId()
       
-      if (currentEventId) return currentEventId
+      if (currentEventId) {
+        return currentEventId
+      }
 
       // if there isn't a current event then instead find the next event
 
@@ -245,7 +247,7 @@ export const useAgendaStore = defineStore('agenda', {
         if (sh.adjustedStart > current) {
           // -> Use the first event of multiple events having identical times
           if (nextEvent.start === sh.adjustedStart.toMillis()) {
-            continue
+            break
           } else {
             nextEvent = {
               id: sh.id,
