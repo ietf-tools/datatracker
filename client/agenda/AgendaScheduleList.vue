@@ -1279,6 +1279,11 @@ onBeforeUnmount(() => {
 
     &.agenda-table-cell-room {
       border-right: 1px solid darken($red-100, 5%) !important;
+      text-decoration: line-through;
+    }
+
+    &.agenda-table-cell-name {
+      text-decoration: line-through;
     }
 
     &:last-child {
@@ -1306,6 +1311,11 @@ onBeforeUnmount(() => {
 
     &.agenda-table-cell-room {
       border-right: 1px solid darken($orange-100, 5%) !important;
+      text-decoration: line-through;
+    }
+
+    &.agenda-table-cell-name {
+      text-decoration: line-through;
     }
 
     &:last-child {
