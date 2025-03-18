@@ -2509,12 +2509,14 @@ def session_details(request, num, acronym):
     scheduled_sessions = [s for s in sessions if s.current_status == 'sched']
     unscheduled_sessions = [s for s in sessions if s.current_status != 'sched']
 
-    pending_suggestions = None
-    if request.user.is_authenticated:
-        if can_manage:
-            pending_suggestions = session.slidesubmission_set.filter(status__slug='pending')
-        else:
-            pending_suggestions = session.slidesubmission_set.filter(status__slug='pending', submitter=request.user.person)
+    # Start with all the pending suggestions for all the group's sessions
+    pending_suggestions = SlideSubmission.objects.filter(session__in=sessions, status__slug='pending')
+    if can_manage:
+        pass  # keep the full set
+    elif hasattr(request.user, "person"):
+        pending_suggestions = pending_suggestions.filter(submitter=request.user.person)
+    else:
+        pending_suggestions = SlideSubmission.objects.none()
 
     return render(request, "meeting/session_details.html",
                   { 'scheduled_sessions':scheduled_sessions ,

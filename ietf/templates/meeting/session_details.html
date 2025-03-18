@@ -31,30 +31,28 @@
     {% include 'meeting/session_details_panel.html' with sessions=scheduled_sessions %}
     <h2 class="mt-3">Unscheduled Sessions</h2>
     {% include 'meeting/session_details_panel.html' with sessions=unscheduled_sessions %}
-    {% if pending_suggestions %}
-        <h2 class="mt-3">
+    {% for s in pending_suggestions %}
+        {% if forloop.first %}<h2 class="mt-3">
             {% if can_manage_materials %}
                 Proposed slides awaiting your approval
             {% else %}
                 Your proposed slides awaiting chair approval
             {% endif %}
         </h2>
-        <div class="proposedslidelist">
-            {% for s in pending_suggestions %}
-                {% if can_manage_materials %}
-                    <p>
-                        <a href="{% url "ietf.meeting.views.approve_proposed_slides" slidesubmission_id=s.pk num=s.session.meeting.number %}">
-                            {{ s.submitter }} - {{ s.title }} ({{ s.time }})
-                        </a>
-                    </p>
-                {% else %}
-                    <p>
-                        {{ s.title }} ({{ s.time }})
-                    </p>
-                {% endif %}
-            {% endfor %}
-        </div>
-    {% endif %}
+        <div class="proposedslidelist">{% endif %}
+            {% if can_manage_materials %}
+                <p>
+                    <a href="{% url "ietf.meeting.views.approve_proposed_slides" slidesubmission_id=s.pk num=s.session.meeting.number %}">
+                        {{ s.submitter }} - {{ s.title }} ({{ s.time }})
+                    </a>
+                </p>
+            {% else %}
+                <p>
+                    {{ s.title }} ({{ s.time }})
+                </p>
+            {% endif %}
+        {% if forloop.last %}</div>{% endif %}
+    {% endfor %}
 {% endblock %}
 {% block js %}
     <script src="{% static 'ietf/js/list.js' %}"></script>
