@@ -245,19 +245,11 @@ export const useAgendaStore = defineStore('agenda', {
       let nextEvent = {}
       for(const sh of this.scheduleAdjusted) {
         if (sh.adjustedStart > current) {
-          // -> Use the first event of multiple events having identical times
-          if (nextEvent.start === sh.adjustedStart.toMillis()) {
-            break
-          } else {
-            nextEvent = {
-              id: sh.id,
-              start: sh.adjustedStart.toMillis(),
-              end: sh.adjustedEnd.toMillis()
-            }
+          nextEvent = {
+            id: sh.id,
+            start: sh.adjustedStart.toMillis(),
+            end: sh.adjustedEnd.toMillis()
           }
-        }
-        // -> Skip other future events
-        if (sh.adjustedStart > current) {
           break
         }
       }
