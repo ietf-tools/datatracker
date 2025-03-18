@@ -4523,6 +4523,7 @@ class EditTests(TestCase):
 
 
 class SessionDetailsTests(TestCase):
+    settings_temp_path_overrides = TestCase.settings_temp_path_overrides + ['SLIDE_STAGING_PATH']
 
     def test_session_details(self):
 
