@@ -230,6 +230,38 @@ export const useAgendaStore = defineStore('agenda', {
 
       return lastEvent.id || null
     },
+    findNowEventId () {
+      const currentEventId = this.findCurrentEventId()
+      
+      if (currentEventId) return currentEventId
+
+      // if there isn't a current event then instead find the next event
+
+      const current = (this.nowDebugDiff ? DateTime.local().minus(this.nowDebugDiff) : DateTime.local()).setZone(this.timezone)
+
+      // -> Find next event after current time
+      let nextEvent = {}
+      for(const sh of this.scheduleAdjusted) {
+        if (sh.adjustedStart > current) {
+          // -> Use the first event of multiple events having identical times
+          if (nextEvent.start === sh.adjustedStart.toMillis()) {
+            continue
+          } else {
+            nextEvent = {
+              id: sh.id,
+              start: sh.adjustedStart.toMillis(),
+              end: sh.adjustedEnd.toMillis()
+            }
+          }
+        }
+        // -> Skip other future events
+        if (sh.adjustedStart > current) {
+          break
+        }
+      }
+
+      return nextEvent.id || null
+    },
     hideLoadingScreen () {
       // -> Hide loading screen
       const loadingRef = document.querySelector('#app-loading')

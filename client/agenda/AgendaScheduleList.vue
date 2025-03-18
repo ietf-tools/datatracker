@@ -590,10 +590,10 @@ function renderLinkLabel (opt) {
 
 function recalculateRedLine () {
   state.currentMinute = DateTime.local().minute
-  const lastEventId = agendaStore.findCurrentEventId()
+  const currentEventId = agendaStore.findCurrentEventId()
 
-  if (lastEventId) {
-    state.redhandOffset = document.getElementById(`agenda-rowid-${lastEventId}`)?.offsetTop || 0
+  if (currentEventId) {
+    state.redhandOffset = document.getElementById(`agenda-rowid-${currentEventId}`)?.offsetTop || 0
   } else {
     state.redhandOffset = 0
   }
@@ -614,9 +614,13 @@ function recalculateRedLine () {
       return
     }
     unsubscribe() // we only need to scroll once, so unsubscribe from future updates
-    if(window.location.hash === "#now") {
-      const lastEventId = agendaStore.findCurrentEventId()
-      document.getElementById(`agenda-rowid-${lastEventId}`)?.scrollIntoView(true)
+    if (window.location.hash === "#now") {
+      const nowEventId = agendaStore.findNowEvent()
+      if (nowEventId) {
+        document.getElementById(`agenda-rowid-${nowEventId}`)?.scrollIntoView(true)
+      } else {
+        message.warning('There is no event happening right now or in the future.')
+      }
     } else if(window.location.hash.startsWith(`#${daySlugPrefix}`)) {
       document.getElementById(window.location.hash.substring(1))?.scrollIntoView(true)
     }

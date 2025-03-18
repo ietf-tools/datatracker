@@ -204,10 +204,10 @@ function scrollToDay (daySlug, ev) {
 }
 
 function scrollToNow (ev) {
-  const lastEventId = agendaStore.findCurrentEventId()
+  const nowEventId = agendaStore.findNowEventId()
 
-  if (lastEventId) {
-    document.getElementById(`agenda-rowid-${lastEventId}`)?.scrollIntoView(true)
+  if (nowEventId) {
+    document.getElementById(`agenda-rowid-${nowEventId}`)?.scrollIntoView(true)
   } else {
     message.warning('There is no event happening right now.')
   }
