@@ -4659,13 +4659,15 @@ class SessionDetailsTests(TestCase):
         # This test overlaps somewhat with MaterialsTests of proposed slides handling. The focus
         # here is on the display of slides, not the approval action.
         group = GroupFactory()
-        meeting = MeetingFactory(type_id="ietf", date=date_today() + datetime.timedelta(days=10))
+        meeting = MeetingFactory(
+            type_id="ietf", date=date_today() + datetime.timedelta(days=10)
+        )
         sessions = SessionFactory.create_batch(
             2,
             group=group,
             meeting=meeting,
         )
-
+    
         # slides submission _not_ in the `pending` state
         do_not_show = [
             SlideSubmissionFactory(
@@ -4679,21 +4681,26 @@ class SessionDetailsTests(TestCase):
                 status_id="rejected",
             ),
         ]
-
+    
         # pending submissions
-        first_session_pending = SlideSubmissionFactory(session=sessions[0], title="first session title") 
-        second_session_pending = SlideSubmissionFactory(session=sessions[1], title="second session title")
-        
+        first_session_pending = SlideSubmissionFactory(
+            session=sessions[0], title="first session title"
+        )
+        second_session_pending = SlideSubmissionFactory(
+            session=sessions[1], title="second session title"
+        )
+    
         # and their approval URLs
         def _approval_url(slidesub):
             return urlreverse(
-            "ietf.meeting.views.approve_proposed_slides",
-            kwargs={"slidesubmission_id": slidesub.pk, "num": meeting.number},
-        )
+                "ietf.meeting.views.approve_proposed_slides",
+                kwargs={"slidesubmission_id": slidesub.pk, "num": meeting.number},
+            )
+    
         first_approval_url = _approval_url(first_session_pending)
         second_approval_url = _approval_url(second_session_pending)
         do_not_show_urls = [_approval_url(ss) for ss in do_not_show]
-
+    
         # Retrieve the URL as a group chair
         url = urlreverse(
             "ietf.meeting.views.session_details",
@@ -4703,24 +4710,26 @@ class SessionDetailsTests(TestCase):
             },
         )
         chair = RoleFactory(group=group, name_id="chair").person
-        self.client.login(username=chair.user.username, password=f"{chair.user.username}+password")
+        self.client.login(
+            username=chair.user.username, password=f"{chair.user.username}+password"
+        )
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         pq = PyQuery(r.content)
         self.assertEqual(
-            len(pq(f'a[href="{first_approval_url}"]')), 
-            1, 
+            len(pq(f'a[href="{first_approval_url}"]')),
+            1,
             "first session proposed slides should be linked for approval",
         )
         self.assertEqual(
             len(pq(f'a[href="{second_approval_url}"]')),
-            1, 
+            1,
             "second session proposed slides should be linked for approval",
         )
         for no_show_url in do_not_show_urls:
             self.assertEqual(
                 len(pq(f'a[href="{no_show_url}"]')),
-                0, 
+                0,
                 "second session proposed slides should be linked for approval",
             )
         
