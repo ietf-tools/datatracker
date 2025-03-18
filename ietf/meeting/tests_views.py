@@ -4665,19 +4665,34 @@ class SessionDetailsTests(TestCase):
             group=group,
             meeting=meeting,
         )
-        # Create pending submissions
+
+        # slides submission _not_ in the `pending` state
+        do_not_show = [
+            SlideSubmissionFactory(
+                session=sessions[0],
+                title="already approved",
+                status_id="approved",
+            ),
+            SlideSubmissionFactory(
+                session=sessions[1],
+                title="already rejected",
+                status_id="rejected",
+            ),
+        ]
+
+        # pending submissions
         first_session_pending = SlideSubmissionFactory(session=sessions[0], title="first session title") 
         second_session_pending = SlideSubmissionFactory(session=sessions[1], title="second session title")
         
         # and their approval URLs
-        first_approval_url = urlreverse(
+        def _approval_url(slidesub):
+            return urlreverse(
             "ietf.meeting.views.approve_proposed_slides",
-            kwargs={"slidesubmission_id": first_session_pending.pk, "num": meeting.number},
+            kwargs={"slidesubmission_id": slidesub.pk, "num": meeting.number},
         )
-        second_approval_url = urlreverse(
-            "ietf.meeting.views.approve_proposed_slides",
-            kwargs={"slidesubmission_id": second_session_pending.pk, "num": meeting.number},
-        )
+        first_approval_url = _approval_url(first_session_pending)
+        second_approval_url = _approval_url(second_session_pending)
+        do_not_show_urls = [_approval_url(ss) for ss in do_not_show]
 
         # Retrieve the URL as a group chair
         url = urlreverse(
@@ -4702,6 +4717,12 @@ class SessionDetailsTests(TestCase):
             1, 
             "second session proposed slides should be linked for approval",
         )
+        for no_show_url in do_not_show_urls:
+            self.assertEqual(
+                len(pq(f'a[href="{no_show_url}"]')),
+                0, 
+                "second session proposed slides should be linked for approval",
+            )
         
 
 class EditScheduleListTests(TestCase):
