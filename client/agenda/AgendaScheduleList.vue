@@ -134,9 +134,19 @@
                         span No meeting materials yet.
                     n-popover(v-for='menuItem of item.menuItems', :key='menuItem.id')
                       template(#trigger)
+                        button(
+                          v-if="menuItem.click"
+                          type="button"
+                          :id='`btn-` + menuItem.id'
+                          :click='menuItem.click'
+                          :aria-label='menuItem.label'
+                          :class='`border-0 bg-transparent text-` + menuItem.color'
+                          ): i.bi(:class='`bi-` + menuItem.icon')
                         a(
+                          v-else
                           :id='`btn-` + menuItem.id'
                           :href='menuItem.href'
+                          data-what="test"
                           :aria-label='menuItem.label'
                           :class='`text-` + menuItem.color'
                           ): i.bi(:class='`bi-` + menuItem.icon')
