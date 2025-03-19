@@ -233,6 +233,7 @@ class MeetingTests(BaseMeetingTestCase):
         session.save()
         slot = TimeSlot.objects.get(sessionassignments__session=session,sessionassignments__schedule=meeting.schedule)
         meeting.timeslot_set.filter(type_id="break").update(show_location=False)
+        meeting.importantdate_set.create(name_id='prelimagenda',date=date_today() + datetime.timedelta(days=20))
         #
         self.write_materials_files(meeting, session)
         #
@@ -262,7 +263,8 @@ class MeetingTests(BaseMeetingTestCase):
                     "updated": generated_data.get("meeting").get("updated"),  # Just expect the value to exist
                     "timezone": meeting.time_zone,
                     "infoNote": meeting.agenda_info_note,
-                    "warningNote": meeting.agenda_warning_note
+                    "warningNote": meeting.agenda_warning_note,
+                    "prelimAgendaDate": (date_today() + datetime.timedelta(days=20)).isoformat()
                 },
                 "categories": generated_data.get("categories"),  # Just expect the value to exist
                 "isCurrentMeeting": True,
@@ -9341,4 +9343,3 @@ class ProceedingsTests(BaseMeetingTestCase):
                 {"name": attended_with_affil.person.plain_name(), "affiliation": "Somewhere"},
             ]
         )
-

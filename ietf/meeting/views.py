@@ -59,7 +59,7 @@ from ietf.person.models import Person, User
 from ietf.ietfauth.utils import role_required, has_role, user_is_person
 from ietf.mailtrigger.utils import gather_address_lists
 from ietf.meeting.models import Meeting, Session, Schedule, FloorPlan, SessionPresentation, TimeSlot, SlideSubmission, Attended
-from ietf.meeting.models import SessionStatusName, SchedulingEvent, SchedTimeSessAssignment, Room, TimeSlotTypeName
+from ietf.meeting.models import ImportantDate, SessionStatusName, SchedulingEvent, SchedTimeSessAssignment, Room, TimeSlotTypeName
 from ietf.meeting.forms import ( CustomDurationField, SwapDaysForm, SwapTimeslotsForm, ImportMinutesForm,
                                  TimeSlotCreateForm, TimeSlotEditForm, SessionCancelForm, SessionEditForm )
 from ietf.meeting.helpers import get_person_by_email, get_schedule_by_name
@@ -1709,6 +1709,9 @@ def generate_agenda_data(num=None, force_refresh=False):
     # Get Floor Plans
     floors = FloorPlan.objects.filter(meeting=meeting).order_by('order')
     
+    # Get Preliminary Agenda Date
+    prelimAgendaDate = ImportantDate.objects.filter(name_id="prelimagenda", meeting=meeting).first()
+
     result = {
         "meeting": {
             "number": schedule.meeting.number,
@@ -1718,7 +1721,8 @@ def generate_agenda_data(num=None, force_refresh=False):
             "updated": updated,
             "timezone": meeting.time_zone,
             "infoNote": schedule.meeting.agenda_info_note,
-            "warningNote": schedule.meeting.agenda_warning_note
+            "warningNote": schedule.meeting.agenda_warning_note,
+            "prelimAgendaDate": prelimAgendaDate.date.isoformat() if prelimAgendaDate else ""
         },
         "categories": filter_organizer.get_filter_categories(),
         "isCurrentMeeting": is_current_meeting,
