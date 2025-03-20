@@ -113,18 +113,18 @@
               template(v-else)
                 span.badge.is-cancelled(v-if='!isMobile && item.status === `canceled`') Cancelled
                 span.badge.is-rescheduled(v-else-if='!isMobile && item.status === `resched`') Rescheduled
-                .agenda-table-cell-links-buttons(v-else-if='siteStore.viewport < 1200 && item.menuItems && item.menuItems.length > 0')
+                .agenda-table-cell-links-buttons(v-else-if='siteStore.viewport < 1200 && item.links && item.links.length > 0')
                   n-dropdown(
                     v-if='!agendaStore.colorPickerVisible'
                     trigger='click'
-                    :options='item.menuItems'
+                    :options='item.links'
                     key-field='id'
-                    :render-icon='renderMenuIcon'
-                    :render-label='renderMenuItem'
+                    :render-icon='renderLinkIcon'
+                    :render-label='renderLink'
                     )
                     n-button(size='tiny')
                       i.bi.bi-three-dots
-                .agenda-table-cell-links-buttons(v-else-if='item.menuItems && item.menuItems.length > 0')
+                .agenda-table-cell-links-buttons(v-else-if='item.links && item.links.length > 0')
                     template(v-if='!item.flags.agenda && item.type === `regular`')
                       n-popover
                         template(#trigger)
@@ -132,25 +132,24 @@
                             i.bi.bi-clipboard-x
                             i.bi.bi-exclamation-triangle-fill.ms-1
                         span No meeting materials yet.
-                    n-popover(v-for='menuItem of item.menuItems', :key='menuItem.id')
+                    n-popover(v-for='lnk of item.links', :key='lnk.id')
                       template(#trigger)
                         button(
-                          v-if="menuItem.click"
+                          v-if="lnk.click"
                           type="button"
-                          :id='`btn-` + menuItem.id'
-                          :click='menuItem.click'
-                          :aria-label='menuItem.label'
-                          :class='`border-0 bg-transparent text-` + menuItem.color'
-                          ): i.bi(:class='`bi-` + menuItem.icon')
+                          :id='`btn-` + lnk.id'
+                          :click='lnk.click'
+                          :aria-label='lnk.label'
+                          :class='`border-0 bg-transparent text-` + lnk.color'
+                          ): i.bi(:class='`bi-` + lnk.icon')
                         a(
                           v-else
-                          :id='`btn-` + menuItem.id'
-                          :href='menuItem.href'
-                          data-what="test"
-                          :aria-label='menuItem.label'
-                          :class='`text-` + menuItem.color'
-                          ): i.bi(:class='`bi-` + menuItem.icon')
-                      span {{menuItem.label}}
+                          :id='`btn-` + lnk.id'
+                          :href='lnk.href'
+                          :aria-label='lnk.label'
+                          :class='`text-` + lnk.color'
+                          ): i.bi(:class='`bi-` + lnk.icon')
+                      span {{lnk.label}}
                     
               .agenda-table-colorindicator(
                 v-if='agendaStore.colorPickerVisible || getEventColor(item.key)'
@@ -282,22 +281,29 @@ const meetingEvents = computed(() => {
     }
     acc.lastTypeName = typeName
 
-    // -> Populate event menu items
-    const menuItems = []
-    const typesWithmenuItems = ['regular', 'plenary', 'other']
-    const purposesWithoutmenuItems = ['admin', 'closed_meeting', 'officehours', 'social']
-    if (item.flags.showAgenda || (typesWithmenuItems.includes(item.type) && !purposesWithoutmenuItems.includes(item.purpose))) {
+    // 
+    /**
+     * -> Populate event menu items
+     * 
+     * links is an array of either,
+     * 1. { href: "...",        click: undefined, ...sharedProps }
+     * 2. { click: () => {...}, href: undefined,  ...sharedProps }
+     */
+    const links = []
+    const typesWithLinks = ['regular', 'plenary', 'other']
+    const purposesWithoutLinks = ['admin', 'closed_meeting', 'officehours', 'social']
+    if (item.flags.showAgenda || (typesWithLinks.includes(item.type) && !purposesWithoutLinks.includes(item.purpose))) {
       if (item.flags.agenda) {
         // -> Meeting Materials
-        menuItems.push({
-          id: `btn-${item.id}-meeting-materials`,
+        links.push({
+          id: `btn-${item.id}-mat`,
           label: 'Show meeting materials',
           icon: 'collection',
           href: undefined,
           click: () => showMaterials(item.id),
           color: 'black'
         })
-        menuItems.push({
+        links.push({
           id: `lnk-${item.id}-tar`,
           label: 'Download meeting materials as .tar archive',
           icon: 'file-zip',
@@ -307,7 +313,7 @@ const meetingEvents = computed(() => {
           }),
           color: 'brown'
         })
-        menuItems.push({
+        links.push({
           id: `lnk-${item.id}-pdf`,
           label: 'Download meeting materials as PDF file',
           icon: 'file-pdf',
@@ -320,7 +326,7 @@ const meetingEvents = computed(() => {
       }
       // -> Point to Wiki for Hackathon sessions, HedgeDocs otherwise
       if (item.groupAcronym === 'hackathon') {
-        menuItems.push({
+        links.push({
           id: `lnk-${item.id}-wiki`,
           label: 'Wiki',
           icon: 'book',
@@ -330,7 +336,7 @@ const meetingEvents = computed(() => {
           color: 'blue'
         })
       } else if (agendaStore.usesNotes) {
-        menuItems.push({
+        links.push({
           id: `lnk-${item.id}-note`,
           label: 'Notepad for note-takers',
           icon: 'journal-text',
@@ -344,7 +350,7 @@ const meetingEvents = computed(() => {
       if (item.adjustedEnd > current) {
         // -> Pre/live event
         // -> Chat room
-        menuItems.push({
+        links.push({
           id: `lnk-${item.id}-room`,
           label: `Chat room for ${item.acronym}`,
           icon: 'chat-left-text',
@@ -353,7 +359,7 @@ const meetingEvents = computed(() => {
         })
         // -> Video stream
         if (item.links.videoStream) {
-          menuItems.push({
+          links.push({
             id: `lnk-${item.id}-video`,
             label: 'Full Client with Video',
             icon: 'camera-video',
@@ -363,7 +369,7 @@ const meetingEvents = computed(() => {
         }
         // -> Onsite tool
         if (item.links.onsiteTool) {
-          menuItems.push({
+          links.push({
             id: `lnk-${item.id}-onsitetool`,
             label: 'Onsite tool',
             icon: 'telephone-outbound',
@@ -373,7 +379,7 @@ const meetingEvents = computed(() => {
         }
         // -> Audio stream
         if (item.links.audioStream) {
-          menuItems.push({
+          links.push({
             id: `lnk-${item.id}-audio`,
             label: 'Audio stream',
             icon: 'headphones',
@@ -383,7 +389,7 @@ const meetingEvents = computed(() => {
         }
         // -> Remote call-in
         if (item.links.remoteCallIn) {
-          menuItems.push({
+          links.push({
             id: `lnk-${item.id}-remotecallin`,
             label: 'Online conference',
             icon: 'people',
@@ -393,7 +399,7 @@ const meetingEvents = computed(() => {
         }
         // -> Calendar item
         if (item.links.calendar) {
-          menuItems.push({
+          links.push({
             id: `lnk-${item.id}-calendar`,
             label: 'Calendar (.ics) entry for this session',
             icon: 'calendar-check',
@@ -405,7 +411,7 @@ const meetingEvents = computed(() => {
         // -> Post event
         if (meetingNumberInt >= 60) {
           // -> Chat logs
-          menuItems.push({
+          links.push({
             id: `lnk-${item.id}-logs`,
             label: `Chat logs for ${item.acronym}`,
             icon: 'chat-left-text',
@@ -418,7 +424,7 @@ const meetingEvents = computed(() => {
           for (const rec of item.links.recordings) {
             if (rec.url.indexOf('audio') > 0) {
               // -> Audio
-              menuItems.push({
+              links.push({
                 id: `lnk-${item.id}-audio-${rec.id}`,
                 label: isMobile.value ? truncate(rec.title, 30) : rec.title,
                 icon: 'soundwave',
@@ -427,7 +433,7 @@ const meetingEvents = computed(() => {
               })
             } else if (rec.url.indexOf('youtu') > 0) {
               // -> Youtube
-              menuItems.push({
+              links.push({
                 id: `lnk-${item.id}-youtube-${rec.id}`,
                 label: isMobile.value ? truncate(rec.title, 30) : rec.title,
                 icon: 'youtube',
@@ -436,7 +442,7 @@ const meetingEvents = computed(() => {
               })
             } else {
               // -> Others
-              menuItems.push({
+              links.push({
                 id: `lnk-${item.id}-video-${rec.id}`,
                 label: isMobile.value ? truncate(rec.title, 30) : rec.title,
                 icon: 'file-play',
@@ -446,7 +452,7 @@ const meetingEvents = computed(() => {
             }
           }
           if (item.links.videoStream) {
-            menuItems.push({
+            links.push({
               id: `lnk-${item.id}-rec`,
               label: 'Session recording',
               icon: 'film',
@@ -502,7 +508,7 @@ const meetingEvents = computed(() => {
       isBoF: item.isBoF,
       isProposed: item.isProposed,
       isSessionEvent: item.type === 'regular',
-      menuItems,
+      links,
       location: item.location,
       name: item.name,
       note: item.note,
@@ -590,11 +596,11 @@ function getEventColor (itemKey) {
   }
 }
 
-function renderMenuIcon (opt) {
+function renderLinkIcon (opt) {
   return h('i', { class: `bi bi-${opt.icon} text-${opt.color}` })
 }
 
-function renderMenuItem (opt) {
+function renderLink (opt) {
   if (opt.click) {
     return h('button', { type: 'button', class: 'overflow-button', onClick: opt.click }, opt.label)
   }
