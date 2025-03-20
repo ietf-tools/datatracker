@@ -425,7 +425,7 @@ test.describe('past - desktop', () => {
       })
     })
     // Open dialog
-    await page.locator(`#agenda-rowid-${event.id} #btn-lnk-${event.id}-mat`).click()
+    await page.locator(`#agenda-rowid-${event.id} #btn-btn-${event.id}-mat`).click()
     await expect(page.locator('.agenda-eventdetails')).toBeVisible()
     // Header
     await expect(page.locator('.agenda-eventdetails .n-card-header__main > .detail-header > .bi')).toBeVisible()
@@ -507,7 +507,7 @@ test.describe('past - desktop', () => {
       })
     })
     // Open dialog
-    await page.locator(`#btn-lnk-${event.id}-mat`).click()
+    await page.locator(`#btn-btn-${event.id}-mat`).click()
     await expect(page.locator('.agenda-eventdetails')).toBeVisible()
     // Slides Tab
     await page.locator('.agenda-eventdetails .detail-nav > a').nth(1).click()
