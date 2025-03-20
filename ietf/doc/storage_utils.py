@@ -10,7 +10,6 @@ from django.core.files.base import ContentFile, File
 from django.core.files.storage import storages
 
 from ietf.utils.log import log
-from .storage_backends import StoredObjectFile
 
 
 # TODO-BLOBSTORE (Future, maybe after leaving 3.9) : add a return type
@@ -64,7 +63,7 @@ def store_file(
     doc_name: Optional[str] = None,
     doc_rev: Optional[str] = None,
 ) -> None:
-    # debug.show('f"asked to store {name} into {kind}"')
+    from .storage_backends import StoredObjectFile  # avoid circular import
     if settings.ENABLE_BLOBSTORAGE:
         try:
             is_new = not exists_in_storage(kind, name)
