@@ -138,7 +138,7 @@
                           v-if="lnk.click"
                           type="button"
                           :id='`btn-` + lnk.id'
-                          :click='lnk.click'
+                          @click='lnk.click'
                           :aria-label='lnk.label'
                           :class='`border-0 bg-transparent text-` + lnk.color'
                           ): i.bi(:class='`bi-` + lnk.icon')
