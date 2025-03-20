@@ -2,6 +2,7 @@
 
 from io import BufferedReader
 from typing import Optional, Union
+
 import debug  # pyflakes ignore
 
 from django.conf import settings
@@ -9,13 +10,13 @@ from django.core.files.base import ContentFile, File
 from django.core.files.storage import storages
 
 from ietf.utils.log import log
+from .storage_backends import StoredObjectFile
 
 
 # TODO-BLOBSTORE (Future, maybe after leaving 3.9) : add a return type
 def _get_storage(kind: str):
 
     if kind in settings.MORE_STORAGE_NAMES:
-        # TODO-BLOBSTORE - add a checker that verifies configuration will only return CustomS3Storages
         return storages[kind]
     else:
         debug.say(f"Got into not-implemented looking for {kind}")
@@ -26,7 +27,10 @@ def exists_in_storage(kind: str, name: str) -> bool:
     if settings.ENABLE_BLOBSTORAGE:
         try:
             store = _get_storage(kind)
-            return store.exists_in_storage(kind, name)
+            with store.open(name):
+                return True
+        except FileNotFoundError:
+            return False
         except Exception as err:
             log(f"Blobstore Error: Failed to test existence of {kind}:{name}: {repr(err)}")
             if settings.SERVER_MODE == "development":
@@ -37,8 +41,14 @@ def exists_in_storage(kind: str, name: str) -> bool:
 def remove_from_storage(kind: str, name: str, warn_if_missing: bool = True) -> None:
     if settings.ENABLE_BLOBSTORAGE:
         try:
-            store = _get_storage(kind)
-            store.remove_from_storage(kind, name, warn_if_missing)
+            if exists_in_storage(kind, name):
+                _get_storage(kind).delete(name)
+            elif warn_if_missing:
+                complaint = (
+                    f"WARNING: Asked to delete non-existent {name} from {kind} storage"
+                )
+                debug.show("complaint")
+                log(complaint)
         except Exception as err:
             log(f"Blobstore Error: Failed to remove {kind}:{name}: {repr(err)}")
             if settings.SERVER_MODE == "development":
@@ -46,7 +56,6 @@ def remove_from_storage(kind: str, name: str, warn_if_missing: bool = True) -> N
     return None
 
 
-# TODO-BLOBSTORE: Try to refactor `kind` out of the signature of the methods already on the custom store (which knows its kind)
 def store_file(
     kind: str,
     name: str,
@@ -58,12 +67,28 @@ def store_file(
     # debug.show('f"asked to store {name} into {kind}"')
     if settings.ENABLE_BLOBSTORAGE:
         try:
-            store = _get_storage(kind)
-            store.store_file(kind, name, file, allow_overwrite, doc_name, doc_rev)
+            is_new = not exists_in_storage(kind, name)
+            # debug.show('f"Asked to store {name} in {kind}: is_new={is_new}, allow_overwrite={allow_overwrite}"')
+            if not allow_overwrite and not is_new:
+                debug.show('f"Failed to save {kind}:{name} - name already exists in store"')
+                raise RuntimeError(f"Failed to save {kind}:{name} - name already exists in store")
+            new_name = _get_storage(kind).save(
+                name,
+                StoredObjectFile(
+                    file=file,
+                    name=name,
+                    doc_name=doc_name,
+                    doc_rev=doc_rev,
+                ),
+            )
+            if new_name != name:
+                complaint = f"Error encountered saving '{name}' - results stored in '{new_name}' instead."
+                debug.show("complaint")
+                raise RuntimeError(complaint)
         except Exception as err:
             log(f"Blobstore Error: Failed to store file {kind}:{name}: {repr(err)}")
             if settings.SERVER_MODE == "development":
-                raise
+                raise  # TODO-BLOBSTORE eventually make this an error for all modes
     return None
 
 
@@ -77,12 +102,19 @@ def store_bytes(
 ) -> None:
     if settings.ENABLE_BLOBSTORAGE:
         try:
-            store_file(kind, name, ContentFile(content), allow_overwrite)
+            store_file(
+                kind,
+                name,
+                ContentFile(content),
+                allow_overwrite,
+                doc_name,
+                doc_rev,
+            )
         except Exception as err:
             # n.b., not likely to get an exception here because store_file or store_bytes will catch it
             log(f"Blobstore Error: Failed to store bytes to {kind}:{name}: {repr(err)}")
             if settings.SERVER_MODE == "development":
-                raise
+                raise  # TODO-BLOBSTORE eventually make this an error for all modes
     return None
 
 
@@ -97,12 +129,19 @@ def store_str(
     if settings.ENABLE_BLOBSTORAGE:
         try:
             content_bytes = content.encode("utf-8")
-            store_bytes(kind, name, content_bytes, allow_overwrite)
+            store_bytes(
+                kind,
+                name,
+                content_bytes,
+                allow_overwrite,
+                doc_name,
+                doc_rev,
+            )
         except Exception as err:
             # n.b., not likely to get an exception here because store_file or store_bytes will catch it
             log(f"Blobstore Error: Failed to store string to {kind}:{name}: {repr(err)}")
             if settings.SERVER_MODE == "development":
-                raise
+                raise  # TODO-BLOBSTORE eventually make this an error for all modes
     return None
 
 
