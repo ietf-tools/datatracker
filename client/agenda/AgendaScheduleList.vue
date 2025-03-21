@@ -1055,8 +1055,6 @@ onBeforeUnmount(() => {
         }
 
         @media screen and (max-width: $bs5-break-md) {
-          width: 30px;
-          display: block;
           margin: 2px 0 0 0;
         }
       }
@@ -1087,13 +1085,11 @@ onBeforeUnmount(() => {
         .badge.is-cancelled {
           background-color: $red-500;
           text-transform: uppercase;
-          width: 10em;
         }
 
         .badge.is-rescheduled {
           background-color: $orange-500;
           text-transform: uppercase;
-          width: 10em;
         }
       }
     }
