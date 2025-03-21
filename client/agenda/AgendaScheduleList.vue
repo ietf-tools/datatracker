@@ -1087,11 +1087,13 @@ onBeforeUnmount(() => {
         .badge.is-cancelled {
           background-color: $red-500;
           text-transform: uppercase;
+          width: 100px;
         }
 
         .badge.is-rescheduled {
           background-color: $orange-500;
           text-transform: uppercase;
+          width: 100px;
         }
       }
     }
@@ -1282,7 +1284,7 @@ onBeforeUnmount(() => {
       text-decoration: line-through;
     }
 
-    &.agenda-table-cell-name {
+    &.agenda-table-cell-name > a, &.agenda-table-cell-name > span {
       text-decoration: line-through;
     }
 
@@ -1314,7 +1316,7 @@ onBeforeUnmount(() => {
       text-decoration: line-through;
     }
 
-    &.agenda-table-cell-name {
+    &.agenda-table-cell-name > a, &.agenda-table-cell-name > span {
       text-decoration: line-through;
     }
 
