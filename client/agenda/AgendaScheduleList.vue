@@ -1087,13 +1087,13 @@ onBeforeUnmount(() => {
         .badge.is-cancelled {
           background-color: $red-500;
           text-transform: uppercase;
-          width: 100px;
+          width: 10em;
         }
 
         .badge.is-rescheduled {
           background-color: $orange-500;
           text-transform: uppercase;
-          width: 100px;
+          width: 10em;
         }
       }
     }
