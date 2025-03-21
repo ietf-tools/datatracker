@@ -3,6 +3,7 @@
 from pathlib import Path
 
 from django.conf import settings
+from django.core.files.base import ContentFile
 from django.core.files.storage import FileSystemStorage
 from ietf.doc.storage_utils import store_file
 from .log import log
@@ -56,3 +57,12 @@ class BlobShadowFileSystemStorage(NoLocationMigrationFileSystemStorage):
         path, args, kwargs = super().deconstruct()
         kwargs["kind"] = ""  # don't record "kind" in migrations
         return path, args, kwargs
+
+
+class MetadataFile(ContentFile):
+    """File that includes metadata"""
+
+    def __init__(self, content, name=None, mtime=None, content_type=None):
+        super().__init__(content, name)
+        self.mtime = mtime
+        self.content_type = content_type

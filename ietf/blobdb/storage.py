@@ -1,19 +1,15 @@
 # Copyright The IETF Trust 2025, All Rights Reserved
-from django.core.files.base import ContentFile
 from django.core.files.storage import Storage
 from django.db.models.functions import Length
 from django.utils.deconstruct import deconstructible
 from django.utils import timezone
 
+from ietf.utils.storage import MetadataFile
 from .models import Blob
 
-# TODO-BLOBSTORE should this be the same / sibling class as StagedBlobStorage speaks? Sort out inheritance
-class BlobFile(ContentFile):
 
-    def __init__(self, content, name=None, mtime=None, content_type=None):
-        super().__init__(content, name)
-        self.mtime = mtime
-        self.content_type = content_type
+class BlobFile(MetadataFile):
+    pass
 
 
 @deconstructible
