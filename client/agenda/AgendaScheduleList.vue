@@ -464,6 +464,23 @@ const meetingEvents = computed(() => {
               color: 'purple'
             })
           }
+          // -> Keep showing video client / on-site tool for Plenary until end of day, in case it goes over the planned time range
+          if (item.type === 'plenary' && item.adjustedEnd.day === current.day) {
+            links.push({
+              id: `lnk-${item.id}-video`,
+              label: 'Full Client with Video',
+              icon: 'camera-video',
+              href: item.links.videoStream,
+              color: 'purple'
+            })
+            links.push({
+              id: `lnk-${item.id}-onsitetool`,
+              label: 'Onsite tool',
+              icon: 'telephone-outbound',
+              href: item.links.onsiteTool,
+              color: 'teal'
+            })
+          }
         }
       }
     }
