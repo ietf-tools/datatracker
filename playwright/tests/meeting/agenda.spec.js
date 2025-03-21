@@ -275,7 +275,7 @@ test.describe('past - desktop', () => {
             const eventButtons = row.locator('.agenda-table-cell-links > .agenda-table-cell-links-buttons')
             if (event.flags.agenda) {
               // Show meeting materials button
-              await expect(eventButtons.locator('i.bi.bi-collection')).toBeVisible()
+              await expect(eventButtons.locator(`#btn-btn-${event.id}-mat`)).toBeVisible()
               // ZIP materials button
               await expect(eventButtons.locator(`#btn-lnk-${event.id}-tar`)).toHaveAttribute('href', `/meeting/${meetingData.meeting.number}/agenda/${event.acronym}-drafts.tgz`)
               await expect(eventButtons.locator(`#btn-lnk-${event.id}-tar > i.bi`)).toBeVisible()
@@ -425,7 +425,7 @@ test.describe('past - desktop', () => {
       })
     })
     // Open dialog
-    await page.locator(`#agenda-rowid-${event.id} #btn-lnk-${event.id}-mat`).click()
+    await page.locator(`#agenda-rowid-${event.id} #btn-btn-${event.id}-mat`).click()
     await expect(page.locator('.agenda-eventdetails')).toBeVisible()
     // Header
     await expect(page.locator('.agenda-eventdetails .n-card-header__main > .detail-header > .bi')).toBeVisible()
@@ -507,7 +507,7 @@ test.describe('past - desktop', () => {
       })
     })
     // Open dialog
-    await page.locator(`#btn-lnk-${event.id}-mat`).click()
+    await page.locator(`#btn-btn-${event.id}-mat`).click()
     await expect(page.locator('.agenda-eventdetails')).toBeVisible()
     // Slides Tab
     await page.locator('.agenda-eventdetails .detail-nav > a').nth(1).click()
@@ -1158,7 +1158,7 @@ test.describe('future - desktop', () => {
         if (event.flags.showAgenda || (['regular', 'plenary', 'other'].includes(event.type) && !['admin', 'closed_meeting', 'officehours', 'social'].includes(event.purpose))) {
           if (event.flags.agenda) {
             // Show meeting materials button
-            await expect(eventButtons.locator('i.bi.bi-collection')).toBeVisible()
+            await expect(eventButtons.locator(`#btn-btn-${event.id}-mat`)).toBeVisible()
             // ZIP materials button
             await expect(eventButtons.locator(`#btn-lnk-${event.id}-tar`)).toHaveAttribute('href', `/meeting/${meetingData.meeting.number}/agenda/${event.acronym}-drafts.tgz`)
             await expect(eventButtons.locator(`#btn-lnk-${event.id}-tar > i.bi`)).toBeVisible()

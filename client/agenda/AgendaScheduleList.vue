@@ -121,20 +121,12 @@
                     :options='item.links'
                     key-field='id'
                     :render-icon='renderLinkIcon'
-                    :render-label='renderLinkLabel'
+                    :render-label='renderLink'
                     )
                     n-button(size='tiny')
                       i.bi.bi-three-dots
                 .agenda-table-cell-links-buttons(v-else-if='item.links && item.links.length > 0')
-                    template(v-if='item.flags.agenda')
-                      n-popover
-                        template(#trigger)
-                          i.bi.bi-collection(
-                            :id='`btn-lnk-` + item.key + `-mat`'
-                            @click='showMaterials(item.key)'
-                            )
-                        span Show meeting materials
-                    template(v-else-if='item.type === `regular`')
+                    template(v-if='!item.flags.agenda && item.type === `regular`')
                       n-popover
                         template(#trigger)
                           i.no-meeting-materials
@@ -143,7 +135,16 @@
                         span No meeting materials yet.
                     n-popover(v-for='lnk of item.links', :key='lnk.id')
                       template(#trigger)
+                        button(
+                          v-if="lnk.click"
+                          type="button"
+                          :id='`btn-` + lnk.id'
+                          @click='lnk.click'
+                          :aria-label='lnk.label'
+                          :class='`border-0 bg-transparent text-` + lnk.color'
+                          ): i.bi(:class='`bi-` + lnk.icon')
                         a(
+                          v-else
                           :id='`btn-` + lnk.id'
                           :href='lnk.href'
                           :aria-label='lnk.label'
@@ -281,13 +282,28 @@ const meetingEvents = computed(() => {
     }
     acc.lastTypeName = typeName
 
-    // -> Populate event links
+    // 
+    /**
+     * -> Populate event menu items
+     * 
+     * links is an array of either,
+     * 1. { href: "...",        click: undefined, ...sharedProps }
+     * 2. { click: () => {...}, href: undefined,  ...sharedProps }
+     */
     const links = []
     const typesWithLinks = ['regular', 'plenary', 'other']
     const purposesWithoutLinks = ['admin', 'closed_meeting', 'officehours', 'social']
     if (item.flags.showAgenda || (typesWithLinks.includes(item.type) && !purposesWithoutLinks.includes(item.purpose))) {
       if (item.flags.agenda) {
         // -> Meeting Materials
+        links.push({
+          id: `btn-${item.id}-mat`,
+          label: 'Show meeting materials',
+          icon: 'collection',
+          href: undefined,
+          click: () => showMaterials(item.id),
+          color: 'black'
+        })
         links.push({
           id: `lnk-${item.id}-tar`,
           label: 'Download meeting materials as .tar archive',
@@ -585,7 +601,11 @@ function renderLinkIcon (opt) {
   return h('i', { class: `bi bi-${opt.icon} text-${opt.color}` })
 }
 
-function renderLinkLabel (opt) {
+function renderLink (opt) {
+  if (opt.click) {
+    return h('button', { type: 'button', class: 'overflow-button', onClick: opt.click }, opt.label)
+  }
+
   return h('a', { href: opt.href, target: '_blank' }, opt.label)
 }
 
@@ -1561,6 +1581,22 @@ onBeforeUnmount(() => {
         animation-delay: #{(5 - $i) * .05}s;
       }
     }
+  }
+}
+
+.overflow-button {
+  font-size: inherit;
+  padding: 0;
+  border: 0;
+  background: transparent;
+
+  &:before {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
   }
 }
 
