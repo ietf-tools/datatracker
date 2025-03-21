@@ -4,7 +4,6 @@ import json
 
 from contextlib import contextmanager
 from functools import cached_property
-from hashlib import sha384
 from storages.backends.s3 import S3Storage
 from typing import Union,  Any
 
@@ -15,37 +14,8 @@ from django.db import transaction
 from ietf.doc.models import StoredObject
 from ietf.doc.tasks import commit_saved_staged_storedobject_task, commit_deleted_staged_storedobject_task
 from ietf.utils.log import log
+from ietf.utils.storage import MetadataFile
 from ietf.utils.timezone import timezone
-
-
-class MetadataFile(File):
-    """Django storage File object that carries custom metadata"""
-    def __init__(self, file, name):
-        super().__init__(file, name)
-        self._custom_metadata = None 
-
-    @property
-    def custom_metadata(self):
-        if self._custom_metadata is None:
-            self._custom_metadata = self._compute_custom_metadata()
-        return self._custom_metadata
-
-    def _compute_custom_metadata(self):
-        try:
-            self.file.seek(0)
-        except AttributeError:  # TODO-BLOBSTORE
-            debug.say("Encountered Non-Seekable content")
-            raise NotImplementedError("cannot handle unseekable content")
-        content_bytes = self.file.read()
-        if not isinstance(
-            content_bytes, bytes
-        ):  # TODO-BLOBSTORE: This is sketch-development only -remove before committing
-            raise Exception(f"Expected bytes - got {type(content_bytes)}")
-        self.file.seek(0)
-        return {
-            "len": f"{len(content_bytes)}",
-            "sha384": f"{sha384(content_bytes).hexdigest()}",
-        }
 
 
 class StoredObjectFile(MetadataFile):
@@ -192,7 +162,7 @@ class StagedBlobStorage(Storage):
         return new_name
 
     def commit_save(self, name):
-        debug.say(f"StagedBlobStorage.commit_save('{name}') called")
+        # debug.say(f"StagedBlobStorage.commit_save('{name}') called")
         try:
             with self.staging_storage.open(name) as staged:
                 new_name = self.final_storage.save(
@@ -228,7 +198,7 @@ class StagedBlobStorage(Storage):
             self.commit_delete(name)
 
     def commit_delete(self, name):
-        debug.say(f"StagedBlobStorage.commit_delete('{name}') called")
+        # debug.say(f"StagedBlobStorage.commit_delete('{name}') called")
         try:
             self.final_storage.delete(name)
         except NotImplementedError:

@@ -1,5 +1,6 @@
 # Copyright The IETF Trust 2020-2025, All Rights Reserved
 """Django Storage classes"""
+from hashlib import sha384
 from pathlib import Path
 
 from django.conf import settings
@@ -66,3 +67,26 @@ class MetadataFile(ContentFile):
         super().__init__(content, name)
         self.mtime = mtime
         self.content_type = content_type
+        self._custom_metadata = None
+
+    @property
+    def custom_metadata(self):
+        if self._custom_metadata is None:
+            self._custom_metadata = self._compute_custom_metadata()
+        return self._custom_metadata
+
+    def _compute_custom_metadata(self):
+        try:
+            self.file.seek(0)
+        except AttributeError:  # TODO-BLOBSTORE
+            raise NotImplementedError("cannot handle unseekable content")
+        content_bytes = self.file.read()
+        if not isinstance(
+            content_bytes, bytes
+        ):  # TODO-BLOBSTORE: This is sketch-development only -remove before committing
+            raise Exception(f"Expected bytes - got {type(content_bytes)}")
+        self.file.seek(0)
+        return {
+            "len": f"{len(content_bytes)}",
+            "sha384": f"{sha384(content_bytes).hexdigest()}",
+        }
