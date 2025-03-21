@@ -55,7 +55,7 @@ def main(request):
     if not check_access(request.user):
         permission_denied(request, 'Restricted to: Secretariat, IAD, or chair of IETF, IAB, RSOC, RSE, IAOC, ISOC, NomCom.')
 
-    form = AnnounceForm(request.POST or None,user=request.user)
+    form = AnnounceForm(request.POST or None, user=request.user)
 
     if form.is_valid():
         # recast as hidden form for next page of process
@@ -71,7 +71,8 @@ def main(request):
             'form': form},
         )
 
-    return render(request, 'announcement/main.html', { 'form': form} )
+    return render(request, 'announcement/index.html', {'form': form})
+
 
 @login_required
 @check_for_cancel('../')
@@ -83,8 +84,8 @@ def confirm(request):
     if request.method == 'POST':
         form = AnnounceForm(request.POST, user=request.user)
         if request.method == 'POST':
-            message = form.save(user=request.user,commit=True)
-            extra = {'Reply-To': message.get('reply_to') }
+            message = form.save(user=request.user, commit=True)
+            extra = {'Reply-To': message.get('reply_to')}
             send_mail_text(None,
                            message.to,
                            message.frm,
@@ -92,12 +93,7 @@ def confirm(request):
                            message.body,
                            cc=message.cc,
                            bcc=message.bcc,
-                           extra=extra,
-                       )
+                           extra=extra)
 
             messages.success(request, 'The announcement was sent.')
             return redirect('ietf.secr.announcement.views.main')
-
-
-
-
