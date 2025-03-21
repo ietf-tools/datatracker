@@ -91,5 +91,4 @@ class MetadataFile(File):
             "len": f"{len(content_bytes)}",
             "sha384": f"{sha384(content_bytes).hexdigest()}",
             "mtime": None if self.mtime is None else self.mtime.isoformat(),
-            "content_type": self.content_type
         }

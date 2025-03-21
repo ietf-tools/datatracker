@@ -106,6 +106,10 @@ class MetadataS3Storage(S3Storage):
     def _get_write_parameters(self, name, content=None):
         # debug.show('f"getting write parameters for {name}"')
         params = super()._get_write_parameters(name, content)
+        # If we have a non-empty explicit content type, use it
+        content_type = getattr(content, "content_type", "").strip()
+        if content_type != "":
+            params["ContentType"] = content_type
         if "Metadata" not in params:
             params["Metadata"] = {}
         if not isinstance(content, MetadataFile):
