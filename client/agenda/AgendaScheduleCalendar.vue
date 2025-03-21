@@ -330,7 +330,6 @@ function close () {
     }
 
     .badge {
-      width: 30px;
       font-size: .7em;
       border: 1px solid #CCC;
       text-transform: uppercase;

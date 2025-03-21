@@ -327,7 +327,6 @@ async function fetchSessionMaterials () {
     border-radius: 5px;
 
     .badge {
-      width: 30px;
       font-size: .7em;
       background-color: $yellow-200;
       border-bottom: 1px solid $yellow-500;
