@@ -1,4 +1,5 @@
 # Copyright The IETF Trust 2025, All Rights Reserved
+from django.core.files.base import ContentFile
 from django.core.files.storage import Storage
 from django.db.models.functions import Length
 from django.utils.deconstruct import deconstructible
@@ -9,7 +10,14 @@ from .models import Blob
 
 
 class BlobFile(MetadataFile):
-    pass
+
+    def __init__(self, content, name=None, mtime=None, content_type=""):
+        super().__init__(
+            file=ContentFile(content),
+            name=name,
+            mtime=mtime,
+            content_type=content_type,
+        )
 
 
 @deconstructible

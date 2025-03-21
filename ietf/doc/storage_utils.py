@@ -1,5 +1,5 @@
 # Copyright The IETF Trust 2025, All Rights Reserved
-
+import datetime
 from io import BufferedReader
 from typing import Optional, Union
 
@@ -62,6 +62,8 @@ def store_file(
     allow_overwrite: bool = False,
     doc_name: Optional[str] = None,
     doc_rev: Optional[str] = None,
+    content_type: str="",
+    mtime: datetime.datetime=None,
 ) -> None:
     from .storage_backends import StoredObjectFile  # avoid circular import
     if settings.ENABLE_BLOBSTORAGE:
@@ -78,6 +80,8 @@ def store_file(
                     name=name,
                     doc_name=doc_name,
                     doc_rev=doc_rev,
+                    mtime=mtime,
+                    content_type=content_type,
                 ),
             )
             if new_name != name:
@@ -98,6 +102,8 @@ def store_bytes(
     allow_overwrite: bool = False,
     doc_name: Optional[str] = None,
     doc_rev: Optional[str] = None,
+    content_type: str = "",
+    mtime: datetime.datetime = None,
 ) -> None:
     if settings.ENABLE_BLOBSTORAGE:
         try:
@@ -108,6 +114,8 @@ def store_bytes(
                 allow_overwrite,
                 doc_name,
                 doc_rev,
+                content_type,
+                mtime,
             )
         except Exception as err:
             # n.b., not likely to get an exception here because store_file or store_bytes will catch it
@@ -124,6 +132,8 @@ def store_str(
     allow_overwrite: bool = False,
     doc_name: Optional[str] = None,
     doc_rev: Optional[str] = None,
+    content_type: str = "",
+    mtime: datetime.datetime = None,
 ) -> None:
     if settings.ENABLE_BLOBSTORAGE:
         try:
@@ -135,6 +145,8 @@ def store_str(
                 allow_overwrite,
                 doc_name,
                 doc_rev,
+                content_type,
+                mtime,
             )
         except Exception as err:
             # n.b., not likely to get an exception here because store_file or store_bytes will catch it
@@ -177,17 +189,3 @@ def retrieve_str(kind: str, name: str) -> str:
             if settings.SERVER_MODE == "development":
                 raise
     return content
-
-
-def commit_saved_object(kind: str, name: str):
-    if settings.ENABLE_BLOBSTORAGE:
-        store = _get_storage(kind)
-        if hasattr(store, "commit_save"):
-            store.commit_save(name)
-
-
-def commit_deleted_object(kind: str, name: str):
-    if settings.ENABLE_BLOBSTORAGE:
-        store = _get_storage(kind)
-        if hasattr(store, "commit_delete"):
-            store.commit_delete(name)

@@ -9,6 +9,7 @@ from celery import shared_task
 from pathlib import Path
 
 from django.conf import settings
+from django.core.files.storage import storages
 from django.utils import timezone
 
 from ietf.utils import log
@@ -26,7 +27,6 @@ from .expire import (
 )
 from .lastcall import get_expired_last_calls, expire_last_call
 from .models import Document, NewRevisionDocEvent
-from .storage_utils import commit_saved_object, commit_deleted_object
 from .utils import (
     generate_idnits2_rfc_status,
     generate_idnits2_rfcs_obsoleted,
@@ -132,10 +132,24 @@ def investigate_fragment_task(name_fragment: str):
 
 
 @shared_task
-def commit_saved_staged_storedobject_task(kind, name):
-    commit_saved_object(kind, name)
-
+def stagedblobstorage_commit_save_task(kind, name):
+    from .storage_backends import StagedBlobStorage
+    storage = storages[kind]  # will raise KeyError on misconfiguration
+    if not isinstance(storage, StagedBlobStorage):
+        raise RuntimeError(
+            f"STORAGES is misconfigured: storages[{kind}] "
+            f"should be a StagedBlobStorage but is {type(storage)}"
+        )
+    storage.commit_save(name)
+    
 
 @shared_task
-def commit_deleted_staged_storedobject_task(kind, name):
-    commit_deleted_object(kind, name)
+def stagedblobstorage_commit_delete_task(kind, name):
+    from .storage_backends import StagedBlobStorage
+    storage = storages[kind]  # will raise KeyError on misconfiguration
+    if not isinstance(storage, StagedBlobStorage):
+        raise RuntimeError(
+            f"STORAGES is misconfigured: storages[{kind}] "
+            f"should be a StagedBlobStorage but is {type(storage)}"
+        )
+    storage.commit_delete(name)

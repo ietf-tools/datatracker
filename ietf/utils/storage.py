@@ -1,10 +1,11 @@
 # Copyright The IETF Trust 2020-2025, All Rights Reserved
 """Django Storage classes"""
+import datetime
 from hashlib import sha384
 from pathlib import Path
 
 from django.conf import settings
-from django.core.files.base import ContentFile
+from django.core.files.base import File
 from django.core.files.storage import FileSystemStorage
 from ietf.doc.storage_utils import store_file
 from .log import log
@@ -60,11 +61,11 @@ class BlobShadowFileSystemStorage(NoLocationMigrationFileSystemStorage):
         return path, args, kwargs
 
 
-class MetadataFile(ContentFile):
+class MetadataFile(File):
     """File that includes metadata"""
 
-    def __init__(self, content, name=None, mtime=None, content_type=None):
-        super().__init__(content, name)
+    def __init__(self, file, name=None, mtime: datetime.datetime=None, content_type=""):
+        super().__init__(file=file, name=name)
         self.mtime = mtime
         self.content_type = content_type
         self._custom_metadata = None
@@ -89,4 +90,6 @@ class MetadataFile(ContentFile):
         return {
             "len": f"{len(content_bytes)}",
             "sha384": f"{sha384(content_bytes).hexdigest()}",
+            "mtime": None if self.mtime is None else self.mtime.isoformat(),
+            "content_type": self.content_type
         }

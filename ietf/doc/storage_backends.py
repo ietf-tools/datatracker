@@ -12,7 +12,7 @@ from django.core.files.storage import Storage, storages
 from django.db import transaction
 
 from ietf.doc.models import StoredObject
-from ietf.doc.tasks import commit_saved_staged_storedobject_task, commit_deleted_staged_storedobject_task
+from ietf.doc.tasks import stagedblobstorage_commit_save_task, stagedblobstorage_commit_delete_task
 from ietf.utils.log import log
 from ietf.utils.storage import MetadataFile
 from ietf.utils.timezone import timezone
@@ -20,8 +20,13 @@ from ietf.utils.timezone import timezone
 
 class StoredObjectFile(MetadataFile):
     """Django storage File object that represents a StoredObject"""
-    def __init__(self, file, name, store=None, doc_name=None, doc_rev=None):
-        super().__init__(file, name)
+    def __init__(self, file, name, mtime=None, content_type="", store=None, doc_name=None, doc_rev=None):
+        super().__init__(
+            file=file,
+            name=name,
+            mtime=mtime,
+            content_type=content_type,
+        )
         self.store = store
         self.doc_name = doc_name
         self.doc_rev = doc_rev
@@ -110,7 +115,11 @@ class MetadataS3Storage(S3Storage):
 
 
 class StagedBlobStorage(Storage):
-    """Storage using an intermediate staging step"""
+    """Storage using an intermediate staging step
+    
+    Relies on `kind` being the same as its key in Django's STORAGES
+    configuration.
+    """
 
     def __init__(
         self,
@@ -155,7 +164,10 @@ class StagedBlobStorage(Storage):
         if self.async_commit:
             # Queue a task to delete from final storage later
             transaction.on_commit(
-                lambda: commit_saved_staged_storedobject_task.delay(self.kind, name)
+                lambda: stagedblobstorage_commit_save_task.delay(
+                    kind=self.kind,
+                    name=name,
+                )
             )
         else:
             self.commit_save(name)  # TODO-BLOBSTORE: deal with name change in this call
@@ -167,11 +179,7 @@ class StagedBlobStorage(Storage):
             with self.staging_storage.open(name) as staged:
                 new_name = self.final_storage.save(
                     name=name,
-                    content=StoredObjectFile.from_storedobject(
-                        file=staged,
-                        name=name,
-                        store=self.kind,
-                    ),
+                    content=staged,
                 )
         except FileNotFoundError:
             log(f"Failed to commit save of {self.kind}:{name} due to FileNotFoundError from staging storage")
@@ -192,7 +200,10 @@ class StagedBlobStorage(Storage):
         # Queue a task to delete from final storage later
         if self.async_commit:
             transaction.on_commit(
-                lambda: commit_deleted_staged_storedobject_task.delay(self.kind, name)
+                lambda: stagedblobstorage_commit_delete_task.delay(
+                    kind=self.kind,
+                    name=name,
+                )
             )
         else:
             self.commit_delete(name)
