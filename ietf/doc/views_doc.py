@@ -617,6 +617,15 @@ def document_main(request, name, rev=None, document_html=False):
         # Stream description and name passing test
         stream = ("draft-stream-" + doc.stream.slug) if doc.stream != None else "(None)"
 
+        # Nits URL
+        nits_url = ''
+        nits3_url = ''
+        if 'txt' in found_types:
+            nits_url = f"{settings.IDNITS_BASE_URL}?url={[fu[1] for fu in file_urls if fu[0] == 'plain text'][0]}"
+        if 'xml' in found_types:
+            nits3_url = f"{settings.IDNITS3_BASE_URL}?url={[fu[1] for fu in file_urls if fu[0] == 'xml'][0]}"
+
+
         html = None
         js = None
         css = None
@@ -713,7 +722,9 @@ def document_main(request, name, rev=None, document_html=False):
                                        review_requests=review_requests,
                                        no_review_from_teams=no_review_from_teams,
                                        due_date=due_date,
-                                       diff_revisions=diff_revisions
+                                       diff_revisions=diff_revisions,
+                                       nits_url=nits_url,
+                                       nits3_url=nits3_url
                                        ))
 
     elif doc.type_id == "charter":
