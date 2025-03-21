@@ -142,7 +142,7 @@ spec:
               mountPath: /workspace/ietf/settings_local.py
               subPath: settings_local.py
       volumes:
-        # To be overriden with the actual shared volume
+        # To be  with the actual shared volume
         - name: dt-vol
         - name: dt-tmp
           emptyDir:
