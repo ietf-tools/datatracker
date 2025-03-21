@@ -51,7 +51,7 @@ jobs:
         push: true
         tags: |
           ghcr.io/ietf-tools/datatracker-app-base:${{ env.IMGVERSION }}
-          ghcr.io/ietf-tools/datatracker-app-base:latest
+          ${{ github.ref == 'refs/heads/main' && 'ghcr.io/ietf-tools/datatracker-app-base:latest' || '' }}
 
     - name: Update version references
       run: |
@@ -61,6 +61,6 @@ jobs:
     - name: Commit CHANGELOG.md
       uses: stefanzweifel/git-auto-commit-action@v5
       with:
-        branch: main
+        branch: ${{ github.ref_name }}
         commit_message: 'ci: update base image target version to ${{ env.IMGVERSION }}'
         file_pattern: dev/build/Dockerfile dev/build/TARGET_BASE
