@@ -1,4 +1,4 @@
-FROM python:3.9-bullseye
+FROM python:3.9-bookworm
 LABEL maintainer="IETF Tools Team <tools-discuss@ietf.org>"
 
 ENV DEBIAN_FRONTEND=noninteractive
@@ -14,6 +14,9 @@ RUN apt-get install -y --no-install-recommends ca-certificates curl gnupg \
     && mkdir -p /etc/apt/keyrings\
     && curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg
 RUN echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_$NODE_MAJOR.x nodistro main" | tee /etc/apt/sources.list.d/nodesource.list
+RUN echo "Package: nodejs" >> /etc/apt/preferences.d/preferences && \
+    echo "Pin: origin deb.nodesource.com" >> /etc/apt/preferences.d/preferences && \
+    echo "Pin-Priority: 1001" >> /etc/apt/preferences.d/preferences
 
 # Add Docker Source
 RUN curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
@@ -56,12 +59,13 @@ RUN apt-get update --fix-missing && apt-get install -qy --no-install-recommends 
 	libmagic-dev \
 	libmariadb-dev \
 	libmemcached-tools \
+	libyang2-tools \
 	locales \
 	make \
 	mariadb-client \
 	memcached \
 	nano \
-	netcat \
+	netcat-traditional \
 	nodejs \
 	pgloader \
 	pigz \
@@ -77,7 +81,6 @@ RUN apt-get update --fix-missing && apt-get install -qy --no-install-recommends 
 	wget \
 	xauth \
 	xvfb \
-	yang-tools \
 	zsh
 
 # Install kramdown-rfc2629 (ruby)
@@ -106,11 +109,11 @@ RUN apt-get autoremove -y && apt-get clean -y && rm -rf /var/lib/apt/lists/* /va
 ENV DBUS_SESSION_BUS_ADDRESS=/dev/null
 
 # avoid million NPM install messages
-ENV npm_config_loglevel warn
+ENV npm_config_loglevel=warn
 # allow installing when the main user is root
-ENV npm_config_unsafe_perm true
+ENV npm_config_unsafe_perm=true
 # disable NPM funding messages
-ENV npm_config_fund false
+ENV npm_config_fund=false
 
 # Set locale to en_US.UTF-8
 RUN echo "LC_ALL=en_US.UTF-8" >> /etc/environment && \
@@ -119,7 +122,7 @@ RUN echo "LC_ALL=en_US.UTF-8" >> /etc/environment && \
     dpkg-reconfigure locales && \
     locale-gen en_US.UTF-8 && \
     update-locale LC_ALL en_US.UTF-8
-ENV LC_ALL en_US.UTF-8
+ENV LC_ALL=en_US.UTF-8
 
 # Install idnits
 ADD https://raw.githubusercontent.com/ietf-tools/idnits-mirror/main/idnits /usr/local/bin/

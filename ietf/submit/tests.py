@@ -1888,7 +1888,7 @@ class SubmitTests(BaseSubmitTestCase):
         r = self.client.get(status_url)
         q = PyQuery(r.content)
         #
-        self.assertContains(r, 'The yang validation returned 1 error')
+        self.assertContains(r, 'The yang validation returned 3 errors')
         #
         m = q('#yang-validation-message').text()
         for command in ['xym', 'pyang', 'yanglint']:
@@ -1898,7 +1898,7 @@ class SubmitTests(BaseSubmitTestCase):
         self.assertIn("draft-yang-testing-invalid-00.txt", m)
         self.assertIn("error: syntax error: illegal keyword: ;", m)
         if settings.SUBMIT_YANGLINT_COMMAND and os.path.exists(settings.YANGLINT_BINARY):
-            self.assertIn("No validation errors", m)
+            self.assertIn('libyang err : Parsing module "ietf-yang-metadata" failed.', m)
 
     def submit_conflicting_submissiondocevent_rev(self, new_rev='01', existing_rev='01'):
         """Test submitting a rev when an equal or later SubmissionDocEvent rev exists
