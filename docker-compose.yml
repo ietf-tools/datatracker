@@ -76,6 +76,8 @@ services:
             CELERY_ROLE: worker
             UPDATE_REQUIREMENTS_FROM: requirements.txt
             DEV_MODE: "yes"
+            CELERY_UID: "501"
+            CELERY_GID: "1000"
         command:
             - '--loglevel=INFO'
         depends_on:
@@ -112,6 +114,22 @@ services:
 #        stop_grace_period: 1m
 #        volumes:
 #            - .:/workspace
+#            - app-assets:/assets
+
+#  Flower is a celery event monitor / metrics exporter. It is not normally needed for dev.
+#    flower:
+#        image: ghcr.io/ietf-tools/datatracker-celery:latest
+#        environment:
+#            CELERY_APP: ietf
+#            CELERY_ROLE: flower
+#        ports:
+#            - '5555:5555'
+#        depends_on:
+#            - mq
+#        restart: unless-stopped
+#        stop_grace_period: 1m
+#        volumes:
+#            -  .:/workspace
 #            - app-assets:/assets
 
 volumes:
