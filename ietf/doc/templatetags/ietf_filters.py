@@ -480,6 +480,25 @@ def state(doc, slug):
         slug = "%s-stream-%s" % (doc.type_id, doc.stream_id)
     return doc.get_state(slug)
 
+
+@register.filter
+def inconsistent_state(doc):
+    """Returns a flag indicating whether the document has an inconsistent state."""
+    if not doc.type_id == "draft":
+        return False
+
+    draft_iesg_state = doc.get_state("draft-iesg")
+    draft_stream_state = doc.get_state("draft-stream-ietf")
+    draft_state = doc.get_state("draft")
+
+    return (
+        not (draft_iesg_state and draft_iesg_state.slug == "idexists")
+        and not (draft_stream_state and draft_stream_state.slug == "sub-pub")
+        and not (draft_stream_state and draft_stream_state.slug == "dead")
+        and not (draft_state and draft_state.slug == "expired")
+    )
+
+
 @register.filter
 def statehelp(state):
     "Output help icon with tooltip for state."
