@@ -2522,6 +2522,8 @@ def session_details(request, num, acronym):
     else:
         pending_suggestions = SlideSubmission.objects.none()
 
+    tsa = session.official_timeslotassignment()
+    future = tsa is not None and timezone.now() < tsa.timeslot.end_time()
     return render(request, "meeting/session_details.html",
                   { 'scheduled_sessions':scheduled_sessions ,
                     'unscheduled_sessions':unscheduled_sessions , 
@@ -2532,7 +2534,7 @@ def session_details(request, num, acronym):
                     'can_manage_materials' : can_manage,
                     'can_view_request': can_view_request,
                     'thisweek': datetime_today()-datetime.timedelta(days=7),
-                    'future': timezone.now() < session.official_timeslotassignment().timeslot.end_time(),
+                    'future': future,
                   })
 
 class SessionDraftsForm(forms.Form):
