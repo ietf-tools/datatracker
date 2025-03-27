@@ -6541,6 +6541,20 @@ class MaterialsTests(TestCase):
         self.assertIn('Upload', str(q("title")))
         
 
+    def test_label_future_sessions(self):
+        self.client.login(username='secretary', password='secretary+password')
+        for future in (True, False):
+            mtg_date = date_today()+datetime.timedelta(days=180 if future else -180)
+            session = SessionFactory(meeting__type_id='ietf', meeting__date=mtg_date)
+            # Verify future warning shows on the session details panel
+            url = urlreverse('ietf.meeting.views.session_details', kwargs={'num':session.meeting.number, 'acronym': session.group.acronym})
+            r = self.client.get(url)
+            self.assertTrue(r.status_code==200)
+            if future:
+                self.assertContains(r, "Session has not ended yet")
+            else:
+                self.assertNotContains(r, "Session has not ended yet")
+
     def test_upload_minutes_agenda(self):
         for doctype in ('minutes','agenda'):
             for future in (True, False):
