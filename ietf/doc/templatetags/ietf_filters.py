@@ -482,20 +482,17 @@ def state(doc, slug):
 
 
 @register.filter
-def inconsistent_state(doc):
-    """Returns a flag indicating whether the document has an inconsistent state."""
+def is_unexpected_wg_state(doc):
+    """Returns a flag indicating whether the document has an unexpected wg state."""
     if not doc.type_id == "draft":
         return False
 
     draft_iesg_state = doc.get_state("draft-iesg")
     draft_stream_state = doc.get_state("draft-stream-ietf")
-    draft_state = doc.get_state("draft")
 
-    return (
-        not (draft_iesg_state and draft_iesg_state.slug == "idexists")
-        and not (draft_stream_state and draft_stream_state.slug == "sub-pub")
-        and not (draft_stream_state and draft_stream_state.slug == "dead")
-        and not (draft_state and draft_state.slug == "expired")
+    return not (
+        (draft_iesg_state and draft_iesg_state.slug == "idexists")
+        or (draft_stream_state and draft_stream_state.slug == "sub-pub")
     )
 
 
