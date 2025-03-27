@@ -14,7 +14,6 @@ from ietf.doc.factories import (
     ConflictReviewFactory,
     BofreqFactory,
     StatementFactory,
-    DocumentFactory,
     RfcFactory,
 )
 from ietf.doc.models import DocEvent
@@ -184,10 +183,10 @@ class IetfFiltersTests(TestCase):
         """
         # test documents with expected wg states
         self.assertFalse(is_unexpected_wg_state(RfcFactory()))
-        self.assertFalse(is_unexpected_wg_state(DocumentFactory(states=[('draft-stream-ietf', 'sub-pub')])))
-        self.assertFalse(is_unexpected_wg_state(DocumentFactory(states=[('draft-iesg', 'idexists')])))
-        self.assertFalse(is_unexpected_wg_state(DocumentFactory(states=[('draft-stream-ietf', 'wg-cand'), ('draft-iesg','idexists')])))
+        self.assertFalse(is_unexpected_wg_state(WgDraftFactory (states=[('draft-stream-ietf', 'sub-pub')])))
+        self.assertFalse(is_unexpected_wg_state(WgDraftFactory (states=[('draft-iesg', 'idexists')])))
+        self.assertFalse(is_unexpected_wg_state(WgDraftFactory (states=[('draft-stream-ietf', 'wg-cand'), ('draft-iesg','idexists')])))
 
         # test documents with unexpected wg states due to invalid combination of states
-        self.assertTrue(is_unexpected_wg_state(DocumentFactory(states=[('draft-stream-ietf', 'wg-cand'), ('draft-iesg','lc-req')])))
-        self.assertTrue(is_unexpected_wg_state(DocumentFactory(states=[('draft-stream-ietf', 'chair-w'), ('draft-iesg','pub-req')])))
+        self.assertTrue(is_unexpected_wg_state(WgDraftFactory (states=[('draft-stream-ietf', 'wg-cand'), ('draft-iesg','lc-req')])))
+        self.assertTrue(is_unexpected_wg_state(WgDraftFactory (states=[('draft-stream-ietf', 'chair-w'), ('draft-iesg','pub-req')])))

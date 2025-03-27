@@ -490,10 +490,7 @@ def is_unexpected_wg_state(doc):
     draft_iesg_state = doc.get_state("draft-iesg")
     draft_stream_state = doc.get_state("draft-stream-ietf")
 
-    return not (
-        (draft_iesg_state and draft_iesg_state.slug == "idexists")
-        or (draft_stream_state and draft_stream_state.slug == "sub-pub")
-    )
+    return draft_iesg_state.slug != "idexists" and draft_stream_state is not None and draft_stream_state.slug != "sub-pub"
 
 
 @register.filter
