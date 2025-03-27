@@ -233,6 +233,7 @@ class MeetingTests(BaseMeetingTestCase):
         session.save()
         slot = TimeSlot.objects.get(sessionassignments__session=session,sessionassignments__schedule=meeting.schedule)
         meeting.timeslot_set.filter(type_id="break").update(show_location=False)
+        meeting.importantdate_set.create(name_id='prelimagenda',date=date_today() + datetime.timedelta(days=20))
         #
         self.write_materials_files(meeting, session)
         #
@@ -262,7 +263,8 @@ class MeetingTests(BaseMeetingTestCase):
                     "updated": generated_data.get("meeting").get("updated"),  # Just expect the value to exist
                     "timezone": meeting.time_zone,
                     "infoNote": meeting.agenda_info_note,
-                    "warningNote": meeting.agenda_warning_note
+                    "warningNote": meeting.agenda_warning_note,
+                    "prelimAgendaDate": (date_today() + datetime.timedelta(days=20)).isoformat()
                 },
                 "categories": generated_data.get("categories"),  # Just expect the value to exist
                 "isCurrentMeeting": True,
@@ -424,37 +426,41 @@ class MeetingTests(BaseMeetingTestCase):
         self.assertEqual(r.status_code, 200)
 
     def test_session_recordings_via_factories(self):
-        session = SessionFactory(meeting__type_id="ietf", meeting__date=date_today()-datetime.timedelta(days=180))
+        session = SessionFactory(meeting__type_id="ietf", meeting__date=date_today()-datetime.timedelta(days=180), meeting__number=str(random.randint(108,150)))
         self.assertEqual(session.meetecho_recording_name, "")
         self.assertEqual(len(session.recordings()), 0)
         url = urlreverse("ietf.meeting.views.session_details", kwargs=dict(num=session.meeting.number, acronym=session.group.acronym))
         r = self.client.get(url)
         q = PyQuery(r.content)
         # debug.show("q(f'#notes_and_recordings_{session.pk}')")
-        self.assertEqual(len(q(f"#notes_and_recordings_{session.pk} tr")), 1)
-        link = q(f"#notes_and_recordings_{session.pk} tr a")
-        self.assertEqual(len(link), 1)
-        self.assertEqual(link[0].attrib['href'], str(session.session_recording_url()))
+        self.assertEqual(len(q(f"#notes_and_recordings_{session.pk} tr")), 2)
+        links = q(f"#notes_and_recordings_{session.pk} tr a")
+        self.assertEqual(len(links), 2)
+        self.assertEqual(links[0].attrib['href'], str(session.notes_url()))
+        self.assertEqual(links[1].attrib['href'], str(session.session_recording_url()))
 
         session.meetecho_recording_name = 'my_test_session_name'
         session.save()
         r = self.client.get(url)
         q = PyQuery(r.content)
-        self.assertEqual(len(q(f"#notes_and_recordings_{session.pk} tr")), 1)
+        self.assertEqual(len(q(f"#notes_and_recordings_{session.pk} tr")), 2)
         links = q(f"#notes_and_recordings_{session.pk} tr a")
-        self.assertEqual(len(links), 1)
-        self.assertEqual(links[0].attrib['href'], session.session_recording_url())
+        self.assertEqual(len(links), 2)
+        self.assertEqual(links[0].attrib['href'], str(session.notes_url()))
+        self.assertEqual(links[1].attrib['href'], str(session.session_recording_url()))
 
         new_recording_url = "https://www.youtube.com/watch?v=jNQXAC9IVRw"
         new_recording_title = "Me at the zoo"
         create_recording(session, new_recording_url, new_recording_title)
         r = self.client.get(url)
         q = PyQuery(r.content)
-        self.assertEqual(len(q(f"#notes_and_recordings_{session.pk} tr")), 2)
+        self.assertEqual(len(q(f"#notes_and_recordings_{session.pk} tr")), 3)
         links = q(f"#notes_and_recordings_{session.pk} tr a")
-        self.assertEqual(len(links), 2)
-        self.assertEqual(links[0].attrib['href'], new_recording_url)
-        self.assertIn(new_recording_title, links[0].text_content())
+        self.assertEqual(len(links), 3)
+        self.assertEqual(links[0].attrib['href'], str(session.notes_url()))
+        self.assertEqual(links[1].attrib['href'], new_recording_url)
+        self.assertIn(new_recording_title, links[1].text_content())
+        self.assertEqual(links[2].attrib['href'], str(session.session_recording_url()))
         #debug.show("q(f'#notes_and_recordings_{session_pk}')")
 
     def test_delete_recordings(self):
@@ -4523,6 +4529,7 @@ class EditTests(TestCase):
 
 
 class SessionDetailsTests(TestCase):
+    settings_temp_path_overrides = TestCase.settings_temp_path_overrides + ['SLIDE_STAGING_PATH']
 
     def test_session_details(self):
 
@@ -4654,6 +4661,85 @@ class SessionDetailsTests(TestCase):
         self.assertEqual(r.status_code,200)
         q = PyQuery(r.content)
         self.assertEqual(1,len(q(".alert-warning:contains('may affect published proceedings')")))
+
+    def test_proposed_slides_for_approval(self):
+        # This test overlaps somewhat with MaterialsTests of proposed slides handling. The focus
+        # here is on the display of slides, not the approval action.
+        group = GroupFactory()
+        meeting = MeetingFactory(
+            type_id="ietf", date=date_today() + datetime.timedelta(days=10)
+        )
+        sessions = SessionFactory.create_batch(
+            2,
+            group=group,
+            meeting=meeting,
+        )
+    
+        # slides submission _not_ in the `pending` state
+        do_not_show = [
+            SlideSubmissionFactory(
+                session=sessions[0],
+                title="already approved",
+                status_id="approved",
+            ),
+            SlideSubmissionFactory(
+                session=sessions[1],
+                title="already rejected",
+                status_id="rejected",
+            ),
+        ]
+    
+        # pending submissions
+        first_session_pending = SlideSubmissionFactory(
+            session=sessions[0], title="first session title"
+        )
+        second_session_pending = SlideSubmissionFactory(
+            session=sessions[1], title="second session title"
+        )
+    
+        # and their approval URLs
+        def _approval_url(slidesub):
+            return urlreverse(
+                "ietf.meeting.views.approve_proposed_slides",
+                kwargs={"slidesubmission_id": slidesub.pk, "num": meeting.number},
+            )
+    
+        first_approval_url = _approval_url(first_session_pending)
+        second_approval_url = _approval_url(second_session_pending)
+        do_not_show_urls = [_approval_url(ss) for ss in do_not_show]
+    
+        # Retrieve the URL as a group chair
+        url = urlreverse(
+            "ietf.meeting.views.session_details",
+            kwargs={
+                "num": meeting.number,
+                "acronym": group.acronym,
+            },
+        )
+        chair = RoleFactory(group=group, name_id="chair").person
+        self.client.login(
+            username=chair.user.username, password=f"{chair.user.username}+password"
+        )
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        pq = PyQuery(r.content)
+        self.assertEqual(
+            len(pq(f'a[href="{first_approval_url}"]')),
+            1,
+            "first session proposed slides should be linked for approval",
+        )
+        self.assertEqual(
+            len(pq(f'a[href="{second_approval_url}"]')),
+            1,
+            "second session proposed slides should be linked for approval",
+        )
+        for no_show_url in do_not_show_urls:
+            self.assertEqual(
+                len(pq(f'a[href="{no_show_url}"]')),
+                0,
+                "second session proposed slides should be linked for approval",
+            )
+        
 
 class EditScheduleListTests(TestCase):
     def setUp(self):
@@ -9257,4 +9343,3 @@ class ProceedingsTests(BaseMeetingTestCase):
                 {"name": attended_with_affil.person.plain_name(), "affiliation": "Somewhere"},
             ]
         )
-

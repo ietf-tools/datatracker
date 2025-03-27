@@ -96,7 +96,7 @@
                 </td>
             </tr>
         {% endif %}
-        {% if doc.time %}
+        {% if review_req.doc.time %}
             <tr>
                 <th scope="row">
                 </th>
@@ -104,7 +104,10 @@
                     I-D last updated
                 </th>
                 <td>
-                    {{ doc.time|date:"Y-m-d" }}
+                    {{ review_req.doc.time|date:"Y-m-d" }}
+                    {% if review_req.doc.pub_date %}
+                        <span class="text-body-secondary">(Latest revision {{ review_req.doc.pub_date|date:"Y-m-d" }})</span>
+                    {% endif %}
                 </td>
             </tr>
         {% endif %}
