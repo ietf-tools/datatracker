@@ -26,6 +26,11 @@
     {% if session_number %}
         <h2>Session {{ session_number }} : {{ session.official_timeslotassignment.timeslot.time|timezone:session.meeting.time_zone|date:"D M-d-Y Hi" }}</h2>
     {% endif %}
+    {% if future %}
+    <p class="alert alert-warning my-3">
+        Caution: Session has not ended yet
+    </p>
+    {% endif %}
     <form enctype="multipart/form-data" method="post" class="my-3">
         {% csrf_token %}
         {% bootstrap_form form %}
