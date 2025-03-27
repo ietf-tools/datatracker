@@ -2825,7 +2825,7 @@ def upload_session_minutes(request, session_id, num):
         form = UploadMinutesForm(show_apply_to_all_checkbox)
 
     tsa = session.official_timeslotassignment()
-    future = tsa and timezone.now() < tsa.timeslot.end_time()
+    future = tsa is not None and timezone.now() < tsa.timeslot.end_time()
     return render(request, "meeting/upload_session_minutes.html", 
                   {'session': session,
                    'session_number': session_number,
