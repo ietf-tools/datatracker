@@ -1,5 +1,5 @@
-# Copyright The IETF Trust 2007-2024, All Rights Reserved
 # -*- coding: utf-8 -*-
+# Copyright The IETF Trust 2007-2024, All Rights Reserved
 
 
 # old meeting models can be found in ../proceedings/models.py
@@ -34,7 +34,7 @@ from ietf.group.utils import can_manage_materials
 from ietf.name.models import (
     MeetingTypeName, TimeSlotTypeName, SessionStatusName, ConstraintName, RoomResourceName,
     ImportantDateName, TimerangeName, SlideSubmissionStatusName, ProceedingsMaterialTypeName,
-    SessionPurposeName,
+    SessionPurposeName, AttendanceTypeName, RegistrationTicketTypeName
 )
 from ietf.person.models import Person
 from ietf.utils.decorators import memoize
@@ -1483,3 +1483,40 @@ class Attended(models.Model):
 
     def __str__(self):
         return f'{self.person} at {self.session}'
+
+
+class RegistrationManager(models.Manager):
+    def onsite(self):
+        return self.get_queryset().filter(registrationticket__attendance_type__slug='onsite')
+
+    def remote(self):
+        return self.get_queryset().filter(registrationticket__attendance_type__slug='remote').exclude(registrationticket__attendance_type__slug='onsite')
+
+class Registration(models.Model):
+    """Registration attendee records from the IETF registration system"""
+    meeting = ForeignKey(Meeting)
+    first_name = models.CharField(max_length=255)
+    last_name = models.CharField(max_length=255)
+    affiliation = models.CharField(blank=True, max_length=255)
+    country_code = models.CharField(max_length=2)        # ISO 3166
+    person = ForeignKey(Person, blank=True, null=True, on_delete=models.PROTECT)
+    email = models.EmailField(blank=True, null=True)
+    # attended was used prior to the introduction of the ietf.meeting.Attended model and is still used by
+    # Meeting.get_attendance() for older meetings. It should not be used except for dealing with legacy data.
+    attended = models.BooleanField(default=False)
+    # checkedin indicates that the badge was picked up
+    checkedin = models.BooleanField(default=False)
+
+    # custom manager
+    objects = RegistrationManager()
+
+    def __str__(self):
+        return "{} {}".format(self.first_name, self.last_name)
+
+class RegistrationTicket(models.Model):
+    registration = ForeignKey(Registration, related_name='tickets')
+    attendance_type = ForeignKey(AttendanceTypeName, on_delete=models.PROTECT)
+    ticket_type = ForeignKey(RegistrationTicketTypeName, on_delete=models.PROTECT)
+
+    def __str__(self):
+        return "{}:{}".format(self.attendance_type, self.ticket_type)
