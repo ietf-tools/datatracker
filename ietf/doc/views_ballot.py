@@ -611,6 +611,10 @@ class BallotWriteupForm(forms.Form):
 def ballot_writeupnotes(request, name):
     """Editing of ballot write-up and notes"""
     doc = get_object_or_404(Document, name=name)
+
+    if doc.stream is None or doc.stream.slug != 'ietf':
+        raise Http404("The requested operation is not allowed for this document.")
+
     prev_state = doc.get_state("draft-iesg")
 
     login = request.user.person
