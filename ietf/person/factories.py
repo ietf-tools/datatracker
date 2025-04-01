@@ -26,20 +26,22 @@ from ietf.person.name import normalize_name, unidecode_name
 
 fake = faker.Factory.create()
 
-def setup():
-    global acceptable_fakers
-    # The transliteration of some Arabic and Devanagari names introduces
-    # non-alphabetic characters that don't work with the draft author
-    # extraction code, and also don't seem to match the way people with Arabic
-    # names romanize Arabic names.  Exclude those locales from name generation
-    # in order to avoid test failures.
-    locales = set( [ l for l in faker.config.AVAILABLE_LOCALES if not (l.startswith('ar_') or l.startswith('sg_') or l=='fr_QC') ] )
-    acceptable_fakers = [faker.Faker(locale) for locale in locales]
-setup()
+# The transliteration of some Arabic and Devanagari names introduces
+# non-alphabetic characters that don't work with the draft author
+# extraction code, and also don't seem to match the way people with Arabic
+# names romanize Arabic names.  Exclude those locales from name generation
+# in order to avoid test failures.
+_acceptable_fakers = [
+    faker.Faker(locale)
+    for locale in set(faker.config.AVAILABLE_LOCALES)
+    if not (locale.startswith('ar_') or locale.startswith('sg_') or locale == 'fr_QC')
+]
+
 
 def random_faker():
-    global acceptable_fakers
-    return random.sample(acceptable_fakers, 1)[0]
+    """Helper to get a random faker acceptable for User names"""
+    return random.sample(_acceptable_fakers, 1)[0]
+
 
 class UserFactory(factory.django.DjangoModelFactory):
     class Meta:
