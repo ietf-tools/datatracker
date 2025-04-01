@@ -25,7 +25,7 @@ from ietf.doc.views_doc import document_ballot_content
 from ietf.group.models import Group, Role
 from ietf.group.factories import GroupFactory, RoleFactory, ReviewTeamFactory
 from ietf.ipr.factories import HolderIprDisclosureFactory
-from ietf.name.models import BallotPositionName, StreamName
+from ietf.name.models import BallotPositionName
 from ietf.iesg.models import TelechatDate
 from ietf.person.models import Person
 from ietf.person.factories import PersonFactory, PersonalApiKeyFactory
@@ -360,7 +360,7 @@ class BallotWriteupsTests(TestCase):
         self.assertTrue('aread@' in outbox[-1]['Cc'])
 
     def test_edit_ballot_writeup(self):
-        draft = IndividualDraftFactory(states=[('draft','active'),('draft-iesg','iesg-eva')], stream=StreamName.objects.get(slug='ietf'))
+        draft = IndividualDraftFactory(states=[('draft','active'),('draft-iesg','iesg-eva')], stream_id='ietf')
         url = urlreverse('ietf.doc.views_ballot.ballot_writeupnotes', kwargs=dict(name=draft.name))
         login_testing_unauthorized(self, "secretary", url)
 
@@ -408,7 +408,7 @@ class BallotWriteupsTests(TestCase):
         self.assertEqual(r.status_code, 404)
 
     def test_edit_ballot_writeup_already_approved(self):
-        draft = IndividualDraftFactory(states=[('draft','active'),('draft-iesg','approved')], stream=StreamName.objects.get(slug='ietf'))
+        draft = IndividualDraftFactory(states=[('draft','active'),('draft-iesg','approved')], stream_id='ietf')
         url = urlreverse('ietf.doc.views_ballot.ballot_writeupnotes', kwargs=dict(name=draft.name))
         login_testing_unauthorized(self, "secretary", url)
 
@@ -482,7 +482,7 @@ class BallotWriteupsTests(TestCase):
     def test_issue_ballot(self):
         ad = Person.objects.get(user__username="ad")
         for case in ('none','past','future'):
-            draft = IndividualDraftFactory(ad=ad, stream=StreamName.objects.get(slug='ietf'))
+            draft = IndividualDraftFactory(ad=ad, stream_id='ietf')
             if case in ('past','future'):
                 LastCallDocEvent.objects.create(
                     by=Person.objects.get(name='(System)'),
@@ -521,7 +521,7 @@ class BallotWriteupsTests(TestCase):
 
     def test_issue_ballot_auto_state_change(self):
         ad = Person.objects.get(user__username="ad")
-        draft = IndividualDraftFactory(ad=ad, states=[('draft','active'),('draft-iesg','writeupw')], stream=StreamName.objects.get(slug='ietf'))
+        draft = IndividualDraftFactory(ad=ad, states=[('draft','active'),('draft-iesg','writeupw')], stream_id='ietf')
         url = urlreverse('ietf.doc.views_ballot.ballot_writeupnotes', kwargs=dict(name=draft.name))
         login_testing_unauthorized(self, "secretary", url)
 
@@ -545,7 +545,7 @@ class BallotWriteupsTests(TestCase):
 
     def test_issue_ballot_warn_if_early(self):
         ad = Person.objects.get(user__username="ad")
-        draft = IndividualDraftFactory(ad=ad, states=[('draft','active'),('draft-iesg','lc')], stream=StreamName.objects.get(slug='ietf'))
+        draft = IndividualDraftFactory(ad=ad, states=[('draft','active'),('draft-iesg','lc')], stream_id='ietf')
         url = urlreverse('ietf.doc.views_ballot.ballot_writeupnotes', kwargs=dict(name=draft.name))
         login_testing_unauthorized(self, "secretary", url)
 

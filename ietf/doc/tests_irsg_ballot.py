@@ -16,7 +16,6 @@ from ietf.utils.test_utils import TestCase, unicontent, login_testing_unauthoriz
 from ietf.doc.factories import IndividualDraftFactory, WgDraftFactory, RgDraftFactory, RgRfcFactory, BallotDocEventFactory, IRSGBallotDocEventFactory, BallotPositionDocEventFactory
 from ietf.doc.models import BallotDocEvent, BallotPositionDocEvent
 from ietf.doc.utils import create_ballot_if_not_open, close_ballot
-from ietf.name.models import StreamName
 from ietf.person.utils import get_active_irsg, get_active_ads
 from ietf.group.factories import RoleFactory
 from ietf.person.models import Person
@@ -289,7 +288,7 @@ class IssueIRSGBallotTests(TestCase):
 
     def test_iesg_ballot_no_irsg_actions(self):
         ad = Person.objects.get(user__username="ad")
-        wg_draft = IndividualDraftFactory(ad=ad, stream=StreamName.objects.get(slug='ietf'))
+        wg_draft = IndividualDraftFactory(ad=ad, stream_id='ietf')
         irsgmember = get_active_irsg()[0]
 
         url = urlreverse('ietf.doc.views_ballot.ballot_writeupnotes', kwargs=dict(name=wg_draft.name))
