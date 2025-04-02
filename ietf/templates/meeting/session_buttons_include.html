@@ -2,7 +2,8 @@
 {% load origin %}
 {% load static %}
 {% load textfilters tz %}
-{% load ietf_filters %}
+{% load ietf_filters session_filters %}
+
 {% origin %}
 {% if item and item|should_show_agenda_session_buttons %}
     {% with slug=item.slug session=item.session timeslot=item.timeslot %}
@@ -127,13 +128,17 @@
                 {% else %}
                     {# chat logs #}
                     {% if meeting.has_chat_logs %}
-                        <a class="btn btn-outline-primary"
-                            role="button"
-                            href="{{session.chat_archive_url}}"
-                            aria-label="Chat logs for {{ session.chat_room_name }}"
-                            title="Chat logs for {{ session.chat_room_name }}">
-                            <i class="bi bi-file-text"></i>
-                        </a>
+                        {% with session.filtered_chatlog_and_polls|get_chatlog as chatlog %}
+                        {% if chatlog %}
+                            <a class="btn btn-outline-primary"
+                                role="button"
+                                href="/doc/{{ chatlog.name }}"
+                                aria-label="Chat logs for {{ session.chat_room_name }}"
+                                title="Chat logs for {{ session.chat_room_name }}">
+                                <i class="bi bi-file-text"></i>
+                            </a>
+                        {% endif %}
+                        {% endwith %}
                     {% endif %}
                     {# Recordings #}
 		    {% if meeting.has_recordings %}
@@ -303,13 +308,17 @@
                         </li>
                     {% else %}
                         {# chat logs #}
-			{% if meeting.has_chat_logs %}
+			            {% if meeting.has_chat_logs %}
+                            {% with session.filtered_chatlog_and_polls|get_chatlog as chatlog %}
+                            {% if chatlog %}
                             <li>
                                 <a class="dropdown-item"
-                                    href="session.chat_room_url">
+                                    href="/doc/{{ chatlog.name }}">
                                     <i class="bi bi-file-text"></i> Chat logs
                                 </a>
                             </li>
+                            {% endif %}
+                            {% endwith %}
                         {% endif %}
                         {# Recordings #}
                         {% if meeting.has_recordings %}

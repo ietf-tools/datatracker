@@ -5,9 +5,11 @@ import debug  # pyflakes: ignore
 from django.template import Context, Template
 from pyquery import PyQuery
 
-from ietf.meeting.factories import FloorPlanFactory, RoomFactory, TimeSlotFactory
+from ietf.meeting.factories import FloorPlanFactory, RoomFactory, TimeSlotFactory, SessionFactory, SessionPresentationFactory
+from ietf.doc.factories import DocumentFactory
 from ietf.meeting.templatetags.agenda_custom_tags import AnchorNode
 from ietf.meeting.templatetags.editor_tags import constraint_icon_for
+from ietf.meeting.templatetags.session_filters import get_chatlog
 from ietf.name.models import ConstraintName
 from ietf.utils.test_utils import TestCase
 
@@ -124,3 +126,44 @@ class EditorTagsTests(TestCase):
                 expected,
                 f'Unexpected output for {slug} {params}',
             )
+
+class GetChatlogFilterTest(TestCase):
+    def test_get_chatlog_returns_chatlog_document(self):
+        # Test when a chatlog document exists
+        session = SessionFactory()
+        chatlog = DocumentFactory(type_id="chatlog", name='chatlog-72-mars-197001010000')
+        polls = DocumentFactory(type_id="polls", name='polls-72-mars-197001010000')
+        chatlog_and_polls = [
+            SessionPresentationFactory(document=chatlog, session=session),
+            SessionPresentationFactory(document=polls, session=session)
+        ]
+        result = get_chatlog(chatlog_and_polls)
+        self.assertEqual(result, chatlog)
+
+    def test_get_chatlog_returns_chatlog_document_inverse_order(self):
+        # Test when a chatlog document exists
+        session = SessionFactory()
+        chatlog = DocumentFactory(type_id="chatlog", name='chatlog-72-mars-197001010000')
+        polls = DocumentFactory(type_id="polls", name='polls-72-mars-197001010000')
+        chatlog_and_polls = [
+            SessionPresentationFactory(document=polls, session=session),
+            SessionPresentationFactory(document=chatlog, session=session)
+        ]
+        result = get_chatlog(chatlog_and_polls)
+        self.assertEqual(result, chatlog)
+
+    def test_get_chatlog_returns_none_when_no_chatlog(self):
+        # Test when no chatlog document exists
+        session = SessionFactory()
+        polls = DocumentFactory(type_id="polls", name='polls-72-mars-197001010000')
+        chatlog_and_polls = [
+            SessionPresentationFactory(document=polls, session=session)
+        ]
+        result = get_chatlog(chatlog_and_polls)
+        self.assertIsNone(result)
+
+    def test_get_chatlog_returns_none_when_empty_list(self):
+        # Test when the input list is empty
+        chatlog_and_polls = []
+        result = get_chatlog(chatlog_and_polls)
+        self.assertIsNone(result)

@@ -54,3 +54,7 @@ def describe_with_tz(session):
             )
             ss0name += f" {session.meeting.tz()}"
     return f"{session.meeting}: {session.group.acronym} {session.name} {ss0name}"
+
+@register.filter
+def get_chatlog(chatlog_and_polls):
+    return next((poll.document for poll in chatlog_and_polls if poll.document.type_id == 'chatlog'), None)
