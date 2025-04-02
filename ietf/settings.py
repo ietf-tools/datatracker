@@ -1103,7 +1103,12 @@ TZDATA_ICS_PATH = BASE_DIR + '/../vzic/zoneinfo/'
 
 DATATRACKER_MAX_UPLOAD_SIZE = 40960000
 PPT2PDF_COMMAND = [
-    "/usr/bin/soffice", "--headless", "--convert-to", "pdf:writer_globaldocument_pdf_Export", "--outdir"
+    "/usr/bin/soffice",
+    "--headless", # no GUI
+    "--safe-mode", # use a new libreoffice profile every time (ensures no reliance on accumulated profile config)
+    "--norestore", # don't attempt to restore files after a previous crash (ensures that one crash won't block future conversions until UI intervention)
+    "--convert-to", "pdf:writer_globaldocument_pdf_Export",
+    "--outdir"
 ]
 
 STATS_REGISTRATION_ATTENDEES_JSON_URL = 'https://registration.ietf.org/{number}/attendees/'
