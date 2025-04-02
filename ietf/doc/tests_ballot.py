@@ -17,7 +17,7 @@ from django.utils import timezone
 from ietf.doc.models import (Document, State, DocEvent,
                              BallotPositionDocEvent, LastCallDocEvent, WriteupDocEvent, TelechatDocEvent)
 from ietf.doc.factories import (DocumentFactory, IndividualDraftFactory, IndividualRfcFactory, WgDraftFactory,
-                                BallotPositionDocEventFactory, BallotDocEventFactory, IRSGBallotDocEventFactory)
+                                BallotPositionDocEventFactory, BallotDocEventFactory, IRSGBallotDocEventFactory, RgDraftFactory)
 from ietf.doc.templatetags.ietf_filters import can_defer
 from ietf.doc.utils import create_ballot_if_not_open
 from ietf.doc.views_ballot import parse_ballot_edit_return_point
@@ -360,7 +360,7 @@ class BallotWriteupsTests(TestCase):
         self.assertTrue('aread@' in outbox[-1]['Cc'])
 
     def test_edit_ballot_writeup(self):
-        draft = IndividualDraftFactory(states=[('draft','active'),('draft-iesg','iesg-eva')])
+        draft = IndividualDraftFactory(states=[('draft','active'),('draft-iesg','iesg-eva')], stream_id='ietf')
         url = urlreverse('ietf.doc.views_ballot.ballot_writeupnotes', kwargs=dict(name=draft.name))
         login_testing_unauthorized(self, "secretary", url)
 
@@ -390,8 +390,25 @@ class BallotWriteupsTests(TestCase):
         self.assertTrue("This is a simple test" in d.latest_event(WriteupDocEvent, type="changed_ballot_writeup_text").text)
         self.assertTrue('iesg-eva' == d.get_state_slug('draft-iesg'))
 
+    def test_edit_ballot_writeup_unauthorized_stream(self):
+        # Test that accessing a document from unauthorized (irtf) stream returns a 404 error
+        draft = RgDraftFactory()
+        url = urlreverse('ietf.doc.views_ballot.ballot_writeupnotes', kwargs=dict(name=draft.name))
+        login_testing_unauthorized(self, "ad", url)
+
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 404)
+
+    def test_edit_ballot_writeup_invalid_name(self):
+        # Test that accessing a non-existent document returns a 404 error
+        url = urlreverse('ietf.doc.views_ballot.ballot_writeupnotes', kwargs=dict(name="invalid_name"))
+        login_testing_unauthorized(self, "ad", url)
+
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 404)
+
     def test_edit_ballot_writeup_already_approved(self):
-        draft = IndividualDraftFactory(states=[('draft','active'),('draft-iesg','approved')])
+        draft = IndividualDraftFactory(states=[('draft','active'),('draft-iesg','approved')], stream_id='ietf')
         url = urlreverse('ietf.doc.views_ballot.ballot_writeupnotes', kwargs=dict(name=draft.name))
         login_testing_unauthorized(self, "secretary", url)
 
@@ -465,7 +482,7 @@ class BallotWriteupsTests(TestCase):
     def test_issue_ballot(self):
         ad = Person.objects.get(user__username="ad")
         for case in ('none','past','future'):
-            draft = IndividualDraftFactory(ad=ad)
+            draft = IndividualDraftFactory(ad=ad, stream_id='ietf')
             if case in ('past','future'):
                 LastCallDocEvent.objects.create(
                     by=Person.objects.get(name='(System)'),
@@ -504,7 +521,7 @@ class BallotWriteupsTests(TestCase):
 
     def test_issue_ballot_auto_state_change(self):
         ad = Person.objects.get(user__username="ad")
-        draft = IndividualDraftFactory(ad=ad, states=[('draft','active'),('draft-iesg','writeupw')])
+        draft = IndividualDraftFactory(ad=ad, states=[('draft','active'),('draft-iesg','writeupw')], stream_id='ietf')
         url = urlreverse('ietf.doc.views_ballot.ballot_writeupnotes', kwargs=dict(name=draft.name))
         login_testing_unauthorized(self, "secretary", url)
 
@@ -528,7 +545,7 @@ class BallotWriteupsTests(TestCase):
 
     def test_issue_ballot_warn_if_early(self):
         ad = Person.objects.get(user__username="ad")
-        draft = IndividualDraftFactory(ad=ad, states=[('draft','active'),('draft-iesg','lc')])
+        draft = IndividualDraftFactory(ad=ad, states=[('draft','active'),('draft-iesg','lc')], stream_id='ietf')
         url = urlreverse('ietf.doc.views_ballot.ballot_writeupnotes', kwargs=dict(name=draft.name))
         login_testing_unauthorized(self, "secretary", url)
 

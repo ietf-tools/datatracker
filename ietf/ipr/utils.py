@@ -4,7 +4,6 @@
 from textwrap import dedent
 
 from ietf.ipr.mail import process_response_email, UndeliverableIprResponseError
-from ietf.ipr.models import IprDocRel
 
 import debug                            # pyflakes:ignore
 
@@ -63,30 +62,6 @@ def related_docs(doc, relationship=('replaces', 'obs'), reverse_relationship=("b
 
     return list(set(results))
 
-
-def generate_draft_recursive_txt():
-    docipr = {}
-
-    for o in IprDocRel.objects.filter(disclosure__state='posted').select_related('document'):
-        doc = o.document
-        name = doc.name
-        related_set = set(doc) | set(doc.all_related_that_doc(('obs', 'replaces')))
-        for related in related_set:
-            name = related.name
-            if name.startswith("rfc"):
-                name = name.upper()
-            if not name in docipr:
-                docipr[name] = []
-            docipr[name].append(o.disclosure_id)
-
-    lines = [ "# Machine-readable list of IPR disclosures by Internet-Draft name" ]
-    for name, iprs in docipr.items():
-        lines.append(name + "\t" + "\t".join(str(ipr_id) for ipr_id in sorted(iprs)))
-
-    data = '\n'.join(lines)
-    filename = '/a/ietfdata/derived/ipr_draft_recursive.txt'
-    with open(filename, 'w') as f:
-        f.write(data)
 
     
 def ingest_response_email(message: bytes):

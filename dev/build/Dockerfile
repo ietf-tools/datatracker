@@ -1,4 +1,4 @@
-FROM ghcr.io/ietf-tools/datatracker-app-base:20250128T1728
+FROM ghcr.io/ietf-tools/datatracker-app-base:20250327T1859
 LABEL maintainer="IETF Tools Team <tools-discuss@ietf.org>"
 
 ENV DEBIAN_FRONTEND=noninteractive
@@ -10,9 +10,8 @@ RUN groupadd -g 1000 datatracker && \
 RUN apt-get purge -y imagemagick imagemagick-6-common
 
 # Install libreoffice (needed via PPT2PDF_COMMAND)
-RUN echo "deb http://deb.debian.org/debian bullseye-backports main" > /etc/apt/sources.list.d/bullseye-backports.list && \
-    apt-get update && \
-    apt-get -qyt bullseye-backports install libreoffice-nogui
+RUN apt-get update && \
+    apt-get -qy install libreoffice-nogui
 
 COPY . .
 COPY ./dev/build/start.sh ./start.sh

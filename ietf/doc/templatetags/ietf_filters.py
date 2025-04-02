@@ -480,6 +480,19 @@ def state(doc, slug):
         slug = "%s-stream-%s" % (doc.type_id, doc.stream_id)
     return doc.get_state(slug)
 
+
+@register.filter
+def is_unexpected_wg_state(doc):
+    """Returns a flag indicating whether the document has an unexpected wg state."""
+    if not doc.type_id == "draft":
+        return False
+
+    draft_iesg_state = doc.get_state("draft-iesg")
+    draft_stream_state = doc.get_state("draft-stream-ietf")
+
+    return draft_iesg_state.slug != "idexists" and draft_stream_state is not None and draft_stream_state.slug != "sub-pub"
+
+
 @register.filter
 def statehelp(state):
     "Output help icon with tooltip for state."
@@ -533,11 +546,14 @@ def ics_date_time(dt, tzname):
     >>> ics_date_time(datetime.datetime(2022,1,2,3,4,5), 'UTC')
     ':20220102T030405Z'
 
+    >>> ics_date_time(datetime.datetime(2022,1,2,3,4,5), 'GmT')
+    ':20220102T030405Z'
+
     >>> ics_date_time(datetime.datetime(2022,1,2,3,4,5), 'America/Los_Angeles')
     ';TZID=America/Los_Angeles:20220102T030405'
     """
     timestamp = dt.strftime('%Y%m%dT%H%M%S')
-    if tzname.lower() == 'utc':
+    if tzname.lower() in ('gmt', 'utc'):
         return f':{timestamp}Z'
     else:
         return f';TZID={ics_esc(tzname)}:{timestamp}'

@@ -445,35 +445,6 @@ def history(request, id):
         'selected_tab_entry':'history'
     })
 
-def by_draft_txt(request):
-    docipr = {}
-
-    for o in IprDocRel.objects.filter(disclosure__state='posted').select_related('document'):
-        name = o.document.name
-        if name.startswith("rfc"):
-            name = name.upper()
-
-        if not name in docipr:
-            docipr[name] = []
-
-        docipr[name].append(o.disclosure_id)
-
-    lines = [ "# Machine-readable list of IPR disclosures by draft name" ]
-    for name, iprs in docipr.items():
-        lines.append(name + "\t" + "\t".join(str(ipr_id) for ipr_id in sorted(iprs)))
-
-    return HttpResponse("\n".join(lines), content_type="text/plain; charset=%s"%settings.DEFAULT_CHARSET)
-
-def by_draft_recursive_txt(request):
-    """Returns machine-readable list of IPR disclosures by draft name, recursive.
-    NOTE: this view is expensive and should be removed _after_ tools.ietf.org is retired,
-    including util function and management commands that generate the content for
-    this view."""
-
-    with open('/a/ietfdata/derived/ipr_draft_recursive.txt') as f:
-        content = f.read()
-    return HttpResponse(content, content_type="text/plain; charset=%s"%settings.DEFAULT_CHARSET)
-
 
 def new(request, _type, updates=None):
     """Submit a new IPR Disclosure.  If the updates field != None, this disclosure

@@ -19,6 +19,7 @@ from ietf.doc.factories import ( DocumentFactory, IndividualRfcFactory,
     WgRfcFactory, DocEventFactory, WgDraftFactory )
 from ietf.doc.models import ( Document, State, DocEvent,
     BallotPositionDocEvent, NewRevisionDocEvent, TelechatDocEvent, WriteupDocEvent )
+from ietf.doc.storage_utils import retrieve_str
 from ietf.doc.utils import create_ballot_if_not_open
 from ietf.doc.views_status_change import default_approval_text
 from ietf.group.models import Person
@@ -71,7 +72,7 @@ class StatusChangeTests(TestCase):
             statchg_relation_row_blah="tois")
         )
         self.assertEqual(r.status_code, 302)
-        status_change = Document.objects.get(name='status-change-imaginary-new')        
+        status_change = Document.objects.get(name='status-change-imaginary-new')
         self.assertEqual(status_change.get_state('statchg').slug,'adrev')
         self.assertEqual(status_change.rev,'00')
         self.assertEqual(status_change.ad.name,'Areað Irector')
@@ -563,6 +564,9 @@ class StatusChangeSubmitTests(TestCase):
         ftp_filepath = Path(settings.FTP_DIR) / "status-changes" / basename
         self.assertFalse(filepath.exists())
         self.assertFalse(ftp_filepath.exists())
+        # TODO-BLOBSTORE: next assert is disabled because we currently suppress all exceptions 
+        # with self.assertRaises(FileNotFoundError):
+        #     retrieve_str("statchg",basename)
         r = self.client.post(url,dict(content="Some initial review text\n",submit_response="1"))
         self.assertEqual(r.status_code,302)
         doc = Document.objects.get(name='status-change-imaginary-mid-review')
@@ -571,6 +575,10 @@ class StatusChangeSubmitTests(TestCase):
             self.assertEqual(f.read(),"Some initial review text\n")
         with ftp_filepath.open() as f:
             self.assertEqual(f.read(),"Some initial review text\n")
+        self.assertEqual(
+            retrieve_str("statchg", basename),
+            "Some initial review text\n"
+        )
         self.assertTrue( "mid-review-00" in doc.latest_event(NewRevisionDocEvent).desc)
 
     def test_subsequent_submission(self):
@@ -607,7 +615,8 @@ class StatusChangeSubmitTests(TestCase):
         self.assertContains(r, "does not appear to be a text file")
 
         # sane post uploading a file
-        test_file = StringIO("This is a new proposal.")
+        test_content = "This is a new proposal."
+        test_file = StringIO(test_content)
         test_file.name = "unnamed"
         r = self.client.post(url,dict(txt=test_file,submit_response="1"))
         self.assertEqual(r.status_code, 302)
@@ -615,8 +624,12 @@ class StatusChangeSubmitTests(TestCase):
         self.assertEqual(doc.rev,'01')
         path = os.path.join(settings.STATUS_CHANGE_PATH, '%s-%s.txt' % (doc.name, doc.rev))
         with io.open(path) as f:
-            self.assertEqual(f.read(),"This is a new proposal.")
+            self.assertEqual(f.read(), test_content)
             f.close()
+        self.assertEqual(
+            retrieve_str("statchg", f"{doc.name}-{doc.rev}.txt"),
+            test_content
+        )
         self.assertTrue( "mid-review-01" in doc.latest_event(NewRevisionDocEvent).desc)
 
         # verify reset text button works

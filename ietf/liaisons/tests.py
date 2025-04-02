@@ -19,6 +19,7 @@ from django.utils import timezone
 from io import StringIO
 from pyquery import PyQuery
 
+from ietf.doc.storage_utils import retrieve_str
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized
 from ietf.utils.mail import outbox
 
@@ -414,7 +415,8 @@ class LiaisonManagementTests(TestCase):
 
         # edit
         attachments_before = liaison.attachments.count()
-        test_file = StringIO("hello world")
+        test_content = "hello world"
+        test_file = StringIO(test_content)
         test_file.name = "unnamed"
         r = self.client.post(url,
                              dict(from_groups=str(from_group.pk),
@@ -452,9 +454,12 @@ class LiaisonManagementTests(TestCase):
         self.assertEqual(attachment.title, "attachment")
         with (Path(settings.LIAISON_ATTACH_PATH) / attachment.uploaded_filename).open() as f:
             written_content = f.read()
+        self.assertEqual(written_content, test_content)
+        self.assertEqual(
+            retrieve_str(attachment.type_id, attachment.uploaded_filename),
+            test_content,
+        )
 
-        test_file.seek(0)
-        self.assertEqual(written_content, test_file.read())
 
     def test_incoming_access(self):
         '''Ensure only Secretariat, Liaison Managers, and Authorized Individuals
@@ -704,7 +709,8 @@ class LiaisonManagementTests(TestCase):
 
         # add new
         mailbox_before = len(outbox)
-        test_file = StringIO("hello world")
+        test_content = "hello world"
+        test_file = StringIO(test_content)
         test_file.name = "unnamed"
         from_groups = [ str(g.pk) for g in Group.objects.filter(type="sdo") ]
         to_group = Group.objects.get(acronym="mars")
@@ -756,6 +762,11 @@ class LiaisonManagementTests(TestCase):
         self.assertEqual(attachment.title, "attachment")
         with (Path(settings.LIAISON_ATTACH_PATH) / attachment.uploaded_filename).open() as f:
             written_content = f.read()
+        self.assertEqual(written_content, test_content)
+        self.assertEqual(
+            retrieve_str(attachment.type_id, attachment.uploaded_filename),
+            test_content
+        )
 
         test_file.seek(0)
         self.assertEqual(written_content, test_file.read())
@@ -783,7 +794,8 @@ class LiaisonManagementTests(TestCase):
 
         # add new
         mailbox_before = len(outbox)
-        test_file = StringIO("hello world")
+        test_content = "hello world"
+        test_file = StringIO(test_content)
         test_file.name = "unnamed"
         from_group = Group.objects.get(acronym="mars")
         to_group = Group.objects.filter(type="sdo")[0]
@@ -835,9 +847,11 @@ class LiaisonManagementTests(TestCase):
         self.assertEqual(attachment.title, "attachment")
         with (Path(settings.LIAISON_ATTACH_PATH) / attachment.uploaded_filename).open() as f:
             written_content = f.read()
-
-        test_file.seek(0)
-        self.assertEqual(written_content, test_file.read())
+        self.assertEqual(written_content, test_content)
+        self.assertEqual(
+            retrieve_str(attachment.type_id, attachment.uploaded_filename),
+            test_content
+        )
 
         self.assertEqual(len(outbox), mailbox_before + 1)
         self.assertTrue("Liaison Statement" in outbox[-1]["Subject"])
@@ -882,7 +896,8 @@ class LiaisonManagementTests(TestCase):
 
 
         # get minimum edit post data
-        file = StringIO('dummy file')
+        test_data = "dummy file"
+        file = StringIO(test_data)
         file.name = "upload.txt"
         post_data = dict(
             from_groups = ','.join([ str(x.pk) for x in liaison.from_groups.all() ]),
@@ -909,6 +924,11 @@ class LiaisonManagementTests(TestCase):
         self.assertEqual(liaison.attachments.count(),1)
         event = liaison.liaisonstatementevent_set.order_by('id').last()
         self.assertTrue(event.desc.startswith('Added attachment'))
+        attachment = liaison.attachments.get()
+        self.assertEqual(
+            retrieve_str(attachment.type_id, attachment.uploaded_filename),
+            test_data
+        )
 
     def test_liaison_edit_attachment(self):
 

@@ -167,6 +167,8 @@ def edit_material(request, name=None, acronym=None, action=None, doc_type=None):
                 with filepath.open('wb+') as dest:
                     for chunk in f.chunks():
                         dest.write(chunk)
+                f.seek(0)
+                doc.store_file(basename, f)
                 if not doc.meeting_related():
                     log.assertion('doc.type_id == "slides"')
                     ftp_filepath = Path(settings.FTP_DIR) / doc.type_id / basename

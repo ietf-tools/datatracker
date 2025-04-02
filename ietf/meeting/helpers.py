@@ -649,6 +649,11 @@ def read_session_file(type, num, doc):
 def read_agenda_file(num, doc):
     return read_session_file('agenda', num, doc)
 
+# TODO-BLOBSTORE: this is _yet another_ draft derived variant created when users
+# ask for drafts from the meeting agenda page. Consider whether to refactor this
+# now to not call out to external binaries, and consider whether we need this extra
+# format at all in the draft blobstore. if so, it would probably be stored under 
+# something like plainpdf/ 
 def convert_draft_to_pdf(doc_name):
     inpath = os.path.join(settings.IDSUBMIT_REPOSITORY_PATH, doc_name + ".txt")
     outpath = os.path.join(settings.INTERNET_DRAFT_PDF_PATH, doc_name + ".pdf")

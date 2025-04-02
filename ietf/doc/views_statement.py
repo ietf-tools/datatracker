@@ -137,12 +137,15 @@ def submit(request, name):
                 mode="wb" if writing_pdf else "w"
             ) as destination:
                 if writing_pdf:
-                    for chunk in form.cleaned_data["statement_file"].chunks():
+                    f = form.cleaned_data["statement_file"]
+                    for chunk in f.chunks():
                         destination.write(chunk)
+                    f.seek(0)
+                    statement.store_file(statement.uploaded_filename, f)
                 else:
                     destination.write(markdown_content)
+                    statement.store_str(statement.uploaded_filename, markdown_content)
             return redirect("ietf.doc.views_doc.document_main", name=statement.name)
-
     else:
         if statement.uploaded_filename.endswith("pdf"):
             text = CONST_PDF_REV_NOTICE
@@ -254,10 +257,14 @@ def new_statement(request):
                 mode="wb" if writing_pdf else "w"
             ) as destination:
                 if writing_pdf:
-                    for chunk in form.cleaned_data["statement_file"].chunks():
+                    f = form.cleaned_data["statement_file"]
+                    for chunk in f.chunks():
                         destination.write(chunk)
+                        f.seek(0)
+                        statement.store_file(statement.uploaded_filename, f)
                 else:
                     destination.write(markdown_content)
+                    statement.store_str(statement.uploaded_filename, markdown_content)
             return redirect("ietf.doc.views_doc.document_main", name=statement.name)
 
     else:
