@@ -87,8 +87,7 @@ logger.addHandler(NullHandler())
 debugmode = False
 
 def setdebug():
-  global debugmode, streamhandler
-
+  global debugmode
   debugmode = True
   loglevel = logging.DEBUG
   logformat = "%(levelname)8s %(message)s"

@@ -29,7 +29,7 @@ spec:
         # -----------------------------------------------------
         # RabbitMQ Container
         # -----------------------------------------------------
-        - image: "ghcr.io/ietf-tools/datatracker-mq:3.12-alpine"
+        - image: "ghcr.io/ietf-tools/datatracker-mq:3.13-alpine"
           imagePullPolicy: Always
           name: rabbitmq
           ports:

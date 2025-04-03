@@ -65,7 +65,6 @@ progdir = os.path.dirname(sys.argv[0])
 opt_debug = False
 opt_timestamp = False
 opt_trace = False
-opt_authorinfo = False
 opt_attributes = False
 # Don't forget to add the option variable to the globals list in _main below
 
@@ -1332,8 +1331,6 @@ def getmeta(fn):
 
 # ----------------------------------------------------------------------
 def _output(docname, fields, outfile=sys.stdout):
-    global company_domain
-
     if opt_attributes:
         def outputkey(key, fields):
             field = fields[key]
@@ -1373,9 +1370,8 @@ def _printmeta(fn, outfile=sys.stdout):
 # Main
 # ----------------------------------------------------------------------
 
-company_domain = {}                     # type: Dict[str, str]
 def _main(outfile=sys.stdout):
-    global opt_debug, opt_timestamp, opt_trace, opt_authorinfo, files, company_domain, opt_attributes
+    global opt_debug, opt_timestamp, opt_trace, files, opt_attributes
     # set default values, if any
     # ----------------------------------------------------------------------
     # Option processing
@@ -1423,8 +1419,6 @@ def _main(outfile=sys.stdout):
         elif opt in ["-T", "--trace"]: # Emit trace information while working
             opt_trace = True
 
-    company_domain = {}
- 
     if not files:
         files = [ "-" ]
 

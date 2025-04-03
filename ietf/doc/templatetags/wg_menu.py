@@ -62,8 +62,6 @@ parents = Group.objects.filter(
 
 @register.simple_tag
 def wg_menu(flavor):
-    global parents
-
     for p in parents:
         p.short_name = parent_short_names.get(p.acronym) or p.name
         if p.short_name.endswith(" Area"):
