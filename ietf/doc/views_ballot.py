@@ -611,6 +611,10 @@ class BallotWriteupForm(forms.Form):
 def ballot_writeupnotes(request, name):
     """Editing of ballot write-up and notes"""
     doc = get_object_or_404(Document, name=name)
+
+    if doc.stream_id is None or doc.stream_id != 'ietf':
+        raise Http404("The requested operation is not allowed for this document.")
+
     prev_state = doc.get_state("draft-iesg")
 
     login = request.user.person
@@ -1335,4 +1339,3 @@ def parse_ballot_edit_return_point(path, doc_name, ballot_id):
         "ietf.iesg.views.past_documents",
     }
     return validate_return_to_path(path, get_default_path, allowed_path_handlers)
-

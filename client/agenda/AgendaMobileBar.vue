@@ -124,11 +124,11 @@ const downloadIcsOptions = [
 
 function jumpToDay (dayId) {
   if (dayId === 'now') {
-    const lastEventId = agendaStore.findCurrentEventId()
-    if (lastEventId) {
-      document.getElementById(`agenda-rowid-${lastEventId}`)?.scrollIntoView(true)
+    const nowEventId = agendaStore.findNowEventId()
+    if (nowEventId) {
+      document.getElementById(`agenda-rowid-${nowEventId}`)?.scrollIntoView(true)
     } else {
-      message.warning('There is no event happening right now.')
+      message.warning('There is no event happening right now or in the future.')
     }
   } else {
     document.getElementById(dayId)?.scrollIntoView(true)

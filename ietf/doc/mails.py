@@ -568,7 +568,7 @@ def email_last_call_expired(doc):
     send_mail(None,
               addrs.to,
               "DraftTracker Mail System <iesg-secretary@ietf.org>",
-              "Last Call Expired: %s" % doc.file_tag(),
+              "IETF Last Call Expired: %s" % doc.file_tag(),
               "doc/mail/change_notice.txt",
               dict(text=text,
                    doc=doc,
