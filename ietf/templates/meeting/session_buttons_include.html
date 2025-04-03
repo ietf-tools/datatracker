@@ -127,18 +127,14 @@
                     </a>
                 {% else %}
                     {# chat logs #}
-                    {% if meeting.has_chat_logs %}
-                        {% with session.filtered_chatlog_and_polls|get_chatlog as chatlog %}
-                        {% if chatlog %}
-                            <a class="btn btn-outline-primary"
-                                role="button"
-                                href="/doc/{{ chatlog.name }}"
-                                aria-label="Chat logs for {{ session.chat_room_name }}"
-                                title="Chat logs for {{ session.chat_room_name }}">
-                                <i class="bi bi-file-text"></i>
-                            </a>
-                        {% endif %}
-                        {% endwith %}
+                    {% if meeting.has_chat_logs and session.chatlog %}
+                        <a class="btn btn-outline-primary"
+                            role="button"
+                            href="/doc/{{ session.chatlog.document.name }}"
+                            aria-label="Chat logs for {{ session.chat_room_name }}"
+                            title="Chat logs for {{ session.chat_room_name }}">
+                            <i class="bi bi-file-text"></i>
+                        </a>
                     {% endif %}
                     {# Recordings #}
 		    {% if meeting.has_recordings %}
@@ -308,17 +304,13 @@
                         </li>
                     {% else %}
                         {# chat logs #}
-			            {% if meeting.has_chat_logs %}
-                            {% with session.filtered_chatlog_and_polls|get_chatlog as chatlog %}
-                            {% if chatlog %}
+			            {% if meeting.has_chat_logs and session.chatlog %}
                             <li>
                                 <a class="dropdown-item"
-                                    href="/doc/{{ chatlog.name }}">
+                                    href="/doc/{{ session.chatlog.document.name }}">
                                     <i class="bi bi-file-text"></i> Chat logs
                                 </a>
                             </li>
-                            {% endif %}
-                            {% endwith %}
                         {% endif %}
                         {# Recordings #}
                         {% if meeting.has_recordings %}
