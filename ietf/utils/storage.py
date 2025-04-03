@@ -1,8 +1,11 @@
 # Copyright The IETF Trust 2020-2025, All Rights Reserved
 """Django Storage classes"""
+import datetime
+from hashlib import sha384
 from pathlib import Path
 
 from django.conf import settings
+from django.core.files.base import File
 from django.core.files.storage import FileSystemStorage
 from ietf.doc.storage_utils import store_file
 from .log import log
@@ -56,3 +59,36 @@ class BlobShadowFileSystemStorage(NoLocationMigrationFileSystemStorage):
         path, args, kwargs = super().deconstruct()
         kwargs["kind"] = ""  # don't record "kind" in migrations
         return path, args, kwargs
+
+
+class MetadataFile(File):
+    """File that includes metadata"""
+
+    def __init__(self, file, name=None, mtime: datetime.datetime=None, content_type=""):
+        super().__init__(file=file, name=name)
+        self.mtime = mtime
+        self.content_type = content_type
+        self._custom_metadata = None
+
+    @property
+    def custom_metadata(self):
+        if self._custom_metadata is None:
+            self._custom_metadata = self._compute_custom_metadata()
+        return self._custom_metadata
+
+    def _compute_custom_metadata(self):
+        try:
+            self.file.seek(0)
+        except AttributeError:  # TODO-BLOBSTORE
+            raise NotImplementedError("cannot handle unseekable content")
+        content_bytes = self.file.read()
+        if not isinstance(
+            content_bytes, bytes
+        ):  # TODO-BLOBSTORE: This is sketch-development only -remove before committing
+            raise Exception(f"Expected bytes - got {type(content_bytes)}")
+        self.file.seek(0)
+        return {
+            "len": f"{len(content_bytes)}",
+            "sha384": f"{sha384(content_bytes).hexdigest()}",
+            "mtime": None if self.mtime is None else self.mtime.isoformat(),
+        }
