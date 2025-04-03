@@ -288,7 +288,7 @@ class IssueIRSGBallotTests(TestCase):
 
     def test_iesg_ballot_no_irsg_actions(self):
         ad = Person.objects.get(user__username="ad")
-        wg_draft = IndividualDraftFactory(ad=ad)
+        wg_draft = IndividualDraftFactory(ad=ad, stream_id='ietf')
         irsgmember = get_active_irsg()[0]
 
         url = urlreverse('ietf.doc.views_ballot.ballot_writeupnotes', kwargs=dict(name=wg_draft.name))

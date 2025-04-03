@@ -1385,7 +1385,7 @@ class SlideSubmission(models.Model):
     apply_to_all = models.BooleanField(default=False)
     submitter = ForeignKey(Person)
     status      = ForeignKey(SlideSubmissionStatusName, null=True, default='pending', on_delete=models.SET_NULL)
-    doc         = ForeignKey(Document, null=True, on_delete=models.SET_NULL)
+    doc         = ForeignKey(Document, blank=True, null=True, on_delete=models.SET_NULL)
 
     def staged_filepath(self):
         return os.path.join(settings.SLIDE_STAGING_PATH , self.filename)
