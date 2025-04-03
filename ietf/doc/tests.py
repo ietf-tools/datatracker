@@ -2958,6 +2958,24 @@ class RawIdTests(TestCase):
         self.should_succeed(dict(name=draft.name, rev='00',ext='txt'))
         self.should_404(dict(name=draft.name, rev='00',ext='html'))
 
+    @override_settings(IDNITS3_BASE_URL="https://example.org/idnits3")
+    def test_nits3_url(self):
+        draft = WgDraftFactory(name="draft-ietf-moon-test",rev="01", create_revisions=range(0,2))
+
+        dir = settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR
+        (Path(dir) / f"{draft.name}-01.xml").touch()
+        r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)))
+        self.assertContains(r, settings.IDNITS3_BASE_URL)
+
+    @override_settings(IDNITS_BASE_URL="https://example.org/nits")
+    def test_nits_url(self):
+        draft = WgDraftFactory(name="draft-ietf-moon-test",rev="01", create_revisions=range(0,2))
+
+        dir = settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR
+        (Path(dir) / f"{draft.name}-01.txt").touch()
+        r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)))
+        self.assertContains(r, settings.IDNITS_BASE_URL)
+
     # test_raw_id_rfc intentionally removed
     # an rfc is no longer a pseudo-version of a draft.
 
