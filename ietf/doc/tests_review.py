@@ -902,7 +902,10 @@ class ReviewTests(TestCase):
 
         self.assertEqual(len(outbox), 1)
         self.assertIn(assignment.review_request.team.list_email, outbox[0]["To"])
-        self.assertIn("This is a review", get_payload_text(outbox[0]))
+        payload = get_payload_text(outbox[0])
+        self.assertIn("This is a review", payload)
+        self.assertIn(f"Document: {assignment.review_request.doc.name}", payload)
+        self.assertIn(f"Title: {assignment.review_request.doc.title}", payload)
 
         self.assertIn(settings.MAILING_LIST_ARCHIVE_URL, assignment.review.external_url)
 

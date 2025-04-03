@@ -59,7 +59,7 @@ from ietf.person.models import Person, User
 from ietf.ietfauth.utils import role_required, has_role, user_is_person
 from ietf.mailtrigger.utils import gather_address_lists
 from ietf.meeting.models import Meeting, Session, Schedule, FloorPlan, SessionPresentation, TimeSlot, SlideSubmission, Attended
-from ietf.meeting.models import SessionStatusName, SchedulingEvent, SchedTimeSessAssignment, Room, TimeSlotTypeName
+from ietf.meeting.models import ImportantDate, SessionStatusName, SchedulingEvent, SchedTimeSessAssignment, Room, TimeSlotTypeName
 from ietf.meeting.forms import ( CustomDurationField, SwapDaysForm, SwapTimeslotsForm, ImportMinutesForm,
                                  TimeSlotCreateForm, TimeSlotEditForm, SessionCancelForm, SessionEditForm )
 from ietf.meeting.helpers import get_person_by_email, get_schedule_by_name
@@ -1709,6 +1709,9 @@ def generate_agenda_data(num=None, force_refresh=False):
     # Get Floor Plans
     floors = FloorPlan.objects.filter(meeting=meeting).order_by('order')
     
+    # Get Preliminary Agenda Date
+    prelimAgendaDate = ImportantDate.objects.filter(name_id="prelimagenda", meeting=meeting).first()
+
     result = {
         "meeting": {
             "number": schedule.meeting.number,
@@ -1718,7 +1721,8 @@ def generate_agenda_data(num=None, force_refresh=False):
             "updated": updated,
             "timezone": meeting.time_zone,
             "infoNote": schedule.meeting.agenda_info_note,
-            "warningNote": schedule.meeting.agenda_warning_note
+            "warningNote": schedule.meeting.agenda_warning_note,
+            "prelimAgendaDate": prelimAgendaDate.date.isoformat() if prelimAgendaDate else ""
         },
         "categories": filter_organizer.get_filter_categories(),
         "isCurrentMeeting": is_current_meeting,
@@ -2509,13 +2513,17 @@ def session_details(request, num, acronym):
     scheduled_sessions = [s for s in sessions if s.current_status == 'sched']
     unscheduled_sessions = [s for s in sessions if s.current_status != 'sched']
 
-    pending_suggestions = None
-    if request.user.is_authenticated:
-        if can_manage:
-            pending_suggestions = session.slidesubmission_set.filter(status__slug='pending')
-        else:
-            pending_suggestions = session.slidesubmission_set.filter(status__slug='pending', submitter=request.user.person)
+    # Start with all the pending suggestions for all the group's sessions
+    pending_suggestions = SlideSubmission.objects.filter(session__in=sessions, status__slug='pending')
+    if can_manage:
+        pass  # keep the full set
+    elif hasattr(request.user, "person"):
+        pending_suggestions = pending_suggestions.filter(submitter=request.user.person)
+    else:
+        pending_suggestions = SlideSubmission.objects.none()
 
+    tsa = session.official_timeslotassignment()
+    future = tsa is not None and timezone.now() < tsa.timeslot.end_time()
     return render(request, "meeting/session_details.html",
                   { 'scheduled_sessions':scheduled_sessions ,
                     'unscheduled_sessions':unscheduled_sessions , 
@@ -2526,6 +2534,7 @@ def session_details(request, num, acronym):
                     'can_manage_materials' : can_manage,
                     'can_view_request': can_view_request,
                     'thisweek': datetime_today()-datetime.timedelta(days=7),
+                    'future': future,
                   })
 
 class SessionDraftsForm(forms.Form):
@@ -2817,11 +2826,14 @@ def upload_session_minutes(request, session_id, num):
     else:
         form = UploadMinutesForm(show_apply_to_all_checkbox)
 
+    tsa = session.official_timeslotassignment()
+    future = tsa is not None and timezone.now() < tsa.timeslot.end_time()
     return render(request, "meeting/upload_session_minutes.html", 
                   {'session': session,
                    'session_number': session_number,
                    'minutes_sp' : minutes_sp,
                    'form': form,
+                   'future': future,
                   })
 
 @role_required("Secretariat")
