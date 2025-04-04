@@ -227,6 +227,20 @@ class StoredObjectStagedBlobStorage(StagedBlobStorage):
 
     def _save(self, name, content):
         now = timezone.now()
+        explicit_mtime = getattr(
+            content,
+            "mtime",
+            None,
+        )
+        if explicit_mtime is not None:
+            mtime = now
+        else:
+            mtime = explicit_mtime
+        content_type = getattr(
+            content,
+            "content_type",
+            "",
+        )
         record, created = StoredObject.objects.get_or_create(
             store=self.kind,
             name=name,
@@ -234,9 +248,10 @@ class StoredObjectStagedBlobStorage(StagedBlobStorage):
                 sha384=content.custom_metadata["sha384"],
                 len=int(content.custom_metadata["len"]),
                 store_created=now,
-                created=now,
-                modified=now,
+                created=mtime,
+                modified=mtime,
                 committed=None,  # we haven't saved yet
+                content_type = content_type
                 doc_name=getattr(
                     content,
                     "doc_name",  # Note that these are assumed to be invariant
@@ -252,7 +267,10 @@ class StoredObjectStagedBlobStorage(StagedBlobStorage):
         if not created:
             record.sha384 = content.custom_metadata["sha384"]
             record.len = int(content.custom_metadata["len"])
-            record.modified = now
+            record.content_type = content_type
+            if explicit_mtime is not None:
+                record.created = explicit_mtime
+            record.modified = mtime
             record.deleted = None
             record.committed = None
             record.save()
