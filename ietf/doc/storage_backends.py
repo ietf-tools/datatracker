@@ -251,7 +251,7 @@ class StoredObjectStagedBlobStorage(StagedBlobStorage):
                 created=mtime,
                 modified=mtime,
                 committed=None,  # we haven't saved yet
-                content_type = content_type
+                content_type = content_type,
                 doc_name=getattr(
                     content,
                     "doc_name",  # Note that these are assumed to be invariant
