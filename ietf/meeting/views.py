@@ -23,6 +23,7 @@ from pathlib import Path
 from urllib.parse import parse_qs, unquote, urlencode, urlsplit, urlunsplit, urlparse
 from tempfile import mkstemp
 from wsgiref.handlers import format_date_time
+from itertools import chain
 
 from django import forms
 from django.core.cache import caches
@@ -2496,7 +2497,12 @@ def session_details(request, num, acronym):
         session.filtered_artifacts.sort(key=lambda d:artifact_types.index(d.document.type.slug))
         session.filtered_slides    = session.presentations.filter(document__type__slug='slides').order_by('order')
         session.filtered_drafts    = session.presentations.filter(document__type__slug='draft')
-        session.filtered_chatlog_and_polls = session.presentations.filter(document__type__slug__in=('chatlog', 'polls')).order_by('document__type__slug')
+        
+        filtered_polls = session.presentations.filter(document__type__slug=('polls'))
+        filtered_chatlogs = session.presentations.filter(document__type__slug=('chatlog'))
+        session.filtered_chatlog_and_polls = chain(filtered_chatlogs, filtered_polls)
+        session.chatlog = filtered_chatlogs.first()
+
         # TODO FIXME Deleted materials shouldn't be in the presentations
         for qs in [session.filtered_artifacts,session.filtered_slides,session.filtered_drafts]:
             qs = [p for p in qs if p.document.get_state_slug(p.document.type_id)!='deleted']
