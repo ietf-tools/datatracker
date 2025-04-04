@@ -35,7 +35,7 @@ class Migration(migrations.Migration):
                 (
                     "created",
                     models.DateTimeField(
-                        help_text="Instant object became known. May not be the same as the storage's created value for the instance. It will hold ctime for objects imported from older disk storage"
+                        help_text="Instant object became known. May not be the same as the storage's created value for the instance. It will hold mtime for objects imported from older disk storage"
                     ),
                 ),
                 (

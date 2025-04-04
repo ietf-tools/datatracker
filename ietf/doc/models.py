@@ -1594,11 +1594,16 @@ class StoredObject(models.Model):
     store = models.CharField(max_length=256)
     name = models.CharField(max_length=1024, null=False, blank=False) # N.B. the 1024 limit on name comes from S3
     sha384 = models.CharField(max_length=96)
+    content_type = models.CharField(
+        max_length=1024,
+        blank=True,
+        help_text="content-type header value for the stored object",
+    )
     len = models.PositiveBigIntegerField()
     store_created = models.DateTimeField(help_text="The instant the object ws first placed in the store")
     created = models.DateTimeField(
         null=False,
-        help_text="Instant object became known. May not be the same as the storage's created value for the instance. It will hold ctime for objects imported from older disk storage"
+        help_text="Instant object became known. May not be the same as the storage's created value for the instance. It will hold mtime for objects imported from older disk storage"
     )
     modified = models.DateTimeField(
         null=False,

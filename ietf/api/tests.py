@@ -49,6 +49,7 @@ OMITTED_APPS = (
     'ietf.secr.proceedings',
     'ietf.ipr',
     'ietf.status',
+    'ietf.blobdb',
 )
 
 class CustomApiTests(TestCase):
@@ -1453,8 +1454,6 @@ class TastypieApiTestCase(ResourceTestCaseMixin, TestCase):
         top = r.json()
         for name in self.apps:
             app_name = self.apps[name]
-            if app_name == "ietf.blobdb":
-                continue
             app = import_module(app_name)
             self.assertEqual("/api/v1/%s/"%name, top[name]["list_endpoint"])
             r = client.get(top[name]["list_endpoint"])
