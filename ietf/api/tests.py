@@ -1440,7 +1440,7 @@ class TastypieApiTestCase(ResourceTestCaseMixin, TestCase):
         resource_list = r.json()
 
         for name in self.apps:
-            if not name in self.apps:
+            if not name in resource_list:
                 sys.stderr.write("Expected a REST API resource for %s, but didn't find one\n" % name)
 
         for name in self.apps:
