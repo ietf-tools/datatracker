@@ -5,7 +5,19 @@ from django.db.models.functions import Length
 from django.utils.deconstruct import deconstructible
 from django.utils import timezone
 
+from ietf.utils.storage import MetadataFile
 from .models import Blob
+
+
+class BlobFile(MetadataFile):
+
+    def __init__(self, content, name=None, mtime=None, content_type=""):
+        super().__init__(
+            file=ContentFile(content),
+            name=name,
+            mtime=mtime,
+            content_type=content_type,
+        )
 
 
 @deconstructible
@@ -43,12 +55,22 @@ class BlobdbStorage(Storage):
             raise FileNotFoundError(
                 f"No object '{name}' exists in bucket '{self.bucket_name}'"
             )
-        return ContentFile(content=blob.content, name=blob.name)
+        return BlobFile(
+            content=blob.content,
+            name=blob.name,
+            mtime=blob.mtime or blob.modified,  # fall back to modified time
+            content_type=blob.content_type,
+        )
 
     def _save(self, name, content):
         Blob.objects.update_or_create(
             name=name,
             bucket=self.bucket_name,
-            defaults={"content": content.read(), "modified": timezone.now()},
+            defaults={
+                "content": content.read(),
+                "modified": timezone.now(),
+                "mtime": getattr(content, "mtime", None),
+                "content_type": getattr(content, "content_type", ""),
+            },
         )
         return name
