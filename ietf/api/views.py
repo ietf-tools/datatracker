@@ -547,7 +547,7 @@ def active_email_list(request):
 
 @requires_api_token
 @csrf_exempt
-def related_email_list(request):
+def related_email_list(request, email):
     """Given an email address, returns all other email addresses known
     to Datatracker, via Person object
     """
@@ -555,20 +555,16 @@ def related_email_list(request):
         return HttpResponse(text, status=code, content_type="text/plain")
 
     if request.method == "GET":
-        if 'email' not in request.GET:
-            return _http_err(400, "Missing email parameter")
-        address = request.GET.get('email')
-        if not address:
-            return _http_err(400, "Email parameter empty")
-        email = Email.objects.get(address=address)
-        if not email:
+        try:
+            email_obj = Email.objects.get(address=email)
+        except Email.DoesNotExist:
             return _http_err(404, "Email not found")
-        person = email.person
+        person = email_obj.person
         if not person:
             return JsonResponse({"addresses": []})
         return JsonResponse(
             {
-                "addresses": list(person.email_set.exclude(address=address).values_list("address", flat=True)),
+                "addresses": list(person.email_set.exclude(address=email).values_list("address", flat=True)),
             }
         )
     return HttpResponse(status=405)

@@ -73,7 +73,7 @@ urlpatterns = [
     # Email alias listing
     url(r'^person/email/$', api_views.active_email_list),
     # Related Email listing
-    url(r'^person/email/related/$', api_views.related_email_list),
+    url(r'^person/email/(?P<email>[^/]+)/related/$', api_views.related_email_list),
     # Draft submission API
     url(r'^submit/?$', submit_views.api_submit_tombstone),
     # Draft upload API
