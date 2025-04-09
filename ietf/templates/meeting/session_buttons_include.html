@@ -2,7 +2,8 @@
 {% load origin %}
 {% load static %}
 {% load textfilters tz %}
-{% load ietf_filters %}
+{% load ietf_filters session_filters %}
+
 {% origin %}
 {% if item and item|should_show_agenda_session_buttons %}
     {% with slug=item.slug session=item.session timeslot=item.timeslot %}
@@ -126,10 +127,10 @@
                     </a>
                 {% else %}
                     {# chat logs #}
-                    {% if meeting.has_chat_logs %}
+                    {% if meeting.has_chat_logs and session.chatlog %}
                         <a class="btn btn-outline-primary"
                             role="button"
-                            href="{{session.chat_archive_url}}"
+                            href="/doc/{{ session.chatlog.document.name }}"
                             aria-label="Chat logs for {{ session.chat_room_name }}"
                             title="Chat logs for {{ session.chat_room_name }}">
                             <i class="bi bi-file-text"></i>
@@ -303,10 +304,10 @@
                         </li>
                     {% else %}
                         {# chat logs #}
-			{% if meeting.has_chat_logs %}
+			            {% if meeting.has_chat_logs and session.chatlog %}
                             <li>
                                 <a class="dropdown-item"
-                                    href="session.chat_room_url">
+                                    href="/doc/{{ session.chatlog.document.name }}">
                                     <i class="bi bi-file-text"></i> Chat logs
                                 </a>
                             </li>

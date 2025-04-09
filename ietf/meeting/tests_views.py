@@ -7736,6 +7736,44 @@ class SessionTests(TestCase):
         self.assertEqual(r.status_code, 404)
         self.assertFalse(mock_delete.called)
 
+    def test_show_chatlog_links(self):
+        meeting = MeetingFactory(type_id='ietf', number='122')
+        session = SessionFactory(meeting=meeting)
+        doc_name = 'chatlog-72-mars-197001010000'
+        SessionPresentation.objects.create(session=session,document=DocumentFactory(type_id='chatlog', name=doc_name))
+
+        session_url = urlreverse('ietf.meeting.views.session_details', 
+                                 kwargs={'num':meeting.number, 'acronym':session.group.acronym})
+
+        r = self.client.get(session_url)
+
+        self.assertEqual(r.status_code, 200)
+
+        q = PyQuery(r.content)
+
+        # Find the chatlog link in the desktop view
+        link_chatlog_box = q(f'a[title="Chat logs for {session.group.acronym}"]')
+        self.assertTrue(link_chatlog_box, 'Expected <a> element with title "Chat logs for {group.acronym}" not found.')
+        self.assertEqual(link_chatlog_box.attr('href'), '/doc/'+ doc_name)
+
+        # Find the chatlog link in the mobile view
+        link_chatlog_list = q('li:contains("Chat logs")')
+        self.assertTrue(link_chatlog_list, 'Expected <li> element containing "Chat logs" not found.')
+        self.assertEqual(link_chatlog_list.find('a').attr('href'), '/doc/'+ doc_name)
+
+    def test_hide_chatlog_links(self):
+        # mock meeting and session, but no chatlog document
+        meeting = MeetingFactory(type_id='ietf', number='122')
+        session = SessionFactory(meeting=meeting)
+
+        session_url = urlreverse('ietf.meeting.views.session_details', 
+                                 kwargs={'num':meeting.number, 'acronym':session.group.acronym})
+
+        r = self.client.get(session_url)
+
+        self.assertEqual(r.status_code, 200)
+        # validate no links for chat logs exist
+        self.assertNotContains(r, 'Chat logs')
 
 
 class HasMeetingsTests(TestCase):
